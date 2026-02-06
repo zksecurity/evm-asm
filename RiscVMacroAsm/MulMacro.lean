@@ -137,7 +137,7 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
   induction nbits generalizing m with
   | zero =>
     intro s
-    simp [add_mulc, prog_skip]
+    simp only [add_mulc, prog_skip]
     have : m = 0 := by omega
     subst this
     simp
@@ -149,7 +149,7 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
       next hodd =>
       simp only [execProgram_seq, ADD, SLLI, single, execProgram_cons, execProgram_nil, execInstr]
       rw [ih (m / 2) (by omega)]
-      simp [MachineState.getReg_setPC,
+      simp only [MachineState.getReg_setPC,
             MachineState.getReg_setReg_ne _ _ _ _ (Ne.symm hne),
             MachineState.getReg_setReg_ne _ _ _ _ hne,
             MachineState.getReg_setReg_eq _ _ _ hrd,
@@ -166,7 +166,7 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
       next hmod =>
       simp only [execProgram_seq, SLLI, single, execProgram_cons, execProgram_nil, execInstr]
       rw [ih (m / 2) (by omega)]
-      simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne _ _ _ _ (Ne.symm hne),
+      simp only [MachineState.getReg_setPC, MachineState.getReg_setReg_ne _ _ _ _ (Ne.symm hne),
             MachineState.getReg_setReg_eq _ _ _ hrs]
       have heven : m % 2 = 0 := by
         simp only [beq_iff_eq] at hmod; omega
