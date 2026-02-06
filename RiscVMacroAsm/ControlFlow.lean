@@ -123,6 +123,73 @@ example : (runIfEqArith 10 3 2).bind (fun s => some (s.getReg .x12)) = some 7 :=
   native_decide
 
 -- ============================================================================
+-- Helper lemmas for symbolic proofs
+-- ============================================================================
+
+/-- An assertion is PC-independent: it holds regardless of the PC value. -/
+def pcIndep (P : Assertion) : Prop := ∀ s v, P s → P (s.setPC v)
+
+theorem pcIndep_and (hP : pcIndep P) (hQ : pcIndep Q) :
+    pcIndep (fun s => P s ∧ Q s) := by
+  intro s v ⟨hp, hq⟩
+  exact ⟨hP s v hp, hQ s v hq⟩
+
+theorem pcIndep_regIs (r : Reg) (val : Word) : pcIndep (regIs r val) := by
+  intro s v h
+  simp only [regIs, MachineState.getReg_setPC] at *; exact h
+
+theorem pcIndep_memIs (a : Addr) (val : Word) : pcIndep (memIs a val) := by
+  intro s v h
+  simp only [memIs, MachineState.getMem, MachineState.setPC] at *; exact h
+
+theorem pcIndep_sepConj (hP : pcIndep P) (hQ : pcIndep Q) :
+    pcIndep (P ** Q) := by
+  intro s v ⟨hp, hq⟩
+  exact ⟨hP s v hp, hQ s v hq⟩
+
+/-- Sign-extend a small 13-bit value (MSB clear) to 32 bits. -/
+theorem signExtend13_ofNat_small (n : Nat) (h : n < 2^12) :
+    signExtend13 (BitVec.ofNat 13 n) = BitVec.ofNat 32 n := by
+  unfold signExtend13
+  rw [BitVec.signExtend_eq_setWidth_of_msb_false]
+  · exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)
+  · rw [BitVec.msb_eq_false_iff_two_mul_lt]; simp [BitVec.toNat_ofNat]; omega
+
+/-- Sign-extend a small 21-bit value (MSB clear) to 32 bits. -/
+theorem signExtend21_ofNat_small (n : Nat) (h : n < 2^20) :
+    signExtend21 (BitVec.ofNat 21 n) = BitVec.ofNat 32 n := by
+  unfold signExtend21
+  rw [BitVec.signExtend_eq_setWidth_of_msb_false]
+  · exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)
+  · rw [BitVec.msb_eq_false_iff_two_mul_lt]; simp [BitVec.toNat_ofNat]; omega
+
+/-- Load the first instruction from a program at its base address. -/
+theorem loadProgram_at_base (base : Addr) (instr : Instr) (rest : List Instr) :
+    loadProgram base (instr :: rest) base = some instr := by
+  simp [loadProgram, BitVec.sub_self]
+
+/-- Load instruction k from a program at address base + 4*k. -/
+theorem loadProgram_at_index (base : Addr) (prog : List Instr) (k : Nat)
+    (hk : k < prog.length) (h4k : 4 * k < 2^32) :
+    loadProgram base prog (base + BitVec.ofNat 32 (4 * k)) = prog[k]? := by
+  simp [loadProgram]
+  have hbase := base.isLt
+  have : (4294967296 - BitVec.toNat base + (BitVec.toNat base + 4 * k)) % 4294967296
+       = 4 * k := by omega
+  rw [this]; simp [hk]; omega
+
+/-- The length of an if_eq program. -/
+theorem if_eq_length (rs1 rs2 : Reg) (tb eb : Program) :
+    (if_eq rs1 rs2 tb eb).length = tb.length + eb.length + 2 := by
+  simp only [if_eq, Program]
+  simp [List.length_append]; omega
+
+/-- JAL x0 executes as a pure PC update (x0 write is dropped). -/
+theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
+    execInstrBr s (Instr.JAL .x0 off) = s.setPC (s.pc + signExtend21 off) := by
+  simp [execInstrBr, MachineState.setReg, MachineState.setPC]
+
+-- ============================================================================
 -- CPS specification for if_eq
 -- ============================================================================
 
@@ -131,7 +198,8 @@ example : (runIfEqArith 10 3 2).bind (fun s => some (s.getReg .x12)) = some 7 :=
     entry (base+4+4*t+4) with inequality, in exactly one step. -/
 theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     (base : Addr) (P : Assertion)
-    (ht_small : 4 * (then_body.length + 1) + 4 < 2^13)
+    (hP : pcIndep P)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
@@ -140,27 +208,62 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     cpsBranch code base P
       then_entry (fun s => P s ∧ s.getReg rs1 = s.getReg rs2)
       else_entry (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) := by
-  -- The first instruction is BNE at address base.
-  -- We need to show that code base = some (BNE rs1 rs2 else_off)
-  -- and then case-split on the branch condition.
-  -- This requires bitvector offset arithmetic; left for future work.
-  sorry
+  simp only
+  intro s hPs hpc_eq
+  -- Fetch BNE at base
+  have hfirst : loadProgram base (if_eq rs1 rs2 then_body else_body) base =
+      some (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) := by
+    simp only [if_eq, loadProgram, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_mod,
+      beq_self_eq_true, Nat.zero_div, true_and, Program]
+    simp [List.length_append]
+  -- Execute one step
+  have hstep : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
+      some (execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))) := by
+    simp [step, hpc_eq, hfirst, Option.map]
+  -- Case split on register equality
+  by_cases heq : s.getReg rs1 = s.getReg rs2
+  · -- Equal → BNE not taken → PC = base + 4 = then_entry
+    have hexec : execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))
+        = s.setPC (s.pc + 4) := by
+      simp [execInstrBr, heq]
+    refine ⟨1, s.setPC (s.pc + 4), ?_, ?_⟩
+    · simp [stepN, hstep, hexec, Option.bind]
+    · left
+      exact ⟨by simp [MachineState.setPC, hpc_eq],
+             hP s _ hPs, by simp [MachineState.getReg_setPC, heq]⟩
+  · -- Not equal → BNE taken → PC = base + signExtend13(offset) = else_entry
+    have hexec : execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))
+        = s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) := by
+      simp [execInstrBr, bne_iff_ne, heq]
+    refine ⟨1, s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))), ?_, ?_⟩
+    · simp [stepN, hstep, hexec, Option.bind]
+    · right
+      refine ⟨?_, hP s _ hPs, by simp [MachineState.getReg_setPC, heq]⟩
+      -- Offset arithmetic: base + signExtend13(else_off) = else_entry
+      simp only [MachineState.setPC, hpc_eq]
+      unfold signExtend13
+      rw [BitVec.signExtend_eq_setWidth_of_msb_false]
+      · rw [BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)]
+        apply BitVec.eq_of_toNat_eq
+        simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+        omega
+      · rw [BitVec.msb_eq_false_iff_two_mul_lt]
+        simp [BitVec.toNat_ofNat]; omega
 
 /-- Full CPS specification for if_eq: given that the then-body is correct
     under equality and the else-body is correct under inequality,
     the whole if_eq is a cpsTriple from entry to exit. -/
 theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
     (base : Addr) (P Q : Assertion)
-    (ht_small : 4 * (then_body.length + 1) + 4 < 2^13)
-    (he_small : 4 * (else_body.length) + 4 < 2^21)
+    (hP : pcIndep P) (hQ : pcIndep Q)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
+    (he_small : 4 * (else_body.length) + 4 < 2^20)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
     let exit_ := base + BitVec.ofNat 32 (4 * prog.length)
-    -- If then-body is correct assuming equality:
     let then_entry := base + 4
     let then_exit  := base + 4 + BitVec.ofNat 32 (4 * then_body.length)
-    -- If else-body is correct assuming inequality:
     let else_entry := then_exit + 4
     let else_exit  := exit_
     (cpsTriple code then_entry then_exit
@@ -168,7 +271,50 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
     (cpsTriple code else_entry else_exit
       (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) Q) →
     cpsTriple code base exit_ P Q := by
-  sorry
+  simp only
+  intro h_then h_else
+  -- 1. Branch dispatch
+  have hbr := if_eq_branch_step rs1 rs2 then_body else_body base P hP ht_small hprog_small
+  simp only at hbr
+  -- 2. JAL step: then_exit → exit_ (preserving Q)
+  have hjal : cpsTriple (loadProgram base (if_eq rs1 rs2 then_body else_body))
+      (base + 4 + BitVec.ofNat 32 (4 * then_body.length))
+      (base + BitVec.ofNat 32 (4 * (if_eq rs1 rs2 then_body else_body).length))
+      Q Q := by
+    intro s hQs hpc
+    have hlen : (if_eq rs1 rs2 then_body else_body).length =
+        then_body.length + else_body.length + 2 := by
+      simp only [if_eq, Program]; simp [List.length_append]; omega
+    -- then_exit = base + ofNat(4*(t+1))
+    have hthen_exit_eq : base + 4 + BitVec.ofNat 32 (4 * then_body.length) =
+        base + BitVec.ofNat 32 (4 * (then_body.length + 1)) := by
+      apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    -- Fetch JAL at then_exit
+    have hidx : then_body.length + 1 < (if_eq rs1 rs2 then_body else_body).length := by omega
+    have hjal_at : loadProgram base (if_eq rs1 rs2 then_body else_body)
+        (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
+        some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
+      rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
+      simp only [if_eq, Program]; simp [List.length_append]
+    -- Execute JAL
+    have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
+        some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
+      unfold step; rw [hpc, hjal_at]; rfl
+    refine ⟨1, s.setPC (s.pc + signExtend21 (BitVec.ofNat 21 (4 * else_body.length + 4))), ?_, ?_, ?_⟩
+    · -- stepN 1 = step composed with execInstrBr_jal_x0
+      simp [stepN, hstep_jal, execInstrBr_jal_x0, Option.bind]
+    · -- PC lands at exit_
+      simp only [MachineState.setPC, hpc, hlen]
+      rw [signExtend21_ofNat_small _ (by omega)]
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega
+    · -- Q is PC-independent
+      exact hQ s _ hQs
+  -- 3. Compose then-path: then_entry → then_exit → exit_
+  have h_then_full := cpsTriple_seq _ _ _ _ _ Q Q h_then hjal
+  -- 4. Merge branches
+  exact cpsBranch_merge _ base _ _ _ P _ _ Q hbr h_then_full h_else
 
 -- ============================================================================
 -- Summary
@@ -189,9 +335,15 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
      of conditional code. `cpsBranch_merge` composes it back into
      a single-exit `cpsTriple`.
 
-  The symbolic proofs (`if_eq_branch_step`, `if_eq_spec`) require
-  bitvector offset reasoning and are left as `sorry` for this prototype.
-  The concrete examples demonstrate full correctness via `native_decide`.
+  4. **Symbolic proofs**: `if_eq_branch_step` proves the BNE dispatch,
+     and `if_eq_spec` composes the full correctness specification
+     from branch-level and body-level specs.
+
+  ### pcIndep
+
+  The `pcIndep` predicate marks assertions as PC-independent, which is
+  needed because branch/jump instructions only modify PC. All concrete
+  assertions (`regIs`, `memIs`, `sepConj` thereof) are PC-independent.
 -/
 
 end RiscVMacroAsm
