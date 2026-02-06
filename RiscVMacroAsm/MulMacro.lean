@@ -134,7 +134,47 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
     ∀ s : MachineState,
       (execProgram s (add_mulc nbits rd rs m)).getReg rd =
         s.getReg rd + s.getReg rs * BitVec.ofNat 32 m := by
-  sorry
+  induction nbits generalizing m with
+  | zero =>
+    intro s
+    simp [add_mulc, prog_skip]
+    have : m = 0 := by omega
+    subst this
+    simp
+  | succ n ih =>
+    intro s
+    simp only [add_mulc]
+    split
+    · -- m % 2 == 1 (odd case)
+      next hodd =>
+      simp only [execProgram_seq, ADD, SLLI, single, execProgram_cons, execProgram_nil, execInstr]
+      rw [ih (m / 2) (by omega)]
+      simp [MachineState.getReg_setPC,
+            MachineState.getReg_setReg_ne _ _ _ _ (Ne.symm hne),
+            MachineState.getReg_setReg_ne _ _ _ _ hne,
+            MachineState.getReg_setReg_eq _ _ _ hrd,
+            MachineState.getReg_setReg_eq _ _ _ hrs]
+      have hodd' : m % 2 = 1 := by simp only [beq_iff_eq] at hodd; omega
+      rw [BitVec.shiftLeft_eq_mul_twoPow]
+      have hm_eq : BitVec.ofNat 32 m = BitVec.ofNat 32 (2 * (m / 2) + 1) := by congr 1; omega
+      rw [hm_eq, BitVec.ofNat_add, BitVec.ofNat_mul, BitVec.twoPow_eq]
+      show s.getReg rd + s.getReg rs + s.getReg rs * (1#32 <<< 1) * BitVec.ofNat 32 (m / 2) =
+           s.getReg rd + s.getReg rs * (2#32 * BitVec.ofNat 32 (m / 2) + 1#32)
+      have h2 : (1#32 <<< 1 : BitVec 32) = 2#32 := by decide
+      rw [h2, BitVec.mul_add, BitVec.mul_one, BitVec.mul_assoc, BitVec.add_assoc, BitVec.add_comm (s.getReg rs)]
+    · -- m % 2 != 1 (even case)
+      next hmod =>
+      simp only [execProgram_seq, SLLI, single, execProgram_cons, execProgram_nil, execInstr]
+      rw [ih (m / 2) (by omega)]
+      simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne _ _ _ _ (Ne.symm hne),
+            MachineState.getReg_setReg_eq _ _ _ hrs]
+      have heven : m % 2 = 0 := by
+        simp only [beq_iff_eq] at hmod; omega
+      rw [BitVec.shiftLeft_eq_mul_twoPow]
+      have : BitVec.ofNat 32 m = BitVec.ofNat 32 2 * BitVec.ofNat 32 (m / 2) := by
+        rw [BitVec.ofNat_mul_ofNat]; congr 1; omega
+      rw [this, BitVec.twoPow_eq, BitVec.mul_assoc]
+      simp
 
 -- ============================================================================
 -- Hoare-triple specification (with separating conjunction)
