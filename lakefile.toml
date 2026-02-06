@@ -1,0 +1,7 @@
+[package]
+name = "RiscVMacroAsm"
+version = "0.1.0"
+leanOptions = []
+
+[[lean_lib]]
+name = "RiscVMacroAsm"
