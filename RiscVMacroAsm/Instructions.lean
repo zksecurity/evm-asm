@@ -45,14 +45,35 @@ inductive Instr where
   | LI   (rd : Reg) (imm : Word)
   /-- NOP (pseudo: ADDI x0, x0, 0) -/
   | NOP
+  /-- BEQ rs1, rs2, offset : branch if rs1 = rs2 (B-type, byte offset) -/
+  | BEQ  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BNE rs1, rs2, offset : branch if rs1 ≠ rs2 (B-type, byte offset) -/
+  | BNE  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- JAL rd, offset : jump and link (J-type, byte offset) -/
+  | JAL  (rd : Reg) (offset : BitVec 21)
   deriving Repr
 
 -- ============================================================================
 -- Instruction Semantics
 -- ============================================================================
 
+/-- Is this instruction a branch or jump? -/
+def Instr.isBranch : Instr → Bool
+  | .BEQ _ _ _ => true
+  | .BNE _ _ _ => true
+  | .JAL _ _   => true
+  | _          => false
+
 /-- Sign-extend a 12-bit immediate to 32 bits. -/
 def signExtend12 (imm : BitVec 12) : Word :=
+  imm.signExtend 32
+
+/-- Sign-extend a 13-bit branch offset to 32 bits. -/
+def signExtend13 (imm : BitVec 13) : Word :=
+  imm.signExtend 32
+
+/-- Sign-extend a 21-bit jump offset to 32 bits. -/
+def signExtend21 (imm : BitVec 21) : Word :=
   imm.signExtend 32
 
 /-- Execute a single instruction, returning the new state.
@@ -93,6 +114,9 @@ def execInstr (s : MachineState) (i : Instr) : MachineState :=
     | .LI rd imm =>
         s.setReg rd imm
     | .NOP => s
+    -- Branch/jump instructions are treated as NOP in list-based execution.
+    -- For proper branch semantics, use execInstrBr + step-based execution.
+    | .BEQ _ _ _ | .BNE _ _ _ | .JAL _ _ => s
   s'.setPC (s'.pc + 4#32)
 
 end RiscVMacroAsm

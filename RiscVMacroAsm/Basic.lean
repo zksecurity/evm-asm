@@ -96,6 +96,18 @@ def setPC (s : MachineState) (v : Word) : MachineState :=
 
 -- Lemmas for reasoning about register file operations
 
+/-- setReg does not affect the program counter. -/
+@[simp]
+theorem pc_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).pc = s.pc := by
+  cases r <;> rfl
+
+/-- setMem does not affect the program counter. -/
+@[simp]
+theorem pc_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).pc = s.pc := by
+  simp [setMem]
+
 /-- setPC does not affect register reads. -/
 @[simp]
 theorem getReg_setPC (s : MachineState) (v : Word) (r : Reg) :
