@@ -57,16 +57,16 @@ def add_mulc (nbits : Nat) (rd rs : Reg) (m : Nat) : Program :=
 
 -- Some examples of what the macro produces:
 
-/-- Multiply by 0: produces no instructions. -/
+-- Multiply by 0: produces no instructions.
 #eval add_mulc 8 .x10 .x11 0
 
-/-- Multiply by 1: ADD then SLLI (plus trailing shifts). -/
+-- Multiply by 1: ADD then SLLI (plus trailing shifts).
 #eval add_mulc 8 .x10 .x11 1
 
-/-- Multiply by 6 (= 110₂). -/
+-- Multiply by 6 (= 110₂).
 #eval add_mulc 8 .x10 .x11 6
 
-/-- Multiply by 10 (= 1010₂). -/
+-- Multiply by 10 (= 1010₂).
 #eval add_mulc 8 .x10 .x11 10
 
 -- ============================================================================

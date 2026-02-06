@@ -45,11 +45,11 @@ def regIs (r : Reg) (v : Word) : Assertion :=
 notation:50 r " ↦ᵣ " v => regIs r v
 
 /-- Register r holds some (unspecified) value. -/
-def regAny (r : Reg) : Assertion :=
+def regAny (_r : Reg) : Assertion :=
   fun _ => True
 
-/-- Notation: r ↦ᵣ ? means register r holds any value. -/
-notation:50 r " ↦ᵣ ?" => regAny r
+-- Notation for regAny is omitted due to parsing issues with wildcard symbols.
+-- Use `regAny r` directly instead.
 
 /-- Memory at address a holds value v. -/
 def memIs (a : Addr) (v : Word) : Assertion :=
@@ -113,13 +113,13 @@ infixr:35 " ** " => sepConj
 /-- Separating conjunction is commutative. -/
 theorem sepConj_comm (P Q : Assertion) : ∀ s, (P ** Q) s ↔ (Q ** P) s := by
   intro s
-  simp [sepConj, And.comm]
+  simp [sepConj, and_comm]
 
 /-- Separating conjunction is associative. -/
 theorem sepConj_assoc (P Q R : Assertion) :
     ∀ s, ((P ** Q) ** R) s ↔ (P ** (Q ** R)) s := by
   intro s
-  simp [sepConj, And.assoc]
+  simp [sepConj, and_assoc]
 
 /-- emp is the unit of separating conjunction. -/
 theorem sepConj_emp_left (P : Assertion) :
