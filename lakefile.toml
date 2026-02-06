@@ -1,0 +1,7 @@
+name = "RiscVMacroAsm"
+version = "0.0.1"
+defaultTargets = ["RiscVMacroAsm"]
+leanOptions = []
+
+[[lean_lib]]
+name = "RiscVMacroAsm"

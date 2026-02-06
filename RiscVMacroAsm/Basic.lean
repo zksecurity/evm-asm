@@ -1,0 +1,117 @@
+/-
+  RiscVMacroAsm.Basic
+
+  A simplified RISC-V machine model for macro assembly verification,
+  inspired by "Coq: The world's best macro assembler?" (Kennedy et al., 2013).
+
+  We model a small subset of RV32I: enough to demonstrate verified macro
+  assembly with separation logic specifications.
+-/
+
+namespace RiscVMacroAsm
+
+-- ============================================================================
+-- Registers
+-- ============================================================================
+
+/-- A small subset of RISC-V integer registers. -/
+inductive Reg where
+  | x0  -- hardwired zero
+  | x1  -- ra
+  | x2  -- sp
+  | x5  -- t0
+  | x6  -- t1
+  | x7  -- t2
+  | x10 -- a0
+  | x11 -- a1
+  | x12 -- a2
+  deriving DecidableEq, BEq, Repr, Hashable
+
+namespace Reg
+
+def toNat : Reg → Nat
+  | x0  => 0
+  | x1  => 1
+  | x2  => 2
+  | x5  => 5
+  | x6  => 6
+  | x7  => 7
+  | x10 => 10
+  | x11 => 11
+  | x12 => 12
+
+instance : ToString Reg where
+  toString r := s!"x{r.toNat}"
+
+end Reg
+
+-- ============================================================================
+-- Word type (32-bit bitvectors)
+-- ============================================================================
+
+/-- We use 32-bit words as our machine word size. -/
+abbrev Word := BitVec 32
+
+/-- Memory addresses are words. -/
+abbrev Addr := Word
+
+-- ============================================================================
+-- Machine State
+-- ============================================================================
+
+/-- The machine state: a register file, memory, and program counter. -/
+structure MachineState where
+  /-- Register file: maps register to its value -/
+  regs : Reg → Word
+  /-- Byte-addressable memory (simplified: word-addressable for now) -/
+  mem  : Addr → Word
+  /-- Program counter -/
+  pc   : Word
+
+namespace MachineState
+
+/-- Read a register (x0 always returns 0). -/
+def getReg (s : MachineState) (r : Reg) : Word :=
+  match r with
+  | .x0 => 0#32
+  | _   => s.regs r
+
+/-- Write a register (writes to x0 are silently dropped). -/
+def setReg (s : MachineState) (r : Reg) (v : Word) : MachineState :=
+  match r with
+  | .x0 => s
+  | _   => { s with regs := fun r' => if r' == r then v else s.regs r' }
+
+/-- Read memory at an address. -/
+def getMem (s : MachineState) (a : Addr) : Word :=
+  s.mem a
+
+/-- Write memory at an address. -/
+def setMem (s : MachineState) (a : Addr) (v : Word) : MachineState :=
+  { s with mem := fun a' => if a' == a then v else s.mem a' }
+
+/-- Set the program counter. -/
+def setPC (s : MachineState) (v : Word) : MachineState :=
+  { s with pc := v }
+
+-- Lemmas for reasoning about register file operations
+
+/-- setPC does not affect register reads. -/
+@[simp]
+theorem getReg_setPC (s : MachineState) (v : Word) (r : Reg) :
+    (s.setPC v).getReg r = s.getReg r := by
+  cases r <;> rfl
+
+/-- Setting register r and reading register r' ≠ r gives the old value. -/
+theorem getReg_setReg_ne (s : MachineState) (r r' : Reg) (v : Word)
+    (h : r ≠ r') : (s.setReg r v).getReg r' = s.getReg r' := by
+  cases r <;> cases r' <;> first | exact absurd rfl h | rfl
+
+/-- Setting register r (≠ x0) and reading it back gives the new value. -/
+theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
+    (h : r ≠ .x0) : (s.setReg r v).getReg r = v := by
+  cases r <;> first | exact absurd rfl h | rfl
+
+end MachineState
+
+end RiscVMacroAsm
