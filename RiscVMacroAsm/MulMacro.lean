@@ -42,7 +42,15 @@ namespace RiscVMacroAsm
 -- ============================================================================
 
 /-- Generate a program that computes rd := rd + rs * m, destroying rs.
-    `nbits` bounds the number of bits to process (recursion fuel). -/
+    `nbits` bounds the number of bits to process (recursion fuel).
+
+    **Acknowledgment**: This macro is adapted from the `add_mulc` implementation in:
+    Andrew Kennedy, Nick Benton, Jonas B. Jensen, Pierre-Evariste Dagand.
+    "Coq: The world's best macro assembler?" PPDP 2013, ACM.
+    https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
+
+    The original implementation uses x86 instructions in Coq. This version
+    adapts the shift-and-add algorithm to RISC-V instructions in Lean 4. -/
 def add_mulc (nbits : Nat) (rd rs : Reg) (m : Nat) : Program :=
   match nbits with
   | 0 => prog_skip
