@@ -134,7 +134,9 @@ theorem swap_spec (v w : Word) :
   intro s ⟨hrd, hrs⟩
   simp only [regIs, sepConj] at *
   -- Unfold the swap program and execution
-  simp only [swap, seq, execProgram_seq, execProgram, MV, single, execInstr]
+  simp only [swap, seq, MV, single]
+  rw [execProgram_append, execProgram_append]
+  simp only [execProgram, execInstr]
   -- Now reason about the chain of setReg/getReg operations.
   -- After MV x5 x10: x5 := s.getReg x10 = v
   -- After MV x10 x11: x10 := (prev state).getReg x11 = w
@@ -142,19 +144,12 @@ theorem swap_spec (v w : Word) :
   -- Each step involves setPC (which doesn't affect regs) and setReg.
   constructor
   · -- Goal: final state's x10 = w
-    simp only [MachineState.getReg_setPC]
-    rw [MachineState.getReg_setReg_ne _ .x11 .x10 _ (by decide)]
-    rw [MachineState.getReg_setReg_eq _ .x10 _ (by decide)]
-    simp only [MachineState.getReg_setPC]
-    rw [MachineState.getReg_setReg_ne _ .x5 .x11 _ (by decide)]
+    simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne,
+          MachineState.getReg_setReg_eq]
     exact hrs
   · -- Goal: final state's x11 = v
-    simp only [MachineState.getReg_setPC]
-    rw [MachineState.getReg_setReg_eq _ .x11 _ (by decide)]
-    simp only [MachineState.getReg_setPC]
-    rw [MachineState.getReg_setReg_ne _ .x10 .x5 _ (by decide)]
-    simp only [MachineState.getReg_setPC]
-    rw [MachineState.getReg_setReg_eq _ .x5 _ (by decide)]
+    simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne,
+          MachineState.getReg_setReg_eq]
     exact hrd
 
 -- ============================================================================

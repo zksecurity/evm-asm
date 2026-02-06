@@ -54,8 +54,10 @@ theorem execProgram_cons (s : MachineState) (i : Instr) (is : List Instr) :
 theorem execProgram_append (s : MachineState) (p1 p2 : Program) :
     execProgram s (p1 ++ p2) = execProgram (execProgram s p1) p2 := by
   induction p1 generalizing s with
-  | nil => simp [execProgram]
-  | cons i is ih => simp [execProgram, ih]
+  | nil => rfl
+  | cons i is ih =>
+    simp only [execProgram]
+    exact ih (execInstr s i)
 
 /-- Sequential composition (;;) composes execution. -/
 theorem execProgram_seq (s : MachineState) (p1 p2 : Program) :
