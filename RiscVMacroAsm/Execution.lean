@@ -77,6 +77,8 @@ def execInstrBr (s : MachineState) (i : Instr) : MachineState :=
         s.setPC (s.pc + 4)
   | .JAL rd offset =>
       (s.setReg rd (s.pc + 4)).setPC (s.pc + signExtend21 offset)
+  | .ECALL =>
+      s.setPC (s.pc + 4)
 
 /-- For non-branch instructions, execInstrBr agrees with execInstr
     (both advance PC by 4 and compute the same state update). -/
@@ -108,9 +110,30 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
 -- ============================================================================
 
 /-- Single step: fetch instruction at PC, execute with branch-aware semantics.
-    Returns none if no instruction at PC (stuck/halted). -/
+    Returns none if no instruction at PC (stuck/halted), or if the instruction
+    is ECALL with t0 = 0 (HALT syscall, following SP1 convention). -/
 def step (code : CodeMem) (s : MachineState) : Option MachineState :=
-  (code s.pc).map (execInstrBr s)
+  match code s.pc with
+  | none => none
+  | some .ECALL =>
+    if s.getReg .x5 == (0 : Word) then none  -- HALT syscall (SP1 convention)
+    else some (execInstrBr s .ECALL)
+  | some i => some (execInstrBr s i)
+
+@[simp] theorem step_non_ecall (code : CodeMem) (s : MachineState) (i : Instr)
+    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL) :
+    step code s = some (execInstrBr s i) := by
+  unfold step; rw [hfetch]; cases i <;> simp_all
+
+theorem step_ecall_halt (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :
+    step code s = none := by
+  simp [step, hfetch, ht0]
+
+theorem step_ecall_continue (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 ≠ 0) :
+    step code s = some (execInstrBr s .ECALL) := by
+  simp only [step, hfetch, beq_iff_eq, ht0, ↓reduceIte]
 
 /-- Multi-step execution (n steps). -/
 def stepN : Nat → CodeMem → MachineState → Option MachineState

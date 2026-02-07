@@ -84,5 +84,12 @@ def LUI  (rd : Reg) (imm : BitVec 20)       : Program := single (.LUI rd imm)
 def MV   (rd rs : Reg)                      : Program := single (.MV rd rs)
 def LI   (rd : Reg) (imm : Word)            : Program := single (.LI rd imm)
 def NOP                                     : Program := single .NOP
+def ECALL                                   : Program := single .ECALL
+
+/-- HALT macro (SP1 convention): set t0 := 0 (HALT syscall), a0 := exit code, then ecall. -/
+def HALT (exitCode : Word := 0) : Program :=
+  LI .x5 0 ;;
+  LI .x10 exitCode ;;
+  single .ECALL
 
 end RiscVMacroAsm

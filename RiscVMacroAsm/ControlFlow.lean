@@ -227,7 +227,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
   -- Execute one step
   have hstep : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
       some (execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))) := by
-    simp [step, hpc_eq, hfirst, Option.map]
+    simp [step, hpc_eq, hfirst]
   -- Case split on register equality
   by_cases heq : s.getReg rs1 = s.getReg rs2
   · -- Equal → BNE not taken → PC = base + 4 = then_entry
@@ -307,7 +307,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
     -- Execute JAL
     have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
         some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
-      unfold step; rw [hpc, hjal_at]; rfl
+      unfold step; rw [hpc, hjal_at]
     refine ⟨1, s.setPC (s.pc + signExtend21 (BitVec.ofNat 21 (4 * else_body.length + 4))), ?_, ?_, ?_⟩
     · -- stepN 1 = step composed with execInstrBr_jal_x0
       simp [stepN, hstep_jal, execInstrBr_jal_x0, Option.bind]
@@ -390,7 +390,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
       simp only [if_eq, Program]; simp [List.length_append]
     have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
         some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
-      unfold step; rw [hpc, hjal_at]; rfl
+      unfold step; rw [hpc, hjal_at]
     refine ⟨1, s.setPC (s.pc + signExtend21 (BitVec.ofNat 21 (4 * else_body.length + 4))), ?_, ?_, ?_⟩
     · simp [stepN, hstep_jal, execInstrBr_jal_x0, Option.bind]
     · simp only [MachineState.setPC, hpc, hlen]

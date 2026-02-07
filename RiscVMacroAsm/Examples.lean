@@ -11,6 +11,7 @@ import RiscVMacroAsm.Program
 import RiscVMacroAsm.SepLogic
 import RiscVMacroAsm.Spec
 import RiscVMacroAsm.MulMacro
+import RiscVMacroAsm.Execution
 
 namespace RiscVMacroAsm
 
@@ -188,6 +189,47 @@ theorem zero_with_frame (rd : Reg) (v : Word) (hrd : rd ≠ .x0) :
   simp only [MachineState.getReg_setPC]
   rw [MachineState.getReg_setReg_eq _ rd _ hrd]
   simp [hpre, BitVec.sub_self]
+
+-- ============================================================================
+-- Example 8: ECALL-based halting (SP1 convention)
+-- ============================================================================
+
+/-- A program that computes 6 * 7 and halts with the result as exit code. -/
+def mul_and_halt : Program :=
+  LI .x10 0 ;;
+  LI .x11 6 ;;
+  add_mulc 8 .x10 .x11 7 ;;
+  LI .x5 0 ;;     -- t0 := HALT
+  single .ECALL
+
+def mul_and_halt_state : MachineState where
+  regs := fun _ => 0
+  mem := fun _ => 0
+  pc := 0
+
+/-- After running all instructions before ECALL, the next step halts. -/
+example : let code := loadProgram 0 mul_and_halt
+          let steps := mul_and_halt.length - 1  -- run up to ECALL
+          (stepN steps code mul_and_halt_state).bind (fun s =>
+            step code s) = none := by
+  native_decide
+
+/-- After running all instructions before ECALL, a0 (x10) contains 42. -/
+example : let code := loadProgram 0 mul_and_halt
+          let steps := mul_and_halt.length - 1
+          (stepN steps code mul_and_halt_state).bind (fun s =>
+            some (s.getReg .x10)) = some 42 := by
+  native_decide
+
+/-- A simple program that halts immediately with exit code 0. -/
+def halt_zero : Program := HALT 0
+
+/-- halt_zero terminates in 3 steps (LI x5, LI x10, ECALL),
+    and the next step returns none. -/
+example : let code := loadProgram 0 halt_zero
+          let s0 := mul_and_halt_state
+          (stepN 2 code s0).bind (fun s => step code s) = none := by
+  native_decide
 
 -- ============================================================================
 -- Summary: The macro assembler pattern

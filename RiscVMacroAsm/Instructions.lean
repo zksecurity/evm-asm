@@ -51,6 +51,9 @@ inductive Instr where
   | BNE  (rs1 rs2 : Reg) (offset : BitVec 13)
   /-- JAL rd, offset : jump and link (J-type, byte offset) -/
   | JAL  (rd : Reg) (offset : BitVec 21)
+  /-- ECALL: environment call (syscall ID in t0/x5, args in a0-a2).
+      Following SP1 convention, t0 = 0 signals HALT with exit code in a0. -/
+  | ECALL
   deriving Repr
 
 -- ============================================================================
@@ -116,7 +119,7 @@ def execInstr (s : MachineState) (i : Instr) : MachineState :=
     | .NOP => s
     -- Branch/jump instructions are treated as NOP in list-based execution.
     -- For proper branch semantics, use execInstrBr + step-based execution.
-    | .BEQ _ _ _ | .BNE _ _ _ | .JAL _ _ => s
+    | .BEQ _ _ _ | .BNE _ _ _ | .JAL _ _ | .ECALL => s
   s'.setPC (s'.pc + 4#32)
 
 end RiscVMacroAsm

@@ -67,12 +67,15 @@ example : (execProgram (testState 10 7) (add_mulc 4 .x10 .x11 3)).getReg .x10
 ```
 RiscVMacroAsm/
   Basic.lean         -- Machine state: registers, memory, PC
-  Instructions.lean  -- RV32I instruction subset and semantics
+  Instructions.lean  -- RV32I instruction subset and semantics (incl. ECALL)
   Program.lean       -- Programs as instruction lists, sequential composition
+  Execution.lean     -- Branch-aware execution, code memory, step/stepN
   SepLogic.lean      -- Separation logic assertions and combinators
   Spec.lean          -- Hoare triples, frame rule, structural rules
+  CPSSpec.lean       -- CPS-style Hoare triples, branch specs, structural rules
+  ControlFlow.lean   -- if_eq macro, symbolic proofs, pcIndep
   MulMacro.lean      -- The add_mulc macro with correctness proofs
-  Examples.lean      -- Swap, zero, triple, and other macro examples
+  Examples.lean      -- Swap, zero, triple, halt, and other macro examples
 ```
 
 ## Lean Toolchain
@@ -104,11 +107,13 @@ This is a **prototype** demonstrating the approach. Current state:
 - **Proved**: Separation logic properties (commutativity, associativity, unit),
   Hoare triple structural rules (skip, sequence, consequence, frame,
   existential), register file lemmas (`getReg_setReg_eq`, `getReg_setReg_ne`,
-  `getReg_setPC`), swap correctness (symbolic Hoare triple proof).
-- **TODO**: Complete the general inductive proof of `add_mulc_correct`
-  (the key invariant and bitvector arithmetic reasoning). The theorem is
-  stated and the concrete instances are verified; the general proof requires
-  bitvector lemmas relating shift-and-add to multiplication.
+  `getReg_setPC`), swap correctness (symbolic Hoare triple proof),
+  `add_mulc_correct` (general inductive proof), real separation logic with
+  `PartialState` and PC as resource, CPS-style branch specs (`cpsBranch`,
+  `cpsNBranch`), `if_eq` control flow macro with symbolic proofs,
+  ECALL/HALT termination (SP1 convention).
+- **TODO**: More control flow macros (loops, function calls), connect to
+  sail-riscv-lean for full ISA coverage.
 
 ## Relationship to sail-riscv-lean
 
@@ -124,5 +129,8 @@ sequences behave correctly under the official RISC-V specification.
 - Kennedy, A., Benton, N., Jensen, J.B., Dagand, P.-E. (2013).
   "Coq: The world's best macro assembler?" PPDP 2013.
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
+- SP1 zkVM: https://github.com/succinctlabs/sp1
+  The `ECALL`-based termination mechanism follows SP1's convention of using
+  `ecall` with syscall ID in `t0` (x5) to signal halting.
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
