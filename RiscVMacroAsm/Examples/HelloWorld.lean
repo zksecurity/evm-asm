@@ -7,6 +7,7 @@
 -/
 
 import RiscVMacroAsm.Execution
+import RiscVMacroAsm.SepLogic
 
 namespace RiscVMacroAsm.Examples
 
@@ -55,11 +56,35 @@ example : ((stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
 /-- Specification: hello world outputs the correct characters and halts. -/
 theorem helloWorld_correct :
     let code := loadProgram 0 helloWorld
-    (stepN 30 code helloInitState).bind (fun s => some s.publicValues) =
-      some helloWorldChars
+    (∀ s, stepN 30 code helloInitState = some s →
+      (publicValuesIs helloWorldChars).holdsFor s)
     ∧
     ((stepN 30 code helloInitState).bind (fun s => step code s)).isNone = true
     := by
-  constructor <;> native_decide
+  refine ⟨?_, by native_decide⟩
+  intro s hs
+  rw [holdsFor_publicValuesIs]
+  have h : (stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
+      (fun s => some s.publicValues) = some helloWorldChars := by native_decide
+  rw [hs, Option.bind_some] at h
+  exact Option.some_inj.mp h
+
+/-- The memory buffer holds 'h' at 0x100 and 'd' at 0x128 after execution. -/
+theorem helloWorld_buffer_spec :
+    ∀ s, stepN 30 (loadProgram 0 helloWorld) helloInitState = some s →
+      ((0x100 : Addr) ↦ₘ (0x68 : Word)).holdsFor s ∧  -- 'h'
+      ((0x128 : Addr) ↦ₘ (0x64 : Word)).holdsFor s     -- 'd'
+    := by
+  intro s hs
+  simp only [holdsFor_memIs]
+  constructor
+  · have h : (stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
+        (fun s => some (s.getMem 0x100)) = some (0x68 : Word) := by native_decide
+    rw [hs, Option.bind_some] at h
+    exact Option.some_inj.mp h
+  · have h : (stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
+        (fun s => some (s.getMem 0x128)) = some (0x64 : Word) := by native_decide
+    rw [hs, Option.bind_some] at h
+    exact Option.some_inj.mp h
 
 end RiscVMacroAsm.Examples
