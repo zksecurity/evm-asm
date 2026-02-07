@@ -681,6 +681,50 @@ theorem sepConj_assoc (P Q R : Assertion) :
            ⟨h1, h2, hd12, rfl, hp, hq⟩, hr⟩
 
 -- ============================================================================
+-- Pure modality: lifting Prop into Assertion
+-- ============================================================================
+
+/-- The pure assertion: holds on the empty partial state when P is true.
+    This is the standard separation logic ⌜P⌝ modality. -/
+def pure (P : Prop) : Assertion :=
+  fun h => h = PartialState.empty ∧ P
+
+/-- Notation: ⌜P⌝ is the pure assertion lifting P into the assertion language. -/
+notation "⌜" P "⌝" => RiscVMacroAsm.pure P
+
+@[simp]
+theorem holdsFor_pure (P : Prop) (s : MachineState) :
+    (⌜P⌝).holdsFor s ↔ P := by
+  simp only [Assertion.holdsFor, pure]
+  constructor
+  · rintro ⟨h, _, rfl, hp⟩; exact hp
+  · intro hp; exact ⟨PartialState.empty, PartialState.CompatibleWith_empty s, rfl, hp⟩
+
+theorem pcFree_pure (P : Prop) : (⌜P⌝).pcFree := by
+  intro h ⟨hemp, _⟩; subst hemp; rfl
+
+theorem pure_true_eq_emp : ⌜True⌝ = empAssertion := by
+  funext h; simp [pure, empAssertion]
+
+theorem sepConj_pure_left (P : Prop) (Q : Assertion) :
+    ∀ h, (⌜P⌝ ** Q) h ↔ P ∧ Q h := by
+  intro h
+  constructor
+  · intro ⟨h1, h2, _, hunion, ⟨hemp, hp⟩, hq⟩
+    subst hemp; rw [PartialState.union_empty_left] at hunion
+    exact ⟨hp, hunion ▸ hq⟩
+  · intro ⟨hp, hq⟩
+    exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left h,
+           PartialState.union_empty_left h, ⟨rfl, hp⟩, hq⟩
+
+theorem sepConj_pure_right (P : Assertion) (Q : Prop) :
+    ∀ h, (P ** ⌜Q⌝) h ↔ P h ∧ Q := by
+  intro h
+  rw [sepConj_comm]
+  simp only [sepConj_pure_left]
+  exact And.comm
+
+-- ============================================================================
 -- Logical combinators (preserved for backward compatibility)
 -- ============================================================================
 
