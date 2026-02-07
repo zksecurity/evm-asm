@@ -12,6 +12,24 @@ The original paper uses Coq to formalize x86 assembly with separation logic
 specifications. This project adapts the same ideas to **RISC-V** (RV32I subset)
 using **Lean 4** as both the macro language and the verification language.
 
+## ⚠️ Warning: Experimental Prototype Only
+
+**DO NOT USE THIS PROJECT FOR ANYTHING OF VALUE.**
+
+This is an experimental research prototype with significant limitations:
+
+- **No RISC-V spec compliance**: The instruction semantics are hand-written and
+  have NOT been validated against the official RISC-V specification. There may
+  be subtle (or not-so-subtle) deviations from actual RISC-V behavior.
+- **No conformance testing**: No systematic testing has been performed to verify
+  that this implementation matches real RISC-V processors or simulators.
+- **Prototype quality**: This code is for educational and research purposes to
+  explore verified macro assembly techniques, not for production use.
+
+If you need a verified RISC-V formalization, consider
+[sail-riscv-lean](https://github.com/opencompl/sail-riscv-lean), which is
+machine-generated from the official RISC-V Sail specification.
+
 ## Key Idea
 
 Lean 4 serves simultaneously as:
