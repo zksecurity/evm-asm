@@ -1308,10 +1308,17 @@ theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState)
     This is the version with the CPS frame included. -/
 theorem holdsFor_sepConj_regIs_regIs_regIs_setReg
     {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {R : Assertion} {s : MachineState}
-    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
+    (hr3_ne : r3 ≠ .x0)
     (h : (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)) ** R).holdsFor s) :
     (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')) ** R).holdsFor (s.setReg r3 v') := by
-  sorry
+  -- Rearrange: ((r1 ** (r2 ** r3)) ** R) → ((r2 ** r3) ** (r1 ** R)) → (r3 ** (r2 ** (r1 ** R)))
+  have h1 := holdsFor_sepConj_pull_second.mp h
+  have h2 := holdsFor_sepConj_pull_second.mp h1
+  -- Apply single-register frame update: (r3 ** frame) → (r3' ** frame) after setReg
+  have h3 := holdsFor_sepConj_regIs_setReg (v' := v') hr3_ne h2
+  -- Reverse: (r3' ** (r2 ** (r1 ** R))) → ((r2 ** r3') ** (r1 ** R)) → ((r1 ** (r2 ** r3')) ** R)
+  have h4 := holdsFor_sepConj_pull_second.mpr h3
+  exact holdsFor_sepConj_pull_second.mpr h4
 
 -- ============================================================================
 -- SubStateOf: partial state inclusion
