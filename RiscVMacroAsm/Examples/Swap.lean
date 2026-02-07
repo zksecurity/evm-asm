@@ -1,10 +1,12 @@
 /-
   RiscVMacroAsm.Examples.Swap
 
-  A simple swap macro and its Hoare triple specification.
+  A simple swap macro and its CPS-style Hoare triple specification.
 -/
 
-import RiscVMacroAsm.Spec
+import RiscVMacroAsm.Execution
+import RiscVMacroAsm.CPSSpec
+import RiscVMacroAsm.ControlFlow
 
 namespace RiscVMacroAsm.Examples
 
@@ -42,37 +44,81 @@ example : (execProgram swapTestState (swap .x10 .x11 .x5)).getReg .x11 = 42 := b
   native_decide
 
 -- ============================================================================
--- Hoare triple for swap (symbolic proof)
+-- CPS-style Hoare triple for swap (symbolic proof, 3 steps)
 -- ============================================================================
 
-/-- Swap specification as a Hoare triple with separating conjunction.
+/-- Swap specification as a cpsTriple: 3 steps of MV instructions.
 
-    This is the style from Kennedy et al.: precondition states that
-    x10 holds v and x11 holds w (as separated resources), and the
-    postcondition states they are swapped.
+    Precondition: x10 holds v and x11 holds w.
+    Postcondition: x10 holds w and x11 holds v.
 
-    The proof uses the getReg_setReg lemmas to trace through the
-    chain of register updates. -/
-theorem swap_spec (v w : Word) :
-    ⦃((.x10 ↦ᵣ v) ** (.x11 ↦ᵣ w)).holdsFor⦄
-    swap .x10 .x11 .x5
-    ⦃((.x10 ↦ᵣ w) ** (.x11 ↦ᵣ v)).holdsFor⦄ := by
-  intro s hpre
-  rw [holdsFor_sepConj_regIs_regIs (by decide)] at hpre
-  rw [holdsFor_sepConj_regIs_regIs (by decide)]
-  obtain ⟨hrd, hrs⟩ := hpre
-  -- Unfold the swap program and execution
-  simp only [swap, seq, MV, single]
-  rw [execProgram_append, execProgram_append]
-  simp only [execProgram, execInstr]
-  constructor
-  · -- Goal: final state's x10 = w
-    simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne,
-          MachineState.getReg_setReg_eq]
-    exact hrs
-  · -- Goal: final state's x11 = v
-    simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne,
-          MachineState.getReg_setReg_eq]
-    exact hrd
+    The proof traces register values through 3 MV instructions
+    using loadProgram_at_base and loadProgram_at_index. -/
+theorem swap_cpsTriple (v w : Word) (base : Addr) :
+    cpsTriple (loadProgram base (swap .x10 .x11 .x5)) base (base + 12)
+      (fun s => s.getReg .x10 = v ∧ s.getReg .x11 = w)
+      (fun s => s.getReg .x10 = w ∧ s.getReg .x11 = v) := by
+  intro s ⟨hx10, hx11⟩ hpc
+  -- The swap program is [MV x5 x10, MV x10 x11, MV x11 x5]
+  -- i.e., 3 instructions
+  have hprog : swap .x10 .x11 .x5 = [Instr.MV .x5 .x10, Instr.MV .x10 .x11, Instr.MV .x11 .x5] := by
+    simp only [swap, seq, MV, single, Program]
+    rfl
+  -- Fetch instruction 0: MV x5 x10 at base
+  have hfetch0 : loadProgram base (swap .x10 .x11 .x5) base = some (Instr.MV .x5 .x10) := by
+    rw [hprog]; exact loadProgram_at_base base _ _
+  -- Step 1: execute MV x5 x10
+  have hstep1 : step (loadProgram base (swap .x10 .x11 .x5)) s =
+      some (execInstrBr s (Instr.MV .x5 .x10)) := by
+    simp [step, hpc, hfetch0]
+  let s1 := execInstrBr s (Instr.MV .x5 .x10)
+  have hs1_pc : s1.pc = base + 4 := by simp [s1, execInstrBr, MachineState.setPC, hpc]
+  have hs1_x10 : s1.getReg .x10 = v := by
+    simp [s1, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_ne, hx10]
+  have hs1_x11 : s1.getReg .x11 = w := by
+    simp [s1, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_ne, hx11]
+  have hs1_x5 : s1.getReg .x5 = v := by
+    simp [s1, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq, hx10]
+  -- Fetch instruction 1: MV x10 x11 at base+4
+  have hfetch1 : loadProgram base (swap .x10 .x11 .x5) (base + BitVec.ofNat 32 4) =
+      some (Instr.MV .x10 .x11) := by
+    rw [hprog, loadProgram_at_index base _ 1 (by simp) (by omega)]
+    simp
+  -- Step 2: execute MV x10 x11
+  have hstep2 : step (loadProgram base (swap .x10 .x11 .x5)) s1 =
+      some (execInstrBr s1 (Instr.MV .x10 .x11)) := by
+    simp [step, hs1_pc, hfetch1]
+  let s2 := execInstrBr s1 (Instr.MV .x10 .x11)
+  have hs2_pc : s2.pc = base + 8 := by
+    simp only [s2, execInstrBr, MachineState.setPC, hs1_pc, BitVec.add_assoc]; rfl
+  have hs2_x10 : s2.getReg .x10 = w := by
+    simp [s2, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq, hs1_x11]
+  have hs2_x11 : s2.getReg .x11 = w := by
+    simp [s2, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_ne, hs1_x11]
+  have hs2_x5 : s2.getReg .x5 = v := by
+    simp [s2, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_ne, hs1_x5]
+  -- Fetch instruction 2: MV x11 x5 at base+8
+  have hfetch2 : loadProgram base (swap .x10 .x11 .x5) (base + BitVec.ofNat 32 8) =
+      some (Instr.MV .x11 .x5) := by
+    rw [hprog, loadProgram_at_index base _ 2 (by simp) (by omega)]
+    simp
+  -- Step 3: execute MV x11 x5
+  have hstep3 : step (loadProgram base (swap .x10 .x11 .x5)) s2 =
+      some (execInstrBr s2 (Instr.MV .x11 .x5)) := by
+    simp [step, hs2_pc, hfetch2]
+  let s3 := execInstrBr s2 (Instr.MV .x11 .x5)
+  have hs3_pc : s3.pc = base + 12 := by
+    simp only [s3, execInstrBr, MachineState.setPC, hs2_pc, BitVec.add_assoc]; rfl
+  have hs3_x10 : s3.getReg .x10 = w := by
+    simp [s3, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_ne, hs2_x10]
+  have hs3_x11 : s3.getReg .x11 = v := by
+    simp [s3, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq, hs2_x5]
+  -- Compose 3 steps
+  refine ⟨3, s3, ?_, hs3_pc, hs3_x10, hs3_x11⟩
+  show (step (loadProgram base (swap .x10 .x11 .x5)) s).bind
+    (fun s' => (step (loadProgram base (swap .x10 .x11 .x5)) s').bind
+      (fun s' => (step (loadProgram base (swap .x10 .x11 .x5)) s').bind
+        (fun s' => some s'))) = some s3
+  rw [hstep1, Option.bind, hstep2, Option.bind, hstep3, Option.bind]
 
 end RiscVMacroAsm.Examples

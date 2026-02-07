@@ -33,7 +33,6 @@ import RiscVMacroAsm.Basic
 import RiscVMacroAsm.Instructions
 import RiscVMacroAsm.Program
 import RiscVMacroAsm.SepLogic
-import RiscVMacroAsm.Spec
 
 namespace RiscVMacroAsm
 
@@ -190,9 +189,8 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
 theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
     (rd rs : Reg) (hne : rd ≠ rs) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
     (v w : Word) :
-    ⦃((rd ↦ᵣ v) ** (rs ↦ᵣ w)).holdsFor⦄
-    add_mulc nbits rd rs m
-    ⦃fun s => s.getReg rd = v + w * BitVec.ofNat 32 m⦄ := by
+    ∀ s : MachineState, ((rd ↦ᵣ v) ** (rs ↦ᵣ w)).holdsFor s →
+      (execProgram s (add_mulc nbits rd rs m)).getReg rd = v + w * BitVec.ofNat 32 m := by
   intro s hpre
   rw [holdsFor_sepConj_regIs_regIs hne] at hpre
   obtain ⟨hrd_eq, hrs_eq⟩ := hpre

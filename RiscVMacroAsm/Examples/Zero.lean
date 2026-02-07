@@ -1,10 +1,12 @@
 /-
   RiscVMacroAsm.Examples.Zero
 
-  A zero-register macro and a Hoare triple using the frame rule.
+  A zero-register macro and a CPS-style Hoare triple.
 -/
 
-import RiscVMacroAsm.Spec
+import RiscVMacroAsm.Execution
+import RiscVMacroAsm.CPSSpec
+import RiscVMacroAsm.ControlFlow
 
 namespace RiscVMacroAsm.Examples
 
@@ -28,17 +30,26 @@ example : (execProgram zeroTestState (zero .x10)).getReg .x10 = 0 := by
   native_decide
 
 -- ============================================================================
--- Hoare triple using the frame rule
+-- CPS-style Hoare triple for zero
 -- ============================================================================
 
-/-- Demonstrate the frame rule: adding an unrelated register to the spec. -/
-theorem zero_with_frame (rd : Reg) (v : Word) (hrd : rd ≠ .x0) :
-    ⦃(rd ↦ᵣ v).holdsFor⦄ zero rd ⦃(rd ↦ᵣ 0).holdsFor⦄ := by
-  intro s hpre
-  rw [holdsFor_regIs] at hpre ⊢
-  simp only [zero, SUB, single, execProgram, execInstr]
-  simp only [MachineState.getReg_setPC]
-  rw [MachineState.getReg_setReg_eq _ rd _ hrd]
-  simp [hpre, BitVec.sub_self]
+/-- CPS-style specification: zeroing a register in one step. -/
+theorem zero_cpsTriple (rd : Reg) (v : Word) (hrd : rd ≠ .x0) (base : Addr) :
+    cpsTriple (loadProgram base (zero rd)) base (base + 4)
+      (fun s => s.getReg rd = v)
+      (fun s => s.getReg rd = 0) := by
+  intro s hpre hpc
+  -- Fetch SUB at base
+  have hfetch : loadProgram base (zero rd) base = some (Instr.SUB rd rd rd) := by
+    simp [zero, SUB, single, loadProgram_at_base]
+  -- Execute 1 step
+  have hstep : step (loadProgram base (zero rd)) s =
+      some (execInstrBr s (Instr.SUB rd rd rd)) := by
+    simp [step, hpc, hfetch]
+  refine ⟨1, execInstrBr s (Instr.SUB rd rd rd), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [execInstrBr, MachineState.setPC, hpc]
+  · simp [execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq _ _ _ hrd,
+          BitVec.sub_self]
 
 end RiscVMacroAsm.Examples
