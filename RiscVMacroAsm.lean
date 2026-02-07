@@ -4,8 +4,7 @@ import RiscVMacroAsm.Program
 import RiscVMacroAsm.SepLogic
 import RiscVMacroAsm.Spec
 import RiscVMacroAsm.MulMacro
-import RiscVMacroAsm.Examples
 import RiscVMacroAsm.Execution
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
-import RiscVMacroAsm.Examples.HelloWorld
+import RiscVMacroAsm.Examples
