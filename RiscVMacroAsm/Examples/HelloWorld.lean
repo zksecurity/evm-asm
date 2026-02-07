@@ -8,6 +8,7 @@
 
 import RiscVMacroAsm.Execution
 import RiscVMacroAsm.SepLogic
+import RiscVMacroAsm.CPSSpec
 
 namespace RiscVMacroAsm.Examples
 
@@ -53,7 +54,18 @@ example : ((stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
     (fun s => step (loadProgram 0 helloWorld) s)).isNone = true := by
   native_decide
 
-/-- Specification: hello world outputs the correct characters and halts. -/
+/-- CPS-style specification: hello world outputs the correct characters and halts. -/
+theorem helloWorld_spec :
+    cpsHaltTriple (loadProgram 0 helloWorld) 0
+      (fun s => s = helloInitState)
+      (fun s => s.publicValues = helloWorldChars) := by
+  intro s hpre hpc; subst hpre
+  have h : (stepN 30 (loadProgram 0 helloWorld) helloInitState).isSome = true := by
+    native_decide
+  exact ⟨30, (stepN 30 (loadProgram 0 helloWorld) helloInitState).get h,
+    (Option.some_get h).symm, by native_decide +revert, by native_decide +revert⟩
+
+/-- Legacy specification: hello world outputs the correct characters and halts. -/
 theorem helloWorld_correct :
     let code := loadProgram 0 helloWorld
     (∀ s, stepN 30 code helloInitState = some s →

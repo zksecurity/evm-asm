@@ -245,4 +245,56 @@ theorem cpsNBranch_extend_head (code : CodeMem) (entry l l' : Addr)
     -- ex ∈ others, pass through
     exact ⟨k1, s1, hstep1, ex, List.Mem.tail _ htail, hpc1, hQ⟩
 
+-- ============================================================================
+-- Halt-aware CPS specifications
+-- ============================================================================
+
+/-- A state is halted when `step` returns `none` (HALT syscall or no instruction). -/
+def isHalted (code : CodeMem) (s : MachineState) : Bool :=
+  (step code s).isNone
+
+/-- CPS-style halt specification: starting from any state where P holds
+    and PC = entry, execution reaches a halted state where Q holds.
+    Unlike `cpsTriple`, there is no exit address — execution simply terminates. -/
+def cpsHaltTriple (code : CodeMem) (entry : Addr)
+    (P Q : MachineState → Prop) : Prop :=
+  ∀ s, P s → s.pc = entry →
+    ∃ k s', stepN k code s = some s' ∧ isHalted code s' = true ∧ Q s'
+
+/-- Promote a `cpsTriple` to a `cpsHaltTriple` when the exit address is halted.
+    If execution reaches exit_ with Q, and every state satisfying Q at exit_ is halted,
+    then the program halts with Q. -/
+theorem cpsTriple_to_cpsHaltTriple (code : CodeMem) (entry exit_ : Addr)
+    (P Q : MachineState → Prop)
+    (h : cpsTriple code entry exit_ P Q)
+    (hhalt : ∀ s, Q s → s.pc = exit_ → isHalted code s = true) :
+    cpsHaltTriple code entry P Q := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, hpc', hQ⟩ := h s hP hpc
+  exact ⟨k, s', hstep, hhalt s' hQ hpc', hQ⟩
+
+/-- Consequence: strengthen precondition and weaken postcondition of a halt triple. -/
+theorem cpsHaltTriple_consequence (code : CodeMem) (entry : Addr)
+    (P P' Q Q' : MachineState → Prop)
+    (hpre  : ∀ s, P' s → P s)
+    (hpost : ∀ s, Q s → Q' s)
+    (h : cpsHaltTriple code entry P Q) :
+    cpsHaltTriple code entry P' Q' := by
+  intro s hP' hpc
+  obtain ⟨k, s', hstep, hhalt, hQ⟩ := h s (hpre s hP') hpc
+  exact ⟨k, s', hstep, hhalt, hpost s' hQ⟩
+
+/-- Sequence a `cpsTriple` followed by a `cpsHaltTriple`:
+    if code reaches midpoint with Q, and from midpoint it halts with R, then
+    the composition halts with R. -/
+theorem cpsTriple_seq_halt (code : CodeMem) (entry mid : Addr)
+    (P Q R : MachineState → Prop)
+    (h1 : cpsTriple code entry mid P Q)
+    (h2 : cpsHaltTriple code mid Q R) :
+    cpsHaltTriple code entry P R := by
+  intro s hP hpc
+  obtain ⟨k1, s1, hstep1, hpc1, hQ⟩ := h1 s hP hpc
+  obtain ⟨k2, s2, hstep2, hhalt, hR⟩ := h2 s1 hQ hpc1
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hhalt, hR⟩
+
 end RiscVMacroAsm
