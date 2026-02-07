@@ -37,7 +37,61 @@ theorem add_spec (rd rs1 rs2 : Reg) (v1 v2 v_old : Word) (base : Addr)
     let pre := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old)
     let post := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 + v2))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- First, derive register distinctness from the sepConj structure
+  have h_pre := holdsFor_sepConj_elim_left hPR
+  -- Derive inequalities from disjoint conditions (by destructuring temporarily)
+  have hne12 : rs1 ≠ rs2 := by
+    obtain ⟨_, _, h_rs1, h_rs2_rd, hd_outer, _, hrs1_holds, hrs2_rd_holds⟩ := h_pre
+    obtain ⟨h_rs2, h_rd, hd_inner, hunion_inner, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
+    simp only [regIs] at hrs1_holds hrs2_holds hrd_holds
+    subst hrs1_holds hrs2_holds hrd_holds hunion_inner
+    have := disjoint_left_of_disjoint_union_right hd_outer
+    exact singletonReg_disjoint_imp_ne this
+  have hne13 : rs1 ≠ rd := by
+    obtain ⟨_, _, h_rs1, h_rs2_rd, hd_outer, _, hrs1_holds, hrs2_rd_holds⟩ := h_pre
+    obtain ⟨h_rs2, h_rd, hd_inner, hunion_inner, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
+    simp only [regIs] at hrs1_holds hrs2_holds hrd_holds
+    subst hrs1_holds hrs2_holds hrd_holds hunion_inner
+    have := disjoint_of_union_disjoint_right hd_inner hd_outer.symm
+    exact singletonReg_disjoint_imp_ne this.symm
+  have hne23 : rs2 ≠ rd := by
+    obtain ⟨_, _, _, _, _, _, _, hrs2_rd_holds⟩ := h_pre
+    obtain ⟨h_rs2, h_rd, hd_inner, _, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
+    simp only [regIs] at hrs2_holds hrd_holds
+    subst hrs2_holds hrd_holds
+    exact singletonReg_disjoint_imp_ne hd_inner
+  -- Extract register values using the new lemma
+  have ⟨hrs1, hrs2, hrd_old⟩ := holdsFor_sepConj_regIs_regIs_regIs hne12 hne13 hne23 h_pre
+  -- Compute the instruction execution
+  let result := v1 + v2
+  have hfetch : loadProgram base [Instr.ADD rd rs1 rs2] base = some (Instr.ADD rd rs1 rs2) := by
+    simp [loadProgram, BitVec.sub_self]
+  have hnext : execInstrBr st (Instr.ADD rd rs1 rs2) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrs1, hrs2]
+  have hstep : step (loadProgram base [Instr.ADD rd rs1 rs2]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Postcondition: (((rs1 ** rs2 ** rd') ** R).holdsFor (st.setReg rd result).setPC (base + 4)
+    -- Apply algebraic rearrangement to hPR, then use setReg lemma, then rearrange back
+    -- hPR : (((rs1 ** rs2 ** rd) ** R).holdsFor st
+    -- Which is: (((rs1 ** (rs2 ** rd)) ** R).holdsFor st (right-assoc)
+    -- Rearrange to get rd first, apply setReg, rearrange back
+    -- ((rs1 ** (rs2 ** rd)) ** R) -[assoc.mpr]→ (((rs1 ** rs2) ** rd) ** R) -[assoc.mp]→ ((rs1 ** rs2) ** (rd ** R))
+    have h1 := holdsFor_sepConj_assoc.mpr hPR  -- (((rs1 ** rs2) ** rd) ** R).holdsFor st
+    have h2 := holdsFor_sepConj_assoc.mp h1  -- ((rs1 ** rs2) ** (rd ** R)).holdsFor st
+    -- Now swap to get rd first: ((rs1 ** rs2) ** (rd ** R)) -[comm]→ ((rd ** R) ** (rs1 ** rs2))
+    have h3 := holdsFor_sepConj_comm.mp h2  -- ((rd ** R) ** (rs1 ** rs2)).holdsFor st
+    -- Swap inner: ((rd ** R) ** (rs1 ** rs2)) -[swap_inner]→ ((R ** rd) ** (rs1 ** rs2))
+    have h4 := holdsFor_sepConj_swap_inner.mp h3  -- ((R ** rd) ** (rs1 ** rs2)).holdsFor st
+    -- Rearrange to: (R ** (rd ** (rs1 ** rs2))) using assoc
+    have h5 := holdsFor_sepConj_assoc.mp h4  -- (R ** (rd ** (rs1 ** rs2))).holdsFor st
+    -- Swap to get: ((rd ** (rs1 ** rs2)) ** R)
+    have h6 := holdsFor_sepConj_comm.mpr h5  -- ((rd ** (rs1 ** rs2)) ** R).holdsFor st
+    sorry  -- Continue with setReg and reverse transformations
 
 /-- ADD rd, rd, rs2: rd := rd + rs2 (rd = rs1, rs2 distinct) -/
 theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)

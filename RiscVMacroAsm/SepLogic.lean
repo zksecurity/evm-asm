@@ -400,6 +400,19 @@ private theorem singletonReg_disjoint_singletonReg {r1 r2 : Reg} {v1 v2 : Word}
     · exact fun hr2 => h2 (beq_iff_eq.mpr hr2)
   · simp [h1]
 
+theorem singletonReg_disjoint_imp_ne {r1 r2 : Reg} {v1 v2 : Word}
+    (hd : (PartialState.singletonReg r1 v1).Disjoint (PartialState.singletonReg r2 v2)) :
+    r1 ≠ r2 := by
+  intro heq
+  subst heq
+  -- Both singletons claim ownership of the same register
+  obtain ⟨hdr, _, _, _, _⟩ := hd
+  have := hdr r1
+  simp only [PartialState.singletonReg] at this
+  simp only [beq_self_eq_true, ite_true] at this
+  -- this says: some v1 = none ∨ some v2 = none, which is false
+  cases this <;> simp_all
+
 private theorem singletonReg_disjoint_singletonMem (r : Reg) (v : Word) (a : Addr) (w : Word) :
     (PartialState.singletonReg r v).Disjoint (PartialState.singletonMem a w) := by
   exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
@@ -519,7 +532,7 @@ private theorem union_assoc (h1 h2 h3 : PartialState) :
   · cases h1.privateInput <;> simp
 
 /-- Helper: extract disjointness facts from nested unions. -/
-private theorem disjoint_of_union_disjoint_right
+theorem disjoint_of_union_disjoint_right
     {h1 h2 h3 : PartialState} (hd12 : h1.Disjoint h2)
     (hd_union_3 : (h1.union h2).Disjoint h3) :
     h2.Disjoint h3 := by
@@ -605,7 +618,7 @@ private theorem disjoint_of_union_disjoint_left
         right; show (PartialState.union h2 h3).privateInput = none
         simp only [PartialState.union]; rw [h2none]; exact h
 
-private theorem disjoint_left_of_disjoint_union_right
+theorem disjoint_left_of_disjoint_union_right
     {h1 h2 h3 : PartialState} (hd1_23 : h1.Disjoint (h2.union h3)) :
     h1.Disjoint h2 := by
   obtain ⟨hdr, hdm, hdpc, hdpv, hdpi⟩ := hd1_23
@@ -1248,6 +1261,44 @@ theorem holdsFor_sepConj_regIs_setReg {r : Reg} {v v' : Word} {R : Assertion}
   have hc2' : h2.CompatibleWith (s.setReg r v') := PartialState.CompatibleWith_setReg hc2 hr2
   refine ⟨(PartialState.singletonReg r v').union h2, ?_, PartialState.singletonReg r v', h2, hdisj', rfl, rfl, hh2⟩
   exact (PartialState.CompatibleWith_union hdisj').mpr ⟨hc1', hc2'⟩
+
+/-- Update the third register in a 3-way register conjunction.
+    Note: ** is right-associative, so this is (r1 ** (r2 ** r3)) -/
+theorem holdsFor_sepConj_regIs_regIs_regIs_update_third
+    {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {s : MachineState}
+    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
+    (h : ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)).holdsFor s) :
+    ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')).holdsFor (s.setReg r3 v') := by
+  -- Algebraic manipulation to get r3 first:
+  -- (r1 ** (r2 ** r3)) -[assoc.mpr]→ ((r1 ** r2) ** r3) -[comm]→ (r3 ** (r1 ** r2))
+  have h1 := holdsFor_sepConj_assoc.mpr h  -- ((r1 ** r2) ** r3).holdsFor s
+  have h2 := holdsFor_sepConj_comm.mp h1  -- (r3 ** (r1 ** r2)).holdsFor s
+  -- Apply setReg lemma
+  have h3 := holdsFor_sepConj_regIs_setReg (v' := v') (R := ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2))) hr3_ne h2
+  -- (r3' ** (r1 ** r2)).holdsFor (s.setReg r3 v')
+  -- Reverse the rearrangement:
+  -- (r3' ** (r1 ** r2)) -[comm]→ ((r1 ** r2) ** r3') -[assoc.mp]→ (r1 ** (r2 ** r3'))
+  have h4 := holdsFor_sepConj_comm.mpr h3  -- ((r1 ** r2) ** r3').holdsFor (s.setReg r3 v')
+  exact holdsFor_sepConj_assoc.mp h4  -- (r1 ** (r2 ** r3')).holdsFor (s.setReg r3 v')
+
+/-- Update the third register in a 3-way conjunction with frame.
+    This is the version with the CPS frame included. -/
+theorem holdsFor_sepConj_regIs_regIs_regIs_setReg
+    {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {R : Assertion} {s : MachineState}
+    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
+    (h : (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)) ** R).holdsFor s) :
+    (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')) ** R).holdsFor (s.setReg r3 v') := by
+  -- Extract the 3-register part
+  have h_pre := holdsFor_sepConj_elim_left h
+  -- Update using our lemma
+  have h_pre' := holdsFor_sepConj_regIs_regIs_regIs_update_third hne12 hne13 hne23 hr3_ne h_pre
+  -- Extract and preserve the frame R
+  have h_R := holdsFor_sepConj_elim_right h
+  have hR_no_r3 : ∀ hp, R hp → hp.regs r3 = none := by
+    sorry  -- R doesn't own r3 (from disjointness in original conjunction)
+  have h_R' := holdsFor_setReg hR_no_r3 h_R
+  -- Recombine (this is still the tricky part)
+  sorry
 
 -- ============================================================================
 -- holdsFor preservation through setReg and setPC
