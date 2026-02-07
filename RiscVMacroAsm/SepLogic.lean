@@ -729,12 +729,44 @@ theorem holdsFor_sepConj_assoc {P Q R : Assertion} {s : MachineState} :
 /-- Swap the two inner assertions: ((P ** Q) ** R) ↔ ((Q ** P) ** R). -/
 theorem holdsFor_sepConj_swap_inner {P Q R : Assertion} {s : MachineState} :
     ((P ** Q) ** R).holdsFor s ↔ ((Q ** P) ** R).holdsFor s := by
-  sorry
+  constructor <;> intro ⟨h, hcompat, hP⟩
+  · -- Forward: ((P ** Q) ** R) → ((Q ** P) ** R)
+    obtain ⟨h12, h3, hd12_3, hunion12_3, hPQ, hR⟩ := hP
+    have hQP := (sepConj_comm P Q h12).mp hPQ
+    exact ⟨h, hcompat, h12, h3, hd12_3, hunion12_3, hQP, hR⟩
+  · -- Backward: ((Q ** P) ** R) → ((P ** Q) ** R)
+    obtain ⟨h12, h3, hd12_3, hunion12_3, hQP, hR⟩ := hP
+    have hPQ := (sepConj_comm Q P h12).mp hQP
+    exact ⟨h, hcompat, h12, h3, hd12_3, hunion12_3, hPQ, hR⟩
 
 /-- Pull the second inner assertion out: ((P ** Q) ** R) ↔ (Q ** (P ** R)). -/
 theorem holdsFor_sepConj_pull_second {P Q R : Assertion} {s : MachineState} :
     ((P ** Q) ** R).holdsFor s ↔ (Q ** (P ** R)).holdsFor s := by
-  sorry
+  constructor <;> intro ⟨h, hcompat, hP⟩
+  · -- Forward: ((P ** Q) ** R) → (Q ** (P ** R))
+    -- Step 1: Apply assoc to get (P ** (Q ** R))
+    have h1 := (sepConj_assoc P Q R h).mp hP
+    -- Step 2: Apply comm to get ((Q ** R) ** P)
+    have h2 := (sepConj_comm P (Q ** R) h).mp h1
+    -- Step 3: Apply assoc to get (Q ** (R ** P))
+    have h3 := (sepConj_assoc Q R P h).mp h2
+    -- Step 4: Apply comm on inner to get (Q ** (P ** R))
+    obtain ⟨h_Q, h_RP, hd, hunion, hQ, hRP⟩ := h3
+    have hPR := (sepConj_comm R P h_RP).mp hRP
+    exact ⟨h, hcompat, h_Q, h_RP, hd, hunion, hQ, hPR⟩
+  · -- Backward: (Q ** (P ** R)) → ((P ** Q) ** R)
+    -- Reverse the steps
+    obtain ⟨h_Q, h_PR, hd, hunion, hQ, hPR⟩ := hP
+    -- Step 1: Apply comm on inner to get (Q ** (R ** P))
+    have hRP := (sepConj_comm P R h_PR).mp hPR
+    have h3 : (Q ** (R ** P)) h := ⟨h_Q, h_PR, hd, hunion, hQ, hRP⟩
+    -- Step 2: Apply assoc backwards to get ((Q ** R) ** P)
+    have h2 := (sepConj_assoc Q R P h).mpr h3
+    -- Step 3: Apply comm to get (P ** (Q ** R))
+    have h1 := (sepConj_comm ((Q ** R)) P h).mp h2
+    -- Step 4: Apply assoc backwards to get ((P ** Q) ** R)
+    have hP' := (sepConj_assoc P Q R h).mpr h1
+    exact ⟨h, hcompat, hP'⟩
 
 /-- Pull the first inner assertion out: ((P ** Q) ** R) ↔ (P ** (Q ** R)).
     This is just holdsFor_sepConj_assoc, provided for symmetry. -/
