@@ -181,7 +181,29 @@ theorem sub_spec (rd rs1 rs2 : Reg) (v1 v2 v_old : Word) (base : Addr)
     let pre := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old)
     let post := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 - v2))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch SUB instruction
+  have hfetch : loadProgram base [Instr.SUB rd rs1 rs2] base = some (Instr.SUB rd rs1 rs2) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1, hrs2, hrd⟩ := holdsFor_sepConj_regIs_regIs_regIs hinner
+  -- Compute next state
+  let result := v1 - v2
+  have hnext : execInstrBr st (Instr.SUB rd rs1 rs2) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrs1, hrs2]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.SUB rd rs1 rs2]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · -- stepN 1 reaches the computed state
+    simp [stepN, hstep, Option.bind]
+  · -- PC = exit_
+    simp [MachineState.setPC]
+  · -- Postcondition holds: (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ result) ** R
+    have h1 := holdsFor_sepConj_regIs_regIs_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_regIs rd result))) hR) (st.setReg rd result) (base + 4) h1
 
 /-- SUB rd, rd, rs2: rd := rd - rs2 -/
 theorem sub_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)
@@ -192,7 +214,31 @@ theorem sub_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)
     let pre := (rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2)
     let post := (rd ↦ᵣ (v1 - v2)) ** (rs2 ↦ᵣ v2)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch SUB instruction
+  have hfetch : loadProgram base [Instr.SUB rd rd rs2] base = some (Instr.SUB rd rd rs2) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrd_val : st.getReg rd = v1 := by
+    exact (holdsFor_regIs rd v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v2 := by
+    exact (holdsFor_regIs rs2 v2 st).mp (holdsFor_sepConj_elim_right hinner)
+  -- Compute next state
+  let result := v1 - v2
+  have hnext : execInstrBr st (Instr.SUB rd rd rs2) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrd_val, hrs2_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.SUB rd rd rs2]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have hPR' := RiscVMacroAsm.holdsFor_sepConj_assoc.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := (rs2 ↦ᵣ v2) ** R) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_assoc.2 h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rd result) (pcFree_regIs rs2 v2)) hR) (st.setReg rd result) (base + 4) h2
 
 /-- SUB rd, rd, rd: rd := rd - rd = 0 -/
 theorem sub_spec_all_same (rd : Reg) (v : Word) (base : Addr)
@@ -239,7 +285,30 @@ theorem addi_spec (rd rs1 : Reg) (v1 v_old : Word) (imm : BitVec 12) (base : Add
     let pre := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old)
     let post := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + signExtend12 imm))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch ADDI instruction
+  have hfetch : loadProgram base [Instr.ADDI rd rs1 imm] base = some (Instr.ADDI rd rs1 imm) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 := by
+    exact (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  -- Compute next state
+  let result := v1 + signExtend12 imm
+  have hnext : execInstrBr st (Instr.ADDI rd rs1 imm) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrs1_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.ADDI rd rs1 imm]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Rearrange: ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old)) ** R → (rd ↦ᵣ v_old) ** ((rs1 ↦ᵣ v1) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_pull_second.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := (rs1 ↦ᵣ v1) ** R) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_pull_second.2 h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR) (st.setReg rd result) (base + 4) h2
 
 /-- ADDI rd, rd, imm: rd := rd + sext(imm) (same register) -/
 theorem addi_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Addr)
@@ -403,7 +472,43 @@ theorem beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Add
     cpsBranch code entry pre
       taken_exit ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
       not_taken_exit ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  have hfetch : loadProgram base [Instr.BEQ rs1 rs2 offset] base = some (Instr.BEQ rs1 rs2 offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 :=
+    (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v2 :=
+    (holdsFor_regIs rs2 v2 st).mp (holdsFor_sepConj_elim_right hinner)
+  have hstep : step (loadProgram base [Instr.BEQ rs1 rs2 offset]) st =
+      some (execInstrBr st (Instr.BEQ rs1 rs2 offset)) := by
+    unfold step; rw [hpc, hfetch]
+  by_cases heq : v1 = v2
+  · -- Branch taken: v1 = v2
+    have hnext : execInstrBr st (Instr.BEQ rs1 rs2 offset) = st.setPC (base + signExtend13 offset) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, heq]
+    refine ⟨1, st.setPC (base + signExtend13 offset), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · left; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (base + signExtend13 offset) ⟨hp, hcompat, hpq'⟩
+  · -- Branch not taken: v1 ≠ v2
+    have hnext : execInstrBr st (Instr.BEQ rs1 rs2 offset) = st.setPC (base + 4) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, beq_eq_false_iff_ne.mpr heq]
+    refine ⟨1, st.setPC (base + 4), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · right; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (base + 4) ⟨hp, hcompat, hpq'⟩
 
 /-- BEQ rs, rs, offset: branch if rs = rs (always taken, same register) -/
 theorem beq_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Addr) :
@@ -415,7 +520,22 @@ theorem beq_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Addr) :
     cpsBranch code entry pre
       taken_exit (rs ↦ᵣ v)
       not_taken_exit (rs ↦ᵣ v) := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  have hfetch : loadProgram base [Instr.BEQ rs rs offset] base = some (Instr.BEQ rs rs offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  have hrs_holds := holdsFor_sepConj_elim_left hPR
+  have hrs_val : st.getReg rs = v := (holdsFor_regIs rs v st).mp hrs_holds
+  -- BEQ rs rs is always taken (rs == rs = true)
+  have hnext : execInstrBr st (Instr.BEQ rs rs offset) = st.setPC (base + signExtend13 offset) := by
+    simp [execInstrBr, hrs_val, hpc]
+  have hstep : step (loadProgram base [Instr.BEQ rs rs offset]) st =
+      some (st.setPC (base + signExtend13 offset)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext]
+  refine ⟨1, st.setPC (base + signExtend13 offset), ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · left; exact ⟨by simp [MachineState.setPC],
+      holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rs v) hR) st (base + signExtend13 offset) hPR⟩
 
 /-- BNE rs1, rs2, offset: branch if rs1 ≠ rs2 (registers distinct) -/
 theorem bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
@@ -427,7 +547,43 @@ theorem bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Add
     cpsBranch code entry pre
       taken_exit ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
       not_taken_exit ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  have hfetch : loadProgram base [Instr.BNE rs1 rs2 offset] base = some (Instr.BNE rs1 rs2 offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 :=
+    (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v2 :=
+    (holdsFor_regIs rs2 v2 st).mp (holdsFor_sepConj_elim_right hinner)
+  have hstep : step (loadProgram base [Instr.BNE rs1 rs2 offset]) st =
+      some (execInstrBr st (Instr.BNE rs1 rs2 offset)) := by
+    unfold step; rw [hpc, hfetch]
+  by_cases heq : v1 = v2
+  · -- Branch not taken: v1 = v2
+    have hnext : execInstrBr st (Instr.BNE rs1 rs2 offset) = st.setPC (base + 4) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, heq]
+    refine ⟨1, st.setPC (base + 4), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · right; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (base + 4) ⟨hp, hcompat, hpq'⟩
+  · -- Branch taken: v1 ≠ v2
+    have hnext : execInstrBr st (Instr.BNE rs1 rs2 offset) = st.setPC (base + signExtend13 offset) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, bne_iff_ne.mpr heq]
+    refine ⟨1, st.setPC (base + signExtend13 offset), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · left; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (base + signExtend13 offset) ⟨hp, hcompat, hpq'⟩
 
 /-- BNE rs, rs, offset: branch if rs ≠ rs (never taken, same register) -/
 theorem bne_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Addr) :
@@ -439,7 +595,22 @@ theorem bne_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Addr) :
     cpsBranch code entry pre
       taken_exit (rs ↦ᵣ v)
       not_taken_exit (rs ↦ᵣ v) := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  have hfetch : loadProgram base [Instr.BNE rs rs offset] base = some (Instr.BNE rs rs offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  have hrs_holds := holdsFor_sepConj_elim_left hPR
+  have hrs_val : st.getReg rs = v := (holdsFor_regIs rs v st).mp hrs_holds
+  -- BNE rs rs is never taken (rs != rs = false)
+  have hnext : execInstrBr st (Instr.BNE rs rs offset) = st.setPC (base + 4) := by
+    simp [execInstrBr, hrs_val, hpc]
+  have hstep : step (loadProgram base [Instr.BNE rs rs offset]) st =
+      some (st.setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext]
+  refine ⟨1, st.setPC (base + 4), ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · right; exact ⟨by simp [MachineState.setPC],
+      holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rs v) hR) st (base + 4) hPR⟩
 
 -- ============================================================================
 -- Jump Instructions
@@ -454,7 +625,23 @@ theorem jal_spec (rd : Reg) (v_old : Word) (offset : BitVec 21) (base : Addr)
     let pre := (rd ↦ᵣ v_old)
     let post := (rd ↦ᵣ (base + 4))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch JAL instruction
+  have hfetch : loadProgram base [Instr.JAL rd offset] base = some (Instr.JAL rd offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Compute next state
+  let result := base + 4
+  have hnext : execInstrBr st (Instr.JAL rd offset) = (st.setReg rd result).setPC (base + signExtend21 offset) := by
+    simp [execInstrBr, result, hpc]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.JAL rd offset]) st = some ((st.setReg rd result).setPC (base + signExtend21 offset)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext]
+  refine ⟨1, (st.setReg rd result).setPC (base + signExtend21 offset), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR) (st.setReg rd result) (base + signExtend21 offset) h1
 
 /-- JALR rd, rs1, offset: rd := PC + 4; PC := (rs1 + sext(offset)) & ~1 (distinct) -/
 theorem jalr_spec (rd rs1 : Reg) (v1 v_old : Word) (offset : BitVec 12) (base : Addr)
@@ -465,7 +652,30 @@ theorem jalr_spec (rd rs1 : Reg) (v1 v_old : Word) (offset : BitVec 12) (base : 
     let pre := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old)
     let post := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch JALR instruction
+  have hfetch : loadProgram base [Instr.JALR rd rs1 offset] base = some (Instr.JALR rd rs1 offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 := by
+    exact (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  -- Compute next state
+  let result := base + 4
+  have hnext : execInstrBr st (Instr.JALR rd rs1 offset) = (st.setReg rd result).setPC ((v1 + signExtend12 offset) &&& ~~~1) := by
+    simp [execInstrBr, result, hpc, hrs1_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.JALR rd rs1 offset]) st = some ((st.setReg rd result).setPC ((v1 + signExtend12 offset) &&& ~~~1)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext]
+  refine ⟨1, (st.setReg rd result).setPC ((v1 + signExtend12 offset) &&& ~~~1), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Rearrange: ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old)) ** R → (rd ↦ᵣ v_old) ** ((rs1 ↦ᵣ v1) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_pull_second.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := (rs1 ↦ᵣ v1) ** R) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_pull_second.2 h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR) (st.setReg rd result) ((v1 + signExtend12 offset) &&& ~~~1) h2
 
 /-- JALR rd, rd, offset: rd := PC + 4; PC := (rd + sext(offset)) & ~1 (same) -/
 theorem jalr_spec_same (rd : Reg) (v : Word) (offset : BitVec 12) (base : Addr)
@@ -476,7 +686,26 @@ theorem jalr_spec_same (rd : Reg) (v : Word) (offset : BitVec 12) (base : Addr)
     let pre := (rd ↦ᵣ v)
     let post := (rd ↦ᵣ (base + 4))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch JALR instruction
+  have hfetch : loadProgram base [Instr.JALR rd rd offset] base = some (Instr.JALR rd rd offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register value from precondition
+  have hrd_holds := holdsFor_sepConj_elim_left hPR
+  have hrd_val : st.getReg rd = v := (holdsFor_regIs rd v st).mp hrd_holds
+  -- Compute next state
+  let result := base + 4
+  have hnext : execInstrBr st (Instr.JALR rd rd offset) = (st.setReg rd result).setPC ((v + signExtend12 offset) &&& ~~~1) := by
+    simp [execInstrBr, result, hpc, hrd_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.JALR rd rd offset]) st = some ((st.setReg rd result).setPC ((v + signExtend12 offset) &&& ~~~1)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext]
+  refine ⟨1, (st.setReg rd result).setPC ((v + signExtend12 offset) &&& ~~~1), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR) (st.setReg rd result) ((v + signExtend12 offset) &&& ~~~1) h1
 
 -- ============================================================================
 -- Pseudo Instructions
@@ -491,7 +720,29 @@ theorem mv_spec (rd rs : Reg) (v v_old : Word) (base : Addr)
     let pre := (rs ↦ᵣ v) ** (rd ↦ᵣ v_old)
     let post := (rs ↦ᵣ v) ** (rd ↦ᵣ v)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch MV instruction
+  have hfetch : loadProgram base [Instr.MV rd rs] base = some (Instr.MV rd rs) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract register value from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs_val : st.getReg rs = v := by
+    exact (holdsFor_regIs rs v st).mp (holdsFor_sepConj_elim_left hinner)
+  -- Compute next state
+  have hnext : execInstrBr st (Instr.MV rd rs) = (st.setReg rd v).setPC (st.pc + 4) := by
+    simp [execInstrBr, hrs_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.MV rd rs]) st = some ((st.setReg rd v).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd v).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Rearrange: ((rs ↦ᵣ v) ** (rd ↦ᵣ v_old)) ** R → (rd ↦ᵣ v_old) ** ((rs ↦ᵣ v) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_pull_second.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := v) (R := (rs ↦ᵣ v) ** R) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_pull_second.2 h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs v) (pcFree_regIs rd v)) hR) (st.setReg rd v) (base + 4) h2
 
 /-- LI rd, imm: rd := imm (pseudo for loading immediate) -/
 theorem li_spec (rd : Reg) (v_old imm : Word) (base : Addr)
@@ -502,7 +753,22 @@ theorem li_spec (rd : Reg) (v_old imm : Word) (base : Addr)
     let pre := (rd ↦ᵣ v_old)
     let post := (rd ↦ᵣ imm)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch LI instruction
+  have hfetch : loadProgram base [Instr.LI rd imm] base = some (Instr.LI rd imm) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Compute next state
+  have hnext : execInstrBr st (Instr.LI rd imm) = (st.setReg rd imm).setPC (st.pc + 4) := by
+    simp [execInstrBr]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.LI rd imm]) st = some ((st.setReg rd imm).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd imm).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_regIs_setReg (v' := imm) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd imm) hR) (st.setReg rd imm) (base + 4) h1
 
 /-- NOP: no operation (pseudo for ADDI x0, x0, 0) -/
 theorem nop_spec (base : Addr) :
