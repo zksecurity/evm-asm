@@ -128,20 +128,17 @@ def inc_mem (base tmp : Reg) (offset : BitVec 12) : Program :=
     The proof uses the getReg_setReg lemmas to trace through the
     chain of register updates. -/
 theorem swap_spec (v w : Word) :
-    ⦃(.x10 ↦ᵣ v) ** (.x11 ↦ᵣ w)⦄
+    ⦃((.x10 ↦ᵣ v) ** (.x11 ↦ᵣ w)).holdsFor⦄
     swap .x10 .x11 .x5
-    ⦃(.x10 ↦ᵣ w) ** (.x11 ↦ᵣ v)⦄ := by
-  intro s ⟨hrd, hrs⟩
-  simp only [regIs, sepConj] at *
+    ⦃((.x10 ↦ᵣ w) ** (.x11 ↦ᵣ v)).holdsFor⦄ := by
+  intro s hpre
+  rw [holdsFor_sepConj_regIs_regIs (by decide)] at hpre
+  rw [holdsFor_sepConj_regIs_regIs (by decide)]
+  obtain ⟨hrd, hrs⟩ := hpre
   -- Unfold the swap program and execution
   simp only [swap, seq, MV, single]
   rw [execProgram_append, execProgram_append]
   simp only [execProgram, execInstr]
-  -- Now reason about the chain of setReg/getReg operations.
-  -- After MV x5 x10: x5 := s.getReg x10 = v
-  -- After MV x10 x11: x10 := (prev state).getReg x11 = w
-  -- After MV x11 x5: x11 := (prev state).getReg x5 = v
-  -- Each step involves setPC (which doesn't affect regs) and setReg.
   constructor
   · -- Goal: final state's x10 = w
     simp [MachineState.getReg_setPC, MachineState.getReg_setReg_ne,
@@ -184,9 +181,9 @@ example : (execProgram tripleTestState (triple .x10 .x11 .x5)).getReg .x10 = 45 
 
 /-- Demonstrate the frame rule: adding an unrelated register to the spec. -/
 theorem zero_with_frame (rd : Reg) (v : Word) (hrd : rd ≠ .x0) :
-    ⦃rd ↦ᵣ v⦄ zero rd ⦃rd ↦ᵣ 0⦄ := by
+    ⦃(rd ↦ᵣ v).holdsFor⦄ zero rd ⦃(rd ↦ᵣ 0).holdsFor⦄ := by
   intro s hpre
-  simp only [regIs] at *
+  rw [holdsFor_regIs] at hpre ⊢
   simp only [zero, SUB, single, seq, execProgram, execInstr]
   simp only [MachineState.getReg_setPC]
   rw [MachineState.getReg_setReg_eq _ rd _ hrd]

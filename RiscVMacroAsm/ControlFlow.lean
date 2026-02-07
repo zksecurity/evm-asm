@@ -126,26 +126,34 @@ example : (runIfEqArith 10 3 2).bind (fun s => some (s.getReg .x12)) = some 7 :=
 -- Helper lemmas for symbolic proofs
 -- ============================================================================
 
-/-- An assertion is PC-independent: it holds regardless of the PC value. -/
-def pcIndep (P : Assertion) : Prop := ∀ s v, P s → P (s.setPC v)
+/-- A predicate on MachineState is PC-independent: it holds regardless of the PC value. -/
+def pcIndep (P : MachineState → Prop) : Prop := ∀ s v, P s → P (s.setPC v)
 
-theorem pcIndep_and (hP : pcIndep P) (hQ : pcIndep Q) :
+theorem pcIndep_and {P Q : MachineState → Prop} (hP : pcIndep P) (hQ : pcIndep Q) :
     pcIndep (fun s => P s ∧ Q s) := by
   intro s v ⟨hp, hq⟩
   exact ⟨hP s v hp, hQ s v hq⟩
 
-theorem pcIndep_regIs (r : Reg) (val : Word) : pcIndep (regIs r val) := by
+theorem pcIndep_holdsFor_regIs (r : Reg) (val : Word) :
+    pcIndep (regIs r val).holdsFor := by
   intro s v h
-  simp only [regIs, MachineState.getReg_setPC] at *; exact h
+  simp only [holdsFor_regIs, MachineState.getReg_setPC] at *; exact h
 
-theorem pcIndep_memIs (a : Addr) (val : Word) : pcIndep (memIs a val) := by
+theorem pcIndep_holdsFor_memIs (a : Addr) (val : Word) :
+    pcIndep (memIs a val).holdsFor := by
   intro s v h
-  simp only [memIs, MachineState.getMem, MachineState.setPC] at *; exact h
+  simp only [holdsFor_memIs, MachineState.getMem, MachineState.setPC] at *; exact h
 
-theorem pcIndep_sepConj (hP : pcIndep P) (hQ : pcIndep Q) :
-    pcIndep (P ** Q) := by
-  intro s v ⟨hp, hq⟩
-  exact ⟨hP s v hp, hQ s v hq⟩
+theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
+    pcIndep ((P ** Q).holdsFor) := by
+  intro s v ⟨h, hcompat, h1, h2, hd, hunion, hp1, hp2⟩
+  refine ⟨h, ?_, h1, h2, hd, hunion, hp1, hp2⟩
+  have hpc_none := pcFree_sepConj hP hQ h ⟨h1, h2, hd, hunion, hp1, hp2⟩
+  rw [← hunion] at hpc_none hcompat ⊢
+  obtain ⟨hr, hm, hpc⟩ := hcompat
+  exact ⟨fun r' v' hv => by rw [MachineState.getReg_setPC]; exact hr r' v' hv,
+         fun a' v' hv => by simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv,
+         fun v' hv => by rw [hpc_none] at hv; simp at hv⟩
 
 /-- Sign-extend a small 13-bit value (MSB clear) to 32 bits. -/
 theorem signExtend13_ofNat_small (n : Nat) (h : n < 2^12) :
@@ -197,7 +205,7 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
     the then-body entry (base+4) with equality, or to the else-body
     entry (base+4+4*t+4) with inequality, in exactly one step. -/
 theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P : Assertion)
+    (base : Addr) (P : MachineState → Prop)
     (hP : pcIndep P)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
@@ -254,7 +262,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     under equality and the else-body is correct under inequality,
     the whole if_eq is a cpsTriple from entry to exit. -/
 theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P Q : Assertion)
+    (base : Addr) (P Q : MachineState → Prop)
     (hP : pcIndep P) (hQ : pcIndep Q)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (he_small : 4 * (else_body.length) + 4 < 2^20)
@@ -323,7 +331,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
 /-- The if_eq macro satisfies a cpsNBranch spec with two exits,
     derived from the existing cpsBranch spec. -/
 theorem if_eq_branch_step_n (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P : Assertion)
+    (base : Addr) (P : MachineState → Prop)
     (hP : pcIndep P)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
@@ -340,7 +348,7 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (then_body else_body : Program)
 
 /-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge. -/
 theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P Q : Assertion)
+    (base : Addr) (P Q : MachineState → Prop)
     (hP : pcIndep P) (hQ : pcIndep Q)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (he_small : 4 * (else_body.length) + 4 < 2^20)

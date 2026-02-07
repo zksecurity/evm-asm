@@ -190,11 +190,12 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
 theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
     (rd rs : Reg) (hne : rd ≠ rs) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
     (v w : Word) :
-    ⦃(rd ↦ᵣ v) ** (rs ↦ᵣ w)⦄
+    ⦃((rd ↦ᵣ v) ** (rs ↦ᵣ w)).holdsFor⦄
     add_mulc nbits rd rs m
     ⦃fun s => s.getReg rd = v + w * BitVec.ofNat 32 m⦄ := by
-  intro s ⟨hrd_eq, hrs_eq⟩
-  simp only [regIs] at *
+  intro s hpre
+  rw [holdsFor_sepConj_regIs_regIs hne] at hpre
+  obtain ⟨hrd_eq, hrs_eq⟩ := hpre
   rw [add_mulc_correct nbits rd rs hne hrd hrs m hm]
   rw [hrd_eq, hrs_eq]
 

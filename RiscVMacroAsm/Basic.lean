@@ -27,6 +27,10 @@ inductive Reg where
   | x12 -- a2
   deriving DecidableEq, BEq, Repr, Hashable
 
+instance : LawfulBEq Reg where
+  eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
+  rfl {a} := by cases a <;> decide
+
 namespace Reg
 
 def toNat : Reg → Nat
