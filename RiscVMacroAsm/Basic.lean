@@ -60,6 +60,36 @@ abbrev Word := BitVec 32
 abbrev Addr := Word
 
 -- ============================================================================
+-- SP1 memory constraints
+-- ============================================================================
+
+/-- SP1 valid memory region start (addresses 0x0–0x1F are reserved for registers). -/
+def SP1_MEM_START : Nat := 0x20
+
+/-- SP1 valid memory region end. -/
+def SP1_MEM_END : Nat := 0x78000000
+
+/-- Address is 4-byte aligned. -/
+def isAligned4 (addr : Addr) : Bool := addr.toNat % 4 == 0
+
+/-- Address is in valid SP1 memory range [0x20, 0x78000000]. -/
+def isValidMemAddr (addr : Addr) : Bool :=
+  decide (SP1_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ SP1_MEM_END)
+
+/-- Valid word-size memory access: in range AND 4-byte aligned. -/
+def isValidMemAccess (addr : Addr) : Bool :=
+  isValidMemAddr addr && isAligned4 addr
+
+@[simp] theorem isValidMemAccess_eq (addr : Addr) :
+    isValidMemAccess addr = (isValidMemAddr addr && isAligned4 addr) := rfl
+
+@[simp] theorem isValidMemAddr_eq (addr : Addr) :
+    isValidMemAddr addr = (decide (SP1_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ SP1_MEM_END)) := rfl
+
+@[simp] theorem isAligned4_eq (addr : Addr) :
+    isAligned4 addr = (addr.toNat % 4 == 0) := rfl
+
+-- ============================================================================
 -- Machine State
 -- ============================================================================
 

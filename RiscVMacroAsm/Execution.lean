@@ -130,12 +130,23 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
 /-- Single step: fetch instruction at PC, execute with branch-aware semantics.
     Returns none if no instruction at PC (stuck/halted), or if the instruction
     is ECALL with t0 = 0 (HALT syscall, following SP1 convention).
+    LW/SW trap (return none) on misaligned or out-of-range addresses.
     WRITE (t0 = 0x02) to fd 13 appends words from memory to public values.
     COMMIT (t0 = 0x10) appends (a0, a1) to committed outputs.
     Other ECALLs continue execution. -/
 def step (code : CodeMem) (s : MachineState) : Option MachineState :=
   match code s.pc with
   | none => none
+  | some (.LW rd rs1 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidMemAccess addr then
+      some (execInstrBr s (.LW rd rs1 offset))
+    else none  -- trap: invalid memory access
+  | some (.SW rs1 rs2 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidMemAccess addr then
+      some (execInstrBr s (.SW rs1 rs2 offset))
+    else none  -- trap: invalid memory access
   | some .ECALL =>
     let t0 := s.getReg .x5
     if t0 == (0 : Word) then none  -- HALT syscall (SP1: t0 = 0)
@@ -169,10 +180,44 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
     else some (execInstrBr s .ECALL)  -- other ecalls continue
   | some i => some (execInstrBr s i)
 
-@[simp] theorem step_non_ecall (code : CodeMem) (s : MachineState) (i : Instr)
-    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL) :
+/-- step for non-ECALL, non-memory instructions (no validity hypothesis needed). -/
+@[simp] theorem step_non_ecall_non_mem (code : CodeMem) (s : MachineState) (i : Instr)
+    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL)
+    (hnm : i.isMemAccess = false) :
     step code s = some (execInstrBr s i) := by
-  unfold step; rw [hfetch]; cases i <;> simp_all
+  unfold step; rw [hfetch]; cases i <;> simp_all [Instr.isMemAccess]
+
+/-- step for LW with valid memory access. -/
+theorem step_lw (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LW rd rs1 offset))
+    (hvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.LW rd rs1 offset)) := by
+  simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for SW with valid memory access. -/
+theorem step_sw (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SW rs1 rs2 offset))
+    (hvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.SW rs1 rs2 offset)) := by
+  simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for LW with invalid memory access (trap). -/
+theorem step_lw_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LW rd rs1 offset))
+    (hinvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for SW with invalid memory access (trap). -/
+theorem step_sw_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SW rs1 rs2 offset))
+    (hinvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
 
 theorem step_ecall_halt (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :

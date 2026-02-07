@@ -67,6 +67,12 @@ def Instr.isBranch : Instr → Bool
   | .JAL _ _   => true
   | _          => false
 
+/-- Is this instruction a memory access (LW or SW)? -/
+def Instr.isMemAccess : Instr → Bool
+  | .LW _ _ _  => true
+  | .SW _ _ _  => true
+  | _          => false
+
 /-- Sign-extend a 12-bit immediate to 32 bits. -/
 def signExtend12 (imm : BitVec 12) : Word :=
   imm.signExtend 32
