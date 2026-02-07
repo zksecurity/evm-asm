@@ -15,3 +15,4 @@ import RiscVMacroAsm.Examples.Commit
 import RiscVMacroAsm.Examples.Write
 import RiscVMacroAsm.Examples.FullPipeline
 import RiscVMacroAsm.Examples.HelloWorld
+import RiscVMacroAsm.Examples.Echo

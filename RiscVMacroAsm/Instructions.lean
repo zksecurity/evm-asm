@@ -129,7 +129,7 @@ inductive Instr where
   | REM  (rd rs1 rs2 : Reg)
   /-- REMU rd, rs1, rs2 : rd := rs1 %u rs2 (unsigned remainder) -/
   | REMU (rd rs1 rs2 : Reg)
-  deriving Repr
+  deriving Repr, DecidableEq
 
 -- ============================================================================
 -- Instruction classification

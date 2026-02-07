@@ -266,6 +266,24 @@ theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
     (h : r ≠ .x0) : (s.setReg r v).getReg r = v := by
   cases r <;> first | exact absurd rfl h | rfl
 
+-- Lemmas for reasoning about memory through state operations
+
+@[simp] theorem getMem_setMem_eq (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).getMem a = v := by
+  simp [getMem, setMem]
+
+@[simp] theorem getMem_setMem_ne (s : MachineState) (a a' : Addr) (v : Word)
+    (h : a' ≠ a) : (s.setMem a v).getMem a' = s.getMem a' := by
+  simp [getMem, setMem, h]
+
+@[simp] theorem getMem_setReg (s : MachineState) (r : Reg) (v : Word) (a : Addr) :
+    (s.setReg r v).getMem a = s.getMem a := by
+  cases r <;> simp [getMem, setReg]
+
+@[simp] theorem getMem_setPC (s : MachineState) (v : Word) (a : Addr) :
+    (s.setPC v).getMem a = s.getMem a := by
+  simp [getMem, setPC]
+
 -- Committed field preservation through existing setters
 
 @[simp]
