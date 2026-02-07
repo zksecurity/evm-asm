@@ -1321,6 +1321,54 @@ theorem holdsFor_sepConj_regIs_regIs_regIs_setReg
   exact holdsFor_sepConj_pull_second.mpr h4
 
 -- ============================================================================
+-- holdsFor preservation through setMem
+-- ============================================================================
+
+/-- If `(a ↦ₘ v) ** R` holds for `s`, then `(a ↦ₘ v') ** R` holds for `s.setMem a v'`.
+    The frame R is preserved because it's disjoint from the memory being modified. -/
+theorem holdsFor_sepConj_memIs_setMem {a : Addr} {v v' : Word} {R : Assertion}
+    {s : MachineState}
+    (hPR : ((a ↦ₘ v) ** R).holdsFor s) :
+    ((a ↦ₘ v') ** R).holdsFor (s.setMem a v') := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := hPR
+  rw [memIs] at hh1; subst hh1; rw [← hunion] at hcompat
+  -- h2 doesn't own address a (from disjointness)
+  have ha2 : h2.mem a = none := by
+    rcases hdisj.2.1 a with h | h
+    · simp [PartialState.singletonMem] at h
+    · exact h
+  -- Disjointness preserved (same memory ownership shape)
+  have hdisj' : (PartialState.singletonMem a v').Disjoint h2 := by
+    refine ⟨hdisj.1, fun a' => ?_, hdisj.2.2.1, hdisj.2.2.2.1, hdisj.2.2.2.2⟩
+    by_cases h : a' = a
+    · subst h; exact Or.inr ha2
+    · left; show (if a' == a then some v' else none) = none
+      simp [h]
+  -- Split old compatibility
+  have ⟨hc1, hc2⟩ := (PartialState.CompatibleWith_union hdisj).mp hcompat
+  -- singletonMem a v' compatible with s.setMem a v'
+  have hc1' : (PartialState.singletonMem a v').CompatibleWith (s.setMem a v') := by
+    refine ⟨fun r w hr => by simp [PartialState.singletonMem] at hr,
+            fun a' w ha' => ?_,
+            fun w hw => by simp [PartialState.singletonMem] at hw,
+            fun w hw => by simp [PartialState.singletonMem] at hw,
+            fun w hw => by simp [PartialState.singletonMem] at hw⟩
+    simp only [PartialState.singletonMem] at ha'
+    split at ha' <;> simp_all
+  -- h2 compatible with s.setMem a v' (doesn't own a)
+  have hc2' : h2.CompatibleWith (s.setMem a v') := PartialState.CompatibleWith_setMem hc2 ha2
+  refine ⟨(PartialState.singletonMem a v').union h2, ?_, PartialState.singletonMem a v', h2, hdisj', rfl, rfl, hh2⟩
+  exact (PartialState.CompatibleWith_union hdisj').mpr ⟨hc1', hc2'⟩
+
+/-- setMem preserves holdsFor for any assertion whose partial state doesn't own the address. -/
+theorem holdsFor_setMem {P : Assertion} {a : Addr} {v : Word} {s : MachineState}
+    (hP_no_a : ∀ h, P h → h.mem a = none)
+    (hP : P.holdsFor s) :
+    P.holdsFor (s.setMem a v) := by
+  obtain ⟨h, hcompat, hp⟩ := hP
+  exact ⟨h, PartialState.CompatibleWith_setMem hcompat (hP_no_a h hp), hp⟩
+
+-- ============================================================================
 -- SubStateOf: partial state inclusion
 -- ============================================================================
 

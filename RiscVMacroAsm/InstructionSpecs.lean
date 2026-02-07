@@ -414,7 +414,8 @@ theorem auipc_spec (rd : Reg) (v_old : Word) (imm : BitVec 20) (base : Addr)
 
 /-- LW rd, offset(rs1): rd := mem[rs1 + sext(offset)] (registers distinct) -/
 theorem lw_spec (rd rs1 : Reg) (v_addr v_old mem_val : Word) (offset : BitVec 12) (base : Addr)
-    (hrd_ne_x0 : rd ≠ .x0) :
+    (hrd_ne_x0 : rd ≠ .x0)
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
     let code := loadProgram base [Instr.LW rd rs1 offset]
     let entry := base
     let exit_ := base + 4
@@ -422,11 +423,43 @@ theorem lw_spec (rd rs1 : Reg) (v_addr v_old mem_val : Word) (offset : BitVec 12
     let pre := (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ v_old) ** (addr ↦ₘ mem_val)
     let post := (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ mem_val) ** (addr ↦ₘ mem_val)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch LW instruction
+  have hfetch : loadProgram base [Instr.LW rd rs1 offset] base = some (Instr.LW rd rs1 offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v_addr := by
+    exact (holdsFor_regIs rs1 v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  have hmem_val : st.getMem (v_addr + signExtend12 offset) = mem_val := by
+    exact (holdsFor_memIs _ _ st).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hinner))
+  -- Compute next state
+  let result := mem_val
+  have hnext : execInstrBr st (Instr.LW rd rs1 offset) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrs1_val, hmem_val]
+  -- Execute one step (LW checks isValidMemAccess)
+  have hstep : step (loadProgram base [Instr.LW rd rs1 offset]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    have := step_lw _ _ _ _ _ (by rw [hpc]; exact hfetch) (by rw [hrs1_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Postcondition: (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ mem_val) ** (addr ↦ₘ mem_val)
+    -- rd is the second element: pull it to front, apply setReg, push back
+    have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_assoc.mp h1
+    have h3 := holdsFor_sepConj_regIs_setReg (v' := result) (R := ((v_addr + signExtend12 offset ↦ₘ mem_val) ** ((rs1 ↦ᵣ v_addr) ** R))) hrd_ne_x0 h2
+    have h4 := holdsFor_sepConj_assoc.mpr h3
+    have h5 := holdsFor_sepConj_pull_second.mpr h4
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v_addr) (pcFree_sepConj (pcFree_regIs rd result) (pcFree_memIs _ mem_val))) hR)
+      (st.setReg rd result) (base + 4) h5
 
 /-- LW rd, offset(rd): rd := mem[rd + sext(offset)] (same register) -/
 theorem lw_spec_same (rd : Reg) (v_addr mem_val : Word) (offset : BitVec 12) (base : Addr)
-    (hrd_ne_x0 : rd ≠ .x0) :
+    (hrd_ne_x0 : rd ≠ .x0)
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
     let code := loadProgram base [Instr.LW rd rd offset]
     let entry := base
     let exit_ := base + 4
@@ -434,10 +467,40 @@ theorem lw_spec_same (rd : Reg) (v_addr mem_val : Word) (offset : BitVec 12) (ba
     let pre := (rd ↦ᵣ v_addr) ** (addr ↦ₘ mem_val)
     let post := (rd ↦ᵣ mem_val) ** (addr ↦ₘ mem_val)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch LW instruction
+  have hfetch : loadProgram base [Instr.LW rd rd offset] base = some (Instr.LW rd rd offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrd_val : st.getReg rd = v_addr := by
+    exact (holdsFor_regIs rd v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  have hmem_val : st.getMem (v_addr + signExtend12 offset) = mem_val := by
+    exact (holdsFor_memIs _ _ st).mp (holdsFor_sepConj_elim_right hinner)
+  -- Compute next state
+  let result := mem_val
+  have hnext : execInstrBr st (Instr.LW rd rd offset) = (st.setReg rd result).setPC (st.pc + 4) := by
+    simp [execInstrBr, result, hrd_val, hmem_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.LW rd rd offset]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    have := step_lw _ _ _ _ _ (by rw [hpc]; exact hfetch) (by rw [hrd_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Postcondition: (rd ↦ᵣ mem_val) ** (addr ↦ₘ mem_val)
+    -- Rearrange: ((rd ↦ᵣ v_addr) ** (addr ↦ₘ mem_val)) ** R → (rd ↦ᵣ v_addr) ** ((addr ↦ₘ mem_val) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_assoc.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := ((v_addr + signExtend12 offset ↦ₘ mem_val) ** R)) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_assoc.2 h1
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rd result) (pcFree_memIs _ mem_val)) hR)
+      (st.setReg rd result) (base + 4) h2
 
 /-- SW rs2, offset(rs1): mem[rs1 + sext(offset)] := rs2 (registers distinct) -/
-theorem sw_spec (rs1 rs2 : Reg) (v_addr v_data mem_old : Word) (offset : BitVec 12) (base : Addr) :
+theorem sw_spec (rs1 rs2 : Reg) (v_addr v_data mem_old : Word) (offset : BitVec 12) (base : Addr)
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
     let code := loadProgram base [Instr.SW rs1 rs2 offset]
     let entry := base
     let exit_ := base + 4
@@ -445,10 +508,47 @@ theorem sw_spec (rs1 rs2 : Reg) (v_addr v_data mem_old : Word) (offset : BitVec 
     let pre := (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (addr ↦ₘ mem_old)
     let post := (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (addr ↦ₘ v_data)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch SW instruction
+  have hfetch : loadProgram base [Instr.SW rs1 rs2 offset] base = some (Instr.SW rs1 rs2 offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v_addr := by
+    exact (holdsFor_regIs rs1 v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v_data := by
+    exact (holdsFor_regIs rs2 v_data st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right hinner))
+  -- Compute next state
+  let addr := v_addr + signExtend12 offset
+  have hnext : execInstrBr st (Instr.SW rs1 rs2 offset) = (st.setMem addr v_data).setPC (st.pc + 4) := by
+    simp [execInstrBr, addr, hrs1_val, hrs2_val]
+  -- Execute one step (SW checks isValidMemAccess)
+  have hstep : step (loadProgram base [Instr.SW rs1 rs2 offset]) st = some ((st.setMem addr v_data).setPC (base + 4)) := by
+    have := step_sw _ _ _ _ _ (by rw [hpc]; exact hfetch) (by rw [hrs1_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setMem addr v_data).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Postcondition: (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (addr ↦ₘ v_data)
+    -- Memory is the third element: pull to front, apply setMem, push back
+    -- Rearrange: ((rs1 ** (rs2 ** mem)) ** R) → ((rs2 ** mem) ** (rs1 ** R)) → (mem ** (rs2 ** (rs1 ** R)))
+    have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_pull_second.mp h1
+    -- h2 : (addr ↦ₘ mem_old) ** ((rs2 ↦ᵣ v_data) ** ((rs1 ↦ᵣ v_addr) ** R))
+    have h3 := holdsFor_sepConj_memIs_setMem (v' := v_data) h2
+    -- h3 : (addr ↦ₘ v_data) ** ((rs2 ↦ᵣ v_data) ** ((rs1 ↦ᵣ v_addr) ** R))
+    -- Rearrange back
+    have h4 := holdsFor_sepConj_pull_second.mpr h3
+    have h5 := holdsFor_sepConj_pull_second.mpr h4
+    -- h5 : ((rs1 ↦ᵣ v_addr) ** ((rs2 ↦ᵣ v_data) ** (addr ↦ₘ v_data))) ** R
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v_addr) (pcFree_sepConj (pcFree_regIs rs2 v_data) (pcFree_memIs _ v_data))) hR)
+      (st.setMem addr v_data) (base + 4) h5
 
 /-- SW rs, offset(rs): mem[rs + sext(offset)] := rs (same register) -/
-theorem sw_spec_same (rs : Reg) (v : Word) (mem_old : Word) (offset : BitVec 12) (base : Addr) :
+theorem sw_spec_same (rs : Reg) (v : Word) (mem_old : Word) (offset : BitVec 12) (base : Addr)
+    (hvalid : isValidMemAccess (v + signExtend12 offset) = true) :
     let code := loadProgram base [Instr.SW rs rs offset]
     let entry := base
     let exit_ := base + 4
@@ -456,7 +556,34 @@ theorem sw_spec_same (rs : Reg) (v : Word) (mem_old : Word) (offset : BitVec 12)
     let pre := (rs ↦ᵣ v) ** (addr ↦ₘ mem_old)
     let post := (rs ↦ᵣ v) ** (addr ↦ₘ v)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch SW instruction
+  have hfetch : loadProgram base [Instr.SW rs rs offset] base = some (Instr.SW rs rs offset) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Extract values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs_val : st.getReg rs = v := by
+    exact (holdsFor_regIs rs v st).mp (holdsFor_sepConj_elim_left hinner)
+  -- Compute next state
+  let addr := v + signExtend12 offset
+  have hnext : execInstrBr st (Instr.SW rs rs offset) = (st.setMem addr v).setPC (st.pc + 4) := by
+    simp [execInstrBr, addr, hrs_val]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.SW rs rs offset]) st = some ((st.setMem addr v).setPC (base + 4)) := by
+    have := step_sw _ _ _ _ _ (by rw [hpc]; exact hfetch) (by rw [hrs_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setMem addr v).setPC (base + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Postcondition: (rs ↦ᵣ v) ** (addr ↦ₘ v)
+    -- Rearrange: ((rs ↦ᵣ v) ** (addr ↦ₘ mem_old)) ** R → (addr ↦ₘ mem_old) ** ((rs ↦ᵣ v) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_pull_second.1 hPR
+    have h1 := holdsFor_sepConj_memIs_setMem (v' := v) hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_pull_second.2 h1
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs v) (pcFree_memIs _ v)) hR)
+      (st.setMem addr v) (base + 4) h2
 
 -- ============================================================================
 -- Branch Instructions (use cpsBranch for two exits)
