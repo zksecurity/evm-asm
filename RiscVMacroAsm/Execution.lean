@@ -111,13 +111,14 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
 
 /-- Single step: fetch instruction at PC, execute with branch-aware semantics.
     Returns none if no instruction at PC (stuck/halted), or if the instruction
-    is ECALL with t0 = 0 (HALT syscall, following SP1 convention). -/
+    is ECALL with t0 = 0 (HALT syscall, following SP1 convention).
+    Non-halt ECALLs (e.g. COMMIT with t0 = 0x10) continue execution. -/
 def step (code : CodeMem) (s : MachineState) : Option MachineState :=
   match code s.pc with
   | none => none
   | some .ECALL =>
-    if s.getReg .x5 == (0 : Word) then none  -- HALT syscall (SP1 convention)
-    else some (execInstrBr s .ECALL)
+    if s.getReg .x5 == (0 : Word) then none  -- HALT syscall (SP1: t0 = 0)
+    else some (execInstrBr s .ECALL)          -- non-HALT ecalls (e.g. COMMIT) continue
   | some i => some (execInstrBr s i)
 
 @[simp] theorem step_non_ecall (code : CodeMem) (s : MachineState) (i : Instr)
@@ -134,6 +135,13 @@ theorem step_ecall_continue (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 ≠ 0) :
     step code s = some (execInstrBr s .ECALL) := by
   simp only [step, hfetch, beq_iff_eq, ht0, ↓reduceIte]
+
+/-- COMMIT syscall (SP1 convention: t0 = 0x10) continues execution. -/
+theorem step_ecall_commit (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .ECALL)
+    (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x10) :
+    step code s = some (execInstrBr s .ECALL) :=
+  step_ecall_continue code s hfetch (by rw [ht0]; decide)
 
 /-- Multi-step execution (n steps). -/
 def stepN : Nat → CodeMem → MachineState → Option MachineState

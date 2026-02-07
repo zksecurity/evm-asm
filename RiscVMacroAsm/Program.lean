@@ -92,4 +92,12 @@ def HALT (exitCode : Word := 0) : Program :=
   LI .x10 exitCode ;;
   single .ECALL
 
+/-- COMMIT macro (SP1 convention): set t0 := 0x10 (COMMIT syscall),
+    a0/a1 for data, then ecall. Execution continues after commit. -/
+def COMMIT (a0val a1val : Word) : Program :=
+  LI .x5 0x10 ;;
+  LI .x10 a0val ;;
+  LI .x11 a1val ;;
+  single .ECALL
+
 end RiscVMacroAsm

@@ -24,12 +24,15 @@ RiscVMacroAsm is a verified macro assembler for RISC-V in Lean 4, inspired by "C
 ```
 RiscVMacroAsm/
   Basic.lean         -- Machine state: registers, memory, PC
-  Instructions.lean  -- RV32I instruction subset and semantics
-  Program.lean       -- Programs as instruction lists, sequential composition
+  Instructions.lean  -- RV32I instruction subset and semantics (incl. ECALL)
+  Program.lean       -- Programs as instruction lists, sequential composition, HALT/COMMIT macros
+  Execution.lean     -- Branch-aware execution, code memory, step/stepN, ECALL dispatch
   SepLogic.lean      -- Separation logic assertions and combinators
   Spec.lean          -- Hoare triples, frame rule, structural rules
-  MulMacro.lean      -- The add_mulc macro with correctness proofs ⭐
-  Examples.lean      -- Swap, zero, triple, and other macro examples
+  CPSSpec.lean       -- CPS-style Hoare triples, branch specs, structural rules
+  ControlFlow.lean   -- if_eq macro, symbolic proofs, pcIndep
+  MulMacro.lean      -- The add_mulc macro with correctness proofs
+  Examples.lean      -- Swap, zero, triple, halt, commit, and other macro examples
 RiscVMacroAsm.lean   -- Root module importing all submodules
 ```
 
@@ -41,39 +44,6 @@ When working with this codebase, be aware of these Lean 4 nightly API changes:
 2. **Doc comments**: Cannot place `/-- ... -/` doc comments immediately before `#eval` commands (use regular `--` comments)
 3. **Proof tactics**: `simp` may need explicit lemma lists or `rw` for manual rewriting
 4. **Namespace**: Most theorems are in `namespace MachineState`, so use full names like `MachineState.getReg_setPC`
-
-## Main Theorem to Prove
-
-The primary open problem is **`add_mulc_correct`** in `RiscVMacroAsm/MulMacro.lean:131`:
-
-```lean
-theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
-    (hne : rd ≠ rs) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
-    (m : Nat) (hm : m < 2 ^ nbits) :
-    ∀ s : MachineState,
-      (execProgram s (add_mulc nbits rd rs m)).getReg rd =
-        s.getReg rd + s.getReg rs * BitVec.ofNat 32 m := by
-  sorry
-```
-
-### Proof Strategy
-
-The theorem requires proving that the shift-and-add multiplication macro is correct. Key elements needed:
-
-1. **Induction on `nbits`**: Natural number induction
-2. **Case analysis**: Whether `m % 2 == 1` (m is odd) or `m % 2 == 0` (m is even)
-3. **Loop invariant**: `rd = v + w * (m % 2^k)` and `rs = w * 2^k` where k is the number of bits processed
-4. **Register file lemmas**: Use `MachineState.getReg_setReg_eq`, `MachineState.getReg_setReg_ne`, `MachineState.getReg_setPC`
-5. **BitVector arithmetic**: Lemmas relating shift operations (`shiftLeft`) to multiplication and division
-
-### Available Lemmas
-
-- `execProgram_nil`: Executing empty program is identity
-- `execProgram_cons`: Executing `i :: is` = execute instruction then rest
-- `execProgram_append`: Program composition theorem
-- `MachineState.getReg_setPC`: Setting PC doesn't affect register reads
-- `MachineState.getReg_setReg_eq`: Reading a register just set
-- `MachineState.getReg_setReg_ne`: Reading a different register
 
 ## Verification Workflow
 
@@ -97,19 +67,22 @@ When adding or modifying proofs:
 2. **Simp lemmas**: Mark key lemmas with `@[simp]` for automatic application
 3. **List operations**: Be careful with `execProgram` and list append - may need explicit `execProgram_append`
 4. **Register inequality**: Use `decide` tactic for concrete register inequality proofs
+5. **Program type**: `Program = List Instr` is a `def`, not `abbrev` — use `simp only [..., Program]` to unfold before `List.length_append` etc.
 
 ## Testing
 
-All concrete examples should pass:
+All concrete examples should pass with no sorries:
 
 ```bash
-lake build  # Should succeed with only 1 sorry (add_mulc_correct)
+lake build  # Should succeed with 0 errors and 0 sorries
 ```
 
 The project includes concrete test cases using `native_decide`:
 - Multiply by constants: 0, 1, 3, 6, 10, 255
 - Swap macro correctness
 - Zero and triple macros
+- ECALL/halt termination examples
+- COMMIT-then-halt examples
 
 ## Git Workflow
 
@@ -121,6 +94,7 @@ The project includes concrete test cases using `native_decide`:
 
 - **Original paper**: Kennedy et al., "Coq: The world's best macro assembler?" PPDP 2013
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
+- **SP1 zkVM**: https://github.com/succinctlabs/sp1
 - **RISC-V ISA**: https://riscv.org/technical/specifications/
 - **sail-riscv-lean**: https://github.com/opencompl/sail-riscv-lean (same toolchain)
 - **Lean 4 docs**: https://lean-lang.org/documentation/
@@ -128,8 +102,8 @@ The project includes concrete test cases using `native_decide`:
 ## Next Steps
 
 Potential future work:
-1. Complete `add_mulc_correct` proof
-2. Connect to sail-riscv-lean for full ISA semantics
-3. Add more verified macros (e.g., division, modulo)
-4. Prove frame rule instances for more instructions
-5. Extend to more RISC-V instructions (branches, loads/stores)
+1. More control flow macros (loops, function calls)
+2. More SP1 syscalls (e.g. LWA, WRITE)
+3. Connect to sail-riscv-lean for full ISA semantics
+4. Add more verified macros (e.g., division, modulo)
+5. Prove frame rule instances for more instructions

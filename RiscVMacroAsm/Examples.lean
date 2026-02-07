@@ -232,6 +232,44 @@ example : let code := loadProgram 0 halt_zero
   native_decide
 
 -- ============================================================================
+-- Example 9: COMMIT syscall (SP1 convention)
+-- ============================================================================
+
+/-- A program that commits a value then halts. -/
+def commit_and_halt : Program :=
+  LI .x10 42 ;;
+  LI .x11 0 ;;
+  LI .x5 0x10 ;;     -- t0 := COMMIT
+  single .ECALL ;;   -- commit (continues)
+  LI .x5 0 ;;        -- t0 := HALT
+  single .ECALL       -- halt
+
+def commit_and_halt_state : MachineState where
+  regs := fun _ => 0
+  mem := fun _ => 0
+  pc := 0
+
+/-- After the commit step (4 instructions to set up + ECALL), execution continues. -/
+example : let code := loadProgram 0 commit_and_halt
+          let steps := 4  -- LI x10, LI x11, LI x5, ECALL (commit)
+          (stepN steps code commit_and_halt_state).isSome = true := by
+  native_decide
+
+/-- After all steps up to halt, the next step returns none (halted). -/
+example : let code := loadProgram 0 commit_and_halt
+          let steps := commit_and_halt.length - 1  -- run up to halt ECALL
+          (stepN steps code commit_and_halt_state).bind (fun s =>
+            step code s) = none := by
+  native_decide
+
+/-- At the halt point, a0 (x10) still contains 42. -/
+example : let code := loadProgram 0 commit_and_halt
+          let steps := commit_and_halt.length - 1
+          (stepN steps code commit_and_halt_state).bind (fun s =>
+            some (s.getReg .x10)) = some 42 := by
+  native_decide
+
+-- ============================================================================
 -- Summary: The macro assembler pattern
 -- ============================================================================
 

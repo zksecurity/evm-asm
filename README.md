@@ -130,7 +130,8 @@ sequences behave correctly under the official RISC-V specification.
   "Coq: The world's best macro assembler?" PPDP 2013.
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
 - SP1 zkVM: https://github.com/succinctlabs/sp1
-  The `ECALL`-based termination mechanism follows SP1's convention of using
-  `ecall` with syscall ID in `t0` (x5) to signal halting.
+  The `ECALL`-based syscall mechanism follows SP1's conventions: `t0 = 0`
+  signals HALT with exit code in `a0`, and `t0 = 0x10` signals COMMIT
+  (public values output).
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
