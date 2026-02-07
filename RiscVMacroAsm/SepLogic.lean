@@ -1121,6 +1121,94 @@ theorem sepConj_mono {P P' Q Q' : Assertion} (hp : ∀ h, P h → P' h) (hq : �
   exact sepConj_mono_right hq h (sepConj_mono_left hp h hpq)
 
 -- ============================================================================
+-- CompatibleWith decomposition through unions
+-- ============================================================================
+
+namespace PartialState
+
+/-- If a union is compatible with a state, the left part is also compatible. -/
+theorem CompatibleWith_union_elim_left {h1 h2 : PartialState} {s : MachineState}
+    (hd : h1.Disjoint h2) (hcompat : (h1.union h2).CompatibleWith s) :
+    h1.CompatibleWith s := by
+  have ⟨hcompat1, hcompat2⟩ := (CompatibleWith_union hd).mp hcompat
+  exact hcompat1
+
+/-- If a union is compatible with a state, the right part is also compatible. -/
+theorem CompatibleWith_union_elim_right {h1 h2 : PartialState} {s : MachineState}
+    (hd : h1.Disjoint h2) (hcompat : (h1.union h2).CompatibleWith s) :
+    h2.CompatibleWith s := by
+  have ⟨hcompat1, hcompat2⟩ := (CompatibleWith_union hd).mp hcompat
+  exact hcompat2
+
+end PartialState
+
+-- ============================================================================
+-- Extracting register values from nested sepConj
+-- ============================================================================
+
+/-- Extract register values from a 3-way separating conjunction.
+    Note: ** is right-associative, so this is (r1 ** (r2 ** r3)) -/
+theorem holdsFor_sepConj_regIs_regIs_regIs {r1 r2 r3 : Reg} {v1 v2 v3 : Word}
+    {s : MachineState} (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3)
+    (h : ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)).holdsFor s) :
+    s.getReg r1 = v1 ∧ s.getReg r2 = v2 ∧ s.getReg r3 = v3 := by
+  -- Structure is (r1 ** (r2 ** r3)) because ** is right-associative
+  obtain ⟨hp, hcompat, hp_outer⟩ := h
+  obtain ⟨h_r1, h_r23, hd_outer, hunion_outer, hp_r1, hp_r23⟩ := hp_outer
+  obtain ⟨h_r2, h_r3, hd_inner, hunion_inner, hp_r2, hp_r3⟩ := hp_r23
+  -- Now extract values using CompatibleWith
+  simp only [regIs] at hp_r1 hp_r2 hp_r3
+  subst hp_r1 hp_r2 hp_r3
+  -- First split outer union, then split inner union
+  rw [← hunion_outer] at hcompat
+  have ⟨hc_r1, hc_r23⟩ := (PartialState.CompatibleWith_union hd_outer).mp hcompat
+  rw [← hunion_inner] at hc_r23
+  have ⟨hc_r2, hc_r3⟩ := (PartialState.CompatibleWith_union hd_inner).mp hc_r23
+  exact ⟨(PartialState.CompatibleWith_singletonReg r1 v1 s).mp hc_r1,
+         (PartialState.CompatibleWith_singletonReg r2 v2 s).mp hc_r2,
+         (PartialState.CompatibleWith_singletonReg r3 v3 s).mp hc_r3⟩
+
+-- ============================================================================
+-- Preservation of holdsFor through setReg for disjoint registers
+-- ============================================================================
+
+/-- If a register assertion doesn't mention register r', it's preserved by setReg r'. -/
+theorem holdsFor_regIs_setReg_other {r r' : Reg} {v v' : Word} {s : MachineState}
+    (hne : r ≠ r')
+    (h : (r ↦ᵣ v).holdsFor s) :
+    (r ↦ᵣ v).holdsFor (s.setReg r' v') := by
+  obtain ⟨h_partial, hcompat, hreg⟩ := h
+  simp only [regIs] at hreg; subst hreg
+  have hcompat' : (PartialState.singletonReg r v).CompatibleWith (s.setReg r' v') := by
+    apply (PartialState.CompatibleWith_singletonReg r v (s.setReg r' v')).mpr
+    rw [MachineState.getReg_setReg_ne s r' r v' hne.symm]
+    exact (PartialState.CompatibleWith_singletonReg r v s).mp hcompat
+  exact ⟨PartialState.singletonReg r v, hcompat', rfl⟩
+
+/-- If a 2-register conjunction doesn't mention register r, it's preserved by setReg r. -/
+theorem holdsFor_sepConj_regIs_regIs_setReg_other {r1 r2 r : Reg} {v1 v2 v' : Word}
+    {s : MachineState} (hne1 : r1 ≠ r) (hne2 : r2 ≠ r)
+    (h : ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2)).holdsFor s) :
+    ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2)).holdsFor (s.setReg r v') := by
+  obtain ⟨h_partial, hcompat, h1, h2, hd, hunion, hreg1, hreg2⟩ := h
+  simp only [regIs] at hreg1 hreg2; subst hreg1; subst hreg2
+  -- After substitution, hunion tells us h_partial = union of singletons
+  rw [← hunion] at hcompat
+  have hcompat' : (PartialState.singletonReg r1 v1).union (PartialState.singletonReg r2 v2) |>.CompatibleWith (s.setReg r v') := by
+    apply (PartialState.CompatibleWith_union hd).mpr
+    constructor
+    · apply (PartialState.CompatibleWith_singletonReg r1 v1 (s.setReg r v')).mpr
+      rw [MachineState.getReg_setReg_ne s r r1 v' hne1.symm]
+      have ⟨hc1, _⟩ := (PartialState.CompatibleWith_union hd).mp hcompat
+      exact (PartialState.CompatibleWith_singletonReg r1 v1 s).mp hc1
+    · apply (PartialState.CompatibleWith_singletonReg r2 v2 (s.setReg r v')).mpr
+      rw [MachineState.getReg_setReg_ne s r r2 v' hne2.symm]
+      have ⟨_, hc2⟩ := (PartialState.CompatibleWith_union hd).mp hcompat
+      exact (PartialState.CompatibleWith_singletonReg r2 v2 s).mp hc2
+  exact ⟨(PartialState.singletonReg r1 v1).union (PartialState.singletonReg r2 v2), hcompat',
+          PartialState.singletonReg r1 v1, PartialState.singletonReg r2 v2, hd, rfl, rfl, rfl⟩
+
+-- ============================================================================
 -- Frame-preserving register update
 -- ============================================================================
 

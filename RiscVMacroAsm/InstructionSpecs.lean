@@ -181,7 +181,28 @@ theorem sub_spec_all_same (rd : Reg) (v : Word) (base : Addr)
     let pre := (rd ↦ᵣ v)
     let post := (rd ↦ᵣ 0)
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch SUB instruction
+  have hfetch : loadProgram base [Instr.SUB rd rd rd] base = some (Instr.SUB rd rd rd) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Compute next state (v - v = 0)
+  let result : Word := 0
+  have hnext : execInstrBr st (Instr.SUB rd rd rd) = (st.setReg rd result).setPC (st.pc + 4) := by
+    have hrd_holds := holdsFor_sepConj_elim_left hPR
+    have hrd : st.getReg rd = v := (holdsFor_regIs rd v st).mp hrd_holds
+    simp [execInstrBr, result, hrd, BitVec.sub_self]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.SUB rd rd rd]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · -- stepN 1 reaches the computed state
+    simp [stepN, hstep, Option.bind]
+  · -- PC = exit_
+    simp [MachineState.setPC]
+  · -- Postcondition holds: (rd ↦ᵣ 0) ** R
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR) (st.setReg rd result) (base + 4) h1
 
 -- ============================================================================
 -- ALU Instructions (Immediate)
@@ -207,7 +228,28 @@ theorem addi_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Addr)
     let pre := (rd ↦ᵣ v)
     let post := (rd ↦ᵣ (v + signExtend12 imm))
     cpsTriple code entry exit_ pre post := by
-  sorry
+  simp only
+  intro R hR st hPR hpc
+  -- Fetch ADDI instruction
+  have hfetch : loadProgram base [Instr.ADDI rd rd imm] base = some (Instr.ADDI rd rd imm) := by
+    simp [loadProgram, BitVec.sub_self]
+  -- Compute next state
+  let result := v + signExtend12 imm
+  have hnext : execInstrBr st (Instr.ADDI rd rd imm) = (st.setReg rd result).setPC (st.pc + 4) := by
+    have hrd_holds := holdsFor_sepConj_elim_left hPR
+    have hrd : st.getReg rd = v := (holdsFor_regIs rd v st).mp hrd_holds
+    simp [execInstrBr, result, hrd]
+  -- Execute one step
+  have hstep : step (loadProgram base [Instr.ADDI rd rd imm]) st = some ((st.setReg rd result).setPC (base + 4)) := by
+    unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
+  refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
+  · -- stepN 1 reaches the computed state
+    simp [stepN, hstep, Option.bind]
+  · -- PC = exit_
+    simp [MachineState.setPC]
+  · -- Postcondition holds: (rd ↦ᵣ result) ** R
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR) (st.setReg rd result) (base + 4) h1
 
 -- ============================================================================
 -- Upper Immediate Instructions
