@@ -220,10 +220,12 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
 
 /-- The if_eq macro satisfies a cpsBranch spec: it either goes to
     the then-body entry (base+4) with equality, or to the else-body
-    entry (base+4+4*t+4) with inequality, in exactly one step. -/
+    entry (base+4+4*t+4) with inequality, in exactly one step.
+
+    P is an Assertion, and postconditions are lifted MachineState predicates. -/
 theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P : MachineState → Prop)
-    (hP : pcIndep P)
+    (base : Addr) (P : Assertion)
+    (hP : P.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
     let prog := if_eq rs1 rs2 then_body else_body
@@ -231,8 +233,8 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     let then_entry := base + 4
     let else_entry := base + 4 + BitVec.ofNat 32 (4 * then_body.length) + 4
     cpsBranch code base P
-      then_entry (fun s => P s ∧ s.getReg rs1 = s.getReg rs2)
-      else_entry (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) := by
+      then_entry (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 = s.getReg rs2))
+      else_entry (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 ≠ s.getReg rs2)) := by
   simp only
   intro s hPs hpc_eq
   -- Fetch BNE at base
@@ -254,8 +256,23 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     refine ⟨1, s.setPC (s.pc + 4), ?_, ?_⟩
     · simp [stepN, hstep, hexec, Option.bind]
     · left
-      exact ⟨by simp [MachineState.setPC, hpc_eq],
-             hP s _ hPs, by simp [MachineState.getReg_setPC, heq]⟩
+      refine ⟨by simp [MachineState.setPC, hpc_eq], ?_⟩
+      apply holdsFor_liftPred_intro
+      intro t hregs hmem hpc hpv hpi
+      constructor
+      · -- P.holdsFor t: P is pcFree, and setPC only changes PC
+        have hPs' := holdsFor_pcFree_setPC hP s (s.pc + 4) hPs
+        obtain ⟨h, hcompat, hp⟩ := hPs'
+        refine ⟨h, ?_, hp⟩
+        obtain ⟨hr, hm, hpc_c, hpv_c, hpi_c⟩ := hcompat
+        exact ⟨fun r v hv => by rw [hregs]; exact hr r v hv,
+               fun a v hv => by rw [hmem]; exact hm a v hv,
+               fun v hv => by rw [hpc]; exact hpc_c v hv,
+               fun v hv => by rw [hpv]; exact hpv_c v hv,
+               fun v hv => by rw [hpi]; exact hpi_c v hv⟩
+      · -- t.getReg rs1 = t.getReg rs2
+        rw [hregs rs1, hregs rs2]
+        simp [MachineState.getReg_setPC, heq]
   · -- Not equal → BNE taken → PC = base + signExtend13(offset) = else_entry
     have hexec : execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))
         = s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) := by
@@ -263,24 +280,39 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (then_body else_body : Program)
     refine ⟨1, s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))), ?_, ?_⟩
     · simp [stepN, hstep, hexec, Option.bind]
     · right
-      refine ⟨?_, hP s _ hPs, by simp [MachineState.getReg_setPC, heq]⟩
-      -- Offset arithmetic: base + signExtend13(else_off) = else_entry
-      simp only [MachineState.setPC, hpc_eq]
-      unfold signExtend13
-      rw [BitVec.signExtend_eq_setWidth_of_msb_false]
-      · rw [BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)]
-        apply BitVec.eq_of_toNat_eq
-        simp [BitVec.toNat_add, BitVec.toNat_ofNat]
-        omega
-      · rw [BitVec.msb_eq_false_iff_two_mul_lt]
-        simp [BitVec.toNat_ofNat]; omega
+      refine ⟨?_, ?_⟩
+      · -- Offset arithmetic: base + signExtend13(else_off) = else_entry
+        simp only [MachineState.setPC, hpc_eq]
+        unfold signExtend13
+        rw [BitVec.signExtend_eq_setWidth_of_msb_false]
+        · rw [BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)]
+          apply BitVec.eq_of_toNat_eq
+          simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+          omega
+        · rw [BitVec.msb_eq_false_iff_two_mul_lt]
+          simp [BitVec.toNat_ofNat]; omega
+      · apply holdsFor_liftPred_intro
+        intro t hregs hmem hpc hpv hpi
+        constructor
+        · have hPs' := holdsFor_pcFree_setPC hP s
+            (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) hPs
+          obtain ⟨h, hcompat, hp⟩ := hPs'
+          refine ⟨h, ?_, hp⟩
+          obtain ⟨hr, hm, hpc_c, hpv_c, hpi_c⟩ := hcompat
+          exact ⟨fun r v hv => by rw [hregs]; exact hr r v hv,
+                 fun a v hv => by rw [hmem]; exact hm a v hv,
+                 fun v hv => by rw [hpc]; exact hpc_c v hv,
+                 fun v hv => by rw [hpv]; exact hpv_c v hv,
+                 fun v hv => by rw [hpi]; exact hpi_c v hv⟩
+        · rw [hregs rs1, hregs rs2]
+          simp [MachineState.getReg_setPC, heq]
 
 /-- Full CPS specification for if_eq: given that the then-body is correct
     under equality and the else-body is correct under inequality,
     the whole if_eq is a cpsTriple from entry to exit. -/
 theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P Q : MachineState → Prop)
-    (hP : pcIndep P) (hQ : pcIndep Q)
+    (base : Addr) (P Q : Assertion)
+    (hP : P.pcFree) (hQ : Q.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (he_small : 4 * (else_body.length) + 4 < 2^20)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
@@ -292,9 +324,9 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
     let else_entry := then_exit + 4
     let else_exit  := exit_
     (cpsTriple code then_entry then_exit
-      (fun s => P s ∧ s.getReg rs1 = s.getReg rs2) Q) →
+      (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 = s.getReg rs2)) Q) →
     (cpsTriple code else_entry else_exit
-      (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) Q) →
+      (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 ≠ s.getReg rs2)) Q) →
     cpsTriple code base exit_ P Q := by
   simp only
   intro h_then h_else
@@ -334,8 +366,8 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
       apply BitVec.eq_of_toNat_eq
       simp [BitVec.toNat_add, BitVec.toNat_ofNat]
       omega
-    · -- Q is PC-independent
-      exact hQ s _ hQs
+    · -- Q is PC-free
+      exact holdsFor_pcFree_setPC hQ s _ hQs
   -- 3. Compose then-path: then_entry → then_exit → exit_
   have h_then_full := cpsTriple_seq _ _ _ _ _ Q Q h_then hjal
   -- 4. Merge branches
@@ -348,8 +380,8 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
 /-- The if_eq macro satisfies a cpsNBranch spec with two exits,
     derived from the existing cpsBranch spec. -/
 theorem if_eq_branch_step_n (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P : MachineState → Prop)
-    (hP : pcIndep P)
+    (base : Addr) (P : Assertion)
+    (hP : P.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
     let prog := if_eq rs1 rs2 then_body else_body
@@ -357,16 +389,16 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (then_body else_body : Program)
     let then_entry := base + 4
     let else_entry := base + 4 + BitVec.ofNat 32 (4 * then_body.length) + 4
     cpsNBranch code base P
-      [ (then_entry, fun s => P s ∧ s.getReg rs1 = s.getReg rs2),
-        (else_entry, fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) ] := by
+      [ (then_entry, liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 = s.getReg rs2)),
+        (else_entry, liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 ≠ s.getReg rs2)) ] := by
   simp only
   exact cpsBranch_to_cpsNBranch _ _ _ _ _ _ _
     (if_eq_branch_step rs1 rs2 then_body else_body base P hP ht_small hprog_small)
 
 /-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge. -/
 theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
-    (base : Addr) (P Q : MachineState → Prop)
-    (hP : pcIndep P) (hQ : pcIndep Q)
+    (base : Addr) (P Q : Assertion)
+    (hP : P.pcFree) (hQ : Q.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
     (he_small : 4 * (else_body.length) + 4 < 2^20)
     (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
@@ -378,9 +410,9 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
     let else_entry := then_exit + 4
     let else_exit  := exit_
     (cpsTriple code then_entry then_exit
-      (fun s => P s ∧ s.getReg rs1 = s.getReg rs2) Q) →
+      (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 = s.getReg rs2)) Q) →
     (cpsTriple code else_entry else_exit
-      (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) Q) →
+      (liftPred (fun s => P.holdsFor s ∧ s.getReg rs1 ≠ s.getReg rs2)) Q) →
     cpsTriple code base exit_ P Q := by
   simp only
   intro h_then h_else
@@ -415,7 +447,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
       apply BitVec.eq_of_toNat_eq
       simp [BitVec.toNat_add, BitVec.toNat_ofNat]
       omega
-    · exact hQ s _ hQs
+    · exact holdsFor_pcFree_setPC hQ s _ hQs
   -- 3. Compose then-path: then_entry → then_exit → exit_
   have h_then_full := cpsTriple_seq _ _ _ _ _ Q Q h_then hjal
   -- 4. Merge using cpsNBranch_merge
@@ -451,11 +483,11 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
      and `if_eq_spec` composes the full correctness specification
      from branch-level and body-level specs.
 
-  ### pcIndep
+  ### pcFree / pcIndep
 
-  The `pcIndep` predicate marks assertions as PC-independent, which is
-  needed because branch/jump instructions only modify PC. All concrete
-  assertions (`regIs`, `memIs`, `sepConj` thereof) are PC-independent.
+  The `pcFree` predicate marks assertions as PC-independent (don't own the PC),
+  which is needed because branch/jump instructions only modify PC.
+  The `pcIndep` predicate is the MachineState-level equivalent for `holdsFor`.
 -/
 
 end RiscVMacroAsm

@@ -898,4 +898,120 @@ theorem holdsFor_sepConj_regIs_privateInputIs {r : Reg} {v : Word}
        (PartialState.CompatibleWith_singletonPrivateInput vals s).mpr h2⟩,
       _, _, hd, rfl, rfl, rfl⟩
 
+-- ============================================================================
+-- fullState: a partial state owning all tracked resources
+-- ============================================================================
+
+namespace PartialState
+
+/-- A partial state that owns regs, mem, pc, publicValues, privateInput
+    with values from a full machine state. -/
+def fullState (s : MachineState) : PartialState where
+  regs := fun r => some (s.getReg r)
+  mem  := fun a => some (s.getMem a)
+  pc   := some s.pc
+  publicValues := some s.publicValues
+  privateInput := some s.privateInput
+
+theorem CompatibleWith_fullState (s : MachineState) :
+    (fullState s).CompatibleWith s := by
+  refine ⟨fun r v h => ?_, fun a v h => ?_, fun v h => ?_, fun v h => ?_, fun v h => ?_⟩ <;>
+  simp [fullState] at h <;> exact h ▸ rfl
+
+end PartialState
+
+-- ============================================================================
+-- stateIs: exact state match (up to committed field)
+-- ============================================================================
+
+/-- Assert that the machine state matches the target on all resources tracked by PartialState
+    (registers, memory, PC, publicValues, privateInput). -/
+def stateIs (target : MachineState) : Assertion :=
+  fun h => h = PartialState.fullState target
+
+@[simp]
+theorem holdsFor_stateIs (target : MachineState) (s : MachineState) :
+    (stateIs target).holdsFor s ↔
+      (∀ r, s.getReg r = target.getReg r) ∧
+      (∀ a, s.getMem a = target.getMem a) ∧
+      s.pc = target.pc ∧
+      s.publicValues = target.publicValues ∧
+      s.privateInput = target.privateInput := by
+  simp only [Assertion.holdsFor, stateIs]
+  constructor
+  · rintro ⟨h, hcompat, rfl⟩
+    obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+    exact ⟨fun r => hr r (target.getReg r) (by simp [PartialState.fullState]),
+           fun a => hm a (target.getMem a) (by simp [PartialState.fullState]),
+           hpc target.pc (by simp [PartialState.fullState]),
+           hpv target.publicValues (by simp [PartialState.fullState]),
+           hpi target.privateInput (by simp [PartialState.fullState])⟩
+  · intro ⟨hregs, hmem, hpc, hpv, hpi⟩
+    refine ⟨PartialState.fullState target, ?_, rfl⟩
+    refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_, fun v hv => ?_, fun v hv => ?_⟩
+    · simp [PartialState.fullState] at hv; rw [hregs, hv]
+    · simp [PartialState.fullState] at hv; rw [hmem, hv]
+    · simp [PartialState.fullState] at hv; rw [hpc, hv]
+    · simp [PartialState.fullState] at hv; rw [hpv, hv]
+    · simp [PartialState.fullState] at hv; rw [hpi, hv]
+
+
+-- ============================================================================
+-- holdsFor_pcFree_setPC: pcFree assertions are preserved by setPC
+-- ============================================================================
+
+theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState) (v : Word) :
+    P.holdsFor s → P.holdsFor (s.setPC v) := by
+  intro ⟨h, hcompat, hp⟩
+  have hpc_none := hP h hp
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  exact ⟨h, ⟨fun r' v' hv => by rw [MachineState.getReg_setPC]; exact hr r' v' hv,
+              fun a' v' hv => by simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv,
+              fun v' hv => by rw [hpc_none] at hv; simp at hv,
+              fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv,
+              fun v' hv => by simp [MachineState.setPC] at *; exact hpi v' hv⟩, hp⟩
+
+-- ============================================================================
+-- liftPred: lift a MachineState predicate to Assertion
+-- ============================================================================
+
+/-- Lift a predicate on MachineState to an Assertion.
+    `(liftPred P).holdsFor s ↔ P s` for predicates P that only depend on
+    registers, memory, PC, publicValues, and privateInput (not committed). -/
+def liftPred (P : MachineState → Prop) : Assertion :=
+  fun h => ∀ s, h.CompatibleWith s → P s
+
+/-- The forward direction of holdsFor for liftPred always works. -/
+theorem holdsFor_liftPred_mp {P : MachineState → Prop} {s : MachineState}
+    (h : (liftPred P).holdsFor s) : P s := by
+  obtain ⟨h, hcompat, hP⟩ := h
+  exact hP s hcompat
+
+/-- Backward: construct holdsFor for liftPred using fullState.
+    Requires proving P transfers through compatible states. -/
+theorem holdsFor_liftPred_intro {P : MachineState → Prop} {s : MachineState}
+    (htransfer : ∀ t : MachineState,
+      (∀ r, t.getReg r = s.getReg r) → (∀ a, t.getMem a = s.getMem a) →
+      t.pc = s.pc → t.publicValues = s.publicValues → t.privateInput = s.privateInput →
+      P t) :
+    (liftPred P).holdsFor s := by
+  refine ⟨PartialState.fullState s, PartialState.CompatibleWith_fullState s, fun t hcompat => ?_⟩
+  apply htransfer
+  · intro r; exact hcompat.1 r (s.getReg r) (by simp [PartialState.fullState])
+  · intro a; exact hcompat.2.1 a (s.getMem a) (by simp [PartialState.fullState])
+  · exact hcompat.2.2.1 s.pc (by simp [PartialState.fullState])
+  · exact hcompat.2.2.2.1 s.publicValues (by simp [PartialState.fullState])
+  · exact hcompat.2.2.2.2 s.privateInput (by simp [PartialState.fullState])
+
+/-- Simpler backward direction: if P only depends on tracked fields
+    (getReg, getMem, pc, publicValues, privateInput), then P s → (liftPred P).holdsFor s. -/
+theorem holdsFor_liftPred_of {P : MachineState → Prop} {s : MachineState}
+    (hPs : P s)
+    (hstable : ∀ t : MachineState,
+      (∀ r, t.getReg r = s.getReg r) → (∀ a, t.getMem a = s.getMem a) →
+      t.pc = s.pc → t.publicValues = s.publicValues → t.privateInput = s.privateInput →
+      P s → P t) :
+    (liftPred P).holdsFor s :=
+  holdsFor_liftPred_intro (fun t hr hm hpc hpv hpi => hstable t hr hm hpc hpv hpi hPs)
+
 end RiscVMacroAsm

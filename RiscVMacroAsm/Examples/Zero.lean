@@ -5,6 +5,7 @@
 -/
 
 import RiscVMacroAsm.Execution
+import RiscVMacroAsm.SepLogic
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
 
@@ -36,9 +37,10 @@ example : (execProgram zeroTestState (zero .x10)).getReg .x10 = 0 := by
 /-- CPS-style specification: zeroing a register in one step. -/
 theorem zero_cpsTriple (rd : Reg) (v : Word) (hrd : rd ≠ .x0) (base : Addr) :
     cpsTriple (loadProgram base (zero rd)) base (base + 4)
-      (fun s => s.getReg rd = v)
-      (fun s => s.getReg rd = 0) := by
+      (rd ↦ᵣ v)
+      (rd ↦ᵣ 0) := by
   intro s hpre hpc
+  simp [holdsFor_regIs] at hpre
   -- Fetch SUB at base
   have hfetch : loadProgram base (zero rd) base = some (Instr.SUB rd rd rd) := by
     simp [zero, SUB, single, loadProgram_at_base]
@@ -49,7 +51,8 @@ theorem zero_cpsTriple (rd : Reg) (v : Word) (hrd : rd ≠ .x0) (base : Addr) :
   refine ⟨1, execInstrBr s (Instr.SUB rd rd rd), ?_, ?_, ?_⟩
   · simp [stepN, hstep, Option.bind]
   · simp [execInstrBr, MachineState.setPC, hpc]
-  · simp [execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq _ _ _ hrd,
+  · simp only [holdsFor_regIs]
+    simp [execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq _ _ _ hrd,
           BitVec.sub_self]
 
 end RiscVMacroAsm.Examples

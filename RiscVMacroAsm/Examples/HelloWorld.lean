@@ -57,13 +57,16 @@ example : ((stepN 30 (loadProgram 0 helloWorld) helloInitState).bind
 /-- CPS-style specification: hello world outputs the correct characters and halts. -/
 theorem helloWorld_spec :
     cpsHaltTriple (loadProgram 0 helloWorld) 0
-      (fun s => s = helloInitState)
-      (fun s => s.publicValues = helloWorldChars) := by
-  intro s hpre hpc; subst hpre
+      (liftPred (fun s => s = helloInitState))
+      (publicValuesIs helloWorldChars) := by
+  intro s hpre hpc
+  have hpre' := holdsFor_liftPred_mp hpre; subst hpre'
   have h : (stepN 30 (loadProgram 0 helloWorld) helloInitState).isSome = true := by
     native_decide
-  exact ⟨30, (stepN 30 (loadProgram 0 helloWorld) helloInitState).get h,
-    (Option.some_get h).symm, by native_decide +revert, by native_decide +revert⟩
+  refine ⟨30, (stepN 30 (loadProgram 0 helloWorld) helloInitState).get h,
+    (Option.some_get h).symm, by native_decide +revert, ?_⟩
+  rw [holdsFor_publicValuesIs]
+  native_decide +revert
 
 /-- Legacy specification: hello world outputs the correct characters and halts. -/
 theorem helloWorld_correct :

@@ -5,6 +5,7 @@
 -/
 
 import RiscVMacroAsm.Execution
+import RiscVMacroAsm.SepLogic
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
 
@@ -56,9 +57,11 @@ example : (execProgram swapTestState (swap .x10 .x11 .x5)).getReg .x11 = 42 := b
     using loadProgram_at_base and loadProgram_at_index. -/
 theorem swap_cpsTriple (v w : Word) (base : Addr) :
     cpsTriple (loadProgram base (swap .x10 .x11 .x5)) base (base + 12)
-      (fun s => s.getReg .x10 = v ∧ s.getReg .x11 = w)
-      (fun s => s.getReg .x10 = w ∧ s.getReg .x11 = v) := by
-  intro s ⟨hx10, hx11⟩ hpc
+      ((.x10 ↦ᵣ v) ** (.x11 ↦ᵣ w))
+      ((.x10 ↦ᵣ w) ** (.x11 ↦ᵣ v)) := by
+  intro s hpre hpc
+  rw [holdsFor_sepConj_regIs_regIs (by decide)] at hpre
+  obtain ⟨hx10, hx11⟩ := hpre
   -- The swap program is [MV x5 x10, MV x10 x11, MV x11 x5]
   -- i.e., 3 instructions
   have hprog : swap .x10 .x11 .x5 = [Instr.MV .x5 .x10, Instr.MV .x10 .x11, Instr.MV .x11 .x5] := by
@@ -114,11 +117,13 @@ theorem swap_cpsTriple (v w : Word) (base : Addr) :
   have hs3_x11 : s3.getReg .x11 = v := by
     simp [s3, execInstrBr, MachineState.getReg_setPC, MachineState.getReg_setReg_eq, hs2_x5]
   -- Compose 3 steps
-  refine ⟨3, s3, ?_, hs3_pc, hs3_x10, hs3_x11⟩
-  show (step (loadProgram base (swap .x10 .x11 .x5)) s).bind
-    (fun s' => (step (loadProgram base (swap .x10 .x11 .x5)) s').bind
+  refine ⟨3, s3, ?_, hs3_pc, ?_⟩
+  · show (step (loadProgram base (swap .x10 .x11 .x5)) s).bind
       (fun s' => (step (loadProgram base (swap .x10 .x11 .x5)) s').bind
-        (fun s' => some s'))) = some s3
-  rw [hstep1, Option.bind, hstep2, Option.bind, hstep3, Option.bind]
+        (fun s' => (step (loadProgram base (swap .x10 .x11 .x5)) s').bind
+          (fun s' => some s'))) = some s3
+    rw [hstep1, Option.bind, hstep2, Option.bind, hstep3, Option.bind]
+  · rw [holdsFor_sepConj_regIs_regIs (by decide)]
+    exact ⟨hs3_x10, hs3_x11⟩
 
 end RiscVMacroAsm.Examples
