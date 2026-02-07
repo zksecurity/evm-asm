@@ -95,4 +95,141 @@ theorem cpsTriple_refl (code : CodeMem) (addr : Addr) (P Q : Assertion)
   intro s hP hpc
   exact ⟨0, s, rfl, hpc, h s hP⟩
 
+-- ============================================================================
+-- N-exit CPS specifications
+-- ============================================================================
+
+/-- CPS spec for code with N exits: "If P holds at entry, execution reaches
+    some exit in the list, with its associated assertion holding."
+
+    Generalizes `cpsBranch` from 2 exits to an arbitrary list. -/
+def cpsNBranch (code : CodeMem) (entry : Addr) (P : Assertion)
+    (exits : List (Addr × Assertion)) : Prop :=
+  ∀ s, P s → s.pc = entry →
+    ∃ k s', stepN k code s = some s' ∧
+      ∃ exit ∈ exits, s'.pc = exit.1 ∧ exit.2 s'
+
+-- ============================================================================
+-- Edge cases
+-- ============================================================================
+
+/-- An N-branch with no exits is vacuously false (no reachable exit). -/
+theorem cpsNBranch_nil_false (code : CodeMem) (entry : Addr) (P : Assertion)
+    (h : cpsNBranch code entry P [])
+    (s : MachineState) (hP : P s) (hpc : s.pc = entry) : False := by
+  obtain ⟨k, s', _, ex, hmem, _, _⟩ := h s hP hpc
+  exact List.not_mem_nil hmem
+
+/-- An N-branch with impossible precondition vacuously holds for any exits. -/
+theorem cpsNBranch_nil_of_false (code : CodeMem) (entry : Addr) :
+    cpsNBranch code entry (fun _ => False) [] := by
+  intro s hP _
+  exact absurd hP id
+
+/-- Reflexivity: zero steps, one exit at the same address. -/
+theorem cpsNBranch_refl (code : CodeMem) (addr : Addr) (P Q : Assertion)
+    (h : ∀ s, P s → Q s) :
+    cpsNBranch code addr P [(addr, Q)] := by
+  intro s hP hpc
+  exact ⟨0, s, rfl, (addr, Q), List.Mem.head _, hpc, h s hP⟩
+
+-- ============================================================================
+-- Equivalences with existing types
+-- ============================================================================
+
+/-- A single-exit cpsTriple can be viewed as a cpsNBranch with one exit. -/
+theorem cpsTriple_to_cpsNBranch (code : CodeMem) (entry exit_ : Addr)
+    (P Q : Assertion) (h : cpsTriple code entry exit_ P Q) :
+    cpsNBranch code entry P [(exit_, Q)] := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, hpc', hQ⟩ := h s hP hpc
+  exact ⟨k, s', hstep, (exit_, Q), List.Mem.head _, hpc', hQ⟩
+
+/-- A singleton cpsNBranch gives back a cpsTriple. -/
+theorem cpsNBranch_to_cpsTriple (code : CodeMem) (entry exit_ : Addr)
+    (P Q : Assertion) (h : cpsNBranch code entry P [(exit_, Q)]) :
+    cpsTriple code entry exit_ P Q := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, ex, hmem, hpc', hQ⟩ := h s hP hpc
+  cases hmem with
+  | head => exact ⟨k, s', hstep, hpc', hQ⟩
+  | tail _ h => exact absurd h List.not_mem_nil
+
+/-- A 2-exit cpsBranch can be viewed as a cpsNBranch with two exits. -/
+theorem cpsBranch_to_cpsNBranch (code : CodeMem) (entry : Addr) (P : Assertion)
+    (exit_t : Addr) (Q_t : Assertion) (exit_f : Addr) (Q_f : Assertion)
+    (h : cpsBranch code entry P exit_t Q_t exit_f Q_f) :
+    cpsNBranch code entry P [(exit_t, Q_t), (exit_f, Q_f)] := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, hbranch⟩ := h s hP hpc
+  rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
+  · exact ⟨k, s', hstep, (exit_t, Q_t), List.Mem.head _, hpc_t, hQ_t⟩
+  · exact ⟨k, s', hstep, (exit_f, Q_f), List.Mem.tail _ (List.Mem.head _), hpc_f, hQ_f⟩
+
+/-- A 2-element cpsNBranch gives back a cpsBranch. -/
+theorem cpsNBranch_to_cpsBranch (code : CodeMem) (entry : Addr) (P : Assertion)
+    (exit_t : Addr) (Q_t : Assertion) (exit_f : Addr) (Q_f : Assertion)
+    (h : cpsNBranch code entry P [(exit_t, Q_t), (exit_f, Q_f)]) :
+    cpsBranch code entry P exit_t Q_t exit_f Q_f := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, ex, hmem, hpc', hQ⟩ := h s hP hpc
+  refine ⟨k, s', hstep, ?_⟩
+  cases hmem with
+  | head => left; exact ⟨hpc', hQ⟩
+  | tail _ htail =>
+    cases htail with
+    | head => right; exact ⟨hpc', hQ⟩
+    | tail _ h => exact absurd h List.not_mem_nil
+
+-- ============================================================================
+-- Structural rules
+-- ============================================================================
+
+/-- N-branch merge: if every exit leads to the same continuation,
+    compose into a single cpsTriple. This is the main structural rule. -/
+theorem cpsNBranch_merge (code : CodeMem) (entry exit_ : Addr)
+    (P R : Assertion) (exits : List (Addr × Assertion))
+    (hbr : cpsNBranch code entry P exits)
+    (hall : ∀ exit ∈ exits, cpsTriple code exit.1 exit_ exit.2 R) :
+    cpsTriple code entry exit_ P R := by
+  intro s hP hpc
+  obtain ⟨k1, s1, hstep1, ex, hmem, hpc1, hQ⟩ := hbr s hP hpc
+  obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := hall ex hmem s1 hQ hpc1
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hpc2, hR⟩
+
+/-- Consequence: strengthen the precondition of an N-branch. -/
+theorem cpsNBranch_weaken_pre (code : CodeMem) (entry : Addr)
+    (P P' : Assertion) (exits : List (Addr × Assertion))
+    (hpre : ∀ s, P' s → P s) (h : cpsNBranch code entry P exits) :
+    cpsNBranch code entry P' exits := by
+  intro s hP' hpc
+  exact h s (hpre s hP') hpc
+
+/-- Monotonicity: expand the exit list (weaken the exit constraint). -/
+theorem cpsNBranch_weaken_exits (code : CodeMem) (entry : Addr)
+    (P : Assertion) (exits exits' : List (Addr × Assertion))
+    (hsub : ∀ ex, ex ∈ exits → ex ∈ exits') (h : cpsNBranch code entry P exits) :
+    cpsNBranch code entry P exits' := by
+  intro s hP hpc
+  obtain ⟨k, s', hstep, ex, hmem, hpc', hQ⟩ := h s hP hpc
+  exact ⟨k, s', hstep, ex, hsub ex hmem, hpc', hQ⟩
+
+/-- Extend the head exit by composing a cpsTriple after it. -/
+theorem cpsNBranch_extend_head (code : CodeMem) (entry l l' : Addr)
+    (P Q R : Assertion) (others : List (Addr × Assertion))
+    (hbr : cpsNBranch code entry P ((l, Q) :: others))
+    (hseq : cpsTriple code l l' Q R) :
+    cpsNBranch code entry P ((l', R) :: others) := by
+  intro s hP hpc
+  obtain ⟨k1, s1, hstep1, ex, hmem, hpc1, hQ⟩ := hbr s hP hpc
+  cases hmem with
+  | head =>
+    -- ex = (l, Q), compose with hseq
+    obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := hseq s1 hQ hpc1
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+           (l', R), List.Mem.head _, hpc2, hR⟩
+  | tail _ htail =>
+    -- ex ∈ others, pass through
+    exact ⟨k1, s1, hstep1, ex, List.Mem.tail _ htail, hpc1, hQ⟩
+
 end RiscVMacroAsm

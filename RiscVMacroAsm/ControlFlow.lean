@@ -317,6 +317,93 @@ theorem if_eq_spec (rs1 rs2 : Reg) (then_body else_body : Program)
   exact cpsBranch_merge _ base _ _ _ P _ _ Q hbr h_then_full h_else
 
 -- ============================================================================
+-- N-exit CPS specifications for if_eq
+-- ============================================================================
+
+/-- The if_eq macro satisfies a cpsNBranch spec with two exits,
+    derived from the existing cpsBranch spec. -/
+theorem if_eq_branch_step_n (rs1 rs2 : Reg) (then_body else_body : Program)
+    (base : Addr) (P : Assertion)
+    (hP : pcIndep P)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
+    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    let prog := if_eq rs1 rs2 then_body else_body
+    let code := loadProgram base prog
+    let then_entry := base + 4
+    let else_entry := base + 4 + BitVec.ofNat 32 (4 * then_body.length) + 4
+    cpsNBranch code base P
+      [ (then_entry, fun s => P s ∧ s.getReg rs1 = s.getReg rs2),
+        (else_entry, fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) ] := by
+  simp only
+  exact cpsBranch_to_cpsNBranch _ _ _ _ _ _ _
+    (if_eq_branch_step rs1 rs2 then_body else_body base P hP ht_small hprog_small)
+
+/-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge. -/
+theorem if_eq_spec_n (rs1 rs2 : Reg) (then_body else_body : Program)
+    (base : Addr) (P Q : Assertion)
+    (hP : pcIndep P) (hQ : pcIndep Q)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
+    (he_small : 4 * (else_body.length) + 4 < 2^20)
+    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    let prog := if_eq rs1 rs2 then_body else_body
+    let code := loadProgram base prog
+    let exit_ := base + BitVec.ofNat 32 (4 * prog.length)
+    let then_entry := base + 4
+    let then_exit  := base + 4 + BitVec.ofNat 32 (4 * then_body.length)
+    let else_entry := then_exit + 4
+    let else_exit  := exit_
+    (cpsTriple code then_entry then_exit
+      (fun s => P s ∧ s.getReg rs1 = s.getReg rs2) Q) →
+    (cpsTriple code else_entry else_exit
+      (fun s => P s ∧ s.getReg rs1 ≠ s.getReg rs2) Q) →
+    cpsTriple code base exit_ P Q := by
+  simp only
+  intro h_then h_else
+  -- 1. N-branch dispatch
+  have hbr_n := if_eq_branch_step_n rs1 rs2 then_body else_body base P hP ht_small hprog_small
+  simp only at hbr_n
+  -- 2. JAL step: then_exit → exit_ (preserving Q)
+  have hjal : cpsTriple (loadProgram base (if_eq rs1 rs2 then_body else_body))
+      (base + 4 + BitVec.ofNat 32 (4 * then_body.length))
+      (base + BitVec.ofNat 32 (4 * (if_eq rs1 rs2 then_body else_body).length))
+      Q Q := by
+    intro s hQs hpc
+    have hlen : (if_eq rs1 rs2 then_body else_body).length =
+        then_body.length + else_body.length + 2 := by
+      simp only [if_eq, Program]; simp [List.length_append]; omega
+    have hthen_exit_eq : base + 4 + BitVec.ofNat 32 (4 * then_body.length) =
+        base + BitVec.ofNat 32 (4 * (then_body.length + 1)) := by
+      apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    have hidx : then_body.length + 1 < (if_eq rs1 rs2 then_body else_body).length := by omega
+    have hjal_at : loadProgram base (if_eq rs1 rs2 then_body else_body)
+        (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
+        some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
+      rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
+      simp only [if_eq, Program]; simp [List.length_append]
+    have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
+        some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
+      unfold step; rw [hpc, hjal_at]; rfl
+    refine ⟨1, s.setPC (s.pc + signExtend21 (BitVec.ofNat 21 (4 * else_body.length + 4))), ?_, ?_, ?_⟩
+    · simp [stepN, hstep_jal, execInstrBr_jal_x0, Option.bind]
+    · simp only [MachineState.setPC, hpc, hlen]
+      rw [signExtend21_ofNat_small _ (by omega)]
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega
+    · exact hQ s _ hQs
+  -- 3. Compose then-path: then_entry → then_exit → exit_
+  have h_then_full := cpsTriple_seq _ _ _ _ _ Q Q h_then hjal
+  -- 4. Merge using cpsNBranch_merge
+  apply cpsNBranch_merge _ _ _ _ _ _ hbr_n
+  intro ex hmem
+  cases hmem with
+  | head => exact h_then_full
+  | tail _ htail =>
+    cases htail with
+    | head => exact h_else
+    | tail _ h => exact absurd h List.not_mem_nil
+
+-- ============================================================================
 -- Summary
 -- ============================================================================
 
