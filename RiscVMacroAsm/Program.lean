@@ -109,4 +109,18 @@ def WRITE (fd bufPtr nbytes : Word) : Program :=
   LI .x12 nbytes ;;
   single .ECALL
 
+/-- HINT_LEN macro (SP1 convention): set t0 := 0xF0 (HINT_LEN syscall),
+    then ecall. Returns byte length of available input in a0. -/
+def HINT_LEN : Program :=
+  LI .x5 0xF0 ;;
+  single .ECALL
+
+/-- HINT_READ macro (SP1 convention): set t0 := 0xF1 (HINT_READ syscall),
+    a0 := destination address, a1 := nbytes, then ecall. -/
+def HINT_READ (addr nbytes : Word) : Program :=
+  LI .x5 0xF1 ;;
+  LI .x10 addr ;;
+  LI .x11 nbytes ;;
+  single .ECALL
+
 end RiscVMacroAsm

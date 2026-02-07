@@ -154,17 +154,23 @@ theorem pcIndep_publicValuesIs (vals : List Word) :
   intro s v h
   simp only [MachineState.publicValuesIs, MachineState.publicValues_setPC] at *; exact h
 
+theorem pcIndep_publicInputIs (vals : List Word) :
+    pcIndep (MachineState.publicInputIs vals) := by
+  intro s v h
+  simp only [MachineState.publicInputIs, MachineState.publicInput_setPC] at *; exact h
+
 theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
     pcIndep ((P ** Q).holdsFor) := by
   intro s v ⟨h, hcompat, h1, h2, hd, hunion, hp1, hp2⟩
   refine ⟨h, ?_, h1, h2, hd, hunion, hp1, hp2⟩
   have hpc_none := pcFree_sepConj hP hQ h ⟨h1, h2, hd, hunion, hp1, hp2⟩
   rw [← hunion] at hpc_none hcompat ⊢
-  obtain ⟨hr, hm, hpc, hpv⟩ := hcompat
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
   exact ⟨fun r' v' hv => by rw [MachineState.getReg_setPC]; exact hr r' v' hv,
          fun a' v' hv => by simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv,
          fun v' hv => by rw [hpc_none] at hv; simp at hv,
-         fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv⟩
+         fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv,
+         fun v' hv => by simp [MachineState.setPC] at *; exact hpi v' hv⟩
 
 /-- Sign-extend a small 13-bit value (MSB clear) to 32 bits. -/
 theorem signExtend13_ofNat_small (n : Nat) (h : n < 2^12) :

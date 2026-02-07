@@ -75,6 +75,8 @@ structure MachineState where
   committed : List (Word × Word) := []
   /-- Accumulated public values from WRITE syscalls (flat word stream) -/
   publicValues : List Word := []
+  /-- Public input stream (flat word list, consumed by HINT_READ) -/
+  publicInput : List Word := []
 
 namespace MachineState
 
@@ -110,6 +112,11 @@ def appendCommit (s : MachineState) (a0 a1 : Word) : MachineState :=
 def readWords (s : MachineState) (base : Addr) : Nat → List Word
   | 0 => []
   | n + 1 => s.getMem base :: readWords s (base + 4) n
+
+/-- Write n consecutive words to memory starting at base address. -/
+def writeWords (s : MachineState) (base : Addr) : List Word → MachineState
+  | [] => s
+  | w :: ws => (s.setMem base w).writeWords (base + 4) ws
 
 /-- Append words to the public values stream. -/
 def appendPublicValues (s : MachineState) (words : List Word) : MachineState :=
@@ -184,6 +191,33 @@ theorem publicValues_appendCommit (s : MachineState) (a0 a1 : Word) :
     (s.appendCommit a0 a1).publicValues = s.publicValues := by
   simp [appendCommit]
 
+-- publicInput field preservation through existing setters
+
+@[simp]
+theorem publicInput_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).publicInput = s.publicInput := by
+  cases r <;> rfl
+
+@[simp]
+theorem publicInput_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).publicInput = s.publicInput := by
+  simp [setMem]
+
+@[simp]
+theorem publicInput_setPC (s : MachineState) (v : Word) :
+    (s.setPC v).publicInput = s.publicInput := by
+  simp [setPC]
+
+@[simp]
+theorem publicInput_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).publicInput = s.publicInput := by
+  simp [appendCommit]
+
+@[simp]
+theorem publicInput_appendPublicValues (s : MachineState) (words : List Word) :
+    (s.appendPublicValues words).publicInput = s.publicInput := by
+  simp [appendPublicValues]
+
 -- appendCommit preservation lemmas
 
 @[simp]
@@ -249,6 +283,55 @@ theorem readWords_length (s : MachineState) (base : Addr) (n : Nat) :
   | zero => rfl
   | succ k ih => simp [readWords, ih]
 
+-- writeWords simp lemmas
+
+@[simp]
+theorem writeWords_nil (s : MachineState) (base : Addr) :
+    s.writeWords base [] = s := rfl
+
+@[simp]
+theorem writeWords_cons (s : MachineState) (base : Addr) (w : Word) (ws : List Word) :
+    s.writeWords base (w :: ws) = (s.setMem base w).writeWords (base + 4) ws := rfl
+
+-- writeWords preservation lemmas
+
+@[simp]
+theorem pc_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).pc = s.pc := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp]
+theorem committed_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).committed = s.committed := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp]
+theorem publicValues_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).publicValues = s.publicValues := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp]
+theorem publicInput_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).publicInput = s.publicInput := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp]
+theorem getReg_writeWords (s : MachineState) (base : Addr) (words : List Word) (r : Reg) :
+    (s.writeWords base words).getReg r = s.getReg r := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih =>
+    simp [writeWords, ih]
+    cases r <;> simp [getReg, setMem]
+
 /-- Predicate asserting the committed output stream equals a given list. -/
 def committedIs (vals : List (Word × Word)) (s : MachineState) : Prop :=
   s.committed = vals
@@ -256,6 +339,10 @@ def committedIs (vals : List (Word × Word)) (s : MachineState) : Prop :=
 /-- Predicate asserting the public values stream equals a given list. -/
 def publicValuesIs (vals : List Word) (s : MachineState) : Prop :=
   s.publicValues = vals
+
+/-- Predicate asserting the public input stream equals a given list. -/
+def publicInputIs (vals : List Word) (s : MachineState) : Prop :=
+  s.publicInput = vals
 
 end MachineState
 
