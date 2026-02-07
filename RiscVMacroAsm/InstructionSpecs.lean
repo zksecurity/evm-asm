@@ -75,23 +75,8 @@ theorem add_spec (rd rs1 rs2 : Reg) (v1 v2 v_old : Word) (base : Addr)
   refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
   · simp [stepN, hstep, Option.bind]
   · simp [MachineState.setPC]
-  · -- Postcondition: (((rs1 ** rs2 ** rd') ** R).holdsFor (st.setReg rd result).setPC (base + 4)
-    -- Apply algebraic rearrangement to hPR, then use setReg lemma, then rearrange back
-    -- hPR : (((rs1 ** rs2 ** rd) ** R).holdsFor st
-    -- Which is: (((rs1 ** (rs2 ** rd)) ** R).holdsFor st (right-assoc)
-    -- Rearrange to get rd first, apply setReg, rearrange back
-    -- ((rs1 ** (rs2 ** rd)) ** R) -[assoc.mpr]→ (((rs1 ** rs2) ** rd) ** R) -[assoc.mp]→ ((rs1 ** rs2) ** (rd ** R))
-    have h1 := holdsFor_sepConj_assoc.mpr hPR  -- (((rs1 ** rs2) ** rd) ** R).holdsFor st
-    have h2 := holdsFor_sepConj_assoc.mp h1  -- ((rs1 ** rs2) ** (rd ** R)).holdsFor st
-    -- Now swap to get rd first: ((rs1 ** rs2) ** (rd ** R)) -[comm]→ ((rd ** R) ** (rs1 ** rs2))
-    have h3 := holdsFor_sepConj_comm.mp h2  -- ((rd ** R) ** (rs1 ** rs2)).holdsFor st
-    -- Swap inner: ((rd ** R) ** (rs1 ** rs2)) -[swap_inner]→ ((R ** rd) ** (rs1 ** rs2))
-    have h4 := holdsFor_sepConj_swap_inner.mp h3  -- ((R ** rd) ** (rs1 ** rs2)).holdsFor st
-    -- Rearrange to: (R ** (rd ** (rs1 ** rs2))) using assoc
-    have h5 := holdsFor_sepConj_assoc.mp h4  -- (R ** (rd ** (rs1 ** rs2))).holdsFor st
-    -- Swap to get: ((rd ** (rs1 ** rs2)) ** R)
-    have h6 := holdsFor_sepConj_comm.mpr h5  -- ((rd ** (rs1 ** rs2)) ** R).holdsFor st
-    sorry  -- Continue with setReg and reverse transformations
+  · -- Postcondition: TODO - needs frame recombination infrastructure
+    sorry
 
 /-- ADD rd, rd, rs2: rd := rd + rs2 (rd = rs1, rs2 distinct) -/
 theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)

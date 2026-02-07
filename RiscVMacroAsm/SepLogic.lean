@@ -1162,7 +1162,7 @@ end PartialState
 /-- Extract register values from a 3-way separating conjunction.
     Note: ** is right-associative, so this is (r1 ** (r2 ** r3)) -/
 theorem holdsFor_sepConj_regIs_regIs_regIs {r1 r2 r3 : Reg} {v1 v2 v3 : Word}
-    {s : MachineState} (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3)
+    {s : MachineState}
     (h : ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)).holdsFor s) :
     s.getReg r1 = v1 ∧ s.getReg r2 = v2 ∧ s.getReg r3 = v3 := by
   -- Structure is (r1 ** (r2 ** r3)) because ** is right-associative
@@ -1266,7 +1266,7 @@ theorem holdsFor_sepConj_regIs_setReg {r : Reg} {v v' : Word} {R : Assertion}
     Note: ** is right-associative, so this is (r1 ** (r2 ** r3)) -/
 theorem holdsFor_sepConj_regIs_regIs_regIs_update_third
     {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {s : MachineState}
-    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
+    (hr3_ne : r3 ≠ .x0)
     (h : ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)).holdsFor s) :
     ((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')).holdsFor (s.setReg r3 v') := by
   -- Algebraic manipulation to get r3 first:
@@ -1280,25 +1280,6 @@ theorem holdsFor_sepConj_regIs_regIs_regIs_update_third
   -- (r3' ** (r1 ** r2)) -[comm]→ ((r1 ** r2) ** r3') -[assoc.mp]→ (r1 ** (r2 ** r3'))
   have h4 := holdsFor_sepConj_comm.mpr h3  -- ((r1 ** r2) ** r3').holdsFor (s.setReg r3 v')
   exact holdsFor_sepConj_assoc.mp h4  -- (r1 ** (r2 ** r3')).holdsFor (s.setReg r3 v')
-
-/-- Update the third register in a 3-way conjunction with frame.
-    This is the version with the CPS frame included. -/
-theorem holdsFor_sepConj_regIs_regIs_regIs_setReg
-    {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {R : Assertion} {s : MachineState}
-    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
-    (h : (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)) ** R).holdsFor s) :
-    (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')) ** R).holdsFor (s.setReg r3 v') := by
-  -- Extract the 3-register part
-  have h_pre := holdsFor_sepConj_elim_left h
-  -- Update using our lemma
-  have h_pre' := holdsFor_sepConj_regIs_regIs_regIs_update_third hne12 hne13 hne23 hr3_ne h_pre
-  -- Extract and preserve the frame R
-  have h_R := holdsFor_sepConj_elim_right h
-  have hR_no_r3 : ∀ hp, R hp → hp.regs r3 = none := by
-    sorry  -- R doesn't own r3 (from disjointness in original conjunction)
-  have h_R' := holdsFor_setReg hR_no_r3 h_R
-  -- Recombine (this is still the tricky part)
-  sorry
 
 -- ============================================================================
 -- holdsFor preservation through setReg and setPC
@@ -1322,6 +1303,15 @@ theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState)
               fun v' hv => by rw [hpc_none] at hv; simp at hv,
               fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv,
               fun v' hv => by simp [MachineState.setPC] at *; exact hpi v' hv⟩, hp⟩
+
+/-- Update the third register in a 3-way conjunction with frame.
+    This is the version with the CPS frame included. -/
+theorem holdsFor_sepConj_regIs_regIs_regIs_setReg
+    {r1 r2 r3 : Reg} {v1 v2 v3 v' : Word} {R : Assertion} {s : MachineState}
+    (hne12 : r1 ≠ r2) (hne13 : r1 ≠ r3) (hne23 : r2 ≠ r3) (hr3_ne : r3 ≠ .x0)
+    (h : (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v3)) ** R).holdsFor s) :
+    (((r1 ↦ᵣ v1) ** (r2 ↦ᵣ v2) ** (r3 ↦ᵣ v')) ** R).holdsFor (s.setReg r3 v') := by
+  sorry
 
 -- ============================================================================
 -- SubStateOf: partial state inclusion
