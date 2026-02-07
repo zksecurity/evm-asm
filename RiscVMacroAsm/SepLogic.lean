@@ -122,6 +122,16 @@ theorem Disjoint_empty_right (h : PartialState) : h.Disjoint empty := by
 theorem union_empty_left (h : PartialState) : empty.union h = h := by
   simp [union, empty]
 
+theorem union_self (h : PartialState) : h.union h = h := by
+  obtain ⟨regs, mem, pc, publicValues, privateInput⟩ := h
+  simp only [union, PartialState.mk.injEq]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · funext r; cases regs r <;> rfl
+  · funext a; cases mem a <;> rfl
+  · cases pc <;> rfl
+  · cases publicValues <;> rfl
+  · cases privateInput <;> rfl
+
 theorem union_empty_right (h : PartialState) : h.union empty = h := by
   simp only [union, empty]
   obtain ⟨regs, mem, pc, publicValues, privateInput⟩ := h
@@ -427,6 +437,24 @@ theorem holdsFor_sepConj_regIs_memIs {r : Reg} {v : Word} {a : Addr} {w : Word}
       ⟨(PartialState.CompatibleWith_singletonReg r v s).mpr h1,
        (PartialState.CompatibleWith_singletonMem a w s).mpr h2⟩,
       _, _, hd, rfl, rfl, rfl⟩
+
+-- ============================================================================
+-- holdsFor projection for sepConj
+-- ============================================================================
+
+/-- If (P ** Q) holds for s, then P holds for s. -/
+theorem holdsFor_sepConj_elim_left {P Q : Assertion} {s : MachineState}
+    (h : (P ** Q).holdsFor s) : P.holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, hp1, _⟩ := h
+  rw [← hunion] at hcompat
+  exact ⟨h1, (PartialState.CompatibleWith_union hd).mp hcompat |>.1, hp1⟩
+
+/-- If (P ** Q) holds for s, then Q holds for s. -/
+theorem holdsFor_sepConj_elim_right {P Q : Assertion} {s : MachineState}
+    (h : (P ** Q).holdsFor s) : Q.holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, _, hq2⟩ := h
+  rw [← hunion] at hcompat
+  exact ⟨h2, (PartialState.CompatibleWith_union hd).mp hcompat |>.2, hq2⟩
 
 -- ============================================================================
 -- pcFree lemmas
@@ -957,8 +985,127 @@ theorem holdsFor_stateIs (target : MachineState) (s : MachineState) :
 
 
 -- ============================================================================
--- holdsFor_pcFree_setPC: pcFree assertions are preserved by setPC
+-- Frame preservation: CompatibleWith through state modifications
 -- ============================================================================
+
+namespace PartialState
+
+/-- If a partial state doesn't own register r, then modifying r preserves compatibility. -/
+theorem CompatibleWith_setReg {h : PartialState} {s : MachineState} {r : Reg} {v : Word}
+    (hcompat : h.CompatibleWith s) (hnone : h.regs r = none) :
+    h.CompatibleWith (s.setReg r v) := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  refine ⟨fun r' v' hv => ?_, fun a' v' hv => by rw [MachineState.getMem_setReg]; exact hm a' v' hv,
+         fun v' hv => by rw [MachineState.pc_setReg]; exact hpc v' hv,
+         fun v' hv => by rw [MachineState.publicValues_setReg]; exact hpv v' hv,
+         fun v' hv => by rw [MachineState.privateInput_setReg]; exact hpi v' hv⟩
+  by_cases heq : r' = r
+  · subst heq; rw [hnone] at hv; simp at hv
+  · have := MachineState.getReg_setReg_ne s r r' v (Ne.symm heq)
+    rw [this]; exact hr r' v' hv
+
+/-- If a partial state doesn't own address a, then modifying mem[a] preserves compatibility. -/
+theorem CompatibleWith_setMem {h : PartialState} {s : MachineState} {a : Addr} {v : Word}
+    (hcompat : h.CompatibleWith s) (hnone : h.mem a = none) :
+    h.CompatibleWith (s.setMem a v) := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  refine ⟨fun r' v' hv => ?_, fun a' v' hv => ?_,
+         fun v' hv => by rw [MachineState.pc_setMem]; exact hpc v' hv,
+         fun v' hv => by rw [MachineState.publicValues_setMem]; exact hpv v' hv,
+         fun v' hv => by rw [MachineState.privateInput_setMem]; exact hpi v' hv⟩
+  · -- setMem doesn't change registers
+    have : (s.setMem a v).getReg r' = s.getReg r' := by
+      cases r' <;> simp [MachineState.getReg, MachineState.setMem]
+    rw [this]; exact hr r' v' hv
+  · by_cases heq : a' = a
+    · subst heq; rw [hnone] at hv; exact absurd hv (by simp)
+    · rw [MachineState.getMem_setMem_ne s a a' v heq]; exact hm a' v' hv
+
+/-- If a partial state doesn't own the PC, then modifying PC preserves compatibility. -/
+theorem CompatibleWith_setPC {h : PartialState} {s : MachineState}
+    (hcompat : h.CompatibleWith s) (hnone : h.pc = none) :
+    h.CompatibleWith (s.setPC v) := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  refine ⟨fun r' v' hv => ?_, fun a' v' hv => ?_, fun v' hv => ?_, fun v' hv => ?_, fun v' hv => ?_⟩
+  · rw [MachineState.getReg_setPC]; exact hr r' v' hv
+  · simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv
+  · rw [hnone] at hv; simp at hv
+  · simp [MachineState.setPC] at *; exact hpv v' hv
+  · simp [MachineState.setPC] at *; exact hpi v' hv
+
+end PartialState
+
+-- ============================================================================
+-- Assertion-level monotonicity for sepConj
+-- ============================================================================
+
+theorem sepConj_mono_left {P P' Q : Assertion} (himpl : ∀ h, P h → P' h) :
+    ∀ h, (P ** Q) h → (P' ** Q) h := by
+  intro h ⟨h1, h2, hd, hunion, hp, hq⟩
+  exact ⟨h1, h2, hd, hunion, himpl h1 hp, hq⟩
+
+theorem sepConj_mono_right {P Q Q' : Assertion} (himpl : ∀ h, Q h → Q' h) :
+    ∀ h, (P ** Q) h → (P ** Q') h := by
+  intro h ⟨h1, h2, hd, hunion, hp, hq⟩
+  exact ⟨h1, h2, hd, hunion, hp, himpl h2 hq⟩
+
+theorem sepConj_mono {P P' Q Q' : Assertion} (hp : ∀ h, P h → P' h) (hq : ∀ h, Q h → Q' h) :
+    ∀ h, (P ** Q) h → (P' ** Q') h := by
+  intro h hpq
+  exact sepConj_mono_right hq h (sepConj_mono_left hp h hpq)
+
+-- ============================================================================
+-- Frame-preserving register update
+-- ============================================================================
+
+/-- If `(r ↦ᵣ v) ** R` holds for `s`, then `(r ↦ᵣ v') ** R` holds for `s.setReg r v'`.
+    The frame R is preserved because it's disjoint from the register being modified. -/
+theorem holdsFor_sepConj_regIs_setReg {r : Reg} {v v' : Word} {R : Assertion}
+    {s : MachineState} (hr_ne : r ≠ .x0)
+    (hPR : ((r ↦ᵣ v) ** R).holdsFor s) :
+    ((r ↦ᵣ v') ** R).holdsFor (s.setReg r v') := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := hPR
+  rw [regIs] at hh1; subst hh1; rw [← hunion] at hcompat
+  -- h2 doesn't own r (from disjointness)
+  have hr2 : h2.regs r = none := by
+    rcases hdisj.1 r with h | h
+    · simp [PartialState.singletonReg] at h
+    · exact h
+  -- Disjointness preserved (same register ownership shape)
+  have hdisj' : (PartialState.singletonReg r v').Disjoint h2 := by
+    refine ⟨fun r' => ?_, hdisj.2.1, hdisj.2.2.1, hdisj.2.2.2.1, hdisj.2.2.2.2⟩
+    by_cases h : r' = r
+    · subst h; exact Or.inr hr2
+    · left; show (if r' == r then some v' else none) = none
+      simp [h]
+  -- Split old compatibility
+  have ⟨hc1, hc2⟩ := (PartialState.CompatibleWith_union hdisj).mp hcompat
+  -- singletonReg r v' compatible with s.setReg r v'
+  have hc1' : (PartialState.singletonReg r v').CompatibleWith (s.setReg r v') := by
+    refine ⟨fun r' w hr' => ?_,
+            fun a w ha => by simp [PartialState.singletonReg] at ha,
+            fun w hw => by simp [PartialState.singletonReg] at hw,
+            fun w hw => by simp [PartialState.singletonReg] at hw,
+            fun w hw => by simp [PartialState.singletonReg] at hw⟩
+    simp only [PartialState.singletonReg] at hr'
+    split at hr' <;> simp_all
+    exact MachineState.getReg_setReg_eq _ _ _ hr_ne
+  -- h2 compatible with s.setReg r v' (doesn't own r)
+  have hc2' : h2.CompatibleWith (s.setReg r v') := PartialState.CompatibleWith_setReg hc2 hr2
+  refine ⟨(PartialState.singletonReg r v').union h2, ?_, PartialState.singletonReg r v', h2, hdisj', rfl, rfl, hh2⟩
+  exact (PartialState.CompatibleWith_union hdisj').mpr ⟨hc1', hc2'⟩
+
+-- ============================================================================
+-- holdsFor preservation through setReg and setPC
+-- ============================================================================
+
+/-- setReg preserves holdsFor for any assertion whose partial state doesn't own the register. -/
+theorem holdsFor_setReg {P : Assertion} {r : Reg} {v : Word} {s : MachineState}
+    (hP_no_r : ∀ h, P h → h.regs r = none)
+    (hP : P.holdsFor s) :
+    P.holdsFor (s.setReg r v) := by
+  obtain ⟨h, hcompat, hp⟩ := hP
+  exact ⟨h, PartialState.CompatibleWith_setReg hcompat (hP_no_r h hp), hp⟩
 
 theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState) (v : Word) :
     P.holdsFor s → P.holdsFor (s.setPC v) := by
@@ -970,6 +1117,223 @@ theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState)
               fun v' hv => by rw [hpc_none] at hv; simp at hv,
               fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv,
               fun v' hv => by simp [MachineState.setPC] at *; exact hpi v' hv⟩, hp⟩
+
+-- ============================================================================
+-- SubStateOf: partial state inclusion
+-- ============================================================================
+
+namespace PartialState
+
+/-- h1 is a sub-state of h: every resource owned by h1 is also owned by h
+    with the same value. h may own additional resources beyond h1. -/
+def SubStateOf (h1 h : PartialState) : Prop :=
+  (∀ r v, h1.regs r = some v → h.regs r = some v) ∧
+  (∀ a v, h1.mem a = some v → h.mem a = some v) ∧
+  (∀ v, h1.pc = some v → h.pc = some v) ∧
+  (∀ v, h1.publicValues = some v → h.publicValues = some v) ∧
+  (∀ v, h1.privateInput = some v → h.privateInput = some v)
+
+theorem SubStateOf_refl (h : PartialState) : h.SubStateOf h :=
+  ⟨fun _ _ hv => hv, fun _ _ hv => hv, fun _ hv => hv,
+   fun _ hv => hv, fun _ hv => hv⟩
+
+theorem SubStateOf_empty (h : PartialState) : empty.SubStateOf h :=
+  ⟨fun _ _ hv => by simp [empty] at hv, fun _ _ hv => by simp [empty] at hv,
+   fun _ hv => by simp [empty] at hv, fun _ hv => by simp [empty] at hv,
+   fun _ hv => by simp [empty] at hv⟩
+
+theorem SubStateOf_CompatibleWith {h1 h : PartialState} {s : MachineState}
+    (hsub : h1.SubStateOf h) (hcompat : h.CompatibleWith s) :
+    h1.CompatibleWith s := by
+  obtain ⟨sr, sm, spc, spv, spi⟩ := hsub
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  exact ⟨fun r v hv => hr r v (sr r v hv),
+         fun a v hv => hm a v (sm a v hv),
+         fun v hv => hpc v (spc v hv),
+         fun v hv => hpv v (spv v hv),
+         fun v hv => hpi v (spi v hv)⟩
+
+theorem SubStateOf_Disjoint {h1 h2 h3 : PartialState}
+    (hd : h1.Disjoint h2) (hsub : h3.SubStateOf h1) :
+    h3.Disjoint h2 := by
+  obtain ⟨dr, dm, dpc, dpv, dpi⟩ := hd
+  obtain ⟨sr, sm, spc, spv, spi⟩ := hsub
+  refine ⟨fun r => ?_, fun a => ?_, ?_, ?_, ?_⟩
+  -- registers
+  · rcases dr r with h1none | h2none
+    · left
+      match h3eq : h3.regs r with
+      | none => rfl
+      | some v => exact absurd (sr r v h3eq) (by simp [h1none])
+    · right; exact h2none
+  -- memory
+  · rcases dm a with h1none | h2none
+    · left
+      match h3eq : h3.mem a with
+      | none => rfl
+      | some v => exact absurd (sm a v h3eq) (by simp [h1none])
+    · right; exact h2none
+  -- pc
+  · rcases dpc with h1none | h2none
+    · left
+      match h3eq : h3.pc with
+      | none => rfl
+      | some v => exact absurd (spc v h3eq) (by simp [h1none])
+    · right; exact h2none
+  -- publicValues
+  · rcases dpv with h1none | h2none
+    · left
+      match h3eq : h3.publicValues with
+      | none => rfl
+      | some v => exact absurd (spv v h3eq) (by simp [h1none])
+    · right; exact h2none
+  -- privateInput
+  · rcases dpi with h1none | h2none
+    · left
+      match h3eq : h3.privateInput with
+      | none => rfl
+      | some v => exact absurd (spi v h3eq) (by simp [h1none])
+    · right; exact h2none
+
+end PartialState
+
+-- ============================================================================
+-- AgreesWith: partial states that agree on overlapping resources
+-- ============================================================================
+
+namespace PartialState
+
+/-- Two partial states agree on overlapping resources:
+    where both own a value, those values are equal. -/
+def AgreesWith (h1 h2 : PartialState) : Prop :=
+  (∀ r v1 v2, h1.regs r = some v1 → h2.regs r = some v2 → v1 = v2) ∧
+  (∀ a v1 v2, h1.mem a = some v1 → h2.mem a = some v2 → v1 = v2) ∧
+  (∀ v1 v2, h1.pc = some v1 → h2.pc = some v2 → v1 = v2) ∧
+  (∀ v1 v2, h1.publicValues = some v1 → h2.publicValues = some v2 → v1 = v2) ∧
+  (∀ v1 v2, h1.privateInput = some v1 → h2.privateInput = some v2 → v1 = v2)
+
+theorem AgreesWith_refl (h : PartialState) : h.AgreesWith h :=
+  ⟨fun _ _ _ h1 h2 => by rw [h1] at h2; exact Option.some.inj h2,
+   fun _ _ _ h1 h2 => by rw [h1] at h2; exact Option.some.inj h2,
+   fun _ _ h1 h2 => by rw [h1] at h2; exact Option.some.inj h2,
+   fun _ _ h1 h2 => by rw [h1] at h2; exact Option.some.inj h2,
+   fun _ _ h1 h2 => by rw [h1] at h2; exact Option.some.inj h2⟩
+
+theorem AgreesWith_symm {h1 h2 : PartialState} (ha : h1.AgreesWith h2) : h2.AgreesWith h1 :=
+  ⟨fun r v1 v2 h2r h1r => (ha.1 r v2 v1 h1r h2r).symm,
+   fun a v1 v2 h2a h1a => (ha.2.1 a v2 v1 h1a h2a).symm,
+   fun v1 v2 h2pc h1pc => (ha.2.2.1 v2 v1 h1pc h2pc).symm,
+   fun v1 v2 h2pv h1pv => (ha.2.2.2.1 v2 v1 h1pv h2pv).symm,
+   fun v1 v2 h2pi h1pi => (ha.2.2.2.2 v2 v1 h1pi h2pi).symm⟩
+
+/-- Disjoint states trivially agree (no overlapping fields). -/
+theorem Disjoint_AgreesWith {h1 h2 : PartialState} (hd : h1.Disjoint h2) : h1.AgreesWith h2 := by
+  obtain ⟨dr, dm, dpc, dpv, dpi⟩ := hd
+  exact ⟨fun r _ _ h1r h2r => by rcases dr r with h | h <;> simp [h] at h1r h2r,
+         fun a _ _ h1a h2a => by rcases dm a with h | h <;> simp [h] at h1a h2a,
+         fun _ _ h1pc h2pc => by rcases dpc with h | h <;> simp [h] at h1pc h2pc,
+         fun _ _ h1pv h2pv => by rcases dpv with h | h <;> simp [h] at h1pv h2pv,
+         fun _ _ h1pi h2pi => by rcases dpi with h | h <;> simp [h] at h1pi h2pi⟩
+
+/-- If h1 and h2 agree, h2 is compatible with any state that h1 ∪ h2 is compatible with. -/
+theorem CompatibleWith_union_right {h1 h2 : PartialState} {s : MachineState}
+    (ha : h1.AgreesWith h2) (hcompat : (h1.union h2).CompatibleWith s) :
+    h2.CompatibleWith s := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  obtain ⟨ar, am, apc, apv, api⟩ := ha
+  refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_, fun v hv => ?_, fun v hv => ?_⟩
+  · -- h2.regs r = some v → s.getReg r = v
+    have hu := hr r
+    match h1eq : h1.regs r with
+    | some w =>
+      have := ar r w v h1eq hv; subst this
+      exact hu w (by simp [union, h1eq])
+    | none => exact hu v (by simp [union, h1eq, hv])
+  · have hu := hm a
+    match h1eq : h1.mem a with
+    | some w =>
+      have := am a w v h1eq hv; subst this
+      exact hu w (by simp [union, h1eq])
+    | none => exact hu v (by simp [union, h1eq, hv])
+  · match h1eq : h1.pc with
+    | some w =>
+      have := apc w v h1eq hv; subst this
+      exact hpc w (by simp [union, h1eq])
+    | none => exact hpc v (by simp [union, h1eq, hv])
+  · match h1eq : h1.publicValues with
+    | some w =>
+      have := apv w v h1eq hv; subst this
+      exact hpv w (by simp [union, h1eq])
+    | none => exact hpv v (by simp [union, h1eq, hv])
+  · match h1eq : h1.privateInput with
+    | some w =>
+      have := api w v h1eq hv; subst this
+      exact hpi w (by simp [union, h1eq])
+    | none => exact hpi v (by simp [union, h1eq, hv])
+
+/-- h1 is always compatible with any state that h1 ∪ h2 is compatible with. -/
+theorem CompatibleWith_union_left {h1 h2 : PartialState} {s : MachineState}
+    (hcompat : (h1.union h2).CompatibleWith s) :
+    h1.CompatibleWith s := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  exact ⟨fun r v hv => hr r v (by simp [union, hv]),
+         fun a v hv => hm a v (by simp [union, hv]),
+         fun v hv => hpc v (by simp [union, hv]),
+         fun v hv => hpv v (by simp [union, hv]),
+         fun v hv => hpi v (by simp [union, hv])⟩
+
+end PartialState
+
+-- ============================================================================
+-- Additive conjunction (aAnd / //\\)
+-- ============================================================================
+
+/-- Additive conjunction: P ⋒ Q holds on h when h = h1 ∪ h2 for
+    two partial states h1, h2 that agree on overlaps (AgreesWith),
+    with P h1 and Q h2. Unlike **, h1 and h2 may share resources.
+    This preserves pcFree: if both P and Q are pcFree, so is P ⋒ Q. -/
+def aAnd (P Q : Assertion) : Assertion :=
+  fun h => ∃ h1 h2, h1.AgreesWith h2 ∧ h1.union h2 = h ∧ P h1 ∧ Q h2
+
+infixr:37 " ⋒ " => aAnd
+
+theorem aAnd_holdsFor_elim {P Q : Assertion} {s : MachineState}
+    (h : (P ⋒ Q).holdsFor s) : P.holdsFor s ∧ Q.holdsFor s := by
+  obtain ⟨h, hcompat, h1, h2, ha, hunion, hp, hq⟩ := h
+  rw [← hunion] at hcompat
+  exact ⟨⟨h1, PartialState.CompatibleWith_union_left hcompat, hp⟩,
+         ⟨h2, PartialState.CompatibleWith_union_right ha hcompat, hq⟩⟩
+
+theorem aAnd_holdsFor_intro {P Q : Assertion} {s : MachineState} {h : PartialState}
+    (hcompat : h.CompatibleWith s) (hp : P h) (hq : Q h) :
+    (P ⋒ Q).holdsFor s :=
+  ⟨h, hcompat, h, h, PartialState.AgreesWith_refl h,
+    PartialState.union_self h, hp, hq⟩
+
+theorem aAnd_left {P Q : Assertion} :
+    ∀ h, (P ⋒ Q) h → ∃ h1, P h1 :=
+  fun _ ⟨h1, _, _, _, hp, _⟩ => ⟨h1, hp⟩
+
+theorem aAnd_right {P Q : Assertion} :
+    ∀ h, (P ⋒ Q) h → ∃ h2, Q h2 :=
+  fun _ ⟨_, h2, _, _, _, hq⟩ => ⟨h2, hq⟩
+
+theorem aAnd_mono_left {P P' Q : Assertion} (himpl : ∀ h, P h → P' h) :
+    ∀ h, (P ⋒ Q) h → (P' ⋒ Q) h := by
+  intro h ⟨h1, h2, ha, hunion, hp, hq⟩
+  exact ⟨h1, h2, ha, hunion, himpl h1 hp, hq⟩
+
+theorem aAnd_mono_right {P Q Q' : Assertion} (himpl : ∀ h, Q h → Q' h) :
+    ∀ h, (P ⋒ Q) h → (P ⋒ Q') h := by
+  intro h ⟨h1, h2, ha, hunion, hp, hq⟩
+  exact ⟨h1, h2, ha, hunion, hp, himpl h2 hq⟩
+
+theorem pcFree_aAnd {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
+    (P ⋒ Q).pcFree := by
+  intro h ⟨h1, h2, _, hunion, hp, hq⟩
+  have h1pc := hP h1 hp
+  have h2pc := hQ h2 hq
+  rw [← hunion]; simp [PartialState.union, h1pc, h2pc]
 
 -- ============================================================================
 -- liftPred: lift a MachineState predicate to Assertion
