@@ -1,7 +1,7 @@
 /-
   RiscVMacroAsm.Examples.Echo
 
-  An "echo" program that reads 4 words from publicInput via HINT_READ
+  An "echo" program that reads 4 words from privateInput via HINT_READ
   and writes them to publicValues via WRITE, demonstrating the
   read-then-write I/O pipeline with a compositional CPS specification.
 
@@ -18,10 +18,10 @@ namespace RiscVMacroAsm.Examples
 -- Echo program definition
 -- ============================================================================
 
-/-- Echo program: read 4 words from publicInput → mem[0x100..0x10C],
+/-- Echo program: read 4 words from privateInput → mem[0x100..0x10C],
     then write them to publicValues, then halt. -/
 def echo : Program :=
-  HINT_READ 0x100 16 ;;   -- Read 4 words from publicInput → mem[0x100..0x10C]
+  HINT_READ 0x100 16 ;;   -- Read 4 words from privateInput → mem[0x100..0x10C]
   WRITE 13 0x100 16 ;;    -- Write 4 words from mem[0x100..0x10C] → publicValues
   HALT 0                   -- Halt
 
@@ -37,7 +37,7 @@ def echoInitState : MachineState where
   regs := fun _ => 0
   mem := fun _ => 0
   pc := 0
-  publicInput := [1, 2, 3, 4]
+  privateInput := [1, 2, 3, 4]
   publicValues := []
 
 /-- After 11 steps, publicValues = [1, 2, 3, 4]. -/
@@ -45,9 +45,9 @@ example : (stepN 11 (loadProgram 0 echo) echoInitState).bind
     (fun s => some s.publicValues) = some [1, 2, 3, 4] := by
   native_decide
 
-/-- After 11 steps, publicInput is consumed. -/
+/-- After 11 steps, privateInput is consumed. -/
 example : (stepN 11 (loadProgram 0 echo) echoInitState).bind
-    (fun s => some s.publicInput) = some [] := by
+    (fun s => some s.privateInput) = some [] := by
   native_decide
 
 /-- After 11 steps, the next step is HALT (returns none). -/
@@ -81,23 +81,23 @@ private def hintReadReady (pi : List Word) (pv : List Word) (s : MachineState) :
   s.getReg .x5 = 0xF1 ∧
   s.getReg .x10 = 0x100 ∧
   s.getReg .x11 = 16 ∧
-  s.publicInput = pi ∧
+  s.privateInput =pi ∧
   s.publicValues = pv
 
-/-- After HINT_READ completes: memory loaded, publicInput consumed. -/
+/-- After HINT_READ completes: memory loaded, privateInput consumed. -/
 private def hintReadDone (w0 w1 w2 w3 : Word) (s : MachineState) : Prop :=
   s.getMem 0x100 = w0 ∧
   s.getMem 0x104 = w1 ∧
   s.getMem 0x108 = w2 ∧
   s.getMem 0x10C = w3 ∧
-  s.publicInput = [] ∧
+  s.privateInput =[] ∧
   s.publicValues = []
 
 /-- Step 0: LI x5 0xF1 at PC=0. -/
 private theorem step0_spec (w0 w1 w2 w3 : Word) :
     cpsTriple (loadProgram 0 echo) 0 4
-      (fun s => s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
-      (fun s => s.getReg .x5 = 0xF1 ∧ s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = []) := by
+      (fun s => s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+      (fun s => s.getReg .x5 = 0xF1 ∧ s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = []) := by
   intro s ⟨hpi, hpv⟩ hpc
   have hs : step (loadProgram 0 echo) s = some ((s.setReg .x5 0xF1).setPC (s.pc + 4)) := by
     rw [step_non_ecall_non_mem _ _ _ (by rw [hpc]; exact fetch_0) (by nofun) (by nofun) rfl]; rfl
@@ -110,7 +110,7 @@ private theorem step0_spec (w0 w1 w2 w3 : Word) :
   · refine ⟨?_, ?_, ?_⟩
     · show s'.getReg .x5 = 0xF1
       simp [s', MachineState.getReg, MachineState.setReg, MachineState.setPC]
-    · show s'.publicInput = [w0, w1, w2, w3]
+    · show s'.privateInput = [w0, w1, w2, w3]
       simp only [s', MachineState.setPC, MachineState.setReg, hpi]
     · show s'.publicValues = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpv]
@@ -118,9 +118,9 @@ private theorem step0_spec (w0 w1 w2 w3 : Word) :
 /-- Step 1: LI x10 0x100 at PC=4. -/
 private theorem step1_spec (w0 w1 w2 w3 : Word) :
     cpsTriple (loadProgram 0 echo) 4 8
-      (fun s => s.getReg .x5 = 0xF1 ∧ s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+      (fun s => s.getReg .x5 = 0xF1 ∧ s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
       (fun s => s.getReg .x5 = 0xF1 ∧ s.getReg .x10 = 0x100 ∧
-                s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = []) := by
+                s.privateInput =[w0, w1, w2, w3] ∧ s.publicValues = []) := by
   intro s ⟨h5, hpi, hpv⟩ hpc
   have hs : step (loadProgram 0 echo) s = some ((s.setReg .x10 0x100).setPC (s.pc + 4)) := by
     rw [step_non_ecall_non_mem _ _ _ (by rw [hpc]; exact fetch_1) (by nofun) (by nofun) rfl]; rfl
@@ -136,7 +136,7 @@ private theorem step1_spec (w0 w1 w2 w3 : Word) :
       exact h5
     · show s'.getReg .x10 = 0x100
       simp [s', MachineState.getReg, MachineState.setReg, MachineState.setPC]
-    · show s'.publicInput = [w0, w1, w2, w3]
+    · show s'.privateInput = [w0, w1, w2, w3]
       simp only [s', MachineState.setPC, MachineState.setReg, hpi]
     · show s'.publicValues = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpv]
@@ -145,7 +145,7 @@ private theorem step1_spec (w0 w1 w2 w3 : Word) :
 private theorem step2_spec (w0 w1 w2 w3 : Word) :
     cpsTriple (loadProgram 0 echo) 8 12
       (fun s => s.getReg .x5 = 0xF1 ∧ s.getReg .x10 = 0x100 ∧
-                s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+                s.privateInput =[w0, w1, w2, w3] ∧ s.publicValues = [])
       (hintReadReady [w0, w1, w2, w3] []) := by
   intro s ⟨h5, h10, hpi, hpv⟩ hpc
   have hs : step (loadProgram 0 echo) s = some ((s.setReg .x11 16).setPC (s.pc + 4)) := by
@@ -166,7 +166,7 @@ private theorem step2_spec (w0 w1 w2 w3 : Word) :
       exact h10
     · show s'.getReg .x11 = 16
       simp [s', MachineState.getReg, MachineState.setReg, MachineState.setPC]
-    · show s'.publicInput = [w0, w1, w2, w3]
+    · show s'.privateInput = [w0, w1, w2, w3]
       simp only [s', MachineState.setPC, MachineState.setReg, hpi]
     · show s'.publicValues = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpv]
@@ -178,18 +178,18 @@ private theorem step3_spec (w0 w1 w2 w3 : Word) :
       (hintReadDone w0 w1 w2 w3) := by
   intro s ⟨h5, h10, h11, hpi, hpv⟩ hpc
   -- HINT_READ: nwords = 16/4 = 4, reads [w0,w1,w2,w3], writes to 0x100
-  have hsuff : (s.getReg .x11).toNat / 4 ≤ s.publicInput.length := by
+  have hsuff : (s.getReg .x11).toNat / 4 ≤ s.privateInput.length := by
     simp [h11, hpi]
   have hs : step (loadProgram 0 echo) s =
       let nwords := 4
       let words := [w0, w1, w2, w3]
-      let s' := { s with publicInput := [] }
+      let s' := { s with privateInput := [] }
       some ((s'.writeWords (s.getReg .x10) words).setPC (s.pc + 4)) := by
     rw [step_ecall_hint_read _ _ (by rw [hpc]; exact fetch_3) h5 hsuff]
     simp [h11, h10, hpi]
   let nwords := 4
   let words := [w0, w1, w2, w3]
-  let s' := { s with publicInput := [] }
+  let s' := { s with privateInput := [] }
   let sfinal := ((s'.writeWords (s.getReg .x10) words).setPC (s.pc + 4))
   refine ⟨1, sfinal, ?_, ?_, ?_⟩
   · rw [stepN_one, hs]
@@ -203,7 +203,7 @@ private theorem step3_spec (w0 w1 w2 w3 : Word) :
 /-- Phase A: Compose steps 0-3 for HINT_READ. -/
 private theorem phaseA (w0 w1 w2 w3 : Word) :
     cpsTriple (loadProgram 0 echo) 0 16
-      (fun s => s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+      (fun s => s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
       (hintReadDone w0 w1 w2 w3) :=
   cpsTriple_seq _ _ _ _ _ _ _
     (cpsTriple_seq _ _ _ _ _ _ _
@@ -227,13 +227,13 @@ private def writeReady (w0 w1 w2 w3 : Word) (s : MachineState) : Prop :=
   s.getMem 0x104 = w1 ∧
   s.getMem 0x108 = w2 ∧
   s.getMem 0x10C = w3 ∧
-  s.publicInput = [] ∧
+  s.privateInput =[] ∧
   s.publicValues = []
 
 /-- After WRITE completes: publicValues populated. -/
 private def writeDone (w0 w1 w2 w3 : Word) (s : MachineState) : Prop :=
   s.publicValues = [w0, w1, w2, w3] ∧
-  s.publicInput = []
+  s.privateInput =[]
 
 /-- Step 4: LI x5 0x02 at PC=16. -/
 private theorem step4_spec (w0 w1 w2 w3 : Word) :
@@ -345,7 +345,7 @@ private theorem step7_spec (w0 w1 w2 w3 : Word) :
     · show s'.getMem 0x10C = w3
       simp only [s', MachineState.getMem, MachineState.setPC, MachineState.setReg]
       exact hm3
-    · show s'.publicInput = []
+    · show s'.privateInput = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpi]
     · show s'.publicValues = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpv]
@@ -396,7 +396,7 @@ private theorem phaseB (w0 w1 w2 w3 : Word) :
 private def haltReady (w0 w1 w2 w3 : Word) (s : MachineState) : Prop :=
   s.getReg .x5 = 0 ∧
   s.publicValues = [w0, w1, w2, w3] ∧
-  s.publicInput = []
+  s.privateInput =[]
 
 /-- Step 9: LI x5 0 at PC=36. -/
 private theorem step9_spec (w0 w1 w2 w3 : Word) :
@@ -439,7 +439,7 @@ private theorem step10_spec (w0 w1 w2 w3 : Word) :
       exact h5
     · show s'.publicValues = [w0, w1, w2, w3]
       simp only [s', MachineState.setPC, MachineState.setReg, hpv]
-    · show s'.publicInput = []
+    · show s'.privateInput = []
       simp only [s', MachineState.setPC, MachineState.setReg, hpi]
 
 /-- Phase C: Compose steps 9-10 for HALT setup. -/
@@ -466,15 +466,15 @@ private theorem halt_at_44 (w0 w1 w2 w3 : Word) :
 -- Main specification
 -- ============================================================================
 
-/-- Echo correctly reads 4 words from publicInput and writes them to publicValues.
+/-- Echo correctly reads 4 words from privateInput and writes them to publicValues.
     Compositionally proved by composing individual instruction specs. -/
 theorem echo_spec (w0 w1 w2 w3 : Word) :
     cpsHaltTriple (loadProgram 0 echo) 0
-      (fun s => s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
-      (fun s => s.publicValues = [w0, w1, w2, w3] ∧ s.publicInput = []) := by
+      (fun s => s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+      (fun s => s.publicValues = [w0, w1, w2, w3] ∧ s.privateInput = []) := by
   -- Compose all three phases
   have combined : cpsTriple (loadProgram 0 echo) 0 44
-      (fun s => s.publicInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
+      (fun s => s.privateInput = [w0, w1, w2, w3] ∧ s.publicValues = [])
       (haltReady w0 w1 w2 w3) :=
     cpsTriple_seq _ _ _ _ _ _ _
       (cpsTriple_seq _ _ _ _ _ _ _

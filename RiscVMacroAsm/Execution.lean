@@ -198,12 +198,12 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.publicValues_setByte, MachineState.publicValues_setHalfword]
   all_goals split <;> simp [MachineState.publicValues_setPC]
 
-@[simp] theorem publicInput_execInstrBr (s : MachineState) (i : Instr) :
-    (execInstrBr s i).publicInput = s.publicInput := by
-  cases i <;> simp [execInstrBr, MachineState.publicInput_setPC,
-    MachineState.publicInput_setReg, MachineState.publicInput_setMem,
-    MachineState.publicInput_setByte, MachineState.publicInput_setHalfword]
-  all_goals split <;> simp [MachineState.publicInput_setPC]
+@[simp] theorem privateInput_execInstrBr (s : MachineState) (i : Instr) :
+    (execInstrBr s i).privateInput = s.privateInput := by
+  cases i <;> simp [execInstrBr, MachineState.privateInput_setPC,
+    MachineState.privateInput_setReg, MachineState.privateInput_setMem,
+    MachineState.privateInput_setByte, MachineState.privateInput_setHalfword]
+  all_goals split <;> simp [MachineState.privateInput_setPC]
 
 -- ============================================================================
 -- Code memory
@@ -297,15 +297,15 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
     else if t0 == (0x10 : Word) then  -- COMMIT syscall
       some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4))
     else if t0 == (0xF0 : Word) then  -- HINT_LEN syscall
-      let len := BitVec.ofNat 32 (4 * s.publicInput.length)
+      let len := BitVec.ofNat 32 (4 * s.privateInput.length)
       some ((s.setReg .x10 len).setPC (s.pc + 4))
     else if t0 == (0xF1 : Word) then  -- HINT_READ syscall
       let addr := s.getReg .x10
       let nbytes := s.getReg .x11
       let nwords := nbytes.toNat / 4
-      if nwords ≤ s.publicInput.length then
-        let words := s.publicInput.take nwords
-        let s' := { s with publicInput := s.publicInput.drop nwords }
+      if nwords ≤ s.privateInput.length then
+        let words := s.privateInput.take nwords
+        let s' := { s with privateInput := s.privateInput.drop nwords }
         some ((s'.writeWords addr words).setPC (s.pc + 4))
       else
         none  -- trap: not enough input (SP1: panic)
@@ -494,23 +494,23 @@ theorem step_ecall_write_other (code : CodeMem) (s : MachineState)
   simp only [step, hfetch, ht0, beq_iff_eq, hfd, ite_false]
   simp (config := { decide := true })
 
-/-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns 4 * publicInput.length in a0. -/
+/-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns 4 * privateInput.length in a0. -/
 theorem step_ecall_hint_len (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF0) :
     step code s =
-      some ((s.setReg .x10 (BitVec.ofNat 32 (4 * s.publicInput.length))).setPC (s.pc + 4)) := by
+      some ((s.setReg .x10 (BitVec.ofNat 32 (4 * s.privateInput.length))).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0]
 
-/-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads words from publicInput into memory. -/
+/-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads words from privateInput into memory. -/
 theorem step_ecall_hint_read (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
-    (hsuff : (s.getReg .x11).toNat / 4 ≤ s.publicInput.length) :
+    (hsuff : (s.getReg .x11).toNat / 4 ≤ s.privateInput.length) :
     step code s =
       let nwords := (s.getReg .x11).toNat / 4
-      let words := s.publicInput.take nwords
-      let s' := { s with publicInput := s.publicInput.drop nwords }
+      let words := s.privateInput.take nwords
+      let s' := { s with privateInput := s.privateInput.drop nwords }
       some ((s'.writeWords (s.getReg .x10) words).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0, hsuff]
 
@@ -518,7 +518,7 @@ theorem step_ecall_hint_read (code : CodeMem) (s : MachineState)
 theorem step_ecall_hint_read_trap (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
-    (hinsuff : ¬ ((s.getReg .x11).toNat / 4 ≤ s.publicInput.length)) :
+    (hinsuff : ¬ ((s.getReg .x11).toNat / 4 ≤ s.privateInput.length)) :
     step code s = none := by
   simp [step, hfetch, ht0, hinsuff]
 

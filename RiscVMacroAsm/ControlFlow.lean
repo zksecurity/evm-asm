@@ -154,10 +154,10 @@ theorem pcIndep_publicValuesIs (vals : List Word) :
   intro s v h
   simp only [MachineState.publicValuesIs, MachineState.publicValues_setPC] at *; exact h
 
-theorem pcIndep_publicInputIs (vals : List Word) :
-    pcIndep (MachineState.publicInputIs vals) := by
+theorem pcIndep_privateInputIs (vals : List Word) :
+    pcIndep (MachineState.privateInputIs vals) := by
   intro s v h
-  simp only [MachineState.publicInputIs, MachineState.publicInput_setPC] at *; exact h
+  simp only [MachineState.privateInputIs, MachineState.privateInput_setPC] at *; exact h
 
 theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
     pcIndep ((P ** Q).holdsFor) := by

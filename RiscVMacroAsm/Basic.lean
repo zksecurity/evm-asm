@@ -153,8 +153,8 @@ structure MachineState where
   committed : List (Word × Word) := []
   /-- Accumulated public values from WRITE syscalls (flat word stream) -/
   publicValues : List Word := []
-  /-- Public input stream (flat word list, consumed by HINT_READ) -/
-  publicInput : List Word := []
+  /-- Private input stream (flat word list, consumed by HINT_READ) -/
+  privateInput : List Word := []
 
 namespace MachineState
 
@@ -343,41 +343,41 @@ theorem publicValues_appendCommit (s : MachineState) (a0 a1 : Word) :
     (s.appendCommit a0 a1).publicValues = s.publicValues := by
   simp [appendCommit]
 
--- publicInput field preservation through existing setters
+-- privateInput field preservation through existing setters
 
 @[simp]
-theorem publicInput_setReg (s : MachineState) (r : Reg) (v : Word) :
-    (s.setReg r v).publicInput = s.publicInput := by
+theorem privateInput_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).privateInput = s.privateInput := by
   cases r <;> rfl
 
 @[simp]
-theorem publicInput_setMem (s : MachineState) (a : Addr) (v : Word) :
-    (s.setMem a v).publicInput = s.publicInput := by
+theorem privateInput_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).privateInput = s.privateInput := by
   simp [setMem]
 
 @[simp]
-theorem publicInput_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
-    (s.setByte addr b).publicInput = s.publicInput := by
+theorem privateInput_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).privateInput = s.privateInput := by
   simp [setByte]
 
 @[simp]
-theorem publicInput_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
-    (s.setHalfword addr h).publicInput = s.publicInput := by
+theorem privateInput_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).privateInput = s.privateInput := by
   simp [setHalfword]
 
 @[simp]
-theorem publicInput_setPC (s : MachineState) (v : Word) :
-    (s.setPC v).publicInput = s.publicInput := by
+theorem privateInput_setPC (s : MachineState) (v : Word) :
+    (s.setPC v).privateInput = s.privateInput := by
   simp [setPC]
 
 @[simp]
-theorem publicInput_appendCommit (s : MachineState) (a0 a1 : Word) :
-    (s.appendCommit a0 a1).publicInput = s.publicInput := by
+theorem privateInput_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).privateInput = s.privateInput := by
   simp [appendCommit]
 
 @[simp]
-theorem publicInput_appendPublicValues (s : MachineState) (words : List Word) :
-    (s.appendPublicValues words).publicInput = s.publicInput := by
+theorem privateInput_appendPublicValues (s : MachineState) (words : List Word) :
+    (s.appendPublicValues words).privateInput = s.privateInput := by
   simp [appendPublicValues]
 
 -- appendCommit preservation lemmas
@@ -479,8 +479,8 @@ theorem publicValues_writeWords (s : MachineState) (base : Addr) (words : List W
   | cons w ws ih => simp [writeWords, ih]
 
 @[simp]
-theorem publicInput_writeWords (s : MachineState) (base : Addr) (words : List Word) :
-    (s.writeWords base words).publicInput = s.publicInput := by
+theorem privateInput_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).privateInput = s.privateInput := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
@@ -502,9 +502,9 @@ def committedIs (vals : List (Word × Word)) (s : MachineState) : Prop :=
 def publicValuesIs (vals : List Word) (s : MachineState) : Prop :=
   s.publicValues = vals
 
-/-- Predicate asserting the public input stream equals a given list. -/
-def publicInputIs (vals : List Word) (s : MachineState) : Prop :=
-  s.publicInput = vals
+/-- Predicate asserting the private input stream equals a given list. -/
+def privateInputIs (vals : List Word) (s : MachineState) : Prop :=
+  s.privateInput = vals
 
 end MachineState
 
