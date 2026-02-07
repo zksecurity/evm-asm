@@ -8,3 +8,4 @@ import RiscVMacroAsm.Examples
 import RiscVMacroAsm.Execution
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
+import RiscVMacroAsm.Examples.HelloWorld
