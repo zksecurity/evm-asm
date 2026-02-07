@@ -160,10 +160,11 @@ theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFre
   refine ⟨h, ?_, h1, h2, hd, hunion, hp1, hp2⟩
   have hpc_none := pcFree_sepConj hP hQ h ⟨h1, h2, hd, hunion, hp1, hp2⟩
   rw [← hunion] at hpc_none hcompat ⊢
-  obtain ⟨hr, hm, hpc⟩ := hcompat
+  obtain ⟨hr, hm, hpc, hpv⟩ := hcompat
   exact ⟨fun r' v' hv => by rw [MachineState.getReg_setPC]; exact hr r' v' hv,
          fun a' v' hv => by simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv,
-         fun v' hv => by rw [hpc_none] at hv; simp at hv⟩
+         fun v' hv => by rw [hpc_none] at hv; simp at hv,
+         fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv⟩
 
 /-- Sign-extend a small 13-bit value (MSB clear) to 32 bits. -/
 theorem signExtend13_ofNat_small (n : Nat) (h : n < 2^12) :

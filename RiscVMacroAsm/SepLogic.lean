@@ -27,48 +27,62 @@ structure PartialState where
   regs : Reg → Option Word
   mem  : Addr → Option Word
   pc   : Option Word
+  publicValues : Option (List Word) := none
 
 namespace PartialState
 
 /-- The empty partial state: owns nothing. -/
-def empty : PartialState := ⟨fun _ => none, fun _ => none, none⟩
+def empty : PartialState := ⟨fun _ => none, fun _ => none, none, none⟩
 
 /-- A partial state owning just one register. -/
 def singletonReg (r : Reg) (v : Word) : PartialState where
   regs := fun r' => if r' == r then some v else none
   mem  := fun _ => none
   pc   := none
+  publicValues := none
 
 /-- A partial state owning just one memory cell. -/
 def singletonMem (a : Addr) (v : Word) : PartialState where
   regs := fun _ => none
   mem  := fun a' => if a' == a then some v else none
   pc   := none
+  publicValues := none
 
 /-- A partial state owning just the PC. -/
 def singletonPC (v : Word) : PartialState where
   regs := fun _ => none
   mem  := fun _ => none
   pc   := some v
+  publicValues := none
+
+/-- A partial state owning just the public values. -/
+def singletonPublicValues (vals : List Word) : PartialState where
+  regs := fun _ => none
+  mem  := fun _ => none
+  pc   := none
+  publicValues := some vals
 
 /-- Two partial states are disjoint if they don't own the same resources. -/
 def Disjoint (h1 h2 : PartialState) : Prop :=
   (∀ r, h1.regs r = none ∨ h2.regs r = none) ∧
   (∀ a, h1.mem a = none ∨ h2.mem a = none) ∧
-  (h1.pc = none ∨ h2.pc = none)
+  (h1.pc = none ∨ h2.pc = none) ∧
+  (h1.publicValues = none ∨ h2.publicValues = none)
 
 /-- Merge two partial states (left-biased on each resource). -/
 def union (h1 h2 : PartialState) : PartialState where
   regs := fun r => match h1.regs r with | some v => some v | none => h2.regs r
   mem  := fun a => match h1.mem a with | some v => some v | none => h2.mem a
   pc   := match h1.pc with | some v => some v | none => h2.pc
+  publicValues := match h1.publicValues with | some v => some v | none => h2.publicValues
 
 /-- A partial state is compatible with a machine state if every owned
     resource has the correct value. -/
 def CompatibleWith (h : PartialState) (s : MachineState) : Prop :=
   (∀ r v, h.regs r = some v → s.getReg r = v) ∧
   (∀ a v, h.mem a = some v → s.getMem a = v) ∧
-  (∀ v, h.pc = some v → s.pc = v)
+  (∀ v, h.pc = some v → s.pc = v) ∧
+  (∀ v, h.publicValues = some v → s.publicValues = v)
 
 -- ============================================================================
 -- Disjoint lemmas
@@ -76,11 +90,11 @@ def CompatibleWith (h : PartialState) (s : MachineState) : Prop :=
 
 theorem Disjoint.symm {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
     h2.Disjoint h1 := by
-  obtain ⟨hr, hm, hpc⟩ := hd
-  exact ⟨fun r => (hr r).symm, fun a => (hm a).symm, hpc.symm⟩
+  obtain ⟨hr, hm, hpc, hpv⟩ := hd
+  exact ⟨fun r => (hr r).symm, fun a => (hm a).symm, hpc.symm, hpv.symm⟩
 
 theorem Disjoint_empty_left (h : PartialState) : empty.Disjoint h := by
-  exact ⟨fun _ => Or.inl rfl, fun _ => Or.inl rfl, Or.inl rfl⟩
+  exact ⟨fun _ => Or.inl rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
 theorem Disjoint_empty_right (h : PartialState) : h.Disjoint empty := by
   exact (Disjoint_empty_left h).symm
@@ -94,18 +108,19 @@ theorem union_empty_left (h : PartialState) : empty.union h = h := by
 
 theorem union_empty_right (h : PartialState) : h.union empty = h := by
   simp only [union, empty]
-  obtain ⟨regs, mem, pc⟩ := h
+  obtain ⟨regs, mem, pc, publicValues⟩ := h
   simp only [PartialState.mk.injEq]
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · funext r; cases regs r <;> rfl
   · funext a; cases mem a <;> rfl
   · cases pc <;> rfl
+  · cases publicValues <;> rfl
 
 theorem union_comm_of_disjoint {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
     h1.union h2 = h2.union h1 := by
-  obtain ⟨hr, hm, hpc⟩ := hd
+  obtain ⟨hr, hm, hpc, hpv⟩ := hd
   simp only [union, PartialState.mk.injEq]
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · funext r
     cases hv1 : h1.regs r <;> cases hv2 : h2.regs r <;> simp
     · have := hr r; rw [hv1, hv2] at this; simp at this
@@ -114,6 +129,8 @@ theorem union_comm_of_disjoint {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
     · have := hm a; rw [hv1, hv2] at this; simp at this
   · cases hv1 : h1.pc <;> cases hv2 : h2.pc <;> simp
     · have := hpc; rw [hv1, hv2] at this; simp at this
+  · cases hv1 : h1.publicValues <;> cases hv2 : h2.publicValues <;> simp
+    · have := hpv; rw [hv1, hv2] at this; simp at this
 
 -- ============================================================================
 -- CompatibleWith lemmas
@@ -121,16 +138,17 @@ theorem union_comm_of_disjoint {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
 
 theorem CompatibleWith_empty (s : MachineState) : empty.CompatibleWith s := by
   exact ⟨fun _ _ h => by simp [empty] at h, fun _ _ h => by simp [empty] at h,
-         fun _ h => by simp [empty] at h⟩
+         fun _ h => by simp [empty] at h, fun _ h => by simp [empty] at h⟩
 
 theorem CompatibleWith_singletonReg (r : Reg) (v : Word) (s : MachineState) :
     (singletonReg r v).CompatibleWith s ↔ s.getReg r = v := by
   constructor
-  · intro ⟨hr, _, _⟩
+  · intro ⟨hr, _, _, _⟩
     have : (if r == r then some v else none) = some v := by simp
     exact hr r v this
   · intro heq
     refine ⟨fun r' v' h => ?_, fun _ _ h => by simp [singletonReg] at h,
+            fun _ h => by simp [singletonReg] at h,
             fun _ h => by simp [singletonReg] at h⟩
     simp only [singletonReg] at h
     split at h
@@ -141,12 +159,13 @@ theorem CompatibleWith_singletonReg (r : Reg) (v : Word) (s : MachineState) :
 theorem CompatibleWith_singletonMem (a : Addr) (v : Word) (s : MachineState) :
     (singletonMem a v).CompatibleWith s ↔ s.getMem a = v := by
   constructor
-  · intro ⟨_, hm, _⟩
+  · intro ⟨_, hm, _, _⟩
     have : (if a == a then some v else none) = some v := by simp
     exact hm a v this
   · intro heq
     refine ⟨fun _ _ h => by simp [singletonMem] at h,
             fun a' v' h => ?_,
+            fun _ h => by simp [singletonMem] at h,
             fun _ h => by simp [singletonMem] at h⟩
     simp only [singletonMem] at h
     split at h
@@ -157,25 +176,27 @@ theorem CompatibleWith_singletonMem (a : Addr) (v : Word) (s : MachineState) :
 theorem CompatibleWith_singletonPC (v : Word) (s : MachineState) :
     (singletonPC v).CompatibleWith s ↔ s.pc = v := by
   constructor
-  · intro ⟨_, _, hpc⟩
+  · intro ⟨_, _, hpc, _⟩
     exact hpc v rfl
   · intro heq
     exact ⟨fun _ _ h => by simp [singletonPC] at h,
            fun _ _ h => by simp [singletonPC] at h,
-           fun v' h => by simp [singletonPC] at h; rw [← h]; exact heq⟩
+           fun v' h => by simp [singletonPC] at h; rw [← h]; exact heq,
+           fun _ h => by simp [singletonPC] at h⟩
 
 theorem CompatibleWith_union {h1 h2 : PartialState} {s : MachineState}
     (hd : h1.Disjoint h2) :
     (h1.union h2).CompatibleWith s ↔ h1.CompatibleWith s ∧ h2.CompatibleWith s := by
-  obtain ⟨hdr, hdm, hdpc⟩ := hd
+  obtain ⟨hdr, hdm, hdpc, hdpv⟩ := hd
   constructor
-  · intro ⟨hr, hm, hpc⟩
+  · intro ⟨hr, hm, hpc, hpv⟩
     constructor
-    · refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_⟩
+    · refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_, fun v hv => ?_⟩
       · exact hr r v (by simp [union, hv])
       · exact hm a v (by simp [union, hv])
       · exact hpc v (by simp [union, hv])
-    · refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_⟩
+      · exact hpv v (by simp [union, hv])
+    · refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_, fun v hv => ?_⟩
       · have := hdr r
         rcases this with h1none | h2none
         · exact hr r v (by show (union h1 h2).regs r = some v; simp only [union]; rw [h1none]; exact hv)
@@ -187,8 +208,11 @@ theorem CompatibleWith_union {h1 h2 : PartialState} {s : MachineState}
       · rcases hdpc with h1none | h2none
         · exact hpc v (by show (union h1 h2).pc = some v; simp only [union]; rw [h1none]; exact hv)
         · rw [h2none] at hv; simp at hv
-  · intro ⟨⟨hr1, hm1, hpc1⟩, ⟨hr2, hm2, hpc2⟩⟩
-    refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_⟩
+      · rcases hdpv with h1none | h2none
+        · exact hpv v (by show (union h1 h2).publicValues = some v; simp only [union]; rw [h1none]; exact hv)
+        · rw [h2none] at hv; simp at hv
+  · intro ⟨⟨hr1, hm1, hpc1, hpv1⟩, ⟨hr2, hm2, hpc2, hpv2⟩⟩
+    refine ⟨fun r v hv => ?_, fun a v hv => ?_, fun v hv => ?_, fun v hv => ?_⟩
     · simp only [union] at hv
       cases h1r : h1.regs r <;> simp [h1r] at hv
       · exact hr2 r v hv
@@ -201,6 +225,10 @@ theorem CompatibleWith_union {h1 h2 : PartialState} {s : MachineState}
       cases h1pc : h1.pc <;> simp [h1pc] at hv
       · exact hpc2 v hv
       · exact hpc1 v (by rw [← hv]; exact h1pc)
+    · simp only [union] at hv
+      cases h1pv : h1.publicValues <;> simp [h1pv] at hv
+      · exact hpv2 v hv
+      · exact hpv1 v (by rw [← hv]; exact h1pv)
 
 end PartialState
 
@@ -319,7 +347,7 @@ theorem holdsFor_emp (s : MachineState) :
 private theorem singletonReg_disjoint_singletonReg {r1 r2 : Reg} {v1 v2 : Word}
     (hne : r1 ≠ r2) :
     (PartialState.singletonReg r1 v1).Disjoint (PartialState.singletonReg r2 v2) := by
-  refine ⟨fun r => ?_, fun _ => Or.inl rfl, Or.inl rfl⟩
+  refine ⟨fun r => ?_, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
   simp only [PartialState.singletonReg]
   by_cases h1 : r == r1
   · simp [h1]
@@ -333,7 +361,7 @@ private theorem singletonReg_disjoint_singletonReg {r1 r2 : Reg} {v1 v2 : Word}
 
 private theorem singletonReg_disjoint_singletonMem (r : Reg) (v : Word) (a : Addr) (w : Word) :
     (PartialState.singletonReg r v).Disjoint (PartialState.singletonMem a w) := by
-  exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl⟩
+  exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
 theorem holdsFor_sepConj_regIs_regIs {r1 r2 : Reg} {v1 v2 : Word} {s : MachineState}
     (hne : r1 ≠ r2) :
@@ -424,19 +452,20 @@ theorem sepConj_emp_right (P : Assertion) :
 private theorem union_assoc (h1 h2 h3 : PartialState) :
     (h1.union h2).union h3 = h1.union (h2.union h3) := by
   simp only [PartialState.union, PartialState.mk.injEq]
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · funext r; cases h1.regs r <;> simp
   · funext a; cases h1.mem a <;> simp
   · cases h1.pc <;> simp
+  · cases h1.publicValues <;> simp
 
 /-- Helper: extract disjointness facts from nested unions. -/
 private theorem disjoint_of_union_disjoint_right
     {h1 h2 h3 : PartialState} (hd12 : h1.Disjoint h2)
     (hd_union_3 : (h1.union h2).Disjoint h3) :
     h2.Disjoint h3 := by
-  obtain ⟨hdr, hdm, hdpc⟩ := hd_union_3
-  obtain ⟨hdr12, hdm12, hdpc12⟩ := hd12
-  refine ⟨fun r => ?_, fun a => ?_, ?_⟩
+  obtain ⟨hdr, hdm, hdpc, hdpv⟩ := hd_union_3
+  obtain ⟨hdr12, hdm12, hdpc12, hdpv12⟩ := hd12
+  refine ⟨fun r => ?_, fun a => ?_, ?_, ?_⟩
   · rcases hdr12 r with h1none | h2none
     · have h := hdr r
       simp only [PartialState.union] at h
@@ -452,28 +481,26 @@ private theorem disjoint_of_union_disjoint_right
       simp only [PartialState.union] at h
       rw [h1none] at h; simp at h; exact h
     · exact Or.inl h2none
+  · rcases hdpv12 with h1none | h2none
+    · have h := hdpv
+      simp only [PartialState.union] at h
+      rw [h1none] at h; simp at h; exact h
+    · exact Or.inl h2none
 
 private theorem disjoint_of_union_disjoint_left
     {h1 h2 h3 : PartialState} (hd12 : h1.Disjoint h2)
     (hd_union_3 : (h1.union h2).Disjoint h3) :
     h1.Disjoint (h2.union h3) := by
-  obtain ⟨hdr, hdm, hdpc⟩ := hd_union_3
-  obtain ⟨hdr12, hdm12, hdpc12⟩ := hd12
-  refine ⟨fun r => ?_, fun a => ?_, ?_⟩
+  obtain ⟨hdr, hdm, hdpc, hdpv⟩ := hd_union_3
+  obtain ⟨hdr12, hdm12, hdpc12, hdpv12⟩ := hd12
+  refine ⟨fun r => ?_, fun a => ?_, ?_, ?_⟩
   · rcases hdr12 r with h1none | h2none
     · exact Or.inl h1none
-    · -- h2.regs r = none, need h1.regs r = none ∨ (h2.union h3).regs r = none
-      -- Since h2none, (h2.union h3).regs r = h3.regs r
-      -- From hdr r: (h1.union h2).regs r = none ∨ h3.regs r = none
-      have h := hdr r
+    · have h := hdr r
       simp only [PartialState.union] at h
-      -- h : (match h1.regs r with | some v => some v | none => h2.regs r) = none ∨ h3.regs r = none
-      -- Goal: h1.regs r = none ∨ (match h2.regs r with ...) = none
       cases h1r : h1.regs r
       · exact Or.inl rfl
-      · -- h1.regs r = some val, so (h1.union h2).regs r = some val ≠ none
-        -- so h3.regs r = none
-        rw [h1r] at h; simp at h
+      · rw [h1r] at h; simp at h
         right; show (PartialState.union h2 h3).regs r = none
         simp only [PartialState.union]; rw [h2none]; exact h
   · rcases hdm12 a with h1none | h2none
@@ -494,12 +521,21 @@ private theorem disjoint_of_union_disjoint_left
       · rw [h1pc] at h; simp at h
         right; show (PartialState.union h2 h3).pc = none
         simp only [PartialState.union]; rw [h2none]; exact h
+  · rcases hdpv12 with h1none | h2none
+    · exact Or.inl h1none
+    · have h := hdpv
+      simp only [PartialState.union] at h
+      cases h1pv : h1.publicValues
+      · exact Or.inl rfl
+      · rw [h1pv] at h; simp at h
+        right; show (PartialState.union h2 h3).publicValues = none
+        simp only [PartialState.union]; rw [h2none]; exact h
 
 private theorem disjoint_left_of_disjoint_union_right
     {h1 h2 h3 : PartialState} (hd1_23 : h1.Disjoint (h2.union h3)) :
     h1.Disjoint h2 := by
-  obtain ⟨hdr, hdm, hdpc⟩ := hd1_23
-  refine ⟨fun r => ?_, fun a => ?_, ?_⟩
+  obtain ⟨hdr, hdm, hdpc, hdpv⟩ := hd1_23
+  refine ⟨fun r => ?_, fun a => ?_, ?_, ?_⟩
   · rcases (hdr r) with h1none | h23none
     · exact Or.inl h1none
     · simp only [PartialState.union] at h23none
@@ -515,14 +551,19 @@ private theorem disjoint_left_of_disjoint_union_right
     · simp only [PartialState.union] at h23none
       cases h2pc : h2.pc <;> rw [h2pc] at h23none <;> simp at h23none
       exact Or.inr rfl
+  · rcases hdpv with h1none | h23none
+    · exact Or.inl h1none
+    · simp only [PartialState.union] at h23none
+      cases h2pv : h2.publicValues <;> rw [h2pv] at h23none <;> simp at h23none
+      exact Or.inr rfl
 
 private theorem disjoint_union_left_of_disjoint_union_right
     {h1 h2 h3 : PartialState} (hd23 : h2.Disjoint h3)
     (hd1_23 : h1.Disjoint (h2.union h3)) :
     (h1.union h2).Disjoint h3 := by
-  obtain ⟨hdr, hdm, hdpc⟩ := hd1_23
-  obtain ⟨hdr23, hdm23, hdpc23⟩ := hd23
-  refine ⟨fun r => ?_, fun a => ?_, ?_⟩
+  obtain ⟨hdr, hdm, hdpc, hdpv⟩ := hd1_23
+  obtain ⟨hdr23, hdm23, hdpc23, hdpv23⟩ := hd23
+  refine ⟨fun r => ?_, fun a => ?_, ?_, ?_⟩
   · rcases hdr23 r with h2none | h3none
     · have h := hdr r
       simp only [PartialState.union] at h
@@ -547,6 +588,15 @@ private theorem disjoint_union_left_of_disjoint_union_right
       rw [h2none] at h; simp at h
       rcases h with h1none | h3none
       · left; show (PartialState.union h1 h2).pc = none
+        simp only [PartialState.union]; rw [h1none]; simp [h2none]
+      · exact Or.inr h3none
+    · exact Or.inr h3none
+  · rcases hdpv23 with h2none | h3none
+    · have h := hdpv
+      simp only [PartialState.union] at h
+      rw [h2none] at h; simp at h
+      rcases h with h1none | h3none
+      · left; show (PartialState.union h1 h2).publicValues = none
         simp only [PartialState.union]; rw [h1none]; simp [h2none]
       · exact Or.inr h3none
     · exact Or.inr h3none
@@ -581,5 +631,83 @@ def aForall {α : Type} (P : α → Assertion) : Assertion :=
 /-- Existential quantification over assertions. -/
 def aExists {α : Type} (P : α → Assertion) : Assertion :=
   fun h => ∃ a, P a h
+
+-- ============================================================================
+-- publicValuesIs assertion
+-- ============================================================================
+
+/-- Public values stream equals a given list. -/
+def publicValuesIs (vals : List Word) : Assertion :=
+  fun h => h = PartialState.singletonPublicValues vals
+
+-- ============================================================================
+-- CompatibleWith / holdsFor for publicValuesIs
+-- ============================================================================
+
+namespace PartialState
+
+theorem CompatibleWith_singletonPublicValues (vals : List Word) (s : MachineState) :
+    (singletonPublicValues vals).CompatibleWith s ↔ s.publicValues = vals := by
+  constructor
+  · intro ⟨_, _, _, hpv⟩
+    exact hpv vals rfl
+  · intro heq
+    exact ⟨fun _ _ h => by simp [singletonPublicValues] at h,
+           fun _ _ h => by simp [singletonPublicValues] at h,
+           fun _ h => by simp [singletonPublicValues] at h,
+           fun v' h => by simp [singletonPublicValues] at h; rw [← h]; exact heq⟩
+
+end PartialState
+
+@[simp]
+theorem holdsFor_publicValuesIs (vals : List Word) (s : MachineState) :
+    (publicValuesIs vals).holdsFor s ↔ s.publicValues = vals := by
+  simp only [Assertion.holdsFor, publicValuesIs]
+  constructor
+  · rintro ⟨h, hcompat, rfl⟩
+    exact (PartialState.CompatibleWith_singletonPublicValues vals s).mp hcompat
+  · intro heq
+    exact ⟨_, (PartialState.CompatibleWith_singletonPublicValues vals s).mpr heq, rfl⟩
+
+-- ============================================================================
+-- pcFree for publicValuesIs
+-- ============================================================================
+
+theorem pcFree_publicValuesIs (vals : List Word) : (publicValuesIs vals).pcFree := by
+  intro h hp; rw [publicValuesIs] at hp; subst hp; rfl
+
+-- ============================================================================
+-- Disjointness lemmas for publicValuesIs composition
+-- ============================================================================
+
+private theorem singletonReg_disjoint_singletonPublicValues (r : Reg) (v : Word) (vals : List Word) :
+    (PartialState.singletonReg r v).Disjoint (PartialState.singletonPublicValues vals) := by
+  exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
+
+private theorem singletonMem_disjoint_singletonPublicValues (a : Addr) (v : Word) (vals : List Word) :
+    (PartialState.singletonMem a v).Disjoint (PartialState.singletonPublicValues vals) := by
+  exact ⟨fun _ => Or.inl rfl, fun _ => Or.inr rfl, Or.inl rfl, Or.inl rfl⟩
+
+-- ============================================================================
+-- holdsFor_sepConj convenience lemmas for publicValuesIs
+-- ============================================================================
+
+theorem holdsFor_sepConj_regIs_publicValuesIs {r : Reg} {v : Word}
+    {vals : List Word} {s : MachineState} :
+    ((regIs r v) ** (publicValuesIs vals)).holdsFor s ↔
+      s.getReg r = v ∧ s.publicValues = vals := by
+  constructor
+  · rintro ⟨h, hcompat, h1, h2, hd, hunion, hp1, hp2⟩
+    rw [regIs] at hp1; rw [publicValuesIs] at hp2; subst hp1; subst hp2
+    rw [← hunion] at hcompat
+    rw [PartialState.CompatibleWith_union hd] at hcompat
+    exact ⟨(PartialState.CompatibleWith_singletonReg r v s).mp hcompat.1,
+           (PartialState.CompatibleWith_singletonPublicValues vals s).mp hcompat.2⟩
+  · intro ⟨h1, h2⟩
+    have hd := singletonReg_disjoint_singletonPublicValues r v vals
+    exact ⟨_, (PartialState.CompatibleWith_union hd).mpr
+      ⟨(PartialState.CompatibleWith_singletonReg r v s).mpr h1,
+       (PartialState.CompatibleWith_singletonPublicValues vals s).mpr h2⟩,
+      _, _, hd, rfl, rfl, rfl⟩
 
 end RiscVMacroAsm
