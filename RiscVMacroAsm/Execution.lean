@@ -27,44 +27,87 @@ namespace RiscVMacroAsm
 /-- Execute a single instruction with full PC control.
     Non-branch instructions: PC += 4.
     Branch instructions: PC += offset (taken) or PC += 4 (not taken).
-    JAL: rd := PC + 4, PC += offset. -/
+    JAL: rd := PC + 4, PC += offset.
+    JALR: rd := PC + 4, PC := (rs1 + sext(offset)) & ~1. -/
 def execInstrBr (s : MachineState) (i : Instr) : MachineState :=
   match i with
+  -- RV32I ALU register-register
   | .ADD rd rs1 rs2 =>
       (s.setReg rd (s.getReg rs1 + s.getReg rs2)).setPC (s.pc + 4)
-  | .ADDI rd rs1 imm =>
-      (s.setReg rd (s.getReg rs1 + signExtend12 imm)).setPC (s.pc + 4)
   | .SUB rd rs1 rs2 =>
       (s.setReg rd (s.getReg rs1 - s.getReg rs2)).setPC (s.pc + 4)
   | .SLL rd rs1 rs2 =>
       let shamt := (s.getReg rs2).toNat % 32
       (s.setReg rd (s.getReg rs1 <<< shamt)).setPC (s.pc + 4)
-  | .SLLI rd rs1 shamt =>
-      (s.setReg rd (s.getReg rs1 <<< shamt.toNat)).setPC (s.pc + 4)
   | .SRL rd rs1 rs2 =>
       let shamt := (s.getReg rs2).toNat % 32
       (s.setReg rd (s.getReg rs1 >>> shamt)).setPC (s.pc + 4)
+  | .SRA rd rs1 rs2 =>
+      let shamt := (s.getReg rs2).toNat % 32
+      (s.setReg rd (BitVec.sshiftRight (s.getReg rs1) shamt)).setPC (s.pc + 4)
   | .AND rd rs1 rs2 =>
       (s.setReg rd (s.getReg rs1 &&& s.getReg rs2)).setPC (s.pc + 4)
-  | .ANDI rd rs1 imm =>
-      (s.setReg rd (s.getReg rs1 &&& signExtend12 imm)).setPC (s.pc + 4)
   | .OR rd rs1 rs2 =>
       (s.setReg rd (s.getReg rs1 ||| s.getReg rs2)).setPC (s.pc + 4)
+  | .XOR rd rs1 rs2 =>
+      (s.setReg rd (s.getReg rs1 ^^^ s.getReg rs2)).setPC (s.pc + 4)
+  | .SLT rd rs1 rs2 =>
+      (s.setReg rd (if BitVec.slt (s.getReg rs1) (s.getReg rs2) then 1 else 0)).setPC (s.pc + 4)
+  | .SLTU rd rs1 rs2 =>
+      (s.setReg rd (if BitVec.ult (s.getReg rs1) (s.getReg rs2) then 1 else 0)).setPC (s.pc + 4)
+  -- RV32I ALU immediate
+  | .ADDI rd rs1 imm =>
+      (s.setReg rd (s.getReg rs1 + signExtend12 imm)).setPC (s.pc + 4)
+  | .ANDI rd rs1 imm =>
+      (s.setReg rd (s.getReg rs1 &&& signExtend12 imm)).setPC (s.pc + 4)
+  | .ORI rd rs1 imm =>
+      (s.setReg rd (s.getReg rs1 ||| signExtend12 imm)).setPC (s.pc + 4)
+  | .XORI rd rs1 imm =>
+      (s.setReg rd (s.getReg rs1 ^^^ signExtend12 imm)).setPC (s.pc + 4)
+  | .SLTI rd rs1 imm =>
+      (s.setReg rd (if BitVec.slt (s.getReg rs1) (signExtend12 imm) then 1 else 0)).setPC (s.pc + 4)
+  | .SLTIU rd rs1 imm =>
+      (s.setReg rd (if BitVec.ult (s.getReg rs1) (signExtend12 imm) then 1 else 0)).setPC (s.pc + 4)
+  | .SLLI rd rs1 shamt =>
+      (s.setReg rd (s.getReg rs1 <<< shamt.toNat)).setPC (s.pc + 4)
+  | .SRLI rd rs1 shamt =>
+      (s.setReg rd (s.getReg rs1 >>> shamt.toNat)).setPC (s.pc + 4)
+  | .SRAI rd rs1 shamt =>
+      (s.setReg rd (BitVec.sshiftRight (s.getReg rs1) shamt.toNat)).setPC (s.pc + 4)
+  -- RV32I upper immediate
+  | .LUI rd imm =>
+      let val : Word := imm.zeroExtend 32 <<< 12
+      (s.setReg rd val).setPC (s.pc + 4)
+  | .AUIPC rd imm =>
+      let val : Word := s.pc + (imm.zeroExtend 32 <<< 12)
+      (s.setReg rd val).setPC (s.pc + 4)
+  -- RV32I word memory
   | .LW rd rs1 offset =>
       let addr := s.getReg rs1 + signExtend12 offset
       (s.setReg rd (s.getMem addr)).setPC (s.pc + 4)
   | .SW rs1 rs2 offset =>
       let addr := s.getReg rs1 + signExtend12 offset
       (s.setMem addr (s.getReg rs2)).setPC (s.pc + 4)
-  | .LUI rd imm =>
-      let val : Word := imm.zeroExtend 32 <<< 12
-      (s.setReg rd val).setPC (s.pc + 4)
-  | .MV rd rs =>
-      (s.setReg rd (s.getReg rs)).setPC (s.pc + 4)
-  | .LI rd imm =>
-      (s.setReg rd imm).setPC (s.pc + 4)
-  | .NOP =>
-      s.setPC (s.pc + 4)
+  -- RV32I sub-word memory
+  | .LB rd rs1 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setReg rd ((s.getByte addr).signExtend 32)).setPC (s.pc + 4)
+  | .LH rd rs1 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setReg rd ((s.getHalfword addr).signExtend 32)).setPC (s.pc + 4)
+  | .LBU rd rs1 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setReg rd ((s.getByte addr).zeroExtend 32)).setPC (s.pc + 4)
+  | .LHU rd rs1 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setReg rd ((s.getHalfword addr).zeroExtend 32)).setPC (s.pc + 4)
+  | .SB rs1 rs2 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setByte addr ((s.getReg rs2).truncate 8)).setPC (s.pc + 4)
+  | .SH rs1 rs2 offset =>
+      let addr := s.getReg rs1 + signExtend12 offset
+      (s.setHalfword addr ((s.getReg rs2).truncate 16)).setPC (s.pc + 4)
+  -- RV32I branches
   | .BEQ rs1 rs2 offset =>
       if s.getReg rs1 == s.getReg rs2 then
         s.setPC (s.pc + signExtend13 offset)
@@ -75,34 +118,91 @@ def execInstrBr (s : MachineState) (i : Instr) : MachineState :=
         s.setPC (s.pc + signExtend13 offset)
       else
         s.setPC (s.pc + 4)
+  | .BLT rs1 rs2 offset =>
+      if BitVec.slt (s.getReg rs1) (s.getReg rs2) then
+        s.setPC (s.pc + signExtend13 offset)
+      else
+        s.setPC (s.pc + 4)
+  | .BGE rs1 rs2 offset =>
+      if ¬ BitVec.slt (s.getReg rs1) (s.getReg rs2) then
+        s.setPC (s.pc + signExtend13 offset)
+      else
+        s.setPC (s.pc + 4)
+  | .BLTU rs1 rs2 offset =>
+      if BitVec.ult (s.getReg rs1) (s.getReg rs2) then
+        s.setPC (s.pc + signExtend13 offset)
+      else
+        s.setPC (s.pc + 4)
+  | .BGEU rs1 rs2 offset =>
+      if ¬ BitVec.ult (s.getReg rs1) (s.getReg rs2) then
+        s.setPC (s.pc + signExtend13 offset)
+      else
+        s.setPC (s.pc + 4)
+  -- RV32I jumps
   | .JAL rd offset =>
       (s.setReg rd (s.pc + 4)).setPC (s.pc + signExtend21 offset)
+  | .JALR rd rs1 offset =>
+      (s.setReg rd (s.pc + 4)).setPC ((s.getReg rs1 + signExtend12 offset) &&& ~~~1#32)
+  -- RV32I pseudo-instructions
+  | .MV rd rs =>
+      (s.setReg rd (s.getReg rs)).setPC (s.pc + 4)
+  | .LI rd imm =>
+      (s.setReg rd imm).setPC (s.pc + 4)
+  | .NOP =>
+      s.setPC (s.pc + 4)
+  -- RV32I system
   | .ECALL =>
       s.setPC (s.pc + 4)
+  | .FENCE =>
+      s.setPC (s.pc + 4)
+  | .EBREAK =>
+      s.setPC (s.pc + 4)
+  -- RV32M multiply
+  | .MUL rd rs1 rs2 =>
+      (s.setReg rd (s.getReg rs1 * s.getReg rs2)).setPC (s.pc + 4)
+  | .MULH rd rs1 rs2 =>
+      (s.setReg rd (rv32_mulh (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  | .MULHSU rd rs1 rs2 =>
+      (s.setReg rd (rv32_mulhsu (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  | .MULHU rd rs1 rs2 =>
+      (s.setReg rd (rv32_mulhu (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  -- RV32M divide
+  | .DIV rd rs1 rs2 =>
+      (s.setReg rd (rv32_div (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  | .DIVU rd rs1 rs2 =>
+      (s.setReg rd (rv32_divu (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  | .REM rd rs1 rs2 =>
+      (s.setReg rd (rv32_rem (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
+  | .REMU rd rs1 rs2 =>
+      (s.setReg rd (rv32_remu (s.getReg rs1) (s.getReg rs2))).setPC (s.pc + 4)
 
 /-- For non-branch instructions, execInstrBr agrees with execInstr
     (both advance PC by 4 and compute the same state update). -/
 theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     (h : i.isBranch = false) : execInstrBr s i = execInstr s i := by
   cases i <;> simp_all [execInstrBr, execInstr, Instr.isBranch,
-    MachineState.pc_setReg, MachineState.pc_setMem]
+    MachineState.pc_setReg, MachineState.pc_setMem,
+    MachineState.pc_setByte, MachineState.pc_setHalfword]
 
 @[simp] theorem committed_execInstrBr (s : MachineState) (i : Instr) :
     (execInstrBr s i).committed = s.committed := by
   cases i <;> simp [execInstrBr, MachineState.committed_setPC,
-    MachineState.committed_setReg, MachineState.committed_setMem]
+    MachineState.committed_setReg, MachineState.committed_setMem,
+    MachineState.committed_setByte, MachineState.committed_setHalfword]
   all_goals split <;> simp [MachineState.committed_setPC]
 
 @[simp] theorem publicValues_execInstrBr (s : MachineState) (i : Instr) :
     (execInstrBr s i).publicValues = s.publicValues := by
   cases i <;> simp [execInstrBr, MachineState.publicValues_setPC,
-    MachineState.publicValues_setReg, MachineState.publicValues_setMem]
+    MachineState.publicValues_setReg, MachineState.publicValues_setMem,
+    MachineState.publicValues_setByte, MachineState.publicValues_setHalfword]
   all_goals split <;> simp [MachineState.publicValues_setPC]
 
 @[simp] theorem publicInput_execInstrBr (s : MachineState) (i : Instr) :
     (execInstrBr s i).publicInput = s.publicInput := by
   cases i <;> simp [execInstrBr, MachineState.publicInput_setPC,
-    MachineState.publicInput_setReg, MachineState.publicInput_setMem]
+    MachineState.publicInput_setReg, MachineState.publicInput_setMem,
+    MachineState.publicInput_setByte, MachineState.publicInput_setHalfword]
   all_goals split <;> simp [MachineState.publicInput_setPC]
 
 -- ============================================================================
@@ -131,6 +231,9 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
     Returns none if no instruction at PC (stuck/halted), or if the instruction
     is ECALL with t0 = 0 (HALT syscall, following SP1 convention).
     LW/SW trap (return none) on misaligned or out-of-range addresses.
+    LB/LBU/SB trap on out-of-range addresses.
+    LH/LHU/SH trap on misaligned or out-of-range addresses.
+    EBREAK traps (returns none).
     WRITE (t0 = 0x02) to fd 13 appends words from memory to public values.
     COMMIT (t0 = 0x10) appends (a0, a1) to committed outputs.
     Other ECALLs continue execution. -/
@@ -147,6 +250,37 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
     if isValidMemAccess addr then
       some (execInstrBr s (.SW rs1 rs2 offset))
     else none  -- trap: invalid memory access
+  | some (.LB rd rs1 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidByteAccess addr then
+      some (execInstrBr s (.LB rd rs1 offset))
+    else none
+  | some (.LBU rd rs1 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidByteAccess addr then
+      some (execInstrBr s (.LBU rd rs1 offset))
+    else none
+  | some (.LH rd rs1 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidHalfwordAccess addr then
+      some (execInstrBr s (.LH rd rs1 offset))
+    else none
+  | some (.LHU rd rs1 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidHalfwordAccess addr then
+      some (execInstrBr s (.LHU rd rs1 offset))
+    else none
+  | some (.SB rs1 rs2 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidByteAccess addr then
+      some (execInstrBr s (.SB rs1 rs2 offset))
+    else none
+  | some (.SH rs1 rs2 offset) =>
+    let addr := s.getReg rs1 + signExtend12 offset
+    if isValidHalfwordAccess addr then
+      some (execInstrBr s (.SH rs1 rs2 offset))
+    else none
+  | some .EBREAK => none  -- trap: breakpoint
   | some .ECALL =>
     let t0 := s.getReg .x5
     if t0 == (0 : Word) then none  -- HALT syscall (SP1: t0 = 0)
@@ -154,8 +288,6 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
       let fd := s.getReg .x10
       let buf := s.getReg .x11
       let nbytes := s.getReg .x12
-      -- FD_PUBLIC_VALUES = 13 in SP1 (defined as 3 + LOWEST_ALLOWED_FD where
-      -- LOWEST_ALLOWED_FD = 10, via the create_fd! macro in sp1-primitives/consts.rs)
       if fd == (13 : Word) then
         let nwords := nbytes.toNat / 4
         let words := s.readWords buf nwords
@@ -180,9 +312,9 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
     else some (execInstrBr s .ECALL)  -- other ecalls continue
   | some i => some (execInstrBr s i)
 
-/-- step for non-ECALL, non-memory instructions (no validity hypothesis needed). -/
+/-- step for non-ECALL, non-EBREAK, non-memory instructions. -/
 @[simp] theorem step_non_ecall_non_mem (code : CodeMem) (s : MachineState) (i : Instr)
-    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL)
+    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL) (hnb : i ≠ .EBREAK)
     (hnm : i.isMemAccess = false) :
     step code s = some (execInstrBr s i) := by
   unfold step; rw [hfetch]; cases i <;> simp_all [Instr.isMemAccess]
@@ -218,6 +350,108 @@ theorem step_sw_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset
     step code s = none := by
   simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
+
+/-- step for LB with valid byte access. -/
+theorem step_lb (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LB rd rs1 offset))
+    (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.LB rd rs1 offset)) := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for LB with invalid byte access (trap). -/
+theorem step_lb_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LB rd rs1 offset))
+    (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for LBU with valid byte access. -/
+theorem step_lbu (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LBU rd rs1 offset))
+    (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.LBU rd rs1 offset)) := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for LBU with invalid byte access (trap). -/
+theorem step_lbu_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LBU rd rs1 offset))
+    (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for LH with valid halfword access. -/
+theorem step_lh (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LH rd rs1 offset))
+    (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.LH rd rs1 offset)) := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for LH with invalid halfword access (trap). -/
+theorem step_lh_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LH rd rs1 offset))
+    (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for LHU with valid halfword access. -/
+theorem step_lhu (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LHU rd rs1 offset))
+    (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.LHU rd rs1 offset)) := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for LHU with invalid halfword access (trap). -/
+theorem step_lhu_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.LHU rd rs1 offset))
+    (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for SB with valid byte access. -/
+theorem step_sb (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SB rs1 rs2 offset))
+    (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.SB rs1 rs2 offset)) := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for SB with invalid byte access (trap). -/
+theorem step_sb_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SB rs1 rs2 offset))
+    (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for SH with valid halfword access. -/
+theorem step_sh (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SH rs1 rs2 offset))
+    (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
+    step code s = some (execInstrBr s (.SH rs1 rs2 offset)) := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
+  omega
+
+/-- step for SH with invalid halfword access (trap). -/
+theorem step_sh_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : code s.pc = some (.SH rs1 rs2 offset))
+    (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
+    step code s = none := by
+  simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
+  omega
+
+/-- step for EBREAK (always traps). -/
+theorem step_ebreak (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .EBREAK) :
+    step code s = none := by
+  simp [step, hfetch]
 
 theorem step_ecall_halt (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :

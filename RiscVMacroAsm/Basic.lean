@@ -90,6 +90,54 @@ def isValidMemAccess (addr : Addr) : Bool :=
     isAligned4 addr = (addr.toNat % 4 == 0) := rfl
 
 -- ============================================================================
+-- Sub-word memory access helpers
+-- ============================================================================
+
+/-- Address is 2-byte aligned. -/
+def isAligned2 (addr : Addr) : Bool := addr.toNat % 2 == 0
+
+/-- Valid halfword memory access: in range AND 2-byte aligned. -/
+def isValidHalfwordAccess (addr : Addr) : Bool :=
+  isValidMemAddr addr && isAligned2 addr
+
+/-- Valid byte memory access: in range (bytes need no alignment). -/
+def isValidByteAccess (addr : Addr) : Bool :=
+  isValidMemAddr addr
+
+@[simp] theorem isAligned2_eq (addr : Addr) :
+    isAligned2 addr = (addr.toNat % 2 == 0) := rfl
+
+@[simp] theorem isValidHalfwordAccess_eq (addr : Addr) :
+    isValidHalfwordAccess addr = (isValidMemAddr addr && isAligned2 addr) := rfl
+
+@[simp] theorem isValidByteAccess_eq (addr : Addr) :
+    isValidByteAccess addr = isValidMemAddr addr := rfl
+
+/-- Extract a byte from a 32-bit word at position 0-3. -/
+def extractByte (w : Word) (pos : Nat) : BitVec 8 :=
+  (w >>> (pos * 8)).truncate 8
+
+/-- Extract a halfword from a 32-bit word at position 0-1 (in halfword units). -/
+def extractHalfword (w : Word) (pos : Nat) : BitVec 16 :=
+  (w >>> (pos * 16)).truncate 16
+
+/-- Replace a byte in a 32-bit word at position 0-3. -/
+def replaceByte (w : Word) (pos : Nat) (b : BitVec 8) : Word :=
+  let mask : Word := ~~~(0xFF#32 <<< (pos * 8))
+  (w &&& mask) ||| ((b.zeroExtend 32) <<< (pos * 8))
+
+/-- Replace a halfword in a 32-bit word at position 0-1 (in halfword units). -/
+def replaceHalfword (w : Word) (pos : Nat) (h : BitVec 16) : Word :=
+  let mask : Word := ~~~(0xFFFF#32 <<< (pos * 16))
+  (w &&& mask) ||| ((h.zeroExtend 32) <<< (pos * 16))
+
+/-- Align an address down to the nearest 4-byte boundary. -/
+def alignToWord (addr : Addr) : Addr := addr &&& ~~~3#32
+
+/-- Get the byte offset within a word (0-3). -/
+def byteOffset (addr : Addr) : Nat := (addr &&& 3#32).toNat
+
+-- ============================================================================
 -- Machine State
 -- ============================================================================
 
@@ -152,6 +200,30 @@ def writeWords (s : MachineState) (base : Addr) : List Word → MachineState
 def appendPublicValues (s : MachineState) (words : List Word) : MachineState :=
   { s with publicValues := s.publicValues ++ words }
 
+/-- Read a byte from memory at an arbitrary byte address.
+    Reads the containing word and extracts the appropriate byte. -/
+def getByte (s : MachineState) (addr : Addr) : BitVec 8 :=
+  extractByte (s.getMem (alignToWord addr)) (byteOffset addr)
+
+/-- Read a halfword from memory at a 2-byte aligned address.
+    Reads the containing word and extracts the appropriate halfword. -/
+def getHalfword (s : MachineState) (addr : Addr) : BitVec 16 :=
+  extractHalfword (s.getMem (alignToWord addr)) ((byteOffset addr) / 2)
+
+/-- Write a byte to memory at an arbitrary byte address.
+    Reads the containing word, replaces the byte, writes back. -/
+def setByte (s : MachineState) (addr : Addr) (b : BitVec 8) : MachineState :=
+  let wa := alignToWord addr
+  let pos := byteOffset addr
+  s.setMem wa (replaceByte (s.getMem wa) pos b)
+
+/-- Write a halfword to memory at a 2-byte aligned address.
+    Reads the containing word, replaces the halfword, writes back. -/
+def setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) : MachineState :=
+  let wa := alignToWord addr
+  let pos := (byteOffset addr) / 2
+  s.setMem wa (replaceHalfword (s.getMem wa) pos h)
+
 -- Lemmas for reasoning about register file operations
 
 /-- setReg does not affect the program counter. -/
@@ -165,6 +237,18 @@ theorem pc_setReg (s : MachineState) (r : Reg) (v : Word) :
 theorem pc_setMem (s : MachineState) (a : Addr) (v : Word) :
     (s.setMem a v).pc = s.pc := by
   simp [setMem]
+
+/-- setByte does not affect the program counter (delegates to setMem). -/
+@[simp]
+theorem pc_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).pc = s.pc := by
+  simp [setByte]
+
+/-- setHalfword does not affect the program counter (delegates to setMem). -/
+@[simp]
+theorem pc_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).pc = s.pc := by
+  simp [setHalfword]
 
 /-- setPC does not affect register reads. -/
 @[simp]
@@ -195,6 +279,16 @@ theorem committed_setMem (s : MachineState) (a : Addr) (v : Word) :
   simp [setMem]
 
 @[simp]
+theorem committed_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).committed = s.committed := by
+  simp [setByte]
+
+@[simp]
+theorem committed_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).committed = s.committed := by
+  simp [setHalfword]
+
+@[simp]
 theorem committed_setPC (s : MachineState) (v : Word) :
     (s.setPC v).committed = s.committed := by
   simp [setPC]
@@ -210,6 +304,16 @@ theorem publicValues_setReg (s : MachineState) (r : Reg) (v : Word) :
 theorem publicValues_setMem (s : MachineState) (a : Addr) (v : Word) :
     (s.setMem a v).publicValues = s.publicValues := by
   simp [setMem]
+
+@[simp]
+theorem publicValues_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).publicValues = s.publicValues := by
+  simp [setByte]
+
+@[simp]
+theorem publicValues_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).publicValues = s.publicValues := by
+  simp [setHalfword]
 
 @[simp]
 theorem publicValues_setPC (s : MachineState) (v : Word) :
@@ -232,6 +336,16 @@ theorem publicInput_setReg (s : MachineState) (r : Reg) (v : Word) :
 theorem publicInput_setMem (s : MachineState) (a : Addr) (v : Word) :
     (s.setMem a v).publicInput = s.publicInput := by
   simp [setMem]
+
+@[simp]
+theorem publicInput_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).publicInput = s.publicInput := by
+  simp [setByte]
+
+@[simp]
+theorem publicInput_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).publicInput = s.publicInput := by
+  simp [setHalfword]
 
 @[simp]
 theorem publicInput_setPC (s : MachineState) (v : Word) :
