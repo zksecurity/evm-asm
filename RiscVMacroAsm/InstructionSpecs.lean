@@ -39,44 +39,27 @@ theorem add_spec (rd rs1 rs2 : Reg) (v1 v2 v_old : Word) (base : Addr)
     cpsTriple code entry exit_ pre post := by
   simp only
   intro R hR st hPR hpc
-  -- First, derive register distinctness from the sepConj structure
-  have h_pre := holdsFor_sepConj_elim_left hPR
-  -- Derive inequalities from disjoint conditions (by destructuring temporarily)
-  have hne12 : rs1 ≠ rs2 := by
-    obtain ⟨_, _, h_rs1, h_rs2_rd, hd_outer, _, hrs1_holds, hrs2_rd_holds⟩ := h_pre
-    obtain ⟨h_rs2, h_rd, hd_inner, hunion_inner, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
-    simp only [regIs] at hrs1_holds hrs2_holds hrd_holds
-    subst hrs1_holds hrs2_holds hrd_holds hunion_inner
-    have := disjoint_left_of_disjoint_union_right hd_outer
-    exact singletonReg_disjoint_imp_ne this
-  have hne13 : rs1 ≠ rd := by
-    obtain ⟨_, _, h_rs1, h_rs2_rd, hd_outer, _, hrs1_holds, hrs2_rd_holds⟩ := h_pre
-    obtain ⟨h_rs2, h_rd, hd_inner, hunion_inner, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
-    simp only [regIs] at hrs1_holds hrs2_holds hrd_holds
-    subst hrs1_holds hrs2_holds hrd_holds hunion_inner
-    have := disjoint_of_union_disjoint_right hd_inner hd_outer.symm
-    exact singletonReg_disjoint_imp_ne this.symm
-  have hne23 : rs2 ≠ rd := by
-    obtain ⟨_, _, _, _, _, _, _, hrs2_rd_holds⟩ := h_pre
-    obtain ⟨h_rs2, h_rd, hd_inner, _, hrs2_holds, hrd_holds⟩ := hrs2_rd_holds
-    simp only [regIs] at hrs2_holds hrd_holds
-    subst hrs2_holds hrd_holds
-    exact singletonReg_disjoint_imp_ne hd_inner
-  -- Extract register values using the new lemma
-  have ⟨hrs1, hrs2, hrd_old⟩ := holdsFor_sepConj_regIs_regIs_regIs hne12 hne13 hne23 h_pre
-  -- Compute the instruction execution
-  let result := v1 + v2
+  -- Fetch ADD instruction
   have hfetch : loadProgram base [Instr.ADD rd rs1 rs2] base = some (Instr.ADD rd rs1 rs2) := by
     simp [loadProgram, BitVec.sub_self]
+  -- Extract register values from precondition
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1, hrs2, hrd⟩ := holdsFor_sepConj_regIs_regIs_regIs hinner
+  -- Compute next state
+  let result := v1 + v2
   have hnext : execInstrBr st (Instr.ADD rd rs1 rs2) = (st.setReg rd result).setPC (st.pc + 4) := by
     simp [execInstrBr, result, hrs1, hrs2]
+  -- Execute one step
   have hstep : step (loadProgram base [Instr.ADD rd rs1 rs2]) st = some ((st.setReg rd result).setPC (base + 4)) := by
     unfold step; rw [hpc, hfetch]; simp [hnext, hpc]
   refine ⟨1, (st.setReg rd result).setPC (base + 4), ?_, ?_, ?_⟩
-  · simp [stepN, hstep, Option.bind]
-  · simp [MachineState.setPC]
-  · -- Postcondition: TODO - needs frame recombination infrastructure
-    sorry
+  · -- stepN 1 reaches the computed state
+    simp [stepN, hstep, Option.bind]
+  · -- PC = exit_
+    simp [MachineState.setPC]
+  · -- Postcondition holds: (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ result) ** R
+    have h1 := holdsFor_sepConj_regIs_regIs_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_regIs rd result))) hR) (st.setReg rd result) (base + 4) h1
 
 /-- ADD rd, rd, rs2: rd := rd + rs2 (rd = rs1, rs2 distinct) -/
 theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)
