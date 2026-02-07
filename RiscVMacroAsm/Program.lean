@@ -100,4 +100,13 @@ def COMMIT (a0val a1val : Word) : Program :=
   LI .x11 a1val ;;
   single .ECALL
 
+/-- WRITE macro (SP1 convention): set t0 := 0x02 (WRITE syscall),
+    a0 := fd, a1 := buffer pointer, a2 := nbytes, then ecall. -/
+def WRITE (fd bufPtr nbytes : Word) : Program :=
+  LI .x5 0x02 ;;
+  LI .x10 fd ;;
+  LI .x11 bufPtr ;;
+  LI .x12 nbytes ;;
+  single .ECALL
+
 end RiscVMacroAsm

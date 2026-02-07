@@ -71,6 +71,10 @@ structure MachineState where
   mem  : Addr → Word
   /-- Program counter -/
   pc   : Word
+  /-- Committed public outputs (a0, a1) from COMMIT syscalls -/
+  committed : List (Word × Word) := []
+  /-- Accumulated public values from WRITE syscalls (flat word stream) -/
+  publicValues : List Word := []
 
 namespace MachineState
 
@@ -97,6 +101,19 @@ def setMem (s : MachineState) (a : Addr) (v : Word) : MachineState :=
 /-- Set the program counter. -/
 def setPC (s : MachineState) (v : Word) : MachineState :=
   { s with pc := v }
+
+/-- Append a committed public output pair. -/
+def appendCommit (s : MachineState) (a0 a1 : Word) : MachineState :=
+  { s with committed := s.committed ++ [(a0, a1)] }
+
+/-- Read n consecutive words from memory starting at base address. -/
+def readWords (s : MachineState) (base : Addr) : Nat → List Word
+  | 0 => []
+  | n + 1 => s.getMem base :: readWords s (base + 4) n
+
+/-- Append words to the public values stream. -/
+def appendPublicValues (s : MachineState) (words : List Word) : MachineState :=
+  { s with publicValues := s.publicValues ++ words }
 
 -- Lemmas for reasoning about register file operations
 
@@ -127,6 +144,118 @@ theorem getReg_setReg_ne (s : MachineState) (r r' : Reg) (v : Word)
 theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
     (h : r ≠ .x0) : (s.setReg r v).getReg r = v := by
   cases r <;> first | exact absurd rfl h | rfl
+
+-- Committed field preservation through existing setters
+
+@[simp]
+theorem committed_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).committed = s.committed := by
+  cases r <;> rfl
+
+@[simp]
+theorem committed_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).committed = s.committed := by
+  simp [setMem]
+
+@[simp]
+theorem committed_setPC (s : MachineState) (v : Word) :
+    (s.setPC v).committed = s.committed := by
+  simp [setPC]
+
+-- publicValues field preservation through existing setters
+
+@[simp]
+theorem publicValues_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).publicValues = s.publicValues := by
+  cases r <;> rfl
+
+@[simp]
+theorem publicValues_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).publicValues = s.publicValues := by
+  simp [setMem]
+
+@[simp]
+theorem publicValues_setPC (s : MachineState) (v : Word) :
+    (s.setPC v).publicValues = s.publicValues := by
+  simp [setPC]
+
+@[simp]
+theorem publicValues_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).publicValues = s.publicValues := by
+  simp [appendCommit]
+
+-- appendCommit preservation lemmas
+
+@[simp]
+theorem getReg_appendCommit (s : MachineState) (a0 a1 : Word) (r : Reg) :
+    (s.appendCommit a0 a1).getReg r = s.getReg r := by
+  cases r <;> rfl
+
+@[simp]
+theorem getMem_appendCommit (s : MachineState) (a0 a1 : Word) (a : Addr) :
+    (s.appendCommit a0 a1).getMem a = s.getMem a := by
+  simp [appendCommit, getMem]
+
+@[simp]
+theorem pc_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).pc = s.pc := by
+  simp [appendCommit]
+
+@[simp]
+theorem committed_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).committed = s.committed ++ [(a0, a1)] := by
+  simp [appendCommit]
+
+-- appendPublicValues preservation lemmas
+
+@[simp]
+theorem getReg_appendPublicValues (s : MachineState) (words : List Word) (r : Reg) :
+    (s.appendPublicValues words).getReg r = s.getReg r := by
+  cases r <;> rfl
+
+@[simp]
+theorem getMem_appendPublicValues (s : MachineState) (words : List Word) (a : Addr) :
+    (s.appendPublicValues words).getMem a = s.getMem a := by
+  simp [appendPublicValues, getMem]
+
+@[simp]
+theorem pc_appendPublicValues (s : MachineState) (words : List Word) :
+    (s.appendPublicValues words).pc = s.pc := by
+  simp [appendPublicValues]
+
+@[simp]
+theorem committed_appendPublicValues (s : MachineState) (words : List Word) :
+    (s.appendPublicValues words).committed = s.committed := by
+  simp [appendPublicValues]
+
+@[simp]
+theorem publicValues_appendPublicValues (s : MachineState) (words : List Word) :
+    (s.appendPublicValues words).publicValues = s.publicValues ++ words := by
+  simp [appendPublicValues]
+
+-- readWords simp lemmas
+
+@[simp]
+theorem readWords_zero (s : MachineState) (base : Addr) :
+    s.readWords base 0 = [] := rfl
+
+@[simp]
+theorem readWords_succ (s : MachineState) (base : Addr) (n : Nat) :
+    s.readWords base (n + 1) = s.getMem base :: s.readWords (base + 4) n := rfl
+
+theorem readWords_length (s : MachineState) (base : Addr) (n : Nat) :
+    (s.readWords base n).length = n := by
+  induction n generalizing base with
+  | zero => rfl
+  | succ k ih => simp [readWords, ih]
+
+/-- Predicate asserting the committed output stream equals a given list. -/
+def committedIs (vals : List (Word × Word)) (s : MachineState) : Prop :=
+  s.committed = vals
+
+/-- Predicate asserting the public values stream equals a given list. -/
+def publicValuesIs (vals : List Word) (s : MachineState) : Prop :=
+  s.publicValues = vals
 
 end MachineState
 

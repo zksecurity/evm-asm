@@ -87,6 +87,18 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
   cases i <;> simp_all [execInstrBr, execInstr, Instr.isBranch,
     MachineState.pc_setReg, MachineState.pc_setMem]
 
+@[simp] theorem committed_execInstrBr (s : MachineState) (i : Instr) :
+    (execInstrBr s i).committed = s.committed := by
+  cases i <;> simp [execInstrBr, MachineState.committed_setPC,
+    MachineState.committed_setReg, MachineState.committed_setMem]
+  all_goals split <;> simp [MachineState.committed_setPC]
+
+@[simp] theorem publicValues_execInstrBr (s : MachineState) (i : Instr) :
+    (execInstrBr s i).publicValues = s.publicValues := by
+  cases i <;> simp [execInstrBr, MachineState.publicValues_setPC,
+    MachineState.publicValues_setReg, MachineState.publicValues_setMem]
+  all_goals split <;> simp [MachineState.publicValues_setPC]
+
 -- ============================================================================
 -- Code memory
 -- ============================================================================
@@ -112,13 +124,30 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
 /-- Single step: fetch instruction at PC, execute with branch-aware semantics.
     Returns none if no instruction at PC (stuck/halted), or if the instruction
     is ECALL with t0 = 0 (HALT syscall, following SP1 convention).
-    Non-halt ECALLs (e.g. COMMIT with t0 = 0x10) continue execution. -/
+    WRITE (t0 = 0x02) to fd 13 appends words from memory to public values.
+    COMMIT (t0 = 0x10) appends (a0, a1) to committed outputs.
+    Other ECALLs continue execution. -/
 def step (code : CodeMem) (s : MachineState) : Option MachineState :=
   match code s.pc with
   | none => none
   | some .ECALL =>
-    if s.getReg .x5 == (0 : Word) then none  -- HALT syscall (SP1: t0 = 0)
-    else some (execInstrBr s .ECALL)          -- non-HALT ecalls (e.g. COMMIT) continue
+    let t0 := s.getReg .x5
+    if t0 == (0 : Word) then none  -- HALT syscall (SP1: t0 = 0)
+    else if t0 == (0x02 : Word) then  -- WRITE syscall
+      let fd := s.getReg .x10
+      let buf := s.getReg .x11
+      let nbytes := s.getReg .x12
+      -- FD_PUBLIC_VALUES = 13 in SP1 (defined as 3 + LOWEST_ALLOWED_FD where
+      -- LOWEST_ALLOWED_FD = 10, via the create_fd! macro in sp1-primitives/consts.rs)
+      if fd == (13 : Word) then
+        let nwords := nbytes.toNat / 4
+        let words := s.readWords buf nwords
+        some ((s.appendPublicValues words).setPC (s.pc + 4))
+      else
+        some (s.setPC (s.pc + 4))  -- other fd: continue
+    else if t0 == (0x10 : Word) then  -- COMMIT syscall
+      some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4))
+    else some (execInstrBr s .ECALL)  -- other ecalls continue
   | some i => some (execInstrBr s i)
 
 @[simp] theorem step_non_ecall (code : CodeMem) (s : MachineState) (i : Instr)
@@ -132,16 +161,38 @@ theorem step_ecall_halt (code : CodeMem) (s : MachineState)
   simp [step, hfetch, ht0]
 
 theorem step_ecall_continue (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 ≠ 0) :
+    (hfetch : code s.pc = some .ECALL)
+    (ht0 : s.getReg .x5 ≠ 0)
+    (ht0_nw : s.getReg .x5 ≠ (0x02 : Word))
+    (ht0_nc : s.getReg .x5 ≠ (0x10 : Word)) :
     step code s = some (execInstrBr s .ECALL) := by
-  simp only [step, hfetch, beq_iff_eq, ht0, ↓reduceIte]
+  simp only [step, hfetch, beq_iff_eq, ht0, ht0_nw, ht0_nc, ↓reduceIte]
 
-/-- COMMIT syscall (SP1 convention: t0 = 0x10) continues execution. -/
+/-- COMMIT syscall (SP1 convention: t0 = 0x10) appends (a0, a1) to committed outputs. -/
 theorem step_ecall_commit (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x10) :
-    step code s = some (execInstrBr s .ECALL) :=
-  step_ecall_continue code s hfetch (by rw [ht0]; decide)
+    step code s =
+      some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) := by
+  simp [step, hfetch, ht0]
+
+/-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends words from memory. -/
+theorem step_ecall_write_public (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .ECALL)
+    (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x02)
+    (hfd : s.getReg .x10 = 13) :
+    step code s =
+      some ((s.appendPublicValues (s.readWords (s.getReg .x11) ((s.getReg .x12).toNat / 4))).setPC (s.pc + 4)) := by
+  simp [step, hfetch, ht0, hfd]
+
+/-- WRITE syscall to non-public-values fd (t0 = 0x02, fd ≠ 13) just advances PC. -/
+theorem step_ecall_write_other (code : CodeMem) (s : MachineState)
+    (hfetch : code s.pc = some .ECALL)
+    (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x02)
+    (hfd : s.getReg .x10 ≠ (13 : Word)) :
+    step code s = some (s.setPC (s.pc + 4)) := by
+  simp only [step, hfetch, ht0, beq_iff_eq, hfd, ite_false]
+  simp (config := { decide := true })
 
 /-- Multi-step execution (n steps). -/
 def stepN : Nat → CodeMem → MachineState → Option MachineState

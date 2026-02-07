@@ -144,6 +144,16 @@ theorem pcIndep_holdsFor_memIs (a : Addr) (val : Word) :
   intro s v h
   simp only [holdsFor_memIs, MachineState.getMem, MachineState.setPC] at *; exact h
 
+theorem pcIndep_committedIs (vals : List (Word × Word)) :
+    pcIndep (MachineState.committedIs vals) := by
+  intro s v h
+  simp only [MachineState.committedIs, MachineState.committed_setPC] at *; exact h
+
+theorem pcIndep_publicValuesIs (vals : List Word) :
+    pcIndep (MachineState.publicValuesIs vals) := by
+  intro s v h
+  simp only [MachineState.publicValuesIs, MachineState.publicValues_setPC] at *; exact h
+
 theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
     pcIndep ((P ** Q).holdsFor) := by
   intro s v ⟨h, hcompat, h1, h2, hd, hunion, hp1, hp2⟩
