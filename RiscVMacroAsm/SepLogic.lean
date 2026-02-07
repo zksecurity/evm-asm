@@ -708,6 +708,24 @@ theorem sepConj_assoc (P Q R : Assertion) :
            by rw [union_assoc, hunion1_23],
            ⟨h1, h2, hd12, rfl, hp, hq⟩, hr⟩
 
+/-- Commutativity of separating conjunction at the holdsFor level. -/
+theorem holdsFor_sepConj_comm {P Q : Assertion} {s : MachineState} :
+    (P ** Q).holdsFor s ↔ (Q ** P).holdsFor s := by
+  constructor
+  · intro ⟨h, hcompat, hP⟩
+    exact ⟨h, hcompat, (sepConj_comm P Q h).mp hP⟩
+  · intro ⟨h, hcompat, hP⟩
+    exact ⟨h, hcompat, (sepConj_comm Q P h).mp hP⟩
+
+/-- Associativity of separating conjunction at the holdsFor level. -/
+theorem holdsFor_sepConj_assoc {P Q R : Assertion} {s : MachineState} :
+    ((P ** Q) ** R).holdsFor s ↔ (P ** (Q ** R)).holdsFor s := by
+  constructor
+  · intro ⟨h, hcompat, hP⟩
+    exact ⟨h, hcompat, (sepConj_assoc P Q R h).mp hP⟩
+  · intro ⟨h, hcompat, hP⟩
+    exact ⟨h, hcompat, (sepConj_assoc P Q R h).mpr hP⟩
+
 -- ============================================================================
 -- Pure modality: lifting Prop into Assertion
 -- ============================================================================
