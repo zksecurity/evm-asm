@@ -726,6 +726,22 @@ theorem holdsFor_sepConj_assoc {P Q R : Assertion} {s : MachineState} :
   · intro ⟨h, hcompat, hP⟩
     exact ⟨h, hcompat, (sepConj_assoc P Q R h).mpr hP⟩
 
+/-- Swap the two inner assertions: ((P ** Q) ** R) ↔ ((Q ** P) ** R). -/
+theorem holdsFor_sepConj_swap_inner {P Q R : Assertion} {s : MachineState} :
+    ((P ** Q) ** R).holdsFor s ↔ ((Q ** P) ** R).holdsFor s := by
+  sorry
+
+/-- Pull the second inner assertion out: ((P ** Q) ** R) ↔ (Q ** (P ** R)). -/
+theorem holdsFor_sepConj_pull_second {P Q R : Assertion} {s : MachineState} :
+    ((P ** Q) ** R).holdsFor s ↔ (Q ** (P ** R)).holdsFor s := by
+  sorry
+
+/-- Pull the first inner assertion out: ((P ** Q) ** R) ↔ (P ** (Q ** R)).
+    This is just holdsFor_sepConj_assoc, provided for symmetry. -/
+theorem holdsFor_sepConj_pull_first {P Q R : Assertion} {s : MachineState} :
+    ((P ** Q) ** R).holdsFor s ↔ (P ** (Q ** R)).holdsFor s :=
+  holdsFor_sepConj_assoc
+
 -- ============================================================================
 -- Pure modality: lifting Prop into Assertion
 -- ============================================================================

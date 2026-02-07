@@ -108,8 +108,14 @@ theorem add_spec_rd_eq_rs2 (rd rs1 : Reg) (v1 v2 : Word) (base : Addr)
   · -- PC = exit_
     simp [MachineState.setPC]
   · -- Postcondition holds: (rs1 ↦ᵣ v1) ** (rd ↦ᵣ result) ** R
-    -- This requires commutativity rearrangement which is complex
-    sorry
+    -- Rearrange: ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v2)) ** R = (rd ↦ᵣ v2) ** ((rs1 ↦ᵣ v1) ** R)
+    have hPR' := RiscVMacroAsm.holdsFor_sepConj_pull_second.1 hPR
+    -- Apply frame preservation for rd
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := (rs1 ↦ᵣ v1) ** R) hrd_ne_x0 hPR'
+    -- Rearrange back: (rd ↦ᵣ result) ** ((rs1 ↦ᵣ v1) ** R) = ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ result)) ** R
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_pull_second.2 h1
+    -- Apply PC preservation
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR) (st.setReg rd result) (base + 4) h2
 
 /-- ADD rd, rd, rd: rd := rd + rd = 2 * rd (all same) -/
 theorem add_spec_all_same (rd : Reg) (v : Word) (base : Addr)
