@@ -12,6 +12,7 @@ import RiscVMacroAsm.SepLogic
 import RiscVMacroAsm.Execution
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
+import Std.Tactic.BVDecide
 
 namespace RiscVMacroAsm
 
@@ -44,6 +45,152 @@ theorem readWords_of_holdsFor_memBufferIs {addr : Addr} {words : List Word}
     have hrest := holdsFor_sepConj_elim_right h
     simp only [List.length_cons, MachineState.readWords]
     rw [hmem, ih hrest]
+
+-- ============================================================================
+-- Section 1b: readBytes ↔ memBufferIs Infrastructure
+-- ============================================================================
+
+/-- If memBufferIs holds, then getMem at each word offset returns the corresponding word. -/
+theorem getMem_of_holdsFor_memBufferIs {addr : Addr} {words : List Word}
+    {s : MachineState}
+    (h : (memBufferIs addr words).holdsFor s) (k : Nat) (hk : k < words.length) :
+    s.getMem (addr + BitVec.ofNat 32 (4 * k)) = words[k]'hk := by
+  induction words generalizing addr k with
+  | nil => simp at hk
+  | cons w ws ih =>
+    simp only [memBufferIs] at h
+    cases k with
+    | zero =>
+      simp only [Nat.mul_zero, List.getElem_cons_zero]
+      have : addr + BitVec.ofNat 32 0 = addr := by
+        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_ofNat]
+      rw [this]; exact (holdsFor_memIs addr w s).mp (holdsFor_sepConj_elim_left h)
+    | succ k' =>
+      have hk' : k' < ws.length := by simp [List.length_cons] at hk; omega
+      simp only [List.getElem_cons_succ]
+      have : addr + BitVec.ofNat 32 (4 * (k' + 1)) = addr + 4 + BitVec.ofNat 32 (4 * k') := by
+        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+      rw [this]; exact ih (holdsFor_sepConj_elim_right h) k' hk'
+
+/-- readBytes of 4 bytes at an aligned address equals the 4 extractBytes of the word. -/
+theorem readBytes_4_of_getMem {addr : Addr} {w : Word} {s : MachineState}
+    (hmem : s.getMem addr = w) (halign : addr &&& 3#32 = 0#32) :
+    s.readBytes addr 4 = [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3] := by
+  simp only [MachineState.readBytes, MachineState.getByte, alignToWord, byteOffset]
+  have h0 : (addr &&& ~~~3#32) = addr := by bv_decide
+  have h1 : ((addr + 1) &&& ~~~3#32) = addr := by bv_decide
+  have h2 : ((addr + 1 + 1) &&& ~~~3#32) = addr := by bv_decide
+  have h3 : ((addr + 1 + 1 + 1) &&& ~~~3#32) = addr := by bv_decide
+  rw [h0, h1, h2, h3, hmem]
+  have h0o : (addr &&& 3#32).toNat = 0 := by rw [halign]; rfl
+  have h1a : ((addr + 1) &&& 3#32) = 1#32 := by bv_decide
+  have h1o : ((addr + 1) &&& 3#32).toNat = 1 := by rw [h1a]; rfl
+  have h2a : ((addr + 1 + 1) &&& 3#32) = 2#32 := by bv_decide
+  have h2o : ((addr + 1 + 1) &&& 3#32).toNat = 2 := by rw [h2a]; rfl
+  have h3a : ((addr + 1 + 1 + 1) &&& 3#32) = 3#32 := by bv_decide
+  have h3o : ((addr + 1 + 1 + 1) &&& 3#32).toNat = 3 := by rw [h3a]; rfl
+  rw [h0o, h1o, h2o, h3o]
+
+/-- Adding 4 to an aligned address preserves alignment. -/
+theorem aligned_add_4 {addr : Addr} (halign : addr &&& 3#32 = 0#32) :
+    (addr + 4) &&& 3#32 = 0#32 := by bv_decide
+
+/-- readBytes splits into prefix and suffix. -/
+theorem readBytes_append (s : MachineState) (addr : Addr) (m n : Nat) :
+    s.readBytes addr (m + n) = s.readBytes addr m ++ s.readBytes (addr + BitVec.ofNat 32 m) n := by
+  induction m generalizing addr with
+  | zero =>
+    simp only [Nat.zero_add, MachineState.readBytes, List.nil_append]
+    congr 1; apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_ofNat]
+  | succ k ih =>
+    simp only [Nat.succ_add, MachineState.readBytes, List.cons_append]; congr 1
+    rw [ih (addr + 1)]; congr 1; congr 1
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+
+/-- readBytes of a word-aligned buffer equals flatMap extractByte of the words. -/
+theorem readBytes_of_words {addr : Addr} {words : List Word} {s : MachineState}
+    (hmem : ∀ (k : Nat) (hk : k < words.length), s.getMem (addr + BitVec.ofNat 32 (4 * k)) = words[k]'hk)
+    (halign : addr &&& 3#32 = 0#32) :
+    s.readBytes addr (4 * words.length) =
+      words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3]) := by
+  induction words generalizing addr with
+  | nil => simp
+  | cons w ws ih =>
+    simp only [List.flatMap_cons, List.length_cons]
+    rw [show 4 * (ws.length + 1) = 4 + 4 * ws.length from by omega]
+    rw [readBytes_append]
+    congr 1
+    · have h0 := hmem 0 (Nat.zero_lt_succ _)
+      simp only [Nat.mul_zero, List.getElem_cons_zero] at h0
+      have : addr + BitVec.ofNat 32 0 = addr := by
+        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+      rw [this] at h0
+      exact readBytes_4_of_getMem h0 halign
+    · rw [show (BitVec.ofNat 32 4 : BitVec 32) = (4 : BitVec 32) from rfl]
+      have hmem' : ∀ (k : Nat) (hk : k < ws.length),
+          s.getMem (addr + 4 + BitVec.ofNat 32 (4 * k)) = ws[k]'hk := by
+        intro k hk
+        have := hmem (k + 1) (by simp [List.length_cons]; omega)
+        simp only [List.getElem_cons_succ] at this
+        have haddr_eq : addr + 4 + BitVec.ofNat 32 (4 * k) = addr + BitVec.ofNat 32 (4 * (k + 1)) := by
+          apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+        rw [haddr_eq]; exact this
+      exact ih hmem' (aligned_add_4 halign)
+
+/-- Taking n elements from a longer readBytes gives readBytes n. -/
+theorem readBytes_take (s : MachineState) (addr : Addr) (n m : Nat) (h : n ≤ m) :
+    (s.readBytes addr m).take n = s.readBytes addr n := by
+  induction n generalizing addr m with
+  | zero => simp [MachineState.readBytes]
+  | succ k ih =>
+    cases m with
+    | zero => omega
+    | succ m' =>
+      simp only [MachineState.readBytes, List.take_succ_cons]; congr 1
+      exact ih (addr + 1) m' (by omega)
+
+-- ============================================================================
+-- Section 1c: Separation Logic Rearrangement Helpers
+-- ============================================================================
+
+/-- Swap elements 1 and 2 of a right-associative chain: A ** B ** C → B ** A ** C. -/
+private theorem swap12_assertion (A B C : Assertion) :
+    ∀ h, (A ** B ** C) h → (B ** A ** C) h :=
+  fun h hab =>
+    sepConj_mono_right (fun h' hca => (sepConj_comm C A h').mp hca) h
+      ((sepConj_assoc B C A h).mp ((sepConj_comm A (B ** C) h).mp hab))
+
+/-- Pull element from position 5 to position 1: A ** B ** C ** D ** E ** F → E ** A ** B ** C ** D ** F. -/
+private theorem pullFifth (A B C D E F : Assertion) :
+    ∀ h, (A ** B ** C ** D ** E ** F) h → (E ** A ** B ** C ** D ** F) h :=
+  fun h hab =>
+    swap12_assertion A E (B ** C ** D ** F) h
+    (sepConj_mono_right (fun h' => swap12_assertion B E (C ** D ** F) h') h
+    (sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => swap12_assertion C E (D ** F) h'') h') h
+    (sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => sepConj_mono_right (fun h''' => swap12_assertion D E F h''') h'') h') h hab)))
+
+/-- Push element from position 1 to position 5: E ** A ** B ** C ** D ** F → A ** B ** C ** D ** E ** F. -/
+private theorem pushFifth (A B C D E F : Assertion) :
+    ∀ h, (E ** A ** B ** C ** D ** F) h → (A ** B ** C ** D ** E ** F) h :=
+  fun h hab =>
+    sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => sepConj_mono_right (fun h''' => swap12_assertion E D F h''') h'') h') h
+    (sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => swap12_assertion E C (D ** F) h'') h') h
+    (sepConj_mono_right (fun h' => swap12_assertion E B (C ** D ** F) h') h
+    (swap12_assertion E A (B ** C ** D ** F) h hab)))
+
+/-- Pull 5th element to front at holdsFor level (within (P ** R)). -/
+theorem holdsFor_pullFifth {A B C D E F R : Assertion} {s : MachineState}
+    (h : ((A ** B ** C ** D ** E ** F) ** R).holdsFor s) :
+    ((E ** A ** B ** C ** D ** F) ** R).holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := h
+  exact ⟨hp, hcompat, h1, h2, hdisj, hunion, pullFifth A B C D E F h1 hh1, hh2⟩
+
+/-- Push element from front back to 5th position at holdsFor level (within (P ** R)). -/
+theorem holdsFor_pushFifth {A B C D E F R : Assertion} {s : MachineState}
+    (h : ((E ** A ** B ** C ** D ** F) ** R).holdsFor s) :
+    ((A ** B ** C ** D ** E ** F) ** R).holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := h
+  exact ⟨hp, hcompat, h1, h2, hdisj, hunion, pushFifth A B C D E F h1 hh1, hh2⟩
 
 -- ============================================================================
 -- Section 2: appendPublicValues Infrastructure
@@ -251,46 +398,180 @@ theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
 /-- Single ECALL step for WRITE to public values (fd = 13).
     Precondition: x5 = 0x02, x10 = 13, x11 = bufPtr, x12 = nbytes,
                   publicValues = oldPV, memory buffer at bufPtr = words.
-    Postcondition: same registers, publicValues = oldPV ++ readBytes(bufPtr, nbytes), memory preserved.
+    Postcondition: same registers, publicValues = oldPV ++ bytes, memory preserved.
 
-    Note: The WRITE syscall now reads individual bytes from memory (matching SP1).
-    The postcondition expresses that readBytes from the buffer are appended to publicValues. -/
+    The WRITE syscall reads individual bytes from memory (matching SP1).
+    The postcondition takes nbytes.toNat bytes from the word buffer's byte representation. -/
 theorem ecall_write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
     (oldPV : List (BitVec 8)) (words : List Word) (addr : Addr)
     (hfetch : code addr = some .ECALL)
-    (hlen : words.length = nbytes.toNat / 4) :
+    (hLen : nbytes.toNat ≤ 4 * words.length)
+    (hAligned : bufPtr &&& 3#32 = 0#32) :
     cpsTriple code addr (addr + 4)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
        publicValuesIs oldPV ** memBufferIs bufPtr words)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
-       publicValuesIs (oldPV ++ words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])) ** memBufferIs bufPtr words) := by
-  sorry
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  intro R hR st hPR hpc
+  -- Extract register values from the 6-part conjunction ** R
+  have hP := holdsFor_sepConj_elim_left hPR
+  have hx5 : st.getReg .x5 = BitVec.ofNat 32 0x02 :=
+    (holdsFor_regIs .x5 _ st).mp (holdsFor_sepConj_elim_left hP)
+  have hx10 : st.getReg .x10 = (13 : Word) :=
+    (holdsFor_regIs .x10 _ st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right hP))
+  have hx11 : st.getReg .x11 = bufPtr :=
+    (holdsFor_regIs .x11 _ st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hP)))
+  have hx12 : st.getReg .x12 = nbytes :=
+    (holdsFor_regIs .x12 _ st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hP))))
+  -- Extract memBufferIs and get getMem facts
+  have hMemBuf := holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hP)))
+  have hMemBuf' := holdsFor_sepConj_elim_right hMemBuf
+  have hGetMem : ∀ (k : Nat) (hk : k < words.length),
+      st.getMem (bufPtr + BitVec.ofNat 32 (4 * k)) = words[k]'hk :=
+    fun k hk => getMem_of_holdsFor_memBufferIs hMemBuf' k hk
+  -- Step computation
+  have hfetch' : code st.pc = some .ECALL := by rw [hpc]; exact hfetch
+  have hstep := step_ecall_write_public code st hfetch' hx5 hx10
+  rw [hx11, hx12] at hstep
+  -- Compute readBytes = (flatMap extractByte words).take nbytes.toNat
+  have hReadFull := readBytes_of_words hGetMem hAligned
+  have hReadTake := readBytes_take st bufPtr nbytes.toNat (4 * words.length) hLen
+  have hRead : st.readBytes bufPtr nbytes.toNat =
+      (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat := by
+    rw [← hReadTake, hReadFull]
+  -- Build the witness
+  let newBytes := (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat
+  have hNewState : step code st = some ((st.appendPublicValues newBytes).setPC (st.pc + 4)) := by
+    rw [hstep, hRead]
+  refine ⟨1, (st.appendPublicValues newBytes).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hNewState, Option.bind, hpc]
+  · simp [MachineState.setPC]
+  · -- Reconstruct postcondition via pullFifth/appendPublicValues/pushFifth/setPC
+    have h1 := holdsFor_pullFifth hPR
+    have h2 := holdsFor_sepConj_assoc.mp h1
+    have h3 := holdsFor_sepConj_publicValuesIs_appendPublicValues (bytes := newBytes) h2
+    have h4 := holdsFor_sepConj_assoc.mpr h3
+    have h5 := holdsFor_pushFifth h4
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj
+        (pcFree_sepConj (pcFree_regIs .x5 _)
+          (pcFree_sepConj (pcFree_regIs .x10 _)
+            (pcFree_sepConj (pcFree_regIs .x11 _)
+              (pcFree_sepConj (pcFree_regIs .x12 _)
+                (pcFree_sepConj (pcFree_publicValuesIs _) (pcFree_memBufferIs _ _))))))
+        hR) _ _ h5
 
 -- ============================================================================
 -- Section 7: WRITE macro specification (fd = 13)
 -- ============================================================================
 
 /-- WRITE 13 bufPtr nbytes: sets up registers for WRITE syscall and executes it.
-    Reads `nbytes/4` words from memory at bufPtr and appends them to publicValues.
+    Reads bytes from memory at bufPtr and appends them to publicValues.
 
     Precondition: own x5, x10, x11, x12, publicValues = oldPV,
                   memory buffer at bufPtr = words.
     Postcondition: x5 = 0x02, x10 = 13, x11 = bufPtr, x12 = nbytes,
-                   publicValues = oldPV ++ words, memory preserved.
+                   publicValues = oldPV ++ bytes, memory preserved.
     Exit: base + 20 (5 instructions × 4 bytes). -/
 theorem write_public_spec (bufPtr nbytes : Word)
     (v5_old v10_old v11_old v12_old : Word)
     (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
-    (hlen : words.length = nbytes.toNat / 4) :
+    (hLen : nbytes.toNat ≤ 4 * words.length)
+    (hAligned : bufPtr &&& 3#32 = 0#32) :
     let code := loadProgram base (WRITE 13 bufPtr nbytes)
     cpsTriple code base (base + 20)
       ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x12 ↦ᵣ v12_old) ** publicValuesIs oldPV ** memBufferIs bufPtr words)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
-       publicValuesIs (oldPV ++ words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])) ** memBufferIs bufPtr words) := by
-  sorry
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  let code := loadProgram base (WRITE 13 bufPtr nbytes)
+  -- The WRITE 13 macro is [LI x5 0x02, LI x10 13, LI x11 bufPtr, LI x12 nbytes, ECALL]
+  have hprog : WRITE 13 bufPtr nbytes =
+      ([Instr.LI .x5 (BitVec.ofNat 32 0x02), Instr.LI .x10 13, Instr.LI .x11 bufPtr, Instr.LI .x12 nbytes, Instr.ECALL] : List Instr) := by
+    simp [WRITE, LI, single, seq, Program]
+  -- Instruction fetches
+  have hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)) := by
+    simp only [code, hprog, loadProgram, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_mod,
+      beq_self_eq_true, Nat.zero_div, true_and, Program]
+    simp [List.length_append]
+  have hf1 : code (base + 4) = some (Instr.LI .x10 13) := by
+    simp only [code]
+    rw [hprog, show (4 : BitVec 32) = BitVec.ofNat 32 (4 * 1) from by grind]
+    rw [loadProgram_at_index base _ 1 (by grind) (by omega)]; rfl
+  have hf2 : code (base + 8) = some (Instr.LI .x11 bufPtr) := by
+    simp only [code]
+    rw [hprog, show (8 : BitVec 32) = BitVec.ofNat 32 (4 * 2) from by grind]
+    rw [loadProgram_at_index base _ 2 (by grind) (by omega)]; rfl
+  have hf3 : code (base + 12) = some (Instr.LI .x12 nbytes) := by
+    simp only [code]
+    rw [hprog, show (12 : BitVec 32) = BitVec.ofNat 32 (4 * 3) from by grind]
+    rw [loadProgram_at_index base _ 3 (by grind) (by omega)]; rfl
+  have hf4 : code (base + 16) = some Instr.ECALL := by
+    simp only [code]
+    rw [hprog, show (16 : BitVec 32) = BitVec.ofNat 32 (4 * 4) from by grind]
+    rw [loadProgram_at_index base _ 4 (by grind) (by omega)]; rfl
+  -- Address arithmetic
+  have h48 : base + 4 + 4 = base + 8 := by grind
+  have h812 : base + 8 + 4 = base + 12 := by grind
+  have h1216 : base + 12 + 4 = base + 16 := by grind
+  have h1620 : base + 16 + 4 = base + 20 := by grind
+  -- pcFree helpers
+  let pvMB := publicValuesIs oldPV ** memBufferIs bufPtr words
+  have hpvMB : pvMB.pcFree := pcFree_sepConj (pcFree_publicValuesIs _) (pcFree_memBufferIs _ _)
+  -- Step 1: LI x5 (base → base+4)
+  have s1 : cpsTriple code base (base + 4) (.x5 ↦ᵣ v5_old) (.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) :=
+    li_spec_gen code .x5 v5_old _ base (by decide) hf0
+  have s1f : cpsTriple code base (base + 4)
+      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_left code base (base + 4) _ _ _
+      (pcFree_sepConj (pcFree_regIs .x10 _) (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB))) s1
+  -- Step 2: LI x10 (base+4 → base+8)
+  have s2core : cpsTriple code (base + 4) (base + 8) (.x10 ↦ᵣ v10_old) (.x10 ↦ᵣ (13 : Word)) := by
+    have := li_spec_gen code .x10 v10_old 13 (base + 4) (by decide) hf1
+    simp only [h48] at this; exact this
+  have s2f : cpsTriple code (base + 4) (base + 8)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_right code (base + 4) (base + 8) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_left code (base + 4) (base + 8) _ _ _
+        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB)) s2core)
+  -- Step 3: LI x11 (base+8 → base+12)
+  have s3core : cpsTriple code (base + 8) (base + 12) (.x11 ↦ᵣ v11_old) (.x11 ↦ᵣ bufPtr) := by
+    have := li_spec_gen code .x11 v11_old bufPtr (base + 8) (by decide) hf2
+    simp only [h812] at this; exact this
+  have s3f : cpsTriple code (base + 8) (base + 12)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
+        (cpsTriple_frame_left code (base + 8) (base + 12) _ _ _
+          (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB) s3core))
+  -- Step 4: LI x12 (base+12 → base+16)
+  have s4core : cpsTriple code (base + 12) (base + 16) (.x12 ↦ᵣ v12_old) (.x12 ↦ᵣ nbytes) := by
+    have := li_spec_gen code .x12 v12_old nbytes (base + 12) (by decide) hf3
+    simp only [h1216] at this; exact this
+  have s4f : cpsTriple code (base + 12) (base + 16)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) ** pvMB) :=
+    cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
+        (cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x11 ↦ᵣ _) (pcFree_regIs .x11 _)
+          (cpsTriple_frame_left code (base + 12) (base + 16) _ _ _ hpvMB s4core)))
+  -- Step 5: ECALL (base+16 → base+20)
+  have s5 : cpsTriple code (base + 16) (base + 20)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) ** publicValuesIs oldPV ** memBufferIs bufPtr words)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+    have := ecall_write_public_spec_gen code bufPtr nbytes oldPV words (base + 16) hf4 hLen hAligned
+    simp only [h1620] at this; exact this
+  -- Compose all steps
+  exact cpsTriple_seq code base (base + 16) (base + 20) _ _ _
+    (cpsTriple_seq code base (base + 12) (base + 16) _ _ _
+      (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
+        (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
 
 end RiscVMacroAsm

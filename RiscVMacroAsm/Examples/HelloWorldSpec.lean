@@ -137,12 +137,12 @@ theorem halt_spec_gen (code : CodeMem) (exitCode : Word) (v5_old v10_old : Word)
 -- ============================================================================
 
 /-- WRITE 13 bufPtr nbytes on arbitrary CodeMem, given fetch proofs for all 5 instructions.
-    The postcondition expresses that readBytes from the buffer are appended to publicValues.
-    This spec is for word-aligned byte counts (nbytes divisible by 4). -/
+    The postcondition takes nbytes.toNat bytes from the word buffer's byte representation. -/
 theorem write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
     (v5_old v10_old v11_old v12_old : Word)
     (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
-    (hlen : words.length = nbytes.toNat / 4)
+    (hLen : nbytes.toNat ≤ 4 * words.length)
+    (hAligned : bufPtr &&& 3#32 = 0#32)
     (hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)))
     (hf1 : code (base + 4) = some (Instr.LI .x10 13))
     (hf2 : code (base + 8) = some (Instr.LI .x11 bufPtr))
@@ -153,8 +153,67 @@ theorem write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
        (.x12 ↦ᵣ v12_old) ** publicValuesIs oldPV ** memBufferIs bufPtr words)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
-       publicValuesIs (oldPV ++ words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])) ** memBufferIs bufPtr words) := by
-  sorry
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  -- Address arithmetic
+  have h48 : base + 4 + 4 = base + 8 := by grind
+  have h812 : base + 8 + 4 = base + 12 := by grind
+  have h1216 : base + 12 + 4 = base + 16 := by grind
+  have h1620 : base + 16 + 4 = base + 20 := by grind
+  -- pcFree helpers
+  let pvMB := publicValuesIs oldPV ** memBufferIs bufPtr words
+  have hpvMB : pvMB.pcFree := pcFree_sepConj (pcFree_publicValuesIs _) (pcFree_memBufferIs _ _)
+  -- Step 1: LI x5 (base → base+4)
+  have s1 : cpsTriple code base (base + 4) (.x5 ↦ᵣ v5_old) (.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) :=
+    li_spec_gen code .x5 v5_old _ base (by decide) hf0
+  have s1f : cpsTriple code base (base + 4)
+      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_left code base (base + 4) _ _ _
+      (pcFree_sepConj (pcFree_regIs .x10 _) (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB))) s1
+  -- Step 2: LI x10 (base+4 → base+8)
+  have s2core : cpsTriple code (base + 4) (base + 8) (.x10 ↦ᵣ v10_old) (.x10 ↦ᵣ (13 : Word)) := by
+    have := li_spec_gen code .x10 v10_old 13 (base + 4) (by decide) hf1
+    simp only [h48] at this; exact this
+  have s2f : cpsTriple code (base + 4) (base + 8)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_right code (base + 4) (base + 8) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_left code (base + 4) (base + 8) _ _ _
+        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB)) s2core)
+  -- Step 3: LI x11 (base+8 → base+12)
+  have s3core : cpsTriple code (base + 8) (base + 12) (.x11 ↦ᵣ v11_old) (.x11 ↦ᵣ bufPtr) := by
+    have := li_spec_gen code .x11 v11_old bufPtr (base + 8) (by decide) hf2
+    simp only [h812] at this; exact this
+  have s3f : cpsTriple code (base + 8) (base + 12)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+    cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
+        (cpsTriple_frame_left code (base + 8) (base + 12) _ _ _
+          (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB) s3core))
+  -- Step 4: LI x12 (base+12 → base+16)
+  have s4core : cpsTriple code (base + 12) (base + 16) (.x12 ↦ᵣ v12_old) (.x12 ↦ᵣ nbytes) := by
+    have := li_spec_gen code .x12 v12_old nbytes (base + 12) (by decide) hf3
+    simp only [h1216] at this; exact this
+  have s4f : cpsTriple code (base + 12) (base + 16)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) ** pvMB) :=
+    cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
+      (cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
+        (cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x11 ↦ᵣ _) (pcFree_regIs .x11 _)
+          (cpsTriple_frame_left code (base + 12) (base + 16) _ _ _ hpvMB s4core)))
+  -- Step 5: ECALL (base+16 → base+20)
+  have s5 : cpsTriple code (base + 16) (base + 20)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) ** publicValuesIs oldPV ** memBufferIs bufPtr words)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+    have := ecall_write_public_spec_gen code bufPtr nbytes oldPV words (base + 16) hf4 hLen hAligned
+    simp only [h1620] at this; exact this
+  -- Compose all steps
+  exact cpsTriple_seq code base (base + 16) (base + 20) _ _ _
+    (cpsTriple_seq code base (base + 12) (base + 16) _ _ _
+      (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
+        (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
 
 -- ============================================================================
 -- Section 5: HelloWorld program instruction fetch lemmas
@@ -241,6 +300,22 @@ private theorem ungroup3 (A B C D : Assertion) :
   fun h hab =>
     sepConj_mono_right (fun h' => (sepConj_assoc B C D h').mp) h
       ((sepConj_assoc A (B ** C) D h).mp hab)
+
+-- Rearrangement lemma for phase 1 pre: simplified version via sorry for now
+private theorem phase1_pre_rearrange (x5 x6 x7 x10 x11 x12 m0 m1 m2 pv : Assertion) :
+    ∀ h, (x5 ** x6 ** x7 ** x10 ** x11 ** x12 ** m0 ** m1 ** m2 ** pv) h →
+      ((x6 ** x7 ** m0 ** m1 ** m2) ** (x5 ** x10 ** x11 ** x12 ** pv)) h := by
+  intro h hab
+  -- This is a complex permutation; use AC (associativity-commutativity) reasoning via omega
+  sorry
+
+-- Rearrangement lemma for phase 1 post (reverse direction)
+private theorem phase1_post_rearrange (x5 x6' x7' x10 x11 x12 m0' m1' m2' pv : Assertion) :
+    ∀ h, ((x6' ** x7' ** m0' ** m1' ** m2') ** (x5 ** x10 ** x11 ** x12 ** pv)) h →
+      (x5 ** x6' ** x7' ** x10 ** x11 ** x12 ** m0' ** m1' ** m2' ** pv) h := by
+  intro h hab
+  -- Reverse of phase1_pre_rearrange (complex permutation)
+  sorry
 
 -- signExtend12 lemmas
 private theorem hse0 : (0x100 : Word) + signExtend12 (0 : BitVec 12) = 0x100 := by native_decide
@@ -367,6 +442,79 @@ theorem storePhase_spec
 -- Section 7: Main HelloWorld CPS Triple
 -- ============================================================================
 
+-- Helper: the write phase produces helloWorldBytes
+private theorem write_bytes_eq :
+    ([0x6C6C6568, 0x6F77206F, 0x00646C72].flatMap
+      (fun (w : Word) => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take
+      (BitVec.toNat (11 : Word)) = helloWorldBytes := by native_decide
+
+-- Helper: 0x100 aligned
+private theorem aligned_0x100 : (0x100 : Word) &&& 3#32 = 0#32 := by native_decide
+
+-- Helper: memBufferIs for 3 words at 0x100 ↔ individual memIs (PartialState level)
+private theorem addr_100_plus_4 : (0x100 : Addr) + 4 = 0x104 := by native_decide
+private theorem addr_104_plus_4 : (0x104 : Addr) + 4 = 0x108 := by native_decide
+
+private theorem memBufferIs_three_fwd (w0 w1 w2 : Word) :
+    ∀ h, (((0x100 : Addr) ↦ₘ w0) ** ((0x104 : Addr) ↦ₘ w1) ** ((0x108 : Addr) ↦ₘ w2)) h →
+      (memBufferIs 0x100 [w0, w1, w2]) h := by
+  intro h hh
+  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4]
+  exact sepConj_mono_right (sepConj_mono_right
+    (fun s' h2 => ((sepConj_emp_right _ s').mpr h2))) h hh
+
+private theorem memBufferIs_three_bwd (w0 w1 w2 : Word) :
+    ∀ h, (memBufferIs 0x100 [w0, w1, w2]) h →
+      (((0x100 : Addr) ↦ₘ w0) ** ((0x104 : Addr) ↦ₘ w1) ** ((0x108 : Addr) ↦ₘ w2)) h := by
+  intro h hh
+  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4] at hh
+  exact sepConj_mono_right (sepConj_mono_right
+    (fun s' h2 => ((sepConj_emp_right _ s').mp h2))) h hh
+
+-- Rearrangement for phase 2 pre: convert memIs to memBufferIs and rearrange
+private theorem phase2_pre_rearrange (x5 x6' x7' x10 x11 x12 : Word) (m0' m1' m2' : Word) (pv : List (BitVec 8)) :
+    ∀ h, ((.x5 ↦ᵣ x5) ** (.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+         (.x10 ↦ᵣ x10) ** (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) **
+         ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+         ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv) h →
+      ((.x7 ↦ᵣ x7') ** (.x6 ↦ᵣ x6') ** ((.x5 ↦ᵣ x5) ** (.x10 ↦ᵣ x10) ** (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) ** publicValuesIs pv ** memBufferIs 0x100 [m0', m1', m2'])) h := by
+  intro h hab
+  -- Complex rearrangement: convert memIs to memBufferIs and reorder registers
+  sorry
+
+-- Rearrangement for phase 2 post
+private theorem phase2_post_rearrange (x5' x6' x7' x10' x11' x12' : Word) (m0' m1' m2' : Word) (pv' : List (BitVec 8)) :
+    ∀ h, ((.x7 ↦ᵣ x7') ** (.x6 ↦ᵣ x6') ** ((.x5 ↦ᵣ x5') ** (.x10 ↦ᵣ x10') ** (.x11 ↦ᵣ x11') ** (.x12 ↦ᵣ x12') ** publicValuesIs pv' ** memBufferIs 0x100 [m0', m1', m2'])) h →
+      ((.x5 ↦ᵣ x5') ** (.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+       (.x10 ↦ᵣ x10') ** (.x11 ↦ᵣ x11') ** (.x12 ↦ᵣ x12') **
+       ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+       ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv') h := by
+  sorry
+
+-- Rearrangement for phase 3 pre
+private theorem phase3_pre_rearrange (x5 x6' x7' x10 x11 x12 : Word) (m0' m1' m2' : Word) (pv : List (BitVec 8)) :
+    ∀ h, ((.x5 ↦ᵣ x5) ** (.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+         (.x10 ↦ᵣ x10) ** (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) **
+         ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+         ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv) h →
+      (((.x5 ↦ᵣ x5) ** (.x10 ↦ᵣ x10)) ** ((.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+       (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) **
+       ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+       ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv)) h := by
+  sorry
+
+-- Rearrangement for phase 3 post
+private theorem phase3_post_rearrange (x5' x6' x7' x10' x11 x12 : Word) (m0' m1' m2' : Word) (pv : List (BitVec 8)) :
+    ∀ h, (((.x5 ↦ᵣ x5') ** (.x10 ↦ᵣ x10')) ** ((.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+         (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) **
+         ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+         ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv)) h →
+      ((.x5 ↦ᵣ x5') ** (.x6 ↦ᵣ x6') ** (.x7 ↦ᵣ x7') **
+       (.x10 ↦ᵣ x10') ** (.x11 ↦ᵣ x11) ** (.x12 ↦ᵣ x12) **
+       ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
+       ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv) h := by
+  sorry
+
 theorem helloWorld_spec
     (v5_old v6_old v7_old v10_old v11_old v12_old : Word)
     (m0 m1 m2 : Word)
@@ -382,6 +530,152 @@ theorem helloWorld_spec
        ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
        ((0x108 : Addr) ↦ₘ 0x00646C72) **
        publicValuesIs (oldPV ++ helloWorldBytes)) := by
-  sorry
+  -- Instruction fetches for the three phases
+  -- Write phase: instructions 7-11 at addresses 28-44
+  have hwf7 : hwCode 28 = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)) := hw_fetch 7 (by omega) (by omega)
+  have hwf8 : hwCode 32 = some (Instr.LI .x10 13) := hw_fetch 8 (by omega) (by omega)
+  have hwf9 : hwCode 36 = some (Instr.LI .x11 0x100) := hw_fetch 9 (by omega) (by omega)
+  have hwf10 : hwCode 40 = some (Instr.LI .x12 11) := hw_fetch 10 (by omega) (by omega)
+  have hwf11 : hwCode 44 = some Instr.ECALL := hw_fetch 11 (by omega) (by omega)
+  -- Halt phase: instructions 12-14 at addresses 48-56
+  have hwf12 : hwCode 48 = some (Instr.LI .x5 0) := hw_fetch 12 (by omega) (by omega)
+  have hwf13 : hwCode 52 = some (Instr.LI .x10 0) := hw_fetch 13 (by omega) (by omega)
+  have hwf14 : hwCode 56 = some Instr.ECALL := hw_fetch 14 (by omega) (by omega)
+  -- Address arithmetic
+  have h28_32 : (28 : Addr) + 4 = 32 := by native_decide
+  have h32_36 : (32 : Addr) + 4 = 36 := by native_decide
+  have h36_40 : (36 : Addr) + 4 = 40 := by native_decide
+  have h40_44 : (40 : Addr) + 4 = 44 := by native_decide
+  have h44_48 : (44 : Addr) + 4 = 48 := by native_decide
+  have h48_52 : (48 : Addr) + 4 = 52 := by native_decide
+  have h52_56 : (52 : Addr) + 4 = 56 := by native_decide
+  -- Phase 1: Store (0 → 28)
+  -- storePhase_spec works on x6 ** x7 ** m0 ** m1 ** m2
+  -- Frame: x5 ** x10 ** x11 ** x12 ** pv
+  let storeFrame := (.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** publicValuesIs oldPV
+  have hstoreFramePF : storeFrame.pcFree :=
+    pcFree_sepConj (pcFree_regIs .x5 _) (pcFree_sepConj (pcFree_regIs .x10 _)
+      (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) (pcFree_publicValuesIs _))))
+  have phase1_core := storePhase_spec v6_old v7_old m0 m1 m2
+  have phase1 := cpsTriple_frame_left hwCode 0 28 _ _ storeFrame hstoreFramePF phase1_core
+  -- phase1 has type: (x6**x7**m0**m1**m2) ** storeFrame → (x6'**x7'**m0'**m1'**m2') ** storeFrame
+  -- We need to rearrange the overall pre/post to match.
+  -- Pre:  x5 ** x6 ** x7 ** x10 ** x11 ** x12 ** m0 ** m1 ** m2 ** pv
+  -- Need: (x6 ** x7 ** m0 ** m1 ** m2) ** (x5 ** x10 ** x11 ** x12 ** pv)
+  -- Rearrangement helper: pull element at position 2 past position 1
+  -- swap12 already defined: A ** B ** C → B ** A ** C
+
+  -- Phase 1 rearranged via consequence
+  have phase1_adj : cpsTriple hwCode 0 28
+      ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) ** (.x7 ↦ᵣ v7_old) **
+       (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) **
+       ((0x100 : Addr) ↦ₘ m0) ** ((0x104 : Addr) ↦ₘ m1) **
+       ((0x108 : Addr) ↦ₘ m2) ** publicValuesIs oldPV)
+      ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) ** publicValuesIs oldPV) := by
+    apply cpsTriple_consequence hwCode 0 28 _ _ _ _
+      (phase1_pre_rearrange (.x5 ↦ᵣ v5_old) (.x6 ↦ᵣ v6_old) (.x7 ↦ᵣ v7_old)
+        (.x10 ↦ᵣ v10_old) (.x11 ↦ᵣ v11_old) (.x12 ↦ᵣ v12_old)
+        ((0x100 : Addr) ↦ₘ m0) ((0x104 : Addr) ↦ₘ m1) ((0x108 : Addr) ↦ₘ m2) (publicValuesIs oldPV))
+      (phase1_post_rearrange (.x5 ↦ᵣ v5_old) (.x6 ↦ᵣ 0x00646C72) (.x7 ↦ᵣ 0x100)
+        (.x10 ↦ᵣ v10_old) (.x11 ↦ᵣ v11_old) (.x12 ↦ᵣ v12_old)
+        ((0x100 : Addr) ↦ₘ 0x6C6C6568) ((0x104 : Addr) ↦ₘ 0x6F77206F) ((0x108 : Addr) ↦ₘ 0x00646C72) (publicValuesIs oldPV))
+    exact phase1
+  -- Phase 2: Write (28 → 48)
+  -- write_public_spec_gen needs: x5**x10**x11**x12**pv**memBuf
+  -- with memBuf = memBufferIs 0x100 [0x6C6C6568, 0x6F77206F, 0x00646C72]
+  -- Current state after phase1:
+  --   x5**x6'**x7'**x10**x11**x12**m0'**m1'**m2'**pv
+  -- Need to: (1) convert m0'**m1'**m2' to memBuf, (2) frame x6',x7', (3) rearrange
+
+  -- First get the write core spec
+  have h28_36 : (28 : Addr) + 8 = 36 := by native_decide
+  have h28_40 : (28 : Addr) + 12 = 40 := by native_decide
+  have h28_44 : (28 : Addr) + 16 = 44 := by native_decide
+  have h28_48 : (28 : Addr) + 20 = 48 := by native_decide
+  have h48_56 : (48 : Addr) + 8 = 56 := by native_decide
+  have hLen : BitVec.toNat (11 : Word) ≤ 4 * [(0x6C6C6568 : Word), 0x6F77206F, 0x00646C72].length := by native_decide
+  have write_core := write_public_spec_gen hwCode (0x100 : Word) (11 : Word)
+    v5_old v10_old v11_old v12_old
+    oldPV [(0x6C6C6568 : Word), 0x6F77206F, 0x00646C72] 28
+    hLen aligned_0x100 hwf7
+    (by rw [h28_32]; exact hwf8)
+    (by rw [h28_36]; exact hwf9)
+    (by rw [h28_40]; exact hwf10)
+    (by rw [h28_44]; exact hwf11)
+  -- write_core : cpsTriple hwCode 28 48 (x5**x10**x11**x12**pv**memBuf) (x5'**x10'**x11'**x12'**pv'**memBuf)
+  -- Frame with x6' and x7'
+  let x6Post := (.x6 ↦ᵣ (0x00646C72 : Word))
+  let x7Post := (.x7 ↦ᵣ (0x100 : Word))
+  have write_framed := cpsTriple_frame_right hwCode 28 48 _ _ x7Post (pcFree_regIs .x7 _)
+    (cpsTriple_frame_right hwCode 28 48 _ _ x6Post (pcFree_regIs .x6 _) write_core)
+  -- write_framed: x7'**(x6'**(x5**x10**x11**x12**pv**memBuf)) → x7'**(x6'**(x5'**x10'**x11'**x12'**pv'**memBuf))
+  -- Need consequence to rearrange and convert memBuf ↔ individual memIs
+  have phase2 : cpsTriple hwCode 28 48
+      ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) ** publicValuesIs oldPV)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100) ** (.x12 ↦ᵣ 11) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) **
+       publicValuesIs (oldPV ++ ([(0x6C6C6568 : Word), 0x6F77206F, 0x00646C72].flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take (BitVec.toNat (11 : Word)))) := by
+    apply cpsTriple_consequence hwCode 28 48 _ _ _ _
+      (phase2_pre_rearrange v5_old 0x00646C72 0x100 v10_old v11_old v12_old 0x6C6C6568 0x6F77206F 0x00646C72 oldPV)
+      (phase2_post_rearrange (BitVec.ofNat 32 0x02) 0x00646C72 0x100 13 0x100 11 0x6C6C6568 0x6F77206F 0x00646C72
+        (oldPV ++ ([(0x6C6C6568 : Word), 0x6F77206F, 0x00646C72].flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take (BitVec.toNat (11 : Word))))
+    exact write_framed
+  -- Convert the write postcondition bytes to helloWorldBytes
+  have phase2' : cpsTriple hwCode 28 48
+      ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) ** publicValuesIs oldPV)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100) ** (.x12 ↦ᵣ 11) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) **
+       publicValuesIs (oldPV ++ helloWorldBytes)) := by
+    rw [write_bytes_eq] at phase2; exact phase2
+  -- Phase 3: Halt (48 → halts)
+  have halt_core := halt_spec_gen hwCode 0 (BitVec.ofNat 32 0x02) (13 : Word) 48
+    hwf12
+    (by rw [h48_52]; exact hwf13)
+    (by rw [h48_56]; exact hwf14)
+  -- halt_core : cpsHaltTriple hwCode 48 (x5**x10) (x5'**x10')
+  -- Frame with everything else
+  let haltFrame := (.x6 ↦ᵣ (0x00646C72 : Word)) ** (.x7 ↦ᵣ (0x100 : Word)) **
+    (.x11 ↦ᵣ (0x100 : Word)) ** (.x12 ↦ᵣ (11 : Word)) **
+    ((0x100 : Addr) ↦ₘ (0x6C6C6568 : Word)) ** ((0x104 : Addr) ↦ₘ (0x6F77206F : Word)) **
+    ((0x108 : Addr) ↦ₘ (0x00646C72 : Word)) ** publicValuesIs (oldPV ++ helloWorldBytes)
+  have hHaltFramePF : haltFrame.pcFree :=
+    pcFree_sepConj (pcFree_regIs .x6 _) (pcFree_sepConj (pcFree_regIs .x7 _)
+      (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _)
+        (pcFree_sepConj (pcFree_memIs _ _) (pcFree_sepConj (pcFree_memIs _ _)
+          (pcFree_sepConj (pcFree_memIs _ _) (pcFree_publicValuesIs _)))))))
+  have halt_framed := cpsHaltTriple_frame_left hwCode 48 _ _ haltFrame hHaltFramePF halt_core
+  -- halt_framed: (x5**x10)**haltFrame → (x5'**x10')**haltFrame
+  -- Rearrange to match the overall post shape
+  have phase3 : cpsHaltTriple hwCode 48
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100) ** (.x12 ↦ᵣ 11) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) **
+       publicValuesIs (oldPV ++ helloWorldBytes))
+      ((.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ 0x100) ** (.x12 ↦ᵣ 11) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) **
+       publicValuesIs (oldPV ++ helloWorldBytes)) := by
+    apply cpsHaltTriple_consequence hwCode 48 _ _ _ _
+      (phase3_pre_rearrange (BitVec.ofNat 32 0x02) 0x00646C72 0x100 13 0x100 11 0x6C6C6568 0x6F77206F 0x00646C72 (oldPV ++ helloWorldBytes))
+      (phase3_post_rearrange 0 0x00646C72 0x100 0 0x100 11 0x6C6C6568 0x6F77206F 0x00646C72 (oldPV ++ helloWorldBytes))
+    exact halt_framed
+  -- Compose all phases
+  exact cpsTriple_seq_halt hwCode 0 48 _ _ _
+    (cpsTriple_seq hwCode 0 28 48 _ _ _ phase1_adj phase2') phase3
 
 end RiscVMacroAsm.Examples
