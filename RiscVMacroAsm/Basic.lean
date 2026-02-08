@@ -252,6 +252,42 @@ def writeBytesAsWords (s : MachineState) (base : Addr) : List (BitVec 8) → Mac
     (s.setMem base (bytesToWordLE chunk)).writeBytesAsWords (base + 4) rest
 termination_by l => l.length
 
+end MachineState
+
+/-- Convert a byte list into a word list by chunking into groups of 4 (LE), zero-padding the last chunk. -/
+def bytesToWords : List (BitVec 8) → List Word
+  | [] => []
+  | b :: bs => bytesToWordLE ((b :: bs).take 4) :: bytesToWords ((b :: bs).drop 4)
+termination_by bytes => bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp]
+theorem bytesToWords_nil : bytesToWords [] = [] := by
+  unfold bytesToWords; rfl
+
+theorem bytesToWords_length (bytes : List (BitVec 8)) (h4 : 4 ∣ bytes.length) :
+    (bytesToWords bytes).length * 4 = bytes.length := by
+  match bytes with
+  | [] => simp
+  | b :: bs =>
+    unfold bytesToWords
+    simp only [List.length_cons, Nat.add_one]
+    have hlen : (b :: bs).length ≥ 4 := by
+      obtain ⟨k, hk⟩ := h4; simp [List.length_cons] at hk ⊢; omega
+    have hdrop_len : ((b :: bs).drop 4).length = bs.length + 1 - 4 := by
+      simp [List.length_drop]
+    have hmod : 4 ∣ ((b :: bs).drop 4).length := by
+      rw [hdrop_len]
+      obtain ⟨k, hk⟩ := h4; simp [List.length_cons] at hk
+      exact ⟨k - 1, by omega⟩
+    have ih := bytesToWords_length _ hmod
+    simp [List.length_cons] at hlen
+    rw [hdrop_len] at ih; omega
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+namespace MachineState
+
 -- Lemmas for reasoning about register file operations
 
 /-- setReg does not affect the program counter. -/

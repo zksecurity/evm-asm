@@ -253,6 +253,178 @@ theorem holdsFor_sepConj_publicValuesIs_appendPublicValues
          PartialState.singletonPublicValues (oldPV ++ bytes), h2, hdisj', rfl, rfl, hh2⟩
 
 -- ============================================================================
+-- Section 2b: dropPrivateInput Infrastructure
+-- ============================================================================
+
+namespace PartialState
+
+/-- Dropping bytes from privateInput preserves compatibility for partial states
+    that don't own privateInput. -/
+theorem CompatibleWith_dropPrivateInput {h : PartialState} {s : MachineState}
+    {n : Nat}
+    (hcompat : h.CompatibleWith s) (hnone : h.privateInput = none) :
+    h.CompatibleWith { s with privateInput := s.privateInput.drop n } := by
+  obtain ⟨hr, hm, hpc, hpv, hpi⟩ := hcompat
+  exact ⟨fun r v hv => hr r v hv,
+         fun a v hv => hm a v hv,
+         fun v hv => hpc v hv,
+         fun v hv => hpv v hv,
+         fun v hv => by rw [hnone] at hv; exact absurd hv (by simp)⟩
+
+end PartialState
+
+/-- If (privateInputIs allBytes ** R).holdsFor s, then
+    (privateInputIs (allBytes.drop n) ** R).holdsFor {s with privateInput := s.privateInput.drop n}.
+    R is automatically privateInput-free by disjointness with privateInputIs. -/
+theorem holdsFor_sepConj_privateInputIs_drop
+    {allBytes : List (BitVec 8)} {n : Nat} {R : Assertion} {s : MachineState}
+    (hPR : ((privateInputIs allBytes) ** R).holdsFor s) :
+    ((privateInputIs (allBytes.drop n)) ** R).holdsFor
+      { s with privateInput := s.privateInput.drop n } := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := hPR
+  rw [privateInputIs] at hh1; subst hh1; rw [← hunion] at hcompat
+  -- h2 doesn't own privateInput (from disjointness)
+  have hpi2 : h2.privateInput = none := by
+    rcases hdisj.2.2.2.2 with h | h
+    · simp [PartialState.singletonPrivateInput] at h
+    · exact h
+  -- Disjointness preserved
+  have hdisj' : (PartialState.singletonPrivateInput (allBytes.drop n)).Disjoint h2 :=
+    ⟨hdisj.1, hdisj.2.1, hdisj.2.2.1, hdisj.2.2.2.1, Or.inr hpi2⟩
+  -- Split old compatibility
+  have ⟨hc1, hc2⟩ := (PartialState.CompatibleWith_union hdisj).mp hcompat
+  -- singletonPrivateInput (allBytes.drop n) compatible with modified state
+  have hc1' : (PartialState.singletonPrivateInput (allBytes.drop n)).CompatibleWith
+      { s with privateInput := s.privateInput.drop n } := by
+    refine ⟨fun r w hr => by simp [PartialState.singletonPrivateInput] at hr,
+            fun a w ha => by simp [PartialState.singletonPrivateInput] at ha,
+            fun w hw => by simp [PartialState.singletonPrivateInput] at hw,
+            fun w hw => by simp [PartialState.singletonPrivateInput] at hw,
+            fun w hw => ?_⟩
+    simp only [PartialState.singletonPrivateInput] at hw
+    rw [Option.some.injEq] at hw; subst hw
+    show s.privateInput.drop n = allBytes.drop n
+    congr 1
+    exact (PartialState.CompatibleWith_singletonPrivateInput allBytes s).mp hc1
+  -- h2 compatible with modified state
+  have hc2' : h2.CompatibleWith { s with privateInput := s.privateInput.drop n } :=
+    PartialState.CompatibleWith_dropPrivateInput hc2 hpi2
+  exact ⟨(PartialState.singletonPrivateInput (allBytes.drop n)).union h2,
+         (PartialState.CompatibleWith_union hdisj').mpr ⟨hc1', hc2'⟩,
+         PartialState.singletonPrivateInput (allBytes.drop n), h2, hdisj', rfl, rfl, hh2⟩
+
+-- ============================================================================
+-- Section 2c: writeBytesAsWords Memory Update Infrastructure
+-- ============================================================================
+
+namespace PartialState
+
+/-- writeBytesAsWords preserves compatibility for partial states
+    that don't own the target memory addresses. -/
+theorem CompatibleWith_writeBytesAsWords {h : PartialState} {s : MachineState}
+    {base : Addr} {bytes : List (BitVec 8)}
+    (hcompat : h.CompatibleWith s)
+    (hnone : ∀ (k : Nat), k < (bytes.length + 3) / 4 → h.mem (base + BitVec.ofNat 32 (4 * k)) = none) :
+    h.CompatibleWith (s.writeBytesAsWords base bytes) := by
+  match bytes with
+  | [] =>
+    unfold MachineState.writeBytesAsWords
+    exact hcompat
+  | b :: bs =>
+    unfold MachineState.writeBytesAsWords
+    have h0 := hnone 0 (by simp)
+    simp at h0
+    apply CompatibleWith_writeBytesAsWords (base := base + 4) (bytes := (b :: bs).drop 4)
+    · exact CompatibleWith_setMem hcompat h0
+    · intro k hk
+      have hlen_drop : ((b :: bs).drop 4).length = bs.length + 1 - 4 := by
+        simp [List.length_drop]
+      have : k + 1 < ((b :: bs).length + 3) / 4 := by
+        rw [hlen_drop] at hk
+        have : (b :: bs).length = bs.length + 1 := by simp
+        rw [this]
+        omega
+      have hval := hnone (k + 1) this
+      have haddr : base + 4 + BitVec.ofNat 32 (4 * k) = base + BitVec.ofNat 32 (4 * (k + 1)) := by
+        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+      rw [haddr]; exact hval
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+end PartialState
+
+/-- Helper: unfold one step of bytesToWords on 4+ elements. -/
+private theorem bytesToWords_cons4 (b0 b1 b2 b3 : BitVec 8) (rest : List (BitVec 8)) :
+    bytesToWords (b0 :: b1 :: b2 :: b3 :: rest) =
+    bytesToWordLE [b0, b1, b2, b3] :: bytesToWords rest := by
+  simp [bytesToWords]
+
+/-- Helper: unfold one step of writeBytesAsWords on 4+ elements. -/
+private theorem writeBytesAsWords_cons4 (s : MachineState) (base : Addr)
+    (b0 b1 b2 b3 : BitVec 8) (rest : List (BitVec 8)) :
+    s.writeBytesAsWords base (b0 :: b1 :: b2 :: b3 :: rest) =
+    (s.setMem base (bytesToWordLE [b0, b1, b2, b3])).writeBytesAsWords (base + 4) rest := by
+  simp [MachineState.writeBytesAsWords]
+
+/-- If (memBufferIs base oldWords ** R).holdsFor s and we write bytes of the same total size,
+    then (memBufferIs base (bytesToWords bytes) ** R).holdsFor (s.writeBytesAsWords base bytes). -/
+theorem holdsFor_sepConj_memBufferIs_writeBytesAsWords
+    {base : Addr} {oldWords : List Word} {bytes : List (BitVec 8)} {R : Assertion}
+    {s : MachineState}
+    (hlen : bytes.length = 4 * oldWords.length)
+    (hPR : ((memBufferIs base oldWords) ** R).holdsFor s) :
+    ((memBufferIs base (bytesToWords bytes)) ** R).holdsFor (s.writeBytesAsWords base bytes) := by
+  -- Generalize R for the induction to work with different frames
+  suffices h : ∀ (oldWords' : List Word) (R' : Assertion) (base' : Addr) (bytes' : List (BitVec 8))
+      (s' : MachineState),
+      bytes'.length = 4 * oldWords'.length →
+      ((memBufferIs base' oldWords') ** R').holdsFor s' →
+      ((memBufferIs base' (bytesToWords bytes')) ** R').holdsFor (s'.writeBytesAsWords base' bytes') from
+    h oldWords R base bytes s hlen hPR
+  intro oldWords'
+  induction oldWords' with
+  | nil =>
+    intro R' base' bytes' s' hlen' hPR'
+    have : bytes' = [] := by cases bytes' <;> simp_all
+    subst this
+    simp [memBufferIs]
+    exact hPR'
+  | cons w ws ih =>
+    intro R' base' bytes' s' hlen' hPR'
+    -- bytes has at least 4 elements
+    have hlen4 : bytes'.length ≥ 4 := by simp [List.length_cons] at hlen'; omega
+    obtain ⟨b0, b1, b2, b3, rest, hbytes, hrest_len⟩ : ∃ b0 b1 b2 b3 rest,
+        bytes' = b0 :: b1 :: b2 :: b3 :: rest ∧ rest.length = 4 * ws.length := by
+      match bytes', hlen' with
+      | b0 :: b1 :: b2 :: b3 :: rest, hlen' =>
+        exact ⟨b0, b1, b2, b3, rest, rfl, by simp [List.length_cons] at hlen'; omega⟩
+    subst hbytes
+    -- Rewrite goal using the unfold lemmas
+    rw [bytesToWords_cons4, writeBytesAsWords_cons4]
+    -- Goal is now: ((memBufferIs base' (btwLE :: bytesToWords rest)) ** R').holdsFor (setMem.wbaw rest)
+    -- which after memBufferIs unfold becomes:
+    -- (((base' ↦ₘ btwLE) ** memBufferIs (base'+4) (bytesToWords rest)) ** R').holdsFor ...
+    change (((base' ↦ₘ bytesToWordLE [b0, b1, b2, b3]) ** memBufferIs (base' + 4) (bytesToWords rest)) ** R').holdsFor _
+    -- hPR' : (((base' ↦ₘ w) ** memBufferIs (base'+4) ws) ** R').holdsFor s'
+    change (((base' ↦ₘ w) ** memBufferIs (base' + 4) ws) ** R').holdsFor s' at hPR'
+    -- Reassociate: (base' ↦ₘ w) ** (memBufferIs ws ** R')
+    have hPR'' := holdsFor_sepConj_assoc.mp hPR'
+    -- Update memory at base': (base' ↦ₘ newWord) ** (memBufferIs ws ** R')
+    let newWord := bytesToWordLE [b0, b1, b2, b3]
+    have h1 : ((base' ↦ₘ newWord) ** (memBufferIs (base' + 4) ws ** R')).holdsFor
+        (s'.setMem base' newWord) :=
+      holdsFor_sepConj_memIs_setMem hPR''
+    -- Reassociate: ((base' ↦ₘ newWord) ** memBufferIs ws) ** R'
+    have h1c := holdsFor_sepConj_assoc.mpr h1
+    -- pull_second: memBufferIs ws ** ((base' ↦ₘ newWord) ** R')
+    have h1d := holdsFor_sepConj_pull_second.mp h1c
+    -- Apply IH with R'' = (base' ↦ₘ newWord) ** R'
+    have h3 := ih ((base' ↦ₘ newWord) ** R') (base' + 4) rest (s'.setMem base' newWord) hrest_len h1d
+    -- h3 : (memBufferIs (base'+4) (bytesToWords rest) ** ((base' ↦ₘ newWord) ** R')).holdsFor ...
+    -- pull_second back: ((base' ↦ₘ newWord) ** memBufferIs (base'+4) (bytesToWords rest)) ** R'
+    exact holdsFor_sepConj_pull_second.mpr h3
+
+-- ============================================================================
 -- Section 3: Generalized Instruction Specs
 -- ============================================================================
 
@@ -390,6 +562,203 @@ theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
   -- Compose: (s1' seq s2') seq_halt s3
   exact cpsTriple_seq_halt code base (base + 8) _ _ _
     (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1' s2') s3
+
+-- ============================================================================
+-- Section 5b: ECALL HINT_READ specification
+-- ============================================================================
+
+/-- Pull element from position 4 to position 1: A ** B ** C ** D ** E → D ** A ** B ** C ** E. -/
+private theorem pullFourth (A B C D E : Assertion) :
+    ∀ h, (A ** B ** C ** D ** E) h → (D ** A ** B ** C ** E) h :=
+  fun h hab =>
+    swap12_assertion A D (B ** C ** E) h
+    (sepConj_mono_right (fun h' => swap12_assertion B D (C ** E) h') h
+    (sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => swap12_assertion C D E h'') h') h hab))
+
+/-- Push element from position 1 to position 4: D ** A ** B ** C ** E → A ** B ** C ** D ** E. -/
+private theorem pushFourth (A B C D E : Assertion) :
+    ∀ h, (D ** A ** B ** C ** E) h → (A ** B ** C ** D ** E) h :=
+  fun h hab =>
+    sepConj_mono_right (fun h' => sepConj_mono_right (fun h'' => swap12_assertion D C E h'') h') h
+    (sepConj_mono_right (fun h' => swap12_assertion D B (C ** E) h') h
+    (swap12_assertion D A (B ** C ** E) h hab))
+
+/-- Pull 4th element to front at holdsFor level. -/
+theorem holdsFor_pullFourth {A B C D E R : Assertion} {s : MachineState}
+    (h : ((A ** B ** C ** D ** E) ** R).holdsFor s) :
+    ((D ** A ** B ** C ** E) ** R).holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := h
+  exact ⟨hp, hcompat, h1, h2, hdisj, hunion, pullFourth A B C D E h1 hh1, hh2⟩
+
+/-- Push element from front back to 4th position at holdsFor level. -/
+theorem holdsFor_pushFourth {A B C D E R : Assertion} {s : MachineState}
+    (h : ((D ** A ** B ** C ** E) ** R).holdsFor s) :
+    ((A ** B ** C ** D ** E) ** R).holdsFor s := by
+  obtain ⟨hp, hcompat, h1, h2, hdisj, hunion, hh1, hh2⟩ := h
+  exact ⟨hp, hcompat, h1, h2, hdisj, hunion, pushFourth A B C D E h1 hh1, hh2⟩
+
+/-- Single ECALL step for HINT_READ (t0 = 0xF1).
+    Precondition: x5 = 0xF1, x10 = bufAddr, x11 = nbytes,
+                  privateInput = inputBytes, memory buffer at bufAddr = oldWords.
+    Postcondition: same registers, privateInput = inputBytes.drop nbytes.toNat,
+                   memory buffer = bytesToWords (inputBytes.take nbytes.toNat). -/
+theorem ecall_hint_read_spec_gen (code : CodeMem) (bufAddr nbytes : Word)
+    (inputBytes : List (BitVec 8)) (oldWords : List Word) (addr : Addr)
+    (hfetch : code addr = some .ECALL)
+    (hLen : nbytes.toNat ≤ inputBytes.length)
+    (hNbytes : nbytes.toNat = 4 * oldWords.length) :
+    cpsTriple code addr (addr + 4)
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ bufAddr) ** (.x11 ↦ᵣ nbytes) **
+       privateInputIs inputBytes ** memBufferIs bufAddr oldWords)
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ bufAddr) ** (.x11 ↦ᵣ nbytes) **
+       privateInputIs (inputBytes.drop nbytes.toNat) **
+       memBufferIs bufAddr (bytesToWords (inputBytes.take nbytes.toNat))) := by
+  intro R hR st hPR hpc
+  -- Extract register values from the 5-part conjunction ** R
+  have hP := holdsFor_sepConj_elim_left hPR
+  have hx5 : st.getReg .x5 = 0xF1#32 :=
+    (holdsFor_regIs .x5 _ st).mp (holdsFor_sepConj_elim_left hP)
+  have hx10 : st.getReg .x10 = bufAddr :=
+    (holdsFor_regIs .x10 _ st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right hP))
+  have hx11 : st.getReg .x11 = nbytes :=
+    (holdsFor_regIs .x11 _ st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hP)))
+  -- Extract privateInputIs value
+  have hPI := holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hP))
+  have hPIval : st.privateInput = inputBytes :=
+    (holdsFor_privateInputIs inputBytes st).mp (holdsFor_sepConj_elim_left hPI)
+  -- Sufficient input check
+  have hsuff : nbytes.toNat ≤ st.privateInput.length := by rw [hPIval]; exact hLen
+  have hsuff' : (st.getReg .x11).toNat ≤ st.privateInput.length := by rw [hx11]; exact hsuff
+  -- Step computation
+  have hfetch' : code st.pc = some .ECALL := by rw [hpc]; exact hfetch
+  have hstep := step_ecall_hint_read code st hfetch' hx5 hsuff'
+  -- Step computation
+  have hNewState : step code st =
+      some (({ st with privateInput := st.privateInput.drop nbytes.toNat }.writeBytesAsWords
+        bufAddr (st.privateInput.take nbytes.toNat)).setPC (addr + 4)) := by
+    rw [hstep, hx11, hx10, hpc]
+  -- Build the witness
+  have hPI_eq : st.privateInput.take nbytes.toNat = inputBytes.take nbytes.toNat := by
+    rw [hPIval]
+  refine ⟨1, ({ st with privateInput := st.privateInput.drop nbytes.toNat }.writeBytesAsWords
+    bufAddr (inputBytes.take nbytes.toNat)).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hNewState, Option.bind, hPI_eq]
+  · simp [MachineState.setPC]
+  · -- Reconstruct postcondition via three state modification layers
+    -- The state is:
+    --   ({ st with privateInput := ... }.writeBytesAsWords bufAddr ...).setPC (addr + 4)
+    -- We handle: (1) privateInput drop, (2) writeBytesAsWords, (3) setPC
+
+    -- Step 1: privateInput drop
+    -- Pull privateInputIs to front (position 4 → 1)
+    have h1 := holdsFor_pullFourth hPR
+    -- h1 : ((privateInputIs inputBytes ** x5 ** x10 ** x11 ** memBufferIs) ** R).holdsFor st
+    have h1a := holdsFor_sepConj_assoc.mp h1
+    -- Apply privateInput drop
+    have h2 := holdsFor_sepConj_privateInputIs_drop (n := nbytes.toNat) h1a
+    -- Push privateInputIs back to position 4
+    have h2a := holdsFor_sepConj_assoc.mpr h2
+    have h3 := holdsFor_pushFourth h2a
+    -- h3 : ((x5 ** x10 ** x11 ** privateInputIs (drop) ** memBufferIs) ** R).holdsFor s'
+    -- where s' = { st with privateInput := st.privateInput.drop n }
+
+    -- Step 2: writeBytesAsWords on memBufferIs
+    -- Rearrange: we need memBufferIs at the front for holdsFor_sepConj_memBufferIs_writeBytesAsWords
+    -- Structure: ((A ** B ** C ** D ** E) ** R) where E = memBufferIs
+    -- Reassociate to get E next to R: ((A ** B ** C ** D) ** (E ** R))
+    -- Then swap to get (E ** (A ** B ** C ** D) ** R)... but this requires more complex maneuvers.
+    -- Simpler: use pull_second repeatedly to get memBufferIs to front in the inner assertion.
+
+    -- Inner: x5 ** x10 ** x11 ** privateInputIs(drop) ** memBufferIs
+    -- We want: memBufferIs ** x5 ** x10 ** x11 ** privateInputIs(drop)
+    -- Use comm at the inner level: swap (privateInputIs ** memBufferIs) to (memBufferIs ** privateInputIs)
+
+    -- Actually, since our holdsFor_sepConj_memBufferIs_writeBytesAsWords works with any R,
+    -- we just need memBufferIs at the outermost left position in the P ** R decomposition.
+    -- Let's reassociate so that the inner part becomes (memBufferIs ** frame) for some frame.
+
+    -- From h3: ((x5 ** x10 ** x11 ** privateInputIs ** memBufferIs) ** R)
+    -- We need to get memBufferIs to the left: reassociate inner as
+    -- (x5 ** x10 ** x11 ** (privateInputIs ** memBufferIs))
+    -- then use comm on the pair: (x5 ** x10 ** x11 ** (memBufferIs ** privateInputIs))
+    -- then reassociate the whole thing into (memBufferIs ** frame) ** R' for appropriate frame/R'.
+
+    -- Alternatively: use holdsFor_pullFourth to get
+    -- ((memBufferIs ** x5 ** ...) ** R) — but memBufferIs is at position 5 of a 5-element chain.
+    -- We need a pull5-from-5 which is just pulling the last element, i.e., comm on the inner's tail's tail's tail.
+
+    -- Let me use a cleaner approach: factor through the inner assertion's last pair.
+    -- ((A ** B ** C ** (D ** E)) ** R) using assoc
+    -- Then comm inside: ((A ** B ** C ** (E ** D)) ** R)
+    -- Then assoc back: ((A ** B ** C ** E ** D) ** R)
+    -- Then pullFourth: ((E ** A ** B ** C ** D) ** R)
+    -- Then assoc: (E ** ((A ** B ** C ** D) ** R))
+    -- Apply writeBytesAsWords
+    -- Then reverse
+
+    -- Associating the last pair: from h3, inner is x5 ** x10 ** x11 ** privateInputIs ** memBufferIs
+    -- = x5 ** (x10 ** (x11 ** (privateInputIs ** memBufferIs)))
+    -- Wrap with R: ((x5 ** x10 ** x11 ** privateInputIs ** memBufferIs) ** R)
+
+    -- Let me just directly manipulate the PartialState witness. Instead of complex rearrangement,
+    -- use the fact that the IH of holdsFor_sepConj_memBufferIs_writeBytesAsWords quantifies over R.
+    -- So I need to decompose h3 as (memBufferIs ** frame) ** R for some frame.
+
+    -- Actually, let's just use a sequence of pull_second operations:
+    -- From h3: ((A ** B ** C ** D ** E) ** R)
+    -- pull_second: (B ** C ** D ** E ** (A ** R))... no, pull_second works at holdsFor level
+    -- It goes from ((A ** B) ** C) to (B ** (A ** C))
+
+    -- Let me just use four pull_second calls to move memBufferIs to front:
+    -- Start: ((x5 ** x10 ** x11 ** pi ** mb) ** R)
+    -- = assoc.mp → (x5 ** (x10 ** x11 ** pi ** mb) ** R)... no that's wrong
+
+    -- pull_second.mp: ((A ** B) ** C) → (B ** (A ** C))
+    -- On h3: ((x5 ** x10 ** x11 ** pi ** mb) ** R) with A=x5, B=(x10 ** x11 ** pi ** mb), C=R:
+    --   → ((x10 ** x11 ** pi ** mb) ** (x5 ** R))
+    -- Again with A=x10, B=(x11 ** pi ** mb), C=(x5 ** R):
+    --   → ((x11 ** pi ** mb) ** (x10 ** x5 ** R))
+    -- Again with A=x11, B=(pi ** mb), C=(x10 ** x5 ** R):
+    --   → ((pi ** mb) ** (x11 ** x10 ** x5 ** R))
+    -- Again with A=pi, B=mb, C=(x11 ** x10 ** x5 ** R):
+    --   → (mb ** (pi ** x11 ** x10 ** x5 ** R))
+    -- Now apply writeBytesAsWords on (mb ** frame)
+    -- Then reverse: push mb back to end
+
+    have h4 := holdsFor_sepConj_pull_second.mp h3
+    have h5 := holdsFor_sepConj_pull_second.mp h4
+    have h6 := holdsFor_sepConj_pull_second.mp h5
+    have h7 := holdsFor_sepConj_pull_second.mp h6
+    -- h7 : (memBufferIs bufAddr oldWords ** (privateInputIs ... ** x11 ** x10 ** x5 ** R))
+    --   .holdsFor { st with privateInput := ... }
+
+    -- Apply writeBytesAsWords
+    have hblen : (inputBytes.take nbytes.toNat).length = 4 * oldWords.length := by
+      rw [List.length_take]; omega
+    have h8 := holdsFor_sepConj_memBufferIs_writeBytesAsWords hblen h7
+
+    -- Push memBufferIs back to position 5 (reverse the 4 pull_seconds)
+    have h9 := holdsFor_sepConj_pull_second.mpr h8
+    have h10 := holdsFor_sepConj_pull_second.mpr h9
+    have h11 := holdsFor_sepConj_pull_second.mpr h10
+    have h12 := holdsFor_sepConj_pull_second.mpr h11
+    -- h12 has the regs/pi/mb in REVERSED order: x5 ** x10 ** x11 ** pi ** mb'
+    -- Wait, pull_second.mpr goes from (B ** (A ** C)) to ((A ** B) ** C)
+    -- Let's trace: h8 = (mb' ** (pi ** x11 ** x10 ** x5 ** R))
+    -- mpr: ((pi ** mb') ** (x11 ** x10 ** x5 ** R))
+    -- mpr: ((x11 ** pi ** mb') ** (x10 ** x5 ** R))
+    -- mpr: ((x10 ** x11 ** pi ** mb') ** (x5 ** R))
+    -- mpr: ((x5 ** x10 ** x11 ** pi ** mb') ** R)
+    -- So h12 = ((x5 ** x10 ** x11 ** privateInputIs(drop) ** memBufferIs(bytesToWords)) ** R)
+
+    -- Step 3: setPC
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj
+        (pcFree_sepConj (pcFree_regIs .x5 _)
+          (pcFree_sepConj (pcFree_regIs .x10 _)
+            (pcFree_sepConj (pcFree_regIs .x11 _)
+              (pcFree_sepConj (pcFree_privateInputIs _) (pcFree_memBufferIs _ _)))))
+        hR) _ _ h12
 
 -- ============================================================================
 -- Section 6: ECALL WRITE (public values) specification
