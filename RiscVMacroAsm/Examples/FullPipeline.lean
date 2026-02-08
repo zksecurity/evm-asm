@@ -26,11 +26,11 @@ def full_pipeline_state : MachineState where
   mem := fun _ => 0
   pc := 0
 
-/-- After running full_pipeline, publicValues = [42]. -/
+/-- After running full_pipeline, publicValues = [0x2A, 0, 0, 0] (42 as LE bytes). -/
 example : let code := loadProgram 0 full_pipeline
           let steps := full_pipeline.length - 1
           (stepN steps code full_pipeline_state).bind (fun s =>
-            some s.publicValues) = some [42] := by
+            some s.publicValues) = some [0x2A, 0, 0, 0] := by
   native_decide
 
 /-- After running full_pipeline, committed = [(0, 0xDEAD)]. -/

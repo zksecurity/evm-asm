@@ -27,8 +27,8 @@ structure PartialState where
   regs : Reg → Option Word
   mem  : Addr → Option Word
   pc   : Option Word
-  publicValues : Option (List Word) := none
-  privateInput : Option (List Word) := none
+  publicValues : Option (List (BitVec 8)) := none
+  privateInput : Option (List (BitVec 8)) := none
 
 namespace PartialState
 
@@ -60,7 +60,7 @@ def singletonPC (v : Word) : PartialState where
   privateInput := none
 
 /-- A partial state owning just the public values. -/
-def singletonPublicValues (vals : List Word) : PartialState where
+def singletonPublicValues (vals : List (BitVec 8)) : PartialState where
   regs := fun _ => none
   mem  := fun _ => none
   pc   := none
@@ -68,7 +68,7 @@ def singletonPublicValues (vals : List Word) : PartialState where
   privateInput := none
 
 /-- A partial state owning just the private input. -/
-def singletonPrivateInput (vals : List Word) : PartialState where
+def singletonPrivateInput (vals : List (BitVec 8)) : PartialState where
   regs := fun _ => none
   mem  := fun _ => none
   pc   := none
@@ -848,7 +848,7 @@ def aExists {α : Type} (P : α → Assertion) : Assertion :=
 -- ============================================================================
 
 /-- Public values stream equals a given list. -/
-def publicValuesIs (vals : List Word) : Assertion :=
+def publicValuesIs (vals : List (BitVec 8)) : Assertion :=
   fun h => h = PartialState.singletonPublicValues vals
 
 -- ============================================================================
@@ -857,7 +857,7 @@ def publicValuesIs (vals : List Word) : Assertion :=
 
 namespace PartialState
 
-theorem CompatibleWith_singletonPublicValues (vals : List Word) (s : MachineState) :
+theorem CompatibleWith_singletonPublicValues (vals : List (BitVec 8)) (s : MachineState) :
     (singletonPublicValues vals).CompatibleWith s ↔ s.publicValues = vals := by
   constructor
   · intro ⟨_, _, _, hpv, _⟩
@@ -872,7 +872,7 @@ theorem CompatibleWith_singletonPublicValues (vals : List Word) (s : MachineStat
 end PartialState
 
 @[simp]
-theorem holdsFor_publicValuesIs (vals : List Word) (s : MachineState) :
+theorem holdsFor_publicValuesIs (vals : List (BitVec 8)) (s : MachineState) :
     (publicValuesIs vals).holdsFor s ↔ s.publicValues = vals := by
   simp only [Assertion.holdsFor, publicValuesIs]
   constructor
@@ -885,18 +885,18 @@ theorem holdsFor_publicValuesIs (vals : List Word) (s : MachineState) :
 -- pcFree for publicValuesIs
 -- ============================================================================
 
-theorem pcFree_publicValuesIs (vals : List Word) : (publicValuesIs vals).pcFree := by
+theorem pcFree_publicValuesIs (vals : List (BitVec 8)) : (publicValuesIs vals).pcFree := by
   intro h hp; rw [publicValuesIs] at hp; subst hp; rfl
 
 -- ============================================================================
 -- Disjointness lemmas for publicValuesIs composition
 -- ============================================================================
 
-private theorem singletonReg_disjoint_singletonPublicValues (r : Reg) (v : Word) (vals : List Word) :
+private theorem singletonReg_disjoint_singletonPublicValues (r : Reg) (v : Word) (vals : List (BitVec 8)) :
     (PartialState.singletonReg r v).Disjoint (PartialState.singletonPublicValues vals) := by
   exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
-private theorem singletonMem_disjoint_singletonPublicValues (a : Addr) (v : Word) (vals : List Word) :
+private theorem singletonMem_disjoint_singletonPublicValues (a : Addr) (v : Word) (vals : List (BitVec 8)) :
     (PartialState.singletonMem a v).Disjoint (PartialState.singletonPublicValues vals) := by
   exact ⟨fun _ => Or.inl rfl, fun _ => Or.inr rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
@@ -905,7 +905,7 @@ private theorem singletonMem_disjoint_singletonPublicValues (a : Addr) (v : Word
 -- ============================================================================
 
 theorem holdsFor_sepConj_regIs_publicValuesIs {r : Reg} {v : Word}
-    {vals : List Word} {s : MachineState} :
+    {vals : List (BitVec 8)} {s : MachineState} :
     ((regIs r v) ** (publicValuesIs vals)).holdsFor s ↔
       s.getReg r = v ∧ s.publicValues = vals := by
   constructor
@@ -927,7 +927,7 @@ theorem holdsFor_sepConj_regIs_publicValuesIs {r : Reg} {v : Word}
 -- ============================================================================
 
 /-- Private input stream equals a given list. -/
-def privateInputIs (vals : List Word) : Assertion :=
+def privateInputIs (vals : List (BitVec 8)) : Assertion :=
   fun h => h = PartialState.singletonPrivateInput vals
 
 -- ============================================================================
@@ -936,7 +936,7 @@ def privateInputIs (vals : List Word) : Assertion :=
 
 namespace PartialState
 
-theorem CompatibleWith_singletonPrivateInput (vals : List Word) (s : MachineState) :
+theorem CompatibleWith_singletonPrivateInput (vals : List (BitVec 8)) (s : MachineState) :
     (singletonPrivateInput vals).CompatibleWith s ↔ s.privateInput = vals := by
   constructor
   · intro ⟨_, _, _, _, hpi⟩
@@ -951,7 +951,7 @@ theorem CompatibleWith_singletonPrivateInput (vals : List Word) (s : MachineStat
 end PartialState
 
 @[simp]
-theorem holdsFor_privateInputIs (vals : List Word) (s : MachineState) :
+theorem holdsFor_privateInputIs (vals : List (BitVec 8)) (s : MachineState) :
     (privateInputIs vals).holdsFor s ↔ s.privateInput = vals := by
   simp only [Assertion.holdsFor, privateInputIs]
   constructor
@@ -964,22 +964,22 @@ theorem holdsFor_privateInputIs (vals : List Word) (s : MachineState) :
 -- pcFree for privateInputIs
 -- ============================================================================
 
-theorem pcFree_privateInputIs (vals : List Word) : (privateInputIs vals).pcFree := by
+theorem pcFree_privateInputIs (vals : List (BitVec 8)) : (privateInputIs vals).pcFree := by
   intro h hp; rw [privateInputIs] at hp; subst hp; rfl
 
 -- ============================================================================
 -- Disjointness lemmas for privateInputIs composition
 -- ============================================================================
 
-private theorem singletonReg_disjoint_singletonPrivateInput (r : Reg) (v : Word) (vals : List Word) :
+private theorem singletonReg_disjoint_singletonPrivateInput (r : Reg) (v : Word) (vals : List (BitVec 8)) :
     (PartialState.singletonReg r v).Disjoint (PartialState.singletonPrivateInput vals) := by
   exact ⟨fun _ => Or.inr rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
-private theorem singletonMem_disjoint_singletonPrivateInput (a : Addr) (v : Word) (vals : List Word) :
+private theorem singletonMem_disjoint_singletonPrivateInput (a : Addr) (v : Word) (vals : List (BitVec 8)) :
     (PartialState.singletonMem a v).Disjoint (PartialState.singletonPrivateInput vals) := by
   exact ⟨fun _ => Or.inl rfl, fun _ => Or.inr rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
-private theorem singletonPublicValues_disjoint_singletonPrivateInput (pv : List Word) (pi : List Word) :
+private theorem singletonPublicValues_disjoint_singletonPrivateInput (pv : List (BitVec 8)) (pi : List (BitVec 8)) :
     (PartialState.singletonPublicValues pv).Disjoint (PartialState.singletonPrivateInput pi) := by
   exact ⟨fun _ => Or.inl rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inr rfl, Or.inl rfl⟩
 
@@ -988,7 +988,7 @@ private theorem singletonPublicValues_disjoint_singletonPrivateInput (pv : List 
 -- ============================================================================
 
 theorem holdsFor_sepConj_regIs_privateInputIs {r : Reg} {v : Word}
-    {vals : List Word} {s : MachineState} :
+    {vals : List (BitVec 8)} {s : MachineState} :
     ((regIs r v) ** (privateInputIs vals)).holdsFor s ↔
       s.getReg r = v ∧ s.privateInput = vals := by
   constructor

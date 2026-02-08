@@ -38,17 +38,18 @@ def echo : Program :=
 /-- The echo program is 12 instructions long. -/
 example : echo.length = 12 := by native_decide
 
-/-- A concrete initial state for smoke tests. -/
+/-- A concrete initial state for smoke tests.
+    privateInput is 16 bytes representing 4 LE words: 1, 2, 3, 4. -/
 def echoInitState : MachineState where
   regs := fun _ => 0
   mem := fun _ => 0
   pc := 0
-  privateInput := [1, 2, 3, 4]
+  privateInput := [1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]
   publicValues := []
 
-/-- After 11 steps, publicValues = [1, 2, 3, 4]. -/
+/-- After 11 steps, publicValues = 16 LE bytes (words 1, 2, 3, 4). -/
 example : (stepN 11 (loadProgram 0 echo) echoInitState).bind
-    (fun s => some s.publicValues) = some [1, 2, 3, 4] := by
+    (fun s => some s.publicValues) = some [1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0] := by
   native_decide
 
 /-- After 11 steps, privateInput is consumed. -/
@@ -83,7 +84,7 @@ private theorem fetch_11 : loadProgram 0 echo 44 = some .ECALL := by native_deci
 -- ============================================================================
 
 /-- After setting up x5, x10, x11 for HINT_READ. -/
-private def hintReadReady (pi : List Word) (pv : List Word) (s : MachineState) : Prop :=
+private def hintReadReady (pi : List (BitVec 8)) (pv : List (BitVec 8)) (s : MachineState) : Prop :=
   s.getReg .x5 = 0xF1 ∧
   s.getReg .x10 = 0x100 ∧
   s.getReg .x11 = 16 ∧

@@ -149,12 +149,12 @@ theorem pcIndep_committedIs (vals : List (Word × Word)) :
   intro s v h
   simp only [MachineState.committedIs, MachineState.committed_setPC] at *; exact h
 
-theorem pcIndep_publicValuesIs (vals : List Word) :
+theorem pcIndep_publicValuesIs (vals : List (BitVec 8)) :
     pcIndep (MachineState.publicValuesIs vals) := by
   intro s v h
   simp only [MachineState.publicValuesIs, MachineState.publicValues_setPC] at *; exact h
 
-theorem pcIndep_privateInputIs (vals : List Word) :
+theorem pcIndep_privateInputIs (vals : List (BitVec 8)) :
     pcIndep (MachineState.privateInputIs vals) := by
   intro s v h
   simp only [MachineState.privateInputIs, MachineState.privateInput_setPC] at *; exact h

@@ -24,11 +24,11 @@ def write_single_state : MachineState where
   mem := fun _ => 0
   pc := 0
 
-/-- After executing write_single_word, publicValues = [42]. -/
+/-- After executing write_single_word, publicValues = [0x2A, 0, 0, 0] (42 as LE bytes). -/
 example : let code := loadProgram 0 write_single_word
           let steps := write_single_word.length
           (stepN steps code write_single_state).bind (fun s =>
-            some s.publicValues) = some [42] := by
+            some s.publicValues) = some [0x2A, 0, 0, 0] := by
   native_decide
 
 -- ============================================================================
@@ -49,11 +49,11 @@ def write_two_state : MachineState where
   mem := fun _ => 0
   pc := 0
 
-/-- After executing write_two_words, publicValues = [42, 99]. -/
+/-- After executing write_two_words, publicValues = [0x2A, 0, 0, 0, 0x63, 0, 0, 0] (42, 99 as LE bytes). -/
 example : let code := loadProgram 0 write_two_words
           let steps := write_two_words.length
           (stepN steps code write_two_state).bind (fun s =>
-            some s.publicValues) = some [42, 99] := by
+            some s.publicValues) = some [0x2A, 0, 0, 0, 0x63, 0, 0, 0] := by
   native_decide
 
 -- ============================================================================

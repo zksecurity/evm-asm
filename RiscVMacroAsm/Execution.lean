@@ -289,24 +289,26 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
       let buf := s.getReg .x11
       let nbytes := s.getReg .x12
       if fd == (13 : Word) then
-        let nwords := nbytes.toNat / 4
-        let words := s.readWords buf nwords
-        some ((s.appendPublicValues words).setPC (s.pc + 4))
+        -- SP1: reads nbytes individual bytes from memory
+        let bytes := s.readBytes buf nbytes.toNat
+        some ((s.appendPublicValues bytes).setPC (s.pc + 4))
       else
         some (s.setPC (s.pc + 4))  -- other fd: continue
     else if t0 == (0x10 : Word) then  -- COMMIT syscall
       some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4))
     else if t0 == (0xF0 : Word) then  -- HINT_LEN syscall
-      let len := BitVec.ofNat 32 (4 * s.privateInput.length)
+      -- SP1: returns actual byte count of input stream
+      let len := BitVec.ofNat 32 s.privateInput.length
       some ((s.setReg .x10 len).setPC (s.pc + 4))
     else if t0 == (0xF1 : Word) then  -- HINT_READ syscall
       let addr := s.getReg .x10
       let nbytes := s.getReg .x11
-      let nwords := nbytes.toNat / 4
-      if nwords ≤ s.privateInput.length then
-        let words := s.privateInput.take nwords
-        let s' := { s with privateInput := s.privateInput.drop nwords }
-        some ((s'.writeWords addr words).setPC (s.pc + 4))
+      let nbytes_val := nbytes.toNat
+      -- SP1: pops nbytes bytes, groups into 4-byte LE words, writes to word-aligned memory
+      if nbytes_val ≤ s.privateInput.length then
+        let bytes := s.privateInput.take nbytes_val
+        let s' := { s with privateInput := s.privateInput.drop nbytes_val }
+        some ((s'.writeBytesAsWords addr bytes).setPC (s.pc + 4))
       else
         none  -- trap: not enough input (SP1: panic)
     else some (execInstrBr s .ECALL)  -- other ecalls continue
@@ -476,13 +478,13 @@ theorem step_ecall_commit (code : CodeMem) (s : MachineState)
       some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0]
 
-/-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends words from memory. -/
+/-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends bytes from memory. -/
 theorem step_ecall_write_public (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x02)
     (hfd : s.getReg .x10 = 13) :
     step code s =
-      some ((s.appendPublicValues (s.readWords (s.getReg .x11) ((s.getReg .x12).toNat / 4))).setPC (s.pc + 4)) := by
+      some ((s.appendPublicValues (s.readBytes (s.getReg .x11) (s.getReg .x12).toNat)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0, hfd]
 
 /-- WRITE syscall to non-public-values fd (t0 = 0x02, fd ≠ 13) just advances PC. -/
@@ -494,31 +496,31 @@ theorem step_ecall_write_other (code : CodeMem) (s : MachineState)
   simp only [step, hfetch, ht0, beq_iff_eq, hfd, ite_false]
   simp (config := { decide := true })
 
-/-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns 4 * privateInput.length in a0. -/
+/-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns privateInput.length in a0. -/
 theorem step_ecall_hint_len (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF0) :
     step code s =
-      some ((s.setReg .x10 (BitVec.ofNat 32 (4 * s.privateInput.length))).setPC (s.pc + 4)) := by
+      some ((s.setReg .x10 (BitVec.ofNat 32 s.privateInput.length)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0]
 
-/-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads words from privateInput into memory. -/
+/-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads bytes from privateInput into memory as LE words. -/
 theorem step_ecall_hint_read (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
-    (hsuff : (s.getReg .x11).toNat / 4 ≤ s.privateInput.length) :
+    (hsuff : (s.getReg .x11).toNat ≤ s.privateInput.length) :
     step code s =
-      let nwords := (s.getReg .x11).toNat / 4
-      let words := s.privateInput.take nwords
-      let s' := { s with privateInput := s.privateInput.drop nwords }
-      some ((s'.writeWords (s.getReg .x10) words).setPC (s.pc + 4)) := by
+      let nbytes_val := (s.getReg .x11).toNat
+      let bytes := s.privateInput.take nbytes_val
+      let s' := { s with privateInput := s.privateInput.drop nbytes_val }
+      some ((s'.writeBytesAsWords (s.getReg .x10) bytes).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0, hsuff]
 
 /-- HINT_READ syscall traps when not enough input is available. -/
 theorem step_ecall_hint_read_trap (code : CodeMem) (s : MachineState)
     (hfetch : code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
-    (hinsuff : ¬ ((s.getReg .x11).toNat / 4 ≤ s.privateInput.length)) :
+    (hinsuff : ¬ ((s.getReg .x11).toNat ≤ s.privateInput.length)) :
     step code s = none := by
   simp [step, hfetch, ht0, hinsuff]
 

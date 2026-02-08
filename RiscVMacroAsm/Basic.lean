@@ -151,10 +151,10 @@ structure MachineState where
   pc   : Word
   /-- Committed public outputs (a0, a1) from COMMIT syscalls -/
   committed : List (Word × Word) := []
-  /-- Accumulated public values from WRITE syscalls (flat word stream) -/
-  publicValues : List Word := []
-  /-- Private input stream (flat word list, consumed by HINT_READ) -/
-  privateInput : List Word := []
+  /-- Accumulated public values from WRITE syscalls (flat byte stream, matching SP1) -/
+  publicValues : List (BitVec 8) := []
+  /-- Private input stream (flat byte list, consumed by HINT_READ, matching SP1) -/
+  privateInput : List (BitVec 8) := []
 
 namespace MachineState
 
@@ -196,9 +196,9 @@ def writeWords (s : MachineState) (base : Addr) : List Word → MachineState
   | [] => s
   | w :: ws => (s.setMem base w).writeWords (base + 4) ws
 
-/-- Append words to the public values stream. -/
-def appendPublicValues (s : MachineState) (words : List Word) : MachineState :=
-  { s with publicValues := s.publicValues ++ words }
+/-- Append bytes to the public values stream. -/
+def appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) : MachineState :=
+  { s with publicValues := s.publicValues ++ bytes }
 
 /-- Read a byte from memory at an arbitrary byte address.
     Reads the containing word and extracts the appropriate byte. -/
@@ -223,6 +223,34 @@ def setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) : MachineState 
   let wa := alignToWord addr
   let pos := (byteOffset addr) / 2
   s.setMem wa (replaceHalfword (s.getMem wa) pos h)
+
+/-- Read n consecutive bytes from memory starting at base byte address.
+    Each byte is extracted from the containing word using getByte. -/
+def readBytes (s : MachineState) (base : Addr) : Nat → List (BitVec 8)
+  | 0 => []
+  | n + 1 => s.getByte base :: readBytes s (base + 1) n
+
+end MachineState
+
+/-- Convert up to 4 bytes (little-endian) into a 32-bit word, zero-padding if fewer than 4. -/
+def bytesToWordLE (bs : List (BitVec 8)) : Word :=
+  let b0 : Word := (bs[0]?.getD 0).zeroExtend 32
+  let b1 : Word := (bs[1]?.getD 0).zeroExtend 32
+  let b2 : Word := (bs[2]?.getD 0).zeroExtend 32
+  let b3 : Word := (bs[3]?.getD 0).zeroExtend 32
+  b0 ||| (b1 <<< (8 : Word)) ||| (b2 <<< (16 : Word)) ||| (b3 <<< (24 : Word))
+
+namespace MachineState
+
+/-- Write a byte stream as consecutive LE words to memory, starting at base (word-aligned).
+    Chunks the byte list into groups of 4, zero-pads the last chunk if needed. -/
+def writeBytesAsWords (s : MachineState) (base : Addr) : List (BitVec 8) → MachineState
+  | [] => s
+  | b :: bs =>
+    let chunk := (b :: bs).take 4
+    let rest := (b :: bs).drop 4
+    (s.setMem base (bytesToWordLE chunk)).writeBytesAsWords (base + 4) rest
+termination_by l => l.length
 
 -- Lemmas for reasoning about register file operations
 
@@ -376,8 +404,8 @@ theorem privateInput_appendCommit (s : MachineState) (a0 a1 : Word) :
   simp [appendCommit]
 
 @[simp]
-theorem privateInput_appendPublicValues (s : MachineState) (words : List Word) :
-    (s.appendPublicValues words).privateInput = s.privateInput := by
+theorem privateInput_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+    (s.appendPublicValues bytes).privateInput = s.privateInput := by
   simp [appendPublicValues]
 
 -- appendCommit preservation lemmas
@@ -405,28 +433,28 @@ theorem committed_appendCommit (s : MachineState) (a0 a1 : Word) :
 -- appendPublicValues preservation lemmas
 
 @[simp]
-theorem getReg_appendPublicValues (s : MachineState) (words : List Word) (r : Reg) :
-    (s.appendPublicValues words).getReg r = s.getReg r := by
+theorem getReg_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) (r : Reg) :
+    (s.appendPublicValues bytes).getReg r = s.getReg r := by
   cases r <;> rfl
 
 @[simp]
-theorem getMem_appendPublicValues (s : MachineState) (words : List Word) (a : Addr) :
-    (s.appendPublicValues words).getMem a = s.getMem a := by
+theorem getMem_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) (a : Addr) :
+    (s.appendPublicValues bytes).getMem a = s.getMem a := by
   simp [appendPublicValues, getMem]
 
 @[simp]
-theorem pc_appendPublicValues (s : MachineState) (words : List Word) :
-    (s.appendPublicValues words).pc = s.pc := by
+theorem pc_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+    (s.appendPublicValues bytes).pc = s.pc := by
   simp [appendPublicValues]
 
 @[simp]
-theorem committed_appendPublicValues (s : MachineState) (words : List Word) :
-    (s.appendPublicValues words).committed = s.committed := by
+theorem committed_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+    (s.appendPublicValues bytes).committed = s.committed := by
   simp [appendPublicValues]
 
 @[simp]
-theorem publicValues_appendPublicValues (s : MachineState) (words : List Word) :
-    (s.appendPublicValues words).publicValues = s.publicValues ++ words := by
+theorem publicValues_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+    (s.appendPublicValues bytes).publicValues = s.publicValues ++ bytes := by
   simp [appendPublicValues]
 
 -- readWords simp lemmas
@@ -494,16 +522,95 @@ theorem getReg_writeWords (s : MachineState) (base : Addr) (words : List Word) (
     simp [writeWords, ih]
     cases r <;> simp [getReg, setMem]
 
+-- readBytes simp lemmas
+
+@[simp]
+theorem readBytes_zero (s : MachineState) (base : Addr) :
+    s.readBytes base 0 = [] := rfl
+
+@[simp]
+theorem readBytes_succ (s : MachineState) (base : Addr) (n : Nat) :
+    s.readBytes base (n + 1) = s.getByte base :: s.readBytes (base + 1) n := rfl
+
+-- writeBytesAsWords simp lemmas
+
+@[simp]
+theorem writeBytesAsWords_nil (s : MachineState) (base : Addr) :
+    s.writeBytesAsWords base [] = s := by
+  unfold writeBytesAsWords; rfl
+
+-- writeBytesAsWords preservation lemmas
+
+@[simp]
+theorem pc_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) :
+    (s.writeBytesAsWords base bytes).pc = s.pc := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [pc_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp]
+theorem committed_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) :
+    (s.writeBytesAsWords base bytes).committed = s.committed := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [committed_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp]
+theorem publicValues_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) :
+    (s.writeBytesAsWords base bytes).publicValues = s.publicValues := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [publicValues_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp]
+theorem privateInput_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) :
+    (s.writeBytesAsWords base bytes).privateInput = s.privateInput := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [privateInput_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp]
+theorem getReg_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) (r : Reg) :
+    (s.writeBytesAsWords base bytes).getReg r = s.getReg r := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [getReg_writeBytesAsWords]
+    cases r <;> simp [getReg, setMem]
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
 /-- Predicate asserting the committed output stream equals a given list. -/
 def committedIs (vals : List (Word × Word)) (s : MachineState) : Prop :=
   s.committed = vals
 
 /-- Predicate asserting the public values stream equals a given list. -/
-def publicValuesIs (vals : List Word) (s : MachineState) : Prop :=
+def publicValuesIs (vals : List (BitVec 8)) (s : MachineState) : Prop :=
   s.publicValues = vals
 
 /-- Predicate asserting the private input stream equals a given list. -/
-def privateInputIs (vals : List Word) (s : MachineState) : Prop :=
+def privateInputIs (vals : List (BitVec 8)) (s : MachineState) : Prop :=
   s.privateInput = vals
 
 end MachineState
