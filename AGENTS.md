@@ -114,6 +114,18 @@ sep_perm h
 
 This handles arbitrary permutations of any number of assertions in a `sepConj` chain.
 
+Additional equality lemmas for `empAssertion` elimination:
+- `sepConj_emp_right'` : `(P ** empAssertion) = P`
+- `sepConj_emp_left'` : `(empAssertion ** P) = P`
+
+When rearranging involves `memBufferIs` (which unfolds to `... ** empAssertion`), combine all rules in one `simp`:
+```lean
+simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4,
+  sepConj_emp_right', sepConj_emp_left',
+  sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hab ⊢
+exact hab
+```
+
 ## Next Steps
 
 Potential future work:

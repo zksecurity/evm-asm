@@ -1641,6 +1641,12 @@ theorem sepConj_assoc' (P Q R : Assertion) : ((P ** Q) ** R) = (P ** (Q ** R)) :
 theorem sepConj_left_comm' (P Q R : Assertion) : (P ** (Q ** R)) = (Q ** (P ** R)) := by
   rw [← sepConj_assoc', ← sepConj_assoc', sepConj_comm' P Q]
 
+theorem sepConj_emp_right' (P : Assertion) : (P ** empAssertion) = P :=
+  funext fun h => propext (sepConj_emp_right P h)
+
+theorem sepConj_emp_left' (P : Assertion) : (empAssertion ** P) = P :=
+  funext fun h => propext (sepConj_emp_left P h)
+
 /-- `sep_perm h` closes a goal of the form `A₁ ** ... ** Aₙ` given a hypothesis `h`
     that is a permutation of the same assertions. Works by AC-normalizing both sides
     with `simp` using `sepConj_assoc'`, `sepConj_comm'`, and `sepConj_left_comm'`. -/
