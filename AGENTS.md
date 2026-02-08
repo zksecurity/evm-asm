@@ -99,6 +99,21 @@ The project includes concrete test cases using `native_decide`:
 - **sail-riscv-lean**: https://github.com/opencompl/sail-riscv-lean (same toolchain)
 - **Lean 4 docs**: https://lean-lang.org/documentation/
 
+## Separation Conjunction Permutation Tactic
+
+The `sep_perm` tactic (defined in `SepLogic.lean`) closes goals that require rearranging `sepConj` (`**`) chains. It works by AC-normalizing both the hypothesis and goal using `simp` with three equality lemmas:
+
+- `sepConj_assoc'` : `((P ** Q) ** R) = (P ** (Q ** R))`
+- `sepConj_comm'` : `(P ** Q) = (Q ** P)`
+- `sepConj_left_comm'` : `(P ** (Q ** R)) = (Q ** (P ** R))`
+
+**Usage**: Given a hypothesis `h : (A ** B ** C) s` and goal `⊢ (C ** A ** B) s`:
+```lean
+sep_perm h
+```
+
+This handles arbitrary permutations of any number of assertions in a `sepConj` chain.
+
 ## Next Steps
 
 Potential future work:

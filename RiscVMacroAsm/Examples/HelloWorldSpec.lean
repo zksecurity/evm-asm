@@ -306,16 +306,14 @@ private theorem phase1_pre_rearrange (x5 x6 x7 x10 x11 x12 m0 m1 m2 pv : Asserti
     ∀ h, (x5 ** x6 ** x7 ** x10 ** x11 ** x12 ** m0 ** m1 ** m2 ** pv) h →
       ((x6 ** x7 ** m0 ** m1 ** m2) ** (x5 ** x10 ** x11 ** x12 ** pv)) h := by
   intro h hab
-  -- This is a complex permutation; use AC (associativity-commutativity) reasoning via omega
-  sorry
+  sep_perm hab
 
 -- Rearrangement lemma for phase 1 post (reverse direction)
 private theorem phase1_post_rearrange (x5 x6' x7' x10 x11 x12 m0' m1' m2' pv : Assertion) :
     ∀ h, ((x6' ** x7' ** m0' ** m1' ** m2') ** (x5 ** x10 ** x11 ** x12 ** pv)) h →
       (x5 ** x6' ** x7' ** x10 ** x11 ** x12 ** m0' ** m1' ** m2' ** pv) h := by
   intro h hab
-  -- Reverse of phase1_pre_rearrange (complex permutation)
-  sorry
+  sep_perm hab
 
 -- signExtend12 lemmas
 private theorem hse0 : (0x100 : Word) + signExtend12 (0 : BitVec 12) = 0x100 := by native_decide

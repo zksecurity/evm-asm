@@ -1628,4 +1628,25 @@ theorem holdsFor_liftPred_of {P : MachineState → Prop} {s : MachineState}
     (liftPred P).holdsFor s :=
   holdsFor_liftPred_intro (fun t hr hm hpc hpv hpi => hstable t hr hm hpc hpv hpi hPs)
 
+-- ============================================================================
+-- Assertion-level equalities for AC normalization of sepConj
+-- ============================================================================
+
+theorem sepConj_comm' (P Q : Assertion) : (P ** Q) = (Q ** P) :=
+  funext fun h => propext (sepConj_comm P Q h)
+
+theorem sepConj_assoc' (P Q R : Assertion) : ((P ** Q) ** R) = (P ** (Q ** R)) :=
+  funext fun h => propext (sepConj_assoc P Q R h)
+
+theorem sepConj_left_comm' (P Q R : Assertion) : (P ** (Q ** R)) = (Q ** (P ** R)) := by
+  rw [← sepConj_assoc', ← sepConj_assoc', sepConj_comm' P Q]
+
+/-- `sep_perm h` closes a goal of the form `A₁ ** ... ** Aₙ` given a hypothesis `h`
+    that is a permutation of the same assertions. Works by AC-normalizing both sides
+    with `simp` using `sepConj_assoc'`, `sepConj_comm'`, and `sepConj_left_comm'`. -/
+syntax "sep_perm" ident : tactic
+macro_rules
+  | `(tactic| sep_perm $hyp) =>
+    `(tactic| (simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at $hyp ⊢; exact $hyp))
+
 end RiscVMacroAsm
