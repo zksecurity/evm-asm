@@ -6,4 +6,5 @@ import RiscVMacroAsm.MulMacro
 import RiscVMacroAsm.Execution
 import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
+import RiscVMacroAsm.SyscallSpecs
 import RiscVMacroAsm.Examples
