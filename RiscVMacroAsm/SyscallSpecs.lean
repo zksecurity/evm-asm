@@ -63,7 +63,7 @@ theorem getMem_of_holdsFor_memBufferIs {addr : Addr} {words : List Word}
     | zero =>
       simp only [Nat.mul_zero, List.getElem_cons_zero]
       have : addr + BitVec.ofNat 32 0 = addr := by
-        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_ofNat]
+        apply BitVec.eq_of_toNat_eq; simp
       rw [this]; exact (holdsFor_memIs addr w s).mp (holdsFor_sepConj_elim_left h)
     | succ k' =>
       have hk' : k' < ws.length := by simp [List.length_cons] at hk; omega
@@ -101,7 +101,7 @@ theorem readBytes_append (s : MachineState) (addr : Addr) (m n : Nat) :
   induction m generalizing addr with
   | zero =>
     simp only [Nat.zero_add, MachineState.readBytes, List.nil_append]
-    congr 1; apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_ofNat]
+    congr 1; apply BitVec.eq_of_toNat_eq; simp
   | succ k ih =>
     simp only [Nat.succ_add, MachineState.readBytes, List.cons_append]; congr 1
     rw [ih (addr + 1)]; congr 1; congr 1
@@ -123,7 +123,7 @@ theorem readBytes_of_words {addr : Addr} {words : List Word} {s : MachineState}
     · have h0 := hmem 0 (Nat.zero_lt_succ _)
       simp only [Nat.mul_zero, List.getElem_cons_zero] at h0
       have : addr + BitVec.ofNat 32 0 = addr := by
-        apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+        apply BitVec.eq_of_toNat_eq; simp
       rw [this] at h0
       exact readBytes_4_of_getMem h0 halign
     · rw [show (BitVec.ofNat 32 4 : BitVec 32) = (4 : BitVec 32) from rfl]
@@ -864,8 +864,8 @@ theorem write_public_spec (bufPtr nbytes : Word)
   -- Instruction fetches
   have hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)) := by
     simp only [code, hprog, loadProgram, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_mod,
-      beq_self_eq_true, Nat.zero_div, true_and, Program]
-    simp [List.length_append]
+      beq_self_eq_true, Nat.zero_div, true_and]
+    simp
   have hf1 : code (base + 4) = some (Instr.LI .x10 13) := by
     simp only [code]
     rw [hprog, show (4 : BitVec 32) = BitVec.ofNat 32 (4 * 1) from by grind]

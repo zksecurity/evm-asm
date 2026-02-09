@@ -229,8 +229,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     (then_body else_body : Program)
     (base : Addr) (P : Assertion)
     (hP : P.pcFree)
-    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
-    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
     let then_entry := base + 4
@@ -317,8 +316,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
     (base : Addr) (P Q : Assertion)
     (hP : P.pcFree) (hQ : Q.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
-    (he_small : 4 * (else_body.length) + 4 < 2^20)
-    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    (he_small : 4 * (else_body.length) + 4 < 2^20) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
     let exit_ := base + BitVec.ofNat 32 (4 * prog.length)
@@ -335,7 +333,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
   simp only
   intro h_then h_else
   -- 1. Branch dispatch
-  have hbr := if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small hprog_small
+  have hbr := if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small
   simp only at hbr
   -- 2. JAL step: then_exit → exit_ (preserving Q)
   have hjal : cpsTriple (loadProgram base (if_eq rs1 rs2 then_body else_body))
@@ -390,8 +388,7 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (v1 v2 : Word)
     (then_body else_body : Program)
     (base : Addr) (P : Assertion)
     (hP : P.pcFree)
-    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
-    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
     let then_entry := base + 4
@@ -402,7 +399,7 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (v1 v2 : Word)
         (else_entry, P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) ] := by
   simp only
   exact cpsBranch_to_cpsNBranch _ _ _ _ _ _ _
-    (if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small hprog_small)
+    (if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small)
 
 /-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge.
 
@@ -412,8 +409,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (v1 v2 : Word)
     (base : Addr) (P Q : Assertion)
     (hP : P.pcFree) (hQ : Q.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12)
-    (he_small : 4 * (else_body.length) + 4 < 2^20)
-    (hprog_small : 4 * (then_body.length + else_body.length + 2) < 2^32) :
+    (he_small : 4 * (else_body.length) + 4 < 2^20) :
     let prog := if_eq rs1 rs2 then_body else_body
     let code := loadProgram base prog
     let exit_ := base + BitVec.ofNat 32 (4 * prog.length)
@@ -430,7 +426,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (v1 v2 : Word)
   simp only
   intro h_then h_else
   -- 1. N-branch dispatch
-  have hbr_n := if_eq_branch_step_n rs1 rs2 v1 v2 then_body else_body base P hP ht_small hprog_small
+  have hbr_n := if_eq_branch_step_n rs1 rs2 v1 v2 then_body else_body base P hP ht_small
   simp only at hbr_n
   -- 2. JAL step: then_exit → exit_ (preserving Q)
   have hjal : cpsTriple (loadProgram base (if_eq rs1 rs2 then_body else_body))
