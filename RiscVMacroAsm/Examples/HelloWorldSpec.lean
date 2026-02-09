@@ -54,6 +54,22 @@ theorem sw_spec_gen (code : CodeMem) (rs1 rs2 : Reg) (v_addr v_data mem_old : Wo
       (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v_addr) (pcFree_sepConj (pcFree_regIs rs2 v_data) (pcFree_memIs _ v_data))) hR)
       (st.setMem mem_addr v_data) (addr + 4) h5
 
+/-- SW spec with memOwn (no mem_old needed). -/
+theorem sw_spec_gen_own (code : CodeMem) (rs1 rs2 : Reg) (v_addr v_data : Word)
+    (offset : BitVec 12) (addr : Addr)
+    (hfetch : code addr = some (Instr.SW rs1 rs2 offset))
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** memOwn (v_addr + signExtend12 offset))
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, hv_addr, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, hv_data, ⟨mem_old, hmem⟩⟩ := hrest1
+  exact sw_spec_gen code rs1 rs2 v_addr v_data mem_old offset addr hfetch hvalid R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv_addr, ⟨h2, hr2, hd2, hu2, hv_data, hmem⟩⟩, hRest⟩ hpc
+
 -- ============================================================================
 -- Section 2: Store word helper (LI x6 val ;; SW x7 x6 offset)
 -- ============================================================================
@@ -99,6 +115,24 @@ theorem storeWord_spec_gen (code : CodeMem) (val : Word) (offset : BitVec 12)
       s2'
   exact cpsTriple_seq code addr (addr + 4) (addr + 8) _ _ _ s1' s2''
 
+/-- Combined LI+SW spec with regOwn and memOwn (no x6_old or mem_old needed). -/
+theorem storeWord_spec_gen_own (code : CodeMem) (val : Word) (offset : BitVec 12)
+    (x7_val : Word) (addr : Addr)
+    (hfetch_li : code addr = some (Instr.LI .x6 val))
+    (hfetch_sw : code (addr + 4) = some (Instr.SW .x7 .x6 offset))
+    (hvalid : isValidMemAccess (x7_val + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 8)
+      (regOwn .x6 ** (.x7 ↦ᵣ x7_val) ** memOwn (x7_val + signExtend12 offset))
+      ((.x6 ↦ᵣ val) ** (.x7 ↦ᵣ x7_val) ** ((x7_val + signExtend12 offset) ↦ₘ val)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨x6_old, hx6⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, hx7, ⟨mem_old, hmem⟩⟩ := hrest1
+  exact storeWord_spec_gen code val offset x6_old x7_val mem_old addr
+    hfetch_li hfetch_sw hvalid R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hx6, ⟨h2, hr2, hd2, hu2, hx7, hmem⟩⟩, hRest⟩ hpc
+
 -- ============================================================================
 -- Section 3: Generalized HALT spec (for arbitrary CodeMem)
 -- ============================================================================
@@ -131,6 +165,20 @@ theorem halt_spec_gen (code : CodeMem) (exitCode : Word) (v5_old v10_old : Word)
     ecall_halt_spec_gen code exitCode (base + 8) hf2
   exact cpsTriple_seq_halt code base (base + 8) _ _ _
     (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1' s2') s3
+
+/-- HALT with regOwn (generalized for any CodeMem, no old values needed). -/
+theorem halt_spec_gen_own (code : CodeMem) (exitCode : Word) (base : Addr)
+    (hf0 : code base = some (Instr.LI .x5 0))
+    (hf1 : code (base + 4) = some (Instr.LI .x10 exitCode))
+    (hf2 : code (base + 8) = some .ECALL) :
+    cpsHaltTriple code base
+      (regOwn .x5 ** regOwn .x10)
+      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, h2, hd, hu, ⟨v5_old, hv5⟩, ⟨v10_old, hv10⟩⟩ := hInner
+  exact halt_spec_gen code exitCode v5_old v10_old base hf0 hf1 hf2 R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, ⟨h1, h2, hd, hu, hv5, hv10⟩, hRest⟩ hpc
 
 -- ============================================================================
 -- Section 4: Generalized WRITE spec (for arbitrary CodeMem)
@@ -214,6 +262,36 @@ theorem write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
     (cpsTriple_seq code base (base + 12) (base + 16) _ _ _
       (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
         (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
+
+/-- WRITE with regOwn (generalized for any CodeMem, no old register values needed). -/
+theorem write_public_spec_gen_own (code : CodeMem) (bufPtr nbytes : Word)
+    (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
+    (hLen : nbytes.toNat ≤ 4 * words.length)
+    (hAligned : bufPtr &&& 3#32 = 0#32)
+    (hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)))
+    (hf1 : code (base + 4) = some (Instr.LI .x10 13))
+    (hf2 : code (base + 8) = some (Instr.LI .x11 bufPtr))
+    (hf3 : code (base + 12) = some (Instr.LI .x12 nbytes))
+    (hf4 : code (base + 16) = some Instr.ECALL) :
+    cpsTriple code base (base + 20)
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
+       publicValuesIs oldPV ** memBufferIs bufPtr words)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
+       (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, ⟨v10, hv10⟩, hrest2⟩ := hrest1
+  obtain ⟨h3, hr3, hd3, hu3, ⟨v11, hv11⟩, hrest3⟩ := hrest2
+  obtain ⟨h4, hr4, hd4, hu4, ⟨v12, hv12⟩, hrest4⟩ := hrest3
+  exact write_public_spec_gen code bufPtr nbytes v5 v10 v11 v12 oldPV words base
+    hLen hAligned hf0 hf1 hf2 hf3 hf4 R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv5,
+        ⟨h2, hr2, hd2, hu2, hv10,
+          ⟨h3, hr3, hd3, hu3, hv11,
+            ⟨h4, hr4, hd4, hu4, hv12, hrest4⟩⟩⟩⟩, hRest⟩ hpc
 
 -- ============================================================================
 -- Section 5: HelloWorld program instruction fetch lemmas
@@ -435,6 +513,27 @@ theorem storePhase_spec
         (fun h' hm => (sepConj_emp_right _ h').mp hm)))) h hab)
     t3_raw
   exact cpsTriple_seq hwCode 0 20 28 _ _ _ c02 t3
+
+/-- Store phase with regOwn and memOwn (no old values needed). -/
+theorem storePhase_spec_own :
+    cpsTriple hwCode 0 28
+      (regOwn .x6 ** regOwn .x7 **
+       memOwn (0x100 : Addr) ** memOwn (0x104 : Addr) ** memOwn (0x108 : Addr))
+      ((.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨v6_old, hv6⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, ⟨v7_old, hv7⟩, hrest2⟩ := hrest1
+  obtain ⟨h3, hr3, hd3, hu3, ⟨m0, hm0⟩, hrest3⟩ := hrest2
+  obtain ⟨h4, hr4, hd4, hu4, ⟨m1, hm1⟩, ⟨m2, hm2⟩⟩ := hrest3
+  exact storePhase_spec v6_old v7_old m0 m1 m2 R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv6,
+        ⟨h2, hr2, hd2, hu2, hv7,
+          ⟨h3, hr3, hd3, hu3, hm0,
+            ⟨h4, hr4, hd4, hu4, hm1, hm2⟩⟩⟩⟩, hRest⟩ hpc
 
 -- ============================================================================
 -- Section 7: Main HelloWorld CPS Triple
@@ -681,5 +780,40 @@ theorem helloWorld_spec
   -- Compose all phases
   exact cpsTriple_seq_halt hwCode 0 48 _ _ _
     (cpsTriple_seq hwCode 0 28 48 _ _ _ phase1_adj phase2') phase3
+
+/-- HelloWorld with regOwn and memOwn (no old values needed). -/
+theorem helloWorld_spec_own (oldPV : List (BitVec 8)) :
+    cpsHaltTriple hwCode 0
+      (regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+       regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
+       memOwn (0x100 : Addr) ** memOwn (0x104 : Addr) ** memOwn (0x108 : Addr) **
+       publicValuesIs oldPV)
+      ((.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ 0x00646C72) ** (.x7 ↦ᵣ 0x100) **
+       (.x10 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ 0x100) ** (.x12 ↦ᵣ 11) **
+       ((0x100 : Addr) ↦ₘ 0x6C6C6568) ** ((0x104 : Addr) ↦ₘ 0x6F77206F) **
+       ((0x108 : Addr) ↦ₘ 0x00646C72) **
+       publicValuesIs (oldPV ++ helloWorldBytes)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, ⟨v6, hv6⟩, hrest2⟩ := hrest1
+  obtain ⟨h3, hr3, hd3, hu3, ⟨v7, hv7⟩, hrest3⟩ := hrest2
+  obtain ⟨h4, hr4, hd4, hu4, ⟨v10, hv10⟩, hrest4⟩ := hrest3
+  obtain ⟨h5, hr5, hd5, hu5, ⟨v11, hv11⟩, hrest5⟩ := hrest4
+  obtain ⟨h6, hr6, hd6, hu6, ⟨v12, hv12⟩, hrest6⟩ := hrest5
+  obtain ⟨h7, hr7, hd7, hu7, ⟨m0, hm0⟩, hrest7⟩ := hrest6
+  obtain ⟨h8, hr8, hd8, hu8, ⟨m1, hm1⟩, hrest8⟩ := hrest7
+  obtain ⟨h9, hr9, hd9, hu9, ⟨m2, hm2⟩, hpv⟩ := hrest8
+  exact helloWorld_spec v5 v6 v7 v10 v11 v12 m0 m1 m2 oldPV R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv5,
+        ⟨h2, hr2, hd2, hu2, hv6,
+          ⟨h3, hr3, hd3, hu3, hv7,
+            ⟨h4, hr4, hd4, hu4, hv10,
+              ⟨h5, hr5, hd5, hu5, hv11,
+                ⟨h6, hr6, hd6, hu6, hv12,
+                  ⟨h7, hr7, hd7, hu7, hm0,
+                    ⟨h8, hr8, hd8, hu8, hm1,
+                      ⟨h9, hr9, hd9, hu9, hm2, hpv⟩⟩⟩⟩⟩⟩⟩⟩⟩, hRest⟩ hpc
 
 end RiscVMacroAsm.Examples

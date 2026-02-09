@@ -572,6 +572,17 @@ theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
   exact cpsTriple_seq_halt code base (base + 8) _ _ _
     (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1' s2') s3
 
+/-- HALT exitCode with regOwn (no old register values needed). -/
+theorem halt_spec_own (exitCode : Word) (base : Addr) :
+    cpsHaltTriple (loadProgram base (HALT exitCode)) base
+      (regOwn .x5 ** regOwn .x10)
+      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, h2, hd, hu, ⟨v5_old, hv5⟩, ⟨v10_old, hv10⟩⟩ := hInner
+  exact halt_spec exitCode v5_old v10_old base R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, ⟨h1, h2, hd, hu, hv5, hv10⟩, hRest⟩ hpc
+
 -- ============================================================================
 -- Section 5b: ECALL HINT_READ specification
 -- ============================================================================
@@ -951,5 +962,31 @@ theorem write_public_spec (bufPtr nbytes : Word)
     (cpsTriple_seq code base (base + 12) (base + 16) _ _ _
       (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
         (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
+
+/-- WRITE 13 bufPtr nbytes with regOwn (no old register values needed). -/
+theorem write_public_spec_own (bufPtr nbytes : Word)
+    (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
+    (hLen : nbytes.toNat ≤ 4 * words.length)
+    (hAligned : bufPtr &&& 3#32 = 0#32) :
+    let code := loadProgram base (WRITE 13 bufPtr nbytes)
+    cpsTriple code base (base + 20)
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
+       publicValuesIs oldPV ** memBufferIs bufPtr words)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
+       (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
+       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, ⟨v10, hv10⟩, hrest2⟩ := hrest1
+  obtain ⟨h3, hr3, hd3, hu3, ⟨v11, hv11⟩, hrest3⟩ := hrest2
+  obtain ⟨h4, hr4, hd4, hu4, ⟨v12, hv12⟩, hrest4⟩ := hrest3
+  exact write_public_spec bufPtr nbytes v5 v10 v11 v12 oldPV words base hLen hAligned R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv5,
+        ⟨h2, hr2, hd2, hu2, hv10,
+          ⟨h3, hr3, hd3, hu3, hv11,
+            ⟨h4, hr4, hd4, hu4, hv12, hrest4⟩⟩⟩⟩, hRest⟩ hpc
 
 end RiscVMacroAsm

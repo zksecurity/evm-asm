@@ -444,4 +444,38 @@ theorem echo_spec (inputBytes : List (BitVec 8))
   -- Chain ABC: AB seq_halt C
   exact cpsTriple_seq_halt code 0 36 _ _ _ phaseAB phaseC
 
+/-- Echo with regOwn (no old register values needed).
+
+    Same as echo_spec but the precondition uses regOwn for the 4 scratch registers
+    instead of requiring specific old values v5, v10, v11, v12. -/
+theorem echo_spec_own (inputBytes : List (BitVec 8))
+    (oldWords : List Word)
+    (oldPV : List (BitVec 8))
+    (hInputLen : 16 ≤ inputBytes.length)
+    (hOldWords : oldWords.length = 4) :
+    let code := loadProgram 0 echo
+    let newWords := bytesToWords (inputBytes.take 16)
+    let newBytesFlat := newWords.flatMap
+      (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])
+    cpsHaltTriple code 0
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
+       privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs 0x100 oldWords)
+      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
+       privateInputIs (inputBytes.drop 16) **
+       publicValuesIs (oldPV ++ newBytesFlat.take 16) **
+       memBufferIs 0x100 newWords) := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, ⟨v10, hv10⟩, hrest2⟩ := hrest1
+  obtain ⟨h3, hr3, hd3, hu3, ⟨v11, hv11⟩, hrest3⟩ := hrest2
+  obtain ⟨h4, hr4, hd4, hu4, ⟨v12, hv12⟩, hrest4⟩ := hrest3
+  exact echo_spec inputBytes oldWords v5 v10 v11 v12 oldPV hInputLen hOldWords R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv5,
+        ⟨h2, hr2, hd2, hu2, hv10,
+          ⟨h3, hr3, hd3, hu3, hv11,
+            ⟨h4, hr4, hd4, hu4, hv12, hrest4⟩⟩⟩⟩, hRest⟩ hpc
+
 end RiscVMacroAsm.Examples
