@@ -84,16 +84,30 @@ example : (execProgram (testState 10 7) (add_mulc 4 .x10 .x11 3)).getReg .x10
 
 ```
 RiscVMacroAsm/
-  Basic.lean         -- Machine state: registers, memory, PC
-  Instructions.lean  -- RV32I instruction subset and semantics (incl. ECALL)
-  Program.lean       -- Programs as instruction lists, sequential composition
-  Execution.lean     -- Branch-aware execution, code memory, step/stepN
-  SepLogic.lean      -- Separation logic assertions and combinators
-  Spec.lean          -- Hoare triples, frame rule, structural rules
-  CPSSpec.lean       -- CPS-style Hoare triples, branch specs, structural rules
-  ControlFlow.lean   -- if_eq macro, symbolic proofs, pcIndep
-  MulMacro.lean      -- The add_mulc macro with correctness proofs
-  Examples.lean      -- Swap, zero, triple, halt, and other macro examples
+  Basic.lean            -- Machine state: registers, memory, PC
+  Instructions.lean     -- RV32IM instruction set and semantics (incl. ECALL)
+  Program.lean          -- Programs as instruction lists, sequential composition
+  Execution.lean        -- Branch-aware execution, code memory, step/stepN
+  SepLogic.lean         -- Separation logic assertions and combinators
+  CPSSpec.lean          -- CPS-style Hoare triples, branch specs, structural rules
+  ControlFlow.lean      -- if_eq macro, symbolic proofs, pcIndep
+  InstructionSpecs.lean -- Per-instruction CPS specs (ADD, SUB, ADDI, LW, SW, BEQ, BNE, JAL, JALR, ...)
+  SyscallSpecs.lean     -- Syscall specs: HALT, WRITE, HINT_READ, memory buffers, public/private I/O
+  MulMacro.lean         -- The add_mulc macro with correctness proofs
+  Examples.lean         -- Module hub importing all examples
+  Examples/
+    Swap.lean           -- Register swap macro
+    Zero.lean           -- Zero-register macro
+    Multiply.lean       -- Multiply-by-constant examples
+    LoadModifyStore.lean -- Load-modify-store pattern
+    Combining.lean      -- Combining multiple macros
+    Halting.lean        -- HALT/ECALL termination examples
+    Commit.lean         -- COMMIT syscall example
+    Write.lean          -- WRITE syscall example
+    FullPipeline.lean   -- End-to-end pipeline example
+    HelloWorld.lean     -- Hello world program
+    HelloWorldSpec.lean -- Hello world correctness proof
+    Echo.lean           -- Echo program with CPS spec
 ```
 
 ## Lean Toolchain
