@@ -467,6 +467,55 @@ theorem ecall_halt_spec_gen (code : CodeMem) (exitCode : Word) (addr : Addr)
     step_ecall_halt code st (by rw [hpc]; exact hfetch) hx5
   exact ⟨0, st, rfl, by simp [isHalted, hhalt], hPR⟩
 
+/-- SW rs1 rs2 offset: mem[rs1 + sext(offset)] := rs2 (generalized for any CodeMem) -/
+theorem sw_spec_gen (code : CodeMem) (rs1 rs2 : Reg) (v_addr v_data mem_old : Word)
+    (offset : BitVec 12) (addr : Addr)
+    (hfetch : code addr = some (Instr.SW rs1 rs2 offset))
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ mem_old))
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SW rs1 rs2 offset) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v_addr :=
+    (holdsFor_regIs rs1 v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v_data :=
+    (holdsFor_regIs rs2 v_data st).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right hinner))
+  let mem_addr := v_addr + signExtend12 offset
+  have hnext : execInstrBr st (Instr.SW rs1 rs2 offset) = (st.setMem mem_addr v_data).setPC (st.pc + 4) := by
+    simp [execInstrBr, mem_addr, hrs1_val, hrs2_val]
+  have hstep : step code st = some ((st.setMem mem_addr v_data).setPC (addr + 4)) := by
+    have := step_sw _ _ _ _ _ hfetch' (by rw [hrs1_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setMem mem_addr v_data).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_pull_second.mp h1
+    have h3 := holdsFor_sepConj_memIs_setMem (v' := v_data) h2
+    have h4 := holdsFor_sepConj_pull_second.mpr h3
+    have h5 := holdsFor_sepConj_pull_second.mpr h4
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v_addr) (pcFree_sepConj (pcFree_regIs rs2 v_data) (pcFree_memIs _ v_data))) hR)
+      (st.setMem mem_addr v_data) (addr + 4) h5
+
+/-- SW spec with memOwn (no mem_old needed). -/
+theorem sw_spec_gen_own (code : CodeMem) (rs1 rs2 : Reg) (v_addr v_data : Word)
+    (offset : BitVec 12) (addr : Addr)
+    (hfetch : code addr = some (Instr.SW rs1 rs2 offset))
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** memOwn (v_addr + signExtend12 offset))
+      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, hv_addr, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, hv_data, ⟨mem_old, hmem⟩⟩ := hrest1
+  exact sw_spec_gen code rs1 rs2 v_addr v_data mem_old offset addr hfetch hvalid R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hv_addr, ⟨h2, hr2, hd2, hu2, hv_data, hmem⟩⟩, hRest⟩ hpc
+
 -- ============================================================================
 -- Section 4: Frame Embedding for cpsTriple
 -- ============================================================================
@@ -516,42 +565,26 @@ theorem cpsHaltTriple_frame_right (code : CodeMem) (entry : Addr)
   exact ⟨k, s', hstep, hhalt, holdsFor_sepConj_pull_second.mpr hQFR⟩
 
 -- ============================================================================
--- Section 5: HALT macro specification
+-- Section 5: Generalized HALT spec (for arbitrary CodeMem)
 -- ============================================================================
 
-/-- HALT exitCode: sets x5 := 0, x10 := exitCode, then halts via ECALL.
-    Precondition: own x5 and x10 (regOwn, no old values needed).
-    Postcondition: x5 = 0, x10 = exitCode, execution halted. -/
-theorem halt_spec (exitCode : Word) (base : Addr) :
-    cpsHaltTriple (loadProgram base (HALT exitCode)) base
+/-- HALT exitCode on arbitrary CodeMem, given fetch proofs for the 3 instructions.
+    Uses regOwn (no old values needed). -/
+theorem halt_spec_gen (code : CodeMem) (exitCode : Word) (base : Addr)
+    (hf0 : code base = some (Instr.LI .x5 0))
+    (hf1 : code (base + 4) = some (Instr.LI .x10 exitCode))
+    (hf2 : code (base + 8) = some .ECALL) :
+    cpsHaltTriple code base
       (regOwn .x5 ** regOwn .x10)
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
-  let code := loadProgram base (HALT exitCode)
-  -- The HALT macro is [LI x5 0, LI x10 exitCode, ECALL]
-  have hprog : HALT exitCode =
-      ([Instr.LI .x5 0, Instr.LI .x10 exitCode, Instr.ECALL] : List Instr) := by
-    simp [HALT, LI, single, seq, Program]
-  -- Instruction fetches
-  have hf0 : code base = some (Instr.LI .x5 0) := by
-    simp [code, hprog, loadProgram, BitVec.sub_self]
-  have hf1 : code (base + 4) = some (Instr.LI .x10 exitCode) := by
-    simp only [code]
-    rw [hprog,
-        show (4 : BitVec 32) = BitVec.ofNat 32 (4 * 1) from by grind]
-    rw [loadProgram_at_index base _ 1 (by grind) (by omega)]; rfl
-  have hf2 : code (base + 8) = some Instr.ECALL := by
-    simp only [code]
-    rw [hprog,
-        show (8 : BitVec 32) = BitVec.ofNat 32 (4 * 2) from by grind]
-    rw [loadProgram_at_index base _ 2 (by grind) (by omega)]; rfl
-  -- Step 1: LI x5 0 (base → base+4), frame regOwn .x10 via pcFree_regOwn
+  -- Step 1: LI x5 0 (base → base+4), frame regOwn .x10
   have s1 : cpsTriple code base (base + 4) (regOwn .x5) (.x5 ↦ᵣ (0 : Word)) :=
     li_spec_gen_own code .x5 0 base (by decide) hf0
   have s1' : cpsTriple code base (base + 4)
       (regOwn .x5 ** regOwn .x10)
       ((.x5 ↦ᵣ (0 : Word)) ** regOwn .x10) :=
     cpsTriple_frame_left code base (base + 4) _ _ _ (pcFree_regOwn .x10) s1
-  -- Step 2: LI x10 exitCode (base+4 → base+8), frame .x5 ↦ᵣ 0 via pcFree_regIs
+  -- Step 2: LI x10 exitCode (base+4 → base+8), frame .x5 ↦ᵣ 0
   have h_four_four : base + 4 + 4 = base + 8 := by grind
   have s2 : cpsTriple code (base + 4) (base + 8) (regOwn .x10) (.x10 ↦ᵣ exitCode) := by
     have := li_spec_gen_own code .x10 exitCode (base + 4) (by decide) hf1
@@ -565,9 +598,71 @@ theorem halt_spec (exitCode : Word) (base : Addr) :
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode))
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) :=
     ecall_halt_spec_gen code exitCode (base + 8) hf2
-  -- Compose: (s1' seq s2') seq_halt s3
   exact cpsTriple_seq_halt code base (base + 8) _ _ _
     (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1' s2') s3
+
+-- ============================================================================
+-- Section 5a: Combined store word spec (LI x6 val ;; SW x7 x6 offset)
+-- ============================================================================
+
+/-- Combined spec for "LI x6, val ;; SW x7, x6, offset":
+    Stores val at mem[x7_val + sext(offset)], updates x6 to val.
+    Proved directly as a 2-step execution. -/
+theorem storeWord_spec_gen (code : CodeMem) (val : Word) (offset : BitVec 12)
+    (x6_old x7_val mem_old : Word) (addr : Addr)
+    (hfetch_li : code addr = some (Instr.LI .x6 val))
+    (hfetch_sw : code (addr + 4) = some (Instr.SW .x7 .x6 offset))
+    (hvalid : isValidMemAccess (x7_val + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 8)
+      ((.x6 ↦ᵣ x6_old) ** (.x7 ↦ᵣ x7_val) ** ((x7_val + signExtend12 offset) ↦ₘ mem_old))
+      ((.x6 ↦ᵣ val) ** (.x7 ↦ᵣ x7_val) ** ((x7_val + signExtend12 offset) ↦ₘ val)) := by
+  -- Step 1: LI x6, val (addr → addr+4), frame x7 and mem
+  let mem_addr := x7_val + signExtend12 offset
+  have s1 : cpsTriple code addr (addr + 4) (.x6 ↦ᵣ x6_old) (.x6 ↦ᵣ val) :=
+    li_spec_gen code .x6 x6_old val addr (by decide) hfetch_li
+  have s1' : cpsTriple code addr (addr + 4)
+      ((.x6 ↦ᵣ x6_old) ** ((.x7 ↦ᵣ x7_val) ** (mem_addr ↦ₘ mem_old)))
+      ((.x6 ↦ᵣ val) ** ((.x7 ↦ᵣ x7_val) ** (mem_addr ↦ₘ mem_old))) :=
+    cpsTriple_frame_left code addr (addr + 4) _ _ ((.x7 ↦ᵣ x7_val) ** (mem_addr ↦ₘ mem_old))
+      (pcFree_sepConj (pcFree_regIs .x7 x7_val) (pcFree_memIs mem_addr mem_old)) s1
+  -- Step 2: SW x7, x6, offset (addr+4 → addr+8), frame x6
+  have h48 : addr + 4 + 4 = addr + 8 := by grind
+  have s2' : cpsTriple code (addr + 4) (addr + 8)
+      ((.x7 ↦ᵣ x7_val) ** (.x6 ↦ᵣ val) ** (mem_addr ↦ₘ mem_old))
+      ((.x7 ↦ᵣ x7_val) ** (.x6 ↦ᵣ val) ** (mem_addr ↦ₘ val)) := by
+    have sw := sw_spec_gen code .x7 .x6 x7_val val mem_old offset (addr + 4) hfetch_sw hvalid
+    simp only [h48] at sw; exact sw
+  have swap12 : ∀ (A B C : Assertion) h, (A ** B ** C) h → (B ** A ** C) h :=
+    fun A B C h hab =>
+      sepConj_mono_right (fun h' hca => (sepConj_comm C A h').mp hca) h
+        ((sepConj_assoc B C A h).mp
+          ((sepConj_comm A (B ** C) h).mp hab))
+  have s2'' : cpsTriple code (addr + 4) (addr + 8)
+      ((.x6 ↦ᵣ val) ** (.x7 ↦ᵣ x7_val) ** (mem_addr ↦ₘ mem_old))
+      ((.x6 ↦ᵣ val) ** (.x7 ↦ᵣ x7_val) ** (mem_addr ↦ₘ val)) :=
+    cpsTriple_consequence code (addr + 4) (addr + 8) _ _ _ _
+      (swap12 (.x6 ↦ᵣ val) (.x7 ↦ᵣ x7_val) (mem_addr ↦ₘ mem_old))
+      (swap12 (.x7 ↦ᵣ x7_val) (.x6 ↦ᵣ val) (mem_addr ↦ₘ val))
+      s2'
+  exact cpsTriple_seq code addr (addr + 4) (addr + 8) _ _ _ s1' s2''
+
+/-- Combined LI+SW spec with regOwn and memOwn (no x6_old or mem_old needed). -/
+theorem storeWord_spec_gen_own (code : CodeMem) (val : Word) (offset : BitVec 12)
+    (x7_val : Word) (addr : Addr)
+    (hfetch_li : code addr = some (Instr.LI .x6 val))
+    (hfetch_sw : code (addr + 4) = some (Instr.SW .x7 .x6 offset))
+    (hvalid : isValidMemAccess (x7_val + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 8)
+      (regOwn .x6 ** (.x7 ↦ᵣ x7_val) ** memOwn (x7_val + signExtend12 offset))
+      ((.x6 ↦ᵣ val) ** (.x7 ↦ᵣ x7_val) ** ((x7_val + signExtend12 offset) ↦ₘ val)) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
+  obtain ⟨h1, hr1, hd1, hu1, ⟨x6_old, hx6⟩, hrest1⟩ := hInner
+  obtain ⟨h2, hr2, hd2, hu2, hx7, ⟨mem_old, hmem⟩⟩ := hrest1
+  exact storeWord_spec_gen code val offset x6_old x7_val mem_old addr
+    hfetch_li hfetch_sw hvalid R hR s
+    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
+      ⟨h1, hr1, hd1, hu1, hx6, ⟨h2, hr2, hd2, hu2, hx7, hmem⟩⟩, hRest⟩ hpc
 
 -- ============================================================================
 -- Section 5b: ECALL HINT_READ specification
@@ -839,55 +934,27 @@ theorem ecall_write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
         hR) _ _ h5
 
 -- ============================================================================
--- Section 7: WRITE macro specification (fd = 13)
+-- Section 7: Generalized WRITE spec (for arbitrary CodeMem)
 -- ============================================================================
 
-/-- WRITE 13 bufPtr nbytes: sets up registers for WRITE syscall and executes it.
-    Reads bytes from memory at bufPtr and appends them to publicValues.
-
-    Precondition: own x5, x10, x11, x12 (regOwn, no old values needed),
-                  publicValues = oldPV, memory buffer at bufPtr = words.
-    Postcondition: x5 = 0x02, x10 = 13, x11 = bufPtr, x12 = nbytes,
-                   publicValues = oldPV ++ bytes, memory preserved.
-    Exit: base + 20 (5 instructions × 4 bytes). -/
-theorem write_public_spec (bufPtr nbytes : Word)
+/-- WRITE 13 bufPtr nbytes on arbitrary CodeMem, given fetch proofs for all 5 instructions.
+    Uses regOwn (no old register values needed).
+    The postcondition takes nbytes.toNat bytes from the word buffer's byte representation. -/
+theorem write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
     (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
     (hLen : nbytes.toNat ≤ 4 * words.length)
-    (hAligned : bufPtr &&& 3#32 = 0#32) :
-    let code := loadProgram base (WRITE 13 bufPtr nbytes)
+    (hAligned : bufPtr &&& 3#32 = 0#32)
+    (hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)))
+    (hf1 : code (base + 4) = some (Instr.LI .x10 13))
+    (hf2 : code (base + 8) = some (Instr.LI .x11 bufPtr))
+    (hf3 : code (base + 12) = some (Instr.LI .x12 nbytes))
+    (hf4 : code (base + 16) = some Instr.ECALL) :
     cpsTriple code base (base + 20)
       (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
        publicValuesIs oldPV ** memBufferIs bufPtr words)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
        publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
-  simp only
-  let code := loadProgram base (WRITE 13 bufPtr nbytes)
-  -- The WRITE 13 macro is [LI x5 0x02, LI x10 13, LI x11 bufPtr, LI x12 nbytes, ECALL]
-  have hprog : WRITE 13 bufPtr nbytes =
-      ([Instr.LI .x5 (BitVec.ofNat 32 0x02), Instr.LI .x10 13, Instr.LI .x11 bufPtr, Instr.LI .x12 nbytes, Instr.ECALL] : List Instr) := by
-    simp [WRITE, LI, single, seq, Program]
-  -- Instruction fetches
-  have hf0 : code base = some (Instr.LI .x5 (BitVec.ofNat 32 0x02)) := by
-    simp only [code, hprog, loadProgram, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_mod,
-      beq_self_eq_true, Nat.zero_div, true_and]
-    simp
-  have hf1 : code (base + 4) = some (Instr.LI .x10 13) := by
-    simp only [code]
-    rw [hprog, show (4 : BitVec 32) = BitVec.ofNat 32 (4 * 1) from by grind]
-    rw [loadProgram_at_index base _ 1 (by grind) (by omega)]; rfl
-  have hf2 : code (base + 8) = some (Instr.LI .x11 bufPtr) := by
-    simp only [code]
-    rw [hprog, show (8 : BitVec 32) = BitVec.ofNat 32 (4 * 2) from by grind]
-    rw [loadProgram_at_index base _ 2 (by grind) (by omega)]; rfl
-  have hf3 : code (base + 12) = some (Instr.LI .x12 nbytes) := by
-    simp only [code]
-    rw [hprog, show (12 : BitVec 32) = BitVec.ofNat 32 (4 * 3) from by grind]
-    rw [loadProgram_at_index base _ 3 (by grind) (by omega)]; rfl
-  have hf4 : code (base + 16) = some Instr.ECALL := by
-    simp only [code]
-    rw [hprog, show (16 : BitVec 32) = BitVec.ofNat 32 (4 * 4) from by grind]
-    rw [loadProgram_at_index base _ 4 (by grind) (by omega)]; rfl
   -- Address arithmetic
   have h48 : base + 4 + 4 = base + 8 := by grind
   have h812 : base + 8 + 4 = base + 12 := by grind
