@@ -66,7 +66,7 @@ The specification (in the style of Kennedy et al.) uses separating conjunction:
 
 ```lean
 theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
-    (rd rs : Reg) (hne : rd ≠ rs) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
+    (rd rs : Reg) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
     (v w : Word) :
     ⦃(rd ↦ᵣ v) ** (rs ↦ᵣ w)⦄
     add_mulc nbits rd rs m

@@ -185,17 +185,25 @@ theorem add_mulc_correct (nbits : Nat) (rd rs : Reg)
     Postcondition: rd holds v + w * m, rs holds an unspecified value.
 
     This is the key theorem connecting the macro to separation logic.
-    The full proof requires the general `add_mulc_correct` theorem above. -/
+    The full proof requires the general `add_mulc_correct` theorem above.
+    Note: the rd ≠ rs case is vacuously true since the separating conjunction
+    (rd ↦ᵣ v) ** (rs ↦ᵣ w) is unsatisfiable when rd = rs. -/
 theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
-    (rd rs : Reg) (hne : rd ≠ rs) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
+    (rd rs : Reg) (hrd : rd ≠ .x0) (hrs : rs ≠ .x0)
     (v w : Word) :
     ∀ s : MachineState, ((rd ↦ᵣ v) ** (rs ↦ᵣ w)).holdsFor s →
       (execProgram s (add_mulc nbits rd rs m)).getReg rd = v + w * BitVec.ofNat 32 m := by
   intro s hpre
-  rw [holdsFor_sepConj_regIs_regIs hne] at hpre
-  obtain ⟨hrd_eq, hrs_eq⟩ := hpre
-  rw [add_mulc_correct nbits rd rs hne hrd hrs m hm]
-  rw [hrd_eq, hrs_eq]
+  by_cases hne : rd = rs
+  · -- rd = rs: contradiction from separation logic (can't own same register twice)
+    subst hne
+    obtain ⟨_, _, h1, h2, hd, _, hp1, hp2⟩ := hpre
+    rw [regIs] at hp1 hp2; subst hp1; subst hp2
+    exact absurd rfl (singletonReg_disjoint_imp_ne hd)
+  · rw [holdsFor_sepConj_regIs_regIs hne] at hpre
+    obtain ⟨hrd_eq, hrs_eq⟩ := hpre
+    rw [add_mulc_correct nbits rd rs hne hrd hrs m hm]
+    rw [hrd_eq, hrs_eq]
 
 /-- For fully concrete inputs, we can verify the Hoare triple by computation. -/
 theorem add_mulc_concrete_example :
