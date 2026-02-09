@@ -981,4 +981,220 @@ theorem fence_spec (base : Addr) :
   This pattern applies to all ALU and memory instructions.
 -/
 
+-- ============================================================================
+-- Ownership variants (regOwn / memOwn)
+-- ============================================================================
+
+/-! ### regOwn / memOwn variants
+
+These specs replace the meaningless `v_old` / `mem_old` parameter with
+`regOwn r` or `memOwn a`, expressing "we own the resource, value unspecified".
+Each is a one-liner delegating to the original spec via a CPS lifting helper.
+-/
+
+-- Tail-position regOwn (P ** regOwn rd)
+
+theorem add_spec_own (rd rs1 rs2 : Reg) (v1 v2 : Word) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.ADD rd rs1 rs2]
+    let entry := base
+    let exit_ := base + 4
+    let pre := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** regOwn rd
+    let post := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 + v2))
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs1_3, hrest4⟩ := hpre1
+  obtain ⟨h5, h6, hd56, hu56, hrs2_5, ⟨v_old, hrd6⟩⟩ := hrest4
+  exact add_spec rd rs1 rs2 v1 v2 v_old base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12,
+      ⟨h3, h4, hd34, hu34, hrs1_3, ⟨h5, h6, hd56, hu56, hrs2_5, hrd6⟩⟩, hR2⟩ hpc
+
+theorem sub_spec_own (rd rs1 rs2 : Reg) (v1 v2 : Word) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.SUB rd rs1 rs2]
+    let entry := base
+    let exit_ := base + 4
+    let pre := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** regOwn rd
+    let post := (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 - v2))
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs1_3, hrest4⟩ := hpre1
+  obtain ⟨h5, h6, hd56, hu56, hrs2_5, ⟨v_old, hrd6⟩⟩ := hrest4
+  exact sub_spec rd rs1 rs2 v1 v2 v_old base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12,
+      ⟨h3, h4, hd34, hu34, hrs1_3, ⟨h5, h6, hd56, hu56, hrs2_5, hrd6⟩⟩, hR2⟩ hpc
+
+theorem addi_spec_own (rd rs1 : Reg) (v1 : Word) (imm : BitVec 12) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.ADDI rd rs1 imm]
+    let entry := base
+    let exit_ := base + 4
+    let pre := (rs1 ↦ᵣ v1) ** regOwn rd
+    let post := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + signExtend12 imm))
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs1_3, ⟨v_old, hrd4⟩⟩ := hpre1
+  exact addi_spec rd rs1 v1 v_old imm base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12, ⟨h3, h4, hd34, hu34, hrs1_3, hrd4⟩, hR2⟩ hpc
+
+theorem jalr_spec_own (rd rs1 : Reg) (v1 : Word) (offset : BitVec 12) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.JALR rd rs1 offset]
+    let entry := base
+    let exit_ := (v1 + signExtend12 offset) &&& (~~~1)
+    let pre := (rs1 ↦ᵣ v1) ** regOwn rd
+    let post := (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs1_3, ⟨v_old, hrd4⟩⟩ := hpre1
+  exact jalr_spec rd rs1 v1 v_old offset base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12, ⟨h3, h4, hd34, hu34, hrs1_3, hrd4⟩, hR2⟩ hpc
+
+theorem mv_spec_own (rd rs : Reg) (v : Word) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.MV rd rs]
+    let entry := base
+    let exit_ := base + 4
+    let pre := (rs ↦ᵣ v) ** regOwn rd
+    let post := (rs ↦ᵣ v) ** (rd ↦ᵣ v)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs_3, ⟨v_old, hrd4⟩⟩ := hpre1
+  exact mv_spec rd rs v v_old base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12, ⟨h3, h4, hd34, hu34, hrs_3, hrd4⟩, hR2⟩ hpc
+
+-- Tail-position memOwn (P ** memOwn addr)
+
+theorem sw_spec_own (rs1 rs2 : Reg) (v_addr v_data : Word) (offset : BitVec 12) (base : Addr)
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    let code := loadProgram base [Instr.SW rs1 rs2 offset]
+    let entry := base
+    let exit_ := base + 4
+    let addr := v_addr + signExtend12 offset
+    let pre := (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** memOwn addr
+    let post := (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (addr ↦ₘ v_data)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs1_3, hrest4⟩ := hpre1
+  obtain ⟨h5, h6, hd56, hu56, hrs2_5, ⟨mem_old, hmem6⟩⟩ := hrest4
+  exact sw_spec rs1 rs2 v_addr v_data mem_old offset base hvalid R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12,
+      ⟨h3, h4, hd34, hu34, hrs1_3, ⟨h5, h6, hd56, hu56, hrs2_5, hmem6⟩⟩, hR2⟩ hpc
+
+theorem sw_spec_same_own (rs : Reg) (v : Word) (offset : BitVec 12) (base : Addr)
+    (hvalid : isValidMemAccess (v + signExtend12 offset) = true) :
+    let code := loadProgram base [Instr.SW rs rs offset]
+    let entry := base
+    let exit_ := base + 4
+    let addr := v + signExtend12 offset
+    let pre := (rs ↦ᵣ v) ** memOwn addr
+    let post := (rs ↦ᵣ v) ** (addr ↦ₘ v)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hu12, hpre1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hu34, hrs_3, ⟨mem_old, hmem4⟩⟩ := hpre1
+  exact sw_spec_same rs v mem_old offset base hvalid R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hu12, ⟨h3, h4, hd34, hu34, hrs_3, hmem4⟩, hR2⟩ hpc
+
+-- Standalone regOwn (regOwn rd is the entire precondition)
+
+theorem lui_spec_own (rd : Reg) (imm : BitVec 20) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.LUI rd imm]
+    let entry := base
+    let exit_ := base + 4
+    let result := BitVec.zeroExtend 32 imm <<< 12
+    let pre := regOwn rd
+    let post := (rd ↦ᵣ result)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨v_old, hrd1⟩, hR2⟩ := hPR
+  exact lui_spec rd v_old imm base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd, hu, hrd1, hR2⟩ hpc
+
+theorem auipc_spec_own (rd : Reg) (imm : BitVec 20) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.AUIPC rd imm]
+    let entry := base
+    let exit_ := base + 4
+    let result := base + BitVec.zeroExtend 32 imm <<< 12
+    let pre := regOwn rd
+    let post := (rd ↦ᵣ result)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨v_old, hrd1⟩, hR2⟩ := hPR
+  exact auipc_spec rd v_old imm base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd, hu, hrd1, hR2⟩ hpc
+
+theorem jal_spec_own (rd : Reg) (offset : BitVec 21) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.JAL rd offset]
+    let entry := base
+    let exit_ := base + signExtend21 offset
+    let pre := regOwn rd
+    let post := (rd ↦ᵣ (base + 4))
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨v_old, hrd1⟩, hR2⟩ := hPR
+  exact jal_spec rd v_old offset base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd, hu, hrd1, hR2⟩ hpc
+
+theorem li_spec_own (rd : Reg) (imm : Word) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    let code := loadProgram base [Instr.LI rd imm]
+    let entry := base
+    let exit_ := base + 4
+    let pre := regOwn rd
+    let post := (rd ↦ᵣ imm)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨v_old, hrd1⟩, hR2⟩ := hPR
+  exact li_spec rd v_old imm base hrd_ne_x0 R hR s
+    ⟨hp, hcompat, h1, h2, hd, hu, hrd1, hR2⟩ hpc
+
+-- Middle-position regOwn (regOwn rd is between other assertions)
+
+theorem lw_spec_own (rd rs1 : Reg) (v_addr mem_val : Word) (offset : BitVec 12) (base : Addr)
+    (hrd_ne_x0 : rd ≠ .x0)
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    let code := loadProgram base [Instr.LW rd rs1 offset]
+    let entry := base
+    let exit_ := base + 4
+    let addr := v_addr + signExtend12 offset
+    let pre := (rs1 ↦ᵣ v_addr) ** regOwn rd ** (addr ↦ₘ mem_val)
+    let post := (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ mem_val) ** (addr ↦ₘ mem_val)
+    cpsTriple code entry exit_ pre post := by
+  simp only
+  intro R hR s hPR hpc
+  -- Decompose: ((rs1 ↦ᵣ v_addr) ** regOwn rd ** (addr ↦ₘ mem_val)) ** R
+  obtain ⟨hp, hcompat, hPown_R⟩ := hPR
+  -- Outer sepConj: (pre ** R)
+  obtain ⟨h1, h2, hd12, hunion12, hpre1, hR2⟩ := hPown_R
+  -- Inner: (rs1 ↦ᵣ v_addr) ** (regOwn rd ** (addr ↦ₘ mem_val))
+  obtain ⟨h3, h4, hd34, hunion34, hrs1_3, hown_mem4⟩ := hpre1
+  -- regOwn rd ** (addr ↦ₘ mem_val)
+  obtain ⟨h5, h6, hd56, hunion56, ⟨v_old, hrd5⟩, hmem6⟩ := hown_mem4
+  -- Reconstruct with regIs instead of regOwn
+  have hPR' : (((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ v_old) ** (v_addr + signExtend12 offset ↦ₘ mem_val)) ** R).holdsFor s :=
+    ⟨hp, hcompat, h1, h2, hd12, hunion12,
+      ⟨h3, h4, hd34, hunion34, hrs1_3, ⟨h5, h6, hd56, hunion56, hrd5, hmem6⟩⟩, hR2⟩
+  exact lw_spec rd rs1 v_addr v_old mem_val offset base hrd_ne_x0 hvalid R hR s hPR' hpc
+
 end RiscVMacroAsm

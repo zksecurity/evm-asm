@@ -89,6 +89,44 @@ theorem cpsTriple_consequence (code : CodeMem) (entry exit_ : Addr)
     obtain ⟨hp, hcompat, hpq⟩ := hQR
     exact ⟨hp, hcompat, sepConj_mono_left hpost hp hpq⟩⟩
 
+-- ============================================================================
+-- regOwn / memOwn lifting helpers
+-- ============================================================================
+
+/-- Lift a spec quantified over v_old to one with regOwn in tail position:
+    (∀ v_old, cpsTriple ... (P ** (r ↦ᵣ v_old)) Q) → cpsTriple ... (P ** regOwn r) Q -/
+theorem cpsTriple_of_forall_regIs_to_regOwn
+    {code entry exit_ r P Q}
+    (h : ∀ v_old, cpsTriple code entry exit_ (P ** (r ↦ᵣ v_old)) Q) :
+    cpsTriple code entry exit_ (P ** regOwn r) Q := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨v_old, hv4⟩⟩ := hPown1
+  exact h v_old R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
+/-- Lift a spec quantified over v_old to one with regOwn as entire precondition:
+    (∀ v_old, cpsTriple ... (r ↦ᵣ v_old) Q) → cpsTriple ... (regOwn r) Q -/
+theorem cpsTriple_of_forall_regIs_to_regOwn_single
+    {code entry exit_ r Q}
+    (h : ∀ v_old, cpsTriple code entry exit_ (r ↦ᵣ v_old) Q) :
+    cpsTriple code entry exit_ (regOwn r) Q := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨v_old, hv⟩, hR2⟩ := hPR
+  exact h v_old R hR s ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
+
+/-- Lift a spec quantified over v_old to one with memOwn in tail position:
+    (∀ v_old, cpsTriple ... (P ** (a ↦ₘ v_old)) Q) → cpsTriple ... (P ** memOwn a) Q -/
+theorem cpsTriple_of_forall_memIs_to_memOwn
+    {code entry exit_ a P Q}
+    (h : ∀ v_old, cpsTriple code entry exit_ (P ** (a ↦ₘ v_old)) Q) :
+    cpsTriple code entry exit_ (P ** memOwn a) Q := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨v_old, hv4⟩⟩ := hPown1
+  exact h v_old R hR s
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
 /-- Branch elimination: if both branch exits lead to the same
     continuation exit with R, merge back into a single cpsTriple. -/
 theorem cpsBranch_merge (code : CodeMem) (entry l_t l_f exit_ : Addr)

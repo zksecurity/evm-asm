@@ -444,6 +444,15 @@ theorem li_spec_gen (code : CodeMem) (rd : Reg) (v_old imm : Word) (addr : Addr)
       (st.setReg rd imm) (addr + 4)
       (holdsFor_sepConj_regIs_setReg (v' := imm) hrd_ne_x0 hPR)
 
+/-- LI spec for any code memory with regOwn (no v_old needed). -/
+theorem li_spec_gen_own (code : CodeMem) (rd : Reg) (imm : Word) (addr : Addr)
+    (hrd_ne_x0 : rd ≠ .x0) (hfetch : code addr = some (Instr.LI rd imm)) :
+    cpsTriple code addr (addr + 4) (regOwn rd) (rd ↦ᵣ imm) := by
+  intro R hR s hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨v_old, hrd1⟩, hR2⟩ := hPR
+  exact li_spec_gen code rd v_old imm addr hrd_ne_x0 hfetch R hR s
+    ⟨hp, hcompat, h1, h2, hd, hu, hrd1, hR2⟩ hpc
+
 /-- ECALL halt spec: when x5 = 0, ECALL halts. -/
 theorem ecall_halt_spec_gen (code : CodeMem) (exitCode : Word) (addr : Addr)
     (hfetch : code addr = some .ECALL) :

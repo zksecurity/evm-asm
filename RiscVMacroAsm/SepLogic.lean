@@ -304,6 +304,12 @@ notation:50 a " ↦ₘ " v => memIs a v
 def pcIs (v : Word) : Assertion :=
   fun h => h = PartialState.singletonPC v
 
+/-- Ownership of register r with unspecified value. -/
+def regOwn (r : Reg) : Assertion := fun h => ∃ v, regIs r v h
+
+/-- Ownership of memory at address a with unspecified value. -/
+def memOwn (a : Addr) : Assertion := fun h => ∃ v, memIs a v h
+
 /-- The empty assertion: owns no resources. -/
 def empAssertion : Assertion := fun h => h = PartialState.empty
 
@@ -380,6 +386,26 @@ theorem holdsFor_emp (s : MachineState) :
     empAssertion.holdsFor s ↔ True := by
   simp only [Assertion.holdsFor, empAssertion, iff_true]
   exact ⟨PartialState.empty, PartialState.CompatibleWith_empty s, rfl⟩
+
+@[simp]
+theorem holdsFor_regOwn (r : Reg) (s : MachineState) :
+    (regOwn r).holdsFor s ↔ True := by
+  simp only [iff_true, regOwn, Assertion.holdsFor]
+  exact ⟨_, (PartialState.CompatibleWith_singletonReg r (s.getReg r) s).mpr rfl,
+         s.getReg r, rfl⟩
+
+@[simp]
+theorem holdsFor_memOwn (a : Addr) (s : MachineState) :
+    (memOwn a).holdsFor s ↔ True := by
+  simp only [iff_true, memOwn, Assertion.holdsFor]
+  exact ⟨_, (PartialState.CompatibleWith_singletonMem a (s.getMem a) s).mpr rfl,
+         s.getMem a, rfl⟩
+
+theorem regIs_implies_regOwn (r : Reg) (v : Word) :
+    ∀ h, regIs r v h → regOwn r h := fun _ hp => ⟨v, hp⟩
+
+theorem memIs_implies_memOwn (a : Addr) (v : Word) :
+    ∀ h, memIs a v h → memOwn a h := fun _ hp => ⟨v, hp⟩
 
 -- ============================================================================
 -- holdsFor for sepConj of atoms
@@ -478,6 +504,12 @@ theorem pcFree_regIs (r : Reg) (v : Word) : (regIs r v).pcFree := by
 
 theorem pcFree_memIs (a : Addr) (v : Word) : (memIs a v).pcFree := by
   intro h hp; rw [memIs] at hp; subst hp; rfl
+
+theorem pcFree_regOwn (r : Reg) : (regOwn r).pcFree := by
+  intro h ⟨v, hv⟩; exact pcFree_regIs r v h hv
+
+theorem pcFree_memOwn (a : Addr) : (memOwn a).pcFree := by
+  intro h ⟨v, hv⟩; exact pcFree_memIs a v h hv
 
 theorem pcFree_emp : empAssertion.pcFree := by
   intro h hp; rw [empAssertion] at hp; subst hp; rfl
