@@ -191,8 +191,8 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     have a4_framed := cpsTriple_frame_left code 12 16 _ _ (regOwn .x12 ** publicValuesIs oldPV)
       (pcFree_sepConj (pcFree_regOwn .x12) (pcFree_publicValuesIs _)) a4_core
     exact cpsTriple_consequence code 12 16 _ _ _ _
-      (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
-      (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
+      (fun h hyp => by sep_perm hyp)
+      (fun h hyp => by sep_perm hyp)
       a4_framed
 
   -- Chain Phase A
@@ -320,8 +320,8 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     -- Frame = piDrop; use frame_left then consequence to rearrange
     have b5_framed := cpsTriple_frame_left code 32 36 _ _ piDrop hpiDrop b5_core
     exact cpsTriple_consequence code 32 36 _ _ _ _
-      (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
-      (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
+      (fun h hyp => by sep_perm hyp)
+      (fun h hyp => by sep_perm hyp)
       b5_framed
 
   -- Chain Phase B
@@ -412,8 +412,8 @@ theorem echo_spec (inputBytes : List (BitVec 8))
        (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
        piDrop' ** pvNew ** mbNew') :=
     cpsHaltTriple_consequence code 44 _ _ _ _
-      (fun h => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm']; exact id)
-      (fun h => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm']; exact id)
+      (fun h hyp => by sep_perm hyp)
+      (fun h hyp => by sep_perm hyp)
       c3_framed
 
   -- Chain Phase C

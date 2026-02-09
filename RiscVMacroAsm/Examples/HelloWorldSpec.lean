@@ -540,9 +540,8 @@ private theorem phase2_pre_rearrange_own (x6' x7' : Word) (m0' m1' m2' : Word) (
          ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv) h →
       ((.x7 ↦ᵣ x7') ** (.x6 ↦ᵣ x6') ** (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** publicValuesIs pv ** memBufferIs 0x100 [m0', m1', m2'])) h := by
   intro h hab
-  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4, sepConj_emp_left', sepConj_comm',
-    sepConj_left_comm'] at hab ⊢
-  exact hab
+  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4, sepConj_emp_right'] at hab ⊢
+  sep_perm hab
 
 -- Rearrangement for phase 2 post (with regOwn context)
 private theorem phase2_post_rearrange_own (x5' x6' x7' x10' x11' x12' : Word) (m0' m1' m2' : Word) (pv' : List (BitVec 8)) :
@@ -552,9 +551,8 @@ private theorem phase2_post_rearrange_own (x5' x6' x7' x10' x11' x12' : Word) (m
        ((0x100 : Addr) ↦ₘ m0') ** ((0x104 : Addr) ↦ₘ m1') **
        ((0x108 : Addr) ↦ₘ m2') ** publicValuesIs pv') h := by
   intro h hab
-  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4, sepConj_emp_left', sepConj_comm',
-    sepConj_left_comm'] at hab ⊢
-  exact hab
+  simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4, sepConj_emp_right'] at hab ⊢
+  sep_perm hab
 
 -- Rearrangement for phase 3 pre (with weakening x5/x10 to regOwn)
 private theorem phase3_pre_rearrange_own (x5 x6' x7' x10 x11 x12 : Word) (m0' m1' m2' : Word) (pv : List (BitVec 8)) :
