@@ -520,11 +520,11 @@ theorem cpsHaltTriple_frame_right (code : CodeMem) (entry : Addr)
 -- ============================================================================
 
 /-- HALT exitCode: sets x5 := 0, x10 := exitCode, then halts via ECALL.
-    Precondition: own x5 and x10 (old values, to be overwritten).
+    Precondition: own x5 and x10 (regOwn, no old values needed).
     Postcondition: x5 = 0, x10 = exitCode, execution halted. -/
-theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
+theorem halt_spec (exitCode : Word) (base : Addr) :
     cpsHaltTriple (loadProgram base (HALT exitCode)) base
-      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old))
+      (regOwn .x5 ** regOwn .x10)
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
   let code := loadProgram base (HALT exitCode)
   -- The HALT macro is [LI x5 0, LI x10 exitCode, ECALL]
@@ -544,23 +544,20 @@ theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
     rw [hprog,
         show (8 : BitVec 32) = BitVec.ofNat 32 (4 * 2) from by grind]
     rw [loadProgram_at_index base _ 2 (by grind) (by omega)]; rfl
-  -- Step 1: LI x5 0 (base → base+4)
-  have s1 : cpsTriple code base (base + 4) (.x5 ↦ᵣ v5_old) (.x5 ↦ᵣ (0 : Word)) :=
-    li_spec_gen code .x5 v5_old 0 base (by decide) hf0
-  -- Embed x10 in frame: (x5 ** x10) → (x5' ** x10)
+  -- Step 1: LI x5 0 (base → base+4), frame regOwn .x10 via pcFree_regOwn
+  have s1 : cpsTriple code base (base + 4) (regOwn .x5) (.x5 ↦ᵣ (0 : Word)) :=
+    li_spec_gen_own code .x5 0 base (by decide) hf0
   have s1' : cpsTriple code base (base + 4)
-      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old))
-      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10_old)) :=
-    cpsTriple_frame_left code base (base + 4) _ _ _ (pcFree_regIs .x10 v10_old) s1
-  -- Step 2: LI x10 exitCode (base+4 → base+8)
-  have := li_spec_gen code .x10 v10_old exitCode (base + 4) (by decide) hf1
+      (regOwn .x5 ** regOwn .x10)
+      ((.x5 ↦ᵣ (0 : Word)) ** regOwn .x10) :=
+    cpsTriple_frame_left code base (base + 4) _ _ _ (pcFree_regOwn .x10) s1
+  -- Step 2: LI x10 exitCode (base+4 → base+8), frame .x5 ↦ᵣ 0 via pcFree_regIs
   have h_four_four : base + 4 + 4 = base + 8 := by grind
-  have s2 : cpsTriple code (base + 4) (base + 8) (.x10 ↦ᵣ v10_old) (.x10 ↦ᵣ exitCode) := by
-    simp only [h_four_four] at this
-    assumption
-  -- Embed x5 in frame: (x5 ** x10) → (x5 ** x10')
+  have s2 : cpsTriple code (base + 4) (base + 8) (regOwn .x10) (.x10 ↦ᵣ exitCode) := by
+    have := li_spec_gen_own code .x10 exitCode (base + 4) (by decide) hf1
+    simp only [h_four_four] at this; exact this
   have s2' : cpsTriple code (base + 4) (base + 8)
-      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10_old))
+      ((.x5 ↦ᵣ (0 : Word)) ** regOwn .x10)
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) :=
     cpsTriple_frame_right code (base + 4) (base + 8) _ _ _ (pcFree_regIs .x5 (0 : Word)) s2
   -- Step 3: ECALL halt (base+8, halts)
@@ -571,17 +568,6 @@ theorem halt_spec (exitCode : Word) (v5_old v10_old : Word) (base : Addr) :
   -- Compose: (s1' seq s2') seq_halt s3
   exact cpsTriple_seq_halt code base (base + 8) _ _ _
     (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1' s2') s3
-
-/-- HALT exitCode with regOwn (no old register values needed). -/
-theorem halt_spec_own (exitCode : Word) (base : Addr) :
-    cpsHaltTriple (loadProgram base (HALT exitCode)) base
-      (regOwn .x5 ** regOwn .x10)
-      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
-  intro R hR s hPR hpc
-  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
-  obtain ⟨h1, h2, hd, hu, ⟨v5_old, hv5⟩, ⟨v10_old, hv10⟩⟩ := hInner
-  exact halt_spec exitCode v5_old v10_old base R hR s
-    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, ⟨h1, h2, hd, hu, hv5, hv10⟩, hRest⟩ hpc
 
 -- ============================================================================
 -- Section 5b: ECALL HINT_READ specification
@@ -859,23 +845,23 @@ theorem ecall_write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
 /-- WRITE 13 bufPtr nbytes: sets up registers for WRITE syscall and executes it.
     Reads bytes from memory at bufPtr and appends them to publicValues.
 
-    Precondition: own x5, x10, x11, x12, publicValues = oldPV,
-                  memory buffer at bufPtr = words.
+    Precondition: own x5, x10, x11, x12 (regOwn, no old values needed),
+                  publicValues = oldPV, memory buffer at bufPtr = words.
     Postcondition: x5 = 0x02, x10 = 13, x11 = bufPtr, x12 = nbytes,
                    publicValues = oldPV ++ bytes, memory preserved.
     Exit: base + 20 (5 instructions × 4 bytes). -/
 theorem write_public_spec (bufPtr nbytes : Word)
-    (v5_old v10_old v11_old v12_old : Word)
     (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
     (hLen : nbytes.toNat ≤ 4 * words.length)
     (hAligned : bufPtr &&& 3#32 = 0#32) :
     let code := loadProgram base (WRITE 13 bufPtr nbytes)
     cpsTriple code base (base + 20)
-      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x12 ↦ᵣ v12_old) ** publicValuesIs oldPV ** memBufferIs bufPtr words)
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
+       publicValuesIs oldPV ** memBufferIs bufPtr words)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
        publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
+  simp only
   let code := loadProgram base (WRITE 13 bufPtr nbytes)
   -- The WRITE 13 macro is [LI x5 0x02, LI x10 13, LI x11 bufPtr, LI x12 nbytes, ECALL]
   have hprog : WRITE 13 bufPtr nbytes =
@@ -910,41 +896,41 @@ theorem write_public_spec (bufPtr nbytes : Word)
   -- pcFree helpers
   let pvMB := publicValuesIs oldPV ** memBufferIs bufPtr words
   have hpvMB : pvMB.pcFree := pcFree_sepConj (pcFree_publicValuesIs _) (pcFree_memBufferIs _ _)
-  -- Step 1: LI x5 (base → base+4)
-  have s1 : cpsTriple code base (base + 4) (.x5 ↦ᵣ v5_old) (.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) :=
-    li_spec_gen code .x5 v5_old _ base (by decide) hf0
+  -- Step 1: LI x5 (base → base+4), frame = regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** pvMB
+  have s1 : cpsTriple code base (base + 4) (regOwn .x5) (.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) :=
+    li_spec_gen_own code .x5 _ base (by decide) hf0
   have s1f : cpsTriple code base (base + 4)
-      ((.x5 ↦ᵣ v5_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** pvMB) :=
     cpsTriple_frame_left code base (base + 4) _ _ _
-      (pcFree_sepConj (pcFree_regIs .x10 _) (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB))) s1
-  -- Step 2: LI x10 (base+4 → base+8)
-  have s2core : cpsTriple code (base + 4) (base + 8) (.x10 ↦ᵣ v10_old) (.x10 ↦ᵣ (13 : Word)) := by
-    have := li_spec_gen code .x10 v10_old 13 (base + 4) (by decide) hf1
+      (pcFree_sepConj (pcFree_regOwn .x10) (pcFree_sepConj (pcFree_regOwn .x11) (pcFree_sepConj (pcFree_regOwn .x12) hpvMB))) s1
+  -- Step 2: LI x10 (base+4 → base+8), frame = .x5 ↦ᵣ 0x02 ** regOwn .x11 ** regOwn .x12 ** pvMB
+  have s2core : cpsTriple code (base + 4) (base + 8) (regOwn .x10) (.x10 ↦ᵣ (13 : Word)) := by
+    have := li_spec_gen_own code .x10 13 (base + 4) (by decide) hf1
     simp only [h48] at this; exact this
   have s2f : cpsTriple code (base + 4) (base + 8)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** regOwn .x11 ** regOwn .x12 ** pvMB) :=
     cpsTriple_frame_right code (base + 4) (base + 8) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_left code (base + 4) (base + 8) _ _ _
-        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB)) s2core)
-  -- Step 3: LI x11 (base+8 → base+12)
-  have s3core : cpsTriple code (base + 8) (base + 12) (.x11 ↦ᵣ v11_old) (.x11 ↦ᵣ bufPtr) := by
-    have := li_spec_gen code .x11 v11_old bufPtr (base + 8) (by decide) hf2
+        (pcFree_sepConj (pcFree_regOwn .x11) (pcFree_sepConj (pcFree_regOwn .x12) hpvMB)) s2core)
+  -- Step 3: LI x11 (base+8 → base+12), frame = .x5 ↦ᵣ 0x02 ** .x10 ↦ᵣ 13 ** regOwn .x12 ** pvMB
+  have s3core : cpsTriple code (base + 8) (base + 12) (regOwn .x11) (.x11 ↦ᵣ bufPtr) := by
+    have := li_spec_gen_own code .x11 bufPtr (base + 8) (by decide) hf2
     simp only [h812] at this; exact this
   have s3f : cpsTriple code (base + 8) (base + 12)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ v11_old) ** (.x12 ↦ᵣ v12_old) ** pvMB)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB) :=
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** regOwn .x11 ** regOwn .x12 ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** regOwn .x12 ** pvMB) :=
     cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_right code (base + 8) (base + 12) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
         (cpsTriple_frame_left code (base + 8) (base + 12) _ _ _
-          (pcFree_sepConj (pcFree_regIs .x12 _) hpvMB) s3core))
-  -- Step 4: LI x12 (base+12 → base+16)
-  have s4core : cpsTriple code (base + 12) (base + 16) (.x12 ↦ᵣ v12_old) (.x12 ↦ᵣ nbytes) := by
-    have := li_spec_gen code .x12 v12_old nbytes (base + 12) (by decide) hf3
+          (pcFree_sepConj (pcFree_regOwn .x12) hpvMB) s3core))
+  -- Step 4: LI x12 (base+12 → base+16), frame = .x5 ↦ᵣ 0x02 ** .x10 ↦ᵣ 13 ** .x11 ↦ᵣ bufPtr ** pvMB
+  have s4core : cpsTriple code (base + 12) (base + 16) (regOwn .x12) (.x12 ↦ᵣ nbytes) := by
+    have := li_spec_gen_own code .x12 nbytes (base + 12) (by decide) hf3
     simp only [h1216] at this; exact this
   have s4f : cpsTriple code (base + 12) (base + 16)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ v12_old) ** pvMB)
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** regOwn .x12 ** pvMB)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) ** pvMB) :=
     cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_right code (base + 12) (base + 16) _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
@@ -962,31 +948,5 @@ theorem write_public_spec (bufPtr nbytes : Word)
     (cpsTriple_seq code base (base + 12) (base + 16) _ _ _
       (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
         (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
-
-/-- WRITE 13 bufPtr nbytes with regOwn (no old register values needed). -/
-theorem write_public_spec_own (bufPtr nbytes : Word)
-    (oldPV : List (BitVec 8)) (words : List Word) (base : Addr)
-    (hLen : nbytes.toNat ≤ 4 * words.length)
-    (hAligned : bufPtr &&& 3#32 = 0#32) :
-    let code := loadProgram base (WRITE 13 bufPtr nbytes)
-    cpsTriple code base (base + 20)
-      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
-       publicValuesIs oldPV ** memBufferIs bufPtr words)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
-       (.x11 ↦ᵣ bufPtr) ** (.x12 ↦ᵣ nbytes) **
-       publicValuesIs (oldPV ++ (words.flatMap (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])).take nbytes.toNat) ** memBufferIs bufPtr words) := by
-  simp only
-  intro R hR s hPR hpc
-  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
-  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
-  obtain ⟨h2, hr2, hd2, hu2, ⟨v10, hv10⟩, hrest2⟩ := hrest1
-  obtain ⟨h3, hr3, hd3, hu3, ⟨v11, hv11⟩, hrest3⟩ := hrest2
-  obtain ⟨h4, hr4, hd4, hu4, ⟨v12, hv12⟩, hrest4⟩ := hrest3
-  exact write_public_spec bufPtr nbytes v5 v10 v11 v12 oldPV words base hLen hAligned R hR s
-    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
-      ⟨h1, hr1, hd1, hu1, hv5,
-        ⟨h2, hr2, hd2, hu2, hv10,
-          ⟨h3, hr3, hd3, hu3, hv11,
-            ⟨h4, hr4, hd4, hu4, hv12, hrest4⟩⟩⟩⟩, hRest⟩ hpc
 
 end RiscVMacroAsm

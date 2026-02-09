@@ -89,9 +89,9 @@ private theorem fetch_11 : loadProgram 0 echo 44 = some .ECALL := by native_deci
     bytesToWords converts the input bytes to LE words, then extractBytes + flatMap
     converts back to bytes. For properly 4-aligned input, this is the identity.
 
-    Registers x5, x10, x11, x12 are used as scratch and have their final HALT values. -/
+    Uses regOwn for scratch registers (no old values needed). -/
 theorem echo_spec (inputBytes : List (BitVec 8))
-    (oldWords : List Word) (v5 v10 v11 v12 : Word)
+    (oldWords : List Word)
     (oldPV : List (BitVec 8))
     (hInputLen : 16 ≤ inputBytes.length)
     (hOldWords : oldWords.length = 4) :
@@ -100,7 +100,7 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     let newBytesFlat := newWords.flatMap
       (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])
     cpsHaltTriple code 0
-      ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) **
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
        privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs 0x100 oldWords)
       ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
        privateInputIs (inputBytes.drop 16) **
@@ -119,7 +119,7 @@ theorem echo_spec (inputBytes : List (BitVec 8))
   have h3236 : (32 : BitVec 32) + 4 = 36 := by grind
   have h3640 : (36 : BitVec 32) + 4 = 40 := by grind
   have h4044 : (40 : BitVec 32) + 4 = 44 := by grind
-  have h4448 : (44 : BitVec 32) + 4 = 48 := by grind
+  have _h4448 : (44 : BitVec 32) + 4 = 48 := by grind
 
   -- pcFree helpers
   let piPvMb := privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs (0x100 : Addr) oldWords
@@ -129,51 +129,48 @@ theorem echo_spec (inputBytes : List (BitVec 8))
   -- =========================================================================
   -- Phase A: HINT_READ (PC 0 → 16)
   -- 3 LIs (x5=0xF1, x10=0x100, x11=16) + ECALL
+  -- Uses li_spec_gen_own for first writes; x12 stays regOwn in frame.
   -- =========================================================================
 
   -- LI x5 0xF1 (PC 0 → 4)
-  have a1 : cpsTriple code 0 4 (.x5 ↦ᵣ v5) (.x5 ↦ᵣ 0xF1#32) := by
-    have := li_spec_gen code .x5 v5 0xF1 0 (by decide) fetch_0
+  have a1 : cpsTriple code 0 4 (regOwn .x5) (.x5 ↦ᵣ 0xF1#32) := by
+    have := li_spec_gen_own code .x5 0xF1 0 (by decide) fetch_0
     simp only [h04] at this; exact this
   have a1f : cpsTriple code 0 4
-      ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) ** piPvMb)
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) ** piPvMb) :=
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** piPvMb)
+      ((.x5 ↦ᵣ 0xF1#32) ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** piPvMb) :=
     cpsTriple_frame_left code 0 4 _ _ _
-      (pcFree_sepConj (pcFree_regIs .x10 _) (pcFree_sepConj (pcFree_regIs .x11 _)
-        (pcFree_sepConj (pcFree_regIs .x12 _) hpiPvMb))) a1
+      (pcFree_sepConj (pcFree_regOwn .x10) (pcFree_sepConj (pcFree_regOwn .x11)
+        (pcFree_sepConj (pcFree_regOwn .x12) hpiPvMb))) a1
 
   -- LI x10 0x100 (PC 4 → 8)
-  have a2 : cpsTriple code 4 8 (.x10 ↦ᵣ v10) (.x10 ↦ᵣ 0x100#32) := by
-    have := li_spec_gen code .x10 v10 0x100 4 (by decide) fetch_1
+  have a2 : cpsTriple code 4 8 (regOwn .x10) (.x10 ↦ᵣ 0x100#32) := by
+    have := li_spec_gen_own code .x10 0x100 4 (by decide) fetch_1
     simp only [h48] at this; exact this
   have a2f : cpsTriple code 4 8
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) ** piPvMb)
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) ** piPvMb) :=
+      ((.x5 ↦ᵣ 0xF1#32) ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 ** piPvMb)
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** regOwn .x11 ** regOwn .x12 ** piPvMb) :=
     cpsTriple_frame_right code 4 8 _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_left code 4 8 _ _ _
-        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _) hpiPvMb)) a2)
+        (pcFree_sepConj (pcFree_regOwn .x11) (pcFree_sepConj (pcFree_regOwn .x12) hpiPvMb)) a2)
 
   -- LI x11 16 (PC 8 → 12)
-  have a3 : cpsTriple code 8 12 (.x11 ↦ᵣ v11) (.x11 ↦ᵣ 16#32) := by
-    have := li_spec_gen code .x11 v11 16 8 (by decide) fetch_2
+  have a3 : cpsTriple code 8 12 (regOwn .x11) (.x11 ↦ᵣ 16#32) := by
+    have := li_spec_gen_own code .x11 16 8 (by decide) fetch_2
     simp only [h812] at this; exact this
   have a3f : cpsTriple code 8 12
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) ** piPvMb)
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) ** piPvMb) :=
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** regOwn .x11 ** regOwn .x12 ** piPvMb)
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 ** piPvMb) :=
     cpsTriple_frame_right code 8 12 _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_right code 8 12 _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
         (cpsTriple_frame_left code 8 12 _ _ _
-          (pcFree_sepConj (pcFree_regIs .x12 _) hpiPvMb) a3))
+          (pcFree_sepConj (pcFree_regOwn .x12) hpiPvMb) a3))
 
   -- ECALL HINT_READ (PC 12 → 16)
-  -- We need to rearrange the precondition to match ecall_hint_read_spec_gen
-  -- Pre: x5=0xF1 ** x10=0x100 ** x11=16 ** x12 ** piPvMb
-  -- piPvMb = privateInputIs ** publicValuesIs ** memBufferIs
+  -- Pre: x5=0xF1 ** x10=0x100 ** x11=16 ** regOwn x12 ** piPvMb
   -- ecall_hint_read_spec_gen wants:
   --   x5=0xF1 ** x10=bufAddr ** x11=nbytes ** privateInputIs ** memBufferIs
-  -- So we need to rearrange x12 and publicValuesIs into the frame
-
-  -- First build the ECALL hint_read spec at base
+  -- So we need to rearrange regOwn x12 and publicValuesIs into the frame
   have a4_core : cpsTriple code 12 16
       ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) **
        privateInputIs inputBytes ** memBufferIs 0x100 oldWords)
@@ -184,20 +181,15 @@ theorem echo_spec (inputBytes : List (BitVec 8))
       (by simp; omega) (by simp; omega)
     simp only [h1216] at this; exact this
 
-  -- Now embed x12 and publicValuesIs as frame
+  -- Now embed regOwn x12 and publicValuesIs as frame
   have a4f : cpsTriple code 12 16
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs 0x100 oldWords)
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        privateInputIs (inputBytes.drop 16) **
        publicValuesIs oldPV ** memBufferIs 0x100 (bytesToWords (inputBytes.take 16))) := by
-    -- Frame = x12 ** pv; use frame_left then consequence to rearrange
-    have a4_framed := cpsTriple_frame_left code 12 16 _ _ ((.x12 ↦ᵣ v12) ** publicValuesIs oldPV)
-      (pcFree_sepConj (pcFree_regIs .x12 _) (pcFree_publicValuesIs _)) a4_core
-    -- a4_framed : cpsTriple code 12 16
-    --   ((x5 ** x10 ** x11 ** pi ** mb) ** (x12 ** pv))
-    --   ((x5 ** x10 ** x11 ** pi' ** mb') ** (x12 ** pv))
-    -- Need to rearrange both pre and post to the 7-part flat form
+    have a4_framed := cpsTriple_frame_left code 12 16 _ _ (regOwn .x12 ** publicValuesIs oldPV)
+      (pcFree_sepConj (pcFree_regOwn .x12) (pcFree_publicValuesIs _)) a4_core
     exact cpsTriple_consequence code 12 16 _ _ _ _
       (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
       (fun h => by simp only [sepConj_comm', sepConj_left_comm']; exact id)
@@ -205,9 +197,9 @@ theorem echo_spec (inputBytes : List (BitVec 8))
 
   -- Chain Phase A
   have phaseA : cpsTriple code 0 16
-      ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x12 ↦ᵣ v12) **
+      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
        privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs 0x100 oldWords)
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        privateInputIs (inputBytes.drop 16) **
        publicValuesIs oldPV ** memBufferIs 0x100 (bytesToWords (inputBytes.take 16))) :=
     cpsTriple_seq code 0 12 16 _ _ _
@@ -217,6 +209,7 @@ theorem echo_spec (inputBytes : List (BitVec 8))
   -- =========================================================================
   -- Phase B: WRITE (PC 16 → 36)
   -- 4 LIs (x5=0x02, x10=13, x11=0x100, x12=16) + ECALL
+  -- x5/x10/x11 have known old values from Phase A; x12 uses li_spec_gen_own.
   -- =========================================================================
 
   let newWords := bytesToWords (inputBytes.take 16)
@@ -233,13 +226,13 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     have := li_spec_gen code .x5 0xF1#32 (BitVec.ofNat 32 0x02) 16 (by decide) fetch_4
     simp only [h1620] at this; exact this
   have b1f : cpsTriple code 16 20
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew) :=
     cpsTriple_frame_left code 16 20 _ _ _
       (pcFree_sepConj (pcFree_regIs .x10 _) (pcFree_sepConj (pcFree_regIs .x11 _)
-        (pcFree_sepConj (pcFree_regIs .x12 _)
+        (pcFree_sepConj (pcFree_regOwn .x12)
           (pcFree_sepConj hpiDrop (pcFree_sepConj hpvOld hmbNew))))) b1
 
   -- LI x10 13 (PC 20 → 24)
@@ -247,13 +240,13 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     have := li_spec_gen code .x10 0x100#32 13 20 (by decide) fetch_5
     simp only [h2024] at this; exact this
   have b2f : cpsTriple code 20 24
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew) :=
     cpsTriple_frame_right code 20 24 _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_left code 20 24 _ _ _
-        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regIs .x12 _)
+        (pcFree_sepConj (pcFree_regIs .x11 _) (pcFree_sepConj (pcFree_regOwn .x12)
           (pcFree_sepConj hpiDrop (pcFree_sepConj hpvOld hmbNew)))) b2)
 
   -- LI x11 0x100 (PC 24 → 28)
@@ -261,22 +254,22 @@ theorem echo_spec (inputBytes : List (BitVec 8))
     have := li_spec_gen code .x11 16#32 0x100 24 (by decide) fetch_6
     simp only [h2428] at this; exact this
   have b3f : cpsTriple code 24 28
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew)
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew) :=
     cpsTriple_frame_right code 24 28 _ _ (.x5 ↦ᵣ _) (pcFree_regIs .x5 _)
       (cpsTriple_frame_right code 24 28 _ _ (.x10 ↦ᵣ _) (pcFree_regIs .x10 _)
         (cpsTriple_frame_left code 24 28 _ _ _
-          (pcFree_sepConj (pcFree_regIs .x12 _)
+          (pcFree_sepConj (pcFree_regOwn .x12)
             (pcFree_sepConj hpiDrop (pcFree_sepConj hpvOld hmbNew))) b3))
 
-  -- LI x12 16 (PC 28 → 32)
-  have b4 : cpsTriple code 28 32 (.x12 ↦ᵣ v12) (.x12 ↦ᵣ 16#32) := by
-    have := li_spec_gen code .x12 v12 16 28 (by decide) fetch_7
+  -- LI x12 16 (PC 28 → 32) — x12 was regOwn, use li_spec_gen_own
+  have b4 : cpsTriple code 28 32 (regOwn .x12) (.x12 ↦ᵣ 16#32) := by
+    have := li_spec_gen_own code .x12 16 28 (by decide) fetch_7
     simp only [h2832] at this; exact this
   have b4f : cpsTriple code 28 32
-      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
        piDrop ** pvOld ** mbNew) :=
@@ -333,7 +326,7 @@ theorem echo_spec (inputBytes : List (BitVec 8))
 
   -- Chain Phase B
   have phaseB : cpsTriple code 16 36
-      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** (.x12 ↦ᵣ v12) **
+      ((.x5 ↦ᵣ 0xF1#32) ** (.x10 ↦ᵣ 0x100#32) ** (.x11 ↦ᵣ 16#32) ** regOwn .x12 **
        piDrop ** pvOld ** mbNew)
       ((.x5 ↦ᵣ (BitVec.ofNat 32 0x02)) ** (.x10 ↦ᵣ (13 : Word)) **
        (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
@@ -443,39 +436,5 @@ theorem echo_spec (inputBytes : List (BitVec 8))
 
   -- Chain ABC: AB seq_halt C
   exact cpsTriple_seq_halt code 0 36 _ _ _ phaseAB phaseC
-
-/-- Echo with regOwn (no old register values needed).
-
-    Same as echo_spec but the precondition uses regOwn for the 4 scratch registers
-    instead of requiring specific old values v5, v10, v11, v12. -/
-theorem echo_spec_own (inputBytes : List (BitVec 8))
-    (oldWords : List Word)
-    (oldPV : List (BitVec 8))
-    (hInputLen : 16 ≤ inputBytes.length)
-    (hOldWords : oldWords.length = 4) :
-    let code := loadProgram 0 echo
-    let newWords := bytesToWords (inputBytes.take 16)
-    let newBytesFlat := newWords.flatMap
-      (fun w => [extractByte w 0, extractByte w 1, extractByte w 2, extractByte w 3])
-    cpsHaltTriple code 0
-      (regOwn .x5 ** regOwn .x10 ** regOwn .x11 ** regOwn .x12 **
-       privateInputIs inputBytes ** publicValuesIs oldPV ** memBufferIs 0x100 oldWords)
-      ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ 0x100#32) ** (.x12 ↦ᵣ 16#32) **
-       privateInputIs (inputBytes.drop 16) **
-       publicValuesIs (oldPV ++ newBytesFlat.take 16) **
-       memBufferIs 0x100 newWords) := by
-  simp only
-  intro R hR s hPR hpc
-  obtain ⟨hp, hcompat, h_inner, h_R, hdisj, hunion, hInner, hRest⟩ := hPR
-  obtain ⟨h1, hr1, hd1, hu1, ⟨v5, hv5⟩, hrest1⟩ := hInner
-  obtain ⟨h2, hr2, hd2, hu2, ⟨v10, hv10⟩, hrest2⟩ := hrest1
-  obtain ⟨h3, hr3, hd3, hu3, ⟨v11, hv11⟩, hrest3⟩ := hrest2
-  obtain ⟨h4, hr4, hd4, hu4, ⟨v12, hv12⟩, hrest4⟩ := hrest3
-  exact echo_spec inputBytes oldWords v5 v10 v11 v12 oldPV hInputLen hOldWords R hR s
-    ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
-      ⟨h1, hr1, hd1, hu1, hv5,
-        ⟨h2, hr2, hd2, hu2, hv10,
-          ⟨h3, hr3, hd3, hu3, hv11,
-            ⟨h4, hr4, hd4, hu4, hv12, hrest4⟩⟩⟩⟩, hRest⟩ hpc
 
 end RiscVMacroAsm.Examples
