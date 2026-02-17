@@ -428,6 +428,68 @@ theorem holdsFor_sepConj_memBufferIs_writeBytesAsWords
 -- Section 3: Generalized Instruction Specs
 -- ============================================================================
 
+/-- LW spec for any code memory: loads mem[rs1 + sext(offset)] into rd. -/
+theorem lw_spec_gen (code : CodeMem) (rd rs1 : Reg) (v_addr v_old mem_val : Word)
+    (offset : BitVec 12) (addr : Addr)
+    (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.LW rd rs1 offset))
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ v_old) ** ((v_addr + signExtend12 offset) ↦ₘ mem_val))
+      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ mem_val) ** ((v_addr + signExtend12 offset) ↦ₘ mem_val)) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.LW rd rs1 offset) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v_addr :=
+    (holdsFor_regIs rs1 v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  let mem_addr := v_addr + signExtend12 offset
+  have hmem_val : st.getMem mem_addr = mem_val :=
+    (holdsFor_memIs mem_addr mem_val st).mp
+      (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hinner))
+  have hnext : execInstrBr st (Instr.LW rd rs1 offset) =
+      (st.setReg rd mem_val).setPC (st.pc + 4) := by
+    simp [execInstrBr, mem_addr, hrs1_val, hmem_val]
+  have hstep : step code st = some ((st.setReg rd mem_val).setPC (addr + 4)) := by
+    have := step_lw _ _ _ _ _ hfetch' (by rw [hrs1_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setReg rd mem_val).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Rearrange to get (rd ↦ᵣ v_old) at front, apply setReg, then reverse
+    have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_assoc.mp h1
+    have h3 := holdsFor_sepConj_regIs_setReg (v' := mem_val) hrd_ne_x0 h2
+    have h4 := holdsFor_sepConj_assoc.mpr h3
+    have h5 := holdsFor_sepConj_pull_second.mpr h4
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj
+        (pcFree_sepConj (pcFree_regIs rs1 v_addr)
+          (pcFree_sepConj (pcFree_regIs rd mem_val) (pcFree_memIs _ mem_val)))
+        hR)
+      (st.setReg rd mem_val) (addr + 4) h5
+
+/-- SLTIU spec for any code memory (rd == rs1 case):
+    rd := (v <u sext(imm)) ? 1 : 0 -/
+theorem sltiu_spec_gen_same (code : CodeMem) (rd : Reg) (v : Word) (imm : BitVec 12)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.SLTIU rd rd imm)) :
+    cpsTriple code addr (addr + 4) (rd ↦ᵣ v)
+      (rd ↦ᵣ (if BitVec.ult v (signExtend12 imm) then (1 : Word) else (0 : Word))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SLTIU rd rd imm) := by rw [hpc]; exact hfetch
+  have hrd_val : st.getReg rd = v :=
+    (holdsFor_regIs rd v st).mp (holdsFor_sepConj_elim_left hPR)
+  let result := if BitVec.ult v (signExtend12 imm) then (1 : Word) else (0 : Word)
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrd_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR)
+      (st.setReg rd result) (addr + 4)
+      (holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR)
+
 /-- LI spec for any code memory (not just a single-instruction loadProgram). -/
 theorem li_spec_gen (code : CodeMem) (rd : Reg) (v_old imm : Word) (addr : Addr)
     (hrd_ne_x0 : rd ≠ .x0) (hfetch : code addr = some (Instr.LI rd imm)) :
