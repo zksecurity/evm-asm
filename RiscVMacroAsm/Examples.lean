@@ -20,3 +20,5 @@ import RiscVMacroAsm.Examples.EvmIsZero
 import RiscVMacroAsm.Examples.EvmAdd
 import RiscVMacroAsm.Examples.EvmSub
 import RiscVMacroAsm.Examples.EvmAnd
+import RiscVMacroAsm.Examples.EvmOr
+import RiscVMacroAsm.Examples.EvmXor
