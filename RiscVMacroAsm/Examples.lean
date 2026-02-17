@@ -23,3 +23,4 @@ import RiscVMacroAsm.Examples.EvmAnd
 import RiscVMacroAsm.Examples.EvmOr
 import RiscVMacroAsm.Examples.EvmXor
 import RiscVMacroAsm.Examples.EvmNot
+import RiscVMacroAsm.Examples.EvmLt
