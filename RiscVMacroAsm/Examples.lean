@@ -17,3 +17,4 @@ import RiscVMacroAsm.Examples.FullPipeline
 import RiscVMacroAsm.Examples.HelloWorld
 import RiscVMacroAsm.Examples.Echo
 import RiscVMacroAsm.Examples.EvmIsZero
+import RiscVMacroAsm.Examples.EvmAdd
