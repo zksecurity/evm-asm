@@ -490,6 +490,28 @@ theorem sltiu_spec_gen_same (code : CodeMem) (rd : Reg) (v : Word) (imm : BitVec
       (st.setReg rd result) (addr + 4)
       (holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR)
 
+/-- XORI spec for any code memory (rd == rs1 case):
+    rd := v ^^^ sext(imm) -/
+theorem xori_spec_gen_same (code : CodeMem) (rd : Reg) (v : Word) (imm : BitVec 12)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.XORI rd rd imm)) :
+    cpsTriple code addr (addr + 4) (rd ↦ᵣ v)
+      (rd ↦ᵣ (v ^^^ signExtend12 imm)) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.XORI rd rd imm) := by rw [hpc]; exact hfetch
+  have hrd_val : st.getReg rd = v :=
+    (holdsFor_regIs rd v st).mp (holdsFor_sepConj_elim_left hPR)
+  let result := v ^^^ signExtend12 imm
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrd_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR)
+      (st.setReg rd result) (addr + 4)
+      (holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR)
+
 /-- ADD spec for any code memory (rd = rs1 case):
     rd := rd + rs2 -/
 theorem add_spec_gen_rd_eq_rs1 (code : CodeMem) (rd rs2 : Reg) (v1 v2 : Word)
