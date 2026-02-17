@@ -514,6 +514,30 @@ theorem add_spec_gen_rd_eq_rs1 (code : CodeMem) (rd rs2 : Reg) (v1 v2 : Word)
     have h2 := RiscVMacroAsm.holdsFor_sepConj_assoc.2 h1
     exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rd result) (pcFree_regIs rs2 v2)) hR) (st.setReg rd result) (addr + 4) h2
 
+/-- SUB spec for any code memory (rd = rs1 case):
+    rd := rd - rs2 -/
+theorem sub_spec_gen_rd_eq_rs1 (code : CodeMem) (rd rs2 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs2)
+    (hfetch : code addr = some (Instr.SUB rd rd rs2)) :
+    cpsTriple code addr (addr + 4)
+      ((rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      ((rd ↦ᵣ (v1 - v2)) ** (rs2 ↦ᵣ v2)) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SUB rd rd rs2) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrd_val, hrs2_val⟩ := (holdsFor_sepConj_regIs_regIs hne).mp hinner
+  let result := v1 - v2
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrd_val, hrs2_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have hPR' := RiscVMacroAsm.holdsFor_sepConj_assoc.1 hPR
+    have h1 := holdsFor_sepConj_regIs_setReg (v' := result) (R := (rs2 ↦ᵣ v2) ** R) hrd_ne_x0 hPR'
+    have h2 := RiscVMacroAsm.holdsFor_sepConj_assoc.2 h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rd result) (pcFree_regIs rs2 v2)) hR) (st.setReg rd result) (addr + 4) h2
+
 /-- ADDI spec for any code memory (rd = rs1 case):
     rd := rd + signExtend12(imm) -/
 theorem addi_spec_gen_same (code : CodeMem) (rd : Reg) (v : Word) (imm : BitVec 12)
