@@ -19,3 +19,4 @@ import RiscVMacroAsm.Examples.Echo
 import RiscVMacroAsm.Examples.EvmIsZero
 import RiscVMacroAsm.Examples.EvmAdd
 import RiscVMacroAsm.Examples.EvmSub
+import RiscVMacroAsm.Examples.EvmAnd
