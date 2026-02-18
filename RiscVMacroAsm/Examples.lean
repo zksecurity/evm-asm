@@ -16,11 +16,10 @@ import RiscVMacroAsm.Examples.Write
 import RiscVMacroAsm.Examples.FullPipeline
 import RiscVMacroAsm.Examples.HelloWorld
 import RiscVMacroAsm.Examples.Echo
-import RiscVMacroAsm.Examples.EvmIsZero
-import RiscVMacroAsm.Examples.EvmAdd
-import RiscVMacroAsm.Examples.EvmSub
-import RiscVMacroAsm.Examples.EvmAnd
-import RiscVMacroAsm.Examples.EvmOr
-import RiscVMacroAsm.Examples.EvmXor
-import RiscVMacroAsm.Examples.EvmNot
-import RiscVMacroAsm.Examples.EvmLt
+
+-- 256-bit EVM operations
+import RiscVMacroAsm.Evm.Basic
+import RiscVMacroAsm.Evm.Stack
+import RiscVMacroAsm.Evm.Bitwise
+import RiscVMacroAsm.Evm.Arithmetic
+import RiscVMacroAsm.Evm.Comparison

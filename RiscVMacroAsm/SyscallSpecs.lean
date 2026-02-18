@@ -1265,4 +1265,54 @@ theorem write_public_spec_gen (code : CodeMem) (bufPtr nbytes : Word)
       (cpsTriple_seq code base (base + 8) (base + 12) _ _ _
         (cpsTriple_seq code base (base + 4) (base + 8) _ _ _ s1f s2f) s3f) s4f) s5
 
+/-- SLTU spec for 3 distinct registers:
+    rd := (rs1 < rs2) ? 1 : 0, preserving rs1 and rs2 -/
+theorem sltu_spec_gen (code : CodeMem) (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.SLTU rd rs1 rs2)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (if BitVec.ult v1 v2 then 1 else 0))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SLTU rd rs1 rs2) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrs2_val, hrd_val⟩ := holdsFor_sepConj_regIs_regIs_regIs hinner
+  let result := if BitVec.ult v1 v2 then (1 : Word) else 0
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hrs2_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_regIs_regIs_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1)
+        (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_regIs rd result))) hR)
+      (st.setReg rd result) (addr + 4) h1
+
+/-- OR spec for 3 distinct registers:
+    rd := rs1 ||| rs2, preserving rs1 and rs2 -/
+theorem or_spec_gen (code : CodeMem) (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.OR rd rs1 rs2)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 ||| v2))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.OR rd rs1 rs2) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrs2_val, hrd_val⟩ := holdsFor_sepConj_regIs_regIs_regIs hinner
+  let result := v1 ||| v2
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hrs2_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_regIs_regIs_regIs_setReg (v' := result) hrd_ne_x0 hPR
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1)
+        (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_regIs rd result))) hR)
+      (st.setReg rd result) (addr + 4) h1
+
 end RiscVMacroAsm
