@@ -77,6 +77,49 @@ def evm_lt : Program :=
   SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
   SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28
 
+/-- 256-bit EVM GT: binary (pop 2, push 1, sp += 32).
+    GT(a, b) = LT(b, a): swap load order vs evm_lt (b loaded first into x7, a into x6).
+    Computes b < a by tracking borrow across multi-limb subtraction.
+    Final borrow = 1 iff b < a, i.e. a > b. Store boolean result as 256-bit value.
+    54 instructions total. -/
+def evm_gt : Program :=
+  -- Limb 0 (3 instructions): load b (sp+32) into x7, a (sp+0) into x6, borrow = (b < a)
+  LW .x7 .x12 32 ;; LW .x6 .x12 0 ;; single (.SLTU .x5 .x7 .x6) ;;
+  -- Limbs 1-7 (6 instructions each): borrow propagation (b_k - a_k with borrow_in)
+  -- Limb 1: b at sp+36, a at sp+4
+  LW .x7 .x12 36 ;; LW .x6 .x12 4 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 2: b at sp+40, a at sp+8
+  LW .x7 .x12 40 ;; LW .x6 .x12 8 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 3: b at sp+44, a at sp+12
+  LW .x7 .x12 44 ;; LW .x6 .x12 12 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 4: b at sp+48, a at sp+16
+  LW .x7 .x12 48 ;; LW .x6 .x12 16 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 5: b at sp+52, a at sp+20
+  LW .x7 .x12 52 ;; LW .x6 .x12 20 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 6: b at sp+56, a at sp+24
+  LW .x7 .x12 56 ;; LW .x6 .x12 24 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- Limb 7: b at sp+60, a at sp+28
+  LW .x7 .x12 60 ;; LW .x6 .x12 28 ;;
+  single (.SLTU .x11 .x7 .x6) ;; single (.SUB .x7 .x7 .x6) ;;
+  single (.SLTU .x6 .x7 .x5) ;; single (.OR .x5 .x11 .x6) ;;
+  -- sp adjustment + store 256-bit result (9 instructions)
+  ADDI .x12 .x12 32 ;;
+  SW .x12 .x5 0 ;;
+  SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
+  SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28
+
 -- ============================================================================
 -- Utility: x0 always holds 0
 -- ============================================================================

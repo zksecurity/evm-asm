@@ -765,6 +765,39 @@ theorem sw_spec_gen_own (code : CodeMem) (rs1 rs2 : Reg) (v_addr v_data : Word)
     ⟨hp, hcompat, h_inner, h_R, hdisj, hunion,
       ⟨h1, hr1, hd1, hu1, hv_addr, ⟨h2, hr2, hd2, hu2, hv_data, hmem⟩⟩, hRest⟩ hpc
 
+/-- SW rs1 x0 offset: mem[rs1 + sext(offset)] := 0.
+    Specialized version of sw_spec_gen for x0 (always reads as 0).
+    Does not require (x0 ↦ᵣ 0) in pre/post. -/
+theorem sw_x0_spec_gen (code : CodeMem) (rs1 : Reg) (v_addr mem_old : Word)
+    (offset : BitVec 12) (addr : Addr)
+    (hfetch : code addr = some (Instr.SW rs1 .x0 offset))
+    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ mem_old))
+      ((rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ (0 : Word))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SW rs1 .x0 offset) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v_addr :=
+    (holdsFor_regIs rs1 v_addr st).mp (holdsFor_sepConj_elim_left hinner)
+  let mem_addr := v_addr + signExtend12 offset
+  have hrx0 : st.getReg .x0 = (0 : Word) := rfl
+  have hnext : execInstrBr st (Instr.SW rs1 .x0 offset) =
+      (st.setMem mem_addr 0).setPC (st.pc + 4) := by
+    simp [execInstrBr, mem_addr, hrs1_val, hrx0]
+  have hstep : step code st = some ((st.setMem mem_addr 0).setPC (addr + 4)) := by
+    have := step_sw _ _ _ _ _ hfetch' (by rw [hrs1_val]; exact hvalid)
+    rw [this, hnext, hpc]
+  refine ⟨1, (st.setMem mem_addr 0).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_memIs_setMem (v' := (0 : Word)) h1
+    have h3 := holdsFor_sepConj_pull_second.mpr h2
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v_addr) (pcFree_memIs _ 0)) hR)
+      (st.setMem mem_addr 0) (addr + 4) h3
+
 -- ============================================================================
 -- Section 4: Frame Embedding for cpsTriple
 -- ============================================================================

@@ -14,10 +14,10 @@ Reference spec: `execution-specs/src/ethereum/forks/shanghai/vm/` (Python).
 
 ## Current Status
 
-**Done (8 opcodes with full 256-bit specs):**
+**Done (9 opcodes with full 256-bit specs):**
 - Arithmetic: ADD, SUB
 - Bitwise: AND, OR, XOR, NOT
-- Comparison: ISZERO, LT
+- Comparison: ISZERO, LT, GT
 
 **Infrastructure:**
 - EvmWord = BitVec 256, stored as 8 little-endian 32-bit limbs
@@ -395,7 +395,7 @@ These require modeling persistent state and cross-contract calls.
 ## Priority Order (What to do first)
 
 **Immediate (unblocks most EVM programs):**
-1. Phase 1: GT, EQ (complete basic comparisons)
+1. Phase 1: EQ (complete basic comparisons) — GT done
 2. Phase 2.1-2.4: POP, PUSH0, DUP1, SWAP1 (stack manipulation)
 3. Phase 2.5: Generalize DUP/SWAP to DUPn/SWAPn
 

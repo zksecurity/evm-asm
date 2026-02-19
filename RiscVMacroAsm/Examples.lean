@@ -28,3 +28,4 @@ import RiscVMacroAsm.Evm.Not
 import RiscVMacroAsm.Evm.Arithmetic
 import RiscVMacroAsm.Evm.ArithmeticSpec
 import RiscVMacroAsm.Evm.Comparison
+import RiscVMacroAsm.Evm.ComparisonSpec
