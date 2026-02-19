@@ -29,22 +29,18 @@ machine-generated from the official RISC-V Sail specification.
 
 ## Motivation: Eliminating Compiler Trust in zkEVM
 
-zkEVM-based systems (e.g. SP1, Risc0) compile high-level programs to RISC-V
+The usual way to use zkVMs is to compile high-level programs to RISC-V
 assembly, then prove correctness of the execution trace using a zero-knowledge
-proof system. The proof covers the *execution trace* — but it cannot cover the
+proof system. The proof covers the *execution trace*, but it cannot cover the
 *compiler*. If the compiler is buggy or malicious, the resulting program may not
-match the developer's intent, even though the ZK proof is valid.
+match the developer's intent, even though the ZK proof is valid, and even if the
+source code is correct.
 
-**evm.asm** explores an alternative: write programs directly as Lean 4
-definitions, and *prove* their correctness in Lean 4 before the ZK proof is ever
-generated. The goal is that a developer never has to trust a compiler — only the
-Lean kernel and the instruction semantics, both of which are comparatively small
-and auditable.
+**evm.asm** explores an alternative: write programs directly as RISC-V code,
+and *prove* their correctness in Lean 4 before the ZK proof is ever
+generated. The goal is that a developer never has to trust a compiler.
 
-More specifically, evm.asm targets the **zkEVM**: programs are sequences of
-256-bit EVM opcodes, compiled to RISC-V for execution inside a zkVM. Each EVM
-opcode is implemented as a short RISC-V macro with a machine-checked
-specification, so composition of macros yields a verified end-to-end program.
+More specifically, evm.asm targets the **zkEVM**.
 
 ## Key Idea
 
@@ -61,7 +57,7 @@ Lean 4 serves simultaneously as:
 
 ## The `add_mulc` Macro
 
-The flagship example is `add_mulc`, a macro that multiplies a register by a
+The simplest example is `add_mulc` (inspired by "Coq: The world's best macro assembler?" cited above), a macro that multiplies a register by a
 compile-time constant using the shift-and-add algorithm:
 
 ```lean
@@ -147,6 +143,9 @@ leanprover/lean4:v4.29.0-rc1
 ```bash
 # Install elan (Lean version manager) if not already installed
 curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh
+
+# download Mathlib cache (optional, recommended)
+lake exec cache get
 
 # Build the project
 lake build
