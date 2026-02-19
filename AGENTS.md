@@ -132,11 +132,13 @@ simp only [memBufferIs, addr_100_plus_4, addr_104_plus_4,
 exact hab
 ```
 
-## Next Steps
+## Roadmap (PLAN.md)
 
-Potential future work:
-1. More control flow macros (loops, function calls)
-2. More SP1 syscalls (e.g. LWA, WRITE)
-3. Connect to sail-riscv-lean for full ISA semantics
-4. Add more verified macros (e.g., division, modulo)
-5. Prove frame rule instances for more instructions
+The project roadmap is maintained in `PLAN.md` at the repository root. It contains a phased plan for implementing the full EVM state transition function as verified RISC-V programs (for use as a zkEVM).
+
+**When you complete a task from the plan**, update `PLAN.md` to reflect the new status:
+- Move completed opcodes from their phase section to the "Done" list under "Current Status"
+- Update instruction counts or other details if they changed during implementation
+- If you discover new sub-tasks or issues, add them to the appropriate phase
+
+Always check `PLAN.md` at the start of a session to see what's next in the priority order.

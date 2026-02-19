@@ -1,5 +1,11 @@
 # PLAN: Verified RISC-V EVM Implementation
 
+> **Agent instruction**: Keep this file up to date as you work. When you finish
+> implementing an opcode or task, move it to the "Done" list under
+> "Current Status", update any counts or details that changed, and note any
+> new sub-tasks you discovered. Check this file at the start of each session
+> to pick up where the last agent left off.
+
 Goal: implement and verify the EVM state transition function as RISC-V macro
 assembly programs, for use as a zkEVM. Each EVM opcode becomes a verified
 RISC-V subroutine operating on 256-bit stack words in memory.
