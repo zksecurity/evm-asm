@@ -1,16 +1,13 @@
-# RiscVMacroAsm: A Verified Macro Assembler for RISC-V in Lean 4
+# evm.asm: A Verified Macro Assembler for zkEVM in Lean 4
 
-A prototype implementation of a verified macro assembler for RISC-V, inspired by:
+A prototype implementation of a verified macro assembler targeting the zkEVM,
+built on a RISC-V backend (RV32IM), inspired by:
 
 > Andrew Kennedy, Nick Benton, Jonas B. Jensen, Pierre-Evariste Dagand.
 > **"Coq: The world's best macro assembler?"**
 > *Proceedings of the 15th International Symposium on Principles and Practice
 > of Declarative Programming (PPDP 2013)*, September 2013, ACM.
 > https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
-
-The original paper uses Coq to formalize x86 assembly with separation logic
-specifications. This project adapts the same ideas to **RISC-V** (RV32I subset)
-using **Lean 4** as both the macro language and the verification language.
 
 ## ⚠️ Warning: Experimental Prototype Only
 
@@ -30,6 +27,25 @@ If you need a verified RISC-V formalization, consider
 [sail-riscv-lean](https://github.com/opencompl/sail-riscv-lean), which is
 machine-generated from the official RISC-V Sail specification.
 
+## Motivation: Eliminating Compiler Trust in zkEVM
+
+zkEVM-based systems (e.g. SP1, Risc0) compile high-level programs to RISC-V
+assembly, then prove correctness of the execution trace using a zero-knowledge
+proof system. The proof covers the *execution trace* — but it cannot cover the
+*compiler*. If the compiler is buggy or malicious, the resulting program may not
+match the developer's intent, even though the ZK proof is valid.
+
+**evm.asm** explores an alternative: write programs directly as Lean 4
+definitions, and *prove* their correctness in Lean 4 before the ZK proof is ever
+generated. The goal is that a developer never has to trust a compiler — only the
+Lean kernel and the instruction semantics, both of which are comparatively small
+and auditable.
+
+More specifically, evm.asm targets the **zkEVM**: programs are sequences of
+256-bit EVM opcodes, compiled to RISC-V for execution inside a zkVM. Each EVM
+opcode is implemented as a short RISC-V macro with a machine-checked
+specification, so composition of macros yields a verified end-to-end program.
+
 ## Key Idea
 
 Lean 4 serves simultaneously as:
@@ -39,9 +55,9 @@ Lean 4 serves simultaneously as:
 2. **A macro language**: Lean functions that produce programs act as macros,
    using all of Lean's facilities (recursion, pattern matching, conditionals).
 3. **A specification language**: Hoare triples with separation logic assertions
-   express correctness properties.
+   express correctness properties of EVM opcodes and macro compositions.
 4. **A proof assistant**: Lean's kernel verifies that macros meet their
-   specifications.
+   specifications, with no external oracle required.
 
 ## The `add_mulc` Macro
 
@@ -62,7 +78,7 @@ def add_mulc (nbits : Nat) (rd rs : Reg) (m : Nat) : Program :=
       add_mulc nbits' rd rs (m / 2)
 ```
 
-The specification (in the style of Kennedy et al.) uses separating conjunction:
+The specification uses separating conjunction:
 
 ```lean
 theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
@@ -71,13 +87,6 @@ theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
     ⦃(rd ↦ᵣ v) ** (rs ↦ᵣ w)⦄
     add_mulc nbits rd rs m
     ⦃fun s => s.getReg rd = v + w * BitVec.ofNat 32 m⦄
-```
-
-Concrete instances are verified by `native_decide`:
-
-```lean
-example : (execProgram (testState 10 7) (add_mulc 4 .x10 .x11 3)).getReg .x10
-    = 10 + 7 * 3 := by native_decide
 ```
 
 ## Project Structure
@@ -92,18 +101,25 @@ RiscVMacroAsm/
   CPSSpec.lean          -- CPS-style Hoare triples, branch specs, structural rules
   ControlFlow.lean      -- if_eq macro, symbolic proofs, pcIndep
   Tactics/
-    XPerm.lean          -- xperm tactic: AC-permutation of sepConj chains (inspired by SPlean/CFML)
-    XSimp.lean          -- xperm_hyp/xsimp tactics: assertion implication with permutation
-  InstructionSpecs.lean -- Per-instruction CPS specs (ADD, SUB, ADDI, LW, SW, BEQ, BNE, JAL, JALR, ...)
-  SyscallSpecs.lean     -- Syscall specs: HALT, WRITE, HINT_READ, memory buffers, public/private I/O
+    XPerm.lean          -- xperm tactic: AC-permutation of sepConj chains
+    XSimp.lean          -- xperm_hyp/xsimp tactics: assertion implication
+  InstructionSpecs.lean -- Per-instruction CPS specs (ADD, SUB, ADDI, LW, SW, BEQ, ...)
+  SyscallSpecs.lean     -- Syscall specs: HALT, WRITE, HINT_READ, memory buffers
   MulMacro.lean         -- The add_mulc macro with correctness proofs
   Evm/
     Basic.lean          -- EvmWord (BitVec 256), getLimb, fromLimbs, round-trip lemmas
     Stack.lean          -- evmWordIs, evmStackIs, pcFree lemmas
+    StackOps.lean       -- EVM POP/PUSH0/DUP1/SWAP1 programs + specs;
+                        --   generic evm_dup n / evm_swap n (1 ≤ n ≤ 16)
     Bitwise.lean        -- EVM AND/OR/XOR/NOT programs + per-limb specs
+    And.lean            -- Full 256-bit EVM AND spec (composed from per-limb)
+    Or.lean             -- Full 256-bit EVM OR spec
+    Xor.lean            -- Full 256-bit EVM XOR spec
+    Not.lean            -- Full 256-bit EVM NOT spec
     Arithmetic.lean     -- EVM ADD/SUB programs + per-limb specs
-    ArithmeticSpec.lean -- Full 256-bit ADD spec composed from 8 per-limb specs
-    Comparison.lean     -- EVM ISZERO/LT programs + per-limb specs
+    ArithmeticSpec.lean -- Full 256-bit EVM ADD/SUB specs
+    Comparison.lean     -- EVM ISZERO/LT/GT/EQ programs + per-limb specs
+    ComparisonSpec.lean -- Full 256-bit EVM LT/GT/EQ/ISZERO specs
   Examples.lean         -- Module hub importing all examples
   Examples/
     Swap.lean           -- Register swap macro
@@ -122,11 +138,8 @@ RiscVMacroAsm/
 
 ## Lean Toolchain
 
-This project uses the same Lean 4 toolchain as
-[sail-riscv-lean](https://github.com/opencompl/sail-riscv-lean):
-
 ```
-leanprover/lean4:nightly-2026-01-22
+leanprover/lean4:v4.29.0-rc1
 ```
 
 ## Building
@@ -146,25 +159,19 @@ This is a **prototype** demonstrating the approach. Current state:
 - **Working**: Machine model, instruction semantics, program composition,
   separation logic framework, Hoare triple infrastructure, concrete
   correctness proofs via `native_decide`.
-- **Proved**: Separation logic properties (commutativity, associativity, unit),
-  Hoare triple structural rules (skip, sequence, consequence, frame,
-  existential), register file lemmas (`getReg_setReg_eq`, `getReg_setReg_ne`,
-  `getReg_setPC`), swap correctness (symbolic Hoare triple proof),
-  `add_mulc_correct` (general inductive proof), real separation logic with
-  `PartialState` and PC as resource, CPS-style branch specs (`cpsBranch`,
-  `cpsNBranch`), `if_eq` control flow macro with symbolic proofs,
-  ECALL/HALT termination (SP1 convention).
-- **TODO**: More control flow macros (loops, function calls), connect to
-  sail-riscv-lean for full ISA coverage.
-
-## Relationship to sail-riscv-lean
-
-The [sail-riscv-lean](https://github.com/opencompl/sail-riscv-lean) project
-provides a complete, machine-generated Lean 4 formalization of the full
-RV64D RISC-V ISA. This project uses the same Lean toolchain for compatibility.
-A natural next step would be to connect this macro assembler framework to the
-full sail-riscv-lean semantics, proving that the generated instruction
-sequences behave correctly under the official RISC-V specification.
+- **Proved**:
+  - Separation logic properties (commutativity, associativity, unit)
+  - Hoare triple structural rules (skip, sequence, consequence, frame, existential)
+  - Register file lemmas, swap correctness, `add_mulc_correct`
+  - CPS-style branch specs (`cpsBranch`, `cpsNBranch`), `if_eq` control flow
+  - ECALL/HALT termination (SP1 convention)
+  - EVM 256-bit bitwise ops: AND, OR, XOR, NOT (full specs)
+  - EVM 256-bit arithmetic: ADD, SUB (full specs)
+  - EVM 256-bit comparisons: LT, GT, EQ, ISZERO (full specs)
+  - EVM stack ops: POP, PUSH0, DUP1, SWAP1 (concrete), DUPn/SWAPn for 1 ≤ n ≤ 16 (generic)
+- **TODO**: More control flow macros (loops, function calls), MLOAD/MSTORE,
+  additional arithmetic (MUL, DIV, MOD), connect to sail-riscv-lean for full
+  ISA coverage.
 
 ## References
 
@@ -174,17 +181,11 @@ sequences behave correctly under the official RISC-V specification.
 - **SPlean** (Separation Logic Proofs in Lean), Verse Lab.
   https://github.com/verse-lab/splean
   The `xperm` / `xperm_hyp` / `xsimp` tactics in `Tactics/` are inspired by
-  SPlean's `xsimpl` tactic, which automates heap entailment simplification
-  using `isDefEq`-based atom matching instead of `ac_rfl`.
+  SPlean's `xsimpl` tactic.
 - Charguéraud, A. (2020). "Separation Logic for Sequential Programs
   (Functional Pearl)." *Proc. ACM Program. Lang.* 4, ICFP, Article 116.
   https://doi.org/10.1145/3408998
-  The underlying theory for the `xsimpl` approach, also presented in
-  Volume 6 of Software Foundations:
-  https://softwarefoundations.cis.upenn.edu/slf-current/index.html
 - SP1 zkVM: https://github.com/succinctlabs/sp1
-  The `ECALL`-based syscall mechanism follows SP1's conventions: `t0 = 0`
-  signals HALT with exit code in `a0`, and `t0 = 0x10` signals COMMIT
-  (public values output).
+  The `ECALL`-based syscall mechanism follows SP1's conventions.
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
