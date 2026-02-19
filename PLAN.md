@@ -14,11 +14,11 @@ Reference spec: `execution-specs/src/ethereum/forks/shanghai/vm/` (Python).
 
 ## Current Status
 
-**Done (14 opcodes with full 256-bit specs):**
+**Done (14 opcodes with full 256-bit specs, Phase 2.1-2.5 complete):**
 - Arithmetic: ADD, SUB
 - Bitwise: AND, OR, XOR, NOT
 - Comparison: ISZERO, LT, GT, EQ
-- Stack: POP, PUSH0, DUP1, SWAP1
+- Stack: POP, PUSH0, DUP1, SWAP1, DUP1-16 (generic), SWAP1-16 (generic)
 
 **Infrastructure:**
 - EvmWord = BitVec 256, stored as 8 little-endian 32-bit limbs
