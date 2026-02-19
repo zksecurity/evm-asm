@@ -521,6 +521,19 @@ theorem pcFree_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
   have hp2 := hQ h2 hp2
   rw [← hunion]; simp [PartialState.union, hp1, hp2]
 
+/-- Type class for PC-free assertions. Synthesized automatically by instance search.
+    Kernel verifies each instance once; uses are opaque references (no inline nesting). -/
+class Assertion.PCFree (P : Assertion) : Prop where
+  proof : P.pcFree
+
+instance : Assertion.PCFree empAssertion             := ⟨pcFree_emp⟩
+instance : Assertion.PCFree (r ↦ᵣ v)                := ⟨pcFree_regIs r v⟩
+instance : Assertion.PCFree (a ↦ₘ v)                := ⟨pcFree_memIs a v⟩
+instance : Assertion.PCFree (regOwn r)               := ⟨pcFree_regOwn r⟩
+instance : Assertion.PCFree (memOwn a)               := ⟨pcFree_memOwn a⟩
+@[irreducible, instance] def instPCFreeSepConj [hP : Assertion.PCFree P] [hQ : Assertion.PCFree Q] :
+    Assertion.PCFree (P ** Q)                        := ⟨pcFree_sepConj hP.proof hQ.proof⟩
+
 -- ============================================================================
 -- Algebraic properties
 -- ============================================================================
@@ -842,6 +855,8 @@ theorem holdsFor_pure (P : Prop) (s : MachineState) :
 theorem pcFree_pure (P : Prop) : (⌜P⌝).pcFree := by
   intro h ⟨hemp, _⟩; subst hemp; rfl
 
+instance (P : Prop) : Assertion.PCFree (⌜P⌝) := ⟨pcFree_pure P⟩
+
 theorem pure_true_eq_emp : ⌜True⌝ = empAssertion := by
   funext h; simp [pure, empAssertion]
 
@@ -919,6 +934,9 @@ theorem holdsFor_publicValuesIs (vals : List (BitVec 8)) (s : MachineState) :
 
 theorem pcFree_publicValuesIs (vals : List (BitVec 8)) : (publicValuesIs vals).pcFree := by
   intro h hp; rw [publicValuesIs] at hp; subst hp; rfl
+
+instance (vals : List (BitVec 8)) : Assertion.PCFree (publicValuesIs vals) :=
+  ⟨pcFree_publicValuesIs vals⟩
 
 -- ============================================================================
 -- Disjointness lemmas for publicValuesIs composition
@@ -998,6 +1016,9 @@ theorem holdsFor_privateInputIs (vals : List (BitVec 8)) (s : MachineState) :
 
 theorem pcFree_privateInputIs (vals : List (BitVec 8)) : (privateInputIs vals).pcFree := by
   intro h hp; rw [privateInputIs] at hp; subst hp; rfl
+
+instance (vals : List (BitVec 8)) : Assertion.PCFree (privateInputIs vals) :=
+  ⟨pcFree_privateInputIs vals⟩
 
 -- ============================================================================
 -- Disjointness lemmas for privateInputIs composition
@@ -1617,6 +1638,9 @@ theorem pcFree_aAnd {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
   have h2pc := hQ h2 hq
   rw [← hunion]; simp [PartialState.union, h1pc, h2pc]
 
+@[irreducible, instance] def instPCFreeAAnd [hP : Assertion.PCFree P] [hQ : Assertion.PCFree Q] :
+    Assertion.PCFree (P ⋒ Q)                         := ⟨pcFree_aAnd hP.proof hQ.proof⟩
+
 -- ============================================================================
 -- liftPred: lift a MachineState predicate to Assertion
 -- ============================================================================
@@ -1700,20 +1724,12 @@ syntax "sep_eq" : tactic
 macro_rules
   | `(tactic| sep_eq) => `(tactic| exact congrFun (by ac_rfl) _)
 
-/-- Automatically prove `pcFree` goals by recursing through sepConj, regIs, memIs, etc. -/
+/-- Proves `P.pcFree` by synthesizing an `Assertion.PCFree P` instance.
+    Instance search runs in the elaborator (not the kernel), so the resulting
+    proof term is a compact opaque reference with no inline nesting. -/
 syntax "pcFree" : tactic
 macro_rules
-  | `(tactic| pcFree) => `(tactic| first
-    | exact pcFree_regIs _ _
-    | exact pcFree_memIs _ _
-    | exact pcFree_emp
-    | exact pcFree_regOwn _
-    | exact pcFree_memOwn _
-    | exact pcFree_publicValuesIs _
-    | exact pcFree_privateInputIs _
-    | exact pcFree_pure _
-    | (apply pcFree_sepConj <;> pcFree)
-    | (apply pcFree_aAnd <;> pcFree))
+  | `(tactic| pcFree) => `(tactic| exact (inferInstance : Assertion.PCFree _).proof)
 
 -- ============================================================================
 -- himpl: Assertion implication (for xsimp framework)

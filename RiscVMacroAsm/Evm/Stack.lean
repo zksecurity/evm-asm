@@ -48,27 +48,16 @@ theorem pcFree_evmStackIs (sp : Addr) (values : List EvmWord) :
   | nil => exact pcFree_emp
   | cons v vs ih => exact pcFree_sepConj (pcFree_evmWordIs sp v) (ih (sp + 32))
 
+instance (addr : Addr) (v : EvmWord) : Assertion.PCFree (evmWordIs addr v) :=
+  ⟨pcFree_evmWordIs addr v⟩
+
+instance (sp : Addr) (values : List EvmWord) : Assertion.PCFree (evmStackIs sp values) :=
+  ⟨pcFree_evmStackIs sp values⟩
+
 theorem evmStackIs_cons (sp : Addr) (v : EvmWord) (vs : List EvmWord) :
     evmStackIs sp (v :: vs) = (evmWordIs sp v ** evmStackIs (sp + 32) vs) := rfl
 
 theorem evmStackIs_nil (sp : Addr) :
     evmStackIs sp [] = empAssertion := rfl
-
-/-- Extend pcFree tactic to handle EVM assertions.
-    This macro_rules extension is tried before the base pcFree from SepLogic.lean. -/
-macro_rules
-  | `(tactic| pcFree) => `(tactic| first
-    | exact pcFree_evmWordIs _ _
-    | exact pcFree_evmStackIs _ _
-    | exact pcFree_regIs _ _
-    | exact pcFree_memIs _ _
-    | exact pcFree_emp
-    | exact pcFree_regOwn _
-    | exact pcFree_memOwn _
-    | exact pcFree_publicValuesIs _
-    | exact pcFree_privateInputIs _
-    | exact pcFree_pure _
-    | (apply pcFree_sepConj <;> pcFree)
-    | (apply pcFree_aAnd <;> pcFree))
 
 end RiscVMacroAsm
