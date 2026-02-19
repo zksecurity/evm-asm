@@ -175,6 +175,24 @@ def signExtend13 (imm : BitVec 13) : Word :=
 def signExtend21 (imm : BitVec 21) : Word :=
   imm.signExtend 32
 
+-- signExtend12 simplification lemmas for concrete offsets used by EVM opcode specs.
+@[simp] theorem signExtend12_0  : signExtend12 (0  : BitVec 12) = (0  : Word) := by native_decide
+@[simp] theorem signExtend12_4  : signExtend12 (4  : BitVec 12) = (4  : Word) := by native_decide
+@[simp] theorem signExtend12_8  : signExtend12 (8  : BitVec 12) = (8  : Word) := by native_decide
+@[simp] theorem signExtend12_12 : signExtend12 (12 : BitVec 12) = (12 : Word) := by native_decide
+@[simp] theorem signExtend12_16 : signExtend12 (16 : BitVec 12) = (16 : Word) := by native_decide
+@[simp] theorem signExtend12_20 : signExtend12 (20 : BitVec 12) = (20 : Word) := by native_decide
+@[simp] theorem signExtend12_24 : signExtend12 (24 : BitVec 12) = (24 : Word) := by native_decide
+@[simp] theorem signExtend12_28 : signExtend12 (28 : BitVec 12) = (28 : Word) := by native_decide
+@[simp] theorem signExtend12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by native_decide
+@[simp] theorem signExtend12_36 : signExtend12 (36 : BitVec 12) = (36 : Word) := by native_decide
+@[simp] theorem signExtend12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by native_decide
+@[simp] theorem signExtend12_44 : signExtend12 (44 : BitVec 12) = (44 : Word) := by native_decide
+@[simp] theorem signExtend12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by native_decide
+@[simp] theorem signExtend12_52 : signExtend12 (52 : BitVec 12) = (52 : Word) := by native_decide
+@[simp] theorem signExtend12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by native_decide
+@[simp] theorem signExtend12_60 : signExtend12 (60 : BitVec 12) = (60 : Word) := by native_decide
+
 -- ============================================================================
 -- M-extension helper functions (division/multiply edge cases per RV32IM spec)
 -- ============================================================================

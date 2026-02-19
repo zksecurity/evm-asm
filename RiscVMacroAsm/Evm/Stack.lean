@@ -54,4 +54,21 @@ theorem evmStackIs_cons (sp : Addr) (v : EvmWord) (vs : List EvmWord) :
 theorem evmStackIs_nil (sp : Addr) :
     evmStackIs sp [] = empAssertion := rfl
 
+/-- Extend pcFree tactic to handle EVM assertions.
+    This macro_rules extension is tried before the base pcFree from SepLogic.lean. -/
+macro_rules
+  | `(tactic| pcFree) => `(tactic| first
+    | exact pcFree_evmWordIs _ _
+    | exact pcFree_evmStackIs _ _
+    | exact pcFree_regIs _ _
+    | exact pcFree_memIs _ _
+    | exact pcFree_emp
+    | exact pcFree_regOwn _
+    | exact pcFree_memOwn _
+    | exact pcFree_publicValuesIs _
+    | exact pcFree_privateInputIs _
+    | exact pcFree_pure _
+    | (apply pcFree_sepConj <;> pcFree)
+    | (apply pcFree_aAnd <;> pcFree))
+
 end RiscVMacroAsm

@@ -368,4 +368,18 @@ theorem cpsTriple_seq_halt (code : CodeMem) (entry mid : Addr)
   obtain ⟨k2, s2, hstep2, hhalt, hRF⟩ := h2 F hF s1 hQF hpc1
   exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hhalt, hRF⟩
 
+/-- Sequential composition with midpoint permutation:
+    compose h1 : cpsTriple code s m P Q1 with h2 : cpsTriple code m e Q2 R
+    when Q1 and Q2 are AC-permutations (proved by hperm).
+    Both Q1 and Q2 are fully determined by h1/h2, so the permutation
+    obligation has no metavar ambiguity. -/
+theorem cpsTriple_seq_with_perm (code : CodeMem) (s m e : Addr)
+    (P Q1 Q2 R : Assertion)
+    (hperm : ∀ h, Q1 h → Q2 h)
+    (h1 : cpsTriple code s m P Q1)
+    (h2 : cpsTriple code m e Q2 R) :
+    cpsTriple code s e P R :=
+  cpsTriple_seq code s m e P Q2 R
+    (cpsTriple_consequence code s m P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+
 end RiscVMacroAsm

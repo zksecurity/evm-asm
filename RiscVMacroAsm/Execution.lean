@@ -224,6 +224,68 @@ def loadProgram (base : Addr) (prog : List Instr) : CodeMem :=
       none
 
 -- ============================================================================
+-- ProgramAt: abstract code memory predicate
+-- ============================================================================
+
+/-- ProgramAt code base prog asserts that program `prog` is loaded in `code`
+    at base address `base`. Instruction i is at address base + 4*i. -/
+def ProgramAt (code : CodeMem) (base : Addr) (prog : List Instr) : Prop :=
+  ∀ (i : Nat), i < prog.length →
+    code (base + BitVec.ofNat 32 (4 * i)) = prog[i]?
+
+/-- Extract a single instruction fetch from ProgramAt. -/
+theorem ProgramAt.get {code : CodeMem} {base : Addr} {prog : List Instr}
+    (h : ProgramAt code base prog) {i : Nat} (hi : i < prog.length) :
+    code (base + BitVec.ofNat 32 (4 * i)) = prog[i]? := h i hi
+
+/-- ProgramAt for the first part of a concatenated program. -/
+theorem ProgramAt.prefix {code : CodeMem} {base : Addr} {prog1 prog2 : List Instr}
+    (h : ProgramAt code base (prog1 ++ prog2)) :
+    ProgramAt code base prog1 := by
+  intro i hi
+  have hi' : i < (prog1 ++ prog2).length := by simp; omega
+  have h_main := h i hi'
+  rwa [List.getElem?_append_left hi] at h_main
+
+/-- ProgramAt for the second part of a concatenated program. -/
+theorem ProgramAt.suffix {code : CodeMem} {base : Addr} {prog1 prog2 : List Instr}
+    (h : ProgramAt code base (prog1 ++ prog2)) :
+    ProgramAt code (base + BitVec.ofNat 32 (4 * prog1.length)) prog2 := by
+  intro i hi
+  have hi' : prog1.length + i < (prog1 ++ prog2).length := by simp; omega
+  have h_main := h (prog1.length + i) hi'
+  rw [List.getElem?_append_right (by omega : prog1.length ≤ prog1.length + i)] at h_main
+  simp only [Nat.add_sub_cancel_left] at h_main
+  have haddr : base + BitVec.ofNat 32 (4 * (prog1.length + i))
+             = base + BitVec.ofNat 32 (4 * prog1.length) + BitVec.ofNat 32 (4 * i) := by
+    apply BitVec.eq_of_toNat_eq
+    simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  rw [haddr] at h_main
+  exact h_main
+
+/-- Extract a single instruction from ProgramAt with address normalization.
+    Useful for converting ProgramAt to individual code hypotheses. -/
+theorem ProgramAt.fetch {code : CodeMem} {base : Addr} {prog : List Instr}
+    (h : ProgramAt code base prog) (i : Nat) (addr : Addr) (instr : Instr)
+    (hi : i < prog.length)
+    (hinstr : prog[i]? = some instr)
+    (haddr : base + BitVec.ofNat 32 (4 * i) = addr) :
+    code addr = some instr := by
+  rw [← haddr, ← hinstr]; exact h i hi
+
+/-- loadProgram produces a ProgramAt. -/
+theorem loadProgram_programAt (base : Addr) (prog : List Instr)
+    (hlen : 4 * prog.length < 2^32) :
+    ProgramAt (loadProgram base prog) base prog := by
+  intro i hi
+  simp [loadProgram]
+  have hbase := base.isLt
+  have : (4294967296 - BitVec.toNat base + (BitVec.toNat base + 4 * i)) % 4294967296
+       = 4 * i := by omega
+  rw [this]; simp [hi]; omega
+
+-- ============================================================================
 -- Step-based execution
 -- ============================================================================
 

@@ -206,8 +206,7 @@ theorem loadProgram_at_index (base : Addr) (prog : List Instr) (k : Nat)
 /-- The length of an if_eq program. -/
 theorem if_eq_length (rs1 rs2 : Reg) (tb eb : Program) :
     (if_eq rs1 rs2 tb eb).length = tb.length + eb.length + 2 := by
-  simp only [if_eq, Program]
-  simp [List.length_append]; omega
+  simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]; omega
 
 /-- JAL x0 executes as a pure PC update (x0 write is dropped). -/
 theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
@@ -251,7 +250,8 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
       some (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) := by
     simp only [if_eq, loadProgram, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_mod,
       beq_self_eq_true, Nat.zero_div, true_and, Program]
-    simp [List.length_append]
+    rw [if_pos (by grind)]
+    grind
   -- Execute one step
   have hstep : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
       some (execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))) := by
@@ -343,7 +343,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
     intro R hR s hQRs hpc
     have hlen : (if_eq rs1 rs2 then_body else_body).length =
         then_body.length + else_body.length + 2 := by
-      simp only [if_eq, Program]; simp [List.length_append]; omega
+      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]; omega
     -- then_exit = base + ofNat(4*(t+1))
     have hthen_exit_eq : base + 4 + BitVec.ofNat 32 (4 * then_body.length) =
         base + BitVec.ofNat 32 (4 * (then_body.length + 1)) := by
@@ -354,7 +354,9 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
         (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
         some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
       rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
-      simp only [if_eq, Program]; simp [List.length_append]
+      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]
+      simp only [Program.getElem?_append, Program.length_append, List.length_cons, List.length_nil, List.getElem?_cons, List.getElem?_nil]
+      rw [if_pos (by omega), if_neg (by omega), if_pos (by omega)]
     -- Execute JAL
     have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
         some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
@@ -436,7 +438,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (v1 v2 : Word)
     intro R hR s hQRs hpc
     have hlen : (if_eq rs1 rs2 then_body else_body).length =
         then_body.length + else_body.length + 2 := by
-      simp only [if_eq, Program]; simp [List.length_append]; omega
+      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]; omega
     have hthen_exit_eq : base + 4 + BitVec.ofNat 32 (4 * then_body.length) =
         base + BitVec.ofNat 32 (4 * (then_body.length + 1)) := by
       apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
@@ -445,7 +447,9 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (v1 v2 : Word)
         (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
         some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
       rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
-      simp only [if_eq, Program]; simp [List.length_append]
+      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]
+      simp only [Program.getElem?_append, Program.length_append, List.length_cons, List.length_nil, List.getElem?_cons, List.getElem?_nil]
+      rw [if_pos (by omega), if_neg (by omega), if_pos (by omega)]
     have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =
         some (execInstrBr s (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))) := by
       unfold step; rw [hpc, hjal_at]

@@ -3,5 +3,9 @@ version = "0.0.1"
 defaultTargets = ["RiscVMacroAsm"]
 leanOptions = []
 
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
 [[lean_lib]]
 name = "RiscVMacroAsm"

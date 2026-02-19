@@ -19,6 +19,17 @@ def Program := List Instr
 
 instance : Append Program := ⟨List.append⟩
 
+/-- Length of concatenated programs. -/
+@[simp] theorem Program.length_append (p q : Program) : (p ++ q).length = p.length + q.length :=
+  List.length_append (as := p) (bs := q)
+
+/-- Element access across concatenated programs. -/
+@[simp] theorem Program.getElem?_append (p q : Program) (i : Nat) :
+    @getElem? (List Instr) Nat Instr _ _ (p ++ q) i =
+    if i < p.length then @getElem? (List Instr) Nat Instr _ _ p i
+    else @getElem? (List Instr) Nat Instr _ _ q (i - p.length) :=
+  List.getElem?_append
+
 /-- The empty program (no instructions). -/
 def prog_skip : Program := []
 

@@ -1679,12 +1679,64 @@ theorem sepConj_emp_right' (P : Assertion) : (P ** empAssertion) = P :=
 theorem sepConj_emp_left' (P : Assertion) : (empAssertion ** P) = P :=
   funext fun h => propext (sepConj_emp_left P h)
 
-/-- `sep_perm h` closes a goal of the form `A₁ ** ... ** Aₙ` given a hypothesis `h`
-    that is a permutation of the same assertions. Works by AC-normalizing both sides
-    with `simp` using `sepConj_assoc'`, `sepConj_comm'`, and `sepConj_left_comm'`. -/
+instance : Std.Associative (α := Assertion) sepConj := ⟨sepConj_assoc'⟩
+instance : Std.Commutative (α := Assertion) sepConj := ⟨sepConj_comm'⟩
+
+/-- `sep_perm h` closes a goal of the form `(A₁ ** ... ** Aₙ) s` given a hypothesis `h`
+    that is a permutation of the same assertions applied to the same state.
+    Works by proving assertion equality via `ac_rfl` and transporting with `congrFun`.
+    Note: uses `show _ = _ by ac_rfl` (hyp → goal direction) rather than
+    `by ac_rfl : _ = _` (goal → hyp direction) to avoid inconsistent atom orderings
+    when the two sides were elaborated in different contexts. -/
 syntax "sep_perm" ident : tactic
 macro_rules
   | `(tactic| sep_perm $hyp) =>
-    `(tactic| (simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at $hyp ⊢; exact $hyp))
+    `(tactic| exact (congrFun (show _ = _ by delta Word Addr; dsimp (config := { failIfUnchanged := false }) only []; all_goals ac_rfl) _).mp $hyp)
+
+/-- `sep_eq` closes a goal of the form `⊢ f x = g x` where `f` and `g` are AC-equivalent
+    `sepConj` chains. Decomposes the function application with `congrFun` and proves
+    the function equality via `ac_rfl`. -/
+syntax "sep_eq" : tactic
+macro_rules
+  | `(tactic| sep_eq) => `(tactic| exact congrFun (by ac_rfl) _)
+
+/-- Automatically prove `pcFree` goals by recursing through sepConj, regIs, memIs, etc. -/
+syntax "pcFree" : tactic
+macro_rules
+  | `(tactic| pcFree) => `(tactic| first
+    | exact pcFree_regIs _ _
+    | exact pcFree_memIs _ _
+    | exact pcFree_emp
+    | exact pcFree_regOwn _
+    | exact pcFree_memOwn _
+    | exact pcFree_publicValuesIs _
+    | exact pcFree_privateInputIs _
+    | exact pcFree_pure _
+    | (apply pcFree_sepConj <;> pcFree)
+    | (apply pcFree_aAnd <;> pcFree))
+
+-- ============================================================================
+-- himpl: Assertion implication (for xsimp framework)
+-- ============================================================================
+
+/-- Assertion implication: P entails Q if for all partial states h, P h → Q h. -/
+def himpl (P Q : Assertion) : Prop := ∀ h, P h → Q h
+
+/-- himpl follows from equality. -/
+theorem himpl_of_eq {P Q : Assertion} (h : P = Q) : himpl P Q :=
+  h ▸ fun _ hp => hp
+
+/-- himpl is reflexive. -/
+theorem himpl_refl (P : Assertion) : himpl P P := fun _ hp => hp
+
+/-- himpl is transitive. -/
+theorem himpl_trans {P Q R : Assertion} (h1 : himpl P Q) (h2 : himpl Q R) : himpl P R :=
+  fun h hp => h2 h (h1 h hp)
+
+/-- himpl lifts to holdsFor. -/
+theorem holdsFor_of_himpl {P Q : Assertion} {s : MachineState} (himpl_pq : himpl P Q)
+    (hp : P.holdsFor s) : Q.holdsFor s := by
+  obtain ⟨h, hcompat, hP⟩ := hp
+  exact ⟨h, hcompat, himpl_pq h hP⟩
 
 end RiscVMacroAsm

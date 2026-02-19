@@ -91,9 +91,19 @@ RiscVMacroAsm/
   SepLogic.lean         -- Separation logic assertions and combinators
   CPSSpec.lean          -- CPS-style Hoare triples, branch specs, structural rules
   ControlFlow.lean      -- if_eq macro, symbolic proofs, pcIndep
+  Tactics/
+    XPerm.lean          -- xperm tactic: AC-permutation of sepConj chains (inspired by SPlean/CFML)
+    XSimp.lean          -- xperm_hyp/xsimp tactics: assertion implication with permutation
   InstructionSpecs.lean -- Per-instruction CPS specs (ADD, SUB, ADDI, LW, SW, BEQ, BNE, JAL, JALR, ...)
   SyscallSpecs.lean     -- Syscall specs: HALT, WRITE, HINT_READ, memory buffers, public/private I/O
   MulMacro.lean         -- The add_mulc macro with correctness proofs
+  Evm/
+    Basic.lean          -- EvmWord (BitVec 256), getLimb, fromLimbs, round-trip lemmas
+    Stack.lean          -- evmWordIs, evmStackIs, pcFree lemmas
+    Bitwise.lean        -- EVM AND/OR/XOR/NOT programs + per-limb specs
+    Arithmetic.lean     -- EVM ADD/SUB programs + per-limb specs
+    ArithmeticSpec.lean -- Full 256-bit ADD spec composed from 8 per-limb specs
+    Comparison.lean     -- EVM ISZERO/LT programs + per-limb specs
   Examples.lean         -- Module hub importing all examples
   Examples/
     Swap.lean           -- Register swap macro
@@ -161,6 +171,17 @@ sequences behave correctly under the official RISC-V specification.
 - Kennedy, A., Benton, N., Jensen, J.B., Dagand, P.-E. (2013).
   "Coq: The world's best macro assembler?" PPDP 2013.
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
+- **SPlean** (Separation Logic Proofs in Lean), Verse Lab.
+  https://github.com/verse-lab/splean
+  The `xperm` / `xperm_hyp` / `xsimp` tactics in `Tactics/` are inspired by
+  SPlean's `xsimpl` tactic, which automates heap entailment simplification
+  using `isDefEq`-based atom matching instead of `ac_rfl`.
+- Charguéraud, A. (2020). "Separation Logic for Sequential Programs
+  (Functional Pearl)." *Proc. ACM Program. Lang.* 4, ICFP, Article 116.
+  https://doi.org/10.1145/3408998
+  The underlying theory for the `xsimpl` approach, also presented in
+  Volume 6 of Software Foundations:
+  https://softwarefoundations.cis.upenn.edu/slf-current/index.html
 - SP1 zkVM: https://github.com/succinctlabs/sp1
   The `ECALL`-based syscall mechanism follows SP1's conventions: `t0 = 0`
   signals HALT with exit code in `a0`, and `t0 = 0x10` signals COMMIT

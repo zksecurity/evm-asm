@@ -61,6 +61,12 @@ When adding or modifying proofs:
 3. **Test concretely**: Verify specific cases with `native_decide` before generalizing
 4. **Incremental development**: Prove helper lemmas before the main theorem
 
+## Critical Rules
+
+- **Do NOT add `set_option maxHeartbeats` to any file.** Heartbeat limits are configured globally in `lakefile.toml`.
+- **Do NOT add `set_option maxRecDepth` to any file.** Recursion depth is configured globally in `lakefile.toml`.
+- If a proof times out or hits recursion limits, restructure the proof (e.g., split into smaller lemmas, use intermediate `have` bindings) rather than increasing limits.
+
 ## Common Pitfalls
 
 1. **Notation issues**: Custom notations (like `↦ᵣ ?`) may not parse correctly; use functions directly

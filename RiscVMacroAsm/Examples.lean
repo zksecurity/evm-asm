@@ -21,5 +21,10 @@ import RiscVMacroAsm.Examples.Echo
 import RiscVMacroAsm.Evm.Basic
 import RiscVMacroAsm.Evm.Stack
 import RiscVMacroAsm.Evm.Bitwise
+import RiscVMacroAsm.Evm.And
+import RiscVMacroAsm.Evm.Or
+import RiscVMacroAsm.Evm.Xor
+import RiscVMacroAsm.Evm.Not
 import RiscVMacroAsm.Evm.Arithmetic
+import RiscVMacroAsm.Evm.ArithmeticSpec
 import RiscVMacroAsm.Evm.Comparison

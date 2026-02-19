@@ -83,6 +83,40 @@ def isValidMemAccess (addr : Addr) : Bool :=
 @[simp] theorem isValidMemAccess_eq (addr : Addr) :
     isValidMemAccess addr = (isValidMemAddr addr && isAligned4 addr) := rfl
 
+/-- ValidMemRange addr n holds when n consecutive word-aligned memory accesses
+    starting at addr are all valid. -/
+def ValidMemRange (addr : Addr) (n : Nat) : Prop :=
+  ∀ (i : Nat), i < n → isValidMemAccess (addr + BitVec.ofNat 32 (4 * i)) = true
+
+/-- Extract a single validity fact from ValidMemRange. -/
+theorem ValidMemRange.get {addr : Addr} {n : Nat}
+    (h : ValidMemRange addr n) {i : Nat} (hi : i < n) :
+    isValidMemAccess (addr + BitVec.ofNat 32 (4 * i)) = true := h i hi
+
+/-- Split a ValidMemRange into two halves. -/
+theorem ValidMemRange.split {addr : Addr} {n1 n2 : Nat}
+    (h : ValidMemRange addr (n1 + n2)) :
+    ValidMemRange addr n1 ∧
+    ValidMemRange (addr + BitVec.ofNat 32 (4 * n1)) n2 := by
+  constructor
+  · intro i hi; exact h i (by omega)
+  · intro i hi
+    have h_main := h (n1 + i) (by omega)
+    have haddr : addr + BitVec.ofNat 32 (4 * (n1 + i))
+               = addr + BitVec.ofNat 32 (4 * n1) + BitVec.ofNat 32 (4 * i) := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega
+    rwa [haddr] at h_main
+
+/-- Extract a single validity fact from ValidMemRange with address normalization. -/
+theorem ValidMemRange.fetch {addr : Addr} {n : Nat}
+    (h : ValidMemRange addr n) (i : Nat) (target : Addr)
+    (hi : i < n)
+    (haddr : addr + BitVec.ofNat 32 (4 * i) = target) :
+    isValidMemAccess target = true := by
+  rw [← haddr]; exact h i hi
+
 @[simp] theorem isValidMemAddr_eq (addr : Addr) :
     isValidMemAddr addr = (decide (SP1_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ SP1_MEM_END)) := rfl
 

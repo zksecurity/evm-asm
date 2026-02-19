@@ -8,3 +8,5 @@ import RiscVMacroAsm.CPSSpec
 import RiscVMacroAsm.ControlFlow
 import RiscVMacroAsm.SyscallSpecs
 import RiscVMacroAsm.Examples
+import RiscVMacroAsm.Tactics.XPerm
+import RiscVMacroAsm.Tactics.XSimp

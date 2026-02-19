@@ -131,20 +131,19 @@ theorem lt_limb0_spec (code : CodeMem) (off_a off_b : BitVec 12)
   -- Compose
   have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
     (cpsTriple_consequence code base (base + 4) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s1f)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s2f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s2f)
   have c123 := cpsTriple_seq code base (base + 8) (base + 12) _ _ _ c12
     (cpsTriple_consequence code (base + 8) (base + 12) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s3f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s3f)
   exact cpsTriple_consequence code base (base + 12) _ _ _ _
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c123
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) c123
 
-set_option maxHeartbeats 800000 in
 /-- LT carry limb spec (6 instructions): LW, LW, SLTU, SUB, SLTU, OR.
     Propagates borrow without storing result. Memory is NOT modified.
     borrow1 = (a < b), temp = a - b, borrow2 = (temp < borrow_in),
@@ -234,28 +233,28 @@ theorem lt_limb_carry_spec (code : CodeMem) (off_a off_b : BitVec 12)
   have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
     (cpsTriple_consequence code base (base + 4) _ _ _ _
       (fun _ hp => hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s1f)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s2f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s2f)
   have c123 := cpsTriple_seq code base (base + 8) (base + 12) _ _ _ c12
     (cpsTriple_consequence code (base + 8) (base + 12) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s3f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s3f)
   have c1234 := cpsTriple_seq code base (base + 12) (base + 16) _ _ _ c123
     (cpsTriple_consequence code (base + 12) (base + 16) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s4f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s4f)
   have c12345 := cpsTriple_seq code base (base + 16) (base + 20) _ _ _ c1234
     (cpsTriple_consequence code (base + 16) (base + 20) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s5f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s5f)
   have c123456 := cpsTriple_seq code base (base + 20) (base + 24) _ _ _ c12345
     (cpsTriple_consequence code (base + 20) (base + 24) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s6f)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s6f)
   exact cpsTriple_consequence code base (base + 24) _ _ _ _
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c123456
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) c123456
 
 end RiscVMacroAsm
