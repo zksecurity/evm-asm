@@ -120,6 +120,35 @@ def evm_gt : Program :=
   SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
   SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28
 
+/-- 256-bit EVM EQ: binary (pop 2, push 1, sp += 32).
+    XOR each limb pair (a_k XOR b_k), OR-reduce all XORs, SLTIU to boolean.
+    Result = 1 iff a == b as 256-bit words.
+    41 instructions total: 3 (limb0) + 7×4 (limbs1-7) + 1 (SLTIU) + 1 (ADDI) + 8 (SWs). -/
+def evm_eq : Program :=
+  -- Limb 0 (3 instructions): load a0 into x7, b0 into x6, XOR them
+  LW .x7 .x12 0 ;; LW .x6 .x12 32 ;; single (.XOR .x7 .x7 .x6) ;;
+  -- Limb 1 (4 instructions): load a1 into x6, b1 into x5, XOR, OR-accumulate
+  LW .x6 .x12 4 ;; LW .x5 .x12 36 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 2
+  LW .x6 .x12 8 ;; LW .x5 .x12 40 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 3
+  LW .x6 .x12 12 ;; LW .x5 .x12 44 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 4
+  LW .x6 .x12 16 ;; LW .x5 .x12 48 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 5
+  LW .x6 .x12 20 ;; LW .x5 .x12 52 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 6
+  LW .x6 .x12 24 ;; LW .x5 .x12 56 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Limb 7
+  LW .x6 .x12 28 ;; LW .x5 .x12 60 ;; single (.XOR .x6 .x6 .x5) ;; single (.OR .x7 .x7 .x6) ;;
+  -- Convert OR-reduced XOR to boolean: x7 = (x7 == 0) ? 1 : 0
+  single (.SLTIU .x7 .x7 1) ;;
+  -- sp adjustment + store 256-bit result (9 instructions)
+  ADDI .x12 .x12 32 ;;
+  SW .x12 .x7 0 ;;
+  SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
+  SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28
+
 -- ============================================================================
 -- Utility: x0 always holds 0
 -- ============================================================================
@@ -299,5 +328,136 @@ theorem lt_limb_carry_spec (code : CodeMem) (off_a off_b : BitVec 12)
   exact cpsTriple_consequence code base (base + 24) _ _ _ _
     (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
     (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) c123456
+
+-- ============================================================================
+-- Per-limb Specs: EQ (XOR + OR accumulation)
+-- ============================================================================
+
+/-- EQ limb 0 spec (3 instructions): LW x7, LW x6, XOR x7 x7 x6.
+    Loads a and b limbs, XORs them into x7. Memory unchanged. -/
+theorem eq_limb0_spec (code : CodeMem) (off_a off_b : BitVec 12)
+    (sp a_limb b_limb v7 v6 : Word) (base : Addr)
+    (hf1 : code base = some (.LW .x7 .x12 off_a))
+    (hf2 : code (base + 4) = some (.LW .x6 .x12 off_b))
+    (hf3 : code (base + 8) = some (.XOR .x7 .x7 .x6))
+    (hvalid_a : isValidMemAccess (sp + signExtend12 off_a) = true)
+    (hvalid_b : isValidMemAccess (sp + signExtend12 off_b) = true) :
+    let mem_a := sp + signExtend12 off_a
+    let mem_b := sp + signExtend12 off_b
+    cpsTriple code base (base + 12)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
+       (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a_limb ^^^ b_limb)) ** (.x6 ↦ᵣ b_limb) **
+       (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
+  simp only
+  have h48  : base + 4 + 4 = base + 8 := by
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have h812 : base + 8 + 4 = base + 12 := by
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  -- Step 1: LW x7, off_a(x12)
+  have s1 := lw_spec_gen code .x7 .x12 sp v7 a_limb off_a base (by nofun) hf1 hvalid_a
+  have s1f := cpsTriple_frame_left code base (base + 4) _ _
+    ((.x6 ↦ᵣ v6) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _)) s1
+  -- Step 2: LW x6, off_b(x12)
+  have s2 := lw_spec_gen code .x6 .x12 sp v6 b_limb off_b (base + 4) (by nofun) hf2 hvalid_b
+  rw [h48] at s2
+  have s2f := cpsTriple_frame_left code (base + 4) (base + 8) _ _
+    ((.x7 ↦ᵣ a_limb) ** ((sp + signExtend12 off_a) ↦ₘ a_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _)) s2
+  -- Step 3: XOR x7, x7, x6 (rd=x7=rs1, rs2=x6)
+  have s3 := xor_spec_gen_rd_eq_rs1 code .x7 .x6 a_limb b_limb (base + 8) (by nofun) (by nofun) hf3
+  rw [h812] at s3
+  have s3f := cpsTriple_frame_left code (base + 8) (base + 12) _ _
+    ((.x12 ↦ᵣ sp) ** ((sp + signExtend12 off_a) ↦ₘ a_limb) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_sepConj (pcFree_memIs _ _) (pcFree_memIs _ _))) s3
+  -- Compose
+  have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
+    (cpsTriple_consequence code base (base + 4) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s1f)
+    (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s2f)
+  have c123 := cpsTriple_seq code base (base + 8) (base + 12) _ _ _ c12
+    (cpsTriple_consequence code (base + 8) (base + 12) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s3f)
+  exact cpsTriple_consequence code base (base + 12) _ _ _ _
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) c123
+
+/-- EQ OR-limb spec (4 instructions): LW x6, LW x5, XOR x6 x6 x5, OR x7 x7 x6.
+    Loads a_k into x6, b_k into x5, XORs them (x6 := a_k XOR b_k),
+    then OR-accumulates into x7 (x7 := acc ||| (a_k XOR b_k)). Memory unchanged. -/
+theorem eq_or_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
+    (sp a_limb b_limb v6 v5 acc : Word) (base : Addr)
+    (hf1 : code base = some (.LW .x6 .x12 off_a))
+    (hf2 : code (base + 4) = some (.LW .x5 .x12 off_b))
+    (hf3 : code (base + 8) = some (.XOR .x6 .x6 .x5))
+    (hf4 : code (base + 12) = some (.OR .x7 .x7 .x6))
+    (hvalid_a : isValidMemAccess (sp + signExtend12 off_a) = true)
+    (hvalid_b : isValidMemAccess (sp + signExtend12 off_b) = true) :
+    let mem_a := sp + signExtend12 off_a
+    let mem_b := sp + signExtend12 off_b
+    let xor_k := a_limb ^^^ b_limb
+    cpsTriple code base (base + 16)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) **
+       (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| xor_k)) ** (.x6 ↦ᵣ xor_k) ** (.x5 ↦ᵣ b_limb) **
+       (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
+  simp only
+  have h48  : base + 4 + 4 = base + 8 := by
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have h812 : base + 8 + 4 = base + 12 := by
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have h1216 : base + 12 + 4 = base + 16 := by
+    apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  -- Step 1: LW x6, off_a(x12)
+  have s1 := lw_spec_gen code .x6 .x12 sp v6 a_limb off_a base (by nofun) hf1 hvalid_a
+  have s1f := cpsTriple_frame_left code base (base + 4) _ _
+    ((.x7 ↦ᵣ acc) ** (.x5 ↦ᵣ v5) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _))) s1
+  -- Step 2: LW x5, off_b(x12)
+  have s2 := lw_spec_gen code .x5 .x12 sp v5 b_limb off_b (base + 4) (by nofun) hf2 hvalid_b
+  rw [h48] at s2
+  have s2f := cpsTriple_frame_left code (base + 4) (base + 8) _ _
+    ((.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ a_limb) ** ((sp + signExtend12 off_a) ↦ₘ a_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _))) s2
+  -- Step 3: XOR x6, x6, x5 (rd=x6=rs1, rs2=x5)
+  have s3 := xor_spec_gen_rd_eq_rs1 code .x6 .x5 a_limb b_limb (base + 8) (by nofun) (by nofun) hf3
+  rw [h812] at s3
+  have s3f := cpsTriple_frame_left code (base + 8) (base + 12) _ _
+    ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) **
+     ((sp + signExtend12 off_a) ↦ₘ a_limb) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_sepConj (pcFree_regIs _ _)
+     (pcFree_sepConj (pcFree_memIs _ _) (pcFree_memIs _ _)))) s3
+  -- Step 4: OR x7, x7, x6 (rd=x7=rs1, rs2=x6)
+  have s4 := or_spec_gen_rd_eq_rs1 code .x7 .x6 acc (a_limb ^^^ b_limb) (base + 12) (by nofun) (by nofun) hf4
+  rw [h1216] at s4
+  have s4f := cpsTriple_frame_left code (base + 12) (base + 16) _ _
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b_limb) **
+     ((sp + signExtend12 off_a) ↦ₘ a_limb) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_sepConj (pcFree_regIs _ _)
+     (pcFree_sepConj (pcFree_memIs _ _) (pcFree_memIs _ _)))) s4
+  -- Compose all 4 steps
+  have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
+    (cpsTriple_consequence code base (base + 4) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s1f)
+    (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s2f)
+  have c123 := cpsTriple_seq code base (base + 8) (base + 12) _ _ _ c12
+    (cpsTriple_consequence code (base + 8) (base + 12) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s3f)
+  have c1234 := cpsTriple_seq code base (base + 12) (base + 16) _ _ _ c123
+    (cpsTriple_consequence code (base + 12) (base + 16) _ _ _ _
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+      (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) s4f)
+  exact cpsTriple_consequence code base (base + 16) _ _ _ _
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp)
+    (fun _ hp => by exact (congrFun (by ac_rfl : _ = _) _).mpr hp) c1234
 
 end RiscVMacroAsm
