@@ -1,10 +1,10 @@
-# AI Agent Guide for RiscVMacroAsm
+# AI Agent Guide for EvmAsm
 
-This document provides guidance for AI agents working on the RiscVMacroAsm project.
+This document provides guidance for AI agents working on the EvmAsm project.
 
 ## Project Overview
 
-RiscVMacroAsm is a verified macro assembler for RISC-V in Lean 4, inspired by "Coq: The world's best macro assembler?" (Kennedy et al., PPDP 2013). The project demonstrates using Lean 4 as both a macro language and verification framework for assembly code.
+EvmAsm is a verified macro assembler for RISC-V in Lean 4, inspired by "Coq: The world's best macro assembler?" (Kennedy et al., PPDP 2013). The project demonstrates using Lean 4 as both a macro language and verification framework for assembly code.
 
 ## Build System
 
@@ -16,13 +16,13 @@ RiscVMacroAsm is a verified macro assembler for RISC-V in Lean 4, inspired by "C
 ### Important Lake Configuration Notes
 
 - The `lakefile.toml` uses Lake 5.0 format (root-level package fields, no `[package]` section)
-- `defaultTargets = ["RiscVMacroAsm"]` is required for `lake build` to work
-- The library name is `RiscVMacroAsm` and sources are in `RiscVMacroAsm/` directory
+- `defaultTargets = ["EvmAsm"]` is required for `lake build` to work
+- The library name is `EvmAsm` and sources are in `EvmAsm/` directory
 
 ## Project Structure
 
 ```
-RiscVMacroAsm/
+EvmAsm/
   Basic.lean         -- Machine state: registers, memory, PC
   Instructions.lean  -- RV32I instruction subset and semantics (incl. ECALL)
   Program.lean       -- Programs as instruction lists, sequential composition, HALT/COMMIT macros
@@ -33,7 +33,7 @@ RiscVMacroAsm/
   ControlFlow.lean   -- if_eq macro, symbolic proofs, pcIndep
   MulMacro.lean      -- The add_mulc macro with correctness proofs
   Examples.lean      -- Swap, zero, triple, halt, commit, and other macro examples
-RiscVMacroAsm.lean   -- Root module importing all submodules
+EvmAsm.lean   -- Root module importing all submodules
 ```
 
 ## Key Lean 4 API Compatibility Notes

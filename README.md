@@ -88,7 +88,7 @@ theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
 ## Project Structure
 
 ```
-RiscVMacroAsm/
+EvmAsm/
   Basic.lean            -- Machine state: registers, memory, PC
   Instructions.lean     -- RV32IM instruction set and semantics (incl. ECALL)
   Program.lean          -- Programs as instruction lists, sequential composition
