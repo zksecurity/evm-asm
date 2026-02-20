@@ -18,14 +18,12 @@ This is an experimental research prototype with significant limitations:
 - **No RISC-V spec compliance**: The instruction semantics are vibe-generated and
   have NOT been validated against the official RISC-V specification. There may
   be subtle (or not-so-subtle) deviations from actual RISC-V behavior.
+- **No EVM spec compliance**: The specs for examples are also vibe-generated and
+  have NOT been validated against the EVM specification.
 - **No conformance testing**: No systematic testing has been performed to verify
-  that this implementation matches real RISC-V processors or simulators.
+  that this implementation matches real RISC-V processors or simulators. No testing has been performed against EVM either.
 - **Prototype quality**: This code is for educational and research purposes to
   explore verified macro assembly techniques, not for production use.
-
-If you need a verified RISC-V formalization, consider
-[sail-riscv-lean](https://github.com/opencompl/sail-riscv-lean), which is
-machine-generated from the official RISC-V Sail specification.
 
 ## Motivation: Eliminating Compiler Trust in zkEVM
 
@@ -171,7 +169,7 @@ This is a **prototype** demonstrating the approach. Current state:
   - EVM stack ops: POP, PUSH0, DUP1, SWAP1 (concrete), DUPn/SWAPn for 1 ≤ n ≤ 16 (generic)
 - **TODO**: More control flow macros (loops, function calls), MLOAD/MSTORE,
   additional arithmetic (MUL, DIV, MOD), preprocessed, connect to sail-riscv-lean for making sure this project is really about RISC-V, connect to EVM specs in Lean,
-  transaction and block processing, Ethereum state transition, I guess I forgot something, TEST! TEST! TEST the whole thing!
+  transaction and block processing, Ethereum state transition, I guess I forgot something, TEST! TEST! TEST!
 
 ## References
 
