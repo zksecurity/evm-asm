@@ -205,7 +205,7 @@ theorem evm_add_spec (code : CodeMem) (sp : Addr) (base : Addr)
   simp only
   -- Helper: sp + signExtend12 0 = sp
   have hse0 : sp + signExtend12 (0 : BitVec 12) = sp := by
-    simp only [signExtend12_0]; apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+    simp only [signExtend12_0]; apply BitVec.eq_of_toNat_eq; simp
   -- ========== Limb 0 (5 instr, base to base+20) ==========
   have L0 := add_limb0_spec code 0 32 sp a0 b0 v7 v6 v5 base hc0 hc1 hc2 hc3 hc4
     (by rw [hse0]; exact hv0) (by simp only [signExtend12_32]; exact hv32)

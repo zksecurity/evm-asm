@@ -24,7 +24,7 @@ local macro "bv_addr" : tactic =>
 /-- sp + signExtend12 0 = sp -/
 private theorem se0_eq_self (sp : Addr) : sp + signExtend12 (0 : BitVec 12) = sp := by
   simp only [signExtend12_0]; apply BitVec.eq_of_toNat_eq
-  simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  simp
 
 /-- pcFree for a 12-element frame: 4 regs + 8 mems -/
 local macro "pcFreeAddi12" : term =>
@@ -681,7 +681,7 @@ theorem eq_result_store_spec (code : CodeMem) (sp : Addr)
     (hv52 : isValidMemAccess (sp + 52) = true)
     (hv56 : isValidMemAccess (sp + 56) = true)
     (hv60 : isValidMemAccess (sp + 60) = true) :
-    let eq_result := if BitVec.ult acc (1 : Word) then (1 : Word) else 0
+    let _eq_result := if BitVec.ult acc (1 : Word) then (1 : Word) else 0
     cpsTriple code base (base + 40)
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 36) ↦ₘ b1) ** ((sp + 40) ↦ₘ b2) ** ((sp + 44) ↦ₘ b3) **

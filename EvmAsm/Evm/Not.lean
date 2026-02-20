@@ -74,7 +74,7 @@ theorem evm_not_spec (code : CodeMem) (sp base : Addr)
        ((sp + 16) ↦ₘ (a4 ^^^ c)) ** ((sp + 20) ↦ₘ (a5 ^^^ c)) ** ((sp + 24) ↦ₘ (a6 ^^^ c)) ** ((sp + 28) ↦ₘ (a7 ^^^ c))) := by
   simp only
   have hse0 : sp + signExtend12 (0 : BitVec 12) = sp := by
-    simp only [signExtend12_0]; apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+    simp only [signExtend12_0]; apply BitVec.eq_of_toNat_eq; simp
   -- Limb 0
   have L0 := not_limb_spec code 0 sp a0 v7 base hc0 hc1 hc2 (by rw [hse0]; exact hv0)
   rw [hse0] at L0

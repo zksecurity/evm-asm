@@ -354,7 +354,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
         (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
         some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
       rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
-      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]
+      simp only [if_eq]
       simp only [Program.getElem?_append, Program.length_append, List.length_cons, List.length_nil, List.getElem?_cons, List.getElem?_nil]
       rw [if_pos (by omega), if_neg (by omega), if_pos (by omega)]
     -- Execute JAL
@@ -447,7 +447,7 @@ theorem if_eq_spec_n (rs1 rs2 : Reg) (v1 v2 : Word)
         (base + 4 + BitVec.ofNat 32 (4 * then_body.length)) =
         some (Instr.JAL .x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) := by
       rw [hthen_exit_eq, loadProgram_at_index base _ _ hidx (by omega)]
-      simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]
+      simp only [if_eq]
       simp only [Program.getElem?_append, Program.length_append, List.length_cons, List.length_nil, List.getElem?_cons, List.getElem?_nil]
       rw [if_pos (by omega), if_neg (by omega), if_pos (by omega)]
     have hstep_jal : step (loadProgram base (if_eq rs1 rs2 then_body else_body)) s =

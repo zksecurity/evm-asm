@@ -123,7 +123,7 @@ theorem and_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
     (cpsTriple_consequence code base (base + 4) _ _ _ _
       (fun _ hp => hp)
       (fun _ hp => by
-        simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
+        simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp)
       s1f)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
       (fun _ hp => by
@@ -149,9 +149,9 @@ theorem and_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
       s4f)
   exact cpsTriple_consequence code base (base + 16) _ _ _ _
     (fun _ hp => by
-      simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
+      simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp)
     (fun _ hp => by
-      simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
+      simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
     c1234
 
 /-- Per-limb OR spec (4 instructions). -/
@@ -198,7 +198,7 @@ theorem or_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
     (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _)) s4
   have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
     (cpsTriple_consequence code base (base + 4) _ _ _ _
-      (fun _ hp => hp) (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
+      (fun _ hp => hp) (fun _ hp => by simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s2f)
@@ -211,8 +211,8 @@ theorem or_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s4f)
   exact cpsTriple_consequence code base (base + 16) _ _ _ _
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c1234
+    (fun _ hp => by simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp)
+    (fun _ hp => by simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c1234
 
 /-- Per-limb XOR spec (4 instructions). -/
 theorem xor_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
@@ -258,7 +258,7 @@ theorem xor_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
     (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _)) s4
   have c12 := cpsTriple_seq code base (base + 4) (base + 8) _ _ _
     (cpsTriple_consequence code base (base + 4) _ _ _ _
-      (fun _ hp => hp) (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
+      (fun _ hp => hp) (fun _ hp => by simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp) s1f)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s2f)
@@ -271,8 +271,8 @@ theorem xor_limb_spec (code : CodeMem) (off_a off_b : BitVec 12)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
       (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s4f)
   exact cpsTriple_consequence code base (base + 16) _ _ _ _
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-    (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c1234
+    (fun _ hp => by simp only [sepConj_assoc', sepConj_left_comm'] at hp ⊢; exact hp)
+    (fun _ hp => by simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) c1234
 
 /-- Per-limb NOT spec (3 instructions): LW, XORI with -1, SW.
     Unary: loads limb, complements it, stores back to same location. -/
@@ -313,15 +313,15 @@ theorem not_limb_spec (code : CodeMem) (off : BitVec 12)
     (cpsTriple_consequence code base (base + 4) _ _ _ _
       (fun _ hp => hp) (fun _ hp => hp) s1)
     (cpsTriple_consequence code (base + 4) (base + 8) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s2f)
+      (fun _ hp => by simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
+      (fun _ hp => by simp only [sepConj_assoc'] at hp ⊢; exact hp) s2f)
   -- Compose (s1;s2f) ; s3
   exact cpsTriple_seq code base (base + 8) (base + 12) _ _ _
     (cpsTriple_consequence code base (base + 8) _ _ _ _
       (fun _ hp => hp) (fun _ hp => hp) c12)
     (cpsTriple_consequence code (base + 8) (base + 12) _ _ _ _
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp)
-      (fun _ hp => by simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢; exact hp) s3)
+      (fun _ hp => by simp only [sepConj_comm'] at hp ⊢; exact hp)
+      (fun _ hp => by simp only [sepConj_comm'] at hp ⊢; exact hp) s3)
 
 -- ============================================================================
 -- Helpers
@@ -600,12 +600,12 @@ theorem binary_bitwise_spec (code : CodeMem) (sp base : Addr)
     (a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7 v7 v6 : Word)
     (limb_spec : ∀ (off_a off_b : BitVec 12)
       (a_limb b_limb v7_in v6_in : Word) (base' : Addr)
-      (hf1 : code base' = some (.LW .x7 .x12 off_a))
-      (hf2 : code (base' + 4) = some (.LW .x6 .x12 off_b))
-      (hf3 : code (base' + 8) = some alu_instr)
-      (hf4 : code (base' + 12) = some (.SW .x12 .x7 off_b))
-      (hva : isValidMemAccess (sp + signExtend12 off_a) = true)
-      (hvb : isValidMemAccess (sp + signExtend12 off_b) = true),
+      (_ : code base' = some (.LW .x7 .x12 off_a))
+      (_ : code (base' + 4) = some (.LW .x6 .x12 off_b))
+      (_ : code (base' + 8) = some alu_instr)
+      (_ : code (base' + 12) = some (.SW .x12 .x7 off_b))
+      (_ : isValidMemAccess (sp + signExtend12 off_a) = true)
+      (_ : isValidMemAccess (sp + signExtend12 off_b) = true),
       cpsTriple code base' (base' + 16)
         ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7_in) ** (.x6 ↦ᵣ v6_in) **
          ((sp + signExtend12 off_a) ↦ₘ a_limb) ** ((sp + signExtend12 off_b) ↦ₘ b_limb))
