@@ -32,15 +32,16 @@ machine-generated from the official RISC-V Sail specification.
 The usual way to use zkVMs is to compile high-level programs to RISC-V
 assembly, then prove correctness of the execution trace using a zero-knowledge
 proof system. The proof covers the *execution trace*, but it cannot cover the
-*compiler*. If the compiler is buggy or malicious, the resulting program may not
-match the developer's intent, even though the ZK proof is valid, and even if the
+*compiler*. If the compiler is buggy or malicious, the proof might not may not
+match the developer's (or the receiver's) intent, even though the ZK proof is valid, and even if the
 source code is correct.
 
 **evm.asm** explores an alternative: write programs directly as RISC-V code,
 and *prove* their correctness in Lean 4 before the ZK proof is ever
-generated. The goal is that a developer never has to trust a compiler.
+generated. The goal is that a developer (or a receiver of a ZK proof) never has to trust a compiler
+for the guest program.
 
-More specifically, evm.asm targets the **zkEVM**.
+More specifically, evm.asm targets the **zkEVM**. Reducing trusted computing base matters for this usage.
 
 ## Key Idea
 
@@ -169,8 +170,8 @@ This is a **prototype** demonstrating the approach. Current state:
   - EVM 256-bit comparisons: LT, GT, EQ, ISZERO (full specs)
   - EVM stack ops: POP, PUSH0, DUP1, SWAP1 (concrete), DUPn/SWAPn for 1 ≤ n ≤ 16 (generic)
 - **TODO**: More control flow macros (loops, function calls), MLOAD/MSTORE,
-  additional arithmetic (MUL, DIV, MOD), connect to sail-riscv-lean for full
-  ISA coverage.
+  additional arithmetic (MUL, DIV, MOD), preprocessed, connect to sail-riscv-lean for making sure this project is really about RISC-V, connect to EVM specs in Lean,
+  transaction and block processing, Ethereum state transition, I guess I forgot something, TEST! TEST! TEST the whole thing!
 
 ## References
 
