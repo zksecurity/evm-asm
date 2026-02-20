@@ -30,7 +30,7 @@ This is an experimental research prototype with significant limitations:
 The usual way to use zkVMs is to compile high-level programs to RISC-V
 assembly, then prove correctness of the execution trace using a zero-knowledge
 proof system. The proof covers the *execution trace*, but it cannot cover the
-*compiler*. If the compiler is buggy or malicious, the proof might not may not
+*compiler*. If the compiler is buggy or malicious, the proof might not
 match the developer's (or the receiver's) intent, even though the ZK proof is valid, and even if the
 source code is correct.
 
