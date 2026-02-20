@@ -15,7 +15,7 @@ built on a RISC-V backend (RV32IM), inspired by:
 
 This is an experimental research prototype with significant limitations:
 
-- **No RISC-V spec compliance**: The instruction semantics are hand-written and
+- **No RISC-V spec compliance**: The instruction semantics are vibe-generated and
   have NOT been validated against the official RISC-V specification. There may
   be subtle (or not-so-subtle) deviations from actual RISC-V behavior.
 - **No conformance testing**: No systematic testing has been performed to verify
