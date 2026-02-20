@@ -14,9 +14,9 @@ Reference spec: `execution-specs/src/ethereum/forks/shanghai/vm/` (Python).
 
 ## Current Status
 
-**Done (14 opcodes with full 256-bit specs, Phase 2.1-2.5 complete):**
+**Done (15 opcodes, Phase 2.1-2.5 complete + SHR program):**
 - Arithmetic: ADD, SUB
-- Bitwise: AND, OR, XOR, NOT
+- Bitwise: AND, OR, XOR, NOT, SHR (program + tests, proofs pending)
 - Comparison: ISZERO, LT, GT, EQ
 - Stack: POP, PUSH0, DUP1, SWAP1, DUP1-16 (generic), SWAP1-16 (generic)
 
@@ -120,9 +120,15 @@ These are critical — almost every EVM program uses PUSH/DUP/SWAP/POP.
 - **Note**: This is significantly more complex than AND/OR/XOR. Consider
   special-casing small shifts (< 32 bits) first.
 
-### 3.3 SHR (Shift Right Logical)
+### 3.3 SHR (Shift Right Logical) ✅
 - **File**: `Evm/Shift.lean`
-- **Approach**: Mirror of SHL but in the opposite direction.
+- **Status**: Program defined (302 instructions), tested via native_decide (11 tests).
+  Proofs not yet started.
+- **Approach**: Decompose shift into limb_shift (÷32) and bit_shift (%32).
+  Phase A: overflow check (>= 256 → zero). Phase B: extract parameters.
+  Phase C: cascade dispatch on limb_shift (0-7). Phase D: 8 unrolled shift
+  bodies with merge (SRL+SLL+AND+OR) per output limb. Phase E: zero path.
+  In-place safe: SHR reads from higher indices, writes to lower.
 - **Reference**: `execution-specs/.../instructions/bitwise.py:bitwise_shr`
 
 ### 3.4 SAR (Shift Right Arithmetic)
