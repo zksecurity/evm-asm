@@ -41,7 +41,7 @@ and *prove* their correctness in Lean 4 before the ZK proof is ever
 generated. The goal is that a developer (or a receiver of a ZK proof) never has to trust a compiler
 for the guest program.
 
-More specifically, evm.asm aims at building a part of the **zkEVM**. Reducing trusted computing base matters for this usage.
+More specifically, evm.asm aims at building the guest part of the **zkEVM**. Reducing trusted computing base matters for this usage.
 
 ## Key Idea
 
