@@ -30,3 +30,5 @@ import EvmAsm.Evm.ArithmeticSpec
 import EvmAsm.Evm.Comparison
 import EvmAsm.Evm.ComparisonSpec
 import EvmAsm.Evm.StackOps
+import EvmAsm.Evm.Shift
+import EvmAsm.Evm.ShiftSpec

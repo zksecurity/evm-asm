@@ -1396,4 +1396,240 @@ theorem or_spec_gen (code : CodeMem) (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
         (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_regIs rd result))) hR)
       (st.setReg rd result) (addr + 4) h1
 
+-- ============================================================================
+-- Section 10: Additional instruction specs for SHR proofs
+-- ============================================================================
+
+/-- ANDI spec for any code memory (rd ≠ rs1 case):
+    rd := rs1 &&& sext(imm), preserving rs1 -/
+theorem andi_spec_gen (code : CodeMem) (rd rs1 : Reg) (v_old v1 : Word) (imm : BitVec 12)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs1)
+    (hfetch : code addr = some (Instr.ANDI rd rs1 imm)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old))
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 &&& signExtend12 imm))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.ANDI rd rs1 imm) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrd_val⟩ := (holdsFor_sepConj_regIs_regIs hne.symm).mp hinner
+  let result := v1 &&& signExtend12 imm
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · -- Rearrange: ((rs1 ** rd) ** R) → (rd ** (rs1 ** R))
+    have h1 := holdsFor_sepConj_pull_second.mp hPR
+    -- Update rd: (rd_old ** (rs1 ** R)) → (rd_new ** (rs1 ** R))
+    have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1
+    -- Rearrange back: (rd_new ** (rs1 ** R)) → ((rs1 ** rd_new) ** R)
+    have h3 := holdsFor_sepConj_pull_second.mpr h2
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR)
+      (st.setReg rd result) (addr + 4) h3
+
+/-- SRLI spec for any code memory (rd == rs1 case):
+    rd := rd >>> shamt -/
+theorem srli_spec_gen_same (code : CodeMem) (rd : Reg) (v : Word) (shamt : BitVec 5)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0)
+    (hfetch : code addr = some (Instr.SRLI rd rd shamt)) :
+    cpsTriple code addr (addr + 4) (rd ↦ᵣ v) (rd ↦ᵣ (v >>> shamt.toNat)) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SRLI rd rd shamt) := by rw [hpc]; exact hfetch
+  have hrd_val : st.getReg rd = v :=
+    (holdsFor_regIs rd v st).mp (holdsFor_sepConj_elim_left hPR)
+  let result := v >>> shamt.toNat
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrd_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (pcFree_regIs rd result) hR)
+      (st.setReg rd result) (addr + 4)
+      (holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR)
+
+/-- SLTIU spec for any code memory (rd ≠ rs1 case):
+    rd := (rs1 <u sext(imm)) ? 1 : 0, preserving rs1 -/
+theorem sltiu_spec_gen (code : CodeMem) (rd rs1 : Reg) (v_old v1 : Word) (imm : BitVec 12)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs1)
+    (hfetch : code addr = some (Instr.SLTIU rd rs1 imm)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old))
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (if BitVec.ult v1 (signExtend12 imm) then (1 : Word) else (0 : Word)))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SLTIU rd rs1 imm) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrd_val⟩ := (holdsFor_sepConj_regIs_regIs hne.symm).mp hinner
+  let result := if BitVec.ult v1 (signExtend12 imm) then (1 : Word) else (0 : Word)
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1
+    have h3 := holdsFor_sepConj_pull_second.mpr h2
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR)
+      (st.setReg rd result) (addr + 4) h3
+
+/-- ADDI spec for any code memory (rd ≠ rs1 case):
+    rd := rs1 + sext(imm), preserving rs1 -/
+theorem addi_spec_gen (code : CodeMem) (rd rs1 : Reg) (v_old v1 : Word) (imm : BitVec 12)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs1)
+    (hfetch : code addr = some (Instr.ADDI rd rs1 imm)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old))
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + signExtend12 imm))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.ADDI rd rs1 imm) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrd_val⟩ := (holdsFor_sepConj_regIs_regIs hne.symm).mp hinner
+  let result := v1 + signExtend12 imm
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1
+    have h3 := holdsFor_sepConj_pull_second.mpr h2
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR)
+      (st.setReg rd result) (addr + 4) h3
+
+/-- SUB spec for any code memory (rd = rs2 case):
+    rd := rs1 - rd, preserving rs1 -/
+theorem sub_spec_gen_rd_eq_rs2 (code : CodeMem) (rd rs1 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs1)
+    (hfetch : code addr = some (Instr.SUB rd rs1 rd)) :
+    cpsTriple code addr (addr + 4)
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v2))
+      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 - v2))) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.SUB rd rs1 rd) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have ⟨hrs1_val, hrd_val⟩ := (holdsFor_sepConj_regIs_regIs hne.symm).mp hinner
+  let result := v1 - v2
+  have hstep : step code st = some ((st.setReg rd result).setPC (addr + 4)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, hrs1_val, hrd_val, hpc, result]
+  refine ⟨1, (st.setReg rd result).setPC (addr + 4), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · have h1 := holdsFor_sepConj_pull_second.mp hPR
+    have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1
+    have h3 := holdsFor_sepConj_pull_second.mpr h2
+    exact holdsFor_pcFree_setPC
+      (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_regIs rd result)) hR)
+      (st.setReg rd result) (addr + 4) h3
+
+/-- BNE spec for any code memory:
+    Branch taken (v1 ≠ v2) → PC = addr + sext(offset)
+    Branch not taken (v1 = v2) → PC = addr + 4 -/
+theorem bne_spec_gen (code : CodeMem) (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Addr) (hfetch : code addr = some (Instr.BNE rs1 rs2 offset)) :
+    cpsBranch code addr
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
+      (addr + 4)                   ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.BNE rs1 rs2 offset) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 :=
+    (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v2 :=
+    (holdsFor_regIs rs2 v2 st).mp (holdsFor_sepConj_elim_right hinner)
+  have hstep : step code st = some (execInstrBr st (Instr.BNE rs1 rs2 offset)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+  by_cases heq : v1 = v2
+  · -- Branch not taken: v1 = v2
+    have hnext : execInstrBr st (Instr.BNE rs1 rs2 offset) = st.setPC (addr + 4) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, heq]
+    refine ⟨1, st.setPC (addr + 4), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · right; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (addr + 4) ⟨hp, hcompat, hpq'⟩
+  · -- Branch taken: v1 ≠ v2
+    have hnext : execInstrBr st (Instr.BNE rs1 rs2 offset) = st.setPC (addr + signExtend13 offset) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, bne_iff_ne.mpr heq]
+    refine ⟨1, st.setPC (addr + signExtend13 offset), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · left; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (addr + signExtend13 offset) ⟨hp, hcompat, hpq'⟩
+
+/-- BEQ spec for any code memory:
+    Branch taken (v1 = v2) → PC = addr + sext(offset)
+    Branch not taken (v1 ≠ v2) → PC = addr + 4 -/
+theorem beq_spec_gen (code : CodeMem) (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Addr) (hfetch : code addr = some (Instr.BEQ rs1 rs2 offset)) :
+    cpsBranch code addr
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
+      (addr + 4)                   ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.BEQ rs1 rs2 offset) := by rw [hpc]; exact hfetch
+  have hinner := holdsFor_sepConj_elim_left hPR
+  have hrs1_val : st.getReg rs1 = v1 :=
+    (holdsFor_regIs rs1 v1 st).mp (holdsFor_sepConj_elim_left hinner)
+  have hrs2_val : st.getReg rs2 = v2 :=
+    (holdsFor_regIs rs2 v2 st).mp (holdsFor_sepConj_elim_right hinner)
+  have hstep : step code st = some (execInstrBr st (Instr.BEQ rs1 rs2 offset)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+  by_cases heq : v1 = v2
+  · -- Branch taken: v1 = v2
+    have hnext : execInstrBr st (Instr.BEQ rs1 rs2 offset) = st.setPC (addr + signExtend13 offset) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, heq]
+    refine ⟨1, st.setPC (addr + signExtend13 offset), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · left; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (addr + signExtend13 offset) ⟨hp, hcompat, hpq'⟩
+  · -- Branch not taken: v1 ≠ v2
+    have hnext : execInstrBr st (Instr.BEQ rs1 rs2 offset) = st.setPC (addr + 4) := by
+      simp [execInstrBr, hrs1_val, hrs2_val, hpc, beq_eq_false_iff_ne.mpr heq]
+    refine ⟨1, st.setPC (addr + 4), ?_, ?_⟩
+    · simp [stepN, hstep, hnext, Option.bind]
+    · right; refine ⟨by simp [MachineState.setPC], ?_⟩
+      obtain ⟨hp, hcompat, hpq⟩ := hPR
+      have hpq' := sepConj_mono_left (sepConj_mono_right
+        (fun h hq => (sepConj_pure_right _ _ h).mpr ⟨hq, heq⟩)) hp hpq
+      exact holdsFor_pcFree_setPC
+        (pcFree_sepConj (pcFree_sepConj (pcFree_regIs rs1 v1) (pcFree_sepConj (pcFree_regIs rs2 v2) (pcFree_pure _))) hR)
+        st (addr + 4) ⟨hp, hcompat, hpq'⟩
+
+/-- JAL x0 spec for any code memory: pure PC jump, no register/memory changes.
+    Since x0 writes are dropped, JAL x0 just updates PC. -/
+theorem jal_x0_spec_gen (code : CodeMem) (offset : BitVec 21) (addr : Addr)
+    (hfetch : code addr = some (Instr.JAL .x0 offset))
+    (P : Assertion) (hP : P.pcFree) :
+    cpsTriple code addr (addr + signExtend21 offset) P P := by
+  intro R hR st hPR hpc
+  have hfetch' : code st.pc = some (Instr.JAL .x0 offset) := by rw [hpc]; exact hfetch
+  have hstep : step code st = some (st.setPC (addr + signExtend21 offset)) := by
+    rw [step_non_ecall_non_mem code st _ hfetch' (by nofun) (by nofun) (by rfl)]
+    simp [execInstrBr, MachineState.setReg, MachineState.setPC, hpc]
+  refine ⟨1, st.setPC (addr + signExtend21 offset), ?_, ?_, ?_⟩
+  · simp [stepN, hstep, Option.bind]
+  · simp [MachineState.setPC]
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj hP hR) st (addr + signExtend21 offset) hPR
+
 end EvmAsm
