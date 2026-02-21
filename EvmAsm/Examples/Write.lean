@@ -25,9 +25,9 @@ def write_single_state : MachineState where
   pc := 0
 
 /-- After executing write_single_word, publicValues = [0x2A, 0, 0, 0] (42 as LE bytes). -/
-example : let code := loadProgram 0 write_single_word
-          let steps := write_single_word.length
-          (stepN steps code write_single_state).bind (fun s =>
+example : let steps := write_single_word.length
+          let s0 := { write_single_state with code := loadProgram 0 write_single_word }
+          (stepN steps s0).bind (fun s =>
             some s.publicValues) = some [0x2A, 0, 0, 0] := by
   native_decide
 
@@ -50,9 +50,9 @@ def write_two_state : MachineState where
   pc := 0
 
 /-- After executing write_two_words, publicValues = [0x2A, 0, 0, 0, 0x63, 0, 0, 0] (42, 99 as LE bytes). -/
-example : let code := loadProgram 0 write_two_words
-          let steps := write_two_words.length
-          (stepN steps code write_two_state).bind (fun s =>
+example : let steps := write_two_words.length
+          let s0 := { write_two_state with code := loadProgram 0 write_two_words }
+          (stepN steps s0).bind (fun s =>
             some s.publicValues) = some [0x2A, 0, 0, 0, 0x63, 0, 0, 0] := by
   native_decide
 
@@ -73,9 +73,9 @@ def write_stdout_state : MachineState where
   pc := 0
 
 /-- After WRITE to fd=1, publicValues is still empty. -/
-example : let code := loadProgram 0 write_stdout
-          let steps := write_stdout.length
-          (stepN steps code write_stdout_state).bind (fun s =>
+example : let steps := write_stdout.length
+          let s0 := { write_stdout_state with code := loadProgram 0 write_stdout }
+          (stepN steps s0).bind (fun s =>
             some s.publicValues) = some [] := by
   native_decide
 

@@ -60,6 +60,128 @@ abbrev Word := BitVec 32
 abbrev Addr := Word
 
 -- ============================================================================
+-- Instructions (RV32IM)
+-- ============================================================================
+
+/-- A single RISC-V instruction. -/
+inductive Instr where
+  -- RV32I ALU register-register
+  /-- ADD rd, rs1, rs2 : rd := rs1 + rs2 -/
+  | ADD  (rd rs1 rs2 : Reg)
+  /-- SUB rd, rs1, rs2 : rd := rs1 - rs2 -/
+  | SUB  (rd rs1 rs2 : Reg)
+  /-- SLL rd, rs1, rs2 : rd := rs1 << rs2[4:0] (shift left logical) -/
+  | SLL  (rd rs1 rs2 : Reg)
+  /-- SRL rd, rs1, rs2 : rd := rs1 >>> rs2[4:0] (shift right logical) -/
+  | SRL  (rd rs1 rs2 : Reg)
+  /-- SRA rd, rs1, rs2 : rd := rs1 >>s rs2[4:0] (shift right arithmetic) -/
+  | SRA  (rd rs1 rs2 : Reg)
+  /-- AND rd, rs1, rs2 : rd := rs1 &&& rs2 -/
+  | AND  (rd rs1 rs2 : Reg)
+  /-- OR rd, rs1, rs2 : rd := rs1 ||| rs2 -/
+  | OR   (rd rs1 rs2 : Reg)
+  /-- XOR rd, rs1, rs2 : rd := rs1 ^^^ rs2 -/
+  | XOR  (rd rs1 rs2 : Reg)
+  /-- SLT rd, rs1, rs2 : rd := (rs1 <s rs2) ? 1 : 0 (signed) -/
+  | SLT  (rd rs1 rs2 : Reg)
+  /-- SLTU rd, rs1, rs2 : rd := (rs1 <u rs2) ? 1 : 0 (unsigned) -/
+  | SLTU (rd rs1 rs2 : Reg)
+  -- RV32I ALU immediate
+  /-- ADDI rd, rs1, imm : rd := rs1 + sext(imm) -/
+  | ADDI (rd rs1 : Reg) (imm : BitVec 12)
+  /-- ANDI rd, rs1, imm : rd := rs1 &&& sext(imm) -/
+  | ANDI (rd rs1 : Reg) (imm : BitVec 12)
+  /-- ORI rd, rs1, imm : rd := rs1 ||| sext(imm) -/
+  | ORI  (rd rs1 : Reg) (imm : BitVec 12)
+  /-- XORI rd, rs1, imm : rd := rs1 ^^^ sext(imm) -/
+  | XORI (rd rs1 : Reg) (imm : BitVec 12)
+  /-- SLTI rd, rs1, imm : rd := (rs1 <s sext(imm)) ? 1 : 0 -/
+  | SLTI (rd rs1 : Reg) (imm : BitVec 12)
+  /-- SLTIU rd, rs1, imm : rd := (rs1 <u sext(imm)) ? 1 : 0 -/
+  | SLTIU (rd rs1 : Reg) (imm : BitVec 12)
+  /-- SLLI rd, rs1, shamt : rd := rs1 << shamt -/
+  | SLLI (rd rs1 : Reg) (shamt : BitVec 5)
+  /-- SRLI rd, rs1, shamt : rd := rs1 >>> shamt (logical) -/
+  | SRLI (rd rs1 : Reg) (shamt : BitVec 5)
+  /-- SRAI rd, rs1, shamt : rd := rs1 >>s shamt (arithmetic) -/
+  | SRAI (rd rs1 : Reg) (shamt : BitVec 5)
+  -- RV32I upper immediate
+  /-- LUI rd, imm : rd := imm << 12 -/
+  | LUI  (rd : Reg) (imm : BitVec 20)
+  /-- AUIPC rd, imm : rd := PC + (imm << 12) -/
+  | AUIPC (rd : Reg) (imm : BitVec 20)
+  -- RV32I word memory
+  /-- LW rd, offset(rs1) : rd := mem[rs1 + sext(offset)] -/
+  | LW   (rd rs1 : Reg) (offset : BitVec 12)
+  /-- SW rs2, offset(rs1) : mem[rs1 + sext(offset)] := rs2 -/
+  | SW   (rs1 rs2 : Reg) (offset : BitVec 12)
+  -- RV32I sub-word memory
+  /-- LB rd, offset(rs1) : rd := sext(mem_byte[rs1 + sext(offset)]) -/
+  | LB   (rd rs1 : Reg) (offset : BitVec 12)
+  /-- LH rd, offset(rs1) : rd := sext(mem_halfword[rs1 + sext(offset)]) -/
+  | LH   (rd rs1 : Reg) (offset : BitVec 12)
+  /-- LBU rd, offset(rs1) : rd := zext(mem_byte[rs1 + sext(offset)]) -/
+  | LBU  (rd rs1 : Reg) (offset : BitVec 12)
+  /-- LHU rd, offset(rs1) : rd := zext(mem_halfword[rs1 + sext(offset)]) -/
+  | LHU  (rd rs1 : Reg) (offset : BitVec 12)
+  /-- SB rs2, offset(rs1) : mem_byte[rs1 + sext(offset)] := rs2[7:0] -/
+  | SB   (rs1 rs2 : Reg) (offset : BitVec 12)
+  /-- SH rs2, offset(rs1) : mem_halfword[rs1 + sext(offset)] := rs2[15:0] -/
+  | SH   (rs1 rs2 : Reg) (offset : BitVec 12)
+  -- RV32I branches
+  /-- BEQ rs1, rs2, offset : branch if rs1 = rs2 (B-type, byte offset) -/
+  | BEQ  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BNE rs1, rs2, offset : branch if rs1 ≠ rs2 (B-type, byte offset) -/
+  | BNE  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BLT rs1, rs2, offset : branch if rs1 <s rs2 (signed) -/
+  | BLT  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BGE rs1, rs2, offset : branch if rs1 >=s rs2 (signed) -/
+  | BGE  (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BLTU rs1, rs2, offset : branch if rs1 <u rs2 (unsigned) -/
+  | BLTU (rs1 rs2 : Reg) (offset : BitVec 13)
+  /-- BGEU rs1, rs2, offset : branch if rs1 >=u rs2 (unsigned) -/
+  | BGEU (rs1 rs2 : Reg) (offset : BitVec 13)
+  -- RV32I jumps
+  /-- JAL rd, offset : jump and link (J-type, byte offset) -/
+  | JAL  (rd : Reg) (offset : BitVec 21)
+  /-- JALR rd, rs1, offset : jump and link register (I-type) -/
+  | JALR (rd rs1 : Reg) (offset : BitVec 12)
+  -- RV32I pseudo-instructions
+  /-- MV rd, rs (pseudo: ADDI rd, rs, 0) -/
+  | MV   (rd rs : Reg)
+  /-- LI rd, imm (pseudo: load immediate) -/
+  | LI   (rd : Reg) (imm : Word)
+  /-- NOP (pseudo: ADDI x0, x0, 0) -/
+  | NOP
+  -- RV32I system
+  /-- ECALL: environment call (syscall ID in t0/x5, args in a0-a2).
+      Following SP1 convention, t0 = 0 signals HALT with exit code in a0. -/
+  | ECALL
+  /-- FENCE: memory ordering fence (NOP in single-hart zkVM) -/
+  | FENCE
+  /-- EBREAK: breakpoint trap -/
+  | EBREAK
+  -- RV32M multiply
+  /-- MUL rd, rs1, rs2 : rd := (rs1 * rs2)[31:0] -/
+  | MUL  (rd rs1 rs2 : Reg)
+  /-- MULH rd, rs1, rs2 : rd := (sext(rs1) * sext(rs2))[63:32] -/
+  | MULH (rd rs1 rs2 : Reg)
+  /-- MULHSU rd, rs1, rs2 : rd := (sext(rs1) * zext(rs2))[63:32] -/
+  | MULHSU (rd rs1 rs2 : Reg)
+  /-- MULHU rd, rs1, rs2 : rd := (zext(rs1) * zext(rs2))[63:32] -/
+  | MULHU (rd rs1 rs2 : Reg)
+  -- RV32M divide
+  /-- DIV rd, rs1, rs2 : rd := rs1 /s rs2 (signed division) -/
+  | DIV  (rd rs1 rs2 : Reg)
+  /-- DIVU rd, rs1, rs2 : rd := rs1 /u rs2 (unsigned division) -/
+  | DIVU (rd rs1 rs2 : Reg)
+  /-- REM rd, rs1, rs2 : rd := rs1 %s rs2 (signed remainder) -/
+  | REM  (rd rs1 rs2 : Reg)
+  /-- REMU rd, rs1, rs2 : rd := rs1 %u rs2 (unsigned remainder) -/
+  | REMU (rd rs1 rs2 : Reg)
+  deriving Repr, DecidableEq
+
+-- ============================================================================
 -- SP1 memory constraints
 -- ============================================================================
 
@@ -175,12 +297,14 @@ def byteOffset (addr : Addr) : Nat := (addr &&& 3#32).toNat
 -- Machine State
 -- ============================================================================
 
-/-- The machine state: a register file, memory, and program counter. -/
+/-- The machine state: a register file, memory, code memory, and program counter. -/
 structure MachineState where
   /-- Register file: maps register to its value -/
   regs : Reg → Word
   /-- Byte-addressable memory (simplified: word-addressable for now) -/
   mem  : Addr → Word
+  /-- Code memory: maps addresses to instructions -/
+  code : Addr → Option Instr := fun _ => none
   /-- Program counter -/
   pc   : Word
   /-- Committed public outputs (a0, a1) from COMMIT syscalls -/
@@ -347,6 +471,62 @@ theorem pc_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
 theorem pc_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
     (s.setHalfword addr h).pc = s.pc := by
   simp [setHalfword]
+
+-- code field preservation through existing setters
+
+@[simp]
+theorem code_setReg (s : MachineState) (r : Reg) (v : Word) :
+    (s.setReg r v).code = s.code := by
+  cases r <;> rfl
+
+@[simp]
+theorem code_setMem (s : MachineState) (a : Addr) (v : Word) :
+    (s.setMem a v).code = s.code := by
+  simp [setMem]
+
+@[simp]
+theorem code_setPC (s : MachineState) (v : Word) :
+    (s.setPC v).code = s.code := by
+  simp [setPC]
+
+@[simp]
+theorem code_setByte (s : MachineState) (addr : Addr) (b : BitVec 8) :
+    (s.setByte addr b).code = s.code := by
+  simp [setByte]
+
+@[simp]
+theorem code_setHalfword (s : MachineState) (addr : Addr) (h : BitVec 16) :
+    (s.setHalfword addr h).code = s.code := by
+  simp [setHalfword]
+
+@[simp]
+theorem code_appendCommit (s : MachineState) (a0 a1 : Word) :
+    (s.appendCommit a0 a1).code = s.code := by
+  simp [appendCommit]
+
+@[simp]
+theorem code_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+    (s.appendPublicValues bytes).code = s.code := by
+  simp [appendPublicValues]
+
+@[simp]
+theorem code_writeWords (s : MachineState) (base : Addr) (words : List Word) :
+    (s.writeWords base words).code = s.code := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp]
+theorem code_writeBytesAsWords (s : MachineState) (base : Addr) (bytes : List (BitVec 8)) :
+    (s.writeBytesAsWords base bytes).code = s.code := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [code_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
 
 /-- setPC does not affect register reads. -/
 @[simp]

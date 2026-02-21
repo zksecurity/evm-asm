@@ -241,6 +241,7 @@ def mkShrTestState (sp : Word)
     else if a == sp + 56 then v6
     else if a == sp + 60 then v7
     else 0
+  code := loadProgram 0 evm_shr
   pc := 0
 
 /-- Run evm_shr and check the final PC and x12 register. -/
@@ -248,9 +249,8 @@ def runShrCheck (sp : Word)
     (s0 s1 s2 s3 s4 s5 s6 s7 : Word)
     (v0 v1 v2 v3 v4 v5 v6 v7 : Word)
     (steps : Nat) : Option (Word × Word) :=
-  let code := loadProgram 0 evm_shr
   let s := mkShrTestState sp s0 s1 s2 s3 s4 s5 s6 s7 v0 v1 v2 v3 v4 v5 v6 v7
-  match stepN steps code s with
+  match stepN steps s with
   | some s' => some (s'.pc, s'.getReg .x12)
   | none => none
 
@@ -259,9 +259,8 @@ def runShrResult (sp : Word)
     (s0 s1 s2 s3 s4 s5 s6 s7 : Word)
     (v0 v1 v2 v3 v4 v5 v6 v7 : Word)
     (steps : Nat) : Option (List Word) :=
-  let code := loadProgram 0 evm_shr
   let s := mkShrTestState sp s0 s1 s2 s3 s4 s5 s6 s7 v0 v1 v2 v3 v4 v5 v6 v7
-  match stepN steps code s with
+  match stepN steps s with
   | some s' =>
     let rsp := s'.getReg .x12
     some [s'.getMem rsp, s'.getMem (rsp + 4), s'.getMem (rsp + 8), s'.getMem (rsp + 12),

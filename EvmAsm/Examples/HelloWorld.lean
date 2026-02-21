@@ -41,13 +41,15 @@ def helloInitState : MachineState where
 example : helloWorld.length = 15 := by native_decide
 
 /-- After 14 steps, publicValues contains "hello world" as bytes. -/
-example : (stepN 14 (loadProgram 0 helloWorld) helloInitState).bind
+example : let s0 := { helloInitState with code := loadProgram 0 helloWorld }
+    (stepN 14 s0).bind
     (fun s => some s.publicValues) = some helloWorldBytes := by
   native_decide
 
 /-- After 14 steps, the next step is HALT. -/
-example : ((stepN 14 (loadProgram 0 helloWorld) helloInitState).bind
-    (fun s => step (loadProgram 0 helloWorld) s)).isNone = true := by
+example : let s0 := { helloInitState with code := loadProgram 0 helloWorld }
+    ((stepN 14 s0).bind
+    (fun s => step s)).isNone = true := by
   native_decide
 
 end EvmAsm.Examples

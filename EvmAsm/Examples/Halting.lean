@@ -27,16 +27,16 @@ def mul_and_halt_state : MachineState where
   pc := 0
 
 /-- After running all instructions before ECALL, the next step halts. -/
-example : let code := loadProgram 0 mul_and_halt
-          let steps := mul_and_halt.length - 1  -- run up to ECALL
-          (stepN steps code mul_and_halt_state).bind (fun s =>
-            step code s) = none := by
+example : let steps := mul_and_halt.length - 1  -- run up to ECALL
+          let s0 := { mul_and_halt_state with code := loadProgram 0 mul_and_halt }
+          (stepN steps s0).bind (fun s =>
+            step s) = none := by
   native_decide
 
 /-- After running all instructions before ECALL, a0 (x10) contains 42. -/
-example : let code := loadProgram 0 mul_and_halt
-          let steps := mul_and_halt.length - 1
-          (stepN steps code mul_and_halt_state).bind (fun s =>
+example : let steps := mul_and_halt.length - 1
+          let s0 := { mul_and_halt_state with code := loadProgram 0 mul_and_halt }
+          (stepN steps s0).bind (fun s =>
             some (s.getReg .x10)) = some 42 := by
   native_decide
 
@@ -45,9 +45,8 @@ def halt_zero : Program := HALT 0
 
 /-- halt_zero terminates in 3 steps (LI x5, LI x10, ECALL),
     and the next step returns none. -/
-example : let code := loadProgram 0 halt_zero
-          let s0 := mul_and_halt_state
-          (stepN 2 code s0).bind (fun s => step code s) = none := by
+example : let s0 := { mul_and_halt_state with code := loadProgram 0 halt_zero }
+          (stepN 2 s0).bind (fun s => step s) = none := by
   native_decide
 
 end EvmAsm.Examples

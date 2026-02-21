@@ -27,16 +27,16 @@ def full_pipeline_state : MachineState where
   pc := 0
 
 /-- After running full_pipeline, publicValues = [0x2A, 0, 0, 0] (42 as LE bytes). -/
-example : let code := loadProgram 0 full_pipeline
-          let steps := full_pipeline.length - 1
-          (stepN steps code full_pipeline_state).bind (fun s =>
+example : let steps := full_pipeline.length - 1
+          let s0 := { full_pipeline_state with code := loadProgram 0 full_pipeline }
+          (stepN steps s0).bind (fun s =>
             some s.publicValues) = some [0x2A, 0, 0, 0] := by
   native_decide
 
 /-- After running full_pipeline, committed = [(0, 0xDEAD)]. -/
-example : let code := loadProgram 0 full_pipeline
-          let steps := full_pipeline.length - 1
-          (stepN steps code full_pipeline_state).bind (fun s =>
+example : let steps := full_pipeline.length - 1
+          let s0 := { full_pipeline_state with code := loadProgram 0 full_pipeline }
+          (stepN steps s0).bind (fun s =>
             some s.committed) = some [(0, 0xDEAD)] := by
   native_decide
 

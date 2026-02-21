@@ -205,6 +205,13 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.privateInput_setByte, MachineState.privateInput_setHalfword]
   all_goals split <;> simp [MachineState.privateInput_setPC]
 
+@[simp] theorem code_execInstrBr (s : MachineState) (i : Instr) :
+    (execInstrBr s i).code = s.code := by
+  cases i <;> simp [execInstrBr, MachineState.code_setPC,
+    MachineState.code_setReg, MachineState.code_setMem,
+    MachineState.code_setByte, MachineState.code_setHalfword]
+  all_goals split <;> simp [MachineState.code_setPC]
+
 -- ============================================================================
 -- Code memory
 -- ============================================================================
@@ -299,8 +306,8 @@ theorem loadProgram_programAt (base : Addr) (prog : List Instr)
     WRITE (t0 = 0x02) to fd 13 appends words from memory to public values.
     COMMIT (t0 = 0x10) appends (a0, a1) to committed outputs.
     Other ECALLs continue execution. -/
-def step (code : CodeMem) (s : MachineState) : Option MachineState :=
-  match code s.pc with
+def step (s : MachineState) : Option MachineState :=
+  match s.code s.pc with
   | none => none
   | some (.LW rd rs1 offset) =>
     let addr := s.getReg rs1 + signExtend12 offset
@@ -377,201 +384,201 @@ def step (code : CodeMem) (s : MachineState) : Option MachineState :=
   | some i => some (execInstrBr s i)
 
 /-- step for non-ECALL, non-EBREAK, non-memory instructions. -/
-@[simp] theorem step_non_ecall_non_mem (code : CodeMem) (s : MachineState) (i : Instr)
-    (hfetch : code s.pc = some i) (hne : i ≠ .ECALL) (hnb : i ≠ .EBREAK)
+@[simp] theorem step_non_ecall_non_mem (s : MachineState) (i : Instr)
+    (hfetch : s.code s.pc = some i) (hne : i ≠ .ECALL) (hnb : i ≠ .EBREAK)
     (hnm : i.isMemAccess = false) :
-    step code s = some (execInstrBr s i) := by
+    step s = some (execInstrBr s i) := by
   unfold step; rw [hfetch]; cases i <;> simp_all [Instr.isMemAccess]
 
 /-- step for LW with valid memory access. -/
-theorem step_lw (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LW rd rs1 offset))
+theorem step_lw (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LW rd rs1 offset))
     (hvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.LW rd rs1 offset)) := by
+    step s = some (execInstrBr s (.LW rd rs1 offset)) := by
   simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for SW with valid memory access. -/
-theorem step_sw (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SW rs1 rs2 offset))
+theorem step_sw (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SW rs1 rs2 offset))
     (hvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.SW rs1 rs2 offset)) := by
+    step s = some (execInstrBr s (.SW rs1 rs2 offset)) := by
   simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for LW with invalid memory access (trap). -/
-theorem step_lw_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LW rd rs1 offset))
+theorem step_lw_trap (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LW rd rs1 offset))
     (hinvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for SW with invalid memory access (trap). -/
-theorem step_sw_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SW rs1 rs2 offset))
+theorem step_sw_trap (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SW rs1 rs2 offset))
     (hinvalid : isValidMemAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidMemAccess, isValidMemAddr, isAligned4, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for LB with valid byte access. -/
-theorem step_lb (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LB rd rs1 offset))
+theorem step_lb (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LB rd rs1 offset))
     (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.LB rd rs1 offset)) := by
+    step s = some (execInstrBr s (.LB rd rs1 offset)) := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for LB with invalid byte access (trap). -/
-theorem step_lb_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LB rd rs1 offset))
+theorem step_lb_trap (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LB rd rs1 offset))
     (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for LBU with valid byte access. -/
-theorem step_lbu (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LBU rd rs1 offset))
+theorem step_lbu (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LBU rd rs1 offset))
     (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.LBU rd rs1 offset)) := by
+    step s = some (execInstrBr s (.LBU rd rs1 offset)) := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for LBU with invalid byte access (trap). -/
-theorem step_lbu_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LBU rd rs1 offset))
+theorem step_lbu_trap (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LBU rd rs1 offset))
     (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for LH with valid halfword access. -/
-theorem step_lh (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LH rd rs1 offset))
+theorem step_lh (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LH rd rs1 offset))
     (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.LH rd rs1 offset)) := by
+    step s = some (execInstrBr s (.LH rd rs1 offset)) := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for LH with invalid halfword access (trap). -/
-theorem step_lh_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LH rd rs1 offset))
+theorem step_lh_trap (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LH rd rs1 offset))
     (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for LHU with valid halfword access. -/
-theorem step_lhu (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LHU rd rs1 offset))
+theorem step_lhu (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LHU rd rs1 offset))
     (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.LHU rd rs1 offset)) := by
+    step s = some (execInstrBr s (.LHU rd rs1 offset)) := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for LHU with invalid halfword access (trap). -/
-theorem step_lhu_trap (code : CodeMem) (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.LHU rd rs1 offset))
+theorem step_lhu_trap (s : MachineState) (rd rs1 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.LHU rd rs1 offset))
     (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for SB with valid byte access. -/
-theorem step_sb (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SB rs1 rs2 offset))
+theorem step_sb (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SB rs1 rs2 offset))
     (hvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.SB rs1 rs2 offset)) := by
+    step s = some (execInstrBr s (.SB rs1 rs2 offset)) := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for SB with invalid byte access (trap). -/
-theorem step_sb_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SB rs1 rs2 offset))
+theorem step_sb_trap (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SB rs1 rs2 offset))
     (hinvalid : isValidByteAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidByteAccess, isValidMemAddr, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for SH with valid halfword access. -/
-theorem step_sh (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SH rs1 rs2 offset))
+theorem step_sh (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SH rs1 rs2 offset))
     (hvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = true) :
-    step code s = some (execInstrBr s (.SH rs1 rs2 offset)) := by
+    step s = some (execInstrBr s (.SH rs1 rs2 offset)) := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hvalid ⊢
   omega
 
 /-- step for SH with invalid halfword access (trap). -/
-theorem step_sh_trap (code : CodeMem) (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
-    (hfetch : code s.pc = some (.SH rs1 rs2 offset))
+theorem step_sh_trap (s : MachineState) (rs1 rs2 : Reg) (offset : BitVec 12)
+    (hfetch : s.code s.pc = some (.SH rs1 rs2 offset))
     (hinvalid : isValidHalfwordAccess (s.getReg rs1 + signExtend12 offset) = false) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, isValidHalfwordAccess, isValidMemAddr, isAligned2, SP1_MEM_START, SP1_MEM_END] at hinvalid ⊢
   omega
 
 /-- step for EBREAK (always traps). -/
-theorem step_ebreak (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .EBREAK) :
-    step code s = none := by
+theorem step_ebreak (s : MachineState)
+    (hfetch : s.code s.pc = some .EBREAK) :
+    step s = none := by
   simp [step, hfetch]
 
-theorem step_ecall_halt (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :
-    step code s = none := by
+theorem step_ecall_halt (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :
+    step s = none := by
   simp [step, hfetch, ht0]
 
-theorem step_ecall_continue (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_continue (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 ≠ 0)
     (ht0_nw : s.getReg .x5 ≠ (0x02 : Word))
     (ht0_nc : s.getReg .x5 ≠ (0x10 : Word))
     (ht0_nhl : s.getReg .x5 ≠ (0xF0 : Word))
     (ht0_nhr : s.getReg .x5 ≠ (0xF1 : Word)) :
-    step code s = some (execInstrBr s .ECALL) := by
+    step s = some (execInstrBr s .ECALL) := by
   simp only [step, hfetch, beq_iff_eq, ht0, ht0_nw, ht0_nc, ht0_nhl, ht0_nhr, ↓reduceIte]
 
 /-- COMMIT syscall (SP1 convention: t0 = 0x10) appends (a0, a1) to committed outputs. -/
-theorem step_ecall_commit (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_commit (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x10) :
-    step code s =
+    step s =
       some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0]
 
 /-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends bytes from memory. -/
-theorem step_ecall_write_public (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_write_public (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x02)
     (hfd : s.getReg .x10 = 13) :
-    step code s =
+    step s =
       some ((s.appendPublicValues (s.readBytes (s.getReg .x11) (s.getReg .x12).toNat)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0, hfd]
 
 /-- WRITE syscall to non-public-values fd (t0 = 0x02, fd ≠ 13) just advances PC. -/
-theorem step_ecall_write_other (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_write_other (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0x02)
     (hfd : s.getReg .x10 ≠ (13 : Word)) :
-    step code s = some (s.setPC (s.pc + 4)) := by
+    step s = some (s.setPC (s.pc + 4)) := by
   simp only [step, hfetch, ht0, beq_iff_eq, hfd, ite_false]
   simp (config := { decide := true })
 
 /-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns privateInput.length in a0. -/
-theorem step_ecall_hint_len (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_hint_len (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF0) :
-    step code s =
+    step s =
       some ((s.setReg .x10 (BitVec.ofNat 32 s.privateInput.length)).setPC (s.pc + 4)) := by
   simp [step, hfetch, ht0]
 
 /-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads bytes from privateInput into memory as LE words. -/
-theorem step_ecall_hint_read (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_hint_read (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
     (hsuff : (s.getReg .x11).toNat ≤ s.privateInput.length) :
-    step code s =
+    step s =
       let nbytes_val := (s.getReg .x11).toNat
       let bytes := s.privateInput.take nbytes_val
       let s' := { s with privateInput := s.privateInput.drop nbytes_val }
@@ -579,52 +586,100 @@ theorem step_ecall_hint_read (code : CodeMem) (s : MachineState)
   simp [step, hfetch, ht0, hsuff]
 
 /-- HINT_READ syscall traps when not enough input is available. -/
-theorem step_ecall_hint_read_trap (code : CodeMem) (s : MachineState)
-    (hfetch : code s.pc = some .ECALL)
+theorem step_ecall_hint_read_trap (s : MachineState)
+    (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 32 0xF1)
     (hinsuff : ¬ ((s.getReg .x11).toNat ≤ s.privateInput.length)) :
-    step code s = none := by
+    step s = none := by
   simp [step, hfetch, ht0, hinsuff]
 
 /-- Multi-step execution (n steps). -/
-def stepN : Nat → CodeMem → MachineState → Option MachineState
-  | 0,     _,    s => some s
-  | n + 1, code, s => (step code s).bind (stepN n code ·)
+def stepN : Nat → MachineState → Option MachineState
+  | 0,     s => some s
+  | n + 1, s => (step s).bind (stepN n ·)
 
 -- ============================================================================
 -- stepN lemmas
 -- ============================================================================
 
 @[simp]
-theorem stepN_zero (code : CodeMem) (s : MachineState) :
-    stepN 0 code s = some s := rfl
+theorem stepN_zero (s : MachineState) :
+    stepN 0 s = some s := rfl
 
 @[simp]
-theorem stepN_succ (code : CodeMem) (s : MachineState) (n : Nat) :
-    stepN (n + 1) code s = (step code s).bind (stepN n code ·) := rfl
+theorem stepN_succ (s : MachineState) (n : Nat) :
+    stepN (n + 1) s = (step s).bind (stepN n ·) := rfl
 
-theorem stepN_one (code : CodeMem) (s : MachineState) :
-    stepN 1 code s = step code s := by
+theorem stepN_one (s : MachineState) :
+    stepN 1 s = step s := by
   simp [stepN, Option.bind]
-  cases step code s <;> simp
+  cases step s <;> simp
 
 /-- Composing step counts: n+m steps = n steps then m steps. -/
-theorem stepN_add (n m : Nat) (code : CodeMem) (s : MachineState) :
-    stepN (n + m) code s = (stepN n code s).bind (stepN m code ·) := by
+theorem stepN_add (n m : Nat) (s : MachineState) :
+    stepN (n + m) s = (stepN n s).bind (stepN m ·) := by
   induction n generalizing s with
   | zero => simp [Option.bind]
   | succ k ih =>
     simp only [Nat.succ_add, stepN_succ]
-    cases h : step code s with
+    cases h : step s with
     | none => simp [Option.bind]
     | some s' => simp [Option.bind, ih]
 
 /-- If stepN n succeeds and then stepN m succeeds, stepN (n+m) gives the same result. -/
-theorem stepN_add_eq (n m : Nat) (code : CodeMem) (s s' s'' : MachineState)
-    (h1 : stepN n code s = some s')
-    (h2 : stepN m code s' = some s'') :
-    stepN (n + m) code s = some s'' := by
+theorem stepN_add_eq (n m : Nat) (s s' s'' : MachineState)
+    (h1 : stepN n s = some s')
+    (h2 : stepN m s' = some s'') :
+    stepN (n + m) s = some s'' := by
   rw [stepN_add, h1, Option.bind]
   exact h2
+
+-- ============================================================================
+-- Code preservation through execution
+-- ============================================================================
+
+/-- step preserves code memory. -/
+theorem code_step {s s' : MachineState} (h : step s = some s') :
+    s'.code = s.code := by
+  simp only [step] at h
+  -- Split the outer match on s.code s.pc, then recursively split ifs
+  -- Each leaf is either `none = some s'` (contradiction) or `some x = some s'` (extract+simp)
+  split at h <;> (
+    first
+    | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+    | (simp at h; done)
+    | (split at h <;> first
+        | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+        | (simp at h; done)
+        | (split at h <;> first
+            | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+            | (simp at h; done)
+            | (split at h <;> first
+                | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+                | (simp at h; done)
+                | (split at h <;> first
+                    | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+                    | (simp at h; done)
+                    | (split at h <;> first
+                        | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+                        | (simp at h; done)
+                        | (split at h <;> first
+                            | (simp only [Option.some.injEq] at h; rw [← h]; simp)
+                            | (simp at h; done))))))))
+
+/-- stepN preserves code memory. -/
+theorem code_stepN {k : Nat} {s s' : MachineState} (h : stepN k s = some s') :
+    s'.code = s.code := by
+  induction k generalizing s with
+  | zero => simp at h; exact h ▸ rfl
+  | succ n ih =>
+    simp [stepN, Option.bind] at h
+    cases hs : step s with
+    | none => simp [hs] at h
+    | some s_mid =>
+      rw [hs] at h; simp at h
+      have h1 := code_step hs
+      have h2 := ih h
+      rw [h2, h1]
 
 end EvmAsm

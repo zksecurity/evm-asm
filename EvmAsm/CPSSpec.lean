@@ -41,19 +41,19 @@ namespace EvmAsm
 
     The universal quantification over R means P and Q only describe the
     resources the code actually reads/writes. -/
-def cpsTriple (code : CodeMem) (entry exit_ : Addr)
+def cpsTriple (entry exit_ : Addr)
     (P Q : Assertion) : Prop :=
   ∀ (R : Assertion), R.pcFree → ∀ s, (P ** R).holdsFor s → s.pc = entry →
-    ∃ k s', stepN k code s = some s' ∧ s'.pc = exit_ ∧ (Q ** R).holdsFor s'
+    ∃ k s', stepN k s = some s' ∧ s'.pc = exit_ ∧ (Q ** R).holdsFor s'
 
 /-- CPS spec for code with two exits (the branch pattern) with built-in frame:
     "For any pcFree frame R, if (P ** R) holds at entry, execution reaches
      EITHER exit_t with (Q_t ** R) OR exit_f with (Q_f ** R)." -/
-def cpsBranch (code : CodeMem) (entry : Addr) (P : Assertion)
+def cpsBranch (entry : Addr) (P : Assertion)
     (exit_t : Addr) (Q_t : Assertion)
     (exit_f : Addr) (Q_f : Assertion) : Prop :=
   ∀ (R : Assertion), R.pcFree → ∀ s, (P ** R).holdsFor s → s.pc = entry →
-    ∃ k s', stepN k code s = some s' ∧
+    ∃ k s', stepN k s = some s' ∧
       ((s'.pc = exit_t ∧ (Q_t ** R).holdsFor s') ∨ (s'.pc = exit_f ∧ (Q_f ** R).holdsFor s'))
 
 -- ============================================================================
@@ -61,25 +61,25 @@ def cpsBranch (code : CodeMem) (entry : Addr) (P : Assertion)
 -- ============================================================================
 
 /-- Sequence: compose two CPS triples sharing a midpoint. -/
-theorem cpsTriple_seq (code : CodeMem) (l1 l2 l3 : Addr)
+theorem cpsTriple_seq (l1 l2 l3 : Addr)
     (P Q R : Assertion)
-    (h1 : cpsTriple code l1 l2 P Q)
-    (h2 : cpsTriple code l2 l3 Q R) :
-    cpsTriple code l1 l3 P R := by
+    (h1 : cpsTriple l1 l2 P Q)
+    (h2 : cpsTriple l2 l3 Q R) :
+    cpsTriple l1 l3 P R := by
   intro F hF s hPF hpc
   obtain ⟨k1, s1, hstep1, hpc1, hQF⟩ := h1 F hF s hPF hpc
   obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := h2 F hF s1 hQF hpc1
-  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hpc2, hRF⟩
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hRF⟩
 
 /-- Consequence: strengthen precondition and weaken postcondition.
     Note: implications are at the assertion (PartialState) level, not holdsFor level,
     because (P' ** R).holdsFor s → (P ** R).holdsFor s requires P' h → P h pointwise. -/
-theorem cpsTriple_consequence (code : CodeMem) (entry exit_ : Addr)
+theorem cpsTriple_consequence (entry exit_ : Addr)
     (P P' Q Q' : Assertion)
     (hpre  : ∀ h, P' h → P h)
     (hpost : ∀ h, Q h → Q' h)
-    (h : cpsTriple code entry exit_ P Q) :
-    cpsTriple code entry exit_ P' Q' := by
+    (h : cpsTriple entry exit_ P Q) :
+    cpsTriple entry exit_ P' Q' := by
   intro R hR s hP'R hpc
   have hPR : (P ** R).holdsFor s := by
     obtain ⟨hp, hcompat, hpq⟩ := hP'R
@@ -90,14 +90,14 @@ theorem cpsTriple_consequence (code : CodeMem) (entry exit_ : Addr)
     exact ⟨hp, hcompat, sepConj_mono_left hpost hp hpq⟩⟩
 
 /-- Rule of consequence for cpsBranch: strengthen pre, weaken both posts. -/
-theorem cpsBranch_consequence (code : CodeMem) (entry : Addr)
+theorem cpsBranch_consequence (entry : Addr)
     (P P' : Assertion) (exit_t : Addr) (Q_t Q_t' : Assertion)
     (exit_f : Addr) (Q_f Q_f' : Assertion)
     (hpre : ∀ h, P' h → P h)
     (hpost_t : ∀ h, Q_t h → Q_t' h)
     (hpost_f : ∀ h, Q_f h → Q_f' h)
-    (h : cpsBranch code entry P exit_t Q_t exit_f Q_f) :
-    cpsBranch code entry P' exit_t Q_t' exit_f Q_f' := by
+    (h : cpsBranch entry P exit_t Q_t exit_f Q_f) :
+    cpsBranch entry P' exit_t Q_t' exit_f Q_f' := by
   intro R hR s hP'R hpc
   have hPR : (P ** R).holdsFor s := by
     obtain ⟨hp, hcompat, hpq⟩ := hP'R
@@ -118,9 +118,9 @@ theorem cpsBranch_consequence (code : CodeMem) (entry : Addr)
 /-- Lift a spec quantified over v_old to one with regOwn in tail position:
     (∀ v_old, cpsTriple ... (P ** (r ↦ᵣ v_old)) Q) → cpsTriple ... (P ** regOwn r) Q -/
 theorem cpsTriple_of_forall_regIs_to_regOwn
-    {code entry exit_ r P Q}
-    (h : ∀ v_old, cpsTriple code entry exit_ (P ** (r ↦ᵣ v_old)) Q) :
-    cpsTriple code entry exit_ (P ** regOwn r) Q := by
+    {entry exit_ r P Q}
+    (h : ∀ v_old, cpsTriple entry exit_ (P ** (r ↦ᵣ v_old)) Q) :
+    cpsTriple entry exit_ (P ** regOwn r) Q := by
   intro R hR s hPR hpc
   obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
   obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨v_old, hv4⟩⟩ := hPown1
@@ -130,9 +130,9 @@ theorem cpsTriple_of_forall_regIs_to_regOwn
 /-- Lift a spec quantified over v_old to one with regOwn as entire precondition:
     (∀ v_old, cpsTriple ... (r ↦ᵣ v_old) Q) → cpsTriple ... (regOwn r) Q -/
 theorem cpsTriple_of_forall_regIs_to_regOwn_single
-    {code entry exit_ r Q}
-    (h : ∀ v_old, cpsTriple code entry exit_ (r ↦ᵣ v_old) Q) :
-    cpsTriple code entry exit_ (regOwn r) Q := by
+    {entry exit_ r Q}
+    (h : ∀ v_old, cpsTriple entry exit_ (r ↦ᵣ v_old) Q) :
+    cpsTriple entry exit_ (regOwn r) Q := by
   intro R hR s hPR hpc
   obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨v_old, hv⟩, hR2⟩ := hPR
   exact h v_old R hR s ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
@@ -140,9 +140,9 @@ theorem cpsTriple_of_forall_regIs_to_regOwn_single
 /-- Lift a spec quantified over v_old to one with memOwn in tail position:
     (∀ v_old, cpsTriple ... (P ** (a ↦ₘ v_old)) Q) → cpsTriple ... (P ** memOwn a) Q -/
 theorem cpsTriple_of_forall_memIs_to_memOwn
-    {code entry exit_ a P Q}
-    (h : ∀ v_old, cpsTriple code entry exit_ (P ** (a ↦ₘ v_old)) Q) :
-    cpsTriple code entry exit_ (P ** memOwn a) Q := by
+    {entry exit_ a P Q}
+    (h : ∀ v_old, cpsTriple entry exit_ (P ** (a ↦ₘ v_old)) Q) :
+    cpsTriple entry exit_ (P ** memOwn a) Q := by
   intro R hR s hPR hpc
   obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
   obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨v_old, hv4⟩⟩ := hPown1
@@ -151,24 +151,24 @@ theorem cpsTriple_of_forall_memIs_to_memOwn
 
 /-- Branch elimination: if both branch exits lead to the same
     continuation exit with R, merge back into a single cpsTriple. -/
-theorem cpsBranch_merge (code : CodeMem) (entry l_t l_f exit_ : Addr)
+theorem cpsBranch_merge (entry l_t l_f exit_ : Addr)
     (P Q_t Q_f R : Assertion)
-    (hbr   : cpsBranch code entry P l_t Q_t l_f Q_f)
-    (h_t   : cpsTriple code l_t exit_ Q_t R)
-    (h_f   : cpsTriple code l_f exit_ Q_f R) :
-    cpsTriple code entry exit_ P R := by
+    (hbr   : cpsBranch entry P l_t Q_t l_f Q_f)
+    (h_t   : cpsTriple l_t exit_ Q_t R)
+    (h_f   : cpsTriple l_f exit_ Q_f R) :
+    cpsTriple entry exit_ P R := by
   intro F hF s hPF hpc
   obtain ⟨k1, s1, hstep1, hbranch⟩ := hbr F hF s hPF hpc
   rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
   · obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := h_t F hF s1 hQ_t hpc_t
-    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hpc2, hR⟩
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
   · obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := h_f F hF s1 hQ_f hpc_f
-    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hpc2, hR⟩
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
 
 /-- A cpsTriple with zero steps: if entry = exit and P implies Q, trivially holds. -/
-theorem cpsTriple_refl (code : CodeMem) (addr : Addr) (P Q : Assertion)
+theorem cpsTriple_refl (addr : Addr) (P Q : Assertion)
     (h : ∀ hp, P hp → Q hp) :
-    cpsTriple code addr addr P Q := by
+    cpsTriple addr addr P Q := by
   intro R hR s hPR hpc
   exact ⟨0, s, rfl, hpc, by
     obtain ⟨hp, hcompat, hpq⟩ := hPR
@@ -183,10 +183,10 @@ theorem cpsTriple_refl (code : CodeMem) (addr : Addr) (P Q : Assertion)
     some exit in the list, with (exit.2 ** R) holding."
 
     Generalizes `cpsBranch` from 2 exits to an arbitrary list. -/
-def cpsNBranch (code : CodeMem) (entry : Addr) (P : Assertion)
+def cpsNBranch (entry : Addr) (P : Assertion)
     (exits : List (Addr × Assertion)) : Prop :=
   ∀ (R : Assertion), R.pcFree → ∀ s, (P ** R).holdsFor s → s.pc = entry →
-    ∃ k s', stepN k code s = some s' ∧
+    ∃ k s', stepN k s = some s' ∧
       ∃ exit ∈ exits, s'.pc = exit.1 ∧ (exit.2 ** R).holdsFor s'
 
 -- ============================================================================
@@ -194,8 +194,8 @@ def cpsNBranch (code : CodeMem) (entry : Addr) (P : Assertion)
 -- ============================================================================
 
 /-- An N-branch with no exits is vacuously false (no reachable exit). -/
-theorem cpsNBranch_nil_false (code : CodeMem) (entry : Addr) (P : Assertion)
-    (h : cpsNBranch code entry P [])
+theorem cpsNBranch_nil_false (entry : Addr) (P : Assertion)
+    (h : cpsNBranch entry P [])
     (s : MachineState) (hP : P.holdsFor s) (hpc : s.pc = entry) : False := by
   -- Use empAssertion as the frame
   have hPemp : (P ** empAssertion).holdsFor s := by
@@ -206,16 +206,16 @@ theorem cpsNBranch_nil_false (code : CodeMem) (entry : Addr) (P : Assertion)
   exact List.not_mem_nil hmem
 
 /-- An N-branch with impossible precondition vacuously holds for any exits. -/
-theorem cpsNBranch_nil_of_false (code : CodeMem) (entry : Addr) :
-    cpsNBranch code entry (fun _ => False) [] := by
+theorem cpsNBranch_nil_of_false (entry : Addr) :
+    cpsNBranch entry (fun _ => False) [] := by
   intro R _ s ⟨_, _, h1, h2, _, _, hf, _⟩ _
   exact absurd hf id
 
 /-- Reflexivity: zero steps, one exit at the same address. -/
-theorem cpsNBranch_refl (code : CodeMem) (addr : Addr)
+theorem cpsNBranch_refl (addr : Addr)
     (P Q : Assertion)
     (h : ∀ hp, P hp → Q hp) :
-    cpsNBranch code addr P [(addr, Q)] := by
+    cpsNBranch addr P [(addr, Q)] := by
   intro R hR s hPR hpc
   exact ⟨0, s, rfl, (addr, Q), List.Mem.head _, hpc, by
     obtain ⟨hp, hcompat, hpq⟩ := hPR
@@ -226,17 +226,17 @@ theorem cpsNBranch_refl (code : CodeMem) (addr : Addr)
 -- ============================================================================
 
 /-- A single-exit cpsTriple can be viewed as a cpsNBranch with one exit. -/
-theorem cpsTriple_to_cpsNBranch (code : CodeMem) (entry exit_ : Addr)
-    (P Q : Assertion) (h : cpsTriple code entry exit_ P Q) :
-    cpsNBranch code entry P [(exit_, Q)] := by
+theorem cpsTriple_to_cpsNBranch (entry exit_ : Addr)
+    (P Q : Assertion) (h : cpsTriple entry exit_ P Q) :
+    cpsNBranch entry P [(exit_, Q)] := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, hpc', hQR⟩ := h R hR s hPR hpc
   exact ⟨k, s', hstep, (exit_, Q), List.Mem.head _, hpc', hQR⟩
 
 /-- A singleton cpsNBranch gives back a cpsTriple. -/
-theorem cpsNBranch_to_cpsTriple (code : CodeMem) (entry exit_ : Addr)
-    (P Q : Assertion) (h : cpsNBranch code entry P [(exit_, Q)]) :
-    cpsTriple code entry exit_ P Q := by
+theorem cpsNBranch_to_cpsTriple (entry exit_ : Addr)
+    (P Q : Assertion) (h : cpsNBranch entry P [(exit_, Q)]) :
+    cpsTriple entry exit_ P Q := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, ex, hmem, hpc', hQR⟩ := h R hR s hPR hpc
   cases hmem with
@@ -244,12 +244,12 @@ theorem cpsNBranch_to_cpsTriple (code : CodeMem) (entry exit_ : Addr)
   | tail _ h => exact absurd h List.not_mem_nil
 
 /-- A 2-exit cpsBranch can be viewed as a cpsNBranch with two exits. -/
-theorem cpsBranch_to_cpsNBranch (code : CodeMem) (entry : Addr)
+theorem cpsBranch_to_cpsNBranch (entry : Addr)
     (P : Assertion)
     (exit_t : Addr) (Q_t : Assertion)
     (exit_f : Addr) (Q_f : Assertion)
-    (h : cpsBranch code entry P exit_t Q_t exit_f Q_f) :
-    cpsNBranch code entry P [(exit_t, Q_t), (exit_f, Q_f)] := by
+    (h : cpsBranch entry P exit_t Q_t exit_f Q_f) :
+    cpsNBranch entry P [(exit_t, Q_t), (exit_f, Q_f)] := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, hbranch⟩ := h R hR s hPR hpc
   rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
@@ -257,12 +257,12 @@ theorem cpsBranch_to_cpsNBranch (code : CodeMem) (entry : Addr)
   · exact ⟨k, s', hstep, (exit_f, Q_f), List.Mem.tail _ (List.Mem.head _), hpc_f, hQ_f⟩
 
 /-- A 2-element cpsNBranch gives back a cpsBranch. -/
-theorem cpsNBranch_to_cpsBranch (code : CodeMem) (entry : Addr)
+theorem cpsNBranch_to_cpsBranch (entry : Addr)
     (P : Assertion)
     (exit_t : Addr) (Q_t : Assertion)
     (exit_f : Addr) (Q_f : Assertion)
-    (h : cpsNBranch code entry P [(exit_t, Q_t), (exit_f, Q_f)]) :
-    cpsBranch code entry P exit_t Q_t exit_f Q_f := by
+    (h : cpsNBranch entry P [(exit_t, Q_t), (exit_f, Q_f)]) :
+    cpsBranch entry P exit_t Q_t exit_f Q_f := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, ex, hmem, hpc', hQR⟩ := h R hR s hPR hpc
   refine ⟨k, s', hstep, ?_⟩
@@ -279,23 +279,23 @@ theorem cpsNBranch_to_cpsBranch (code : CodeMem) (entry : Addr)
 
 /-- N-branch merge: if every exit leads to the same continuation,
     compose into a single cpsTriple. This is the main structural rule. -/
-theorem cpsNBranch_merge (code : CodeMem) (entry exit_ : Addr)
+theorem cpsNBranch_merge (entry exit_ : Addr)
     (P R : Assertion)
     (exits : List (Addr × Assertion))
-    (hbr : cpsNBranch code entry P exits)
-    (hall : ∀ exit ∈ exits, cpsTriple code exit.1 exit_ exit.2 R) :
-    cpsTriple code entry exit_ P R := by
+    (hbr : cpsNBranch entry P exits)
+    (hall : ∀ exit ∈ exits, cpsTriple exit.1 exit_ exit.2 R) :
+    cpsTriple entry exit_ P R := by
   intro F hF s hPF hpc
   obtain ⟨k1, s1, hstep1, ex, hmem, hpc1, hQF⟩ := hbr F hF s hPF hpc
   obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := hall ex hmem F hF s1 hQF hpc1
-  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hpc2, hRF⟩
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hRF⟩
 
 /-- Consequence: strengthen the precondition of an N-branch. -/
-theorem cpsNBranch_weaken_pre (code : CodeMem) (entry : Addr)
+theorem cpsNBranch_weaken_pre (entry : Addr)
     (P P' : Assertion)
     (exits : List (Addr × Assertion))
-    (hpre : ∀ h, P' h → P h) (h : cpsNBranch code entry P exits) :
-    cpsNBranch code entry P' exits := by
+    (hpre : ∀ h, P' h → P h) (h : cpsNBranch entry P exits) :
+    cpsNBranch entry P' exits := by
   intro R hR s hP'R hpc
   have hPR : (P ** R).holdsFor s := by
     obtain ⟨hp, hcompat, hpq⟩ := hP'R
@@ -303,29 +303,29 @@ theorem cpsNBranch_weaken_pre (code : CodeMem) (entry : Addr)
   exact h R hR s hPR hpc
 
 /-- Monotonicity: expand the exit list (weaken the exit constraint). -/
-theorem cpsNBranch_weaken_exits (code : CodeMem) (entry : Addr)
+theorem cpsNBranch_weaken_exits (entry : Addr)
     (P : Assertion)
     (exits exits' : List (Addr × Assertion))
-    (hsub : ∀ ex, ex ∈ exits → ex ∈ exits') (h : cpsNBranch code entry P exits) :
-    cpsNBranch code entry P exits' := by
+    (hsub : ∀ ex, ex ∈ exits → ex ∈ exits') (h : cpsNBranch entry P exits) :
+    cpsNBranch entry P exits' := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, ex, hmem, hpc', hQR⟩ := h R hR s hPR hpc
   exact ⟨k, s', hstep, ex, hsub ex hmem, hpc', hQR⟩
 
 /-- Extend the head exit by composing a cpsTriple after it. -/
-theorem cpsNBranch_extend_head (code : CodeMem) (entry l l' : Addr)
+theorem cpsNBranch_extend_head (entry l l' : Addr)
     (P Q R : Assertion)
     (others : List (Addr × Assertion))
-    (hbr : cpsNBranch code entry P ((l, Q) :: others))
-    (hseq : cpsTriple code l l' Q R) :
-    cpsNBranch code entry P ((l', R) :: others) := by
+    (hbr : cpsNBranch entry P ((l, Q) :: others))
+    (hseq : cpsTriple l l' Q R) :
+    cpsNBranch entry P ((l', R) :: others) := by
   intro F hF s hPF hpc
   obtain ⟨k1, s1, hstep1, ex, hmem, hpc1, hQF⟩ := hbr F hF s hPF hpc
   cases hmem with
   | head =>
     -- ex = (l, Q), compose with hseq
     obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := hseq F hF s1 hQF hpc1
-    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
            (l', R), List.Mem.head _, hpc2, hRF⟩
   | tail _ htail =>
     -- ex ∈ others, pass through
@@ -336,38 +336,38 @@ theorem cpsNBranch_extend_head (code : CodeMem) (entry l l' : Addr)
 -- ============================================================================
 
 /-- A state is halted when `step` returns `none` (HALT syscall or no instruction). -/
-def isHalted (code : CodeMem) (s : MachineState) : Bool :=
-  (step code s).isNone
+def isHalted (s : MachineState) : Bool :=
+  (step s).isNone
 
 /-- CPS-style halt specification with built-in frame rule:
     For any pcFree frame R, starting from any state where (P ** R) holds
     and PC = entry, execution reaches a halted state where (Q ** R) holds.
     Unlike `cpsTriple`, there is no exit address — execution simply terminates. -/
-def cpsHaltTriple (code : CodeMem) (entry : Addr)
+def cpsHaltTriple (entry : Addr)
     (P Q : Assertion) : Prop :=
   ∀ (R : Assertion), R.pcFree → ∀ s, (P ** R).holdsFor s → s.pc = entry →
-    ∃ k s', stepN k code s = some s' ∧ isHalted code s' = true ∧ (Q ** R).holdsFor s'
+    ∃ k s', stepN k s = some s' ∧ isHalted s' = true ∧ (Q ** R).holdsFor s'
 
 /-- Promote a `cpsTriple` to a `cpsHaltTriple` when the exit address is halted.
     If execution reaches exit_ with Q, and every state satisfying (Q ** R) at exit_ is halted,
     then the program halts with Q. -/
-theorem cpsTriple_to_cpsHaltTriple (code : CodeMem) (entry exit_ : Addr)
+theorem cpsTriple_to_cpsHaltTriple (entry exit_ : Addr)
     (P Q : Assertion)
-    (h : cpsTriple code entry exit_ P Q)
+    (h : cpsTriple entry exit_ P Q)
     (hhalt : ∀ (R : Assertion), R.pcFree → ∀ s, (Q ** R).holdsFor s → s.pc = exit_ →
-      isHalted code s = true) :
-    cpsHaltTriple code entry P Q := by
+      isHalted s = true) :
+    cpsHaltTriple entry P Q := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, hpc', hQR⟩ := h R hR s hPR hpc
   exact ⟨k, s', hstep, hhalt R hR s' hQR hpc', hQR⟩
 
 /-- Consequence: strengthen precondition and weaken postcondition of a halt triple. -/
-theorem cpsHaltTriple_consequence (code : CodeMem) (entry : Addr)
+theorem cpsHaltTriple_consequence (entry : Addr)
     (P P' Q Q' : Assertion)
     (hpre  : ∀ h, P' h → P h)
     (hpost : ∀ h, Q h → Q' h)
-    (h : cpsHaltTriple code entry P Q) :
-    cpsHaltTriple code entry P' Q' := by
+    (h : cpsHaltTriple entry P Q) :
+    cpsHaltTriple entry P' Q' := by
   intro R hR s hP'R hpc
   have hPR : (P ** R).holdsFor s := by
     obtain ⟨hp, hcompat, hpq⟩ := hP'R
@@ -380,29 +380,29 @@ theorem cpsHaltTriple_consequence (code : CodeMem) (entry : Addr)
 /-- Sequence a `cpsTriple` followed by a `cpsHaltTriple`:
     if code reaches midpoint with Q, and from midpoint it halts with R, then
     the composition halts with R. -/
-theorem cpsTriple_seq_halt (code : CodeMem) (entry mid : Addr)
+theorem cpsTriple_seq_halt (entry mid : Addr)
     (P Q R : Assertion)
-    (h1 : cpsTriple code entry mid P Q)
-    (h2 : cpsHaltTriple code mid Q R) :
-    cpsHaltTriple code entry P R := by
+    (h1 : cpsTriple entry mid P Q)
+    (h2 : cpsHaltTriple mid Q R) :
+    cpsHaltTriple entry P R := by
   intro F hF s hPF hpc
   obtain ⟨k1, s1, hstep1, hpc1, hQF⟩ := h1 F hF s hPF hpc
   obtain ⟨k2, s2, hstep2, hhalt, hRF⟩ := h2 F hF s1 hQF hpc1
-  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hhalt, hRF⟩
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hhalt, hRF⟩
 
 /-- Sequential composition with midpoint permutation:
-    compose h1 : cpsTriple code s m P Q1 with h2 : cpsTriple code m e Q2 R
+    compose h1 : cpsTriple s m P Q1 with h2 : cpsTriple m e Q2 R
     when Q1 and Q2 are AC-permutations (proved by hperm).
     Both Q1 and Q2 are fully determined by h1/h2, so the permutation
     obligation has no metavar ambiguity. -/
-theorem cpsTriple_seq_with_perm (code : CodeMem) (s m e : Addr)
+theorem cpsTriple_seq_with_perm (s m e : Addr)
     (P Q1 Q2 R : Assertion)
     (hperm : ∀ h, Q1 h → Q2 h)
-    (h1 : cpsTriple code s m P Q1)
-    (h2 : cpsTriple code m e Q2 R) :
-    cpsTriple code s e P R :=
-  cpsTriple_seq code s m e P Q2 R
-    (cpsTriple_consequence code s m P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (h1 : cpsTriple s m P Q1)
+    (h2 : cpsTriple m e Q2 R) :
+    cpsTriple s e P R :=
+  cpsTriple_seq s m e P Q2 R
+    (cpsTriple_consequence s m P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
 
 -- ============================================================================
 -- Cascade composition (for dispatch chains like Phase C)
@@ -411,76 +411,76 @@ theorem cpsTriple_seq_with_perm (code : CodeMem) (s m e : Addr)
 /-- Sequential composition: cpsTriple followed by cpsNBranch.
     If code reaches mid with Q, and from mid it branches to one of exits,
     then code branches from entry to one of exits. -/
-theorem cpsTriple_seq_cpsNBranch (code : CodeMem) (entry mid : Addr)
+theorem cpsTriple_seq_cpsNBranch (entry mid : Addr)
     (P Q : Assertion) (exits : List (Addr × Assertion))
-    (h1 : cpsTriple code entry mid P Q)
-    (h2 : cpsNBranch code mid Q exits) :
-    cpsNBranch code entry P exits := by
+    (h1 : cpsTriple entry mid P Q)
+    (h2 : cpsNBranch mid Q exits) :
+    cpsNBranch entry P exits := by
   intro R hR s hPR hpc
   obtain ⟨k1, s1, hstep1, hpc1, hQR⟩ := h1 R hR s hPR hpc
   obtain ⟨k2, s2, hstep2, ex, hmem, hpc2, hER⟩ := h2 R hR s1 hQR hpc1
-  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, ex, hmem, hpc2, hER⟩
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, ex, hmem, hpc2, hER⟩
 
 /-- Sequential composition with permutation: cpsTriple followed by cpsNBranch
     when the intermediate assertions are permutations. -/
-theorem cpsTriple_seq_cpsNBranch_with_perm (code : CodeMem) (entry mid : Addr)
+theorem cpsTriple_seq_cpsNBranch_with_perm (entry mid : Addr)
     (P Q1 Q2 : Assertion) (exits : List (Addr × Assertion))
     (hperm : ∀ h, Q1 h → Q2 h)
-    (h1 : cpsTriple code entry mid P Q1)
-    (h2 : cpsNBranch code mid Q2 exits) :
-    cpsNBranch code entry P exits :=
-  cpsTriple_seq_cpsNBranch code entry mid P Q2 exits
-    (cpsTriple_consequence code entry mid P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (h1 : cpsTriple entry mid P Q1)
+    (h2 : cpsNBranch mid Q2 exits) :
+    cpsNBranch entry P exits :=
+  cpsTriple_seq_cpsNBranch entry mid P Q2 exits
+    (cpsTriple_consequence entry mid P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
 
 /-- Sequential composition: cpsTriple followed by cpsBranch.
     If code reaches mid with Q, and from mid it branches, then the
     composition branches from entry. -/
-theorem cpsTriple_seq_cpsBranch (code : CodeMem) (entry mid : Addr)
+theorem cpsTriple_seq_cpsBranch (entry mid : Addr)
     (P Q : Assertion) (exit_t : Addr) (Q_t : Assertion) (exit_f : Addr) (Q_f : Assertion)
-    (h1 : cpsTriple code entry mid P Q)
-    (h2 : cpsBranch code mid Q exit_t Q_t exit_f Q_f) :
-    cpsBranch code entry P exit_t Q_t exit_f Q_f := by
+    (h1 : cpsTriple entry mid P Q)
+    (h2 : cpsBranch mid Q exit_t Q_t exit_f Q_f) :
+    cpsBranch entry P exit_t Q_t exit_f Q_f := by
   intro R hR s hPR hpc
   obtain ⟨k1, s1, hstep1, hpc1, hQR⟩ := h1 R hR s hPR hpc
   obtain ⟨k2, s2, hstep2, hbranch⟩ := h2 R hR s1 hQR hpc1
-  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2, hbranch⟩
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hbranch⟩
 
 /-- Sequential composition with permutation: cpsTriple followed by cpsBranch. -/
-theorem cpsTriple_seq_cpsBranch_with_perm (code : CodeMem) (entry mid : Addr)
+theorem cpsTriple_seq_cpsBranch_with_perm (entry mid : Addr)
     (P Q1 Q2 : Assertion) (exit_t : Addr) (Q_t : Assertion) (exit_f : Addr) (Q_f : Assertion)
     (hperm : ∀ h, Q1 h → Q2 h)
-    (h1 : cpsTriple code entry mid P Q1)
-    (h2 : cpsBranch code mid Q2 exit_t Q_t exit_f Q_f) :
-    cpsBranch code entry P exit_t Q_t exit_f Q_f :=
-  cpsTriple_seq_cpsBranch code entry mid P Q2 exit_t Q_t exit_f Q_f
-    (cpsTriple_consequence code entry mid P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (h1 : cpsTriple entry mid P Q1)
+    (h2 : cpsBranch mid Q2 exit_t Q_t exit_f Q_f) :
+    cpsBranch entry P exit_t Q_t exit_f Q_f :=
+  cpsTriple_seq_cpsBranch entry mid P Q2 exit_t Q_t exit_f Q_f
+    (cpsTriple_consequence entry mid P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
 
 /-- Compose a cpsBranch with a cpsNBranch on the not-taken (false) path.
     The taken path becomes a new exit prepended to the cpsNBranch exits. -/
-theorem cpsBranch_cons_cpsNBranch (code : CodeMem) (entry : Addr)
+theorem cpsBranch_cons_cpsNBranch (entry : Addr)
     (P : Assertion) (exit_t : Addr) (Q_t : Assertion)
     (exit_f : Addr) (Q_f : Assertion)
     (exits : List (Addr × Assertion))
-    (hbr : cpsBranch code entry P exit_t Q_t exit_f Q_f)
-    (h_rest : cpsNBranch code exit_f Q_f exits) :
-    cpsNBranch code entry P ((exit_t, Q_t) :: exits) := by
+    (hbr : cpsBranch entry P exit_t Q_t exit_f Q_f)
+    (h_rest : cpsNBranch exit_f Q_f exits) :
+    cpsNBranch entry P ((exit_t, Q_t) :: exits) := by
   intro R hR s hPR hpc
   obtain ⟨k1, s1, hstep1, hbranch⟩ := hbr R hR s hPR hpc
   rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
   · exact ⟨k1, s1, hstep1, (exit_t, Q_t), List.Mem.head _, hpc_t, hQ_t⟩
   · obtain ⟨k2, s2, hstep2, ex, hmem, hpc2, hER⟩ := h_rest R hR s1 hQ_f hpc_f
-    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
            ex, List.Mem.tail _ hmem, hpc2, hER⟩
 
 /-- Compose a cpsBranch with a cpsNBranch, with permutation on the not-taken path. -/
-theorem cpsBranch_cons_cpsNBranch_with_perm (code : CodeMem) (entry : Addr)
+theorem cpsBranch_cons_cpsNBranch_with_perm (entry : Addr)
     (P : Assertion) (exit_t : Addr) (Q_t : Assertion)
     (exit_f : Addr) (Q_f Q_f' : Assertion)
     (exits : List (Addr × Assertion))
     (hperm : ∀ h, Q_f h → Q_f' h)
-    (hbr : cpsBranch code entry P exit_t Q_t exit_f Q_f)
-    (h_rest : cpsNBranch code exit_f Q_f' exits) :
-    cpsNBranch code entry P ((exit_t, Q_t) :: exits) := by
+    (hbr : cpsBranch entry P exit_t Q_t exit_f Q_f)
+    (h_rest : cpsNBranch exit_f Q_f' exits) :
+    cpsNBranch entry P ((exit_t, Q_t) :: exits) := by
   intro R hR s hPR hpc
   obtain ⟨k1, s1, hstep1, hbranch⟩ := hbr R hR s hPR hpc
   rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
@@ -489,19 +489,19 @@ theorem cpsBranch_cons_cpsNBranch_with_perm (code : CodeMem) (entry : Addr)
       obtain ⟨hp, hcompat, hpq⟩ := hQ_f
       exact ⟨hp, hcompat, sepConj_mono_left hperm hp hpq⟩
     obtain ⟨k2, s2, hstep2, ex, hmem, hpc2, hER⟩ := h_rest R hR s1 hQ_f' hpc_f
-    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
            ex, List.Mem.tail _ hmem, hpc2, hER⟩
 
 /-- Compose two sequential cpsBranch specs where the first's not-taken path leads
     to the second's entry, and both taken paths go to the same target.
     The two taken postconditions are merged into a common one via weakening functions. -/
-theorem cpsBranch_seq_cpsBranch (code : CodeMem) (entry mid target exit_f : Addr)
+theorem cpsBranch_seq_cpsBranch (entry mid target exit_f : Addr)
     (P Q_t1 Q_f1 Q_t2 Q_f2 Q_t : Assertion)
-    (h1 : cpsBranch code entry P target Q_t1 mid Q_f1)
-    (h2 : cpsBranch code mid Q_f1 target Q_t2 exit_f Q_f2)
+    (h1 : cpsBranch entry P target Q_t1 mid Q_f1)
+    (h2 : cpsBranch mid Q_f1 target Q_t2 exit_f Q_f2)
     (ht1 : ∀ h, Q_t1 h → Q_t h)
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
-    cpsBranch code entry P target Q_t exit_f Q_f2 := by
+    cpsBranch entry P target Q_t exit_f Q_f2 := by
   intro R hR s hPR hpc
   obtain ⟨k1, s1, hstep1, hbranch1⟩ := h1 R hR s hPR hpc
   rcases hbranch1 with ⟨hpc_t1, hQ_t1R⟩ | ⟨hpc_f1, hQ_f1R⟩
@@ -513,35 +513,35 @@ theorem cpsBranch_seq_cpsBranch (code : CodeMem) (entry mid target exit_f : Addr
     obtain ⟨k2, s2, hstep2, hbranch2⟩ := h2 R hR s1 hQ_f1R hpc_f1
     rcases hbranch2 with ⟨hpc_t2, hQ_t2R⟩ | ⟨hpc_f2, hQ_f2R⟩
     · -- Second branch taken → target
-      exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+      exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
              Or.inl ⟨hpc_t2, by
                obtain ⟨hp, hcompat, hpq⟩ := hQ_t2R
                exact ⟨hp, hcompat, sepConj_mono_left ht2 hp hpq⟩⟩⟩
     · -- Second branch not taken → exit_f
-      exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 code s s1 s2 hstep1 hstep2,
+      exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
              Or.inr ⟨hpc_f2, hQ_f2R⟩⟩
 
 /-- Like `cpsBranch_seq_cpsBranch` but with a permutation between Q_f1 and R. -/
-theorem cpsBranch_seq_cpsBranch_with_perm (code : CodeMem)
+theorem cpsBranch_seq_cpsBranch_with_perm
     (entry mid target exit_f : Addr)
     (P Q_t1 Q_f1 R Q_t2 Q_f2 Q_t : Assertion)
-    (h1 : cpsBranch code entry P target Q_t1 mid Q_f1)
+    (h1 : cpsBranch entry P target Q_t1 mid Q_f1)
     (hperm : ∀ h, Q_f1 h → R h)
-    (h2 : cpsBranch code mid R target Q_t2 exit_f Q_f2)
+    (h2 : cpsBranch mid R target Q_t2 exit_f Q_f2)
     (ht1 : ∀ h, Q_t1 h → Q_t h)
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
-    cpsBranch code entry P target Q_t exit_f Q_f2 :=
-  cpsBranch_seq_cpsBranch code entry mid target exit_f P Q_t1 R Q_t2 Q_f2 Q_t
-    (cpsBranch_consequence code entry _ _ _ _ _ _ _ _
+    cpsBranch entry P target Q_t exit_f Q_f2 :=
+  cpsBranch_seq_cpsBranch entry mid target exit_f P Q_t1 R Q_t2 Q_f2 Q_t
+    (cpsBranch_consequence entry _ _ _ _ _ _ _ _
       (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
 /-- Weaken postconditions of all exits in a cpsNBranch. -/
-theorem cpsNBranch_weaken_posts (code : CodeMem) (entry : Addr)
+theorem cpsNBranch_weaken_posts (entry : Addr)
     (P : Assertion) (exits exits' : List (Addr × Assertion))
-    (h : cpsNBranch code entry P exits)
+    (h : cpsNBranch entry P exits)
     (hmap : ∀ ex ∈ exits, ∃ ex' ∈ exits', ex'.1 = ex.1 ∧ ∀ h, ex.2 h → ex'.2 h) :
-    cpsNBranch code entry P exits' := by
+    cpsNBranch entry P exits' := by
   intro R hR s hPR hpc
   obtain ⟨k, s', hstep, ex, hmem, hpc', hER⟩ := h R hR s hPR hpc
   obtain ⟨ex', hmem', heq, hpost⟩ := hmap ex hmem
