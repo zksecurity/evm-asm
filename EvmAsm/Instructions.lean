@@ -193,6 +193,10 @@ def signExtend21 (imm : BitVec 21) : Word :=
 @[simp] theorem signExtend12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by native_decide
 @[simp] theorem signExtend12_60 : signExtend12 (60 : BitVec 12) = (60 : Word) := by native_decide
 @[simp] theorem signExtend12_1  : signExtend12 (1  : BitVec 12) = (1  : Word) := by native_decide
+@[simp] theorem signExtend12_2  : signExtend12 (2  : BitVec 12) = (2  : Word) := by native_decide
+@[simp] theorem signExtend12_3  : signExtend12 (3  : BitVec 12) = (3  : Word) := by native_decide
+@[simp] theorem signExtend12_5  : signExtend12 (5  : BitVec 12) = (5  : Word) := by native_decide
+@[simp] theorem signExtend12_6  : signExtend12 (6  : BitVec 12) = (6  : Word) := by native_decide
 
 -- ============================================================================
 -- M-extension helper functions (division/multiply edge cases per RV32IM spec)

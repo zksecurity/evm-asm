@@ -861,6 +861,47 @@ theorem cpsTriple_frame_left (code : CodeMem) (entry exit_ : Addr)
   obtain ⟨k, s', hstep, hpc', hQFR'⟩ := h (F ** R) hFR s hPFR' hpc
   exact ⟨k, s', hstep, hpc', holdsFor_sepConj_assoc.mpr hQFR'⟩
 
+/-- Frame for cpsBranch: if cpsBranch P → Q_t | Q_f, then cpsBranch (P ** F) → (Q_t ** F) | (Q_f ** F). -/
+theorem cpsBranch_frame_left (code : CodeMem) (entry : Addr)
+    (P : Assertion) (exit_t : Addr) (Q_t : Assertion)
+    (exit_f : Addr) (Q_f : Assertion)
+    (F : Assertion) (hF : F.pcFree)
+    (h : cpsBranch code entry P exit_t Q_t exit_f Q_f) :
+    cpsBranch code entry (P ** F) exit_t (Q_t ** F) exit_f (Q_f ** F) := by
+  intro R hR s hPFR hpc
+  have hFR : (F ** R).pcFree := pcFree_sepConj hF hR
+  have hPFR' := holdsFor_sepConj_assoc.mp hPFR
+  obtain ⟨k, s', hstep, hbranch⟩ := h (F ** R) hFR s hPFR' hpc
+  rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
+  · exact ⟨k, s', hstep, Or.inl ⟨hpc_t, holdsFor_sepConj_assoc.mpr hQ_t⟩⟩
+  · exact ⟨k, s', hstep, Or.inr ⟨hpc_f, holdsFor_sepConj_assoc.mpr hQ_f⟩⟩
+
+/-- Frame for cpsNBranch: if cpsNBranch P → exits, then cpsNBranch (P ** F) → exits with F. -/
+theorem cpsNBranch_frame_left (code : CodeMem) (entry : Addr)
+    (P : Assertion) (exits : List (Addr × Assertion))
+    (F : Assertion) (hF : F.pcFree)
+    (h : cpsNBranch code entry P exits) :
+    cpsNBranch code entry (P ** F) (exits.map fun (a, Q) => (a, Q ** F)) := by
+  intro R hR s hPFR hpc
+  have hFR : (F ** R).pcFree := pcFree_sepConj hF hR
+  have hPFR' := holdsFor_sepConj_assoc.mp hPFR
+  obtain ⟨k, s', hstep, ⟨a, Q⟩, hmem, hpc', hQFR⟩ := h (F ** R) hFR s hPFR' hpc
+  exact ⟨k, s', hstep, (a, Q ** F), List.mem_map.mpr ⟨(a, Q), hmem, rfl⟩, hpc',
+    holdsFor_sepConj_assoc.mpr hQFR⟩
+
+/-- Frame for cpsNBranch on the right: if cpsNBranch P → exits, then cpsNBranch (F ** P) → exits with F. -/
+theorem cpsNBranch_frame_right (code : CodeMem) (entry : Addr)
+    (P : Assertion) (exits : List (Addr × Assertion))
+    (F : Assertion) (hF : F.pcFree)
+    (h : cpsNBranch code entry P exits) :
+    cpsNBranch code entry (F ** P) (exits.map fun (a, Q) => (a, F ** Q)) := by
+  intro R hR s hFPR hpc
+  have hFR : (F ** R).pcFree := pcFree_sepConj hF hR
+  have h1 := holdsFor_sepConj_pull_second.mp hFPR
+  obtain ⟨k, s', hstep, ⟨a, Q⟩, hmem, hpc', hQFR⟩ := h (F ** R) hFR s h1 hpc
+  exact ⟨k, s', hstep, (a, F ** Q), List.mem_map.mpr ⟨(a, Q), hmem, rfl⟩, hpc',
+    holdsFor_sepConj_pull_second.mpr hQFR⟩
+
 /-- Frame on the left: if cpsTriple P → Q, then cpsTriple (F ** P) → (F ** Q). -/
 theorem cpsTriple_frame_right (code : CodeMem) (entry exit_ : Addr)
     (P Q F : Assertion) (hF : F.pcFree)

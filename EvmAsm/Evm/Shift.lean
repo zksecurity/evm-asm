@@ -44,7 +44,7 @@ namespace EvmAsm
 /-- Phase A: Check shift >= 256 (17 instructions).
     OR-reduce shift limbs 1-7. BNE to zero_path if nonzero.
     Then check limb 0 < 256. BEQ to zero_path if not. -/
-private def shr_phase_a : Program :=
+def shr_phase_a : Program :=
   LW .x5  .x12 4  ;;                          -- x5  = shift[1]
   LW .x10 .x12 8  ;; single (.OR .x5 .x5 .x10) ;; -- x5 |= shift[2]
   LW .x10 .x12 12 ;; single (.OR .x5 .x5 .x10) ;; -- x5 |= shift[3]
@@ -58,7 +58,7 @@ private def shr_phase_a : Program :=
   single (.BEQ .x10 .x0 1108)                 -- shift[0] >= 256 → zero_path (1172-64=1108)
 
 /-- Phase B: Extract parameters (7 instructions). -/
-private def shr_phase_b : Program :=
+def shr_phase_b : Program :=
   single (.ANDI .x6 .x5 31) ;;                -- x6 = bit_shift
   single (.SRLI .x5 .x5 5)  ;;                -- x5 = limb_shift
   single (.SLTU .x11 .x0 .x6) ;;             -- x11 = (bit_shift > 0)
@@ -68,7 +68,7 @@ private def shr_phase_b : Program :=
   ADDI .x12 .x12 32                           -- pop shift word
 
 /-- Phase C: Cascade dispatch (13 instructions). -/
-private def shr_phase_c : Program :=
+def shr_phase_c : Program :=
   single (.BEQ .x5 .x0 864) ;;               -- ls0 (960-96=864)
   ADDI .x10 .x0 1 ;;
   single (.BEQ .x5 .x10 668) ;;              -- ls1 (772-104=668)
@@ -86,7 +86,7 @@ private def shr_phase_c : Program :=
 /-- Helper: 7-instruction merge block for one middle limb.
     LW x5, src_off(x12); SRL x5,x5,x6; LW x10, next_off(x12);
     SLL x10,x10,x7; AND x10,x10,x11; OR x5,x5,x10; SW x12,x5,dst_off -/
-private def shr_merge_limb (src_off next_off dst_off : BitVec 12) : Program :=
+def shr_merge_limb (src_off next_off dst_off : BitVec 12) : Program :=
   LW .x5 .x12 src_off ;;
   single (.SRL .x5 .x5 .x6) ;;
   LW .x10 .x12 next_off ;;
@@ -97,20 +97,20 @@ private def shr_merge_limb (src_off next_off dst_off : BitVec 12) : Program :=
 
 /-- Helper: 3-instruction last-limb block.
     LW x5, 28(x12); SRL x5,x5,x6; SW x12,x5,dst_off -/
-private def shr_last_limb (dst_off : BitVec 12) : Program :=
+def shr_last_limb (dst_off : BitVec 12) : Program :=
   LW .x5 .x12 28 ;;
   single (.SRL .x5 .x5 .x6) ;;
   SW .x12 .x5 dst_off
 
 /-- ls7: limb_shift=7 (11 instructions) -/
-private def shr_body_7 : Program :=
+def shr_body_7 : Program :=
   shr_last_limb 0 ;;
   SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
   SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28 ;;
   single (.JAL .x0 1020)                      -- exit (1208-188=1020)
 
 /-- ls6: limb_shift=6 (17 instructions) -/
-private def shr_body_6 : Program :=
+def shr_body_6 : Program :=
   shr_merge_limb 24 28 0 ;;                   -- i=0: value[6],value[7]→result[0]
   shr_last_limb 4 ;;                          -- i=1: value[7]→result[1]
   SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
@@ -118,7 +118,7 @@ private def shr_body_6 : Program :=
   single (.JAL .x0 952)                       -- exit (1208-256=952)
 
 /-- ls5: limb_shift=5 (23 instructions) -/
-private def shr_body_5 : Program :=
+def shr_body_5 : Program :=
   shr_merge_limb 20 24 0 ;;                   -- i=0
   shr_merge_limb 24 28 4 ;;                   -- i=1
   shr_last_limb 8 ;;                          -- i=2
@@ -127,7 +127,7 @@ private def shr_body_5 : Program :=
   single (.JAL .x0 860)                       -- exit (1208-348=860)
 
 /-- ls4: limb_shift=4 (29 instructions) -/
-private def shr_body_4 : Program :=
+def shr_body_4 : Program :=
   shr_merge_limb 16 20 0 ;;                   -- i=0
   shr_merge_limb 20 24 4 ;;                   -- i=1
   shr_merge_limb 24 28 8 ;;                   -- i=2
@@ -137,7 +137,7 @@ private def shr_body_4 : Program :=
   single (.JAL .x0 744)                       -- exit (1208-464=744)
 
 /-- ls3: limb_shift=3 (35 instructions) -/
-private def shr_body_3 : Program :=
+def shr_body_3 : Program :=
   shr_merge_limb 12 16 0 ;;                   -- i=0
   shr_merge_limb 16 20 4 ;;                   -- i=1
   shr_merge_limb 20 24 8 ;;                   -- i=2
@@ -147,7 +147,7 @@ private def shr_body_3 : Program :=
   single (.JAL .x0 604)                       -- exit (1208-604=604)
 
 /-- ls2: limb_shift=2 (41 instructions) -/
-private def shr_body_2 : Program :=
+def shr_body_2 : Program :=
   shr_merge_limb 8 12 0 ;;                    -- i=0
   shr_merge_limb 12 16 4 ;;                   -- i=1
   shr_merge_limb 16 20 8 ;;                   -- i=2
@@ -158,7 +158,7 @@ private def shr_body_2 : Program :=
   single (.JAL .x0 440)                       -- exit (1208-768=440)
 
 /-- ls1: limb_shift=1 (47 instructions) -/
-private def shr_body_1 : Program :=
+def shr_body_1 : Program :=
   shr_merge_limb 4 8 0 ;;                     -- i=0
   shr_merge_limb 8 12 4 ;;                    -- i=1
   shr_merge_limb 12 16 8 ;;                   -- i=2
@@ -170,7 +170,7 @@ private def shr_body_1 : Program :=
   single (.JAL .x0 252)                       -- exit (1208-956=252)
 
 /-- ls0: limb_shift=0 (53 instructions) -/
-private def shr_body_0 : Program :=
+def shr_body_0 : Program :=
   shr_merge_limb 0 4 0 ;;                     -- i=0
   shr_merge_limb 4 8 4 ;;                     -- i=1
   shr_merge_limb 8 12 8 ;;                    -- i=2
@@ -182,7 +182,7 @@ private def shr_body_0 : Program :=
   single (.JAL .x0 40)                        -- exit (1208-1168=40)
 
 /-- Phase E: Zero path (9 instructions). -/
-private def shr_zero_path : Program :=
+def shr_zero_path : Program :=
   ADDI .x12 .x12 32 ;;
   SW .x12 .x0 0 ;; SW .x12 .x0 4 ;; SW .x12 .x0 8 ;; SW .x12 .x0 12 ;;
   SW .x12 .x0 16 ;; SW .x12 .x0 20 ;; SW .x12 .x0 24 ;; SW .x12 .x0 28

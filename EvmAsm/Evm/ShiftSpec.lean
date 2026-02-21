@@ -648,6 +648,193 @@ theorem shr_phase_b_spec (code : CodeMem) (shift0 sp r6 r7 r11 : Word) (base : A
     (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) c17
 
 -- ============================================================================
+-- Cascade step helper: ADDI x10,x0,k; BEQ x5,x10,off (2 instructions)
+-- ============================================================================
+
+/-- Cascade step: ADDI x10,x0,k followed by BEQ x5,x10,off.
+    Produces a cpsBranch with clean postconditions (no pure facts).
+    Both taken and not-taken paths have the same register state;
+    the branch is reflected only in which exit address is reached. -/
+theorem shr_cascade_step_spec (code : CodeMem) (v5 v10 : Word)
+    (k : BitVec 12) (offset : BitVec 13) (base target : Addr)
+    (hf0 : code base = some (.ADDI .x10 .x0 k))
+    (hf1 : code (base + 4) = some (.BEQ .x5 .x10 offset))
+    (htarget : (base + 4) + signExtend13 offset = target) :
+    let k_val := (0 : Word) + signExtend12 k
+    cpsBranch code base
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ k_val))
+      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ k_val)) := by
+  simp only
+  have h48 : base + 4 + 4 = base + 8 := by bv_addr
+  -- Step 1: ADDI x10, x0, k
+  have s1 := addi_spec_gen code .x10 .x0 v10 (0 : Word) k base (by nofun) (by nofun) hf0
+  have s1f := cpsTriple_frame_right code base (base + 4) _ _
+    (.x5 ↦ᵣ v5) (pcFree_regIs _ _) s1
+  -- Step 2: BEQ x5, x10, offset
+  have s2 := beq_spec_gen code .x5 .x10 offset v5 ((0 : Word) + signExtend12 k) (base + 4) hf1
+  rw [htarget] at s2; rw [h48] at s2
+  have s2f := cpsBranch_frame_left code (base + 4) _ _ _ _ _
+    (.x0 ↦ᵣ (0 : Word)) (pcFree_regIs _ _) s2
+  -- Fix association: (P ** Q) ** R → P ** (Q ** R)
+  simp only [sepConj_assoc'] at s2f
+  -- Compose ADDI → BEQ (permutation: x5**x0**x10 → x5**x10**x0)
+  have raw := cpsTriple_seq_cpsBranch_with_perm code base (base + 4) _ _ _
+    _ _ _ _ (fun _ hp => by xperm_hyp hp) s1f s2f
+  -- Strip pure facts and permute postconditions to standard x5**x0**x10 order
+  have drop : ∀ (P : Prop) h,
+      ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)) **
+       ⌜P⌝ ** (.x0 ↦ᵣ (0 : Word))) h →
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x10 ↦ᵣ ((0 : Word) + signExtend12 k))) h := by
+    intro _ h hp
+    have := sepConj_mono_right (sepConj_mono_right
+      (fun h hp => ((sepConj_pure_left _ _ h).mp hp).2)) h hp
+    exact (congrFun (show _ = _ by xperm) h).mp this
+  exact cpsBranch_consequence code base _ _ _ _ _ _ _ _
+    (fun _ hp => hp) (drop _) (drop _) raw
+
+-- ============================================================================
+-- Phase C spec: cascade dispatch (13 instructions, cpsNBranch with 8 exits)
+-- ============================================================================
+
+set_option maxHeartbeats 3200000 in
+/-- Phase C spec: cascade dispatch on limb_shift (0-7).
+    BEQ x5,x0 for ls0, then 6 × (ADDI x10,x0,k; BEQ x5,x10) for ls1-ls6,
+    fall-through to ls7. 13 instructions total. -/
+theorem shr_phase_c_spec (code : CodeMem) (v5 v10 : Word) (base : Addr)
+    (e0 e1 e2 e3 e4 e5 e6 e7 : Addr)
+    (hf0  : code base = some (.BEQ .x5 .x0 864))
+    (hf1  : code (base + 4) = some (.ADDI .x10 .x0 1))
+    (hf2  : code (base + 8) = some (.BEQ .x5 .x10 668))
+    (hf3  : code (base + 12) = some (.ADDI .x10 .x0 2))
+    (hf4  : code (base + 16) = some (.BEQ .x5 .x10 496))
+    (hf5  : code (base + 20) = some (.ADDI .x10 .x0 3))
+    (hf6  : code (base + 24) = some (.BEQ .x5 .x10 348))
+    (hf7  : code (base + 28) = some (.ADDI .x10 .x0 4))
+    (hf8  : code (base + 32) = some (.BEQ .x5 .x10 224))
+    (hf9  : code (base + 36) = some (.ADDI .x10 .x0 5))
+    (hf10 : code (base + 40) = some (.BEQ .x5 .x10 124))
+    (hf11 : code (base + 44) = some (.ADDI .x10 .x0 6))
+    (hf12 : code (base + 48) = some (.BEQ .x5 .x10 48))
+    (he0 : base + signExtend13 864 = e0)
+    (he1 : (base + 8) + signExtend13 668 = e1)
+    (he2 : (base + 16) + signExtend13 496 = e2)
+    (he3 : (base + 24) + signExtend13 348 = e3)
+    (he4 : (base + 32) + signExtend13 224 = e4)
+    (he5 : (base + 40) + signExtend13 124 = e5)
+    (he6 : (base + 48) + signExtend13 48 = e6)
+    (he7 : base + 52 = e7) :
+    cpsNBranch code base
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10)),
+       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 1)),
+       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 2)),
+       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 3)),
+       (e4, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 4)),
+       (e5, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 5)),
+       (e6, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 6)),
+       (e7, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ 6))] := by
+  -- Address normalization
+  have h04   : base + 0 + 4 = base + 4   := by bv_addr
+  have h4852 : base + 48 + 4 = base + 52 := by bv_addr
+  -- Value normalization: (0 : Word) + signExtend12 k = k
+  have val1 : (0 : Word) + signExtend12 (1 : BitVec 12) = (1 : Word) := by native_decide
+  have val2 : (0 : Word) + signExtend12 (2 : BitVec 12) = (2 : Word) := by native_decide
+  have val3 : (0 : Word) + signExtend12 (3 : BitVec 12) = (3 : Word) := by native_decide
+  have val4 : (0 : Word) + signExtend12 (4 : BitVec 12) = (4 : Word) := by native_decide
+  have val5 : (0 : Word) + signExtend12 (5 : BitVec 12) = (5 : Word) := by native_decide
+  have val6 : (0 : Word) + signExtend12 (6 : BitVec 12) = (6 : Word) := by native_decide
+  -- Helper: strip pure from position 3 of a 4-atom chain: a ** b ** ⌜P⌝ ** c → a ** b ** c
+  have drop_inner_pure : ∀ (a b : Assertion) (P : Prop) (c : Assertion) h,
+      (a ** b ** ⌜P⌝ ** c) h → (a ** b ** c) h :=
+    fun _ _ _ _ h hp =>
+      sepConj_mono_right (sepConj_mono_right
+        (fun h hp => ((sepConj_pure_left _ _ h).mp hp).2)) h hp
+  -- === Build from back to front ===
+  -- BEQ#6 at base+48: last BEQ, cpsBranch on {x5, x10} framed with x0
+  have B6 := beq_spec_gen code .x5 .x10 48 v5 ((0 : Word) + signExtend12 6) (base + 48) hf12
+  rw [he6] at B6; rw [show base + 48 + 4 = e7 from by rw [h4852]; exact he7] at B6
+  have B6f := cpsBranch_frame_left code (base + 48) _ _ _ _ _
+    (.x0 ↦ᵣ (0 : Word)) (pcFree_regIs _ _) B6
+  simp only [sepConj_assoc'] at B6f
+  -- Clean B6: strip pure facts, permute x10↔x0 to standard x5**x0**x10 order
+  have B6c := cpsBranch_consequence code (base + 48) _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 6))) _ _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 6))) _ _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 6)))
+    (fun h hp => by exact (congrFun (show _ = _ by xperm) h).mp hp)
+    (fun h hp => by have := drop_inner_pure _ _ _ _ h hp
+                    exact (congrFun (show _ = _ by xperm) h).mp this)
+    (fun h hp => by have := drop_inner_pure _ _ _ _ h hp
+                    exact (congrFun (show _ = _ by xperm) h).mp this) B6f
+  have N := cpsBranch_to_cpsNBranch _ _ _ _ _ _ _ B6c
+  -- ADDI x10,x0,6 at base+44 (frame right with x5, so output is x5**x0**x10)
+  have A6 := addi_spec_gen code .x10 .x0 ((0 : Word) + signExtend12 5)
+    (0 : Word) 6 (base + 44) (by nofun) (by nofun) hf11
+  rw [show (base + 44) + 4 = base + 48 from by bv_addr] at A6
+  have A6f := cpsTriple_frame_right code (base + 44) (base + 48) _ _
+    (.x5 ↦ᵣ v5) (pcFree_regIs _ _) A6
+  -- A6f post = x5**x0**x10(=val6), N pre = x5**x0**x10(=val6): exact match
+  have N := cpsTriple_seq_cpsNBranch_with_perm code (base + 44) (base + 48) _ _ _
+    _ (fun _ hp => hp) A6f N
+  -- CS5 through CS1: cascade steps with clean postconditions, identity permutation
+  have CS5 := shr_cascade_step_spec code v5 ((0 : Word) + signExtend12 4)
+    5 124 (base + 36) e5
+    hf9 (by rw [show (base + 36) + 4 = base + 40 from by bv_addr]; exact hf10)
+    (by rw [show (base + 36) + 4 = base + 40 from by bv_addr]; exact he5)
+  rw [show (base + 36) + 8 = base + 44 from by bv_addr] at CS5
+  have N := cpsBranch_cons_cpsNBranch_with_perm code (base + 36) _ _ _ _ _ _
+    _ (fun _ hp => hp) CS5 N
+  have CS4 := shr_cascade_step_spec code v5 ((0 : Word) + signExtend12 3)
+    4 224 (base + 28) e4
+    hf7 (by rw [show (base + 28) + 4 = base + 32 from by bv_addr]; exact hf8)
+    (by rw [show (base + 28) + 4 = base + 32 from by bv_addr]; exact he4)
+  rw [show (base + 28) + 8 = base + 36 from by bv_addr] at CS4
+  have N := cpsBranch_cons_cpsNBranch_with_perm code (base + 28) _ _ _ _ _ _
+    _ (fun _ hp => hp) CS4 N
+  have CS3 := shr_cascade_step_spec code v5 ((0 : Word) + signExtend12 2)
+    3 348 (base + 20) e3
+    hf5 (by rw [show (base + 20) + 4 = base + 24 from by bv_addr]; exact hf6)
+    (by rw [show (base + 20) + 4 = base + 24 from by bv_addr]; exact he3)
+  rw [show (base + 20) + 8 = base + 28 from by bv_addr] at CS3
+  have N := cpsBranch_cons_cpsNBranch_with_perm code (base + 20) _ _ _ _ _ _
+    _ (fun _ hp => hp) CS3 N
+  have CS2 := shr_cascade_step_spec code v5 ((0 : Word) + signExtend12 1)
+    2 496 (base + 12) e2
+    hf3 (by rw [show (base + 12) + 4 = base + 16 from by bv_addr]; exact hf4)
+    (by rw [show (base + 12) + 4 = base + 16 from by bv_addr]; exact he2)
+  rw [show (base + 12) + 8 = base + 20 from by bv_addr] at CS2
+  have N := cpsBranch_cons_cpsNBranch_with_perm code (base + 12) _ _ _ _ _ _
+    _ (fun _ hp => hp) CS2 N
+  have CS1 := shr_cascade_step_spec code v5 v10
+    1 668 (base + 4) e1
+    hf1 (by rw [show (base + 4) + 4 = base + 8 from by bv_addr]; exact hf2)
+    (by rw [show (base + 4) + 4 = base + 8 from by bv_addr]; exact he1)
+  rw [show (base + 4) + 8 = base + 12 from by bv_addr] at CS1
+  have N := cpsBranch_cons_cpsNBranch_with_perm code (base + 4) _ _ _ _ _ _
+    _ (fun _ hp => hp) CS1 N
+  -- BEQ#0 at base: BEQ x5,x0 (no ADDI), frame with x10
+  have B0 := beq_spec_gen code .x5 .x0 864 v5 (0 : Word) base hf0
+  rw [he0] at B0
+  have B0f := cpsBranch_frame_left code base _ _ _ _ _
+    (.x10 ↦ᵣ v10) (pcFree_regIs _ _) B0
+  simp only [sepConj_assoc'] at B0f
+  -- Clean B0: strip pure facts (x5**x0**⌜P⌝**x10 → x5**x0**x10)
+  have B0c := cpsBranch_consequence code base _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10)) _ _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10)) _ _
+    ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+    (fun _ hp => hp)
+    (fun h hp => drop_inner_pure _ _ _ _ h hp)
+    (fun h hp => drop_inner_pure _ _ _ _ h hp) B0f
+  have N := cpsBranch_cons_cpsNBranch_with_perm code base _ _ _ _ _ _
+    _ (fun _ hp => hp) B0c N
+  -- Normalize (0:Word) + signExtend12 k to literal values in exit postconditions
+  simp only [val1, val2, val3, val4, val5, val6] at N
+  exact N
+
+-- ============================================================================
 -- Shift body spec: body_7 (limb_shift=7, 11 instructions)
 -- ============================================================================
 
@@ -2524,5 +2711,572 @@ theorem shr_body_0_spec (code : CodeMem) (sp : Word)
     (fun _ hp => by xperm_hyp hp) c07 JL; clear c07 JL
   exact cpsTriple_consequence code base exit _ _ _ _
     (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) cfull
+
+-- ============================================================================
+-- LW+OR accumulator helper (2 instructions)
+-- ============================================================================
+
+/-- LW x10, off(x12); OR x5, x5, x10:
+    Load a word from memory and OR it into x5. 2 instructions. -/
+theorem shr_lw_or_acc_spec (code : CodeMem) (sp acc prev_x10 val : Word) (off : BitVec 12)
+    (base : Addr)
+    (hf0 : code base = some (.LW .x10 .x12 off))
+    (hf1 : code (base + 4) = some (.OR .x5 .x5 .x10))
+    (hvalid : isValidMemAccess (sp + signExtend12 off) = true) :
+    cpsTriple code base (base + 8)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
+  -- Step 1: LW x10, off(x12)
+  have L := lw_spec_gen code .x10 .x12 sp prev_x10 val off base (by nofun) hf0 hvalid
+  have Lf := cpsTriple_frame_right code base (base + 4) _ _
+    (.x5 ↦ᵣ acc) (pcFree_regIs _ _) L
+  -- Step 2: OR x5, x5, x10
+  have O := or_spec_gen_rd_eq_rs1 code .x5 .x10 acc val (base + 4) (by nofun) (by nofun) hf1
+  rw [show (base + 4) + 4 = base + 8 from by bv_addr] at O
+  have Of := cpsTriple_frame_left code (base + 4) (base + 8) _ _
+    ((.x12 ↦ᵣ sp) ** ((sp + signExtend12 off) ↦ₘ val))
+    (pcFree_sepConj (pcFree_regIs _ _) (pcFree_memIs _ _)) O
+  -- Compose with intermediate permutation, then fix pre/post
+  have comp := cpsTriple_seq_with_perm code base (base + 4) (base + 8) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) Lf Of
+  exact cpsTriple_consequence code base (base + 8) _ _ _ _
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp) comp
+
+-- ============================================================================
+-- Phase A spec: Overflow check (17 instructions, cpsBranch)
+-- ============================================================================
+
+private theorem regIs_to_regOwn (r : Reg) (v : Word) : ∀ h, (r ↦ᵣ v) h → (regOwn r) h :=
+  fun _ hp => ⟨v, hp⟩
+
+set_option maxHeartbeats 6400000 in
+/-- Phase A spec: Check shift >= 256.
+    OR-reduce high limbs (s1|..|s7), BNE to zero_path if nonzero.
+    Then load s0, SLTIU, BEQ to zero_path if s0 >= 256.
+    17 instructions, cpsBranch with 2 exits:
+    - Taken (zero_path): shift >= 256, x5/x10 are regOwn (existential)
+    - Not-taken (base+68): shift < 256, x5=s0, x10 is regOwn -/
+theorem shr_phase_a_spec (code : CodeMem) (sp r5 r10 : Word)
+    (s0 s1 s2 s3 s4 s5 s6 s7 : Word)
+    (base zero_path : Addr)
+    (hf0  : code base = some (.LW .x5 .x12 4))
+    (hf1  : code (base + 4) = some (.LW .x10 .x12 8))
+    (hf2  : code (base + 8) = some (.OR .x5 .x5 .x10))
+    (hf3  : code (base + 12) = some (.LW .x10 .x12 12))
+    (hf4  : code (base + 16) = some (.OR .x5 .x5 .x10))
+    (hf5  : code (base + 20) = some (.LW .x10 .x12 16))
+    (hf6  : code (base + 24) = some (.OR .x5 .x5 .x10))
+    (hf7  : code (base + 28) = some (.LW .x10 .x12 20))
+    (hf8  : code (base + 32) = some (.OR .x5 .x5 .x10))
+    (hf9  : code (base + 36) = some (.LW .x10 .x12 24))
+    (hf10 : code (base + 40) = some (.OR .x5 .x5 .x10))
+    (hf11 : code (base + 44) = some (.LW .x10 .x12 28))
+    (hf12 : code (base + 48) = some (.OR .x5 .x5 .x10))
+    (hf13 : code (base + 52) = some (.BNE .x5 .x0 1120))
+    (hf14 : code (base + 56) = some (.LW .x5 .x12 0))
+    (hf15 : code (base + 60) = some (.SLTIU .x10 .x5 256))
+    (hf16 : code (base + 64) = some (.BEQ .x10 .x0 1108))
+    (hzero : (base + 52) + signExtend13 1120 = zero_path)
+    (hzero2 : (base + 64) + signExtend13 1108 = zero_path)
+    (hvalid : ValidMemRange sp 8) :
+    cpsBranch code base
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+      zero_path
+      ((.x12 ↦ᵣ sp) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+      (base + 68)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) := by
+  -- Memory validity
+  have hv0  := hvalid.fetch 0 sp           (by omega) (by bv_addr)
+  have hv4  := hvalid.fetch 1 (sp + 4)     (by omega) (by bv_addr)
+  have hv8  := hvalid.fetch 2 (sp + 8)     (by omega) (by bv_addr)
+  have hv12 := hvalid.fetch 3 (sp + 12)    (by omega) (by bv_addr)
+  have hv16 := hvalid.fetch 4 (sp + 16)    (by omega) (by bv_addr)
+  have hv20 := hvalid.fetch 5 (sp + 20)    (by omega) (by bv_addr)
+  have hv24 := hvalid.fetch 6 (sp + 24)    (by omega) (by bv_addr)
+  have hv28 := hvalid.fetch 7 (sp + 28)    (by omega) (by bv_addr)
+  -- signExtend12 normalization for memory offsets
+  have se4  : signExtend12 (4  : BitVec 12) = (4  : Word) := by native_decide
+  have se8  : signExtend12 (8  : BitVec 12) = (8  : Word) := by native_decide
+  have se12 : signExtend12 (12 : BitVec 12) = (12 : Word) := by native_decide
+  have se16 : signExtend12 (16 : BitVec 12) = (16 : Word) := by native_decide
+  have se20 : signExtend12 (20 : BitVec 12) = (20 : Word) := by native_decide
+  have se24 : signExtend12 (24 : BitVec 12) = (24 : Word) := by native_decide
+  have se28 : signExtend12 (28 : BitVec 12) = (28 : Word) := by native_decide
+  have se0  : signExtend12 (0  : BitVec 12) = (0  : Word) := by native_decide
+  -- ============ Part 1: LW x5, 4(x12) — load s1 into x5 ============
+  have I0 := lw_spec_gen code .x5 .x12 sp r5 s1 4 base (by nofun) hf0
+    (by rw [se4]; exact hv4)
+  simp only [se4] at I0
+  have I0f := cpsTriple_frame_left code base (base + 4) _ _
+    ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
+     (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) I0
+  -- ============ Part 2: 6 × LW+OR accumulate ============
+  -- Acc step: s2 (offset 8)
+  have A2 := shr_lw_or_acc_spec code sp s1 r10 s2 8 (base + 4) hf1
+    (by rw [show (base + 4) + 4 = base + 8 from by bv_addr]; exact hf2)
+    (by rw [se8]; exact hv8)
+  simp only [se8] at A2
+  rw [show (base + 4) + 8 = base + 12 from by bv_addr] at A2
+  have A2f := cpsTriple_frame_left code (base + 4) (base + 12) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) A2
+  have c01 := cpsTriple_seq_with_perm code base (base + 4) (base + 12) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) I0f A2f
+  -- Acc step: s3 (offset 12)
+  have A3 := shr_lw_or_acc_spec code sp (s1 ||| s2) s2 s3 12 (base + 12) hf3
+    (by rw [show (base + 12) + 4 = base + 16 from by bv_addr]; exact hf4)
+    (by rw [se12]; exact hv12)
+  simp only [se12] at A3
+  rw [show (base + 12) + 8 = base + 20 from by bv_addr] at A3
+  have A3f := cpsTriple_frame_left code (base + 12) (base + 20) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) A3
+  have c02 := cpsTriple_seq_with_perm code base (base + 12) (base + 20) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c01 A3f; clear c01
+  -- Acc step: s4 (offset 16)
+  have A4 := shr_lw_or_acc_spec code sp (s1 ||| s2 ||| s3) s3 s4 16 (base + 20) hf5
+    (by rw [show (base + 20) + 4 = base + 24 from by bv_addr]; exact hf6)
+    (by rw [se16]; exact hv16)
+  simp only [se16] at A4
+  rw [show (base + 20) + 8 = base + 28 from by bv_addr] at A4
+  have A4f := cpsTriple_frame_left code (base + 20) (base + 28) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) A4
+  have c03 := cpsTriple_seq_with_perm code base (base + 20) (base + 28) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c02 A4f; clear c02
+  -- Acc step: s5 (offset 20)
+  have A5 := shr_lw_or_acc_spec code sp (s1 ||| s2 ||| s3 ||| s4) s4 s5 20 (base + 28) hf7
+    (by rw [show (base + 28) + 4 = base + 32 from by bv_addr]; exact hf8)
+    (by rw [se20]; exact hv20)
+  simp only [se20] at A5
+  rw [show (base + 28) + 8 = base + 36 from by bv_addr] at A5
+  have A5f := cpsTriple_frame_left code (base + 28) (base + 36) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) A5
+  have c04 := cpsTriple_seq_with_perm code base (base + 28) (base + 36) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c03 A5f; clear c03
+  -- Acc step: s6 (offset 24)
+  have A6 := shr_lw_or_acc_spec code sp (s1 ||| s2 ||| s3 ||| s4 ||| s5) s5 s6 24 (base + 36) hf9
+    (by rw [show (base + 36) + 4 = base + 40 from by bv_addr]; exact hf10)
+    (by rw [se24]; exact hv24)
+  simp only [se24] at A6
+  rw [show (base + 36) + 8 = base + 44 from by bv_addr] at A6
+  have A6f := cpsTriple_frame_left code (base + 36) (base + 44) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) A6
+  have c05 := cpsTriple_seq_with_perm code base (base + 36) (base + 44) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c04 A6f; clear c04
+  -- Acc step: s7 (offset 28)
+  have A7 := shr_lw_or_acc_spec code sp (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6) s6 s7 28 (base + 44) hf11
+    (by rw [show (base + 44) + 4 = base + 48 from by bv_addr]; exact hf12)
+    (by rw [se28]; exact hv28)
+  simp only [se28] at A7
+  rw [show (base + 44) + 8 = base + 52 from by bv_addr] at A7
+  have A7f := cpsTriple_frame_left code (base + 44) (base + 52) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6))
+    (by pcFree) A7
+  have OR_reduce := cpsTriple_seq_with_perm code base (base + 44) (base + 52) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c05 A7f; clear c05
+  -- ============ Part 3: BNE x5, x0 (branch if high limbs nonzero) ============
+  have BNE := bne_spec_gen code .x5 .x0 1120
+    (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7) (0 : Word) (base + 52) hf13
+  rw [hzero] at BNE
+  rw [show (base + 52) + 4 = base + 56 from by bv_addr] at BNE
+  -- Strip pure assertions from BNE postconditions before framing
+  have BNE_clean := cpsBranch_consequence code (base + 52) _ _ _ _ _ _ _ _
+    (fun _ hp => hp)
+    (fun h hp => sepConj_mono_right (fun h hp => ((sepConj_pure_right _ _ h).mp hp).1) h hp)
+    (fun h hp => sepConj_mono_right (fun h hp => ((sepConj_pure_right _ _ h).mp hp).1) h hp)
+    BNE
+  -- Fix lambda wrappers via change (eta-reduce)
+  change cpsBranch code (base + 52)
+    ((.x5 ↦ᵣ (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7)) ** (.x0 ↦ᵣ (0 : Word)))
+    zero_path
+    ((.x5 ↦ᵣ (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7)) ** (.x0 ↦ᵣ (0 : Word)))
+    (base + 56)
+    ((.x5 ↦ᵣ (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7)) ** (.x0 ↦ᵣ (0 : Word)))
+    at BNE_clean
+  have BNEf := cpsBranch_frame_left code (base + 52) _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ s7) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) BNE_clean
+  simp only [sepConj_assoc'] at BNEf
+  -- Compose OR_reduce + BNE → cpsBranch(base → zero_path | base+56) = BR1
+  have BR1 := cpsTriple_seq_cpsBranch_with_perm code base (base + 52)
+    _ _ _ _ _ _ _ (fun _ hp => by xperm_hyp hp) OR_reduce BNEf; clear OR_reduce
+  -- ============ Part 4: LW x5, 0(x12); SLTIU x10; BEQ ============
+  have L0 := lw_spec_gen code .x5 .x12 sp
+    (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7) s0 0 (base + 56) (by nofun) hf14
+    (by rw [se0]; rw [show sp + (0 : Word) = sp from by bv_addr]; exact hv0)
+  simp only [se0] at L0
+  rw [show sp + (0 : Word) = sp from by bv_addr] at L0
+  rw [show (base + 56) + 4 = base + 60 from by bv_addr] at L0
+  have SL := sltiu_spec_gen code .x10 .x5 s7 s0 256 (base + 60) (by nofun) (by nofun) hf15
+  rw [show (base + 60) + 4 = base + 64 from by bv_addr] at SL
+  -- Frame L0 with (x10↦s7) to prepare for composition
+  have L0f := cpsTriple_frame_left code (base + 56) (base + 60) _ _
+    (.x10 ↦ᵣ s7) (by pcFree) L0
+  simp only [sepConj_assoc'] at L0f
+  -- Frame SL with (x12↦sp) ** (sp↦ₘ s0)
+  have SLf := cpsTriple_frame_left code (base + 60) (base + 64) _ _
+    ((.x12 ↦ᵣ sp) ** (sp ↦ₘ s0)) (by pcFree) SL
+  simp only [sepConj_assoc'] at SLf
+  -- Compose L0f + SLf
+  have LS := cpsTriple_seq_with_perm code (base + 56) (base + 60) (base + 64) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) L0f SLf
+  -- Frame LS with remaining memory/regs
+  have LSf := cpsTriple_frame_left code (base + 56) (base + 64) _ _
+    ((.x0 ↦ᵣ (0 : Word)) **
+     ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) LS
+  simp only [sepConj_assoc'] at LSf
+  let sltiu_result := if BitVec.ult s0 (signExtend12 (256 : BitVec 12)) then (1 : Word) else (0 : Word)
+  have BEQ := beq_spec_gen code .x10 .x0 1108 sltiu_result (0 : Word) (base + 64) hf16
+  rw [hzero2] at BEQ
+  rw [show (base + 64) + 4 = base + 68 from by bv_addr] at BEQ
+  -- Strip pure assertions from BEQ postconditions before framing
+  have BEQ_clean := cpsBranch_consequence code (base + 64) _ _ _ _ _ _ _ _
+    (fun _ hp => hp)
+    (fun h hp => sepConj_mono_right (fun h hp => ((sepConj_pure_right _ _ h).mp hp).1) h hp)
+    (fun h hp => sepConj_mono_right (fun h hp => ((sepConj_pure_right _ _ h).mp hp).1) h hp)
+    BEQ
+  -- Fix lambda wrappers via change (eta-reduce)
+  change cpsBranch code (base + 64)
+    ((.x10 ↦ᵣ sltiu_result) ** (.x0 ↦ᵣ (0 : Word)))
+    zero_path
+    ((.x10 ↦ᵣ sltiu_result) ** (.x0 ↦ᵣ (0 : Word)))
+    (base + 68)
+    ((.x10 ↦ᵣ sltiu_result) ** (.x0 ↦ᵣ (0 : Word)))
+    at BEQ_clean
+  have BEQf := cpsBranch_frame_left code (base + 64) _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) BEQ_clean
+  simp only [sepConj_assoc'] at BEQf
+  -- Compose LSf + BEQ → cpsBranch(base+56 → zero_path | base+68) = BR2
+  have BR2 := cpsTriple_seq_cpsBranch_with_perm code (base + 56) (base + 64)
+    _ _ _ _ _ _ _ (fun _ hp => by xperm_hyp hp) LSf BEQf; clear LSf
+  -- ============ Part 5: Combine BR1 + BR2 → cpsBranch(base → zero_path | base+68) ============
+  -- Helpers: convert regIs to regOwn in taken postconditions (flat chains, no pure)
+  have ht1 : ∀ h,
+      ((.x5 ↦ᵣ (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7)) **
+       (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ s7) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) h →
+      ((.x12 ↦ᵣ sp) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) h := by
+    intro h hp
+    have hp' := sepConj_mono_left (regIs_to_regOwn .x5 _) h hp
+    have hp'' := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+      (sepConj_mono_left (regIs_to_regOwn .x10 _)))) h hp'
+    exact (congrFun (show _ = _ by xperm) h).mp hp''
+  have ht2 : ∀ h,
+      ((.x10 ↦ᵣ sltiu_result) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) h →
+      ((.x12 ↦ᵣ sp) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) h := by
+    intro h hp
+    have hp' := sepConj_mono_left (regIs_to_regOwn .x10 _) h hp
+    have hp'' := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+      (sepConj_mono_left (regIs_to_regOwn .x5 _)))) h hp'
+    exact (congrFun (show _ = _ by xperm) h).mp hp''
+  -- Combine BR1 + BR2 with permutation between fallthrough and BR2 precondition
+  have combined := cpsBranch_seq_cpsBranch_with_perm code base (base + 56)
+    zero_path (base + 68) _ _ _ _ _ _ _
+    BR1 (fun h hp => by xperm_hyp hp) BR2 ht1 ht2
+  -- Final adjustment: permute precondition and convert BR2 fallthrough to desired form
+  exact cpsBranch_consequence code base _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) (fun _ hp => hp)
+    (fun h hp => by
+      have hp' := sepConj_mono_left (regIs_to_regOwn .x10 _) h hp
+      exact (congrFun (show _ = _ by xperm) h).mp hp')
+    combined
+
+-- ============================================================================
+-- shr256: 256-bit shift right semantic definition
+-- ============================================================================
+
+/-- 256-bit shift right: if shift >= 256 then 0 else value >>> shift.toNat. -/
+def shr256 (shift value : EvmWord) : EvmWord :=
+  if shift.toNat ≥ 256 then 0 else value >>> shift.toNat
+
+-- ============================================================================
+-- Full composition: evm_shr_spec
+-- ============================================================================
+
+/-- Helper: convert memIs to memOwn. -/
+private theorem memIs_to_memOwn (a : Addr) (v : Word) : ∀ h, (a ↦ₘ v) h → (memOwn a) h :=
+  fun _ hp => ⟨v, hp⟩
+
+/-- Weaken zero path postcondition: convert concrete regs to regOwn, concrete mems to memOwn. -/
+private theorem weaken_zp_post (sp : Addr) (r6 r7 r11 : Word)
+    (s0 s1 s2 s3 s4 s5 s6 s7 : Word) : ∀ h,
+    ((.x12 ↦ᵣ (sp + 32)) **
+     ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 36) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 44) ↦ₘ (0 : Word)) **
+     ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 52) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)) ** ((sp + 60) ↦ₘ (0 : Word)) **
+     (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+     (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) h →
+    ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) ** (regOwn .x7) **
+     (regOwn .x10) ** (regOwn .x11) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7) **
+     (memOwn (sp + 32)) ** (memOwn (sp + 36)) ** (memOwn (sp + 40)) ** (memOwn (sp + 44)) **
+     (memOwn (sp + 48)) ** (memOwn (sp + 52)) ** (memOwn (sp + 56)) ** (memOwn (sp + 60))) h := by
+  intro h hp
+  -- Step 1: Permute to move items-to-weaken to the front
+  have hp' := (congrFun (show _ =
+    ((.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
+    ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 36) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 44) ↦ₘ (0 : Word)) **
+    ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 52) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)) ** ((sp + 60) ↦ₘ (0 : Word)) **
+    (.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+    (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+    ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    from by xperm) h).mp hp
+  -- Step 2: Weaken positions 0-10 (left to right)
+  have w0 := sepConj_mono_left (regIs_to_regOwn .x6 r6) h hp'
+  have w1 := sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn .x7 r7)) h w0
+  have w2 := sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (regIs_to_regOwn .x11 r11))) h w1
+  have w3 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 32) 0)))) h w2
+  have w4 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 36) 0))))) h w3
+  have w5 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 40) 0)))))) h w4
+  have w6 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 44) 0))))))) h w5
+  have w7 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 48) 0)))))))) h w6
+  have w8 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 52) 0))))))))) h w7
+  have w9 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 56) 0)))))))))) h w8
+  have w10 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+    (sepConj_mono_left (memIs_to_memOwn (sp + 60) 0))))))))))) h w9
+  -- Step 3: Permute to target order
+  exact (congrFun (show _ = _ by xperm) h).mp w10
+
+set_option maxHeartbeats 12800000 in
+set_option maxRecDepth 2048 in
+/-- Full spec for the 256-bit EVM SHR program.
+    SHR(shift, value) = value >> shift. 302 instructions.
+    Pops shift (sp) and value (sp+32), pushes result (sp+32), advances sp by 32.
+    Shift limbs at sp..sp+28 are preserved.
+    Result limbs at sp+32..sp+60 are overwritten. -/
+theorem evm_shr_spec (code : CodeMem) (sp base : Addr)
+    (s0 s1 s2 s3 s4 s5 s6 s7 : Word)
+    (v0 v1 v2 v3 v4 v5 v6 v7 : Word)
+    (r5 r6 r7 r10 r11 : Word)
+    (hcode : ProgramAt code base evm_shr)
+    (hvS : ValidMemRange sp 8) (hvV : ValidMemRange (sp + 32) 8) :
+    let exit := base + 1208
+    cpsTriple code base exit
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) **
+       (.x10 ↦ᵣ r10) ** (.x11 ↦ᵣ r11) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7) **
+       ((sp + 32) ↦ₘ v0) ** ((sp + 36) ↦ₘ v1) ** ((sp + 40) ↦ₘ v2) ** ((sp + 44) ↦ₘ v3) **
+       ((sp + 48) ↦ₘ v4) ** ((sp + 52) ↦ₘ v5) ** ((sp + 56) ↦ₘ v6) ** ((sp + 60) ↦ₘ v7))
+      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) ** (regOwn .x7) **
+       (regOwn .x10) ** (regOwn .x11) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+       ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7) **
+       (memOwn (sp + 32)) ** (memOwn (sp + 36)) ** (memOwn (sp + 40)) ** (memOwn (sp + 44)) **
+       (memOwn (sp + 48)) ** (memOwn (sp + 52)) ** (memOwn (sp + 56)) ** (memOwn (sp + 60))) := by
+  simp only
+  -- ============ Step 1: Split ProgramAt into sub-programs ============
+  -- Unfold evm_shr to expose the ++ chain of sub-programs
+  unfold evm_shr at hcode; simp only [seq] at hcode
+  -- Split Phase A (17 instrs at base)
+  have hA_prog := hcode.prefix
+  have hcode1 := hcode.suffix
+  have : shr_phase_a.length = 17 := by native_decide
+  simp only [this, show 4 * 17 = 68 from by omega] at hcode1
+  -- Split Phase B (7 instrs at base+68)
+  have hB_prog := hcode1.prefix
+  have hcode2 := hcode1.suffix
+  have : shr_phase_b.length = 7 := by native_decide
+  simp only [this, show 4 * 7 = 28 from by omega] at hcode2
+  -- hcode2 at base + 68 + 28 = base + 96
+  rw [show base + BitVec.ofNat 32 68 + BitVec.ofNat 32 28 = base + 96 from by bv_addr] at hcode2
+  -- Split Phase C (13 instrs at base+96)
+  have hC_prog := hcode2.prefix
+  have hcode3 := hcode2.suffix
+  have : shr_phase_c.length = 13 := by native_decide
+  simp only [this, show 4 * 13 = 52 from by omega] at hcode3
+  rw [show base + 96 + BitVec.ofNat 32 52 = base + 148 from by bv_addr] at hcode3
+  -- Split Body 7 (11 instrs at base+148)
+  have h7_prog := hcode3.prefix
+  have hcode4 := hcode3.suffix
+  have : shr_body_7.length = 11 := by native_decide
+  simp only [this, show 4 * 11 = 44 from by omega] at hcode4
+  rw [show base + 148 + BitVec.ofNat 32 44 = base + 192 from by bv_addr] at hcode4
+  -- Split Body 6 (17 instrs at base+192)
+  have h6_prog := hcode4.prefix
+  have hcode5 := hcode4.suffix
+  have : shr_body_6.length = 17 := by native_decide
+  simp only [this, show 4 * 17 = 68 from by omega] at hcode5
+  rw [show base + 192 + BitVec.ofNat 32 68 = base + 260 from by bv_addr] at hcode5
+  -- Split Body 5 (23 instrs at base+260)
+  have h5_prog := hcode5.prefix
+  have hcode6 := hcode5.suffix
+  have : shr_body_5.length = 23 := by native_decide
+  simp only [this, show 4 * 23 = 92 from by omega] at hcode6
+  rw [show base + 260 + BitVec.ofNat 32 92 = base + 352 from by bv_addr] at hcode6
+  -- Split Body 4 (29 instrs at base+352)
+  have h4_prog := hcode6.prefix
+  have hcode7 := hcode6.suffix
+  have : shr_body_4.length = 29 := by native_decide
+  simp only [this, show 4 * 29 = 116 from by omega] at hcode7
+  rw [show base + 352 + BitVec.ofNat 32 116 = base + 468 from by bv_addr] at hcode7
+  -- Split Body 3 (35 instrs at base+468)
+  have h3_prog := hcode7.prefix
+  have hcode8 := hcode7.suffix
+  have : shr_body_3.length = 35 := by native_decide
+  simp only [this, show 4 * 35 = 140 from by omega] at hcode8
+  rw [show base + 468 + BitVec.ofNat 32 140 = base + 608 from by bv_addr] at hcode8
+  -- Split Body 2 (41 instrs at base+608)
+  have h2_prog := hcode8.prefix
+  have hcode9 := hcode8.suffix
+  have : shr_body_2.length = 41 := by native_decide
+  simp only [this, show 4 * 41 = 164 from by omega] at hcode9
+  rw [show base + 608 + BitVec.ofNat 32 164 = base + 772 from by bv_addr] at hcode9
+  -- Split Body 1 (47 instrs at base+772)
+  have h1_prog := hcode9.prefix
+  have hcode10 := hcode9.suffix
+  have : shr_body_1.length = 47 := by native_decide
+  simp only [this, show 4 * 47 = 188 from by omega] at hcode10
+  rw [show base + 772 + BitVec.ofNat 32 188 = base + 960 from by bv_addr] at hcode10
+  -- Split Body 0 (53 instrs at base+960)
+  have h0_prog := hcode10.prefix
+  have hZP_prog := hcode10.suffix
+  have : shr_body_0.length = 53 := by native_decide
+  simp only [this, show 4 * 53 = 212 from by omega] at hZP_prog
+  rw [show base + 960 + BitVec.ofNat 32 212 = base + 1172 from by bv_addr] at hZP_prog
+  -- hZP_prog : ProgramAt code (base + 1172) shr_zero_path
+  -- ============ Step 2: Apply Phase A spec ============
+  -- Extract 17 instruction hypotheses from hA_prog
+  have hA0  := hA_prog.fetch 0  base          (.LW .x5 .x12 4)      (by native_decide) (by native_decide) (by bv_addr)
+  have hA1  := hA_prog.fetch 1  (base + 4)    (.LW .x10 .x12 8)     (by native_decide) (by native_decide) (by bv_addr)
+  have hA2  := hA_prog.fetch 2  (base + 8)    (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA3  := hA_prog.fetch 3  (base + 12)   (.LW .x10 .x12 12)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA4  := hA_prog.fetch 4  (base + 16)   (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA5  := hA_prog.fetch 5  (base + 20)   (.LW .x10 .x12 16)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA6  := hA_prog.fetch 6  (base + 24)   (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA7  := hA_prog.fetch 7  (base + 28)   (.LW .x10 .x12 20)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA8  := hA_prog.fetch 8  (base + 32)   (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA9  := hA_prog.fetch 9  (base + 36)   (.LW .x10 .x12 24)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA10 := hA_prog.fetch 10 (base + 40)   (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA11 := hA_prog.fetch 11 (base + 44)   (.LW .x10 .x12 28)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA12 := hA_prog.fetch 12 (base + 48)   (.OR .x5 .x5 .x10)    (by native_decide) (by native_decide) (by bv_addr)
+  have hA13 := hA_prog.fetch 13 (base + 52)   (.BNE .x5 .x0 1120)   (by native_decide) (by native_decide) (by bv_addr)
+  have hA14 := hA_prog.fetch 14 (base + 56)   (.LW .x5 .x12 0)      (by native_decide) (by native_decide) (by bv_addr)
+  have hA15 := hA_prog.fetch 15 (base + 60)   (.SLTIU .x10 .x5 256)  (by native_decide) (by native_decide) (by bv_addr)
+  have hA16 := hA_prog.fetch 16 (base + 64)   (.BEQ .x10 .x0 1108)  (by native_decide) (by native_decide) (by bv_addr)
+  -- Apply Phase A spec (cpsBranch)
+  have phaseA := shr_phase_a_spec code sp r5 r10 s0 s1 s2 s3 s4 s5 s6 s7
+    base (base + 1172)
+    hA0 hA1 hA2 hA3 hA4 hA5 hA6 hA7 hA8 hA9 hA10 hA11 hA12
+    hA13 hA14 hA15 hA16
+    (by rw [show signExtend13 (1120 : BitVec 13) = (1120 : BitVec 32) from by native_decide]; bv_addr)
+    (by rw [show signExtend13 (1108 : BitVec 13) = (1108 : BitVec 32) from by native_decide]; bv_addr)
+    hvS
+  -- Frame Phase A with {x6, x7, x11, value_mem}
+  have phaseAf := cpsBranch_frame_left code base _ _ _ _ _
+    ((.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
+     ((sp + 32) ↦ₘ v0) ** ((sp + 36) ↦ₘ v1) ** ((sp + 40) ↦ₘ v2) ** ((sp + 44) ↦ₘ v3) **
+     ((sp + 48) ↦ₘ v4) ** ((sp + 52) ↦ₘ v5) ** ((sp + 56) ↦ₘ v6) ** ((sp + 60) ↦ₘ v7))
+    (by pcFree) phaseA
+  simp only [sepConj_assoc'] at phaseAf
+  -- ============ Step 3: Zero path (taken path) ============
+  -- Extract 9 instruction hypotheses for zero path
+  have hZ0 := hZP_prog.fetch 0  (base + 1172)          (.ADDI .x12 .x12 32)  (by native_decide) (by native_decide) (by bv_addr)
+  have hZ1 := hZP_prog.fetch 1  ((base + 1172) + 4)   (.SW .x12 .x0 0)      (by native_decide) (by native_decide) (by bv_addr)
+  have hZ2 := hZP_prog.fetch 2  ((base + 1172) + 8)   (.SW .x12 .x0 4)      (by native_decide) (by native_decide) (by bv_addr)
+  have hZ3 := hZP_prog.fetch 3  ((base + 1172) + 12)  (.SW .x12 .x0 8)      (by native_decide) (by native_decide) (by bv_addr)
+  have hZ4 := hZP_prog.fetch 4  ((base + 1172) + 16)  (.SW .x12 .x0 12)     (by native_decide) (by native_decide) (by bv_addr)
+  have hZ5 := hZP_prog.fetch 5  ((base + 1172) + 20)  (.SW .x12 .x0 16)     (by native_decide) (by native_decide) (by bv_addr)
+  have hZ6 := hZP_prog.fetch 6  ((base + 1172) + 24)  (.SW .x12 .x0 20)     (by native_decide) (by native_decide) (by bv_addr)
+  have hZ7 := hZP_prog.fetch 7  ((base + 1172) + 28)  (.SW .x12 .x0 24)     (by native_decide) (by native_decide) (by bv_addr)
+  have hZ8 := hZP_prog.fetch 8  ((base + 1172) + 32)  (.SW .x12 .x0 28)     (by native_decide) (by native_decide) (by bv_addr)
+  -- Apply zero path spec: x12=sp → x12=sp+32, zeros all value limbs
+  have zeroPath := shr_zero_path_spec code sp v0 v1 v2 v3 v4 v5 v6 v7
+    (base + 1172) hZ0 hZ1 hZ2 hZ3 hZ4 hZ5 hZ6 hZ7 hZ8 hvV
+  rw [show (base + 1172) + 36 = base + 1208 from by bv_addr] at zeroPath
+  -- Frame zero path with {regOwn x5, x0, regOwn x10, shift_mem, x6, x7, x11}
+  have zeroPathF := cpsTriple_frame_left code (base + 1172) (base + 1208) _ _
+    ((regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+     (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7))
+    (by pcFree) zeroPath
+  simp only [sepConj_assoc'] at zeroPathF
+  -- Normalize addresses: sp + 32 + k → sp + (32 + k)
+  rw [show (sp + 32 : Addr) + 4 = sp + 36 from by bv_addr,
+      show (sp + 32 : Addr) + 8 = sp + 40 from by bv_addr,
+      show (sp + 32 : Addr) + 12 = sp + 44 from by bv_addr,
+      show (sp + 32 : Addr) + 16 = sp + 48 from by bv_addr,
+      show (sp + 32 : Addr) + 20 = sp + 52 from by bv_addr,
+      show (sp + 32 : Addr) + 24 = sp + 56 from by bv_addr,
+      show (sp + 32 : Addr) + 28 = sp + 60 from by bv_addr] at zeroPathF
+  -- ============ Step 4: Normal path (not-taken path) ============
+  -- This composes Phase B + Phase C + all 8 bodies into a single cpsTriple
+  -- from base+68 to base+1208.
+  have normalPath : cpsTriple code (base + 68) (base + 1208)
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7) **
+     (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
+     ((sp + 32) ↦ₘ v0) ** ((sp + 36) ↦ₘ v1) ** ((sp + 40) ↦ₘ v2) ** ((sp + 44) ↦ₘ v3) **
+     ((sp + 48) ↦ₘ v4) ** ((sp + 52) ↦ₘ v5) ** ((sp + 56) ↦ₘ v6) ** ((sp + 60) ↦ₘ v7))
+    ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) ** (regOwn .x7) **
+     (regOwn .x10) ** (regOwn .x11) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
+     ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7) **
+     (memOwn (sp + 32)) ** (memOwn (sp + 36)) ** (memOwn (sp + 40)) ** (memOwn (sp + 44)) **
+     (memOwn (sp + 48)) ** (memOwn (sp + 52)) ** (memOwn (sp + 56)) ** (memOwn (sp + 60))) := by
+    sorry
+  -- ============ Step 5: Merge Phase A + zero path + normal path ============
+  -- Convert zeroPathF postcondition to target (regOwn + memOwn)
+  have zeroPathR := cpsTriple_consequence code (base + 1172) (base + 1208) _ _ _ _
+    (fun _ hp => hp) (weaken_zp_post sp r6 r7 r11 s0 s1 s2 s3 s4 s5 s6 s7) zeroPathF
+  -- Apply cpsBranch_merge
+  exact cpsBranch_merge code base (base + 1172) (base + 68) (base + 1208)
+    _ _ _ _
+    (cpsBranch_consequence code base _ _ _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp) (fun _ hp => hp) phaseAf)
+    zeroPathR
+    (cpsTriple_consequence code (base + 68) (base + 1208) _ _ _ _
+      (fun _ hp => hp) (fun _ hp => hp) normalPath)
 
 end EvmAsm
