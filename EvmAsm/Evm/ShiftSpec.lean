@@ -541,6 +541,113 @@ theorem shr_zero_path_spec (code : CodeMem) (sp : Word)
     (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) cfull
 
 -- ============================================================================
+-- Phase B spec: Extract parameters (7 instructions)
+-- ============================================================================
+
+set_option maxHeartbeats 1600000 in
+/-- Phase B spec: Extract bit_shift, limb_shift, mask, anti_shift from shift0.
+    ANDI x6,x5,31; SRLI x5,x5,5; SLTU x11,x0,x6; SUB x11,x0,x11;
+    LI x7,32; SUB x7,x7,x6; ADDI x12,x12,32.
+    Requires .x0 ↦ᵣ 0 for SLTU and SUB instructions using x0. -/
+theorem shr_phase_b_spec (code : CodeMem) (shift0 sp r6 r7 r11 : Word) (base : Addr)
+    (hf0 : code base = some (.ANDI .x6 .x5 31))
+    (hf1 : code (base + 4) = some (.SRLI .x5 .x5 5))
+    (hf2 : code (base + 8) = some (.SLTU .x11 .x0 .x6))
+    (hf3 : code (base + 12) = some (.SUB .x11 .x0 .x11))
+    (hf4 : code (base + 16) = some (.LI .x7 32))
+    (hf5 : code (base + 20) = some (.SUB .x7 .x7 .x6))
+    (hf6 : code (base + 24) = some (.ADDI .x12 .x12 32)) :
+    let bit_shift := shift0 &&& signExtend12 31
+    let limb_shift := shift0 >>> (5 : BitVec 5).toNat
+    let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
+    let mask := (0 : Word) - cond
+    let anti_shift := (32 : Word) - bit_shift
+    cpsTriple code base (base + 28)
+      ((.x5 ↦ᵣ shift0) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+      ((.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ anti_shift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) := by
+  simp only
+  -- Address normalization
+  have h48 : base + 4 + 4 = base + 8 := by bv_addr
+  have h812 : base + 8 + 4 = base + 12 := by bv_addr
+  have h1216 : base + 12 + 4 = base + 16 := by bv_addr
+  have h1620 : base + 16 + 4 = base + 20 := by bv_addr
+  have h2024 : base + 20 + 4 = base + 24 := by bv_addr
+  have h2428 : base + 24 + 4 = base + 28 := by bv_addr
+  -- Step 1: ANDI x6, x5, 31 — x6 = shift0 & 31
+  have s1 := andi_spec_gen code .x6 .x5 r6 shift0 31 base (by nofun) (by nofun) hf0
+  have s1f := cpsTriple_frame_left code base (base + 4) _ _
+    ((.x0 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s1
+  -- Step 2: SRLI x5, x5, 5 — x5 = shift0 >>> 5
+  have s2 := srli_spec_gen_same code .x5 shift0 5 (base + 4) (by nofun) hf1
+  rw [h48] at s2
+  have s2f := cpsTriple_frame_left code (base + 4) (base + 8) _ _
+    ((.x6 ↦ᵣ (shift0 &&& signExtend12 31)) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s2
+  -- Step 3: SLTU x11, x0, x6 — x11 = (0 < bit_shift ? 1 : 0)
+  have s3 := sltu_spec_gen code .x11 .x0 .x6 r11 (0 : Word)
+    (shift0 &&& signExtend12 31) (base + 8) (by nofun) hf2
+  rw [h812] at s3
+  have s3f := cpsTriple_frame_left code (base + 8) (base + 12) _ _
+    ((.x5 ↦ᵣ (shift0 >>> (5 : BitVec 5).toNat)) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s3
+  -- Step 4: SUB x11, x0, x11 — x11 = 0 - cond = mask
+  have s4 := sub_spec_gen_rd_eq_rs2 code .x11 .x0 (0 : Word)
+    (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 31) then (1 : Word) else 0)
+    (base + 12) (by nofun) (by nofun) hf3
+  rw [h1216] at s4
+  have s4f := cpsTriple_frame_left code (base + 12) (base + 16) _ _
+    ((.x5 ↦ᵣ (shift0 >>> (5 : BitVec 5).toNat)) **
+     (.x6 ↦ᵣ (shift0 &&& signExtend12 31)) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s4
+  -- Step 5: LI x7, 32
+  have s5 := li_spec_gen code .x7 r7 (32 : Word) (base + 16) (by nofun) hf4
+  rw [h1620] at s5
+  have s5f := cpsTriple_frame_left code (base + 16) (base + 20) _ _
+    ((.x5 ↦ᵣ (shift0 >>> (5 : BitVec 5).toNat)) **
+     (.x6 ↦ᵣ (shift0 &&& signExtend12 31)) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x11 ↦ᵣ ((0 : Word) - (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 31)
+       then (1 : Word) else 0))) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s5
+  -- Step 6: SUB x7, x7, x6 — x7 = 32 - bit_shift
+  have s6 := sub_spec_gen_rd_eq_rs1 code .x7 .x6 (32 : Word)
+    (shift0 &&& signExtend12 31) (base + 20) (by nofun) (by nofun) hf5
+  rw [h2024] at s6
+  have s6f := cpsTriple_frame_left code (base + 20) (base + 24) _ _
+    ((.x5 ↦ᵣ (shift0 >>> (5 : BitVec 5).toNat)) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x11 ↦ᵣ ((0 : Word) - (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 31)
+       then (1 : Word) else 0))) ** (.x12 ↦ᵣ sp))
+    (by pcFree) s6
+  -- Step 7: ADDI x12, x12, 32 — pop shift word
+  have s7 := addi_spec_gen_same code .x12 sp 32 (base + 24) (by nofun) hf6
+  rw [h2428] at s7
+  have s7f := cpsTriple_frame_left code (base + 24) (base + 28) _ _
+    ((.x5 ↦ᵣ (shift0 >>> (5 : BitVec 5).toNat)) **
+     (.x6 ↦ᵣ (shift0 &&& signExtend12 31)) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x11 ↦ᵣ ((0 : Word) - (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 31)
+       then (1 : Word) else 0))) **
+     (.x7 ↦ᵣ ((32 : Word) - (shift0 &&& signExtend12 31))))
+    (by pcFree) s7
+  -- Compose all steps
+  have c12 := cpsTriple_seq_with_perm code base (base + 4) (base + 8) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) s1f s2f; clear s1f s2f
+  have c13 := cpsTriple_seq_with_perm code base (base + 8) (base + 12) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c12 s3f; clear c12 s3f
+  have c14 := cpsTriple_seq_with_perm code base (base + 12) (base + 16) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c13 s4f; clear c13 s4f
+  have c15 := cpsTriple_seq_with_perm code base (base + 16) (base + 20) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c14 s5f; clear c14 s5f
+  have c16 := cpsTriple_seq_with_perm code base (base + 20) (base + 24) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c15 s6f; clear c15 s6f
+  have c17 := cpsTriple_seq_with_perm code base (base + 24) (base + 28) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) c16 s7f; clear c16 s7f
+  exact cpsTriple_consequence code base (base + 28) _ _ _ _
+    (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) c17
+
+-- ============================================================================
 -- Shift body spec: body_7 (limb_shift=7, 11 instructions)
 -- ============================================================================
 
