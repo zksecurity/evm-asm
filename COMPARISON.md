@@ -1,5 +1,11 @@
 # EVM Opcode Assembly Comparison: evm-asm vs Compiled Rust (ethrex-style)
 
+> **Disclaimer**: This research was conducted entirely by Claude Code (Opus 4.6). The
+> methodology, instruction counts, analysis, and conclusions have **not been independently
+> validated by a third party**. Instruction counts were derived from automated parsing of
+> compiler-emitted assembly and manual reading of Lean 4 program definitions. Readers
+> should verify critical numbers against the source material before relying on them.
+
 ## Overview
 
 This document compares hand-written RISC-V assembly for EVM opcodes (evm-asm) against
