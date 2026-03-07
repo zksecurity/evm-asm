@@ -82,6 +82,135 @@ private partial def inlineLets : Expr → Expr
       | _ => e
     else e
 
+-- ============================================================================
+-- Section: Address Normalization for Sub-Spec Composition
+-- ============================================================================
+
+/-- Check if an expression is a numeric literal (OfNat.ofNat _ n _) and return n. -/
+private def getBvLitVal? (e : Expr) : Option Nat :=
+  if e.isAppOfArity ``OfNat.ofNat 3 then
+    match e.getAppArgs[1]! with
+    | .lit (.natVal n) => some n
+    | _ => none
+  else none
+
+/-- Prove `old = new` via `bv_omega`. Returns `none` on failure. -/
+private def proveBvEq (old new_ : Expr) : MetaM (Option Expr) := do
+  if ← withoutModifyingState (isDefEq old new_) then
+    return some (← mkEqRefl old)
+  let eqMVar ← mkFreshExprMVar (← mkEq old new_)
+  try
+    let stx ← `(tactic| bv_omega)
+    let _ ← Lean.Elab.runTactic eqMVar.mvarId! stx
+    return some (← instantiateMVars eqMVar)
+  catch _ => return none
+
+/-- Prove `old = new` via `native_decide`. Returns `none` on failure. -/
+private def proveByNativeDecide (old new_ : Expr) : MetaM (Option Expr) := do
+  let eqMVar ← mkFreshExprMVar (← mkEq old new_)
+  try
+    let stx ← `(tactic| native_decide)
+    let _ ← Lean.Elab.runTactic eqMVar.mvarId! stx
+    return some (← instantiateMVars eqMVar)
+  catch _ => return none
+
+/-- Try to simplify a fully-recursed expression at the top level:
+    - `signExtend12 N` (concrete N) → numeric literal
+    - `e + 0` → `e`
+    - `(a + lit₁) + lit₂` → `a + (lit₁ + lit₂)` -/
+private def trySimplifyTop (e : Expr) : MetaM (Expr × Option Expr) := do
+  -- signExtend12 on concrete literal
+  if e.isAppOfArity ``EvmAsm.signExtend12 1 then
+    let arg := e.getAppArgs[0]!
+    if let some argVal := getBvLitVal? arg then
+      let n12 := argVal % 4096
+      let signExtVal := if n12 < 2048 then n12 else n12 + (2^32 - 4096)
+      let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+      let resultExpr ← mkNumeral bv32 signExtVal
+      if let some pf ← proveByNativeDecide e resultExpr then
+        return (resultExpr, some pf)
+      if let some pf ← proveBvEq e resultExpr then
+        return (resultExpr, some pf)
+  -- Address arithmetic at BitVec type
+  if e.isAppOfArity ``HAdd.hAdd 6 then
+    let args := e.getAppArgs
+    let lhs := args[4]!
+    let rhs := args[5]!
+    let eTy ← inferType e
+    if (← whnf eTy).isAppOfArity ``BitVec 1 then
+      -- e + 0 → e
+      if getBvLitVal? rhs == some 0 then
+        if let some pf ← proveBvEq e lhs then
+          return (lhs, some pf)
+      -- (a + lit₁) + lit₂ → a + (lit₁ + lit₂)
+      if let some rhsVal := getBvLitVal? rhs then
+        if lhs.isAppOfArity ``HAdd.hAdd 6 then
+          let lhsArgs := lhs.getAppArgs
+          let b := lhsArgs[5]!
+          if let some bVal := getBvLitVal? b then
+            let a := lhsArgs[4]!
+            let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+            let sumLit ← mkNumeral bv32 (bVal + rhsVal)
+            let result ← mkAppM ``HAdd.hAdd #[a, sumLit]
+            if let some pf ← proveBvEq e result then
+              return (result, some pf)
+  return (e, none)
+
+/-- Bottom-up normalization walk on a cpsTriple type expression.
+    First recurses into `.app` sub-expressions, then tries top-level simplifications.
+    This ensures `signExtend12 0` is reduced to `0` before `sp + 0 → sp` is checked.
+
+    Returns (normalized_expr, proof : original = normalized) or (original, none). -/
+private partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
+  -- 1. Recurse into .app sub-expressions first (bottom-up)
+  let (e', childPf?) ← match e with
+    | .app f a => do
+      let (f', fPf?) ← normalizeTypeAddrs f
+      let (a', aPf?) ← normalizeTypeAddrs a
+      if fPf?.isNone && aPf?.isNone then Pure.pure (e, none)
+      else
+        let new_ := Expr.app f' a'
+        let pf ← match fPf?, aPf? with
+          | some fPf, some aPf => mkCongr fPf aPf
+          | some fPf, none => mkCongrFun fPf a
+          | none, some aPf => mkCongrArg f aPf
+          | none, none => unreachable!
+        Pure.pure (new_, some pf)
+    | _ => Pure.pure (e, none)
+  -- 2. Try top-level simplifications on the (possibly modified) expression
+  let (e'', topPf?) ← trySimplifyTop e'
+  -- 3. If top-level simplified, try again (e.g., after (a+b)+c → a+(b+c), check a+(b+c)+0)
+  let (final, finalPf?) ← if topPf?.isSome then do
+    let (e''', morePf?) ← trySimplifyTop e''
+    match morePf? with
+    | some mp => Pure.pure (e''', some (← mkEqTrans topPf?.get! mp))
+    | none => Pure.pure (e'', topPf?)
+  else Pure.pure (e'', topPf?)
+  -- 4. Combine child and top-level proofs
+  match childPf?, finalPf? with
+  | none, none => Pure.pure (e, none)
+  | some cp, none => Pure.pure (e', some cp)
+  | none, some tp => Pure.pure (final, some tp)
+  | some cp, some tp => Pure.pure (final, some (← mkEqTrans cp tp))
+
+/-- Normalize addresses in a cpsTriple proof.
+    First inlines `let` bindings (which are definitionally equal),
+    then eliminates `signExtend12 N` for concrete N and flattens address arithmetic
+    `(base + N) + M` → `base + (N+M)` and `e + 0` → `e`.
+    Transports the original proof via `Eq.mp` (works because cpsTriple is Prop-valued). -/
+private def normalizeSpecAddresses (proof : Expr) : MetaM Expr := do
+  let origType ← instantiateMVars (← inferType proof)
+  -- Inline let-bindings first (e.g., `let mem := sp + signExtend12 off; ...`)
+  let cleanType := inlineLets origType
+  let (_, normPf?) ← normalizeTypeAddrs cleanType
+  match normPf? with
+  | some pf => mkEqMP pf proof
+  | none =>
+    -- If let-inlining changed the type shape, wrap with @id to force the clean type
+    -- (let-inlined type is definitionally equal, so the kernel accepts it)
+    if cleanType == origType then Pure.pure proof
+    else Pure.pure (mkApp2 (mkConst ``id [levelZero]) cleanType proof)
+
 /-- Normalize the exit address of a cpsTriple proof to match a target address.
     Proves equality via `bv_omega` when needed. -/
 private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := do
@@ -148,16 +277,25 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
       prePermProof, postIdProof, s1Framed]
 
 /-- Core: compose an array of cpsTriple proofs with initial framing,
-    address normalization, and seqFrame chaining. -/
-private def runBlockCore (specs : Array Expr) (goalPre : Expr) : MetaM Expr := do
+    address normalization, and seqFrame chaining.
+    When `normalizeAddrs` is true (manual mode), applies signExtend12 reduction
+    and address arithmetic flattening to each spec before composing. -/
+private def runBlockCore (specs : Array Expr) (goalPre : Expr)
+    (normalizeAddrs : Bool := false) : MetaM Expr := do
   if specs.size == 0 then
     throwError "runBlock: no specs provided.\n\
         Usage: `runBlock s1 s2 ...` (manual) or `runBlock` (auto from @[spec_gen] database)."
+  -- Normalize addresses in manual-mode specs (signExtend12, address flattening)
+  let processedSpecs ← if normalizeAddrs then
+    specs.mapM fun spec => do
+      try normalizeSpecAddresses spec
+      catch _ => Pure.pure spec
+  else Pure.pure specs
   -- Frame the first spec against the goal precondition
-  let mut acc ← frameFirstSpec specs[0]! goalPre
+  let mut acc ← frameFirstSpec processedSpecs[0]! goalPre
   -- Chain remaining specs via seqFrame with address normalization
-  for i in [1:specs.size] do
-    let nextSpec := specs[i]!
+  for i in [1:processedSpecs.size] do
+    let nextSpec := processedSpecs[i]!
     let nextType ← inferType nextSpec
     let some (nextEntry, _, _, _) ← parseCpsTriple? nextType
       | throwError "runBlock: argument {i + 1} is not a cpsTriple"
@@ -412,7 +550,7 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
     else
       -- Manual mode: use provided specs
       let specExprs ← specs.mapM fun s => elabTerm s none
-      runBlockCore specExprs goalPre
+      runBlockCore specExprs goalPre (normalizeAddrs := true)
   let finalResult ← normalizeToGoal composed goalType
   -- Always permute postcondition to match goal (goal.assign doesn't type-check)
   let some (gEntry, gExit, gPre, goalPost) ← parseCpsTriple? goalType
