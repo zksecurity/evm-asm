@@ -1,10 +1,10 @@
 /-
-  EvmAsm.Evm.Xor
+  EvmAsm.Evm32.Xor
 
   Full 256-bit EVM XOR spec composed from per-limb specs.
 -/
 
-import EvmAsm.Evm.Bitwise
+import EvmAsm.Evm32.Bitwise
 
 open EvmAsm.Tactics
 

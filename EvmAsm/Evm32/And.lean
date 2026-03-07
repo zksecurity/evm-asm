@@ -1,10 +1,10 @@
 /-
-  EvmAsm.Evm.And
+  EvmAsm.Evm32.And
 
   Full 256-bit EVM AND spec with ProgramAt/ValidMemRange abstractions.
 -/
 
-import EvmAsm.Evm.Bitwise
+import EvmAsm.Evm32.Bitwise
 
 namespace EvmAsm
 

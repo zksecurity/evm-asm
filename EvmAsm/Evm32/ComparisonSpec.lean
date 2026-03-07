@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm.ComparisonSpec
+  EvmAsm.Evm32.ComparisonSpec
 
   Full 256-bit EVM GT spec composed from per-limb LT specs (with swapped operands).
   GT(a, b) = LT(b, a): load b-limbs into x7 and a-limbs into x6, compute borrow(b < a).
@@ -7,7 +7,7 @@
   54 instructions total: 45 borrow + 9 store.
 -/
 
-import EvmAsm.Evm.Comparison
+import EvmAsm.Evm32.Comparison
 import EvmAsm.Tactics.XSimp
 
 open EvmAsm.Tactics

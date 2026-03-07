@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm.StackOps
+  EvmAsm.Evm32.StackOps
 
   Verified 256-bit EVM stack manipulation opcodes:
   - POP (Phase 2.1): discard top of stack, sp += 32. 1 instruction.
@@ -8,7 +8,7 @@
   - SWAP1 (Phase 2.4): swap top two stack items, sp unchanged. 32 instructions.
 -/
 
-import EvmAsm.Evm.Stack
+import EvmAsm.Evm32.Stack
 import EvmAsm.SyscallSpecs
 import EvmAsm.Tactics.XSimp
 import EvmAsm.Tactics.RunBlock

@@ -1,11 +1,11 @@
 /-
-  EvmAsm.Evm.Stack
+  EvmAsm.Evm32.Stack
 
   Separation logic assertions for 256-bit EVM values stored as
   8 little-endian 32-bit limbs in consecutive word-aligned memory.
 -/
 
-import EvmAsm.Evm.Basic
+import EvmAsm.Evm32.Basic
 import EvmAsm.SyscallSpecs
 
 namespace EvmAsm

@@ -18,17 +18,17 @@ import EvmAsm.Examples.HelloWorld
 import EvmAsm.Examples.Echo
 
 -- 256-bit EVM operations
-import EvmAsm.Evm.Basic
-import EvmAsm.Evm.Stack
-import EvmAsm.Evm.Bitwise
-import EvmAsm.Evm.And
-import EvmAsm.Evm.Or
-import EvmAsm.Evm.Xor
-import EvmAsm.Evm.Not
-import EvmAsm.Evm.Arithmetic
-import EvmAsm.Evm.ArithmeticSpec
-import EvmAsm.Evm.Comparison
-import EvmAsm.Evm.ComparisonSpec
-import EvmAsm.Evm.StackOps
-import EvmAsm.Evm.Shift
-import EvmAsm.Evm.ShiftSpec
+import EvmAsm.Evm32.Basic
+import EvmAsm.Evm32.Stack
+import EvmAsm.Evm32.Bitwise
+import EvmAsm.Evm32.And
+import EvmAsm.Evm32.Or
+import EvmAsm.Evm32.Xor
+import EvmAsm.Evm32.Not
+import EvmAsm.Evm32.Arithmetic
+import EvmAsm.Evm32.ArithmeticSpec
+import EvmAsm.Evm32.Comparison
+import EvmAsm.Evm32.ComparisonSpec
+import EvmAsm.Evm32.StackOps
+import EvmAsm.Evm32.Shift
+import EvmAsm.Evm32.ShiftSpec

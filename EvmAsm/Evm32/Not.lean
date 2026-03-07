@@ -1,10 +1,10 @@
 /-
-  EvmAsm.Evm.Not
+  EvmAsm.Evm32.Not
 
   Full 256-bit EVM NOT spec composed from per-limb specs.
 -/
 
-import EvmAsm.Evm.Bitwise
+import EvmAsm.Evm32.Bitwise
 
 namespace EvmAsm
 

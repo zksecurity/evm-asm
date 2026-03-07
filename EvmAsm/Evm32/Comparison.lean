@@ -1,12 +1,12 @@
 /-
-  EvmAsm.Evm.Comparison
+  EvmAsm.Evm32.Comparison
 
   256-bit EVM comparison operations (ISZERO, LT) as RISC-V programs.
   ISZERO: unary, OR all 8 limbs, SLTIU to boolean, store result.
   LT: binary, multi-limb subtraction tracking only the borrow.
 -/
 
-import EvmAsm.Evm.Stack
+import EvmAsm.Evm32.Stack
 import EvmAsm.CPSSpec
 import EvmAsm.SyscallSpecs
 import EvmAsm.Tactics.XSimp

@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm.Basic
+  EvmAsm.Evm32.Basic
 
   Types and conversions for 256-bit EVM words on 32-bit RISC-V.
   Each EvmWord is stored as 8 little-endian 32-bit limbs.

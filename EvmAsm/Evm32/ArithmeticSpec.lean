@@ -1,12 +1,12 @@
 /-
-  EvmAsm.Evm.ArithmeticSpec
+  EvmAsm.Evm32.ArithmeticSpec
 
   Full 256-bit EVM arithmetic specs (ADD, SUB) composed from per-limb specs.
   Each composes 8 per-limb specs + ADDI sp adjustment into a single cpsTriple.
   62 instructions total with instrAt in both P and Q.
 -/
 
-import EvmAsm.Evm.Arithmetic
+import EvmAsm.Evm32.Arithmetic
 import EvmAsm.Tactics.XSimp
 
 open EvmAsm.Tactics

@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm.ShiftSpec
+  EvmAsm.Evm32.ShiftSpec
 
   CPS specifications for the 256-bit EVM SHR (logical shift right) program.
   Modular decomposition:
@@ -10,7 +10,7 @@
   - Full composition: evm_shr_spec
 -/
 
-import EvmAsm.Evm.Shift
+import EvmAsm.Evm32.Shift
 import EvmAsm.SyscallSpecs
 import EvmAsm.Tactics.XSimp
 import EvmAsm.Tactics.RunBlock
@@ -4799,6 +4799,6 @@ theorem progAt_evm_shr_split (base : Addr) :
     addr_norm_96, addr_norm_148, addr_norm_192, addr_norm_260, addr_norm_352,
     addr_norm_468, addr_norm_608, addr_norm_772, addr_norm_960, addr_norm_1172]
 
--- evm_shr_spec is proved in EvmAsm.Evm.ShiftComposition
+-- evm_shr_spec is proved in EvmAsm.Evm32.ShiftComposition
 
 end EvmAsm

@@ -1,12 +1,12 @@
 /-
-  EvmAsm.Evm.ShiftComposition
+  EvmAsm.Evm32.ShiftComposition
 
   Full composition proof for the 256-bit EVM SHR program.
   Composes all sub-specs (phase_a, phase_b, phase_c, body_7..body_0, zero_path)
   into the final evm_shr_spec theorem.
 -/
 
-import EvmAsm.Evm.ShiftSpec
+import EvmAsm.Evm32.ShiftSpec
 
 namespace EvmAsm
 

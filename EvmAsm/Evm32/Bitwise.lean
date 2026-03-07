@@ -1,11 +1,11 @@
 /-
-  EvmAsm.Evm.Bitwise
+  EvmAsm.Evm32.Bitwise
 
   256-bit EVM bitwise operations (AND, OR, XOR, NOT) as RISC-V programs.
   Each operates on 8 little-endian 32-bit limbs stored in memory.
 -/
 
-import EvmAsm.Evm.Stack
+import EvmAsm.Evm32.Stack
 import EvmAsm.CPSSpec
 import EvmAsm.SyscallSpecs
 import EvmAsm.Tactics.XSimp

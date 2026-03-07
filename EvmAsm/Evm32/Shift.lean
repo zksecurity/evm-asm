@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm.Shift
+  EvmAsm.Evm32.Shift
 
   256-bit EVM SHR (logical shift right) as a RISC-V program.
   SHR(shift, value) pops shift and value, pushes value >> shift.
@@ -32,7 +32,7 @@
     Exit point
 -/
 
-import EvmAsm.Evm.Stack
+import EvmAsm.Evm32.Stack
 import EvmAsm.CPSSpec
 
 namespace EvmAsm

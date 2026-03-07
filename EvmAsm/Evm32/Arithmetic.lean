@@ -1,12 +1,12 @@
 /-
-  EvmAsm.Evm.Arithmetic
+  EvmAsm.Evm32.Arithmetic
 
   256-bit EVM arithmetic operations (ADD, SUB) as RISC-V programs.
   Each operates on 8 little-endian 32-bit limbs stored in memory,
   propagating carry/borrow across limbs.
 -/
 
-import EvmAsm.Evm.Stack
+import EvmAsm.Evm32.Stack
 import EvmAsm.CPSSpec
 import EvmAsm.SyscallSpecs
 import EvmAsm.Tactics.XSimp
