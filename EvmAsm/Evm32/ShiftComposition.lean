@@ -697,13 +697,7 @@ private abbrev otherCode (base : Addr) : Assertion :=
   progAt (base + 1172) shr_zero_path
 
 private theorem pcFree_otherCode (base : Addr) : (otherCode base).pcFree := by
-  unfold otherCode
-  exact pcFree_sepConj (pcFree_progAt _ _) (pcFree_sepConj (pcFree_progAt _ _)
-    (pcFree_sepConj (pcFree_progAt _ _) (pcFree_sepConj (pcFree_progAt _ _)
-    (pcFree_sepConj (pcFree_progAt _ _) (pcFree_sepConj (pcFree_progAt _ _)
-    (pcFree_sepConj (pcFree_progAt _ _) (pcFree_sepConj (pcFree_progAt _ _)
-    (pcFree_sepConj (pcFree_progAt _ _) (pcFree_sepConj (pcFree_progAt _ _)
-    (pcFree_progAt _ _))))))))))
+  unfold otherCode; pcFree
 
 -- ============================================================================
 -- Section 3: Not-taken path helper
@@ -930,18 +924,7 @@ theorem evm_shr_spec (sp base : Addr)
      (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 36) ↦ₘ v1) ** ((sp + 40) ↦ₘ v2) ** ((sp + 44) ↦ₘ v3) **
      ((sp + 48) ↦ₘ v4) ** ((sp + 52) ↦ₘ v5) ** ((sp + 56) ↦ₘ v6) ** ((sp + 60) ↦ₘ v7))
-    (by apply pcFree_sepConj (pcFree_otherCode base)
-        apply pcFree_sepConj (pcFree_regIs _ _)
-        apply pcFree_sepConj (pcFree_regIs _ _)
-        apply pcFree_sepConj (pcFree_regIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        apply pcFree_sepConj (pcFree_memIs _ _)
-        exact pcFree_memIs _ _)
+    (pcFree_sepConj (pcFree_otherCode base) (by pcFree))
     pa
   clear pa
   -- Step 3: Merge taken/not-taken via cpsBranch_merge

@@ -1422,23 +1422,6 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
        (sp ↦ₘ s0) ** ((sp + 4) ↦ₘ s1) ** ((sp + 8) ↦ₘ s2) ** ((sp + 12) ↦ₘ s3) **
        ((sp + 16) ↦ₘ s4) ** ((sp + 20) ↦ₘ s5) ** ((sp + 24) ↦ₘ s6) ** ((sp + 28) ↦ₘ s7)) := by
-  -- Memory validity from ValidMemRange sp 8
-  have hv0 : isValidMemAccess sp = true := by
-    have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv4 : isValidMemAccess (sp + 4) = true := by
-    have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv8 : isValidMemAccess (sp + 8) = true := by
-    have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv12 : isValidMemAccess (sp + 12) = true := by
-    have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv16 : isValidMemAccess (sp + 16) = true := by
-    have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv20 : isValidMemAccess (sp + 20) = true := by
-    have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv24 : isValidMemAccess (sp + 24) = true := by
-    have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv28 : isValidMemAccess (sp + 28) = true := by
-    have := hvalid.get (i := 7) (by omega); simpa using this
   -- Address arithmetic
   have ha1 : (base + 4 : Addr) + 4 = base + 8 := by bv_omega
   have ha52 : (base + 52 : Addr) + 4 = base + 56 := by bv_omega
@@ -1447,7 +1430,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
   have ha64 : (base + 64 : Addr) + 4 = base + 68 := by bv_omega
   -- Step 1: LW x5 x12 4 at base (loads s1 into x5)
   have lw1 := lw_spec_gen .x5 .x12 sp r5 s1 4 base (by nofun)
-    (by simp only [signExtend12_4]; exact hv4)
+    (by validMem)
   simp only [signExtend12_4] at lw1
   -- Exit address normalization for shr_lw_or_acc_spec calls
   have he4  : (base + 4  : Addr) + 8 = base + 12 := by bv_omega
@@ -1473,7 +1456,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (by pcFree) lw1
   -- Step 2: shr_lw_or_acc_spec at base+4 (LW x10 x12 8 + OR x5 x5 x10) -> x5 = s1|s2
   have lor2 := shr_lw_or_acc_spec sp s1 r10 s2 8 (base + 4)
-    (by simp only [signExtend12_8]; exact hv8)
+    (by validMem)
   simp only [signExtend12_8] at lor2
   rw [ha1, he4] at lor2
   have lor2f := cpsTriple_frame_left _ _ _ _
@@ -1495,7 +1478,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (fun _ hp => by xperm_hyp hp) lw1f lor2f; clear lw1 lw1f lor2 lor2f
   -- Step 3: shr_lw_or_acc_spec at base+12 -> x5 = s1|s2|s3
   have lor3 := shr_lw_or_acc_spec sp (s1 ||| s2) s2 s3 12 (base + 12)
-    (by simp only [signExtend12_12]; exact hv12)
+    (by validMem)
   simp only [signExtend12_12] at lor3
   rw [show (base + 12 : Addr) + 4 = base + 16 from by bv_omega, he12] at lor3
   have lor3f := cpsTriple_frame_left _ _ _ _
@@ -1516,7 +1499,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (fun _ hp => by xperm_hyp hp) c12 lor3f; clear c12 lor3 lor3f
   -- Step 4: shr_lw_or_acc_spec at base+20 -> x5 = s1|s2|s3|s4
   have lor4 := shr_lw_or_acc_spec sp (s1 ||| s2 ||| s3) s3 s4 16 (base + 20)
-    (by simp only [signExtend12_16]; exact hv16)
+    (by validMem)
   simp only [signExtend12_16] at lor4
   rw [show (base + 20 : Addr) + 4 = base + 24 from by bv_omega, he20] at lor4
   have lor4f := cpsTriple_frame_left _ _ _ _
@@ -1537,7 +1520,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (fun _ hp => by xperm_hyp hp) c13 lor4f; clear c13 lor4 lor4f
   -- Step 5: shr_lw_or_acc_spec at base+28 -> x5 = s1|..|s5
   have lor5 := shr_lw_or_acc_spec sp (s1 ||| s2 ||| s3 ||| s4) s4 s5 20 (base + 28)
-    (by simp only [signExtend12_20]; exact hv20)
+    (by validMem)
   simp only [signExtend12_20] at lor5
   rw [show (base + 28 : Addr) + 4 = base + 32 from by bv_omega, he28] at lor5
   have lor5f := cpsTriple_frame_left _ _ _ _
@@ -1558,7 +1541,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (fun _ hp => by xperm_hyp hp) c14 lor5f; clear c14 lor5 lor5f
   -- Step 6: shr_lw_or_acc_spec at base+36 -> x5 = s1|..|s6
   have lor6 := shr_lw_or_acc_spec sp (s1 ||| s2 ||| s3 ||| s4 ||| s5) s5 s6 24 (base + 36)
-    (by simp only [signExtend12_24]; exact hv24)
+    (by validMem)
   simp only [signExtend12_24] at lor6
   rw [show (base + 36 : Addr) + 4 = base + 40 from by bv_omega, he36] at lor6
   have lor6f := cpsTriple_frame_left _ _ _ _
@@ -1579,7 +1562,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
     (fun _ hp => by xperm_hyp hp) c15 lor6f; clear c15 lor6 lor6f
   -- Step 7: shr_lw_or_acc_spec at base+44 -> x5 = s1|..|s7
   have lor7 := shr_lw_or_acc_spec sp (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6) s6 s7 28 (base + 44)
-    (by simp only [signExtend12_28]; exact hv28)
+    (by validMem)
   simp only [signExtend12_28] at lor7
   rw [show (base + 44 : Addr) + 4 = base + 48 from by bv_omega, he44] at lor7
   have lor7f := cpsTriple_frame_left _ _ _ _
@@ -1637,7 +1620,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
   -- Step 9: LW x5 x12 0 at base+56 (loads s0 into x5)
   have lw9 := lw_spec_gen .x5 .x12 sp
     (s1 ||| s2 ||| s3 ||| s4 ||| s5 ||| s6 ||| s7) s0 0 (base + 56) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_addr]; exact hv0)
+    (by validMem)
   simp only [signExtend12_0] at lw9
   rw [show sp + (0 : Word) = sp from by bv_addr] at lw9
   rw [ha56] at lw9

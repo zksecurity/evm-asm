@@ -232,9 +232,8 @@ private theorem bw_addi (sp base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3)) := by
-  have ha : (base + 64 : Addr) + 4 = base + 68 := by bv_omega
   have s_raw := addi_spec_gen_same .x12 sp 32 (base + 64) (by nofun)
-  rw [ha] at s_raw
+  rw [show (base + 64 : Addr) + 4 = base + 68 from by bv_omega] at s_raw
   simp only [signExtend12_32] at s_raw
   exact cpsTriple_consequence _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) (fun h hq => by xperm_hyp hq)

@@ -28,11 +28,7 @@ def evmStackIs (sp : Addr) (values : List EvmWord) : Assertion :=
 
 theorem pcFree_evmWordIs (addr : Addr) (v : EvmWord) :
     (evmWordIs addr v).pcFree := by
-  unfold evmWordIs
-  exact pcFree_sepConj (pcFree_memIs _ _)
-    (pcFree_sepConj (pcFree_memIs _ _)
-    (pcFree_sepConj (pcFree_memIs _ _)
-                    (pcFree_memIs _ _)))
+  unfold evmWordIs; pcFree
 
 theorem pcFree_evmStackIs (sp : Addr) (values : List EvmWord) :
     (evmStackIs sp values).pcFree := by
