@@ -215,31 +215,12 @@ theorem add_limb_carry_spec (off_a off_b : BitVec 12)
        ((base + 24) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 off_b) **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carry_out) ** (.x11 ↦ᵣ carry1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ result)) := by
-  have hmid : (base + 16 : Addr) = (base + 16) := rfl
-  -- Phase 1: base → base+16
   have p1 := add_limb_carry_spec_phase1 off_a off_b sp a_limb b_limb v7 v6 carry_in v11 base
     hvalid_a hvalid_b
-  have p1f := cpsTriple_frame_left _ _ _ _
-    (((base + 16) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 20) ↦ᵢ .SLTU .x6 .x7 .x5) **
-     ((base + 24) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 off_b))
-    (by pcFree) p1
-  -- Phase 2: base+16 → base+32
-  have hp2b : ((base + 16 : Addr) + 4) = base + 20 := by bv_omega
-  have hp2c : ((base + 16 : Addr) + 8) = base + 24 := by bv_omega
-  have hp2d : ((base + 16 : Addr) + 12) = base + 28 := by bv_omega
-  have hp2e : ((base + 16 : Addr) + 16) = base + 32 := by bv_omega
   have p2 := add_limb_carry_spec_phase2 off_b sp (a_limb + b_limb) b_limb carry_in
     (if BitVec.ult (a_limb + b_limb) b_limb then (1 : Word) else 0)
     a_limb (sp + signExtend12 off_a) (base + 16) hvalid_b
-  rw [hp2e, hp2b, hp2c, hp2d] at p2
-  have p2f := cpsTriple_frame_left _ _ _ _
-    ((base ↦ᵢ .LW .x7 .x12 off_a) ** ((base + 4) ↦ᵢ .LW .x6 .x12 off_b) **
-     ((base + 8) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SLTU .x11 .x7 .x6))
-    (by pcFree) p2
-  exact cpsTriple_consequence _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) (fun h hq => by xperm_hyp hq)
-    (cpsTriple_seq_with_perm _ _ _ _ _ _ _
-      (fun h hp => by xperm_hyp hp) p1f p2f)
+  runBlock p1 p2
 
 -- ============================================================================
 -- Per-limb Specs: SUB
@@ -339,29 +320,11 @@ theorem sub_limb_carry_spec (off_a off_b : BitVec 12)
        ((base + 24) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 off_b) **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrow_out) ** (.x11 ↦ᵣ borrow1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ result)) := by
-  -- Phase 1: base → base+16
   have p1 := sub_limb_carry_spec_phase1 off_a off_b sp a_limb b_limb v7 v6 borrow_in v11 base
     hvalid_a hvalid_b
-  have p1f := cpsTriple_frame_left _ _ _ _
-    (((base + 16) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 20) ↦ᵢ .SUB .x7 .x7 .x5) **
-     ((base + 24) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 off_b))
-    (by pcFree) p1
-  -- Phase 2: base+16 → base+32
-  have hp2b : ((base + 16 : Addr) + 4) = base + 20 := by bv_omega
-  have hp2c : ((base + 16 : Addr) + 8) = base + 24 := by bv_omega
-  have hp2d : ((base + 16 : Addr) + 12) = base + 28 := by bv_omega
-  have hp2e : ((base + 16 : Addr) + 16) = base + 32 := by bv_omega
   have p2 := sub_limb_carry_spec_phase2 off_b sp (a_limb - b_limb) b_limb borrow_in
     (if BitVec.ult a_limb b_limb then (1 : Word) else 0)
     a_limb (sp + signExtend12 off_a) (base + 16) hvalid_b
-  rw [hp2e, hp2b, hp2c, hp2d] at p2
-  have p2f := cpsTriple_frame_left _ _ _ _
-    ((base ↦ᵢ .LW .x7 .x12 off_a) ** ((base + 4) ↦ᵢ .LW .x6 .x12 off_b) **
-     ((base + 8) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 12) ↦ᵢ .SUB .x7 .x7 .x6))
-    (by pcFree) p2
-  exact cpsTriple_consequence _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) (fun h hq => by xperm_hyp hq)
-    (cpsTriple_seq_with_perm _ _ _ _ _ _ _
-      (fun h hp => by xperm_hyp hp) p1f p2f)
+  runBlock p1 p2
 
 end EvmAsm
