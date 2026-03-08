@@ -6,6 +6,8 @@
 
 import EvmAsm.Evm64.Bitwise
 
+open EvmAsm.Rv64.Tactics
+
 namespace EvmAsm.Rv64
 
 -- ============================================================================
@@ -18,10 +20,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_not_spec (sp base : Addr)
     (a0 a1 a2 a3 : Word)
     (v7 : Word)
-    (hv0 : isValidDwordAccess sp = true)
-    (hv8 : isValidDwordAccess (sp + 8) = true)
-    (hv16 : isValidDwordAccess (sp + 16) = true)
-    (hv24 : isValidDwordAccess (sp + 24) = true) :
+    (hvalid : ValidMemRange sp 4) :
     let c := signExtend12 (-1 : BitVec 12)
     cpsTriple base (base + 48)
       (-- Limb 0 code
@@ -43,20 +42,11 @@ theorem evm_not_spec (sp base : Addr)
        -- Registers + memory (updated)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a3 ^^^ c)) **
        (sp ↦ₘ (a0 ^^^ c)) ** ((sp + 8) ↦ₘ (a1 ^^^ c)) ** ((sp + 16) ↦ₘ (a2 ^^^ c)) ** ((sp + 24) ↦ₘ (a3 ^^^ c))) := by
-  -- Memory validity with signExtend normalization
-  have hvm0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0
-  have hvm8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; exact hv8
-  have hvm16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; exact hv16
-  have hvm24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; exact hv24
   -- Compose 4 per-limb NOT specs via runBlock (manual mode with address normalization)
-  have L0 := not_limb_spec 0 sp a0 v7 base hvm0
-  have L1 := not_limb_spec 8 sp a1 (a0 ^^^ signExtend12 (-1 : BitVec 12)) (base + 12) hvm8
-  have L2 := not_limb_spec 16 sp a2 (a1 ^^^ signExtend12 (-1 : BitVec 12)) (base + 24) hvm16
-  have L3 := not_limb_spec 24 sp a3 (a2 ^^^ signExtend12 (-1 : BitVec 12)) (base + 36) hvm24
+  have L0 := not_limb_spec 0 sp a0 v7 base (by validMem)
+  have L1 := not_limb_spec 8 sp a1 (a0 ^^^ signExtend12 (-1 : BitVec 12)) (base + 12) (by validMem)
+  have L2 := not_limb_spec 16 sp a2 (a1 ^^^ signExtend12 (-1 : BitVec 12)) (base + 24) (by validMem)
+  have L3 := not_limb_spec 24 sp a3 (a2 ^^^ signExtend12 (-1 : BitVec 12)) (base + 36) (by validMem)
   runBlock L0 L1 L2 L3
 
 -- ============================================================================
@@ -70,10 +60,7 @@ set_option maxHeartbeats 6400000 in
 /-- Stack-level 256-bit EVM NOT: complements an EvmWord in-place. -/
 theorem evm_not_stack_spec (sp base : Addr)
     (a : EvmWord) (v7 : Word)
-    (hv0 : isValidDwordAccess sp = true)
-    (hv8 : isValidDwordAccess (sp + 8) = true)
-    (hv16 : isValidDwordAccess (sp + 16) = true)
-    (hv24 : isValidDwordAccess (sp + 24) = true) :
+    (hvalid : ValidMemRange sp 4) :
     let c := signExtend12 (-1 : BitVec 12)
     cpsTriple base (base + 48)
       (-- Code
@@ -98,7 +85,7 @@ theorem evm_not_stack_spec (sp base : Addr)
   -- Apply evm_not_spec with individual limbs
   have h_main := evm_not_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    v7 hv0 hv8 hv16 hv24
+    v7 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _
     (fun h hp => by
       simp only [evmWordIs] at hp

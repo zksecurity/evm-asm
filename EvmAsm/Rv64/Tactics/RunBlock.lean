@@ -101,11 +101,20 @@ private def proveBvEq (old new_ : Expr) : MetaM (Option Expr) := do
   if ← withoutModifyingState (isDefEq old new_) then
     return some (← mkEqRefl old)
   let eqType ← mkEq old new_
+  -- Fast path: bv_omega directly
   let eqMVar ← mkFreshExprMVar eqType
   try
     let stx ← `(tactic| bv_omega)
     let _ ← Lean.Elab.runTactic eqMVar.mvarId! stx
     return some (← instantiateMVars eqMVar)
+  catch _ =>
+    (Pure.pure PUnit.unit : MetaM PUnit)
+  -- Fallback: normalize signExtend12 then bv_omega (handles (sp + K) + signExtend12 N)
+  let eqMVar2 ← mkFreshExprMVar eqType
+  try
+    let stx ← `(tactic| simp only [signExtend12_0, signExtend12_8, signExtend12_16, signExtend12_24, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56] <;> bv_omega)
+    let _ ← Lean.Elab.runTactic eqMVar2.mvarId! stx
+    return some (← instantiateMVars eqMVar2)
   catch _ => return none
 
 /-- Prove `old = new` for concrete decidable propositions.
@@ -170,7 +179,7 @@ private def trySimplifyTop (e : Expr) : MetaM (Expr × Option Expr) := do
     This ensures `signExtend12 0` is reduced to `0` before `sp + 0 → sp` is checked.
 
     Returns (normalized_expr, proof : original = normalized) or (original, none). -/
-private partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
+partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
   -- Fast exit: atoms that never contain address arithmetic
   if e.isConst || e.isFVar || e.isLit || e.isBVar || e.isSort then return (e, none)
   -- Fast exit: constructor applications (register/instruction constructors, etc.)
@@ -339,9 +348,105 @@ private def isConcreteDecidable (ty : Expr) : MetaM Bool := do
     return isCtorApp env args[1]! && isCtorApp env args[2]!
   return false
 
+/-- Extract the target address from `isValidDwordAccess target = true`. -/
+private def parseIsValidDwordAccess? (ty : Expr) : MetaM (Option Expr) := do
+  if !ty.isAppOfArity ``Eq 3 then return none
+  let args := ty.getAppArgs
+  let lhs := args[1]!
+  let rhs := args[2]!
+  unless rhs == mkConst ``Bool.true do return none
+  if lhs.isAppOfArity ``EvmAsm.Rv64.isValidDwordAccess 1 then
+    return some lhs.getAppArgs[0]!
+  return none
+
+/-- Get a Nat literal value from an expression (handles raw `.lit` and `OfNat.ofNat`). -/
+private def getNatLitVal? (e : Expr) : Option Nat :=
+  match e with
+  | .lit (.natVal n) => some n
+  | _ =>
+    if e.isAppOfArity ``OfNat.ofNat 3 then
+      match e.getAppArgs[1]! with
+      | .lit (.natVal n) => some n
+      | _ => none
+    else none
+
+/-- Try to extract a concrete byte offset from `target` relative to `validAddr`.
+    Handles: `validAddr` (offset 0), `validAddr + lit`, `validAddr + signExtend12 lit`,
+    `(validAddr + lit₁) + lit₂` (nested additions). -/
+private def extractConcreteOffset? (validAddr target : Expr) : MetaM (Option Nat) := do
+  -- Case 1: target = validAddr (offset 0)
+  if ← withoutModifyingState (isDefEq validAddr target) then return some 0
+  -- Case 2: target = something + rhs
+  if target.isAppOfArity ``HAdd.hAdd 6 then
+    let lhs := target.getAppArgs[4]!
+    let rhs := target.getAppArgs[5]!
+    if ← withoutModifyingState (isDefEq validAddr lhs) then
+      -- rhs is a numeric literal
+      if let some v := getBvLitVal? rhs then return some v
+      -- rhs is signExtend12 N (64-bit: 12-bit sign-extend to 64-bit)
+      if rhs.isAppOfArity ``EvmAsm.Rv64.signExtend12 1 then
+        let arg := rhs.getAppArgs[0]!
+        if let some argVal := getBvLitVal? arg then
+          let n12 := argVal % 4096
+          return some (if n12 < 2048 then n12 else n12 + (2^64 - 4096))
+    -- Case 3: target = (validAddr + lit₁) + lit₂  (nested addition)
+    -- Also handles (validAddr + lit₁) + signExtend12 lit₂
+    if lhs.isAppOfArity ``HAdd.hAdd 6 then
+      let innerLhs := lhs.getAppArgs[4]!
+      let innerRhs := lhs.getAppArgs[5]!
+      if ← withoutModifyingState (isDefEq validAddr innerLhs) then
+        if let some v1 := getBvLitVal? innerRhs then
+          -- (validAddr + v1) + rhs
+          if let some v2 := getBvLitVal? rhs then return some (v1 + v2)
+          if rhs.isAppOfArity ``EvmAsm.Rv64.signExtend12 1 then
+            let arg := rhs.getAppArgs[0]!
+            if let some argVal := getBvLitVal? arg then
+              let n12 := argVal % 4096
+              let v2 := if n12 < 2048 then n12 else n12 + (2^64 - 4096)
+              return some (v1 + v2)
+  return none
+
+/-- Build a proof of `ValidMemRange.fetch` for a given index (64-bit, stride 8). -/
+private def buildFetchProof (validAddr validN : Expr) (validHyp : Expr)
+    (i : Nat) (nVal : Nat) (target : Expr) : MetaM (Option Expr) := do
+  if i >= nVal then return none
+  let eightI := mkApp2 (mkConst ``BitVec.ofNat) (mkNatLit 64) (mkNatLit (8 * i))
+  let indexedAddr ← mkAppM ``HAdd.hAdd #[validAddr, eightI]
+  let some eqProof ← proveBvEq indexedAddr target | return none
+  let iLtN ← mkDecideProof (← mkAppM ``LT.lt #[mkNatLit i, validN])
+  return some (mkAppN (mkConst ``EvmAsm.Rv64.ValidMemRange.fetch)
+    #[validAddr, validN, validHyp, mkNatLit i, target, iLtN, eqProof])
+
+/-- Try to prove `isValidDwordAccess target = true` from ValidMemRange hypotheses.
+    Searches for `ValidMemRange addr n` hypotheses and uses `ValidMemRange.fetch`. -/
+private def solveFromValidMemRange (ty : Expr) : MetaM (Option Expr) := do
+  let some target ← parseIsValidDwordAccess? ty | return none
+  let lctx ← getLCtx
+  for decl in lctx do
+    if decl.isImplementationDetail then continue
+    let declType ← instantiateMVars decl.type
+    if !declType.isAppOfArity ``EvmAsm.Rv64.ValidMemRange 2 then continue
+    let validAddr := declType.getAppArgs[0]!
+    let validN := declType.getAppArgs[1]!
+    let some nVal := getNatLitVal? validN | continue
+    -- Fast path: extract concrete offset and compute index directly
+    if let some offset ← extractConcreteOffset? validAddr target then
+      if offset % 8 == 0 then
+        let i := offset / 8
+        if let some proof ← buildFetchProof validAddr validN decl.toExpr i nVal target then
+          return some proof
+    -- Slow path: try all indices (handles complex address forms)
+    for i in [:nVal] do
+      let saved ← saveState
+      if let some proof ← buildFetchProof validAddr validN decl.toExpr i nVal target then
+        return some proof
+      else
+        restoreState saved
+  return none
+
 /-- Try to solve a proof obligation MVar.
     Uses mkDecideProof for concrete decidable props (register inequalities),
-    local context search for hypotheses, and bv_omega as fallback. -/
+    local context search for hypotheses, ValidMemRange derivation, and bv_omega as fallback. -/
 private def solveObligation (mvarId : MVarId) : MetaM Bool := do
   let ty ← instantiateMVars (← mvarId.getType)
   -- Try Decidable proof for concrete propositions (rd ≠ .x0, rd ≠ rs, etc.)
@@ -352,13 +457,17 @@ private def solveObligation (mvarId : MVarId) : MetaM Bool := do
       return true
     catch _ =>
       (Pure.pure PUnit.unit : MetaM PUnit)
-  -- Try searching local context (handles isValidMemAccess from hypotheses)
+  -- Try searching local context (handles isValidDwordAccess from hypotheses)
   let lctx ← getLCtx
   for decl in lctx do
     if !decl.isImplementationDetail then
       if ← isDefEq decl.type ty then
         mvarId.assign decl.toExpr
         return true
+  -- Try deriving from ValidMemRange hypotheses
+  if let some proof ← solveFromValidMemRange ty then
+    mvarId.assign proof
+    return true
   -- Try bv_omega as last resort
   try
     let stx ← `(tactic| bv_omega)
@@ -366,6 +475,36 @@ private def solveObligation (mvarId : MVarId) : MetaM Bool := do
     return true
   catch _ =>
     return false
+
+/-- Tactic to derive `isValidDwordAccess target = true` from `ValidMemRange` in context.
+    Searches for `ValidMemRange addr n` hypotheses and uses `ValidMemRange.fetch`.
+    Normalizes `signExtend12` in the goal first to handle compound address forms. -/
+elab "validMem" : tactic => do
+  -- First normalize signExtend12 in the goal (handles (sp + K) + signExtend12 N patterns)
+  try
+    evalTactic (← `(tactic| simp only [signExtend12_0, signExtend12_1, signExtend12_8,
+      signExtend12_16, signExtend12_24, signExtend12_32, signExtend12_40,
+      signExtend12_48, signExtend12_56]))
+  catch _ =>
+    (Pure.pure PUnit.unit : TacticM PUnit)
+  withMainContext do
+    let goal ← getMainGoal
+    let ty ← instantiateMVars (← goal.getType)
+    -- Try deriving from ValidMemRange hypotheses
+    if let some proof ← solveFromValidMemRange ty then
+      goal.assign proof
+      replaceMainGoal []
+      return
+    -- Fallback: search local context for matching hypothesis (handles symbolic offsets)
+    let lctx ← getLCtx
+    for decl in lctx do
+      if !decl.isImplementationDetail then
+        if ← isDefEq decl.type ty then
+          goal.assign decl.toExpr
+          replaceMainGoal []
+          return
+    throwError "validMem: could not derive from ValidMemRange or local context.\n\
+        Expected goal of the form: `isValidDwordAccess target = true`"
 
 /-- Try to instantiate a single spec theorem for a given instruction and state.
     Uses unification: creates MVars for all spec parameters, unifies the spec's

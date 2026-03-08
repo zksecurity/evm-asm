@@ -260,6 +260,14 @@ theorem ValidMemRange.get {addr : Addr} {n : Nat}
     (h : ValidMemRange addr n) {i : Nat} (hi : i < n) :
     isValidDwordAccess (addr + BitVec.ofNat 64 (8 * i)) = true := h i hi
 
+/-- Extract a single validity fact from ValidMemRange with address normalization. -/
+theorem ValidMemRange.fetch {addr : Addr} {n : Nat}
+    (h : ValidMemRange addr n) (i : Nat) (target : Addr)
+    (hi : i < n)
+    (haddr : addr + BitVec.ofNat 64 (8 * i) = target) :
+    isValidDwordAccess target = true := by
+  rw [← haddr]; exact h i hi
+
 /-- Extract a byte from a 64-bit word at position 0-7. -/
 def extractByte (w : Word) (pos : Nat) : BitVec 8 :=
   (w >>> (pos * 8)).truncate 8

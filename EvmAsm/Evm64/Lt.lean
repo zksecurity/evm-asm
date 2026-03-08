@@ -11,9 +11,6 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
-local macro "bv_addr" : tactic =>
-  `(tactic| (apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]))
-
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM LT: LT(a, b) = 1 iff a < b (unsigned).
     Borrow chain across 4 limbs, then store result.
@@ -85,38 +82,18 @@ theorem evm_lt_spec (sp : Addr) (base : Addr)
   intro borrow1a; intro temp1; intro borrow1b; intro borrow1
   intro borrow2a; intro temp2; intro borrow2b; intro borrow2
   intro borrow3a; intro temp3; intro borrow3b; intro borrow3
-  have hv0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv32 : isValidDwordAccess (sp + signExtend12 (32 : BitVec 12)) = true := by
-    simp only [signExtend12_32]; have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv40 : isValidDwordAccess (sp + signExtend12 (40 : BitVec 12)) = true := by
-    simp only [signExtend12_40]; have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv48 : isValidDwordAccess (sp + signExtend12 (48 : BitVec 12)) = true := by
-    simp only [signExtend12_48]; have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv56 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true := by
-    simp only [signExtend12_56]; have := hvalid.get (i := 7) (by omega); simpa using this
   -- Per-limb borrow specs
-  have L0 := lt_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base hv0 hv32
-  have L1 := lt_limb_carry_spec 8 40 sp a1 b1 a0 b0 borrow0 v11 (base + 12) hv8 hv40
-  have L2 := lt_limb_carry_spec 16 48 sp a2 b2 temp1 borrow1b borrow1 borrow1a (base + 36) hv16 hv48
-  have L3 := lt_limb_carry_spec 24 56 sp a3 b3 temp2 borrow2b borrow2 borrow2a (base + 60) hv24 hv56
+  have L0 := lt_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base (by validMem) (by validMem)
+  have L1 := lt_limb_carry_spec 8 40 sp a1 b1 a0 b0 borrow0 v11 (base + 12) (by validMem) (by validMem)
+  have L2 := lt_limb_carry_spec 16 48 sp a2 b2 temp1 borrow1b borrow1 borrow1a (base + 36) (by validMem) (by validMem)
+  have L3 := lt_limb_carry_spec 24 56 sp a3 b3 temp2 borrow2b borrow2 borrow2a (base + 60) (by validMem) (by validMem)
   -- Store phase
   have A := addi_spec_gen_same .x12 sp 32 (base + 84) (by nofun)
   simp only [signExtend12_32] at A
-  have S0 := sd_spec_gen .x12 .x5 (sp + 32) borrow3 b0 0 (base + 88)
-    (by simp only [signExtend12_0]; rwa [show (sp + 32 : Word) + 0 = sp + 32 from by bv_addr])
-  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 92)
-    (by simp only [signExtend12_8]; rwa [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega])
-  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 96)
-    (by simp only [signExtend12_16]; rwa [show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega])
-  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 100)
-    (by simp only [signExtend12_24]; rwa [show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega])
+  have S0 := sd_spec_gen .x12 .x5 (sp + 32) borrow3 b0 0 (base + 88) (by validMem)
+  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 92) (by validMem)
+  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 96) (by validMem)
+  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 100) (by validMem)
   runBlock L0 L1 L2 L3 A S0 S1 S2 S3
 
 end EvmAsm.Rv64

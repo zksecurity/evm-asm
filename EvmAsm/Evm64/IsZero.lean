@@ -51,30 +51,22 @@ theorem evm_iszero_spec (sp : Addr) (base : Addr)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
        (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) := by
   intro or_all; intro result
-  have hv0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
   -- LD x7 x12 0 (load limb 0 into x7)
-  have L0 := ld_spec_gen .x7 .x12 sp v7 a0 0 base (by nofun) hv0
+  have L0 := ld_spec_gen .x7 .x12 sp v7 a0 0 base (by nofun) (by validMem)
   -- OR limbs 1-3
-  have O1 := iszero_or_limb_spec 8 sp a1 v6 a0 (base + 4) hv8
-  have O2 := iszero_or_limb_spec 16 sp a2 a1 (a0 ||| a1) (base + 12) hv16
-  have O3 := iszero_or_limb_spec 24 sp a3 a2 (a0 ||| a1 ||| a2) (base + 20) hv24
+  have O1 := iszero_or_limb_spec 8 sp a1 v6 a0 (base + 4) (by validMem)
+  have O2 := iszero_or_limb_spec 16 sp a2 a1 (a0 ||| a1) (base + 12) (by validMem)
+  have O3 := iszero_or_limb_spec 24 sp a3 a2 (a0 ||| a1 ||| a2) (base + 20) (by validMem)
   -- SLTIU
   have T := sltiu_spec_gen_same .x7 (a0 ||| a1 ||| a2 ||| a3) 1 (base + 28) (by nofun)
   simp only [signExtend12_1] at T
   -- Store phase
   have S0 := sd_spec_gen .x12 .x7 sp
     (if BitVec.ult (a0 ||| a1 ||| a2 ||| a3) (1 : Word) then (1 : Word) else 0)
-    a0 0 (base + 32) hv0
-  have S1 := sd_x0_spec_gen .x12 sp a1 8 (base + 36) hv8
-  have S2 := sd_x0_spec_gen .x12 sp a2 16 (base + 40) hv16
-  have S3 := sd_x0_spec_gen .x12 sp a3 24 (base + 44) hv24
+    a0 0 (base + 32) (by validMem)
+  have S1 := sd_x0_spec_gen .x12 sp a1 8 (base + 36) (by validMem)
+  have S2 := sd_x0_spec_gen .x12 sp a2 16 (base + 40) (by validMem)
+  have S3 := sd_x0_spec_gen .x12 sp a3 24 (base + 44) (by validMem)
   runBlock L0 O1 O2 O3 T S0 S1 S2 S3
 
 end EvmAsm.Rv64

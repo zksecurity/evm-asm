@@ -87,21 +87,13 @@ theorem evm_push0_spec (nsp base : Addr)
        ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 24) **
        (.x12 ↦ᵣ nsp) **
        (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) := by
-  have hv0 : isValidDwordAccess (nsp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (nsp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (nsp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (nsp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
   have LADDI := addi_spec_gen_same .x12 (nsp + 32) (-32) base (by nofun)
   simp only [signExtend12_neg32] at LADDI
   rw [show (nsp + 32 : Word) + (-32 : Word) = nsp from by bv_omega] at LADDI
-  have L0 := sd_x0_spec_gen .x12 nsp d0 0 (base + 4) hv0
-  have L1 := sd_x0_spec_gen .x12 nsp d1 8 (base + 8) hv8
-  have L2 := sd_x0_spec_gen .x12 nsp d2 16 (base + 12) hv16
-  have L3 := sd_x0_spec_gen .x12 nsp d3 24 (base + 16) hv24
+  have L0 := sd_x0_spec_gen .x12 nsp d0 0 (base + 4) (by validMem)
+  have L1 := sd_x0_spec_gen .x12 nsp d1 8 (base + 8) (by validMem)
+  have L2 := sd_x0_spec_gen .x12 nsp d2 16 (base + 12) (by validMem)
+  have L3 := sd_x0_spec_gen .x12 nsp d3 24 (base + 16) (by validMem)
   runBlock LADDI L0 L1 L2 L3
 
 theorem evm_push0_stack_spec (nsp base : Addr)
@@ -169,29 +161,13 @@ theorem evm_dup1_spec (nsp base : Addr)
        (.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ a3) **
        (nsp ↦ₘ a0) ** ((nsp + 8) ↦ₘ a1) ** ((nsp + 16) ↦ₘ a2) ** ((nsp + 24) ↦ₘ a3) **
        ((nsp + 32) ↦ₘ a0) ** ((nsp + 40) ↦ₘ a1) ** ((nsp + 48) ↦ₘ a2) ** ((nsp + 56) ↦ₘ a3)) := by
-  have hv0 : isValidDwordAccess (nsp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (nsp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (nsp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (nsp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv32 : isValidDwordAccess (nsp + signExtend12 (32 : BitVec 12)) = true := by
-    simp only [signExtend12_32]; have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv40 : isValidDwordAccess (nsp + signExtend12 (40 : BitVec 12)) = true := by
-    simp only [signExtend12_40]; have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv48 : isValidDwordAccess (nsp + signExtend12 (48 : BitVec 12)) = true := by
-    simp only [signExtend12_48]; have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv56 : isValidDwordAccess (nsp + signExtend12 (56 : BitVec 12)) = true := by
-    simp only [signExtend12_56]; have := hvalid.get (i := 7) (by omega); simpa using this
   have LADDI := addi_spec_gen_same .x12 (nsp + 32) (-32) base (by nofun)
   simp only [signExtend12_neg32] at LADDI
   rw [show (nsp + 32 : Word) + (-32 : Word) = nsp from by bv_omega] at LADDI
-  have P0 := dup1_pair_spec nsp 32 0 a0 d0 v7 (base + 4) hv32 hv0
-  have P1 := dup1_pair_spec nsp 40 8 a1 d1 a0 (base + 12) hv40 hv8
-  have P2 := dup1_pair_spec nsp 48 16 a2 d2 a1 (base + 20) hv48 hv16
-  have P3 := dup1_pair_spec nsp 56 24 a3 d3 a2 (base + 28) hv56 hv24
+  have P0 := dup1_pair_spec nsp 32 0 a0 d0 v7 (base + 4) (by validMem) (by validMem)
+  have P1 := dup1_pair_spec nsp 40 8 a1 d1 a0 (base + 12) (by validMem) (by validMem)
+  have P2 := dup1_pair_spec nsp 48 16 a2 d2 a1 (base + 20) (by validMem) (by validMem)
+  have P3 := dup1_pair_spec nsp 56 24 a3 d3 a2 (base + 28) (by validMem) (by validMem)
   runBlock LADDI P0 P1 P2 P3
 
 set_option maxHeartbeats 6400000 in
@@ -285,26 +261,10 @@ theorem evm_swap1_spec (sp base : Addr)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ a3) ** (.x6 ↦ᵣ b3) **
        (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
        ((sp + 32) ↦ₘ a0) ** ((sp + 40) ↦ₘ a1) ** ((sp + 48) ↦ₘ a2) ** ((sp + 56) ↦ₘ a3)) := by
-  have hv0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv32 : isValidDwordAccess (sp + signExtend12 (32 : BitVec 12)) = true := by
-    simp only [signExtend12_32]; have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv40 : isValidDwordAccess (sp + signExtend12 (40 : BitVec 12)) = true := by
-    simp only [signExtend12_40]; have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv48 : isValidDwordAccess (sp + signExtend12 (48 : BitVec 12)) = true := by
-    simp only [signExtend12_48]; have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv56 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true := by
-    simp only [signExtend12_56]; have := hvalid.get (i := 7) (by omega); simpa using this
-  have L0 := swap1_limb_spec sp 0 32 a0 b0 v7 v6 base hv0 hv32
-  have L1 := swap1_limb_spec sp 8 40 a1 b1 a0 b0 (base + 16) hv8 hv40
-  have L2 := swap1_limb_spec sp 16 48 a2 b2 a1 b1 (base + 32) hv16 hv48
-  have L3 := swap1_limb_spec sp 24 56 a3 b3 a2 b2 (base + 48) hv24 hv56
+  have L0 := swap1_limb_spec sp 0 32 a0 b0 v7 v6 base (by validMem) (by validMem)
+  have L1 := swap1_limb_spec sp 8 40 a1 b1 a0 b0 (base + 16) (by validMem) (by validMem)
+  have L2 := swap1_limb_spec sp 16 48 a2 b2 a1 b1 (base + 32) (by validMem) (by validMem)
+  have L3 := swap1_limb_spec sp 24 56 a3 b3 a2 b2 (base + 48) (by validMem) (by validMem)
   runBlock L0 L1 L2 L3
 
 set_option maxHeartbeats 6400000 in

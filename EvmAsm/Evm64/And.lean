@@ -48,28 +48,10 @@ theorem evm_and_spec (sp base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a3 &&& b3)) ** (.x6 ↦ᵣ b3) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ (a0 &&& b0)) ** ((sp + 40) ↦ₘ (a1 &&& b1)) ** ((sp + 48) ↦ₘ (a2 &&& b2)) ** ((sp + 56) ↦ₘ (a3 &&& b3))) := by
-  -- Memory validity from ValidMemRange
-  have hv0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv32 : isValidDwordAccess (sp + signExtend12 (32 : BitVec 12)) = true := by
-    simp only [signExtend12_32]; have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv40 : isValidDwordAccess (sp + signExtend12 (40 : BitVec 12)) = true := by
-    simp only [signExtend12_40]; have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv48 : isValidDwordAccess (sp + signExtend12 (48 : BitVec 12)) = true := by
-    simp only [signExtend12_48]; have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv56 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true := by
-    simp only [signExtend12_56]; have := hvalid.get (i := 7) (by omega); simpa using this
-  -- Per-limb AND specs + ADDI, composed via runBlock manual mode
-  have L0 := and_limb_spec 0 32 sp a0 b0 v7 v6 base hv0 hv32
-  have L1 := and_limb_spec 8 40 sp a1 b1 (a0 &&& b0) b0 (base + 16) hv8 hv40
-  have L2 := and_limb_spec 16 48 sp a2 b2 (a1 &&& b1) b1 (base + 32) hv16 hv48
-  have L3 := and_limb_spec 24 56 sp a3 b3 (a2 &&& b2) b2 (base + 48) hv24 hv56
+  have L0 := and_limb_spec 0 32 sp a0 b0 v7 v6 base (by validMem) (by validMem)
+  have L1 := and_limb_spec 8 40 sp a1 b1 (a0 &&& b0) b0 (base + 16) (by validMem) (by validMem)
+  have L2 := and_limb_spec 16 48 sp a2 b2 (a1 &&& b1) b1 (base + 32) (by validMem) (by validMem)
+  have L3 := and_limb_spec 24 56 sp a3 b3 (a2 &&& b2) b2 (base + 48) (by validMem) (by validMem)
   have LADDI := addi_spec_gen_same .x12 sp 32 (base + 64) (by nofun)
   runBlock L0 L1 L2 L3 LADDI
 

@@ -88,26 +88,10 @@ theorem evm_sub_spec (sp : Addr) (base : Addr)
   intro borrow1a; intro temp1; intro borrow1b; intro result1; intro borrow1
   intro borrow2a; intro temp2; intro borrow2b; intro result2; intro borrow2
   intro borrow3a; intro temp3; intro borrow3b; intro result3; intro borrow3
-  have hv0 : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true := by
-    simp only [signExtend12_0]; have := hvalid.get (i := 0) (by omega); simpa using this
-  have hv8 : isValidDwordAccess (sp + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; have := hvalid.get (i := 1) (by omega); simpa using this
-  have hv16 : isValidDwordAccess (sp + signExtend12 (16 : BitVec 12)) = true := by
-    simp only [signExtend12_16]; have := hvalid.get (i := 2) (by omega); simpa using this
-  have hv24 : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true := by
-    simp only [signExtend12_24]; have := hvalid.get (i := 3) (by omega); simpa using this
-  have hv32 : isValidDwordAccess (sp + signExtend12 (32 : BitVec 12)) = true := by
-    simp only [signExtend12_32]; have := hvalid.get (i := 4) (by omega); simpa using this
-  have hv40 : isValidDwordAccess (sp + signExtend12 (40 : BitVec 12)) = true := by
-    simp only [signExtend12_40]; have := hvalid.get (i := 5) (by omega); simpa using this
-  have hv48 : isValidDwordAccess (sp + signExtend12 (48 : BitVec 12)) = true := by
-    simp only [signExtend12_48]; have := hvalid.get (i := 6) (by omega); simpa using this
-  have hv56 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true := by
-    simp only [signExtend12_56]; have := hvalid.get (i := 7) (by omega); simpa using this
-  have L0 := sub_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base hv0 hv32
-  have L1 := sub_limb_carry_spec 8 40 sp a1 b1 diff0 b0 borrow0 v11 (base + 20) hv8 hv40
-  have L2 := sub_limb_carry_spec 16 48 sp a2 b2 result1 borrow1b borrow1 borrow1a (base + 52) hv16 hv48
-  have L3 := sub_limb_carry_spec 24 56 sp a3 b3 result2 borrow2b borrow2 borrow2a (base + 84) hv24 hv56
+  have L0 := sub_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base (by validMem) (by validMem)
+  have L1 := sub_limb_carry_spec 8 40 sp a1 b1 diff0 b0 borrow0 v11 (base + 20) (by validMem) (by validMem)
+  have L2 := sub_limb_carry_spec 16 48 sp a2 b2 result1 borrow1b borrow1 borrow1a (base + 52) (by validMem) (by validMem)
+  have L3 := sub_limb_carry_spec 24 56 sp a3 b3 result2 borrow2b borrow2 borrow2a (base + 84) (by validMem) (by validMem)
   have Laddi := addi_spec_gen_same .x12 sp 32 (base + 116) (by nofun)
   runBlock L0 L1 L2 L3 Laddi
 
