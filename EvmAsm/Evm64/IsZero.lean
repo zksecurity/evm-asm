@@ -11,7 +11,6 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM ISZERO: result = 1 iff all 4 limbs are 0.
     Unary: reads 256-bit word at sp, overwrites with boolean result.
     12 instructions = 48 bytes. -/
