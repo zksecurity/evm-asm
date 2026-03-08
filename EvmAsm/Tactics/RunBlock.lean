@@ -94,20 +94,29 @@ private def getBvLitVal? (e : Expr) : Option Nat :=
     | _ => none
   else none
 
-/-- Prove `old = new` via `bv_omega`. Returns `none` on failure. -/
+/-- Prove `old = new` via `bv_omega`. Returns `none` on failure.
+    Tries `mkDecideProof` first (fast for concrete BitVec equalities),
+    then falls back to `bv_omega` via `runTactic`. -/
 private def proveBvEq (old new_ : Expr) : MetaM (Option Expr) := do
   if ← withoutModifyingState (isDefEq old new_) then
     return some (← mkEqRefl old)
-  let eqMVar ← mkFreshExprMVar (← mkEq old new_)
+  let eqType ← mkEq old new_
+  let eqMVar ← mkFreshExprMVar eqType
   try
     let stx ← `(tactic| bv_omega)
     let _ ← Lean.Elab.runTactic eqMVar.mvarId! stx
     return some (← instantiateMVars eqMVar)
   catch _ => return none
 
-/-- Prove `old = new` via `native_decide`. Returns `none` on failure. -/
+/-- Prove `old = new` for concrete decidable propositions.
+    Uses `mkDecideProof` (no tactic overhead). Falls back to `native_decide` via `runTactic`. -/
 private def proveByNativeDecide (old new_ : Expr) : MetaM (Option Expr) := do
-  let eqMVar ← mkFreshExprMVar (← mkEq old new_)
+  let eqType ← mkEq old new_
+  -- Try mkDecideProof (fast path, avoids runTactic overhead)
+  try return some (← mkDecideProof eqType)
+  catch _ => (Pure.pure PUnit.unit : MetaM PUnit)
+  -- Fallback to native_decide
+  let eqMVar ← mkFreshExprMVar eqType
   try
     let stx ← `(tactic| native_decide)
     let _ ← Lean.Elab.runTactic eqMVar.mvarId! stx
@@ -162,6 +171,14 @@ private def trySimplifyTop (e : Expr) : MetaM (Expr × Option Expr) := do
 
     Returns (normalized_expr, proof : original = normalized) or (original, none). -/
 private partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
+  -- Fast exit: atoms that never contain address arithmetic
+  if e.isConst || e.isFVar || e.isLit || e.isBVar || e.isSort then return (e, none)
+  -- Fast exit: constructor applications (register/instruction constructors, etc.)
+  if let .const name _ := e.getAppFn then
+    let env ← getEnv
+    if env.isConstructor name then return (e, none)
+    -- OfNat.ofNat wraps numeric literals — no address arithmetic inside
+    if name == ``OfNat.ofNat then return (e, none)
   -- 1. Recurse into .app sub-expressions first (bottom-up)
   let (e', childPf?) ← match e with
     | .app f a => do
@@ -253,15 +270,9 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
       #[entry, exit_, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
   -- Build frame expression
   let frameExpr ← buildSepConjChain frameAtoms
-  -- Prove pcFree for the frame
-  let pcFreeType := mkApp (mkConst ``EvmAsm.Assertion.pcFree) frameExpr
-  let pcFreeMVar ← mkFreshExprMVar pcFreeType
-  try
-    let stx ← `(tactic| pcFree)
-    let _ ← Lean.Elab.runTactic pcFreeMVar.mvarId! stx
-  catch _ =>
-    throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
-  let pcFreeProof ← instantiateMVars pcFreeMVar
+  -- Prove pcFree for the frame (direct proof construction, no tactic overhead)
+  let pcFreeProof ← try buildPcFreeProof frameExpr
+    catch _ => throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
   -- Frame s1: cpsTriple entry exit (P1 ** F) (Q1 ** F)
   let s1Framed := mkAppN (mkConst ``EvmAsm.cpsTriple_frame_left)
     #[entry, exit_, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]

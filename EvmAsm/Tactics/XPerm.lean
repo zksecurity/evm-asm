@@ -60,49 +60,63 @@ partial def flattenSepConj (e : Expr) : MetaM (List Expr) := do
   | some (l, r) => return l :: (← flattenSepConj r)
   | none => return [e]
 
-/-- Find the index of an atom in an array that is `isDefEq` to the target. -/
+/-- Find the index of an atom in an array that is `isDefEq` to the target.
+    Uses hash pre-filtering to reduce expensive `isDefEq` calls on non-matching atoms. -/
 def findAtomIdx (target : Expr) (atoms : Array Expr) : MetaM (Option Nat) := do
+  let h := target.hash
+  -- Fast path: check atoms with matching hash first (usually O(1) bucket)
   for i in [:atoms.size] do
-    if ← isDefEq target atoms[i]! then
-      return some i
+    if atoms[i]!.hash == h then
+      if ← isDefEq target atoms[i]! then return some i
+  -- Slow path: remaining atoms (handles hash mismatch + definitional equality)
+  for i in [:atoms.size] do
+    if atoms[i]!.hash != h then
+      if ← isDefEq target atoms[i]! then return some i
   return none
+
+/-- Remove element at `idx` from array, preserving order of remaining elements. -/
+private def arrayEraseIdx (arr : Array Expr) (idx : Nat) : Array Expr := Id.run do
+  let mut result : Array Expr := Array.mkEmpty (arr.size - 1)
+  for i in [:arr.size] do
+    if i != idx then
+      result := result.push arr[i]!
+  return result
 
 /-- Build a proof that picks the element at index `k` to the front of a
     right-associated sepConj chain.
 
     Given chain = A₀ ** (A₁ ** (... ** (Aₖ ** ...))),
-    returns a proof of:
-      chain = Aₖ ** (A₀ ** (A₁ ** (...)))
--/
-partial def buildPickProof (chain : Expr) (k : Nat) : MetaM Expr := do
+    returns `(proof, rhs)` where `proof : chain = rhs` and
+    `rhs = Aₖ ** (A₀ ** (A₁ ** (...)))`.
+
+    **Optimization**: returns the RHS expression alongside the proof,
+    avoiding expensive `inferType` calls on deeply nested proof terms. -/
+partial def buildPickProof (chain : Expr) (k : Nat) : MetaM (Expr × Expr) := do
   if k == 0 then
-    mkEqRefl chain
+    return (← mkEqRefl chain, chain)
   else
     -- Normalize chain to expose sepConj structure
     let chainN ← normForSepConj chain
     match ← parseSepConj? chainN with
     | none => throwError "buildPickProof: expected sepConj at index {k}, got:\n{chainN}"
     | some (head, tail) =>
-      -- If chain was normalized, we need to account for the definitional equality
-      -- chain =def= chainN = head ** tail
-      -- We'll work with chainN and rely on definitional equality
-      let innerProof ← buildPickProof tail (k - 1)
+      let (innerProof, innerRHS) ← buildPickProof tail (k - 1)
       -- innerProof : tail = innerRHS
       let sepConjHead := mkApp (mkConst ``EvmAsm.sepConj) head
       let step1 ← mkCongrArg sepConjHead innerProof
       -- step1 : head ** tail = head ** innerRHS
-      let innerType ← inferType innerProof
-      let some (_, _, innerRHS) := Expr.eq? innerType
-        | throwError "buildPickProof: inner proof is not an equality"
       match ← parseSepConj? innerRHS with
       | none =>
         -- Two-element case: head ** target → target ** head
         let step2 := mkApp2 (mkConst ``EvmAsm.sepConj_comm') head innerRHS
-        mkEqTrans step1 step2
+        let rhs := mkApp2 (mkConst ``EvmAsm.sepConj) innerRHS head
+        return (← mkEqTrans step1 step2, rhs)
       | some (target, rest) =>
         -- Three+ element case: head ** (target ** rest) → target ** (head ** rest)
         let step2 := mkApp3 (mkConst ``EvmAsm.sepConj_left_comm') head target rest
-        mkEqTrans step1 step2
+        let rhs := mkApp2 (mkConst ``EvmAsm.sepConj) target
+          (mkApp2 (mkConst ``EvmAsm.sepConj) head rest)
+        return (← mkEqTrans step1 step2, rhs)
 
 /-- Reassociate a sepConj chain to right-associated form.
     Handles `(A ** B) ** C → A ** (B ** C)` recursively.
@@ -136,50 +150,70 @@ partial def reassocProof (e : Expr) : MetaM (Expr × Expr) := do
 
     Given LHS and RHS as sepConj chains with the same atoms
     (up to `isDefEq`), builds a proof of `LHS = RHS`.
-    Handles non-right-associated chains by first reassociating. -/
+    Handles non-right-associated chains by first reassociating.
+
+    **Optimization**: flattens LHS once and passes the atom array through
+    recursion (avoiding O(n²) re-flattening). -/
 partial def buildPermProof (lhs rhs : Expr) : MetaM Expr := do
   -- First reassociate both sides to right-associated form
   let (lhsRA, lhsPf) ← reassocProof lhs
   let (rhsRA, rhsPf) ← reassocProof rhs
+  -- Flatten LHS once (not per-atom)
+  let lhsAtoms := (← flattenSepConj lhsRA).toArray
+  let rhsAtoms := (← flattenSepConj rhsRA).toArray
   -- Build permutation proof on right-associated forms
-  let rhsAtoms ← flattenSepConj rhsRA
-  let permPf ← buildPermProofAux lhsRA rhsAtoms.toArray
+  let permPf ← buildPermProofAux lhsRA lhsAtoms rhsAtoms
   -- Chain: lhs = lhsRA = rhsRA = rhs
   let step1 ← mkEqTrans lhsPf permPf
   let rhsPfSymm ← mkEqSymm rhsPf
   mkEqTrans step1 rhsPfSymm
 where
-  buildPermProofAux (currentLhs : Expr) (remainingRhs : Array Expr) (startIdx : Nat := 0) :
-      MetaM Expr := do
+  /-- Inner loop: pick each RHS atom from the LHS chain.
+      `lhsAtoms` is the cached atom array (updated by erasing matched elements). -/
+  buildPermProofAux (currentLhs : Expr) (lhsAtoms : Array Expr)
+      (remainingRhs : Array Expr) (startIdx : Nat := 0) : MetaM Expr := do
     if startIdx >= remainingRhs.size then
       mkEqRefl currentLhs
     else if startIdx + 1 == remainingRhs.size then
       -- Last atom: they should be isDefEq
       let target := remainingRhs[startIdx]!
-      let currentAtoms ← flattenSepConj currentLhs
-      if currentAtoms.length == 1 then
+      if lhsAtoms.size == 1 then
         if ← isDefEq currentLhs target then
           mkEqRefl currentLhs
         else
           throwError "xperm: final atoms don't match:\n  LHS: {currentLhs}\n  RHS: {target}"
       else
-        throwError "xperm: LHS has {currentAtoms.length} atoms but only 1 remaining in RHS"
+        throwError "xperm: LHS has {lhsAtoms.size} atoms but only 1 remaining in RHS"
     else
+      -- Early termination: if remaining LHS atoms already match RHS in order, short-circuit.
+      -- This avoids O(m²) picks when only a few atoms were rearranged (common in seqFrame).
+      if lhsAtoms.size == remainingRhs.size - startIdx then
+        let mut hashesMatch := true
+        for j in [:lhsAtoms.size] do
+          if lhsAtoms[j]!.hash != remainingRhs[startIdx + j]!.hash then
+            hashesMatch := false
+            break
+        if hashesMatch then
+          -- Hashes match — build remaining RHS chain and verify with isDefEq
+          let endIdx := remainingRhs.size
+          let mut rhsChain := remainingRhs[endIdx - 1]!
+          for j' in [:endIdx - startIdx - 1] do
+            let j := endIdx - 2 - j'
+            rhsChain := mkApp2 (mkConst ``EvmAsm.sepConj) remainingRhs[j]! rhsChain
+          if ← withoutModifyingState (isDefEq currentLhs rhsChain) then
+            return ← mkEqRefl currentLhs
       let target := remainingRhs[startIdx]!
-      let currentAtoms := (← flattenSepConj currentLhs).toArray
-      -- Find target in current LHS atoms
-      let some idx ← findAtomIdx target currentAtoms
-        | throwError "xperm: could not find atom in LHS matching RHS atom:\n  target: {target}\n  LHS ({currentAtoms.size} atoms)"
-      -- Build pick proof: currentLhs = pickedRhs
-      let pickProof ← buildPickProof currentLhs idx
-      -- Get the "pickedRhs" after picking
-      let pickType ← inferType pickProof
-      let some (_, _, pickedRhs) := Expr.eq? pickType
-        | throwError "xperm: pick proof is not an equality"
+      -- Find target in cached LHS atoms (no re-flattening)
+      let some idx ← findAtomIdx target lhsAtoms
+        | throwError "xperm: could not find atom in LHS matching RHS atom:\n  target: {target}\n  LHS ({lhsAtoms.size} atoms)"
+      -- Build pick proof: currentLhs = pickedRhs (returns RHS directly, no inferType needed)
+      let (pickProof, pickedRhs) ← buildPickProof currentLhs idx
       match ← parseSepConj? pickedRhs with
       | none =>
         throwError "xperm: picked result is a single atom but {remainingRhs.size - startIdx} RHS atoms remain"
       | some (pickedHead, pickedTail) =>
+        -- Update cached atoms: remove the matched element
+        let newLhsAtoms := arrayEraseIdx lhsAtoms idx
         if startIdx + 2 == remainingRhs.size then
           -- Exactly 2 remaining: pickedTail should match the last RHS atom
           let lastTarget := remainingRhs[startIdx + 1]!
@@ -191,8 +225,8 @@ where
           else
             throwError "xperm: last two atoms don't match:\n  LHS tail: {pickedTail}\n  RHS last: {lastTarget}"
         else
-          -- Recursively process the tail
-          let tailProof ← buildPermProofAux pickedTail remainingRhs (startIdx + 1)
+          -- Recursively process the tail with updated atom cache
+          let tailProof ← buildPermProofAux pickedTail newLhsAtoms remainingRhs (startIdx + 1)
           let sepConjPicked := mkApp (mkConst ``EvmAsm.sepConj) pickedHead
           let step2 ← mkCongrArg sepConjPicked tailProof
           mkEqTrans pickProof step2

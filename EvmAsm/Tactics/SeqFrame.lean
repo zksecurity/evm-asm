@@ -44,7 +44,8 @@ def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr)) :
 
 /-- Given Q1 (postcondition of h1) and P2 (precondition of h2),
     find atoms of P2 within Q1 and return the frame (residual Q1 atoms).
-    Both sides are first reassociated to right-associated form for proper flattening. -/
+    Both sides are first reassociated to right-associated form for proper flattening.
+    Uses hash pre-filtering to reduce expensive `isDefEq` calls. -/
 def computeFrame (q1 p2 : Expr) : MetaM (List Expr) := do
   -- Reassociate to right-associated form before flattening
   let (q1RA, _) ← reassocProof q1
@@ -53,13 +54,23 @@ def computeFrame (q1 p2 : Expr) : MetaM (List Expr) := do
   let p2Atoms := (← flattenSepConj p2RA).toArray
   let mut available := (Array.mk (List.replicate q1Atoms.size true) : Array Bool)
   for p2Atom in p2Atoms do
+    let h := p2Atom.hash
     let mut found := false
+    -- Fast path: check atoms with matching hash first
     for i in [:q1Atoms.size] do
-      if available[i]! then
+      if available[i]! && q1Atoms[i]!.hash == h then
         if ← withReducible (isDefEq p2Atom q1Atoms[i]!) then
           available := available.set! i false
           found := true
           break
+    -- Slow path: remaining atoms (handles hash mismatch + definitional equality)
+    unless found do
+      for i in [:q1Atoms.size] do
+        if available[i]! && q1Atoms[i]!.hash != h then
+          if ← withReducible (isDefEq p2Atom q1Atoms[i]!) then
+            available := available.set! i false
+            found := true
+            break
     unless found do
       throwError "seqFrame: h2's precondition atom not found in h1's postcondition:\n  {p2Atom}\n\
           Hint: h1's postcondition must contain all atoms needed by h2's precondition."
@@ -68,6 +79,50 @@ def computeFrame (q1 p2 : Expr) : MetaM (List Expr) := do
     if available[i]! then
       result := result ++ [q1Atoms[i]!]
   return result
+
+/-- Build a `pcFree` proof directly in MetaM, avoiding tactic overhead.
+    Handles all standard assertion types; falls back to the `pcFree` tactic for unknowns. -/
+partial def buildPcFreeProof (assertion : Expr) : MetaM Expr := do
+  let e ← normForSepConj assertion
+  if e.isAppOfArity ``EvmAsm.sepConj 2 then
+    let l := Expr.appArg! (Expr.appFn! e)
+    let r := Expr.appArg! e
+    let lPf ← buildPcFreeProof l
+    let rPf ← buildPcFreeProof r
+    return mkApp4 (mkConst ``EvmAsm.pcFree_sepConj) l r lPf rPf
+  else if e.isAppOfArity `EvmAsm.instrAt 2 then
+    let args := e.getAppArgs
+    return mkApp2 (mkConst ``EvmAsm.pcFree_instrAt) args[0]! args[1]!
+  else if e.isAppOfArity `EvmAsm.regIs 2 then
+    let args := e.getAppArgs
+    return mkApp2 (mkConst ``EvmAsm.pcFree_regIs) args[0]! args[1]!
+  else if e.isAppOfArity `EvmAsm.memIs 2 then
+    let args := e.getAppArgs
+    return mkApp2 (mkConst ``EvmAsm.pcFree_memIs) args[0]! args[1]!
+  else if e.isAppOfArity `EvmAsm.regOwn 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_regOwn) e.getAppArgs[0]!
+  else if e.isAppOfArity `EvmAsm.memOwn 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_memOwn) e.getAppArgs[0]!
+  else if e == mkConst ``EvmAsm.empAssertion then
+    return mkConst ``EvmAsm.pcFree_emp
+  else if e.isAppOfArity `EvmAsm.pure 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_pure) e.getAppArgs[0]!
+  else if e.isAppOfArity `EvmAsm.publicValuesIs 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_publicValuesIs) e.getAppArgs[0]!
+  else if e.isAppOfArity `EvmAsm.privateInputIs 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_privateInputIs) e.getAppArgs[0]!
+  else if e.isAppOfArity `EvmAsm.programAt 1 then
+    return mkApp (mkConst ``EvmAsm.pcFree_programAt) e.getAppArgs[0]!
+  else if e.isAppOfArity `EvmAsm.progAt 2 then
+    let args := e.getAppArgs
+    return mkApp2 (mkConst ``EvmAsm.pcFree_progAt) args[0]! args[1]!
+  else
+    -- Fallback to tactic for unknown assertion types
+    let pcFreeType := mkApp (mkConst ``EvmAsm.Assertion.pcFree) assertion
+    let pcFreeMVar ← mkFreshExprMVar pcFreeType
+    let stx ← `(tactic| pcFree)
+    let _ ← Lean.Elab.runTactic pcFreeMVar.mvarId! stx
+    instantiateMVars pcFreeMVar
 
 /-- Build a lambda `fun (h : PartialState) (hp : P h) => proof h hp`
     where proof converts `P h` to `Q h` using a permutation equality `P = Q`. -/
@@ -104,15 +159,9 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let frameAtoms ← computeFrame postQ1 preP2
   let frameExpr ← buildSepConjChain frameAtoms
 
-  -- Solve pcFree for the frame
-  let pcFreeType := mkApp (mkConst ``EvmAsm.Assertion.pcFree) frameExpr
-  let pcFreeMVar ← mkFreshExprMVar pcFreeType
-  try
-    let stx ← `(tactic| pcFree)
-    let _ ← Lean.Elab.runTactic pcFreeMVar.mvarId! stx
-  catch _ =>
-    throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
-  let pcFreeProof ← instantiateMVars pcFreeMVar
+  -- Solve pcFree for the frame (direct proof construction, no tactic overhead)
+  let pcFreeProof ← try buildPcFreeProof frameExpr
+    catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
 
   -- h2Framed : cpsTriple mid exit_ (P2 ** F) (Q2 ** F)
   let h2Framed := mkAppN (mkConst ``EvmAsm.cpsTriple_frame_left)
