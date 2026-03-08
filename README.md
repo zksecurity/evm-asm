@@ -1,7 +1,7 @@
 # evm.asm: A Verified Macro Assembler for building zkEVM in Lean 4 (early experiment)
 
 A prototype implementation of a verified macro assembler targeting the zkEVM,
-built on a RISC-V backend (RV32IM), inspired by:
+built on RISC-V backends (RV64IM primary, RV32IM secondary), inspired by:
 
 > Andrew Kennedy, Nick Benton, Jonas B. Jensen, Pierre-Evariste Dagand.
 > **"Coq: The world's best macro assembler?"**
@@ -88,49 +88,71 @@ theorem add_mulc_spec (m nbits : Nat) (hm : m < 2 ^ nbits)
 
 ```
 EvmAsm/
-  Basic.lean            -- Machine state: registers, memory, PC
-  Instructions.lean     -- RV32IM instruction set and semantics (incl. ECALL)
-  Program.lean          -- Programs as instruction lists, sequential composition
-  Execution.lean        -- Branch-aware execution, code memory, step/stepN
-  SepLogic.lean         -- Separation logic assertions and combinators
-  CPSSpec.lean          -- CPS-style Hoare triples, branch specs, structural rules
-  ControlFlow.lean      -- if_eq macro, symbolic proofs, pcIndep
-  Tactics/
-    XPerm.lean          -- xperm tactic: AC-permutation of sepConj chains
-    XSimp.lean          -- xperm_hyp/xsimp tactics: assertion implication
-    XCancel.lean        -- xcancel tactic: cancellation with frame extraction
-    SeqFrame.lean       -- seqFrame tactic: auto frame+compose cpsTriple specs
-  InstructionSpecs.lean -- Per-instruction CPS specs (ADD, SUB, ADDI, LW, SW, BEQ, ...)
-  SyscallSpecs.lean     -- Syscall specs: HALT, WRITE, HINT_READ, memory buffers
-  MulMacro.lean         -- The add_mulc macro with correctness proofs
-  Evm/
-    Basic.lean          -- EvmWord (BitVec 256), getLimb, fromLimbs, round-trip lemmas
-    Stack.lean          -- evmWordIs, evmStackIs, pcFree lemmas
-    StackOps.lean       -- EVM POP/PUSH0/DUP1/SWAP1 programs + specs;
-                        --   generic evm_dup n / evm_swap n (1 ≤ n ≤ 16)
-    Bitwise.lean        -- EVM AND/OR/XOR/NOT programs + per-limb specs
-    And.lean            -- Full 256-bit EVM AND spec (composed from per-limb)
-    Or.lean             -- Full 256-bit EVM OR spec
-    Xor.lean            -- Full 256-bit EVM XOR spec
-    Not.lean            -- Full 256-bit EVM NOT spec
-    Arithmetic.lean     -- EVM ADD/SUB programs + per-limb specs
-    ArithmeticSpec.lean -- Full 256-bit EVM ADD/SUB specs
-    Comparison.lean     -- EVM ISZERO/LT/GT/EQ programs + per-limb specs
-    ComparisonSpec.lean -- Full 256-bit EVM LT/GT/EQ/ISZERO specs
-  Examples.lean         -- Module hub importing all examples
-  Examples/
-    Swap.lean           -- Register swap macro
-    Zero.lean           -- Zero-register macro
-    Multiply.lean       -- Multiply-by-constant examples
-    LoadModifyStore.lean -- Load-modify-store pattern
-    Combining.lean      -- Combining multiple macros
-    Halting.lean        -- HALT/ECALL termination examples
-    Commit.lean         -- COMMIT syscall example
-    Write.lean          -- WRITE syscall example
-    FullPipeline.lean   -- End-to-end pipeline example
-    HelloWorld.lean     -- Hello world program
-    HelloWorldSpec.lean -- Hello world correctness proof
-    Echo.lean           -- Echo program with CPS spec
+  Rv64/                       -- RV64IM backend (primary)
+    Basic.lean                --   Machine state: registers (64-bit), memory, PC
+    Instructions.lean         --   RV64IM instruction set and semantics
+    Program.lean              --   Programs as instruction lists, sequential composition
+    Execution.lean            --   Branch-aware execution, code memory, step/stepN
+    SepLogic.lean             --   Separation logic assertions and combinators
+    CPSSpec.lean              --   CPS-style Hoare triples, branch specs, structural rules
+    ControlFlow.lean          --   if_eq macro, symbolic proofs, pcIndep
+    GenericSpecs.lean         --   Generic specs parameterized over instructions
+    InstructionSpecs.lean     --   Per-instruction CPS specs
+    SyscallSpecs.lean         --   Syscall specs: HALT, WRITE, HINT_READ
+    Tactics/
+      XPerm.lean              --   xperm tactic: AC-permutation of sepConj chains
+      XSimp.lean              --   xperm_hyp/xsimp tactics: assertion implication
+      XCancel.lean            --   xcancel tactic: cancellation with frame extraction
+      SeqFrame.lean           --   seqFrame tactic: auto frame+compose cpsTriple specs
+      LiftSpec.lean           --   liftSpec tactic: lift instruction specs
+      RunBlock.lean           --   runBlock tactic: block execution automation
+      SpecDb.lean             --   Spec database for tactic lookup
+  Rv32/                       -- RV32IM backend (secondary, parallel structure)
+    Basic.lean ... Tactics/   --   Same modules as Rv64, 32-bit word size
+    MulMacro.lean             --   The add_mulc macro with correctness proofs
+  Evm64/                      -- EVM opcodes on RV64IM (primary, 4×64-bit limbs, 18 files)
+    Basic.lean                --   EvmWord (BitVec 256), getLimb64, fromLimbs64
+    Stack.lean                --   evmWordIs, evmStackIs, pcFree lemmas
+    StackOps.lean             --   POP, PUSH0, DUP1, SWAP1, generic DUPn/SWAPn
+    Bitwise.lean              --   AND/OR/XOR/NOT programs + per-limb specs
+    And.lean                  --   Full 256-bit AND spec
+    Or.lean                   --   Full 256-bit OR spec
+    Xor.lean                  --   Full 256-bit XOR spec
+    Not.lean                  --   Full 256-bit NOT spec
+    Arithmetic.lean           --   ADD/SUB programs + per-limb specs
+    Add.lean                  --   Full 256-bit ADD spec
+    Sub.lean                  --   Full 256-bit SUB spec
+    Comparison.lean           --   LT/GT/EQ/ISZERO programs + per-limb specs
+    Lt.lean                   --   Full 256-bit LT spec
+    Gt.lean                   --   Full 256-bit GT spec
+    Eq.lean                   --   Full 256-bit EQ spec
+    IsZero.lean               --   Full 256-bit ISZERO spec
+    Shift.lean                --   SHR program + per-limb specs
+    ShiftSpec.lean            --   Full 256-bit SHR spec
+    zkvm-standards/           --   Submodule: zkVM RISC-V target standards
+  Evm32/                      -- EVM opcodes on RV32IM (secondary, 8×32-bit limbs, 15 files)
+    Basic.lean ... StackOps.lean  -- Same opcodes as Evm64, 32-bit limbs
+    Shift.lean                --   SHR program + per-limb specs
+    ShiftSpec.lean            --   Full 256-bit SHR spec
+    ShiftComposition.lean     --   SHR shift composition (1 sorry)
+  Examples/                   -- 12 example files
+    Swap.lean                 --   Register swap macro
+    Zero.lean                 --   Zero-register macro
+    Multiply.lean             --   Multiply-by-constant examples
+    LoadModifyStore.lean      --   Load-modify-store pattern
+    Combining.lean            --   Combining multiple macros
+    Halting.lean              --   HALT/ECALL termination examples
+    Commit.lean               --   COMMIT syscall example
+    Write.lean                --   WRITE syscall example
+    FullPipeline.lean         --   End-to-end pipeline example
+    HelloWorld.lean           --   Hello world program
+    HelloWorldSpec.lean       --   Hello world correctness proof
+    Echo.lean                 --   Echo program with CPS spec
+EvmAsm.lean                  -- Top-level module hub
+EvmAsm/Rv64.lean             -- Rv64 module hub
+EvmAsm/Rv32.lean             -- Rv32 module hub
+EvmAsm/Examples.lean         -- Examples module hub
+execution-specs/              -- Submodule: Ethereum execution specs (uninitialized)
 ```
 
 ## Lean Toolchain
@@ -156,22 +178,20 @@ lake build
 
 This is a **prototype** demonstrating the approach. Current state:
 
-- **Working**: Machine model, instruction semantics, program composition,
-  separation logic framework, Hoare triple infrastructure, concrete
-  correctness proofs via `native_decide`.
-- **Proved**:
-  - Separation logic properties (commutativity, associativity, unit)
-  - Hoare triple structural rules (skip, sequence, consequence, frame, existential)
-  - Register file lemmas, swap correctness, `add_mulc_correct`
-  - CPS-style branch specs (`cpsBranch`, `cpsNBranch`), `if_eq` control flow
-  - ECALL/HALT termination (SP1 convention)
-  - EVM 256-bit bitwise ops: AND, OR, XOR, NOT (full specs)
-  - EVM 256-bit arithmetic: ADD, SUB (full specs)
-  - EVM 256-bit comparisons: LT, GT, EQ, ISZERO (full specs)
-  - EVM stack ops: POP, PUSH0, DUP1, SWAP1 (concrete), DUPn/SWAPn for 1 ≤ n ≤ 16 (generic)
-- **TODO**: More control flow macros (loops, function calls), MLOAD/MSTORE,
-  additional arithmetic (MUL, DIV, MOD), preprocessed, connect to sail-riscv-lean for making sure this project is really about RISC-V, connect to EVM specs in Lean,
-  transaction and block processing, Ethereum state transition, I guess I forgot something, TEST! TEST! TEST!
+- **Infrastructure**: Two complete RISC-V backends (RV64IM, RV32IM) with
+  separation logic, CPS-style Hoare triples, and automated tactics
+  (`xperm`, `xcancel`, `seqFrame`, `liftSpec`, `runBlock`).
+- **Evm64 (primary, 0 sorry)** — targets `riscv64im_zicclsm-unknown-none-elf`,
+  4×64-bit limbs, 15 fully-proved opcodes:
+  AND, OR, XOR, NOT, ADD, SUB, LT, GT, EQ, ISZERO, SHR,
+  POP, PUSH0, DUP1, SWAP1 (+ generic DUPn/SWAPn for 1 ≤ n ≤ 16)
+- **Evm32 (secondary, 1 sorry)** — 8×32-bit limbs, same 15 opcodes;
+  one sorry remains in `ShiftComposition.lean`.
+- **Proved (examples)**: `add_mulc`, register swap, hello world, echo,
+  HALT/COMMIT termination, load-modify-store, full pipeline.
+- **TODO**: More opcodes (MUL, DIV, MOD, SHL, SAR, MLOAD, MSTORE),
+  interpreter loop, state transition function, connect to sail-riscv-lean
+  for RISC-V spec compliance, connect to EVM specs in Lean, testing.
 
 ## References
 
@@ -200,5 +220,7 @@ This is a **prototype** demonstrating the approach. Current state:
     `cpsTriple_frame_left` + `cpsTriple_seq_with_perm`.
 - SP1 zkVM: https://github.com/succinctlabs/sp1
   The `ECALL`-based syscall mechanism follows SP1's conventions.
+- zkvm-standards: https://github.com/eth-act/zkvm-standards
+  Tentative standards for zkVM RISC-V target, I/O interface, and C-interface accelerators.
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
