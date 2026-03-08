@@ -78,13 +78,13 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 
 ## Current Status
 
-### Evm64 (PRIMARY) — 17 opcodes, all proofs complete (0 sorry)
+### Evm64 (PRIMARY) — 19 opcodes, all proofs complete (0 sorry)
 
 | Category | Opcodes | Instructions (per op) | Status |
 |----------|---------|----------------------|--------|
 | Arithmetic | ADD, SUB | 30 each | ✅ Fully proved |
 | Bitwise | AND, OR, XOR, NOT | 17 / 17 / 17 / 12 | ✅ Fully proved |
-| Shift | SHR | 90 | ✅ Fully proved |
+| Shift | SHR, SHL, SAR | 90 / 90 / 95 | ✅ Fully proved |
 | Comparison | ISZERO, LT, GT, EQ, SLT, SGT | 12 / 26 / 26 / 21 / 25 / 25 | ✅ Fully proved |
 | Stack | POP, PUSH0, DUP1, SWAP1 | 1 / 5 / 9 / 16 | ✅ Fully proved |
 
@@ -129,17 +129,19 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 
 ### Phase 2: Remaining Shifts & Bitwise ← NEXT
 
-#### 2.1 SHL (Shift Left)
-- **File**: `Evm64/Shift.lean` + `Evm64/ShlSpec.lean` (new)
-- **Approach**: Mirror of SHR. Decompose into limb_shift (÷64) and bit_shift
-  (%64). Cascade dispatch on limb_shift (0-3 for 64-bit). 4 unrolled shift
-  bodies with SLL+SRL+OR per output limb.
-- **Note**: ~90 instructions (similar to SHR). Simpler than Evm32 (4 vs 8 cases).
+#### ~~2.1 SHL (Shift Left)~~ ✅
+- **Files**: `Evm64/Shift.lean` (program + 11 tests) + `Evm64/ShlSpec.lean` (per-limb + body specs)
+- **Approach**: Mirror of SHR. Reuses SHR phases A/B/C/zero_path. 4 SHL bodies
+  process top-down (SLL+SRL swapped vs SHR). Per-limb helpers: `shl_merge_limb_spec`,
+  `shl_first_limb_spec`, in-place variants. Body specs: `shl_body_{0,1,2,3}_spec`.
+- 90 instructions = 360 bytes. All specs proved, 0 sorry.
 
-#### 2.2 SAR (Shift Right Arithmetic)
-- **File**: `Evm64/Shift.lean` + `Evm64/SarSpec.lean` (new)
-- **Approach**: Like SHR but fills vacated bits with sign bit (MSB of input).
-  Extract sign, then SHR body with sign-fill instead of zero-fill.
+#### ~~2.2 SAR (Shift Right Arithmetic)~~ ✅
+- **Files**: `Evm64/Shift.lean` (program + 12 tests) + `Evm64/SarSpec.lean` (per-limb + body + sign-fill specs)
+- **Approach**: Like SHR but uses SRA for MSB limb and fills vacated limbs with
+  sign extension (SRAI result, 63). Reuses SHR phase B and merge limb specs.
+  Custom phase A/C (different offsets), sign-fill path (7 instrs) instead of zero_path.
+- 95 instructions = 380 bytes. All specs proved, 0 sorry.
 
 #### 2.3 BYTE (Extract byte from word)
 - **File**: `Evm64/Bitwise.lean` + `Evm64/Byte.lean` (new)

@@ -132,6 +132,15 @@ namespace EvmAsm.Rv64
     (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
 
+@[spec_gen_rv64] theorem sra_spec_gen_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs2) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .SRA rd rd rs2) ** (rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      ((addr ↦ᵢ .SRA rd rd rs2) ** (rd ↦ᵣ (BitVec.sshiftRight v1 (v2.toNat % 64))) ** (rs2 ↦ᵣ v2)) :=
+  generic_2reg_rd_eq_rs1_spec (.SRA rd rd rs2) rd rs2 v1 v2 _ addr hrd_ne_x0
+    (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
 -- ============================================================================
 -- Immediate specs
 -- ============================================================================
@@ -188,6 +197,24 @@ namespace EvmAsm.Rv64
       ((addr ↦ᵢ .SRLI rd rd shamt) ** (rd ↦ᵣ (v >>> shamt.toNat))) :=
   generic_1reg_spec (.SRLI rd rd shamt) rd v _ addr hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+@[spec_gen_rv64] theorem srai_spec_gen_same (rd : Reg) (v : Word) (shamt : BitVec 6)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .SRAI rd rd shamt) ** (rd ↦ᵣ v))
+      ((addr ↦ᵢ .SRAI rd rd shamt) ** (rd ↦ᵣ (BitVec.sshiftRight v shamt.toNat))) :=
+  generic_1reg_spec (.SRAI rd rd shamt) rd v _ addr hrd_ne_x0
+    (by intro s _ hrd; simp [execInstrBr, hrd])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+@[spec_gen_rv64] theorem srai_spec_gen (rd rs1 : Reg) (v_old v1 : Word) (shamt : BitVec 6)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .SRAI rd rs1 shamt) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old))
+      ((addr ↦ᵢ .SRAI rd rs1 shamt) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (BitVec.sshiftRight v1 shamt.toNat))) :=
+  generic_2reg_spec (.SRAI rd rs1 shamt) rs1 rd v1 v_old (BitVec.sshiftRight v1 shamt.toNat) addr hrd_ne_x0
+    (by intro s _ hrs1 _; simp [execInstrBr, hrs1])
     (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
 
 -- ============================================================================
