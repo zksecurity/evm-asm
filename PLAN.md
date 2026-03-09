@@ -78,11 +78,11 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 
 ## Current Status
 
-### Evm64 (PRIMARY) — 50 opcodes, all proofs complete (0 sorry)
+### Evm64 (PRIMARY) — 51 opcodes, all proofs complete (0 sorry)
 
 | Category | Opcodes | Instructions (per op) | Status |
 |----------|---------|----------------------|--------|
-| Arithmetic | ADD, SUB | 30 each | ✅ Fully proved |
+| Arithmetic | ADD, SUB, SIGNEXTEND | 30 / 30 / 48 | ✅ Fully proved |
 | Bitwise | AND, OR, XOR, NOT, BYTE | 17 / 17 / 17 / 12 / 45 | ✅ Fully proved |
 | Shift | SHR, SHL, SAR | 90 / 90 / 95 | ✅ Fully proved |
 | Comparison | ISZERO, LT, GT, EQ, SLT, SGT | 12 / 26 / 26 / 21 / 25 / 25 | ✅ Fully proved |
@@ -199,8 +199,12 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 #### 4.5 EXP (Exponentiation)
 - **Approach**: Square-and-multiply using MUL. Loop over exponent bits.
 
-#### 4.6 SIGNEXTEND
-- **Approach**: Sign-extend byte b of value x. Per-limb mask logic.
+#### ~~4.6 SIGNEXTEND~~ ✅
+- **Files**: `Evm64/SignExtend.lean` (program + 16 tests) + `Evm64/SignExtendSpec.lean` (per-body + phase B specs)
+- **Approach**: If b >= 31, result = x. Else compute limb_idx = b/8, shift_amount = 56 - (b%8)*8.
+  Cascade dispatch to body_N: SLL+SRA sign-extends target limb in-place, SRAI fills higher limbs.
+  Shares Phase B computation with BYTE opcode.
+- 48 instructions = 192 bytes. All specs proved, 0 sorry.
 
 ### Phase 5: Memory & Code Region
 
