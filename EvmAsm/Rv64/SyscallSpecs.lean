@@ -333,6 +333,15 @@ namespace EvmAsm.Rv64
     (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
 
+@[spec_gen_rv64] theorem sltu_spec_gen_rd_eq_rs2 (rd rs1 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rs1 ≠ rd) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .SLTU rd rs1 rd) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ v2))
+      ((addr ↦ᵢ .SLTU rd rs1 rd) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (if BitVec.ult v1 v2 then (1 : Word) else 0))) :=
+  generic_2reg_spec (.SLTU rd rs1 rd) rs1 rd v1 v2 _ addr hrd_ne_x0
+    (by intro s _ hrs1 hrd; simp [execInstrBr, hrs1, hrd])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
 @[spec_gen_rv64] theorem or_spec_gen (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
     (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) :
     cpsTriple addr (addr + 4)
@@ -340,6 +349,46 @@ namespace EvmAsm.Rv64
       ((addr ↦ᵢ .OR rd rs1 rs2) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 ||| v2))) :=
   generic_3reg_spec (.OR rd rs1 rs2) rs1 rs2 rd v1 v2 v_old _ addr hrd_ne_x0
     (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+-- ============================================================================
+-- M extension: multiply specs
+-- ============================================================================
+
+@[spec_gen_rv64] theorem mul_spec_gen (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .MUL rd rs1 rs2) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old))
+      ((addr ↦ᵢ .MUL rd rs1 rs2) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 * v2))) :=
+  generic_3reg_spec (.MUL rd rs1 rs2) rs1 rs2 rd v1 v2 v_old _ addr hrd_ne_x0
+    (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+@[spec_gen_rv64] theorem mul_spec_gen_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs2) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .MUL rd rd rs2) ** (rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      ((addr ↦ᵢ .MUL rd rd rs2) ** (rd ↦ᵣ (v1 * v2)) ** (rs2 ↦ᵣ v2)) :=
+  generic_2reg_rd_eq_rs1_spec (.MUL rd rd rs2) rd rs2 v1 v2 _ addr hrd_ne_x0
+    (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+@[spec_gen_rv64] theorem mulhu_spec_gen (rd rs1 rs2 : Reg) (v_old v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .MULHU rd rs1 rs2) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old))
+      ((addr ↦ᵢ .MULHU rd rs1 rs2) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ rv64_mulhu v1 v2)) :=
+  generic_3reg_spec (.MULHU rd rs1 rs2) rs1 rs2 rd v1 v2 v_old _ addr hrd_ne_x0
+    (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
+    (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
+
+@[spec_gen_rv64] theorem mulhu_spec_gen_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word)
+    (addr : Addr) (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs2) :
+    cpsTriple addr (addr + 4)
+      ((addr ↦ᵢ .MULHU rd rd rs2) ** (rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      ((addr ↦ᵢ .MULHU rd rd rs2) ** (rd ↦ᵣ rv64_mulhu v1 v2) ** (rs2 ↦ᵣ v2)) :=
+  generic_2reg_rd_eq_rs1_spec (.MULHU rd rd rs2) rd rs2 v1 v2 _ addr hrd_ne_x0
+    (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
 
 @[spec_gen_rv64] theorem sub_spec_gen_rd_eq_rs2 (rd rs1 : Reg) (v1 v2 : Word)

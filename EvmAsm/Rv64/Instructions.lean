@@ -112,19 +112,19 @@ def rv64_remu (a b : Word) : Word :=
 def rv64_mulh (a b : Word) : Word :=
   let a128 : BitVec 128 := a.signExtend 128
   let b128 : BitVec 128 := b.signExtend 128
-  (a128 * b128 >>> 64).truncate 64
+  ((a128 * b128) >>> 64).truncate 64
 
 /-- MULHSU: signed × unsigned, upper 64 bits. -/
 def rv64_mulhsu (a b : Word) : Word :=
   let a128 : BitVec 128 := a.signExtend 128
   let b128 : BitVec 128 := b.zeroExtend 128
-  (a128 * b128 >>> 64).truncate 64
+  ((a128 * b128) >>> 64).truncate 64
 
 /-- MULHU: unsigned × unsigned, upper 64 bits. -/
 def rv64_mulhu (a b : Word) : Word :=
   let a128 : BitVec 128 := a.zeroExtend 128
   let b128 : BitVec 128 := b.zeroExtend 128
-  (a128 * b128 >>> 64).truncate 64
+  ((a128 * b128) >>> 64).truncate 64
 
 -- ============================================================================
 -- Instruction Semantics

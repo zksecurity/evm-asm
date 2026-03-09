@@ -78,11 +78,11 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 
 ## Current Status
 
-### Evm64 (PRIMARY) — 51 opcodes, all proofs complete (0 sorry)
+### Evm64 (PRIMARY) — 52 opcodes, all proofs complete (0 sorry)
 
 | Category | Opcodes | Instructions (per op) | Status |
 |----------|---------|----------------------|--------|
-| Arithmetic | ADD, SUB, SIGNEXTEND | 30 / 30 / 48 | ✅ Fully proved |
+| Arithmetic | ADD, SUB, MUL, SIGNEXTEND | 30 / 30 / 63 / 48 | ✅ Fully proved (MUL: program + 16 tests) |
 | Bitwise | AND, OR, XOR, NOT, BYTE | 17 / 17 / 17 / 12 / 45 | ✅ Fully proved |
 | Shift | SHR, SHL, SAR | 90 / 90 / 95 | ✅ Fully proved |
 | Comparison | ISZERO, LT, GT, EQ, SLT, SGT | 12 / 26 / 26 / 21 / 25 / 25 | ✅ Fully proved |
@@ -171,17 +171,14 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 
 ### Phase 4: Remaining Arithmetic
 
-#### 4.1 MUL (256-bit Multiply)
-- **File**: `Evm64/Multiply.lean` (new)
-- **Approach**: Schoolbook 4×4 limb multiplication using RV64 MUL/MULHU.
-  Only need low 256 bits (4 output limbs). Each partial product `a_i × b_j`
-  contributes to limb `(i+j)` with carry to `(i+j+1)`.
-  With 4 limbs: 10 partial products (i+j < 4) + carry chain.
-  ~80-100 instructions (vs ~200+ for Evm32's 8×8).
-- **Note**: Hardest single opcode. Break into sub-tasks:
-  1. Single-limb multiply helper (MUL + MULHU for lo/hi)
-  2. Accumulate partial products with carry chain
-  3. Full 4×4 composition
+#### ~~4.1 MUL (256-bit Multiply)~~ ✅
+- **Files**: `Evm64/Multiply.lean` (program + 16 tests)
+- **Approach**: Schoolbook 4×4 limb column-wise multiplication using RV64 MUL/MULHU.
+  Column j processes b[j] × a[0..3-j]. After column j, result[j] is finalized.
+  Carry detection via SLTU after ADD. Intermediate r[3] accumulator spilled to memory
+  (reusing freed a-limb slots). Added `sltu_spec_gen_rd_eq_rs2` to SyscallSpecs.lean.
+  Fixed operator precedence bug in rv64_mulhu/rv64_mulh/rv64_mulhsu (`>>>` binds tighter than `*`).
+- 63 instructions = 252 bytes. Program + 16 tests verified, specs pending.
 
 #### 4.2 DIV and MOD
 - **File**: `Evm64/DivMod.lean` (new)
