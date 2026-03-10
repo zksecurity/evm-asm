@@ -11,6 +11,31 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
+/-- Instruction memory assertion for the 256-bit EVM ADD operation.
+    30 instructions = 120 bytes. 4 per-limb ADD blocks + ADDI sp adjustment. -/
+abbrev evm_add_code (base : Addr) : Assertion :=
+  -- Limb 0 code (5 instructions: base+0..base+16)
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SLTU .x5 .x7 .x6) **
+  ((base + 16) ↦ᵢ .SD .x12 .x7 32) **
+  -- Limb 1 code (8 instructions: base+20..base+48)
+  ((base + 20) ↦ᵢ .LD .x7 .x12 8) ** ((base + 24) ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 28) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 32) ↦ᵢ .SLTU .x11 .x7 .x6) **
+  ((base + 36) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 40) ↦ᵢ .SLTU .x6 .x7 .x5) **
+  ((base + 44) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 48) ↦ᵢ .SD .x12 .x7 40) **
+  -- Limb 2 code (8 instructions: base+52..base+80)
+  ((base + 52) ↦ᵢ .LD .x7 .x12 16) ** ((base + 56) ↦ᵢ .LD .x6 .x12 48) **
+  ((base + 60) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 64) ↦ᵢ .SLTU .x11 .x7 .x6) **
+  ((base + 68) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 72) ↦ᵢ .SLTU .x6 .x7 .x5) **
+  ((base + 76) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 80) ↦ᵢ .SD .x12 .x7 48) **
+  -- Limb 3 code (8 instructions: base+84..base+112)
+  ((base + 84) ↦ᵢ .LD .x7 .x12 24) ** ((base + 88) ↦ᵢ .LD .x6 .x12 56) **
+  ((base + 92) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 96) ↦ᵢ .SLTU .x11 .x7 .x6) **
+  ((base + 100) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 104) ↦ᵢ .SLTU .x6 .x7 .x5) **
+  ((base + 108) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 112) ↦ᵢ .SD .x12 .x7 56) **
+  -- ADDI instruction
+  ((base + 116) ↦ᵢ .ADDI .x12 .x12 32)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM ADD: composes 4 per-limb ADD specs + ADDI sp adjustment.
     30 instructions total. Pops 2 stack words (A at sp, B at sp+32),
@@ -37,28 +62,7 @@ theorem evm_add_spec (sp : Addr) (base : Addr)
     let result3 := psum3 + carry2
     let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
     let carry3 := carry3a ||| carry3b
-    let code :=
-      -- Limb 0 code (5 instructions: base+0..base+16)
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SLTU .x5 .x7 .x6) **
-      ((base + 16) ↦ᵢ .SD .x12 .x7 32) **
-      -- Limb 1 code (8 instructions: base+20..base+48)
-      ((base + 20) ↦ᵢ .LD .x7 .x12 8) ** ((base + 24) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 28) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 32) ↦ᵢ .SLTU .x11 .x7 .x6) **
-      ((base + 36) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 40) ↦ᵢ .SLTU .x6 .x7 .x5) **
-      ((base + 44) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 48) ↦ᵢ .SD .x12 .x7 40) **
-      -- Limb 2 code (8 instructions: base+52..base+80)
-      ((base + 52) ↦ᵢ .LD .x7 .x12 16) ** ((base + 56) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 60) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 64) ↦ᵢ .SLTU .x11 .x7 .x6) **
-      ((base + 68) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 72) ↦ᵢ .SLTU .x6 .x7 .x5) **
-      ((base + 76) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 80) ↦ᵢ .SD .x12 .x7 48) **
-      -- Limb 3 code (8 instructions: base+84..base+112)
-      ((base + 84) ↦ᵢ .LD .x7 .x12 24) ** ((base + 88) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 92) ↦ᵢ .ADD .x7 .x7 .x6) ** ((base + 96) ↦ᵢ .SLTU .x11 .x7 .x6) **
-      ((base + 100) ↦ᵢ .ADD .x7 .x7 .x5) ** ((base + 104) ↦ᵢ .SLTU .x6 .x7 .x5) **
-      ((base + 108) ↦ᵢ .OR .x5 .x11 .x6) ** ((base + 112) ↦ᵢ .SD .x12 .x7 56) **
-      -- ADDI instruction
-      ((base + 116) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_add_code base
     cpsTriple base (base + 120)
       (code **
        -- Registers + memory

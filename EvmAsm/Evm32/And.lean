@@ -16,6 +16,35 @@ namespace EvmAsm
 local macro "bv_addr" : tactic =>
   `(tactic| (apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]))
 
+/-- Instruction memory assertion for the 256-bit EVM AND operation (RV32). -/
+abbrev evm_and_code (base : Addr) : Assertion :=
+  -- Limb 0 code
+  (base ↦ᵢ .LW .x7 .x12 0) ** ((base + 4) ↦ᵢ .LW .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SW .x12 .x7 32) **
+  -- Limb 1 code
+  ((base + 16) ↦ᵢ .LW .x7 .x12 4) ** ((base + 20) ↦ᵢ .LW .x6 .x12 36) **
+  ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 36) **
+  -- Limb 2 code
+  ((base + 32) ↦ᵢ .LW .x7 .x12 8) ** ((base + 36) ↦ᵢ .LW .x6 .x12 40) **
+  ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SW .x12 .x7 40) **
+  -- Limb 3 code
+  ((base + 48) ↦ᵢ .LW .x7 .x12 12) ** ((base + 52) ↦ᵢ .LW .x6 .x12 44) **
+  ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SW .x12 .x7 44) **
+  -- Limb 4 code
+  ((base + 64) ↦ᵢ .LW .x7 .x12 16) ** ((base + 68) ↦ᵢ .LW .x6 .x12 48) **
+  ((base + 72) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 76) ↦ᵢ .SW .x12 .x7 48) **
+  -- Limb 5 code
+  ((base + 80) ↦ᵢ .LW .x7 .x12 20) ** ((base + 84) ↦ᵢ .LW .x6 .x12 52) **
+  ((base + 88) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 92) ↦ᵢ .SW .x12 .x7 52) **
+  -- Limb 6 code
+  ((base + 96) ↦ᵢ .LW .x7 .x12 24) ** ((base + 100) ↦ᵢ .LW .x6 .x12 56) **
+  ((base + 104) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 108) ↦ᵢ .SW .x12 .x7 56) **
+  -- Limb 7 code
+  ((base + 112) ↦ᵢ .LW .x7 .x12 28) ** ((base + 116) ↦ᵢ .LW .x6 .x12 60) **
+  ((base + 120) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 124) ↦ᵢ .SW .x12 .x7 60) **
+  -- ADDI
+  ((base + 128) ↦ᵢ .ADDI .x12 .x12 32)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM AND: composes 8 per-limb AND specs + sp adjustment.
     33 instructions total. Pops 2 stack words (A at sp, B at sp+32),
@@ -26,33 +55,7 @@ theorem evm_and_spec (sp base : Addr)
     (b0 b1 b2 b3 b4 b5 b6 b7 : Word)
     (v7 v6 : Word)
     (hvalid : ValidMemRange sp 16) :
-    let code :=
-      -- Limb 0 code
-      (base ↦ᵢ .LW .x7 .x12 0) ** ((base + 4) ↦ᵢ .LW .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SW .x12 .x7 32) **
-      -- Limb 1 code
-      ((base + 16) ↦ᵢ .LW .x7 .x12 4) ** ((base + 20) ↦ᵢ .LW .x6 .x12 36) **
-      ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 36) **
-      -- Limb 2 code
-      ((base + 32) ↦ᵢ .LW .x7 .x12 8) ** ((base + 36) ↦ᵢ .LW .x6 .x12 40) **
-      ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SW .x12 .x7 40) **
-      -- Limb 3 code
-      ((base + 48) ↦ᵢ .LW .x7 .x12 12) ** ((base + 52) ↦ᵢ .LW .x6 .x12 44) **
-      ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SW .x12 .x7 44) **
-      -- Limb 4 code
-      ((base + 64) ↦ᵢ .LW .x7 .x12 16) ** ((base + 68) ↦ᵢ .LW .x6 .x12 48) **
-      ((base + 72) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 76) ↦ᵢ .SW .x12 .x7 48) **
-      -- Limb 5 code
-      ((base + 80) ↦ᵢ .LW .x7 .x12 20) ** ((base + 84) ↦ᵢ .LW .x6 .x12 52) **
-      ((base + 88) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 92) ↦ᵢ .SW .x12 .x7 52) **
-      -- Limb 6 code
-      ((base + 96) ↦ᵢ .LW .x7 .x12 24) ** ((base + 100) ↦ᵢ .LW .x6 .x12 56) **
-      ((base + 104) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 108) ↦ᵢ .SW .x12 .x7 56) **
-      -- Limb 7 code
-      ((base + 112) ↦ᵢ .LW .x7 .x12 28) ** ((base + 116) ↦ᵢ .LW .x6 .x12 60) **
-      ((base + 120) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 124) ↦ᵢ .SW .x12 .x7 60) **
-      -- ADDI
-      ((base + 128) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_and_code base
     cpsTriple base (base + 132)
       (code **
        -- Registers + memory
@@ -90,33 +93,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_and_stack_spec (sp base : Addr)
     (a b : EvmWord) (v7 v6 : Word)
     (hvalid : ValidMemRange sp 16) :
-    let code :=
-      -- Limb 0 code
-      (base ↦ᵢ .LW .x7 .x12 0) ** ((base + 4) ↦ᵢ .LW .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SW .x12 .x7 32) **
-      -- Limb 1 code
-      ((base + 16) ↦ᵢ .LW .x7 .x12 4) ** ((base + 20) ↦ᵢ .LW .x6 .x12 36) **
-      ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SW .x12 .x7 36) **
-      -- Limb 2 code
-      ((base + 32) ↦ᵢ .LW .x7 .x12 8) ** ((base + 36) ↦ᵢ .LW .x6 .x12 40) **
-      ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SW .x12 .x7 40) **
-      -- Limb 3 code
-      ((base + 48) ↦ᵢ .LW .x7 .x12 12) ** ((base + 52) ↦ᵢ .LW .x6 .x12 44) **
-      ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SW .x12 .x7 44) **
-      -- Limb 4 code
-      ((base + 64) ↦ᵢ .LW .x7 .x12 16) ** ((base + 68) ↦ᵢ .LW .x6 .x12 48) **
-      ((base + 72) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 76) ↦ᵢ .SW .x12 .x7 48) **
-      -- Limb 5 code
-      ((base + 80) ↦ᵢ .LW .x7 .x12 20) ** ((base + 84) ↦ᵢ .LW .x6 .x12 52) **
-      ((base + 88) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 92) ↦ᵢ .SW .x12 .x7 52) **
-      -- Limb 6 code
-      ((base + 96) ↦ᵢ .LW .x7 .x12 24) ** ((base + 100) ↦ᵢ .LW .x6 .x12 56) **
-      ((base + 104) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 108) ↦ᵢ .SW .x12 .x7 56) **
-      -- Limb 7 code
-      ((base + 112) ↦ᵢ .LW .x7 .x12 28) ** ((base + 116) ↦ᵢ .LW .x6 .x12 60) **
-      ((base + 120) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 124) ↦ᵢ .SW .x12 .x7 60) **
-      -- ADDI
-      ((base + 128) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_and_code base
     cpsTriple base (base + 132)
       (code **
        -- Registers + memory

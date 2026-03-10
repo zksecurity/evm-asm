@@ -12,6 +12,19 @@ namespace EvmAsm.Rv64
 -- Full 256-bit AND spec
 -- ============================================================================
 
+/-- Instruction memory assertion for the 256-bit EVM AND operation.
+    17 instructions = 68 bytes. 4 per-limb AND blocks + ADDI sp adjustment. -/
+abbrev evm_and_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
+  ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
+  ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
+  ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
+  ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
+  ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56) **
+  ((base + 64) ↦ᵢ .ADDI .x12 .x12 32)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM AND: composes 4 per-limb AND specs + sp adjustment.
     17 instructions total. Pops 2 stack words (A at sp, B at sp+32),
@@ -19,16 +32,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_and_spec (sp base : Addr)
     (a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
-      ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
-      ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56) **
-      ((base + 64) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_and_code base
     cpsTriple base (base + 68)
       (code **
        -- Registers + memory
@@ -56,16 +60,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_and_stack_spec (sp base : Addr)
     (a b : EvmWord) (v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
-      ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 24) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 40) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
-      ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 56) ↦ᵢ .AND .x7 .x7 .x6) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56) **
-      ((base + 64) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_and_code base
     cpsTriple base (base + 68)
       (code **
        -- Registers + memory
