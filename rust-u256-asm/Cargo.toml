@@ -1,0 +1,13 @@
+[package]
+name = "u256-asm-compare"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ethereum-types = { version = "0.15.1", default-features = false }
+
+[profile.release]
+opt-level = 2
+lto = "thin"
+codegen-units = 1
+panic = "abort"
