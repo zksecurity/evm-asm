@@ -2201,4 +2201,242 @@ theorem divK_div128_prodcheck1_merged_spec
         xperm_hyp hp')
       h_composed
 
+-- ============================================================================
+-- div128 subroutine: Clamp q0 section [33]-[36].
+-- 4 instructions: SRLI + BEQ + ADDI + ADD.
+-- BEQ skips correction if q0 < 2^32, else q0-- and rhat2+=d_hi.
+-- ============================================================================
+
+set_option maxRecDepth 1024 in
+/-- div128 clamp q0: test q0 >= 2^32, conditionally decrement and adjust rhat2.
+    Instrs [33]-[36]. Both BEQ paths merge at base+16. -/
+theorem divK_div128_clamp_q0_merged_spec (q0 rhat2 d_hi v1_old : Word) (base : Addr) :
+    let hi := q0 >>> (32 : BitVec 6).toNat
+    let q0' := if hi = 0 then q0 else q0 + signExtend12 4095
+    let rhat2' := if hi = 0 then rhat2 else rhat2 + d_hi
+    let code :=
+      (base ↦ᵢ .SRLI .x1 .x5 32) **
+      ((base + 4) ↦ᵢ .BEQ .x1 .x0 12) **
+      ((base + 8) ↦ᵢ .ADDI .x5 .x5 4095) **
+      ((base + 12) ↦ᵢ .ADD .x11 .x11 .x6)
+    cpsTriple base (base + 16)
+      (code ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ v1_old) ** (.x0 ↦ᵣ 0))
+      (code ** (.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ rhat2') ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
+  intro hi; intro q0'; intro rhat2'; intro code
+  -- 1. SRLI body
+  have hbody : cpsTriple base (base + 4)
+      (code ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ v1_old) ** (.x0 ↦ᵣ 0))
+      (code ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
+    have I0 := srli_spec_gen .x1 .x5 v1_old q0 32 base (by nofun)
+    runBlock I0
+  -- 2. BEQ branch at [34]
+  have hsig : signExtend13 (12 : BitVec 13) = (12 : Word) := by native_decide
+  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rw [hsig]; bv_omega
+  have hbeq := beq_spec_gen .x1 .x0 12 hi 0 (base + 4)
+  rw [ha_t] at hbeq
+  -- 3. Frame BEQ with remaining atoms
+  have hbeq_framed := cpsBranch_frame_left _ _ _ _ _ _
+    ((base ↦ᵢ .SRLI .x1 .x5 32) **
+     ((base + 8) ↦ᵢ .ADDI .x5 .x5 4095) **
+     ((base + 12) ↦ᵢ .ADD .x11 .x11 .x6) **
+     (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi))
+    (by pcFree) hbeq
+  -- 4. Compose SRLI → BEQ into cpsBranch
+  have hbranch := cpsTriple_seq_cpsBranch_with_perm _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbeq_framed
+  -- 5. Case split on condition
+  by_cases hcond : hi = 0
+  · -- Taken: BEQ jumps to base+16, no correction needed
+    simp only [q0', rhat2', hcond, ↓reduceIte]
+    simp only [hcond] at hbranch
+    have h_elim := cpsBranch_elim_taken _ _ _ _ _ _ hbranch (fun hp hQf => by
+      obtain ⟨h1, h2, _, _, h1p, _⟩ := hQf
+      obtain ⟨_, h1b, _, _, _, h1bp⟩ := h1p
+      obtain ⟨_, h1c, _, _, _, h1cp⟩ := h1bp
+      exact absurd rfl ((sepConj_pure_right _ _ h1c).1 h1cp).2)
+    exact cpsTriple_consequence _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_left
+          (sepConj_strip_pure_end3 _ _ _ True) h hp
+        xperm_hyp hp')
+      h_elim
+  · -- Not-taken: fall through to ADDI+ADD correction
+    simp only [q0', rhat2', show (hi = 0) = False from propext ⟨hcond.elim, False.elim⟩, ↓reduceIte]
+    have h_elim := cpsBranch_elim_ntaken _ _ _ _ _ _ hbranch (fun hp hQt => by
+      obtain ⟨h1, h2, _, _, h1p, _⟩ := hQt
+      obtain ⟨_, h1b, _, _, _, h1bp⟩ := h1p
+      obtain ⟨_, h1c, _, _, _, h1cp⟩ := h1bp
+      exact hcond ((sepConj_pure_right _ _ h1c).1 h1cp).2)
+    have ha8 : (base + 4 : Addr) + 4 = base + 8 := by bv_omega
+    rw [ha8] at h_elim
+    -- Correction: ADDI + ADD from base+8 to base+16
+    have ha12 : (base + 8 : Addr) + 4 = base + 12 := by bv_omega
+    have ha16 : (base + 8 : Addr) + 8 = base + 16 := by bv_omega
+    have hcorr := divK_div128_correct_q0_spec q0 rhat2 d_hi (base + 8)
+    rw [ha12, ha16] at hcorr
+    -- Frame correction with BEQ code + x1 + x0 + ⌜hi≠0⌝ + SRLI
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _
+      (((base + 4) ↦ᵢ .BEQ .x1 .x0 12) ** (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ 0) **
+       ⌜hi ≠ 0⌝ ** (base ↦ᵢ .SRLI .x1 .x5 32))
+      (by pcFree) hcorr
+    have h_composed := cpsTriple_seq_with_perm _ _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp) h_elim hcorr_framed
+    exact cpsTriple_consequence _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_right
+          (sepConj_strip_pure_depth3 _ _ _ _ (hi ≠ 0)) h hp
+        xperm_hyp hp')
+      h_composed
+
+-- ============================================================================
+-- div128 subroutine: Product check 2 section [37]-[44].
+-- 8 instructions: LD+MUL+SLLI+LD+OR (body) + BLTU+JAL (branch) + ADDI (correction).
+-- BLTU taken → ADDI correction, BLTU ntaken → JAL skip. Both merge at base+32.
+-- ============================================================================
+
+set_option maxRecDepth 1024 in
+/-- div128 product check 2: compute q0*d_lo vs rhat2*2^32+un0, conditionally correct q0.
+    Instrs [37]-[44]. Both BLTU paths merge at base+32. -/
+theorem divK_div128_prodcheck2_merged_spec
+    (sp q0 rhat2 v1_old v7_old dlo un0 : Word) (base : Addr)
+    (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
+    (hv_un0 : isValidDwordAccess (sp + signExtend12 3944) = true) :
+    let q0_dlo := q0 * dlo
+    let rhat2_un0 := (rhat2 <<< (32 : BitVec 6).toNat) ||| un0
+    let q0' := if BitVec.ult rhat2_un0 q0_dlo then q0 + signExtend12 4095 else q0
+    let code :=
+      (base ↦ᵢ .LD .x1 .x12 3952) **
+      ((base + 4) ↦ᵢ .MUL .x7 .x5 .x1) **
+      ((base + 8) ↦ᵢ .SLLI .x1 .x11 32) **
+      ((base + 12) ↦ᵢ .LD .x11 .x12 3944) **
+      ((base + 16) ↦ᵢ .OR .x1 .x1 .x11) **
+      ((base + 20) ↦ᵢ .BLTU .x1 .x7 8) **
+      ((base + 24) ↦ᵢ .JAL .x0 8) **
+      ((base + 28) ↦ᵢ .ADDI .x5 .x5 4095)
+    cpsTriple base (base + 32)
+      (code ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) **
+       (.x7 ↦ᵣ v7_old) ** (.x1 ↦ᵣ v1_old) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      (code ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ un0) **
+       (.x7 ↦ᵣ q0_dlo) ** (.x1 ↦ᵣ rhat2_un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
+  intro q0_dlo; intro rhat2_un0; intro q0'; intro code
+  -- 1. Prodcheck2 body [37]-[41], framed with branch/correction code
+  have hbody_raw := divK_div128_prodcheck2_body_spec sp q0 rhat2 v1_old v7_old dlo un0
+    base hv_dlo hv_un0
+  have hbody := cpsTriple_frame_left _ _ _ _
+    (((base + 20) ↦ᵢ .BLTU .x1 .x7 8) **
+     ((base + 24) ↦ᵢ .JAL .x0 8) **
+     ((base + 28) ↦ᵢ .ADDI .x5 .x5 4095))
+    (by pcFree) hbody_raw
+  -- 2. BLTU branch at [42]
+  have hsig : signExtend13 (8 : BitVec 13) = (8 : Word) := by native_decide
+  have ha_t : (base + 20) + signExtend13 (8 : BitVec 13) = base + 28 := by rw [hsig]; bv_omega
+  have hbltu := bltu_spec_gen .x1 .x7 8 rhat2_un0 q0_dlo (base + 20)
+  rw [ha_t] at hbltu
+  -- 3. Frame BLTU with remaining atoms
+  have hbltu_framed := cpsBranch_frame_left _ _ _ _ _ _
+    ((base ↦ᵢ .LD .x1 .x12 3952) **
+     ((base + 4) ↦ᵢ .MUL .x7 .x5 .x1) **
+     ((base + 8) ↦ᵢ .SLLI .x1 .x11 32) **
+     ((base + 12) ↦ᵢ .LD .x11 .x12 3944) **
+     ((base + 16) ↦ᵢ .OR .x1 .x1 .x11) **
+     ((base + 24) ↦ᵢ .JAL .x0 8) **
+     ((base + 28) ↦ᵢ .ADDI .x5 .x5 4095) **
+     (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+     (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+    (by pcFree) hbltu
+  -- 4. Compose framed body → framed BLTU into cpsBranch
+  have hbranch := cpsTriple_seq_cpsBranch_with_perm _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbltu_framed
+  -- 5. Case split on condition
+  by_cases hcond : BitVec.ult rhat2_un0 q0_dlo = true
+  · -- Taken: BLTU jumps to base+28, correction needed (single ADDI)
+    simp only [q0', hcond, ↓reduceIte]
+    simp only [hcond] at hbranch
+    -- Extract taken path (ntaken absurd: ⌜¬True⌝ → False)
+    have h_elim := cpsBranch_elim_taken _ _ _ _ _ _ hbranch (fun hp hQf => by
+      obtain ⟨h1, h2, _, _, h1p, _⟩ := hQf
+      obtain ⟨_, h1b, _, _, _, h1bp⟩ := h1p
+      obtain ⟨_, h1c, _, _, _, h1cp⟩ := h1bp
+      exact absurd trivial ((sepConj_pure_right _ _ h1c).1 h1cp).2)
+    -- Correction [44]: single ADDI from base+28 to base+32
+    have ha32c : (base + 28 : Addr) + 4 = base + 32 := by bv_omega
+    have hcorr := divK_div128_correct_q0_single_spec q0 (base + 28)
+    rw [ha32c] at hcorr
+    -- Frame correction with all non-correction atoms
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _
+      (((base + 20) ↦ᵢ .BLTU .x1 .x7 8) ** (.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) **
+       ⌜True⌝ **
+       (base ↦ᵢ .LD .x1 .x12 3952) **
+       ((base + 4) ↦ᵢ .MUL .x7 .x5 .x1) **
+       ((base + 8) ↦ᵢ .SLLI .x1 .x11 32) **
+       ((base + 12) ↦ᵢ .LD .x11 .x12 3944) **
+       ((base + 16) ↦ᵢ .OR .x1 .x1 .x11) **
+       ((base + 24) ↦ᵢ .JAL .x0 8) **
+       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      (by pcFree) hcorr
+    -- Compose h_elim → hcorr_framed
+    have h_composed := cpsTriple_seq_with_perm _ _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp) h_elim hcorr_framed
+    -- Weaken: rearrange pre, strip ⌜True⌝ and rearrange post
+    exact cpsTriple_consequence _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_right
+          (sepConj_strip_pure_depth3 _ _ _ _ True) h hp
+        xperm_hyp hp')
+      h_composed
+  · -- Not-taken: fall through to JAL skip at [43]
+    have hne : ¬(BitVec.ult rhat2_un0 q0_dlo = true) := hcond
+    have hf : BitVec.ult rhat2_un0 q0_dlo = false := Bool.eq_false_iff.mpr hne
+    simp only [q0', hf, if_neg (show ¬((false : Bool) = true) from by decide)]
+    simp only [hf] at hbranch
+    -- Extract ntaken path (taken absurd: ⌜false = true⌝ → False)
+    have h_elim := cpsBranch_elim_ntaken _ _ _ _ _ _ hbranch (fun hp hQt => by
+      obtain ⟨h1, h2, _, _, h1p, _⟩ := hQt
+      obtain ⟨_, h1b, _, _, _, h1bp⟩ := h1p
+      obtain ⟨_, h1c, _, _, _, h1cp⟩ := h1bp
+      exact absurd ((sepConj_pure_right _ _ h1c).1 h1cp).2 (by decide))
+    -- Normalize exit address: base+20+4 → base+24
+    have ha24 : (base + 20 : Addr) + 4 = base + 24 := by bv_omega
+    rw [ha24] at h_elim
+    -- JAL x0 8 at [43]: unconditional jump base+24 → base+32
+    have hsig21 : signExtend21 (8 : BitVec 21) = (8 : Word) := by native_decide
+    have ha32j : (base + 24 : Addr) + signExtend21 (8 : BitVec 21) = base + 32 := by
+      rw [hsig21]; bv_omega
+    have hjal := jal_x0_spec_gen (8 : BitVec 21) (base + 24)
+    rw [ha32j] at hjal
+    -- Frame JAL with all remaining atoms
+    have hjal_framed := cpsTriple_frame_left _ _ _ _
+      (((base + 20) ↦ᵢ .BLTU .x1 .x7 8) ** (.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) **
+       ⌜¬(false = true)⌝ **
+       (base ↦ᵢ .LD .x1 .x12 3952) **
+       ((base + 4) ↦ᵢ .MUL .x7 .x5 .x1) **
+       ((base + 8) ↦ᵢ .SLLI .x1 .x11 32) **
+       ((base + 12) ↦ᵢ .LD .x11 .x12 3944) **
+       ((base + 16) ↦ᵢ .OR .x1 .x1 .x11) **
+       ((base + 28) ↦ᵢ .ADDI .x5 .x5 4095) **
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      (by pcFree) hjal
+    -- Compose h_elim → hjal_framed
+    have h_composed := cpsTriple_seq_with_perm _ _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp) h_elim hjal_framed
+    -- Weaken: rearrange pre, strip ⌜¬(false = true)⌝ and rearrange post
+    exact cpsTriple_consequence _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_right
+          (sepConj_strip_pure_depth3 _ _ _ _ (¬(false = true))) h hp
+        xperm_hyp hp')
+      h_composed
+
 end EvmAsm.Rv64
