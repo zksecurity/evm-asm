@@ -182,16 +182,19 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
   Manual-mode `runBlock` with column decomposition (col0: 21, col1: 23, col2: 13, col3: 5, epilogue: 1).
   Added `mul_spec_gen_rd_eq_rs1`, `mulhu_spec_gen_rd_eq_rs1`, `sltu_spec_gen_rd_eq_rs2` to SyscallSpecs.
 
-#### 4.2 DIV and MOD — in progress (program + specs complete, composition pending)
-- **Files**: `Evm64/DivMod.lean` (program + tests), `Evm64/DivModSpec.lean` (CPS specs)
+#### 4.2 DIV and MOD — in progress (program + specs + composition in progress)
+- **Files**: `Evm64/DivMod.lean` (program + tests), `Evm64/DivModSpec.lean` (CPS specs),
+  `Evm64/DivModCompose.lean` (hierarchical composition)
 - **Approach**: Knuth Algorithm D in base 2^64. 316 instructions total (21 phases
   + 49-instr div128 subroutine + NOP separator). DIV and MOD share 95% of code,
   differ only in epilogue (load quotient vs remainder).
 - **Status**: ~50 CPS specs proved (0 sorry). All building blocks for every phase.
   div128 subroutine fully specified in 5 composable blocks (phase1, step1,
   compute_un21, step2, end). Branch compositions for BEQ/BLTU merge patterns.
-  Full program composition blocked by Lean WHNF scaling (25+ instruction atoms
-  cause timeout in theorem type elaboration).
+  Hierarchical composition using progAt to avoid WHNF scaling limit:
+  - `divCode` splits `progAt base evm_div` into 14 per-phase progAt blocks
+  - `evm_div_bzero_spec` (b=0 path): phaseA body → BEQ taken → zeroPath (0 sorry) ✅
+  - Remaining: b≠0 path compositions (phaseB → CLZ → ... → epilogue)
 
 #### 4.3 SDIV and SMOD (Signed)
 - **Approach**: Check signs, compute unsigned div/mod, apply sign correction.
