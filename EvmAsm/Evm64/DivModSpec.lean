@@ -1132,4 +1132,203 @@ theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Addr)
     (fun h hp => by rw [heq] at hp; xperm_hyp hp)
     full
 
+-- ============================================================================
+-- Mul-sub limb: 11 instructions, core of the loop body.
+-- q_hat * v[i] + carry_in, subtract from u[j+i].
+-- ============================================================================
+
+/-- Mul-sub limb Part A: LD v[i], MUL, MULHU, ADD, SLTU, ADD.
+    6 instructions. Produces full_sub (x7) and partial_carry (x10). -/
+theorem divK_mulsub_partA_spec (sp q_hat carry_in v5_old v7_old v_i : Word)
+    (v_off : BitVec 12) (base : Addr)
+    (hv : isValidDwordAccess (sp + signExtend12 v_off) = true) :
+    let prod_lo := q_hat * v_i
+    let prod_hi := rv64_mulhu q_hat v_i
+    let full_sub := prod_lo + carry_in
+    let borrow_add := if BitVec.ult full_sub carry_in then (1 : Word) else 0
+    let partial_carry := borrow_add + prod_hi
+    let code :=
+      (base ↦ᵢ .LD .x5 .x12 v_off) **
+      ((base + 4) ↦ᵢ .MUL .x7 .x11 .x5) **
+      ((base + 8) ↦ᵢ .MULHU .x5 .x11 .x5) **
+      ((base + 12) ↦ᵢ .ADD .x7 .x7 .x10) **
+      ((base + 16) ↦ᵢ .SLTU .x10 .x7 .x10) **
+      ((base + 20) ↦ᵢ .ADD .x10 .x10 .x5)
+    cpsTriple base (base + 24)
+      (code ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) ** (.x10 ↦ᵣ carry_in) **
+       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i))
+      (code ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) ** (.x10 ↦ᵣ partial_carry) **
+       (.x5 ↦ᵣ prod_hi) ** (.x7 ↦ᵣ full_sub) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i)) := by
+  intro prod_lo; intro prod_hi; intro full_sub; intro borrow_add; intro partial_carry; intro code
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old v_i v_off base (by nofun) hv
+  have I1 := mul_spec_gen .x7 .x11 .x5 v7_old q_hat v_i (base + 4) (by nofun)
+  have I2 := mulhu_spec_gen_rd_eq_rs2 .x5 .x11 q_hat v_i (base + 8) (by nofun) (by nofun)
+  have I3 := add_spec_gen_rd_eq_rs1 .x7 .x10 prod_lo carry_in (base + 12) (by nofun) (by nofun)
+  have I4 := sltu_spec_gen_rd_eq_rs2 .x10 .x7 full_sub carry_in (base + 16) (by nofun) (by nofun)
+  have I5 := add_spec_gen_rd_eq_rs1 .x10 .x5 borrow_add prod_hi (base + 20) (by nofun) (by nofun)
+  runBlock I0 I1 I2 I3 I4 I5
+
+/-- Mul-sub limb Part B: LD u[j+i], SLTU, SUB, ADD, SD.
+    5 instructions. Produces carry_out (x10) and stores u_new. -/
+theorem divK_mulsub_partB_spec (u_base partial_carry prod_hi full_sub v2_old u_i : Word)
+    (u_off : BitVec 12) (base : Addr)
+    (hv : isValidDwordAccess (u_base + signExtend12 u_off) = true) :
+    let borrow_sub := if BitVec.ult u_i full_sub then (1 : Word) else 0
+    let u_new := u_i - full_sub
+    let carry_out := partial_carry + borrow_sub
+    let code :=
+      (base ↦ᵢ .LD .x2 .x6 u_off) **
+      ((base + 4) ↦ᵢ .SLTU .x5 .x2 .x7) **
+      ((base + 8) ↦ᵢ .SUB .x2 .x2 .x7) **
+      ((base + 12) ↦ᵢ .ADD .x10 .x10 .x5) **
+      ((base + 16) ↦ᵢ .SD .x6 .x2 u_off)
+    cpsTriple base (base + 20)
+      (code ** (.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ partial_carry) **
+       (.x5 ↦ᵣ prod_hi) ** (.x7 ↦ᵣ full_sub) ** (.x2 ↦ᵣ v2_old) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_i))
+      (code ** (.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carry_out) **
+       (.x5 ↦ᵣ borrow_sub) ** (.x7 ↦ᵣ full_sub) ** (.x2 ↦ᵣ u_new) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_new)) := by
+  intro borrow_sub; intro u_new; intro carry_out; intro code
+  have I0 := ld_spec_gen .x2 .x6 u_base v2_old u_i u_off base (by nofun) hv
+  have I1 := sltu_spec_gen .x5 .x2 .x7 prod_hi u_i full_sub (base + 4) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x2 .x7 u_i full_sub (base + 8) (by nofun) (by nofun)
+  have I3 := add_spec_gen_rd_eq_rs1 .x10 .x5 partial_carry borrow_sub (base + 12) (by nofun) (by nofun)
+  have I4 := sd_spec_gen .x6 .x2 u_base u_new u_i u_off (base + 16) hv
+  runBlock I0 I1 I2 I3 I4
+
+-- ============================================================================
+-- Add-back correction limb: 8 instructions per limb.
+-- u[j+i] += v[i] + carry_in, with carry propagation.
+-- ============================================================================
+
+/-- Add-back Part A: LD v[i], LD u[j+i], ADD carry, SLTU carry1, ADD v[i].
+    5 instructions. Produces sum (x2) and carry1 (x7). -/
+theorem divK_addback_partA_spec (sp u_base carry_in v5_old v2_old v_i u_i : Word)
+    (v_off : BitVec 12) (u_off : BitVec 12) (base : Addr)
+    (hv_v : isValidDwordAccess (sp + signExtend12 v_off) = true)
+    (hv_u : isValidDwordAccess (u_base + signExtend12 u_off) = true) :
+    let u_plus_carry := u_i + carry_in
+    let carry1 := if BitVec.ult u_plus_carry carry_in then (1 : Word) else 0
+    let u_new := u_plus_carry + v_i
+    let code :=
+      (base ↦ᵢ .LD .x5 .x12 v_off) **
+      ((base + 4) ↦ᵢ .LD .x2 .x6 u_off) **
+      ((base + 8) ↦ᵢ .ADD .x2 .x2 .x7) **
+      ((base + 12) ↦ᵢ .SLTU .x7 .x2 .x7) **
+      ((base + 16) ↦ᵢ .ADD .x2 .x2 .x5)
+    cpsTriple base (base + 20)
+      (code ** (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry_in) **
+       (.x5 ↦ᵣ v5_old) ** (.x2 ↦ᵣ v2_old) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_i))
+      (code ** (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry1) **
+       (.x5 ↦ᵣ v_i) ** (.x2 ↦ᵣ u_new) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_i)) := by
+  intro u_plus_carry; intro carry1; intro u_new; intro code
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old v_i v_off base (by nofun) hv_v
+  have I1 := ld_spec_gen .x2 .x6 u_base v2_old u_i u_off (base + 4) (by nofun) hv_u
+  have I2 := add_spec_gen_rd_eq_rs1 .x2 .x7 u_i carry_in (base + 8) (by nofun) (by nofun)
+  have I3 := sltu_spec_gen_rd_eq_rs2 .x7 .x2 u_plus_carry carry_in (base + 12) (by nofun) (by nofun)
+  have I4 := add_spec_gen_rd_eq_rs1 .x2 .x5 u_plus_carry v_i (base + 16) (by nofun) (by nofun)
+  runBlock I0 I1 I2 I3 I4
+
+/-- Add-back Part B: SLTU carry2, OR carry_out, SD u_new.
+    3 instructions. Produces carry_out (x7) and stores u_new. -/
+theorem divK_addback_partB_spec (u_base carry1 v_i u_new u_i : Word)
+    (u_off : BitVec 12) (base : Addr)
+    (hv_u : isValidDwordAccess (u_base + signExtend12 u_off) = true) :
+    let carry2 := if BitVec.ult u_new v_i then (1 : Word) else 0
+    let carry_out := carry1 ||| carry2
+    let code :=
+      (base ↦ᵢ .SLTU .x5 .x2 .x5) **
+      ((base + 4) ↦ᵢ .OR .x7 .x7 .x5) **
+      ((base + 8) ↦ᵢ .SD .x6 .x2 u_off)
+    cpsTriple base (base + 12)
+      (code ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry1) **
+       (.x5 ↦ᵣ v_i) ** (.x2 ↦ᵣ u_new) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_i))
+      (code ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry_out) **
+       (.x5 ↦ᵣ carry2) ** (.x2 ↦ᵣ u_new) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_new)) := by
+  intro carry2; intro carry_out; intro code
+  have I0 := sltu_spec_gen_rd_eq_rs2 .x5 .x2 u_new v_i base (by nofun) (by nofun)
+  have I1 := or_spec_gen_rd_eq_rs1 .x7 .x5 carry1 carry2 (base + 4) (by nofun) (by nofun)
+  have I2 := sd_spec_gen .x6 .x2 u_base u_new u_i u_off (base + 8) hv_u
+  runBlock I0 I1 I2
+
+-- ============================================================================
+-- Subtract carry from u[j+4]: 4 instructions after mul-sub limbs.
+-- ============================================================================
+
+/-- Subtract carry from u[j+4].
+    4 instructions: LD, SLTU, SUB, SD. Produces borrow (x7). -/
+theorem divK_sub_carry_spec (u_base carry_in v5_old v7_old u_top : Word)
+    (u_off : BitVec 12) (base : Addr)
+    (hv : isValidDwordAccess (u_base + signExtend12 u_off) = true) :
+    let borrow := if BitVec.ult u_top carry_in then (1 : Word) else 0
+    let u_new := u_top - carry_in
+    let code :=
+      (base ↦ᵢ .LD .x5 .x6 u_off) **
+      ((base + 4) ↦ᵢ .SLTU .x7 .x5 .x10) **
+      ((base + 8) ↦ᵢ .SUB .x5 .x5 .x10) **
+      ((base + 12) ↦ᵢ .SD .x6 .x5 u_off)
+    cpsTriple base (base + 16)
+      (code ** (.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carry_in) **
+       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_top))
+      (code ** (.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carry_in) **
+       (.x5 ↦ᵣ u_new) ** (.x7 ↦ᵣ borrow) **
+       ((u_base + signExtend12 u_off) ↦ₘ u_new)) := by
+  intro borrow; intro u_new; intro code
+  have I0 := ld_spec_gen .x5 .x6 u_base v5_old u_top u_off base (by nofun) hv
+  have I1 := sltu_spec_gen .x7 .x5 .x10 v7_old u_top carry_in (base + 4) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x5 .x10 u_top carry_in (base + 8) (by nofun) (by nofun)
+  have I3 := sd_spec_gen .x6 .x5 u_base u_new u_top u_off (base + 12) hv
+  runBlock I0 I1 I2 I3
+
+-- ============================================================================
+-- Store q[j]: 4 instructions.
+-- ============================================================================
+
+/-- Store q[j]: compute &q[j] = sp+4088 - j*8, store q_hat.
+    First 3 instructions compute q_addr. Then SD stores. Split into 3+1. -/
+theorem divK_store_qj_addr_spec (sp j v5_old v7_old : Word)
+    (base : Addr) :
+    let j_x8 := j <<< (3 : BitVec 6).toNat
+    let sp_m8 := sp + signExtend12 4088
+    let q_addr := sp_m8 - j_x8
+    let code :=
+      (base ↦ᵢ .SLLI .x5 .x1 3) **
+      ((base + 4) ↦ᵢ .ADDI .x7 .x12 4088) **
+      ((base + 8) ↦ᵢ .SUB .x7 .x7 .x5)
+    cpsTriple base (base + 12)
+      (code ** (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) **
+       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old))
+      (code ** (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) **
+       (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr)) := by
+  intro j_x8; intro sp_m8; intro q_addr; intro code
+  have I0 := slli_spec_gen .x5 .x1 v5_old j 3 base (by nofun)
+  have I1 := addi_spec_gen .x7 .x12 v7_old sp 4088 (base + 4) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x7 .x5 sp_m8 j_x8 (base + 8) (by nofun) (by nofun)
+  runBlock I0 I1 I2
+
+/-- Store q[j]: SD q_hat at q_addr. 1 instruction. -/
+theorem divK_store_qj_write_spec (q_addr q_hat q_old : Word) (base : Addr)
+    (hv : isValidDwordAccess q_addr = true) :
+    let code := (base ↦ᵢ .SD .x7 .x11 0)
+    cpsTriple base (base + 4)
+      (code ** (.x7 ↦ᵣ q_addr) ** (.x11 ↦ᵣ q_hat) ** (q_addr ↦ₘ q_old))
+      (code ** (.x7 ↦ᵣ q_addr) ** (.x11 ↦ᵣ q_hat) ** (q_addr ↦ₘ q_hat)) := by
+  intro code
+  have hse : signExtend12 (0 : BitVec 12) = (0 : Word) := by native_decide
+  have haddr : q_addr + signExtend12 (0 : BitVec 12) = q_addr := by rw [hse]; bv_omega
+  have hv' : isValidDwordAccess (q_addr + signExtend12 0) = true := by rw [haddr]; exact hv
+  have I0 := sd_spec_gen .x7 .x11 q_addr q_hat q_old 0 base hv'
+  rw [haddr] at I0
+  runBlock I0
+
 end EvmAsm.Rv64
