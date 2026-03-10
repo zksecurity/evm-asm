@@ -1331,4 +1331,280 @@ theorem divK_store_qj_write_spec (q_addr q_hat q_old : Word) (base : Addr)
   rw [haddr] at I0
   runBlock I0
 
+-- ============================================================================
+-- Add-back finalization: u[j+4] += carry, q_hat--.
+-- 4 instructions: LD + ADD + SD + ADDI.
+-- ============================================================================
+
+/-- Add-back finalization after limb corrections. -/
+theorem divK_addback_final_spec (u_base carry q_hat v5_old u_top : Word)
+    (u_off : BitVec 12) (base : Addr)
+    (hv : isValidDwordAccess (u_base + signExtend12 u_off) = true) :
+    let u_new := u_top + carry
+    let q_hat' := q_hat + signExtend12 4095
+    let code :=
+      (base ↦ᵢ .LD .x5 .x6 u_off) **
+      ((base + 4) ↦ᵢ .ADD .x5 .x5 .x7) **
+      ((base + 8) ↦ᵢ .SD .x6 .x5 u_off) **
+      ((base + 12) ↦ᵢ .ADDI .x11 .x11 4095)
+    cpsTriple base (base + 16)
+      (code ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry) ** (.x11 ↦ᵣ q_hat) **
+       (.x5 ↦ᵣ v5_old) ** (u_base + signExtend12 u_off ↦ₘ u_top))
+      (code ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry) ** (.x11 ↦ᵣ q_hat') **
+       (.x5 ↦ᵣ u_new) ** (u_base + signExtend12 u_off ↦ₘ u_new)) := by
+  intro u_new; intro q_hat'; intro code
+  have I0 := ld_spec_gen .x5 .x6 u_base v5_old u_top u_off base (by nofun) hv
+  have I1 := add_spec_gen_rd_eq_rs1 .x5 .x7 u_top carry (base + 4) (by nofun) (by nofun)
+  have I2 := sd_spec_gen .x6 .x5 u_base u_new u_top u_off (base + 8) hv
+  have I3 := addi_spec_gen_same .x11 q_hat 4095 (base + 12) (by nofun)
+  runBlock I0 I1 I2 I3
+
+-- ============================================================================
+-- Loop control: j-- and BGE loop back.
+-- 2 instructions: ADDI + BGE.
+-- ============================================================================
+
+set_option maxRecDepth 1024 in
+/-- Loop control: decrement j and branch back if j >= 0. -/
+theorem divK_loop_control_spec (j : Word) (loop_back_off : BitVec 13)
+    (base : Addr) :
+    let j' := j + signExtend12 4095
+    let code :=
+      (base ↦ᵢ .ADDI .x1 .x1 4095) **
+      ((base + 4) ↦ᵢ .BGE .x1 .x0 loop_back_off)
+    cpsBranch base
+      (code ** (.x1 ↦ᵣ j) ** (.x0 ↦ᵣ 0))
+      (base + 4 + signExtend13 loop_back_off)
+      (code ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0))
+      (base + 8)
+      (code ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0)) := by
+  intro j'; intro code
+  -- 1. ADDI body
+  have hbody : cpsTriple base (base + 4)
+      (code ** (.x1 ↦ᵣ j) ** (.x0 ↦ᵣ 0))
+      (code ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0)) := by
+    have I0 := addi_spec_gen_same .x1 j 4095 base (by nofun)
+    runBlock I0
+  -- 2. BGE, drop pure facts
+  have hbge_raw := bge_spec_gen .x1 .x0 loop_back_off j' 0 (base + 4)
+  have ha1 : (base + 4 : Addr) + 4 = base + 8 := by bv_omega
+  have hbge : cpsBranch (base + 4)
+      (((base + 4) ↦ᵢ .BGE .x1 .x0 loop_back_off) ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0))
+      ((base + 4) + signExtend13 loop_back_off)
+        (((base + 4) ↦ᵢ .BGE .x1 .x0 loop_back_off) ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0))
+      (base + 8)
+        (((base + 4) ↦ᵢ .BGE .x1 .x0 loop_back_off) ** (.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0)) := by
+    rw [ha1] at hbge_raw
+    exact cpsBranch_consequence (base + 4) _ _ _ _ _ _ _ _
+      (fun _ hp => hp)
+      (fun h hp => sepConj_mono_right (sepConj_mono_right
+        (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp)
+      (fun h hp => sepConj_mono_right (sepConj_mono_right
+        (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp)
+      hbge_raw
+  -- 3. Frame BGE with ADDI code
+  have hbge_framed := cpsBranch_frame_left _ _ _ _ _ _
+    ((base ↦ᵢ .ADDI .x1 .x1 4095))
+    (by pcFree) hbge
+  -- 4. Compose body → BGE
+  have composed := cpsTriple_seq_cpsBranch_with_perm _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbge_framed
+  -- 5. Final permutation
+  exact cpsBranch_consequence _
+    _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    composed
+
+-- ============================================================================
+-- Mul-sub setup: restore j, compute u_base = &u[j], init carry = 0.
+-- 5 instructions: LD + SLLI + ADDI + SUB + ADDI.
+-- ============================================================================
+
+/-- Mul-sub setup: restore j from scratch, compute u_base, zero carry. -/
+theorem divK_mulsub_setup_spec (sp q_hat j v1_old v5_old v6_old v10_old : Word)
+    (base : Addr)
+    (hv : isValidDwordAccess (sp + signExtend12 3976) = true) :
+    let j_x8 := j <<< (3 : BitVec 6).toNat
+    let sp_m40 := sp + signExtend12 4056
+    let u_base := sp_m40 - j_x8
+    let code :=
+      (base ↦ᵢ .LD .x1 .x12 3976) **
+      ((base + 4) ↦ᵢ .SLLI .x5 .x1 3) **
+      ((base + 8) ↦ᵢ .ADDI .x6 .x12 4056) **
+      ((base + 12) ↦ᵢ .SUB .x6 .x6 .x5) **
+      ((base + 16) ↦ᵢ .ADDI .x10 .x0 0)
+    cpsTriple base (base + 20)
+      (code ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
+       (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
+       (.x10 ↦ᵣ v10_old) ** (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3976 ↦ₘ j))
+      (code ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
+       (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ j_x8) ** (.x6 ↦ᵣ u_base) **
+       (.x10 ↦ᵣ signExtend12 0) ** (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3976 ↦ₘ j)) := by
+  intro j_x8; intro sp_m40; intro u_base; intro code
+  have I0 := ld_spec_gen .x1 .x12 sp v1_old j 3976 base (by nofun) hv
+  have I1 := slli_spec_gen .x5 .x1 v5_old j 3 (base + 4) (by nofun)
+  have I2 := addi_spec_gen .x6 .x12 v6_old sp 4056 (base + 8) (by nofun)
+  have I3 := sub_spec_gen_rd_eq_rs1 .x6 .x5 sp_m40 j_x8 (base + 12) (by nofun) (by nofun)
+  have I4 := addi_x0_spec_gen .x10 v10_old 0 (base + 16) (by nofun)
+  runBlock I0 I1 I2 I3 I4
+
+-- ============================================================================
+-- Save j: 1 instruction SD.
+-- ============================================================================
+
+/-- Save j to scratch memory. -/
+theorem divK_save_j_spec (sp j j_old : Word) (base : Addr)
+    (hv : isValidDwordAccess (sp + signExtend12 3976) = true) :
+    let code := (base ↦ᵢ .SD .x12 .x1 3976)
+    cpsTriple base (base + 4)
+      (code ** (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) ** (sp + signExtend12 3976 ↦ₘ j_old))
+      (code ** (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) ** (sp + signExtend12 3976 ↦ₘ j)) := by
+  intro code
+  have I0 := sd_spec_gen .x12 .x1 sp j j_old 3976 base hv
+  runBlock I0
+
+-- ============================================================================
+-- Addback carry init: ADDI x7 x0 0 (set carry = 0).
+-- ============================================================================
+
+/-- Initialize add-back carry to 0. -/
+theorem divK_addback_init_spec (v7_old : Word) (base : Addr) :
+    let code := (base ↦ᵢ .ADDI .x7 .x0 0)
+    cpsTriple base (base + 4)
+      (code ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ 0))
+      (code ** (.x7 ↦ᵣ signExtend12 0) ** (.x0 ↦ᵣ 0)) := by
+  intro code
+  have I0 := addi_x0_spec_gen .x7 v7_old 0 base (by nofun)
+  runBlock I0
+
+-- ============================================================================
+-- Addback condition: BEQ x7 x0 (skip correction if no borrow).
+-- ============================================================================
+
+/-- Correction condition: branch if borrow (x7) is zero. -/
+theorem divK_correction_branch_spec (borrow : Word) (skip_off : BitVec 13) (base : Addr) :
+    let code := (base ↦ᵢ .BEQ .x7 .x0 skip_off)
+    cpsBranch base
+      (code ** (.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ 0))
+      (base + signExtend13 skip_off)
+      (code ** (.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ 0))
+      (base + 4)
+      (code ** (.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ 0)) := by
+  intro code
+  exact cpsBranch_consequence _ _ _ _ _ _ _ _ _
+    (fun _ hp => hp)
+    (fun h hp => sepConj_mono_right (sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp)
+    (fun h hp => sepConj_mono_right (sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp)
+    (beq_spec_gen .x7 .x0 skip_off borrow 0 base)
+
+-- ============================================================================
+-- Trial quotient: load u[j+n], u[j+n-1].
+-- 7 instructions: LD + ADD + SLLI + ADDI + SUB + LD + LD.
+-- ============================================================================
+
+/-- Load u_hi = u[j+n] and u_lo = u[j+n-1] for trial quotient estimation.
+    u_addr = sp + signExtend12 4056 - (j + n) <<< 3.
+    u_hi = mem[u_addr], u_lo = mem[u_addr + 8]. -/
+theorem divK_trial_load_u_spec (sp j n v5_old v7_old u_hi u_lo : Word)
+    (base : Addr)
+    (hv_n : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_uhi : isValidDwordAccess (sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat) = true)
+    (hv_ulo : isValidDwordAccess ((sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat) + 8) = true) :
+    let jpn := j + n
+    let jpn_x8 := jpn <<< (3 : BitVec 6).toNat
+    let u0_base := sp + signExtend12 4056
+    let u_addr := u0_base - jpn_x8
+    let code :=
+      (base ↦ᵢ .LD .x5 .x12 3984) **
+      ((base + 4) ↦ᵢ .ADD .x7 .x1 .x5) **
+      ((base + 8) ↦ᵢ .SLLI .x7 .x7 3) **
+      ((base + 12) ↦ᵢ .ADDI .x5 .x12 4056) **
+      ((base + 16) ↦ᵢ .SUB .x5 .x5 .x7) **
+      ((base + 20) ↦ᵢ .LD .x7 .x5 0) **
+      ((base + 24) ↦ᵢ .LD .x5 .x5 8)
+    cpsTriple base (base + 28)
+      (code ** (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo))
+      (code ** (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ u_lo) ** (.x7 ↦ᵣ u_hi) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo)) := by
+  intro jpn; intro jpn_x8; intro u0_base; intro u_addr; intro code
+  have hse0 : signExtend12 (0 : BitVec 12) = (0 : Word) := by native_decide
+  have haddr0 : u_addr + signExtend12 (0 : BitVec 12) = u_addr := by rw [hse0]; bv_omega
+  have hv_uhi' : isValidDwordAccess (u_addr + signExtend12 0) = true := by rw [haddr0]; exact hv_uhi
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old n 3984 base (by nofun) hv_n
+  have I1 := add_spec_gen .x7 .x1 .x5 j n v7_old (base + 4) (by nofun)
+  have I2 := slli_spec_gen_same .x7 jpn 3 (base + 8) (by nofun)
+  have I3 := addi_spec_gen .x5 .x12 n sp 4056 (base + 12) (by nofun)
+  have I4 := sub_spec_gen_rd_eq_rs1 .x5 .x7 u0_base jpn_x8 (base + 16) (by nofun) (by nofun)
+  have I5 := ld_spec_gen .x7 .x5 u_addr jpn_x8 u_hi 0 (base + 20) (by nofun) hv_uhi'
+  rw [haddr0] at I5
+  have I6 := ld_spec_gen_same .x5 u_addr u_lo 8 (base + 24) (by nofun) hv_ulo
+  runBlock I0 I1 I2 I3 I4 I5 I6
+
+-- ============================================================================
+-- Trial quotient: load v_top = b[n-1].
+-- 5 instructions: LD + ADDI + SLLI + ADD + LD.
+-- ============================================================================
+
+/-- Load v_top = b[n-1] for trial quotient estimation.
+    vtop_addr = sp + (n + signExtend12 4095) <<< 3.
+    v_top = mem[vtop_addr + 32]. -/
+theorem divK_trial_load_vtop_spec (sp n v6_old v10_old v_top : Word)
+    (base : Addr)
+    (hv_n : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_vtop : isValidDwordAccess (sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) = true) :
+    let nm1 := n + signExtend12 4095
+    let nm1_x8 := nm1 <<< (3 : BitVec 6).toNat
+    let vtop_base := sp + nm1_x8
+    let code :=
+      (base ↦ᵢ .LD .x6 .x12 3984) **
+      ((base + 4) ↦ᵢ .ADDI .x6 .x6 4095) **
+      ((base + 8) ↦ᵢ .SLLI .x6 .x6 3) **
+      ((base + 12) ↦ᵢ .ADD .x6 .x12 .x6) **
+      ((base + 16) ↦ᵢ .LD .x10 .x6 32)
+    cpsTriple base (base + 20)
+      (code ** (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6_old) ** (.x10 ↦ᵣ v10_old) **
+       (sp + signExtend12 3984 ↦ₘ n) ** (vtop_base + signExtend12 32 ↦ₘ v_top))
+      (code ** (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ vtop_base) ** (.x10 ↦ᵣ v_top) **
+       (sp + signExtend12 3984 ↦ₘ n) ** (vtop_base + signExtend12 32 ↦ₘ v_top)) := by
+  intro nm1; intro nm1_x8; intro vtop_base; intro code
+  have I0 := ld_spec_gen .x6 .x12 sp v6_old n 3984 base (by nofun) hv_n
+  have I1 := addi_spec_gen_same .x6 n 4095 (base + 4) (by nofun)
+  have I2 := slli_spec_gen_same .x6 nm1 3 (base + 8) (by nofun)
+  have I3 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1_x8 (base + 12) (by nofun) (by nofun)
+  have I4 := ld_spec_gen .x10 .x6 vtop_base v10_old v_top 32 (base + 16) (by nofun) hv_vtop
+  runBlock I0 I1 I2 I3 I4
+
+-- ============================================================================
+-- Trial quotient: MAX path (u_hi >= v_top).
+-- 2 instructions: ADDI x11 x0 4095 + JAL x0 8.
+-- ============================================================================
+
+/-- Trial quotient MAX path: set q_hat = MAX64, jump over div128 call. -/
+theorem divK_trial_max_spec (v11_old : Word) (base : Addr) :
+    let code :=
+      (base ↦ᵢ .ADDI .x11 .x0 4095) **
+      ((base + 4) ↦ᵢ .JAL .x0 8)
+    cpsTriple base (base + 12)
+      (code ** (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ 0))
+      (code ** (.x11 ↦ᵣ signExtend12 4095) ** (.x0 ↦ᵣ 0)) := by
+  intro code
+  have hj : signExtend21 (8 : BitVec 21) = (8 : Addr) := by native_decide
+  have I0 := addi_x0_spec_gen .x11 v11_old 4095 base (by nofun)
+  have I1 := jal_x0_spec_gen 8 (base + 4)
+  rw [hj] at I1
+  have ha : (base + 4 : Addr) + 8 = base + 12 := by bv_omega
+  rw [ha] at I1
+  runBlock I0 I1
+
 end EvmAsm.Rv64
