@@ -48,21 +48,21 @@ private theorem bv_off_divK_1   : BitVec.ofNat 64 (4 * 1)   = (4   : Addr) := by
 private theorem bv_off_divK_49  : BitVec.ofNat 64 (4 * 49)  = (196 : Addr) := by native_decide
 
 -- ============================================================================
--- Section 3: Accumulated address normalization (via bv_omega)
+-- Section 3: Accumulated address normalization (via bv_add_ofNat_assoc)
 -- ============================================================================
 
-@[simp] private theorem divK_addr_116  (b : Addr) : b + 32 + 84  = b + 116  := by bv_omega
-@[simp] private theorem divK_addr_212  (b : Addr) : b + 116 + 96 = b + 212  := by bv_omega
-@[simp] private theorem divK_addr_228  (b : Addr) : b + 212 + 16 = b + 228  := by bv_omega
-@[simp] private theorem divK_addr_312  (b : Addr) : b + 228 + 84 = b + 312  := by bv_omega
-@[simp] private theorem divK_addr_396  (b : Addr) : b + 312 + 84 = b + 396  := by bv_omega
-@[simp] private theorem divK_addr_432  (b : Addr) : b + 396 + 36 = b + 432  := by bv_omega
-@[simp] private theorem divK_addr_448  (b : Addr) : b + 432 + 16 = b + 448  := by bv_omega
-@[simp] private theorem divK_addr_904  (b : Addr) : b + 448 + 456 = b + 904 := by bv_omega
-@[simp] private theorem divK_addr_1004 (b : Addr) : b + 904 + 100 = b + 1004 := by bv_omega
-@[simp] private theorem divK_addr_1044 (b : Addr) : b + 1004 + 40 = b + 1044 := by bv_omega
-@[simp] private theorem divK_addr_1064 (b : Addr) : b + 1044 + 20 = b + 1064 := by bv_omega
-@[simp] private theorem divK_addr_1068 (b : Addr) : b + 1064 + 4  = b + 1068 := by bv_omega
+@[simp] private theorem divK_addr_116  (b : Addr) : b + 32 + 84  = b + 116  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_212  (b : Addr) : b + 116 + 96 = b + 212  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_228  (b : Addr) : b + 212 + 16 = b + 228  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_312  (b : Addr) : b + 228 + 84 = b + 312  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_396  (b : Addr) : b + 312 + 84 = b + 396  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_432  (b : Addr) : b + 396 + 36 = b + 432  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_448  (b : Addr) : b + 432 + 16 = b + 448  := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_904  (b : Addr) : b + 448 + 456 = b + 904 := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_1004 (b : Addr) : b + 904 + 100 = b + 1004 := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_1044 (b : Addr) : b + 1004 + 40 = b + 1044 := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_1064 (b : Addr) : b + 1044 + 20 = b + 1064 := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
+@[simp] private theorem divK_addr_1068 (b : Addr) : b + 1064 + 4  = b + 1068 := by simp only [OfNat.ofNat, bv_add_ofNat_assoc]
 
 -- ============================================================================
 -- Section 4: Full program code split into per-phase progAt blocks
@@ -130,13 +130,7 @@ private theorem progAt_divK_phaseA (base : Addr) :
   show progAt base ([.LD .x5 .x12 32, .LD .x10 .x12 40, .OR .x5 .x5 .x10,
     .LD .x10 .x12 48, .OR .x5 .x5 .x10, .LD .x10 .x12 56,
     .OR .x5 .x5 .x10, .BEQ .x5 .x0 1016] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -150,10 +144,7 @@ private theorem progAt_divK_zeroPath (base : Addr) :
      ((base + 16) ↦ᵢ .SD .x12 .x0 24)) := by
   show progAt base ([.ADDI .x12 .x12 32, .SD .x12 .x0 0, .SD .x12 .x0 8,
     .SD .x12 .x0 16, .SD .x12 .x0 24] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in

@@ -1819,6 +1819,14 @@ def programAt : List (Addr × Instr) → Assertion
   | [] => empAssertion
   | (a, i) :: rest => (instrAt a i) ** (programAt rest)
 
+/-- Reassociate and fold address literal additions:
+    `(a + BitVec.ofNat w n) + BitVec.ofNat w m = a + BitVec.ofNat w (n + m)`.
+    Used with `OfNat.ofNat` unfolding to normalize addresses in progAt proofs. -/
+theorem bv_add_ofNat_assoc {w : Nat} (a : BitVec w) (n m : Nat) :
+    (a + BitVec.ofNat w n) + BitVec.ofNat w m = a + BitVec.ofNat w (n + m) := by
+  rw [BitVec.add_assoc]; congr 1
+  apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+
 /-- Convert a program (List Instr) at a base address to address-instruction pairs.
     Each instruction occupies 4 bytes. -/
 def progIndexed (base : Addr) : List Instr → List (Addr × Instr)

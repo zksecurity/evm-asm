@@ -36,22 +36,7 @@ private theorem progAt_shr_phase_a (base : Addr) :
      ((base + 60) ↦ᵢ .SLTIU .x10 .x5 256) **
      ((base + 64) ↦ᵢ .BEQ .x10 .x0 1108)) := by
   show progAt base ([.LW .x5 .x12 4, .LW .x10 .x12 8, .OR .x5 .x5 .x10, .LW .x10 .x12 12, .OR .x5 .x5 .x10, .LW .x10 .x12 16, .OR .x5 .x5 .x10, .LW .x10 .x12 20, .OR .x5 .x5 .x10, .LW .x10 .x12 24, .OR .x5 .x5 .x10, .LW .x10 .x12 28, .OR .x5 .x5 .x10, .BNE .x5 .x0 1120, .LW .x5 .x12 0, .SLTIU .x10 .x5 256, .BEQ .x10 .x0 1108] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -65,12 +50,7 @@ private theorem progAt_shr_phase_b (base : Addr) :
      ((base + 20) ↦ᵢ .SUB .x7 .x7 .x6) **
      ((base + 24) ↦ᵢ .ADDI .x12 .x12 32)) := by
   show progAt base ([.ANDI .x6 .x5 31, .SRLI .x5 .x5 5, .SLTU .x11 .x0 .x6, .SUB .x11 .x0 .x11, .LI .x7 32, .SUB .x7 .x7 .x6, .ADDI .x12 .x12 32] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp [progAt, progIndexed, programAt, sepConj_emp_right', BitVec.add_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -90,18 +70,7 @@ private theorem progAt_shr_phase_c (base : Addr) :
      ((base + 44) ↦ᵢ .ADDI .x10 .x0 6) **
      ((base + 48) ↦ᵢ .BEQ .x5 .x10 48)) := by
   show progAt base ([.BEQ .x5 .x0 864, .ADDI .x10 .x0 1, .BEQ .x5 .x10 668, .ADDI .x10 .x0 2, .BEQ .x5 .x10 496, .ADDI .x10 .x0 3, .BEQ .x5 .x10 348, .ADDI .x10 .x0 4, .BEQ .x5 .x10 224, .ADDI .x10 .x0 5, .BEQ .x5 .x10 124, .ADDI .x10 .x0 6, .BEQ .x5 .x10 48] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -119,16 +88,7 @@ private theorem progAt_shr_body_7 (base : Addr) :
      ((base + 36) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 40) ↦ᵢ .JAL .x0 1020)) := by
   show progAt base ([.LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 0, .SW .x12 .x0 4, .SW .x12 .x0 8, .SW .x12 .x0 12, .SW .x12 .x0 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 1020] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -152,22 +112,7 @@ private theorem progAt_shr_body_6 (base : Addr) :
      ((base + 60) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 64) ↦ᵢ .JAL .x0 952)) := by
   show progAt base ([.LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 4, .SW .x12 .x0 8, .SW .x12 .x0 12, .SW .x12 .x0 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 952] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -197,28 +142,7 @@ private theorem progAt_shr_body_5 (base : Addr) :
      ((base + 84) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 88) ↦ᵢ .JAL .x0 860)) := by
   show progAt base ([.LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 8, .SW .x12 .x0 12, .SW .x12 .x0 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 860] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -254,34 +178,7 @@ private theorem progAt_shr_body_4 (base : Addr) :
      ((base + 108) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 112) ↦ᵢ .JAL .x0 744)) := by
   show progAt base ([.LW .x5 .x12 16, .SRL .x5 .x5 .x6, .LW .x10 .x12 20, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 8, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 12, .SW .x12 .x0 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 744] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 112 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 108 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 104 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 100 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 96 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 92 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -323,40 +220,7 @@ private theorem progAt_shr_body_3 (base : Addr) :
      ((base + 132) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 136) ↦ᵢ .JAL .x0 604)) := by
   show progAt base ([.LW .x5 .x12 12, .SRL .x5 .x5 .x6, .LW .x10 .x12 16, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 16, .SRL .x5 .x5 .x6, .LW .x10 .x12 20, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 8, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 12, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 604] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 136 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 132 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 128 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 124 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 120 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 116 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 112 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 108 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 104 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 100 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 96 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 92 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -404,46 +268,7 @@ private theorem progAt_shr_body_2 (base : Addr) :
      ((base + 156) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 160) ↦ᵢ .JAL .x0 440)) := by
   show progAt base ([.LW .x5 .x12 8, .SRL .x5 .x5 .x6, .LW .x10 .x12 12, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 12, .SRL .x5 .x5 .x6, .LW .x10 .x12 16, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 16, .SRL .x5 .x5 .x6, .LW .x10 .x12 20, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 8, .LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 12, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 16, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 20, .SW .x12 .x0 24, .SW .x12 .x0 28, .JAL .x0 440] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 160 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 156 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 152 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 148 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 144 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 140 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 136 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 132 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 128 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 124 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 120 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 116 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 112 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 108 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 104 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 100 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 96 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 92 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -497,52 +322,7 @@ private theorem progAt_shr_body_1 (base : Addr) :
      ((base + 180) ↦ᵢ .SW .x12 .x0 28) **
      ((base + 184) ↦ᵢ .JAL .x0 252)) := by
   show progAt base ([.LW .x5 .x12 4, .SRL .x5 .x5 .x6, .LW .x10 .x12 8, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 8, .SRL .x5 .x5 .x6, .LW .x10 .x12 12, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 12, .SRL .x5 .x5 .x6, .LW .x10 .x12 16, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 8, .LW .x5 .x12 16, .SRL .x5 .x5 .x6, .LW .x10 .x12 20, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 12, .LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 16, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 20, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 24, .SW .x12 .x0 28, .JAL .x0 252] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 184 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 180 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 176 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 172 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 168 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 164 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 160 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 156 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 152 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 148 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 144 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 140 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 136 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 132 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 128 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 124 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 120 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 116 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 112 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 108 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 104 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 100 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 96 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 92 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -602,58 +382,7 @@ private theorem progAt_shr_body_0 (base : Addr) :
      ((base + 204) ↦ᵢ .SW .x12 .x5 28) **
      ((base + 208) ↦ᵢ .JAL .x0 40)) := by
   show progAt base ([.LW .x5 .x12 0, .SRL .x5 .x5 .x6, .LW .x10 .x12 4, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 0, .LW .x5 .x12 4, .SRL .x5 .x5 .x6, .LW .x10 .x12 8, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 4, .LW .x5 .x12 8, .SRL .x5 .x5 .x6, .LW .x10 .x12 12, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 8, .LW .x5 .x12 12, .SRL .x5 .x5 .x6, .LW .x10 .x12 16, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 12, .LW .x5 .x12 16, .SRL .x5 .x5 .x6, .LW .x10 .x12 20, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 16, .LW .x5 .x12 20, .SRL .x5 .x5 .x6, .LW .x10 .x12 24, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 20, .LW .x5 .x12 24, .SRL .x5 .x5 .x6, .LW .x10 .x12 28, .SLL .x10 .x10 .x7, .AND .x10 .x10 .x11, .OR .x5 .x5 .x10, .SW .x12 .x5 24, .LW .x5 .x12 28, .SRL .x5 .x5 .x6, .SW .x12 .x5 28, .JAL .x0 40] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 208 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 204 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 200 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 196 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 192 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 188 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 184 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 180 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 176 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 172 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 168 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 164 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 160 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 156 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 152 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 148 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 144 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 140 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 136 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 132 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 128 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 124 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 120 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 116 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 112 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 108 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 104 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 100 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 96 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 92 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 88 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 84 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 80 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 76 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 72 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 68 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 64 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 60 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 56 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 52 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 48 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 44 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 40 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 36 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 25600000 in
@@ -669,14 +398,7 @@ private theorem progAt_shr_zero_path (base : Addr) :
      ((base + 28) ↦ᵢ .SW .x12 .x0 24) **
      ((base + 32) ↦ᵢ .SW .x12 .x0 28)) := by
   show progAt base ([.ADDI .x12 .x12 32, .SW .x12 .x0 0, .SW .x12 .x0 4, .SW .x12 .x0 8, .SW .x12 .x0 12, .SW .x12 .x0 16, .SW .x12 .x0 20, .SW .x12 .x0 24, .SW .x12 .x0 28] : List Instr) = _
-  simp only [progAt, progIndexed, programAt, sepConj_emp_right']
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 + 4 = base + 32 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 + 4 = base + 28 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 + 4 = base + 24 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 + 4 = base + 20 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 + 4 = base + 16 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 + 4 = base + 12 from by bv_omega]
-  rw [show (base + 4 : Addr) + 4 = base + 8 from by bv_omega]
+  simp only [progAt, progIndexed, programAt, sepConj_emp_right', OfNat.ofNat, bv_add_ofNat_assoc]
 
 -- ============================================================================
 -- Section 2: Abbreviations for code frame
