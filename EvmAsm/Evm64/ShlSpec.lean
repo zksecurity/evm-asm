@@ -21,6 +21,12 @@ set_option maxHeartbeats 800000
 -- Per-limb Specs: SHL Merge Limb (7 instructions)
 -- ============================================================================
 
+abbrev shl_merge_limb_code (base : Addr) (src_off prev_off dst_off : BitVec 12) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 src_off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .LD .x10 .x12 prev_off) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 24) ↦ᵢ .SD .x12 .x5 dst_off)
+
 /-- SHL merge limb spec (7 instructions):
     LD x5, src_off(x12); SLL x5,x5,x6; LD x10, prev_off(x12);
     SRL x10,x10,x7; AND x10,x10,x11; OR x5,x5,x10; SD x12,x5,dst_off
@@ -38,11 +44,7 @@ theorem shl_merge_limb_spec (src_off prev_off dst_off : BitVec 12)
     let shifted_src := src <<< (bit_shift.toNat % 64)
     let shifted_prev := (prev >>> (anti_shift.toNat % 64)) &&& mask
     let result := shifted_src ||| shifted_prev
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 src_off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .LD .x10 .x12 prev_off) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 24) ↦ᵢ .SD .x12 .x5 dst_off)
+    let code := shl_merge_limb_code base src_off prev_off dst_off
     cpsTriple base (base + 28)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -58,6 +60,10 @@ theorem shl_merge_limb_spec (src_off prev_off dst_off : BitVec 12)
 -- Per-limb Specs: SHL First Limb (3 instructions)
 -- ============================================================================
 
+abbrev shl_first_limb_code (base : Addr) (dst_off : BitVec 12) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SD .x12 .x5 dst_off)
+
 /-- SHL first limb spec (3 instructions):
     LD x5, 0(x12); SLL x5,x5,x6; SD x12,x5,dst_off
 
@@ -70,9 +76,7 @@ theorem shl_first_limb_spec (dst_off : BitVec 12)
     let mem_src := sp + signExtend12 (0 : BitVec 12)
     let mem_dst := sp + signExtend12 dst_off
     let result := src <<< (bit_shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SD .x12 .x5 dst_off)
+    let code := shl_first_limb_code base dst_off
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -86,6 +90,12 @@ theorem shl_first_limb_spec (dst_off : BitVec 12)
 -- Per-limb Specs: SHL Merge Limb In-place (7 instructions, src_off = dst_off)
 -- ============================================================================
 
+abbrev shl_merge_limb_inplace_code (base : Addr) (off prev_off : BitVec 12) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .LD .x10 .x12 prev_off) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 24) ↦ᵢ .SD .x12 .x5 off)
+
 /-- SHL merge limb in-place spec (7 instructions):
     Same as shl_merge_limb_spec but src_off = dst_off. -/
 theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
@@ -97,11 +107,7 @@ theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
     let shifted_src := src <<< (bit_shift.toNat % 64)
     let shifted_prev := (prev >>> (anti_shift.toNat % 64)) &&& mask
     let result := shifted_src ||| shifted_prev
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .LD .x10 .x12 prev_off) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 24) ↦ᵢ .SD .x12 .x5 off)
+    let code := shl_merge_limb_inplace_code base off prev_off
     cpsTriple base (base + 28)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -117,6 +123,10 @@ theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
 -- Per-limb Specs: SHL First Limb In-place (3 instructions, dst_off = 0)
 -- ============================================================================
 
+abbrev shl_first_limb_inplace_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SD .x12 .x5 0)
+
 /-- SHL first limb in-place spec (3 instructions):
     LD x5, 0(x12); SLL x5,x5,x6; SD x12,x5,0
     Reads and writes the same memory cell at sp+0. -/
@@ -125,9 +135,7 @@ theorem shl_first_limb_inplace_spec
     (hvalid : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true) :
     let mem := sp + signExtend12 (0 : BitVec 12)
     let result := src <<< (bit_shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SD .x12 .x5 0)
+    let code := shl_first_limb_inplace_code base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
@@ -138,6 +146,12 @@ theorem shl_first_limb_inplace_spec
 -- ============================================================================
 -- Shift Body Specs
 -- ============================================================================
+
+abbrev shl_body_3_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SD .x12 .x5 24) **
+  ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 8) **
+  ((base + 20) ↦ᵢ .SD .x12 .x0 0) ** ((base + 24) ↦ᵢ .JAL .x0 jal_off)
 
 /-- Shift body 3: limb_shift=3.
     Result[3] = value[0] <<< bs, rest = 0.
@@ -150,11 +164,7 @@ theorem shl_body_3_spec (sp : Word)
     (hexit : (base + 24) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange sp 4) :
     let result3 := v0 <<< (bit_shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 0) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SD .x12 .x5 24) **
-      ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 8) **
-      ((base + 20) ↦ᵢ .SD .x12 .x0 0) ** ((base + 24) ↦ᵢ .JAL .x0 jal_off)
+    let code := shl_body_3_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -172,6 +182,16 @@ theorem shl_body_3_spec (sp : Word)
   rw [hexit] at JL
   runBlock FL S0 S1 S2 JL
 
+abbrev shl_body_2_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 8) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .LD .x10 .x12 0) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
+  ((base + 28) ↦ᵢ .LD .x5 .x12 0) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 36) ↦ᵢ .SD .x12 .x5 16) **
+  ((base + 40) ↦ᵢ .SD .x12 .x0 8) ** ((base + 44) ↦ᵢ .SD .x12 .x0 0) **
+  ((base + 48) ↦ᵢ .JAL .x0 jal_off)
+
 set_option maxHeartbeats 3200000 in
 /-- Shift body 2: limb_shift=2.
     Result[3] = (value[1] <<< bs) ||| ((value[0] >>> as) &&& mask),
@@ -186,15 +206,7 @@ theorem shl_body_2_spec (sp : Word)
     (hvalid : ValidMemRange sp 4) :
     let result3 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (anti_shift.toNat % 64)) &&& mask)
     let result2 := v0 <<< (bit_shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 8) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .LD .x10 .x12 0) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
-      ((base + 28) ↦ᵢ .LD .x5 .x12 0) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 36) ↦ᵢ .SD .x12 .x5 16) **
-      ((base + 40) ↦ᵢ .SD .x12 .x0 8) ** ((base + 44) ↦ᵢ .SD .x12 .x0 0) **
-      ((base + 48) ↦ᵢ .JAL .x0 jal_off)
+    let code := shl_body_2_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -214,6 +226,23 @@ theorem shl_body_2_spec (sp : Word)
   rw [hexit] at JL
   runBlock MM FL S0 S1 JL
 
+abbrev shl_body_1_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  -- merge_limb(16,8,24): 7 instructions at base..base+24
+  (base ↦ᵢ .LD .x5 .x12 16) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .LD .x10 .x12 8) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
+  -- merge_limb(8,0,16): 7 instructions at base+28..base+52
+  ((base + 28) ↦ᵢ .LD .x5 .x12 8) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 36) ↦ᵢ .LD .x10 .x12 0) ** ((base + 40) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 44) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 48) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 52) ↦ᵢ .SD .x12 .x5 16) **
+  -- first_limb(8): 3 instructions at base+56..base+64
+  ((base + 56) ↦ᵢ .LD .x5 .x12 0) ** ((base + 60) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 64) ↦ᵢ .SD .x12 .x5 8) **
+  -- SD + JAL: 2 instructions at base+68..base+72
+  ((base + 68) ↦ᵢ .SD .x12 .x0 0) ** ((base + 72) ↦ᵢ .JAL .x0 jal_off)
+
 set_option maxHeartbeats 3200000 in
 /-- Shift body 1: limb_shift=1.
     Result[3] = merge(value[2],value[1]),
@@ -231,22 +260,7 @@ theorem shl_body_1_spec (sp : Word)
     let result3 := (v2 <<< (bit_shift.toNat % 64)) ||| ((v1 >>> (anti_shift.toNat % 64)) &&& mask)
     let result2 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (anti_shift.toNat % 64)) &&& mask)
     let result1 := v0 <<< (bit_shift.toNat % 64)
-    let code :=
-      -- merge_limb(16,8,24): 7 instructions at base..base+24
-      (base ↦ᵢ .LD .x5 .x12 16) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .LD .x10 .x12 8) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
-      -- merge_limb(8,0,16): 7 instructions at base+28..base+52
-      ((base + 28) ↦ᵢ .LD .x5 .x12 8) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 36) ↦ᵢ .LD .x10 .x12 0) ** ((base + 40) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 44) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 48) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 52) ↦ᵢ .SD .x12 .x5 16) **
-      -- first_limb(8): 3 instructions at base+56..base+64
-      ((base + 56) ↦ᵢ .LD .x5 .x12 0) ** ((base + 60) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 64) ↦ᵢ .SD .x12 .x5 8) **
-      -- SD + JAL: 2 instructions at base+68..base+72
-      ((base + 68) ↦ᵢ .SD .x12 .x0 0) ** ((base + 72) ↦ᵢ .JAL .x0 jal_off)
+    let code := shl_body_1_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -269,6 +283,28 @@ theorem shl_body_1_spec (sp : Word)
   rw [hexit] at JL
   runBlock MM1 MM2 FL S0 JL
 
+abbrev shl_body_0_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  -- merge_limb_inplace(24,16): 7 instructions at base..base+24
+  (base ↦ᵢ .LD .x5 .x12 24) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .LD .x10 .x12 16) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
+  -- merge_limb_inplace(16,8): 7 instructions at base+28..base+52
+  ((base + 28) ↦ᵢ .LD .x5 .x12 16) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 36) ↦ᵢ .LD .x10 .x12 8) ** ((base + 40) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 44) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 48) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 52) ↦ᵢ .SD .x12 .x5 16) **
+  -- merge_limb_inplace(8,0): 7 instructions at base+56..base+80
+  ((base + 56) ↦ᵢ .LD .x5 .x12 8) ** ((base + 60) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 64) ↦ᵢ .LD .x10 .x12 0) ** ((base + 68) ↦ᵢ .SRL .x10 .x10 .x7) **
+  ((base + 72) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 76) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 80) ↦ᵢ .SD .x12 .x5 8) **
+  -- first_limb_inplace: 3 instructions at base+84..base+92
+  ((base + 84) ↦ᵢ .LD .x5 .x12 0) ** ((base + 88) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 92) ↦ᵢ .SD .x12 .x5 0) **
+  -- JAL at base+96
+  ((base + 96) ↦ᵢ .JAL .x0 jal_off)
+
 set_option maxHeartbeats 3200000 in
 /-- Shift body 0: limb_shift=0.
     Result[i] = merge(value[i], value[i-1]) for i=3..1,
@@ -285,27 +321,7 @@ theorem shl_body_0_spec (sp : Word)
     let result2 := (v2 <<< (bit_shift.toNat % 64)) ||| ((v1 >>> (anti_shift.toNat % 64)) &&& mask)
     let result1 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (anti_shift.toNat % 64)) &&& mask)
     let result0 := v0 <<< (bit_shift.toNat % 64)
-    let code :=
-      -- merge_limb_inplace(24,16): 7 instructions at base..base+24
-      (base ↦ᵢ .LD .x5 .x12 24) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .LD .x10 .x12 16) ** ((base + 12) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 16) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 20) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 24) ↦ᵢ .SD .x12 .x5 24) **
-      -- merge_limb_inplace(16,8): 7 instructions at base+28..base+52
-      ((base + 28) ↦ᵢ .LD .x5 .x12 16) ** ((base + 32) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 36) ↦ᵢ .LD .x10 .x12 8) ** ((base + 40) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 44) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 48) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 52) ↦ᵢ .SD .x12 .x5 16) **
-      -- merge_limb_inplace(8,0): 7 instructions at base+56..base+80
-      ((base + 56) ↦ᵢ .LD .x5 .x12 8) ** ((base + 60) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 64) ↦ᵢ .LD .x10 .x12 0) ** ((base + 68) ↦ᵢ .SRL .x10 .x10 .x7) **
-      ((base + 72) ↦ᵢ .AND .x10 .x10 .x11) ** ((base + 76) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 80) ↦ᵢ .SD .x12 .x5 8) **
-      -- first_limb_inplace: 3 instructions at base+84..base+92
-      ((base + 84) ↦ᵢ .LD .x5 .x12 0) ** ((base + 88) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 92) ↦ᵢ .SD .x12 .x5 0) **
-      -- JAL at base+96
-      ((base + 96) ↦ᵢ .JAL .x0 jal_off)
+    let code := shl_body_0_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **

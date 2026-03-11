@@ -14,6 +14,14 @@ namespace EvmAsm.Rv64
 -- Full NOT spec
 -- ============================================================================
 
+/-- Instruction memory assertion for the 256-bit EVM NOT operation.
+    12 instructions = 48 bytes. 4 per-limb XORI(-1) blocks. -/
+abbrev evm_not_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
+  ((base + 12) ↦ᵢ .LD .x7 .x12 8) ** ((base + 16) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 20) ↦ᵢ .SD .x12 .x7 8) **
+  ((base + 24) ↦ᵢ .LD .x7 .x12 16) ** ((base + 28) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 32) ↦ᵢ .SD .x12 .x7 16) **
+  ((base + 36) ↦ᵢ .LD .x7 .x12 24) ** ((base + 40) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 44) ↦ᵢ .SD .x12 .x7 24)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM NOT: composes 4 per-limb NOT specs.
     12 instructions total. Unary: complements each limb in-place, sp unchanged. -/
@@ -22,11 +30,7 @@ theorem evm_not_spec (sp base : Addr)
     (v7 : Word)
     (hvalid : ValidMemRange sp 4) :
     let c := signExtend12 (-1 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
-      ((base + 12) ↦ᵢ .LD .x7 .x12 8) ** ((base + 16) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 20) ↦ᵢ .SD .x12 .x7 8) **
-      ((base + 24) ↦ᵢ .LD .x7 .x12 16) ** ((base + 28) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 32) ↦ᵢ .SD .x12 .x7 16) **
-      ((base + 36) ↦ᵢ .LD .x7 .x12 24) ** ((base + 40) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 44) ↦ᵢ .SD .x12 .x7 24)
+    let code := evm_not_code base
     cpsTriple base (base + 48)
       (code **
        -- Registers + memory
@@ -56,11 +60,7 @@ theorem evm_not_stack_spec (sp base : Addr)
     (a : EvmWord) (v7 : Word)
     (hvalid : ValidMemRange sp 4) :
     let c := signExtend12 (-1 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
-      ((base + 12) ↦ᵢ .LD .x7 .x12 8) ** ((base + 16) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 20) ↦ᵢ .SD .x12 .x7 8) **
-      ((base + 24) ↦ᵢ .LD .x7 .x12 16) ** ((base + 28) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 32) ↦ᵢ .SD .x12 .x7 16) **
-      ((base + 36) ↦ᵢ .LD .x7 .x12 24) ** ((base + 40) ↦ᵢ .XORI .x7 .x7 (-1)) ** ((base + 44) ↦ᵢ .SD .x12 .x7 24)
+    let code := evm_not_code base
     cpsTriple base (base + 48)
       (code **
        -- Registers + memory

@@ -25,6 +25,12 @@ set_option maxHeartbeats 800000
 -- Per-body Helper: Sign-extend in-place (4 instructions)
 -- ============================================================================
 
+/-- Instruction memory assertion for sign-extend in-place (4 instructions):
+    LD x5, off(x12); SLL x5,x5,x6; SRA x5,x5,x6; SD x12,x5,off -/
+abbrev signext_inplace_code (off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 off)
+
 /-- Sign-extend in-place spec (4 instructions):
     LD x5, off(x12); SLL x5,x5,x6; SRA x5,x5,x6; SD x12,x5,off
 
@@ -34,9 +40,7 @@ theorem signext_inplace_spec (off : BitVec 12)
     (sp limb v5 shift_amount : Word) (base : Addr)
     (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let result := BitVec.sshiftRight (limb <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 off)
+    let code := signext_inplace_code off base
     cpsTriple base (base + 16)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift_amount) **
@@ -54,6 +58,13 @@ theorem signext_inplace_spec (off : BitVec 12)
 -- Body Specs
 -- ============================================================================
 
+/-- Instruction memory assertion for sign-extend body 3 (5 instructions):
+    LD + SLL + SRA + SD at sp+56 + JAL. -/
+abbrev signext_body_3_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 56) **
+  ((base + 16) ↦ᵢ .JAL .x0 jal_off)
+
 /-- Body 3: limb_idx=3, sign-extend limb 3 at sp+56 (5 instrs).
     4 instructions: LD + SLL + SRA + SD + JAL. No higher limbs to fill. -/
 theorem signext_body_3_spec (sp : Word)
@@ -62,10 +73,7 @@ theorem signext_body_3_spec (sp : Word)
     (hexit : (base + 16) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange sp 8) :
     let result := BitVec.sshiftRight (v3 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 56) **
-      ((base + 16) ↦ᵢ .JAL .x0 jal_off)
+    let code := signext_body_3_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift_amount) **
@@ -78,6 +86,15 @@ theorem signext_body_3_spec (sp : Word)
   rw [hexit] at JL
   runBlock IP JL
 
+/-- Instruction memory assertion for sign-extend body 2 (7 instructions):
+    LD + SLL + SRA + SD at sp+48 + SRAI + SD at sp+56 + JAL. -/
+abbrev signext_body_2_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 48) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 48) **
+  ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
+  ((base + 20) ↦ᵢ .SD .x12 .x10 56) **
+  ((base + 24) ↦ᵢ .JAL .x0 jal_off)
+
 /-- Body 2: limb_idx=2, sign-extend limb 2 at sp+48, fill limb 3 (7 instrs).
     LD + SLL + SRA + SD + SRAI + SD + JAL. -/
 theorem signext_body_2_spec (sp : Word)
@@ -87,12 +104,7 @@ theorem signext_body_2_spec (sp : Word)
     (hvalid : ValidMemRange sp 8) :
     let result := BitVec.sshiftRight (v2 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
     let sign_fill := BitVec.sshiftRight result 63
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 48) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 48) **
-      ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
-      ((base + 20) ↦ᵢ .SD .x12 .x10 56) **
-      ((base + 24) ↦ᵢ .JAL .x0 jal_off)
+    let code := signext_body_2_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift_amount) ** (.x10 ↦ᵣ v10) **
@@ -113,6 +125,15 @@ theorem signext_body_2_spec (sp : Word)
   rw [hexit] at JL
   runBlock IP SR S0 JL
 
+/-- Instruction memory assertion for sign-extend body 1 (8 instructions):
+    LD + SLL + SRA + SD at sp+40 + SRAI + SD at sp+48 + SD at sp+56 + JAL. -/
+abbrev signext_body_1_code (base : Addr) (jal_off : BitVec 21) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 40) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 40) **
+  ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
+  ((base + 20) ↦ᵢ .SD .x12 .x10 48) ** ((base + 24) ↦ᵢ .SD .x12 .x10 56) **
+  ((base + 28) ↦ᵢ .JAL .x0 jal_off)
+
 set_option maxHeartbeats 1600000 in
 /-- Body 1: limb_idx=1, sign-extend limb 1 at sp+40, fill limbs 2-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + JAL. -/
@@ -123,12 +144,7 @@ theorem signext_body_1_spec (sp : Word)
     (hvalid : ValidMemRange sp 8) :
     let result := BitVec.sshiftRight (v1 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
     let sign_fill := BitVec.sshiftRight result 63
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 40) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 40) **
-      ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
-      ((base + 20) ↦ᵢ .SD .x12 .x10 48) ** ((base + 24) ↦ᵢ .SD .x12 .x10 56) **
-      ((base + 28) ↦ᵢ .JAL .x0 jal_off)
+    let code := signext_body_1_code base jal_off
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift_amount) ** (.x10 ↦ᵣ v10) **
@@ -152,6 +168,16 @@ theorem signext_body_1_spec (sp : Word)
   rw [hexit] at JL
   runBlock IP SR S0 S1 JL
 
+/-- Instruction memory assertion for sign-extend body 0 (8 instructions):
+    LD + SLL + SRA + SD at sp+32 + SRAI + SD at sp+40 + SD at sp+48 + SD at sp+56.
+    Falls through to done. -/
+abbrev signext_body_0_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 32) **
+  ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
+  ((base + 20) ↦ᵢ .SD .x12 .x10 40) ** ((base + 24) ↦ᵢ .SD .x12 .x10 48) **
+  ((base + 28) ↦ᵢ .SD .x12 .x10 56)
+
 set_option maxHeartbeats 1600000 in
 /-- Body 0: limb_idx=0, sign-extend limb 0 at sp+32, fill limbs 1-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + SD. Falls through to done. -/
@@ -161,12 +187,7 @@ theorem signext_body_0_spec (sp : Word)
     (hvalid : ValidMemRange sp 8) :
     let result := BitVec.sshiftRight (v0 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
     let sign_fill := BitVec.sshiftRight result 63
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRA .x5 .x5 .x6) ** ((base + 12) ↦ᵢ .SD .x12 .x5 32) **
-      ((base + 16) ↦ᵢ .SRAI .x10 .x5 63) **
-      ((base + 20) ↦ᵢ .SD .x12 .x10 40) ** ((base + 24) ↦ᵢ .SD .x12 .x10 48) **
-      ((base + 28) ↦ᵢ .SD .x12 .x10 56)
+    let code := signext_body_0_code base
     cpsTriple base (base + 32)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift_amount) ** (.x10 ↦ᵣ v10) **
@@ -207,6 +228,13 @@ theorem signext_done_spec (sp : Word) (base : Addr) :
 -- Phase B Spec: Compute shift_amount and limb_idx (5 instructions)
 -- ============================================================================
 
+/-- Instruction memory assertion for sign-extend phase B (5 instructions):
+    ANDI x10,x5,7; SLLI x10,x10,3; ADDI x6,x0,56; SUB x6,x6,x10; SRLI x5,x5,3. -/
+abbrev signext_phase_b_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ANDI .x10 .x5 7) ** ((base + 4) ↦ᵢ .SLLI .x10 .x10 3) **
+  ((base + 8) ↦ᵢ .ADDI .x6 .x0 56) ** ((base + 12) ↦ᵢ .SUB .x6 .x6 .x10) **
+  ((base + 16) ↦ᵢ .SRLI .x5 .x5 3)
+
 set_option maxHeartbeats 1600000 in
 /-- Phase B spec: compute sign-extension parameters.
     ANDI x10,x5,7; SLLI x10,x10,3; ADDI x6,x0,56;
@@ -218,15 +246,18 @@ theorem signext_phase_b_spec (b r6 r10 : Word) (base : Addr) :
     let byte_shift := byte_in_limb <<< (3 : BitVec 6).toNat
     let shift_amount := (56 : Word) - byte_shift
     let limb_idx := b >>> (3 : BitVec 6).toNat
-    let code :=
-      (base ↦ᵢ .ANDI .x10 .x5 7) ** ((base + 4) ↦ᵢ .SLLI .x10 .x10 3) **
-      ((base + 8) ↦ᵢ .ADDI .x6 .x0 56) ** ((base + 12) ↦ᵢ .SUB .x6 .x6 .x10) **
-      ((base + 16) ↦ᵢ .SRLI .x5 .x5 3)
+    let code := signext_phase_b_code base
     cpsTriple base (base + 20)
       (code **
        (.x5 ↦ᵣ b) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
       (code **
        (.x5 ↦ᵣ limb_idx) ** (.x6 ↦ᵣ shift_amount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byte_shift)) := by
-  runBlock
+  have A := andi_spec_gen .x10 .x5 r10 b 7 base (by nofun)
+  have SL := slli_spec_gen_same .x10 (b &&& signExtend12 7) 3 (base + 4) (by nofun)
+  have AD := addi_x0_spec_gen .x6 r6 56 (base + 8) (by nofun)
+  have SU := sub_spec_gen_rd_eq_rs1 .x6 .x10 (signExtend12 56)
+    ((b &&& signExtend12 7) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun) (by nofun)
+  have SR := srli_spec_gen_same .x5 b 3 (base + 16) (by nofun)
+  runBlock A SL AD SU SR
 
 end EvmAsm.Rv64

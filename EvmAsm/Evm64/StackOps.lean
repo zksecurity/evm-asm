@@ -74,14 +74,16 @@ theorem evm_pop_stack_spec (sp base : Addr)
 -- PUSH0 spec
 -- ============================================================================
 
+abbrev evm_push0_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
+  ((base + 4) ↦ᵢ .SD .x12 .x0 0) ** ((base + 8) ↦ᵢ .SD .x12 .x0 8) **
+  ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 24)
+
 set_option maxHeartbeats 6400000 in
 theorem evm_push0_spec (nsp base : Addr)
     (d0 d1 d2 d3 : Word)
     (hvalid : ValidMemRange nsp 4) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
-      ((base + 4) ↦ᵢ .SD .x12 .x0 0) ** ((base + 8) ↦ᵢ .SD .x12 .x0 8) **
-      ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 24)
+    let code := evm_push0_code base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ (nsp + 32)) **
@@ -101,10 +103,7 @@ theorem evm_push0_spec (nsp base : Addr)
 theorem evm_push0_stack_spec (nsp base : Addr)
     (d0 d1 d2 d3 : Word) (rest : List EvmWord)
     (hvalid : ValidMemRange nsp 4) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
-      ((base + 4) ↦ᵢ .SD .x12 .x0 0) ** ((base + 8) ↦ᵢ .SD .x12 .x0 8) **
-      ((base + 12) ↦ᵢ .SD .x12 .x0 16) ** ((base + 16) ↦ᵢ .SD .x12 .x0 24)
+    let code := evm_push0_code base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ (nsp + 32)) **
@@ -144,16 +143,18 @@ theorem dup1_pair_spec (sp : Addr)
 -- DUP1 spec
 -- ============================================================================
 
+abbrev evm_dup1_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
+  ((base + 4) ↦ᵢ .LD .x7 .x12 32) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
+  ((base + 12) ↦ᵢ .LD .x7 .x12 40) ** ((base + 16) ↦ᵢ .SD .x12 .x7 8) **
+  ((base + 20) ↦ᵢ .LD .x7 .x12 48) ** ((base + 24) ↦ᵢ .SD .x12 .x7 16) **
+  ((base + 28) ↦ᵢ .LD .x7 .x12 56) ** ((base + 32) ↦ᵢ .SD .x12 .x7 24)
+
 set_option maxHeartbeats 6400000 in
 theorem evm_dup1_spec (nsp base : Addr)
     (a0 a1 a2 a3 d0 d1 d2 d3 : Word) (v7 : Word)
     (hvalid : ValidMemRange nsp 8) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
-      ((base + 4) ↦ᵢ .LD .x7 .x12 32) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
-      ((base + 12) ↦ᵢ .LD .x7 .x12 40) ** ((base + 16) ↦ᵢ .SD .x12 .x7 8) **
-      ((base + 20) ↦ᵢ .LD .x7 .x12 48) ** ((base + 24) ↦ᵢ .SD .x12 .x7 16) **
-      ((base + 28) ↦ᵢ .LD .x7 .x12 56) ** ((base + 32) ↦ᵢ .SD .x12 .x7 24)
+    let code := evm_dup1_code base
     cpsTriple base (base + 36)
       (code **
        (.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
@@ -176,12 +177,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_dup1_stack_spec (nsp base : Addr)
     (a : EvmWord) (d0 d1 d2 d3 : Word) (v7 : Word)
     (hvalid : ValidMemRange nsp 8) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 (-32)) **
-      ((base + 4) ↦ᵢ .LD .x7 .x12 32) ** ((base + 8) ↦ᵢ .SD .x12 .x7 0) **
-      ((base + 12) ↦ᵢ .LD .x7 .x12 40) ** ((base + 16) ↦ᵢ .SD .x12 .x7 8) **
-      ((base + 20) ↦ᵢ .LD .x7 .x12 48) ** ((base + 24) ↦ᵢ .SD .x12 .x7 16) **
-      ((base + 28) ↦ᵢ .LD .x7 .x12 56) ** ((base + 32) ↦ᵢ .SD .x12 .x7 24)
+    let code := evm_dup1_code base
     cpsTriple base (base + 36)
       (code **
        (.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
@@ -235,19 +231,21 @@ theorem swap1_limb_spec (sp : Addr)
 -- SWAP1 spec
 -- ============================================================================
 
+abbrev evm_swap1_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .SD .x12 .x6 0) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
+  ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 24) ↦ᵢ .SD .x12 .x6 8) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
+  ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
+  ((base + 40) ↦ᵢ .SD .x12 .x6 16) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
+  ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
+  ((base + 56) ↦ᵢ .SD .x12 .x6 24) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56)
+
 set_option maxHeartbeats 6400000 in
 theorem evm_swap1_spec (sp base : Addr)
     (a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .SD .x12 .x6 0) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
-      ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 24) ↦ᵢ .SD .x12 .x6 8) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 40) ↦ᵢ .SD .x12 .x6 16) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
-      ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 56) ↦ᵢ .SD .x12 .x6 24) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56)
+    let code := evm_swap1_code base
     cpsTriple base (base + 64)
       (code **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
@@ -267,15 +265,7 @@ set_option maxHeartbeats 6400000 in
 theorem evm_swap1_stack_spec (sp base : Addr)
     (a b : EvmWord) (v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .SD .x12 .x6 0) ** ((base + 12) ↦ᵢ .SD .x12 .x7 32) **
-      ((base + 16) ↦ᵢ .LD .x7 .x12 8) ** ((base + 20) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 24) ↦ᵢ .SD .x12 .x6 8) ** ((base + 28) ↦ᵢ .SD .x12 .x7 40) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 16) ** ((base + 36) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 40) ↦ᵢ .SD .x12 .x6 16) ** ((base + 44) ↦ᵢ .SD .x12 .x7 48) **
-      ((base + 48) ↦ᵢ .LD .x7 .x12 24) ** ((base + 52) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 56) ↦ᵢ .SD .x12 .x6 24) ** ((base + 60) ↦ᵢ .SD .x12 .x7 56)
+    let code := evm_swap1_code base
     cpsTriple base (base + 64)
       (code **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
@@ -518,6 +508,7 @@ theorem evm_dup_spec (nsp base : Addr)
     (BitVec.ofNat 12 (n*32+8)) (BitVec.ofNat 12 8) s1 d1 s0 (base + 12)
     (by rw [hse_s1]; exact hvs8) (by rw [hm8]; exact hv8)
   rw [hse_s1, signExtend12_ofNat_small 8 (by omega)] at P1_raw
+  rw [show nsp + BitVec.ofNat 64 8 = nsp + 8 from by bv_omega] at P1_raw
   rw [show (base + 12 : Addr) + 4 = base + 16 from by bv_omega,
       show (base + 12 : Addr) + 8 = base + 20 from by bv_omega] at P1_raw
   have P1 := cpsTriple_frame_left _ _ _ _
@@ -543,6 +534,7 @@ theorem evm_dup_spec (nsp base : Addr)
     (BitVec.ofNat 12 (n*32+16)) (BitVec.ofNat 12 16) s2 d2 s1 (base + 20)
     (by rw [hse_s2]; exact hvs16) (by rw [hm16]; exact hv16)
   rw [hse_s2, signExtend12_ofNat_small 16 (by omega)] at P2_raw
+  rw [show nsp + BitVec.ofNat 64 16 = nsp + 16 from by bv_omega] at P2_raw
   rw [show (base + 20 : Addr) + 4 = base + 24 from by bv_omega,
       show (base + 20 : Addr) + 8 = base + 28 from by bv_omega] at P2_raw
   have P2 := cpsTriple_frame_left _ _ _ _
@@ -568,6 +560,7 @@ theorem evm_dup_spec (nsp base : Addr)
     (BitVec.ofNat 12 (n*32+24)) (BitVec.ofNat 12 24) s3 d3 s2 (base + 28)
     (by rw [hse_s3]; exact hvs24) (by rw [hm24]; exact hv24)
   rw [hse_s3, signExtend12_ofNat_small 24 (by omega)] at P3_raw
+  rw [show nsp + BitVec.ofNat 64 24 = nsp + 24 from by bv_omega] at P3_raw
   rw [show (base + 28 : Addr) + 4 = base + 32 from by bv_omega,
       show (base + 28 : Addr) + 8 = base + 36 from by bv_omega] at P3_raw
   have P3 := cpsTriple_frame_left _ _ _ _

@@ -15,6 +15,28 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
+/-- Instruction memory assertion for the 256-bit EVM SLT operation.
+    25 instructions = 100 bytes. MSB signed compare + lower borrow chain + store. -/
+abbrev evm_slt_code (base : Addr) : Assertion :=
+  -- Phase 1: MSB check (3 instructions)
+  (base ↦ᵢ .LD .x7 .x12 24) ** ((base + 4) ↦ᵢ .LD .x6 .x12 56) **
+  ((base + 8) ↦ᵢ .BEQ .x7 .x6 12) **
+  -- MSB differ path (2 instructions)
+  ((base + 12) ↦ᵢ .SLT .x5 .x7 .x6) ** ((base + 16) ↦ᵢ .JAL .x0 64) **
+  -- Lower compare path: 3-limb borrow chain (15 instructions)
+  ((base + 20) ↦ᵢ .LD .x7 .x12 0) ** ((base + 24) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 28) ↦ᵢ .SLTU .x5 .x7 .x6) **
+  ((base + 32) ↦ᵢ .LD .x7 .x12 8) ** ((base + 36) ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 40) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 44) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 48) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 52) ↦ᵢ .OR .x5 .x11 .x6) **
+  ((base + 56) ↦ᵢ .LD .x7 .x12 16) ** ((base + 60) ↦ᵢ .LD .x6 .x12 48) **
+  ((base + 64) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 68) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 72) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 76) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Store phase (5 instructions)
+  ((base + 80) ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 84) ↦ᵢ .SD .x12 .x5 0) **
+  ((base + 88) ↦ᵢ .SD .x12 .x0 8) ** ((base + 92) ↦ᵢ .SD .x12 .x0 16) **
+  ((base + 96) ↦ᵢ .SD .x12 .x0 24)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM SLT: SLT(a, b) = 1 iff a <s b (signed).
     If MSB limbs differ, uses RV64 SLT (signed comparison).
@@ -40,25 +62,7 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
     let slt_msb := if BitVec.slt a3 b3 then (1 : Word) else 0
     -- Result: signed LT
     let result := if a3 = b3 then borrow2 else slt_msb
-    let code :=
-      -- Phase 1: MSB check (3 instructions)
-      (base ↦ᵢ .LD .x7 .x12 24) ** ((base + 4) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 8) ↦ᵢ .BEQ .x7 .x6 12) **
-      -- MSB differ path (2 instructions)
-      ((base + 12) ↦ᵢ .SLT .x5 .x7 .x6) ** ((base + 16) ↦ᵢ .JAL .x0 64) **
-      -- Lower compare path: 3-limb borrow chain (15 instructions)
-      ((base + 20) ↦ᵢ .LD .x7 .x12 0) ** ((base + 24) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 28) ↦ᵢ .SLTU .x5 .x7 .x6) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 8) ** ((base + 36) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 40) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 44) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 48) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 52) ↦ᵢ .OR .x5 .x11 .x6) **
-      ((base + 56) ↦ᵢ .LD .x7 .x12 16) ** ((base + 60) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 64) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 68) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 72) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 76) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Store phase (5 instructions)
-      ((base + 80) ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 84) ↦ᵢ .SD .x12 .x5 0) **
-      ((base + 88) ↦ᵢ .SD .x12 .x0 8) ** ((base + 92) ↦ᵢ .SD .x12 .x0 16) **
-      ((base + 96) ↦ᵢ .SD .x12 .x0 24)
+    let code := evm_slt_code base
     cpsTriple base (base + 100)
       (code **
        -- Registers + memory
@@ -82,7 +86,7 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
   by_cases h : a3 = b3
   · -- Case: MSB limbs equal → BEQ taken, lower compare path
     subst h
-    simp only []
+    simp only [ite_true]
     -- MSB load phase
     have M := slt_msb_load_spec 24 56 sp a3 a3 v7 v6 base (by validMem) (by validMem)
     -- BEQ taken (a3 = a3)

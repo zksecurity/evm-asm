@@ -23,15 +23,17 @@ namespace EvmAsm.Rv64
 -- Column 3: b[3] × {a[0]} (5 instructions)
 -- ============================================================================
 
+abbrev mul_col3_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
+  ((base + 8) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 12) ↦ᵢ .ADD .x10 .x10 .x6) **
+  ((base + 16) ↦ᵢ .SD .x12 .x10 56)
+
 /-- Column 3: multiply b[3] × a[0], add to r3 accumulator, store result.
     5 instructions: LD b3; LD a0; MUL a0*b3; ADD acc; SD result. -/
 theorem mul_col3_spec (sp : Addr) (base : Addr)
     (a0 b3 r3_in v5 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 12) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 16) ↦ᵢ .SD .x12 .x10 56)
+    let code := mul_col3_code base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x10 ↦ᵣ r3_in) **
@@ -50,6 +52,15 @@ theorem mul_col3_spec (sp : Addr) (base : Addr)
 -- Column 2: b[2] × {a[0], a[1]} (13 instructions)
 -- ============================================================================
 
+abbrev mul_col2_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 48) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
+  ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x6 .x6 .x5) **
+  ((base + 16) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 20) ↦ᵢ .SLTU .x7 .x11 .x7) **
+  ((base + 24) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 28) ↦ᵢ .SD .x12 .x11 48) **
+  ((base + 32) ↦ᵢ .LD .x7 .x12 8) ** ((base + 36) ↦ᵢ .MUL .x7 .x7 .x5) **
+  ((base + 40) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 44) ↦ᵢ .LD .x10 .x12 16) **
+  ((base + 48) ↦ᵢ .ADD .x10 .x10 .x6)
+
 set_option maxHeartbeats 1600000 in
 /-- Column 2: multiply b[2] × {a[0],a[1]}, finalize r[2], update r[3] accumulator.
     13 instructions. Input: x11 = r2 acc, sp+16 = r3 partial.
@@ -63,14 +74,7 @@ theorem mul_col2_spec (sp : Addr) (base : Addr)
     let carry02 := if BitVec.ult r2_out lo_a0b2 then (1 : Word) else 0
     let r3_contrib := hi_a0b2 + carry02 + a1 * b2
     let r3_out := r3p + r3_contrib
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 48) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 16) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 20) ↦ᵢ .SLTU .x7 .x11 .x7) **
-      ((base + 24) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 28) ↦ᵢ .SD .x12 .x11 48) **
-      ((base + 32) ↦ᵢ .LD .x7 .x12 8) ** ((base + 36) ↦ᵢ .MUL .x7 .x7 .x5) **
-      ((base + 40) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 44) ↦ᵢ .LD .x10 .x12 16) **
-      ((base + 48) ↦ᵢ .ADD .x10 .x10 .x6)
+    let code := mul_col2_code base
     cpsTriple base (base + 52)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
@@ -101,6 +105,20 @@ theorem mul_col2_spec (sp : Addr) (base : Addr)
 -- Column 1: b[1] × {a[0], a[1], a[2]} (23 instructions)
 -- ============================================================================
 
+abbrev mul_col1_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 40) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
+  ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x6 .x6 .x5) **
+  ((base + 16) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 20) ↦ᵢ .SLTU .x7 .x10 .x7) **
+  ((base + 24) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 28) ↦ᵢ .SD .x12 .x10 40) **
+  ((base + 32) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 36) ↦ᵢ .SLTU .x10 .x11 .x6) **
+  ((base + 40) ↦ᵢ .LD .x6 .x12 8) ** ((base + 44) ↦ᵢ .MUL .x7 .x6 .x5) **
+  ((base + 48) ↦ᵢ .MULHU .x6 .x6 .x5) ** ((base + 52) ↦ᵢ .ADD .x11 .x11 .x7) **
+  ((base + 56) ↦ᵢ .SLTU .x7 .x11 .x7) ** ((base + 60) ↦ᵢ .ADD .x6 .x6 .x7) **
+  ((base + 64) ↦ᵢ .ADD .x10 .x10 .x6) ** ((base + 68) ↦ᵢ .LD .x6 .x12 16) **
+  ((base + 72) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 76) ↦ᵢ .ADD .x10 .x10 .x6) **
+  ((base + 80) ↦ᵢ .LD .x6 .x12 24) ** ((base + 84) ↦ᵢ .ADD .x10 .x10 .x6) **
+  ((base + 88) ↦ᵢ .SD .x12 .x10 16)
+
 set_option maxHeartbeats 3200000 in
 /-- Column 1: multiply b[1] × {a[0],a[1],a[2]}, finalize r[1], update r[2]/r[3].
     23 instructions. Input: x10 = r1 acc, x11 = r2 acc, sp+24 = r3 partial from col0.
@@ -121,19 +139,7 @@ theorem mul_col1_spec (sp : Addr) (base : Addr)
     let carry_r2_2 := if BitVec.ult r2_out lo_a1b1 then (1 : Word) else 0
     let r3_contrib1 := hi_a1b1 + carry_r2_2
     let r3_spill := carry_r2_1 + r3_contrib1 + a2 * b1 + r3p0
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 40) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 16) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 20) ↦ᵢ .SLTU .x7 .x10 .x7) **
-      ((base + 24) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 28) ↦ᵢ .SD .x12 .x10 40) **
-      ((base + 32) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 36) ↦ᵢ .SLTU .x10 .x11 .x6) **
-      ((base + 40) ↦ᵢ .LD .x6 .x12 8) ** ((base + 44) ↦ᵢ .MUL .x7 .x6 .x5) **
-      ((base + 48) ↦ᵢ .MULHU .x6 .x6 .x5) ** ((base + 52) ↦ᵢ .ADD .x11 .x11 .x7) **
-      ((base + 56) ↦ᵢ .SLTU .x7 .x11 .x7) ** ((base + 60) ↦ᵢ .ADD .x6 .x6 .x7) **
-      ((base + 64) ↦ᵢ .ADD .x10 .x10 .x6) ** ((base + 68) ↦ᵢ .LD .x6 .x12 16) **
-      ((base + 72) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 76) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 80) ↦ᵢ .LD .x6 .x12 24) ** ((base + 84) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 88) ↦ᵢ .SD .x12 .x10 16)
+    let code := mul_col1_code base
     cpsTriple base (base + 92)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
@@ -178,6 +184,19 @@ theorem mul_col1_spec (sp : Addr) (base : Addr)
 -- Column 0: b[0] × {a[0], a[1], a[2], a[3]} (21 instructions)
 -- ============================================================================
 
+abbrev mul_col0_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
+  ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x10 .x6 .x5) **
+  ((base + 16) ↦ᵢ .SD .x12 .x7 32) ** ((base + 20) ↦ᵢ .LD .x6 .x12 8) **
+  ((base + 24) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 28) ↦ᵢ .MULHU .x11 .x6 .x5) **
+  ((base + 32) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 36) ↦ᵢ .SLTU .x6 .x10 .x7) **
+  ((base + 40) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 44) ↦ᵢ .LD .x6 .x12 16) **
+  ((base + 48) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 52) ↦ᵢ .MULHU .x6 .x6 .x5) **
+  ((base + 56) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 60) ↦ᵢ .SLTU .x7 .x11 .x7) **
+  ((base + 64) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 68) ↦ᵢ .LD .x7 .x12 24) **
+  ((base + 72) ↦ᵢ .MUL .x7 .x7 .x5) ** ((base + 76) ↦ᵢ .ADD .x6 .x6 .x7) **
+  ((base + 80) ↦ᵢ .SD .x12 .x6 24)
+
 set_option maxHeartbeats 3200000 in
 /-- Column 0: multiply b[0] × {a[0],a[1],a[2],a[3]}, store r[0], spill r[3] partial.
     21 instructions. Output: x10 = r1 acc, x11 = r2 acc, sp+24 = r3p, sp+32 = r0. -/
@@ -195,18 +214,7 @@ theorem mul_col0_spec (sp : Addr) (base : Addr)
     let r2_acc := hi_a1b0 + carry_r1 + lo_a2b0
     let carry_r2 := if BitVec.ult r2_acc lo_a2b0 then (1 : Word) else 0
     let r3p := hi_a2b0 + carry_r2 + a3 * b0
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x10 .x6 .x5) **
-      ((base + 16) ↦ᵢ .SD .x12 .x7 32) ** ((base + 20) ↦ᵢ .LD .x6 .x12 8) **
-      ((base + 24) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 28) ↦ᵢ .MULHU .x11 .x6 .x5) **
-      ((base + 32) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 36) ↦ᵢ .SLTU .x6 .x10 .x7) **
-      ((base + 40) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 44) ↦ᵢ .LD .x6 .x12 16) **
-      ((base + 48) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 52) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 56) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 60) ↦ᵢ .SLTU .x7 .x11 .x7) **
-      ((base + 64) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 68) ↦ᵢ .LD .x7 .x12 24) **
-      ((base + 72) ↦ᵢ .MUL .x7 .x7 .x5) ** ((base + 76) ↦ᵢ .ADD .x6 .x6 .x7) **
-      ((base + 80) ↦ᵢ .SD .x12 .x6 24)
+    let code := mul_col0_code base
     cpsTriple base (base + 84)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
@@ -247,6 +255,18 @@ theorem mul_col0_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 -- Full 256-bit EVM MUL (63 instructions + 1 epilogue = 252 bytes)
 -- ============================================================================
+
+abbrev evm_mul_code (base : Addr) : Assertion :=
+  -- Col0 (21 instrs: base+0..base+80)
+  mul_col0_code base **
+  -- Col1 (23 instrs: base+84..base+172)
+  mul_col1_code (base + 84) **
+  -- Col2 (13 instrs: base+176..base+224)
+  mul_col2_code (base + 176) **
+  -- Col3 (5 instrs: base+228..base+244)
+  mul_col3_code (base + 228) **
+  -- Epilogue (1 instr: base+248)
+  ((base + 248) ↦ᵢ .ADDI .x12 .x12 32)
 
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM MUL: composes 4 per-column specs + ADDI sp adjustment.
@@ -291,46 +311,7 @@ theorem evm_mul_spec (sp : Addr) (base : Addr)
     let c2_r3 := c1_r3p + c2_rc
     -- Col3
     let r3_final := c2_r3 + a0 * b3
-    let code :=
-      -- Col0 (21 instrs: base+0..base+80)
-      (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 12) ↦ᵢ .MULHU .x10 .x6 .x5) **
-      ((base + 16) ↦ᵢ .SD .x12 .x7 32) ** ((base + 20) ↦ᵢ .LD .x6 .x12 8) **
-      ((base + 24) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 28) ↦ᵢ .MULHU .x11 .x6 .x5) **
-      ((base + 32) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 36) ↦ᵢ .SLTU .x6 .x10 .x7) **
-      ((base + 40) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 44) ↦ᵢ .LD .x6 .x12 16) **
-      ((base + 48) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 52) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 56) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 60) ↦ᵢ .SLTU .x7 .x11 .x7) **
-      ((base + 64) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 68) ↦ᵢ .LD .x7 .x12 24) **
-      ((base + 72) ↦ᵢ .MUL .x7 .x7 .x5) ** ((base + 76) ↦ᵢ .ADD .x6 .x6 .x7) **
-      ((base + 80) ↦ᵢ .SD .x12 .x6 24) **
-      -- Col1 (23 instrs: base+84..base+172)
-      ((base + 84) ↦ᵢ .LD .x5 .x12 40) ** ((base + 88) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 92) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 96) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 100) ↦ᵢ .ADD .x10 .x10 .x7) ** ((base + 104) ↦ᵢ .SLTU .x7 .x10 .x7) **
-      ((base + 108) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 112) ↦ᵢ .SD .x12 .x10 40) **
-      ((base + 116) ↦ᵢ .ADD .x11 .x11 .x6) ** ((base + 120) ↦ᵢ .SLTU .x10 .x11 .x6) **
-      ((base + 124) ↦ᵢ .LD .x6 .x12 8) ** ((base + 128) ↦ᵢ .MUL .x7 .x6 .x5) **
-      ((base + 132) ↦ᵢ .MULHU .x6 .x6 .x5) ** ((base + 136) ↦ᵢ .ADD .x11 .x11 .x7) **
-      ((base + 140) ↦ᵢ .SLTU .x7 .x11 .x7) ** ((base + 144) ↦ᵢ .ADD .x6 .x6 .x7) **
-      ((base + 148) ↦ᵢ .ADD .x10 .x10 .x6) ** ((base + 152) ↦ᵢ .LD .x6 .x12 16) **
-      ((base + 156) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 160) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 164) ↦ᵢ .LD .x6 .x12 24) ** ((base + 168) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 172) ↦ᵢ .SD .x12 .x10 16) **
-      -- Col2 (13 instrs: base+176..base+224)
-      ((base + 176) ↦ᵢ .LD .x5 .x12 48) ** ((base + 180) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 184) ↦ᵢ .MUL .x7 .x6 .x5) ** ((base + 188) ↦ᵢ .MULHU .x6 .x6 .x5) **
-      ((base + 192) ↦ᵢ .ADD .x11 .x11 .x7) ** ((base + 196) ↦ᵢ .SLTU .x7 .x11 .x7) **
-      ((base + 200) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 204) ↦ᵢ .SD .x12 .x11 48) **
-      ((base + 208) ↦ᵢ .LD .x7 .x12 8) ** ((base + 212) ↦ᵢ .MUL .x7 .x7 .x5) **
-      ((base + 216) ↦ᵢ .ADD .x6 .x6 .x7) ** ((base + 220) ↦ᵢ .LD .x10 .x12 16) **
-      ((base + 224) ↦ᵢ .ADD .x10 .x10 .x6) **
-      -- Col3 (5 instrs: base+228..base+244)
-      ((base + 228) ↦ᵢ .LD .x5 .x12 56) ** ((base + 232) ↦ᵢ .LD .x6 .x12 0) **
-      ((base + 236) ↦ᵢ .MUL .x6 .x6 .x5) ** ((base + 240) ↦ᵢ .ADD .x10 .x10 .x6) **
-      ((base + 244) ↦ᵢ .SD .x12 .x10 56) **
-      -- Epilogue (1 instr: base+248)
-      ((base + 248) ↦ᵢ .ADDI .x12 .x12 32)
+    let code := evm_mul_code base
     cpsTriple base (base + 252)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **

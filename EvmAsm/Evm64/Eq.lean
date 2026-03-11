@@ -11,6 +11,21 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
+/-- Instruction memory assertion for the 256-bit EVM EQ operation.
+    21 instructions = 84 bytes. XOR-OR accumulation + SLTIU boolean + store. -/
+abbrev evm_eq_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .XOR .x7 .x7 .x6) **
+  ((base + 12) ↦ᵢ .LD .x6 .x12 8) ** ((base + 16) ↦ᵢ .LD .x5 .x12 40) **
+  ((base + 20) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 24) ↦ᵢ .OR .x7 .x7 .x6) **
+  ((base + 28) ↦ᵢ .LD .x6 .x12 16) ** ((base + 32) ↦ᵢ .LD .x5 .x12 48) **
+  ((base + 36) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 40) ↦ᵢ .OR .x7 .x7 .x6) **
+  ((base + 44) ↦ᵢ .LD .x6 .x12 24) ** ((base + 48) ↦ᵢ .LD .x5 .x12 56) **
+  ((base + 52) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 56) ↦ᵢ .OR .x7 .x7 .x6) **
+  ((base + 60) ↦ᵢ .SLTIU .x7 .x7 1) ** ((base + 64) ↦ᵢ .ADDI .x12 .x12 32) **
+  ((base + 68) ↦ᵢ .SD .x12 .x7 0) ** ((base + 72) ↦ᵢ .SD .x12 .x0 8) **
+  ((base + 76) ↦ᵢ .SD .x12 .x0 16) ** ((base + 80) ↦ᵢ .SD .x12 .x0 24)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM EQ: EQ(a, b) = 1 iff a == b (unsigned).
     XOR each limb pair, OR-reduce, SLTIU to boolean.
@@ -27,18 +42,7 @@ theorem evm_eq_spec (sp : Addr) (base : Addr)
     let acc2 := acc1 ||| (a2 ^^^ b2)
     let acc3 := acc2 ||| (a3 ^^^ b3)
     let eq_result := if BitVec.ult acc3 (1 : Word) then (1 : Word) else 0
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .XOR .x7 .x7 .x6) **
-      ((base + 12) ↦ᵢ .LD .x6 .x12 8) ** ((base + 16) ↦ᵢ .LD .x5 .x12 40) **
-      ((base + 20) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 24) ↦ᵢ .OR .x7 .x7 .x6) **
-      ((base + 28) ↦ᵢ .LD .x6 .x12 16) ** ((base + 32) ↦ᵢ .LD .x5 .x12 48) **
-      ((base + 36) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 40) ↦ᵢ .OR .x7 .x7 .x6) **
-      ((base + 44) ↦ᵢ .LD .x6 .x12 24) ** ((base + 48) ↦ᵢ .LD .x5 .x12 56) **
-      ((base + 52) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 56) ↦ᵢ .OR .x7 .x7 .x6) **
-      ((base + 60) ↦ᵢ .SLTIU .x7 .x7 1) ** ((base + 64) ↦ᵢ .ADDI .x12 .x12 32) **
-      ((base + 68) ↦ᵢ .SD .x12 .x7 0) ** ((base + 72) ↦ᵢ .SD .x12 .x0 8) **
-      ((base + 76) ↦ᵢ .SD .x12 .x0 16) ** ((base + 80) ↦ᵢ .SD .x12 .x0 24)
+    let code := evm_eq_code base
     cpsTriple base (base + 84)
       (code **
        -- Registers + memory

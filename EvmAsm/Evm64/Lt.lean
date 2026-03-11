@@ -11,6 +11,24 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
+/-- Instruction memory assertion for the 256-bit EVM LT operation.
+    26 instructions = 104 bytes. Borrow chain across 4 limbs + store. -/
+abbrev evm_lt_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .SLTU .x5 .x7 .x6) **
+  ((base + 12) ↦ᵢ .LD .x7 .x12 8) ** ((base + 16) ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 20) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 24) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 28) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 32) ↦ᵢ .OR .x5 .x11 .x6) **
+  ((base + 36) ↦ᵢ .LD .x7 .x12 16) ** ((base + 40) ↦ᵢ .LD .x6 .x12 48) **
+  ((base + 44) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 48) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 52) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 56) ↦ᵢ .OR .x5 .x11 .x6) **
+  ((base + 60) ↦ᵢ .LD .x7 .x12 24) ** ((base + 64) ↦ᵢ .LD .x6 .x12 56) **
+  ((base + 68) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 72) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 76) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 80) ↦ᵢ .OR .x5 .x11 .x6) **
+  ((base + 84) ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 88) ↦ᵢ .SD .x12 .x5 0) **
+  ((base + 92) ↦ᵢ .SD .x12 .x0 8) ** ((base + 96) ↦ᵢ .SD .x12 .x0 16) **
+  ((base + 100) ↦ᵢ .SD .x12 .x0 24)
+
 set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM LT: LT(a, b) = 1 iff a < b (unsigned).
     Borrow chain across 4 limbs, then store result.
@@ -34,21 +52,7 @@ theorem evm_lt_spec (sp : Addr) (base : Addr)
     let temp3 := a3 - b3
     let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
     let borrow3 := borrow3a ||| borrow3b
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .SLTU .x5 .x7 .x6) **
-      ((base + 12) ↦ᵢ .LD .x7 .x12 8) ** ((base + 16) ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 20) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 24) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 28) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 32) ↦ᵢ .OR .x5 .x11 .x6) **
-      ((base + 36) ↦ᵢ .LD .x7 .x12 16) ** ((base + 40) ↦ᵢ .LD .x6 .x12 48) **
-      ((base + 44) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 48) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 52) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 56) ↦ᵢ .OR .x5 .x11 .x6) **
-      ((base + 60) ↦ᵢ .LD .x7 .x12 24) ** ((base + 64) ↦ᵢ .LD .x6 .x12 56) **
-      ((base + 68) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 72) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 76) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 80) ↦ᵢ .OR .x5 .x11 .x6) **
-      ((base + 84) ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 88) ↦ᵢ .SD .x12 .x5 0) **
-      ((base + 92) ↦ᵢ .SD .x12 .x0 8) ** ((base + 96) ↦ᵢ .SD .x12 .x0 16) **
-      ((base + 100) ↦ᵢ .SD .x12 .x0 24)
+    let code := evm_lt_code base
     cpsTriple base (base + 104)
       (code **
        -- Registers + memory
