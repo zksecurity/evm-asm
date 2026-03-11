@@ -198,12 +198,21 @@ partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
       if fPf?.isNone && aPf?.isNone then Pure.pure (e, none)
       else
         let new_ := Expr.app f' a'
-        let pf ← match fPf?, aPf? with
-          | some fPf, some aPf => mkCongr fPf aPf
-          | some fPf, none => mkCongrFun fPf a
-          | none, some aPf => mkCongrArg f aPf
-          | none, none => unreachable!
-        Pure.pure (new_, some pf)
+        -- Build congruence proof; fall back gracefully when AppBuilder fails
+        -- (e.g., `congrArg` fails for dependent functions like `ite` with Decidable instances).
+        let pf? : Option Expr ← do
+          try
+            let pf ← match fPf?, aPf? with
+              | some fPf, some aPf => mkCongr fPf aPf
+              | some fPf, none => mkCongrFun fPf a
+              | none, some aPf => mkCongrArg f aPf
+              | none, none => unreachable!
+            Pure.pure (some pf : Option Expr)
+          catch _ =>
+            Pure.pure (none : Option Expr)
+        match pf? with
+        | some pf => Pure.pure (new_, some pf)
+        | none => Pure.pure (e, none)  -- skip normalization for this subtree
     | _ => Pure.pure (e, none)
   -- 2. Try top-level simplifications on the (possibly modified) expression
   let (e'', topPf?) ← trySimplifyTop e'
@@ -221,23 +230,73 @@ partial def normalizeTypeAddrs (e : Expr) : MetaM (Expr × Option Expr) := do
   | none, some tp => Pure.pure (final, some tp)
   | some cp, some tp => Pure.pure (final, some (← mkEqTrans cp tp))
 
+/-- Expand reducible definitions (abbrevs) in a sepConj assertion tree.
+    For each leaf that is NOT a sepConj, applies `withReducible whnf` to unfold abbrevs.
+    This preserves the structural associativity of the sepConj tree (only expanding leaves),
+    so the result is definitionally equal to the input (kernel can verify by unfolding the abbrev).
+    Returns the expanded expression (syntactically equal at sepConj structure level). -/
+partial def expandAbbrevsInAssertion (e : Expr) : MetaM Expr := do
+  match ← parseSepConj? e with
+  | some (l, r) =>
+    let l' ← expandAbbrevsInAssertion l
+    let r' ← expandAbbrevsInAssertion r
+    return mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) l' r'
+  | none =>
+    -- Leaf: apply whnf to unfold abbrevs (e.g., foo_code k base → instrAt base ... ** ...)
+    withReducible (whnf e)
+
+/-- Expand reducible definitions (abbrevs) in the Pre and Post assertions of a cpsTriple proof.
+    When a spec's type contains `foo_code N (base+K)`, this expands it to its instrAt chain
+    so that `normalizeTypeAddrs` can later simplify addresses like `(base+K)+4 → base+(K+4)`.
+    Preserves sepConj tree structure (only expands leaf abbrevs, not the chains themselves),
+    so the result is definitionally equal to the original — uses Eq.mp with rfl for transport. -/
+private def expandAbbrevsInCpsTriple (proof : Expr) : MetaM Expr := do
+  let ty ← instantiateMVars (← inferType proof)
+  let cleanTy := inlineLets ty
+  let some (entry, exit_, pre, post) ← parseCpsTriple? cleanTy | return proof
+  -- Expand abbrevs in pre/post while preserving sepConj tree structure
+  let preNew ← expandAbbrevsInAssertion pre
+  let postNew ← expandAbbrevsInAssertion post
+  -- If nothing changed (no abbrevs expanded), return original proof unchanged
+  if preNew == pre && postNew == post then
+    return proof
+  -- Build new type with expanded assertions
+  let newTy := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, exit_, preNew, postNew]
+  -- Build proof that ty = newTy via definitional equality (abbrev expansion is definitional).
+  -- Use @id (ty = newTy) (Eq.refl ty) to get a term with SYNTACTIC type ty = newTy.
+  -- The kernel accepts Eq.refl ty : ty = newTy iff ty =def= newTy.
+  -- We pre-check via isDefEq to avoid silent kernel failures.
+  if ¬(← withoutModifyingState (isDefEq ty newTy)) then
+    return proof  -- fallback: not definitionally equal (shouldn't happen for well-formed abbrevs)
+  let eqTy ← mkEq ty newTy
+  let eqProof := mkApp2 (mkConst ``id [levelZero]) eqTy (← mkEqRefl ty)
+  mkEqMP eqProof proof
+
 /-- Normalize addresses in a cpsTriple proof.
     First inlines `let` bindings (which are definitionally equal),
-    then eliminates `signExtend12 N` for concrete N and flattens address arithmetic
-    `(base + N) + M` → `base + (N+M)` and `e + 0` → `e`.
+    expands reducible abbreviations (abbrevs) in the assertion parts so that
+    compound addresses like `(base+N)+M` become `base+(N+M)`,
+    then eliminates `signExtend12 N` for concrete N and flattens address arithmetic.
     Transports the original proof via `Eq.mp` (works because cpsTriple is Prop-valued). -/
 private def normalizeSpecAddresses (proof : Expr) : MetaM Expr := do
   let origType ← instantiateMVars (← inferType proof)
   -- Inline let-bindings first (e.g., `let mem := sp + signExtend12 off; ...`)
   let cleanType := inlineLets origType
-  let (_, normPf?) ← normalizeTypeAddrs cleanType
+  -- Expand abbrevs in assertions: unfolds `foo_code N (base+K)` so normalizeTypeAddrs
+  -- can normalize the resulting `(base+K)+4` addresses.
+  let expandedProof ← do
+    try expandAbbrevsInCpsTriple proof
+    catch _ => Pure.pure proof
+  let expandedType ← instantiateMVars (← inferType expandedProof)
+  let workType := inlineLets expandedType
+  let (_, normPf?) ← normalizeTypeAddrs workType
   match normPf? with
-  | some pf => mkEqMP pf proof
+  | some pf => mkEqMP pf expandedProof
   | none =>
     -- If let-inlining changed the type shape, wrap with @id to force the clean type
     -- (let-inlined type is definitionally equal, so the kernel accepts it)
-    if cleanType == origType then Pure.pure proof
-    else Pure.pure (mkApp2 (mkConst ``id [levelZero]) cleanType proof)
+    if workType == expandedType then Pure.pure expandedProof
+    else Pure.pure (mkApp2 (mkConst ``id [levelZero]) workType expandedProof)
 
 /-- Normalize the exit address of a cpsTriple proof to match a target address.
     Proves equality via `bv_omega` when needed. -/
@@ -300,19 +359,19 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
 
 /-- Core: compose an array of cpsTriple proofs with initial framing,
     address normalization, and seqFrame chaining.
-    When `normalizeAddrs` is true (manual mode), applies signExtend12 reduction
-    and address arithmetic flattening to each spec before composing. -/
+    Always normalizes spec addresses (signExtend12 reduction and address arithmetic flattening)
+    so that atoms match the normalized goal. The `normalizeAddrs` parameter is kept for
+    backward compatibility but is no longer used. -/
 private def runBlockCore (specs : Array Expr) (goalPre : Expr)
     (normalizeAddrs : Bool := false) : MetaM Expr := do
   if specs.size == 0 then
     throwError "runBlock: no specs provided.\n\
         Usage: `runBlock s1 s2 ...` (manual) or `runBlock` (auto from @[spec_gen_rv64] database)."
-  -- Normalize addresses in manual-mode specs (signExtend12, address flattening)
-  let processedSpecs ← if normalizeAddrs then
-    specs.mapM fun spec => do
-      try normalizeSpecAddresses spec
-      catch _ => Pure.pure spec
-  else Pure.pure specs
+  -- Always normalize addresses in specs (signExtend12, address flattening)
+  -- This ensures spec atoms match the normalized goal atoms in both auto and manual mode.
+  let processedSpecs ← specs.mapM fun spec => do
+    try normalizeSpecAddresses spec
+    catch _ => Pure.pure spec
   -- Frame the first spec against the goal precondition
   let mut acc ← frameFirstSpec processedSpecs[0]! goalPre
   -- Chain remaining specs via seqFrame with address normalization

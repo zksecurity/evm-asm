@@ -26,6 +26,13 @@ local macro "bv_addr" : tactic =>
 -- Store phase helper: ADDI + 8 SW instructions
 -- ============================================================================
 
+abbrev lt_result_store_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 4) ↦ᵢ .SW .x12 .x5 0) **
+  ((base + 8) ↦ᵢ .SW .x12 .x0 4) ** ((base + 12) ↦ᵢ .SW .x12 .x0 8) **
+  ((base + 16) ↦ᵢ .SW .x12 .x0 12) ** ((base + 20) ↦ᵢ .SW .x12 .x0 16) **
+  ((base + 24) ↦ᵢ .SW .x12 .x0 20) ** ((base + 28) ↦ᵢ .SW .x12 .x0 24) **
+  ((base + 32) ↦ᵢ .SW .x12 .x0 28)
+
 set_option maxHeartbeats 4800000 in
 /-- Store phase spec for LT/GT: ADDI sp+32 + SW borrow + 7×SW 0.
     Takes sp → sp+32, stores borrow to mem[sp+32], zeros to mem[sp+36..sp+60].
@@ -35,12 +42,7 @@ theorem lt_result_store_spec (sp : Addr)
     (b0 b1 b2 b3 b4 b5 b6 b7 : Word) (base : Addr)
     -- Memory validity for sp+32..sp+60
     (hvalid : ValidMemRange (sp + 32) 8) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 4) ↦ᵢ .SW .x12 .x5 0) **
-      ((base + 8) ↦ᵢ .SW .x12 .x0 4) ** ((base + 12) ↦ᵢ .SW .x12 .x0 8) **
-      ((base + 16) ↦ᵢ .SW .x12 .x0 12) ** ((base + 20) ↦ᵢ .SW .x12 .x0 16) **
-      ((base + 24) ↦ᵢ .SW .x12 .x0 20) ** ((base + 28) ↦ᵢ .SW .x12 .x0 24) **
-      ((base + 32) ↦ᵢ .SW .x12 .x0 28)
+    let code := lt_result_store_code base
     cpsTriple base (base + 36)
       (code **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ borrow) ** (.x11 ↦ᵣ v11) **
@@ -66,6 +68,41 @@ theorem lt_result_store_spec (sp : Addr)
 -- ============================================================================
 -- Full 256-bit GT spec
 -- ============================================================================
+
+abbrev evm_gt_code (base : Addr) : Assertion :=
+  -- Limb 0 code (3 instr): LW b, LW a, SLTU
+  (base ↦ᵢ .LW .x7 .x12 32) ** ((base + 4) ↦ᵢ .LW .x6 .x12 0) **
+  ((base + 8) ↦ᵢ .SLTU .x5 .x7 .x6) **
+  -- Limb 1 code (6 instr)
+  ((base + 12) ↦ᵢ .LW .x7 .x12 36) ** ((base + 16) ↦ᵢ .LW .x6 .x12 4) **
+  ((base + 20) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 24) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 28) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 32) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 2 code (6 instr)
+  ((base + 36) ↦ᵢ .LW .x7 .x12 40) ** ((base + 40) ↦ᵢ .LW .x6 .x12 8) **
+  ((base + 44) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 48) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 52) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 56) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 3 code (6 instr)
+  ((base + 60) ↦ᵢ .LW .x7 .x12 44) ** ((base + 64) ↦ᵢ .LW .x6 .x12 12) **
+  ((base + 68) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 72) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 76) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 80) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 4 code (6 instr)
+  ((base + 84) ↦ᵢ .LW .x7 .x12 48) ** ((base + 88) ↦ᵢ .LW .x6 .x12 16) **
+  ((base + 92) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 96) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 100) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 104) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 5 code (6 instr)
+  ((base + 108) ↦ᵢ .LW .x7 .x12 52) ** ((base + 112) ↦ᵢ .LW .x6 .x12 20) **
+  ((base + 116) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 120) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 124) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 128) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 6 code (6 instr)
+  ((base + 132) ↦ᵢ .LW .x7 .x12 56) ** ((base + 136) ↦ᵢ .LW .x6 .x12 24) **
+  ((base + 140) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 144) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 148) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 152) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Limb 7 code (6 instr)
+  ((base + 156) ↦ᵢ .LW .x7 .x12 60) ** ((base + 160) ↦ᵢ .LW .x6 .x12 28) **
+  ((base + 164) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 168) ↦ᵢ .SUB .x7 .x7 .x6) **
+  ((base + 172) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 176) ↦ᵢ .OR .x5 .x11 .x6) **
+  -- Store phase code (9 instr)
+  lt_result_store_code (base + 180)
 
 set_option maxHeartbeats 12800000 in
 set_option synthInstance.maxHeartbeats 40000000 in
@@ -110,44 +147,7 @@ theorem evm_gt_spec (sp : Addr) (base : Addr)
     let temp7 := b7 - a7
     let borrow7b := if BitVec.ult temp7 borrow6 then (1 : Word) else 0
     let borrow7 := borrow7a ||| borrow7b
-    let code :=
-      -- Limb 0 code (3 instr): LW b, LW a, SLTU
-      (base ↦ᵢ .LW .x7 .x12 32) ** ((base + 4) ↦ᵢ .LW .x6 .x12 0) **
-      ((base + 8) ↦ᵢ .SLTU .x5 .x7 .x6) **
-      -- Limb 1 code (6 instr)
-      ((base + 12) ↦ᵢ .LW .x7 .x12 36) ** ((base + 16) ↦ᵢ .LW .x6 .x12 4) **
-      ((base + 20) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 24) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 28) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 32) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 2 code (6 instr)
-      ((base + 36) ↦ᵢ .LW .x7 .x12 40) ** ((base + 40) ↦ᵢ .LW .x6 .x12 8) **
-      ((base + 44) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 48) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 52) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 56) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 3 code (6 instr)
-      ((base + 60) ↦ᵢ .LW .x7 .x12 44) ** ((base + 64) ↦ᵢ .LW .x6 .x12 12) **
-      ((base + 68) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 72) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 76) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 80) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 4 code (6 instr)
-      ((base + 84) ↦ᵢ .LW .x7 .x12 48) ** ((base + 88) ↦ᵢ .LW .x6 .x12 16) **
-      ((base + 92) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 96) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 100) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 104) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 5 code (6 instr)
-      ((base + 108) ↦ᵢ .LW .x7 .x12 52) ** ((base + 112) ↦ᵢ .LW .x6 .x12 20) **
-      ((base + 116) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 120) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 124) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 128) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 6 code (6 instr)
-      ((base + 132) ↦ᵢ .LW .x7 .x12 56) ** ((base + 136) ↦ᵢ .LW .x6 .x12 24) **
-      ((base + 140) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 144) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 148) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 152) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Limb 7 code (6 instr)
-      ((base + 156) ↦ᵢ .LW .x7 .x12 60) ** ((base + 160) ↦ᵢ .LW .x6 .x12 28) **
-      ((base + 164) ↦ᵢ .SLTU .x11 .x7 .x6) ** ((base + 168) ↦ᵢ .SUB .x7 .x7 .x6) **
-      ((base + 172) ↦ᵢ .SLTU .x6 .x7 .x5) ** ((base + 176) ↦ᵢ .OR .x5 .x11 .x6) **
-      -- Store phase code (9 instr)
-      ((base + 180) ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 184) ↦ᵢ .SW .x12 .x5 0) **
-      ((base + 188) ↦ᵢ .SW .x12 .x0 4) ** ((base + 192) ↦ᵢ .SW .x12 .x0 8) **
-      ((base + 196) ↦ᵢ .SW .x12 .x0 12) ** ((base + 200) ↦ᵢ .SW .x12 .x0 16) **
-      ((base + 204) ↦ᵢ .SW .x12 .x0 20) ** ((base + 208) ↦ᵢ .SW .x12 .x0 24) **
-      ((base + 212) ↦ᵢ .SW .x12 .x0 28)
+    let code := evm_gt_code base
     cpsTriple base (base + 216)
       (code **
        -- Registers + memory
@@ -216,6 +216,13 @@ theorem evm_gt_spec (sp : Addr) (base : Addr)
 -- EQ: store+SLTIU phase
 -- ============================================================================
 
+abbrev eq_result_store_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .SLTIU .x7 .x7 1) ** ((base + 4) ↦ᵢ .ADDI .x12 .x12 32) **
+  ((base + 8) ↦ᵢ .SW .x12 .x7 0) ** ((base + 12) ↦ᵢ .SW .x12 .x0 4) **
+  ((base + 16) ↦ᵢ .SW .x12 .x0 8) ** ((base + 20) ↦ᵢ .SW .x12 .x0 12) **
+  ((base + 24) ↦ᵢ .SW .x12 .x0 16) ** ((base + 28) ↦ᵢ .SW .x12 .x0 20) **
+  ((base + 32) ↦ᵢ .SW .x12 .x0 24) ** ((base + 36) ↦ᵢ .SW .x12 .x0 28)
+
 set_option maxHeartbeats 6400000 in
 /-- Store phase spec for EQ: SLTIU + ADDI sp+32 + SW eq_result + 7×SW 0.
     SLTIU converts accumulated XOR to boolean eq_result (1 iff all limbs equal).
@@ -227,12 +234,7 @@ theorem eq_result_store_spec (sp : Addr)
     -- Memory validity for sp+32..sp+60
     (hvalid : ValidMemRange (sp + 32) 8) :
     let _eq_result := if BitVec.ult acc (1 : Word) then (1 : Word) else 0
-    let code :=
-      (base ↦ᵢ .SLTIU .x7 .x7 1) ** ((base + 4) ↦ᵢ .ADDI .x12 .x12 32) **
-      ((base + 8) ↦ᵢ .SW .x12 .x7 0) ** ((base + 12) ↦ᵢ .SW .x12 .x0 4) **
-      ((base + 16) ↦ᵢ .SW .x12 .x0 8) ** ((base + 20) ↦ᵢ .SW .x12 .x0 12) **
-      ((base + 24) ↦ᵢ .SW .x12 .x0 16) ** ((base + 28) ↦ᵢ .SW .x12 .x0 20) **
-      ((base + 32) ↦ᵢ .SW .x12 .x0 24) ** ((base + 36) ↦ᵢ .SW .x12 .x0 28)
+    let code := eq_result_store_code base
     cpsTriple base (base + 40)
       (code **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
@@ -265,6 +267,34 @@ theorem eq_result_store_spec (sp : Addr)
 -- Full 256-bit EQ spec
 -- ============================================================================
 
+abbrev evm_eq_code (base : Addr) : Assertion :=
+  -- Limb 0 code (3 instr)
+  (base ↦ᵢ .LW .x7 .x12 0) ** ((base + 4) ↦ᵢ .LW .x6 .x12 32) **
+  ((base + 8) ↦ᵢ .XOR .x7 .x7 .x6) **
+  -- Limb 1 code (4 instr)
+  ((base + 12) ↦ᵢ .LW .x6 .x12 4) ** ((base + 16) ↦ᵢ .LW .x5 .x12 36) **
+  ((base + 20) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 24) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 2 code (4 instr)
+  ((base + 28) ↦ᵢ .LW .x6 .x12 8) ** ((base + 32) ↦ᵢ .LW .x5 .x12 40) **
+  ((base + 36) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 40) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 3 code (4 instr)
+  ((base + 44) ↦ᵢ .LW .x6 .x12 12) ** ((base + 48) ↦ᵢ .LW .x5 .x12 44) **
+  ((base + 52) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 56) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 4 code (4 instr)
+  ((base + 60) ↦ᵢ .LW .x6 .x12 16) ** ((base + 64) ↦ᵢ .LW .x5 .x12 48) **
+  ((base + 68) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 72) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 5 code (4 instr)
+  ((base + 76) ↦ᵢ .LW .x6 .x12 20) ** ((base + 80) ↦ᵢ .LW .x5 .x12 52) **
+  ((base + 84) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 88) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 6 code (4 instr)
+  ((base + 92) ↦ᵢ .LW .x6 .x12 24) ** ((base + 96) ↦ᵢ .LW .x5 .x12 56) **
+  ((base + 100) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 104) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Limb 7 code (4 instr)
+  ((base + 108) ↦ᵢ .LW .x6 .x12 28) ** ((base + 112) ↦ᵢ .LW .x5 .x12 60) **
+  ((base + 116) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 120) ↦ᵢ .OR .x7 .x7 .x6) **
+  -- Store phase code (10 instr)
+  eq_result_store_code (base + 124)
+
 set_option maxHeartbeats 12800000 in
 /-- Full 256-bit EVM EQ: EQ(a, b) = 1 iff a == b (as 256-bit unsigned integers).
     Computed by XOR-ing each limb pair, OR-reducing, then SLTIU to boolean.
@@ -287,37 +317,7 @@ theorem evm_eq_spec (sp : Addr) (base : Addr)
     let acc6 := acc5 ||| (a6 ^^^ b6)
     let acc7 := acc6 ||| (a7 ^^^ b7)
     let eq_result := if BitVec.ult acc7 (1 : Word) then (1 : Word) else 0
-    let code :=
-      -- Limb 0 code (3 instr)
-      (base ↦ᵢ .LW .x7 .x12 0) ** ((base + 4) ↦ᵢ .LW .x6 .x12 32) **
-      ((base + 8) ↦ᵢ .XOR .x7 .x7 .x6) **
-      -- Limb 1 code (4 instr)
-      ((base + 12) ↦ᵢ .LW .x6 .x12 4) ** ((base + 16) ↦ᵢ .LW .x5 .x12 36) **
-      ((base + 20) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 24) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 2 code (4 instr)
-      ((base + 28) ↦ᵢ .LW .x6 .x12 8) ** ((base + 32) ↦ᵢ .LW .x5 .x12 40) **
-      ((base + 36) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 40) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 3 code (4 instr)
-      ((base + 44) ↦ᵢ .LW .x6 .x12 12) ** ((base + 48) ↦ᵢ .LW .x5 .x12 44) **
-      ((base + 52) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 56) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 4 code (4 instr)
-      ((base + 60) ↦ᵢ .LW .x6 .x12 16) ** ((base + 64) ↦ᵢ .LW .x5 .x12 48) **
-      ((base + 68) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 72) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 5 code (4 instr)
-      ((base + 76) ↦ᵢ .LW .x6 .x12 20) ** ((base + 80) ↦ᵢ .LW .x5 .x12 52) **
-      ((base + 84) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 88) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 6 code (4 instr)
-      ((base + 92) ↦ᵢ .LW .x6 .x12 24) ** ((base + 96) ↦ᵢ .LW .x5 .x12 56) **
-      ((base + 100) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 104) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Limb 7 code (4 instr)
-      ((base + 108) ↦ᵢ .LW .x6 .x12 28) ** ((base + 112) ↦ᵢ .LW .x5 .x12 60) **
-      ((base + 116) ↦ᵢ .XOR .x6 .x6 .x5) ** ((base + 120) ↦ᵢ .OR .x7 .x7 .x6) **
-      -- Store phase code (10 instr)
-      ((base + 124) ↦ᵢ .SLTIU .x7 .x7 1) ** ((base + 128) ↦ᵢ .ADDI .x12 .x12 32) **
-      ((base + 132) ↦ᵢ .SW .x12 .x7 0) ** ((base + 136) ↦ᵢ .SW .x12 .x0 4) **
-      ((base + 140) ↦ᵢ .SW .x12 .x0 8) ** ((base + 144) ↦ᵢ .SW .x12 .x0 12) **
-      ((base + 148) ↦ᵢ .SW .x12 .x0 16) ** ((base + 152) ↦ᵢ .SW .x12 .x0 20) **
-      ((base + 156) ↦ᵢ .SW .x12 .x0 24) ** ((base + 160) ↦ᵢ .SW .x12 .x0 28)
+    let code := evm_eq_code base
     cpsTriple base (base + 164)
       (code **
        -- Registers + memory

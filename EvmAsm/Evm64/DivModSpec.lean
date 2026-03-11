@@ -19,17 +19,19 @@ namespace EvmAsm.Rv64
 -- Zero path: b = 0, push 0. 5 instructions.
 -- ============================================================================
 
+abbrev divK_zeroPath_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 32) **
+  ((base + 4) ↦ᵢ .SD .x12 .x0 0) **
+  ((base + 8) ↦ᵢ .SD .x12 .x0 8) **
+  ((base + 12) ↦ᵢ .SD .x12 .x0 16) **
+  ((base + 16) ↦ᵢ .SD .x12 .x0 24)
+
 /-- Zero path: advance sp by 32, store four zeros at the output location.
     Used when b = 0 (both DIV and MOD return 0). -/
 theorem divK_zeroPath_spec (sp : Addr) (base : Addr)
     (m32 m40 m48 m56 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 32) **
-      ((base + 4) ↦ᵢ .SD .x12 .x0 0) **
-      ((base + 8) ↦ᵢ .SD .x12 .x0 8) **
-      ((base + 12) ↦ᵢ .SD .x12 .x0 16) **
-      ((base + 16) ↦ᵢ .SD .x12 .x0 24)
+    let code := divK_zeroPath_code base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ sp) **
@@ -51,21 +53,23 @@ theorem divK_zeroPath_spec (sp : Addr) (base : Addr)
 -- Pre/post include BEQ instruction and x0 for branch composition.
 -- ============================================================================
 
+abbrev divK_phaseA_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 32) **
+  ((base + 4) ↦ᵢ .LD .x10 .x12 40) **
+  ((base + 8) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 12) ↦ᵢ .LD .x10 .x12 48) **
+  ((base + 16) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 20) ↦ᵢ .LD .x10 .x12 56) **
+  ((base + 24) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 28) ↦ᵢ .BEQ .x5 .x0 1016)
+
 /-- Phase A body: load and OR-reduce the 4 limbs of b.
     Produces x5 = b0 ||| b1 ||| b2 ||| b3.
     The BEQ instruction at base+28 and x0 are preserved for branch composition. -/
 theorem divK_phaseA_body_spec (sp : Addr) (base : Addr)
     (b0 b1 b2 b3 v5 v10 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 32) **
-      ((base + 4) ↦ᵢ .LD .x10 .x12 40) **
-      ((base + 8) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 12) ↦ᵢ .LD .x10 .x12 48) **
-      ((base + 16) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 20) ↦ᵢ .LD .x10 .x12 56) **
-      ((base + 24) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 28) ↦ᵢ .BEQ .x5 .x0 1016)
+    let code := divK_phaseA_code base
     cpsTriple base (base + 28)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -94,15 +98,7 @@ theorem divK_phaseA_spec (sp : Addr) (base : Addr)
     (b0 b1 b2 b3 v5 v10 : Word)
     (hvalid : ValidMemRange sp 8) :
     let bor := b0 ||| b1 ||| b2 ||| b3
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 32) **
-      ((base + 4) ↦ᵢ .LD .x10 .x12 40) **
-      ((base + 8) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 12) ↦ᵢ .LD .x10 .x12 48) **
-      ((base + 16) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 20) ↦ᵢ .LD .x10 .x12 56) **
-      ((base + 24) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 28) ↦ᵢ .BEQ .x5 .x0 1016)
+    let code := divK_phaseA_code base
     let post :=
       code **
       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ bor) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -166,6 +162,15 @@ theorem divK_phaseA_spec (sp : Addr) (base : Addr)
 -- 9 straight-line instructions.
 -- ============================================================================
 
+abbrev divK_phaseB_init1_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .SD .x12 .x0 4088) **
+  ((base + 4) ↦ᵢ .SD .x12 .x0 4080) **
+  ((base + 8) ↦ᵢ .SD .x12 .x0 4072) **
+  ((base + 12) ↦ᵢ .SD .x12 .x0 4064) **
+  ((base + 16) ↦ᵢ .SD .x12 .x0 4016) **
+  ((base + 20) ↦ᵢ .SD .x12 .x0 4008) **
+  ((base + 24) ↦ᵢ .SD .x12 .x0 4000)
+
 /-- Phase B init part 1: zero scratch q[0..3] and u[5..7]. 7 instructions. -/
 theorem divK_phaseB_init1_spec (sp : Addr) (base : Addr)
     (q0 q1 q2 q3 u5 u6 u7 : Word)
@@ -176,14 +181,7 @@ theorem divK_phaseB_init1_spec (sp : Addr) (base : Addr)
     (hv_u5 : isValidDwordAccess (sp + signExtend12 4016) = true)
     (hv_u6 : isValidDwordAccess (sp + signExtend12 4008) = true)
     (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true) :
-    let code :=
-      (base ↦ᵢ .SD .x12 .x0 4088) **
-      ((base + 4) ↦ᵢ .SD .x12 .x0 4080) **
-      ((base + 8) ↦ᵢ .SD .x12 .x0 4072) **
-      ((base + 12) ↦ᵢ .SD .x12 .x0 4064) **
-      ((base + 16) ↦ᵢ .SD .x12 .x0 4016) **
-      ((base + 20) ↦ᵢ .SD .x12 .x0 4008) **
-      ((base + 24) ↦ᵢ .SD .x12 .x0 4000)
+    let code := divK_phaseB_init1_code base
     cpsTriple base (base + 28)
       (code **
        (.x12 ↦ᵣ sp) **
@@ -206,13 +204,15 @@ theorem divK_phaseB_init1_spec (sp : Addr) (base : Addr)
   have I6 := sd_x0_spec_gen .x12 sp u7 4000 (base + 24) hv_u7
   runBlock I0 I1 I2 I3 I4 I5 I6
 
+abbrev divK_phaseB_init2_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x6 .x12 40) **
+  ((base + 4) ↦ᵢ .LD .x7 .x12 48)
+
 /-- Phase B init part 2: load b[1] and b[2]. 2 instructions. -/
 theorem divK_phaseB_init2_spec (sp : Addr) (base : Addr)
     (b1 b2 : Word) (v6 v7 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .LD .x6 .x12 40) **
-      ((base + 4) ↦ᵢ .LD .x7 .x12 48)
+    let code := divK_phaseB_init2_code base
     cpsTriple base (base + 8)
       (code **
        (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
@@ -228,6 +228,17 @@ theorem divK_phaseB_init2_spec (sp : Addr) (base : Addr)
 -- Phase C4: Copy a → u[0..4] unshifted (shift = 0). 9 instructions.
 -- ============================================================================
 
+abbrev divK_copyAU_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 0) **
+  ((base + 4) ↦ᵢ .SD .x12 .x5 4056) **
+  ((base + 8) ↦ᵢ .LD .x5 .x12 8) **
+  ((base + 12) ↦ᵢ .SD .x12 .x5 4048) **
+  ((base + 16) ↦ᵢ .LD .x5 .x12 16) **
+  ((base + 20) ↦ᵢ .SD .x12 .x5 4040) **
+  ((base + 24) ↦ᵢ .LD .x5 .x12 24) **
+  ((base + 28) ↦ᵢ .SD .x12 .x5 4032) **
+  ((base + 32) ↦ᵢ .SD .x12 .x0 4024)
+
 /-- Copy a[0..3] to u[0..3] and set u[4] = 0 (no shift needed). -/
 theorem divK_copyAU_spec (sp : Addr) (base : Addr)
     (a0 a1 a2 a3 u0 u1 u2 u3 u4 : Word) (v5 : Word)
@@ -237,16 +248,7 @@ theorem divK_copyAU_spec (sp : Addr) (base : Addr)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
     (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
     (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true) :
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 0) **
-      ((base + 4) ↦ᵢ .SD .x12 .x5 4056) **
-      ((base + 8) ↦ᵢ .LD .x5 .x12 8) **
-      ((base + 12) ↦ᵢ .SD .x12 .x5 4048) **
-      ((base + 16) ↦ᵢ .LD .x5 .x12 16) **
-      ((base + 20) ↦ᵢ .SD .x12 .x5 4040) **
-      ((base + 24) ↦ᵢ .LD .x5 .x12 24) **
-      ((base + 28) ↦ᵢ .SD .x12 .x5 4032) **
-      ((base + 32) ↦ᵢ .SD .x12 .x0 4024)
+    let code := divK_copyAU_code base
     cpsTriple base (base + 36)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) **
@@ -278,6 +280,14 @@ theorem divK_copyAU_spec (sp : Addr) (base : Addr)
 -- Per-limb decomposition: 3 merge limbs (6 instr each) + 1 last limb (3 instr).
 -- ============================================================================
 
+abbrev divK_normB_merge_code (high_off low_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 high_off) **
+  ((base + 4) ↦ᵢ .LD .x7 .x12 low_off) **
+  ((base + 8) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 12) ↦ᵢ .SRL .x7 .x7 .x2) **
+  ((base + 16) ↦ᵢ .OR .x5 .x5 .x7) **
+  ((base + 20) ↦ᵢ .SD .x12 .x5 high_off)
+
 /-- NormB merge limb (6 instructions): LD high, LD low, SLL, SRL, OR, SD.
     Computes result = (high <<< shift) ||| (low >>> anti_shift) and stores to high_off.
     x6 = shift, x2 = anti_shift (= 64 - shift as unsigned). -/
@@ -288,13 +298,7 @@ theorem divK_normB_merge_spec (high_off low_off : BitVec 12)
     let shifted_high := high <<< (shift.toNat % 64)
     let shifted_low := low >>> (anti_shift.toNat % 64)
     let result := shifted_high ||| shifted_low
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 high_off) **
-      ((base + 4) ↦ᵢ .LD .x7 .x12 low_off) **
-      ((base + 8) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 12) ↦ᵢ .SRL .x7 .x7 .x2) **
-      ((base + 16) ↦ᵢ .OR .x5 .x5 .x7) **
-      ((base + 20) ↦ᵢ .SD .x12 .x5 high_off)
+    let code := divK_normB_merge_code high_off low_off base
     cpsTriple base (base + 24)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
@@ -315,16 +319,18 @@ theorem divK_normB_merge_spec (high_off low_off : BitVec 12)
   have I5 := sd_spec_gen .x12 .x5 sp result high high_off (base + 20) hvalid_high
   runBlock I0 I1 I2 I3 I4 I5
 
+abbrev divK_normB_last_code (off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) **
+  ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SD .x12 .x5 off)
+
 /-- NormB last limb (3 instructions): LD, SLL, SD.
     Computes result = val <<< shift and stores to off. -/
 theorem divK_normB_last_spec (off : BitVec 12)
     (sp val v5 shift : Word) (base : Addr)
     (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let result := val <<< (shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off) **
-      ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SD .x12 .x5 off)
+    let code := divK_normB_last_code off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) **
@@ -343,6 +349,11 @@ theorem divK_normB_last_spec (off : BitVec 12)
 -- Per-limb decomposition: top (3 instr) + 3 merge (5 instr each) + last (2 instr).
 -- ============================================================================
 
+abbrev divK_normA_top_code (src_off dst_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 src_off) **
+  ((base + 4) ↦ᵢ .SRL .x7 .x5 .x2) **
+  ((base + 8) ↦ᵢ .SD .x12 .x7 dst_off)
+
 /-- NormA top: LD a[3], SRL to x7, SD u[4]. 3 instructions.
     Computes u[4] = a[3] >>> anti_shift (overflow bits from top limb). -/
 theorem divK_normA_top_spec (src_off dst_off : BitVec 12)
@@ -350,10 +361,7 @@ theorem divK_normA_top_spec (src_off dst_off : BitVec 12)
     (hvalid_src : isValidDwordAccess (sp + signExtend12 src_off) = true)
     (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let result := val >>> (anti_shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 src_off) **
-      ((base + 4) ↦ᵢ .SRL .x7 .x5 .x2) **
-      ((base + 8) ↦ᵢ .SD .x12 .x7 dst_off)
+    let code := divK_normA_top_code src_off dst_off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ anti_shift) **
@@ -369,6 +377,13 @@ theorem divK_normA_top_spec (src_off dst_off : BitVec 12)
   have I2 := sd_spec_gen .x12 .x7 sp result dst_old dst_off (base + 8) hvalid_dst
   runBlock I0 I1 I2
 
+abbrev divK_normA_mergeA_code (next_off dst_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 next_off) **
+  ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SRL .x10 .x7 .x2) **
+  ((base + 12) ↦ᵢ .OR .x5 .x5 .x10) **
+  ((base + 16) ↦ᵢ .SD .x12 .x5 dst_off)
+
 /-- NormA merge type A (5 instructions): x5 holds current limb.
     LD next into x7, SLL x5 by shift, SRL x10 from x7 by anti_shift, OR into x5, SD.
     Used for u[3] and u[1] computation. -/
@@ -379,12 +394,7 @@ theorem divK_normA_mergeA_spec (next_off dst_off : BitVec 12)
     let shifted_curr := current <<< (shift.toNat % 64)
     let shifted_next := next >>> (anti_shift.toNat % 64)
     let result := shifted_curr ||| shifted_next
-    let code :=
-      (base ↦ᵢ .LD .x7 .x12 next_off) **
-      ((base + 4) ↦ᵢ .SLL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SRL .x10 .x7 .x2) **
-      ((base + 12) ↦ᵢ .OR .x5 .x5 .x10) **
-      ((base + 16) ↦ᵢ .SD .x12 .x5 dst_off)
+    let code := divK_normA_mergeA_code next_off dst_off base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ current) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
@@ -404,6 +414,13 @@ theorem divK_normA_mergeA_spec (next_off dst_off : BitVec 12)
   have I4 := sd_spec_gen .x12 .x5 sp result dst_old dst_off (base + 16) hvalid_dst
   runBlock I0 I1 I2 I3 I4
 
+abbrev divK_normA_mergeB_code (next_off dst_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 next_off) **
+  ((base + 4) ↦ᵢ .SLL .x7 .x7 .x6) **
+  ((base + 8) ↦ᵢ .SRL .x10 .x5 .x2) **
+  ((base + 12) ↦ᵢ .OR .x7 .x7 .x10) **
+  ((base + 16) ↦ᵢ .SD .x12 .x7 dst_off)
+
 /-- NormA merge type B (5 instructions): x7 holds current limb.
     LD next into x5, SLL x7 by shift, SRL x10 from x5 by anti_shift, OR into x7, SD.
     Used for u[2] computation. -/
@@ -414,12 +431,7 @@ theorem divK_normA_mergeB_spec (next_off dst_off : BitVec 12)
     let shifted_curr := current <<< (shift.toNat % 64)
     let shifted_next := next >>> (anti_shift.toNat % 64)
     let result := shifted_curr ||| shifted_next
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 next_off) **
-      ((base + 4) ↦ᵢ .SLL .x7 .x7 .x6) **
-      ((base + 8) ↦ᵢ .SRL .x10 .x5 .x2) **
-      ((base + 12) ↦ᵢ .OR .x7 .x7 .x10) **
-      ((base + 16) ↦ᵢ .SD .x12 .x7 dst_off)
+    let code := divK_normA_mergeB_code next_off dst_off base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ current) ** (.x10 ↦ᵣ v10) **
@@ -439,15 +451,17 @@ theorem divK_normA_mergeB_spec (next_off dst_off : BitVec 12)
   have I4 := sd_spec_gen .x12 .x7 sp result dst_old dst_off (base + 16) hvalid_dst
   runBlock I0 I1 I2 I3 I4
 
+abbrev divK_normA_last_code (dst_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .SLL .x7 .x7 .x6) **
+  ((base + 4) ↦ᵢ .SD .x12 .x7 dst_off)
+
 /-- NormA last limb (2 instructions): SLL x7 by shift, SD to dst_off.
     Computes u[0] = a[0] <<< shift. -/
 theorem divK_normA_last_spec (dst_off : BitVec 12)
     (sp val shift dst_old : Word) (base : Addr)
     (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let result := val <<< (shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .SLL .x7 .x7 .x6) **
-      ((base + 4) ↦ᵢ .SD .x12 .x7 dst_off)
+    let code := divK_normA_last_code dst_off base
     cpsTriple base (base + 8)
       (code **
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ val) ** (.x6 ↦ᵣ shift) **
@@ -465,6 +479,14 @@ theorem divK_normA_last_spec (dst_off : BitVec 12)
 -- Same structure as NormB but SRL/SLL swapped (right-shift with merge from above).
 -- ============================================================================
 
+abbrev divK_denorm_merge_code (curr_off next_off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 curr_off) **
+  ((base + 4) ↦ᵢ .LD .x7 .x12 next_off) **
+  ((base + 8) ↦ᵢ .SRL .x5 .x5 .x6) **
+  ((base + 12) ↦ᵢ .SLL .x7 .x7 .x2) **
+  ((base + 16) ↦ᵢ .OR .x5 .x5 .x7) **
+  ((base + 20) ↦ᵢ .SD .x12 .x5 curr_off)
+
 /-- Denorm merge limb (6 instructions): LD curr, LD next, SRL, SLL, OR, SD.
     Computes result = (curr >>> shift) ||| (next <<< anti_shift) and stores to curr_off.
     x6 = shift, x2 = anti_shift. -/
@@ -475,13 +497,7 @@ theorem divK_denorm_merge_spec (curr_off next_off : BitVec 12)
     let shifted_curr := curr >>> (shift.toNat % 64)
     let shifted_next := next <<< (anti_shift.toNat % 64)
     let result := shifted_curr ||| shifted_next
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 curr_off) **
-      ((base + 4) ↦ᵢ .LD .x7 .x12 next_off) **
-      ((base + 8) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 12) ↦ᵢ .SLL .x7 .x7 .x2) **
-      ((base + 16) ↦ᵢ .OR .x5 .x5 .x7) **
-      ((base + 20) ↦ᵢ .SD .x12 .x5 curr_off)
+    let code := divK_denorm_merge_code curr_off next_off base
     cpsTriple base (base + 24)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
@@ -502,16 +518,18 @@ theorem divK_denorm_merge_spec (curr_off next_off : BitVec 12)
   have I5 := sd_spec_gen .x12 .x5 sp result curr curr_off (base + 20) hvalid_curr
   runBlock I0 I1 I2 I3 I4 I5
 
+abbrev divK_denorm_last_code (off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) **
+  ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .SD .x12 .x5 off)
+
 /-- Denorm last limb (3 instructions): LD, SRL, SD.
     Computes result = val >>> shift and stores to off. -/
 theorem divK_denorm_last_spec (off : BitVec 12)
     (sp val v5 shift : Word) (base : Addr)
     (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let result := val >>> (shift.toNat % 64)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off) **
-      ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .SD .x12 .x5 off)
+    let code := divK_denorm_last_code off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) **
@@ -530,6 +548,12 @@ theorem divK_denorm_last_spec (off : BitVec 12)
 -- Split into load phase (4 LD) + store phase (ADDI + 4 SD) + JAL.
 -- ============================================================================
 
+abbrev divK_epilogue_load_code (off0 off1 off2 off3 : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off0) **
+  ((base + 4) ↦ᵢ .LD .x6 .x12 off1) **
+  ((base + 8) ↦ᵢ .LD .x7 .x12 off2) **
+  ((base + 12) ↦ᵢ .LD .x10 .x12 off3)
+
 /-- Epilogue load phase: load 4 values from scratch space. 4 instructions.
     Loads q[0..3] (for DIV) or u[0..3] (for MOD) into x5, x6, x7, x10. -/
 theorem divK_epilogue_load_spec (off0 off1 off2 off3 : BitVec 12)
@@ -538,11 +562,7 @@ theorem divK_epilogue_load_spec (off0 off1 off2 off3 : BitVec 12)
     (hv1 : isValidDwordAccess (sp + signExtend12 off1) = true)
     (hv2 : isValidDwordAccess (sp + signExtend12 off2) = true)
     (hv3 : isValidDwordAccess (sp + signExtend12 off3) = true) :
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off0) **
-      ((base + 4) ↦ᵢ .LD .x6 .x12 off1) **
-      ((base + 8) ↦ᵢ .LD .x7 .x12 off2) **
-      ((base + 12) ↦ᵢ .LD .x10 .x12 off3)
+    let code := divK_epilogue_load_code off0 off1 off2 off3 base
     cpsTriple base (base + 16)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
@@ -558,17 +578,19 @@ theorem divK_epilogue_load_spec (off0 off1 off2 off3 : BitVec 12)
   have I3 := ld_spec_gen .x10 .x12 sp v10 r3 off3 (base + 12) (by nofun) hv3
   runBlock I0 I1 I2 I3
 
+abbrev divK_epilogue_store_code (jal_off : BitVec 21) (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 32) **
+  ((base + 4) ↦ᵢ .SD .x12 .x5 0) **
+  ((base + 8) ↦ᵢ .SD .x12 .x6 8) **
+  ((base + 12) ↦ᵢ .SD .x12 .x7 16) **
+  ((base + 16) ↦ᵢ .SD .x12 .x10 24) **
+  ((base + 20) ↦ᵢ .JAL .x0 jal_off)
+
 /-- Epilogue store phase: ADDI sp+32, store 4 values, JAL to exit. 6 instructions. -/
 theorem divK_epilogue_store_spec (sp : Addr) (base : Addr)
     (r0 r1 r2 r3 m0 m8 m16 m24 : Word) (jal_off : BitVec 21)
     (hvalid : ValidMemRange sp 8) :
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 32) **
-      ((base + 4) ↦ᵢ .SD .x12 .x5 0) **
-      ((base + 8) ↦ᵢ .SD .x12 .x6 8) **
-      ((base + 12) ↦ᵢ .SD .x12 .x7 16) **
-      ((base + 16) ↦ᵢ .SD .x12 .x10 24) **
-      ((base + 20) ↦ᵢ .JAL .x0 jal_off)
+    let code := divK_epilogue_store_code jal_off base
     cpsTriple base (base + 20 + signExtend21 jal_off)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r0) ** (.x6 ↦ᵣ r1) ** (.x7 ↦ᵣ r2) ** (.x10 ↦ᵣ r3) **
@@ -591,6 +613,13 @@ theorem divK_epilogue_store_spec (sp : Addr) (base : Addr)
 -- 5 instructions: SD, ADDI, SLLI, ADD, LD.
 -- ============================================================================
 
+abbrev divK_phaseB_tail_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .SD .x12 .x5 3984) **
+  ((base + 4) ↦ᵢ .ADDI .x5 .x5 4095) **
+  ((base + 8) ↦ᵢ .SLLI .x5 .x5 3) **
+  ((base + 12) ↦ᵢ .ADD .x5 .x12 .x5) **
+  ((base + 16) ↦ᵢ .LD .x5 .x5 32)
+
 /-- Phase B tail: store n to scratch, compute sp + (n-1)*8, load b[n-1].
     x5 = n on entry. On exit, x5 = leading limb b[n-1]. -/
 theorem divK_phaseB_tail_spec (sp n leading_limb n_mem : Word) (base : Addr)
@@ -600,12 +629,7 @@ theorem divK_phaseB_tail_spec (sp n leading_limb n_mem : Word) (base : Addr)
     let nm1 := n + signExtend12 4095
     let nm1_x8 := nm1 <<< (3 : BitVec 6).toNat
     let addr_lead := sp + nm1_x8
-    let code :=
-      (base ↦ᵢ .SD .x12 .x5 3984) **
-      ((base + 4) ↦ᵢ .ADDI .x5 .x5 4095) **
-      ((base + 8) ↦ᵢ .SLLI .x5 .x5 3) **
-      ((base + 12) ↦ᵢ .ADD .x5 .x12 .x5) **
-      ((base + 16) ↦ᵢ .LD .x5 .x5 32)
+    let code := divK_phaseB_tail_code base
     cpsTriple base (base + 20)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) **
@@ -627,6 +651,12 @@ theorem divK_phaseB_tail_spec (sp n leading_limb n_mem : Word) (base : Addr)
 -- Phase C2 body: store shift, compute anti_shift. 3 instructions.
 -- ============================================================================
 
+abbrev divK_phaseC2_code (shift0_off : BitVec 13) (base : Addr) : Assertion :=
+  (base ↦ᵢ .SD .x12 .x6 3992) **
+  ((base + 4) ↦ᵢ .ADDI .x2 .x0 0) **
+  ((base + 8) ↦ᵢ .SUB .x2 .x2 .x6) **
+  ((base + 12) ↦ᵢ .BEQ .x6 .x0 shift0_off)
+
 /-- Phase C2 body: SD shift to scratch, ADDI x2 = 0, SUB x2 = -shift.
     Preserves x6 and x0 for the subsequent BEQ.
     The postcondition uses `signExtend12 (0 : BitVec 12) - shift` (= 0 - shift)
@@ -634,11 +664,7 @@ theorem divK_phaseB_tail_spec (sp n leading_limb n_mem : Word) (base : Addr)
 theorem divK_phaseC2_body_spec (sp shift v2 shift_mem : Word)
     (shift0_off : BitVec 13) (base : Addr)
     (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true) :
-    let code :=
-      (base ↦ᵢ .SD .x12 .x6 3992) **
-      ((base + 4) ↦ᵢ .ADDI .x2 .x0 0) **
-      ((base + 8) ↦ᵢ .SUB .x2 .x2 .x6) **
-      ((base + 12) ↦ᵢ .BEQ .x6 .x0 shift0_off)
+    let code := divK_phaseC2_code shift0_off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -665,11 +691,7 @@ set_option maxHeartbeats 1600000 in
 theorem divK_phaseC2_spec (sp shift v2 shift_mem : Word)
     (shift0_off : BitVec 13) (base : Addr)
     (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true) :
-    let code :=
-      (base ↦ᵢ .SD .x12 .x6 3992) **
-      ((base + 4) ↦ᵢ .ADDI .x2 .x0 0) **
-      ((base + 8) ↦ᵢ .SUB .x2 .x2 .x6) **
-      ((base + 12) ↦ᵢ .BEQ .x6 .x0 shift0_off)
+    let code := divK_phaseC2_code shift0_off base
     let post :=
       code **
       (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) **
@@ -727,15 +749,18 @@ theorem divK_phaseC2_spec (sp shift v2 shift_mem : Word)
 -- Used for each "if b[k]≠0 → n=k" step in the n-computation cascade.
 -- ============================================================================
 
+abbrev divK_phaseB_cascade_step_code (n_val : BitVec 12) (rx : Reg) (bne_off : BitVec 13)
+    (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x5 .x0 n_val) **
+  ((base + 4) ↦ᵢ .BNE rx .x0 bne_off)
+
 /-- Single cascade step: load n_val into x5, then BNE on rx vs x0.
     Taken: rx ≠ 0 (limb is nonzero), branch to target with x5 = n_val.
     Not taken: rx = 0, fall through with x5 = n_val. -/
 theorem divK_phaseB_cascade_step_spec (n_val : BitVec 12) (rx : Reg) (check v5 : Word)
     (bne_off : BitVec 13) (base : Addr) :
     let n := (0 : Word) + signExtend12 n_val
-    let code :=
-      (base ↦ᵢ .ADDI .x5 .x0 n_val) **
-      ((base + 4) ↦ᵢ .BNE rx .x0 bne_off)
+    let code := divK_phaseB_cascade_step_code n_val rx bne_off base
     let post :=
       code ** (.x5 ↦ᵣ n) ** (.x0 ↦ᵣ (0 : Word)) ** (rx ↦ᵣ check)
     cpsBranch base
@@ -788,16 +813,18 @@ theorem divK_phaseB_cascade_step_spec (n_val : BitVec 12) (rx : Reg) (check v5 :
 -- 4 instructions: LD, ADDI, SUB, BLT. cpsBranch.
 -- ============================================================================
 
+abbrev divK_loopSetup_code (blt_off : BitVec 13) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 3984) **
+  ((base + 4) ↦ᵢ .ADDI .x1 .x0 4) **
+  ((base + 8) ↦ᵢ .SUB .x1 .x1 .x5) **
+  ((base + 12) ↦ᵢ .BLT .x1 .x0 blt_off)
+
 /-- Loop setup body: load n, compute m = 4 - n. 3 straight-line instructions.
     Uses signExtend12 4 directly to match addi_x0_spec_gen + sub_spec_gen output. -/
 theorem divK_loopSetup_body_spec (sp n v1 v5 : Word)
     (blt_off : BitVec 13) (base : Addr)
     (hv_n : isValidDwordAccess (sp + signExtend12 3984) = true) :
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 3984) **
-      ((base + 4) ↦ᵢ .ADDI .x1 .x0 4) **
-      ((base + 8) ↦ᵢ .SUB .x1 .x1 .x5) **
-      ((base + 12) ↦ᵢ .BLT .x1 .x0 blt_off)
+    let code := divK_loopSetup_code blt_off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x1 ↦ᵣ v1) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -821,11 +848,7 @@ theorem divK_loopSetup_spec (sp n v1 v5 : Word)
     (blt_off : BitVec 13) (base : Addr)
     (hv_n : isValidDwordAccess (sp + signExtend12 3984) = true) :
     let m := signExtend12 (4 : BitVec 12) - n
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 3984) **
-      ((base + 4) ↦ᵢ .ADDI .x1 .x0 4) **
-      ((base + 8) ↦ᵢ .SUB .x1 .x1 .x5) **
-      ((base + 12) ↦ᵢ .BLT .x1 .x0 blt_off)
+    let code := divK_loopSetup_code blt_off base
     let post :=
       code **
       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) ** (.x1 ↦ᵣ m) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -897,16 +920,18 @@ theorem divK_clz_init_spec (v6 : Word) (base : Addr) :
 -- K : BitVec 6 (SRLI shamt), M_s : BitVec 6 (SLLI shamt), M_a : BitVec 12 (ADDI imm).
 -- ============================================================================
 
+abbrev divK_clz_stage_code (K M_s : BitVec 6) (M_a : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .SRLI .x7 .x5 K) **
+  ((base + 4) ↦ᵢ .BNE .x7 .x0 12) **
+  ((base + 8) ↦ᵢ .SLLI .x5 .x5 M_s) **
+  ((base + 12) ↦ᵢ .ADDI .x6 .x6 M_a)
+
 /-- CLZ stage, taken branch: val >>> K ≠ 0, skip SLLI+ADDI.
     x5 = val (unchanged), x6 = count (unchanged), x7 = val >>> K. -/
 theorem divK_clz_stage_taken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val count v7 : Word)
     (base : Addr)
     (hne : val >>> K.toNat ≠ 0) :
-    let code :=
-      (base ↦ᵢ .SRLI .x7 .x5 K) **
-      ((base + 4) ↦ᵢ .BNE .x7 .x0 12) **
-      ((base + 8) ↦ᵢ .SLLI .x5 .x5 M_s) **
-      ((base + 12) ↦ᵢ .ADDI .x6 .x6 M_a)
+    let code := divK_clz_stage_code K M_s M_a base
     cpsTriple base (base + 16)
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)))
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) **
@@ -956,11 +981,7 @@ theorem divK_clz_stage_taken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val coun
 theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val count v7 : Word)
     (base : Addr)
     (heq : val >>> K.toNat = 0) :
-    let code :=
-      (base ↦ᵢ .SRLI .x7 .x5 K) **
-      ((base + 4) ↦ᵢ .BNE .x7 .x0 12) **
-      ((base + 8) ↦ᵢ .SLLI .x5 .x5 M_s) **
-      ((base + 12) ↦ᵢ .ADDI .x6 .x6 M_a)
+    let code := divK_clz_stage_code K M_s M_a base
     cpsTriple base (base + 16)
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)))
       (code ** (.x5 ↦ᵣ (val <<< M_s.toNat)) ** (.x6 ↦ᵣ (count + signExtend12 M_a)) **
@@ -1028,14 +1049,16 @@ theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val cou
 -- 3 instructions. BNE offset = 8 (not 12), no SLLI.
 -- ============================================================================
 
+abbrev divK_clz_last_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .SRLI .x7 .x5 63) **
+  ((base + 4) ↦ᵢ .BNE .x7 .x0 8) **
+  ((base + 8) ↦ᵢ .ADDI .x6 .x6 1)
+
 /-- CLZ last stage, taken: val >>> 63 ≠ 0 (MSB is 1), skip ADDI.
     x5 unchanged, x6 unchanged, x7 = val >>> 63. -/
 theorem divK_clz_last_taken_spec (val count v7 : Word) (base : Addr)
     (hne : val >>> 63 ≠ 0) :
-    let code :=
-      (base ↦ᵢ .SRLI .x7 .x5 63) **
-      ((base + 4) ↦ᵢ .BNE .x7 .x0 8) **
-      ((base + 8) ↦ᵢ .ADDI .x6 .x6 1)
+    let code := divK_clz_last_code base
     cpsTriple base (base + 12)
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)))
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) **
@@ -1078,10 +1101,7 @@ theorem divK_clz_last_taken_spec (val count v7 : Word) (base : Addr)
     x5 unchanged, x6 = count + 1, x7 = 0. -/
 theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Addr)
     (heq : val >>> 63 = 0) :
-    let code :=
-      (base ↦ᵢ .SRLI .x7 .x5 63) **
-      ((base + 4) ↦ᵢ .BNE .x7 .x0 8) **
-      ((base + 8) ↦ᵢ .ADDI .x6 .x6 1)
+    let code := divK_clz_last_code base
     cpsTriple base (base + 12)
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)))
       (code ** (.x5 ↦ᵣ val) ** (.x6 ↦ᵣ (count + signExtend12 (1 : BitVec 12))) **

@@ -23,6 +23,10 @@ set_option maxHeartbeats 800000
 -- Per-body Helper: Byte Extraction (3 instructions)
 -- ============================================================================
 
+abbrev byte_extract_code (off : BitVec 12) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .ANDI .x5 .x5 255)
+
 /-- Byte extraction spec (3 instructions):
     LD x5, off(x12); SRL x5,x5,x6; ANDI x5,x5,255
 
@@ -32,9 +36,7 @@ theorem byte_extract_spec (off : BitVec 12)
     (sp limb v5 bit_shift : Word) (base : Addr)
     (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let result := (limb >>> (bit_shift.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .ANDI .x5 .x5 255)
+    let code := byte_extract_code off base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -51,6 +53,10 @@ theorem byte_extract_spec (off : BitVec 12)
 -- Body Specs (extract + JAL for bodies 1-3, extract only for body 0)
 -- ============================================================================
 
+abbrev byte_body_jal_code (off : BitVec 12) (jal_off : BitVec 21) (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 off) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .ANDI .x5 .x5 255) ** ((base + 12) ↦ᵢ .JAL .x0 jal_off)
+
 /-- Body 3: limb_from_msb=3, extract byte from limb 0 at sp+32.
     4 instructions: LD + SRL + ANDI + JAL. -/
 theorem byte_body_3_spec (sp : Word)
@@ -60,9 +66,7 @@ theorem byte_body_3_spec (sp : Word)
     (hexit : (base + 12) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange sp 8) :
     let result := (v0 >>> (bit_shift.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 32) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .ANDI .x5 .x5 255) ** ((base + 12) ↦ᵢ .JAL .x0 jal_off)
+    let code := byte_body_jal_code 32 jal_off base
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -84,9 +88,7 @@ theorem byte_body_2_spec (sp : Word)
     (hexit : (base + 12) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange sp 8) :
     let result := (v1 >>> (bit_shift.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 40) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .ANDI .x5 .x5 255) ** ((base + 12) ↦ᵢ .JAL .x0 jal_off)
+    let code := byte_body_jal_code 40 jal_off base
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -108,9 +110,7 @@ theorem byte_body_1_spec (sp : Word)
     (hexit : (base + 12) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange sp 8) :
     let result := (v2 >>> (bit_shift.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 48) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .ANDI .x5 .x5 255) ** ((base + 12) ↦ᵢ .JAL .x0 jal_off)
+    let code := byte_body_jal_code 48 jal_off base
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -123,6 +123,10 @@ theorem byte_body_1_spec (sp : Word)
   rw [hexit] at JL
   runBlock EX JL
 
+abbrev byte_body_0_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
+  ((base + 8) ↦ᵢ .ANDI .x5 .x5 255)
+
 /-- Body 0: limb_from_msb=0, extract byte from limb 3 at sp+56.
     3 instructions: LD + SRL + ANDI (falls through to store). -/
 theorem byte_body_0_spec (sp : Word)
@@ -131,9 +135,7 @@ theorem byte_body_0_spec (sp : Word)
     (base : Addr)
     (hvalid : ValidMemRange sp 8) :
     let result := (v3 >>> (bit_shift.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code :=
-      (base ↦ᵢ .LD .x5 .x12 56) ** ((base + 4) ↦ᵢ .SRL .x5 .x5 .x6) **
-      ((base + 8) ↦ᵢ .ANDI .x5 .x5 255)
+    let code := byte_body_0_code base
     cpsTriple base (base + 12)
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
@@ -147,6 +149,11 @@ theorem byte_body_0_spec (sp : Word)
 -- Store Path Spec (6 instructions): ADDI + 4×SD + JAL
 -- ============================================================================
 
+abbrev byte_store_code (jal_off : BitVec 21) (base : Addr) : Assertion :=
+  (base ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 4) ↦ᵢ .SD .x12 .x5 0) **
+  ((base + 8) ↦ᵢ .SD .x12 .x0 8) ** ((base + 12) ↦ᵢ .SD .x12 .x0 16) **
+  ((base + 16) ↦ᵢ .SD .x12 .x0 24) ** ((base + 20) ↦ᵢ .JAL .x0 jal_off)
+
 set_option maxHeartbeats 3200000 in
 /-- Store path spec: pop index word, write byte result + 3 zeros, jump to exit.
     6 instructions: ADDI x12,x12,32; SD x12,x5,0; SD x12,x0,8;
@@ -157,10 +164,7 @@ theorem byte_store_spec (sp byte_result : Word)
     (hexit : (base + 20) + signExtend21 jal_off = exit)
     (hvalid : ValidMemRange (sp + 32) 4) :
     let nsp := sp + 32
-    let code :=
-      (base ↦ᵢ .ADDI .x12 .x12 32) ** ((base + 4) ↦ᵢ .SD .x12 .x5 0) **
-      ((base + 8) ↦ᵢ .SD .x12 .x0 8) ** ((base + 12) ↦ᵢ .SD .x12 .x0 16) **
-      ((base + 16) ↦ᵢ .SD .x12 .x0 24) ** ((base + 20) ↦ᵢ .JAL .x0 jal_off)
+    let code := byte_store_code jal_off base
     cpsTriple base exit
       (code **
        (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ byte_result) **
@@ -183,6 +187,11 @@ theorem byte_store_spec (sp byte_result : Word)
 -- Phase B Spec: Compute bit_shift and limb_from_msb (5 instructions)
 -- ============================================================================
 
+abbrev byte_phase_b_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .ANDI .x10 .x5 7) ** ((base + 4) ↦ᵢ .SLLI .x10 .x10 3) **
+  ((base + 8) ↦ᵢ .ADDI .x6 .x0 56) ** ((base + 12) ↦ᵢ .SUB .x6 .x6 .x10) **
+  ((base + 16) ↦ᵢ .SRLI .x5 .x5 3)
+
 set_option maxHeartbeats 1600000 in
 /-- Phase B spec: compute byte extraction parameters.
     ANDI x10,x5,7; SLLI x10,x10,3; ADDI x6,x0,56;
@@ -193,10 +202,7 @@ theorem byte_phase_b_spec (index r6 r10 : Word) (base : Addr) :
     let byte_shift := byte_in_limb <<< (3 : BitVec 6).toNat
     let bit_shift := (56 : Word) - byte_shift
     let limb_from_msb := index >>> (3 : BitVec 6).toNat
-    let code :=
-      (base ↦ᵢ .ANDI .x10 .x5 7) ** ((base + 4) ↦ᵢ .SLLI .x10 .x10 3) **
-      ((base + 8) ↦ᵢ .ADDI .x6 .x0 56) ** ((base + 12) ↦ᵢ .SUB .x6 .x6 .x10) **
-      ((base + 16) ↦ᵢ .SRLI .x5 .x5 3)
+    let code := byte_phase_b_code base
     cpsTriple base (base + 20)
       (code **
        (.x5 ↦ᵣ index) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
