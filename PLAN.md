@@ -89,15 +89,17 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 | Stack | POP, PUSH0, DUP1, SWAP1 | 1 / 5 / 9 / 16 | ✅ Fully proved |
 | Stack (generic) | DUP1-16, SWAP1-16 | 9 / 16 each | ✅ Fully proved |
 
-### Evm32 (secondary) — 15 opcodes, 1 sorry
+### Evm32 (secondary) — 11 opcodes, 0 sorry
 
 | Category | Opcodes | Status |
 |----------|---------|--------|
 | Arithmetic | ADD, SUB | ✅ Fully proved |
 | Bitwise | AND, OR, XOR, NOT | ✅ Fully proved |
-| Shift | SHR | ⚠️ 1 sorry in ShiftComposition.lean (8-way case merge) |
+| Shift | SHR | ✅ Program + native_decide tests (no CPS specs) |
 | Comparison | ISZERO, LT, GT, EQ | ✅ Fully proved |
-| Stack | POP, PUSH0, DUP1-16, SWAP1-16 | ✅ Fully proved |
+
+Note: Evm32 ShiftSpec, StackOps, and ShiftComposition were removed (contained
+sorry). Evm64 is the primary target; Evm32 retains the sorry-free subset.
 
 ### Infrastructure — complete, no sorry
 
