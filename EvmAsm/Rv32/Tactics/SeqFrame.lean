@@ -141,10 +141,61 @@ def mkIdLambda (p : Expr) : MetaM Expr := do
     withLocalDeclD `hp (mkApp p h) fun hp =>
       mkLambdaFVars #[h, hp] hp
 
-/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` for CodeReq extension.
-    For concrete CodeReq expressions, uses a tactic proof. -/
-private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
-  -- Build type: ∀ a i, oldCr a = some i → newCr a = some i
+/-- Build identity monotonicity proof: fun a i h => h -/
+private def mkIdentityMono (cr : Expr) : MetaM Expr := do
+  let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+  let instrType := mkConst ``EvmAsm.Instr
+  withLocalDeclD `a bv32 fun a =>
+    withLocalDeclD `i instrType fun i => do
+      let someI ← mkAppOptM ``some #[instrType, i]
+      let eqType ← mkEq (mkApp cr a) someI
+      withLocalDeclD `h eqType fun h =>
+        mkLambdaFVars #[a, i, h] h
+
+/-- Build a proof of `CodeReq.Disjoint cr1 cr2` by structural recursion.
+    Handles: empty, singleton vs singleton (bv_omega for addr ≠),
+    union vs anything (recursive). -/
+partial def buildDisjointProof (cr1 cr2 : Expr) : MetaM Expr := do
+  let cr1 ← whnfR cr1
+  let cr2 ← whnfR cr2
+  -- empty vs anything
+  if cr1 == mkConst ``EvmAsm.CodeReq.empty then
+    return ← mkAppM ``EvmAsm.CodeReq.Disjoint.empty_left #[cr2]
+  if cr2 == mkConst ``EvmAsm.CodeReq.empty then
+    return ← mkAppM ``EvmAsm.CodeReq.Disjoint.empty_right #[cr1]
+  -- singleton vs singleton
+  if cr1.isAppOfArity ``EvmAsm.CodeReq.singleton 2 &&
+     cr2.isAppOfArity ``EvmAsm.CodeReq.singleton 2 then
+    let a1 := cr1.getAppArgs[0]!
+    let i1 := cr1.getAppArgs[1]!
+    let a2 := cr2.getAppArgs[0]!
+    let i2 := cr2.getAppArgs[1]!
+    let addrType := mkApp (mkConst ``BitVec) (mkNatLit 32)
+    let neqType := mkApp3 (mkConst ``Ne [levelOne]) addrType a1 a2
+    let neqMVar ← mkFreshExprMVar neqType
+    let stx ← `(tactic| bv_omega)
+    let _ ← Lean.Elab.runTactic neqMVar.mvarId! stx
+    let neqProof ← instantiateMVars neqMVar
+    return ← mkAppM ``EvmAsm.CodeReq.Disjoint.singleton #[neqProof, i1, i2]
+  -- union on left
+  if cr1.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let sub1 := cr1.getAppArgs[0]!
+    let sub2 := cr1.getAppArgs[1]!
+    let hd1 ← buildDisjointProof sub1 cr2
+    let hd2 ← buildDisjointProof sub2 cr2
+    return ← mkAppM ``EvmAsm.CodeReq.Disjoint.union_left #[hd1, hd2]
+  -- union on right
+  if cr2.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let sub1 := cr2.getAppArgs[0]!
+    let sub2 := cr2.getAppArgs[1]!
+    let hd1 ← buildDisjointProof cr1 sub1
+    let hd2 ← buildDisjointProof cr1 sub2
+    return ← mkAppM ``EvmAsm.CodeReq.Disjoint.union_right #[hd1, hd2]
+  -- fallback
+  throwError "buildDisjointProof: cannot prove CodeReq.Disjoint for:\n  cr1 = {cr1}\n  cr2 = {cr2}"
+
+/-- Fallback: Build monotonicity proof via tactic (for edge cases). -/
+private def buildMonoProofTactic (oldCr newCr : Expr) : MetaM Expr := do
   let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
   let instrType := mkConst ``EvmAsm.Instr
   let propType ← withLocalDeclD `a bv32 fun a => do
@@ -157,20 +208,54 @@ private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
       let body ← mkArrow ant cons
       let body' ← mkForallFVars #[i] body
       mkForallFVars #[a] body'
-  -- Build proof via tactic: intro a i h; simp only [CodeReq.singleton, CodeReq.union] at *; ...
   let mvar ← mkFreshExprMVar propType
   try
     let stx ← `(tactic| intro a i h; simp only [EvmAsm.CodeReq.singleton, EvmAsm.CodeReq.union] at *; split <;> try simp_all)
     let _ ← Lean.Elab.runTactic mvar.mvarId! stx
     return ← instantiateMVars mvar
   catch _ =>
-    -- If tactic fails, try decide (for fully concrete CodeReq)
     try return ← mkDecideProof propType
     catch _ => throwError "seqFrame: cannot build monotonicity proof for CodeReq extension"
 
+/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` structurally.
+    Walks the union chain to find matching pieces, composing with
+    CodeReq.union_mono_left, mono_union_right, and union_split_mono.
+    Falls back to tactic-based proof for edge cases. -/
+private partial def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
+  -- Identity: oldCr ≡ newCr (structural check first to avoid deep isDefEq on CodeReq functions)
+  if oldCr == newCr then
+    return ← mkIdentityMono oldCr
+  if ← withoutModifyingState (withReducible (isDefEq oldCr newCr)) then
+    return ← mkIdentityMono oldCr
+  let oldCrW ← whnfR oldCr
+  let newCrW ← whnfR newCr
+  -- oldCr = union(sub1, sub2): split and recurse
+  if oldCrW.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let sub1 := oldCrW.getAppArgs[0]!
+    let sub2 := oldCrW.getAppArgs[1]!
+    let headMono ← buildMonoProof sub1 newCr
+    let tailMono ← buildMonoProof sub2 newCr
+    return ← mkAppM ``EvmAsm.CodeReq.union_split_mono #[headMono, tailMono]
+  -- newCr = union(head, tail): walk the chain
+  if newCrW.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let head := newCrW.getAppArgs[0]!
+    let tail := newCrW.getAppArgs[1]!
+    -- Left match: oldCr ≡ head (structural check first)
+    if oldCr == head then
+      return ← mkAppM ``EvmAsm.CodeReq.union_mono_left #[head, tail]
+    if ← withoutModifyingState (withReducible (isDefEq oldCr head)) then
+      return ← mkAppM ``EvmAsm.CodeReq.union_mono_left #[head, tail]
+    -- Skip: prove head.Disjoint oldCr, recurse on tail
+    let disjProof ← buildDisjointProof head oldCr
+    let tailMono ← buildMonoProof oldCr tail
+    return ← mkAppM ``EvmAsm.CodeReq.mono_union_right #[disjProof, tailMono]
+  -- Fallback: tactic-based proof
+  buildMonoProofTactic oldCr newCr
+
 /-- Extend a spec's CodeReq from oldCr to newCr using `cpsTriple_extend_code`. -/
 private def extendSpecCr (spec : Expr) (oldCr newCr : Expr) : MetaM Expr := do
-  if ← withoutModifyingState (isDefEq oldCr newCr) then
+  if oldCr == newCr then return spec
+  if ← withoutModifyingState (withReducible (isDefEq oldCr newCr)) then
     return spec
   let monoProof ← buildMonoProof oldCr newCr
   mkAppM ``EvmAsm.cpsTriple_extend_code #[monoProof, spec]
@@ -189,12 +274,17 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   unless ← isDefEq mid1 mid2 do
     throwError "seqFrame: midpoints don't match:\n  h1 exit: {mid1}\n  h2 entry: {mid2}"
 
-  -- Compute union cr (cr1.union cr2)
-  let combinedCr ← mkAppM ``EvmAsm.CodeReq.union #[cr1, cr2]
-
-  -- Extend h1 and h2 to the combined cr
-  let h1Extended ← extendSpecCr h1Expr cr1 combinedCr
-  let h2Extended ← extendSpecCr h2Expr cr2 combinedCr
+  -- Determine effective CR and extended specs
+  let (effectiveCr, h1Eff, h2Eff) ←
+    if ← withoutModifyingState (isDefEq cr1 cr2) then
+      -- Same-CR fast path: skip union/extension
+      Pure.pure (cr1, h1Expr, h2Expr)
+    else
+      -- Different CRs: extend both to combined CR
+      let combinedCr ← mkAppM ``EvmAsm.CodeReq.union #[cr1, cr2]
+      let h1Extended ← extendSpecCr h1Expr cr1 combinedCr
+      let h2Extended ← extendSpecCr h2Expr cr2 combinedCr
+      Pure.pure (combinedCr, h1Extended, h2Extended)
 
   -- Find frame: Q1 atoms not matched by P2
   let frameAtoms ← computeFrame postQ1 preP2
@@ -204,19 +294,19 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
 
-  -- h2Framed : cpsTriple mid exit_ combinedCr (P2 ** F) (Q2 ** F)
+  -- h2Framed : cpsTriple mid exit_ effectiveCr (P2 ** F) (Q2 ** F)
   let h2Framed := mkAppN (mkConst ``EvmAsm.cpsTriple_frame_left)
-    #[mid2, exit_, combinedCr, preP2, postQ2, frameExpr, pcFreeProof, h2Extended]
+    #[mid2, exit_, effectiveCr, preP2, postQ2, frameExpr, pcFreeProof, h2Eff]
 
   -- Permutation proof: Q1 → (P2 ** F)
   let p2StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) preP2 frameExpr
   let hperm ← mkPermLambda postQ1 p2StarFrame
 
-  -- Compose: cpsTriple_seq_with_perm entry mid exit_ combinedCr P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
+  -- Compose: cpsTriple_seq_with_perm entry mid exit_ effectiveCr P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
   let q2StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) postQ2 frameExpr
   return mkAppN (mkConst ``EvmAsm.cpsTriple_seq_with_perm)
-    #[entry, mid1, exit_, combinedCr, preP, postQ1, p2StarFrame, q2StarFrame,
-      hperm, h1Extended, h2Framed]
+    #[entry, mid1, exit_, effectiveCr, preP, postQ1, p2StarFrame, q2StarFrame,
+      hperm, h1Eff, h2Framed]
 
 /-- Try to assign `result` directly to `goal`, or with a postcondition permutation. -/
 def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do

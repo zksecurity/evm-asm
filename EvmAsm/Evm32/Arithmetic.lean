@@ -138,7 +138,7 @@ theorem add_limb0_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ sum) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ carry) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ sum)) := by
-  sorry
+  runBlock
 
 -- ============================================================================
 -- Per-limb Specs: ADD with carry (limbs 1-7)
@@ -164,7 +164,7 @@ theorem add_limb_carry_spec_phase1 (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ psum) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ carry_in) ** (.x11 ↦ᵣ carry1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 /-- ADD carry limb phase 2 (4 instructions): ADD, SLTU, OR, SW.
     Takes psum, carry1, carry_in, computes result = psum + carry_in,
@@ -186,7 +186,7 @@ theorem add_limb_carry_spec_phase2 (off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carry_out) ** (.x11 ↦ᵣ carry1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ result)) := by
-  sorry
+  runBlock
 
 /-- ADD carry limb spec (8 instructions): LW, LW, ADD, SLTU, ADD, SLTU, OR, SW.
     Takes carry_in, produces carry_out = carry1 ||| carry2 where:
@@ -250,7 +250,7 @@ theorem sub_limb0_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ diff) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ borrow) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ diff)) := by
-  sorry
+  runBlock
 
 /-- SUB carry limb phase 1 (4 instructions): LW, LW, SLTU, SUB.
     Loads a_limb and b_limb, computes borrow1 = (a < b ? 1 : 0), temp = a - b. -/
@@ -272,7 +272,7 @@ theorem sub_limb_carry_spec_phase1 (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ borrow_in) ** (.x11 ↦ᵣ borrow1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 /-- SUB carry limb phase 2 (4 instructions): SLTU, SUB, OR, SW.
     Takes temp, borrow1, borrow_in, computes borrow2 = (temp < borrow_in ? 1 : 0),
@@ -294,7 +294,7 @@ theorem sub_limb_carry_spec_phase2 (off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrow_out) ** (.x11 ↦ᵣ borrow1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ result)) := by
-  sorry
+  runBlock
 
 /-- SUB carry limb spec (8 instructions): LW, LW, SLTU, SUB, SLTU, SUB, OR, SW.
     Takes borrow_in, produces borrow_out = borrow1 ||| borrow2 where:

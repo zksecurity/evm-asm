@@ -2064,6 +2064,32 @@ theorem CodeReq.Disjoint.union_left {cr1 cr2 cr3 : CodeReq}
 theorem CodeReq.Disjoint.symm {cr1 cr2 : CodeReq} (hd : cr1.Disjoint cr2) :
     cr2.Disjoint cr1 := fun a => (hd a).symm
 
+/-- Left child of a union is subsumed (unconditionally true, union is left-biased). -/
+theorem CodeReq.union_mono_left (cr1 cr2 : CodeReq) :
+    ∀ a i, cr1 a = some i → (cr1.union cr2) a = some i := by
+  intro a i h; simp [CodeReq.union, h]
+
+/-- Skip head of union: if head is disjoint from oldCr and oldCr ⊆ tail, then oldCr ⊆ union. -/
+theorem CodeReq.mono_union_right {oldCr head tail : CodeReq}
+    (hd : head.Disjoint oldCr)
+    (htail : ∀ a i, oldCr a = some i → tail a = some i) :
+    ∀ a i, oldCr a = some i → (head.union tail) a = some i := by
+  intro a i h
+  rcases hd a with h_head_none | h_old_none
+  · simp [CodeReq.union, h_head_none, htail a i h]
+  · simp [h_old_none] at h
+
+/-- Split a union oldCr: if both halves are subsumed by cr, the union is too. -/
+theorem CodeReq.union_split_mono {cr1 cr2 cr : CodeReq}
+    (h1 : ∀ a i, cr1 a = some i → cr a = some i)
+    (h2 : ∀ a i, cr2 a = some i → cr a = some i) :
+    ∀ a i, (cr1.union cr2) a = some i → cr a = some i := by
+  intro a i h
+  simp only [CodeReq.union] at h
+  cases ha : cr1 a with
+  | none => simp [ha] at h; exact h2 a i h
+  | some j => simp [ha] at h; subst h; exact h1 a j ha
+
 theorem CodeReq.singleton_get (a : Addr) (i : Instr) :
     CodeReq.singleton a i a = some i := by
   simp [CodeReq.singleton]

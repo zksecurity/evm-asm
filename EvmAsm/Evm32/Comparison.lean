@@ -184,7 +184,7 @@ theorem lt_limb0_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ a_limb) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ borrow) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 /-- LT carry limb spec (6 instructions): LW, LW, SLTU, SUB, SLTU, OR.
     Propagates borrow without storing result. Memory is NOT modified.
@@ -212,7 +212,7 @@ theorem lt_limb_carry_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrow_out) ** (.x11 ↦ᵣ borrow1) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 -- ============================================================================
 -- Per-limb Specs: EQ (XOR + OR accumulation)
@@ -235,7 +235,7 @@ theorem eq_limb0_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a_limb ^^^ b_limb)) ** (.x6 ↦ᵣ b_limb) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 /-- EQ OR-limb spec (4 instructions): LW x6, LW x5, XOR x6 x6 x5, OR x7 x7 x6.
     Loads a_k into x6, b_k into x5, XORs them (x6 := a_k XOR b_k),
@@ -257,6 +257,6 @@ theorem eq_or_limb_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| xor_k)) ** (.x6 ↦ᵣ xor_k) ** (.x5 ↦ᵣ b_limb) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb)) := by
-  sorry
+  runBlock
 
 end EvmAsm

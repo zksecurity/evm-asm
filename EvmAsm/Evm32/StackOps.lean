@@ -78,7 +78,7 @@ theorem evm_pop_stack_spec (sp base : Addr)
       (CodeReq.singleton base (.ADDI .x12 .x12 32))
       ((.x12 ↦ᵣ sp) ** evmWordIs sp a ** evmStackIs (sp + 32) rest)
       ((.x12 ↦ᵣ (sp + 32)) ** evmWordIs sp a ** evmStackIs (sp + 32) rest) := by
-  sorry
+  runBlock
 
 -- ============================================================================
 -- PUSH0 spec (Phase 2.2)
@@ -140,7 +140,7 @@ theorem dup1_pair_spec (sp : Addr)
        ((sp + signExtend12 off_src) ↦ₘ src_val) ** ((sp + signExtend12 off_dst) ↦ₘ dst_old))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ src_val) **
        ((sp + signExtend12 off_src) ↦ₘ src_val) ** ((sp + signExtend12 off_dst) ↦ₘ src_val)) := by
-  sorry
+  runBlock
 
 -- ============================================================================
 -- DUP1 spec (Phase 2.3)
@@ -224,7 +224,7 @@ theorem swap1_limb_spec (sp : Addr)
        (mem_a ↦ₘ a) ** (mem_b ↦ₘ b))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ a) ** (.x6 ↦ᵣ b) **
        (mem_a ↦ₘ b) ** (mem_b ↦ₘ a)) := by
-  sorry
+  runBlock
 
 -- ============================================================================
 -- SWAP1 spec (Phase 2.4)

@@ -86,10 +86,19 @@ private partial def inlineLets : Expr → Expr
 -- Section: CodeReq Extension (from SeqFrame)
 -- ============================================================================
 
-/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` for CodeReq extension.
-    For concrete CodeReq expressions, uses a tactic proof. -/
-private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
-  -- Build type: ∀ a i, oldCr a = some i → newCr a = some i
+/-- Build identity monotonicity proof: fun a i h => h -/
+private def mkIdentityMono (cr : Expr) : MetaM Expr := do
+  let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+  let instrType := mkConst ``EvmAsm.Instr
+  withLocalDeclD `a bv32 fun a =>
+    withLocalDeclD `i instrType fun i => do
+      let someI ← mkAppOptM ``some #[instrType, i]
+      let eqType ← mkEq (mkApp cr a) someI
+      withLocalDeclD `h eqType fun h =>
+        mkLambdaFVars #[a, i, h] h
+
+/-- Fallback: Build monotonicity proof via tactic (for edge cases). -/
+private def buildMonoProofTactic (oldCr newCr : Expr) : MetaM Expr := do
   let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
   let instrType := mkConst ``EvmAsm.Instr
   let propType ← withLocalDeclD `a bv32 fun a => do
@@ -102,7 +111,6 @@ private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
       let body ← mkArrow ant cons
       let body' ← mkForallFVars #[i] body
       mkForallFVars #[a] body'
-  -- Build proof via tactic: unfold then simp_all with bv_omega for address inequalities
   let mvar ← mkFreshExprMVar propType
   let saved ← saveState
   try
@@ -110,11 +118,47 @@ private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
     let _ ← Lean.Elab.runTactic mvar.mvarId! stx
     return ← instantiateMVars mvar
   catch _ => restoreState saved
-  throwError "runBlock: cannot build monotonicity proof for CodeReq extension"
+  throwError "runBlock: cannot build monotonicity proof for CodeReq extension (fallback)"
+
+/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` structurally.
+    Walks the union chain to find matching pieces, composing with
+    CodeReq.union_mono_left, mono_union_right, and union_split_mono.
+    Falls back to tactic-based proof for edge cases. -/
+private partial def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
+  -- Identity: oldCr ≡ newCr (structural check first, then isDefEq fallback)
+  if oldCr == newCr then
+    return ← mkIdentityMono oldCr
+  if ← withoutModifyingState (withReducible (isDefEq oldCr newCr)) then
+    return ← mkIdentityMono oldCr
+  let oldCrW ← whnfR oldCr
+  let newCrW ← whnfR newCr
+  -- oldCr = union(sub1, sub2): split and recurse
+  if oldCrW.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let sub1 := oldCrW.getAppArgs[0]!
+    let sub2 := oldCrW.getAppArgs[1]!
+    let headMono ← buildMonoProof sub1 newCr
+    let tailMono ← buildMonoProof sub2 newCr
+    return ← mkAppM ``EvmAsm.CodeReq.union_split_mono #[headMono, tailMono]
+  -- newCr = union(head, tail): walk the chain
+  if newCrW.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let head := newCrW.getAppArgs[0]!
+    let tail := newCrW.getAppArgs[1]!
+    -- Left match: oldCr ≡ head (structural check first)
+    if oldCr == head then
+      return ← mkAppM ``EvmAsm.CodeReq.union_mono_left #[head, tail]
+    if ← withoutModifyingState (withReducible (isDefEq oldCr head)) then
+      return ← mkAppM ``EvmAsm.CodeReq.union_mono_left #[head, tail]
+    -- Skip: prove head.Disjoint oldCr, recurse on tail
+    let disjProof ← buildDisjointProof head oldCr
+    let tailMono ← buildMonoProof oldCr tail
+    return ← mkAppM ``EvmAsm.CodeReq.mono_union_right #[disjProof, tailMono]
+  -- Fallback: tactic-based proof
+  buildMonoProofTactic oldCr newCr
 
 /-- Extend a spec's CodeReq from oldCr to newCr using `cpsTriple_extend_code`. -/
 private def extendSpecCr (spec : Expr) (oldCr newCr : Expr) : MetaM Expr := do
-  if ← withoutModifyingState (isDefEq oldCr newCr) then
+  if oldCr == newCr then return spec
+  if ← withoutModifyingState (withReducible (isDefEq oldCr newCr)) then
     return spec
   let monoProof ← buildMonoProof oldCr newCr
   mkAppM ``EvmAsm.cpsTriple_extend_code #[monoProof, spec]
@@ -341,7 +385,7 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr) (goalCr : Expr)
   else Pure.pure specs
   -- Extend each spec to goalCr
   let extendToGoal := fun spec => do
-    let specType ← inferType spec
+    let specType ← instantiateMVars (← inferType spec)
     let some (_, _, specCr, _, _) ← parseCpsTriple? specType | throwError "runBlockCore: not cpsTriple"
     extendSpecCr spec specCr goalCr
   let extendedSpecs ← processedSpecs.mapM extendToGoal
@@ -539,7 +583,8 @@ private def tryInstantiateSpec (specName : Name) (instrExpr instrAddr : Expr)
   unless ← isDefEq specEntry instrAddr do
     throwError "address mismatch"
   -- Step 1b: Match instruction in specCr (should be CodeReq.singleton)
-  let specCrWhnf ← whnf specCr
+  -- Use whnfR (not whnf) to avoid unfolding CodeReq.singleton into a lambda
+  let specCrWhnf ← whnfR specCr
   if specCrWhnf.isAppOfArity ``EvmAsm.CodeReq.singleton 2 then
     let specInstr := specCrWhnf.getAppArgs[1]!
     unless ← isDefEq specInstr instrExpr do
@@ -655,24 +700,35 @@ private def extractInstrAtoms (atoms : List Expr) : List (Expr × Expr) :=
       some (atom.getAppArgs[0]!, atom.getAppArgs[1]!)
     else none
 
-/-- Extract instruction entries `(addr, instrExpr)` from a CodeReq expression.
+/-- Extract instruction entries `(addr, instrExpr)` from a CodeReq expression (pure, no whnf).
     Handles: CodeReq.singleton addr instr, CodeReq.union cr1 cr2 (recursive),
     CodeReq.empty (returns []). -/
-private partial def extractCrEntries (cr : Expr) : List (Expr × Expr) :=
+private partial def extractCrEntriesPure (cr : Expr) : List (Expr × Expr) :=
   if cr.isAppOfArity ``EvmAsm.CodeReq.singleton 2 then
     let args := cr.getAppArgs
     [(args[0]!, args[1]!)]
   else if cr.isAppOfArity ``EvmAsm.CodeReq.union 2 then
     let args := cr.getAppArgs
-    extractCrEntries args[0]! ++ extractCrEntries args[1]!
+    extractCrEntriesPure args[0]! ++ extractCrEntriesPure args[1]!
   else []
+
+/-- Extract instruction entries `(addr, instrExpr)` from a CodeReq expression.
+    Uses whnfR once at the top level to unfold abbrevs (e.g. `evm_push0_code base`),
+    then extracts `CodeReq.singleton`/`CodeReq.union` entries purely. -/
+private def extractCrEntries (cr : Expr) : MetaM (List (Expr × Expr)) := do
+  -- Try pure extraction first (fast path)
+  let entries := extractCrEntriesPure cr
+  if !entries.isEmpty then return entries
+  -- If nothing found, try whnfR to unfold abbrevs then extract purely
+  let cr ← Lean.Meta.whnfR cr
+  return extractCrEntriesPure cr
 
 /-- Auto-resolve all specs from the CodeReq and compose them.
     Extracts instruction entries from cr, resolves each spec using the current state,
     and advances the state between instructions. -/
 private def autoResolveAndCompose (goalPre : Expr) (goalCr : Expr) : MetaM Expr := do
   -- Try new-style: extract instructions from CodeReq (cr)
-  let mut instrAtoms := extractCrEntries goalCr
+  let mut instrAtoms ← extractCrEntries goalCr
   -- Fallback: if CodeReq is empty/unknown, try legacy instrAt in precondition
   if instrAtoms.isEmpty then
     let atoms ← flattenSepConj goalPre
@@ -719,12 +775,35 @@ private def autoResolveAndCompose (goalPre : Expr) (goalCr : Expr) : MetaM Expr 
 
     **Debugging**: use `set_option trace.runBlock true` to see resolution details. -/
 elab "runBlock" specs:ident* : tactic => withMainContext do
-  let goal ← getMainGoal
+  let mvarGoal ← getMainGoal
   -- Strip leading let bindings and metadata from goal type
-  let goalType := inlineLets (← instantiateMVars (← goal.getType))
-  let some (_, _, goalCr, goalPre, _) ← parseCpsTriple? goalType
+  let goalType := inlineLets (← instantiateMVars (← mvarGoal.getType))
+  let some (_, _, goalCr, _, _) ← parseCpsTriple? goalType
     | throwError "runBlock: goal is not a `cpsTriple`.\n\
         Expected goal of the form: `cpsTriple entry exit cr pre post`."
+  -- If the CodeReq is an abbrev application (not CodeReq.singleton/union/empty), delta-unfold it
+  -- in the actual goal so all proof terms share the same expression. This prevents deep isDefEq
+  -- between abbrev'd and expanded CodeReq (CodeReq = Addr → Option Instr, equality is costly).
+  let mvarGoal ← do
+    let crEntries := extractCrEntriesPure goalCr
+    if crEntries.isEmpty then
+      -- goalCr is not structurally a union/singleton — check if it's a named definition to unfold
+      match goalCr.getAppFn with
+      | .const name _ =>
+        -- Skip CodeReq.singleton/union/empty themselves
+        if name == ``EvmAsm.CodeReq.singleton || name == ``EvmAsm.CodeReq.union ||
+           name == ``EvmAsm.CodeReq.empty then
+          Pure.pure mvarGoal
+        else
+          trace[runBlock] "deltaTarget: unfolding CodeReq abbrev {name}"
+          try mvarGoal.deltaTarget (· == name)
+          catch e => trace[runBlock] "deltaTarget failed: {e.toMessageData}"; Pure.pure mvarGoal
+      | _ => Pure.pure mvarGoal
+    else Pure.pure mvarGoal
+  -- Re-parse goal after potential delta-unfolding
+  let goalType := inlineLets (← instantiateMVars (← mvarGoal.getType))
+  let some (_, _, goalCr, goalPre, _) ← parseCpsTriple? goalType
+    | throwError "runBlock: goal is not a `cpsTriple` after CodeReq normalization."
   let composed ←
     if specs.isEmpty then
       -- Auto mode: resolve specs from precondition
@@ -746,7 +825,7 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
   let idPre ← mkIdLambda gPre
   let permuted := mkAppN (mkConst ``EvmAsm.cpsTriple_consequence)
     #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
-  goal.assign permuted
+  mvarGoal.assign permuted
   replaceMainGoal []
 
 end EvmAsm.Tactics

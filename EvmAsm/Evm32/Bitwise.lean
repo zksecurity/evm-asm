@@ -31,9 +31,9 @@ def evm_and : Program :=
   LW .x7 .x12 20 ;; LW .x6 .x12 52 ;; single (.AND .x7 .x7 .x6) ;; SW .x12 .x7 52 ;;
   LW .x7 .x12 24 ;; LW .x6 .x12 56 ;; single (.AND .x7 .x7 .x6) ;; SW .x12 .x7 56 ;;
   LW .x7 .x12 28 ;; LW .x6 .x12 60 ;; single (.AND .x7 .x7 .x6) ;; SW .x12 .x7 60 ;;
-  ADDI .x12 .x12 32
+  single (.ADDI .x12 .x12 32)
 
-/-- 256-bit EVM OR. -/
+/-- 256-bit EVM OR: binary, pops 2, pushes 1. -/
 def evm_or : Program :=
   LW .x7 .x12 0 ;; LW .x6 .x12 32 ;; single (.OR .x7 .x7 .x6) ;; SW .x12 .x7 32 ;;
   LW .x7 .x12 4 ;; LW .x6 .x12 36 ;; single (.OR .x7 .x7 .x6) ;; SW .x12 .x7 36 ;;
@@ -43,9 +43,9 @@ def evm_or : Program :=
   LW .x7 .x12 20 ;; LW .x6 .x12 52 ;; single (.OR .x7 .x7 .x6) ;; SW .x12 .x7 52 ;;
   LW .x7 .x12 24 ;; LW .x6 .x12 56 ;; single (.OR .x7 .x7 .x6) ;; SW .x12 .x7 56 ;;
   LW .x7 .x12 28 ;; LW .x6 .x12 60 ;; single (.OR .x7 .x7 .x6) ;; SW .x12 .x7 60 ;;
-  ADDI .x12 .x12 32
+  single (.ADDI .x12 .x12 32)
 
-/-- 256-bit EVM XOR. -/
+/-- 256-bit EVM XOR: binary, pops 2, pushes 1. -/
 def evm_xor : Program :=
   LW .x7 .x12 0 ;; LW .x6 .x12 32 ;; single (.XOR .x7 .x7 .x6) ;; SW .x12 .x7 32 ;;
   LW .x7 .x12 4 ;; LW .x6 .x12 36 ;; single (.XOR .x7 .x7 .x6) ;; SW .x12 .x7 36 ;;
@@ -55,10 +55,10 @@ def evm_xor : Program :=
   LW .x7 .x12 20 ;; LW .x6 .x12 52 ;; single (.XOR .x7 .x7 .x6) ;; SW .x12 .x7 52 ;;
   LW .x7 .x12 24 ;; LW .x6 .x12 56 ;; single (.XOR .x7 .x7 .x6) ;; SW .x12 .x7 56 ;;
   LW .x7 .x12 28 ;; LW .x6 .x12 60 ;; single (.XOR .x7 .x7 .x6) ;; SW .x12 .x7 60 ;;
-  ADDI .x12 .x12 32
+  single (.ADDI .x12 .x12 32)
 
-/-- 256-bit EVM NOT: unary (pop 1, push 1, sp unchanged).
-    For each limb: load, XOR with -1 (complement), store back. -/
+/-- 256-bit EVM NOT: unary, pops 1, pushes 1.
+    For each of 8 limbs: load, XOR with -1, store back. -/
 def evm_not : Program :=
   LW .x7 .x12 0 ;; XORI .x7 .x7 (-1) ;; SW .x12 .x7 0 ;;
   LW .x7 .x12 4 ;; XORI .x7 .x7 (-1) ;; SW .x12 .x7 4 ;;
@@ -91,7 +91,7 @@ theorem and_limb_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a_limb &&& b_limb)) ** (.x6 ↦ᵣ b_limb) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ (a_limb &&& b_limb))) := by
-  sorry
+  runBlock
 
 /-- Per-limb OR spec (4 instructions: LW x7, LW x6, OR x7 x7 x6, SW x12 x7). -/
 theorem or_limb_spec (off_a off_b : BitVec 12)
@@ -110,7 +110,7 @@ theorem or_limb_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a_limb ||| b_limb)) ** (.x6 ↦ᵣ b_limb) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ (a_limb ||| b_limb))) := by
-  sorry
+  runBlock
 
 /-- Per-limb XOR spec (4 instructions: LW x7, LW x6, XOR x7 x7 x6, SW x12 x7). -/
 theorem xor_limb_spec (off_a off_b : BitVec 12)
@@ -129,7 +129,7 @@ theorem xor_limb_spec (off_a off_b : BitVec 12)
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a_limb ^^^ b_limb)) ** (.x6 ↦ᵣ b_limb) **
        (mem_a ↦ₘ a_limb) ** (mem_b ↦ₘ (a_limb ^^^ b_limb))) := by
-  sorry
+  runBlock
 
 /-- Per-limb NOT spec (3 instructions: LW x7, XORI x7 x7 (-1), SW x12 x7).
     Unary: loads limb, complements it, stores back to same location. -/
@@ -144,6 +144,6 @@ theorem not_limb_spec (off : BitVec 12)
     cpsTriple base (base + 12) cr
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (mem ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (limb ^^^ signExtend12 (-1))) ** (mem ↦ₘ (limb ^^^ signExtend12 (-1)))) := by
-  sorry
+  sorry -- xperm permutation issue with signExtend12 (-1)
 
 end EvmAsm
