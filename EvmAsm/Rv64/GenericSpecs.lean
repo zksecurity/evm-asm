@@ -37,10 +37,10 @@ theorem generic_1reg_spec (instr : Instr) (rd : Reg) (v result : Word) (base : A
     (hexec : ∀ s, s.pc = base → s.getReg rd = v →
       execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base instr)
       ((base ↦ᵢ instr) ** (rd ↦ᵣ v))
       ((base ↦ᵢ instr) ** (rd ↦ᵣ result)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   -- Extract from precondition
   have hfetch : s.code s.pc = some instr :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
@@ -74,10 +74,10 @@ theorem generic_2reg_spec (instr : Instr) (rs rd : Reg)
     (hexec : ∀ s, s.pc = base → s.getReg rs = v_src → s.getReg rd = v_old →
       execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base instr)
       ((base ↦ᵢ instr) ** (rs ↦ᵣ v_src) ** (rd ↦ᵣ v_old))
       ((base ↦ᵢ instr) ** (rs ↦ᵣ v_src) ** (rd ↦ᵣ result)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some instr :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs : s.getReg rs = v_src :=
@@ -117,10 +117,10 @@ theorem generic_2reg_rd_eq_rs1_spec (instr : Instr) (rd rs2 : Reg)
     (hexec : ∀ s, s.pc = base → s.getReg rd = v1 → s.getReg rs2 = v2 →
       execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base instr)
       ((base ↦ᵢ instr) ** (rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       ((base ↦ᵢ instr) ** (rd ↦ᵣ result) ** (rs2 ↦ᵣ v2)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some instr :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrd : s.getReg rd = v1 :=
@@ -160,10 +160,10 @@ theorem generic_3reg_spec (instr : Instr) (rs1 rs2 rd : Reg)
     (hexec : ∀ s, s.pc = base → s.getReg rs1 = v1 → s.getReg rs2 = v2 →
       execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base instr)
       ((base ↦ᵢ instr) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ v_old))
       ((base ↦ᵢ instr) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ result)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some instr :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -198,10 +198,10 @@ theorem generic_3reg_spec (instr : Instr) (rs1 rs2 rd : Reg)
 theorem generic_nop_spec (instr : Instr) (base exit_ : Addr)
     (hexec : ∀ s, s.pc = base → execInstrBr s instr = s.setPC exit_)
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base exit_
+    cpsTriple base exit_ (CodeReq.singleton base instr)
       (base ↦ᵢ instr)
       (base ↦ᵢ instr) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some instr :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left hPR)
   have hexec' := hexec s rfl
@@ -225,13 +225,13 @@ theorem generic_nop_spec (instr : Instr) (base exit_ : Addr)
     Taken (v1 ≠ v2): PC = base + signExtend13 offset, post includes ⌜v1 ≠ v2⌝
     Not taken (v1 = v2): PC = base + 4, post includes ⌜v1 = v2⌝ -/
 theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
-    cpsBranch base
+    cpsBranch base (CodeReq.singleton base (.BNE rs1 rs2 offset))
       ((base ↦ᵢ .BNE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset)
         ((base ↦ᵢ .BNE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
       (base + 4)
         ((base ↦ᵢ .BNE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.BNE rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -278,13 +278,13 @@ theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
 
 /-- Generic spec for BEQ: branch if equal. -/
 theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
-    cpsBranch base
+    cpsBranch base (CodeReq.singleton base (.BEQ rs1 rs2 offset))
       ((base ↦ᵢ .BEQ rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset)
         ((base ↦ᵢ .BEQ rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
       (base + 4)
         ((base ↦ᵢ .BEQ rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.BEQ rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -335,13 +335,13 @@ theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
     Taken (ult v1 v2): PC = base + signExtend13 offset
     Not taken (¬ult v1 v2): PC = base + 4 -/
 theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
-    cpsBranch base
+    cpsBranch base (CodeReq.singleton base (.BLTU rs1 rs2 offset))
       ((base ↦ᵢ .BLTU rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset)
         ((base ↦ᵢ .BLTU rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝)
       (base + 4)
         ((base ↦ᵢ .BLTU rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.BLTU rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -392,13 +392,13 @@ theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
     Taken (¬slt v1 v2): PC = base + signExtend13 offset
     Not taken (slt v1 v2): PC = base + 4 -/
 theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
-    cpsBranch base
+    cpsBranch base (CodeReq.singleton base (.BGE rs1 rs2 offset))
       ((base ↦ᵢ .BGE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset)
         ((base ↦ᵢ .BGE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝)
       (base + 4)
         ((base ↦ᵢ .BGE rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.BGE rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -449,13 +449,13 @@ theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
     Taken (slt v1 v2): PC = base + signExtend13 offset
     Not taken (¬slt v1 v2): PC = base + 4 -/
 theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Addr) :
-    cpsBranch base
+    cpsBranch base (CodeReq.singleton base (.BLT rs1 rs2 offset))
       ((base ↦ᵢ .BLT rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset)
         ((base ↦ᵢ .BLT rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝)
       (base + 4)
         ((base ↦ᵢ .BLT rs1 rs2 offset) ** (rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.BLT rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -507,10 +507,10 @@ theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
     Post: (base ↦ᵢ .JAL rd offset) ** (rd ↦ᵣ (base + 4)) -/
 theorem generic_jal_spec (rd : Reg) (v_old : Word) (offset : BitVec 21) (base : Addr)
     (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + signExtend21 offset)
+    cpsTriple base (base + signExtend21 offset) (CodeReq.singleton base (.JAL rd offset))
       ((base ↦ᵢ .JAL rd offset) ** (rd ↦ᵣ v_old))
       ((base ↦ᵢ .JAL rd offset) ** (rd ↦ᵣ (base + 4))) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.JAL rd offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hstep' : step s = some (execInstrBr s (.JAL rd offset)) :=
@@ -529,10 +529,10 @@ theorem generic_jal_spec (rd : Reg) (v_old : Word) (offset : BitVec 21) (base : 
     Post: (base ↦ᵢ .JALR rd rs1 offset) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4)) -/
 theorem generic_jalr_spec (rd rs1 : Reg) (v1 v_old : Word) (offset : BitVec 12) (base : Addr)
     (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base ((v1 + signExtend12 offset) &&& ~~~1)
+    cpsTriple base ((v1 + signExtend12 offset) &&& ~~~1) (CodeReq.singleton base (.JALR rd rs1 offset))
       ((base ↦ᵢ .JALR rd rs1 offset) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ v_old))
       ((base ↦ᵢ .JALR rd rs1 offset) ** (rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.JALR rd rs1 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
@@ -566,10 +566,10 @@ theorem generic_ld_spec (rd rs1 : Reg) (v_addr v_old mem_val : Word)
     (offset : BitVec 12) (base : Addr)
     (hrd_ne_x0 : rd ≠ .x0)
     (hvalid : isValidDwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rs1 offset))
       ((base ↦ᵢ .LD rd rs1 offset) ** (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ v_old) ** ((v_addr + signExtend12 offset) ↦ₘ mem_val))
       ((base ↦ᵢ .LD rd rs1 offset) ** (rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ mem_val) ** ((v_addr + signExtend12 offset) ↦ₘ mem_val)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.LD rd rs1 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v_addr :=
@@ -611,10 +611,10 @@ theorem generic_ld_spec (rd rs1 : Reg) (v_addr v_old mem_val : Word)
 theorem generic_sd_spec (rs1 rs2 : Reg) (v_addr v_data mem_old : Word)
     (offset : BitVec 12) (base : Addr)
     (hvalid : isValidDwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs1 rs2 offset))
       ((base ↦ᵢ .SD rs1 rs2 offset) ** (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ mem_old))
       ((base ↦ᵢ .SD rs1 rs2 offset) ** (rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.SD rs1 rs2 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v_addr :=
@@ -654,10 +654,10 @@ theorem generic_sd_spec (rs1 rs2 : Reg) (v_addr v_data mem_old : Word)
 theorem generic_sd_x0_spec (rs1 : Reg) (v_addr mem_old : Word)
     (offset : BitVec 12) (base : Addr)
     (hvalid : isValidDwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
+    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs1 .x0 offset))
       ((base ↦ᵢ .SD rs1 .x0 offset) ** (rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ mem_old))
       ((base ↦ᵢ .SD rs1 .x0 offset) ** (rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ (0 : Word))) := by
-  intro R hR s hPR hpc; subst hpc
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.SD rs1 .x0 offset) :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v_addr :=

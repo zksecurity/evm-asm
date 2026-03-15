@@ -89,15 +89,17 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 | Stack | POP, PUSH0, DUP1, SWAP1 | 1 / 5 / 9 / 16 | ✅ Fully proved |
 | Stack (generic) | DUP1-16, SWAP1-16 | 9 / 16 each | ✅ Fully proved |
 
-### Evm32 (secondary) — 15 opcodes, 1 sorry
+### Evm32 (secondary) — 11 opcodes, 0 sorry
 
 | Category | Opcodes | Status |
 |----------|---------|--------|
 | Arithmetic | ADD, SUB | ✅ Fully proved |
 | Bitwise | AND, OR, XOR, NOT | ✅ Fully proved |
-| Shift | SHR | ⚠️ 1 sorry in ShiftComposition.lean (8-way case merge) |
+| Shift | SHR | ✅ Program + native_decide tests (no CPS specs) |
 | Comparison | ISZERO, LT, GT, EQ | ✅ Fully proved |
-| Stack | POP, PUSH0, DUP1-16, SWAP1-16 | ✅ Fully proved |
+
+Note: Evm32 ShiftSpec, StackOps, and ShiftComposition were removed (contained
+sorry). Evm64 is the primary target; Evm32 retains the sorry-free subset.
 
 ### Infrastructure — complete, no sorry
 
@@ -107,6 +109,116 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
   PcFree, SpecDb
 - Examples: Swap, HelloWorld, Echo, Multiply, LoadModifyStore, Combining,
   Halting, Commit, Write, FullPipeline
+- **CodeReq infrastructure** (Issue #35): `CodeReq` type + `cpsTriple` 5-arg
+  form + composition rules + tactic support all in place for both Rv32 and Rv64.
+  Evm32 fully migrated; Evm64 migration pending (see below).
+
+---
+
+## Pending: Evm64 CodeReq Migration (Issue #35)
+
+The Rv64 infrastructure (CPSSpec, SyscallSpecs, tactics) already supports
+`CodeReq` as a persistent side-condition. The `@[spec_gen_rv64]` single-
+instruction specs in `SyscallSpecs.lean` use `CodeReq.singleton`. However,
+the Evm64 opcode files still use the **old pattern**: `instrAt` atoms in
+pre/postconditions with implicit `CodeReq.empty`.
+
+### Current Evm64 pattern (And.lean as example)
+
+```lean
+-- Code as an Assertion (instrAt atoms in P/Q):
+abbrev evm_and_code (base : Addr) : Assertion :=
+  (base ↦ᵢ .LD .x7 .x12 0) ** ((base + 4) ↦ᵢ .LD .x6 .x12 32) ** ...
+
+-- cpsTriple with implicit CodeReq.empty, code in both P and Q:
+theorem evm_and_spec ... :
+    cpsTriple base (base + 68)
+      (code ** (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** ...)     -- code in pre
+      (code ** (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ ...) ** ...)  -- code in post
+```
+
+### Target Evm64 pattern (matching Evm32 migrated form)
+
+```lean
+-- Code as a CodeReq (union of singletons):
+abbrev evm_and_code (base : Addr) : CodeReq :=
+  CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 0))
+  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 32))
+  (...))
+
+-- cpsTriple with explicit CodeReq, NO instrAt in P/Q:
+theorem evm_and_spec ... :
+    cpsTriple base (base + 68) (evm_and_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** ...)        -- only regs + mem
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ ...) ** ...)  -- only regs + mem
+```
+
+### Migration steps for each Evm64 opcode file
+
+For each file (And.lean, Or.lean, ..., ShiftSpec.lean, Multiply.lean, etc.):
+
+1. **Change the `_code` abbrev** from `Assertion` to `CodeReq`:
+   - Replace `(base ↦ᵢ .LD .x7 .x12 0)` → `CodeReq.singleton base (.LD .x7 .x12 0)`
+   - Replace `**` between instrAt atoms → `CodeReq.union`
+   - The type changes from `Assertion` to `CodeReq`
+
+2. **Update the theorem statement**:
+   - Add the CodeReq as the 3rd argument to `cpsTriple`: `cpsTriple base exit (code) P Q`
+   - Remove `code **` from both precondition P and postcondition Q
+   - The `let code := ...` binding stays but now refers to a `CodeReq` not `Assertion`
+
+3. **Update the proof**:
+   - `runBlock` in manual mode should work as-is (it already handles CodeReq
+     composition via `cpsTriple_seq_ext` + `CodeReq.mono_union_right`)
+   - Sub-specs from `@[spec_gen_rv64]` already use `CodeReq.singleton`
+   - The `runBlock` tactic unions sub-spec CodeReqs automatically
+
+4. **Update stack-level specs** (e.g., `evm_and_stack_spec`):
+   - These call `cpsTriple_frame_left` + `cpsTriple_consequence` on the
+     block-level spec. The frame no longer includes `code` (it's in CodeReq).
+   - The `evmWordIs`/`evmStackIs` assertions are purely memory, so
+     `simp [evmWordIs]` + `xperm_hyp` should still close the goals.
+
+5. **Per-limb helper specs** (in Bitwise.lean, Arithmetic.lean, etc.):
+   - Same migration: move instrAt to CodeReq, remove from P/Q.
+   - These are the building blocks that `runBlock` composes.
+
+### File migration order (by complexity)
+
+**Tier 1 — Simple bitwise (17 instructions each, 4 limbs)**:
+- `Evm64/Bitwise.lean` (per-limb helpers: `and_limb_spec`, etc.)
+- `Evm64/And.lean`, `Or.lean`, `Xor.lean`, `Not.lean`
+
+**Tier 2 — Arithmetic (30 instructions, carry chains)**:
+- `Evm64/Arithmetic.lean` (per-limb helpers: `add_limb_spec`, etc.)
+- `Evm64/Add.lean`, `Sub.lean`
+
+**Tier 3 — Comparisons (12-26 instructions, branch specs)**:
+- `Evm64/Comparison.lean` (per-limb + branch helpers)
+- `Evm64/Lt.lean`, `Gt.lean`, `Eq.lean`, `IsZero.lean`, `Slt.lean`, `Sgt.lean`
+
+**Tier 4 — Stack operations**:
+- `Evm64/StackOps.lean` (POP, PUSH0, DUP1-16, SWAP1-16)
+
+**Tier 5 — Complex operations (90+ instructions)**:
+- `Evm64/Shift.lean` + `ShiftSpec.lean`, `ShlSpec.lean`, `SarSpec.lean`
+- `Evm64/Byte.lean` + `ByteSpec.lean`
+- `Evm64/SignExtend.lean` + `SignExtendSpec.lean`
+- `Evm64/Multiply.lean` + `MultiplySpec.lean`
+
+### Key considerations
+
+- **Backwards compatibility**: The migration changes theorem signatures (removing
+  `code **` from P/Q, adding CodeReq parameter). Any file that calls these
+  theorems must be updated simultaneously.
+- **Performance benefit**: Removing N instrAt atoms from P/Q eliminates O(N)
+  atoms from the `xperm_hyp` permutation search, which is O(N²) overall.
+  For the 90-instruction SHR, this removes ~90 atoms from each permutation.
+- **`runBlock` tactic**: Already handles CodeReq in manual mode (tested on
+  Evm32). Auto mode also works since `@[spec_gen_rv64]` specs have proper
+  `CodeReq.singleton`.
+- **No new infrastructure needed**: All CodeReq lemmas, tactic support, and
+  composition rules already exist in Rv64/.
 
 ---
 
