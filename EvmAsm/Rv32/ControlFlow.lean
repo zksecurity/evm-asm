@@ -252,7 +252,65 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     cpsBranch base cr
       (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
       then_entry (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝)
-      else_entry (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) := sorry
+      else_entry (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) := by
+  intro _else_off _bne_instr _cr _then_entry _else_entry
+  -- Unfold cpsBranch: introduce frame R and machine state s
+  intro R hR s hcr hPR hpc; subst hpc
+  -- Extract instruction fetch from CodeReq
+  have hfetch : s.code s.pc = some (Instr.BNE rs1 rs2 _else_off) :=
+    (CodeReq.singleton_satisfiedBy s.pc _ s).mp hcr
+  -- Extract register values from the aAnd precondition
+  -- P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) is right-assoc: P ⋒ ((rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
+  have hPcomb := holdsFor_sepConj_elim_left hPR
+  have hPaAnd := aAnd_holdsFor_elim hPcomb   -- P.holdsFor s ∧ ((rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2)).holdsFor s
+  have hRegsAnd := aAnd_holdsFor_elim hPaAnd.2  -- (rs1 ↦ᵣ v1).holdsFor s ∧ (rs2 ↦ᵣ v2).holdsFor s
+  have hrs1 : s.getReg rs1 = v1 := (holdsFor_regIs _ _ s).mp hRegsAnd.1
+  have hrs2 : s.getReg rs2 = v2 := (holdsFor_regIs _ _ s).mp hRegsAnd.2
+  -- BNE execution step
+  have hstep' : step s = some (execInstrBr s (.BNE rs1 rs2 _else_off)) :=
+    step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
+  -- pcFree facts for preservation through setPC
+  have hPcFree : (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2)).pcFree :=
+    pcFree_aAnd hP (pcFree_aAnd (pcFree_regIs rs1 v1) (pcFree_regIs rs2 v2))
+  have hAllPcFree : ((P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2)) ** R).pcFree :=
+    pcFree_sepConj hPcFree hR
+  -- Case split on v1 = v2
+  by_cases heq : v1 = v2
+  · -- Not taken: v1 = v2, PC goes to base + 4 (then_entry)
+    have hexec' : execInstrBr s (.BNE rs1 rs2 _else_off) = s.setPC (s.pc + 4) := by
+      simp only [execInstrBr, hrs1, hrs2, heq, bne_iff_ne, ne_eq, not_true_eq_false, ite_false]
+    refine ⟨1, s.setPC (s.pc + 4), ?_, Or.inl ⟨rfl, ?_⟩⟩
+    · show (step s).bind (stepN 0) = some _
+      rw [hstep', hexec']; rfl
+    · -- Postcondition: add ⌜v1 = v2⌝ via aAnd, preserve through setPC
+      -- Goal: ((P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝) ** R).holdsFor (s.setPC (s.pc + 4))
+      -- which is ((P ⋒ ((rs1 ↦ᵣ v1) ⋒ ((rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝))) ** R).holdsFor ...
+      have hpreserved := holdsFor_pcFree_setPC hAllPcFree s (s.pc + 4) hPR
+      obtain ⟨hp, hcompat, h1, h2, hd, hunion, hP1, hR2⟩ := hpreserved
+      refine ⟨hp, hcompat, h1, h2, hd, hunion, ?_, hR2⟩
+      exact aAnd_mono_right
+        (fun h' hp' => aAnd_mono_right
+          (fun h'' hp'' => aAnd_pure_right_of_true heq h'' hp'') h' hp') h1 hP1
+  · -- Taken: v1 ≠ v2, PC goes to base + signExtend13 _else_off (else_entry)
+    have hexec' : execInstrBr s (.BNE rs1 rs2 _else_off) = s.setPC (s.pc + signExtend13 _else_off) := by
+      simp only [execInstrBr, hrs1, hrs2, bne_iff_ne, ne_eq, heq, not_false_eq_true, ite_true]
+    -- Show that base + signExtend13 _else_off = else_entry
+    have hoff : s.pc + signExtend13 _else_off = _else_entry := by
+      simp only [_else_off, _else_entry]
+      rw [signExtend13_ofNat_small _ ht_small]
+      rw [show BitVec.ofNat 32 (4 * (then_body.length + 1) + 4) =
+            (4 : Word) + BitVec.ofNat 32 (4 * then_body.length) + 4 from by bv_omega]
+      bv_omega
+    refine ⟨1, s.setPC (s.pc + signExtend13 _else_off), ?_, Or.inr ⟨hoff, ?_⟩⟩
+    · show (step s).bind (stepN 0) = some _
+      rw [hstep', hexec']; rfl
+    · have hpreserved := holdsFor_pcFree_setPC hAllPcFree s (s.pc + signExtend13 _else_off) hPR
+      obtain ⟨hp, hcompat, h1, h2, hd, hunion, hP1, hR2⟩ := hpreserved
+      refine ⟨hp, hcompat, h1, h2, hd, hunion, ?_, hR2⟩
+      exact aAnd_mono_right
+        (fun h' hp' => aAnd_mono_right
+          (fun h'' hp'' => aAnd_pure_right_of_true heq h'' hp'') h' hp') h1 hP1
+
 
 /-- Full CPS specification for if_eq: given that the then-body is correct
     under equality and the else-body is correct under inequality,
@@ -282,7 +340,48 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
       (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝) Q) →
     (cpsTriple else_entry else_exit cr
       (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) Q) →
-    cpsTriple base exit_ cr (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2)) Q := sorry
+    cpsTriple base exit_ cr (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2)) Q := by
+  intro prog exit_ then_entry then_exit else_entry else_exit else_off end_off bne_instr jal_instr cr
+  intro hthen helse
+  -- Step 1: Get the branch step (BNE dispatch) and extend to combined cr
+  have hbr := if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small
+  -- Extend branch from BNE singleton to combined cr
+  have hbr_ext : cpsBranch base cr
+      (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
+      then_entry (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝)
+      else_entry (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) := by
+    intro R hR s hcr hPR hpc
+    exact hbr R hR s (CodeReq.SatisfiedBy_mono s (CodeReq.union_mono_left _ _) hcr) hPR hpc
+  -- Step 2: Build JAL x0 spec: then_exit → exit_
+  have hjal := jal_x0_spec_gen end_off then_exit
+  -- Show then_exit + signExtend21 end_off = exit_
+  have hjal_target : then_exit + signExtend21 end_off = exit_ := by
+    simp only [then_exit, exit_, prog, end_off, if_eq_length]
+    rw [signExtend21_ofNat_small _ he_small]
+    bv_omega
+  rw [hjal_target] at hjal
+  -- Extend JAL to combined cr
+  have hjal_ext : cpsTriple then_exit exit_ cr empAssertion empAssertion :=
+    cpsTriple_extend_code
+      (fun a i h => CodeReq.mono_union_right
+        (CodeReq.Disjoint.singleton (by
+          simp only [then_exit]; bv_omega) _ _)
+        (fun a' i' h' => h') a i h) hjal
+  -- Frame JAL with Q: cpsTriple then_exit exit_ cr Q Q
+  have hjal_framed : cpsTriple then_exit exit_ cr Q Q := by
+    have h1 := cpsTriple_frame_left _ _ _ _ _ Q hQ hjal_ext
+    simp only [sepConj_emp_left', sepConj_emp_right'] at h1
+    exact h1
+  -- Step 3: Compose then-body with JAL
+  have hthen_full : cpsTriple then_entry exit_ cr
+      (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝) Q :=
+    cpsTriple_seq _ _ _ _ _ _ _ hthen hjal_framed
+  -- Step 4: Use cpsBranch_merge to combine
+  exact cpsBranch_merge base then_entry else_entry exit_ cr
+    (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
+    (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝)
+    (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)
+    Q hbr_ext hthen_full helse
 
 -- ============================================================================
 -- N-exit CPS specifications for if_eq
