@@ -253,7 +253,7 @@ partial def expandAbbrevsInAssertion (e : Expr) : MetaM Expr := do
 private def expandAbbrevsInCpsTriple (proof : Expr) : MetaM Expr := do
   let ty ← instantiateMVars (← inferType proof)
   let cleanTy := inlineLets ty
-  let some (entry, exit_, pre, post) ← parseCpsTriple? cleanTy | return proof
+  let some (entry, exit_, cr, pre, post) ← parseCpsTriple? cleanTy | return proof
   -- Expand abbrevs in pre/post while preserving sepConj tree structure
   let preNew ← expandAbbrevsInAssertion pre
   let postNew ← expandAbbrevsInAssertion post
@@ -261,7 +261,7 @@ private def expandAbbrevsInCpsTriple (proof : Expr) : MetaM Expr := do
   if preNew == pre && postNew == post then
     return proof
   -- Build new type with expanded assertions
-  let newTy := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, exit_, preNew, postNew]
+  let newTy := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, exit_, cr, preNew, postNew]
   -- Build proof that ty = newTy via definitional equality (abbrev expansion is definitional).
   -- Use @id (ty = newTy) (Eq.refl ty) to get a term with SYNTACTIC type ty = newTy.
   -- The kernel accepts Eq.refl ty : ty = newTy iff ty =def= newTy.
@@ -302,7 +302,7 @@ private def normalizeSpecAddresses (proof : Expr) : MetaM Expr := do
     Proves equality via `bv_omega` when needed. -/
 private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := do
   let accType ← inferType accExpr
-  let some (entry, exit₁, P, Q) ← parseCpsTriple? accType
+  let some (entry, exit₁, cr, P, Q) ← parseCpsTriple? accType
     | throwError "runBlock: not a cpsTriple"
   if ← withoutModifyingState (isDefEq exit₁ targetExit) then
     return accExpr
@@ -316,7 +316,7 @@ private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := d
   let eqProof ← instantiateMVars eqMVar
   let addrType ← inferType exit₁
   withLocalDeclD `x addrType fun x => do
-    let body := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, x, P, Q]
+    let body := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, x, cr, P, Q]
     let motive ← mkLambdaFVars #[x] body
     let congrProof ← mkCongrArg motive eqProof
     mkEqMP congrProof accExpr
@@ -326,7 +326,7 @@ private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := d
     returns : cpsTriple entry exit goalPre (Q1 ** Frame) where Frame = goalPre \ P1. -/
 private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
   let s1Type ← inferType s1Expr
-  let some (entry, exit_, preP1, postQ1) ← parseCpsTriple? s1Type
+  let some (entry, exit_, cr1, preP1, postQ1) ← parseCpsTriple? s1Type
     | throwError "runBlock: first spec is not a cpsTriple"
   -- Compute frame: goalPre atoms not in P1
   let frameAtoms ← computeFrame goalPre preP1
@@ -337,15 +337,15 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
     let prePermProof ← mkPermLambda goalPre preP1
     let postIdProof ← mkIdLambda postQ1
     return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
-      #[entry, exit_, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
+      #[entry, exit_, cr1, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
   -- Build frame expression
   let frameExpr ← buildSepConjChain frameAtoms
   -- Prove pcFree for the frame (direct proof construction, no tactic overhead)
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
-  -- Frame s1: cpsTriple entry exit (P1 ** F) (Q1 ** F)
+  -- Frame s1: cpsTriple entry exit cr1 (P1 ** F) (Q1 ** F)
   let s1Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frame_left)
-    #[entry, exit_, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
+    #[entry, exit_, cr1, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
   -- Permute precondition: goalPre → (P1 ** F)
   let p1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP1 frameExpr
   -- cpsTriple_consequence (P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple P Q) : cpsTriple P' Q'
@@ -354,7 +354,7 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
   let q1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ1 frameExpr
   let postIdProof ← mkIdLambda q1StarFrame
   return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
-    #[entry, exit_, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
+    #[entry, exit_, cr1, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
       prePermProof, postIdProof, s1Framed]
 
 /-- Core: compose an array of cpsTriple proofs with initial framing,
@@ -378,7 +378,7 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
   for i in [1:processedSpecs.size] do
     let nextSpec := processedSpecs[i]!
     let nextType ← inferType nextSpec
-    let some (nextEntry, _, _, _) ← parseCpsTriple? nextType
+    let some (nextEntry, _, _, _, _) ← parseCpsTriple? nextType
       | throwError "runBlock: argument {i + 1} is not a cpsTriple"
     acc ← normalizeAddr acc nextEntry
     acc ← seqFrameCore acc nextSpec
@@ -386,7 +386,7 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
 
 /-- Try to normalize a cpsTriple's exit to match the goal's exit address. -/
 private def normalizeToGoal (composed : Expr) (goalType : Expr) : MetaM Expr := do
-  if let some (_, goalExit, _, _) ← parseCpsTriple? goalType then
+  if let some (_, goalExit, _, _, _) ← parseCpsTriple? goalType then
     try return ← normalizeAddr composed goalExit catch _ => return composed
   return composed
 
@@ -604,7 +604,7 @@ private def tryInstantiateSpec (specName : Name) (instrExpr instrAddr : Expr)
   -- unfolding cpsTriple, which is itself a ∀ internally)
   let (params, _, body) ← forallMetaTelescope specType
   -- body should be cpsTriple entry exit pre post
-  let some (specEntry, _, specPre, _) ← parseCpsTriple? body
+  let some (specEntry, _, _, specPre, _) ← parseCpsTriple? body
     | throwError "tryInstantiateSpec: {specName} is not a cpsTriple"
   -- Step 1: Unify spec address with our instruction address
   unless ← isDefEq specEntry instrAddr do
@@ -704,7 +704,7 @@ private def resolveSpecForInstr (instrExpr instrAddr : Expr)
     Returns postcondition atoms ∪ (currentAtoms \ precondition atoms). -/
 private def advanceState (currentAtoms : List Expr) (specExpr : Expr) : MetaM (List Expr) := do
   let specType ← inferType specExpr
-  let some (_, _, specPre, specPost) ← parseCpsTriple? specType
+  let some (_, _, _, specPre, specPost) ← parseCpsTriple? specType
     | throwError "advanceState: not a cpsTriple"
   let preAtoms ← flattenSepConj specPre
   let postAtoms ← flattenSepConj specPost
@@ -787,7 +787,7 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
       goal.assign proof
       Pure.pure (newGoalMVar.mvarId!, normGoalType)
     else Pure.pure (goal, goalType)
-  let some (_, _, goalPre, _) ← parseCpsTriple? workingGoalType
+  let some (_, _, _, goalPre, _) ← parseCpsTriple? workingGoalType
     | throwError "runBlock: goal is not a `cpsTriple`.\n\
         Expected goal of the form: `cpsTriple entry exit pre post`."
   let composed ←
@@ -800,17 +800,17 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
       runBlockCore specExprs goalPre (normalizeAddrs := true)
   let finalResult ← normalizeToGoal composed workingGoalType
   -- Always permute postcondition to match goal (goal.assign doesn't type-check)
-  let some (gEntry, gExit, gPre, goalPost) ← parseCpsTriple? workingGoalType
+  let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? workingGoalType
     | throwError "runBlock: internal error — goal lost cpsTriple structure during permutation"
   let resultType ← inferType finalResult
-  let some (_, _, _, resultPost) ← parseCpsTriple? resultType
+  let some (_, _, _, _, resultPost) ← parseCpsTriple? resultType
     | throwError "runBlock: internal error — composed result is not a cpsTriple"
   -- cpsTriple_consequence (P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple P Q) : cpsTriple P' Q'
   -- P = gPre (what finalResult has), P' = gPre (same, identity), Q = resultPost, Q' = goalPost
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
   let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
-    #[gEntry, gExit, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
+    #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
   workingGoal.assign permuted
   replaceMainGoal []
 

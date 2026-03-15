@@ -33,13 +33,13 @@ open Lean Meta Elab Tactic
 
 namespace EvmAsm.Rv64.Tactics
 
-/-- Parse `cpsTriple entry exit_ P Q` returning the four arguments.
+/-- Parse `cpsTriple entry exit_ cr P Q` returning the five arguments.
     Does NOT whnf (which would unfold the def). -/
-def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr)) := do
+def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr × Expr)) := do
   let e ← instantiateMVars e
-  if e.isAppOfArity ``EvmAsm.Rv64.cpsTriple 4 then
+  if e.isAppOfArity ``EvmAsm.Rv64.cpsTriple 5 then
     let args := e.getAppArgs
-    return some (args[0]!, args[1]!, args[2]!, args[3]!)
+    return some (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   return none
 
 /-- Given Q1 (postcondition of h1) and P2 (precondition of h2),
@@ -143,15 +143,68 @@ def mkIdLambda (p : Expr) : MetaM Expr := do
     withLocalDeclD `hp (mkApp p h) fun hp =>
       mkLambdaFVars #[h, hp] hp
 
+/-- Build a proof of `CodeReq.Disjoint cr1 cr2` by structural recursion on cr1, cr2.
+    Handles the common cases:
+    - empty vs anything
+    - singleton vs singleton (uses bv_omega to prove addresses differ)
+    - union vs anything (recursive)
+    Falls back to the `decide` tactic for unknown structures. -/
+partial def buildDisjointProof (cr1 cr2 : Expr) : MetaM Expr := do
+  let cr1 ← whnfR cr1
+  let cr2 ← whnfR cr2
+  -- Case: cr1 = empty
+  if cr1 == mkConst ``EvmAsm.Rv64.CodeReq.empty then
+    return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.empty_left #[cr2]
+  -- Case: cr2 = empty
+  if cr2 == mkConst ``EvmAsm.Rv64.CodeReq.empty then
+    return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.empty_right #[cr1]
+  -- Case: cr1 = singleton a1 i1, cr2 = singleton a2 i2
+  if cr1.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 &&
+     cr2.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 then
+    let a1 := cr1.getAppArgs[0]!
+    let i1 := cr1.getAppArgs[1]!
+    let a2 := cr2.getAppArgs[0]!
+    let i2 := cr2.getAppArgs[1]!
+    -- Prove a1 ≠ a2 via bv_omega
+    let neqType := mkApp3 (mkConst ``Ne [levelOne]) (mkConst ``EvmAsm.Rv64.Addr) a1 a2
+    let neqMVar ← mkFreshExprMVar neqType
+    let stx ← `(tactic| bv_omega)
+    let _ ← Lean.Elab.runTactic neqMVar.mvarId! stx
+    let neqProof ← instantiateMVars neqMVar
+    return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.singleton #[neqProof, i1, i2]
+  -- Case: cr1 = union sub1 sub2 → need sub1.Disjoint cr2 and sub2.Disjoint cr2
+  if cr1.isAppOfArity ``EvmAsm.Rv64.CodeReq.union 2 then
+    let sub1 := cr1.getAppArgs[0]!
+    let sub2 := cr1.getAppArgs[1]!
+    let hd1 ← buildDisjointProof sub1 cr2
+    let hd2 ← buildDisjointProof sub2 cr2
+    return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.union_left #[hd1, hd2]
+  -- Case: cr2 = union sub1 sub2 → need cr1.Disjoint sub1 and cr1.Disjoint sub2
+  if cr2.isAppOfArity ``EvmAsm.Rv64.CodeReq.union 2 then
+    let sub1 := cr2.getAppArgs[0]!
+    let sub2 := cr2.getAppArgs[1]!
+    let hd1 ← buildDisjointProof cr1 sub1
+    let hd2 ← buildDisjointProof cr1 sub2
+    return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.union_right #[hd1, hd2]
+  -- Fallback: try native_decide
+  let disjType := mkApp2 (mkConst ``EvmAsm.Rv64.CodeReq.Disjoint) cr1 cr2
+  let disjMVar ← mkFreshExprMVar disjType
+  let stx ← `(tactic| intro a; simp [CodeReq.singleton, CodeReq.union, CodeReq.empty]; decide)
+  try
+    let _ ← Lean.Elab.runTactic disjMVar.mvarId! stx
+    return ← instantiateMVars disjMVar
+  catch _ =>
+    throwError "seqFrame: cannot prove CodeReq.Disjoint for:\n  cr1 = {cr1}\n  cr2 = {cr2}"
+
 /-- Core MetaM implementation of seqFrame.
     Returns the composed proof term. -/
 def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let h1Type ← inferType h1Expr
   let h2Type ← inferType h2Expr
 
-  let some (entry, mid1, preP, postQ1) ← parseCpsTriple? h1Type
+  let some (entry, mid1, cr1, preP, postQ1) ← parseCpsTriple? h1Type
     | throwError "seqFrame: first argument is not a cpsTriple"
-  let some (mid2, exit_, preP2, postQ2) ← parseCpsTriple? h2Type
+  let some (mid2, exit_, cr2, preP2, postQ2) ← parseCpsTriple? h2Type
     | throwError "seqFrame: second argument is not a cpsTriple"
 
   unless ← isDefEq mid1 mid2 do
@@ -165,18 +218,21 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
 
-  -- h2Framed : cpsTriple mid exit_ (P2 ** F) (Q2 ** F)
+  -- h2Framed : cpsTriple mid exit_ cr2 (P2 ** F) (Q2 ** F)
   let h2Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frame_left)
-    #[mid2, exit_, preP2, postQ2, frameExpr, pcFreeProof, h2Expr]
+    #[mid2, exit_, cr2, preP2, postQ2, frameExpr, pcFreeProof, h2Expr]
 
   -- Permutation proof: Q1 → (P2 ** F)
   let p2StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP2 frameExpr
   let hperm ← mkPermLambda postQ1 p2StarFrame
 
-  -- Compose: cpsTriple_seq_with_perm entry mid exit_ P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
+  -- Build disjointness proof for cr1, cr2
+  let hdProof ← buildDisjointProof cr1 cr2
+
+  -- Compose: cpsTriple_seq_with_perm entry mid exit_ cr1 cr2 hd P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
   let q2StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ2 frameExpr
   return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm)
-    #[entry, mid1, exit_, preP, postQ1, p2StarFrame, q2StarFrame,
+    #[entry, mid1, exit_, cr1, cr2, hdProof, preP, postQ1, p2StarFrame, q2StarFrame,
       hperm, h1Expr, h2Framed]
 
 /-- Try to assign `result` directly to `goal`, or with a postcondition permutation. -/
@@ -188,9 +244,9 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
     goal.assign result
     return
   -- Attempt 2: permute postcondition via cpsTriple_consequence
-  let some (gEntry, gExit, gPre, goalPost) ← parseCpsTriple? goalType
+  let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? goalType
     | throwError "seqFrame: goal is not a cpsTriple"
-  let some (rEntry, rExit, _, resultPost) ← parseCpsTriple? resultType
+  let some (rEntry, rExit, _rCr, _, resultPost) ← parseCpsTriple? resultType
     | throwError "seqFrame: result is not a cpsTriple (internal error)"
   unless ← isDefEq gEntry rEntry do
     throwError "seqFrame: entry addresses don't match goal"
@@ -199,7 +255,7 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
   let finalResult := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
-    #[gEntry, gExit, gPre, gPre, resultPost, goalPost, idPre, postPerm, result]
+    #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, result]
   goal.assign finalResult
 
 /-- `seqFrame h1 h2` composes two `cpsTriple` hypotheses with automatic framing.

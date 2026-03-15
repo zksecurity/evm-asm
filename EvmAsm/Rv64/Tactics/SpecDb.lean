@@ -99,15 +99,15 @@ private partial def extractInstrCtorFromType (type : Expr) : Option Name :=
   match type with
   | .forallE _ _ body _ => extractInstrCtorFromType body
   | _ =>
-    -- Try cpsTriple entry exit pre post (4 args)
-    if type.isAppOfArity `EvmAsm.Rv64.cpsTriple 4 then
+    -- Try cpsTriple entry exit cr pre post (5 args)
+    if type.isAppOfArity `EvmAsm.Rv64.cpsTriple 5 then
+      findInstrCtorInPre type.getAppArgs[3]!
+    -- Try cpsBranch addr cr pre takenTarget takenPost notTakenTarget notTakenPost (7 args)
+    else if type.isAppOfArity `EvmAsm.Rv64.cpsBranch 7 then
       findInstrCtorInPre type.getAppArgs[2]!
-    -- Try cpsBranch addr pre takenTarget takenPost notTakenTarget notTakenPost (6 args)
-    else if type.isAppOfArity `EvmAsm.Rv64.cpsBranch 6 then
-      findInstrCtorInPre type.getAppArgs[1]!
-    -- Try cpsHaltTriple addr pre post (3 args)
-    else if type.isAppOfArity `EvmAsm.Rv64.cpsHaltTriple 3 then
-      findInstrCtorInPre type.getAppArgs[1]!
+    -- Try cpsHaltTriple addr cr pre post (4 args)
+    else if type.isAppOfArity `EvmAsm.Rv64.cpsHaltTriple 4 then
+      findInstrCtorInPre type.getAppArgs[2]!
     else none
 
 -- ============================================================================

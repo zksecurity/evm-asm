@@ -13,6 +13,7 @@
 -/
 
 import EvmAsm.Rv32.Basic
+import EvmAsm.Rv32.Execution
 
 namespace EvmAsm
 
@@ -1946,6 +1947,135 @@ theorem pcFree_progAt (base : Addr) (prog : List Instr) : (progAt base prog).pcF
   pcFree_programAt (progIndexed base prog)
 
 instance : Assertion.PCFree (progAt base prog) := ⟨pcFree_progAt base prog⟩
+
+-- ============================================================================
+-- CodeReq: persistent code side-condition (for issue #35)
+-- ============================================================================
+
+/-- A code requirement maps addresses to optional instructions.
+    Used as a side-condition in cpsTriple instead of linear instrAt assertions.
+    Unlike instrAt (which is linear), CodeReq is persistent/checked non-consumptively. -/
+def CodeReq := Addr → Option Instr
+
+namespace CodeReq
+
+/-- Empty code requirement (satisfies everything). -/
+def empty : CodeReq := fun _ => none
+
+/-- Singleton code requirement: exactly one instruction at one address. -/
+def singleton (a : Addr) (i : Instr) : CodeReq :=
+  fun a' => if a' == a then some i else none
+
+/-- Union of two code requirements (left-biased). -/
+def union (cr1 cr2 : CodeReq) : CodeReq :=
+  fun a => match cr1 a with | some i => some i | none => cr2 a
+
+/-- A CodeReq is satisfied by a machine state if all required instructions are present. -/
+def SatisfiedBy (cr : CodeReq) (s : MachineState) : Prop :=
+  ∀ a i, cr a = some i → s.code a = some i
+
+/-- Build a CodeReq from a list of address-instruction pairs. -/
+def ofIndexed (pairs : List (Addr × Instr)) : CodeReq :=
+  pairs.foldl (fun cr (ai : Addr × Instr) => cr.union (singleton ai.1 ai.2)) empty
+
+/-- Build a CodeReq from a program at a base address. -/
+def ofProg (base : Addr) (prog : List Instr) : CodeReq :=
+  ofIndexed (progIndexed base prog)
+
+end CodeReq
+
+-- ============================================================================
+-- CodeReq lemmas
+-- ============================================================================
+
+theorem CodeReq.singleton_get (a : Addr) (i : Instr) :
+    CodeReq.singleton a i a = some i := by
+  simp [CodeReq.singleton]
+
+/-- Two CodeReqs are disjoint: they never both have a requirement at the same address. -/
+def CodeReq.Disjoint (cr1 cr2 : CodeReq) : Prop :=
+  ∀ a, cr1 a = none ∨ cr2 a = none
+
+/-- Singleton CodeReqs at different addresses are disjoint. -/
+theorem CodeReq.Disjoint.singleton {a1 a2 : Addr} (h : a1 ≠ a2)
+    (i1 i2 : Instr) : CodeReq.Disjoint (CodeReq.singleton a1 i1) (CodeReq.singleton a2 i2) := by
+  intro a
+  simp only [CodeReq.singleton]
+  cases hb1 : a == a1 with
+  | false => left; simp
+  | true =>
+    right
+    rw [beq_iff_eq] at hb1
+    cases hb2 : a == a2 with
+    | false => simp
+    | true =>
+      rw [beq_iff_eq] at hb2
+      exact absurd (hb1 ▸ hb2) h
+
+/-- The union of two disjoint CodeReqs is satisfied iff both are satisfied.
+    Disjointness is required for soundness: if cr1 and cr2 map the same address
+    to different instructions, the union (left-biased) would not imply cr2. -/
+theorem CodeReq.union_satisfiedBy (cr1 cr2 : CodeReq) (s : MachineState)
+    (hd : cr1.Disjoint cr2) :
+    (cr1.union cr2).SatisfiedBy s ↔ cr1.SatisfiedBy s ∧ cr2.SatisfiedBy s := by
+  simp only [CodeReq.SatisfiedBy, CodeReq.union]
+  constructor
+  · intro h
+    refine ⟨fun a i h1 => ?_, fun a i h2 => ?_⟩
+    · exact h a i (by simp [h1])
+    · rcases hd a with h1 | h2'
+      · exact h a i (by simp [h1, h2])
+      · simp [h2'] at h2
+  · intro ⟨h1, h2⟩ a i hcr
+    cases ha : cr1 a with
+    | some j =>
+      simp only [ha] at hcr
+      have hji : j = i := Option.some.inj hcr
+      rw [← hji]
+      exact h1 a j ha
+    | none =>
+      simp [ha] at hcr
+      exact h2 a i hcr
+
+/-- The empty CodeReq is satisfied by every state. -/
+theorem CodeReq.empty_satisfiedBy (s : MachineState) : CodeReq.empty.SatisfiedBy s :=
+  fun _ _ h => by simp [CodeReq.empty] at h
+
+/-- A singleton CodeReq is satisfied iff the state has the instruction at that address. -/
+theorem CodeReq.singleton_satisfiedBy (a : Addr) (i : Instr) (s : MachineState) :
+    (CodeReq.singleton a i).SatisfiedBy s ↔ s.code a = some i := by
+  constructor
+  · intro h; exact h a i (by simp [CodeReq.singleton])
+  · intro h a' i' hcr
+    simp only [CodeReq.singleton] at hcr
+    -- hcr : (if a' == a then some i else none) = some i'
+    cases heq : (a' == a)
+    · simp [heq] at hcr
+    · simp [heq] at hcr
+      rw [beq_iff_eq] at heq
+      exact heq ▸ hcr ▸ h
+
+/-- Step preserves code (single step). -/
+theorem step_code_preserved (s s' : MachineState) (h : step s = some s') :
+    s'.code = s.code := code_step h
+
+/-- stepN preserves code (multiple steps). -/
+theorem stepN_code_preserved (k : Nat) (s s' : MachineState) (h : stepN k s = some s') :
+    s'.code = s.code := code_stepN h
+
+/-- CodeReq.SatisfiedBy is preserved by stepN. -/
+theorem CodeReq.SatisfiedBy_preserved (cr : CodeReq) (k : Nat) (s s' : MachineState)
+    (h : stepN k s = some s') (hcr : cr.SatisfiedBy s) : cr.SatisfiedBy s' := by
+  intro a i hcri
+  have hcode : s'.code = s.code := stepN_code_preserved k s s' h
+  rw [hcode]
+  exact hcr a i hcri
+
+/-- Monotonicity: if cr2 subsumes cr1, any state satisfying cr2 also satisfies cr1. -/
+theorem CodeReq.SatisfiedBy_mono {cr1 cr2 : CodeReq} (s : MachineState)
+    (hmono : ∀ a i, cr1 a = some i → cr2 a = some i)
+    (h : cr2.SatisfiedBy s) : cr1.SatisfiedBy s :=
+  fun a i hcr1 => h a i (hmono a i hcr1)
 
 -- ============================================================================
 -- Assertion-level equalities for AC normalization of sepConj

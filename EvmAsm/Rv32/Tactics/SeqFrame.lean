@@ -33,13 +33,13 @@ open Lean Meta Elab Tactic
 
 namespace EvmAsm.Tactics
 
-/-- Parse `cpsTriple entry exit_ P Q` returning the four arguments.
+/-- Parse `cpsTriple entry exit_ cr P Q` returning the five arguments.
     Does NOT whnf (which would unfold the def). -/
-def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr)) := do
+def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr × Expr)) := do
   let e ← instantiateMVars e
-  if e.isAppOfArity ``EvmAsm.cpsTriple 4 then
+  if e.isAppOfArity ``EvmAsm.cpsTriple 5 then
     let args := e.getAppArgs
-    return some (args[0]!, args[1]!, args[2]!, args[3]!)
+    return some (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   return none
 
 /-- Given Q1 (postcondition of h1) and P2 (precondition of h2),
@@ -141,19 +141,60 @@ def mkIdLambda (p : Expr) : MetaM Expr := do
     withLocalDeclD `hp (mkApp p h) fun hp =>
       mkLambdaFVars #[h, hp] hp
 
+/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` for CodeReq extension.
+    For concrete CodeReq expressions, uses a tactic proof. -/
+private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
+  -- Build type: ∀ a i, oldCr a = some i → newCr a = some i
+  let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+  let instrType := mkConst ``EvmAsm.Instr
+  let propType ← withLocalDeclD `a bv32 fun a => do
+    withLocalDeclD `i instrType fun i => do
+      let oldCrA := mkApp oldCr a
+      let newCrA := mkApp newCr a
+      let someI ← mkAppOptM ``some #[instrType, i]
+      let ant ← mkEq oldCrA someI
+      let cons ← mkEq newCrA someI
+      let body ← mkArrow ant cons
+      let body' ← mkForallFVars #[i] body
+      mkForallFVars #[a] body'
+  -- Build proof via tactic: intro a i h; simp only [CodeReq.singleton, CodeReq.union] at *; ...
+  let mvar ← mkFreshExprMVar propType
+  try
+    let stx ← `(tactic| intro a i h; simp only [EvmAsm.CodeReq.singleton, EvmAsm.CodeReq.union] at *; split <;> try simp_all)
+    let _ ← Lean.Elab.runTactic mvar.mvarId! stx
+    return ← instantiateMVars mvar
+  catch _ =>
+    -- If tactic fails, try decide (for fully concrete CodeReq)
+    try return ← mkDecideProof propType
+    catch _ => throwError "seqFrame: cannot build monotonicity proof for CodeReq extension"
+
+/-- Extend a spec's CodeReq from oldCr to newCr using `cpsTriple_extend_code`. -/
+private def extendSpecCr (spec : Expr) (oldCr newCr : Expr) : MetaM Expr := do
+  if ← withoutModifyingState (isDefEq oldCr newCr) then
+    return spec
+  let monoProof ← buildMonoProof oldCr newCr
+  mkAppM ``EvmAsm.cpsTriple_extend_code #[monoProof, spec]
+
 /-- Core MetaM implementation of seqFrame.
     Returns the composed proof term. -/
 def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let h1Type ← inferType h1Expr
   let h2Type ← inferType h2Expr
 
-  let some (entry, mid1, preP, postQ1) ← parseCpsTriple? h1Type
+  let some (entry, mid1, cr1, preP, postQ1) ← parseCpsTriple? h1Type
     | throwError "seqFrame: first argument is not a cpsTriple"
-  let some (mid2, exit_, preP2, postQ2) ← parseCpsTriple? h2Type
+  let some (mid2, exit_, cr2, preP2, postQ2) ← parseCpsTriple? h2Type
     | throwError "seqFrame: second argument is not a cpsTriple"
 
   unless ← isDefEq mid1 mid2 do
     throwError "seqFrame: midpoints don't match:\n  h1 exit: {mid1}\n  h2 entry: {mid2}"
+
+  -- Compute union cr (cr1.union cr2)
+  let combinedCr ← mkAppM ``EvmAsm.CodeReq.union #[cr1, cr2]
+
+  -- Extend h1 and h2 to the combined cr
+  let h1Extended ← extendSpecCr h1Expr cr1 combinedCr
+  let h2Extended ← extendSpecCr h2Expr cr2 combinedCr
 
   -- Find frame: Q1 atoms not matched by P2
   let frameAtoms ← computeFrame postQ1 preP2
@@ -163,19 +204,19 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr := do
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
 
-  -- h2Framed : cpsTriple mid exit_ (P2 ** F) (Q2 ** F)
+  -- h2Framed : cpsTriple mid exit_ combinedCr (P2 ** F) (Q2 ** F)
   let h2Framed := mkAppN (mkConst ``EvmAsm.cpsTriple_frame_left)
-    #[mid2, exit_, preP2, postQ2, frameExpr, pcFreeProof, h2Expr]
+    #[mid2, exit_, combinedCr, preP2, postQ2, frameExpr, pcFreeProof, h2Extended]
 
   -- Permutation proof: Q1 → (P2 ** F)
   let p2StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) preP2 frameExpr
   let hperm ← mkPermLambda postQ1 p2StarFrame
 
-  -- Compose: cpsTriple_seq_with_perm entry mid exit_ P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
+  -- Compose: cpsTriple_seq_with_perm entry mid exit_ combinedCr P Q1 (P2**F) (Q2**F) hperm h1 h2Framed
   let q2StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) postQ2 frameExpr
   return mkAppN (mkConst ``EvmAsm.cpsTriple_seq_with_perm)
-    #[entry, mid1, exit_, preP, postQ1, p2StarFrame, q2StarFrame,
-      hperm, h1Expr, h2Framed]
+    #[entry, mid1, exit_, combinedCr, preP, postQ1, p2StarFrame, q2StarFrame,
+      hperm, h1Extended, h2Framed]
 
 /-- Try to assign `result` directly to `goal`, or with a postcondition permutation. -/
 def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
@@ -186,9 +227,9 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
     goal.assign result
     return
   -- Attempt 2: permute postcondition via cpsTriple_consequence
-  let some (gEntry, gExit, gPre, goalPost) ← parseCpsTriple? goalType
+  let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? goalType
     | throwError "seqFrame: goal is not a cpsTriple"
-  let some (rEntry, rExit, _, resultPost) ← parseCpsTriple? resultType
+  let some (rEntry, rExit, _, _, resultPost) ← parseCpsTriple? resultType
     | throwError "seqFrame: result is not a cpsTriple (internal error)"
   unless ← isDefEq gEntry rEntry do
     throwError "seqFrame: entry addresses don't match goal"
@@ -197,7 +238,7 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
   let finalResult := mkAppN (mkConst ``EvmAsm.cpsTriple_consequence)
-    #[gEntry, gExit, gPre, gPre, resultPost, goalPost, idPre, postPerm, result]
+    #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, result]
   goal.assign finalResult
 
 /-- `seqFrame h1 h2` composes two `cpsTriple` hypotheses with automatic framing.

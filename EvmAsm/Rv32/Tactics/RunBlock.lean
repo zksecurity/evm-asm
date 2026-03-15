@@ -83,6 +83,43 @@ private partial def inlineLets : Expr → Expr
     else e
 
 -- ============================================================================
+-- Section: CodeReq Extension (from SeqFrame)
+-- ============================================================================
+
+/-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` for CodeReq extension.
+    For concrete CodeReq expressions, uses a tactic proof. -/
+private def buildMonoProof (oldCr newCr : Expr) : MetaM Expr := do
+  -- Build type: ∀ a i, oldCr a = some i → newCr a = some i
+  let bv32 := mkApp (mkConst ``BitVec) (mkNatLit 32)
+  let instrType := mkConst ``EvmAsm.Instr
+  let propType ← withLocalDeclD `a bv32 fun a => do
+    withLocalDeclD `i instrType fun i => do
+      let oldCrA := mkApp oldCr a
+      let newCrA := mkApp newCr a
+      let someI ← mkAppOptM ``some #[instrType, i]
+      let ant ← mkEq oldCrA someI
+      let cons ← mkEq newCrA someI
+      let body ← mkArrow ant cons
+      let body' ← mkForallFVars #[i] body
+      mkForallFVars #[a] body'
+  -- Build proof via tactic: unfold then simp_all with bv_omega for address inequalities
+  let mvar ← mkFreshExprMVar propType
+  let saved ← saveState
+  try
+    let stx ← `(tactic| intro a i h; simp only [EvmAsm.CodeReq.singleton, EvmAsm.CodeReq.union] at *; (first | simp_all | (split at h <;> simp_all <;> bv_omega)))
+    let _ ← Lean.Elab.runTactic mvar.mvarId! stx
+    return ← instantiateMVars mvar
+  catch _ => restoreState saved
+  throwError "runBlock: cannot build monotonicity proof for CodeReq extension"
+
+/-- Extend a spec's CodeReq from oldCr to newCr using `cpsTriple_extend_code`. -/
+private def extendSpecCr (spec : Expr) (oldCr newCr : Expr) : MetaM Expr := do
+  if ← withoutModifyingState (isDefEq oldCr newCr) then
+    return spec
+  let monoProof ← buildMonoProof oldCr newCr
+  mkAppM ``EvmAsm.cpsTriple_extend_code #[monoProof, spec]
+
+-- ============================================================================
 -- Section: Address Normalization for Sub-Spec Composition
 -- ============================================================================
 
@@ -232,7 +269,7 @@ private def normalizeSpecAddresses (proof : Expr) : MetaM Expr := do
     Proves equality via `bv_omega` when needed. -/
 private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := do
   let accType ← inferType accExpr
-  let some (entry, exit₁, P, Q) ← parseCpsTriple? accType
+  let some (entry, exit₁, cr, P, Q) ← parseCpsTriple? accType
     | throwError "runBlock: not a cpsTriple"
   if ← withoutModifyingState (isDefEq exit₁ targetExit) then
     return accExpr
@@ -246,52 +283,52 @@ private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := d
   let eqProof ← instantiateMVars eqMVar
   let addrType ← inferType exit₁
   withLocalDeclD `x addrType fun x => do
-    let body := mkAppN (mkConst ``EvmAsm.cpsTriple) #[entry, x, P, Q]
+    let body := mkAppN (mkConst ``EvmAsm.cpsTriple) #[entry, x, cr, P, Q]
     let motive ← mkLambdaFVars #[x] body
     let congrProof ← mkCongrArg motive eqProof
     mkEqMP congrProof accExpr
 
 /-- Frame the first spec against the goal precondition and permute.
-    Given s1 : cpsTriple entry exit P1 Q1 and goalPre (the goal's precondition),
-    returns : cpsTriple entry exit goalPre (Q1 ** Frame) where Frame = goalPre \ P1. -/
+    Given s1 : cpsTriple entry exit cr P1 Q1 and goalPre (the goal's precondition),
+    returns : cpsTriple entry exit cr goalPre (Q1 ** Frame) where Frame = goalPre \ P1. -/
 private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr := do
   let s1Type ← inferType s1Expr
-  let some (entry, exit_, preP1, postQ1) ← parseCpsTriple? s1Type
+  let some (entry, exit_, cr, preP1, postQ1) ← parseCpsTriple? s1Type
     | throwError "runBlock: first spec is not a cpsTriple"
   -- Compute frame: goalPre atoms not in P1
   let frameAtoms ← computeFrame goalPre preP1
   if frameAtoms.isEmpty then
     -- No frame needed, just permute precondition
-    -- cpsTriple_consequence (P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple P Q) : cpsTriple P' Q'
+    -- cpsTriple_consequence (entry exit_ cr P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple entry exit_ cr P Q) : cpsTriple entry exit_ cr P' Q'
     -- P = preP1 (from s1), P' = goalPre (what we want), hpre : goalPre → preP1
     let prePermProof ← mkPermLambda goalPre preP1
     let postIdProof ← mkIdLambda postQ1
     return mkAppN (mkConst ``EvmAsm.cpsTriple_consequence)
-      #[entry, exit_, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
+      #[entry, exit_, cr, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
   -- Build frame expression
   let frameExpr ← buildSepConjChain frameAtoms
   -- Prove pcFree for the frame (direct proof construction, no tactic overhead)
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
-  -- Frame s1: cpsTriple entry exit (P1 ** F) (Q1 ** F)
+  -- Frame s1: cpsTriple entry exit_ cr (P1 ** F) (Q1 ** F)
   let s1Framed := mkAppN (mkConst ``EvmAsm.cpsTriple_frame_left)
-    #[entry, exit_, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
+    #[entry, exit_, cr, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
   -- Permute precondition: goalPre → (P1 ** F)
   let p1StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) preP1 frameExpr
-  -- cpsTriple_consequence (P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple P Q) : cpsTriple P' Q'
+  -- cpsTriple_consequence (entry exit_ cr P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple entry exit_ cr P Q) : cpsTriple entry exit_ cr P' Q'
   -- P = p1StarFrame (from s1Framed), P' = goalPre, hpre : goalPre → p1StarFrame
   let prePermProof ← mkPermLambda goalPre p1StarFrame
   let q1StarFrame := mkApp2 (mkConst ``EvmAsm.sepConj) postQ1 frameExpr
   let postIdProof ← mkIdLambda q1StarFrame
   return mkAppN (mkConst ``EvmAsm.cpsTriple_consequence)
-    #[entry, exit_, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
+    #[entry, exit_, cr, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
       prePermProof, postIdProof, s1Framed]
 
 /-- Core: compose an array of cpsTriple proofs with initial framing,
     address normalization, and seqFrame chaining.
     When `normalizeAddrs` is true (manual mode), applies signExtend12 reduction
     and address arithmetic flattening to each spec before composing. -/
-private def runBlockCore (specs : Array Expr) (goalPre : Expr)
+private def runBlockCore (specs : Array Expr) (goalPre : Expr) (goalCr : Expr)
     (normalizeAddrs : Bool := false) : MetaM Expr := do
   if specs.size == 0 then
     throwError "runBlock: no specs provided.\n\
@@ -302,13 +339,19 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
       try normalizeSpecAddresses spec
       catch _ => Pure.pure spec
   else Pure.pure specs
+  -- Extend each spec to goalCr
+  let extendToGoal := fun spec => do
+    let specType ← inferType spec
+    let some (_, _, specCr, _, _) ← parseCpsTriple? specType | throwError "runBlockCore: not cpsTriple"
+    extendSpecCr spec specCr goalCr
+  let extendedSpecs ← processedSpecs.mapM extendToGoal
   -- Frame the first spec against the goal precondition
-  let mut acc ← frameFirstSpec processedSpecs[0]! goalPre
+  let mut acc ← frameFirstSpec extendedSpecs[0]! goalPre
   -- Chain remaining specs via seqFrame with address normalization
-  for i in [1:processedSpecs.size] do
-    let nextSpec := processedSpecs[i]!
+  for i in [1:extendedSpecs.size] do
+    let nextSpec := extendedSpecs[i]!
     let nextType ← inferType nextSpec
-    let some (nextEntry, _, _, _) ← parseCpsTriple? nextType
+    let some (nextEntry, _, _, _, _) ← parseCpsTriple? nextType
       | throwError "runBlock: argument {i + 1} is not a cpsTriple"
     acc ← normalizeAddr acc nextEntry
     acc ← seqFrameCore acc nextSpec
@@ -316,7 +359,7 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
 
 /-- Try to normalize a cpsTriple's exit to match the goal's exit address. -/
 private def normalizeToGoal (composed : Expr) (goalType : Expr) : MetaM Expr := do
-  if let some (_, goalExit, _, _) ← parseCpsTriple? goalType then
+  if let some (_, goalExit, _, _, _) ← parseCpsTriple? goalType then
     try return ← normalizeAddr composed goalExit catch _ => return composed
   return composed
 
@@ -489,21 +532,21 @@ private def tryInstantiateSpec (specName : Name) (instrExpr instrAddr : Expr)
   -- Create metavariable telescope for spec parameters (non-reducing to avoid
   -- unfolding cpsTriple, which is itself a ∀ internally)
   let (params, _, body) ← forallMetaTelescope specType
-  -- body should be cpsTriple entry exit pre post
-  let some (specEntry, _, specPre, _) ← parseCpsTriple? body
+  -- body should be cpsTriple entry exit_ cr pre post
+  let some (specEntry, _, specCr, specPre, _) ← parseCpsTriple? body
     | throwError "tryInstantiateSpec: {specName} is not a cpsTriple"
   -- Step 1: Unify spec address with our instruction address
   unless ← isDefEq specEntry instrAddr do
     throwError "address mismatch"
-  -- Step 2: Flatten spec precondition and match atoms
+  -- Step 1b: Match instruction in specCr (should be CodeReq.singleton)
+  let specCrWhnf ← whnf specCr
+  if specCrWhnf.isAppOfArity ``EvmAsm.CodeReq.singleton 2 then
+    let specInstr := specCrWhnf.getAppArgs[1]!
+    unless ← isDefEq specInstr instrExpr do
+      throwError "instruction mismatch in cr"
+  -- Step 2: Flatten spec precondition and match atoms (no instrAt anymore)
   let specAtoms ← flattenSepConj specPre
-  -- Step 2a: Unify the instrAt atom
-  for atom in specAtoms do
-    if atom.isAppOfArity `EvmAsm.instrAt 2 then
-      let specInstr := atom.getAppArgs[1]!
-      unless ← isDefEq specInstr instrExpr do
-        throwError "instruction mismatch"
-  -- Step 2b: Unify regIs atoms
+  -- Step 2a: Unify regIs atoms
   let stateRegAtoms := stateAtoms.filter (·.isAppOfArity `EvmAsm.regIs 2)
   for atom in specAtoms do
     if atom.isAppOfArity `EvmAsm.regIs 2 then
@@ -520,7 +563,7 @@ private def tryInstantiateSpec (specName : Name) (instrExpr instrAddr : Expr)
           break
       unless found do
         throwError "register {specReg} not found in state"
-  -- Step 2c: Unify memIs atoms
+  -- Step 2b: Unify memIs atoms
   let stateMemAtoms := stateAtoms.filter (·.isAppOfArity `EvmAsm.memIs 2)
   for atom in specAtoms do
     if atom.isAppOfArity `EvmAsm.memIs 2 then
@@ -590,7 +633,7 @@ private def resolveSpecForInstr (instrExpr instrAddr : Expr)
     Returns postcondition atoms ∪ (currentAtoms \ precondition atoms). -/
 private def advanceState (currentAtoms : List Expr) (specExpr : Expr) : MetaM (List Expr) := do
   let specType ← inferType specExpr
-  let some (_, _, specPre, specPost) ← parseCpsTriple? specType
+  let some (_, _, _, specPre, specPost) ← parseCpsTriple? specType
     | throwError "advanceState: not a cpsTriple"
   let preAtoms ← flattenSepConj specPre
   let postAtoms ← flattenSepConj specPost
@@ -605,24 +648,41 @@ private def advanceState (currentAtoms : List Expr) (specExpr : Expr) : MetaM (L
   let frame := available.filter (·.2) |>.map (·.1) |>.toList
   return postAtoms ++ frame
 
-/-- Extract instruction atoms `(addr, instrExpr)` from assertion atoms,
-    preserving the order they appear in the precondition. -/
+/-- Extract instruction atoms `(addr, instrExpr)` from assertion atoms (legacy). -/
 private def extractInstrAtoms (atoms : List Expr) : List (Expr × Expr) :=
   atoms.filterMap fun atom =>
     if atom.isAppOfArity `EvmAsm.instrAt 2 then
       some (atom.getAppArgs[0]!, atom.getAppArgs[1]!)
     else none
 
-/-- Auto-resolve all specs from the precondition and compose them.
-    Extracts instruction atoms, resolves each spec using the current state,
+/-- Extract instruction entries `(addr, instrExpr)` from a CodeReq expression.
+    Handles: CodeReq.singleton addr instr, CodeReq.union cr1 cr2 (recursive),
+    CodeReq.empty (returns []). -/
+private partial def extractCrEntries (cr : Expr) : List (Expr × Expr) :=
+  if cr.isAppOfArity ``EvmAsm.CodeReq.singleton 2 then
+    let args := cr.getAppArgs
+    [(args[0]!, args[1]!)]
+  else if cr.isAppOfArity ``EvmAsm.CodeReq.union 2 then
+    let args := cr.getAppArgs
+    extractCrEntries args[0]! ++ extractCrEntries args[1]!
+  else []
+
+/-- Auto-resolve all specs from the CodeReq and compose them.
+    Extracts instruction entries from cr, resolves each spec using the current state,
     and advances the state between instructions. -/
-private def autoResolveAndCompose (goalPre : Expr) : MetaM Expr := do
-  let atoms ← flattenSepConj goalPre
-  let instrAtoms := extractInstrAtoms atoms
+private def autoResolveAndCompose (goalPre : Expr) (goalCr : Expr) : MetaM Expr := do
+  -- Try new-style: extract instructions from CodeReq (cr)
+  let mut instrAtoms := extractCrEntries goalCr
+  -- Fallback: if CodeReq is empty/unknown, try legacy instrAt in precondition
   if instrAtoms.isEmpty then
-    throwError "runBlock: no `instrAt` (↦ᵢ) atoms found in the goal's precondition.\n\
-        The goal must be a `cpsTriple` whose precondition contains instruction atoms."
-  -- Non-instruction atoms form the initial state
+    let atoms ← flattenSepConj goalPre
+    instrAtoms := extractInstrAtoms atoms
+  if instrAtoms.isEmpty then
+    throwError "runBlock: no instructions found in the goal's CodeReq or precondition.\n\
+        The goal must be a `cpsTriple` whose CodeReq contains `CodeReq.singleton` entries,\n\
+        or whose precondition contains `instrAt` (↦ᵢ) atoms."
+  -- All precondition atoms are state atoms (instrAt atoms in legacy mode are also kept)
+  let atoms ← flattenSepConj goalPre
   let stateAtoms := atoms.filter fun a => !a.isAppOfArity `EvmAsm.instrAt 2
   trace[runBlock] "auto mode: {instrAtoms.length} instruction(s), {stateAtoms.length} state atom(s)"
   let mut currentState := stateAtoms
@@ -640,7 +700,7 @@ private def autoResolveAndCompose (goalPre : Expr) : MetaM Expr := do
       let eMsg ← e.toMessageData.format
       throwError "{eMsg}\n  Progress: resolved {resolvedCount} of {totalCount} instruction(s) before failure."
   trace[runBlock] "all {specs.size} spec(s) resolved, composing..."
-  runBlockCore specs goalPre
+  runBlockCore specs goalPre goalCr
 
 /-- Verify a basic block by composing instruction specs with automatic framing.
 
@@ -654,7 +714,7 @@ private def autoResolveAndCompose (goalPre : Expr) : MetaM Expr := do
     runBlock s1 s2 s3
     ```
 
-    The goal must be a `cpsTriple entry exit pre post`. In auto mode, the
+    The goal must be a `cpsTriple entry exit cr pre post`. In auto mode, the
     precondition must contain `instrAt` (`↦ᵢ`) atoms for each instruction.
 
     **Debugging**: use `set_option trace.runBlock true` to see resolution details. -/
@@ -662,30 +722,30 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
   let goal ← getMainGoal
   -- Strip leading let bindings and metadata from goal type
   let goalType := inlineLets (← instantiateMVars (← goal.getType))
-  let some (_, _, goalPre, _) ← parseCpsTriple? goalType
+  let some (_, _, goalCr, goalPre, _) ← parseCpsTriple? goalType
     | throwError "runBlock: goal is not a `cpsTriple`.\n\
-        Expected goal of the form: `cpsTriple entry exit pre post`."
+        Expected goal of the form: `cpsTriple entry exit cr pre post`."
   let composed ←
     if specs.isEmpty then
       -- Auto mode: resolve specs from precondition
-      autoResolveAndCompose goalPre
+      autoResolveAndCompose goalPre goalCr
     else
       -- Manual mode: use provided specs
       let specExprs ← specs.mapM fun s => elabTerm s none
-      runBlockCore specExprs goalPre (normalizeAddrs := true)
+      runBlockCore specExprs goalPre goalCr (normalizeAddrs := true)
   let finalResult ← normalizeToGoal composed goalType
   -- Always permute postcondition to match goal (goal.assign doesn't type-check)
-  let some (gEntry, gExit, gPre, goalPost) ← parseCpsTriple? goalType
+  let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? goalType
     | throwError "runBlock: internal error — goal lost cpsTriple structure during permutation"
   let resultType ← inferType finalResult
-  let some (_, _, _, resultPost) ← parseCpsTriple? resultType
+  let some (_, _, _, _, resultPost) ← parseCpsTriple? resultType
     | throwError "runBlock: internal error — composed result is not a cpsTriple"
-  -- cpsTriple_consequence (P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple P Q) : cpsTriple P' Q'
+  -- cpsTriple_consequence (entry exit_ cr P P' Q Q') (hpre : P' → P) (hpost : Q → Q') (h : cpsTriple entry exit_ cr P Q) : cpsTriple entry exit_ cr P' Q'
   -- P = gPre (what finalResult has), P' = gPre (same, identity), Q = resultPost, Q' = goalPost
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
   let permuted := mkAppN (mkConst ``EvmAsm.cpsTriple_consequence)
-    #[gEntry, gExit, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
+    #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
   goal.assign permuted
   replaceMainGoal []
 
