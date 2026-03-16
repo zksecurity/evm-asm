@@ -219,8 +219,8 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
 @[spec_gen_rv64] theorem jal_x0_spec_gen (offset : BitVec 21) (addr : Addr) :
     cpsTriple addr (addr + signExtend21 offset)
       (CodeReq.singleton addr (.JAL .x0 offset))
-      (addr ↦ᵢ .JAL .x0 offset)
-      (addr ↦ᵢ .JAL .x0 offset) :=
+      empAssertion
+      empAssertion :=
   generic_nop_spec (.JAL .x0 offset) addr (addr + signExtend21 offset)
     (by intro s hpc; simp [execInstrBr, MachineState.setReg, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl))
@@ -235,13 +235,13 @@ theorem execInstrBr_jalr_x0 (s : MachineState) (rs1 : Reg) (off : BitVec 12) :
     (offset : BitVec 12) (addr : Addr) :
     cpsTriple addr ((v + signExtend12 offset) &&& ~~~1)
       (CodeReq.singleton addr (.JALR .x0 rs1 offset))
-      ((addr ↦ᵢ .JALR .x0 rs1 offset) ** (rs1 ↦ᵣ v))
-      ((addr ↦ᵢ .JALR .x0 rs1 offset) ** (rs1 ↦ᵣ v)) := by
-  intro R hR s _hcr hPR hpc; subst hpc
+      (rs1 ↦ᵣ v)
+      (rs1 ↦ᵣ v) := by
+  intro R hR s hcr hPR hpc; subst hpc
   have hfetch : s.code s.pc = some (.JALR .x0 rs1 offset) :=
-    (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
+    (CodeReq.singleton_satisfiedBy s.pc (.JALR .x0 rs1 offset) s).mp hcr
   have hrs1 : s.getReg rs1 = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
+    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left hPR)
   have hexec : execInstrBr s (.JALR .x0 rs1 offset) = s.setPC ((v + signExtend12 offset) &&& ~~~1) := by
     rw [execInstrBr_jalr_x0, hrs1]
   have hstep : step s = some (execInstrBr s (.JALR .x0 rs1 offset)) :=
@@ -442,19 +442,29 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
       obtain ⟨hp, hcompat, hpq⟩ := hQR2
       exact ⟨hp, hcompat, hassert_perm2 ▸ hpq⟩
     -- Apply JAL spec
-    have hjal_pcfree : ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) ** Q ** R).pcFree :=
-      pcFree_sepConj (pcFree_instrAt _ _) (pcFree_sepConj hQ hR)
+    -- Frame for jal_x0_spec_gen: the full (jal ** bne ** Q ** R) conjunction
+    have hjal_pcfree : (((s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length)) ↦ᵢ Instr.JAL Reg.x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) **
+        ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) ** Q ** R)).pcFree :=
+      pcFree_sepConj (pcFree_instrAt _ _) (pcFree_sepConj (pcFree_instrAt _ _) (pcFree_sepConj hQ hR))
     have hjal_cr : (CodeReq.singleton (s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length))
         (Instr.JAL Reg.x0 (BitVec.ofNat 21 (4 * else_body.length + 4)))).SatisfiedBy s2 :=
       instrAt_singleton_satisfiedBy _ _ _ (holdsFor_sepConj_elim_left hQR2')
+    -- Convert hQR2' for jal_x0_spec_gen (empAssertion pre/post; frame is jal ** bne ** Q ** R)
+    have hQR2_emp : (empAssertion **
+        (((s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length)) ↦ᵢ Instr.JAL Reg.x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) **
+          ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) ** Q ** R))).holdsFor s2 := by
+      simp only [sepConj_emp_left']; exact hQR2'
     obtain ⟨k3, s3, hstep3, hpc3, hQR3⟩ := jal_x0_spec_gen
       (BitVec.ofNat 21 (4 * else_body.length + 4))
       (s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length))
-      _ hjal_pcfree s2 hjal_cr hQR2' hpc2
-    -- hQR3 : (jal ** (bne ** Q ** R)).holdsFor s3
-    -- Extract (Q ** R) by dropping the two instrAt's
+      _ hjal_pcfree s2 hjal_cr hQR2_emp hpc2
+    -- hQR3 : (empAssertion ** (jal ** (bne ** Q ** R))).holdsFor s3
+    -- Extract (Q ** R) by stripping empAssertion then two instrAt's
+    have hQR3_flat : (((s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length)) ↦ᵢ Instr.JAL Reg.x0 (BitVec.ofNat 21 (4 * else_body.length + 4))) **
+        ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) ** Q ** R)).holdsFor s3 := by
+      simp only [sepConj_emp_left'] at hQR3; exact hQR3
     have hQR3' : (Q ** R).holdsFor s3 :=
-      holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hQR3)
+      holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right hQR3_flat)
     -- The exit address: then_exit + signExtend21(end_off) = exit_
     have hexit : (s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length)) + signExtend21 (BitVec.ofNat 21 (4 * else_body.length + 4)) =
         s.pc + BitVec.ofNat 64 (4 * (if_eq rs1 rs2 then_body else_body).length) := by

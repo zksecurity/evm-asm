@@ -489,6 +489,27 @@ theorem cpsTriple_seq_with_perm (s m e : Addr) (cr1 cr2 : CodeReq)
   cpsTriple_seq s m e cr1 cr2 hd P Q2 R
     (cpsTriple_consequence s m cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
 
+/-- Sequence with same CodeReq: compose two CPS triples sharing the same CodeReq.
+    Unlike `cpsTriple_seq`, does not require disjointness (same cr on both sides). -/
+theorem cpsTriple_seq_same_cr (l1 l2 l3 : Addr) (cr : CodeReq)
+    (P Q R : Assertion)
+    (h1 : cpsTriple l1 l2 cr P Q) (h2 : cpsTriple l2 l3 cr Q R) :
+    cpsTriple l1 l3 cr P R := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, s1, hstep1, hpc1, hQF⟩ := h1 F hF s hcr hPF hpc
+  have hcr' := CodeReq.SatisfiedBy_preserved cr k1 s s1 hstep1 hcr
+  obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := h2 F hF s1 hcr' hQF hpc1
+  exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hRF⟩
+
+/-- Sequential composition with midpoint permutation (same CodeReq).
+    Like `cpsTriple_seq_with_perm` but for same-CR (no disjointness required). -/
+theorem cpsTriple_seq_with_perm_same_cr (s m e : Addr) (cr : CodeReq)
+    (P Q1 Q2 R : Assertion) (hperm : ∀ h, Q1 h → Q2 h)
+    (h1 : cpsTriple s m cr P Q1) (h2 : cpsTriple m e cr Q2 R) :
+    cpsTriple s e cr P R :=
+  cpsTriple_seq_same_cr s m e cr P Q2 R
+    (cpsTriple_consequence s m cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+
 -- ============================================================================
 -- Cascade composition (for dispatch chains like Phase C)
 -- ============================================================================
