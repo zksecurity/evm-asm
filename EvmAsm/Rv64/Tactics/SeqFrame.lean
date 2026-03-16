@@ -456,4 +456,21 @@ elab "seqFrame" h1:ident h2:ident : tactic => withMainContext do
     withMainContext do
       Term.addLocalVarInfo (mkIdent name) (.fvar fvarId)
 
+/-- `crDisjoint` proves a goal of the form `CodeReq.Disjoint cr1 cr2`
+    by structural recursion on union/singleton, using bv_omega for address inequality. -/
+elab "crDisjoint" : tactic => do
+  let goal ← getMainGoal
+  let goalType ← instantiateMVars (← goal.getType)
+  let goalType ← whnfR goalType
+  -- Extract cr1 and cr2 from CodeReq.Disjoint cr1 cr2
+  -- The goal may appear as CodeReq.Disjoint cr1 cr2 (fully qualified)
+  -- or as cr1.Disjoint cr2 (dot notation → same Expr structure)
+  unless goalType.isAppOfArity ``EvmAsm.Rv64.CodeReq.Disjoint 2 do
+    throwError "crDisjoint: goal is not a CodeReq.Disjoint, got:\n  {goalType}"
+  let cr1 := goalType.getAppArgs[0]!
+  let cr2 := goalType.getAppArgs[1]!
+  let proof ← buildDisjointProof cr1 cr2
+  goal.assign proof
+  replaceMainGoal []
+
 end EvmAsm.Rv64.Tactics
