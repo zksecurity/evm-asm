@@ -111,17 +111,29 @@ sorry). Evm64 is the primary target; Evm32 retains the sorry-free subset.
   Halting, Commit, Write, FullPipeline
 - **CodeReq infrastructure** (Issue #35): `CodeReq` type + `cpsTriple` 5-arg
   form + composition rules + tactic support all in place for both Rv32 and Rv64.
-  Evm32 fully migrated; Evm64 migration pending (see below).
+  Evm32 fully migrated; **Evm64 fully migrated** (all 19 files use CodeReq,
+  0 `↦ᵢ` in Evm64). CodeReq monotonicity helpers added to SepLogic.lean
+  (`union_singleton_apply`, `beq_base_offset`, `union_mono_tail`).
 
 ---
 
-## Pending: Evm64 CodeReq Migration (Issue #35)
+## ~~Pending~~ DONE: Evm64 CodeReq Migration (Issue #35)
+
+**Completed.** All 19 Evm64 files migrated to CodeReq pattern. Zero `↦ᵢ`
+(instrAt) atoms remain in Evm64. Full 46-job build passes with 0 sorry.
+
+Key techniques developed during migration:
+- `hcr_eq : cr = <expanded> := rfl` pattern for let-bound CodeReq expansion
+- `rw [hcr_eq]; crMono` for CR monotonicity through let bindings
+- `cpsTriple_extend_code (h := h_raw) (hmono := ...)` with named args for
+  elaboration order control
+- `cpsBranch_extend_code` + `cpsBranch_frame_left` for branch CR extension
+- Structural CR monotonicity helpers (`union_mono_tail`, `union_singleton_apply`)
+  for 15-element CodeReq targets
 
 The Rv64 infrastructure (CPSSpec, SyscallSpecs, tactics) already supports
 `CodeReq` as a persistent side-condition. The `@[spec_gen_rv64]` single-
-instruction specs in `SyscallSpecs.lean` use `CodeReq.singleton`. However,
-the Evm64 opcode files still use the **old pattern**: `instrAt` atoms in
-pre/postconditions with implicit `CodeReq.empty`.
+instruction specs in `SyscallSpecs.lean` use `CodeReq.singleton`.
 
 ### Current Evm64 pattern (And.lean as example)
 
@@ -300,9 +312,12 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 - **Approach**: Knuth Algorithm D in base 2^64. 316 instructions total (21 phases
   + 49-instr div128 subroutine + NOP separator). DIV and MOD share 95% of code,
   differ only in epilogue (load quotient vs remainder).
-- **Status**: ~50 CPS specs proved (0 sorry). All building blocks for every phase.
-  div128 subroutine fully specified in 5 composable blocks (phase1, step1,
-  compute_un21, step2, end). Branch compositions for BEQ/BLTU merge patterns.
+- **Status**: ~60 CPS specs proved (0 sorry in DivModSpec.lean). All building
+  blocks for every phase. div128 subroutine fully specified in composable blocks
+  including phase1, step1 (init+clamp_q1+prodcheck1), compute_un21, step2
+  (init+clamp_q0+prodcheck2), end. Branch merge specs for BEQ/BLTU patterns.
+  Composed per-limb specs: mulsub_limb (11 instrs), addback_limb (8 instrs),
+  trial_load (12 instrs), store_qj (4 instrs).
   Hierarchical composition using progAt to avoid WHNF scaling limit:
   - `divCode`/`modCode` split `progAt base evm_div/evm_mod` into 14 per-phase progAt blocks
   - `divCode_mid` (12 blocks excl phaseA+zeroPath), `divCode_noAB` (12 blocks excl phaseA+phaseB)
