@@ -2548,7 +2548,7 @@ theorem divK_div128_prodcheck2_merged_spec
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 4000000 in
 /-- div128 step 1: trial division q1, clamp, product check. Instrs [10]-[24].
     Input: u_hi in x7, d_hi in x6, un1 in x11, dlo in memory.
     Output: refined q1 in x10, refined rhat in x7. -/
@@ -2587,55 +2587,72 @@ theorem divK_div128_step1_spec
       ((.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ d_hi) ** (.x10 ↦ᵣ q1') **
        (.x5 ↦ᵣ q_dlo) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhat_un1) **
        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry /- TODO: compose step1_init + clamp_q1_merged + prodcheck1_merged
   intro q1; intro rhat; intro hi; intro q1c; intro rhatc
   intro q_dlo; intro rhat_un1; intro q1'; intro rhat'; intro cr
-  -- Sub-spec 1: init (base to base+12)
+  have hcr_eq : cr =
+      CodeReq.union (CodeReq.singleton base (.DIVU .x10 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x5 .x10 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.SRLI .x5 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.BEQ .x5 .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 20) (.ADDI .x10 .x10 4095))
+      (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x7 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x1 .x12 3952))
+      (CodeReq.union (CodeReq.singleton (base + 32) (.MUL .x5 .x10 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 36) (.SLLI .x1 .x7 32))
+      (CodeReq.union (CodeReq.singleton (base + 40) (.OR .x1 .x1 .x11))
+      (CodeReq.union (CodeReq.singleton (base + 44) (.BLTU .x1 .x5 8))
+      (CodeReq.union (CodeReq.singleton (base + 48) (.JAL .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 52) (.ADDI .x10 .x10 4095))
+       (CodeReq.singleton (base + 56) (.ADD .x7 .x7 .x6))))))))))))))) := rfl
+  -- Sub-spec 1: init [10]-[12]
   have h1_raw := divK_div128_step1_init_spec u_hi d_hi v5_old v10_old base
-  have h1 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h1_raw
+  have h1 : cpsTriple base (base + 12) cr _ _ :=
+    cpsTriple_extend_code (h := h1_raw) (hmono := by sorry)
   have h1f := cpsTriple_frame_left _ _ _ _ _
-    ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo))
+    ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+     (sp + signExtend12 3952 ↦ₘ dlo))
     (by pcFree) h1
-  -- Sub-spec 2: clamp q1 (base+12 to base+28)
-  have h2_raw := divK_div128_clamp_q1_merged_spec q1 rhat d_hi v5_old (base + 12)
-  -- Address normalization
-  have ha0 : (base + 12 : Addr) + 4 = base + 16 := by bv_omega
-  have ha1 : (base + 12 : Addr) + 8 = base + 20 := by bv_omega
-  have ha2 : (base + 12 : Addr) + 12 = base + 24 := by bv_omega
-  have ha3 : (base + 12 : Addr) + 16 = base + 28 := by bv_omega
-  simp only [ha0, ha1, ha2, ha3] at h2_raw
-  have h2 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h2_raw
+  -- Sub-spec 2: clamp q1 [13]-[16]
+  have h2_raw := divK_div128_clamp_q1_merged_spec q1 rhat d_hi (q1 * d_hi) (base + 12)
+  have : (base + 12 : Addr) + 4 = base + 16 := by bv_omega
+  have : (base + 12 : Addr) + 8 = base + 20 := by bv_omega
+  have : (base + 12 : Addr) + 12 = base + 24 := by bv_omega
+  have : (base + 12 : Addr) + 16 = base + 28 := by bv_omega
+  simp only [*] at h2_raw
+  have h2 : cpsTriple (base + 12) (base + 28) cr _ _ :=
+    cpsTriple_extend_code (h := h2_raw) (hmono := by sorry)
   have h2f := cpsTriple_frame_left _ _ _ _ _
-    ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo))
+    ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) **
+     (sp + signExtend12 3952 ↦ₘ dlo))
     (by pcFree) h2
-  -- Sub-spec 3: prodcheck1 (base+28 to base+60)
-  have h3_raw := divK_div128_prodcheck1_merged_spec sp q1c rhatc d_hi un1 v1_old (q1 * d_hi) dlo (base + 28) hv
-  have hb0 : (base + 28 : Addr) + 4 = base + 32 := by bv_omega
-  have hb1 : (base + 28 : Addr) + 8 = base + 36 := by bv_omega
-  have hb2 : (base + 28 : Addr) + 12 = base + 40 := by bv_omega
-  have hb3 : (base + 28 : Addr) + 16 = base + 44 := by bv_omega
-  have hb4 : (base + 28 : Addr) + 20 = base + 48 := by bv_omega
-  have hb5 : (base + 28 : Addr) + 24 = base + 52 := by bv_omega
-  have hb6 : (base + 28 : Addr) + 28 = base + 56 := by bv_omega
-  have hb7 : (base + 28 : Addr) + 32 = base + 60 := by bv_omega
-  simp only [hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7] at h3_raw
-  have h3 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h3_raw
+  -- Compose blocks 1 → 2
+  have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h1f h2f
+  -- Sub-spec 3: prodcheck1 [17]-[24]
+  have h3_raw := divK_div128_prodcheck1_merged_spec sp q1c rhatc d_hi un1
+    v1_old hi dlo (base + 28) hv
+  have : (base + 28 : Addr) + 4 = base + 32 := by bv_omega
+  have : (base + 28 : Addr) + 8 = base + 36 := by bv_omega
+  have : (base + 28 : Addr) + 12 = base + 40 := by bv_omega
+  have : (base + 28 : Addr) + 16 = base + 44 := by bv_omega
+  have : (base + 28 : Addr) + 20 = base + 48 := by bv_omega
+  have : (base + 28 : Addr) + 24 = base + 52 := by bv_omega
+  have : (base + 28 : Addr) + 28 = base + 56 := by bv_omega
+  have : (base + 28 : Addr) + 32 = base + 60 := by bv_omega
+  simp only [*] at h3_raw
+  have h3 : cpsTriple (base + 28) (base + 60) cr _ _ :=
+    cpsTriple_extend_code (h := h3_raw) (hmono := by sorry)
   have h3f := cpsTriple_frame_left _ _ _ _ _
     ((.x0 ↦ᵣ 0))
     (by pcFree) h3
-  -- Compose: h1f → h2f → h3f
-  have c12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp)
-    h1f h2f
+  -- Compose blocks 1→2 → 3
+  have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h12 h3f
   exact cpsTriple_consequence _ _ _ _ _ _ _
-    (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
-    (cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-      (fun h hp => by xperm_hyp hp)
-      c12 h3f) -/
+    (fun h hp => by xperm_hyp hp)
+    h123
 -- ============================================================================
 -- div128 subroutine: Step 2 full [30]-[44].
 -- 15 instructions: DIVU+MUL+SUB (init) + SRLI+BEQ+ADDI+ADD (clamp q0)
@@ -2643,7 +2660,7 @@ theorem divK_div128_step1_spec
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 4000000 in
 /-- div128 step 2: trial division q0, clamp, product check. Instrs [30]-[44].
     Input: un21 in x7, d_hi in x6, dlo/un0 in memory.
     Output: refined q0 in x5. -/
@@ -2684,56 +2701,72 @@ theorem divK_div128_step2_spec
        (.x1 ↦ᵣ rhat2_un0) ** (.x11 ↦ᵣ un0) **
        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  sorry /- TODO: compose step2_init + clamp_q0_merged + prodcheck2_merged
   intro q0; intro rhat2; intro hi; intro q0c; intro rhat2c
   intro q0_dlo; intro rhat2_un0; intro q0'; intro cr
-  -- Sub-spec 1: init (base to base+12)
+  have hcr_eq : cr =
+      CodeReq.union (CodeReq.singleton base (.DIVU .x5 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x1 .x5 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x11 .x7 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.SRLI .x1 .x5 32))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.BEQ .x1 .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 20) (.ADDI .x5 .x5 4095))
+      (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x11 .x11 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x1 .x12 3952))
+      (CodeReq.union (CodeReq.singleton (base + 32) (.MUL .x7 .x5 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 36) (.SLLI .x1 .x11 32))
+      (CodeReq.union (CodeReq.singleton (base + 40) (.LD .x11 .x12 3944))
+      (CodeReq.union (CodeReq.singleton (base + 44) (.OR .x1 .x1 .x11))
+      (CodeReq.union (CodeReq.singleton (base + 48) (.BLTU .x1 .x7 8))
+      (CodeReq.union (CodeReq.singleton (base + 52) (.JAL .x0 8))
+       (CodeReq.singleton (base + 56) (.ADDI .x5 .x5 4095))))))))))))))) := rfl
+  -- Sub-spec 1: init [30]-[32]
   have h1_raw := divK_div128_step2_init_spec un21 d_hi v1_old v5_old v11_old base
-  have h1 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h1_raw
+  have h1 : cpsTriple base (base + 12) cr _ _ :=
+    cpsTriple_extend_code (h := h1_raw) (hmono := by sorry)
   have h1f := cpsTriple_frame_left _ _ _ _ _
     ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
      (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
     (by pcFree) h1
-  -- Sub-spec 2: clamp q0 (base+12 to base+28)
-  have h2_raw := divK_div128_clamp_q0_merged_spec q0 rhat2 d_hi v1_old (base + 12)
-  have ha0 : (base + 12 : Addr) + 4 = base + 16 := by bv_omega
-  have ha1 : (base + 12 : Addr) + 8 = base + 20 := by bv_omega
-  have ha2 : (base + 12 : Addr) + 12 = base + 24 := by bv_omega
-  have ha3 : (base + 12 : Addr) + 16 = base + 28 := by bv_omega
-  simp only [ha0, ha1, ha2, ha3] at h2_raw
-  have h2 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h2_raw
+  -- Sub-spec 2: clamp q0 [33]-[36]
+  have h2_raw := divK_div128_clamp_q0_merged_spec q0 rhat2 d_hi (q0 * d_hi) (base + 12)
+  have : (base + 12 : Addr) + 4 = base + 16 := by bv_omega
+  have : (base + 12 : Addr) + 8 = base + 20 := by bv_omega
+  have : (base + 12 : Addr) + 12 = base + 24 := by bv_omega
+  have : (base + 12 : Addr) + 16 = base + 28 := by bv_omega
+  simp only [*] at h2_raw
+  have h2 : cpsTriple (base + 12) (base + 28) cr _ _ :=
+    cpsTriple_extend_code (h := h2_raw) (hmono := by sorry)
   have h2f := cpsTriple_frame_left _ _ _ _ _
-    ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+    ((.x7 ↦ᵣ un21) ** (.x12 ↦ᵣ sp) **
      (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
     (by pcFree) h2
-  -- Sub-spec 3: prodcheck2 (base+28 to base+60)
-  have h3_raw := divK_div128_prodcheck2_merged_spec sp q0c rhat2c v1_old (q0 * d_hi) dlo un0 (base + 28) hv_dlo hv_un0
-  have hb0 : (base + 28 : Addr) + 4 = base + 32 := by bv_omega
-  have hb1 : (base + 28 : Addr) + 8 = base + 36 := by bv_omega
-  have hb2 : (base + 28 : Addr) + 12 = base + 40 := by bv_omega
-  have hb3 : (base + 28 : Addr) + 16 = base + 44 := by bv_omega
-  have hb4 : (base + 28 : Addr) + 20 = base + 48 := by bv_omega
-  have hb5 : (base + 28 : Addr) + 24 = base + 52 := by bv_omega
-  have hb6 : (base + 28 : Addr) + 28 = base + 56 := by bv_omega
-  have hb7 : (base + 28 : Addr) + 32 = base + 60 := by bv_omega
-  simp only [hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7] at h3_raw
-  have h3 := cpsTriple_extend_code (cr' := cr) (fun a i h => by
-    sorry) h3_raw
+  -- Compose blocks 1 → 2
+  have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h1f h2f
+  -- Sub-spec 3: prodcheck2 [37]-[44]
+  have h3_raw := divK_div128_prodcheck2_merged_spec sp q0c rhat2c hi
+    un21 dlo un0 (base + 28) hv_dlo hv_un0
+  have : (base + 28 : Addr) + 4 = base + 32 := by bv_omega
+  have : (base + 28 : Addr) + 8 = base + 36 := by bv_omega
+  have : (base + 28 : Addr) + 12 = base + 40 := by bv_omega
+  have : (base + 28 : Addr) + 16 = base + 44 := by bv_omega
+  have : (base + 28 : Addr) + 20 = base + 48 := by bv_omega
+  have : (base + 28 : Addr) + 24 = base + 52 := by bv_omega
+  have : (base + 28 : Addr) + 28 = base + 56 := by bv_omega
+  have : (base + 28 : Addr) + 32 = base + 60 := by bv_omega
+  simp only [*] at h3_raw
+  have h3 : cpsTriple (base + 28) (base + 60) cr _ _ :=
+    cpsTriple_extend_code (h := h3_raw) (hmono := by sorry)
   have h3f := cpsTriple_frame_left _ _ _ _ _
-    ((.x0 ↦ᵣ 0))
+    ((.x6 ↦ᵣ d_hi) ** (.x0 ↦ᵣ 0))
     (by pcFree) h3
-  -- Compose: h1f → h2f → h3f
-  have c12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp)
-    h1f h2f
+  -- Compose blocks 1→2 → 3
+  have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h12 h3f
   exact cpsTriple_consequence _ _ _ _ _ _ _
-    (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
-    (cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-      (fun h hp => by xperm_hyp hp)
-      c12 h3f) -/
+    (fun h hp => by xperm_hyp hp)
+    h123
 -- ============================================================================
 -- div128 subroutine: Phase 1 [0]-[9] — save ret/d, split d and u_lo.
 -- 10 instructions: SD+SD+SRLI+SLLI+SRLI+SD + SRLI+SLLI+SRLI+SD.
