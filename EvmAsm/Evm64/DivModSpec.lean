@@ -2265,7 +2265,20 @@ theorem divK_div128_phase1_spec
        (sp + signExtend12 3960 ↦ₘ d) **
        (sp + signExtend12 3952 ↦ₘ d_lo) **
        (sp + signExtend12 3944 ↦ₘ un0)) := by
-  sorry
+  intro d_hi; intro d_lo; intro un1; intro un0; intro cr
+  -- Instructions from save_split_d (6 instrs at base)
+  have I0 := sd_spec_gen .x12 .x2 sp ret_addr ret_mem 3968 base hv_ret
+  have I1 := sd_spec_gen .x12 .x10 sp d d_mem 3960 (base + 4) hv_d
+  have I2 := srli_spec_gen .x6 .x10 v6_old d 32 (base + 8) (by nofun)
+  have I3 := slli_spec_gen .x1 .x10 v1_old d 32 (base + 12) (by nofun)
+  have I4 := srli_spec_gen_same .x1 (d <<< (32 : BitVec 6).toNat) 32 (base + 16) (by nofun)
+  have I5 := sd_spec_gen .x12 .x1 sp d_lo dlo_mem 3952 (base + 20) hv_dlo
+  -- Instructions from split_ulo (4 instrs at base+24)
+  have I6 := srli_spec_gen .x11 .x5 v11_old u_lo 32 (base + 24) (by nofun)
+  have I7 := slli_spec_gen_same .x5 u_lo 32 (base + 28) (by nofun)
+  have I8 := srli_spec_gen_same .x5 (u_lo <<< (32 : BitVec 6).toNat) 32 (base + 32) (by nofun)
+  have I9 := sd_spec_gen .x12 .x5 sp un0 un0_mem 3944 (base + 36) hv_un0
+  runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9
 -- ============================================================================
 -- div128 subroutine: End phase [45]-[48] — combine q + restore/return.
 -- 4 instructions: SLLI + OR + LD + JALR.
@@ -2290,7 +2303,15 @@ theorem divK_div128_end_spec
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ v2_old) ** (sp + signExtend12 3968 ↦ₘ ret_addr))
       ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q) **
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (sp + signExtend12 3968 ↦ₘ ret_addr)) := by
-  sorry
+  intro q1_hi; intro q; intro cr
+  -- Instructions from combine_q (2 instrs at base)
+  have I0 := slli_spec_gen .x11 .x10 v11_old q1 32 base (by nofun)
+  have I1 := or_spec_gen_rd_eq_rs1 .x11 .x5 q1_hi q0 (base + 4) (by nofun) (by nofun)
+  -- Instructions from restore_return (2 instrs at base+8)
+  have I2 := ld_spec_gen .x2 .x12 sp v2_old ret_addr 3968 (base + 8) (by nofun) hv
+  have I3 := jalr_x0_spec_gen .x2 ret_addr 0 (base + 12)
+  rw [halign] at I3
+  runBlock I0 I1 I2 I3
 -- ============================================================================
 -- Composed per-limb specs: mulsub_limb, addback_limb.
 -- These compose partA+partB into single per-limb operations.
@@ -2336,7 +2357,22 @@ theorem divK_mulsub_limb_spec
        (.x2 ↦ᵣ u_new) **
        ((sp + signExtend12 v_off) ↦ₘ v_i) **
        ((u_base + signExtend12 u_off) ↦ₘ u_new)) := by
-  sorry
+  intro prod_lo; intro prod_hi; intro full_sub; intro borrow_add; intro partial_carry
+  intro borrow_sub; intro u_new; intro carry_out; intro cr
+  -- Instructions from partA (6 instrs at base)
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old v_i v_off base (by nofun) hv_v
+  have I1 := mul_spec_gen .x7 .x11 .x5 v7_old q_hat v_i (base + 4) (by nofun)
+  have I2 := mulhu_spec_gen_rd_eq_rs2 .x5 .x11 q_hat v_i (base + 8) (by nofun) (by nofun)
+  have I3 := add_spec_gen_rd_eq_rs1 .x7 .x10 prod_lo carry_in (base + 12) (by nofun) (by nofun)
+  have I4 := sltu_spec_gen_rd_eq_rs2 .x10 .x7 full_sub carry_in (base + 16) (by nofun) (by nofun)
+  have I5 := add_spec_gen_rd_eq_rs1 .x10 .x5 borrow_add prod_hi (base + 20) (by nofun) (by nofun)
+  -- Instructions from partB (5 instrs at base+24)
+  have I6 := ld_spec_gen .x2 .x6 u_base v2_old u_i u_off (base + 24) (by nofun) hv_u
+  have I7 := sltu_spec_gen .x5 .x2 .x7 prod_hi u_i full_sub (base + 28) (by nofun)
+  have I8 := sub_spec_gen_rd_eq_rs1 .x2 .x7 u_i full_sub (base + 32) (by nofun) (by nofun)
+  have I9 := add_spec_gen_rd_eq_rs1 .x10 .x5 partial_carry borrow_sub (base + 36) (by nofun) (by nofun)
+  have I10 := sd_spec_gen .x6 .x2 u_base u_new u_i u_off (base + 40) hv_u
+  runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10
 set_option maxRecDepth 2048 in
 /-- Add-back full limb: partA (5 instrs) + partB (3 instrs) = 8 instructions.
     Input: carry_in (x7), v[i] and u[j+i] in memory.
@@ -2369,7 +2405,18 @@ theorem divK_addback_limb_spec
        (.x5 ↦ᵣ carry2) ** (.x2 ↦ᵣ u_new) **
        ((sp + signExtend12 v_off) ↦ₘ v_i) **
        ((u_base + signExtend12 u_off) ↦ₘ u_new)) := by
-  sorry
+  intro u_plus_carry; intro carry1; intro u_new; intro carry2; intro carry_out; intro cr
+  -- Instructions from partA (5 instrs at base)
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old v_i v_off base (by nofun) hv_v
+  have I1 := ld_spec_gen .x2 .x6 u_base v2_old u_i u_off (base + 4) (by nofun) hv_u
+  have I2 := add_spec_gen_rd_eq_rs1 .x2 .x7 u_i carry_in (base + 8) (by nofun) (by nofun)
+  have I3 := sltu_spec_gen_rd_eq_rs2 .x7 .x2 u_plus_carry carry_in (base + 12) (by nofun) (by nofun)
+  have I4 := add_spec_gen_rd_eq_rs1 .x2 .x5 u_plus_carry v_i (base + 16) (by nofun) (by nofun)
+  -- Instructions from partB (3 instrs at base+20)
+  have I5 := sltu_spec_gen_rd_eq_rs2 .x5 .x2 u_new v_i (base + 20) (by nofun) (by nofun)
+  have I6 := or_spec_gen_rd_eq_rs1 .x7 .x5 carry1 carry2 (base + 24) (by nofun) (by nofun)
+  have I7 := sd_spec_gen .x6 .x2 u_base u_new u_i u_off (base + 28) hv_u
+  runBlock I0 I1 I2 I3 I4 I5 I6 I7
 -- ============================================================================
 -- Trial quotient load phase: load u[j+n], u[j+n-1], v_top = b[n-1].
 -- trial_load_u [1]-[7] + trial_load_vtop [8]-[12] = 12 instructions.
@@ -2414,7 +2461,31 @@ theorem divK_trial_load_spec
        (sp + signExtend12 3984 ↦ₘ n) **
        (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo) **
        (vtop_base + signExtend12 32 ↦ₘ v_top)) := by
-  sorry
+  intro u_addr; intro vtop_base; intro cr
+  -- Instructions from trial_load_u (7 instrs at base)
+  let jpn := j + n
+  let jpn_x8 := jpn <<< (3 : BitVec 6).toNat
+  let u0_base := sp + signExtend12 4056
+  have hse0 : signExtend12 (0 : BitVec 12) = (0 : Word) := by native_decide
+  have haddr0 : u_addr + signExtend12 (0 : BitVec 12) = u_addr := by rw [hse0]; bv_omega
+  have hv_uhi' : isValidDwordAccess (u_addr + signExtend12 0) = true := by rw [haddr0]; exact hv_uhi
+  have I0 := ld_spec_gen .x5 .x12 sp v5_old n 3984 base (by nofun) hv_n1
+  have I1 := add_spec_gen .x7 .x1 .x5 j n v7_old (base + 4) (by nofun)
+  have I2 := slli_spec_gen_same .x7 jpn 3 (base + 8) (by nofun)
+  have I3 := addi_spec_gen .x5 .x12 n sp 4056 (base + 12) (by nofun)
+  have I4 := sub_spec_gen_rd_eq_rs1 .x5 .x7 u0_base jpn_x8 (base + 16) (by nofun) (by nofun)
+  have I5 := ld_spec_gen .x7 .x5 u_addr jpn_x8 u_hi 0 (base + 20) (by nofun) hv_uhi'
+  rw [haddr0] at I5
+  have I6 := ld_spec_gen_same .x5 u_addr u_lo 8 (base + 24) (by nofun) hv_ulo
+  -- Instructions from trial_load_vtop (5 instrs at base+28)
+  let nm1 := n + signExtend12 4095
+  let nm1_x8 := nm1 <<< (3 : BitVec 6).toNat
+  have I7 := ld_spec_gen .x6 .x12 sp v6_old n 3984 (base + 28) (by nofun) hv_n1
+  have I8 := addi_spec_gen_same .x6 n 4095 (base + 32) (by nofun)
+  have I9 := slli_spec_gen_same .x6 nm1 3 (base + 36) (by nofun)
+  have I10 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1_x8 (base + 40) (by nofun) (by nofun)
+  have I11 := ld_spec_gen .x10 .x6 vtop_base v10_old v_top 32 (base + 44) (by nofun) hv_vtop
+  runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11
 -- ============================================================================
 -- Composed store q[j]: addr computation + SD = 4 instructions.
 -- ============================================================================
@@ -2439,5 +2510,16 @@ theorem divK_store_qj_spec (sp j q_hat v5_old v7_old q_old : Word)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) **
        (q_addr ↦ₘ q_hat)) := by
-  sorry
+  intro j_x8; intro q_addr; intro cr
+  -- Instructions from store_qj_addr (3 instrs at base)
+  have I0 := slli_spec_gen .x5 .x1 v5_old j 3 base (by nofun)
+  have I1 := addi_spec_gen .x7 .x12 v7_old sp 4088 (base + 4) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x7 .x5 (sp + signExtend12 4088) j_x8 (base + 8) (by nofun) (by nofun)
+  -- SD instruction with signExtend12 normalization
+  have hse : signExtend12 (0 : BitVec 12) = (0 : Word) := by native_decide
+  have haddr : q_addr + signExtend12 (0 : BitVec 12) = q_addr := by rw [hse]; bv_omega
+  have hv' : isValidDwordAccess (q_addr + signExtend12 0) = true := by rw [haddr]; exact hv
+  have I3 := sd_spec_gen .x7 .x11 q_addr q_hat q_old 0 (base + 12) hv'
+  rw [haddr] at I3
+  runBlock I0 I1 I2 I3
 end EvmAsm.Rv64
