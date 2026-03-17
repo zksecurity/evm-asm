@@ -2034,14 +2034,94 @@ theorem divK_div128_clamp_q1_merged_spec (q1 rhat d_hi v5_old : Word) (base : Ad
        (.x5 ↦ᵣ v5_old) ** (.x0 ↦ᵣ 0))
       ((.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ d_hi) **
        (.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
-  sorry
+  intro hi; intro q1'; intro rhat'; intro cr
+  -- 1. SRLI body
+  have I0 := srli_spec_gen .x5 .x10 v5_old q1 32 base (by nofun)
+  have hbody : cpsTriple base (base + 4) cr
+      ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi) **
+       (.x5 ↦ᵣ v5_old) ** (.x0 ↦ᵣ 0))
+      ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi) **
+       (.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
+    runBlock I0
+  -- 2. BEQ at base+4 (keep pure facts)
+  have hbeq_raw := beq_spec_gen .x5 .x0 (12 : BitVec 13) hi (0 : Word) (base + 4)
+  have hsig : signExtend13 (12 : BitVec 13) = (12 : Word) := by native_decide
+  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rw [hsig]; bv_omega
+  have ha_f : (base + 4 : Addr) + 4 = base + 8 := by bv_omega
+  rw [ha_t, ha_f] at hbeq_raw
+  -- 3. Frame BEQ with x10, x7, x6
+  have hbeq_framed := cpsBranch_frame_left _ _ _ _ _ _ _
+    ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi))
+    (by pcFree) hbeq_raw
+  -- 4. Extend to full cr
+  have hbeq_ext : cpsBranch (base + 4) cr
+      (((.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word))) **
+       ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi)))
+      (base + 16)
+        (((.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜hi = 0⌝) **
+         ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi)))
+      (base + 8)
+        (((.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜hi ≠ 0⌝) **
+         ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi))) :=
+    fun R hR s hcr hPR hpc =>
+      hbeq_framed R hR s ((CodeReq.singleton_satisfiedBy _ _ s).mpr (hcr _ _ (by
+        show cr (base + 4) = _
+        simp only [cr, CodeReq.union, CodeReq.singleton]
+        have h0 : ¬(base + 4 = base) := by bv_omega
+        simp only [beq_iff_eq, h0, ↓reduceIte]))) hPR hpc
+  -- 5. Compose body → BEQ
+  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbeq_ext
+  -- 6. by_cases on hi = 0
+  by_cases hcond : hi = 0
+  · -- hi = 0 → BEQ taken (skip correction)
+    have hq : q1' = q1 := if_pos hcond
+    have hr : rhat' = rhat := if_pos hcond
+    rw [hq, hr]
+    -- Eliminate ntaken path (hi ≠ 0 contradicts hcond)
+    have taken := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
+      exact ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    -- Strip pure fact from taken postcondition and permute
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp') taken
+  · -- hi ≠ 0 → BEQ not-taken (execute correction)
+    have hq : q1' = q1 + signExtend12 4095 := if_neg hcond
+    have hr : rhat' = rhat + d_hi := if_neg hcond
+    rw [hq, hr]
+    -- Eliminate taken path (hi = 0 contradicts hcond)
+    have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
+      exact hcond ((sepConj_pure_right _ _ _).1 h_x0p).2)
+    -- Correction: ADDI + ADD from base+8 to base+16
+    have I1 := addi_spec_gen_same .x10 q1 4095 (base + 8) (by nofun)
+    have I2 := add_spec_gen_rd_eq_rs1 .x7 .x6 rhat d_hi (base + 12) (by nofun) (by nofun)
+    have hcorr : cpsTriple (base + 8) (base + 16) cr
+        ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi))
+        ((.x10 ↦ᵣ (q1 + signExtend12 4095)) ** (.x7 ↦ᵣ (rhat + d_hi)) ** (.x6 ↦ᵣ d_hi)) := by
+      runBlock I1 I2
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)))
+      (by pcFree) hcorr
+    have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp') ntaken hcorr_framed
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by xperm_hyp hp) full
 -- ============================================================================
 -- div128 subroutine: Product check 1 section [17]-[24].
 -- 8 instructions: LD+MUL+SLLI+OR (body) + BLTU+JAL (branch) + ADDI+ADD (correction).
 -- BLTU taken → correction, BLTU ntaken → JAL skip. Both merge at base+32.
 -- ============================================================================
 
-set_option maxRecDepth 1024 in
+set_option maxRecDepth 8192 in
 /-- div128 product check 1: compute q1*d_lo vs rhat*2^32+un1, conditionally correct.
     Instrs [17]-[24]. Both BLTU paths merge at base+32. -/
 theorem divK_div128_prodcheck1_merged_spec
@@ -2067,7 +2147,121 @@ theorem divK_div128_prodcheck1_merged_spec
       ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x11 ↦ᵣ un1) **
        (.x5 ↦ᵣ q_dlo) ** (.x1 ↦ᵣ rhat_un1) ** (.x6 ↦ᵣ d_hi) **
        (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry
+  intro q_dlo; intro rhat_un1; intro q1'; intro rhat'; intro cr
+  -- 1. Body: 4 instructions (LD+MUL+SLLI+OR)
+  have hbody : cpsTriple base (base + 16) cr
+      ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+       (.x5 ↦ᵣ v5_old) ** (.x1 ↦ᵣ v1_old) ** (.x6 ↦ᵣ d_hi) **
+       (sp + signExtend12 3952 ↦ₘ dlo))
+      ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+       (.x5 ↦ᵣ q_dlo) ** (.x1 ↦ᵣ rhat_un1) ** (.x6 ↦ᵣ d_hi) **
+       (sp + signExtend12 3952 ↦ₘ dlo)) := by
+    have I0 := ld_spec_gen .x1 .x12 sp v1_old dlo 3952 base (by nofun) hv
+    have I1 := mul_spec_gen .x5 .x10 .x1 v5_old q1 dlo (base + 4) (by nofun)
+    have I2 := slli_spec_gen .x1 .x7 dlo rhat 32 (base + 8) (by nofun)
+    have I3 := or_spec_gen_rd_eq_rs1 .x1 .x11 (rhat <<< (32 : BitVec 6).toNat) un1 (base + 12) (by nofun) (by nofun)
+    runBlock I0 I1 I2 I3
+  -- 2. BLTU at base+16, strip pure
+  have hbltu_raw := bltu_spec_gen .x1 .x5 (8 : BitVec 13) rhat_un1 q_dlo (base + 16)
+  have hsig : signExtend13 (8 : BitVec 13) = (8 : Word) := by native_decide
+  have ha_t : (base + 16) + signExtend13 (8 : BitVec 13) = base + 24 := by rw [hsig]; bv_omega
+  have ha_f : (base + 16 : Addr) + 4 = base + 20 := by bv_omega
+  rw [ha_t, ha_f] at hbltu_raw
+  -- 3. Frame BLTU with remaining atoms
+  have hbltu_framed := cpsBranch_frame_left _ _ _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+     (.x6 ↦ᵣ d_hi) ** (sp + signExtend12 3952 ↦ₘ dlo))
+    (by pcFree) hbltu_raw
+  -- 4. Extend to full cr
+  have hbltu_ext : cpsBranch (base + 16) cr
+      (((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo)) **
+       ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+        (.x6 ↦ᵣ d_hi) ** (sp + signExtend12 3952 ↦ₘ dlo)))
+      (base + 24)
+        (((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo) ** ⌜BitVec.ult rhat_un1 q_dlo⌝) **
+         ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+          (.x6 ↦ᵣ d_hi) ** (sp + signExtend12 3952 ↦ₘ dlo)))
+      (base + 20)
+        (((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo) ** ⌜¬BitVec.ult rhat_un1 q_dlo⌝) **
+         ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+          (.x6 ↦ᵣ d_hi) ** (sp + signExtend12 3952 ↦ₘ dlo))) :=
+    fun R hR s hcr hPR hpc =>
+      hbltu_framed R hR s ((CodeReq.singleton_satisfiedBy _ _ s).mpr (hcr _ _ (by
+        show cr (base + 16) = _
+        simp only [cr, CodeReq.union, CodeReq.singleton]
+        have h0 : ¬(base + 16 = base) := by bv_omega
+        have h1 : ¬(base + 16 = base + 4) := by bv_omega
+        have h2 : ¬(base + 16 = base + 8) := by bv_omega
+        have h3 : ¬(base + 16 = base + 12) := by bv_omega
+        simp only [beq_iff_eq, h0, h1, h2, h3, ↓reduceIte]))) hPR hpc
+  -- 5. Compose body → BLTU
+  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbltu_ext
+  -- 6. by_cases on BLTU condition
+  by_cases hcond : BitVec.ult rhat_un1 q_dlo
+  · -- BLTU taken: rhat_un1 < q_dlo → correction
+    have hq : q1' = q1 + signExtend12 4095 := if_pos hcond
+    have hr : rhat' = rhat + d_hi := if_pos hcond
+    rw [hq, hr]
+    -- Eliminate ntaken path
+    have taken_br := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
+      exact ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    -- Correction: ADDI q1-- + ADD rhat+=d_hi
+    have I4 := addi_spec_gen_same .x10 q1 4095 (base + 24) (by nofun)
+    have I5 := add_spec_gen_rd_eq_rs1 .x7 .x6 rhat d_hi (base + 28) (by nofun) (by nofun)
+    have hcorr : cpsTriple (base + 24) (base + 32) cr
+        ((.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ d_hi))
+        ((.x10 ↦ᵣ (q1 + signExtend12 4095)) ** (.x7 ↦ᵣ (rhat + d_hi)) ** (.x6 ↦ᵣ d_hi)) := by
+      runBlock I4 I5
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ un1) **
+       (sp + signExtend12 3952 ↦ₘ dlo))
+      (by pcFree) hcorr
+    have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp')
+      taken_br hcorr_framed
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by xperm_hyp hp) full
+  · -- BLTU not-taken: rhat_un1 >= q_dlo → JAL skip
+    have hq : q1' = q1 := if_neg hcond
+    have hr : rhat' = rhat := if_neg hcond
+    rw [hq, hr]
+    -- Eliminate taken path
+    have ntaken_br := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
+      exact absurd ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    -- JAL skip: base+20 → base+32
+    have hj : signExtend21 (12 : BitVec 21) = (12 : Addr) := by native_decide
+    have I_jal := jal_x0_spec_gen 12 (base + 20)
+    rw [hj] at I_jal
+    have ha_jal : (base + 20 : Addr) + 12 = base + 32 := by bv_omega
+    rw [ha_jal] at I_jal
+    -- Extend JAL CR from singleton to cr
+    have hcr_jal : ∀ a i, CodeReq.singleton (base + 20) (.JAL .x0 12) a = some i →
+        cr a = some i := by
+      intro a i h
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq => rw [beq_iff_eq] at heq; subst heq; simp_all [cr, CodeReq.union, CodeReq.singleton]
+      · simp at h
+    have I_jal_cr := cpsTriple_extend_code hcr_jal I_jal
+    have hjal_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo) ** (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) **
+       (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) ** (.x6 ↦ᵣ d_hi) **
+       (sp + signExtend12 3952 ↦ₘ dlo))
+      (by pcFree) I_jal_cr
+    simp only [sepConj_emp_left'] at hjal_framed
+    exact cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp')
+      ntaken_br hjal_framed
 -- ============================================================================
 -- div128 subroutine: Clamp q0 section [33]-[36].
 -- 4 instructions: SRLI + BEQ + ADDI + ADD.
@@ -2091,14 +2285,91 @@ theorem divK_div128_clamp_q0_merged_spec (q0 rhat2 d_hi v1_old : Word) (base : A
        (.x1 ↦ᵣ v1_old) ** (.x0 ↦ᵣ 0))
       ((.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ rhat2') ** (.x6 ↦ᵣ d_hi) **
        (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
-  sorry
+  intro hi; intro q0'; intro rhat2'; intro cr
+  -- 1. SRLI body
+  have hbody : cpsTriple base (base + 4) cr
+      ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ v1_old) ** (.x0 ↦ᵣ 0))
+      ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi) **
+       (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ 0)) := by
+    have I0 := srli_spec_gen .x1 .x5 v1_old q0 32 base (by nofun)
+    runBlock I0
+  -- 2. BEQ at base+4 (keep pure facts)
+  have hbeq_raw := beq_spec_gen .x1 .x0 (12 : BitVec 13) hi (0 : Word) (base + 4)
+  have hsig : signExtend13 (12 : BitVec 13) = (12 : Word) := by native_decide
+  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rw [hsig]; bv_omega
+  have ha_f : (base + 4 : Addr) + 4 = base + 8 := by bv_omega
+  rw [ha_t, ha_f] at hbeq_raw
+  -- 3. Frame BEQ with x5, x11, x6
+  have hbeq_framed := cpsBranch_frame_left _ _ _ _ _ _ _
+    ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi))
+    (by pcFree) hbeq_raw
+  -- 4. Extend to full cr
+  have hbeq_ext : cpsBranch (base + 4) cr
+      (((.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word))) **
+       ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi)))
+      (base + 16)
+        (((.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜hi = 0⌝) **
+         ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi)))
+      (base + 8)
+        (((.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜hi ≠ 0⌝) **
+         ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi))) :=
+    fun R hR s hcr hPR hpc =>
+      hbeq_framed R hR s ((CodeReq.singleton_satisfiedBy _ _ s).mpr (hcr _ _ (by
+        show cr (base + 4) = _
+        simp only [cr, CodeReq.union, CodeReq.singleton]
+        have h0 : ¬(base + 4 = base) := by bv_omega
+        simp only [beq_iff_eq, h0, ↓reduceIte]))) hPR hpc
+  -- 5. Compose body → BEQ
+  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbeq_ext
+  -- 6. by_cases on hi = 0
+  by_cases hcond : hi = 0
+  · -- hi = 0 → BEQ taken (skip correction)
+    have hq : q0' = q0 := if_pos hcond
+    have hr : rhat2' = rhat2 := if_pos hcond
+    rw [hq, hr]
+    have taken := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
+      exact ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp') taken
+  · -- hi ≠ 0 → BEQ not-taken (execute correction)
+    have hq : q0' = q0 + signExtend12 4095 := if_neg hcond
+    have hr : rhat2' = rhat2 + d_hi := if_neg hcond
+    rw [hq, hr]
+    have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
+      exact hcond ((sepConj_pure_right _ _ _).1 h_x0p).2)
+    -- Correction: ADDI + ADD from base+8 to base+16
+    have I1 := addi_spec_gen_same .x5 q0 4095 (base + 8) (by nofun)
+    have I2 := add_spec_gen_rd_eq_rs1 .x11 .x6 rhat2 d_hi (base + 12) (by nofun) (by nofun)
+    have hcorr : cpsTriple (base + 8) (base + 16) cr
+        ((.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) ** (.x6 ↦ᵣ d_hi))
+        ((.x5 ↦ᵣ (q0 + signExtend12 4095)) ** (.x11 ↦ᵣ (rhat2 + d_hi)) ** (.x6 ↦ᵣ d_hi)) := by
+      runBlock I1 I2
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word)))
+      (by pcFree) hcorr
+    have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp') ntaken hcorr_framed
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by xperm_hyp hp) full
 -- ============================================================================
 -- div128 subroutine: Product check 2 section [37]-[44].
 -- 8 instructions: LD+MUL+SLLI+LD+OR (body) + BLTU+JAL (branch) + ADDI (correction).
 -- BLTU taken → ADDI correction, BLTU ntaken → JAL skip. Both merge at base+32.
 -- ============================================================================
 
-set_option maxRecDepth 1024 in
+set_option maxRecDepth 8192 in
 /-- div128 product check 2: compute q0*d_lo vs rhat2*2^32+un0, conditionally correct q0.
     Instrs [37]-[44]. Both BLTU paths merge at base+32. -/
 theorem divK_div128_prodcheck2_merged_spec
@@ -2124,7 +2395,117 @@ theorem divK_div128_prodcheck2_merged_spec
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ un0) **
        (.x7 ↦ᵣ q0_dlo) ** (.x1 ↦ᵣ rhat2_un0) **
        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  sorry
+  intro q0_dlo; intro rhat2_un0; intro q0'; intro cr
+  -- 1. Body: 5 instructions (LD+MUL+SLLI+LD+OR)
+  have hbody : cpsTriple base (base + 20) cr
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ rhat2) **
+       (.x7 ↦ᵣ v7_old) ** (.x1 ↦ᵣ v1_old) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+       (.x7 ↦ᵣ q0_dlo) ** (.x1 ↦ᵣ rhat2_un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
+    have I0 := ld_spec_gen .x1 .x12 sp v1_old dlo 3952 base (by nofun) hv_dlo
+    have I1 := mul_spec_gen .x7 .x5 .x1 v7_old q0 dlo (base + 4) (by nofun)
+    have I2 := slli_spec_gen .x1 .x11 dlo rhat2 32 (base + 8) (by nofun)
+    have I3 := ld_spec_gen .x11 .x12 sp rhat2 un0 3944 (base + 12) (by nofun) hv_un0
+    have I4 := or_spec_gen_rd_eq_rs1 .x1 .x11 (rhat2 <<< (32 : BitVec 6).toNat) un0 (base + 16) (by nofun) (by nofun)
+    runBlock I0 I1 I2 I3 I4
+  -- 2. BLTU at base+20
+  have hbltu_raw := bltu_spec_gen .x1 .x7 (8 : BitVec 13) rhat2_un0 q0_dlo (base + 20)
+  have hsig : signExtend13 (8 : BitVec 13) = (8 : Word) := by native_decide
+  have ha_t : (base + 20) + signExtend13 (8 : BitVec 13) = base + 28 := by rw [hsig]; bv_omega
+  have ha_f : (base + 20 : Addr) + 4 = base + 24 := by bv_omega
+  rw [ha_t, ha_f] at hbltu_raw
+  -- 3. Frame BLTU
+  have hbltu_framed := cpsBranch_frame_left _ _ _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+     (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+    (by pcFree) hbltu_raw
+  -- 4. Extend to full cr
+  have hbltu_ext : cpsBranch (base + 20) cr
+      (((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo)) **
+       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)))
+      (base + 28)
+        (((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** ⌜BitVec.ult rhat2_un0 q0_dlo⌝) **
+         ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+          (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)))
+      (base + 24)
+        (((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** ⌜¬BitVec.ult rhat2_un0 q0_dlo⌝) **
+         ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
+          (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))) :=
+    fun R hR s hcr hPR hpc =>
+      hbltu_framed R hR s ((CodeReq.singleton_satisfiedBy _ _ s).mpr (hcr _ _ (by
+        show cr (base + 20) = _
+        simp only [cr, CodeReq.union, CodeReq.singleton]
+        have h0 : ¬(base + 20 = base) := by bv_omega
+        have h1 : ¬(base + 20 = base + 4) := by bv_omega
+        have h2 : ¬(base + 20 = base + 8) := by bv_omega
+        have h3 : ¬(base + 20 = base + 12) := by bv_omega
+        have h4 : ¬(base + 20 = base + 16) := by bv_omega
+        simp only [beq_iff_eq, h0, h1, h2, h3, h4, ↓reduceIte]))) hPR hpc
+  -- 5. Compose body → BLTU
+  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbltu_ext
+  -- 6. by_cases on BLTU condition
+  by_cases hcond : BitVec.ult rhat2_un0 q0_dlo
+  · -- BLTU taken: correction (ADDI q0--)
+    have hq : q0' = q0 + signExtend12 4095 := if_pos hcond
+    rw [hq]
+    have taken_br := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
+      exact ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    -- Correction: ADDI q0-- from base+28 to base+32
+    have I5 := addi_spec_gen_same .x5 q0 4095 (base + 28) (by nofun)
+    have hcorr : cpsTriple (base + 28) (base + 32) cr
+        (.x5 ↦ᵣ q0)
+        (.x5 ↦ᵣ (q0 + signExtend12 4095)) := by
+      runBlock I5
+    have hcorr_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      (by pcFree) hcorr
+    have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp')
+      taken_br hcorr_framed
+    exact cpsTriple_consequence _ _ _ _ _ _ _
+      (fun h hp => hp)
+      (fun h hp => by xperm_hyp hp) full
+  · -- BLTU not-taken: JAL skip
+    have hq : q0' = q0 := if_neg hcond
+    rw [hq]
+    have ntaken_br := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+      obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
+      exact absurd ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
+    -- JAL skip: base+24 → base+32
+    have hj : signExtend21 (8 : BitVec 21) = (8 : Addr) := by native_decide
+    have I_jal := jal_x0_spec_gen 8 (base + 24)
+    rw [hj] at I_jal
+    have ha_jal : (base + 24 : Addr) + 8 = base + 32 := by bv_omega
+    rw [ha_jal] at I_jal
+    have hcr_jal : ∀ a i, CodeReq.singleton (base + 24) (.JAL .x0 8) a = some i →
+        cr a = some i := by
+      intro a i h
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq => rw [beq_iff_eq] at heq; subst heq; simp_all [cr, CodeReq.union, CodeReq.singleton]
+      · simp at h
+    have I_jal_cr := cpsTriple_extend_code hcr_jal I_jal
+    have hjal_framed := cpsTriple_frame_left _ _ _ _ _
+      ((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) **
+       (.x11 ↦ᵣ un0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+      (by pcFree) I_jal_cr
+    simp only [sepConj_emp_left'] at hjal_framed
+    exact cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by
+        have hp' := sepConj_mono_left (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+        xperm_hyp hp')
+      ntaken_br hjal_framed
 -- ============================================================================
 -- div128 subroutine: Step 1 full [10]-[24].
 -- 15 instructions: DIVU+MUL+SUB (init) + SRLI+BEQ+ADDI+ADD (clamp q1)
