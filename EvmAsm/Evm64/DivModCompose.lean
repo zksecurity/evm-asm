@@ -98,9 +98,25 @@ private theorem divK_phaseA_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_phaseA_code base) a = some i → (divCode base) a = some i := by
   intro a i h
   unfold divCode
-  exact CodeReq.union_mono_left _ _ a i (by
-    -- divK_phaseA_code base produces the same mappings as CodeReq.ofProg base (divK_phaseA 1016)
-    sorry)
+  apply CodeReq.union_mono_left
+  simp only [divK_phaseA_code, CodeReq.union, CodeReq.singleton] at h
+  -- Pre-compute the program to a concrete instruction list
+  have hprog : (divK_phaseA 1016 : List Instr) = [.LD .x5 .x12 32, .LD .x10 .x12 40,
+    .OR .x5 .x5 .x10, .LD .x10 .x12 48, .OR .x5 .x5 .x10, .LD .x10 .x12 56,
+    .OR .x5 .x5 .x10, .BEQ .x5 .x0 1016] := by rfl
+  -- Stage 1: Unfold ofProg/ofIndexed and substitute concrete program
+  simp only [CodeReq.ofProg, CodeReq.ofIndexed, hprog] at ⊢
+  -- Stage 2: Reduce progIndexed to concrete (addr, instr) pairs
+  simp only [progIndexed] at ⊢
+  -- Stage 3: Reduce foldl to nested unions, then to if-chains
+  simp only [List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton] at ⊢
+  -- Stage 4: Normalize chained addresses (base+4+4 → base+8, etc.)
+  simp only [OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
+  -- Case split h on each if-branch, then simp_all closes each
+  split at h <;> (try simp_all) <;> split at h <;> (try simp_all) <;>
+  split at h <;> (try simp_all) <;> split at h <;> (try simp_all) <;>
+  split at h <;> (try simp_all) <;> split at h <;> (try simp_all) <;>
+  split at h <;> (try simp_all) <;> split at h <;> simp_all
 
 /-- Zero path code (5 instructions) is subsumed by divCode. -/
 private theorem divK_zeroPath_code_sub_divCode (base : Addr) :
