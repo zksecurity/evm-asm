@@ -439,11 +439,22 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
   let extendedSpecs ← withTraceNode `runBlock.perf.extend
     (fun _ => return m!"extend {processedSpecs.size} specs to goalCr") do
     match goalCr with
-    | some gcr => processedSpecs.mapM fun spec => do
-        let specType ← inferType spec
-        let some (_, _, specCr, _, _) ← parseCpsTriple? specType | Pure.pure spec
-        try extendSpecCr spec specCr gcr
-        catch _ => Pure.pure spec
+    | some gcr => do
+        -- Pre-extract the goal CR chain once (O(N)) for direct proof building
+        let goalChain ← extractUnionChain gcr
+        processedSpecs.mapM fun spec => do
+          let specType ← inferType spec
+          let some (entry, exit_, specCr, P, Q) ← parseCpsTriple? specType | Pure.pure spec
+          if specCr == gcr then Pure.pure spec
+          else if ← withoutModifyingState (withReducible (isDefEq specCr gcr)) then Pure.pure spec
+          else try
+            -- Fast path: direct chain lookup for singleton specs (O(position) per spec)
+            if let some monoProof ← buildMonoProofDirect specCr goalChain gcr then
+              Pure.pure (mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_extend_code)
+                #[entry, exit_, specCr, gcr, P, Q, monoProof, spec])
+            else
+              extendSpecCr spec specCr gcr
+          catch _ => Pure.pure spec
     | none => Pure.pure processedSpecs
   -- Frame the first spec against the goal precondition
   let mut acc ← frameFirstSpec extendedSpecs[0]! goalPre

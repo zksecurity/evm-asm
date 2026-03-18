@@ -316,10 +316,97 @@ private def buildMonoProofTactic (oldCr newCr : Expr) : MetaM Expr := do
   catch _ =>
     throwError "seqFrame: cannot build monotonicity proof for CodeReq extension (fallback)"
 
+/-- Extract the union chain from a CodeReq expression into an array of
+    `(head_singleton, tail_from_here)` pairs. The `tail_from_here` is the
+    full sub-expression `union(head, rest)` at each position.
+    Returns entries from outermost to innermost. -/
+partial def extractUnionChain (cr : Expr) : MetaM (Array (Expr × Expr × Expr)) := do
+  let crW ← whnfR cr
+  if crW.isAppOfArity ``EvmAsm.Rv64.CodeReq.union 2 then
+    let head := crW.getAppArgs[0]!
+    let tail := crW.getAppArgs[1]!
+    let rest ← extractUnionChain tail
+    return #[(head, tail, crW)] ++ rest
+  else
+    return #[(crW, mkConst ``EvmAsm.Rv64.CodeReq.empty, crW)]
+
+/-- Build a mono proof for `singleton addr instr ⊆ goalCr` using direct chain lookup.
+    Uses `singleton_mono` with a proof that `goalCr addr = some instr`, built via
+    a chain of `union_hit`/`union_skip` — avoids identity mismatch between spec
+    and goal CR singletons. O(position) with ~0.1ms/step. -/
+def buildMonoProofDirect (oldCr : Expr) (chain : Array (Expr × Expr × Expr))
+    (chainCr : Expr) : MetaM (Option Expr) := do
+  -- oldCr must be a singleton
+  let oldCrW ← whnfR oldCr
+  unless oldCrW.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 do return none
+  let specAddr := oldCrW.getAppArgs[0]!
+  let specInstr := oldCrW.getAppArgs[1]!
+  -- Find matching position by address
+  let mut matchIdx : Option Nat := none
+  for i in [:chain.size] do
+    let (head, _, _) := chain[i]!
+    if head.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 then
+      let headAddr := head.getAppArgs[0]!
+      if specAddr == headAddr then
+        matchIdx := some i
+        break
+  let some j := matchIdx | return none
+  let (matchHead, _, _) := chain[j]!
+  -- Verify instruction matches
+  unless matchHead.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 do return none
+  let matchInstr := matchHead.getAppArgs[1]!
+  unless matchInstr == specInstr || (← withoutModifyingState (isDefEq matchInstr specInstr)) do
+    return none
+  -- Strategy: prove `chainCr specAddr = some specInstr` via union_hit/union_skip chain,
+  -- then apply `singleton_mono` to get `singleton specAddr specInstr ⊆ chainCr`.
+  -- This avoids identity issues between spec singleton and goal CR singleton.
+
+  -- Step 1: Build proof of `singleton specAddr specInstr specAddr = some specInstr`
+  -- (singleton_get is for singleton's OWN addr; we need it for the SPEC's addr)
+  -- Since matchHead's addr == specAddr, we use matchHead's singleton_get
+  -- then the chain will produce `chainCr matchAddr = some matchInstr`
+  -- which is definitionally equal to `chainCr specAddr = some specInstr`
+  let matchAddr := matchHead.getAppArgs[0]!
+  -- Build: singleton matchAddr matchInstr matchAddr = some matchInstr
+  let hitProof := mkApp2 (mkConst ``EvmAsm.Rv64.CodeReq.singleton_get) matchAddr matchInstr
+
+  -- Step 2: Lift through the union chain from position j to position 0
+  -- At position j: if it's wrapped in a union, use union_hit; otherwise use hitProof directly
+  let (_, matchTail, matchCrW) := chain[j]!
+  let mut crProof :=
+    if matchCrW.isAppOfArity ``EvmAsm.Rv64.CodeReq.union 2 then
+      -- union(matchHead, matchTail) at position j
+      mkAppN (mkConst ``EvmAsm.Rv64.CodeReq.union_hit)
+        #[matchHead, matchTail, matchAddr, matchInstr, hitProof]
+    else
+      -- Bare singleton at last position: hitProof is already the right type
+      hitProof
+  -- For k = j-1 down to 0: union_skip (singleton_miss hne) crProof
+  let mut k := j
+  while k > 0 do
+    k := k - 1
+    let (skipHead, tailAtK, _) := chain[k]!
+    unless skipHead.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 do return none
+    let skipAddr := skipHead.getAppArgs[0]!
+    -- Prove matchAddr ≠ skipAddr (so skipHead misses at matchAddr)
+    let neqProof ← proveAddrNe matchAddr skipAddr
+    let missProof := mkAppN (mkConst ``EvmAsm.Rv64.CodeReq.singleton_miss)
+      #[skipAddr, matchAddr, skipHead.getAppArgs[1]!, neqProof]
+    crProof := mkAppN (mkConst ``EvmAsm.Rv64.CodeReq.union_skip)
+      #[skipHead, tailAtK, matchAddr, matchInstr, missProof, crProof]
+
+  -- Step 3: Apply singleton_mono: singleton specAddr specInstr ⊆ chainCr
+  -- crProof : chainCr matchAddr = some matchInstr
+  -- singleton_mono {a := matchAddr} {i := matchInstr} {cr := chainCr} crProof
+  --   : ∀ a' i', singleton matchAddr matchInstr a' = some i' → chainCr a' = some i'
+  -- Since matchAddr == specAddr and matchInstr isDefEq specInstr, the kernel
+  -- accepts this as a proof for singleton specAddr specInstr ⊆ chainCr.
+  return some (mkAppN (mkConst ``EvmAsm.Rv64.CodeReq.singleton_mono)
+    #[matchAddr, matchInstr, chainCr, crProof])
+
 /-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` structurally.
-    Walks the union chain to find matching pieces, composing with
-    CodeReq.union_mono_left, mono_union_right, and union_split_mono.
-    Falls back to tactic-based proof for edge cases. -/
+    Uses direct chain lookup for singleton-vs-chain (O(N) with low constant),
+    falls back to recursive walk for complex cases. -/
 partial def buildMonoProof (oldCr newCr : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.extend (fun _ => return m!"buildMonoProof") do
   -- Identity: oldCr ≡ newCr
