@@ -53,7 +53,6 @@ theorem mul_col3_spec (sp : Addr) (base : Addr)
 abbrev mul_col2_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base mul_col2
 
-set_option maxHeartbeats 1600000 in
 /-- Column 2: multiply b[2] × {a[0],a[1]}, finalize r[2], update r[3] accumulator.
     13 instructions. Input: x11 = r2 acc, sp+16 = r3 partial.
     Output: x10 = r3 total, sp+48 = r2 stored. -/
@@ -98,18 +97,8 @@ theorem mul_col2_spec (sp : Addr) (base : Addr)
 
 -- Part A: LD b1, LD a0, MUL, MULHU, ADD, SLTU, ADD, SD r1, ADD, SLTU (10 instrs)
 abbrev mul_col1_partA_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 40))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.ADD .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SLTU .x7 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.SD .x12 .x10 40))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.ADD .x11 .x11 .x6))
-  (CodeReq.singleton (base + 36) (.SLTU .x10 .x11 .x6))))))))))
+  CodeReq.ofProg base (mul_col1.take 10)
 
-set_option maxHeartbeats 1600000 in
 /-- Column 1 part A: load b1, multiply a0×b1, store r1, begin r2 accumulation.
     10 instructions at base..base+36. -/
 theorem mul_col1_partA_spec (sp : Addr) (base : Addr)
@@ -147,21 +136,8 @@ theorem mul_col1_partA_spec (sp : Addr) (base : Addr)
 -- Part B: LD a1, MUL, MULHU, ADD, SLTU, ADD, ADD, LD a2, MUL, ADD, LD r3p0, ADD, SD (13 instrs)
 -- Uses outer base (base = column base), so atoms are at base+40..base+88.
 abbrev mul_col1_partB_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton (base + 40) (.LD .x6 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.ADD .x11 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 56) (.SLTU .x7 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.ADD .x10 .x10 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.LD .x6 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.MUL .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.ADD .x10 .x10 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 80) (.LD .x6 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 84) (.ADD .x10 .x10 .x6))
-  (CodeReq.singleton (base + 88) (.SD .x12 .x10 16)))))))))))))
+  CodeReq.ofProg (base + 40) (mul_col1.drop 10)
 
-set_option maxHeartbeats 1600000 in
 /-- Column 1 part B: multiply a1×b1, a2×b1, accumulate r2/r3, store r3 spill.
     13 instructions at base+40..base+88. -/
 theorem mul_col1_partB_spec (sp : Addr) (base : Addr)
@@ -202,7 +178,6 @@ theorem mul_col1_partB_spec (sp : Addr) (base : Addr)
 abbrev mul_col1_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base mul_col1
 
-set_option maxHeartbeats 1600000 in
 /-- Column 1: multiply b[1] × {a[0],a[1],a[2]}, finalize r[1], update r[2]/r[3].
     23 instructions. Input: x10 = r1 acc, x11 = r2 acc, sp+24 = r3 partial from col0.
     Output: x11 = r2 acc, sp+16 = r3 partial, sp+40 = r1 stored. -/
@@ -247,19 +222,8 @@ theorem mul_col1_spec (sp : Addr) (base : Addr)
 
 -- Part A: LD b0, LD a0, MUL, MULHU, SD r0, LD a1, MUL, MULHU, ADD, SLTU, ADD (11 instrs)
 abbrev mul_col0_partA_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 32))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.MULHU .x10 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SD .x12 .x7 32))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.LD .x6 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.MULHU .x11 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.ADD .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.SLTU .x6 .x10 .x7))
-  (CodeReq.singleton (base + 40) (.ADD .x11 .x11 .x6)))))))))))
+  CodeReq.ofProg base (mul_col0.take 11)
 
-set_option maxHeartbeats 1600000 in
 /-- Column 0 part A: load b0, multiply a0×b0 and a1×b0, store r0, begin r1/r2 accumulation.
     11 instructions at base..base+40. -/
 theorem mul_col0_partA_spec (sp : Addr) (base : Addr)
@@ -297,18 +261,8 @@ theorem mul_col0_partA_spec (sp : Addr) (base : Addr)
 -- Part B: LD a2, MUL, MULHU, ADD, SLTU, ADD, LD a3, MUL, ADD, SD r3p (10 instrs)
 -- Uses outer base (base = column base), so atoms are at base+44..base+80.
 abbrev mul_col0_partB_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton (base + 44) (.LD .x6 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 56) (.ADD .x11 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SLTU .x7 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.LD .x7 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.MUL .x7 .x7 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.ADD .x6 .x6 .x7))
-  (CodeReq.singleton (base + 80) (.SD .x12 .x6 24))))))))))
+  CodeReq.ofProg (base + 44) (mul_col0.drop 11)
 
-set_option maxHeartbeats 1600000 in
 /-- Column 0 part B: multiply a2×b0 and a3×b0, accumulate r2, store r3 partial.
     10 instructions at base+44..base+80. -/
 theorem mul_col0_partB_spec (sp : Addr) (base : Addr)
@@ -344,7 +298,6 @@ theorem mul_col0_partB_spec (sp : Addr) (base : Addr)
 abbrev mul_col0_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base mul_col0
 
-set_option maxHeartbeats 1600000 in
 /-- Column 0: multiply b[0] × {a[0],a[1],a[2],a[3]}, store r[0], spill r[3] partial.
     21 instructions. Output: x10 = r1 acc, x11 = r2 acc, sp+24 = r3p, sp+32 = r0. -/
 theorem mul_col0_spec (sp : Addr) (base : Addr)
@@ -387,7 +340,6 @@ theorem mul_col0_spec (sp : Addr) (base : Addr)
 abbrev evm_mul_code01 (base : Addr) : CodeReq :=
   CodeReq.union (mul_col0_code base) (mul_col1_code (base + 84))
 
-set_option maxHeartbeats 6400000 in
 /-- Intermediate: compose col0 + col1. 44 instructions at base..base+176. -/
 theorem evm_mul_cols01_spec (sp : Addr) (base : Addr)
     (a0 a1 a2 a3 b0 b1 : Word)
@@ -445,7 +397,6 @@ abbrev evm_mul_cols23ep_code (base : Addr) : CodeReq :=
   (CodeReq.union (mul_col3_code (base + 228))
   (CodeReq.singleton (base + 248) (.ADDI .x12 .x12 32)))
 
-set_option maxHeartbeats 1600000 in
 /-- Intermediate: compose col2 + col3 + epilogue. 19 instructions at base+176..base+252. -/
 theorem evm_mul_cols23ep_spec (sp : Addr) (base : Addr)
     (a0 a1 b2 b3 r2_in r3p_in v5 v6 v7 v10 : Word)
@@ -483,7 +434,6 @@ abbrev evm_mul_code (base : Addr) : CodeReq :=
       (CodeReq.union (mul_col3_code (base + 228))
         (CodeReq.singleton (base + 248) (.ADDI .x12 .x12 32)))))
 
-set_option maxHeartbeats 12800000 in
 /-- Full 256-bit EVM MUL: composes cols01 + cols23ep intermediate triples.
     63 instructions total. Pops 2 stack words (A at sp, B at sp+32),
     writes (A * B) mod 2^256 to sp+32..sp+56, advances sp by 32. -/

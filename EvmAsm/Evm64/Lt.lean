@@ -16,7 +16,6 @@ namespace EvmAsm.Rv64
 abbrev evm_lt_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_lt
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM LT: LT(a, b) = 1 iff a < b (unsigned).
     Borrow chain across 4 limbs, then store result.
     Pops 2 stack words (A at sp, B at sp+32),

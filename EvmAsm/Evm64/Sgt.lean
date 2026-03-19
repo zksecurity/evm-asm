@@ -21,7 +21,6 @@ namespace EvmAsm.Rv64
 abbrev evm_sgt_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_sgt
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM SGT: SGT(a, b) = 1 iff a >s b (signed).
     Computed as SLT(b, a): signed compare MSB limbs (b3 vs a3),
     if equal, unsigned borrow chain on lower 3 limbs (b - a).

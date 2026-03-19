@@ -20,7 +20,6 @@ namespace EvmAsm.Rv64
 abbrev evm_slt_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_slt
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM SLT: SLT(a, b) = 1 iff a <s b (signed).
     If MSB limbs differ, uses RV64 SLT (signed comparison).
     If MSB limbs equal, uses unsigned borrow chain on lower 3 limbs.
