@@ -19,7 +19,6 @@ namespace EvmAsm.Rv64
 abbrev evm_not_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_not
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM NOT: composes 4 per-limb NOT specs.
     12 instructions total. Unary: complements each limb in-place, sp unchanged. -/
 theorem evm_not_spec (sp base : Addr)
@@ -49,7 +48,6 @@ theorem evm_not_spec (sp base : Addr)
 theorem signExtend12_neg1_eq_allOnes : signExtend12 (-1 : BitVec 12) = BitVec.allOnes 64 := by
   native_decide
 
-set_option maxHeartbeats 6400000 in
 /-- Stack-level 256-bit EVM NOT: complements an EvmWord in-place. -/
 theorem evm_not_stack_spec (sp base : Addr)
     (a : EvmWord) (v7 : Word)

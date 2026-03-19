@@ -79,7 +79,6 @@ theorem divK_phaseA_body_spec (sp : Addr) (base : Addr)
 -- Phase A: full cpsBranch (body + BEQ)
 -- ============================================================================
 
-set_option maxHeartbeats 1600000 in
 /-- Phase A: OR-reduce b then BEQ to zero path. -/
 theorem divK_phaseA_spec (sp : Addr) (base : Addr)
     (b0 b1 b2 b3 v5 v10 : Word)
@@ -643,7 +642,6 @@ theorem divK_phaseC2_body_spec (sp shift v2 shift_mem : Word)
 -- Phase C2 full: body + BEQ (shift = 0 branch). cpsBranch.
 -- ============================================================================
 
-set_option maxHeartbeats 1600000 in
 set_option maxRecDepth 1024 in
 /-- Phase C2: store shift, compute anti_shift, BEQ if shift=0.
     Taken: shift = 0, skip normalization.
@@ -810,7 +808,6 @@ theorem divK_loopSetup_body_spec (sp n v1 v5 : Word)
     (signExtend12 (4 : BitVec 12)) n (base + 8) (by nofun) (by nofun)
   runBlock I0 I1 I2
 
-set_option maxHeartbeats 1600000 in
 /-- Loop setup: load n, compute m = 4-n, BLT if m < 0 (skip loop).
     Taken: m < 0 (n > 4, impossible in practice but handled).
     Not taken: m >= 0, proceed to loop. -/
@@ -2502,8 +2499,8 @@ theorem divK_div128_prodcheck2_merged_spec
 --   + LD+MUL+SLLI+OR+BLTU+JAL+ADDI+ADD (product check 1).
 -- ============================================================================
 
-set_option maxRecDepth 2048 in
 set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 2048 in
 /-- div128 step 1: trial division q1, clamp, product check. Instrs [10]-[24].
     Input: u_hi in x7, d_hi in x6, un1 in x11, dlo in memory.
     Output: refined q1 in x10, refined rhat in x7. -/
@@ -2645,8 +2642,8 @@ theorem divK_div128_step1_spec
 --   + LD+MUL+SLLI+LD+OR+BLTU+JAL+ADDI (product check 2).
 -- ============================================================================
 
-set_option maxRecDepth 2048 in
 set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 2048 in
 /-- div128 step 2: trial division q0, clamp, product check. Instrs [30]-[44].
     Input: un21 in x7, d_hi in x6, dlo/un0 in memory.
     Output: refined q0 in x5. -/

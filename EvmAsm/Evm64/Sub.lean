@@ -16,7 +16,6 @@ namespace EvmAsm.Rv64
 abbrev evm_sub_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_sub
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM SUB: composes 4 per-limb SUB specs + ADDI sp adjustment.
     30 instructions total. Pops 2 stack words (A at sp, B at sp+32),
     writes A - B to sp+32..sp+56, advances sp by 32.

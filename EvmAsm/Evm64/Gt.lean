@@ -17,7 +17,6 @@ namespace EvmAsm.Rv64
 abbrev evm_gt_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_gt
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM GT: GT(a, b) = 1 iff a > b (unsigned).
     Computed as borrow chain of (b - a), same circuit as LT(b, a).
     Pops 2 stack words (A at sp, B at sp+32),

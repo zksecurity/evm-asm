@@ -17,7 +17,6 @@ namespace EvmAsm.Rv64
 abbrev evm_and_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_and
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM AND: composes 4 per-limb AND specs + sp adjustment.
     17 instructions total. Pops 2 stack words (A at sp, B at sp+32),
     writes A &&& B to sp+32..sp+56, advances sp by 32. -/
@@ -45,7 +44,6 @@ theorem evm_and_spec (sp base : Addr)
 -- Stack-level AND spec
 -- ============================================================================
 
-set_option maxHeartbeats 6400000 in
 /-- Stack-level 256-bit EVM AND: operates on two EvmWords via evmWordIs. -/
 theorem evm_and_stack_spec (sp base : Addr)
     (a b : EvmWord) (v7 v6 : Word)
