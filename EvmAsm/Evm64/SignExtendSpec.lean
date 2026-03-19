@@ -27,10 +27,7 @@ namespace EvmAsm.Rv64
 /-- CodeReq for sign-extend in-place (4 instructions):
     LD x5, off(x12); SLL x5,x5,x6; SRA x5,x5,x6; SD x12,x5,off -/
 abbrev signext_inplace_code (off : BitVec 12) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 off))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SLL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SRA .x5 .x5 .x6))
-   (CodeReq.singleton (base + 12) (.SD .x12 .x5 off))))
+  CodeReq.ofProg base (signext_inplace_prog off)
 
 /-- Sign-extend in-place spec (4 instructions):
     LD x5, off(x12); SLL x5,x5,x6; SRA x5,x5,x6; SD x12,x5,off
@@ -60,11 +57,7 @@ theorem signext_inplace_spec (off : BitVec 12)
 /-- CodeReq for sign-extend body 3 (5 instructions):
     LD + SLL + SRA + SD at sp+56 + JAL. -/
 abbrev signext_body_3_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 56))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SLL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x5 56))
-   (CodeReq.singleton (base + 16) (.JAL .x0 jal_off)))))
+  CodeReq.ofProg base (signext_body_3_prog jal_off)
 
 /-- Body 3: limb_idx=3, sign-extend limb 3 at sp+56 (5 instrs).
     4 instructions: LD + SLL + SRA + SD + JAL. No higher limbs to fill. -/
@@ -88,13 +81,7 @@ theorem signext_body_3_spec (sp : Word)
 /-- CodeReq for sign-extend body 2 (7 instructions):
     LD + SLL + SRA + SD at sp+48 + SRAI + SD at sp+56 + JAL. -/
 abbrev signext_body_2_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 48))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SLL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x5 48))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x10 56))
-   (CodeReq.singleton (base + 24) (.JAL .x0 jal_off)))))))
+  CodeReq.ofProg base (signext_body_2_prog jal_off)
 
 /-- Body 2: limb_idx=2, sign-extend limb 2 at sp+48, fill limb 3 (7 instrs).
     LD + SLL + SRA + SD + SRAI + SD + JAL. -/
@@ -127,14 +114,7 @@ theorem signext_body_2_spec (sp : Word)
 /-- CodeReq for sign-extend body 1 (8 instructions):
     LD + SLL + SRA + SD at sp+40 + SRAI + SD at sp+48 + SD at sp+56 + JAL. -/
 abbrev signext_body_1_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 40))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SLL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x5 40))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x10 48))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x10 56))
-   (CodeReq.singleton (base + 28) (.JAL .x0 jal_off))))))))
+  CodeReq.ofProg base (signext_body_1_prog jal_off)
 
 /-- Body 1: limb_idx=1, sign-extend limb 1 at sp+40, fill limbs 2-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + JAL. -/
@@ -171,14 +151,7 @@ theorem signext_body_1_spec (sp : Word)
     LD + SLL + SRA + SD at sp+32 + SRAI + SD at sp+40 + SD at sp+48 + SD at sp+56.
     Falls through to done. -/
 abbrev signext_body_0_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 32))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SLL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x5 32))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x10 40))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x10 48))
-   (CodeReq.singleton (base + 28) (.SD .x12 .x10 56))))))))
+  CodeReq.ofProg base signext_body_0
 
 /-- Body 0: limb_idx=0, sign-extend limb 0 at sp+32, fill limbs 1-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + SD. Falls through to done. -/

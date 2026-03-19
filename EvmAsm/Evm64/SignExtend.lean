@@ -112,6 +112,24 @@ def signext_body_0 : Program :=
   single (.SRAI .x10 .x5 63) ;;             -- sign fill value
   SD .x12 .x10 40 ;; SD .x12 .x10 48 ;; SD .x12 .x10 56  -- fill x[1], x[2], x[3]
 
+/-- Parameterized inplace sign-extension (4 instructions). -/
+def signext_inplace_prog (off : BitVec 12) : Program :=
+  [.LD .x5 .x12 off, .SLL .x5 .x5 .x6, .SRA .x5 .x5 .x6, .SD .x12 .x5 off]
+
+/-- Parameterized body_3: sign-extend limb 3 + JAL (5 instrs). -/
+def signext_body_3_prog (jal_off : BitVec 21) : Program :=
+  [.LD .x5 .x12 56, .SLL .x5 .x5 .x6, .SRA .x5 .x5 .x6, .SD .x12 .x5 56, .JAL .x0 jal_off]
+
+/-- Parameterized body_2: sign-extend limb 2, fill limb 3 + JAL (7 instrs). -/
+def signext_body_2_prog (jal_off : BitVec 21) : Program :=
+  [.LD .x5 .x12 48, .SLL .x5 .x5 .x6, .SRA .x5 .x5 .x6, .SD .x12 .x5 48,
+   .SRAI .x10 .x5 63, .SD .x12 .x10 56, .JAL .x0 jal_off]
+
+/-- Parameterized body_1: sign-extend limb 1, fill limbs 2-3 + JAL (8 instrs). -/
+def signext_body_1_prog (jal_off : BitVec 21) : Program :=
+  [.LD .x5 .x12 40, .SLL .x5 .x5 .x6, .SRA .x5 .x5 .x6, .SD .x12 .x5 40,
+   .SRAI .x10 .x5 63, .SD .x12 .x10 48, .SD .x12 .x10 56, .JAL .x0 jal_off]
+
 /-- done: pop b word (1 instruction). -/
 def signext_done : Program :=
   ADDI .x12 .x12 32
