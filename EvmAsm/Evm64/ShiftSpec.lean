@@ -34,13 +34,7 @@ set_option maxHeartbeats 800000
 -- SHR Merge Limb (7 instructions)
 
 abbrev shr_merge_limb_code (src_off next_off dst_off : BitVec 12) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 src_off))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 next_off))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-   (CodeReq.singleton (base + 24) (.SD .x12 .x5 dst_off)))))))
+  CodeReq.ofProg base (shr_merge_limb_prog src_off next_off dst_off)
 
 theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
     (sp src next dst_old v5 v10 bit_shift anti_shift mask : Word) (base : Addr)
@@ -73,9 +67,7 @@ theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
 -- SHR Last Limb (3 instructions)
 
 abbrev shr_last_limb_code (dst_off : BitVec 12) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-   (CodeReq.singleton (base + 8) (.SD .x12 .x5 dst_off)))
+  CodeReq.ofProg base (shr_last_limb_prog dst_off)
 
 theorem shr_last_limb_spec (dst_off : BitVec 12)
     (sp src dst_old v5 bit_shift : Word) (base : Addr)
@@ -98,13 +90,7 @@ theorem shr_last_limb_spec (dst_off : BitVec 12)
 -- SHR Merge Limb In-place (7 instructions, src_off = dst_off)
 
 abbrev shr_merge_limb_inplace_code (off next_off : BitVec 12) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 off))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 next_off))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-   (CodeReq.singleton (base + 24) (.SD .x12 .x5 off)))))))
+  CodeReq.ofProg base (shr_merge_limb_inplace_prog off next_off)
 
 theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
     (sp src next v5 v10 bit_shift anti_shift mask : Word) (base : Addr)
@@ -135,9 +121,7 @@ theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
 -- SHR Last Limb In-place (3 instructions, dst_off = 24)
 
 abbrev shr_last_limb_inplace_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-   (CodeReq.singleton (base + 8) (.SD .x12 .x5 24)))
+  CodeReq.ofProg base shr_last_limb_inplace_prog
 
 theorem shr_last_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Addr)
@@ -215,8 +199,7 @@ theorem shr_phase_b_spec (shift0 sp r6 r7 r11 : Word) (base : Addr) :
 -- ============================================================================
 
 abbrev shr_ld_or_acc_code (off : BitVec 12) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x10 .x12 off))
-   (CodeReq.singleton (base + 4) (.OR .x5 .x5 .x10))
+  CodeReq.ofProg base (shr_ld_or_acc_prog off)
 
 theorem shr_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     (base : Addr)
@@ -236,13 +219,7 @@ theorem shr_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
 -- Body 3: limb_shift=3, 7 instructions
 
 abbrev shr_body_3_code (jal_off : BitVec 21) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SD .x12 .x5 0))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x0 8))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SD .x12 .x0 16))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x0 24))
-   (CodeReq.singleton (base + 24) (.JAL .x0 jal_off)))))))
+  CodeReq.ofProg base (shr_body_3_prog jal_off)
 
 theorem shr_body_3_spec (sp : Word)
     (v5 v10 bit_shift anti_shift mask : Word)
@@ -270,19 +247,7 @@ theorem shr_body_3_spec (sp : Word)
 -- Body 2: limb_shift=2, 13 instructions
 
 abbrev shr_body_2_code (jal_off : BitVec 21) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.SD .x12 .x5 8))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SD .x12 .x0 16))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.SD .x12 .x0 24))
-   (CodeReq.singleton (base + 48) (.JAL .x0 jal_off)))))))))))))
+  CodeReq.ofProg base (shr_body_2_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 theorem shr_body_2_spec (sp : Word)
@@ -314,29 +279,7 @@ theorem shr_body_2_spec (sp : Word)
 -- Body 1: limb_shift=1, 19 instructions
 
 abbrev shr_body_1_code (jal_off : BitVec 21) (base : Addr) : CodeReq :=
-  -- merge_limb(8,16,0): 7 at base..base+24
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  -- merge_limb(16,24,8): 7 at base+28..base+52
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.SD .x12 .x5 8))
-  -- last_limb(16): 3 at base+56..base+64
-  (CodeReq.union (CodeReq.singleton (base + 56) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.SD .x12 .x5 16))
-  -- SD + JAL
-  (CodeReq.union (CodeReq.singleton (base + 68) (.SD .x12 .x0 24))
-   (CodeReq.singleton (base + 72) (.JAL .x0 jal_off)))))))))))))))))))
+  CodeReq.ofProg base (shr_body_1_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 theorem shr_body_1_spec (sp : Word)
@@ -372,36 +315,7 @@ theorem shr_body_1_spec (sp : Word)
 -- Body 0: limb_shift=0, 25 instructions
 
 abbrev shr_body_0_code (jal_off : BitVec 21) (base : Addr) : CodeReq :=
-  -- merge_limb_inplace(0,8): 7 at base..base+24
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  -- merge_limb_inplace(8,16): 7 at base+28..base+52
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.LD .x10 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.SD .x12 .x5 8))
-  -- merge_limb_inplace(16,24): 7 at base+56..base+80
-  (CodeReq.union (CodeReq.singleton (base + 56) (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 80) (.SD .x12 .x5 16))
-  -- last_limb_inplace: 3 at base+84..base+92
-  (CodeReq.union (CodeReq.singleton (base + 84) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 88) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 92) (.SD .x12 .x5 24))
-  -- JAL at base+96
-   (CodeReq.singleton (base + 96) (.JAL .x0 jal_off)))))))))))))))))))))))))
+  CodeReq.ofProg base (shr_body_0_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 theorem shr_body_0_spec (sp : Word)
@@ -443,8 +357,7 @@ theorem shr_body_0_spec (sp : Word)
 -- ============================================================================
 
 abbrev shr_cascade_step_code (k : BitVec 12) (offset : BitVec 13) (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.ADDI .x10 .x0 k))
-   (CodeReq.singleton (base + 4) (.BEQ .x5 .x10 offset))
+  CodeReq.ofProg base (shr_cascade_step_prog k offset)
 
 /-- Cascade step: ADDI x10,x0,k followed by BEQ x5,x10,off.
     Produces a cpsBranch with clean postconditions (no pure facts).
