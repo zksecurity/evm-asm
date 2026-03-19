@@ -2124,6 +2124,30 @@ theorem CodeReq.Disjoint.union_left {cr1 cr2 cr3 : CodeReq}
 theorem CodeReq.Disjoint.symm {cr1 cr2 : CodeReq} (hd : cr1.Disjoint cr2) :
     cr2.Disjoint cr1 := fun a => (hd a).symm
 
+/-- ofProg of empty list is disjoint from anything (left). -/
+theorem CodeReq.Disjoint.ofProg_nil_left (base : Addr) (cr : CodeReq) :
+    CodeReq.Disjoint (CodeReq.ofProg base []) cr :=
+  CodeReq.Disjoint.empty_left cr
+
+/-- Any CodeReq is disjoint from ofProg of empty list (right). -/
+theorem CodeReq.Disjoint.ofProg_nil_right (cr : CodeReq) (base : Addr) :
+    CodeReq.Disjoint cr (CodeReq.ofProg base []) :=
+  CodeReq.Disjoint.empty_right cr
+
+/-- Disjointness of ofProg cons on the left: peel off the head singleton. -/
+theorem CodeReq.Disjoint.ofProg_cons_left (base : Addr) (i : Instr) (rest : List Instr) (cr : CodeReq)
+    (h1 : CodeReq.Disjoint (CodeReq.singleton base i) cr)
+    (h2 : CodeReq.Disjoint (CodeReq.ofProg (base + 4) rest) cr) :
+    CodeReq.Disjoint (CodeReq.ofProg base (i :: rest)) cr := by
+  rw [CodeReq.ofProg_cons]; exact CodeReq.Disjoint.union_left h1 h2
+
+/-- Disjointness of ofProg cons on the right: peel off the head singleton. -/
+theorem CodeReq.Disjoint.ofProg_cons_right (cr : CodeReq) (base : Addr) (i : Instr) (rest : List Instr)
+    (h1 : CodeReq.Disjoint cr (CodeReq.singleton base i))
+    (h2 : CodeReq.Disjoint cr (CodeReq.ofProg (base + 4) rest)) :
+    CodeReq.Disjoint cr (CodeReq.ofProg base (i :: rest)) := by
+  rw [CodeReq.ofProg_cons]; exact CodeReq.Disjoint.union_right h1 h2
+
 /-- Simplify CodeReq.union applied to a concrete address, when the head is a singleton.
     This collapses `(singleton a i |> union · rest) a'` into an if-then-else
     at the ite level rather than the match-over-ite level. -/
@@ -2228,6 +2252,128 @@ theorem CodeReq.singleton_get (a : Addr) (i : Instr) :
     CodeReq.singleton a i a = some i := by
   simp [CodeReq.singleton]
 
+-- ---------------------------------------------------------------------------
+-- ofProg lookup by flat index (for tactic-built mono proofs)
+-- ---------------------------------------------------------------------------
+
+/-- Auxiliary: `base + BitVec.ofNat 64 0 = base`. -/
+private theorem ofProg_addr_zero (base : Addr) : base + BitVec.ofNat 64 0 = base := by
+  bv_omega
+
+/-- Auxiliary: address step for ofProg induction.
+    `base + ofNat(4*(k+1)) = (base + 4) + ofNat(4*k)`. -/
+private theorem ofProg_addr_succ (base : Addr) (k : Nat) :
+    base + BitVec.ofNat 64 (4 * (k + 1)) = (base + 4) + BitVec.ofNat 64 (4 * k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+/-- Auxiliary: `base + ofNat(4*(k+1)) ≠ base` when `4*(k+1) < 2^64`. -/
+private theorem ofProg_addr_ne (base : Addr) (k : Nat) (hk : 4 * (k + 1) < 2 ^ 64) :
+    base + BitVec.ofNat 64 (4 * (k + 1)) ≠ base := by
+  intro h
+  have := congrArg BitVec.toNat h
+  simp [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at this
+  omega
+
+/-- ofProg lookup at offset 0: the first instruction is at `base`. -/
+theorem CodeReq.ofProg_lookup_zero (base : Addr) (i : Instr) (rest : List Instr) :
+    (CodeReq.ofProg base (i :: rest)) base = some i := by
+  rw [CodeReq.ofProg_cons]
+  exact CodeReq.union_hit (CodeReq.singleton_get base i)
+
+theorem CodeReq.ofProg_lookup (base : Addr) (prog : List Instr) (k : Nat)
+    (hk : k < prog.length) (hbound : 4 * prog.length < 2 ^ 64) :
+    (CodeReq.ofProg base prog) (base + BitVec.ofNat 64 (4 * k)) = some (prog.get ⟨k, hk⟩) := by
+  induction prog generalizing base k with
+  | nil => exact absurd hk (by simp)
+  | cons i rest ih =>
+    rw [CodeReq.ofProg_cons]
+    cases k with
+    | zero =>
+      simp only [Nat.mul_zero, List.get]
+      rw [ofProg_addr_zero]
+      exact CodeReq.union_hit (CodeReq.singleton_get base i)
+    | succ k' =>
+      simp only [List.get]
+      have hk'_bound : 4 * (k' + 1) < 2 ^ 64 := by omega
+      have hmiss : (CodeReq.singleton base i) (base + BitVec.ofNat 64 (4 * (k' + 1))) = none :=
+        CodeReq.singleton_miss (ofProg_addr_ne base k' hk'_bound)
+      simp only [CodeReq.union, hmiss]
+      rw [ofProg_addr_succ]
+      exact ih (base + 4) k' (by simp [List.length] at hk; omega) (by simp [List.length] at hbound; omega)
+
+/-- Variant of ofProg_none_range with explicit length (avoids needing to reduce prog.length). -/
+theorem CodeReq.ofProg_none_range_len (base : Addr) (prog : List Instr) (n : Nat) (a : Addr)
+    (hlen : prog.length = n)
+    (h : ∀ k : Nat, k < n → a ≠ base + BitVec.ofNat 64 (4 * k)) :
+    CodeReq.ofProg base prog a = none :=
+  CodeReq.ofProg_none_range base prog a (fun k hk => h k (hlen ▸ hk))
+
+/-- Singleton is disjoint from ofProg if the singleton's address is not in the program range. -/
+theorem CodeReq.Disjoint.singleton_ofProg {a : Addr} {i : Instr} {base : Addr} {prog : List Instr}
+    (h : CodeReq.ofProg base prog a = none) :
+    CodeReq.Disjoint (CodeReq.singleton a i) (CodeReq.ofProg base prog) := by
+  intro a'
+  simp only [CodeReq.singleton]
+  by_cases hb : (a' == a) = true
+  · rw [beq_iff_eq] at hb; subst hb; right; exact h
+  · left; simp [hb]
+
+/-- ofProg is disjoint from singleton if the singleton's address is not in the program range. -/
+theorem CodeReq.Disjoint.ofProg_singleton {a : Addr} {i : Instr} {base : Addr} {prog : List Instr}
+    (h : CodeReq.ofProg base prog a = none) :
+    CodeReq.Disjoint (CodeReq.ofProg base prog) (CodeReq.singleton a i) :=
+  (CodeReq.Disjoint.singleton_ofProg h).symm
+
+/-- Reverse of ofProg_none_range: if `ofProg` returns `some` at address `a`,
+    then `a` must be `base + 4*k` for some `k < prog.length`. -/
+theorem CodeReq.ofProg_some_range (base : Addr) (prog : List Instr) (a : Addr) (i : Instr)
+    (h : (CodeReq.ofProg base prog) a = some i) :
+    ∃ k, k < prog.length ∧ a = base + BitVec.ofNat 64 (4 * k) := by
+  induction prog generalizing base with
+  | nil => simp [CodeReq.ofProg_nil, CodeReq.empty] at h
+  | cons instr rest ih =>
+    rw [CodeReq.ofProg_cons] at h
+    simp only [CodeReq.union, CodeReq.singleton] at h
+    by_cases hb : (a == base) = true
+    · rw [beq_iff_eq] at hb
+      exact ⟨0, by simp, by simp [hb, BitVec.ofNat]⟩
+    · simp [hb] at h
+      obtain ⟨k, hk, haddr⟩ := ih (base + 4) h
+      exact ⟨k + 1, by simp [List.length]; omega, by rw [haddr]; exact (ofProg_addr_succ base k).symm⟩
+
+/-- Two ofProg blocks at non-overlapping address ranges are disjoint.
+    Only requires the address-inequality predicate, not list expansion. -/
+theorem CodeReq.ofProg_disjoint_range (base1 : Addr) (prog1 : List Instr)
+    (base2 : Addr) (prog2 : List Instr)
+    (h : ∀ k1 k2, k1 < prog1.length → k2 < prog2.length →
+      base1 + BitVec.ofNat 64 (4 * k1) ≠ base2 + BitVec.ofNat 64 (4 * k2)) :
+    CodeReq.Disjoint (CodeReq.ofProg base1 prog1) (CodeReq.ofProg base2 prog2) := by
+  intro a
+  by_cases h1 : (CodeReq.ofProg base1 prog1) a = none
+  · left; exact h1
+  · right
+    -- h1 : ¬ ... = none, so ∃ i, ... = some i
+    match hsome : (CodeReq.ofProg base1 prog1) a with
+    | none => exact absurd hsome h1
+    | some i =>
+      obtain ⟨k1, hk1, haddr⟩ := CodeReq.ofProg_some_range base1 prog1 a i hsome
+      apply CodeReq.ofProg_none_range
+      intro k2 hk2
+      rw [haddr]
+      exact h k1 k2 hk1 hk2
+
+/-- Variant of ofProg_disjoint_range with explicit lengths (avoids needing to reduce prog.length). -/
+theorem CodeReq.ofProg_disjoint_range_len (base1 : Addr) (prog1 : List Instr) (n1 : Nat)
+    (base2 : Addr) (prog2 : List Instr) (n2 : Nat)
+    (hlen1 : prog1.length = n1) (hlen2 : prog2.length = n2)
+    (h : ∀ k1 k2, k1 < n1 → k2 < n2 →
+      base1 + BitVec.ofNat 64 (4 * k1) ≠ base2 + BitVec.ofNat 64 (4 * k2)) :
+    CodeReq.Disjoint (CodeReq.ofProg base1 prog1) (CodeReq.ofProg base2 prog2) :=
+  CodeReq.ofProg_disjoint_range base1 prog1 base2 prog2
+    (fun k1 k2 hk1 hk2 => h k1 k2 (hlen1 ▸ hk1) (hlen2 ▸ hk2))
+
 theorem CodeReq.union_satisfiedBy (cr1 cr2 : CodeReq) (s : MachineState)
     (hd : cr1.Disjoint cr2) :
     (cr1.union cr2).SatisfiedBy s ↔ cr1.SatisfiedBy s ∧ cr2.SatisfiedBy s := by
@@ -2294,6 +2440,30 @@ theorem CodeReq.SatisfiedBy_mono {cr1 cr2 : CodeReq} (s : MachineState)
     (hmono : ∀ a i, cr1 a = some i → cr2 a = some i)
     (h : cr2.SatisfiedBy s) : cr1.SatisfiedBy s :=
   fun a i hcr1 => h a i (hmono a i hcr1)
+
+-- ============================================================================
+-- Address arithmetic reflection lemmas (for fast tactic proofs)
+-- ============================================================================
+
+/-- Addresses with same base but different offsets are not equal.
+    Used by `proveAddrNe` for ~100x faster proofs vs `bv_omega`. -/
+theorem addr_ne_of_bv_ne (base a b : Addr) (h : a ≠ b) :
+    base + a ≠ base + b := by bv_omega
+
+/-- Base address is not equal to base + a when a ≠ 0. -/
+theorem addr_ne_add_right (base a : Addr) (h : a ≠ 0) :
+    base ≠ base + a := by bv_omega
+
+/-- Base + a is not equal to bare base when a ≠ 0. -/
+theorem addr_add_ne_left (base a : Addr) (h : a ≠ 0) :
+    base + a ≠ base := by bv_omega
+
+/-- Address reassociation: (base + k1) + k2 = base + sum when k1 + k2 = sum. -/
+theorem addr_reassoc (base k1 k2 sum : Addr) (h : k1 + k2 = sum) :
+    (base + k1) + k2 = base + sum := by subst h; bv_omega
+
+/-- Address addition with zero: a + 0 = a. -/
+theorem addr_add_zero_bv (a : Addr) : a + (0 : Addr) = a := by bv_omega
 
 -- ============================================================================
 -- Assertion-level equalities for AC normalization of sepConj

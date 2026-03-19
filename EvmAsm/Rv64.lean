@@ -14,9 +14,11 @@ import EvmAsm.Rv64.GenericSpecs
 import EvmAsm.Rv64.InstructionSpecs
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.ControlFlow
+import EvmAsm.Rv64.Tactics.PerfTrace
 import EvmAsm.Rv64.Tactics.XPerm
 import EvmAsm.Rv64.Tactics.XSimp
 import EvmAsm.Rv64.Tactics.XCancel
 import EvmAsm.Rv64.Tactics.SeqFrame
 import EvmAsm.Rv64.Tactics.SpecDb
 import EvmAsm.Rv64.Tactics.RunBlock
+import EvmAsm.Rv64.Tactics.LiftSpec
