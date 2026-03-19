@@ -145,13 +145,7 @@ theorem divK_phaseA_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 abbrev divK_phaseB_init1_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.SD .x12 .x0 4088))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SD .x12 .x0 4080))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SD .x12 .x0 4072))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SD .x12 .x0 4064))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SD .x12 .x0 4016))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x0 4008))
-   (CodeReq.singleton (base + 24) (.SD .x12 .x0 4000)))))))
+  CodeReq.ofProg base (divK_phaseB.take 7)
 
 /-- Phase B init part 1: zero scratch q[0..3] and u[5..7]. 7 instructions. -/
 theorem divK_phaseB_init1_spec (sp : Addr) (base : Addr)
@@ -187,8 +181,7 @@ theorem divK_phaseB_init1_spec (sp : Addr) (base : Addr)
   runBlock I0 I1 I2 I3 I4 I5 I6
 
 abbrev divK_phaseB_init2_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x6 .x12 40))
-   (CodeReq.singleton (base + 4) (.LD .x7 .x12 48))
+  CodeReq.ofProg base (divK_phaseB.drop 7 |>.take 2)
 
 /-- Phase B init part 2: load b[1] and b[2]. 2 instructions. -/
 theorem divK_phaseB_init2_spec (sp : Addr) (base : Addr)
@@ -588,11 +581,7 @@ theorem divK_epilogue_store_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 abbrev divK_phaseB_tail_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.SD .x12 .x5 3984))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.ADDI .x5 .x5 4095))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SLLI .x5 .x5 3))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.ADD .x5 .x12 .x5))
-   (CodeReq.singleton (base + 16) (.LD .x5 .x5 32)))))
+  CodeReq.ofProg base (divK_phaseB.drop 16)
 
 /-- Phase B tail: store n to scratch, compute sp + (n-1)*8, load b[n-1].
     x5 = n on entry. On exit, x5 = leading limb b[n-1]. -/

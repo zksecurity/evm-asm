@@ -30,6 +30,19 @@ private theorem divK_divEpilogue_len : (divK_div_epilogue 24).length = 10 := by 
 private theorem divK_zeroPath_len : divK_zeroPath.length = 5 := by native_decide
 private theorem divK_nop_len : (ADDI .x0 .x0 0 : Program).length = 1 := by native_decide
 private theorem divK_div128_len : divK_div128.length = 49 := by native_decide
+private theorem divK_modEpilogue_len : (divK_mod_epilogue 24).length = 10 := by native_decide
+
+/-- Skip one ofProg block in a right-nested union via range disjointness.
+    Closes the disjointness goal using block length lemmas + bv_omega. -/
+macro "skipBlock" : tactic =>
+  `(tactic| apply CodeReq.mono_union_right
+      (CodeReq.ofProg_disjoint_range _ _ _ _ (fun k1 k2 hk1 hk2 => by
+        simp only [divK_phaseA_len, divK_phaseB_len, divK_clz_len, divK_phaseC2_len,
+          divK_normB_len, divK_normA_len, divK_copyAU_len, divK_loopSetup_len,
+          divK_loopBody_len, divK_denorm_len, divK_divEpilogue_len,
+          divK_zeroPath_len, divK_nop_len, divK_div128_len,
+          divK_modEpilogue_len] at hk1 hk2
+        bv_omega)))
 
 -- ============================================================================
 -- Section 2: BitVec.ofNat offset normalization (via native_decide)
@@ -120,241 +133,126 @@ private theorem divK_zeroPath_instrs :
 /-- The full evm_div code split into 14 per-phase CodeReq.ofProg blocks.
     This is the canonical CodeReq for all composed specs. -/
 abbrev divCode (base : Addr) : CodeReq :=
-  CodeReq.ofProg base (divK_phaseA 1016) |>.union
-  (CodeReq.ofProg (base + 32) divK_phaseB |>.union
-  (CodeReq.ofProg (base + 116) divK_clz |>.union
-  (CodeReq.ofProg (base + 212) (divK_phaseC2 172) |>.union
-  (CodeReq.ofProg (base + 228) divK_normB |>.union
-  (CodeReq.ofProg (base + 312) (divK_normA 40) |>.union
-  (CodeReq.ofProg (base + 396) divK_copyAU |>.union
-  (CodeReq.ofProg (base + 432) (divK_loopSetup 460) |>.union
-  (CodeReq.ofProg (base + 448) (divK_loopBody 556 7740) |>.union
-  (CodeReq.ofProg (base + 904) divK_denorm |>.union
-  (CodeReq.ofProg (base + 1004) (divK_div_epilogue 24) |>.union
-  (CodeReq.ofProg (base + 1044) divK_zeroPath |>.union
-  (CodeReq.ofProg (base + 1064) (ADDI .x0 .x0 0) |>.union
-  (CodeReq.ofProg (base + 1068) divK_div128)))))))))))))
+  CodeReq.unionAll [
+    CodeReq.ofProg base (divK_phaseA 1016),             -- block 0
+    CodeReq.ofProg (base + 32) divK_phaseB,              -- block 1
+    CodeReq.ofProg (base + 116) divK_clz,                -- block 2
+    CodeReq.ofProg (base + 212) (divK_phaseC2 172),      -- block 3
+    CodeReq.ofProg (base + 228) divK_normB,              -- block 4
+    CodeReq.ofProg (base + 312) (divK_normA 40),         -- block 5
+    CodeReq.ofProg (base + 396) divK_copyAU,             -- block 6
+    CodeReq.ofProg (base + 432) (divK_loopSetup 460),    -- block 7
+    CodeReq.ofProg (base + 448) (divK_loopBody 556 7740),-- block 8
+    CodeReq.ofProg (base + 904) divK_denorm,             -- block 9
+    CodeReq.ofProg (base + 1004) (divK_div_epilogue 24), -- block 10
+    CodeReq.ofProg (base + 1044) divK_zeroPath,          -- block 11
+    CodeReq.ofProg (base + 1064) (ADDI .x0 .x0 0),      -- block 12
+    CodeReq.ofProg (base + 1068) divK_div128             -- block 13
+  ]
 
 -- ============================================================================
--- Section 5: CodeReq subsumption lemmas
--- Each sub-spec's CodeReq is subsumed by divCode.
--- These are proved by showing the sub-CodeReq maps into the corresponding
--- ofProg block, which is a component of the divCode union.
+-- Section 5: CodeReq subsumption lemmas (via mono_unionAll / mono_sub_unionAll)
+-- Each sub-spec's CodeReq is subsumed by divCode using structural union reasoning.
 -- ============================================================================
 
-/-- Phase A code (8 instructions) is subsumed by divCode.
-    Both sides are `CodeReq.ofProg base (divK_phaseA 1016)`, so this is `union_mono_left`. -/
+/-- Phase A code (8 instructions, block 0) is subsumed by divCode. -/
 private theorem divK_phaseA_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_phaseA_code base) a = some i → (divCode base) a = some i := by
-  unfold divCode divK_phaseA_code; exact CodeReq.union_mono_left _ _
+  unfold divCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _
 
-set_option maxRecDepth 2048 in
-set_option maxHeartbeats 6400000 in
-/-- Zero path code (5 instructions) is subsumed by divCode. -/
+set_option maxHeartbeats 1600000 in
+/-- Zero path code (5 instructions, block 11) is subsumed by divCode. -/
 private theorem divK_zeroPath_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_zeroPath_code (base + 1044)) a = some i → (divCode base) a = some i := by
-  intro a i h
-  -- Derive address range from h (non-destructively)
-  have ha : a = base + 1044 ∨ a = base + 1048 ∨ a = base + 1052 ∨
-            a = base + 1056 ∨ a = base + 1060 := by
-    suffices ∀ b, divK_zeroPath_code (b + 1044) a = some i →
-      a = b + 1044 ∨ a = b + 1048 ∨ a = b + 1052 ∨ a = b + 1056 ∨ a = b + 1060 from this base h
-    intro b h'
-    -- Expand ofProg to singleton chain for address case analysis
-    simp only [divK_zeroPath_code, show (divK_zeroPath : List Instr) =
-      [.ADDI .x12 .x12 32, .SD .x12 .x0 0, .SD .x12 .x0 8, .SD .x12 .x0 16, .SD .x12 .x0 24]
-      from rfl, CodeReq.ofProg_cons, CodeReq.ofProg_nil,
-      CodeReq.union, CodeReq.singleton, CodeReq.empty,
-      OfNat.ofNat, bv_add_ofNat_assoc] at h'
-    by_cases h1 : (a == b + 1044 : Bool)
-    · exact Or.inl (beq_iff_eq.mp h1)
-    · by_cases h2 : (a == b + 1048 : Bool)
-      · exact Or.inr (Or.inl (beq_iff_eq.mp h2))
-      · by_cases h3 : (a == b + 1052 : Bool)
-        · exact Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h3)))
-        · by_cases h4 : (a == b + 1056 : Bool)
-          · exact Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h4))))
-          · by_cases h5 : (a == b + 1060 : Bool)
-            · exact Or.inr (Or.inr (Or.inr (Or.inr (beq_iff_eq.mp h5))))
-            · exfalso; simp_all
-  unfold divCode
-  -- Skip blocks 0-10: each returns none at zeroPath addresses
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s1 := CodeReq.ofProg_none_range (base + 32) divK_phaseB a
-    (fun k hk => by rw [divK_phaseB_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s2 := CodeReq.ofProg_none_range (base + 116) divK_clz a
-    (fun k hk => by rw [divK_clz_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s3 := CodeReq.ofProg_none_range (base + 212) (divK_phaseC2 172) a
-    (fun k hk => by rw [divK_phaseC2_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s4 := CodeReq.ofProg_none_range (base + 228) divK_normB a
-    (fun k hk => by rw [divK_normB_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s5 := CodeReq.ofProg_none_range (base + 312) (divK_normA 40) a
-    (fun k hk => by rw [divK_normA_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s6 := CodeReq.ofProg_none_range (base + 396) divK_copyAU a
-    (fun k hk => by rw [divK_copyAU_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s7 := CodeReq.ofProg_none_range (base + 432) (divK_loopSetup 460) a
-    (fun k hk => by rw [divK_loopSetup_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s8 := CodeReq.ofProg_none_range (base + 448) (divK_loopBody 556 7740) a
-    (fun k hk => by rw [divK_loopBody_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s9 := CodeReq.ofProg_none_range (base + 904) divK_denorm a
-    (fun k hk => by rw [divK_denorm_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s10 := CodeReq.ofProg_none_range (base + 1004) (divK_div_epilogue 24) a
-    (fun k hk => by rw [divK_divEpilogue_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  -- Peel off blocks 0-10 via union_none_left, then match block 11
-  rw [CodeReq.union_none_left s0, CodeReq.union_none_left s1, CodeReq.union_none_left s2,
-      CodeReq.union_none_left s3, CodeReq.union_none_left s4, CodeReq.union_none_left s5,
-      CodeReq.union_none_left s6, CodeReq.union_none_left s7, CodeReq.union_none_left s8,
-      CodeReq.union_none_left s9, CodeReq.union_none_left s10]
-  apply CodeReq.union_mono_left
-  -- Both h and goal describe the same 5-address code region; case-split on concrete address
-  rcases ha with rfl | rfl | rfl | rfl | rfl <;> (
-    simp only [divK_zeroPath_code, show (divK_zeroPath : List Instr) =
-      [.ADDI .x12 .x12 32, .SD .x12 .x0 0, .SD .x12 .x0 8, .SD .x12 .x0 16, .SD .x12 .x0 24]
-      from rfl, CodeReq.ofProg_cons, CodeReq.ofProg_nil,
-      CodeReq.union, CodeReq.singleton, CodeReq.empty,
-      OfNat.ofNat, bv_add_ofNat_assoc] at h
-    simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_zeroPath_instrs, progIndexed,
-      List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-      OfNat.ofNat, bv_add_ofNat_assoc]
-    simp_all)
+  unfold divCode divK_zeroPath_code; simp only [CodeReq.unionAll_cons]
+  -- Skip blocks 0-10, then match block 11
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-/-- BEQ singleton at base+28 is subsumed by divCode (it's part of phaseA). -/
+/-- BEQ singleton at base+28 is subsumed by divCode (part of block 0: phaseA). -/
 private theorem beq_singleton_sub_divCode (base : Addr) :
     ∀ a i, (CodeReq.singleton (base + 28) (.BEQ .x5 .x0 1016)) a = some i →
       (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  unfold divCode
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.singleton] at h
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseA_instrs] at ⊢
-  simp only [progIndexed] at ⊢
-  simp only [List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton] at ⊢
-  simp only [OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  split at h <;> simp_all
+  exact CodeReq.union_mono_left _ _ a i
+    (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1016) 7
+      (by native_decide) (by native_decide)) a i h)
 
-set_option maxHeartbeats 1600000 in
-/-- Phase B init1 code (7 instructions) is subsumed by divCode. -/
+/-- Phase B init1 code (ofProg sub-range of block 1) is subsumed by divCode. -/
 private theorem divK_phaseB_init1_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_phaseB_init1_code (base + 32)) a = some i → (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  simp only [divK_phaseB_init1_code, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at h
-  -- Derive address range from h
-  have ha : a = base + 32 ∨ a = base + 36 ∨ a = base + 40 ∨ a = base + 44 ∨
-            a = base + 48 ∨ a = base + 52 ∨ a = base + 56 := by
-    by_cases h1 : (a == base + 32 : Bool)
-    · exact Or.inl (beq_iff_eq.mp h1)
-    · by_cases h2 : (a == base + 36 : Bool)
-      · exact Or.inr (Or.inl (beq_iff_eq.mp h2))
-      · by_cases h3 : (a == base + 40 : Bool)
-        · exact Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h3)))
-        · by_cases h4 : (a == base + 44 : Bool)
-          · exact Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h4))))
-          · by_cases h5 : (a == base + 48 : Bool)
-            · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h5)))))
-            · by_cases h6 : (a == base + 52 : Bool)
-              · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h6))))))
-              · by_cases h7 : (a == base + 56 : Bool)
-                · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (beq_iff_eq.mp h7))))))
-                · exfalso; simp_all
-  unfold divCode
-  -- Skip block 0 (phaseA: base to base+28)
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; rcases ha with h|h|h|h|h|h|h <;> (subst h; bv_omega))
-  rw [CodeReq.union_none_left s0]
-  -- Focus on block 1 (phaseB)
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseB_instrs, progIndexed,
-    List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+  -- Lift from init1 sub-range to full phaseB block
+  have h1 := CodeReq.ofProg_mono_sub (base + 32) (base + 32) divK_phaseB
+    (divK_phaseB.take 7) 0
+    (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h
+  -- Skip block 0 (phaseA disjoint from phaseB), match block 1
+  exact CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range _ _ _ _
+      (fun k1 k2 hk1 hk2 => by simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left _ _) a i h1
 
-set_option maxHeartbeats 1600000 in
-/-- Phase B init2 code (2 instructions) is subsumed by divCode. -/
+/-- Phase B init2 code (ofProg sub-range of block 1) is subsumed by divCode. -/
 private theorem divK_phaseB_init2_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_phaseB_init2_code (base + 60)) a = some i → (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  simp only [divK_phaseB_init2_code, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at h
-  have ha : a = base + 60 ∨ a = base + 64 := by
-    by_cases h1 : (a == base + 60 : Bool)
-    · exact Or.inl (beq_iff_eq.mp h1)
-    · by_cases h2 : (a == base + 64 : Bool)
-      · exact Or.inr (beq_iff_eq.mp h2)
-      · exfalso; simp_all
-  unfold divCode
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; rcases ha with h|h <;> (subst h; bv_omega))
-  rw [CodeReq.union_none_left s0]
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseB_instrs, progIndexed,
-    List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  rcases ha with rfl | rfl <;> simp_all
+  have h1 := CodeReq.ofProg_mono_sub (base + 32) (base + 60) divK_phaseB
+    (divK_phaseB.drop 7 |>.take 2) 7
+    (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h
+  exact CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range _ _ _ _
+      (fun k1 k2 hk1 hk2 => by simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left _ _) a i h1
 
-set_option maxHeartbeats 1600000 in
-/-- ADDI x5 x0 4 singleton at base+68 is subsumed by divCode. -/
+/-- ADDI x5 x0 4 singleton at base+68 (part of block 1: phaseB) is subsumed by divCode. -/
 private theorem addi_x5_singleton_sub_divCode (base : Addr) :
     ∀ a i, (CodeReq.singleton (base + 68) (.ADDI .x5 .x0 4)) a = some i →
       (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  simp only [CodeReq.singleton] at h
-  unfold divCode
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; split at h <;> simp_all; bv_omega)
-  rw [CodeReq.union_none_left s0]
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseB_instrs, progIndexed,
-    List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  split at h <;> simp_all
+  have hlookup := CodeReq.ofProg_lookup (base + 32) divK_phaseB 9
+    (by native_decide) (by native_decide)
+  rw [show BitVec.ofNat 64 (4 * 9) = (36 : Addr) from by native_decide,
+      show (base + 32 : Addr) + 36 = base + 68 from by bv_omega] at hlookup
+  have h1 := CodeReq.singleton_mono hlookup a i h
+  exact CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range _ _ _ _
+      (fun k1 k2 hk1 hk2 => by simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left _ _) a i h1
 
-set_option maxHeartbeats 1600000 in
-/-- BNE x10 x0 24 singleton at base+72 is subsumed by divCode. -/
+/-- BNE x10 x0 24 singleton at base+72 (part of block 1: phaseB) is subsumed by divCode. -/
 private theorem bne_x10_singleton_sub_divCode (base : Addr) :
     ∀ a i, (CodeReq.singleton (base + 72) (.BNE .x10 .x0 24)) a = some i →
       (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  simp only [CodeReq.singleton] at h
-  unfold divCode
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; split at h <;> simp_all; bv_omega)
-  rw [CodeReq.union_none_left s0]
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseB_instrs, progIndexed,
-    List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  split at h <;> simp_all
+  have hlookup := CodeReq.ofProg_lookup (base + 32) divK_phaseB 10
+    (by native_decide) (by native_decide)
+  rw [show BitVec.ofNat 64 (4 * 10) = (40 : Addr) from by native_decide,
+      show (base + 32 : Addr) + 40 = base + 72 from by bv_omega] at hlookup
+  have h1 := CodeReq.singleton_mono hlookup a i h
+  exact CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range _ _ _ _
+      (fun k1 k2 hk1 hk2 => by simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left _ _) a i h1
 
-set_option maxHeartbeats 1600000 in
-/-- Phase B tail code (5 instructions) is subsumed by divCode. -/
+/-- Phase B tail code (ofProg sub-range of block 1) is subsumed by divCode. -/
 private theorem divK_phaseB_tail_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_phaseB_tail_code (base + 96)) a = some i → (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  simp only [divK_phaseB_tail_code, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at h
-  have ha : a = base + 96 ∨ a = base + 100 ∨ a = base + 104 ∨ a = base + 108 ∨ a = base + 112 := by
-    by_cases h1 : (a == base + 96 : Bool)
-    · exact Or.inl (beq_iff_eq.mp h1)
-    · by_cases h2 : (a == base + 100 : Bool)
-      · exact Or.inr (Or.inl (beq_iff_eq.mp h2))
-      · by_cases h3 : (a == base + 104 : Bool)
-        · exact Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h3)))
-        · by_cases h4 : (a == base + 108 : Bool)
-          · exact Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h4))))
-          · by_cases h5 : (a == base + 112 : Bool)
-            · exact Or.inr (Or.inr (Or.inr (Or.inr (beq_iff_eq.mp h5))))
-            · exfalso; simp_all
-  unfold divCode
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  rw [CodeReq.union_none_left s0]
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseB_instrs, progIndexed,
-    List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-    OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  rcases ha with rfl | rfl | rfl | rfl | rfl <;> simp_all
+  have h1 := CodeReq.ofProg_mono_sub (base + 32) (base + 96) divK_phaseB
+    (divK_phaseB.drop 16) 16
+    (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h
+  exact CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range _ _ _ _
+      (fun k1 k2 hk1 hk2 => by simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left _ _) a i h1
 
 -- ============================================================================
 -- Section 6: signExtend13 normalization
@@ -698,118 +596,51 @@ theorem evm_div_phaseAB_n4_spec (sp base : Addr)
 -- Section 11: MOD program code infrastructure
 -- ============================================================================
 
-private theorem divK_modEpilogue_len : (divK_mod_epilogue 24).length = 10 := by native_decide
-
 /-- The full evm_mod code split into 14 per-phase CodeReq.ofProg blocks.
-    Identical to divCode except block 11 uses divK_mod_epilogue. -/
+    Identical to divCode except block 10 uses divK_mod_epilogue. -/
 abbrev modCode (base : Addr) : CodeReq :=
-  CodeReq.ofProg base (divK_phaseA 1016) |>.union
-  (CodeReq.ofProg (base + 32) divK_phaseB |>.union
-  (CodeReq.ofProg (base + 116) divK_clz |>.union
-  (CodeReq.ofProg (base + 212) (divK_phaseC2 172) |>.union
-  (CodeReq.ofProg (base + 228) divK_normB |>.union
-  (CodeReq.ofProg (base + 312) (divK_normA 40) |>.union
-  (CodeReq.ofProg (base + 396) divK_copyAU |>.union
-  (CodeReq.ofProg (base + 432) (divK_loopSetup 460) |>.union
-  (CodeReq.ofProg (base + 448) (divK_loopBody 556 7740) |>.union
-  (CodeReq.ofProg (base + 904) divK_denorm |>.union
-  (CodeReq.ofProg (base + 1004) (divK_mod_epilogue 24) |>.union
-  (CodeReq.ofProg (base + 1044) divK_zeroPath |>.union
-  (CodeReq.ofProg (base + 1064) (ADDI .x0 .x0 0) |>.union
-  (CodeReq.ofProg (base + 1068) divK_div128)))))))))))))
+  CodeReq.unionAll [
+    CodeReq.ofProg base (divK_phaseA 1016),
+    CodeReq.ofProg (base + 32) divK_phaseB,
+    CodeReq.ofProg (base + 116) divK_clz,
+    CodeReq.ofProg (base + 212) (divK_phaseC2 172),
+    CodeReq.ofProg (base + 228) divK_normB,
+    CodeReq.ofProg (base + 312) (divK_normA 40),
+    CodeReq.ofProg (base + 396) divK_copyAU,
+    CodeReq.ofProg (base + 432) (divK_loopSetup 460),
+    CodeReq.ofProg (base + 448) (divK_loopBody 556 7740),
+    CodeReq.ofProg (base + 904) divK_denorm,
+    CodeReq.ofProg (base + 1004) (divK_mod_epilogue 24),  -- block 10 differs from divCode
+    CodeReq.ofProg (base + 1044) divK_zeroPath,
+    CodeReq.ofProg (base + 1064) (ADDI .x0 .x0 0),
+    CodeReq.ofProg (base + 1068) divK_div128
+  ]
 
 -- ============================================================================
--- Section 12: MOD CodeReq subsumption lemmas
+-- Section 12: MOD CodeReq subsumption lemmas (via mono_unionAll)
 -- ============================================================================
 
-/-- Phase A code is subsumed by modCode.
-    Both sides are `CodeReq.ofProg base (divK_phaseA 1016)`, so this is `union_mono_left`. -/
 private theorem divK_phaseA_code_sub_modCode (base : Addr) :
     ∀ a i, (divK_phaseA_code base) a = some i → (modCode base) a = some i := by
-  unfold modCode divK_phaseA_code; exact CodeReq.union_mono_left _ _
+  unfold modCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _
 
-set_option maxRecDepth 2048 in
-set_option maxHeartbeats 6400000 in
-/-- Zero path code is subsumed by modCode. -/
+set_option maxHeartbeats 1600000 in
 private theorem divK_zeroPath_code_sub_modCode (base : Addr) :
     ∀ a i, (divK_zeroPath_code (base + 1044)) a = some i → (modCode base) a = some i := by
-  intro a i h
-  have ha : a = base + 1044 ∨ a = base + 1048 ∨ a = base + 1052 ∨
-            a = base + 1056 ∨ a = base + 1060 := by
-    suffices ∀ b, divK_zeroPath_code (b + 1044) a = some i →
-      a = b + 1044 ∨ a = b + 1048 ∨ a = b + 1052 ∨ a = b + 1056 ∨ a = b + 1060 from this base h
-    intro b h'
-    -- Expand ofProg to singleton chain for address case analysis
-    simp only [divK_zeroPath_code, show (divK_zeroPath : List Instr) =
-      [.ADDI .x12 .x12 32, .SD .x12 .x0 0, .SD .x12 .x0 8, .SD .x12 .x0 16, .SD .x12 .x0 24]
-      from rfl, CodeReq.ofProg_cons, CodeReq.ofProg_nil,
-      CodeReq.union, CodeReq.singleton, CodeReq.empty,
-      OfNat.ofNat, bv_add_ofNat_assoc] at h'
-    by_cases h1 : (a == b + 1044 : Bool)
-    · exact Or.inl (beq_iff_eq.mp h1)
-    · by_cases h2 : (a == b + 1048 : Bool)
-      · exact Or.inr (Or.inl (beq_iff_eq.mp h2))
-      · by_cases h3 : (a == b + 1052 : Bool)
-        · exact Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h3)))
-        · by_cases h4 : (a == b + 1056 : Bool)
-          · exact Or.inr (Or.inr (Or.inr (Or.inl (beq_iff_eq.mp h4))))
-          · by_cases h5 : (a == b + 1060 : Bool)
-            · exact Or.inr (Or.inr (Or.inr (Or.inr (beq_iff_eq.mp h5))))
-            · exfalso; simp_all
-  unfold modCode
-  have s0 := CodeReq.ofProg_none_range base (divK_phaseA 1016) a
-    (fun k hk => by rw [divK_phaseA_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s1 := CodeReq.ofProg_none_range (base + 32) divK_phaseB a
-    (fun k hk => by rw [divK_phaseB_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s2 := CodeReq.ofProg_none_range (base + 116) divK_clz a
-    (fun k hk => by rw [divK_clz_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s3 := CodeReq.ofProg_none_range (base + 212) (divK_phaseC2 172) a
-    (fun k hk => by rw [divK_phaseC2_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s4 := CodeReq.ofProg_none_range (base + 228) divK_normB a
-    (fun k hk => by rw [divK_normB_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s5 := CodeReq.ofProg_none_range (base + 312) (divK_normA 40) a
-    (fun k hk => by rw [divK_normA_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s6 := CodeReq.ofProg_none_range (base + 396) divK_copyAU a
-    (fun k hk => by rw [divK_copyAU_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s7 := CodeReq.ofProg_none_range (base + 432) (divK_loopSetup 460) a
-    (fun k hk => by rw [divK_loopSetup_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s8 := CodeReq.ofProg_none_range (base + 448) (divK_loopBody 556 7740) a
-    (fun k hk => by rw [divK_loopBody_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s9 := CodeReq.ofProg_none_range (base + 904) divK_denorm a
-    (fun k hk => by rw [divK_denorm_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  have s10 := CodeReq.ofProg_none_range (base + 1004) (divK_mod_epilogue 24) a
-    (fun k hk => by rw [divK_modEpilogue_len] at hk; rcases ha with h|h|h|h|h <;> (subst h; bv_omega))
-  -- Peel off blocks 0-10 via union_none_left, then match block 11
-  rw [CodeReq.union_none_left s0, CodeReq.union_none_left s1, CodeReq.union_none_left s2,
-      CodeReq.union_none_left s3, CodeReq.union_none_left s4, CodeReq.union_none_left s5,
-      CodeReq.union_none_left s6, CodeReq.union_none_left s7, CodeReq.union_none_left s8,
-      CodeReq.union_none_left s9, CodeReq.union_none_left s10]
-  apply CodeReq.union_mono_left
-  -- Both h and goal describe the same 5-address code region; case-split on concrete address
-  rcases ha with rfl | rfl | rfl | rfl | rfl <;> (
-    simp only [divK_zeroPath_code, show (divK_zeroPath : List Instr) =
-      [.ADDI .x12 .x12 32, .SD .x12 .x0 0, .SD .x12 .x0 8, .SD .x12 .x0 16, .SD .x12 .x0 24]
-      from rfl, CodeReq.ofProg_cons, CodeReq.ofProg_nil,
-      CodeReq.union, CodeReq.singleton, CodeReq.empty,
-      OfNat.ofNat, bv_add_ofNat_assoc] at h
-    simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_zeroPath_instrs, progIndexed,
-      List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton,
-      OfNat.ofNat, bv_add_ofNat_assoc]
-    simp_all)
+  unfold modCode divK_zeroPath_code; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-/-- BEQ singleton at base+28 is subsumed by modCode. -/
 private theorem beq_singleton_sub_modCode (base : Addr) :
     ∀ a i, (CodeReq.singleton (base + 28) (.BEQ .x5 .x0 1016)) a = some i →
       (modCode base) a = some i := by
+  unfold modCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  unfold modCode
-  apply CodeReq.union_mono_left
-  simp only [CodeReq.singleton] at h
-  simp only [CodeReq.ofProg, CodeReq.ofIndexed, divK_phaseA_instrs] at ⊢
-  simp only [progIndexed] at ⊢
-  simp only [List.foldl, CodeReq.empty, CodeReq.union, CodeReq.singleton] at ⊢
-  simp only [OfNat.ofNat, bv_add_ofNat_assoc] at ⊢
-  split at h <;> simp_all
+  exact CodeReq.union_mono_left _ _ a i
+    (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1016) 7
+      (by native_decide) (by native_decide)) a i h)
 
 -- ============================================================================
 -- Section 13: MOD zero path composition (b = 0)
