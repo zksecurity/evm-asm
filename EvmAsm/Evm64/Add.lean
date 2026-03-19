@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Arithmetic
+import EvmAsm.Evm64.EvmWordArith
 
 open EvmAsm.Rv64.Tactics
 
@@ -60,5 +61,71 @@ theorem evm_add_spec (sp : Addr) (base : Addr)
   have L3 := add_limb_carry_spec 24 56 sp a3 b3 result2 carry2b carry2 carry2a (base + 84) (by validMem) (by validMem)
   have Laddi := addi_spec_gen_same .x12 sp 32 (base + 116) (by nofun)
   runBlock L0 L1 L2 L3 Laddi
+
+-- ============================================================================
+-- Stack-level ADD spec
+-- ============================================================================
+
+/-- Stack-level 256-bit EVM ADD: operates on two EvmWords via evmWordIs. -/
+theorem evm_add_stack_spec (sp base : Addr)
+    (a b : EvmWord) (v7 v6 v5 v11 : Word)
+    (hvalid : ValidMemRange sp 8) :
+    let a0 := a.getLimb 0; let b0 := b.getLimb 0
+    let a1 := a.getLimb 1; let b1 := b.getLimb 1
+    let a2 := a.getLimb 2; let b2 := b.getLimb 2
+    let a3 := a.getLimb 3; let b3 := b.getLimb 3
+    let sum0 := a0 + b0
+    let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
+    let psum1 := a1 + b1
+    let carry1a := if BitVec.ult psum1 b1 then (1 : Word) else 0
+    let result1 := psum1 + carry0
+    let carry1b := if BitVec.ult result1 carry0 then (1 : Word) else 0
+    let carry1 := carry1a ||| carry1b
+    let psum2 := a2 + b2
+    let carry2a := if BitVec.ult psum2 b2 then (1 : Word) else 0
+    let result2 := psum2 + carry1
+    let carry2b := if BitVec.ult result2 carry1 then (1 : Word) else 0
+    let carry2 := carry2a ||| carry2b
+    let psum3 := a3 + b3
+    let carry3a := if BitVec.ult psum3 b3 then (1 : Word) else 0
+    let result3 := psum3 + carry2
+    let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
+    let carry3 := carry3a ||| carry3b
+    let code := evm_add_code base
+    cpsTriple base (base + 120) code
+      (-- Registers + memory
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       evmWordIs sp a ** evmWordIs (sp + 32) b)
+      (-- Registers + memory (updated)
+       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
+       (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
+  intro a0; intro b0; intro a1; intro b1; intro a2; intro b2; intro a3; intro b3
+  intro sum0; intro carry0; intro psum1; intro carry1a; intro result1; intro carry1b; intro carry1
+  intro psum2; intro carry2a; intro result2; intro carry2b; intro carry2
+  intro psum3; intro carry3a; intro result3; intro carry3b; intro carry3
+  have h_main := evm_add_spec sp base
+    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
+    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    v7 v6 v5 v11 hvalid
+  -- Get the carry chain correctness
+  have ⟨h0, h1, h2, h3⟩ := EvmWord.add_carry_chain_correct a b
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by
+      simp only [evmWordIs] at hp
+      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      simp only [evmWordIs]
+      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
+      rw [h0, h1, h2, h3]
+      xperm_hyp hq)
+    h_main
 
 end EvmAsm.Rv64

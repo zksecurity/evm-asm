@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Comparison
+import EvmAsm.Evm64.EvmWordArith
 
 open EvmAsm.Rv64.Tactics
 
@@ -51,5 +52,43 @@ theorem evm_iszero_spec (sp : Addr) (base : Addr)
   have S2 := sd_x0_spec_gen .x12 sp a2 16 (base + 40) (by validMem)
   have S3 := sd_x0_spec_gen .x12 sp a3 24 (base + 44) (by validMem)
   runBlock L0 O1 O2 O3 T S0 S1 S2 S3
+
+-- ============================================================================
+-- Stack-level ISZERO spec
+-- ============================================================================
+
+/-- Stack-level 256-bit EVM ISZERO: operates on an EvmWord via evmWordIs. -/
+theorem evm_iszero_stack_spec (sp base : Addr)
+    (a : EvmWord) (v7 v6 : Word)
+    (hvalid : ValidMemRange sp 4) :
+    let or_all := a.getLimb 0 ||| a.getLimb 1 ||| a.getLimb 2 ||| a.getLimb 3
+    let result := if BitVec.ult or_all 1 then (1 : Word) else 0
+    let code := evm_iszero_code base
+    cpsTriple base (base + 48) code
+      (-- Registers + memory
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
+       evmWordIs sp a)
+      (-- Registers + memory (updated)
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimb 3) **
+       evmWordIs sp (if a = 0 then 1 else 0)) := by
+  intro or_all; intro result
+  have h_main := evm_iszero_spec sp base
+    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
+    v7 v6 hvalid
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by
+      simp only [evmWordIs] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      unfold evmWordIs
+      simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
+                 show (0 : Fin 4) = 0 from rfl,
+                 show ¬((1 : Fin 4) = 0) from by decide,
+                 show ¬((2 : Fin 4) = 0) from by decide,
+                 show ¬((3 : Fin 4) = 0) from by decide,
+                 ite_true, ite_false, ite_self,
+                 ← EvmWord.iszero_or_reduce_correct]
+      xperm_hyp hq)
+    h_main
 
 end EvmAsm.Rv64

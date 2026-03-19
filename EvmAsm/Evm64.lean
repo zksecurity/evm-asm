@@ -21,6 +21,9 @@ import EvmAsm.Evm64.Or
 import EvmAsm.Evm64.Xor
 import EvmAsm.Evm64.Not
 
+-- EvmWord arithmetic correctness lemmas
+import EvmAsm.Evm64.EvmWordArith
+
 -- Arithmetic
 import EvmAsm.Evm64.Arithmetic
 import EvmAsm.Evm64.Add

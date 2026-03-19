@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Comparison
+import EvmAsm.Evm64.EvmWordArith
 
 open EvmAsm.Rv64.Tactics
 
@@ -68,5 +69,69 @@ theorem evm_gt_spec (sp : Addr) (base : Addr)
   have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 96) (by validMem)
   have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 100) (by validMem)
   runBlock L0 L1 L2 L3 A S0 S1 S2 S3
+
+-- ============================================================================
+-- Stack-level GT spec
+-- ============================================================================
+
+/-- Stack-level 256-bit EVM GT: operates on two EvmWords via evmWordIs.
+    GT(a, b) = LT(b, a), using the borrow chain in b-a direction. -/
+theorem evm_gt_stack_spec (sp base : Addr)
+    (a b : EvmWord) (v7 v6 v5 v11 : Word)
+    (hvalid : ValidMemRange sp 8) :
+    -- Borrow chain: b - a (GT direction)
+    let borrow0 := if BitVec.ult (b.getLimb 0) (a.getLimb 0) then (1 : Word) else 0
+    let borrow1a := if BitVec.ult (b.getLimb 1) (a.getLimb 1) then (1 : Word) else 0
+    let temp1 := b.getLimb 1 - a.getLimb 1
+    let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+    let borrow1 := borrow1a ||| borrow1b
+    let borrow2a := if BitVec.ult (b.getLimb 2) (a.getLimb 2) then (1 : Word) else 0
+    let temp2 := b.getLimb 2 - a.getLimb 2
+    let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+    let borrow2 := borrow2a ||| borrow2b
+    let borrow3a := if BitVec.ult (b.getLimb 3) (a.getLimb 3) then (1 : Word) else 0
+    let temp3 := b.getLimb 3 - a.getLimb 3
+    let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
+    let borrow3 := borrow3a ||| borrow3b
+    let code := evm_gt_code base
+    cpsTriple base (base + 104) code
+      (-- Registers + memory
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       evmWordIs sp a ** evmWordIs (sp + 32) b)
+      (-- Registers + memory (updated)
+       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ temp3) ** (.x6 ↦ᵣ borrow3b) **
+       (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.ult b a then 1 else 0)) := by
+  intro borrow0
+  intro borrow1a; intro temp1; intro borrow1b; intro borrow1
+  intro borrow2a; intro temp2; intro borrow2b; intro borrow2
+  intro borrow3a; intro temp3; intro borrow3b; intro borrow3
+  have h_main := evm_gt_spec sp base
+    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
+    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    v7 v6 v5 v11 hvalid
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by
+      simp only [evmWordIs] at hp
+      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      unfold evmWordIs
+      simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
+                 show (0 : Fin 4) = 0 from rfl,
+                 show ¬((1 : Fin 4) = 0) from by decide,
+                 show ¬((2 : Fin 4) = 0) from by decide,
+                 show ¬((3 : Fin 4) = 0) from by decide,
+                 ite_true, ite_false, ite_self,
+                 ← EvmWord.lt_borrow_chain_correct b a]
+      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
+      xperm_hyp hq)
+    h_main
 
 end EvmAsm.Rv64
