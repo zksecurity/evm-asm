@@ -608,6 +608,114 @@ private def buildMonoProofOfProg (oldCrW : Expr) (newCrBase newCrProg : Expr) : 
       #[specAddr, specInstr, ofProgExpr, lookupProof]
     return some monoProof
 
+/-- Verify that `sub` is a contiguous slice of `full` starting at index `idx`.
+    Walks both lists in lockstep, comparing instructions via isDefEq.
+    Returns `(subLen, fullLen)` on success. -/
+private partial def verifyProgSlice (full sub : Expr) (idx : Nat)
+    (pos : Nat := 0) : MetaM (Option (Nat × Nat)) := do
+  -- Fast-forward `full` by `idx` positions
+  let mut fullCur := full
+  for _ in [:idx] do
+    let w ← whnf fullCur
+    unless w.isAppOfArity ``List.cons 3 do return none
+    fullCur := w.getAppArgs[2]!
+  -- Now compare sub against full[idx..]
+  let mut subCur := sub
+  let mut fCur := fullCur
+  let mut subLen := 0
+  while true do
+    let subW ← whnf subCur
+    if subW.isAppOfArity ``List.cons 3 then
+      let subHead := subW.getAppArgs[1]!
+      let subTail := subW.getAppArgs[2]!
+      let fW ← whnf fCur
+      unless fW.isAppOfArity ``List.cons 3 do return none
+      let fHead := fW.getAppArgs[1]!
+      let fTail := fW.getAppArgs[2]!
+      unless subHead == fHead ||
+        (← withoutModifyingState (withReducible (isDefEq subHead fHead))) do return none
+      subLen := subLen + 1
+      subCur := subTail
+      fCur := fTail
+    else break  -- sub is exhausted
+  -- Count remaining full length
+  let mut fullLen := idx + subLen
+  let mut r := fCur
+  while true do
+    let rW ← whnf r
+    if rW.isAppOfArity ``List.cons 3 then
+      fullLen := fullLen + 1; r := rW.getAppArgs[2]!
+    else break
+  return some (subLen, fullLen)
+
+/-- Build a mono proof for `ofProg sub_base sub_prog ⊆ ofProg base full_prog`
+    using `ofProg_mono_sub`. Finds the sub-program as a contiguous slice. -/
+private def buildMonoProofOfProgToOfProg (oldCrW : Expr)
+    (newCrBase newCrProg : Expr) : MetaM (Option Expr) := do
+  -- oldCr must be an ofProg
+  unless oldCrW.isAppOfArity ``EvmAsm.Rv64.CodeReq.ofProg 2 do return none
+  let subBase := oldCrW.getAppArgs[0]!
+  let subProg := oldCrW.getAppArgs[1]!
+  -- Extract base + offset from both addresses
+  let some (subSymBase, subOff) := getAddrOffset? subBase | return none
+  let some (newSymBase, newOff) := getAddrOffset? newCrBase | return none
+  -- Check same symbolic base
+  unless subSymBase == newSymBase ||
+    (← withoutModifyingState (withReducible (isDefEq subSymBase newSymBase))) do return none
+  -- Compute instruction index
+  unless subOff ≥ newOff && (subOff - newOff) % 4 == 0 do return none
+  let idx := (subOff - newOff) / 4
+  -- Verify the sub-program is a contiguous slice
+  let some (subLen, fullLen) ← verifyProgSlice newCrProg subProg idx | return none
+  -- Build proof: ofProg_mono_sub base sub_base full sub idx h_addr h_slice h_range hbound
+  let idxLit := mkNatLit idx
+  let subLenLit := mkNatLit subLen
+  let fullLenLit := mkNatLit fullLen
+  -- h_addr : sub_base = base + BitVec.ofNat 64 (4 * idx)
+  let fourIdx := mkNatLit (4 * idx)
+  let bvOfNat := mkApp2 (mkConst ``BitVec.ofNat) (mkNatLit 64) fourIdx
+  let addrSum := mkApp6
+    (mkConst ``HAdd.hAdd [.zero])
+    (mkApp (mkConst ``BitVec) (mkNatLit 64))
+    (mkApp (mkConst ``BitVec) (mkNatLit 64))
+    (mkApp (mkConst ``BitVec) (mkNatLit 64))
+    (mkApp2 (mkConst ``instHAdd [.zero]) (mkApp (mkConst ``BitVec) (mkNatLit 64))
+      (mkApp (mkConst ``BitVec.instAdd) (mkNatLit 64)))
+    newCrBase bvOfNat
+  let h_addr ← do
+    let eqType ← mkEq subBase addrSum
+    try mkDecideProof eqType
+    catch _ =>
+      -- Fallback: try bv_omega
+      let mvar ← mkFreshExprMVar eqType
+      let stx ← `(tactic| bv_omega)
+      runTacticSilent mvar.mvarId! stx
+      instantiateMVars mvar
+  -- h_slice : (full.drop idx).take sub.length = sub — via native_decide
+  let instrTy := mkConst ``EvmAsm.Rv64.Instr
+  let listInstr := mkApp (mkConst ``List [.zero]) instrTy
+  let dropExpr := mkApp3 (mkConst ``List.drop [.zero]) instrTy idxLit newCrProg
+  let takeExpr := mkApp3 (mkConst ``List.take [.zero]) instrTy subLenLit dropExpr
+  let h_slice ← do
+    let eqType ← mkEq takeExpr subProg
+    mkDecideProof eqType
+  -- h_range : idx + sub.length ≤ full.length
+  let idxPlusSubLen := mkNatLit (idx + subLen)
+  let h_range ← do
+    let leType := mkApp4 (mkConst ``LE.le [.zero]) (mkConst ``Nat) (mkConst ``instLENat)
+      idxPlusSubLen fullLenLit
+    mkDecideProof leType
+  -- hbound : 4 * full.length < 2^64
+  let fourFullLen := mkNatLit (4 * fullLen)
+  let pow64 := mkNatLit (2 ^ 64)
+  let hbound ← do
+    let ltType := mkApp4 (mkConst ``LT.lt [.zero]) (mkConst ``Nat) (mkConst ``instLTNat)
+      fourFullLen pow64
+    mkDecideProof ltType
+  -- Assemble: ofProg_mono_sub base sub_base full sub idx h_addr h_slice h_range hbound
+  return some (mkAppN (mkConst ``EvmAsm.Rv64.CodeReq.ofProg_mono_sub)
+    #[newCrBase, subBase, newCrProg, subProg, idxLit, h_addr, h_slice, h_range, hbound])
+
 /-- Build a proof of `∀ a i, oldCr a = some i → newCr a = some i` structurally.
     Uses direct chain lookup for singleton-vs-chain (O(N) with low constant),
     falls back to recursive walk for complex cases. -/
@@ -619,10 +727,13 @@ partial def buildMonoProof (oldCr newCr : Expr) : MetaM Expr :=
     return ← mkIdentityMono oldCr
   let oldCrW ← whnfR oldCr
   let newCrW ← whnfR newCr
-  -- newCr = ofProg(base, prog): use ofProg_lookup for singletons
+  -- newCr = ofProg(base, prog): use ofProg_lookup for singletons, ofProg_mono_sub for ofProg
   if newCrW.isAppOfArity ``EvmAsm.Rv64.CodeReq.ofProg 2 then
     let newBase := newCrW.getAppArgs[0]!
     let newProg := newCrW.getAppArgs[1]!
+    -- Try ofProg-to-ofProg (sub-program slice)
+    if let some proof ← buildMonoProofOfProgToOfProg oldCrW newBase newProg then
+      return proof
     -- Try direct singleton-to-ofProg
     if let some proof ← buildMonoProofOfProg oldCrW newBase newProg then
       return proof
