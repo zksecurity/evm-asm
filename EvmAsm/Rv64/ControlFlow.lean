@@ -278,7 +278,7 @@ private theorem aAnd_pure_right_of_true {P : Assertion} {prop : Prop}
 
     Requires instrAt for the BNE instruction at base. -/
 theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
-    (then_body else_body : Program)
+    (then_body : Program)
     (base : Addr) (P : Assertion)
     (hP : P.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
@@ -532,7 +532,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
 
     Uses additive conjunction (⋒) so rs1 and rs2 may be the same register. -/
 theorem if_eq_branch_step_n (rs1 rs2 : Reg) (v1 v2 : Word)
-    (then_body else_body : Program)
+    (then_body : Program)
     (base : Addr) (P : Assertion)
     (hP : P.pcFree)
     (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
@@ -546,7 +546,7 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (v1 v2 : Word)
         (else_entry, (base ↦ᵢ bne_instr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)) ] := by
   simp only
   exact cpsBranch_to_cpsNBranch _ _ _ _ _ _ _
-    (if_eq_branch_step rs1 rs2 v1 v2 then_body else_body base P hP ht_small)
+    (if_eq_branch_step rs1 rs2 v1 v2 then_body base P hP ht_small)
 
 /-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge.
 
