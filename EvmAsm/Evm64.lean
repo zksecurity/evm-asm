@@ -39,6 +39,7 @@ import EvmAsm.Evm64.Sgt
 import EvmAsm.Evm64.Shift
 import EvmAsm.Evm64.ShrSpec
 import EvmAsm.Evm64.ShrCompose
+import EvmAsm.Evm64.ShrSemantic
 
 -- Byte and SignExtend
 import EvmAsm.Evm64.Byte
