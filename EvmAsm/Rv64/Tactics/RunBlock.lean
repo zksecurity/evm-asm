@@ -332,9 +332,8 @@ private def expandAbbrevsInCpsTriple (proof : Expr) : MetaM Expr := do
     Transports the original proof via `Eq.mp` (works because cpsTriple is Prop-valued). -/
 private def normalizeSpecAddresses (proof : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.normalize (fun _ => return m!"normalizeSpecAddresses") do
-  let origType ← instantiateMVars (← inferType proof)
+  let _origType ← instantiateMVars (← inferType proof)
   -- Inline let-bindings first (e.g., `let mem := sp + signExtend12 off; ...`)
-  let cleanType := inlineLets origType
   -- Expand abbrevs in assertions: unfolds `foo_code N (base+K)` so normalizeTypeAddrs
   -- can normalize the resulting `(base+K)+4` addresses.
   let expandedProof ← do
@@ -424,7 +423,7 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
     Always normalizes spec addresses (signExtend12 reduction and address arithmetic flattening)
     so that atoms match the normalized goal. -/
 private def runBlockCore (specs : Array Expr) (goalPre : Expr)
-    (goalCr : Option Expr := none) (normalizeAddrs : Bool := false) : MetaM Expr :=
+    (goalCr : Option Expr := none) : MetaM Expr :=
   withTraceNode `runBlock.perf (fun _ => return m!"runBlockCore ({specs.size} specs)") do
   if specs.size == 0 then
     throwError "runBlock: no specs provided.\n\
@@ -964,7 +963,7 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
       else
         -- Manual mode: use provided specs
         let specExprs ← specs.mapM fun s => elabTerm s none
-        runBlockCore specExprs goalPre (goalCr := some goalCr) (normalizeAddrs := true)
+        runBlockCore specExprs goalPre (goalCr := some goalCr)
     let finalResult ← normalizeToGoal composed workingGoalType
     -- Always permute postcondition to match goal
     let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? workingGoalType

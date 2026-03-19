@@ -45,8 +45,8 @@ theorem signext_inplace_spec (off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 off) ↦ₘ result)) := by
   have L := ld_spec_gen .x5 .x12 sp v5 limb off base (by nofun) hvalid
-  have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun) (by nofun)
-  have SR := sra_spec_gen_rd_eq_rs1 .x5 .x6 (limb <<< (shift_amount.toNat % 64)) shift_amount (base + 8) (by nofun) (by nofun)
+  have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
+  have SR := sra_spec_gen_rd_eq_rs1 .x5 .x6 (limb <<< (shift_amount.toNat % 64)) shift_amount (base + 8) (by nofun)
   have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) limb off (base + 12) hvalid
   runBlock L SL SR SD_
 
@@ -224,7 +224,7 @@ theorem signext_phase_b_spec (b r6 r10 : Word) (base : Addr) :
   have SL := slli_spec_gen_same .x10 (b &&& signExtend12 7) 3 (base + 4) (by nofun)
   have AD := addi_x0_spec_gen .x6 r6 56 (base + 8) (by nofun)
   have SU := sub_spec_gen_rd_eq_rs1 .x6 .x10 (signExtend12 56)
-    ((b &&& signExtend12 7) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun) (by nofun)
+    ((b &&& signExtend12 7) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun)
   have SR := srli_spec_gen_same .x5 b 3 (base + 16) (by nofun)
   runBlock A SL AD SU SR
 

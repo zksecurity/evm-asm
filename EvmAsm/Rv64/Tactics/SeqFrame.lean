@@ -635,7 +635,7 @@ private def buildMonoProofOfProg (oldCrW : Expr) (newCrBase newCrProg : Expr) : 
     Walks both lists in lockstep, comparing instructions via isDefEq.
     Returns `(subLen, fullLen)` on success. -/
 private partial def verifyProgSlice (full sub : Expr) (idx : Nat)
-    (pos : Nat := 0) : MetaM (Option (Nat × Nat)) := do
+    : MetaM (Option (Nat × Nat)) := do
   -- Fast-forward `full` by `idx` positions
   let mut fullCur := full
   for _ in [:idx] do
@@ -714,7 +714,6 @@ private def buildMonoProofOfProgToOfProg (oldCrW : Expr)
     instantiateMVars mvar
   -- h_slice : (full.drop idx).take sub.length = sub — via native_decide
   let instrTy := mkConst ``EvmAsm.Rv64.Instr
-  let listInstr := mkApp (mkConst ``List [.zero]) instrTy
   let dropExpr := mkApp3 (mkConst ``List.drop [.zero]) instrTy idxLit newCrProg
   let takeExpr := mkApp3 (mkConst ``List.take [.zero]) instrTy subLenLit dropExpr
   let h_slice ← do
@@ -997,8 +996,7 @@ elab "seqFrame" h1:ident h2:ident : tactic => withMainContext do
     by structural recursion on union/singleton trees. -/
 elab "crMono" : tactic => do
   let goal ← getMainGoal
-  let goalType ← instantiateMVars (← goal.getType)
-  let goalType ← whnfR goalType
+  let _goalType ← instantiateMVars (← goal.getType)
   -- Extract cr1 and cr2 from ∀ a i, cr1 a = some i → cr2 a = some i
   -- The type should be a pi: ∀ (a : Addr) (i : Instr), cr1 a = some i → cr2 a = some i
   -- buildMonoProof handles this structurally

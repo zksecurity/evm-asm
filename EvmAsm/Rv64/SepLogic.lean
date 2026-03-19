@@ -2102,12 +2102,12 @@ theorem CodeReq.Disjoint.singleton {a1 a2 : Addr} (h : a1 ≠ a2)
   intro a
   simp only [CodeReq.singleton]
   cases hb1 : a == a1 with
-  | false => left; simp [hb1]
+  | false => left; simp
   | true =>
     right
     rw [beq_iff_eq] at hb1
     cases hb2 : a == a2 with
-    | false => simp [hb2]
+    | false => simp
     | true =>
       rw [beq_iff_eq] at hb2
       exact absurd (hb1 ▸ hb2) h

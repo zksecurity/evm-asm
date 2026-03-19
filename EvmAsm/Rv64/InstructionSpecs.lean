@@ -39,7 +39,7 @@ theorem add_spec (rd rs1 rs2 : Reg) (v1 v2 v_old : Word) (base : Addr)
 
 /-- ADD rd, rd, rs2: rd := rd + rs2 (rd = rs1, rs2 distinct) -/
 theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)
-    (hrd_ne_x0 : rd ≠ .x0) (hne : rd ≠ rs2) :
+    (hrd_ne_x0 : rd ≠ .x0) :
     cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rd rs2))
       ((rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       ((rd ↦ᵣ (v1 + v2)) ** (rs2 ↦ᵣ v2)) :=
@@ -49,7 +49,7 @@ theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Addr)
 
 /-- ADD rd, rs1, rd: rd := rs1 + rd (rd = rs2, rs1 distinct) -/
 theorem add_spec_rd_eq_rs2 (rd rs1 : Reg) (v1 v2 : Word) (base : Addr)
-    (hrd_ne_x0 : rd ≠ .x0) (hne : rs1 ≠ rd) :
+    (hrd_ne_x0 : rd ≠ .x0) :
     cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rs1 rd))
       ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v2))
       ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + v2))) :=
