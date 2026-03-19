@@ -13,7 +13,6 @@ namespace EvmAsm.Rv64
 abbrev evm_or_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_or
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM OR: composes 4 per-limb OR specs + sp adjustment. -/
 theorem evm_or_spec (sp base : Addr)
     (a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 : Word)
@@ -33,7 +32,6 @@ theorem evm_or_spec (sp base : Addr)
   have LADDI := addi_spec_gen_same .x12 sp 32 (base + 64) (by nofun)
   runBlock L0 L1 L2 L3 LADDI
 
-set_option maxHeartbeats 6400000 in
 /-- Stack-level 256-bit EVM OR. -/
 theorem evm_or_stack_spec (sp base : Addr)
     (a b : EvmWord) (v7 v6 : Word)

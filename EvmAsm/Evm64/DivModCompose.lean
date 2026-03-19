@@ -79,7 +79,6 @@ private theorem divK_phaseA_code_sub_divCode (base : Addr) :
   unfold divCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
   exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 1600000 in
 /-- Zero path code (5 instructions, block 11) is subsumed by divCode. -/
 private theorem divK_zeroPath_code_sub_divCode (base : Addr) :
     ∀ a i, (divK_zeroPath_code (base + 1044)) a = some i → (divCode base) a = some i := by
@@ -218,7 +217,6 @@ private theorem phB_sp24_32 (sp : Addr) : (sp + (24 : Addr) + (32 : Addr)) = sp 
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 12800000 in
 /-- When b = 0 (all limbs zero), evm_div writes zeros and advances sp.
     Execution path: phaseA body (7 instrs), BEQ taken, zeroPath (5 instrs). -/
 theorem evm_div_bzero_spec (sp base : Addr)
@@ -280,7 +278,6 @@ theorem evm_div_bzero_spec (sp base : Addr)
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 12800000 in
 /-- When b ≠ 0, evm_div falls through Phase A to Phase B at base+32.
     Execution path: phaseA body (7 instrs), BEQ not taken. -/
 theorem evm_div_phaseA_ntaken_spec (sp base : Addr)
@@ -328,8 +325,8 @@ theorem evm_div_phaseA_ntaken_spec (sp base : Addr)
 -- init1 → init2 → ADDI x5=4 → BNE x10(taken) → tail
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
 set_option maxHeartbeats 51200000 in
+set_option maxRecDepth 4096 in
 /-- Phase B when b[3] ≠ 0 (n=4): zero scratch, load b[1..2], cascade BNE taken, load leading limb.
     Execution path: init1 (7 instrs) + init2 (2) + ADDI (1) + BNE taken (1) + tail (5) = 16 instrs.
     Exit at base+116 (start of CLZ). x5 = b[3] (leading limb), x6 = b[1], x7 = b[2], n = 4. -/
@@ -453,8 +450,8 @@ theorem evm_div_phaseB_n4_spec (sp base : Addr)
 -- base → base+116 (entry to CLZ)
 -- ============================================================================
 
-set_option maxRecDepth 2048 in
 set_option maxHeartbeats 25600000 in
+set_option maxRecDepth 2048 in
 /-- When b ≠ 0 and b[3] ≠ 0, evm_div executes Phase A (ntaken) then Phase B (n=4).
     Execution: 8 + 16 = 24 instructions, base → base+116 (start of CLZ).
     Pre/postcondition shapes reflect frame structure from composition. -/
@@ -543,7 +540,6 @@ private theorem divK_phaseA_code_sub_modCode (base : Addr) :
   unfold modCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
   exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 1600000 in
 private theorem divK_zeroPath_code_sub_modCode (base : Addr) :
     ∀ a i, (divK_zeroPath_code (base + 1044)) a = some i → (modCode base) a = some i := by
   unfold modCode divK_zeroPath_code; simp only [CodeReq.unionAll_cons]
@@ -566,7 +562,6 @@ private theorem beq_singleton_sub_modCode (base : Addr) :
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 12800000 in
 /-- When b = 0 (all limbs zero), evm_mod writes zeros and advances sp.
     Execution path: phaseA body (7 instrs), BEQ taken, zeroPath (5 instrs). -/
 theorem evm_mod_bzero_spec (sp base : Addr)
@@ -624,7 +619,6 @@ theorem evm_mod_bzero_spec (sp base : Addr)
 -- ============================================================================
 
 set_option maxRecDepth 2048 in
-set_option maxHeartbeats 12800000 in
 /-- When b ≠ 0, evm_mod falls through Phase A to Phase B at base+32.
     Execution path: phaseA body (7 instrs), BEQ not taken. -/
 theorem evm_mod_phaseA_ntaken_spec (sp base : Addr)

@@ -19,7 +19,6 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
-set_option maxHeartbeats 800000
 
 -- ============================================================================
 -- Per-body Helper: Sign-extend in-place (4 instructions)
@@ -137,7 +136,6 @@ abbrev signext_body_1_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
   (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x10 56))
    (CodeReq.singleton (base + 28) (.JAL .x0 jal_off))))))))
 
-set_option maxHeartbeats 1600000 in
 /-- Body 1: limb_idx=1, sign-extend limb 1 at sp+40, fill limbs 2-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + JAL. -/
 theorem signext_body_1_spec (sp : Word)
@@ -182,7 +180,6 @@ abbrev signext_body_0_code (base : Addr) : CodeReq :=
   (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x10 48))
    (CodeReq.singleton (base + 28) (.SD .x12 .x10 56))))))))
 
-set_option maxHeartbeats 1600000 in
 /-- Body 0: limb_idx=0, sign-extend limb 0 at sp+32, fill limbs 1-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + SD. Falls through to done. -/
 theorem signext_body_0_spec (sp : Word)
@@ -236,7 +233,6 @@ theorem signext_done_spec (sp : Word) (base : Addr) :
 abbrev signext_phase_b_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base signext_phase_b
 
-set_option maxHeartbeats 1600000 in
 /-- Phase B spec: compute sign-extension parameters.
     ANDI x10,x5,7; SLLI x10,x10,3; ADDI x6,x0,56;
     SUB x6,x6,x10; SRLI x5,x5,3.

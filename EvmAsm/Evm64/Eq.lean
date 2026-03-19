@@ -16,7 +16,6 @@ namespace EvmAsm.Rv64
 abbrev evm_eq_code (base : Addr) : CodeReq :=
   CodeReq.ofProg base evm_eq
 
-set_option maxHeartbeats 6400000 in
 /-- Full 256-bit EVM EQ: EQ(a, b) = 1 iff a == b (unsigned).
     XOR each limb pair, OR-reduce, SLTIU to boolean.
     Pops 2 stack words (A at sp, B at sp+32),
