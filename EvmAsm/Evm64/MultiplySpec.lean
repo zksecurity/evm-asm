@@ -26,11 +26,7 @@ namespace EvmAsm.Rv64
 -- ============================================================================
 
 abbrev mul_col3_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 56))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.ADD .x10 .x10 .x6))
-  (CodeReq.singleton (base + 16) (.SD .x12 .x10 56)))))
+  CodeReq.ofProg base mul_col3
 
 /-- Column 3: multiply b[3] × a[0], add to r3 accumulator, store result.
     5 instructions: LD b3; LD a0; MUL a0*b3; ADD acc; SD result. -/
@@ -55,19 +51,7 @@ theorem mul_col3_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 abbrev mul_col2_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 48))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.ADD .x11 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SLTU .x7 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.SD .x12 .x11 48))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.LD .x7 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.MUL .x7 .x7 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.LD .x10 .x12 16))
-  (CodeReq.singleton (base + 48) (.ADD .x10 .x10 .x6)))))))))))))
+  CodeReq.ofProg base mul_col2
 
 set_option maxHeartbeats 1600000 in
 /-- Column 2: multiply b[2] × {a[0],a[1]}, finalize r[2], update r[3] accumulator.
@@ -216,29 +200,7 @@ theorem mul_col1_partB_spec (sp : Addr) (base : Addr)
 
 -- Full column 1 code (used by evm_mul_code)
 abbrev mul_col1_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 40))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.ADD .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SLTU .x7 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.SD .x12 .x10 40))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.ADD .x11 .x11 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.SLTU .x10 .x11 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.LD .x6 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.ADD .x11 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 56) (.SLTU .x7 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.ADD .x10 .x10 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.LD .x6 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.MUL .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.ADD .x10 .x10 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 80) (.LD .x6 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 84) (.ADD .x10 .x10 .x6))
-  (CodeReq.singleton (base + 88) (.SD .x12 .x10 16)))))))))))))))))))))))
+  CodeReq.ofProg base mul_col1
 
 set_option maxHeartbeats 1600000 in
 /-- Column 1: multiply b[1] × {a[0],a[1],a[2]}, finalize r[1], update r[2]/r[3].
@@ -380,27 +342,7 @@ theorem mul_col0_partB_spec (sp : Addr) (base : Addr)
 
 -- Full column 0 code (used by evm_mul_code)
 abbrev mul_col0_code (base : Addr) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 32))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.MULHU .x10 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SD .x12 .x7 32))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.LD .x6 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.MULHU .x11 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.ADD .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.SLTU .x6 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.ADD .x11 .x11 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.LD .x6 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.MUL .x7 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.MULHU .x6 .x6 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 56) (.ADD .x11 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SLTU .x7 .x11 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.ADD .x6 .x6 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.LD .x7 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.MUL .x7 .x7 .x5))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.ADD .x6 .x6 .x7))
-  (CodeReq.singleton (base + 80) (.SD .x12 .x6 24)))))))))))))))))))))
+  CodeReq.ofProg base mul_col0
 
 set_option maxHeartbeats 1600000 in
 /-- Column 0: multiply b[0] × {a[0],a[1],a[2],a[3]}, store r[0], spill r[3] partial.
@@ -534,13 +476,12 @@ theorem evm_mul_cols23ep_spec (sp : Addr) (base : Addr)
   have EP := addi_spec_gen_same .x12 sp 32 (base + 248) (by nofun)
   runBlock C2 C3 EP
 
--- Full code (unchanged, used by evm_mul_spec)
+-- Full code: union of sub-codes (used by evm_mul_spec for composition)
 abbrev evm_mul_code (base : Addr) : CodeReq :=
-  CodeReq.union (mul_col0_code base)
-  (CodeReq.union (mul_col1_code (base + 84))
-  (CodeReq.union (mul_col2_code (base + 176))
-  (CodeReq.union (mul_col3_code (base + 228))
-  (CodeReq.singleton (base + 248) (.ADDI .x12 .x12 32)))))
+  CodeReq.union (mul_col0_code base) (CodeReq.union (mul_col1_code (base + 84))
+    (CodeReq.union (mul_col2_code (base + 176))
+      (CodeReq.union (mul_col3_code (base + 228))
+        (CodeReq.singleton (base + 248) (.ADDI .x12 .x12 32)))))
 
 set_option maxHeartbeats 12800000 in
 /-- Full 256-bit EVM MUL: composes cols01 + cols23ep intermediate triples.

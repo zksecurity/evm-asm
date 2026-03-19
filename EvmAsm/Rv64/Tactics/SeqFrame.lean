@@ -266,12 +266,16 @@ private def buildOfProgDisjointRange (cr1 cr2 : Expr) : MetaM Expr := do
   unless off1 + 4 * n1 ≤ off2 ∨ off2 + 4 * n2 ≤ off1 do
     throwError "ofProg range: address ranges overlap"
   -- Build proof via tactic: apply ofProg_disjoint_range, then bv_omega closes each inequality
+  -- Embed concrete lengths so bv_omega has concrete bounds
+  let n1Stx := Lean.Syntax.mkNumLit (toString n1)
+  let n2Stx := Lean.Syntax.mkNumLit (toString n2)
   let disjType := mkApp2 (mkConst ``EvmAsm.Rv64.CodeReq.Disjoint) cr1 cr2
   let mvar ← mkFreshExprMVar disjType
-  let stx ← `(tactic|
-    apply CodeReq.ofProg_disjoint_range
-    intro k1 k2 hk1 hk2
-    bv_omega)
+  let stx ← `(tactic| (
+    apply CodeReq.ofProg_disjoint_range_len _ _ $(n1Stx) _ _ $(n2Stx)
+      (by native_decide) (by native_decide);
+    intro k1 k2 hk1 hk2;
+    bv_omega))
   runTacticSilent mvar.mvarId! stx
   instantiateMVars mvar
 
@@ -305,6 +309,46 @@ partial def buildDisjointProof (cr1 cr2 : Expr) : MetaM Expr :=
     -- Prove a1 ≠ a2 (fast offset-based when possible, bv_omega fallback)
     let neqProof ← proveAddrNe a1 a2
     return ← mkAppM ``EvmAsm.Rv64.CodeReq.Disjoint.singleton #[neqProof, i1, i2]
+  -- Case: cr1 = singleton, cr2 = ofProg → range check via ofProg_none_range_len + bv_omega
+  if cr1.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 &&
+     cr2.isAppOfArity ``EvmAsm.Rv64.CodeReq.ofProg 2 then
+    try
+      let a := cr1.getAppArgs[0]!
+      let base2 := cr2.getAppArgs[0]!
+      let prog2 := cr2.getAppArgs[1]!
+      let some (_, sOff) := getAddrOffset? a | throwError ""
+      let some (_, bOff) := getAddrOffset? base2 | throwError ""
+      let n2 ← countListLength prog2
+      unless sOff < bOff ∨ sOff ≥ bOff + 4 * n2 do throwError ""
+      let n2Stx := Lean.Syntax.mkNumLit (toString n2)
+      let disjType := mkApp2 (mkConst ``EvmAsm.Rv64.CodeReq.Disjoint) cr1 cr2
+      let mvar ← mkFreshExprMVar disjType
+      let stx ← `(tactic|
+        exact CodeReq.Disjoint.singleton_ofProg
+          (CodeReq.ofProg_none_range_len _ _ $(n2Stx) _ (by native_decide) (fun k hk => by bv_omega)))
+      runTacticSilent mvar.mvarId! stx
+      return ← instantiateMVars mvar
+    catch _ => (Pure.pure PUnit.unit : MetaM PUnit)
+  -- Case: cr1 = ofProg, cr2 = singleton → symmetric
+  if cr1.isAppOfArity ``EvmAsm.Rv64.CodeReq.ofProg 2 &&
+     cr2.isAppOfArity ``EvmAsm.Rv64.CodeReq.singleton 2 then
+    try
+      let a := cr2.getAppArgs[0]!
+      let base1 := cr1.getAppArgs[0]!
+      let prog1 := cr1.getAppArgs[1]!
+      let some (_, sOff) := getAddrOffset? a | throwError ""
+      let some (_, bOff) := getAddrOffset? base1 | throwError ""
+      let n1 ← countListLength prog1
+      unless sOff < bOff ∨ sOff ≥ bOff + 4 * n1 do throwError ""
+      let n1Stx := Lean.Syntax.mkNumLit (toString n1)
+      let disjType := mkApp2 (mkConst ``EvmAsm.Rv64.CodeReq.Disjoint) cr1 cr2
+      let mvar ← mkFreshExprMVar disjType
+      let stx ← `(tactic|
+        exact CodeReq.Disjoint.ofProg_singleton
+          (CodeReq.ofProg_none_range_len _ _ $(n1Stx) _ (by native_decide) (fun k hk => by bv_omega)))
+      runTacticSilent mvar.mvarId! stx
+      return ← instantiateMVars mvar
+    catch _ => (Pure.pure PUnit.unit : MetaM PUnit)
   -- Case: cr1 = union sub1 sub2 → need sub1.Disjoint cr2 and sub2.Disjoint cr2
   if cr1.isAppOfArity ``EvmAsm.Rv64.CodeReq.union 2 then
     let sub1 := cr1.getAppArgs[0]!

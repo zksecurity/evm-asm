@@ -2303,6 +2303,29 @@ theorem CodeReq.ofProg_lookup (base : Addr) (prog : List Instr) (k : Nat)
       rw [ofProg_addr_succ]
       exact ih (base + 4) k' (by simp [List.length] at hk; omega) (by simp [List.length] at hbound; omega)
 
+/-- Variant of ofProg_none_range with explicit length (avoids needing to reduce prog.length). -/
+theorem CodeReq.ofProg_none_range_len (base : Addr) (prog : List Instr) (n : Nat) (a : Addr)
+    (hlen : prog.length = n)
+    (h : ∀ k : Nat, k < n → a ≠ base + BitVec.ofNat 64 (4 * k)) :
+    CodeReq.ofProg base prog a = none :=
+  CodeReq.ofProg_none_range base prog a (fun k hk => h k (hlen ▸ hk))
+
+/-- Singleton is disjoint from ofProg if the singleton's address is not in the program range. -/
+theorem CodeReq.Disjoint.singleton_ofProg {a : Addr} {i : Instr} {base : Addr} {prog : List Instr}
+    (h : CodeReq.ofProg base prog a = none) :
+    CodeReq.Disjoint (CodeReq.singleton a i) (CodeReq.ofProg base prog) := by
+  intro a'
+  simp only [CodeReq.singleton]
+  by_cases hb : (a' == a) = true
+  · rw [beq_iff_eq] at hb; subst hb; right; exact h
+  · left; simp [hb]
+
+/-- ofProg is disjoint from singleton if the singleton's address is not in the program range. -/
+theorem CodeReq.Disjoint.ofProg_singleton {a : Addr} {i : Instr} {base : Addr} {prog : List Instr}
+    (h : CodeReq.ofProg base prog a = none) :
+    CodeReq.Disjoint (CodeReq.ofProg base prog) (CodeReq.singleton a i) :=
+  (CodeReq.Disjoint.singleton_ofProg h).symm
+
 /-- Reverse of ofProg_none_range: if `ofProg` returns `some` at address `a`,
     then `a` must be `base + 4*k` for some `k < prog.length`. -/
 theorem CodeReq.ofProg_some_range (base : Addr) (prog : List Instr) (a : Addr) (i : Instr)
@@ -2340,6 +2363,16 @@ theorem CodeReq.ofProg_disjoint_range (base1 : Addr) (prog1 : List Instr)
       intro k2 hk2
       rw [haddr]
       exact h k1 k2 hk1 hk2
+
+/-- Variant of ofProg_disjoint_range with explicit lengths (avoids needing to reduce prog.length). -/
+theorem CodeReq.ofProg_disjoint_range_len (base1 : Addr) (prog1 : List Instr) (n1 : Nat)
+    (base2 : Addr) (prog2 : List Instr) (n2 : Nat)
+    (hlen1 : prog1.length = n1) (hlen2 : prog2.length = n2)
+    (h : ∀ k1 k2, k1 < n1 → k2 < n2 →
+      base1 + BitVec.ofNat 64 (4 * k1) ≠ base2 + BitVec.ofNat 64 (4 * k2)) :
+    CodeReq.Disjoint (CodeReq.ofProg base1 prog1) (CodeReq.ofProg base2 prog2) :=
+  CodeReq.ofProg_disjoint_range base1 prog1 base2 prog2
+    (fun k1 k2 hk1 hk2 => h k1 k2 (hlen1 ▸ hk1) (hlen2 ▸ hk2))
 
 theorem CodeReq.union_satisfiedBy (cr1 cr2 : CodeReq) (s : MachineState)
     (hd : cr1.Disjoint cr2) :
