@@ -1,5 +1,5 @@
 /-
-  EvmAsm.Evm64.ShiftSpec
+  EvmAsm.Evm64.ShrSpec
 
   CPS specifications for the 256-bit EVM SHR (logical shift right) program (64-bit).
   Modern CodeReq-based approach.
