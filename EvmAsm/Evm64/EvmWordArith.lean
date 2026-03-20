@@ -861,6 +861,67 @@ theorem slt_result_correct (a b : EvmWord) :
       have h192_bound' : b0.toNat + b1.toNat * 2^64 + b2.toNat * 2^128 < 2^192 := by nlinarith
       nlinarith [Nat.mul_le_mul_right (2^192) hgt]
 
+-- ============================================================================
+-- BYTE correctness: limb-level byte extraction = 256-bit byte extraction
+-- ============================================================================
+
+/-- Extracting a byte from a 64-bit limb within a larger value gives the same
+    result as extracting directly from the larger value, because the mod 2^64
+    doesn't affect bytes that fit within the limb.
+
+    Key identity: `a % 2^64 / 2^B % 256 = a / 2^B % 256` when `B + 8 ≤ 64`.
+    Proof: `2^64 = 2^B * 2^(64-B)`, and `2^(64-B) ≥ 256`, so the high quotient
+    `(a / 2^64) * 2^(64-B)` is a multiple of 256 and vanishes under `% 256`. -/
+private theorem mod_pow64_div_mod256_eq (a B : Nat) (hB : B + 8 ≤ 64) :
+    a % 2 ^ 64 / 2 ^ B % 256 = a / 2 ^ B % 256 := by
+  -- a = q * 2^64 + r, and 2^64 = 2^B * 2^(64-B)
+  -- So a / 2^B = q * 2^(64-B) + r / 2^B
+  -- Since 2^(64-B) is a multiple of 256 (because 64-B ≥ 8),
+  -- the q * 2^(64-B) term vanishes under % 256.
+  set q := a / 2 ^ 64
+  set r := a % 2 ^ 64
+  have hr : r < 2 ^ 64 := Nat.mod_lt _ (by positivity)
+  have ha : a = q * 2 ^ 64 + r := by omega
+  have h64 : (2 : Nat) ^ 64 = 2 ^ B * 2 ^ (64 - B) := by
+    rw [← Nat.pow_add]; congr 1; omega
+  -- a / 2^B = q * 2^(64-B) + r / 2^B
+  have hdiv : a / 2 ^ B = q * 2 ^ (64 - B) + r / 2 ^ B := by
+    conv_lhs => rw [ha, h64]
+    rw [show q * (2 ^ B * 2 ^ (64 - B)) + r = r + 2 ^ B * (q * 2 ^ (64 - B)) from by ring]
+    rw [Nat.add_mul_div_left _ _ (by positivity : 0 < 2 ^ B)]
+    omega
+  -- 256 divides q * 2^(64-B)
+  have hdvd : 256 ∣ q * 2 ^ (64 - B) := by
+    refine Dvd.dvd.mul_left ?_ q
+    exact ⟨2 ^ (64 - B - 8), by
+      rw [show (256 : Nat) = 2 ^ 8 from by norm_num, ← Nat.pow_add]; congr 1; omega⟩
+  rw [hdiv]
+  obtain ⟨k, hk⟩ := hdvd
+  rw [hk, show 256 * k + r / 2 ^ B = r / 2 ^ B + k * 256 from by omega]
+  rw [Nat.add_mul_mod_self_right]
+
+/-- The BYTE operation: limb-level byte extraction equals direct 256-bit extraction.
+
+    For byte index `i` (0 ≤ i < 32, big-endian), the limb-level computation:
+    - `limb_from_msb = i / 8`, selecting limb `3 - i/8`
+    - `bit_shift = 56 - (i%8) * 8`, shift within the 64-bit limb
+    - result = `(getLimb (3 - i/8) >>> bit_shift) % 256`
+
+    equals the direct 256-bit extraction: `(x >>> ((31-i)*8)) % 256`.
+    This connects the RISC-V limb-level BYTE implementation to the
+    EVM-level BYTE semantics. -/
+theorem byte_extract_correct (x : EvmWord) (i : Nat) (hi : i < 32) :
+    let limb_idx : Fin 4 := ⟨3 - i / 8, by omega⟩
+    let bit_shift := 56 - (i % 8) * 8
+    ((x.getLimb limb_idx).toNat / 2 ^ bit_shift) % 256 =
+    (x.toNat / 2 ^ ((31 - i) * 8)) % 256 := by
+  simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
+  -- Goal: x.toNat / 2^((3-i/8)*64) % 2^64 / 2^(56-(i%8)*8) % 256 =
+  --       x.toNat / 2^((31-i)*8) % 256
+  have hshift : (3 - i / 8) * 64 + (56 - i % 8 * 8) = (31 - i) * 8 := by omega
+  rw [mod_pow64_div_mod256_eq _ _ (by omega)]
+  rw [Nat.div_div_eq_div_mul, ← Nat.pow_add, hshift]
+
 end EvmWord
 
 end EvmAsm.Rv64
