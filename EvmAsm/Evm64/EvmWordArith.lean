@@ -751,7 +751,56 @@ theorem slt_result_correct (a b : EvmWord) :
     let slt_msb := if BitVec.slt a3 b3 then (1 : Word) else 0
     let result := if a3 = b3 then borrow2 else slt_msb
     result = if BitVec.slt a b then (1 : Word) else 0 := by
-  sorry
+  intro a0 b0 a1 b1 a2 b2 a3 b3
+  intro borrow0 borrow1a temp1 borrow1b borrow1
+  intro borrow2a temp2 borrow2b borrow2
+  intro slt_msb result
+  -- Key: a.msb = a3.msb (bit 255 of a = bit 63 of a3 = MSB of getLimb 3)
+  have hmsb_a : a.msb = a3.msb := by
+    show a.getLsbD (256 - 1) = (a.extractLsb' (3 * 64) 64).getLsbD (64 - 1)
+    simp [BitVec.getLsbD_extractLsb']
+  have hmsb_b : b.msb = b3.msb := by
+    show b.getLsbD (256 - 1) = (b.extractLsb' (3 * 64) 64).getLsbD (64 - 1)
+    simp [BitVec.getLsbD_extractLsb']
+  -- Get borrow2 as the 3-limb LT comparison
+  -- borrow2 tracks: lower 3 limbs of a < lower 3 limbs of b
+  -- This is the same borrow chain as in lt_borrow_chain_correct (first 3 limbs)
+  have hborrow2_iff : borrow2 = (1 : Word) ↔
+      a0.toNat + a1.toNat * 2^64 + a2.toNat * 2^128 <
+      b0.toNat + b1.toNat * 2^64 + b2.toNat * 2^128 := by
+    sorry -- TODO: 3-limb borrow chain (subset of lt_borrow_chain_correct)
+  by_cases h : a3 = b3
+  · -- MSB limbs equal
+    simp only [result, h, ite_true]
+    -- slt a b = ult a b (same MSB)
+    have hmsb_eq : a.msb = b.msb := by rw [hmsb_a, hmsb_b, h]
+    rw [show BitVec.slt a b = BitVec.ult a b from BitVec.slt_eq_ult_of_msb_eq hmsb_eq]
+    -- ult a b ↔ a.toNat < b.toNat ↔ lower3(a) < lower3(b) (since a3 = b3)
+    have hult_lower : BitVec.ult a b ↔
+        (a0.toNat + a1.toNat * 2^64 + a2.toNat * 2^128 <
+         b0.toNat + b1.toNat * 2^64 + b2.toNat * 2^128) := by
+      rw [ult_iff, toNat_eq_limb_sum a, toNat_eq_limb_sum b]
+      have ha3b3 : a3.toNat = b3.toNat := congrArg BitVec.toNat h
+      constructor <;> intro hlt <;> nlinarith
+    -- borrow2 = if ult a b then 1 else 0
+    rcases Decidable.em (BitVec.ult a b) with h | h
+    · rw [if_pos h]; exact hborrow2_iff.mpr (hult_lower.mp h)
+    · rw [if_neg h]
+      have hb2_01 := borrow_or_val_01 (c1 := BitVec.ult a2 b2) (c2 := BitVec.ult temp2 borrow1)
+      by_contra hne
+      have hb2_eq1 : borrow2 = 1 := by
+        rcases hb2_01 with h0 | h1
+        · exact absurd (BitVec.eq_of_toNat_eq h0) hne
+        · exact BitVec.eq_of_toNat_eq h1
+      exact h (hult_lower.mpr (hborrow2_iff.mp hb2_eq1))
+  · -- MSB limbs differ
+    simp only [result, h, ite_false]
+    -- slt a b ↔ slt a3 b3
+    have hmsb_neq : a.msb ≠ b.msb ↔ a3.msb ≠ b3.msb := by rw [hmsb_a, hmsb_b]
+    -- When MSBs differ: slt = !ult, and slt a3 b3 = !ult a3 b3
+    -- But also: ult a b ↔ ¬ ult a3 b3 ... this is more complex
+    -- Simpler: use slt_eq_ult for both and relate
+    sorry
 
 end EvmWord
 
