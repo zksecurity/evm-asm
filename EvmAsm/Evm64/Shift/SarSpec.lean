@@ -81,14 +81,7 @@ theorem sar_last_limb_inplace_spec
 -- ============================================================================
 
 abbrev sar_body_3_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.SD .x12 .x5 0))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.SD .x12 .x10 8))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x10 16))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x10 24))
-   (CodeReq.singleton (base + 28) (.JAL .x0 jal_off))))))))
+  CodeReq.ofProg base (sar_body_3_prog jal_off)
 
 /-- SAR body 3: limb_shift=3 (8 instructions).
     result[0] = value[3] SRA bs; result[1..3] = sign_ext.
@@ -121,20 +114,7 @@ theorem sar_body_3_spec (sp : Word)
   runBlock LL SR S0 S1 S2 JL
 
 abbrev sar_body_2_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.SD .x12 .x5 8))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.SD .x12 .x10 16))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.SD .x12 .x10 24))
-   (CodeReq.singleton (base + 52) (.JAL .x0 jal_off))))))))))))))
+  CodeReq.ofProg base (sar_body_2_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 /-- SAR body 2: limb_shift=2 (14 instructions).
@@ -158,33 +138,25 @@ theorem sar_body_2_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ sign_ext) ** (.x11 ↦ᵣ mask) **
        (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ sign_ext) ** ((sp + 24) ↦ₘ sign_ext)) := by
-  sorry -- runBlock regression in Lean v4.29.0-rc6: proof term has unresolved mvars
+  have h63 : (63 : BitVec 6).toNat = 63 := by native_decide
+  have MM := shr_merge_limb_spec 16 24 0 sp v2 v3 v0 v5 v10 bit_shift anti_shift mask base (by validMem) (by validMem) (by validMem)
+  have LL := sar_last_limb_spec 8 sp v3 v1
+    ((v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (anti_shift.toNat % 64)) &&& mask))
+    bit_shift (base + 28) (by validMem) (by validMem)
+  have SR := srai_spec_gen .x10 .x5
+    ((v3 <<< (anti_shift.toNat % 64)) &&& mask)
+    (BitVec.sshiftRight v3 (bit_shift.toNat % 64)) 63 (base + 40) (by nofun)
+  simp only [h63] at SR
+  have S0 := sd_spec_gen .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight v3 (bit_shift.toNat % 64)) 63) v2 16 (base + 44) (by validMem)
+  have S1 := sd_spec_gen .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight v3 (bit_shift.toNat % 64)) 63) v3 24 (base + 48) (by validMem)
+  have JL := jal_x0_spec_gen jal_off (base + 52)
+  rw [hexit] at JL
+  runBlock MM LL SR S0 S1 JL
 
 abbrev sar_body_1_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  -- merge_limb(8,16,0): 7 instructions at base..base+24
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  -- merge_limb(16,24,8): 7 instructions at base+28..base+52
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.SD .x12 .x5 8))
-  -- sar_last_limb(16): 3 instructions at base+56..base+64
-  (CodeReq.union (CodeReq.singleton (base + 56) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.SD .x12 .x5 16))
-  -- SRAI + SD + JAL: 3 instructions at base+68..base+76
-  (CodeReq.union (CodeReq.singleton (base + 68) (.SRAI .x10 .x5 63))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.SD .x12 .x10 24))
-   (CodeReq.singleton (base + 76) (.JAL .x0 jal_off))))))))))))))))))))
+  CodeReq.ofProg base (sar_body_1_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 /-- SAR body 1: limb_shift=1 (20 instructions).
@@ -209,39 +181,27 @@ theorem sar_body_1_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ sign_ext) ** (.x11 ↦ᵣ mask) **
        (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ sign_ext)) := by
-  sorry -- runBlock regression in Lean v4.29.0-rc6: proof term has unresolved mvars
+  have h63 : (63 : BitVec 6).toNat = 63 := by native_decide
+  have MM1 := shr_merge_limb_spec 8 16 0 sp v1 v2 v0 v5 v10 bit_shift anti_shift mask base (by validMem) (by validMem) (by validMem)
+  have MM2 := shr_merge_limb_spec 16 24 8 sp v2 v3 v1
+    ((v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (anti_shift.toNat % 64)) &&& mask))
+    ((v2 <<< (anti_shift.toNat % 64)) &&& mask)
+    bit_shift anti_shift mask (base + 28) (by validMem) (by validMem) (by validMem)
+  have LL := sar_last_limb_spec 16 sp v3 v2
+    ((v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (anti_shift.toNat % 64)) &&& mask))
+    bit_shift (base + 56) (by validMem) (by validMem)
+  have SR := srai_spec_gen .x10 .x5
+    ((v3 <<< (anti_shift.toNat % 64)) &&& mask)
+    (BitVec.sshiftRight v3 (bit_shift.toNat % 64)) 63 (base + 68) (by nofun)
+  simp only [h63] at SR
+  have S0 := sd_spec_gen .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight v3 (bit_shift.toNat % 64)) 63) v3 24 (base + 72) (by validMem)
+  have JL := jal_x0_spec_gen jal_off (base + 76)
+  rw [hexit] at JL
+  runBlock MM1 MM2 LL SR S0 JL
 
 abbrev sar_body_0_code (base : Addr) (jal_off : BitVec 21) : CodeReq :=
-  -- merge_limb_inplace(0,8): 7 instructions at base..base+24
-  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 0))
-  (CodeReq.union (CodeReq.singleton (base + 4) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x10 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 12) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 16) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 20) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 24) (.SD .x12 .x5 0))
-  -- merge_limb_inplace(8,16): 7 instructions at base+28..base+52
-  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x5 .x12 8))
-  (CodeReq.union (CodeReq.singleton (base + 32) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 36) (.LD .x10 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 40) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 44) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 48) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 52) (.SD .x12 .x5 8))
-  -- merge_limb_inplace(16,24): 7 instructions at base+56..base+80
-  (CodeReq.union (CodeReq.singleton (base + 56) (.LD .x5 .x12 16))
-  (CodeReq.union (CodeReq.singleton (base + 60) (.SRL .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 64) (.LD .x10 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 68) (.SLL .x10 .x10 .x7))
-  (CodeReq.union (CodeReq.singleton (base + 72) (.AND .x10 .x10 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 76) (.OR .x5 .x5 .x10))
-  (CodeReq.union (CodeReq.singleton (base + 80) (.SD .x12 .x5 16))
-  -- sar_last_limb_inplace: 3 instructions at base+84..base+92
-  (CodeReq.union (CodeReq.singleton (base + 84) (.LD .x5 .x12 24))
-  (CodeReq.union (CodeReq.singleton (base + 88) (.SRA .x5 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 92) (.SD .x12 .x5 24))
-  -- JAL at base+96
-   (CodeReq.singleton (base + 96) (.JAL .x0 jal_off)))))))))))))))))))))))))
+  CodeReq.ofProg base (sar_body_0_prog jal_off)
 
 set_option maxHeartbeats 3200000 in
 /-- SAR body 0: limb_shift=0 (25 instructions).
@@ -267,7 +227,21 @@ theorem sar_body_0_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result3) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ ((v3 <<< (anti_shift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
        (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) := by
-  sorry -- runBlock regression in Lean v4.29.0-rc6: proof term has unresolved mvars
+  have MM1 := shr_merge_limb_inplace_spec 0 8 sp v0 v1 v5 v10 bit_shift anti_shift mask base (by validMem) (by validMem)
+  have MM2 := shr_merge_limb_inplace_spec 8 16 sp v1 v2
+    ((v0 >>> (bit_shift.toNat % 64)) ||| ((v1 <<< (anti_shift.toNat % 64)) &&& mask))
+    ((v1 <<< (anti_shift.toNat % 64)) &&& mask)
+    bit_shift anti_shift mask (base + 28) (by validMem) (by validMem)
+  have MM3 := shr_merge_limb_inplace_spec 16 24 sp v2 v3
+    ((v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (anti_shift.toNat % 64)) &&& mask))
+    ((v2 <<< (anti_shift.toNat % 64)) &&& mask)
+    bit_shift anti_shift mask (base + 56) (by validMem) (by validMem)
+  have LL := sar_last_limb_inplace_spec sp v3
+    ((v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (anti_shift.toNat % 64)) &&& mask))
+    bit_shift (base + 84) (by validMem)
+  have JL := jal_x0_spec_gen jal_off (base + 96)
+  rw [hexit] at JL
+  runBlock MM1 MM2 MM3 LL JL
 
 -- ============================================================================
 -- Sign-fill path spec (7 instructions)
