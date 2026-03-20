@@ -105,7 +105,7 @@ EvmAsm/
     Swap/                     --   SWAP1-16 (Program + Spec)
     Multiply/                 --   MUL (Program + LimbSpec, schoolbook 4x4 limb)
     DivMod/                   --   DIV/MOD (Program + LimbSpec + Compose, Knuth Algorithm D)
-    SignExtend/               --   SIGNEXTEND (Program + LimbSpec)
+    SignExtend/               --   SIGNEXTEND (Program + LimbSpec + Compose + Spec)
     Shift/                    --   SHR/SHL/SAR (Program + LimbSpec + ShlSpec + SarSpec + Compose)
     Byte/                     --   BYTE (Program + LimbSpec + Spec)
     zkvm-standards/           --   Submodule: zkVM RISC-V target standards
