@@ -16,10 +16,3 @@ jobs:
         with:
           use-mathlib-cache: true
           lake-package-directory: .
-          build-args: "--no-build"
-      - name: Fetch ProofWidgets and Mathlib cache
-        run: |
-          lake clean
-          lake exe cache get
-      - name: Build
-        run: lake build
