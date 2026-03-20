@@ -621,11 +621,12 @@ theorem sub_borrow_chain_correct (a b : EvmWord) :
     simp only [D, h128, h192, h256]; omega
   have hD1 : D = (a0.toNat + W - b0.toNat) + (a1.toNat + W - 1 - b1.toNat) * W +
     (a2.toNat + W - 1 - b2.toNat + (a3.toNat + W - 1 - b3.toNat) * W) * (W * W) := by
-    simp only [D, h128, h192, h256]; omega
+    rw [hD0, show ∀ a b c : Nat, (a + b * c) * c = a * c + b * (c * c) from by intros; ring]
+    omega
   have hD2 : D = (a0.toNat + W - b0.toNat) + (a1.toNat + W - 1 - b1.toNat) * W +
     (a2.toNat + W - 1 - b2.toNat) * (W * W) +
     (a3.toNat + W - 1 - b3.toNat) * (W * (W * W)) := by
-    simp only [D, h128, h192, h256]; omega
+    rw [hD1, show ∀ p a b c : Nat, p + (a + b * c) * (c * c) = p + a * (c * c) + b * (c * (c * c)) from by intros; ring]
   -- Strip helpers
   have strip4 : ∀ (p q r s W : Nat), 0 < W →
       (p + (q + r * W + s * (W * W))) % W = (p + q) % W := by
