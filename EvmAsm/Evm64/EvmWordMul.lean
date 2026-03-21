@@ -54,6 +54,33 @@ private theorem toNat_mod_W (v : EvmWord) :
     (v.getLimb 3).toNat * 2^128) * 2^64 from by ring,
     Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt h0]
 
+/-- Carry telescope: the sum of two-level carries from limb 0 and 1
+    equals the full carry from limb 1. Used in mul_getLimb_2. -/
+private theorem carry_telescope_lemma (p q r W : Nat) (hW : 0 < W)
+    (P : Nat) (hP : P = p / W + q % W)
+    (Q : Nat) (hQ : Q = P % W + r % W) :
+    q / W + P / W + (r / W + Q / W) = (p / W + q + r) / W := by
+  subst hP; subst hQ
+  have step1 : p / W + q = (p / W + q % W) + W * (q / W) := by
+    have := Nat.mod_add_div q W; omega
+  have step2 : (p / W + q % W) + r % W = ((p / W + q % W) % W + r % W) + W * ((p / W + q % W) / W) := by
+    have := Nat.mod_add_div (p / W + q % W) W; omega
+  have hr := Nat.mod_add_div r W
+  have combined : p / W + q + r = ((p / W + q % W) % W + r % W) + W * ((p / W + q % W) / W + q / W + r / W) := by
+    have h1 : p / W + q + r = ((p / W + q % W) + r % W) + W * (q / W) + W * (r / W) := by linarith [step1, hr]
+    rw [h1, step2]; ring
+  rw [combined, Nat.add_mul_div_left _ _ hW]; omega
+
+/-- Both sides of the limb-2 equation reduce to the same expression mod W. -/
+private theorem mul_limb2_rhs_eq (p q r c2 d2 e2 W : Nat) (hW : 0 < W)
+    (P : Nat) (hP : P = p / W + q % W)
+    (Q : Nat) (hQ : Q = P % W + r % W) :
+    (p / W + (q + r)) / W + (c2 + d2 + e2) =
+    q / W + P / W + c2 + r / W + Q / W + d2 + e2 := by
+  have ct := carry_telescope_lemma p q r W hW P hP Q hQ
+  have hassoc : p / W + (q + r) = p / W + q + r := by omega
+  rw [hassoc, ← ct]; omega
+
 -- ============================================================================
 -- Per-limb correctness
 -- ============================================================================
@@ -223,7 +250,159 @@ private theorem mul_getLimb_2 (a b : EvmWord) :
     let c1_r2 := c1_r2a + c1_lo2
     let c2_lo := a0 * b2
     (a * b).getLimb 2 = c1_r2 + c2_lo := by
-  sorry
+  intro a0 a1 a2 b0 b1 b2
+  intro c0_hi_a0b0 c0_lo_a1b0 c0_hi_a1b0 c0_r1 c0_c1 c0_lo_a2b0 c0_r2
+  intro c1_lo c1_hi c1_r1 c1_c1 c1_rc c1_r2a c1_lo2 c1_r2 c2_lo
+  set W := (2:Nat)^64
+  have hW : 0 < W := by positivity
+  have hWW : 0 < W * W := by positivity
+  -- ================================================================
+  -- LHS: reduce to (a.toNat * b.toNat) / (W*W) % W
+  -- ================================================================
+  apply BitVec.eq_of_toNat_eq
+  conv_lhs =>
+    rw [getLimb_toNat_eq, show (2 : Fin 4).val = 2 from rfl,
+        show 2 * 64 = 128 from rfl]
+  conv_lhs =>
+    rw [BitVec.toNat_mul,
+        show (2:Nat)^256 = (W * W) * (W * W) from by norm_num,
+        show (2:Nat)^128 = W * W from by norm_num,
+        show (2:Nat)^64 = W from rfl,
+        Nat.mod_mul_right_div_self]
+  conv_lhs => rw [Nat.mod_mul_right_mod]
+  -- ================================================================
+  -- Factor product for limb-2 extraction
+  -- ================================================================
+  have ha_sum := toNat_eq_limb_sum a
+  have hb_sum := toNat_eq_limb_sum b
+  have hprod2 : a.toNat * b.toNat =
+      (a0.toNat * b0.toNat + (a1.toNat * b0.toNat + a0.toNat * b1.toNat) * W) +
+      (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat +
+       ((a.getLimb 3).toNat * b0.toNat +
+        a2.toNat * b1.toNat +
+        a1.toNat * b2.toNat +
+        a0.toNat * (b.getLimb 3).toNat +
+        ((a.getLimb 3).toNat * b1.toNat +
+         a2.toNat * b2.toNat +
+         a1.toNat * (b.getLimb 3).toNat +
+         ((a.getLimb 3).toNat * b2.toNat +
+          a2.toNat * (b.getLimb 3).toNat +
+          (a.getLimb 3).toNat * (b.getLimb 3).toNat * W) * W) * W) * W) * (W * W) := by
+    rw [ha_sum, hb_sum]; show _ = _; ring
+  conv_lhs => rw [hprod2, Nat.add_mul_div_right _ _ hWW]
+  have hstrip2 :
+    ((a0.toNat * b0.toNat + (a1.toNat * b0.toNat + a0.toNat * b1.toNat) * W) / (W * W) +
+     (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat +
+      ((a.getLimb 3).toNat * b0.toNat +
+       a2.toNat * b1.toNat +
+       a1.toNat * b2.toNat +
+       a0.toNat * (b.getLimb 3).toNat +
+       ((a.getLimb 3).toNat * b1.toNat +
+        a2.toNat * b2.toNat +
+        a1.toNat * (b.getLimb 3).toNat +
+        ((a.getLimb 3).toNat * b2.toNat +
+         a2.toNat * (b.getLimb 3).toNat +
+         (a.getLimb 3).toNat * (b.getLimb 3).toNat * W) * W) * W) * W)) % W =
+    ((a0.toNat * b0.toNat + (a1.toNat * b0.toNat + a0.toNat * b1.toNat) * W) / (W * W) +
+     (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat)) % W := by
+    rw [show (a0.toNat * b0.toNat + (a1.toNat * b0.toNat + a0.toNat * b1.toNat) * W) / (W * W) +
+        (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat +
+         ((a.getLimb 3).toNat * b0.toNat +
+          a2.toNat * b1.toNat +
+          a1.toNat * b2.toNat +
+          a0.toNat * (b.getLimb 3).toNat +
+          ((a.getLimb 3).toNat * b1.toNat +
+           a2.toNat * b2.toNat +
+           a1.toNat * (b.getLimb 3).toNat +
+           ((a.getLimb 3).toNat * b2.toNat +
+            a2.toNat * (b.getLimb 3).toNat +
+            (a.getLimb 3).toNat * (b.getLimb 3).toNat * W) * W) * W) * W) =
+        ((a0.toNat * b0.toNat + (a1.toNat * b0.toNat + a0.toNat * b1.toNat) * W) / (W * W) +
+         (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat)) +
+        ((a.getLimb 3).toNat * b0.toNat +
+         a2.toNat * b1.toNat +
+         a1.toNat * b2.toNat +
+         a0.toNat * (b.getLimb 3).toNat +
+         ((a.getLimb 3).toNat * b1.toNat +
+          a2.toNat * b2.toNat +
+          a1.toNat * (b.getLimb 3).toNat +
+          ((a.getLimb 3).toNat * b2.toNat +
+           a2.toNat * (b.getLimb 3).toNat +
+           (a.getLimb 3).toNat * (b.getLimb 3).toNat * W) * W) * W) * W from by ring,
+        Nat.add_mul_mod_self_right]
+  conv_lhs => rw [hstrip2]
+  rw [← Nat.div_div_eq_div_mul, Nat.add_mul_div_right _ _ hW]
+  -- LHS = ((a0*b0/W + a1*b0 + a0*b1) / W + a2*b0 + a1*b1 + a0*b2) % W
+  -- Clear heavy unused hypotheses to reduce kernel term depth
+  clear hprod2 hstrip2 ha_sum hb_sum hWW
+  -- ================================================================
+  -- RHS: expand step by step to Nat, then show equal
+  -- ================================================================
+  have ha0 := a0.isLt; have ha1 := a1.isLt; have ha2 := a2.isLt
+  have hb0 := b0.isLt; have hb1 := b1.isLt; have hb2 := b2.isLt
+  -- Key Nat-level facts for the carry chain
+  have hhi_a0b0 : c0_hi_a0b0.toNat = a0.toNat * b0.toNat / W := mulhu_toNat a0 b0
+  have hhi_a1b0 : c0_hi_a1b0.toNat = a1.toNat * b0.toNat / W := mulhu_toNat a1 b0
+  have hhi_a0b1 : c1_hi.toNat = a0.toNat * b1.toNat / W := mulhu_toNat a0 b1
+  have hlo_a1b0 : c0_lo_a1b0.toNat = (a1.toNat * b0.toNat) % W := BitVec.toNat_mul a1 b0
+  have hlo_a0b1 : c1_lo.toNat = (a0.toNat * b1.toNat) % W := BitVec.toNat_mul a0 b1
+  have hr1_nat : c0_r1.toNat = (c0_hi_a0b0.toNat + c0_lo_a1b0.toNat) % W :=
+    BitVec.toNat_add c0_hi_a0b0 c0_lo_a1b0
+  have hc0c1 : c0_c1.toNat = (c0_hi_a0b0.toNat + c0_lo_a1b0.toNat) / W :=
+    carry_toNat c0_hi_a0b0 c0_lo_a1b0
+  have hc1c1 : c1_c1.toNat = (c0_r1.toNat + c1_lo.toNat) / W :=
+    carry_toNat c0_r1 c1_lo
+  have hlo_a2b0 : c0_lo_a2b0.toNat = (a2.toNat * b0.toNat) % W := BitVec.toNat_mul a2 b0
+  have hlo_a1b1 : c1_lo2.toNat = (a1.toNat * b1.toNat) % W := BitVec.toNat_mul a1 b1
+  have hlo_a0b2 : c2_lo.toNat = (a0.toNat * b2.toNat) % W := BitVec.toNat_mul a0 b2
+  -- Compute RHS toNat step by step
+  -- RHS = (c1_r2 + c2_lo).toNat = (c1_r2.toNat + c2_lo.toNat) % W
+  -- Unfold c1_r2 ... down to base values, substituting at each step
+  -- Set abbreviations for the carry chain partial sums (as Nat)
+  set P := a0.toNat * b0.toNat / W + (a1.toNat * b0.toNat) % W  -- before-mod sum for c0_r1
+  -- c0_r1.toNat = P % W
+  have hr1P : c0_r1.toNat = P % W := by rw [hr1_nat, hhi_a0b0, hlo_a1b0]
+  -- c0_c1.toNat = P / W
+  have hc0c1P : c0_c1.toNat = P / W := by rw [hc0c1, hhi_a0b0, hlo_a1b0]
+  set Q := P % W + (a0.toNat * b1.toNat) % W  -- before-mod sum for c1_r1
+  -- c1_c1.toNat = Q / W
+  have hc1c1Q : c1_c1.toNat = Q / W := by rw [hc1c1, hr1P, hlo_a0b1]
+  -- Use external helper lemma for carry telescope
+  -- ================================================================
+  -- RHS: compute step by step, flatten mods
+  -- ================================================================
+  have hr2_flat : c0_r2.toNat =
+      (a1.toNat * b0.toNat / W + P / W + a2.toNat * b0.toNat) % W := by
+    have h1 : c0_r2.toNat = ((c0_hi_a1b0.toNat + c0_c1.toNat) % W + c0_lo_a2b0.toNat) % W := by
+      show c0_r2.toNat = _
+      rw [show c0_r2 = c0_hi_a1b0 + c0_c1 + c0_lo_a2b0 from rfl]
+      rw [BitVec.toNat_add, BitVec.toNat_add, show (2:Nat)^64 = W from rfl]
+    rw [h1, hhi_a1b0, hc0c1P, hlo_a2b0, ← Nat.add_mod]
+  have hrc_flat : c1_rc.toNat =
+      (a0.toNat * b1.toNat / W + Q / W) % W := by
+    rw [show c1_rc.toNat = (c1_hi.toNat + c1_c1.toNat) % W from BitVec.toNat_add c1_hi c1_c1,
+        hhi_a0b1, hc1c1Q]
+  have hr2a_flat : c1_r2a.toNat =
+      (a1.toNat * b0.toNat / W + P / W + a2.toNat * b0.toNat +
+       a0.toNat * b1.toNat / W + Q / W) % W := by
+    rw [show c1_r2a.toNat = (c0_r2.toNat + c1_rc.toNat) % W from BitVec.toNat_add c0_r2 c1_rc,
+        hr2_flat, hrc_flat, ← Nat.add_mod]; congr 1; omega
+  have hr2_full_flat : c1_r2.toNat =
+      (a1.toNat * b0.toNat / W + P / W + a2.toNat * b0.toNat +
+       a0.toNat * b1.toNat / W + Q / W + a1.toNat * b1.toNat) % W := by
+    rw [show c1_r2.toNat = (c1_r2a.toNat + c1_lo2.toNat) % W from BitVec.toNat_add c1_r2a c1_lo2,
+        hr2a_flat, hlo_a1b1, ← Nat.add_mod]
+  have hresult_flat : (c1_r2 + c2_lo).toNat =
+      (a1.toNat * b0.toNat / W + P / W + a2.toNat * b0.toNat +
+       a0.toNat * b1.toNat / W + Q / W + a1.toNat * b1.toNat + a0.toNat * b2.toNat) % W := by
+    rw [show (c1_r2 + c2_lo).toNat = (c1_r2.toNat + c2_lo.toNat) % W from BitVec.toNat_add c1_r2 c2_lo,
+        hr2_full_flat, hlo_a0b2, ← Nat.add_mod]
+  -- Final: apply the helper lemma
+  conv_rhs => rw [hresult_flat]
+  exact congrArg (· % W) (mul_limb2_rhs_eq
+    (a0.toNat * b0.toNat) (a1.toNat * b0.toNat) (a0.toNat * b1.toNat)
+    (a2.toNat * b0.toNat) (a1.toNat * b1.toNat) (a0.toNat * b2.toNat)
+    W hW P rfl Q rfl)
 
 set_option maxHeartbeats 1600000 in
 /-- Limb 3 of the product equals the carry-chain r3_final. -/
@@ -263,6 +442,260 @@ private theorem mul_getLimb_3 (a b : EvmWord) :
     let c2_r3 := c1_r3p + c2_rc
     (a * b).getLimb 3 = c2_r3 + a0 * b3 := by
   sorry
+  /-
+  set W := (2:Nat)^64; have hW : 0 < W := by positivity
+  have hWWW : 0 < W * W * W := by positivity
+  apply BitVec.eq_of_toNat_eq
+  conv_lhs =>
+    rw [getLimb_toNat_eq, show (3 : Fin 4).val = 3 from rfl, show 3 * 64 = 192 from rfl]
+  conv_lhs =>
+    rw [BitVec.toNat_mul, show (2:Nat)^256 = (W * W * W) * W from by norm_num,
+        show (2:Nat)^192 = W * W * W from by norm_num,
+        show (2:Nat)^64 = W from rfl, Nat.mod_mul_right_div_self]
+  conv_lhs => rw [Nat.mod_mod]
+  have ha_sum := toNat_eq_limb_sum a; have hb_sum := toNat_eq_limb_sum b
+  have hprod3 : a.toNat * b.toNat =
+      (a0.toNat * b0.toNat +
+       ((a1.toNat * b0.toNat + a0.toNat * b1.toNat) +
+        (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) * W) * W) +
+      (a3.toNat * b0.toNat + a2.toNat * b1.toNat + a1.toNat * b2.toNat + a0.toNat * b3.toNat +
+       (a3.toNat * b1.toNat + a2.toNat * b2.toNat + a1.toNat * b3.toNat +
+        (a3.toNat * b2.toNat + a2.toNat * b3.toNat + a3.toNat * b3.toNat * W) * W) * W) *
+      (W * W * W) := by rw [ha_sum, hb_sum]; show _ = _; ring
+  conv_lhs => rw [hprod3, Nat.add_mul_div_right _ _ hWWW]
+  have hstrip3 : ∀ base : Nat,
+    (base + (a3.toNat * b0.toNat + a2.toNat * b1.toNat + a1.toNat * b2.toNat +
+      a0.toNat * b3.toNat + (a3.toNat * b1.toNat + a2.toNat * b2.toNat + a1.toNat * b3.toNat +
+       (a3.toNat * b2.toNat + a2.toNat * b3.toNat + a3.toNat * b3.toNat * W) * W) * W)) % W =
+    (base + (a3.toNat * b0.toNat + a2.toNat * b1.toNat + a1.toNat * b2.toNat +
+      a0.toNat * b3.toNat)) % W := by
+    intro base
+    rw [show base + (a3.toNat * b0.toNat + a2.toNat * b1.toNat + a1.toNat * b2.toNat +
+        a0.toNat * b3.toNat + (a3.toNat * b1.toNat + a2.toNat * b2.toNat + a1.toNat * b3.toNat +
+         (a3.toNat * b2.toNat + a2.toNat * b3.toNat + a3.toNat * b3.toNat * W) * W) * W) =
+      (base + (a3.toNat * b0.toNat + a2.toNat * b1.toNat + a1.toNat * b2.toNat +
+        a0.toNat * b3.toNat)) + (a3.toNat * b1.toNat + a2.toNat * b2.toNat +
+        a1.toNat * b3.toNat + (a3.toNat * b2.toNat + a2.toNat * b3.toNat +
+        a3.toNat * b3.toNat * W) * W) * W from by ring, Nat.add_mul_mod_self_right]
+  conv_lhs => rw [hstrip3]
+  -- Decompose low3/(W*W*W) into nested form
+  set low3 := a0.toNat * b0.toNat +
+     ((a1.toNat * b0.toNat + a0.toNat * b1.toNat) +
+      (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) * W) * W
+  have hdiv1 : low3 / W =
+      a0.toNat * b0.toNat / W + ((a1.toNat * b0.toNat + a0.toNat * b1.toNat) +
+      (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) * W) :=
+    Nat.add_mul_div_right _ _ hW
+  have hdiv2 : low3 / W / W =
+      (a0.toNat * b0.toNat / W + (a1.toNat * b0.toNat + a0.toNat * b1.toNat)) / W +
+      (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) := by
+    rw [hdiv1,
+      show a0.toNat * b0.toNat / W +
+        ((a1.toNat * b0.toNat + a0.toNat * b1.toNat) +
+         (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) * W) =
+        (a0.toNat * b0.toNat / W + (a1.toNat * b0.toNat + a0.toNat * b1.toNat)) +
+        (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat) * W from by ring,
+      Nat.add_mul_div_right _ _ hW]
+  have hlow3_decomp : low3 / (W * W * W) =
+      ((a0.toNat * b0.toNat / W + (a1.toNat * b0.toNat + a0.toNat * b1.toNat)) / W +
+       (a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat)) / W := by
+    rw [show W * W * W = W * (W * W) from by ring,
+        ← Nat.div_div_eq_div_mul (low3) W (W * W),
+        ← Nat.div_div_eq_div_mul (low3 / W) W W, hdiv2]
+  conv_lhs => rw [hlow3_decomp]
+  -- RHS setup
+  have hWe : (2:Nat)^64 = W := rfl
+  have ha0 := a0.isLt; have ha1 := a1.isLt; have ha2 := a2.isLt
+  have hb0 := b0.isLt; have hb1 := b1.isLt; have hb2 := b2.isLt
+  have fmr : ∀ (x y m : Nat), (x + y % m) % m = (x + y) % m := add_mod_replace
+  have fml : ∀ (x y m : Nat), (x % m + y) % m = (x + y) % m := by
+    intro x y m; rw [Nat.add_comm (x % m), fmr, Nat.add_comm]
+  have fm : ∀ (x y m : Nat), (x % m + y % m) % m = (x + y) % m := by
+    intro x y m; exact (Nat.add_mod x y m).symm
+  have hhi00 : c0_hi_a0b0.toNat = a0.toNat * b0.toNat / W := mulhu_toNat a0 b0
+  have hhi10 : c0_hi_a1b0.toNat = a1.toNat * b0.toNat / W := mulhu_toNat a1 b0
+  have hhi20 : c0_hi_a2b0.toNat = a2.toNat * b0.toNat / W := mulhu_toNat a2 b0
+  have hhi01 : c1_hi.toNat = a0.toNat * b1.toNat / W := mulhu_toNat a0 b1
+  have hhi11 : c1_hi2.toNat = a1.toNat * b1.toNat / W := mulhu_toNat a1 b1
+  have hhi02 : c2_hi.toNat = a0.toNat * b2.toNat / W := mulhu_toNat a0 b2
+  have hlo10 : c0_lo_a1b0.toNat = (a1.toNat * b0.toNat) % W := BitVec.toNat_mul a1 b0
+  have hlo20 : c0_lo_a2b0.toNat = (a2.toNat * b0.toNat) % W := BitVec.toNat_mul a2 b0
+  have hlo01 : c1_lo.toNat = (a0.toNat * b1.toNat) % W := BitVec.toNat_mul a0 b1
+  have hlo11 : c1_lo2.toNat = (a1.toNat * b1.toNat) % W := BitVec.toNat_mul a1 b1
+  have hlo02 : c2_lo.toNat = (a0.toNat * b2.toNat) % W := BitVec.toNat_mul a0 b2
+  -- Convert all carry_toNat / BitVec.toNat_* based facts to use W
+  -- (they produce 2^64 which = W by definition)
+  set P := a0.toNat * b0.toNat / W + (a1.toNat * b0.toNat) % W with hP_def
+  set Q := P % W + (a0.toNat * b1.toNat) % W with hQ_def
+  set R := a1.toNat * b0.toNat / W + P / W + (a2.toNat * b0.toNat) % W with hR_def
+  set T := a0.toNat * b1.toNat / W + Q / W with hT_def
+  have hr1P : c0_r1.toNat = P % W := by
+    rw [show c0_r1.toNat = (c0_hi_a0b0.toNat + c0_lo_a1b0.toNat) % W from
+      BitVec.toNat_add c0_hi_a0b0 c0_lo_a1b0, hhi00, hlo10]
+  have hc0c1P : c0_c1.toNat = P / W := by
+    have hct := carry_toNat c0_hi_a0b0 c0_lo_a1b0; simp only [hWe] at hct
+    rw [hct, hhi00, hlo10]
+  have hc1r1Q : c1_r1.toNat = Q % W := by
+    rw [show c1_r1.toNat = (c0_r1.toNat + c1_lo.toNat) % W from
+      BitVec.toNat_add c0_r1 c1_lo, hr1P, hlo01]
+  have hc1c1Q : c1_c1.toNat = Q / W := by
+    have hct := carry_toNat c0_r1 c1_lo; simp only [hWe] at hct
+    rw [hct, hr1P, hlo01]
+  have hr2R : c0_r2.toNat = R % W := by
+    rw [show c0_r2.toNat = ((c0_hi_a1b0 + c0_c1).toNat + c0_lo_a2b0.toNat) % W from
+        BitVec.toNat_add (c0_hi_a1b0 + c0_c1) c0_lo_a2b0,
+      show (c0_hi_a1b0 + c0_c1).toNat = (c0_hi_a1b0.toNat + c0_c1.toNat) % W from
+        BitVec.toNat_add c0_hi_a1b0 c0_c1, hhi10, hc0c1P, hlo20, fml]
+  have hrcT : c1_rc.toNat = T % W := by
+    rw [show c1_rc.toNat = (c1_hi.toNat + c1_c1.toNat) % W from
+      BitVec.toNat_add c1_hi c1_c1, hhi01, hc1c1Q]
+  have hr2a : c1_r2a.toNat = (R + T) % W := by
+    rw [show c1_r2a.toNat = (c0_r2.toNat + c1_rc.toNat) % W from
+      BitVec.toNat_add c0_r2 c1_rc, hr2R, hrcT, fm]
+  have hcr1 : c1_cr1.toNat = (R % W + T % W) / W := by
+    have hct := carry_toNat c0_r2 c1_rc; simp only [hWe] at hct
+    rw [hct, hr2R, hrcT]
+  have hr2V : c1_r2.toNat = ((R + T) + (a1.toNat * b1.toNat) % W) % W := by
+    rw [show c1_r2.toNat = (c1_r2a.toNat + c1_lo2.toNat) % W from
+      BitVec.toNat_add c1_r2a c1_lo2, hr2a, hlo11, fml]
+  have hcr2 : c1_cr2.toNat = ((R + T) % W + (a1.toNat * b1.toNat) % W) / W := by
+    have hct := carry_toNat c1_r2a c1_lo2; simp only [hWe] at hct
+    rw [hct, hr2a, hlo11]
+  set V := (R + T) + (a1.toNat * b1.toNat) % W with hV_def
+  have hr2Vm : c1_r2.toNat = V % W := hr2V
+  have hc2cV : c2_c.toNat = (V % W + (a0.toNat * b2.toNat) % W) / W := by
+    have hct := carry_toNat c1_r2 c2_lo; simp only [hWe] at hct
+    rw [hct, hr2Vm, hlo02]
+  have hc0c2R : c0_c2.toNat =
+      ((a1.toNat * b0.toNat / W + P / W) % W + (a2.toNat * b0.toNat) % W) / W := by
+    have hct := carry_toNat (c0_hi_a1b0 + c0_c1) c0_lo_a2b0; simp only [hWe] at hct
+    rw [hct, show (c0_hi_a1b0 + c0_c1).toNat = (c0_hi_a1b0.toNat + c0_c1.toNat) % W from
+        BitVec.toNat_add c0_hi_a1b0 c0_c1, hhi10, hc0c1P, hlo20]
+  have hc0r3p : c0_r3p.toNat =
+      (a2.toNat * b0.toNat / W + c0_c2.toNat + a3.toNat * b0.toNat) % W := by
+    rw [show c0_r3p.toNat = ((c0_hi_a2b0 + c0_c2).toNat + (a3 * b0).toNat) % W from
+        BitVec.toNat_add (c0_hi_a2b0 + c0_c2) (a3 * b0),
+      show (c0_hi_a2b0 + c0_c2).toNat = (c0_hi_a2b0.toNat + c0_c2.toNat) % W from
+        BitVec.toNat_add c0_hi_a2b0 c0_c2,
+      hhi20, BitVec.toNat_mul, show (2:Nat)^64 = W from rfl, fml, fmr]
+  have hrc2n : c1_rc2.toNat = (a1.toNat * b1.toNat / W + c1_cr2.toNat) % W := by
+    rw [show c1_rc2.toNat = (c1_hi2.toNat + c1_cr2.toNat) % W from
+        BitVec.toNat_add c1_hi2 c1_cr2, hhi11]
+  have hc1r3p : c1_r3p.toNat =
+      (c1_cr1.toNat + a1.toNat * b1.toNat / W + c1_cr2.toNat + a2.toNat * b1.toNat +
+       a2.toNat * b0.toNat / W + c0_c2.toNat + a3.toNat * b0.toNat) % W := by
+    -- c1_r3p = ((c1_cr1 + c1_rc2) + a2*b1) + c0_r3p
+    have h1 : c1_r3p.toNat =
+        (((c1_cr1 + c1_rc2) + a2 * b1).toNat + c0_r3p.toNat) % W := by
+      show (((c1_cr1 + c1_rc2) + a2 * b1) + c0_r3p).toNat = _
+      exact BitVec.toNat_add _ c0_r3p
+    have h2 : ((c1_cr1 + c1_rc2) + a2 * b1).toNat =
+        ((c1_cr1 + c1_rc2).toNat + (a2 * b1).toNat) % W :=
+      BitVec.toNat_add _ (a2 * b1)
+    have h3 : (c1_cr1 + c1_rc2).toNat = (c1_cr1.toNat + c1_rc2.toNat) % W :=
+      BitVec.toNat_add c1_cr1 c1_rc2
+    have h4 : (a2 * b1).toNat = (a2.toNat * b1.toNat) % W := BitVec.toNat_mul a2 b1
+    simp only [show (2:Nat)^64 = W from rfl] at h4
+    rw [h1, h2, h3, hrc2n, h4, hc0r3p]
+    sorry
+  have hc2rc : c2_rc.toNat =
+      (a0.toNat * b2.toNat / W + c2_c.toNat + a1.toNat * b2.toNat) % W := by
+    have h1 : c2_rc.toNat = ((c2_hi + c2_c).toNat + (a1 * b2).toNat) % W :=
+      BitVec.toNat_add (c2_hi + c2_c) (a1 * b2)
+    have h2 : (c2_hi + c2_c).toNat = (c2_hi.toNat + c2_c.toNat) % W :=
+      BitVec.toNat_add c2_hi c2_c
+    have h3 : (a1 * b2).toNat = (a1.toNat * b2.toNat) % W := BitVec.toNat_mul a1 b2
+    rw [show (2:Nat)^64 = W from rfl] at h3
+    rw [h1, h2, hhi02, h3, fml, fmr]
+  have hres : (c2_r3 + a0 * b3).toNat =
+      (c1_cr1.toNat + a1.toNat * b1.toNat / W + c1_cr2.toNat + a2.toNat * b1.toNat +
+       a2.toNat * b0.toNat / W + c0_c2.toNat + a3.toNat * b0.toNat +
+       a0.toNat * b2.toNat / W + c2_c.toNat + a1.toNat * b2.toNat +
+       a0.toNat * b3.toNat) % W := by
+    have h1 : (c2_r3 + a0 * b3).toNat = (c2_r3.toNat + (a0 * b3).toNat) % W :=
+      BitVec.toNat_add c2_r3 (a0 * b3)
+    have h2 : c2_r3.toNat = (c1_r3p.toNat + c2_rc.toNat) % W :=
+      BitVec.toNat_add c1_r3p c2_rc
+    have h3 : (a0 * b3).toNat = (a0.toNat * b3.toNat) % W := BitVec.toNat_mul a0 b3
+    rw [show (2:Nat)^64 = W from rfl] at h3
+    rw [h1, h2, hc1r3p, hc2rc, fm, h3, fmr]
+    congr 1; ring
+  show _ = BitVec.toNat (c2_r3 + a0 * b3)
+  rw [hres]
+  congr 1
+  -- Carry telescope
+  have hPb : P < 2 * W := by
+    have := Nat.div_lt_of_lt_mul (show a0.toNat * b0.toNat < W * W from by nlinarith)
+    have := Nat.mod_lt (a1.toNat * b0.toNat) hW; omega
+  have hRTl : a1.toNat * b0.toNat / W + P / W < W := by
+    have := Nat.div_lt_of_lt_mul (show a1.toNat * b0.toNat < W * W from by nlinarith)
+    have : P / W ≤ 1 := Nat.div_le_of_le_mul (by omega); omega
+  have hTl : T < W := by
+    rw [hT_def]
+    have := Nat.div_lt_of_lt_mul (show a0.toNat * b1.toNat < W * W from by nlinarith)
+    have : Q < 2 * W := by
+      have := Nat.mod_lt P hW; have := Nat.mod_lt (a0.toNat * b1.toNat) hW; omega
+    have : Q / W ≤ 1 := Nat.div_le_of_le_mul (by omega); omega
+  have cm : ∀ (x y : Nat), (x % W + y % W) / W + x / W + y / W = (x + y) / W := by
+    intro x y; have h1 : x + y = (x % W + y % W) + (x / W + y / W) * W := by
+      have := (Nat.mod_add_div x W).symm; have := (Nat.mod_add_div y W).symm; omega
+    rw [h1, Nat.add_mul_div_right _ _ hW]
+  set S1 := a0.toNat * b0.toNat / W + a1.toNat * b0.toNat + a0.toNat * b1.toNat with hS1d
+  have ct1 : a1.toNat * b0.toNat / W + P / W + (a0.toNat * b1.toNat / W + Q / W) = S1 / W := by
+    have hPs : P = P % W + P / W * W := (Nat.mod_add_div P W).symm
+    have h1 : S1 = Q + (P / W + a1.toNat * b0.toNat / W + a0.toNat * b1.toNat / W) * W := by
+      rw [hS1d, hQ_def, hP_def]; have := (Nat.mod_add_div (a1.toNat * b0.toNat) W).symm
+      have := (Nat.mod_add_div (a0.toNat * b1.toNat) W).symm; rw [hPs]; ring
+    rw [h1, Nat.add_mul_div_right _ _ hW]; ring
+  have s1 : c0_c2.toNat = R / W := by
+    rw [hc0c2R, Nat.mod_eq_of_lt hRTl]
+    have := cm (a1.toNat * b0.toNat / W + P / W) ((a2.toNat * b0.toNat) % W)
+    rw [Nat.mod_eq_of_lt hRTl, Nat.mod_eq_of_lt (Nat.mod_lt _ hW),
+        Nat.div_eq_of_lt hRTl, Nat.div_eq_of_lt (Nat.mod_lt _ hW)] at this; linarith
+  have hTd : T / W = 0 := Nat.div_eq_of_lt hTl
+  have s2 : c1_cr1.toNat + R / W = (R + T) / W := by
+    have := cm R T
+    rw [show R % W = c0_r2.toNat from hr2R.symm, show T % W = c1_rc.toNat from hrcT.symm,
+        show (c0_r2.toNat + c1_rc.toNat) / W = c1_cr1.toNat from by
+          rw [hcr1, hr2R, hrcT], hTd] at this; linarith
+  have s3 : c1_cr2.toNat + (R + T) / W = V / W := by
+    have hm := Nat.mod_lt (a1.toNat * b1.toNat) hW
+    have := cm (R + T) ((a1.toNat * b1.toNat) % W)
+    rw [Nat.mod_eq_of_lt hm, Nat.div_eq_of_lt hm,
+        show (R + T) % W + (a1.toNat * b1.toNat) % W = c1_r2a.toNat + c1_lo2.toNat from by
+          rw [hr2a, hlo11],
+        show (c1_r2a.toNat + c1_lo2.toNat) / W = c1_cr2.toNat from by
+          rw [hcr2, hr2a, hlo11]] at this; linarith
+  have s4 : c2_c.toNat + V / W = (V + (a0.toNat * b2.toNat) % W) / W := by
+    have hm := Nat.mod_lt (a0.toNat * b2.toNat) hW
+    have := cm V ((a0.toNat * b2.toNat) % W)
+    rw [Nat.mod_eq_of_lt hm, Nat.div_eq_of_lt hm,
+        show V % W + (a0.toNat * b2.toNat) % W = c1_r2.toNat + c2_lo.toNat from by
+          rw [show c1_r2.toNat = V % W from by rw [hr2V, hV_def, fml], hlo02],
+        show (c1_r2.toNat + c2_lo.toNat) / W = c2_c.toNat from by
+          rw [hc2cV]; congr 1
+          rw [show c1_r2.toNat = V % W from by rw [hr2V, hV_def, fml], hlo02]] at this; linarith
+  have hRTeq : R + T = S1 / W + (a2.toNat * b0.toNat) % W := by
+    rw [hR_def, hT_def]; linarith [ct1]
+  have hVB2 : V + (a0.toNat * b2.toNat) % W = S1 / W + (a2.toNat * b0.toNat) % W +
+      (a1.toNat * b1.toNat) % W + (a0.toNat * b2.toNat) % W := by rw [hV_def, hRTeq]; ring
+  set S2 := S1 / W + a2.toNat * b0.toNat + a1.toNat * b1.toNat + a0.toNat * b2.toNat
+  have hS2d : S2 / W = (S1 / W + (a2.toNat * b0.toNat) % W + (a1.toNat * b1.toNat) % W +
+       (a0.toNat * b2.toNat) % W) / W +
+      (a2.toNat * b0.toNat / W + a1.toNat * b1.toNat / W + a0.toNat * b2.toNat / W) := by
+    have : S2 = (S1 / W + (a2.toNat * b0.toNat) % W + (a1.toNat * b1.toNat) % W +
+         (a0.toNat * b2.toNat) % W) + (a2.toNat * b0.toNat / W + a1.toNat * b1.toNat / W +
+         a0.toNat * b2.toNat / W) * W := by
+      have := Nat.mod_add_div (a2.toNat * b0.toNat) W
+      have := Nat.mod_add_div (a1.toNat * b1.toNat) W
+      have := Nat.mod_add_div (a0.toNat * b2.toNat) W; omega
+    rw [this, Nat.add_mul_div_right _ _ hW]
+  have ch : c0_c2.toNat + c1_cr1.toNat + c1_cr2.toNat + c2_c.toNat =
+      (V + (a0.toNat * b2.toNat) % W) / W := by
+    have h12 : c1_cr1.toNat + c0_c2.toNat = (R + T) / W := by linarith [s1, s2]
+    have h123 : c1_cr2.toNat + c1_cr1.toNat + c0_c2.toNat = V / W := by linarith [s3, h12]
+    linarith [s4, h123]
+  -/
 
 -- ============================================================================
 -- Combined theorem
