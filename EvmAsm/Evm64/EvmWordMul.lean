@@ -498,6 +498,58 @@ private theorem mul_limb3_carry_eq
   conv_rhs => rw [hassoc]
   rw [hsd]; linarith
 
+/-- RHS of mul_getLimb_3: the carry chain sum equals
+    (S2/W + a3b0 + a2b1 + a1b2 + a0b3) % W, stated purely in Nat.
+    All mulhu/carry values are passed as Nat parameters with their defining equations. -/
+private theorem mul_getLimb_3_rhs_nat
+    (a0b0 a1b0 a0b1 a2b0 a1b1 a0b2 a3b0 a2b1 a1b2 a0b3 W : Nat) (hW : 0 < W)
+    (hi20 hi02 : Nat) -- mulhu a2 b0, mulhu a0 b2
+    (c0c2 cr1 cr2 c2c : Nat)  -- carry flag toNat values
+    (P : Nat) (hP : P = a0b0 / W + a1b0 % W)
+    (Q : Nat) (hQ : Q = P % W + a0b1 % W)
+    (R : Nat) (hR : R = a1b0 / W + P / W + a2b0 % W)
+    (T : Nat) (hT : T = a0b1 / W + Q / W)
+    (V : Nat) (hV : V = R + T + a1b1 % W)
+    (hTW : T / W = 0)
+    (hc0c2 : c0c2 = R / W)
+    (hcr1 : cr1 = (R % W + T % W) / W)
+    (hcr2 : cr2 = ((R + T) % W + a1b1 % W) / W)
+    (hc2c : c2c = (V % W + a0b2 % W) / W)
+    (hhi20 : hi20 = a2b0 / W) (hhi02 : hi02 = a0b2 / W) :
+    (cr1 + a1b1 / W + cr2 + a2b1 +
+     hi20 + c0c2 + a3b0 +
+     hi02 + c2c + a1b2 +
+     a0b3) % W =
+    (((a0b0 / W + (a1b0 + a0b1)) / W + (a2b0 + a1b1 + a0b2)) / W +
+     a3b0 + a2b1 + a1b2 + a0b3) % W := by
+  subst hc0c2; subst hcr1; subst hcr2; subst hc2c; subst hhi20; subst hhi02
+  congr 1
+  have hce := mul_limb3_carry_eq a0b0 a1b0 a0b1 a2b0 a1b1 a0b2 W hW P hP Q hQ R hR T hT V hV hTW
+  linarith
+
+/-- mulhu ≤ W - 2 for inputs < W. -/
+private theorem mulhu_le_W_sub_2 (a b W : Nat) (ha : a < W) (hb : b < W) (hW : 2 ≤ W) :
+    a * b / W ≤ W - 2 := by
+  have hab : a * b ≤ (W - 1) * (W - 1) :=
+    Nat.mul_le_mul (by omega) (by omega)
+  have hWW : (W - 1) * (W - 1) < (W - 1) * W :=
+    Nat.mul_lt_mul_of_pos_left (by omega : W - 1 < W) (by omega : 0 < W - 1)
+  have : a * b / W < W - 1 := Nat.div_lt_of_lt_mul (by linarith)
+  omega
+
+/-- T/W = 0 bound needed by carry_sum_eq. -/
+private theorem T_div_W_eq_zero (a0 b1 W : Nat) (hW : 2 ≤ W)
+    (ha0 : a0 < W) (hb1 : b1 < W)
+    (P : Nat) (hPb : P < 2 * W) :
+    (a0 * b1 / W + (P % W + (a0 * b1) % W) / W) / W = 0 := by
+  have h1 : a0 * b1 / W ≤ W - 2 := mulhu_le_W_sub_2 a0 b1 W ha0 hb1 hW
+  have hPm : P % W < W := Nat.mod_lt _ (by omega)
+  have ham : (a0 * b1) % W < W := Nat.mod_lt _ (by omega)
+  have h2 : (P % W + (a0 * b1) % W) / W ≤ 1 := by
+    apply Nat.le_of_lt_succ; apply Nat.div_lt_of_lt_mul
+    show P % W + (a0 * b1) % W < W * 2; linarith
+  exact Nat.div_eq_of_lt (by omega)
+
 set_option maxHeartbeats 3200000 in
 /-- Limb 3 of the product equals the carry-chain r3_final. -/
 private theorem mul_getLimb_3 (a b : EvmWord) :
