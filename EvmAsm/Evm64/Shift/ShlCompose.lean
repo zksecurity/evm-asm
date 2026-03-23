@@ -20,8 +20,37 @@ namespace EvmAsm.Rv64
 -- Section 1: shlCode definition and helpers
 -- ============================================================================
 
-/-- The full evm_shl code as a single CodeReq.ofProg block (90 instructions). -/
-abbrev shlCode (base : Addr) : CodeReq := CodeReq.ofProg base evm_shl
+-- Sub-program length lemmas (cheap native_decide on small lists)
+private theorem shr_phase_a_len : shr_phase_a.length = 9 := by native_decide
+private theorem shr_phase_b_len : shr_phase_b.length = 7 := by native_decide
+private theorem shr_phase_c_len : shr_phase_c.length = 5 := by native_decide
+private theorem shl_body_3_prog_len : (shl_body_3_prog 252).length = 7 := by native_decide
+private theorem shl_body_2_prog_len : (shl_body_2_prog 200).length = 13 := by native_decide
+private theorem shl_body_1_prog_len : (shl_body_1_prog 124).length = 19 := by native_decide
+private theorem shl_body_0_prog_len : (shl_body_0_prog 24).length = 25 := by native_decide
+private theorem shr_zero_path_len : shr_zero_path.length = 5 := by native_decide
+
+/-- Skip one ofProg block in a right-nested union via range disjointness. -/
+local macro "skipBlock" : tactic =>
+  `(tactic| apply CodeReq.mono_union_right
+      (CodeReq.ofProg_disjoint_range _ _ _ _ (fun k1 k2 hk1 hk2 => by
+        simp only [shr_phase_a_len, shr_phase_b_len, shr_phase_c_len,
+          shl_body_3_prog_len, shl_body_2_prog_len, shl_body_1_prog_len,
+          shl_body_0_prog_len, shr_zero_path_len] at hk1 hk2
+        bv_omega)))
+
+/-- The full evm_shl code split into 8 per-phase CodeReq.ofProg blocks. -/
+abbrev shlCode (base : Addr) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg base shr_phase_a,                      -- block 0 (shared with SHR)
+    CodeReq.ofProg (base + 36) shr_phase_b,               -- block 1 (shared)
+    CodeReq.ofProg (base + 64) shr_phase_c,               -- block 2 (shared)
+    CodeReq.ofProg (base + 84) (shl_body_3_prog 252),     -- block 3
+    CodeReq.ofProg (base + 112) (shl_body_2_prog 200),    -- block 4
+    CodeReq.ofProg (base + 164) (shl_body_1_prog 124),    -- block 5
+    CodeReq.ofProg (base + 240) (shl_body_0_prog 24),     -- block 6
+    CodeReq.ofProg (base + 340) shr_zero_path              -- block 7 (shared)
+  ]
 
 /-- Weaken concrete register to existential ownership. -/
 private theorem regIs_to_regOwn (r : Reg) (v : Word) : ∀ h, (r ↦ᵣ v) h → (regOwn r) h :=
@@ -38,155 +67,175 @@ private theorem CodeReq_union_sub_both {cr1 cr2 target : CodeReq}
   | none => simp [h1a] at h; exact h2 a i h
   | some v => simp [h1a] at h; subst h; exact h1 a v h1a
 
-/-- A singleton at instruction k of evm_shl is subsumed by shlCode. -/
-private theorem singleton_sub_shlCode (base addr : Addr) (instr : Instr) (k : Nat)
-    (hk : k < evm_shl.length)
+private theorem singleton_sub_ofProg (base addr : Addr) (prog : List Instr) (instr : Instr) (k : Nat)
+    (hk : k < prog.length) (hbound : 4 * prog.length < 2 ^ 64)
     (h_addr : addr = base + BitVec.ofNat 64 (4 * k))
-    (h_instr : evm_shl.get ⟨k, hk⟩ = instr) :
-    ∀ a i, CodeReq.singleton addr instr a = some i → shlCode base a = some i :=
-  CodeReq.singleton_mono (h_instr ▸ CodeReq.ofProg_lookup_addr base evm_shl k addr hk
-    (by native_decide) h_addr)
+    (h_instr : prog.get ⟨k, hk⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i → (CodeReq.ofProg base prog) a = some i :=
+  CodeReq.singleton_mono (h_instr ▸ CodeReq.ofProg_lookup_addr base prog k addr hk hbound h_addr)
 
 -- ============================================================================
--- Section 2: Subsumption lemmas
+-- Section 2: Subsumption lemmas (via unionAll structural reasoning)
 -- ============================================================================
 
-/-- Phase A code (union chain, 9 instrs at +0) is subsumed by shlCode. -/
-private theorem phase_a_sub_shlCode (base : Addr) :
-    ∀ a i, shr_phase_a_code base a = some i → shlCode base a = some i := by
-  unfold shr_phase_a_code
+-- Bridge: shr_phase_a_code (union chain) ⊆ ofProg shr_phase_a (9-element list)
+private theorem phase_a_code_sub_ofProg (base : Addr) :
+    ∀ a i, shr_phase_a_code base a = some i →
+      (CodeReq.ofProg base shr_phase_a) a = some i := by
+  unfold shr_phase_a_code shr_ld_or_acc_code
   apply CodeReq_union_sub_both
-  · exact singleton_sub_shlCode base base (.LD .x5 .x12 8) 0
-      (by native_decide) (by bv_omega) (by native_decide)
+  · exact singleton_sub_ofProg base base shr_phase_a (.LD .x5 .x12 8) 0
+      (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
   · apply CodeReq_union_sub_both
-    · unfold shr_ld_or_acc_code
-      exact CodeReq.ofProg_mono_sub base (base + 4) evm_shl (shr_ld_or_acc_prog 16) 1
+    · exact CodeReq.ofProg_mono_sub base (base + 4) shr_phase_a (shr_ld_or_acc_prog 16) 1
         (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
     · apply CodeReq_union_sub_both
-      · unfold shr_ld_or_acc_code
-        exact CodeReq.ofProg_mono_sub base (base + 12) evm_shl (shr_ld_or_acc_prog 24) 3
+      · exact CodeReq.ofProg_mono_sub base (base + 12) shr_phase_a (shr_ld_or_acc_prog 24) 3
           (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
       · apply CodeReq_union_sub_both
-        · exact singleton_sub_shlCode base (base + 20) (.BNE .x5 .x0 320) 5
-            (by native_decide) (by bv_omega) (by native_decide)
+        · exact singleton_sub_ofProg base (base + 20) shr_phase_a (.BNE .x5 .x0 320) 5
+            (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
         · apply CodeReq_union_sub_both
-          · exact singleton_sub_shlCode base (base + 24) (.LD .x5 .x12 0) 6
-              (by native_decide) (by bv_omega) (by native_decide)
+          · exact singleton_sub_ofProg base (base + 24) shr_phase_a (.LD .x5 .x12 0) 6
+              (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
           · apply CodeReq_union_sub_both
-            · exact singleton_sub_shlCode base (base + 28) (.SLTIU .x10 .x5 256) 7
-                (by native_decide) (by bv_omega) (by native_decide)
-            · exact singleton_sub_shlCode base (base + 32) (.BEQ .x10 .x0 308) 8
-                (by native_decide) (by bv_omega) (by native_decide)
+            · exact singleton_sub_ofProg base (base + 28) shr_phase_a (.SLTIU .x10 .x5 256) 7
+                (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
+            · exact singleton_sub_ofProg base (base + 32) shr_phase_a (.BEQ .x10 .x0 308) 8
+                (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
 
-/-- Phase B code (ofProg, 7 instrs at +36) is subsumed by shlCode. -/
+/-- Phase A code (union chain, 9 instrs at +0) is subsumed by shlCode (block 0). -/
+private theorem phase_a_sub_shlCode (base : Addr) :
+    ∀ a i, shr_phase_a_code base a = some i → shlCode base a = some i := by
+  intro a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i (phase_a_code_sub_ofProg base a i h)
+
+/-- Phase B code (ofProg, 7 instrs at +36) is subsumed by shlCode (block 1). -/
 private theorem phase_b_sub_shlCode (base : Addr) :
     ∀ a i, shr_phase_b_code (base + 36) a = some i → shlCode base a = some i := by
-  unfold shr_phase_b_code
-  exact CodeReq.ofProg_mono_sub base (base + 36) evm_shl shr_phase_b 9
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shr_phase_b_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock
+  exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 4000000 in
-private theorem cascade_17_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.ofProg (base + 68) (shr_cascade_step_prog 1 92) a = some i → shlCode base a = some i :=
-  CodeReq.ofProg_mono_sub base (base + 68) evm_shl (shr_cascade_step_prog 1 92) 17
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+-- Bridge: shr_phase_c_code (union chain) ⊆ ofProg shr_phase_c (5-element list)
+private theorem phase_c_code_sub_ofProg (base : Addr) :
+    ∀ a i, shr_phase_c_code base a = some i →
+      (CodeReq.ofProg base shr_phase_c) a = some i := by
+  unfold shr_phase_c_code shr_cascade_step_code
+  apply CodeReq_union_sub_both
+  · exact singleton_sub_ofProg base base shr_phase_c (.BEQ .x5 .x0 176) 0
+      (by native_decide) (by native_decide) (by bv_omega) (by native_decide)
+  · apply CodeReq_union_sub_both
+    · exact CodeReq.ofProg_mono_sub base (base + 4) shr_phase_c (shr_cascade_step_prog 1 92) 1
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+    · exact CodeReq.ofProg_mono_sub base (base + 12) shr_phase_c (shr_cascade_step_prog 2 32) 3
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
 
-set_option maxHeartbeats 4000000 in
-private theorem cascade_19_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.ofProg (base + 76) (shr_cascade_step_prog 2 32) a = some i → shlCode base a = some i :=
-  CodeReq.ofProg_mono_sub base (base + 76) evm_shl (shr_cascade_step_prog 2 32) 19
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+private theorem ofProg_phase_c_sub_shlCode (base : Addr) :
+    ∀ a i, (CodeReq.ofProg (base + 64) shr_phase_c) a = some i → shlCode base a = some i := by
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-/-- Phase C code (union chain, 5 instrs at +64) is subsumed by shlCode. -/
+/-- Phase C code (union chain, 5 instrs at +64) is subsumed by shlCode (block 2). -/
 private theorem phase_c_sub_shlCode (base : Addr) :
     ∀ a i, shr_phase_c_code (base + 64) a = some i → shlCode base a = some i := by
-  unfold shr_phase_c_code
-  apply CodeReq_union_sub_both
-  · exact singleton_sub_shlCode base (base + 64) (.BEQ .x5 .x0 176) 16
-      (by native_decide) (by bv_omega) (by native_decide)
-  · apply CodeReq_union_sub_both
-    · unfold shr_cascade_step_code
-      have : (base + 64 : Addr) + 4 = base + 68 := by bv_omega
-      rw [this]
-      exact cascade_17_sub_shlCode base
-    · unfold shr_cascade_step_code
-      have : (base + 64 : Addr) + 12 = base + 76 := by bv_omega
-      rw [this]
-      exact cascade_19_sub_shlCode base
+  intro a i h
+  exact ofProg_phase_c_sub_shlCode base a i (phase_c_code_sub_ofProg (base + 64) a i h)
 
-set_option maxHeartbeats 4000000 in
-/-- SHL Body 3 code (7 instrs at +84) is subsumed by shlCode. -/
+/-- SHL Body 3 code (7 instrs at +84) is subsumed by shlCode (block 3). -/
 private theorem shl_body_3_sub_shlCode (base : Addr) :
     ∀ a i, shl_body_3_code (base + 84) 252 a = some i → shlCode base a = some i := by
-  exact CodeReq.ofProg_mono_sub base (base + 84) evm_shl (shl_body_3_prog 252) 21
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shl_body_3_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 4000000 in
-/-- SHL Body 2 code (13 instrs at +112) is subsumed by shlCode. -/
+/-- SHL Body 2 code (13 instrs at +112) is subsumed by shlCode (block 4). -/
 private theorem shl_body_2_sub_shlCode (base : Addr) :
     ∀ a i, shl_body_2_code (base + 112) 200 a = some i → shlCode base a = some i := by
-  exact CodeReq.ofProg_mono_sub base (base + 112) evm_shl (shl_body_2_prog 200) 28
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shl_body_2_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 4000000 in
-/-- SHL Body 1 code (19 instrs at +164) is subsumed by shlCode. -/
+/-- SHL Body 1 code (19 instrs at +164) is subsumed by shlCode (block 5). -/
 private theorem shl_body_1_sub_shlCode (base : Addr) :
     ∀ a i, shl_body_1_code (base + 164) 124 a = some i → shlCode base a = some i := by
-  exact CodeReq.ofProg_mono_sub base (base + 164) evm_shl (shl_body_1_prog 124) 41
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shl_body_1_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-set_option maxHeartbeats 4000000 in
-/-- SHL Body 0 code (25 instrs at +240) is subsumed by shlCode. -/
+/-- SHL Body 0 code (25 instrs at +240) is subsumed by shlCode (block 6). -/
 private theorem shl_body_0_sub_shlCode (base : Addr) :
     ∀ a i, shl_body_0_code (base + 240) 24 a = some i → shlCode base a = some i := by
-  exact CodeReq.ofProg_mono_sub base (base + 240) evm_shl (shl_body_0_prog 24) 60
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shl_body_0_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
-/-- Zero path code (ofProg, 5 instrs at +340) is subsumed by shlCode. -/
+/-- Zero path code (ofProg, 5 instrs at +340) is subsumed by shlCode (block 7). -/
 private theorem zero_path_sub_shlCode (base : Addr) :
     ∀ a i, shr_zero_path_code (base + 340) a = some i → shlCode base a = some i := by
-  unfold shr_zero_path_code
-  exact CodeReq.ofProg_mono_sub base (base + 340) evm_shl shr_zero_path 85
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  unfold shr_zero_path_code shlCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
 -- Individual instruction subsumption helpers (for phase A raw composition)
 
 private theorem ld_s1_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.singleton base (.LD .x5 .x12 8) a = some i → shlCode base a = some i :=
-  singleton_sub_shlCode base base (.LD .x5 .x12 8) 0
-    (by native_decide) (by bv_omega) (by native_decide)
+    ∀ a i, CodeReq.singleton base (.LD .x5 .x12 8) a = some i → shlCode base a = some i := by
+  intro a i h
+  have h1 := singleton_sub_ofProg base base shr_phase_a (.LD .x5 .x12 8) 0
+    (by native_decide) (by native_decide) (by bv_omega) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem ld_or_16_sub_shlCode (base : Addr) :
     ∀ a i, shr_ld_or_acc_code 16 (base + 4) a = some i → shlCode base a = some i := by
-  unfold shr_ld_or_acc_code
-  exact CodeReq.ofProg_mono_sub base (base + 4) evm_shl (shr_ld_or_acc_prog 16) 1
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  intro a i h; unfold shr_ld_or_acc_code at h
+  have h1 := CodeReq.ofProg_mono_sub base (base + 4) shr_phase_a (shr_ld_or_acc_prog 16) 1
+    (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem ld_or_24_sub_shlCode (base : Addr) :
     ∀ a i, shr_ld_or_acc_code 24 (base + 12) a = some i → shlCode base a = some i := by
-  unfold shr_ld_or_acc_code
-  exact CodeReq.ofProg_mono_sub base (base + 12) evm_shl (shr_ld_or_acc_prog 24) 3
-    (by bv_omega) (by native_decide) (by native_decide) (by native_decide)
+  intro a i h; unfold shr_ld_or_acc_code at h
+  have h1 := CodeReq.ofProg_mono_sub base (base + 12) shr_phase_a (shr_ld_or_acc_prog 24) 3
+    (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem bne_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.singleton (base + 20) (.BNE .x5 .x0 320) a = some i → shlCode base a = some i :=
-  singleton_sub_shlCode base (base + 20) (.BNE .x5 .x0 320) 5
-    (by native_decide) (by bv_omega) (by native_decide)
+    ∀ a i, CodeReq.singleton (base + 20) (.BNE .x5 .x0 320) a = some i → shlCode base a = some i := by
+  intro a i h
+  have h1 := singleton_sub_ofProg base (base + 20) shr_phase_a (.BNE .x5 .x0 320) 5
+    (by native_decide) (by native_decide) (by bv_omega) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem ld_s0_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.singleton (base + 24) (.LD .x5 .x12 0) a = some i → shlCode base a = some i :=
-  singleton_sub_shlCode base (base + 24) (.LD .x5 .x12 0) 6
-    (by native_decide) (by bv_omega) (by native_decide)
+    ∀ a i, CodeReq.singleton (base + 24) (.LD .x5 .x12 0) a = some i → shlCode base a = some i := by
+  intro a i h
+  have h1 := singleton_sub_ofProg base (base + 24) shr_phase_a (.LD .x5 .x12 0) 6
+    (by native_decide) (by native_decide) (by bv_omega) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem sltiu_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.singleton (base + 28) (.SLTIU .x10 .x5 256) a = some i → shlCode base a = some i :=
-  singleton_sub_shlCode base (base + 28) (.SLTIU .x10 .x5 256) 7
-    (by native_decide) (by bv_omega) (by native_decide)
+    ∀ a i, CodeReq.singleton (base + 28) (.SLTIU .x10 .x5 256) a = some i → shlCode base a = some i := by
+  intro a i h
+  have h1 := singleton_sub_ofProg base (base + 28) shr_phase_a (.SLTIU .x10 .x5 256) 7
+    (by native_decide) (by native_decide) (by bv_omega) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 private theorem beq_sub_shlCode (base : Addr) :
-    ∀ a i, CodeReq.singleton (base + 32) (.BEQ .x10 .x0 308) a = some i → shlCode base a = some i :=
-  singleton_sub_shlCode base (base + 32) (.BEQ .x10 .x0 308) 8
-    (by native_decide) (by bv_omega) (by native_decide)
+    ∀ a i, CodeReq.singleton (base + 32) (.BEQ .x10 .x0 308) a = some i → shlCode base a = some i := by
+  intro a i h
+  have h1 := singleton_sub_ofProg base (base + 32) shr_phase_a (.BEQ .x10 .x0 308) 8
+    (by native_decide) (by native_decide) (by bv_omega) (by native_decide) a i h
+  unfold shlCode; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left _ _ a i h1
 
 -- ============================================================================
 -- Section 3: Address normalization lemmas
