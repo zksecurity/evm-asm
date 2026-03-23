@@ -63,10 +63,10 @@ When adding or modifying proofs:
 
 ## Critical Rules
 
-- **Do NOT add `set_option maxHeartbeats` to any file** unless you are in `Evm64/Shift/` composition files (Compose, ShlCompose, SarCompose) or subsumption lemmas where `native_decide` on large programs (90-95 instructions) requires it. Heartbeat limits are configured globally in `lakefile.toml`.
+- **Do NOT add `set_option maxHeartbeats` to any file** unless you are in `Evm64/Shift/` composition files (Compose, ShlCompose, SarCompose) for body/path composition proofs. Heartbeat limits are configured globally in `lakefile.toml`.
 - **Do NOT add `set_option maxRecDepth` to any file.** Recursion depth is configured globally in `lakefile.toml`.
 - If a proof times out or hits recursion limits, restructure the proof (e.g., split into smaller lemmas, use intermediate `have` bindings) rather than increasing limits.
-- **Exception for Shift composition files**: `set_option maxHeartbeats 4000000` (or up to 8000000) is acceptable for subsumption lemmas using `native_decide` on 90-95 instruction programs, and `set_option maxHeartbeats 6400000` for body composition proofs.
+- **Exception for Shift composition files**: `set_option maxHeartbeats` up to 6400000 is acceptable for body/path composition proofs (Section 4+) which are bottlenecked by `xperm_hyp` permutation on large atom chains. Subsumption lemmas (Section 2) should NOT need heartbeat overrides — they use structural `unionAll` reasoning.
 
 ## Common Pitfalls
 
@@ -139,8 +139,8 @@ Each EVM opcode follows a three-level proof hierarchy:
 
 1. **Limb-level specs** (`LimbSpec.lean`, `ShlSpec.lean`, `SarSpec.lean`): Per-instruction specs composed with `runBlock`. These operate on raw 64-bit memory cells (`↦ₘ`).
 2. **Composition** (`Compose.lean`, `ShlCompose.lean`, `SarCompose.lean`): Hierarchical composition of limb specs into full-program theorems. Includes:
-   - `xyzCode` definition (`CodeReq.ofProg base evm_xyz`)
-   - Subsumption lemmas (prove each sub-spec's code is contained in the full program)
+   - `xyzCode` definition (`CodeReq.unionAll` of per-phase `CodeReq.ofProg` blocks)
+   - Subsumption lemmas (structural `skipBlock` + `union_mono_left`, no `native_decide` on full programs)
    - Address normalization lemmas (`bv_omega` proofs)
    - Path composition (zero-path/sign-fill for shift >= 256, body-path for shift < 256)
    - Bridge lemmas connecting per-limb results to `getLimb (result) i`
@@ -149,8 +149,8 @@ Each EVM opcode follows a three-level proof hierarchy:
 ### Composition File Pattern (for shift opcodes)
 
 Each shift Compose file (~1000-1200 lines) follows this structure:
-1. **Section 1**: `xyzCode` definition + helpers (`singleton_sub_xyzCode`, `CodeReq_union_sub_both`, `regIs_to_regOwn`)
-2. **Section 2**: Subsumption lemmas — prove each phase/body/path code is subsumed by the full program using `CodeReq.ofProg_mono_sub` or `singleton_sub_xyzCode`
+1. **Section 1**: `xyzCode` definition as `CodeReq.unionAll` of per-phase `ofProg` blocks + length lemmas + `skipBlock` macro + helpers (`singleton_sub_ofProg`, `CodeReq_union_sub_both`, `regIs_to_regOwn`)
+2. **Section 2**: Subsumption lemmas — structural reasoning via `skipBlock` + `union_mono_left` (following the DivMod pattern). For union-chain `_code` definitions (Phase A, Phase C, sign-fill), split into bridge sub-lemma (`chain_code ⊆ ofProg small_block`) + structural sub-lemma (`ofProg small_block ⊆ xyzCode`)
 3. **Section 3**: Address normalization — `bv_omega` proofs for all offset arithmetic
 4. **Section 4**: Zero-path or sign-fill composition — instruction-by-instruction Phase A chain + branch elimination + path composition
 5. **Section 5**: Phase C dispatch — `cpsNBranch` with cascade steps
@@ -168,7 +168,8 @@ Bridge lemmas in `Evm64/Basic.lean` connect per-limb arithmetic to 256-bit opera
 
 - **SAR sign-fill path** uses `sar_sign_fill_path_spec` which takes `.x5` and `.x10` in its precondition (unlike `shr_zero_path_spec` which only takes `.x12`). This means the frame for sign-fill is smaller than for zero-path.
 - **Address normalization direction matters**: The sign-fill path spec uses `sp + 40` directly, not `(sp + 32) + 8`. Don't apply `ha40 : sp + 40 = (sp + 32) + 8` in permutation callbacks if the assertions already use `sp + 40`. Use `xperm_hyp` directly — it handles both forms.
-- **Subsumption for large programs (90-95 instrs)**: Individual `singleton_sub_xyzCode` calls with `native_decide` can timeout. For 7+ instruction blocks, use `CodeReq.ofProg_mono_sub` which batches the proof. For union chains, use `CodeReq_union_sub_both` to decompose.
+- **Subsumption via unionAll (preferred pattern)**: Define `xyzCode` as `CodeReq.unionAll` of per-phase `ofProg` blocks (not a flat `ofProg base evm_xyz`). Then subsumption is structural: `skipBlock` skips disjoint blocks, `union_mono_left` matches the target block. For union-chain `_code` definitions, add a bridge sub-lemma using `singleton_sub_ofProg`/`ofProg_mono_sub` on the **small** sub-program (5-25 elements). Never use `native_decide` on the full 90-95 instruction program — that's the old pattern and requires 4-8M heartbeats. See `DivMod/Compose.lean` for the canonical reference.
+- **`local macro` for file-scoped tactics**: When defining `skipBlock` (or similar) in multiple Compose files, use `local macro` not `macro`. Without `local`, importing multiple files causes "environment already contains" errors.
 - **`sshiftRight (sshiftRight x n) 63 = sshiftRight x 63`**: This identity (sign extension is idempotent under further shifting by 63) requires a case split on `63 + j < 64` and `BitVec.msb_sshiftRight`.
 - **Phase C for SAR**: Same structure as SHR/SHL Phase C but with different BEQ/cascade offsets. The `shr_cascade_step_code`/`shr_cascade_step_spec` are parameterized and reusable. Only the initial BEQ offset and the `phase_c_code` definition need SAR-specific versions.
 - **`native_decide` cannot handle free variables**: For `getLimb_fromLimbs_const`, use `match i with | ⟨0, _⟩ => ...; bv_decide | ⟨1, _⟩ => ...` instead of `fin_cases i <;> bv_decide`.
