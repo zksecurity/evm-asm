@@ -81,17 +81,17 @@ EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
 | Bitwise | AND, OR, XOR, NOT | 17 / 17 / 17 / 12 | ✅ Fully proved |
 | Shift | SHR, SHL, SAR | 90 / 90 / 95 | ✅ Fully proved |
 | Comparison | ISZERO, LT, GT, EQ, SLT, SGT | 12 / 26 / 26 / 21 / 25 / 25 | ✅ Fully proved |
-| Byte/SignExt | BYTE, SIGNEXTEND | 45 / 48 | ⚠️ BYTE spec deleted; SIGNEXTEND proved |
+| Byte/SignExt | BYTE, SIGNEXTEND | 45 / 48 | ✅ Fully proved |
 | Stack | POP, PUSH0, DUP1-16, SWAP1-16 | 1 / 5 / 9 / 16 | ✅ Fully proved |
 
 **Deleted spec files** (incomplete CodeReq migration, easier to recreate):
 - ~~`ShiftSpec.lean`~~ — ✅ Recreated as `LimbSpec.lean` (SHR) + `ShlSpec.lean` (SHL) + `Compose.lean` + `ShlCompose.lean` + `Semantic.lean` + `ShlSemantic.lean`
 - ~~`ShlSpec.lean`~~ — ✅ Recreated (per-limb + body + composition + stack-level spec)
 - ~~`SarSpec.lean`~~ — ✅ Recreated (per-limb + body + sign-fill + composition + stack-level spec)
-- `ByteSpec.lean` — BYTE per-body + store + phase B specs
+- ~~`ByteSpec.lean`~~ — ✅ Recreated as `Byte/Spec.lean` (stack-level `evm_byte_stack_spec`) + `Byte/LimbSpec.lean` (per-body + cascade dispatch)
 - ~~`StackOps.lean`~~ — ✅ Recreated as modular `Pop.lean`, `Push0.lean`, `Dup.lean`, `Swap.lean`
 
-See **Pending: Recreate Deleted Spec Files** below for recreation plan.
+All deleted spec files have been recreated. See **Pending: Recreate Deleted Spec Files** below for details.
 
 **Removed targets** (not relevant to primary goal):
 - Evm32 (secondary RV32IM target) — removed entirely
@@ -101,7 +101,8 @@ See **Pending: Recreate Deleted Spec Files** below for recreation plan.
 ### Infrastructure — RV64 only, no sorry
 
 - RV64: Basic, Instructions, Program, Execution, CPSSpec,
-  ControlFlow, SepLogic, GenericSpecs, InstructionSpecs, SyscallSpecs
+  ControlFlow, SepLogic, GenericSpecs, InstructionSpecs, SyscallSpecs,
+  HalfwordOps, WordOps
 - Tactics: XPerm, XSimp, XCancel, SeqFrame, RunBlock, LiftSpec, ValidMem,
   PcFree, SpecDb
 - **CodeReq infrastructure** (Issue #35): `CodeReq` type + `cpsTriple` 5-arg
@@ -129,8 +130,9 @@ See **Pending: Recreate Deleted Spec Files** below for recreation plan.
   - x1 (ra) = return address, x2 (sp) = call stack (grows down, callee-saved)
   - x10-x11 (a0-a1) = args/return values, x12 (a2) = EVM stack pointer
   - Program snippets: `cc_ret`, `cc_prologue` (16-byte frame), `cc_epilogue`
-  - Proved specs: `callNear_spec`, `ret_spec`, `cc_prologue_spec`,
-    `cc_epilogue_spec`, `callNear_function_spec` (call+return round-trip),
+  - Proved specs: `callNear_spec`, `callFar_spec`, `ret_spec`, `ret_spec'`,
+    `cc_prologue_spec`, `cc_epilogue_spec`,
+    `callNear_function_spec` (call+return round-trip),
     `nonleaf_function_spec` (prologue+body+epilogue composition)
   - All new subroutines (handlers, RLP, interpreter) should use this convention.
     The older DivMod ad-hoc convention (x2 as return address) is legacy.
@@ -216,15 +218,15 @@ corresponding non-Spec files.
 - **Key difference from SHR/SHL**: Sign-fill path (all limbs = `sshiftRight(v[3], 63)`)
   replaces zero-path; SRA instruction for MSB limb; sign extension for vacated limbs
 
-#### 5. ByteSpec.lean — BYTE per-body + store + phase B specs
+#### ~~5. ByteSpec.lean — BYTE per-body + store + phase B specs~~ ✅ DONE
 
-- **File**: `Evm64/ByteSpec.lean`
-- **Depends on**: ShiftSpec.lean (reuses `shr_zero_path_spec`, `shr_phase_a_spec`)
-- **What was in the old file**:
-  - Per-body: `byte_body_{0,1,2,3}_spec` (SRL + ANDI cascade)
-  - Store path: `byte_store_spec` (SD result + 3× SD zero)
-  - Phase B: `byte_phase_b_spec` (cascade dispatch)
-- **Approach**: `runBlock` for body specs. Phase B cascade similar to SHR.
+- **Files**: `Evm64/Byte/Spec.lean` (stack-level `evm_byte_stack_spec`, 3-way case split),
+  `Evm64/Byte/LimbSpec.lean` (per-body + cascade dispatch specs),
+  `Evm64/Byte/Program.lean` (45-instruction program + tests)
+- **Specs**: `evm_byte_zero_high_spec`, `evm_byte_zero_geq32_spec`,
+  `evm_byte_body_evmWord_spec`, `evm_byte_stack_spec` — all proved, 0 sorry
+- **Pattern**: Uses `CodeReq.ofProg_mono_sub` for subsumption, cascade dispatch
+  with frame and consequence rules, evmWordIs abstraction for stack-level spec
 
 ### General recreation guidelines
 
@@ -260,34 +262,27 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 - **Approach**: SGT(a,b) = SLT(b,a). Swap operand load order (b-limbs into x7, a-limbs into x6).
 - 25 instructions = 100 bytes. Mirrors SLT proof structure exactly.
 
-### Phase 2: Remaining Shifts & Bitwise — specs deleted, programs done
+### ~~Phase 2: Remaining Shifts & Bitwise~~ — DONE
 
-> **Note**: Phases 2.1–2.3 were fully proved at one point but the spec files
-> were deleted in commit `1197924` due to incomplete CodeReq migration. The
-> program definitions and tests remain in `Shift.lean` / `Byte.lean`. See
-> **Pending: Recreate Deleted Spec Files** below.
+> **Note**: Phases 2.1–2.3 were originally proved, then deleted in commit
+> `1197924` due to incomplete CodeReq migration, then fully recreated.
+> All specs are now proved with 0 sorry.
 
-#### 2.1 SHL (Shift Left) — ⚠️ specs deleted
-- **Files**: `Evm64/Shift.lean` (program + 11 tests). `ShlSpec.lean` deleted.
-- **Approach**: Mirror of SHR. Reuses SHR phases A/B/C/zero_path. 4 SHL bodies
-  process top-down (SLL+SRL swapped vs SHR). Per-limb helpers: `shl_merge_limb_spec`,
-  `shl_first_limb_spec`, in-place variants. Body specs: `shl_body_{0,1,2,3}_spec`.
-- 90 instructions = 360 bytes.
+#### ~~2.1 SHL (Shift Left)~~ ✅
+- **Files**: `Evm64/Shift/ShlSpec.lean` (per-limb + body), `Evm64/Shift/ShlCompose.lean`
+  (composition + bridge lemmas), `Evm64/Shift/ShlSemantic.lean` (stack-level `evm_shl_stack_spec`)
+- 90 instructions = 360 bytes. All specs proved, 0 sorry.
 
-#### 2.2 SAR (Shift Right Arithmetic) — ⚠️ specs deleted
-- **Files**: `Evm64/Shift.lean` (program + 12 tests). `SarSpec.lean` deleted.
-- **Approach**: Like SHR but uses SRA for MSB limb and fills vacated limbs with
-  sign extension (SRAI result, 63). Reuses SHR phase B and merge limb specs.
-  Custom phase A/C (different offsets), sign-fill path (7 instrs) instead of zero_path.
-- 95 instructions = 380 bytes.
+#### ~~2.2 SAR (Shift Right Arithmetic)~~ ✅
+- **Files**: `Evm64/Shift/SarSpec.lean` (per-limb + body + sign-fill),
+  `Evm64/Shift/SarCompose.lean` (composition + bridge lemmas),
+  `Evm64/Shift/SarSemantic.lean` (stack-level `evm_sar_stack_spec`)
+- 95 instructions = 380 bytes. All specs proved, 0 sorry.
 
-#### 2.3 BYTE (Extract byte from word) — ⚠️ specs deleted
-- **Files**: `Evm64/Byte.lean` (program + 12 tests). `ByteSpec.lean` deleted.
-- **Approach**: If index >= 32, result = 0. Else compute which limb (index/8)
-  and byte offset (56 - (index%8)*8), cascade dispatch to load correct limb,
-  SRL + ANDI 0xFF. Shared store path writes result + 3 zero limbs.
-- 45 instructions = 180 bytes.
-- Added `andi_spec_gen_same` and `slli_spec_gen_same` to SyscallSpecs.lean.
+#### ~~2.3 BYTE (Extract byte from word)~~ ✅
+- **Files**: `Evm64/Byte/Spec.lean` (stack-level `evm_byte_stack_spec`),
+  `Evm64/Byte/LimbSpec.lean` (per-body + cascade dispatch), `Evm64/Byte/Program.lean`
+- 45 instructions = 180 bytes. All specs proved, 0 sorry.
 
 ### Phase 3: Stack Extensions
 
@@ -325,7 +320,7 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
 - **Approach**: Knuth Algorithm D in base 2^64. 316 instructions total (21 phases
   + 49-instr div128 subroutine + NOP separator). DIV and MOD share 95% of code,
   differ only in epilogue (load quotient vs remainder).
-- **Status**: ~60 CPS specs proved (0 sorry in DivModSpec.lean). All building
+- **Status**: 69 CPS specs proved in LimbSpec.lean (0 sorry). All building
   blocks for every phase. div128 subroutine fully specified in composable blocks
   including phase1, step1 (init+clamp_q1+prodcheck1), compute_un21, step2
   (init+clamp_q0+prodcheck2), end. Branch merge specs for BEQ/BLTU patterns.
@@ -653,14 +648,14 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 
 ## Priority Order
 
-**Immediate (recreate deleted specs):**
+**Immediate (recreate deleted specs) — ✅ ALL DONE:**
 1. ~~Recreate `StackOps.lean`~~ — ✅ Done (Pop.lean, Push0.lean, Dup.lean, Swap.lean)
 2. ~~Recreate `ShiftSpec.lean`~~ — ✅ Done (SHR per-limb + phase + body specs, 961 lines, 0 sorry)
-3. Recreate `ShlSpec.lean`, `SarSpec.lean` — SHL/SAR specs (depend on ShiftSpec)
-4. Recreate `ByteSpec.lean` — BYTE specs (depends on ShiftSpec)
+3. ~~Recreate `ShlSpec.lean`, `SarSpec.lean`~~ — ✅ Done (SHL/SAR full hierarchy: per-limb + compose + semantic)
+4. ~~Recreate `ByteSpec.lean`~~ — ✅ Done (Byte/Spec.lean + Byte/LimbSpec.lean, stack-level spec)
 
 **Short-term (enables simple contracts):**
-5. Phase 4.2: DIV, MOD ← **next new opcode work**
+5. Phase 4.2: DIV, MOD — in progress (69 LimbSpecs + 6 compositions proved, remaining: Phase B cascade variants, CLZ+, loop body, full path merge)
 6. Phase 5: MLOAD, MSTORE, EVM memory model
 7. Phase 5.1: EVM code region (needed for PUSHn and interpreter)
 
