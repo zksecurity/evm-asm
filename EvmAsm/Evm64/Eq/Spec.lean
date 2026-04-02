@@ -43,7 +43,7 @@ theorem evm_eq_spec (sp : Addr) (base : Addr)
        (.x7 ↦ᵣ eq_result) ** (.x6 ↦ᵣ (a3 ^^^ b3)) ** (.x5 ↦ᵣ b3) ** (.x11 ↦ᵣ v11) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ eq_result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
-  intro acc0; intro acc1; intro acc2; intro acc3; intro eq_result
+  intro acc0 acc1 acc2 acc3 eq_result
   -- Per-limb EQ specs
   have L0 := eq_limb0_spec 0 32 sp a0 b0 v7 v6 base (by validMem) (by validMem)
   have L1 := eq_or_limb_spec 8 40 sp a1 b1 b0 v5 (a0 ^^^ b0) (base + 12) (by validMem) (by validMem)
@@ -89,7 +89,7 @@ theorem evm_eq_stack_spec (sp base : Addr)
        (.x7 ↦ᵣ eq_result) ** (.x6 ↦ᵣ (a.getLimb 3 ^^^ b.getLimb 3)) **
        (.x5 ↦ᵣ b.getLimb 3) ** (.x11 ↦ᵣ v11) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if a = b then 1 else 0)) := by
-  intro acc0; intro acc1; intro acc2; intro acc3; intro eq_result
+  intro acc0 acc1 acc2 acc3 eq_result
   have h_main := evm_eq_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
     (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
@@ -105,7 +105,6 @@ theorem evm_eq_stack_spec (sp base : Addr)
     (fun h hq => by
       unfold evmWordIs
       simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show (0 : Fin 4) = 0 from rfl,
                  show ¬((1 : Fin 4) = 0) from by decide,
                  show ¬((2 : Fin 4) = 0) from by decide,
                  show ¬((3 : Fin 4) = 0) from by decide,

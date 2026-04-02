@@ -52,9 +52,7 @@ theorem evm_add_spec (sp : Addr) (base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) ** (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) ** ((sp + 56) ↦ₘ result3)) := by
-  intro sum0; intro carry0; intro psum1; intro carry1a; intro result1; intro carry1b; intro carry1
-  intro psum2; intro carry2a; intro result2; intro carry2b; intro carry2
-  intro psum3; intro carry3a; intro result3; intro carry3b; intro carry3
+  intro sum0 carry0 psum1 carry1a result1 carry1b carry1 psum2 carry2a result2 carry2b carry2 psum3 carry3a result3 carry3b carry3
   have L0 := add_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base (by validMem) (by validMem)
   have L1 := add_limb_carry_spec 8 40 sp a1 b1 sum0 b0 carry0 v11 (base + 20) (by validMem) (by validMem)
   have L2 := add_limb_carry_spec 16 48 sp a2 b2 result1 carry1b carry1 carry1a (base + 52) (by validMem) (by validMem)
@@ -100,10 +98,7 @@ theorem evm_add_stack_spec (sp base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
        (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
-  intro a0; intro b0; intro a1; intro b1; intro a2; intro b2; intro a3; intro b3
-  intro sum0; intro carry0; intro psum1; intro carry1a; intro result1; intro carry1b; intro carry1
-  intro psum2; intro carry2a; intro result2; intro carry2b; intro carry2
-  intro psum3; intro carry3a; intro result3; intro carry3b; intro carry3
+  intro a0 b0 a1 b1 a2 b2 a3 b3 sum0 carry0 psum1 carry1a result1 carry1b carry1 psum2 carry2a result2 carry2b carry2 psum3 carry3a result3 carry3b carry3
   have h_main := evm_add_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
     (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)

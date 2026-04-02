@@ -95,7 +95,7 @@ theorem eq_xor_or_reduce_correct (a b : EvmWord) :
     let acc3 := acc2 ||| (a.getLimb 3 ^^^ b.getLimb 3)
     (if BitVec.ult acc3 1 then (1 : Word) else 0) =
     (if a = b then (1 : Word) else 0) := by
-  intro acc0; intro acc1; intro acc2; intro acc3
+  intro acc0 acc1 acc2 acc3
   suffices h : BitVec.ult acc3 1 ↔ a = b by
     by_cases hab : a = b <;> simp_all
   constructor
@@ -170,10 +170,7 @@ theorem lt_borrow_chain_correct (a b : EvmWord) :
     let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
     let borrow3 := borrow3a ||| borrow3b
     borrow3 = if BitVec.ult a b then (1 : Word) else 0 := by
-  intro a0 b0 a1 b1 a2 b2 a3 b3
-  intro borrow0 borrow1a temp1 borrow1b borrow1
-  intro borrow2a temp2 borrow2b borrow2
-  intro borrow3a temp3 borrow3b borrow3
+  intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 borrow3a temp3 borrow3b borrow3
   -- Step 1: borrow0 tracks 1-limb comparison
   have hb0_nat : borrow0.toNat = if a0.toNat < b0.toNat then 1 else 0 := by
     simp only [borrow0]; split
@@ -309,10 +306,7 @@ theorem add_carry_chain_correct (a b : EvmWord) :
     (a + b).getLimb 1 = result1 ∧
     (a + b).getLimb 2 = result2 ∧
     (a + b).getLimb 3 = result3 := by
-  intro a0 b0 a1 b1 a2 b2 a3 b3
-  intro sum0 carry0 psum1 carry1a result1 carry1b carry1
-  intro psum2 carry2a result2 carry2b carry2
-  intro psum3 result3
+  intro a0 b0 a1 b1 a2 b2 a3 b3 sum0 carry0 psum1 carry1a result1 carry1b carry1 psum2 carry2a result2 carry2b carry2 psum3 result3
   -- toNat of carry chain
   have hc0 : carry0.toNat = (a0.toNat + b0.toNat) / 2^64 := carry_toNat a0 b0
   have hc0_le : carry0.toNat ≤ 1 := by
@@ -500,19 +494,15 @@ theorem sub_borrow_chain_correct (a b : EvmWord) :
     let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
     let result2 := temp2 - borrow1
     let borrow2 := borrow2a ||| borrow2b
-    let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
+    let _borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
     let temp3 := a3 - b3
-    let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
+    let _borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
     let result3 := temp3 - borrow2
     (a - b).getLimb 0 = diff0 ∧
     (a - b).getLimb 1 = result1 ∧
     (a - b).getLimb 2 = result2 ∧
     (a - b).getLimb 3 = result3 := by
-  intro a0 b0 a1 b1 a2 b2 a3 b3
-  intro borrow0 diff0
-  intro borrow1a temp1 borrow1b result1 borrow1
-  intro borrow2a temp2 borrow2b result2 borrow2
-  intro _borrow3a temp3 _borrow3b result3
+  intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 diff0 borrow1a temp1 borrow1b result1 borrow1 borrow2a temp2 borrow2b result2 borrow2 _borrow3a temp3 _borrow3b result3
   -- Key: (a - b).toNat = (a.toNat + 2^256 - b.toNat) % 2^256
   have hS : (a - b).toNat = (a.toNat + 2^256 - b.toNat) % 2^256 := by
     simp only [BitVec.toNat_sub]; congr 1; omega
@@ -752,17 +742,14 @@ theorem slt_result_correct (a b : EvmWord) :
     let slt_msb := if BitVec.slt a3 b3 then (1 : Word) else 0
     let result := if a3 = b3 then borrow2 else slt_msb
     result = if BitVec.slt a b then (1 : Word) else 0 := by
-  intro a0 b0 a1 b1 a2 b2 a3 b3
-  intro borrow0 borrow1a temp1 borrow1b borrow1
-  intro borrow2a temp2 borrow2b borrow2
-  intro slt_msb result
+  intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 slt_msb result
   -- Key: a.msb = a3.msb (bit 255 of a = bit 63 of a3 = MSB of getLimb 3)
   have hmsb_a : a.msb = a3.msb := by
     show a.getLsbD (256 - 1) = (a.extractLsb' (3 * 64) 64).getLsbD (64 - 1)
-    simp [BitVec.getLsbD_extractLsb']
+    simp
   have hmsb_b : b.msb = b3.msb := by
     show b.getLsbD (256 - 1) = (b.extractLsb' (3 * 64) 64).getLsbD (64 - 1)
-    simp [BitVec.getLsbD_extractLsb']
+    simp
   -- Get borrow2 as the 3-limb LT comparison
   -- borrow2 tracks: lower 3 limbs of a < lower 3 limbs of b
   -- This is the same borrow chain as in lt_borrow_chain_correct (first 3 limbs)
@@ -796,7 +783,7 @@ theorem slt_result_correct (a b : EvmWord) :
       have hb_bound : b0.toNat + b1.toNat * 2^64 < 2^128 := by
         have := b0.isLt; have := b1.isLt; nlinarith
       convert borrow_step_iff (2^128) a2.isLt b2.isLt ha_bound hb_bound using 2
-      congr 1; omega
+      omega
     -- borrow2 = borrow2a ||| borrow2b encodes hb2_cond
     constructor
     · intro hb2

@@ -875,7 +875,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Addr)
          (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ x10v) **
          (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
          ((sp + 32) ↦ₘ resV) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) := by
-    intro bodyBase x10v vLimb hbodyRaw; intro resV
+    intro bodyBase x10v vLimb hbodyRaw resV
     have hbody_f := cpsTriple_frame_left bodyBase (base + 136) _ _ _
       ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ x10v) **
        (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3))
@@ -1012,7 +1012,7 @@ theorem evm_byte_stack_spec (sp base : Addr)
       -- getLimb k = (idx.toNat / 2^(k*64)) % 2^64
       -- For k >= 1, idx.toNat < 2^64 ⇒ idx.toNat / 2^(k*64) = 0
       have h1 : i1 = 0 := by
-        show idx.getLimb 1 = 0; simp [EvmWord.getLimb, BitVec.extractLsb'_toNat]
+        show idx.getLimb 1 = 0; simp [EvmWord.getLimb]
         apply BitVec.eq_of_toNat_eq; simp [BitVec.extractLsb'_toNat]; omega
       have h2 : i2 = 0 := by
         show idx.getLimb 2 = 0; apply BitVec.eq_of_toNat_eq

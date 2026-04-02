@@ -682,7 +682,7 @@ private theorem CodeReq_union_sub {cr1 cr2 target : CodeReq}
     (h2 : ∀ a i, cr2 a = some i → target a = some i) :
     ∀ a i, (cr1.union cr2) a = some i → target a = some i := by
   intro a i h
-  simp only [CodeReq.union, Option.orElse] at h
+  simp only [CodeReq.union] at h
   cases h1a : cr1 a with
   | some j => rw [h1a] at h; simp at h; exact h ▸ h1 a j h1a
   | none => rw [h1a] at h; simp at h; exact h2 a i h
@@ -774,13 +774,7 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Addr)
        (sp + signExtend12 3952 ↦ₘ d_lo) **
        (sp + signExtend12 3944 ↦ₘ un0)) := by
   -- Introduce all let bindings
-  intro d_hi; intro d_lo; intro un1; intro un0
-  intro q1; intro rhat; intro hi1; intro q1c; intro rhatc
-  intro q_dlo; intro rhat_un1; intro q1'; intro rhat'
-  intro cu_rhat_un1; intro cu_q1_dlo; intro un21
-  intro q0; intro rhat2; intro hi2; intro q0c; intro rhat2c
-  intro q0_dlo; intro rhat2_un0; intro q0'
-  intro q
+  intro d_hi d_lo un1 un0 q1 rhat hi1 q1c rhatc q_dlo rhat_un1 q1' rhat' cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0_dlo rhat2_un0 q0' q
   -- ================================================================
   -- Block 1: Phase 1 (base+1068 → base+1108)
   -- Saves ret/d, splits d and u_lo into halves.

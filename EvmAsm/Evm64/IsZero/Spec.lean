@@ -34,7 +34,7 @@ theorem evm_iszero_spec (sp : Addr) (base : Addr)
       (-- Registers + memory (updated)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
        (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) := by
-  intro or_all; intro result
+  intro or_all result
   -- LD x7 x12 0 (load limb 0 into x7)
   have L0 := ld_spec_gen .x7 .x12 sp v7 a0 0 base (by nofun) (by validMem)
   -- OR limbs 1-3
@@ -71,7 +71,7 @@ theorem evm_iszero_stack_spec (sp base : Addr)
       (-- Registers + memory (updated)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimb 3) **
        evmWordIs sp (if a = 0 then 1 else 0)) := by
-  intro or_all; intro result
+  intro or_all result
   have h_main := evm_iszero_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
     v7 v6 hvalid
@@ -82,7 +82,6 @@ theorem evm_iszero_stack_spec (sp base : Addr)
     (fun h hq => by
       unfold evmWordIs
       simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show (0 : Fin 4) = 0 from rfl,
                  show ¬((1 : Fin 4) = 0) from by decide,
                  show ¬((2 : Fin 4) = 0) from by decide,
                  show ¬((3 : Fin 4) = 0) from by decide,

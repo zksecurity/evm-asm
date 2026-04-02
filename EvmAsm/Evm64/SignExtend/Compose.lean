@@ -852,7 +852,7 @@ theorem signext_body_spec (sp base : Addr)
     ((sp + 56) ↦ₘ (EvmWord.signextend b x).getLimb 3)
   -- The sa_nat for BitVec.ofNat matches shift_amount.toNat % 64
   have hsa_ofNat : (BitVec.ofNat 64 (56 - (b.toNat % 8) * 8)).toNat % 64 = shift_amount.toNat % 64 := by
-    rw [hsa_mod]; congr 1
+    rw [hsa_mod]
     simp [BitVec.toNat_ofNat]
     have : b.toNat % 8 < 8 := Nat.mod_lt _ (by omega)
     omega
@@ -931,7 +931,7 @@ theorem signext_body_spec (sp base : Addr)
       have heq1 := EvmWord.signextend_getLimb_below b x hnotge (1 : Fin 4) (by simp [hL])
       have heq2 := EvmWord.signextend_getLimb_below b x hnotge (2 : Fin 4) (by simp [hL])
       have heq3 := EvmWord.signextend_getLimb_target b x hnotge (3 : Fin 4) (by simp [hL])
-      simp only [EvmWord.signextLimb, EvmWord.signextFill] at heq3
+      simp only [EvmWord.signextLimb] at heq3
       rw [hsa_ofNat, hL] at heq3
       rw [hv3_eq] at hq
       show resultPost h
@@ -946,7 +946,7 @@ theorem signext_body_spec (sp base : Addr)
   -- Merge Phase C exits with body+done specs
   have hphaseCD := cpsNBranch_merge (base + 56) (base + 192) (signextCode base) _ _ _ hphaseC_framed
     (fun exit hmem => by
-      simp only [List.mem_cons, Prod.mk.injEq, List.mem_nil_iff, or_false, false_or] at hmem
+      simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · -- Exit 0: limb_idx = 0 → body_0 at base+156
         exact cpsTriple_consequence _ _ _ _ _ _ _

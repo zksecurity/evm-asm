@@ -60,10 +60,7 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
        (.x11 ↦ᵣ (if a3 = b3 then borrow2a else v11)) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
-  intro borrow0
-  intro borrow1a; intro temp1; intro borrow1b; intro borrow1
-  intro borrow2a; intro temp2; intro borrow2b; intro borrow2
-  intro slt_msb
+  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 slt_msb
   -- Don't intro result; let simp inline it via if_pos/if_neg
   by_cases h : a3 = b3
   · -- Case: MSB limbs equal → BEQ taken, lower compare path
@@ -141,10 +138,7 @@ theorem evm_slt_stack_spec (sp base : Addr)
        (.x5 ↦ᵣ result) **
        (.x11 ↦ᵣ (if a.getLimb 3 = b.getLimb 3 then borrow2a else v11)) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt a b then 1 else 0)) := by
-  intro borrow0
-  intro borrow1a; intro temp1; intro borrow1b; intro borrow1
-  intro borrow2a; intro temp2; intro borrow2b; intro borrow2
-  intro slt_msb; intro result
+  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 slt_msb result
   have h_main := evm_slt_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
     (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
@@ -160,7 +154,6 @@ theorem evm_slt_stack_spec (sp base : Addr)
     (fun h hq => by
       unfold evmWordIs
       simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show (0 : Fin 4) = 0 from rfl,
                  show ¬((1 : Fin 4) = 0) from by decide,
                  show ¬((2 : Fin 4) = 0) from by decide,
                  show ¬((3 : Fin 4) = 0) from by decide,

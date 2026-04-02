@@ -73,8 +73,7 @@ theorem mul_col2_spec (sp : Addr) (base : Addr)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b2) ** (.x6 ↦ᵣ r3_contrib) ** (.x7 ↦ᵣ a1 * b2) **
        (.x10 ↦ᵣ r3_out) ** (.x11 ↦ᵣ r2_out) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p) ** ((sp + 48) ↦ₘ r2_out)) := by
-  intro lo_a0b2; intro hi_a0b2; intro r2_out; intro carry02
-  intro r3_contrib; intro r3_out
+  intro lo_a0b2 hi_a0b2 r2_out carry02 r3_contrib r3_out
   have I0 := ld_spec_gen .x5 .x12 sp v5 b2 48 base (by nofun) (by validMem)
   have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b2 (base + 8) (by nofun)
@@ -119,8 +118,7 @@ theorem mul_col1_partA_spec (sp : Addr) (base : Addr)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b1) ** (.x6 ↦ᵣ r2_contrib1) ** (.x7 ↦ᵣ carry01) **
        (.x10 ↦ᵣ carry_r2_1) ** (.x11 ↦ᵣ r2_acc1) **
        (sp ↦ₘ a0) ** ((sp + 40) ↦ₘ r1_out)) := by
-  intro lo_a0b1; intro hi_a0b1; intro r1_out; intro carry01
-  intro r2_contrib1; intro r2_acc1; intro carry_r2_1
+  intro lo_a0b1 hi_a0b1 r1_out carry01 r2_contrib1 r2_acc1 carry_r2_1
   have I0 := ld_spec_gen .x5 .x12 sp v5 b1 40 base (by nofun) (by validMem)
   have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b1 (base + 8) (by nofun)
@@ -157,8 +155,7 @@ theorem mul_col1_partB_spec (sp : Addr) (base : Addr)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b1) ** (.x6 ↦ᵣ r3p0) ** (.x7 ↦ᵣ carry_r2_2) **
        (.x10 ↦ᵣ r3_spill) ** (.x11 ↦ᵣ r2_out) **
        ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3_spill) ** ((sp + 24) ↦ₘ r3p0)) := by
-  intro lo_a1b1; intro hi_a1b1; intro r2_out; intro carry_r2_2
-  intro r3_contrib1; intro r3_spill
+  intro lo_a1b1 hi_a1b1 r2_out carry_r2_2 r3_contrib1 r3_spill
   have I0 := ld_spec_gen .x6 .x12 sp v6 a1 8 (base + 40) (by nofun) (by validMem)
   have I1 := mul_spec_gen .x7 .x6 .x5 v7 a1 b1 (base + 44) (by nofun)
   have I2 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a1 b1 (base + 48) (by nofun)
@@ -207,10 +204,7 @@ theorem mul_col1_spec (sp : Addr) (base : Addr)
        (.x10 ↦ᵣ r3_spill) ** (.x11 ↦ᵣ r2_out) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3_spill) **
        ((sp + 24) ↦ₘ r3p0) ** ((sp + 40) ↦ₘ r1_out)) := by
-  intro lo_a0b1; intro hi_a0b1; intro r1_out; intro carry01
-  intro r2_contrib1; intro r2_acc1; intro carry_r2_1
-  intro lo_a1b1; intro hi_a1b1; intro r2_out; intro carry_r2_2
-  intro r3_contrib1; intro r3_spill
+  intro lo_a0b1 hi_a0b1 r1_out carry01 r2_contrib1 r2_acc1 carry_r2_1 lo_a1b1 hi_a1b1 r2_out carry_r2_2 r3_contrib1 r3_spill
   have PA := mul_col1_partA_spec sp base a0 b1 r1_in r2_in v5 v6 v7 hvalid
   have PB := mul_col1_partB_spec sp base a1 a2 b1 r3p0 r2_contrib1 carry01 carry_r2_1 r2_acc1 hvalid
   runBlock PA PB
@@ -243,8 +237,7 @@ theorem mul_col0_partA_spec (sp : Addr) (base : Addr)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x6 ↦ᵣ carry_r1) ** (.x7 ↦ᵣ lo_a1b0) **
        (.x10 ↦ᵣ r1_acc) ** (.x11 ↦ᵣ hi_a1b0 + carry_r1) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 32) ↦ₘ r0)) := by
-  intro r0; intro hi_a0b0; intro lo_a1b0; intro hi_a1b0
-  intro r1_acc; intro carry_r1
+  intro r0 hi_a0b0 lo_a1b0 hi_a1b0 r1_acc carry_r1
   have I0 := ld_spec_gen .x5 .x12 sp v5 b0 32 base (by nofun) (by validMem)
   have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b0 (base + 8) (by nofun)
@@ -281,7 +274,7 @@ theorem mul_col0_partB_spec (sp : Addr) (base : Addr)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x6 ↦ᵣ r3p) ** (.x7 ↦ᵣ a3 * b0) **
        (.x11 ↦ᵣ r2_acc) **
        ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ r3p)) := by
-  intro lo_a2b0; intro hi_a2b0; intro r2_acc; intro carry_r2; intro r3p
+  intro lo_a2b0 hi_a2b0 r2_acc carry_r2 r3p
   have I0 := ld_spec_gen .x6 .x12 sp v6 a2 16 (base + 44) (by nofun) (by validMem)
   have I1 := mul_spec_gen .x7 .x6 .x5 v7 a2 b0 (base + 48) (by nofun)
   have I2 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a2 b0 (base + 52) (by nofun)
@@ -324,9 +317,7 @@ theorem mul_col0_spec (sp : Addr) (base : Addr)
        (.x10 ↦ᵣ r1_acc) ** (.x11 ↦ᵣ r2_acc) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
        ((sp + 24) ↦ₘ r3p) ** ((sp + 32) ↦ₘ r0)) := by
-  intro r0; intro hi_a0b0; intro lo_a1b0; intro hi_a1b0
-  intro r1_acc; intro carry_r1; intro lo_a2b0; intro hi_a2b0
-  intro r2_acc; intro carry_r2; intro r3p
+  intro r0 hi_a0b0 lo_a1b0 hi_a1b0 r1_acc carry_r1 lo_a2b0 hi_a2b0 r2_acc carry_r2 r3p
   have PA := mul_col0_partA_spec sp base a0 a1 b0 v5 v6 v7 v10 v11 hvalid
   have PB := mul_col0_partB_spec sp base a2 a3 b0 carry_r1 lo_a1b0 (hi_a1b0 + carry_r1) hvalid
   runBlock PA PB
@@ -381,12 +372,7 @@ theorem evm_mul_cols01_spec (sp : Addr) (base : Addr)
        (.x10 ↦ᵣ c1_r3p) ** (.x11 ↦ᵣ c1_r2) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ c1_r3p) **
        ((sp + 24) ↦ₘ c0_r3p) ** ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1)) := by
-  intro c0_r0; intro c0_hi_a0b0; intro c0_lo_a1b0; intro c0_hi_a1b0
-  intro c0_r1; intro c0_c1; intro c0_lo_a2b0; intro c0_hi_a2b0
-  intro c0_r2; intro c0_c2; intro c0_r3p
-  intro c1_lo; intro c1_hi; intro c1_r1; intro c1_c1
-  intro c1_rc; intro c1_r2a; intro c1_cr1
-  intro c1_lo2; intro c1_hi2; intro c1_r2; intro c1_cr2; intro c1_rc2; intro c1_r3p
+  intro c0_r0 c0_hi_a0b0 c0_lo_a1b0 c0_hi_a1b0 c0_r1 c0_c1 c0_lo_a2b0 c0_hi_a2b0 c0_r2 c0_c2 c0_r3p c1_lo c1_hi c1_r1 c1_c1 c1_rc c1_r2a c1_cr1 c1_lo2 c1_hi2 c1_r2 c1_cr2 c1_rc2 c1_r3p
   have C0 := mul_col0_spec sp base a0 a1 a2 a3 b0 v5 v6 v7 v10 v11 hvalid
   have C1 := mul_col1_spec sp (base + 84) a0 a1 a2 b1 c0_r1 c0_r2 c0_r3p b0 c0_r3p (a3 * b0) hvalid
   runBlock C0 C1
@@ -420,8 +406,7 @@ theorem evm_mul_cols23ep_spec (sp : Addr) (base : Addr)
        (.x10 ↦ᵣ r3_final) ** (.x11 ↦ᵣ c2_r2) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p_in) **
        ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)) := by
-  intro c2_lo; intro c2_hi; intro c2_r2; intro c2_c; intro c2_rc; intro c2_r3
-  intro r3_final
+  intro c2_lo c2_hi c2_r2 c2_c c2_rc c2_r3 r3_final
   have C2 := mul_col2_spec sp (base + 176) a0 a1 b2 r2_in r3p_in v5 v6 v7 v10 hvalid
   have C3 := mul_col3_spec sp (base + 228) a0 b3 c2_r3 b2 c2_rc hvalid
   have EP := addi_spec_gen_same .x12 sp 32 (base + 248) (by nofun)
@@ -487,14 +472,7 @@ theorem evm_mul_spec (sp : Addr) (base : Addr)
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ c1_r3p) ** ((sp + 24) ↦ₘ c0_r3p) **
        ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1) ** ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)) := by
   -- Introduce all let bindings
-  intro c0_r0; intro c0_hi_a0b0; intro c0_lo_a1b0; intro c0_hi_a1b0
-  intro c0_r1; intro c0_c1; intro c0_lo_a2b0; intro c0_hi_a2b0
-  intro c0_r2; intro c0_c2; intro c0_r3p
-  intro c1_lo; intro c1_hi; intro c1_r1; intro c1_c1
-  intro c1_rc; intro c1_r2a; intro c1_cr1
-  intro c1_lo2; intro c1_hi2; intro c1_r2; intro c1_cr2; intro c1_rc2; intro c1_r3p
-  intro c2_lo; intro c2_hi; intro c2_r2; intro c2_c; intro c2_rc; intro c2_r3
-  intro r3_final
+  intro c0_r0 c0_hi_a0b0 c0_lo_a1b0 c0_hi_a1b0 c0_r1 c0_c1 c0_lo_a2b0 c0_hi_a2b0 c0_r2 c0_c2 c0_r3p c1_lo c1_hi c1_r1 c1_c1 c1_rc c1_r2a c1_cr1 c1_lo2 c1_hi2 c1_r2 c1_cr2 c1_rc2 c1_r3p c2_lo c2_hi c2_r2 c2_c c2_rc c2_r3 r3_final
   -- Compose intermediate triples
   have S01 := evm_mul_cols01_spec sp base a0 a1 a2 a3 b0 b1 v5 v6 v7 v10 v11 hvalid
   have S23EP := evm_mul_cols23ep_spec sp base a0 a1 b2 b3 c1_r2 c1_r3p b1 c0_r3p c1_cr2 c1_r3p hvalid

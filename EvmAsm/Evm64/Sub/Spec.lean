@@ -52,10 +52,7 @@ theorem evm_sub_spec (sp : Addr) (base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ borrow3b) ** (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ diff0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) ** ((sp + 56) ↦ₘ result3)) := by
-  intro borrow0; intro diff0
-  intro borrow1a; intro temp1; intro borrow1b; intro result1; intro borrow1
-  intro borrow2a; intro temp2; intro borrow2b; intro result2; intro borrow2
-  intro borrow3a; intro temp3; intro borrow3b; intro result3; intro borrow3
+  intro borrow0 diff0 borrow1a temp1 borrow1b result1 borrow1 borrow2a temp2 borrow2b result2 borrow2 borrow3a temp3 borrow3b result3 borrow3
   have L0 := sub_limb0_spec 0 32 sp a0 b0 v7 v6 v5 base (by validMem) (by validMem)
   have L1 := sub_limb_carry_spec 8 40 sp a1 b1 diff0 b0 borrow0 v11 (base + 20) (by validMem) (by validMem)
   have L2 := sub_limb_carry_spec 16 48 sp a2 b2 result1 borrow1b borrow1 borrow1a (base + 52) (by validMem) (by validMem)
@@ -76,16 +73,16 @@ theorem evm_sub_stack_spec (sp base : Addr)
     let a2 := a.getLimb 2; let b2 := b.getLimb 2
     let a3 := a.getLimb 3; let b3 := b.getLimb 3
     let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
-    let diff0 := a0 - b0
+    let _diff0 := a0 - b0
     let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
     let temp1 := a1 - b1
     let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-    let result1 := temp1 - borrow0
+    let _result1 := temp1 - borrow0
     let borrow1 := borrow1a ||| borrow1b
     let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
     let temp2 := a2 - b2
     let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-    let result2 := temp2 - borrow1
+    let _result2 := temp2 - borrow1
     let borrow2 := borrow2a ||| borrow2b
     let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
     let temp3 := a3 - b3
@@ -101,11 +98,7 @@ theorem evm_sub_stack_spec (sp base : Addr)
        (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ borrow3b) **
        (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a - b)) := by
-  intro a0; intro b0; intro a1; intro b1; intro a2; intro b2; intro a3; intro b3
-  intro borrow0; intro diff0
-  intro borrow1a; intro temp1; intro borrow1b; intro result1; intro borrow1
-  intro borrow2a; intro temp2; intro borrow2b; intro result2; intro borrow2
-  intro borrow3a; intro temp3; intro borrow3b; intro result3; intro borrow3
+  intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 diff0 borrow1a temp1 borrow1b result1 borrow1 borrow2a temp2 borrow2b result2 borrow2 borrow3a temp3 borrow3b result3 borrow3
   have h_main := evm_sub_spec sp base
     (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
     (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
