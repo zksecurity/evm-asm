@@ -627,7 +627,138 @@ theorem divK_save_trial_load_spec
     SJfTLe
 
 -- ============================================================================
--- Section 8: Store q[j] + loop control
+-- Section 8: Trial quotient BLTU branch + div128/max composition
+-- After trial_load (base+500): x7=u_hi, x10=v_top, x5=u_lo.
+-- BLTU x7 x10 12 at base+500:
+--   Taken (u_hi < v_top) → base+512: JAL x2 556 → div128 → base+516, x11=q
+--   Not-taken (u_hi >= v_top) → base+504: ADDI x11 x0 4095 + JAL x0 8 → base+516
+-- ============================================================================
+
+-- Address normalization for trial quotient
+private theorem lb_bltu_taken (base : Addr) : (base + 500 : Addr) + signExtend13 (12 : BitVec 13) = base + 512 := by
+  have : signExtend13 (12 : BitVec 13) = (12 : Word) := by native_decide
+  rw [this]; bv_omega
+private theorem lb_bltu_ntaken (base : Addr) : (base + 500 : Addr) + 4 = base + 504 := by bv_omega
+private theorem lb_trial_max_end (base : Addr) : (base + 504 : Addr) + 12 = base + 516 := by bv_omega
+private theorem lb_jal_target (base : Addr) : (base + 512 : Addr) + signExtend21 (556 : BitVec 21) = base + 1068 := by
+  have : signExtend21 (556 : BitVec 21) = (556 : Word) := by native_decide
+  rw [this]; bv_omega
+private theorem lb_jal_ret (base : Addr) : (base + 512 : Addr) + 4 = base + 516 := by bv_omega
+
+-- ============================================================================
+-- Section 8a: Trial quotient NOT-TAKEN path (u_hi >= v_top)
+-- Instrs [14]-[15] at base+504: ADDI x11 x0 4095 + JAL x0 8 → base+516.
+-- ============================================================================
+
+/-- Trial quotient MAX path: q_hat = MAX64, skip div128 call.
+    2 instructions at base+504. Entry: base+504, Exit: base+516. -/
+private theorem divK_trial_max_extended (v11_old : Word) (base : Addr) :
+    cpsTriple (base + 504) (base + 516) (divCode base)
+      ((.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ 0))
+      ((.x11 ↦ᵣ signExtend12 4095) ** (.x0 ↦ᵣ 0)) := by
+  have TM := divK_trial_max_spec v11_old (base + 504)
+  dsimp only [] at TM
+  rw [lb_trial_max_end] at TM
+  exact cpsTriple_extend_code (hmono := by
+    exact CodeReq_union_sub (lb_sub base 14 _ _ (by native_decide) (by bv_omega) (by native_decide))
+      (lb_sub base 15 _ _ (by native_decide) (by bv_omega) (by native_decide))) TM
+
+-- ============================================================================
+-- Section 8b: Trial quotient TAKEN path (u_hi < v_top)
+-- Instr [16] JAL x2 556 at base+512 → div128 at base+1068 → returns to base+516.
+-- ============================================================================
+
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 1600000 in
+/-- Trial call path: JAL x2 556 (instr [16]) + div128 subroutine.
+    Entry: base+512, Exit: base+516, CodeReq: divCode base.
+    Computes q_hat = div128(u_hi, u_lo, v_top). -/
+theorem divK_trial_call_path_spec
+    (sp j u_lo u_hi v_top vtop_base : Word) (base : Addr)
+    (v2_old v11_old : Word)
+    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (hv_ret : isValidDwordAccess (sp + signExtend12 3968) = true)
+    (hv_d   : isValidDwordAccess (sp + signExtend12 3960) = true)
+    (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
+    (hv_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516) :
+    -- div128 intermediates (same as div128_spec)
+    let d_hi := v_top >>> (32 : BitVec 6).toNat
+    let d_lo := (v_top <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let un1 := u_lo >>> (32 : BitVec 6).toNat
+    let un0 := (u_lo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u_hi d_hi
+    let rhat := u_hi - q1 * d_hi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + d_hi
+    let q_dlo := q1c * d_lo
+    let rhat_un1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+    let q1' := if BitVec.ult rhat_un1 q_dlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhat_un1 q_dlo then rhatc + d_hi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| un1
+    let cu_q1_dlo := q1' * d_lo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 d_hi
+    let rhat2 := un21 - q0 * d_hi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + d_hi
+    let q0_dlo := q0c * d_lo
+    let rhat2_un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+    let q0' := if BitVec.ult rhat2_un0 q0_dlo then q0c + signExtend12 4095 else q0c
+    let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
+    cpsTriple (base + 512) (base + 516) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtop_base) **
+       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
+       (.x2 ↦ᵣ v2_old) ** (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3960 ↦ₘ d_mem) **
+       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3944 ↦ₘ un0_mem))
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ rhat2_un0) **
+       (.x5 ↦ᵣ q0') ** (.x6 ↦ᵣ d_hi) **
+       (.x7 ↦ᵣ q0_dlo) ** (.x10 ↦ᵣ q1') **
+       (.x2 ↦ᵣ (base + 516)) ** (.x11 ↦ᵣ q) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+       (sp + signExtend12 3960 ↦ₘ v_top) **
+       (sp + signExtend12 3952 ↦ₘ d_lo) **
+       (sp + signExtend12 3944 ↦ₘ un0)) := by
+  intro d_hi d_lo un1 un0 q1 rhat hi1 q1c rhatc q_dlo rhat_un1 q1' rhat'
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0_dlo rhat2_un0 q0' q
+  -- 1. JAL x2 556 at base+512: x2 ← base+516, PC → base+1068
+  have J := jal_spec .x2 v2_old (556 : BitVec 21) (base + 512) (by nofun)
+  rw [lb_jal_target, lb_jal_ret] at J
+  have Je := cpsTriple_extend_code (hmono :=
+    lb_sub base 16 _ _ (by native_decide) (by bv_omega) (by native_decide)) J
+  -- 2. div128 subroutine: base+1068 → base+516
+  have D := div128_spec sp (base + 516) v_top u_lo u_hi base
+    j vtop_base v11_old ret_mem d_mem dlo_mem un0_mem
+    hv_ret hv_d hv_dlo hv_un0 halign
+  dsimp only [] at D
+  -- 3. Frame JAL with all registers/memory for div128
+  have Jf := cpsTriple_frame_left _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+     (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtop_base) **
+     (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
+     (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ ret_mem) **
+     (sp + signExtend12 3960 ↦ₘ d_mem) **
+     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+     (sp + signExtend12 3944 ↦ₘ un0_mem))
+    (by pcFree) Je
+  -- 4. Compose JAL + div128
+  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) Jf D
+  -- 5. Final permutation
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
+-- ============================================================================
+-- Section 9: Store q[j] + loop control
 -- Store q[j] at instrs [108]-[111] (base+880→base+896).
 -- Loop control at instrs [112]-[113] (base+896): j--, BGE back to base+448 or exit base+904.
 -- ============================================================================
