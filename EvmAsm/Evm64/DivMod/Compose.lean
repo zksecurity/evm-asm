@@ -1191,6 +1191,340 @@ theorem evm_div_phaseB_n1_spec (sp base : Addr)
     hphaseB
 
 -- ============================================================================
+-- Section 10g: Phase C2 composition (shift check, 4 instructions)
+-- base+212: SD shift, ADDI x2=0, SUB x2=-shift, BEQ shift=0
+-- ============================================================================
+
+/-- Phase C2 code (block 3) is subsumed by divCode. -/
+private theorem divK_phaseC2_code_sub_divCode (base : Addr) :
+    ∀ a i, (divK_phaseC2_code 172 (base + 212)) a = some i → (divCode base) a = some i := by
+  unfold divCode divK_phaseC2_code; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- BEQ x6 x0 172 singleton at base+224 (index 3 of phaseC2) is subsumed by divCode. -/
+private theorem beq_shift_sub_divCode (base : Addr) :
+    ∀ a i, (CodeReq.singleton (base + 224) (.BEQ .x6 .x0 172)) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + 212) (divK_phaseC2 172) 3
+    (by native_decide) (by native_decide)
+  rw [show BitVec.ofNat 64 (4 * 3) = (12 : Addr) from by native_decide,
+      show (base + 212 : Addr) + 12 = base + 224 from by bv_omega] at hlookup
+  exact divK_phaseC2_code_sub_divCode base a i
+    (CodeReq.singleton_mono hlookup a i h)
+
+private theorem signExtend13_172 : signExtend13 (172 : BitVec 13) = (172 : Word) := by native_decide
+
+/-- Phase C2 body (base+212 → base+224): store shift, compute anti_shift.
+    Extends to divCode. Uses first 3 instructions of phaseC2. -/
+private theorem divK_phaseC2_body_divCode (sp shift v2 shift_mem : Word) (base : Addr)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true) :
+    cpsTriple (base + 212) (base + 224) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+       (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  have hbody := divK_phaseC2_body_spec sp shift v2 shift_mem 172 (base + 212) hv_shift
+  rw [show (base + 212 : Addr) + 12 = base + 224 from by bv_omega] at hbody
+  exact cpsTriple_extend_code (divK_phaseC2_code_sub_divCode base) hbody
+
+set_option maxRecDepth 2048 in
+/-- Phase C2 when shift ≠ 0: falls through to normB at base+228.
+    Stores shift to scratch, computes anti_shift = -shift. -/
+theorem divK_phaseC2_ntaken_spec (sp shift v2 shift_mem : Word) (base : Addr)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hshift_nz : shift ≠ 0) :
+    cpsTriple (base + 212) (base + 228) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+       (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base hv_shift
+  have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
+  rw [show (base + 224 : Addr) + signExtend13 172 = base + 396 from by
+        rw [signExtend13_172]; bv_omega,
+      show (base + 224 : Addr) + 4 = base + 228 from by bv_omega] at hbeq_raw
+  have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
+      exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 (show shift ≠ (0 : Word) from hshift_nz))
+  have hbeq := cpsTriple_extend_code (beq_shift_sub_divCode base) hbeq_clean
+  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+     ((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hbeq
+  have hC2 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbeqf
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hC2
+
+set_option maxRecDepth 2048 in
+/-- Phase C2 when shift = 0: branches to copyAU at base+396.
+    Stores shift (=0) to scratch, computes anti_shift = 0. -/
+theorem divK_phaseC2_taken_spec (sp shift v2 shift_mem : Word) (base : Addr)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hshift_z : shift = 0) :
+    cpsTriple (base + 212) (base + 396) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+       (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base hv_shift
+  have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
+  rw [show (base + 224 : Addr) + signExtend13 172 = base + 396 from by
+        rw [signExtend13_172]; bv_omega,
+      show (base + 224 : Addr) + 4 = base + 228 from by bv_omega] at hbeq_raw
+  have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
+    (fun hp hQf => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
+      exact absurd hshift_z ((sepConj_pure_right _ _ _).mp h_rest).2)
+  have hbeq := cpsTriple_extend_code (beq_shift_sub_divCode base) hbeq_clean
+  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+     ((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hbeq
+  have hC2 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hbody hbeqf
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hC2
+
+-- ============================================================================
+-- Section 10h: NormB composition (normalize divisor, 21 instructions)
+-- base+228: 3 merge blocks (6 instrs each) + 1 last block (3 instrs)
+-- ============================================================================
+
+/-- NormB code (block 4) is subsumed by divCode. -/
+private theorem divK_normB_code_sub_divCode (base : Addr) :
+    ∀ a i, (CodeReq.ofProg (base + 228) divK_normB) a = some i → (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- Helper: NormB sub-block subsumption via ofProg_mono_sub. -/
+private theorem normB_sub (base : Addr) (sub_prog : List Instr) (k : Nat)
+    (hk : k + sub_prog.length ≤ divK_normB.length)
+    (hslice : (divK_normB.drop k).take sub_prog.length = sub_prog)
+    (hbound : 4 * divK_normB.length < 2 ^ 64) :
+    ∀ a i, (CodeReq.ofProg ((base + 228) + BitVec.ofNat 64 (4 * k)) sub_prog) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  exact divK_normB_code_sub_divCode base a i
+    (CodeReq.ofProg_mono_sub (base + 228) _ divK_normB _ k rfl hslice hk hbound a i h)
+
+-- signExtend12 for offsets used by normB merge spec
+private theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by native_decide
+private theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by native_decide
+private theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by native_decide
+private theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by native_decide
+
+set_option maxHeartbeats 12800000 in
+set_option maxRecDepth 4096 in
+/-- Full NormB: normalize divisor b[0..3] in place by left-shifting.
+    base+228 → base+312 (21 instructions).
+    Pre: x12=sp, x6=shift, x2=anti_shift, b[0..3] at sp+32..56.
+    Post: b[i] normalized, x5=b[0]<<<shift, x7=b[0]>>>anti_shift. -/
+theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (base : Addr)
+    (hvalid : ValidMemRange sp 8) :
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    cpsTriple (base + 228) (base + 312) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
+  intro b3' b2' b1' b0'
+  -- Merge 1: b[3] with b[2] (base+228 → base+252)
+  have hm1 := divK_normB_merge_spec 56 48 sp b3 b2 v5 v7 shift anti_shift (base + 228)
+    (by rw [se12_56]; exact hvalid.get (show 7 < 8 from by omega))
+    (by rw [se12_48]; exact hvalid.get (show 6 < 8 from by omega))
+  simp only [se12_56, se12_48] at hm1
+  rw [show (base + 228 : Addr) + 24 = base + 252 from by bv_omega] at hm1
+  have hm1e := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_normB_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 228) (base + 228) divK_normB
+        (divK_normB_merge_prog 56 48) 0
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h)) hm1
+  -- Frame merge1 with b[0], b[1] (not touched by merge1)
+  have hm1ef := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1))
+    (by pcFree) hm1e
+  -- Merge 2: b[2] with b[1] (base+252 → base+276)
+  have hm2 := divK_normB_merge_spec 48 40 sp b2 b1 b3' (b2 >>> (anti_shift.toNat % 64))
+    shift anti_shift (base + 252)
+    (by rw [se12_48]; exact hvalid.get (show 6 < 8 from by omega))
+    (by rw [se12_40]; exact hvalid.get (show 5 < 8 from by omega))
+  simp only [se12_48, se12_40] at hm2
+  rw [show (base + 252 : Addr) + 24 = base + 276 from by bv_omega] at hm2
+  have hm2e := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_normB_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 228) (base + 252) divK_normB
+        (divK_normB_merge_prog 48 40) 6
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h)) hm2
+  have hm2ef := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 32) ↦ₘ b0) ** ((sp + 56) ↦ₘ b3'))
+    (by pcFree) hm2e
+  have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hm1ef hm2ef
+  -- Merge 3: b[1] with b[0] (base+276 → base+300)
+  have hm3 := divK_normB_merge_spec 40 32 sp b1 b0
+    b2' (b1 >>> (anti_shift.toNat % 64)) shift anti_shift (base + 276)
+    (by rw [se12_40]; exact hvalid.get (show 5 < 8 from by omega))
+    (by rw [se12_32]; exact hvalid.get (show 4 < 8 from by omega))
+  simp only [se12_40, se12_32] at hm3
+  rw [show (base + 276 : Addr) + 24 = base + 300 from by bv_omega] at hm3
+  have hm3e := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_normB_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 228) (base + 276) divK_normB
+        (divK_normB_merge_prog 40 32) 12
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h)) hm3
+  have hm3ef := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
+    (by pcFree) hm3e
+  have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h12 hm3ef
+  -- Last: b[0] alone (base+300 → base+312)
+  have hl := divK_normB_last_spec 32 sp b0 b1' shift (base + 300)
+    (by rw [se12_32]; exact hvalid.get (show 4 < 8 from by omega))
+  simp only [se12_32] at hl
+  rw [show (base + 300 : Addr) + 12 = base + 312 from by bv_omega] at hl
+  have hle := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_normB_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 228) (base + 300) divK_normB
+        (divK_normB_last_prog 32) 18
+        (by bv_omega) (by native_decide) (by native_decide) (by native_decide) a i h)) hl
+  have hlef := cpsTriple_frame_left _ _ _ _ _
+    ((.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) **
+     ((sp + 40) ↦ₘ b1') ** ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
+    (by pcFree) hle
+  have h1234 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) h123 hlef
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    h1234
+
+-- ============================================================================
+-- Section 10i: NormA composition (normalize dividend, 21 instructions)
+-- base+312: top(3) + mergeA(5) + mergeB(5) + mergeA(5) + last(2) + JAL(1)
+-- ============================================================================
+
+/-- NormA code (block 5) is subsumed by divCode. -/
+private theorem divK_normA_code_sub_divCode (base : Addr) :
+    ∀ a i, (CodeReq.ofProg (base + 312) (divK_normA 40)) a = some i → (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- Helper: NormA sub-block subsumption via ofProg_mono_sub. -/
+private theorem normA_sub (base : Addr) (sub_prog : List Instr) (k : Nat)
+    (hk : k + sub_prog.length ≤ (divK_normA 40).length)
+    (hslice : ((divK_normA 40).drop k).take sub_prog.length = sub_prog)
+    (hbound : 4 * (divK_normA 40).length < 2 ^ 64) :
+    ∀ a i, (CodeReq.ofProg ((base + 312) + BitVec.ofNat 64 (4 * k)) sub_prog) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  exact divK_normA_code_sub_divCode base a i
+    (CodeReq.ofProg_mono_sub (base + 312) _ (divK_normA 40) _ k rfl hslice hk hbound a i h)
+
+-- signExtend12 for src/dst offsets used by normA specs
+private theorem se12_24 : signExtend12 (24 : BitVec 12) = (24 : Word) := by native_decide
+private theorem se12_16 : signExtend12 (16 : BitVec 12) = (16 : Word) := by native_decide
+private theorem se12_8 : signExtend12 (8 : BitVec 12) = (8 : Word) := by native_decide
+private theorem se12_0 : signExtend12 (0 : BitVec 12) = (0 : Word) := by native_decide
+private theorem se12_4024 : signExtend12 (4024 : BitVec 12) = signExtend12 4024 := rfl
+private theorem se12_4032 : signExtend12 (4032 : BitVec 12) = signExtend12 4032 := rfl
+private theorem se12_4040 : signExtend12 (4040 : BitVec 12) = signExtend12 4040 := rfl
+private theorem se12_4048 : signExtend12 (4048 : BitVec 12) = signExtend12 4048 := rfl
+private theorem se12_4056 : signExtend12 (4056 : BitVec 12) = signExtend12 4056 := rfl
+private theorem signExtend21_40 : signExtend21 (40 : BitVec 21) = (40 : Word) := by native_decide
+
+set_option maxHeartbeats 25600000 in
+set_option maxRecDepth 4096 in
+/-- Full NormA: normalize dividend a[0..3] → u[0..4] and jump to loopSetup.
+    base+312 → base+432 (21 instructions including JAL).
+    u[4] = a[3]>>>anti_shift, u[3..0] = merged shifted limbs. -/
+theorem divK_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
+    (u0_old u1_old u2_old u3_old u4_old : Word) (base : Addr)
+    (hvalid : ValidMemRange sp 8)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true) :
+    let u4 := a3 >>> (anti_shift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+    let u0 := a0 <<< (shift.toNat % 64)
+    cpsTriple (base + 312) (base + 432) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4024) ↦ₘ u4_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
+       ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
+       ((sp + signExtend12 4056) ↦ₘ u0_old))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ a0) ** (.x7 ↦ᵣ u0) ** (.x10 ↦ᵣ (a0 >>> (anti_shift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4056) ↦ₘ u0)) := by
+  intro u4 u3 u2 u1 u0; sorry
+
+-- ============================================================================
+-- Section 10j: CopyAU composition (copy a[] to u[], 9 instructions)
+-- base+396: used when shift=0 (no normalization needed)
+-- ============================================================================
+
+/-- CopyAU code (block 6) is subsumed by divCode. -/
+private theorem divK_copyAU_code_sub_divCode (base : Addr) :
+    ∀ a i, (divK_copyAU_code (base + 396)) a = some i → (divCode base) a = some i := by
+  unfold divCode divK_copyAU_code; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- Full CopyAU: copy a[0..3] to u[0..3], set u[4]=0.
+    base+396 → base+432 (9 instructions). -/
+theorem divK_copyAU_full_spec (sp : Addr)
+    (a0 a1 a2 a3 : Word) (u0 u1 u2 u3 u4 v5 : Word) (base : Addr)
+    (hvalid : ValidMemRange sp 8)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true) :
+    cpsTriple (base + 396) (base + 432) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) **
+       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + signExtend12 4024) ↦ₘ u4))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ a3) **
+       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4056) ↦ₘ a0) ** ((sp + signExtend12 4048) ↦ₘ a1) **
+       ((sp + signExtend12 4040) ↦ₘ a2) ** ((sp + signExtend12 4032) ↦ₘ a3) **
+       ((sp + signExtend12 4024) ↦ₘ (0 : Word))) := by
+  have hcopy := divK_copyAU_spec sp (base + 396) a0 a1 a2 a3 u0 u1 u2 u3 u4 v5
+    hvalid hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+  rw [show (base + 396 : Addr) + 36 = base + 432 from by bv_omega] at hcopy
+  exact cpsTriple_extend_code (divK_copyAU_code_sub_divCode base) hcopy
+
+-- ============================================================================
 -- Section 11: MOD program code infrastructure
 -- ============================================================================
 
