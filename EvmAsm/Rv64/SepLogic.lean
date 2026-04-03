@@ -2646,6 +2646,36 @@ theorem sepConj_emp_left' (P : Assertion) : (empAssertion ** P) = P :=
 instance : Std.Associative (α := Assertion) sepConj := ⟨sepConj_assoc'⟩
 instance : Std.Commutative (α := Assertion) sepConj := ⟨sepConj_comm'⟩
 
+-- ---------------------------------------------------------------------------
+-- seps: list-based separation conjunction (bedrock2-style)
+-- ---------------------------------------------------------------------------
+
+/-- Fold a list of assertions into a right-associated sepConj chain.
+    Used by the xperm tactic to reduce proof term size from O(n²) to O(n).
+    `seps [a, b, c]` = `a ** (b ** (c ** empAssertion))`.
+    The trailing `empAssertion` is removed at the boundary via `sepConj_emp_right'`. -/
+def seps : List Assertion → Assertion
+  | [] => empAssertion
+  | x :: xs => x ** seps xs
+
+@[simp] theorem seps_nil : seps ([] : List Assertion) = empAssertion := rfl
+@[simp] theorem seps_cons (x : Assertion) (xs : List Assertion) :
+    seps (x :: xs) = (x ** seps xs) := rfl
+
+/-- Pick the n-th element to the front of a seps chain.
+    `seps xs = xs[n] ** seps (xs.eraseIdx n)` -/
+theorem seps_pick (xs : List Assertion) (n : Nat) (hn : n < xs.length) :
+    seps xs = (xs[n] ** seps (xs.eraseIdx n)) := by
+  induction n generalizing xs with
+  | zero =>
+    match xs, hn with
+    | x :: rest, _ => simp [seps, List.eraseIdx]
+  | succ k ih =>
+    match xs, hn with
+    | x :: rest, hn' =>
+      simp only [seps_cons, List.getElem_cons_succ, List.eraseIdx_cons_succ]
+      rw [ih rest (Nat.lt_of_succ_lt_succ hn'), sepConj_left_comm']
+
 /-- `sep_perm h` closes a goal of the form `(A₁ ** ... ** Aₙ) s` given a hypothesis `h`
     that is a permutation of the same assertions applied to the same state.
     Works by proving assertion equality via `ac_rfl` and transporting with `congrFun`.

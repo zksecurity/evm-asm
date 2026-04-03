@@ -158,24 +158,145 @@ partial def reassocProof (e : Expr) : MetaM (Expr × Expr) := do
       let pf ← mkEqTrans assocPf restPf
       return (result, pf)
 
+/-- Build proof that `chain = chain ** empAssertion` (add emp at the end).
+    For `a ** (b ** c)`, returns proof: `a ** (b ** c) = a ** (b ** (c ** empAssertion))`.
+    This bridges from raw sepConj chains to the `seps` representation. -/
+private partial def buildAddEmpProof (chain : Expr) : MetaM (Expr × Expr) := do
+  match ← parseSepConj? chain with
+  | none =>
+    -- Base case: single atom `x`. Prove `x = x ** empAssertion`
+    let emp := mkConst ``EvmAsm.Rv64.empAssertion
+    let rhs := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) chain emp
+    let pf ← mkEqSymm (mkApp (mkConst ``EvmAsm.Rv64.sepConj_emp_right') chain)
+    return (pf, rhs)
+  | some (head, tail) =>
+    -- Recursive case: `head ** tail`. Add emp to tail.
+    let (tailPf, tailRhs) ← buildAddEmpProof tail
+    let sepConjHead := mkApp (mkConst ``EvmAsm.Rv64.sepConj) head
+    let pf ← mkCongrArg sepConjHead tailPf
+    let rhs := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) head tailRhs
+    return (pf, rhs)
+
+/-- Build proof that `chain ** empAssertion = chain` (remove emp from the end).
+    Inverse of `buildAddEmpProof`. -/
+private partial def buildRemoveEmpProof (chain : Expr) : MetaM (Expr × Expr) := do
+  match ← parseSepConj? chain with
+  | none =>
+    -- Shouldn't happen (chain should end with ** emp)
+    return (← mkEqRefl chain, chain)
+  | some (head, tail) =>
+    -- Check if tail is empAssertion
+    if tail == mkConst ``EvmAsm.Rv64.empAssertion then
+      -- Base: `head ** emp = head`
+      let pf := mkApp (mkConst ``EvmAsm.Rv64.sepConj_emp_right') head
+      return (pf, head)
+    else
+      -- Recursive: head ** (... ** emp)
+      let (tailPf, tailRhs) ← buildRemoveEmpProof tail
+      let sepConjHead := mkApp (mkConst ``EvmAsm.Rv64.sepConj) head
+      let pf ← mkCongrArg sepConjHead tailPf
+      let rhs := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) head tailRhs
+      return (pf, rhs)
+
+/-- Build an Expr representing a `List Assertion` literal from an Array of Assertion Exprs. -/
+private def mkAssertionList (atoms : Array Expr) : Expr :=
+  let assertionType := mkConst ``EvmAsm.Rv64.Assertion
+  atoms.foldr (init := mkApp (mkConst ``List.nil [0]) assertionType)
+    fun atom acc => mkApp3 (mkConst ``List.cons [0]) assertionType atom acc
+
+/-- Build a seps-based permutation proof: returns (proof, rhs_expr) where
+    proof : seps_chain_lhs = rhs_expr, and rhs_expr is a CONCRETE sepConj chain
+    (with empAssertion at the end), NOT an opaque `seps` application.
+
+    This is the O(n)-tactic-time permutation prover. Each pick is one `seps_pick`
+    application (O(1) in MetaM), vs O(k) `left_comm'` applications in the old algorithm. -/
+private partial def buildSepsPermProof (lhsAtoms rhsAtoms : Array Expr) :
+    MetaM (Expr × Expr) := do
+  if lhsAtoms.size != rhsAtoms.size then
+    throwError "buildSepsPermProof: atom count mismatch ({lhsAtoms.size} vs {rhsAtoms.size})"
+  let emp := mkConst ``EvmAsm.Rv64.empAssertion
+  if lhsAtoms.size == 0 then
+    let pf ← mkEqRefl emp
+    return (pf, emp)
+  if lhsAtoms.size == 1 then
+    -- seps [a] = a ** emp, rhs should also be a ** emp
+    if ← isDefEq lhsAtoms[0]! rhsAtoms[0]! then
+      let chain := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) lhsAtoms[0]! emp
+      let pf ← mkEqRefl chain
+      return (pf, chain)
+    else
+      throwError "buildSepsPermProof: single atoms don't match"
+  -- Recursive loop: pick each RHS atom from current LHS list
+  buildSepsPermAux lhsAtoms rhsAtoms 0
+where
+  buildSepsPermAux (currentAtoms : Array Expr) (rhsAtoms : Array Expr)
+      (startIdx : Nat) : MetaM (Expr × Expr) := do
+    let emp := mkConst ``EvmAsm.Rv64.empAssertion
+    if startIdx >= rhsAtoms.size then
+      return (← mkEqRefl emp, emp)
+    if startIdx + 1 == rhsAtoms.size then
+      -- Last atom: currentAtoms should have 1 element matching rhsAtoms[startIdx]
+      -- The seps form is: currentAtoms[0] ** empAssertion
+      if currentAtoms.size == 1 then
+        if ← isDefEq currentAtoms[0]! rhsAtoms[startIdx]! then
+          let chain := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) currentAtoms[0]! emp
+          return (← mkEqRefl chain, chain)
+        else
+          throwError "buildSepsPermProof: final atoms don't match"
+      else
+        throwError "buildSepsPermProof: {currentAtoms.size} atoms left but only 1 RHS remaining"
+    else
+      let target := rhsAtoms[startIdx]!
+      let some idx ← findAtomIdx target currentAtoms
+        | throwError "buildSepsPermProof: could not find RHS atom {startIdx}"
+      -- seps_pick proof: seps currentList = currentAtoms[idx] ** seps (eraseIdx currentList idx)
+      let listExpr := mkAssertionList currentAtoms
+      let idxLit := mkNatLit idx
+      let boundProof ← mkDecideProof (← mkLt (mkNatLit idx) (mkNatLit currentAtoms.size))
+      let pickProof := mkApp3 (mkConst ``EvmAsm.Rv64.seps_pick) listExpr idxLit boundProof
+      -- Recurse on tail
+      let newAtoms := (currentAtoms.extract 0 idx) ++ (currentAtoms.extract (idx + 1) currentAtoms.size)
+      let (tailProof, tailRhs) ← buildSepsPermAux newAtoms rhsAtoms (startIdx + 1)
+      -- tailProof : seps newAtoms = tailRhs (concrete chain)
+      -- Build: target ** seps newAtoms = target ** tailRhs
+      let sepConjTarget := mkApp (mkConst ``EvmAsm.Rv64.sepConj) target
+      let step2 ← mkCongrArg sepConjTarget tailProof
+      let rhs := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) target tailRhs
+      -- Chain: seps currentList = target ** seps newAtoms = target ** tailRhs
+      let pf ← mkEqTrans pickProof step2
+      return (pf, rhs)
+
 /-- The main permutation proof builder.
 
     Given LHS and RHS as sepConj chains with the same atoms
     (up to `isDefEq`), builds a proof of `LHS = RHS`.
-    Handles non-right-associated chains by first reassociating.
 
-    **Optimization**: flattens LHS once and passes the atom array through
-    recursion (avoiding O(n²) re-flattening). -/
+    **Strategy**: Uses `seps_pick` (bedrock2-style) for O(n) proof terms.
+    Each pick is a single lemma application; the kernel reduces `List.get`
+    and `List.eraseIdx` on concrete lists. Falls back to the O(n²) pick-chain
+    algorithm if the seps approach fails. -/
 partial def buildPermProof (lhs rhs : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.perm (fun _ => return m!"perm") do
   -- First reassociate both sides to right-associated form
   let (lhsRA, lhsPf) ← reassocProof lhs
   let (rhsRA, rhsPf) ← reassocProof rhs
-  -- Flatten LHS once (not per-atom)
+  -- Flatten both sides to atom arrays
   let lhsAtoms := (← flattenSepConj lhsRA).toArray
   let rhsAtoms := (← flattenSepConj rhsRA).toArray
-  -- Build permutation proof on right-associated forms
-  let permPf ← buildPermProofAux lhsRA lhsAtoms rhsAtoms
+  -- Try seps-based O(n) proof, fall back to O(n²) pick chain
+  let permPf ← try
+    -- Bridge: lhsRA = lhsRA ** empAssertion (= seps lhsAtoms by definition)
+    let (addEmpPf, _) ← buildAddEmpProof lhsRA
+    -- Permutation: seps lhsAtoms = rhs_with_emp (concrete chain ending in emp)
+    let (sepsPf, rhsWithEmp) ← buildSepsPermProof lhsAtoms rhsAtoms
+    -- Bridge: rhs_with_emp = rhsRA (remove empAssertion from concrete chain)
+    let (remEmpPf, _) ← buildRemoveEmpProof rhsWithEmp
+    -- Chain: lhsRA = lhsRA**emp = rhs**emp = rhsRA
+    let step ← mkEqTrans addEmpPf sepsPf
+    mkEqTrans step remEmpPf
+  catch e =>
+    trace[runBlock.perf.perm] "seps fast path failed ({lhsAtoms.size} atoms): {← e.toMessageData.toString}"
+    buildPermProofAux lhsRA lhsAtoms rhsAtoms
   -- Chain: lhs = lhsRA = rhsRA = rhs
   let step1 ← mkEqTrans lhsPf permPf
   let rhsPfSymm ← mkEqSymm rhsPf
