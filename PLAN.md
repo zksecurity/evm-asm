@@ -351,11 +351,12 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
   - NormA (normalize dividend): 21 instructions at base+312
   - CopyAU (copy a[] to u[]): 9 instructions at base+396
   - LoopSetup: 4 instructions, cpsBranch at base+432
-  - LoopBody (main Knuth D loop): 114 instructions at base+448 — the most complex phase
-    - Contains: trial_load, trial_max, mulsub (setup+partA+partB), correction_branch,
-      addback (init+partA+partB+final), sub_carry, store_qj, loop_control
-    - All sub-specs exist in DivModSpec but composing the full loop requires
-      loop invariant proof (inductive over j iterations)
+  - LoopBody (main Knuth D loop): 114 instructions at base+448 — **compositions complete (PR #132)**
+    - 20 sorry-free theorems in `LoopBody.lean`: trial phase (5), mulsub+correction (4),
+      addback+correction (3), store+loop (1), full loop body cpsBranch (4 paths + combined)
+    - `intro_lets` tactic added for selective let-binding expansion (xperm scaling fix)
+    - Combined spec unifies all 4 paths with existential postconditions
+    - Remaining: inductive loop spec (needs array-level sep logic for sliding window)
   - Denorm (denormalize remainder): 25 instructions at base+904
   - Epilogue (load quotient/remainder): 10 instructions at base+1004
   - div128 subroutine: 49 instructions at base+1068
@@ -655,7 +656,7 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 4. ~~Recreate `ByteSpec.lean`~~ — ✅ Done (Byte/Spec.lean + Byte/LimbSpec.lean, stack-level spec)
 
 **Short-term (enables simple contracts):**
-5. Phase 4.2: DIV, MOD — in progress (69 LimbSpecs + 6 compositions proved, remaining: Phase B cascade variants, CLZ+, loop body, full path merge)
+5. Phase 4.2: DIV, MOD — in progress (69 LimbSpecs + 6 compositions + 20 loop body compositions proved, remaining: Phase B cascade variants, CLZ+, other phases, full path merge)
 6. Phase 5: MLOAD, MSTORE, EVM memory model
 7. Phase 5.1: EVM code region (needed for PUSHn and interpreter)
 
