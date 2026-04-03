@@ -348,12 +348,17 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     - `divK_clz_spec` at base+116→base+212, `clzResult` function for postcondition
     - Combined stage specs avoid exponential branching via conditional postconditions
 
+  - Phase C2 ✅: shift check cpsBranch (4 instrs, base+212)
+    - `divK_phaseC2_ntaken_spec` (shift≠0 → normB), `divK_phaseC2_taken_spec` (shift=0 → copyAU)
+  - NormB ✅: normalize divisor (21 instrs, base+228), `divK_normB_full_spec`
+  - NormA ✅: normalize dividend (21 instrs + JAL, base+312→base+432), `divK_normA_full_spec`
+  - CopyAU ✅: copy a[]→u[] (9 instrs, base+396), `divK_copyAU_full_spec`
+
+  - LoopSetup ✅: cpsBranch (4 instrs, base+432)
+    - `divK_loopSetup_ntaken_spec` (m≥0 → loop body), `divK_loopSetup_taken_spec` (m<0 → denorm)
+  - DIV Epilogue ✅: load q[0..3] + store to output (10 instrs, base+1004), `divK_div_epilogue_spec`
+
   **Remaining compositions (b≠0 non-zero path):**
-  - Phase C2 (check n≥2): 4 instructions, cpsBranch at base+212→base+228
-  - NormB (normalize divisor): 21 instructions at base+228
-  - NormA (normalize dividend): 21 instructions at base+312
-  - CopyAU (copy a[] to u[]): 9 instructions at base+396
-  - LoopSetup: 4 instructions, cpsBranch at base+432
   - LoopBody (main Knuth D loop): 114 instructions at base+448 — **compositions complete (PR #132)**
     - 20 sorry-free theorems in `LoopBody.lean`: trial phase (5), mulsub+correction (4),
       addback+correction (3), store+loop (1), full loop body cpsBranch (4 paths + combined)
