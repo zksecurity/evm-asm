@@ -212,6 +212,38 @@ private theorem phB_t_20 (base : Addr) : (base + 96 : Addr) + 20 = base + 116 :=
 private theorem phB_sp24_32 (sp : Addr) : (sp + (24 : Addr) + (32 : Addr)) = sp + 56 := by bv_omega
 
 -- ============================================================================
+-- Section 6b: Opaque memory bundle for phaseB invariant cells
+-- These 7 memory cells are zeroed by init1 and stay zero throughout phaseB.
+-- Bundling them reduces the atom count for xperm matching.
+-- ============================================================================
+
+/-- The 7 memory cells zeroed by phaseB init1 (q[0..3] + u[5..7]).
+    Marked @[irreducible] so xperm treats this as 1 opaque atom, not 7. -/
+@[irreducible]
+def phaseB_zeroed_mem (sp : Addr) : Assertion :=
+  ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word))
+
+/-- Fold 7 individual memory-zero assertions into the opaque bundle. -/
+theorem phaseB_zeroed_mem_fold (sp : Addr) :
+    (((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word))) = phaseB_zeroed_mem sp := by
+  delta phaseB_zeroed_mem; rfl
+
+/-- Unfold the opaque bundle back to 7 individual assertions. -/
+theorem phaseB_zeroed_mem_unfold (sp : Addr) :
+    phaseB_zeroed_mem sp =
+    (((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word))) := by
+  delta phaseB_zeroed_mem; rfl
+
+-- ============================================================================
 -- Section 7: Zero path composition (b = 0)
 -- Phase A body → BEQ(taken) → zeroPath → exit
 -- ============================================================================
@@ -374,32 +406,12 @@ theorem evm_div_phaseB_n4_spec (sp base : Addr)
   have hinit2_raw := divK_phaseB_init2_spec sp (base + 60) b1 b2 v6 v7 hvalid
   simp only [phB_i2_8] at hinit2_raw
   have hinit2 := cpsTriple_extend_code (divK_phaseB_init2_code_sub_divCode base) hinit2_raw
-  have hinit2f := cpsTriple_frame_left _ _ _ _ _
-    ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
-     ((sp + 56) ↦ₘ b3) **
-     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem))
-    (by pcFree) hinit2
-  have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hinit1f hinit2f
+  seqFrame hinit1f hinit2
   -- ---- Step 3: ADDI x5 x0 4 at base+68 → base+72
   have haddi_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
   simp only [phB_addi_4, divK_se12_4] at haddi_raw
   have haddi := cpsTriple_extend_code (addi_x5_singleton_sub_divCode base) haddi_raw
-  have haddif := cpsTriple_frame_left _ _ _ _ _
-    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
-     ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
-     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem))
-    (by pcFree) haddi
-  have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h12 haddif
+  seqFrame hinit1fhinit2 haddi
   -- ---- Step 4: BNE x10 x0 24 at base+72, elim ntaken (b3=0 absurd)
   have hbne_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Addr) + signExtend13 24 = base + 96 from by
@@ -409,17 +421,7 @@ theorem evm_div_phaseB_n4_spec (sp base : Addr)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hb3nz)
   have hbne := cpsTriple_extend_code (bne_x10_singleton_sub_divCode base) hbne_clean
-  have hbnef := cpsTriple_frame_left _ _ _ _ _
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (4 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
-     ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
-     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem))
-    (by pcFree) hbne
-  have h1234 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123 hbnef
+  seqFrame hinit1fhinit2haddi hbne
   -- ---- Step 5: Tail (base+96 → base+116) — store n=4, load leading limb b[3]
   have hv_limb : isValidDwordAccess
       ((sp + ((4 : Word) + signExtend12 (4095 : BitVec 12)) <<< (3 : BitVec 6).toNat)
@@ -429,21 +431,12 @@ theorem evm_div_phaseB_n4_spec (sp base : Addr)
   have htail_raw := divK_phaseB_tail_spec sp (4 : Word) b3 n_mem (base + 96) hv_n hv_limb
   simp only [phB_t_20, divK_phaseB_n4_nm1_x8, divK_se12_32, phB_sp24_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_divCode base) htail_raw
-  have htailf := cpsTriple_frame_left _ _ _ _ _
-    ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
-     ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) **
-     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 4000) ↦ₘ (0 : Word)))
-    (by pcFree) htail
-  have hphaseB := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1234 htailf
+  seqFrame hinit1fhinit2haddihbne htail
   -- ---- Step 6: Final consequence — permute assertions
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
-    hphaseB
+    hinit1fhinit2haddihbnehtail
 
 -- ============================================================================
 -- Section 10: Phase A + Phase B n=4 composition (b≠0, b[3]≠0)

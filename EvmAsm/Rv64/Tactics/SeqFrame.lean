@@ -1026,18 +1026,31 @@ elab "seqFrame" h1:ident h2:ident : tactic => withMainContext do
   let h2Expr ← elabTerm h2 none
   let result ← seqFrameCore h1Expr h2Expr
   let goal ← getMainGoal
-  -- Try to close the goal
-  try
-    assignOrPermute goal result
-    replaceMainGoal []
-  catch e =>
-    Lean.logWarning m!"seqFrame: could not close goal: {← e.toMessageData.toString}"
-    -- Introduce as a named hypothesis
+  let goalType ← goal.getType
+  -- Fast check: can we plausibly close the goal?
+  let isCpsGoal := (← parseCpsTriple? goalType).isSome
+  let canClose ← if isCpsGoal then Pure.pure true else do
+    let resultType ← inferType result
+    withoutModifyingState (isDefEq goalType resultType)
+  if canClose then
+    try
+      assignOrPermute goal result
+      replaceMainGoal []
+    catch e =>
+      Lean.logWarning m!"seqFrame: could not close goal: {← e.toMessageData.toString}"
+      -- Introduce as a named hypothesis
+      let name := Name.mkSimple s!"{h1.getId}{h2.getId}"
+      let fvarId ← liftMetaTacticAux (α := FVarId) fun mvarId => do
+        let (fvarId, mvarId) ← mvarId.note name result
+        return (fvarId, [mvarId])
+      withMainContext do
+        Term.addLocalVarInfo (mkIdent name) (.fvar fvarId)
+  else
+    -- Goal is not a cpsTriple — silently introduce as named hypothesis
     let name := Name.mkSimple s!"{h1.getId}{h2.getId}"
     let fvarId ← liftMetaTacticAux (α := FVarId) fun mvarId => do
       let (fvarId, mvarId) ← mvarId.note name result
       return (fvarId, [mvarId])
-    -- Register name in elaboration context so subsequent tactics can find it
     withMainContext do
       Term.addLocalVarInfo (mkIdent name) (.fvar fvarId)
 

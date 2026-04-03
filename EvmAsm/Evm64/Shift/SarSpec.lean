@@ -16,8 +16,6 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Rv64
 
-set_option maxHeartbeats 800000
-
 -- ============================================================================
 -- Per-limb Specs: SAR Last Limb (3 instructions)
 -- ============================================================================
