@@ -85,13 +85,26 @@ elab "intro_lets" "at" h:ident : tactic => withMainContext do
     -- Instantiate let-binding value (resolve mvars, but don't expand defs)
     let value ← mvarId.withContext (instantiateMVars value)
     let binderType ← mvarId.withContext (instantiateMVars binderType)
-    -- Add local let-definition: `name : binderType := value`
-    mvarId ← mvarId.define name binderType value
-    -- Introduce the new definition into the context
-    let (newFvar, mvarId') ← mvarId.intro1
-    mvarId := mvarId'
-    -- Update ty: substitute bvar 0 (the let-bound variable) with the new fvar
-    ty := _body.instantiate1 (.fvar newFvar)
+    -- Check if a local let-def with the same name already exists
+    let existingFvar? ← mvarId.withContext do
+      let lctx ← getLCtx
+      for decl in lctx do
+        if decl.userName == name then
+          if decl.isLet then
+            -- Found existing let-def with same name; check if value matches
+            if ← isDefEq decl.value value then
+              return some decl.fvarId
+      return none
+    match existingFvar? with
+    | some existingFvarId =>
+      -- Reuse existing let-def (avoids name collision like u_base vs u_base✝)
+      ty := _body.instantiate1 (.fvar existingFvarId)
+    | none =>
+      -- Add new local let-definition: `name : binderType := value`
+      mvarId ← mvarId.define name binderType value
+      let (newFvar, mvarId') ← mvarId.intro1
+      mvarId := mvarId'
+      ty := _body.instantiate1 (.fvar newFvar)
     ty ← mvarId.withContext (instantiateMVars ty)
   -- Re-lookup h in the (potentially updated) context
   let hDecl' ← mvarId.withContext (getLocalDeclFromUserName hName)

@@ -1294,20 +1294,14 @@ theorem divK_trial_max_full_spec
     STLfntaken_cleanTM
 
 -- ============================================================================
--- Section 12: Notes on full loop body composition
--- The full loop body cpsBranch chains trial_max_full (or trial_call_full)
--- → mulsub_correction_skip (or _addback) → store_loop.
--- The final seqFrame + xperm_hyp hits a scaling limit: after dsimp expands
--- all let-bindings, the assertion atoms contain fully-inlined computation
--- chains that xperm can't match syntactically against the target postcondition.
--- Resolution: either use abbreviations for intermediate results, or use
--- isDefEq-based matching in the permutation step.
--- All 13 intermediate building blocks are proved with 0 sorry.
+-- Section 12: Full loop body cpsBranch (BLTU not-taken, BEQ skip path)
+-- Uses intro_lets instead of dsimp to preserve let-bound abbreviations.
 -- ============================================================================
 
-/-
--- Blocked by xperm scaling on 24+ atom chains with expanded let-bindings.
--- The individual pieces are all proved; the composition is a tooling issue.
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 6400000 in
+/-- Full loop body (BLTU ntaken + BEQ skip): trial quotient MAX path + mulsub (no addback)
+    + store q[j] + loop control. Entry: base+448, cpsBranch to base+448/904. -/
 theorem divK_loop_body_max_skip_spec
     (sp j n j_old v5_old v6_old v7_old v10_old v11_old v2_old
      u_hi u_lo v_top v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -1415,16 +1409,17 @@ theorem divK_loop_body_max_skip_spec
   -- 1. Trial max full (base+448 → base+516)
   have TF := divK_trial_max_full_spec sp j n j_old v5_old v6_old v7_old v10_old v11_old u_hi u_lo v_top
     base hv_j hv_n1 hv_uhi hv_ulo hv_vtop hbltu
-  dsimp only [] at TF
+  intro_lets at TF
   -- 2. Mulsub + correction skip (base+516 → base+880)
   have MCS := divK_mulsub_correction_skip_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
     j u_lo vtop_base u_hi v_top v2_old base
     hv_j hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4
-  dsimp only [] at MCS hborrow
+  intro_lets at MCS
+  intro_lets at hborrow
   have MCS0 := MCS hborrow
   -- 3. Store loop cpsBranch (base+880 → base+448/904)
   have SL := divK_store_loop_spec sp j q_hat u4_new (0 : Word) q_old base hv_q
-  dsimp only [] at SL
+  intro_lets at SL
   -- 4. Frame TF with mulsub memory + x2
   have TFf := cpsTriple_frame_left _ _ _ _ _
     ((.x2 ↦ᵣ v2_old) **
@@ -1437,34 +1432,30 @@ theorem divK_loop_body_max_skip_spec
     (by pcFree) TF
   -- 5. Compose TF + MCS0
   seqFrame TFf MCS0
-  -- 6. Frame MCS result with trial_load memory + q_addr
-  -- Then compose with store_loop cpsBranch
-  have pre_store := cpsTriple_frame_left _ _ _ _ _
-    ((sp + signExtend12 3984 ↦ₘ n) **
-     (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo) **
-     (vtop_base + signExtend12 32 ↦ₘ v_top))
-    (by pcFree) TFfMCS0
-  -- Frame store_loop with big frame, then reshape via consequence
+  -- 6. TFfMCS0 already contains trial_load memory (from TF postcondition).
+  -- No additional framing needed. Use TFfMCS0 directly as pre_store.
+  let pre_store := TFfMCS0
+  -- 7. Frame store_loop with ALL remaining atoms
   have SLf := cpsBranch_frame_left _ _ _ _ _ _ _
     ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
-     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
-     (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo) **
-     (vtop_base + signExtend12 32 ↦ₘ v_top) **
+     (sp + signExtend12 3976 ↦ₘ j) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3) **
-     ((u_base + signExtend12 4064) ↦ₘ u4_new))
+     ((u_base + signExtend12 4064) ↦ₘ u4_new) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (u_addr ↦ₘ u_hi) ** ((u_addr + 8) ↦ₘ u_lo) **
+     (vtop_base + signExtend12 32 ↦ₘ v_top))
     (by pcFree) SL
-  -- 7. Compose pre_store (cpsTriple) with SLf (cpsBranch)
+  -- 8. Compose pre_store (cpsTriple) with SLf (cpsBranch)
   have full := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) pre_store SLf
-  -- 8. Permute final cpsBranch to match target
+  -- 9. Permute final cpsBranch to match target
   exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp)
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
--/
 
 end EvmAsm.Rv64
