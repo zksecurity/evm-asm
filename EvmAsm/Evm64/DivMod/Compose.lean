@@ -920,4 +920,85 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Addr)
     (fun h hq => by xperm_hyp hq)
     h12345
 
+-- ============================================================================
+-- Section 9: CLZ (Count Leading Zeros) composition
+-- 24 instructions at base+116, 6-stage binary search.
+-- Computes leading zero count in x6, shifts x5 left by that count.
+-- ============================================================================
+
+/-- CLZ code (block 2) is subsumed by divCode. -/
+private theorem divK_clz_code_sub_divCode (base : Addr) :
+    ∀ a i, (CodeReq.ofProg (base + 116) divK_clz) a = some i →
+      (divCode base) a = some i := by
+  unfold divCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- Helper: CLZ stage at instruction index k is subsumed by divCode.
+    The stage has 4 instructions starting at index k of divK_clz. -/
+private theorem clz_stage_sub (base : Addr)
+    (K M_s : BitVec 6) (M_a : BitVec 12) (k : Nat)
+    (hk : k + (divK_clz_stage_prog K M_s M_a).length ≤ divK_clz.length)
+    (hslice : (divK_clz.drop k).take (divK_clz_stage_prog K M_s M_a).length =
+      divK_clz_stage_prog K M_s M_a)
+    (hbound : 4 * divK_clz.length < 2 ^ 64) :
+    ∀ a i, (divK_clz_stage_code K M_s M_a ((base + 116) + BitVec.ofNat 64 (4 * k))) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  exact divK_clz_code_sub_divCode base a i
+    (CodeReq.ofProg_mono_sub (base + 116) _ divK_clz _ k
+      rfl hslice hk hbound a i h)
+
+/-- Helper: CLZ last stage at instruction index k is subsumed by divCode.
+    The last stage has 3 instructions. -/
+private theorem clz_last_sub (base : Addr) (k : Nat)
+    (hk : k + divK_clz_last_prog.length ≤ divK_clz.length)
+    (hslice : (divK_clz.drop k).take divK_clz_last_prog.length = divK_clz_last_prog)
+    (hbound : 4 * divK_clz.length < 2 ^ 64) :
+    ∀ a i, (divK_clz_last_code ((base + 116) + BitVec.ofNat 64 (4 * k))) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  exact divK_clz_code_sub_divCode base a i
+    (CodeReq.ofProg_mono_sub (base + 116) _ divK_clz _ k
+      rfl hslice hk hbound a i h)
+
+/-- Helper: CLZ init singleton (ADDI x6 x0 0 at base+116) is subsumed by divCode. -/
+private theorem clz_init_sub (base : Addr) :
+    ∀ a i, (CodeReq.singleton (base + 116) (.ADDI .x6 .x0 0)) a = some i →
+      (divCode base) a = some i := by
+  intro a i h
+  exact divK_clz_code_sub_divCode base a i
+    (CodeReq.singleton_mono (CodeReq.ofProg_lookup (base + 116) divK_clz 0
+      (by native_decide) (by native_decide)) a i (by rwa [show (base + 116 : Addr) =
+        base + 116 + BitVec.ofNat 64 (4 * 0) from by bv_omega] at h))
+
+-- CLZ stage parameters: (SRLI_K, SLLI_M_s, ADDI_M_a, instruction_index)
+-- Stage 0: K=32, M_s=32, M_a=32, index 1 (after init at index 0)
+-- Stage 1: K=48, M_s=16, M_a=16, index 5
+-- Stage 2: K=56, M_s=8,  M_a=8,  index 9
+-- Stage 3: K=60, M_s=4,  M_a=4,  index 13
+-- Stage 4: K=62, M_s=2,  M_a=2,  index 17
+-- Stage 5 (last): K=63, M_a=1,   index 21
+
+/-- CLZ result function: compute (count, shifted_val) from a 6-stage binary search. -/
+noncomputable def clzResult (val : Word) : Word × Word :=
+  -- Stage 0: check top 32 bits
+  let (v0, c0) := if val >>> (32 : BitVec 6).toNat ≠ 0 then (val, signExtend12 (0 : BitVec 12))
+    else (val <<< (32 : BitVec 6).toNat, signExtend12 (32 : BitVec 12))
+  -- Stage 1: check bits 48..63 of current value
+  let (v1, c1) := if v0 >>> (48 : BitVec 6).toNat ≠ 0 then (v0, c0)
+    else (v0 <<< (16 : BitVec 6).toNat, c0 + signExtend12 (16 : BitVec 12))
+  -- Stage 2: check bits 56..63
+  let (v2, c2) := if v1 >>> (56 : BitVec 6).toNat ≠ 0 then (v1, c1)
+    else (v1 <<< (8 : BitVec 6).toNat, c1 + signExtend12 (8 : BitVec 12))
+  -- Stage 3: check bits 60..63
+  let (v3, c3) := if v2 >>> (60 : BitVec 6).toNat ≠ 0 then (v2, c2)
+    else (v2 <<< (4 : BitVec 6).toNat, c2 + signExtend12 (4 : BitVec 12))
+  -- Stage 4: check bits 62..63
+  let (v4, c4) := if v3 >>> (62 : BitVec 6).toNat ≠ 0 then (v3, c3)
+    else (v3 <<< (2 : BitVec 6).toNat, c3 + signExtend12 (2 : BitVec 12))
+  -- Stage 5 (last): check bit 63
+  let c5 := if v4 >>> (63 : Nat) ≠ 0 then c4 else c4 + signExtend12 (1 : BitVec 12)
+  (c5, v4)
+
 end EvmAsm.Rv64
