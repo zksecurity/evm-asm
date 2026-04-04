@@ -10,11 +10,11 @@ namespace EvmAsm.Rv64
 
 /-- CodeReq for the 256-bit EVM OR operation.
     17 instructions = 68 bytes. 4 per-limb OR blocks + ADDI sp adjustment. -/
-abbrev evm_or_code (base : Addr) : CodeReq :=
+abbrev evm_or_code (base : Word) : CodeReq :=
   CodeReq.ofProg base evm_or
 
 /-- Full 256-bit EVM OR: composes 4 per-limb OR specs + sp adjustment. -/
-theorem evm_or_spec (sp base : Addr)
+theorem evm_or_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
     let code := evm_or_code base
@@ -33,32 +33,32 @@ theorem evm_or_spec (sp base : Addr)
   runBlock L0 L1 L2 L3 LADDI
 
 /-- Stack-level 256-bit EVM OR. -/
-theorem evm_or_stack_spec (sp base : Addr)
+theorem evm_or_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 : Word)
     (hvalid : ValidMemRange sp 8) :
     let code := evm_or_code base
     cpsTriple base (base + 68) code
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        evmWordIs sp a ** evmWordIs (sp + 32) b)
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a.getLimb 3 ||| b.getLimb 3)) ** (.x6 ↦ᵣ b.getLimb 3) **
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a.getLimbN 3 ||| b.getLimbN 3)) ** (.x6 ↦ᵣ b.getLimbN 3) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a ||| b)) := by
   have h_main := evm_or_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       simp only [evmWordIs] at hp
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_or]
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      simp only [evmWordIs, EvmWord.getLimbN_or]
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
       xperm_hyp hq)
     h_main

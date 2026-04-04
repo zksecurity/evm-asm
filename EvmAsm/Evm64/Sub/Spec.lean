@@ -14,14 +14,14 @@ namespace EvmAsm.Rv64
 
 /-- CodeReq for the 256-bit EVM SUB operation.
     30 instructions = 120 bytes. 4 per-limb SUB blocks + ADDI sp adjustment. -/
-abbrev evm_sub_code (base : Addr) : CodeReq :=
+abbrev evm_sub_code (base : Word) : CodeReq :=
   CodeReq.ofProg base evm_sub
 
 /-- Full 256-bit EVM SUB: composes 4 per-limb SUB specs + ADDI sp adjustment.
     30 instructions total. Pops 2 stack words (A at sp, B at sp+32),
     writes A - B to sp+32..sp+56, advances sp by 32.
     Borrow propagates through limbs via x5. -/
-theorem evm_sub_spec (sp : Addr) (base : Addr)
+theorem evm_sub_spec (sp : Word) (base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
@@ -65,13 +65,13 @@ theorem evm_sub_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 /-- Stack-level 256-bit EVM SUB: operates on two EvmWords via evmWordIs. -/
-theorem evm_sub_stack_spec (sp base : Addr)
+theorem evm_sub_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let a0 := a.getLimb 0; let b0 := b.getLimb 0
-    let a1 := a.getLimb 1; let b1 := b.getLimb 1
-    let a2 := a.getLimb 2; let b2 := b.getLimb 2
-    let a3 := a.getLimb 3; let b3 := b.getLimb 3
+    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
+    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
+    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
+    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
     let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
     let _diff0 := a0 - b0
     let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
@@ -100,25 +100,27 @@ theorem evm_sub_stack_spec (sp base : Addr)
        evmWordIs sp a ** evmWordIs (sp + 32) (a - b)) := by
   intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 diff0 borrow1a temp1 borrow1b result1 borrow1 borrow2a temp2 borrow2b result2 borrow2 borrow3a temp3 borrow3b result3 borrow3
   have h_main := evm_sub_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11 hvalid
   -- Get the borrow chain correctness
   have ⟨h0, h1, h2, h3⟩ := EvmWord.sub_borrow_chain_correct a b
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       simp only [evmWordIs] at hp
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
       simp only [evmWordIs]
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
+      simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                 EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3] at h0 h1 h2 h3
       rw [h0, h1, h2, h3]
       xperm_hyp hq)
     h_main

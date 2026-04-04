@@ -19,7 +19,7 @@ namespace EvmAsm.Rv64
 
 /-- CodeReq for the 256-bit EVM SLT operation.
     25 instructions = 100 bytes. MSB signed compare + lower borrow chain + store. -/
-abbrev evm_slt_code (base : Addr) : CodeReq :=
+abbrev evm_slt_code (base : Word) : CodeReq :=
   CodeReq.ofProg base evm_slt
 
 /-- Full 256-bit EVM SLT: SLT(a, b) = 1 iff a <s b (signed).
@@ -28,7 +28,7 @@ abbrev evm_slt_code (base : Addr) : CodeReq :=
     Pops 2 stack words (A at sp, B at sp+32),
     writes result to sp+32..sp+56, advances sp by 32.
     25 instructions = 100 bytes total. -/
-theorem evm_slt_spec (sp : Addr) (base : Addr)
+theorem evm_slt_spec (sp : Word) (base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
@@ -70,7 +70,7 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
     have M := slt_msb_load_spec 24 56 sp a3 a3 v7 v6 base (by validMem) (by validMem)
     -- BEQ taken (a3 = a3)
     have B := beq_eq_spec .x7 .x6 (12 : BitVec 13) a3 (base + 8)
-    have hsig13 : signExtend13 (12 : BitVec 13) = (12 : Addr) := by native_decide
+    have hsig13 : signExtend13 (12 : BitVec 13) = (12 : Word) := by native_decide
     simp only [hsig13] at B
     -- Lower limb borrow chain
     have L0 := lt_limb0_spec 0 32 sp a0 b0 a3 a3 v5 (base + 20) (by validMem) (by validMem)
@@ -94,7 +94,7 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
     have S := slt_spec_gen .x5 .x7 .x6 v5 a3 b3 (base + 12) (by nofun)
     -- JAL to store
     have J := jal_x0_spec_gen (64 : BitVec 21) (base + 16)
-    have hsig21 : signExtend21 (64 : BitVec 21) = (64 : Addr) := by native_decide
+    have hsig21 : signExtend21 (64 : BitVec 21) = (64 : Word) := by native_decide
     simp only [hsig21] at J
     -- Store phase
     have A := addi_spec_gen_same .x12 sp 32 (base + 80) (by nofun)
@@ -110,22 +110,22 @@ theorem evm_slt_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 /-- Stack-level 256-bit EVM SLT: operates on two EvmWords via evmWordIs. -/
-theorem evm_slt_stack_spec (sp base : Addr)
+theorem evm_slt_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
     -- Lower 3 limbs borrow chain (used when MSB limbs equal)
-    let borrow0 := if BitVec.ult (a.getLimb 0) (b.getLimb 0) then (1 : Word) else 0
-    let borrow1a := if BitVec.ult (a.getLimb 1) (b.getLimb 1) then (1 : Word) else 0
-    let temp1 := a.getLimb 1 - b.getLimb 1
+    let borrow0 := if BitVec.ult (a.getLimbN 0) (b.getLimbN 0) then (1 : Word) else 0
+    let borrow1a := if BitVec.ult (a.getLimbN 1) (b.getLimbN 1) then (1 : Word) else 0
+    let temp1 := a.getLimbN 1 - b.getLimbN 1
     let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
     let borrow1 := borrow1a ||| borrow1b
-    let borrow2a := if BitVec.ult (a.getLimb 2) (b.getLimb 2) then (1 : Word) else 0
-    let temp2 := a.getLimb 2 - b.getLimb 2
+    let borrow2a := if BitVec.ult (a.getLimbN 2) (b.getLimbN 2) then (1 : Word) else 0
+    let temp2 := a.getLimbN 2 - b.getLimbN 2
     let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
     let borrow2 := borrow2a ||| borrow2b
     -- Signed comparison of MSB limbs
-    let slt_msb := if BitVec.slt (a.getLimb 3) (b.getLimb 3) then (1 : Word) else 0
-    let result := if a.getLimb 3 = b.getLimb 3 then borrow2 else slt_msb
+    let slt_msb := if BitVec.slt (a.getLimbN 3) (b.getLimbN 3) then (1 : Word) else 0
+    let result := if a.getLimbN 3 = b.getLimbN 3 then borrow2 else slt_msb
     let code := evm_slt_code base
     cpsTriple base (base + 100) code
       (-- Registers + memory
@@ -133,35 +133,37 @@ theorem evm_slt_stack_spec (sp base : Addr)
        evmWordIs sp a ** evmWordIs (sp + 32) b)
       (-- Registers + memory (updated)
        (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ (if a.getLimb 3 = b.getLimb 3 then temp2 else a.getLimb 3)) **
-       (.x6 ↦ᵣ (if a.getLimb 3 = b.getLimb 3 then borrow2b else b.getLimb 3)) **
+       (.x7 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then temp2 else a.getLimbN 3)) **
+       (.x6 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2b else b.getLimbN 3)) **
        (.x5 ↦ᵣ result) **
-       (.x11 ↦ᵣ (if a.getLimb 3 = b.getLimb 3 then borrow2a else v11)) **
+       (.x11 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2a else v11)) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt a b then 1 else 0)) := by
   intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 slt_msb result
   have h_main := evm_slt_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       simp only [evmWordIs] at hp
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
       unfold evmWordIs
-      simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show ¬((1 : Fin 4) = 0) from by decide,
-                 show ¬((2 : Fin 4) = 0) from by decide,
-                 show ¬((3 : Fin 4) = 0) from by decide,
+      simp only [EvmWord.getLimbN_ite, EvmWord.getLimbN_one, EvmWord.getLimbN_zero,
+                 show ¬((1 : Nat) = 0) from by decide,
+                 show ¬((2 : Nat) = 0) from by decide,
+                 show ¬((3 : Nat) = 0) from by decide,
                  ite_true, ite_false, ite_self,
                  ← EvmWord.slt_result_correct a b]
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                 EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3]
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
       xperm_hyp hq)
     h_main

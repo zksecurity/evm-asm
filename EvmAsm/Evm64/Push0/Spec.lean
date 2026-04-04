@@ -16,7 +16,7 @@ namespace EvmAsm.Rv64
 set_option maxHeartbeats 6400000 in
 /-- PUSH0: writes 4 zero limbs at nsp, moves SP backward by 32.
     5 instructions = 20 bytes. nsp is the NEW stack pointer (after decrement). -/
-theorem evm_push0_spec (nsp base : Addr)
+theorem evm_push0_spec (nsp base : Word)
     (d0 d1 d2 d3 : Word)
     (hvalid : ValidMemRange nsp 4) :
     let code := evm_push0_code base
@@ -35,7 +35,7 @@ theorem evm_push0_spec (nsp base : Addr)
   runBlock LADDI L0 L1 L2 L3
 
 /-- PUSH0 stack spec: pushes EvmWord 0 onto stack. -/
-theorem evm_push0_stack_spec (nsp base : Addr)
+theorem evm_push0_stack_spec (nsp base : Word)
     (d0 d1 d2 d3 : Word) (rest : List EvmWord)
     (hvalid : ValidMemRange nsp 4) :
     let code := evm_push0_code base
@@ -46,7 +46,7 @@ theorem evm_push0_stack_spec (nsp base : Addr)
       ((.x12 ↦ᵣ nsp) ** evmWordIs nsp 0 ** evmStackIs (nsp + 32) rest) :=
   cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by simp only [evmWordIs, EvmWord.getLimb_zero]; xperm_hyp hq)
+    (fun h hq => by simp only [evmWordIs, EvmWord.getLimbN_zero]; xperm_hyp hq)
     (cpsTriple_frame_left _ _ _ _ _
       (evmStackIs (nsp + 32) rest)
       (by exact pcFree_evmStackIs (nsp + 32) rest)

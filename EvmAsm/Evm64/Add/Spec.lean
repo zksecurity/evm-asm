@@ -14,14 +14,14 @@ namespace EvmAsm.Rv64
 
 /-- CodeReq for the 256-bit EVM ADD operation.
     30 instructions = 120 bytes. 4 per-limb ADD blocks + ADDI sp adjustment. -/
-abbrev evm_add_code (base : Addr) : CodeReq :=
+abbrev evm_add_code (base : Word) : CodeReq :=
   CodeReq.ofProg base evm_add
 
 /-- Full 256-bit EVM ADD: composes 4 per-limb ADD specs + ADDI sp adjustment.
     30 instructions total. Pops 2 stack words (A at sp, B at sp+32),
     writes A + B to sp+32..sp+56, advances sp by 32.
     Carry propagates through limbs via x5. -/
-theorem evm_add_spec (sp : Addr) (base : Addr)
+theorem evm_add_spec (sp : Word) (base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
@@ -65,13 +65,13 @@ theorem evm_add_spec (sp : Addr) (base : Addr)
 -- ============================================================================
 
 /-- Stack-level 256-bit EVM ADD: operates on two EvmWords via evmWordIs. -/
-theorem evm_add_stack_spec (sp base : Addr)
+theorem evm_add_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let a0 := a.getLimb 0; let b0 := b.getLimb 0
-    let a1 := a.getLimb 1; let b1 := b.getLimb 1
-    let a2 := a.getLimb 2; let b2 := b.getLimb 2
-    let a3 := a.getLimb 3; let b3 := b.getLimb 3
+    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
+    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
+    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
+    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
     let sum0 := a0 + b0
     let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
     let psum1 := a1 + b1
@@ -100,25 +100,27 @@ theorem evm_add_stack_spec (sp base : Addr)
        evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
   intro a0 b0 a1 b1 a2 b2 a3 b3 sum0 carry0 psum1 carry1a result1 carry1b carry1 psum2 carry2a result2 carry2b carry2 psum3 carry3a result3 carry3b carry3
   have h_main := evm_add_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11 hvalid
   -- Get the carry chain correctness
   have ⟨h0, h1, h2, h3⟩ := EvmWord.add_carry_chain_correct a b
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       simp only [evmWordIs] at hp
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
       simp only [evmWordIs]
-      have : (sp : Addr) + 32 + 8 = sp + 40 := by bv_omega
-      have : (sp : Addr) + 32 + 16 = sp + 48 := by bv_omega
-      have : (sp : Addr) + 32 + 24 = sp + 56 := by bv_omega
+      have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
+      have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
+      have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›]
+      simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                 EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3] at h0 h1 h2 h3
       rw [h0, h1, h2, h3]
       xperm_hyp hq)
     h_main

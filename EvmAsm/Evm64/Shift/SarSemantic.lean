@@ -23,7 +23,7 @@ private theorem regIs_to_regOwn' (r : Reg) (v : Word) : ∀ h, (r ↦ᵣ v) h �
   fun _ hp => ⟨v, hp⟩
 
 /-- Weaken: sign-fill result + frame regs → evmWordIs sign_fill + regOwn. -/
-private theorem sar_sign_fill_evmWord_weaken (sp : Addr) (s0 s1 s2 s3 r6 r7 r11 sign_ext : Word) :
+private theorem sar_sign_fill_evmWord_weaken (sp : Word) (s0 s1 s2 s3 r6 r7 r11 sign_ext : Word) :
     ∀ h,
     ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
      (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
@@ -56,7 +56,7 @@ private theorem sar_sign_fill_evmWord_weaken (sp : Addr) (s0 s1 s2 s3 r6 r7 r11 
 
 /-- Compose one sign-fill case into evmWordIs form.
     Shared proof structure for both high-limbs and s0≥256 cases. -/
-private theorem sar_sign_fill_lift (sp base : Addr)
+private theorem sar_sign_fill_lift (sp base : Word)
     (shift value : EvmWord) (r5 r6 r7 r10 r11 : Word)
     (_hvalid : ValidMemRange sp 8)
     (hmain : cpsTriple base (base + 380) (sarCode base)
@@ -106,17 +106,23 @@ private theorem sar_sign_fill_lift (sp base : Addr)
       hframed
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
-      have ha40 : (sp + 32 : Addr) + 8 = sp + 40 := by bv_omega
-      have ha48 : (sp + 32 : Addr) + 16 = sp + 48 := by bv_omega
-      have ha56 : (sp + 32 : Addr) + 24 = sp + 56 := by bv_omega
+      simp only [evmWordIs, ← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                 ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3] at hp
+      have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
+      have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
+      have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
       simp only [ha40, ha48, ha56] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_fromLimbs_const]
-      have ha40 : (sp + 32 : Addr) + 8 = sp + 40 := by bv_omega
-      have ha48 : (sp + 32 : Addr) + 16 = sp + 48 := by bv_omega
-      have ha56 : (sp + 32 : Addr) + 24 = sp + 56 := by bv_omega
+      simp only [evmWordIs, EvmWord.getLimbN_fromLimbs_const,
+                 show (0 : Nat) < 4 from by decide, show (1 : Nat) < 4 from by decide,
+                 show (2 : Nat) < 4 from by decide, show (3 : Nat) < 4 from by decide,
+                 ite_true]
+      simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                 ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+      have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
+      have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
+      have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
       simp only [ha40, ha48, ha56]
       have hq' : ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
          (sp ↦ₘ shift.getLimb 0) ** ((sp + 8) ↦ₘ shift.getLimb 1) **
@@ -139,7 +145,7 @@ set_option maxHeartbeats 1600000 in
     Given shift and value as EvmWords on the stack, produces:
     - `fromLimbs (fun _ => sshiftRight (value.getLimb 3) 63)` when shift ≥ 256
     - `sshiftRight value shift.toNat` when shift < 256 -/
-theorem evm_sar_stack_spec (sp base : Addr)
+theorem evm_sar_stack_spec (sp base : Word)
     (shift value : EvmWord) (r5 r6 r7 r10 r11 : Word)
     (hvalid : ValidMemRange sp 8) :
     let result := if shift.toNat ≥ 256
