@@ -267,15 +267,26 @@ where
       let pf ← mkEqTrans pickProof step2
       return (pf, rhs)
 
+/-- Normalize an atom for hash comparison: recursively whnf with reducible
+    transparency to normalize OfNat instances and Fin proof terms. -/
+private def normalizeAtomForHash (e : Expr) : MetaM Expr :=
+  Lean.Core.transform e (pre := fun sub => do
+    let sub' ← withReducible (whnf sub)
+    if sub' == sub then return .continue
+    else return .continue sub')
+
 /-- Check if two sepConj chains are eligible for AC normalization.
-    Requires: both are sepConj chains with ≥2 atoms, and sorted atom hashes match. -/
+    Requires: both are sepConj chains with ≥2 atoms, and sorted atom hashes match
+    after reducible normalization. -/
 private def checkACEligible (lhs rhs : Expr) : MetaM Bool := do
   let lAtoms ← flattenSepConj lhs
   let rAtoms ← flattenSepConj rhs
   if lAtoms.length != rAtoms.length then return false
   if lAtoms.length < 2 then return false
-  let lHashes := lAtoms.map (·.hash) |>.toArray |>.insertionSort (· < ·)
-  let rHashes := rAtoms.map (·.hash) |>.toArray |>.insertionSort (· < ·)
+  let lNorm ← lAtoms.mapM normalizeAtomForHash
+  let rNorm ← rAtoms.mapM normalizeAtomForHash
+  let lHashes := lNorm.map (·.hash) |>.toArray |>.insertionSort (· < ·)
+  let rHashes := rNorm.map (·.hash) |>.toArray |>.insertionSort (· < ·)
   for i in [:lHashes.size] do
     if lHashes[i]! != rHashes[i]! then return false
   return true
@@ -306,6 +317,12 @@ private def reportAtomMismatches (lhsAtoms rhsAtoms : List Expr) : MetaM Message
     the mismatching atoms so the caller can fix the normalization. -/
 partial def buildPermProof (lhs rhs : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.perm (fun _ => return m!"perm") do
+  -- Normalize both sides to canonical form:
+  -- 1. zetaReduce: inline let-bound fvars
+  -- 2. Lean.Core.transform: recursively whnf each subexpression with reducible
+  --    transparency to normalize Fin proofs, OfNat instances, etc.
+  let lhs ← Lean.Meta.zetaReduce lhs
+  let rhs ← Lean.Meta.zetaReduce rhs
   -- Inline let-bound fvars so atoms like `regIs .x7 result` become
   -- `regIs .x7 (if ... then 1 else 0)` — syntactically identical across both sides.
   let lhs ← Lean.Meta.zetaReduce lhs
