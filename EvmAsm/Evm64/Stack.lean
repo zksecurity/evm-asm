@@ -15,10 +15,10 @@ open EvmWord
 /-- Assert that 4 consecutive memory doublewords hold the limbs of an EvmWord.
     The limbs are stored little-endian: addr+0 is the LSB limb, addr+24 is the MSB limb. -/
 def evmWordIs (addr : Word) (v : EvmWord) : Assertion :=
-  (addr ↦ₘ v.getLimb 0) **
-  ((addr + 8) ↦ₘ v.getLimb 1) **
-  ((addr + 16) ↦ₘ v.getLimb 2) **
-  ((addr + 24) ↦ₘ v.getLimb 3)
+  (addr ↦ₘ v.getLimbN 0) **
+  ((addr + 8) ↦ₘ v.getLimbN 1) **
+  ((addr + 16) ↦ₘ v.getLimbN 2) **
+  ((addr + 24) ↦ₘ v.getLimbN 3)
 
 /-- Assert an EVM stack starting at sp. Each element is 32 bytes (4 × 8-byte limbs). -/
 def evmStackIs (sp : Word) (values : List EvmWord) : Assertion :=

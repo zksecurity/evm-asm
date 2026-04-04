@@ -26,15 +26,15 @@ private theorem signext_nochange_lift (sp base : Word)
     (_hvalid : ValidMemRange sp 8)
     (hmain : cpsTriple base (base + 192) (signextCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ b.getLimb 0) ** ((sp + 8) ↦ₘ b.getLimb 1) **
-       ((sp + 16) ↦ₘ b.getLimb 2) ** ((sp + 24) ↦ₘ b.getLimb 3) **
-       ((sp + 32) ↦ₘ x.getLimb 0) ** ((sp + 40) ↦ₘ x.getLimb 1) **
-       ((sp + 48) ↦ₘ x.getLimb 2) ** ((sp + 56) ↦ₘ x.getLimb 3))
+       (sp ↦ₘ b.getLimbN 0) ** ((sp + 8) ↦ₘ b.getLimbN 1) **
+       ((sp + 16) ↦ₘ b.getLimbN 2) ** ((sp + 24) ↦ₘ b.getLimbN 3) **
+       ((sp + 32) ↦ₘ x.getLimbN 0) ** ((sp + 40) ↦ₘ x.getLimbN 1) **
+       ((sp + 48) ↦ₘ x.getLimbN 2) ** ((sp + 56) ↦ₘ x.getLimbN 3))
       ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b.getLimb 0) ** ((sp + 8) ↦ₘ b.getLimb 1) **
-       ((sp + 16) ↦ₘ b.getLimb 2) ** ((sp + 24) ↦ₘ b.getLimb 3) **
-       ((sp + 32) ↦ₘ x.getLimb 0) ** ((sp + 40) ↦ₘ x.getLimb 1) **
-       ((sp + 48) ↦ₘ x.getLimb 2) ** ((sp + 56) ↦ₘ x.getLimb 3)))
+       (sp ↦ₘ b.getLimbN 0) ** ((sp + 8) ↦ₘ b.getLimbN 1) **
+       ((sp + 16) ↦ₘ b.getLimbN 2) ** ((sp + 24) ↦ₘ b.getLimbN 3) **
+       ((sp + 32) ↦ₘ x.getLimbN 0) ** ((sp + 40) ↦ₘ x.getLimbN 1) **
+       ((sp + 48) ↦ₘ x.getLimbN 2) ** ((sp + 56) ↦ₘ x.getLimbN 3)))
     (result : EvmWord) (hresult : result = x) :
     cpsTriple base (base + 192) (signextCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
@@ -46,14 +46,14 @@ private theorem signext_nochange_lift (sp base : Word)
   have hmain_f := cpsTriple_frame_left _ _ _ _ _ (.x6 ↦ᵣ r6) (by pcFree) hmain
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
       simp only [ha40, ha48, ha56] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN]
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
@@ -82,18 +82,18 @@ theorem evm_signextend_stack_spec (sp base : Word)
   by_cases hge : b.toNat ≥ 31
   · -- b >= 31: result = x (no change)
     have hresult : result = x := by simp [result, EvmWord.signextend_ge31 b x hge]
-    by_cases hhigh : b.getLimb 1 ||| b.getLimb 2 ||| b.getLimb 3 ≠ 0
+    by_cases hhigh : b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0
     · exact signext_nochange_lift sp base b x r5 r6 r10 hvalid
         (signext_nochange_high_spec sp base _ _ _ _ _ _ _ _ r5 r10 hhigh hvalid)
         result hresult
-    · have hhigh' : b.getLimb 1 ||| b.getLimb 2 ||| b.getLimb 3 = 0 :=
+    · have hhigh' : b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 = 0 :=
         Classical.byContradiction (fun h => hhigh h)
-      have hlarge : BitVec.ult (b.getLimb 0) (signExtend12 (31 : BitVec 12)) = false := by
+      have hlarge : BitVec.ult (b.getLimbN 0) (signExtend12 (31 : BitVec 12)) = false := by
         have h_toNat := EvmWord.toNat_eq_getLimb0_of_high_zero b hhigh'
         rw [h_toNat] at hge
         have h31 : (signExtend12 (31 : BitVec 12)).toNat = 31 := by native_decide
         simp only [BitVec.ult, h31]
-        cases h : decide ((b.getLimb 0).toNat < 31)
+        cases h : decide ((b.getLimbN 0).toNat < 31)
         · rfl
         · simp at h; omega
       exact signext_nochange_lift sp base b x r5 r6 r10 hvalid
@@ -101,27 +101,27 @@ theorem evm_signextend_stack_spec (sp base : Word)
         result hresult
   · -- b < 31: body path
     push_neg at hge
-    have hhigh : b.getLimb 1 ||| b.getLimb 2 ||| b.getLimb 3 = 0 :=
+    have hhigh : b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 = 0 :=
       EvmWord.high_limbs_zero_of_toNat_lt b (by omega)
-    have hsmall : BitVec.ult (b.getLimb 0) (signExtend12 (31 : BitVec 12)) = true := by
+    have hsmall : BitVec.ult (b.getLimbN 0) (signExtend12 (31 : BitVec 12)) = true := by
       have hb_toNat := EvmWord.toNat_eq_getLimb0_of_high_zero b hhigh
       have h31 : (signExtend12 (31 : BitVec 12)).toNat = 31 := by native_decide
       simp only [BitVec.ult, h31]
-      cases h : decide ((b.getLimb 0).toNat < 31)
+      cases h : decide ((b.getLimbN 0).toNat < 31)
       · simp at h; omega
       · rfl
     -- Use the body path theorem from Compose, lifting to evmWordIs
     have h_raw := signext_body_spec sp base b x r5 r6 r10 hvalid hhigh hsmall
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by
-        simp only [evmWordIs] at hp
+        simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
         have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
         have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
         have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
         simp only [ha40, ha48, ha56] at hp
         xperm_hyp hp)
       (fun h hq => by
-        simp only [evmWordIs]
+        simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN]
         have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
         have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
         have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega

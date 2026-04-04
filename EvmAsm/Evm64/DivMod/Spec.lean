@@ -36,23 +36,23 @@ theorem evm_div_bzero_stack_spec (sp base : Word)
        evmWordIs (sp + 32) (EvmWord.div a b)) := by
   subst hbz
   -- Normalize (0 : EvmWord).getLimb k to (0 : Word)
-  have hg0 : (0 : EvmWord).getLimb 0 = (0 : Word) := by native_decide
-  have hg1 : (0 : EvmWord).getLimb 1 = (0 : Word) := by native_decide
-  have hg2 : (0 : EvmWord).getLimb 2 = (0 : Word) := by native_decide
-  have hg3 : (0 : EvmWord).getLimb 3 = (0 : Word) := by native_decide
+  have hg0 : (0 : EvmWord).getLimbN 0 = (0 : Word) := by native_decide
+  have hg1 : (0 : EvmWord).getLimbN 1 = (0 : Word) := by native_decide
+  have hg2 : (0 : EvmWord).getLimbN 2 = (0 : Word) := by native_decide
+  have hg3 : (0 : EvmWord).getLimbN 3 = (0 : Word) := by native_decide
   -- Get the limb-level zero-path spec
-  have hlimbs_or : (0 : EvmWord).getLimb 0 ||| (0 : EvmWord).getLimb 1 |||
-      (0 : EvmWord).getLimb 2 ||| (0 : EvmWord).getLimb 3 = (0 : Word) := by native_decide
+  have hlimbs_or : (0 : EvmWord).getLimbN 0 ||| (0 : EvmWord).getLimbN 1 |||
+      (0 : EvmWord).getLimbN 2 ||| (0 : EvmWord).getLimbN 3 = (0 : Word) := by native_decide
   have h_raw := evm_div_bzero_spec sp base
-    ((0 : EvmWord).getLimb 0) ((0 : EvmWord).getLimb 1)
-    ((0 : EvmWord).getLimb 2) ((0 : EvmWord).getLimb 3)
+    ((0 : EvmWord).getLimbN 0) ((0 : EvmWord).getLimbN 1)
+    ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3)
     v5 v10 hlimbs_or hvalid
   simp only [hg0, hg1, hg2, hg3] at h_raw
   -- Bridge: div a 0 = 0, getLimb (div a 0) k = 0
-  have hr0 : (EvmWord.div a 0).getLimb 0 = 0 := EvmWord.div_getLimb_zero_right a 0
-  have hr1 : (EvmWord.div a 0).getLimb 1 = 0 := EvmWord.div_getLimb_zero_right a 1
-  have hr2 : (EvmWord.div a 0).getLimb 2 = 0 := EvmWord.div_getLimb_zero_right a 2
-  have hr3 : (EvmWord.div a 0).getLimb 3 = 0 := EvmWord.div_getLimb_zero_right a 3
+  have hr0 : (EvmWord.div a 0).getLimbN 0 = 0 := EvmWord.div_getLimb_zero_right a 0
+  have hr1 : (EvmWord.div a 0).getLimbN 1 = 0 := EvmWord.div_getLimb_zero_right a 1
+  have hr2 : (EvmWord.div a 0).getLimbN 2 = 0 := EvmWord.div_getLimb_zero_right a 2
+  have hr3 : (EvmWord.div a 0).getLimbN 3 = 0 := EvmWord.div_getLimb_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       unfold evmWordIs at hp
@@ -98,21 +98,21 @@ theorem evm_mod_bzero_stack_spec (sp base : Word)
       ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x10) ** (.x0 ↦ᵣ (0 : Word)) **
        evmWordIs (sp + 32) (EvmWord.mod a b)) := by
   subst hbz
-  have hg0 : (0 : EvmWord).getLimb 0 = (0 : Word) := by native_decide
-  have hg1 : (0 : EvmWord).getLimb 1 = (0 : Word) := by native_decide
-  have hg2 : (0 : EvmWord).getLimb 2 = (0 : Word) := by native_decide
-  have hg3 : (0 : EvmWord).getLimb 3 = (0 : Word) := by native_decide
-  have hlimbs_or : (0 : EvmWord).getLimb 0 ||| (0 : EvmWord).getLimb 1 |||
-      (0 : EvmWord).getLimb 2 ||| (0 : EvmWord).getLimb 3 = (0 : Word) := by native_decide
+  have hg0 : (0 : EvmWord).getLimbN 0 = (0 : Word) := by native_decide
+  have hg1 : (0 : EvmWord).getLimbN 1 = (0 : Word) := by native_decide
+  have hg2 : (0 : EvmWord).getLimbN 2 = (0 : Word) := by native_decide
+  have hg3 : (0 : EvmWord).getLimbN 3 = (0 : Word) := by native_decide
+  have hlimbs_or : (0 : EvmWord).getLimbN 0 ||| (0 : EvmWord).getLimbN 1 |||
+      (0 : EvmWord).getLimbN 2 ||| (0 : EvmWord).getLimbN 3 = (0 : Word) := by native_decide
   have h_raw := evm_mod_bzero_spec sp base
-    ((0 : EvmWord).getLimb 0) ((0 : EvmWord).getLimb 1)
-    ((0 : EvmWord).getLimb 2) ((0 : EvmWord).getLimb 3)
+    ((0 : EvmWord).getLimbN 0) ((0 : EvmWord).getLimbN 1)
+    ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3)
     v5 v10 hlimbs_or hvalid
   simp only [hg0, hg1, hg2, hg3] at h_raw
-  have hr0 : (EvmWord.mod a 0).getLimb 0 = 0 := EvmWord.mod_getLimb_zero_right a 0
-  have hr1 : (EvmWord.mod a 0).getLimb 1 = 0 := EvmWord.mod_getLimb_zero_right a 1
-  have hr2 : (EvmWord.mod a 0).getLimb 2 = 0 := EvmWord.mod_getLimb_zero_right a 2
-  have hr3 : (EvmWord.mod a 0).getLimb 3 = 0 := EvmWord.mod_getLimb_zero_right a 3
+  have hr0 : (EvmWord.mod a 0).getLimbN 0 = 0 := EvmWord.mod_getLimb_zero_right a 0
+  have hr1 : (EvmWord.mod a 0).getLimbN 1 = 0 := EvmWord.mod_getLimb_zero_right a 1
+  have hr2 : (EvmWord.mod a 0).getLimbN 2 = 0 := EvmWord.mod_getLimb_zero_right a 2
+  have hr3 : (EvmWord.mod a 0).getLimbN 3 = 0 := EvmWord.mod_getLimb_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       unfold evmWordIs at hp

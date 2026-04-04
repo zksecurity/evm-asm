@@ -139,6 +139,35 @@ theorem getLimbN_ge (v : EvmWord) (k : Nat) (h : k ≥ 4) :
     v.getLimbN k = 0 := by
   simp [getLimbN, show ¬(k < 4) from by omega]
 
+/-- Convert getLimb (Fin 4) to getLimbN (Nat). Use this simp lemma to normalize
+    all getLimb calls to getLimbN for consistent Expr.hash in xperm. -/
+theorem getLimb_eq_getLimbN (v : EvmWord) (i : Fin 4) :
+    v.getLimb i = v.getLimbN i.val := by
+  simp [getLimbN, i.isLt]
+
+-- getLimbN versions of operation lemmas (for xperm AC fast path consistency)
+theorem getLimbN_and (x y : EvmWord) (k : Nat) :
+    (x &&& y).getLimbN k = x.getLimbN k &&& y.getLimbN k := by
+  simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_and]
+
+theorem getLimbN_or (x y : EvmWord) (k : Nat) :
+    (x ||| y).getLimbN k = x.getLimbN k ||| y.getLimbN k := by
+  simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_or]
+
+theorem getLimbN_xor (x y : EvmWord) (k : Nat) :
+    (x ^^^ y).getLimbN k = x.getLimbN k ^^^ y.getLimbN k := by
+  simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_xor]
+
+theorem getLimbN_not (x : EvmWord) (k : Nat) (hk : k < 4) :
+    (~~~ x).getLimbN k = ~~~ (x.getLimbN k) := by
+  simp only [getLimbN, hk, dif_pos, getLimb_not]
+
+theorem getLimbN_zero (k : Nat) :
+    (0 : EvmWord).getLimbN k = 0 := by
+  unfold getLimbN; split
+  · simp [getLimb]
+  · rfl
+
 private theorem extractLsb'_ge_width (v : BitVec 256) (s : Nat) (h : s ≥ 256) :
     BitVec.extractLsb' s 64 v = (0 : BitVec 64) := by
   ext j

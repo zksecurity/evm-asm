@@ -530,8 +530,8 @@ set_option maxHeartbeats 6400000 in
 theorem evm_byte_body_evmWord_spec (sp base : Word)
     (idx value : EvmWord) (r5 r6 r10 : Word)
     (hvalid : ValidMemRange sp 8)
-    (hhigh_zero : idx.getLimb 1 ||| idx.getLimb 2 ||| idx.getLimb 3 = 0)
-    (hlt_i0 : BitVec.ult (idx.getLimb 0) (signExtend12 (32 : BitVec 12)) = true)
+    (hhigh_zero : idx.getLimbN 1 ||| idx.getLimbN 2 ||| idx.getLimbN 3 = 0)
+    (hlt_i0 : BitVec.ult (idx.getLimbN 0) (signExtend12 (32 : BitVec 12)) = true)
     (hlt : idx.toNat < 32) :
     cpsTriple base (base + 180) (evm_byte_code base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) **
@@ -541,14 +541,14 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
        (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
        evmWordIs sp idx ** evmWordIs (sp + 32) (byte idx value)) := by
   -- Abbreviate limbs
-  set i0 := idx.getLimb 0
-  set i1 := idx.getLimb 1
-  set i2 := idx.getLimb 2
-  set i3 := idx.getLimb 3
-  set v0 := value.getLimb 0
-  set v1 := value.getLimb 1
-  set v2 := value.getLimb 2
-  set v3 := value.getLimb 3
+  set i0 := idx.getLimbN 0
+  set i1 := idx.getLimbN 1
+  set i2 := idx.getLimbN 2
+  set i3 := idx.getLimbN 3
+  set v0 := value.getLimbN 0
+  set v1 := value.getLimbN 1
+  set v2 := value.getLimbN 2
+  set v3 := value.getLimbN 3
   set result := byte idx value
   -- Reduce evmWordIs to raw memIs
   suffices h_raw : cpsTriple base (base + 180) (evm_byte_code base)
@@ -991,14 +991,14 @@ theorem evm_byte_stack_spec (sp base : Word)
        (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
        evmWordIs sp idx ** evmWordIs (sp + 32) (EvmWord.byte idx val)) := by
   -- Abbreviate limbs
-  set i0 := idx.getLimb 0
-  set i1 := idx.getLimb 1
-  set i2 := idx.getLimb 2
-  set i3 := idx.getLimb 3
-  set v0 := val.getLimb 0
-  set v1 := val.getLimb 1
-  set v2 := val.getLimb 2
-  set v3 := val.getLimb 3
+  set i0 := idx.getLimbN 0
+  set i1 := idx.getLimbN 1
+  set i2 := idx.getLimbN 2
+  set i3 := idx.getLimbN 3
+  set v0 := val.getLimbN 0
+  set v1 := val.getLimbN 1
+  set v2 := val.getLimbN 2
+  set v3 := val.getLimbN 3
   -- Case split on three conditions
   by_cases hhigh : i1 ||| i2 ||| i3 ≠ 0
   · -- Case 1: high limbs nonzero → zero result
@@ -1012,13 +1012,13 @@ theorem evm_byte_stack_spec (sp base : Word)
       -- getLimb k = (idx.toNat / 2^(k*64)) % 2^64
       -- For k >= 1, idx.toNat < 2^64 ⇒ idx.toNat / 2^(k*64) = 0
       have h1 : i1 = 0 := by
-        show idx.getLimb 1 = 0; simp [EvmWord.getLimb]
+        show idx.getLimbN 1 = 0; simp [EvmWord.getLimb]
         apply BitVec.eq_of_toNat_eq; simp [BitVec.extractLsb'_toNat]; omega
       have h2 : i2 = 0 := by
-        show idx.getLimb 2 = 0; apply BitVec.eq_of_toNat_eq
+        show idx.getLimbN 2 = 0; apply BitVec.eq_of_toNat_eq
         simp [EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
       have h3 : i3 = 0 := by
-        show idx.getLimb 3 = 0; apply BitVec.eq_of_toNat_eq
+        show idx.getLimbN 3 = 0; apply BitVec.eq_of_toNat_eq
         simp [EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
       rw [h1, h2, h3]; simp
     rw [hbyte_zero]
@@ -1040,10 +1040,10 @@ theorem evm_byte_stack_spec (sp base : Word)
         simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                    show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                    show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
-                   show (0 : EvmWord).getLimb 0 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimb 1 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimb 2 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimb 3 = 0 from by simp [EvmWord.getLimb]]
+                   show (0 : EvmWord).getLimbN 0 = 0 from by simp [EvmWord.getLimb],
+                   show (0 : EvmWord).getLimbN 1 = 0 from by simp [EvmWord.getLimb],
+                   show (0 : EvmWord).getLimbN 2 = 0 from by simp [EvmWord.getLimb],
+                   show (0 : EvmWord).getLimbN 3 = 0 from by simp [EvmWord.getLimb]]
         have w := sepConj_mono_left (regIs_to_regOwn .x6 _) h
           ((congrFun (show _ = _ from by xperm) h).mp hq)
         exact (congrFun (show _ = _ from by xperm) h).mp w)
@@ -1085,10 +1085,10 @@ theorem evm_byte_stack_spec (sp base : Word)
           simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                      show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                      show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
-                     show (0 : EvmWord).getLimb 0 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimb 1 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimb 2 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimb 3 = 0 from by simp [EvmWord.getLimb]]
+                     show (0 : EvmWord).getLimbN 0 = 0 from by simp [EvmWord.getLimb],
+                     show (0 : EvmWord).getLimbN 1 = 0 from by simp [EvmWord.getLimb],
+                     show (0 : EvmWord).getLimbN 2 = 0 from by simp [EvmWord.getLimb],
+                     show (0 : EvmWord).getLimbN 3 = 0 from by simp [EvmWord.getLimb]]
           have w := sepConj_mono_left (regIs_to_regOwn .x6 _) h
             ((congrFun (show _ = _ from by xperm) h).mp hq)
           exact (congrFun (show _ = _ from by xperm) h).mp w)

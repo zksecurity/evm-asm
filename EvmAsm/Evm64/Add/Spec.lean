@@ -68,10 +68,10 @@ theorem evm_add_spec (sp : Word) (base : Word)
 theorem evm_add_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let a0 := a.getLimb 0; let b0 := b.getLimb 0
-    let a1 := a.getLimb 1; let b1 := b.getLimb 1
-    let a2 := a.getLimb 2; let b2 := b.getLimb 2
-    let a3 := a.getLimb 3; let b3 := b.getLimb 3
+    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
+    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
+    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
+    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
     let sum0 := a0 + b0
     let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
     let psum1 := a1 + b1
@@ -100,21 +100,21 @@ theorem evm_add_stack_spec (sp base : Word)
        evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
   intro a0 b0 a1 b1 a2 b2 a3 b3 sum0 carry0 psum1 carry1a result1 carry1b carry1 psum2 carry2a result2 carry2b carry2 psum3 carry3a result3 carry3b carry3
   have h_main := evm_add_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11 hvalid
   -- Get the carry chain correctness
   have ⟨h0, h1, h2, h3⟩ := EvmWord.add_carry_chain_correct a b
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN]
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega

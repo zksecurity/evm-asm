@@ -127,7 +127,7 @@ theorem evm_dup_evmword_spec (nsp base : Word)
       ((.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
        evmWordIs nsp dst **
        evmWordIs (nsp + BitVec.ofNat 64 (n * 32)) src)
-      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ src.getLimb 3) **
+      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ src.getLimbN 3) **
        evmWordIs nsp src **
        evmWordIs (nsp + BitVec.ofNat 64 (n * 32)) src) := by
   -- Address normalizations for evmWordIs (nsp + BitVec.ofNat 64 (n*32))
@@ -138,15 +138,15 @@ theorem evm_dup_evmword_spec (nsp base : Word)
   have haddr24 : (nsp + BitVec.ofNat 64 (n*32) : Word) + 24 = nsp + BitVec.ofNat 64 (n*32+24) := by
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have h_main := evm_dup_spec nsp base n hn1 hn16
-    (src.getLimb 0) (src.getLimb 1) (src.getLimb 2) (src.getLimb 3)
-    (dst.getLimb 0) (dst.getLimb 1) (dst.getLimb 2) (dst.getLimb 3)
+    (src.getLimbN 0) (src.getLimbN 1) (src.getLimbN 2) (src.getLimbN 3)
+    (dst.getLimbN 0) (dst.getLimbN 1) (dst.getLimbN 2) (dst.getLimbN 3)
     v7 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun _ hp => by
-      simp only [evmWordIs, haddr8, haddr16, haddr24] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, haddr8, haddr16, haddr24] at hp
       xperm_hyp hp)
     (fun _ hq => by
-      simp only [evmWordIs, haddr8, haddr16, haddr24]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, haddr8, haddr16, haddr24]
       xperm_hyp hq)
     h_main
 
@@ -167,7 +167,7 @@ theorem evm_dup_stack_spec (nsp base : Word)
       ((.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
        evmWordIs nsp d **
        evmStackIs (nsp + 32) stack)
-      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ vn.getLimb 3) **
+      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ vn.getLimbN 3) **
        evmWordIs nsp vn **
        evmStackIs (nsp + 32) stack) := by
   intro vn

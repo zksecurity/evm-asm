@@ -40,22 +40,22 @@ theorem evm_or_stack_spec (sp base : Word)
     cpsTriple base (base + 68) code
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        evmWordIs sp a ** evmWordIs (sp + 32) b)
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a.getLimb 3 ||| b.getLimb 3)) ** (.x6 ↦ᵣ b.getLimb 3) **
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a.getLimbN 3 ||| b.getLimbN 3)) ** (.x6 ↦ᵣ b.getLimbN 3) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a ||| b)) := by
   have h_main := evm_or_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
       rw [‹sp + 32 + 8 = sp + 40›, ‹sp + 32 + 16 = sp + 48›, ‹sp + 32 + 24 = sp + 56›] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_or]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, EvmWord.getLimbN_or]
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega

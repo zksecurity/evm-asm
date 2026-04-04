@@ -74,10 +74,10 @@ theorem evm_lt_spec (sp : Word) (base : Word)
 theorem evm_lt_stack_spec (sp base : Word)
     (a b : EvmWord) (v7 v6 v5 v11 : Word)
     (hvalid : ValidMemRange sp 8) :
-    let a0 := a.getLimb 0; let b0 := b.getLimb 0
-    let a1 := a.getLimb 1; let b1 := b.getLimb 1
-    let a2 := a.getLimb 2; let b2 := b.getLimb 2
-    let a3 := a.getLimb 3; let b3 := b.getLimb 3
+    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
+    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
+    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
+    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
     let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
     let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
     let temp1 := a1 - b1
@@ -102,12 +102,12 @@ theorem evm_lt_stack_spec (sp base : Word)
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.ult a b then 1 else 0)) := by
   intro a0 b0 a1 b1 a2 b2 a3 b3 borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 borrow3a temp3 borrow3b borrow3
   have h_main := evm_lt_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
-    (b.getLimb 0) (b.getLimb 1) (b.getLimb 2) (b.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega

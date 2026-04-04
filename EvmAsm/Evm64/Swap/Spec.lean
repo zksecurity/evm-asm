@@ -127,7 +127,7 @@ theorem evm_swap_evmword_spec (sp base : Word)
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        evmWordIs sp top **
        evmWordIs (sp + BitVec.ofNat 64 (n * 32)) nth)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimb 3) ** (.x6 ↦ᵣ nth.getLimb 3) **
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimbN 3) ** (.x6 ↦ᵣ nth.getLimbN 3) **
        evmWordIs sp nth **
        evmWordIs (sp + BitVec.ofNat 64 (n * 32)) top) := by
   -- Address normalizations
@@ -139,14 +139,14 @@ theorem evm_swap_evmword_spec (sp base : Word)
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, ha8, ha16, ha24] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, ha8, ha16, ha24] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, ha8, ha16, ha24]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, ha8, ha16, ha24]
       xperm_hyp hq)
     (evm_swap_spec sp base n hn1 hn16
-      (top.getLimb 0) (top.getLimb 1) (top.getLimb 2) (top.getLimb 3)
-      (nth.getLimb 0) (nth.getLimb 1) (nth.getLimb 2) (nth.getLimb 3)
+      (top.getLimbN 0) (top.getLimbN 1) (top.getLimbN 2) (top.getLimbN 3)
+      (nth.getLimbN 0) (nth.getLimbN 1) (nth.getLimbN 2) (nth.getLimbN 3)
       v7 v6 hvalid)
 
 -- ============================================================================
@@ -164,7 +164,7 @@ theorem evm_swap_stack_spec (sp base : Word)
     cpsTriple base (base + 64) (evm_swap_code base n)
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        evmStackIs sp stack)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimb 3) ** (.x6 ↦ᵣ nth.getLimb 3) **
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimbN 3) ** (.x6 ↦ᵣ nth.getLimbN 3) **
        evmWordIs sp nth **
        evmStackIs (sp + 32) ((stack.drop 1).take (n - 1)) **
        evmWordIs (sp + BitVec.ofNat 64 (n * 32)) top **

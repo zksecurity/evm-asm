@@ -58,22 +58,22 @@ theorem evm_not_stack_spec (sp base : Word)
       (-- Registers + memory
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** evmWordIs sp a)
       (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a.getLimb 3 ^^^ c)) ** evmWordIs sp (~~~a)) := by
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a.getLimbN 3 ^^^ c)) ** evmWordIs sp (~~~a)) := by
   -- Helper: (~~~a).getLimb i = a.getLimb i ^^^ signExtend12 (-1)
   have not_limb_eq : ∀ i : Fin 4,
       (~~~a).getLimb i = a.getLimb i ^^^ signExtend12 (-1 : BitVec 12) := by
     intro i
-    rw [EvmWord.getLimb_not, BitVec.not_def, BitVec.xor_comm, ← signExtend12_neg1_eq_allOnes]
+    rw [EvmWord.getLimbN_not, BitVec.not_def, BitVec.xor_comm, ← signExtend12_neg1_eq_allOnes]
   -- Apply evm_not_spec with individual limbs
   have h_main := evm_not_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     v7 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, not_limb_eq]
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, not_limb_eq]
       xperm_hyp hq)
     h_main
 

@@ -61,7 +61,7 @@ theorem evm_iszero_spec (sp : Word) (base : Word)
 theorem evm_iszero_stack_spec (sp base : Word)
     (a : EvmWord) (v7 v6 : Word)
     (hvalid : ValidMemRange sp 4) :
-    let or_all := a.getLimb 0 ||| a.getLimb 1 ||| a.getLimb 2 ||| a.getLimb 3
+    let or_all := a.getLimbN 0 ||| a.getLimbN 1 ||| a.getLimbN 2 ||| a.getLimbN 3
     let result := if BitVec.ult or_all 1 then (1 : Word) else 0
     let code := evm_iszero_code base
     cpsTriple base (base + 48) code
@@ -69,15 +69,15 @@ theorem evm_iszero_stack_spec (sp base : Word)
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
        evmWordIs sp a)
       (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimb 3) **
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
        evmWordIs sp (if a = 0 then 1 else 0)) := by
   intro or_all result
   have h_main := evm_iszero_spec sp base
-    (a.getLimb 0) (a.getLimb 1) (a.getLimb 2) (a.getLimb 3)
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     v7 v6 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs] at hp
+      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
       xperm_hyp hp)
     (fun h hq => by
       unfold evmWordIs
