@@ -764,12 +764,16 @@ theorem evm_shl_body_evmWord_spec (sp base : Word)
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by
         unfold evmWordIs at hp
+        simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                   ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3] at hp
         simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                    show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                    show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega] at hp
         xperm_hyp hp)
       (fun h hq => by
         unfold evmWordIs
+        simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                   ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
         simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                    show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                    show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega]

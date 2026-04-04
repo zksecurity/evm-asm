@@ -100,14 +100,17 @@ private theorem shl_zero_lift (sp base : Word)
       hframed
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
+      simp only [evmWordIs, ← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                 ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3] at hp
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
       simp only [ha40, ha48, ha56] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, EvmWord.getLimb_zero]
+      simp only [evmWordIs, EvmWord.getLimbN_zero]
+      simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+                 ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega

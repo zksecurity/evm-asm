@@ -145,6 +145,13 @@ theorem getLimb_eq_getLimbN (v : EvmWord) (i : Fin 4) :
     v.getLimb i = v.getLimbN i.val := by
   simp [getLimbN, i.isLt]
 
+/-- Convert `getLimb (k : Fin 4)` to `getLimbN k` for concrete indices.
+    Use `simp only [getLimb_as_getLimbN]` to batch-convert bridge lemma hypotheses. -/
+theorem getLimb_as_getLimbN_0 (v : EvmWord) : v.getLimb 0 = v.getLimbN 0 := by simp [getLimbN]
+theorem getLimb_as_getLimbN_1 (v : EvmWord) : v.getLimb 1 = v.getLimbN 1 := by simp [getLimbN]
+theorem getLimb_as_getLimbN_2 (v : EvmWord) : v.getLimb 2 = v.getLimbN 2 := by simp [getLimbN]
+theorem getLimb_as_getLimbN_3 (v : EvmWord) : v.getLimb 3 = v.getLimbN 3 := by simp [getLimbN]
+
 -- getLimbN versions of operation lemmas (for xperm AC fast path consistency)
 theorem getLimbN_and (x y : EvmWord) (k : Nat) :
     (x &&& y).getLimbN k = x.getLimbN k &&& y.getLimbN k := by
@@ -167,6 +174,20 @@ theorem getLimbN_zero (k : Nat) :
   unfold getLimbN; split
   · simp [getLimb]
   · rfl
+
+theorem getLimbN_one (k : Nat) :
+    (1 : EvmWord).getLimbN k = if k = 0 then 1 else 0 := by
+  unfold getLimbN
+  split
+  · next h =>
+    have hfin : ∀ j : Fin 4, (1 : EvmWord).getLimb j = if j.val = 0 then 1 else 0 := by
+      native_decide
+    exact hfin ⟨k, h⟩
+  · next h => simp [show ¬(k = 0) from by omega]
+
+theorem getLimbN_ite (c : Prop) [Decidable c] (x y : EvmWord) (k : Nat) :
+    (if c then x else y).getLimbN k = if c then x.getLimbN k else y.getLimbN k := by
+  split <;> rfl
 
 private theorem extractLsb'_ge_width (v : BitVec 256) (s : Nat) (h : s ≥ 256) :
     BitVec.extractLsb' s 64 v = (0 : BitVec 64) := by
@@ -500,6 +521,13 @@ theorem getLimb_fromLimbs_const (w : Word) (i : Fin 4) :
   | ⟨2, _⟩ => simp [fromLimbs, getLimb]; bv_decide
   | ⟨3, _⟩ => simp [fromLimbs, getLimb]; bv_decide
   | ⟨n+4, h⟩ => exact absurd h (by omega)
+
+theorem getLimbN_fromLimbs_const (w : Word) (k : Nat) :
+    (fromLimbs (fun _ => w)).getLimbN k = if k < 4 then w else 0 := by
+  unfold getLimbN
+  split
+  · next h => simp [getLimb_fromLimbs_const]
+  · next h => simp_all
 
 end EvmWord
 

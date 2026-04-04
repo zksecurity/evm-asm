@@ -733,11 +733,10 @@ theorem signext_body_spec (sp base : Word)
             ((sp + 32) ↦ₘ m32) ** ((sp + 40) ↦ₘ m40) ** ((sp + 48) ↦ₘ m48) ** ((sp + 56) ↦ₘ m56)) h := by
     intro r5v r6v r10v m32 m40 m48 m56 h hp
     rw [hse32] at hp
-    have w1 := sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn' .x5 _)) h
-      ((congrFun (show _ = _ from by xperm) h).mp hp)
+    have w1 := sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn' .x5 _)) h hp
     have w2 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn' .x6 _))) h w1
     have w3 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn' .x10 _)))) h w2
-    exact (congrFun (show _ = _ from by xperm) h).mp w3
+    xperm_hyp w3
   -- Apply weakening to each body+done
   have hbd0_w := cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd0

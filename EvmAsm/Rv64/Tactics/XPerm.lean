@@ -268,9 +268,11 @@ where
       return (pf, rhs)
 
 /-- Normalize an atom for hash comparison: recursively whnf with reducible
-    transparency to normalize OfNat instances and Fin proof terms. -/
+    transparency to normalize OfNat instances and Fin proof terms.
+    Skips subexpressions with loose bound variables to avoid WHNF panics. -/
 private def normalizeAtomForHash (e : Expr) : MetaM Expr :=
   Lean.Core.transform e (pre := fun sub => do
+    if sub.hasLooseBVars then return .continue
     let sub' ← withReducible (whnf sub)
     if sub' == sub then return .continue
     else return .continue sub')
@@ -307,53 +309,93 @@ private def reportAtomMismatches (lhsAtoms rhsAtoms : List Expr) : MetaM Message
       msgs := msgs.push m!"  RHS atom {i} (hash {ra[i]!.hash}): {ra[i]!}"
   return MessageData.joinSep msgs.toList "\n"
 
+/-- Fallback pick-based permutation prover (O(n^2) in atom count).
+    Used when AC reflection is not safe (e.g., expressions with loose bvars). -/
+private partial def buildPermProofFallback (lhs rhs : Expr) : MetaM Expr := do
+  -- First reassociate both sides to right-associated form
+  let (lhsRA, lhsPf) ← reassocProof lhs
+  let (rhsRA, rhsPf) ← reassocProof rhs
+  -- Flatten LHS once (not per-atom)
+  let lhsAtoms := (← flattenSepConj lhsRA).toArray
+  let rhsAtoms := (← flattenSepConj rhsRA).toArray
+  -- Build permutation proof on right-associated forms
+  let permPf ← buildPermProofPickAux lhsRA lhsAtoms rhsAtoms
+  -- Chain: lhs = lhsRA = rhsRA = rhs
+  let step1 ← mkEqTrans lhsPf permPf
+  let rhsPfSymm ← mkEqSymm rhsPf
+  mkEqTrans step1 rhsPfSymm
+where
+  /-- Inner loop: pick each RHS atom from the LHS chain. -/
+  buildPermProofPickAux (currentLhs : Expr) (lhsAtoms : Array Expr)
+      (remainingRhs : Array Expr) (startIdx : Nat := 0) : MetaM Expr := do
+    if startIdx >= remainingRhs.size then
+      mkEqRefl currentLhs
+    else if startIdx + 1 == remainingRhs.size then
+      let target := remainingRhs[startIdx]!
+      if lhsAtoms.size == 1 then
+        if ← isDefEq currentLhs target then
+          mkEqRefl currentLhs
+        else
+          throwError "xperm: final atoms don't match:\n  LHS: {currentLhs}\n  RHS: {target}"
+      else
+        throwError "xperm: LHS has {lhsAtoms.size} atoms but only 1 remaining in RHS"
+    else
+      let target := remainingRhs[startIdx]!
+      let some idx ← findAtomIdx target lhsAtoms
+        | throwError "xperm: could not find atom in LHS matching RHS atom:\n  target: {target}\n  LHS ({lhsAtoms.size} atoms)"
+      let (pickProof, pickedRhs) ← buildPickProof currentLhs idx
+      match ← parseSepConj? pickedRhs with
+      | none =>
+        throwError "xperm: picked result is a single atom but {remainingRhs.size - startIdx} RHS atoms remain"
+      | some (pickedHead, pickedTail) =>
+        let newLhsAtoms := arrayEraseIdx lhsAtoms idx
+        let tailProof ← buildPermProofPickAux pickedTail newLhsAtoms remainingRhs (startIdx + 1)
+        let sepConjPicked := mkApp (mkConst ``EvmAsm.Rv64.sepConj) pickedHead
+        let step2 ← mkCongrArg sepConjPicked tailProof
+        mkEqTrans pickProof step2
+
 /-- The main permutation proof builder.
 
     Given LHS and RHS as sepConj chains with the same atoms
     (syntactically identical), builds a proof of `LHS = RHS`.
 
     Uses AC reflection via `buildNormProof` for O(n log n) kernel work.
-    If atoms are not syntactically identical (different Expr.hash), reports
-    the mismatching atoms so the caller can fix the normalization. -/
+    Falls back to pick-based O(n^2) algorithm if expressions contain
+    loose bvars (which would cause PANIC in AC normalization). -/
 partial def buildPermProof (lhs rhs : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.perm (fun _ => return m!"perm") do
-  -- Normalize both sides to canonical form:
-  -- 1. zetaReduce: inline let-bound fvars
-  -- 2. Lean.Core.transform: recursively whnf each subexpression with reducible
-  --    transparency to normalize Fin proofs, OfNat instances, etc.
-  let lhs ← Lean.Meta.zetaReduce lhs
-  let rhs ← Lean.Meta.zetaReduce rhs
-  -- Inline let-bound fvars so atoms like `regIs .x7 result` become
-  -- `regIs .x7 (if ... then 1 else 0)` — syntactically identical across both sides.
-  let lhs ← Lean.Meta.zetaReduce lhs
-  let rhs ← Lean.Meta.zetaReduce rhs
-  let lhsAtoms ← flattenSepConj lhs
-  let rhsAtoms ← flattenSepConj rhs
-  -- Check atom count
+  -- Try AC fast path with zetaReduce
+  let lhsZ ← Lean.Meta.zetaReduce lhs
+  let rhsZ ← Lean.Meta.zetaReduce rhs
+  -- Safety check: if zetaReduce produced loose bvars, fall back
+  if lhsZ.hasLooseBVars || rhsZ.hasLooseBVars then
+    return ← buildPermProofFallback lhs rhs
+  let lhsAtoms ← flattenSepConj lhsZ
+  let rhsAtoms ← flattenSepConj rhsZ
+  -- If atom counts don't match after zetaReduce, try fallback on originals
   unless lhsAtoms.length == rhsAtoms.length do
-    throwError "xperm: atom count mismatch ({lhsAtoms.length} LHS vs {rhsAtoms.length} RHS)"
+    return ← buildPermProofFallback lhs rhs
   -- Handle trivial cases (0-1 atoms): just check isDefEq
   if lhsAtoms.length ≤ 1 then
-    if ← isDefEq lhs rhs then
-      return ← mkEqRefl lhs
+    if ← isDefEq lhsZ rhsZ then
+      return ← mkEqRefl lhsZ
     else
-      throwError "xperm: single atom doesn't match:\n  LHS: {lhs}\n  RHS: {rhs}"
-  -- Check sorted hashes match (atoms must be syntactically identical)
-  let acEligible ← checkACEligible lhs rhs
+      return ← buildPermProofFallback lhs rhs
+  -- Safety check: if any atom has loose bvars, fall back
+  if lhsAtoms.any (·.hasLooseBVars) || rhsAtoms.any (·.hasLooseBVars) then
+    return ← buildPermProofFallback lhs rhs
+  -- Check sorted hashes match (atoms must be syntactically identical for AC path)
+  let acEligible ← checkACEligible lhsZ rhsZ
   unless acEligible do
-    let diffs ← reportAtomMismatches lhsAtoms rhsAtoms
-    throwError "xperm: atoms are not syntactically identical (different Expr.hash).\n\
-      Both sides have {lhsAtoms.length} atoms but some differ structurally.\n\
-      Mismatching atoms:\n{diffs}\n\n\
-      Hint: ensure both sides use the same representation for addresses \
-      (e.g., normalize signExtend12 before calling xperm)."
+    -- Fall back to pick-based algorithm on originals (uses isDefEq for atom matching)
+    return ← buildPermProofFallback lhs rhs
   -- AC reflection: normalize each side, check normal forms match
   let op := mkConst ``EvmAsm.Rv64.sepConj
   let some pc ← Lean.Meta.AC.preContext op
     | throwError "xperm: sepConj has no Associative/Commutative instances"
-  let some (lHead, lTail) ← parseSepConj? lhs
+  let some (lHead, lTail) ← parseSepConj? lhsZ
     | throwError "xperm: LHS is not a sepConj chain"
-  let some (rHead, rTail) ← parseSepConj? rhs
+  let some (rHead, rTail) ← parseSepConj? rhsZ
     | throwError "xperm: RHS is not a sepConj chain"
   let (lPf, lNorm) ← withTheReader Core.Context (fun c => { c with maxRecDepth := 1024 }) do
     Lean.Meta.AC.buildNormProof pc lHead lTail

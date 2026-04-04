@@ -77,16 +77,18 @@ theorem evm_iszero_stack_spec (sp base : Word)
     v7 v6 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
+      simp only [evmWordIs] at hp
       xperm_hyp hp)
     (fun h hq => by
       unfold evmWordIs
-      simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show ¬((1 : Fin 4) = 0) from by decide,
-                 show ¬((2 : Fin 4) = 0) from by decide,
-                 show ¬((3 : Fin 4) = 0) from by decide,
+      simp only [EvmWord.getLimbN_ite, EvmWord.getLimbN_one, EvmWord.getLimbN_zero,
+                 show ¬((1 : Nat) = 0) from by decide,
+                 show ¬((2 : Nat) = 0) from by decide,
+                 show ¬((3 : Nat) = 0) from by decide,
                  ite_true, ite_false, ite_self,
                  ← EvmWord.iszero_or_reduce_correct]
+      simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                 EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3]
       xperm_hyp hq)
     h_main
 

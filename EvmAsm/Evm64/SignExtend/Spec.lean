@@ -46,14 +46,14 @@ private theorem signext_nochange_lift (sp base : Word)
   have hmain_f := cpsTriple_frame_left _ _ _ _ _ (.x6 ↦ᵣ r6) (by pcFree) hmain
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
+      simp only [evmWordIs] at hp
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
       simp only [ha40, ha48, ha56] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN]
+      simp only [evmWordIs]
       have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
       have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
       have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
@@ -90,6 +90,7 @@ theorem evm_signextend_stack_spec (sp base : Word)
         Classical.byContradiction (fun h => hhigh h)
       have hlarge : BitVec.ult (b.getLimbN 0) (signExtend12 (31 : BitVec 12)) = false := by
         have h_toNat := EvmWord.toNat_eq_getLimb0_of_high_zero b hhigh'
+        simp only [EvmWord.getLimb_as_getLimbN_0] at h_toNat
         rw [h_toNat] at hge
         have h31 : (signExtend12 (31 : BitVec 12)).toNat = 31 := by native_decide
         simp only [BitVec.ult, h31]
@@ -105,6 +106,7 @@ theorem evm_signextend_stack_spec (sp base : Word)
       EvmWord.high_limbs_zero_of_toNat_lt b (by omega)
     have hsmall : BitVec.ult (b.getLimbN 0) (signExtend12 (31 : BitVec 12)) = true := by
       have hb_toNat := EvmWord.toNat_eq_getLimb0_of_high_zero b hhigh
+      simp only [EvmWord.getLimb_as_getLimbN_0] at hb_toNat
       have h31 : (signExtend12 (31 : BitVec 12)).toNat = 31 := by native_decide
       simp only [BitVec.ult, h31]
       cases h : decide ((b.getLimbN 0).toNat < 31)
@@ -114,18 +116,22 @@ theorem evm_signextend_stack_spec (sp base : Word)
     have h_raw := signext_body_spec sp base b x r5 r6 r10 hvalid hhigh hsmall
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by
-        simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
+        simp only [evmWordIs] at hp
         have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
         have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
         have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
         simp only [ha40, ha48, ha56] at hp
+        simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                   EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3]
         xperm_hyp hp)
       (fun h hq => by
-        simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN]
+        simp only [evmWordIs]
         have ha40 : (sp + 32 : Word) + 8 = sp + 40 := by bv_omega
         have ha48 : (sp + 32 : Word) + 16 = sp + 48 := by bv_omega
         have ha56 : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
         simp only [ha40, ha48, ha56]
+        simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                   EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3] at hq
         xperm_hyp hq)
       h_raw
 

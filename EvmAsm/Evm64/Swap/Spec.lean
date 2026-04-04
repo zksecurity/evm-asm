@@ -139,10 +139,10 @@ theorem evm_swap_evmword_spec (sp base : Word)
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, ha8, ha16, ha24] at hp
+      simp only [evmWordIs, ha8, ha16, ha24] at hp
       xperm_hyp hp)
     (fun h hq => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, ha8, ha16, ha24]
+      simp only [evmWordIs, ha8, ha16, ha24]
       xperm_hyp hq)
     (evm_swap_spec sp base n hn1 hn16
       (top.getLimbN 0) (top.getLimbN 1) (top.getLimbN 2) (top.getLimbN 3)

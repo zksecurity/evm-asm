@@ -143,10 +143,10 @@ theorem evm_dup_evmword_spec (nsp base : Word)
     v7 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun _ hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, haddr8, haddr16, haddr24] at hp
+      simp only [evmWordIs, haddr8, haddr16, haddr24] at hp
       xperm_hyp hp)
     (fun _ hq => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN, haddr8, haddr16, haddr24]
+      simp only [evmWordIs, haddr8, haddr16, haddr24]
       xperm_hyp hq)
     h_main
 

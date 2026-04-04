@@ -145,7 +145,7 @@ theorem evm_slt_stack_spec (sp base : Word)
     v7 v6 v5 v11 hvalid
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      simp only [evmWordIs, EvmWord.getLimb_eq_getLimbN] at hp
+      simp only [evmWordIs] at hp
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega
@@ -153,12 +153,14 @@ theorem evm_slt_stack_spec (sp base : Word)
       xperm_hyp hp)
     (fun h hq => by
       unfold evmWordIs
-      simp only [EvmWord.getLimb_ite, EvmWord.getLimb_one, EvmWord.getLimb_zero,
-                 show ¬((1 : Fin 4) = 0) from by decide,
-                 show ¬((2 : Fin 4) = 0) from by decide,
-                 show ¬((3 : Fin 4) = 0) from by decide,
+      simp only [EvmWord.getLimbN_ite, EvmWord.getLimbN_one, EvmWord.getLimbN_zero,
+                 show ¬((1 : Nat) = 0) from by decide,
+                 show ¬((2 : Nat) = 0) from by decide,
+                 show ¬((3 : Nat) = 0) from by decide,
                  ite_true, ite_false, ite_self,
                  ← EvmWord.slt_result_correct a b]
+      simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                 EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3]
       have : (sp : Word) + 32 + 8 = sp + 40 := by bv_omega
       have : (sp : Word) + 32 + 16 = sp + 48 := by bv_omega
       have : (sp : Word) + 32 + 24 = sp + 56 := by bv_omega

@@ -569,6 +569,8 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
                    show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega] at hp
         xperm_hyp hp)
       (fun h hq => by
+        simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
+                   EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3] at hq
         unfold evmWordIs
         simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                    show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
@@ -1012,14 +1014,14 @@ theorem evm_byte_stack_spec (sp base : Word)
       -- getLimb k = (idx.toNat / 2^(k*64)) % 2^64
       -- For k >= 1, idx.toNat < 2^64 ⇒ idx.toNat / 2^(k*64) = 0
       have h1 : i1 = 0 := by
-        show idx.getLimbN 1 = 0; simp [EvmWord.getLimb]
+        show idx.getLimbN 1 = 0; simp [EvmWord.getLimbN, EvmWord.getLimb]
         apply BitVec.eq_of_toNat_eq; simp [BitVec.extractLsb'_toNat]; omega
       have h2 : i2 = 0 := by
         show idx.getLimbN 2 = 0; apply BitVec.eq_of_toNat_eq
-        simp [EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
+        simp [EvmWord.getLimbN, EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
       have h3 : i3 = 0 := by
         show idx.getLimbN 3 = 0; apply BitVec.eq_of_toNat_eq
-        simp [EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
+        simp [EvmWord.getLimbN, EvmWord.getLimb, BitVec.extractLsb'_toNat]; omega
       rw [h1, h2, h3]; simp
     rw [hbyte_zero]
     -- Use evm_byte_zero_high_spec at the limb level, then wrap with evmWordIs
@@ -1040,13 +1042,9 @@ theorem evm_byte_stack_spec (sp base : Word)
         simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                    show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                    show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
-                   show (0 : EvmWord).getLimbN 0 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimbN 1 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimbN 2 = 0 from by simp [EvmWord.getLimb],
-                   show (0 : EvmWord).getLimbN 3 = 0 from by simp [EvmWord.getLimb]]
-        have w := sepConj_mono_left (regIs_to_regOwn .x6 _) h
-          ((congrFun (show _ = _ from by xperm) h).mp hq)
-        exact (congrFun (show _ = _ from by xperm) h).mp w)
+                   EvmWord.getLimbN_zero]
+        have w := sepConj_mono_right (regIs_to_regOwn .x6 _) h hq
+        xperm_hyp w)
       h_framed
   · push_neg at hhigh
     -- hhigh : i1 ||| i2 ||| i3 = 0
@@ -1085,13 +1083,9 @@ theorem evm_byte_stack_spec (sp base : Word)
           simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
                      show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
                      show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
-                     show (0 : EvmWord).getLimbN 0 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimbN 1 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimbN 2 = 0 from by simp [EvmWord.getLimb],
-                     show (0 : EvmWord).getLimbN 3 = 0 from by simp [EvmWord.getLimb]]
-          have w := sepConj_mono_left (regIs_to_regOwn .x6 _) h
-            ((congrFun (show _ = _ from by xperm) h).mp hq)
-          exact (congrFun (show _ = _ from by xperm) h).mp w)
+                     EvmWord.getLimbN_zero]
+          have w := sepConj_mono_right (regIs_to_regOwn .x6 _) h hq
+          xperm_hyp w)
         h_framed
 
 end EvmAsm.Rv64
