@@ -306,6 +306,10 @@ private def reportAtomMismatches (lhsAtoms rhsAtoms : List Expr) : MetaM Message
     the mismatching atoms so the caller can fix the normalization. -/
 partial def buildPermProof (lhs rhs : Expr) : MetaM Expr :=
   withTraceNode `runBlock.perf.perm (fun _ => return m!"perm") do
+  -- Inline let-bound fvars so atoms like `regIs .x7 result` become
+  -- `regIs .x7 (if ... then 1 else 0)` — syntactically identical across both sides.
+  let lhs ← Lean.Meta.zetaReduce lhs
+  let rhs ← Lean.Meta.zetaReduce rhs
   let lhsAtoms ← flattenSepConj lhs
   let rhsAtoms ← flattenSepConj rhs
   -- Check atom count
