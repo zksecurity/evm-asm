@@ -29,4 +29,7 @@ import EvmAsm.Evm64.DivMod.Compose.ModNormA
 import EvmAsm.Evm64.DivMod.Compose.ModEpilogue
 import EvmAsm.Evm64.DivMod.Compose.ModDiv128
 import EvmAsm.Evm64.DivMod.Compose.FullPath
+import EvmAsm.Evm64.DivMod.Compose.FullPathN3
+import EvmAsm.Evm64.DivMod.Compose.FullPathN2
+import EvmAsm.Evm64.DivMod.Compose.FullPathN1
 import EvmAsm.Evm64.DivMod.Compose.ModFullPath
