@@ -140,26 +140,22 @@ private theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by nati
 
 set_option maxHeartbeats 12800000 in
 set_option maxRecDepth 4096 in
-/-- Full NormB: normalize divisor b[0..3] in place by left-shifting.
-    base+228 → base+312 (21 instructions).
-    Pre: x12=sp, x6=shift, x2=anti_shift, b[0..3] at sp+32..56.
-    Post: b[i] normalized, x5=b[0]<<<shift, x7=b[0]>>>anti_shift. -/
-theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (base : Word)
+/-- NormB first half: merge1 (b[3] with b[2]) + merge2 (b[2] with b[1]).
+    base+228 → base+276 (12 instructions). -/
+private theorem divK_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (base : Word)
     (hvalid : ValidMemRange sp 8) :
     let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
     let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-    let b0' := b0 <<< (shift.toNat % 64)
-    cpsTriple (base + 228) (base + 312) (divCode base)
+    cpsTriple (base + 228) (base + 276) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
        ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b2') ** (.x7 ↦ᵣ (b1 >>> (anti_shift.toNat % 64))) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
-       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
        ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
-  intro b3' b2' b1' b0'
+  intro b3' b2'
   -- Merge 1: b[3] with b[2] (base+228 → base+252)
   have hm1 := divK_normB_merge_spec 56 48 sp b3 b2 v5 v7 shift anti_shift (base + 228)
     (by rw [se12_56]; exact hvalid.get (show 7 < 8 from by omega))
@@ -192,6 +188,29 @@ theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (bas
     (by pcFree) hm2e
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hm1ef hm2ef
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    h12
+
+set_option maxHeartbeats 12800000 in
+set_option maxRecDepth 4096 in
+/-- NormB second half: merge3 (b[1] with b[0]) + last (b[0] shift).
+    base+276 → base+312 (9 instructions). -/
+private theorem divK_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base : Word)
+    (hvalid : ValidMemRange sp 8) :
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    cpsTriple (base + 276) (base + 312) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b2') ** (.x7 ↦ᵣ (b1 >>> (anti_shift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
+  intro b1' b0'
   -- Merge 3: b[1] with b[0] (base+276 → base+300)
   have hm3 := divK_normB_merge_spec 40 32 sp b1 b0
     b2' (b1 >>> (anti_shift.toNat % 64)) shift anti_shift (base + 276)
@@ -207,8 +226,6 @@ theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (bas
   have hm3ef := cpsTriple_frame_left _ _ _ _ _
     (((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
     (by pcFree) hm3e
-  have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h12 hm3ef
   -- Last: b[0] alone (base+300 → base+312)
   have hl := divK_normB_last_spec 32 sp b0 b1' shift (base + 300)
     (by rw [se12_32]; exact hvalid.get (show 4 < 8 from by omega))
@@ -223,11 +240,41 @@ theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (bas
     ((.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) **
      ((sp + 40) ↦ₘ b1') ** ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
     (by pcFree) hle
-  have h1234 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123 hlef
+  have h34 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hm3ef hlef
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
-    h1234
+    h34
+
+set_option maxHeartbeats 800000 in
+set_option maxRecDepth 4096 in
+/-- Full NormB: normalize divisor b[0..3] in place by left-shifting.
+    base+228 → base+312 (21 instructions).
+    Pre: x12=sp, x6=shift, x2=anti_shift, b[0..3] at sp+32..56.
+    Post: b[i] normalized, x5=b[0]<<<shift, x7=b[0]>>>anti_shift. -/
+theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (base : Word)
+    (hvalid : ValidMemRange sp 8) :
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    cpsTriple (base + 228) (base + 312) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
+       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
+  intro b3' b2' b1' b0'
+  have h1 := divK_normB_half1 sp b0 b1 b2 b3 v5 v7 shift anti_shift base hvalid
+  have h2 := divK_normB_half2 sp b0 b1 b2' b3' shift anti_shift base hvalid
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    (cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (fun h hp => by xperm_hyp hp) h1 h2)
 
 end EvmAsm.Rv64
