@@ -376,4 +376,74 @@ theorem evm_mod_phaseA_ntaken_spec (sp base : Word)
     (fun h hq => by xperm_hyp hq)
     hAB
 
+-- ============================================================================
+-- Section 14: MOD epilogue composition (load u[0..3], store to output)
+-- Mirrors DIV epilogue but reads from u[] offsets (4056/4048/4040/4032).
+-- ============================================================================
+
+private theorem divK_modEpilogue_code_sub_modCode (base : Word) :
+    ∀ a i, (CodeReq.ofProg (base + 1004) (divK_mod_epilogue 24)) a = some i →
+      (modCode base) a = some i := by
+  unfold modCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+set_option maxHeartbeats 12800000 in
+set_option maxRecDepth 4096 in
+/-- Full MOD epilogue: load u[0..3] (denormalized remainder), advance sp, store to output, JAL to NOP.
+    base+1004 → base+1064 (10 instructions). -/
+theorem divK_mod_epilogue_spec (sp : Word) (base : Word)
+    (u0 u1 u2 u3 v5 v6 v7 v10 m0 m8 m16 m24 : Word)
+    (hvalid : ValidMemRange sp 8)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
+    cpsTriple (base + 1004) (base + 1064) (modCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ u0) ** (.x6 ↦ᵣ u1) ** (.x7 ↦ᵣ u2) ** (.x10 ↦ᵣ u3) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + 32) ↦ₘ u0) ** ((sp + 40) ↦ₘ u1) **
+       ((sp + 48) ↦ₘ u2) ** ((sp + 56) ↦ₘ u3)) := by
+  -- Load phase (base+1004 → base+1020): load u[0..3] from scratch memory
+  have hload := divK_epilogue_load_spec 4056 4048 4040 4032 sp u0 u1 u2 u3 v5 v6 v7 v10
+    (base + 1004) hv_u0 hv_u1 hv_u2 hv_u3
+  rw [show (base + 1004 : Word) + 16 = base + 1020 from by bv_addr] at hload
+  have hloade := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_modEpilogue_code_sub_modCode base a i
+      (CodeReq.ofProg_mono_sub (base + 1004) (base + 1004) (divK_mod_epilogue 24)
+        (divK_epilogue_load_prog 4056 4048 4040 4032) 0
+        (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hload
+  -- Store phase (base+1020 → base+1064 via JAL): advance sp, store u[0..3] to output
+  have hstore := divK_epilogue_store_spec sp (base + 1020) u0 u1 u2 u3 m0 m8 m16 m24 24 hvalid
+  rw [show (base + 1020 : Word) + 20 + signExtend21 24 = base + 1064 from by
+        rw [show signExtend21 (24 : BitVec 21) = (24 : Word) from by native_decide]; bv_addr]
+    at hstore
+  have hstoree := cpsTriple_extend_code (hmono := fun a i h =>
+    divK_modEpilogue_code_sub_modCode base a i
+      (CodeReq.ofProg_mono_sub (base + 1004) (base + 1020) (divK_mod_epilogue 24)
+        (divK_epilogue_store_prog 24) 4
+        (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hstore
+  -- Frame load with output memory
+  have hloadef := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) ** ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+    (by pcFree) hloade
+  -- Frame store with scratch memory
+  have hstoref := cpsTriple_frame_left _ _ _ _ _
+    (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
+    (by pcFree) hstoree
+  have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hloadef hstoref
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    h12
+
 end EvmAsm.Rv64
