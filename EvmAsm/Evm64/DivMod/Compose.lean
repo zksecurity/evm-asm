@@ -21,3 +21,5 @@ import EvmAsm.Evm64.DivMod.Compose.NormA
 import EvmAsm.Evm64.DivMod.Compose.Div128
 import EvmAsm.Evm64.DivMod.Compose.Epilogue
 import EvmAsm.Evm64.DivMod.Compose.ModPhaseB
+import EvmAsm.Evm64.DivMod.Compose.ModPhaseBn3
+import EvmAsm.Evm64.DivMod.Compose.ModPhaseBn21
