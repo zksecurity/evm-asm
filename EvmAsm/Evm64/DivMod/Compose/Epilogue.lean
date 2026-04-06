@@ -41,6 +41,66 @@ private theorem se12_4040' : signExtend12 (4040 : BitVec 12) = signExtend12 4040
 private theorem se12_4048' : signExtend12 (4048 : BitVec 12) = signExtend12 4048 := rfl
 private theorem se12_4056' : signExtend12 (4056 : BitVec 12) = signExtend12 4056 := rfl
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 3200000 in
+/-- Denorm preamble for shift≠0: LD shift from memory + BEQ not taken.
+    base+904 → base+912. Bridges the gap between loop body exit and denorm body. -/
+theorem divK_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hshift_nz : shift ≠ 0) :
+    cpsTriple (base + 904) (base + 912) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  -- 1. LD x6 x12 3992 at base+904 (denorm instr [0])
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun) hv_shift
+  rw [show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hld
+  have hlde := cpsTriple_extend_code (hmono := by
+    intro a i h
+    exact divK_denorm_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 904) (base + 904) divK_denorm
+        [.LD .x6 .x12 3992] 0 (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hld
+  -- 2. BEQ x6 x0 96 at base+908 (denorm instr [1])
+  have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 908)
+  rw [show (base + 908 : Word) + signExtend13 (96 : BitVec 13) = base + 1004 from by
+        rw [show signExtend13 (96 : BitVec 13) = (96 : Word) from by native_decide]
+        bv_addr,
+      show (base + 908 : Word) + 4 = base + 912 from by bv_addr] at hbeq
+  have hbeqe := cpsBranch_extend_code (hmono := by
+    intro a i h
+    exact divK_denorm_code_sub_divCode base a i
+      (CodeReq.ofProg_mono_sub (base + 904) (base + 908) divK_denorm
+        [.BEQ .x6 .x0 96] 1 (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hbeq
+  -- 3. Eliminate taken branch: shift ≠ 0 means BEQ not taken
+  have hbeq_exit := cpsBranch_elim_ntaken _ _ _ _ _ _ _ hbeqe
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+      exact hshift_nz hpure)
+  have hbeq_clean := cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
+    hbeq_exit
+  -- 4. Frame LD with x0, x5, x7, x2, x10
+  have hldf := cpsTriple_frame_left _ _ _ _ _
+    ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
+    (by pcFree) hlde
+  -- 5. Frame BEQ exit with x12, x5, x7, x2, x10, shift_mem
+  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+     ((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hbeq_clean
+  -- 6. Compose LD → BEQ exit
+  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hldf hbeqf
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
 set_option maxHeartbeats 12800000 in
 set_option maxRecDepth 4096 in
 /-- Full Denorm (shift body only): denormalize u[0..3] by right-shifting.
