@@ -467,6 +467,21 @@ theorem evm_div_n4_full_spec (sp base : Word)
   -- hRF_heap : (POST_LOOP_POST ** LEFTOVER ** F) h_res
   -- Need: (∃ qv0 x2out ... scout, (all 35 atoms)) ** F) h_res
   -- The anti_shift/u' values from intro_lets become existential witnesses
-  sorry -- TODO: provide existential witnesses from let-bound values + xperm
+  -- hRF_heap : (POST_LOOP_POST ** (LEFTOVER ** F)) h_res
+  -- Goal: ((fun h => ∃ witnesses, atoms h) ** F) h_res
+  -- Re-associate: POST ** (LO ** F) → (POST ** LO) ** F
+  rw [← sepConj_assoc'] at hRF_heap
+  -- Now hRF_heap : ((POST_LOOP_POST ** LEFTOVER) ** F) h_res
+  -- Split into (POST ** LO) and F
+  obtain ⟨h_pl, h_f3, heq_r, hdisj_r, hPL, hF3⟩ := hRF_heap
+  -- Provide the sep conj with existential witnesses
+  refine ⟨h_pl, h_f3, heq_r, hdisj_r, ?_, hF3⟩
+  -- hPL : (POST_LOOP_POST ** LEFTOVER) h_pl
+  -- Need: ∃ qv0 x2out ... scout, (35 atoms) h_pl
+  -- Expand let-bindings in POST_LOOP_POST
+  intro_lets at hPL
+  exact ⟨qv, _, signExtend12 (4095 : BitVec 12), x11v,
+    _, _, _, _, u4v, retv, dv, dlov, sunv,
+    by xperm_hyp hPL⟩
 
 end EvmAsm.Rv64
