@@ -337,11 +337,27 @@ theorem evm_div_n4_full_spec (sp base : Word)
        ((sp + signExtend12 3976) ↦ₘ j_old) **
        ((sp + signExtend12 3968) ↦ₘ ret_mem) ** ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) ** ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fun h => ∃ (qv0 qv1 qv2 qv3 : Word),
-        ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ qv0) ** (.x6 ↦ᵣ qv1) ** (.x7 ↦ᵣ qv2) **
-         (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ qv3) **
-         ((sp + 32) ↦ₘ qv0) ** ((sp + 40) ↦ₘ qv1) **
-         ((sp + 48) ↦ₘ qv2) ** ((sp + 56) ↦ₘ qv3)) h) := by
+      (fun h => ∃ (qv0 x2out x1out x11out : Word)
+        (u0out u1out u2out u3out u4out : Word)
+        (retout dout dlout scout : Word),
+        ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ qv0) ** (.x6 ↦ᵣ (0 : Word)) ** (.x7 ↦ᵣ (0 : Word)) **
+         (.x2 ↦ᵣ x2out) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) **
+         (.x1 ↦ᵣ x1out) ** (.x11 ↦ᵣ x11out) **
+         ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+         ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+         ((sp + 32) ↦ₘ qv0) ** ((sp + 40) ↦ₘ (0 : Word)) **
+         ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 3992) ↦ₘ shift) **
+         ((sp + signExtend12 4056) ↦ₘ u0out) ** ((sp + signExtend12 4048) ↦ₘ u1out) **
+         ((sp + signExtend12 4040) ↦ₘ u2out) ** ((sp + signExtend12 4032) ↦ₘ u3out) **
+         ((sp + signExtend12 4088) ↦ₘ qv0) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 4024) ↦ₘ u4out) **
+         ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 3984) ↦ₘ (4 : Word)) ** ((sp + signExtend12 3976) ↦ₘ (0 : Word)) **
+         ((sp + signExtend12 3968) ↦ₘ retout) ** ((sp + signExtend12 3960) ↦ₘ dout) **
+         ((sp + signExtend12 3952) ↦ₘ dlout) ** ((sp + signExtend12 3944) ↦ₘ scout)) h) := by
   intro shift anti_shift b3' b2' b1' b0'
   -- Step 1: Pre-loop + loop body (base → base+904)
   have hPLLB := evm_div_n4_preloop_loopbody_spec sp base
@@ -357,11 +373,100 @@ theorem evm_div_n4_full_spec (sp base : Word)
   intro F hF st hcr hPF hpc
   -- Execute first half: base → base+904
   obtain ⟨k1, s1, hstep1, hpc1, hQF⟩ := hPLLB F hF st hcr hPF hpc
-  -- TODO: Complete the end-to-end composition by:
-  -- 1. Destructuring loopBodyPostN4 existentials from the intermediate state
-  -- 2. Applying evm_div_preamble_denorm_epilogue_spec with the concrete values
-  -- 3. Chaining the execution steps
-  -- The approach is proven correct by cpsTriple_seq_ex_same_cr above.
-  sorry
+  -- Destructure holdsFor and sep conj
+  obtain ⟨h_full, hcompat1, h_qframe, h_f, heq_outer, hdisj_outer, hQFrame, hF_heap⟩ := hQF
+  obtain ⟨h_lp, h_frame, heq_inner, hdisj_inner, hLP, hFrame⟩ := hQFrame
+  -- Expand loopBodyPostN4
+  change loopBodyPostN4 sp (0 : Word) b0' b1' b2' b3' h_lp at hLP
+  dsimp only [loopBodyPostN4] at hLP
+  simp only [j0_u_base_eq, j0_q_addr_eq, j0_u0_addr_eq, j0_u1_addr_eq,
+    j0_u2_addr_eq, j0_u3_addr_eq, j0_u4_addr_eq, j0_shl3_eq, j0_j'_eq,
+    signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56] at hLP
+  obtain ⟨x2v, x10v, x11v, un0v, un1v, un2v, un3v, u4v, qv,
+    retv, dv, dlov, sunv, hLP_atoms⟩ := hLP
+  -- Get post-loop chain with concrete values
+  -- v2=x2v, v5=0, v6=sp+SE12(4056), v7=sp+SE12(4088), v10=x10v
+  -- q0=qv, q1=0, q2=0, q3=0, m0=b0', m8=b1', m16=b2', m24=b3'
+  have hDE := evm_div_preamble_denorm_epilogue_spec sp base
+    un0v un1v un2v un3v shift
+    x2v (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088) x10v
+    qv (0 : Word) (0 : Word) (0 : Word) b0' b1' b2' b3'
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  intro_lets at hDE
+  -- Weaken postcondition to existential q output
+  -- Don't weaken postcondition — use hDE directly with full output
+  -- The postcondition weakening happens at the holdsFor level at the end
+  -- Apply hDE (unframed) with combined frame = LEFTOVER ** F
+  -- LEFTOVER: atoms not used by post-loop but carried through
+  -- Recombine heaps
+  have hCombined : sepConj _ _ h_qframe :=
+    ⟨h_lp, h_frame, heq_inner, hdisj_inner, hLP_atoms, hFrame⟩
+  have hAll : sepConj _ _ h_full :=
+    ⟨h_qframe, h_f, heq_outer, hdisj_outer, hCombined, hF_heap⟩
+  rw [sepConj_assoc'] at hAll
+  -- Rearrange atoms to match POST_LOOP_PRE ** (LEFTOVER ** F)
+  -- POST_LOOP_PRE = hDE's precondition (20 atoms)
+  let POST_LOOP_PRE :=
+    (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ sp + signExtend12 4056) ** (.x0 ↦ᵣ (0 : Word)) **
+    (.x5 ↦ᵣ (0 : Word)) ** (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x2 ↦ᵣ x2v) ** (.x10 ↦ᵣ x10v) **
+    ((sp + signExtend12 3992) ↦ₘ shift) **
+    ((sp + signExtend12 4056) ↦ₘ un0v) ** ((sp + signExtend12 4048) ↦ₘ un1v) **
+    ((sp + signExtend12 4040) ↦ₘ un2v) ** ((sp + signExtend12 4032) ↦ₘ un3v) **
+    ((sp + signExtend12 4088) ↦ₘ qv) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+    ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+    ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')
+  have hRearranged : (POST_LOOP_PRE ** (((.x1 ↦ᵣ signExtend12 (4095 : BitVec 12)) ** (.x11 ↦ᵣ x11v) **
+     ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ u4v) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ (4 : Word)) ** ((sp + signExtend12 3976) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retv) ** (sp + signExtend12 3960 ↦ₘ dv) **
+     (sp + signExtend12 3952 ↦ₘ dlov) ** (sp + signExtend12 3944 ↦ₘ sunv)) ** F)) h_full := by
+    sorry -- xperm_hyp hAll
+  have hQ2F : (POST_LOOP_PRE ** (((.x1 ↦ᵣ signExtend12 (4095 : BitVec 12)) ** (.x11 ↦ᵣ x11v) **
+     ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ u4v) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ (4 : Word)) ** ((sp + signExtend12 3976) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retv) ** (sp + signExtend12 3960 ↦ₘ dv) **
+     (sp + signExtend12 3952 ↦ₘ dlov) ** (sp + signExtend12 3944 ↦ₘ sunv)) ** F)).holdsFor s1 :=
+    ⟨h_full, hcompat1, hRearranged⟩
+  -- Apply the post-loop chain with LEFTOVER ** F as the frame
+  have hLOF_pcFree : (((.x1 ↦ᵣ signExtend12 (4095 : BitVec 12)) ** (.x11 ↦ᵣ x11v) **
+     ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ u4v) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ (4 : Word)) ** ((sp + signExtend12 3976) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retv) ** (sp + signExtend12 3960 ↦ₘ dv) **
+     (sp + signExtend12 3952 ↦ₘ dlov) ** (sp + signExtend12 3944 ↦ₘ sunv)) ** F).pcFree := by
+    pcFree; exact hF
+  obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ :=
+    hDE (((.x1 ↦ᵣ signExtend12 (4095 : BitVec 12)) ** (.x11 ↦ᵣ x11v) **
+     ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ u4v) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ (4 : Word)) ** ((sp + signExtend12 3976) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retv) ** (sp + signExtend12 3960 ↦ₘ dv) **
+     (sp + signExtend12 3952 ↦ₘ dlov) ** (sp + signExtend12 3944 ↦ₘ sunv)) ** F) hLOF_pcFree s1
+      (CodeReq.SatisfiedBy_preserved (divCode base) k1 _ _ hstep1 hcr) hQ2F hpc1
+  -- Chain the steps
+  refine ⟨k1 + k2, s2, stepN_add_eq k1 k2 st s1 s2 hstep1 hstep2, hpc2, ?_⟩
+  -- Convert: (POST_LOOP_POST ** LEFTOVER ** F).holdsFor → (declared_post ** F).holdsFor
+  obtain ⟨h_res, hcompat2, hRF_heap⟩ := hRF
+  refine ⟨h_res, hcompat2, ?_⟩
+  -- Provide existential witnesses and permute atoms
+  -- hRF_heap : (POST_LOOP_POST ** LEFTOVER ** F) h_res
+  -- Need: (∃ qv0 x2out ... scout, (all 35 atoms)) ** F) h_res
+  -- The anti_shift/u' values from intro_lets become existential witnesses
+  sorry -- TODO: provide existential witnesses from let-bound values + xperm
 
 end EvmAsm.Rv64
