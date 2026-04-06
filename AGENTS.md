@@ -77,7 +77,7 @@ When adding or modifying proofs:
 
 - **Do NOT add `set_option maxHeartbeats` to any file** unless you are in `Evm64/Shift/` composition files (Compose, ShlCompose, SarCompose) for body/path composition proofs. Heartbeat limits are configured globally in `lakefile.toml`.
 - **Do NOT add `set_option maxRecDepth` to any file.** Recursion depth is configured globally in `lakefile.toml`.
-- If a proof times out or hits recursion limits, restructure the proof (e.g., split into smaller lemmas, use intermediate `have` bindings) rather than increasing limits.
+- If a proof times out or hits recursion limits, restructure the proof (e.g., split into smaller lemmas, use intermediate `have` bindings) rather than increasing limits. Increasing `maxRecDepth`/`maxHeartbeats` is almost always a waste of time — the real issue is typically a unification mismatch, wrong argument order, or missing address canonicalization.
 - **Exception for Shift composition files**: `set_option maxHeartbeats` up to 6400000 is acceptable for body/path composition proofs (Section 4+) which are bottlenecked by `xperm_hyp` permutation on large atom chains. Subsumption lemmas (Section 2) should NOT need heartbeat overrides — they use structural `unionAll` reasoning.
 
 ## Common Pitfalls
@@ -280,6 +280,48 @@ Large composition files (>1000 lines) should be split into independent sub-files
 - `Compose.lean`: lightweight re-export of all sub-files
 
 This enables parallel kernel checking. The split reduced DivMod/Compose from 87s (monolithic) to 55s (critical path through Norm.lean).
+
+## End-to-End Composition with Existential Intermediates
+
+When composing specs where an intermediate postcondition has existentials (e.g., `loopBodyPostN4` which wraps computed values in `∃`), standard `cpsTriple_seq_with_perm_same_cr` doesn't work because the second spec's precondition depends on the existential witnesses.
+
+### Approach: Unfold `cpsTriple` directly
+
+```lean
+show cpsTriple base end_ cr P R
+intro F hF st hcr hPF hpc
+-- Execute first half
+obtain ⟨k1, s1, hstep1, hpc1, hQF⟩ := h1 F hF st hcr hPF hpc
+-- Destructure holdsFor and sep conj
+obtain ⟨h_full, hcompat1, ...⟩ := hQF
+-- Expand existential def (e.g., loopBodyPostN4)
+dsimp only [loopBodyPostN4] at hLP
+obtain ⟨x2v, ..., hLP_atoms⟩ := hLP
+-- Now have concrete values → instantiate second spec
+have h2 := second_spec ... x2v ...
+-- Apply second spec with combined frame
+obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := h2 (LEFTOVER ** F) ...
+-- Chain steps
+exact ⟨k1 + k2, s2, stepN_add_eq ..., hpc2, ...⟩
+```
+
+### Key techniques
+
+1. **`cpsTriple_seq_ex_same_cr`** (in `DivN4Full.lean`): Helper lemma for composing `cpsTriple s m cr P (fun h => ∃ v, Q v h)` with `∀ v, cpsTriple m e cr (Q v) R`. Handles the `holdsFor`/`sepConj` plumbing internally.
+
+2. **`rw [← sepConj_assoc']`**: Re-associates `P ** (Q ** F)` to `(P ** Q) ** F` — essential for separating the frame F from the combined assertion when constructing the postcondition existentials.
+
+3. **`intro_lets` at hypothesis**: Expands let-bindings from spec postconditions (e.g., `anti_shift`, `u0'`) into local definitions that can be used as existential witnesses.
+
+4. **Combined frame approach**: When applying a `cpsTriple` spec directly (after unfolding), use `hDE (LEFTOVER ** F) hLOF_pcFree s1 ...` to pass both leftover atoms AND the original frame F as the frame parameter. This avoids a separate `cpsTriple_frame_left` step and the resulting 36+ atom xperm.
+
+5. **Address canonicalization for `j=0`**: The `j0_*_addr_eq` lemmas convert `u_base`-relative addresses (from `loopBodyPostN4`) to canonical `sp + signExtend12 XXXX` form. Also need `signExtend12_32/40/48/56` to convert `sp + signExtend12 32` to `sp + 32`. Apply these with `simp only [...] at hLP` after `dsimp only [loopBodyPostN4]`.
+
+6. **`pcFree` for combined frames**: The `pcFree` tactic can't see through `let`/`set` definitions. Either inline the frame assertion or use `pcFree; exact hF` when the frame ends with an abstract `F`.
+
+### Import cycle prevention
+
+`DivN4Full.lean` imports both `LoopBodyN4` and `FullPath.lean`. Since `LoopBody.lean` → `Compose.lean` already forms a chain, do NOT add `DivN4Full` to `Compose.lean`'s imports — it would create a cycle. `DivN4Full` stands alone.
 
 ## Roadmap (PLAN.md)
 
