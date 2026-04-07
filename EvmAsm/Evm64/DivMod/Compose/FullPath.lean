@@ -675,4 +675,141 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
     (fun h hq => by xperm_hyp hq)
     hFull
 
+-- ============================================================================
+-- MOD Denorm preamble: LD shift + BEQ (base+904 → base+912) with modCode
+-- Same instructions as divK_denorm_preamble_spec, but proved against modCode.
+-- ============================================================================
+
+/-- Denorm code (block 9) is subsumed by modCode.
+    Re-proved here because the version in ModEpilogue.lean is private. -/
+private theorem divK_denorm_code_sub_modCode' (base : Word) :
+    ∀ a i, (CodeReq.ofProg (base + 904) divK_denorm) a = some i → (modCode base) a = some i := by
+  unfold modCode; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 3200000 in
+/-- Denorm preamble for shift≠0 with modCode: LD shift from memory + BEQ not taken.
+    base+904 → base+912. -/
+theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hshift_nz : shift ≠ 0) :
+    cpsTriple (base + 904) (base + 912) (modCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  -- 1. LD x6 x12 3992 at base+904 (denorm instr [0])
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun) hv_shift
+  rw [show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hld
+  have hlde := cpsTriple_extend_code (hmono := by
+    intro a i h
+    exact divK_denorm_code_sub_modCode' base a i
+      (CodeReq.ofProg_mono_sub (base + 904) (base + 904) divK_denorm
+        [.LD .x6 .x12 3992] 0 (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hld
+  -- 2. BEQ x6 x0 96 at base+908 (denorm instr [1])
+  have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 908)
+  rw [show (base + 908 : Word) + signExtend13 (96 : BitVec 13) = base + 1004 from by
+        rw [show signExtend13 (96 : BitVec 13) = (96 : Word) from by native_decide]
+        bv_addr,
+      show (base + 908 : Word) + 4 = base + 912 from by bv_addr] at hbeq
+  have hbeqe := cpsBranch_extend_code (hmono := by
+    intro a i h
+    exact divK_denorm_code_sub_modCode' base a i
+      (CodeReq.ofProg_mono_sub (base + 904) (base + 908) divK_denorm
+        [.BEQ .x6 .x0 96] 1 (by bv_addr) (by native_decide) (by native_decide) (by native_decide) a i h)) hbeq
+  -- 3. Eliminate taken branch: shift ≠ 0 means BEQ not taken
+  have hbeq_exit := cpsBranch_elim_ntaken _ _ _ _ _ _ _ hbeqe
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+      exact hshift_nz hpure)
+  have hbeq_clean := cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
+    hbeq_exit
+  -- 4. Frame LD with x0, x5, x7, x2, x10
+  have hldf := cpsTriple_frame_left _ _ _ _ _
+    ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
+    (by pcFree) hlde
+  -- 5. Frame BEQ exit with x12, x5, x7, x2, x10, shift_mem
+  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+     ((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hbeq_clean
+  -- 6. Compose LD → BEQ exit
+  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hldf hbeqf
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
+-- ============================================================================
+-- Post-loop chain with preamble: Preamble → Denorm → MOD Epilogue (base+904 → base+1064)
+-- Loads shift from memory, denormalizes u[], then loads u'[] (remainder) to output.
+-- ============================================================================
+
+/-- Post-loop chain for MOD with preamble: loads shift, denormalizes u[], outputs u'[] (remainder).
+    base+904 → base+1064. Shift ≠ 0 case. -/
+theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
+    (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
+    (m0 m8 m16 m24 : Word)
+    (hshift_nz : shift ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
+    let anti_shift := signExtend12 (0 : BitVec 12) - shift
+    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
+    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
+    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
+    let u3' := u3 >>> (shift.toNat % 64)
+    cpsTriple (base + 904) (base + 1064) (modCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ u0') ** (.x6 ↦ᵣ u1') ** (.x7 ↦ᵣ u2') **
+       (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ u3') **
+       ((sp + signExtend12 3992) ↦ₘ shift) **
+       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
+       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3') **
+       ((sp + 32) ↦ₘ u0') ** ((sp + 40) ↦ₘ u1') **
+       ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3')) := by
+  intro anti_shift u0' u1' u2' u3'
+  -- Step 1: Preamble (base+904 → base+912)
+  have hPre := mod_denorm_preamble_spec sp shift v5 v6 v7 v2 v10 base hv_shift hshift_nz
+  -- Frame preamble with u[], output memory
+  have hPreF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+     ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+     ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+    (by pcFree) hPre
+  -- Step 2: Denorm + MOD Epilogue (base+912 → base+1064)
+  have hDE := evm_mod_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
+    m0 m8 m16 m24 hvalid hv_u0 hv_u1 hv_u2 hv_u3
+  intro_lets at hDE
+  -- Frame epilogue with shift_mem
+  have hDEF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hDE
+  -- Compose preamble → denorm+epilogue
+  have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hPreF hDEF
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hFull
+
 end EvmAsm.Rv64
