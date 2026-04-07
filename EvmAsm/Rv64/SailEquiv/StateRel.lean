@@ -9,7 +9,7 @@ import EvmAsm.Rv64.Basic
 import LeanRV64D
 
 open LeanRV64D.Functions
-open LeanRV64D.Defs
+open Sail
 
 namespace EvmAsm.Rv64.SailEquiv
 
@@ -20,42 +20,63 @@ namespace EvmAsm.Rv64.SailEquiv
 /-- The SAIL machine state type. -/
 abbrev SailState := PreSail.SequentialState RegisterType trivialChoiceSource
 
-/-- The SAIL monad. -/
-abbrev SailM' := SailM
-
 -- ============================================================================
--- Register mapping
+-- Register mapping: Rv64.Reg → regidx (5-bit index)
 -- ============================================================================
 
 /-- Map Rv64.Reg to the SAIL 5-bit register index. -/
 def regToRegidx : Reg → regidx
-  | .x0  => Regidx 0
-  | .x1  => Regidx 1
-  | .x2  => Regidx 2
-  | .x5  => Regidx 5
-  | .x6  => Regidx 6
-  | .x7  => Regidx 7
-  | .x10 => Regidx 10
-  | .x11 => Regidx 11
-  | .x12 => Regidx 12
-
-/-- All regToRegidx values are distinct. -/
-theorem regToRegidx_injective : Function.Injective regToRegidx := by
-  sorry
+  | .x0  => regidx.Regidx 0
+  | .x1  => regidx.Regidx 1
+  | .x2  => regidx.Regidx 2
+  | .x5  => regidx.Regidx 5
+  | .x6  => regidx.Regidx 6
+  | .x7  => regidx.Regidx 7
+  | .x10 => regidx.Regidx 10
+  | .x11 => regidx.Regidx 11
+  | .x12 => regidx.Regidx 12
 
 -- ============================================================================
--- Reading registers from SAIL state
+-- Register mapping: Rv64.Reg → Register (SAIL state key, for non-x0)
 -- ============================================================================
 
-/-- Read an integer register from the SAIL state by running rX_bits. -/
-noncomputable def sailGetReg (s : SailState) (idx : regidx) : Option (BitVec 64 × SailState) :=
-  match rX_bits idx s with
+/-- Map an Rv64 non-x0 register to its SAIL Register key.
+    x0 has no entry in the state (hardwired zero). -/
+def regToSailReg : Reg → Option Register
+  | .x0  => none
+  | .x1  => some Register.x1
+  | .x2  => some Register.x2
+  | .x5  => some Register.x5
+  | .x6  => some Register.x6
+  | .x7  => some Register.x7
+  | .x10 => some Register.x10
+  | .x11 => some Register.x11
+  | .x12 => some Register.x12
+
+/-- Pure register lookup: read an integer register value from SAIL state.
+    Returns 0 for x0, or looks up in the ExtDHashMap for others.
+    Each case is concrete so Lean knows RegisterType Register.xN = BitVec 64. -/
+noncomputable def sailRegVal (s : SailState) (r : Reg) : Option (BitVec 64) :=
+  match r with
+  | .x0  => some 0#64  -- x0 is hardwired zero
+  | .x1  => s.regs.get? Register.x1
+  | .x2  => s.regs.get? Register.x2
+  | .x5  => s.regs.get? Register.x5
+  | .x6  => s.regs.get? Register.x6
+  | .x7  => s.regs.get? Register.x7
+  | .x10 => s.regs.get? Register.x10
+  | .x11 => s.regs.get? Register.x11
+  | .x12 => s.regs.get? Register.x12
+
+-- ============================================================================
+-- Running SAIL computations
+-- ============================================================================
+
+/-- Run a SAIL monadic computation, returning the result and final state (or none on error). -/
+noncomputable def runSail (m : SailM α) (s : SailState) : Option (α × SailState) :=
+  match m s with
   | .ok v s' => some (v, s')
   | .error _ _ => none
-
-/-- Read the PC register from the SAIL state. -/
-noncomputable def sailGetPC (s : SailState) : Option (BitVec 64) :=
-  s.regs.get? Register.PC
 
 -- ============================================================================
 -- Memory reconstruction: SAIL byte-addressed → Rv64 doubleword-addressed
@@ -75,55 +96,16 @@ def reconstructDword (mem : Std.ExtHashMap Nat (BitVec 8)) (addr : Nat) : BitVec
   (b4 <<< 32) ||| (b5 <<< 40) ||| (b6 <<< 48) ||| (b7 <<< 56)
 
 -- ============================================================================
--- State abstraction relation
+-- State abstraction relation (no PC — proved separately at step level)
 -- ============================================================================
 
 /-- The abstraction relation between Rv64.MachineState and SAIL state.
-
-    Asserts that:
-    1. Registers agree on the 9-register subset
-    2. PC agrees
-    3. Memory agrees (SAIL byte-addressed ↔ Rv64 doubleword-addressed)
-    4. SAIL is in Machine mode with bare address translation (no MMU)
--/
+    Asserts register and memory agreement only. -/
 structure StateRel (s_rv : MachineState) (s_sail : SailState) : Prop where
-  /-- Registers agree: reading register r from Rv64 state equals reading it from SAIL state. -/
-  reg_agree : ∀ (r : Reg),
-    ∃ s_sail', sailGetReg s_sail (regToRegidx r) = some (s_rv.getReg r, s_sail')
-  /-- PC values agree. -/
-  pc_agree : sailGetPC s_sail = some s_rv.pc
+  /-- Registers agree on the 9-register subset. -/
+  reg_agree : ∀ (r : Reg), sailRegVal s_sail r = some (s_rv.getReg r)
   /-- Memory agrees: SAIL bytes reconstruct to Rv64 doublewords. -/
   mem_agree : ∀ (a : BitVec 64),
     reconstructDword s_sail.mem a.toNat = s_rv.getMem a
-  /-- SAIL state is in Machine mode (bare address translation). -/
-  bare_mode : True  -- TODO: refine to actual bare-mode predicate on s_sail
-
--- ============================================================================
--- StateRel preservation lemmas
--- ============================================================================
-
-/-- Register write preserves StateRel for other registers and memory. -/
-theorem StateRel.after_reg_write (s_rv : MachineState) (s_sail : SailState)
-    (hrel : StateRel s_rv s_sail)
-    (r : Reg) (v : BitVec 64)
-    (s_sail' : SailState)
-    (h_write : ∀ r', r' ≠ r →
-      sailGetReg s_sail' (regToRegidx r') = sailGetReg s_sail (regToRegidx r'))
-    (h_written : sailGetReg s_sail' (regToRegidx r) = some (MachineState.getReg (s_rv.setReg r v) r, s_sail'))
-    (h_pc : sailGetPC s_sail' = sailGetPC s_sail)
-    (h_mem : s_sail'.mem = s_sail.mem) :
-    StateRel (s_rv.setReg r v) s_sail' := by
-  sorry
-
-/-- PC update preserves StateRel for registers and memory. -/
-theorem StateRel.after_pc_update (s_rv : MachineState) (s_sail : SailState)
-    (hrel : StateRel s_rv s_sail)
-    (new_pc : BitVec 64)
-    (s_sail' : SailState)
-    (h_regs : ∀ r, sailGetReg s_sail' (regToRegidx r) = sailGetReg s_sail (regToRegidx r))
-    (h_pc : sailGetPC s_sail' = some new_pc)
-    (h_mem : s_sail'.mem = s_sail.mem) :
-    StateRel (s_rv.setPC new_pc) s_sail' := by
-  sorry
 
 end EvmAsm.Rv64.SailEquiv
