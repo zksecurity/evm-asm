@@ -36,8 +36,8 @@ theorem limbs_or_ne_zero_imp (b0 b1 b2 b3 : Word)
 -- Word nonzero → toNat positive
 -- ============================================================================
 
-/-- A nonzero 64-bit word has toNat ≥ 1. -/
-theorem word_toNat_pos_of_ne_zero {w : Word} (h : w ≠ 0) : w.toNat ≥ 1 := by
+/-- A nonzero 64-bit word has positive toNat. -/
+theorem word_toNat_pos_of_ne_zero {w : Word} (h : w ≠ 0) : w.toNat > 0 := by
   by_contra hc; push Not at hc
   exact h (BitVec.eq_of_toNat_eq (by simp; omega))
 
@@ -89,28 +89,6 @@ theorem fromLimbs_ne_zero_of_or (b0 b1 b2 b3 : Word)
     rw [val256_eq_fromLimbs_toNat]
     have := congr_arg BitVec.toNat heq; simpa using this
   linarith [val256_pos_of_or_ne_zero b0 b1 b2 b3 h]
-
--- ============================================================================
--- Limb-level Euclidean → EvmWord.div/mod from limbs
--- ============================================================================
-
-/-- Master bridge from limb-level Euclidean property to EvmWord.div.
-    Given limb decompositions of a and b, and a Nat-level Euclidean
-    equation in terms of val256, derives the EvmWord quotient. -/
-theorem div_of_val256_euclidean (a b q r : EvmWord)
-    (hbnz : b ≠ 0)
-    (h_eq : a.toNat = b.toNat * q.toNat + r.toNat)
-    (h_lt : r.toNat < b.toNat) :
-    q = EvmWord.div a b :=
-  div_of_nat_euclidean a b q r hbnz h_eq h_lt
-
-/-- Master bridge from limb-level Euclidean property to EvmWord.mod. -/
-theorem mod_of_val256_euclidean (a b q r : EvmWord)
-    (hbnz : b ≠ 0)
-    (h_eq : a.toNat = b.toNat * q.toNat + r.toNat)
-    (h_lt : r.toNat < b.toNat) :
-    r = EvmWord.mod a b :=
-  mod_of_nat_euclidean a b q r hbnz h_eq h_lt
 
 end EvmWord
 
