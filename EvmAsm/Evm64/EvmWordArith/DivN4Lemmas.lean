@@ -45,37 +45,43 @@ theorem div_nat_le_one_of_msb (u_lo d : Word) (hd : d.toNat ≥ 2^63) :
 -- n=4 shift=0 correctness: q=0 case (a < b)
 -- ============================================================================
 
-/-- When a < b, the quotient is 0 and the remainder is a itself. -/
-theorem div_zero_of_lt (a b : EvmWord) (hbnz : b ≠ 0)
-    (h_lt : a.toNat < b.toNat) :
-    (0 : EvmWord) = EvmWord.div a b :=
-  div_of_nat_euclidean a b 0 a hbnz (by simp) h_lt
+private theorem bnz_of_lt (a b : EvmWord) (h : a.toNat < b.toNat) : b ≠ 0 := by
+  intro heq; subst heq; simp at h
 
-theorem mod_self_of_lt (a b : EvmWord) (hbnz : b ≠ 0)
-    (h_lt : a.toNat < b.toNat) :
-    a = EvmWord.mod a b :=
-  mod_of_nat_euclidean a b 0 a hbnz (by simp) h_lt
+/-- When a < b, the quotient is 0. -/
+theorem div_zero_of_lt (a b : EvmWord) (h_lt : a.toNat < b.toNat) :
+    EvmWord.div a b = 0 :=
+  (div_of_nat_euclidean a b 0 a (bnz_of_lt a b h_lt) (by simp) h_lt).symm
+
+/-- When a < b, the remainder is a itself. -/
+theorem mod_self_of_lt (a b : EvmWord) (h_lt : a.toNat < b.toNat) :
+    EvmWord.mod a b = a :=
+  (mod_of_nat_euclidean a b 0 a (bnz_of_lt a b h_lt) (by simp) h_lt).symm
 
 -- ============================================================================
 -- n=4 shift=0 correctness: q=1 case (b ≤ a < 2*b)
 -- ============================================================================
 
-/-- When b ≤ a < 2b, the quotient is 1 and the remainder is a - b. -/
-theorem div_one_of_ge_lt (a b : EvmWord) (hbnz : b ≠ 0)
-    (h_ge : b.toNat ≤ a.toNat) (h_lt2 : a.toNat < 2 * b.toNat) :
-    (1 : EvmWord) = EvmWord.div a b := by
-  have h1 : (1 : EvmWord).toNat = 1 := by decide
-  apply div_of_nat_euclidean a b 1 (a - b) hbnz
-  · rw [h1, BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega
-  · rw [BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega
+private theorem bnz_of_lt2 (a b : EvmWord) (h : a.toNat < 2 * b.toNat) : b ≠ 0 := by
+  intro heq; subst heq; simp at h
 
-theorem mod_sub_of_ge_lt (a b : EvmWord) (hbnz : b ≠ 0)
+/-- When b ≤ a < 2b, the quotient is 1. -/
+theorem div_one_of_ge_lt (a b : EvmWord)
     (h_ge : b.toNat ≤ a.toNat) (h_lt2 : a.toNat < 2 * b.toNat) :
-    a - b = EvmWord.mod a b := by
+    EvmWord.div a b = 1 := by
   have h1 : (1 : EvmWord).toNat = 1 := by decide
-  apply mod_of_nat_euclidean a b 1 (a - b) hbnz
-  · rw [h1, BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega
-  · rw [BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega
+  exact (div_of_nat_euclidean a b 1 (a - b) (bnz_of_lt2 a b h_lt2)
+    (by rw [h1, BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega)
+    (by rw [BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega)).symm
+
+/-- When b ≤ a < 2b, the remainder is a - b. -/
+theorem mod_sub_of_ge_lt (a b : EvmWord)
+    (h_ge : b.toNat ≤ a.toNat) (h_lt2 : a.toNat < 2 * b.toNat) :
+    EvmWord.mod a b = a - b := by
+  have h1 : (1 : EvmWord).toNat = 1 := by decide
+  exact (mod_of_nat_euclidean a b 1 (a - b) (bnz_of_lt2 a b h_lt2)
+    (by rw [h1, BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega)
+    (by rw [BitVec.toNat_sub_of_le (BitVec.le_def.mpr h_ge)]; omega)).symm
 
 -- ============================================================================
 -- MSB condition implies divisor bound for trial quotient
@@ -90,7 +96,7 @@ theorem msb_imp_hi32_ge (b3 : Word) (hmsb : b3.toNat ≥ 2^63) :
   have hb3 := b3.isLt
   exact Nat.le_div_iff_mul_le (by positivity) |>.mpr (by omega)
 
-/-- If b3 ≥ 2^63, the full 256-bit divisor b satisfies b ≥ 2^192 * 2^63 > 0. -/
+/-- If b3 ≥ 2^63, the full 256-bit divisor b satisfies b ≥ 2^63 * 2^192. -/
 theorem val256_pos_of_b3_msb (b0 b1 b2 b3 : Word) (hmsb : b3.toNat ≥ 2^63) :
     val256 b0 b1 b2 b3 ≥ 2^63 * 2^192 := by
   unfold val256
