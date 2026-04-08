@@ -358,23 +358,25 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     - `divK_loopSetup_ntaken_spec` (m≥0 → loop body), `divK_loopSetup_taken_spec` (m<0 → denorm)
   - DIV Epilogue ✅: load q[0..3] + store to output (10 instrs, base+1004), `divK_div_epilogue_spec`
 
-  **Remaining compositions (b≠0 non-zero path):**
-  - LoopBody (main Knuth D loop): 114 instructions at base+448 — **compositions complete (PR #132)**
-    - 20 sorry-free theorems in `LoopBody.lean`: trial phase (5), mulsub+correction (4),
-      addback+correction (3), store+loop (1), full loop body cpsBranch (4 paths + combined)
+  **Full path compositions (all proved, 0 sorry):**
+  - LoopBody (main Knuth D loop): 114 instructions at base+448
+    - 20 sorry-free theorems in `LoopBody.lean` + N-specific variants in `LoopBodyN{1,2,3,4}.lean`
     - `intro_lets` tactic added for selective let-binding expansion (xperm scaling fix)
     - Combined spec unifies all 4 paths with existential postconditions
-    - Remaining: inductive loop spec (needs array-level sep logic for sliding window)
-  - Denorm (denormalize remainder): 25 instructions at base+904
-  - Epilogue (load quotient/remainder): 10 instructions at base+1004
-  - div128 subroutine: 49 instructions at base+1068
-    - Already fully specified in 5 composable blocks, needs hierarchical composition
+  - Per-n full specs (16 files): DivN{1,2,3,4}Full.lean, DivN{1,2,3,4}FullShift0.lean,
+    ModN{1,2,3,4}Full.lean, ModN{1,2,3,4}FullShift0.lean — each covers base→base+1064
+  - Combined b≠0 specs: `evm_div_bnz_full_spec` (DivCombined.lean),
+    `evm_mod_bnz_full_spec` (ModCombined.lean) — by_cases on n (1/2/3/4) × shift (0/≠0)
+  - Stack-level b≠0 specs: `evm_div_bnz_stack_spec`, `evm_mod_bnz_stack_spec` (Spec.lean)
+    — uses evmWordIs for a, b, and existential result EvmWord
 
-  **Key technical challenges remaining:**
-  - Loop body composition: 114 instructions with loop invariant (j = 4-n down to 0)
-  - div128 subroutine call/return: JALR-based call requires return address framing
-  - Full path merging: by_cases on n (1/2/3/4) to combine all Phase B variants
-  - MOD mirrors: most DIV compositions transfer directly (same code, different epilogue)
+  **Remaining work (semantic correctness):**
+  - Multi-limb arithmetic foundations: `MultiLimb.lean` — half-word decomposition, rv64_divu/mulhu
+    Nat-level correctness, val128/val256 representation, partial product decomposition (done)
+  - `EvmWord.div_correct` / `EvmWord.mod_correct` bridge lemmas: prove algorithm output = BitVec.udiv/umod
+    (requires formalizing Knuth Algorithm D correctness: normalization, trial quotient, correction)
+  - Stack-level specs with `evmWordIs (sp+32) (EvmWord.div a b)` / `(EvmWord.mod a b)` in postcondition
+  - Combined spec merging b=0 + b≠0 into single `evm_div_stack_spec`/`evm_mod_stack_spec`
 
 #### 4.3 SDIV and SMOD (Signed)
 - **Approach**: Check signs, compute unsigned div/mod, apply sign correction.
@@ -664,7 +666,7 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 4. ~~Recreate `ByteSpec.lean`~~ — ✅ Done (Byte/Spec.lean + Byte/LimbSpec.lean, stack-level spec)
 
 **Short-term (enables simple contracts):**
-5. Phase 4.2: DIV, MOD — in progress (69 LimbSpecs + 6 compositions + 20 loop body compositions proved, remaining: Phase B cascade variants, CLZ+, other phases, full path merge)
+5. Phase 4.2: DIV, MOD — near complete (full path compositions proved for all n-cases × shift variants × DIV/MOD, stack-level b=0 and b≠0 specs with evmWordIs; remaining: semantic correctness bridge + combined stack spec)
 6. Phase 5: MLOAD, MSTORE, EVM memory model
 7. Phase 5.1: EVM code region (needed for PUSHn and interpreter)
 
