@@ -13,7 +13,9 @@
   Key results:
   - iter_accumulate_{1,2,3,4}: telescoping for 1..4 iterations
   - val256_zero_upper_{1,2,3}: val256 with trailing zero limbs
-  - accumulated_quotient_correct: full chain from iterations to EvmWord.div
+  - div_correct_n{1,2,3,4}_no_shift: end-to-end for each n-case (div + mod)
+  - div_of_val256_eq_div / mod_of_val256_eq_mod: val256 bridge to EvmWord
+  - div_correct_normalized / mod_correct_normalized: normalization round-trip
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivRemainderBound
@@ -300,6 +302,93 @@ theorem div_of_val256_eq_div
   have hdiv : (EvmWord.div a b).toNat = a.toNat / b.toNat := by
     unfold EvmWord.div; rw [if_neg hbnz']; exact BitVec.toNat_udiv
   exact BitVec.eq_of_toNat_eq (by omega)
+
+/-- Bridge from val256-level remainder correctness to EvmWord.mod.
+    If val256(r_limbs) = val256(a_limbs) % val256(b_limbs), then
+    fromLimbs(r_limbs) = EvmWord.mod(fromLimbs(a_limbs), fromLimbs(b_limbs)). -/
+theorem mod_of_val256_eq_mod
+    {a0 a1 a2 a3 b0 b1 b2 b3 r0 r1 r2 r3 : Word}
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hr : val256 r0 r1 r2 r3 = val256 a0 a1 a2 a3 % val256 b0 b1 b2 b3) :
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    let r := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => r0 | 1 => r1 | 2 => r2 | 3 => r3
+    r = EvmWord.mod a b := by
+  intro a b r
+  have ha : a.toNat = val256 a0 a1 a2 a3 := (val256_eq_fromLimbs_toNat a0 a1 a2 a3).symm
+  have hb : b.toNat = val256 b0 b1 b2 b3 := (val256_eq_fromLimbs_toNat b0 b1 b2 b3).symm
+  have hr_val : r.toNat = val256 r0 r1 r2 r3 := (val256_eq_fromLimbs_toNat r0 r1 r2 r3).symm
+  have hbnz' : b ≠ 0 := fromLimbs_ne_zero_of_or b0 b1 b2 b3 hbnz
+  have hr_nat : r.toNat = a.toNat % b.toNat := by rw [hr_val, ha, hb]; exact hr
+  have hmod : (EvmWord.mod a b).toNat = a.toNat % b.toNat := by
+    unfold EvmWord.mod; rw [if_neg hbnz']; exact BitVec.toNat_umod
+  exact BitVec.eq_of_toNat_eq (by omega)
+
+-- ============================================================================
+-- MOD with normalization: denormalized remainder → EvmWord.mod
+-- ============================================================================
+
+/-- For the MOD epilogue with normalization: the algorithm computes the normalized
+    remainder r_norm, then right-shifts by s to get the actual remainder.
+    If val256(r_denorm) = val256(r_norm) / 2^s and this equals val256(a) % val256(b),
+    then fromLimbs(r_denorm) = EvmWord.mod a b.
+
+    This bridges `mod_remainder_of_normalized` to the EvmWord level. -/
+theorem mod_of_denormalized_remainder
+    {a0 a1 a2 a3 b0 b1 b2 b3 r0 r1 r2 r3 : Word}
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    {r_norm : Nat} (s : Nat)
+    (hr_denorm : val256 r0 r1 r2 r3 = r_norm / 2^s)
+    (hr_mod : r_norm / 2^s = val256 a0 a1 a2 a3 % val256 b0 b1 b2 b3) :
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    let r := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => r0 | 1 => r1 | 2 => r2 | 3 => r3
+    r = EvmWord.mod a b :=
+  mod_of_val256_eq_mod hbnz (by rw [hr_denorm]; exact hr_mod)
+
+/-- Combined normalization bridge for DIV: from normalized Euclidean equation
+    directly to EvmWord.div. Combines `div_quotient_of_normalized` and
+    `div_of_val256_eq_div` into a single step. -/
+theorem div_correct_normalized
+    {a0 a1 a2 a3 b0 b1 b2 b3 q0 q1 q2 q3 : Word}
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    {r_norm : Nat} (s : Nat)
+    (hmulsub : val256 a0 a1 a2 a3 * 2^s =
+               val256 q0 q1 q2 q3 * (val256 b0 b1 b2 b3 * 2^s) + r_norm)
+    (hlt : r_norm < val256 b0 b1 b2 b3 * 2^s) :
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    let q := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => q0 | 1 => q1 | 2 => q2 | 3 => q3
+    q = EvmWord.div a b :=
+  div_of_val256_eq_div hbnz (div_quotient_of_normalized s hmulsub hlt)
+
+/-- Combined normalization bridge for MOD: from normalized Euclidean equation
+    and denormalized remainder → EvmWord.mod. -/
+theorem mod_correct_normalized
+    {a0 a1 a2 a3 b0 b1 b2 b3 q0 q1 q2 q3 r0 r1 r2 r3 : Word}
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    {r_norm : Nat} (s : Nat)
+    (hmulsub : val256 a0 a1 a2 a3 * 2^s =
+               val256 q0 q1 q2 q3 * (val256 b0 b1 b2 b3 * 2^s) + r_norm)
+    (hlt : r_norm < val256 b0 b1 b2 b3 * 2^s)
+    (hr_denorm : val256 r0 r1 r2 r3 = r_norm / 2^s) :
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    let r := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => r0 | 1 => r1 | 2 => r2 | 3 => r3
+    r = EvmWord.mod a b :=
+  mod_of_denormalized_remainder hbnz s hr_denorm (mod_remainder_of_normalized s hmulsub hlt)
 
 end EvmWord
 

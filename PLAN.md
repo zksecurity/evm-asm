@@ -401,7 +401,9 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     `norm_euclidean_correct` (normalization round-trip) (done)
   - Quotient accumulation: `DivAccumulate.lean` — multi-iteration telescoping (`iter_accumulate_{2,3,4}`),
     val256 trailing-zero simplifications, per-n end-to-end `div_correct_n{1,2,3,4}_no_shift`,
-    `div_quotient_of_normalized` (shift bridge), `div_of_val256_eq_div` (val256 → EvmWord.div) (done)
+    `div_quotient_of_normalized` / `mod_remainder_of_normalized` (shift bridge),
+    `div_of_val256_eq_div` / `mod_of_val256_eq_mod` (val256 → EvmWord),
+    `div_correct_normalized` / `mod_correct_normalized` (combined normalization bridge) (done)
   - Remaining: prove algorithm output satisfies Nat-level Euclidean property
     (carry chain analysis connecting specific register expressions to val256 equations)
   - Stack-level specs with `evmWordIs (sp+32) (EvmWord.div a b)` / `(EvmWord.mod a b)` in postcondition
