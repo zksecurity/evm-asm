@@ -623,16 +623,15 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
   · -- Loop-back case: j=3 looped back to base+448, now execute j=2 then j=1 then j=0
     obtain ⟨h_full2, hcompat2, h_qf2, h_f2, hdisj2, heq2, hQF2, hF2⟩ := hQ2F
     obtain ⟨h_lp2, h_frame2, hdisj_i2, heq_i2, hLP2, hFrame2⟩ := hQF2
-    -- Unfold and canonicalize loopBodyPostN1 at j=3
-    change loopBodyPostN1 sp (3 : Word) b0' b1' b2' b3' h_lp2 at hLP2
-    unfold loopBodyPostN1 at hLP2
-    simp only [j3_u0_addr_eq, j3_u1_addr_eq, j3_u2_addr_eq, j3_u3_addr_eq, j3_u4_addr_eq,
-      j3_q_addr_eq] at hLP2
-    simp only [j3_u_base_eq, j3_shl3_eq, j3_j'_eq, j3_sub_24, j3_q_sub_24,
-      signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-      word_add_zero] at hLP2
+    -- Destructure loopBodyPostN1 existentials at j=3
     obtain ⟨x2v_j3, x10v_j3, x11v_j3, un0v_j3, un1v_j3, un2v_j3, un3v_j3, u4v_j3, qv_j3,
       retv_j3, dv_j3, dlov_j3, sunv_j3, hLP2_atoms⟩ := hLP2
+    unfold loopBodyPostN1 at hLP2_atoms
+    simp only [j3_u0_addr_eq, j3_u1_addr_eq, j3_u2_addr_eq, j3_u3_addr_eq, j3_u4_addr_eq,
+      j3_q_addr_eq] at hLP2_atoms
+    simp only [j3_u_base_eq, j3_shl3_eq, j3_j'_eq, j3_sub_24, j3_q_sub_24,
+      signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+      word_add_zero] at hLP2_atoms
     -- Build j=2 combined_spec with j=3 output values
     -- After j=3: x1=2, x5=24, x6=sp+SE12(4032), x7=sp+SE12(4064),
     -- x10=x10v_j3, x11=x11v_j3, x2=x2v_j3
@@ -698,16 +697,15 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
     · -- j=2 loop-back: now execute j=1 then j=0
       obtain ⟨h_full3, hcompat3, h_qf3, h_f3, hdisj3, heq3, hQF3, hF3⟩ := hQ3F
       obtain ⟨h_lp3, h_frame3, hdisj_i3, heq_i3, hLP3, hFrame3⟩ := hQF3
-      -- Unfold and canonicalize loopBodyPostN1 at j=2
-      change loopBodyPostN1 sp (2 : Word) b0' b1' b2' b3' h_lp3 at hLP3
-      unfold loopBodyPostN1 at hLP3
-      simp only [j2_u0_addr_eq, j2_u1_addr_eq, j2_u2_addr_eq, j2_u3_addr_eq, j2_u4_addr_eq,
-        j2_q_addr_eq] at hLP3
-      simp only [j2_u_base_eq, j2_shl3_eq, j2_j'_eq, j2_sub_16, j2_q_sub_16,
-        signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-        word_add_zero] at hLP3
+      -- Destructure loopBodyPostN1 existentials at j=2
       obtain ⟨x2v_j2, x10v_j2, x11v_j2, un0v_j2, un1v_j2, un2v_j2, un3v_j2, u4v_j2, qv_j2,
         retv_j2, dv_j2, dlov_j2, sunv_j2, hLP3_atoms⟩ := hLP3
+      unfold loopBodyPostN1 at hLP3_atoms
+      simp only [j2_u0_addr_eq, j2_u1_addr_eq, j2_u2_addr_eq, j2_u3_addr_eq, j2_u4_addr_eq,
+        j2_q_addr_eq] at hLP3_atoms
+      simp only [j2_u_base_eq, j2_shl3_eq, j2_j'_eq, j2_sub_16, j2_q_sub_16,
+        signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+        word_add_zero] at hLP3_atoms
       -- Build j=1 combined_spec with j=2 output values
       -- After j=2: x1=1, x5=16, x6=sp+SE12(4040), x7=sp+SE12(4072)
       -- u window at j=1: u0 at SE12(4048)=u1, u1 at SE12(4040)=un0v_j2,
@@ -771,16 +769,15 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
       · -- j=1 loop-back: now execute j=0
         obtain ⟨h_full4, hcompat4, h_qf4, h_f4, hdisj4, heq4, hQF4, hF4⟩ := hQ4F
         obtain ⟨h_lp4, h_frame4, hdisj_i4, heq_i4, hLP4, hFrame4⟩ := hQF4
-        -- Unfold and canonicalize loopBodyPostN1 at j=1
-        change loopBodyPostN1 sp (1 : Word) b0' b1' b2' b3' h_lp4 at hLP4
-        unfold loopBodyPostN1 at hLP4
-        simp only [j1_u0_addr_eq, j1_u1_addr_eq, j1_u2_addr_eq, j1_u3_addr_eq, j1_u4_addr_eq,
-          j1_q_addr_eq] at hLP4
-        simp only [j1_u_base_eq, j1_shl3_eq, j1_j'_eq, j1_sub_8, j1_q_sub_8,
-          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-          word_add_zero] at hLP4
+        -- Destructure loopBodyPostN1 existentials at j=1
         obtain ⟨x2v_j1, x10v_j1, x11v_j1, un0v_j1, un1v_j1, un2v_j1, un3v_j1, u4v_j1, qv_j1,
           retv_j1, dv_j1, dlov_j1, sunv_j1, hLP4_atoms⟩ := hLP4
+        unfold loopBodyPostN1 at hLP4_atoms
+        simp only [j1_u0_addr_eq, j1_u1_addr_eq, j1_u2_addr_eq, j1_u3_addr_eq, j1_u4_addr_eq,
+          j1_q_addr_eq] at hLP4_atoms
+        simp only [j1_u_base_eq, j1_shl3_eq, j1_j'_eq, j1_sub_8, j1_q_sub_8,
+          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+          word_add_zero] at hLP4_atoms
         -- Build j=0 spec with j=1 output values
         -- After j=1: x1=0, x5=8, x6=sp+SE12(4048), x7=sp+SE12(4080)
         -- u window at j=0: u0 at SE12(4056)=u0, u1 at SE12(4048)=un0v_j1,
@@ -844,15 +841,14 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
         obtain ⟨h_res5, hcompat5, h_qf5, h_f5, hdisj5, heq5, hQF5, hF5⟩ := hQ5F
         refine ⟨h_res5, hcompat5, h_qf5, h_f5, hdisj5, heq5, ?_, hF5⟩
         obtain ⟨h_j0, h_fr0, hdisj_j0, heq_j0, hJ0post, hFR0⟩ := hQF5
-        change loopBodyPostN1 sp (0 : Word) b0' b1' b2' b3' h_j0 at hJ0post
-        unfold loopBodyPostN1 at hJ0post
-        simp only [j0_u0_addr_eq, j0_u1_addr_eq, j0_u2_addr_eq, j0_u3_addr_eq, j0_u4_addr_eq,
-          j0_q_addr_eq] at hJ0post
-        simp only [j0_u_base_eq, j0_shl3_eq, j0_j'_eq, j0_sub_zero, j0_q_sub_zero,
-          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-          word_add_zero] at hJ0post
         obtain ⟨x2v_j0, x10v_j0, x11v_j0, un0v_j0, un1v_j0, un2v_j0, un3v_j0, u4v_j0, qv_j0,
           retv_j0, dv_j0, dlov_j0, sunv_j0, hJ0_atoms⟩ := hJ0post
+        unfold loopBodyPostN1 at hJ0_atoms
+        simp only [j0_u0_addr_eq, j0_u1_addr_eq, j0_u2_addr_eq, j0_u3_addr_eq, j0_u4_addr_eq,
+          j0_q_addr_eq] at hJ0_atoms
+        simp only [j0_u_base_eq, j0_shl3_eq, j0_j'_eq, j0_sub_zero, j0_q_sub_zero,
+          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+          word_add_zero] at hJ0_atoms
         have hCombined5 : sepConj _ _ h_qf5 :=
           ⟨h_j0, h_fr0, hdisj_j0, heq_j0, hJ0_atoms, hFR0⟩
         exact ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, u4v_j1, qv_j1, u4v_j2, qv_j2, u4v_j3, qv_j3, _, _, _, _, _,
@@ -862,15 +858,14 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
         refine ⟨k1 + k2 + k3 + k4, s4, stepN_add_eq _ _ _ _ _ (stepN_add_eq _ _ _ _ _ (stepN_add_eq _ _ _ _ _ hstep1 hstep2) hstep3) hstep4, hpc4, ?_⟩
         refine ⟨h_full4, hcompat4, h_qf4, h_f4, hdisj4, heq4, ?_, hF4⟩
         obtain ⟨h_lp4, h_frame4, hdisj_i4, heq_i4, hLP4, hFrame4⟩ := hQF4
-        change loopBodyPostN1 sp (1 : Word) b0' b1' b2' b3' h_lp4 at hLP4
-        unfold loopBodyPostN1 at hLP4
-        simp only [j1_u0_addr_eq, j1_u1_addr_eq, j1_u2_addr_eq, j1_u3_addr_eq, j1_u4_addr_eq,
-          j1_q_addr_eq] at hLP4
-        simp only [j1_u_base_eq, j1_shl3_eq, j1_j'_eq, j1_sub_8, j1_q_sub_8,
-          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-          word_add_zero] at hLP4
         obtain ⟨x2v_j1, x10v_j1, x11v_j1, un0v_j1, un1v_j1, un2v_j1, un3v_j1, u4v_j1, qv_j1,
           retv_j1, dv_j1, dlov_j1, sunv_j1, hLP4_atoms⟩ := hLP4
+        unfold loopBodyPostN1 at hLP4_atoms
+        simp only [j1_u0_addr_eq, j1_u1_addr_eq, j1_u2_addr_eq, j1_u3_addr_eq, j1_u4_addr_eq,
+          j1_q_addr_eq] at hLP4_atoms
+        simp only [j1_u_base_eq, j1_shl3_eq, j1_j'_eq, j1_sub_8, j1_q_sub_8,
+          signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+          word_add_zero] at hLP4_atoms
         have hCombined4 : sepConj _ _ h_qf4 :=
           ⟨h_lp4, h_frame4, hdisj_i4, heq_i4, hLP4_atoms, hFrame4⟩
         exact ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, u4v_j1, qv_j1, u4v_j2, qv_j2, u4v_j3, qv_j3, _, _, _, _, _,
@@ -880,15 +875,14 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
       refine ⟨k1 + k2 + k3, s3, stepN_add_eq _ _ _ _ _ (stepN_add_eq _ _ _ _ _ hstep1 hstep2) hstep3, hpc3, ?_⟩
       refine ⟨h_full3, hcompat3, h_qf3, h_f3, hdisj3, heq3, ?_, hF3⟩
       obtain ⟨h_lp3, h_frame3, hdisj_i3, heq_i3, hLP3, hFrame3⟩ := hQF3
-      change loopBodyPostN1 sp (2 : Word) b0' b1' b2' b3' h_lp3 at hLP3
-      unfold loopBodyPostN1 at hLP3
-      simp only [j2_u0_addr_eq, j2_u1_addr_eq, j2_u2_addr_eq, j2_u3_addr_eq, j2_u4_addr_eq,
-        j2_q_addr_eq] at hLP3
-      simp only [j2_u_base_eq, j2_shl3_eq, j2_j'_eq, j2_sub_16, j2_q_sub_16,
-        signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-        word_add_zero] at hLP3
       obtain ⟨x2v_j2, x10v_j2, x11v_j2, un0v_j2, un1v_j2, un2v_j2, un3v_j2, u4v_j2, qv_j2,
         retv_j2, dv_j2, dlov_j2, sunv_j2, hLP3_atoms⟩ := hLP3
+      unfold loopBodyPostN1 at hLP3_atoms
+      simp only [j2_u0_addr_eq, j2_u1_addr_eq, j2_u2_addr_eq, j2_u3_addr_eq, j2_u4_addr_eq,
+        j2_q_addr_eq] at hLP3_atoms
+      simp only [j2_u_base_eq, j2_shl3_eq, j2_j'_eq, j2_sub_16, j2_q_sub_16,
+        signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+        word_add_zero] at hLP3_atoms
       have hCombined3 : sepConj _ _ h_qf3 :=
         ⟨h_lp3, h_frame3, hdisj_i3, heq_i3, hLP3_atoms, hFrame3⟩
       exact ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, un3v_j2, _, u4v_j2, qv_j2, u4v_j3, qv_j3, _, _, _, _, _,
@@ -898,15 +892,14 @@ theorem evm_div_n1_preloop_loopbody_spec (sp base : Word)
     refine ⟨k1 + k2, s2, stepN_add_eq _ _ _ _ _ hstep1 hstep2, hpc2, ?_⟩
     refine ⟨h_full2, hcompat2, h_qf2, h_f2, hdisj2, heq2, ?_, hF2⟩
     obtain ⟨h_lp2, h_frame2, hdisj_i2, heq_i2, hLP2, hFrame2⟩ := hQF2
-    change loopBodyPostN1 sp (3 : Word) b0' b1' b2' b3' h_lp2 at hLP2
-    unfold loopBodyPostN1 at hLP2
-    simp only [j3_u0_addr_eq, j3_u1_addr_eq, j3_u2_addr_eq, j3_u3_addr_eq, j3_u4_addr_eq,
-      j3_q_addr_eq] at hLP2
-    simp only [j3_u_base_eq, j3_shl3_eq, j3_j'_eq, j3_sub_24, j3_q_sub_24,
-      signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
-      word_add_zero] at hLP2
     obtain ⟨x2v_j3, x10v_j3, x11v_j3, un0v_j3, un1v_j3, un2v_j3, un3v_j3, u4v_j3, qv_j3,
       retv_j3, dv_j3, dlov_j3, sunv_j3, hLP2_atoms⟩ := hLP2
+    unfold loopBodyPostN1 at hLP2_atoms
+    simp only [j3_u0_addr_eq, j3_u1_addr_eq, j3_u2_addr_eq, j3_u3_addr_eq, j3_u4_addr_eq,
+      j3_q_addr_eq] at hLP2_atoms
+    simp only [j3_u_base_eq, j3_shl3_eq, j3_j'_eq, j3_sub_24, j3_q_sub_24,
+      signExtend12_0, signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56,
+      word_add_zero] at hLP2_atoms
     have hCombined2 : sepConj _ _ h_qf2 :=
       ⟨h_lp2, h_frame2, hdisj_i2, heq_i2, hLP2_atoms, hFrame2⟩
     exact ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, un2v_j3, _, un3v_j3, _, u4v_j3, qv_j3, _, _, _, _, _,
