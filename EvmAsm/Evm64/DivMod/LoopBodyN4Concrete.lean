@@ -145,6 +145,52 @@ def loopBodyN4Output
    out_u4v, out_qv, out_retv, out_dv, out_dlov, out_sunv)
 
 -- ============================================================================
+-- Unified loop iteration output (case-splits on borrow internally)
+-- ============================================================================
+
+/-- Unified output of one n=4 loop iteration: computes trial quotient,
+    multiply-subtract, and conditionally addback. Returns
+    (q_final, un0_final, un1_final, un2_final, un3_final, u4_final). -/
+def loopIterN4 (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let q_hat := trialQuotientN4 v3 u3 u_top
+  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+  let un0 := ms.1; let un1 := ms.2.1; let un2 := ms.2.2.1
+  let un3 := ms.2.2.2.1; let c3 := ms.2.2.2.2
+  let u4_new := u_top - c3
+  if BitVec.ult u_top c3 then
+    let ab := addbackN4 un0 un1 un2 un3 u4_new v0 v1 v2 v3
+    (q_hat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2)
+  else
+    (q_hat, un0, un1, un2, un3, u4_new)
+
+/-- The mulsub carry c3 from one loop iteration. -/
+def loopIterN4_c3 (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Word :=
+  (mulsubN4 (trialQuotientN4 v3 u3 u_top) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+
+/-- Scratch memory values after loop body. -/
+def loopScratchN4 (v3 u3 u_top ret_mem d_mem dlo_mem scratch_un0 base : Word) :
+    Word × Word × Word × Word :=
+  if BitVec.ult u_top v3 then
+    ( base + 516, v3,
+      (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat,
+      (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat )
+  else (ret_mem, d_mem, dlo_mem, scratch_un0)
+
+/-- Unified loop body postcondition for n=4, j=0.
+    All output values expressed via loopIterN4, loopIterN4_c3, loopScratchN4. -/
+def loopBodyN4_fullpost
+    (sp v0 v1 v2 v3 u0 u1 u2 u3 u_top
+     ret_mem d_mem dlo_mem scratch_un0 base : Word) : Assertion :=
+  let out := loopIterN4 v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let c3 := loopIterN4_c3 v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let scr := loopScratchN4 v3 u3 u_top ret_mem d_mem dlo_mem scratch_un0 base
+  loopBodyPostN4 sp (0 : Word) v0 v1 v2 v3
+    out.2.2.2.2.1 c3 out.1
+    out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 out.2.2.2.2.2 out.1
+    scr.1 scr.2.1 scr.2.2.1 scr.2.2.2
+
+-- ============================================================================
 -- Semantic bridge: mulsub equation from loopBodyN4Output
 -- ============================================================================
 
