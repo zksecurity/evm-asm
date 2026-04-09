@@ -358,17 +358,13 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     - `divK_loopSetup_ntaken_spec` (m≥0 → loop body), `divK_loopSetup_taken_spec` (m<0 → denorm)
   - DIV Epilogue ✅: load q[0..3] + store to output (10 instrs, base+1004), `divK_div_epilogue_spec`
 
-  **Full path compositions (all proved, 0 sorry):**
+  **Full path compositions:**
   - LoopBody (main Knuth D loop): 114 instructions at base+448
     - 20 sorry-free theorems in `LoopBody.lean` + N-specific variants in `LoopBodyN{1,2,3,4}.lean`
     - `intro_lets` tactic added for selective let-binding expansion (xperm scaling fix)
-    - Combined spec unifies all 4 paths with existential postconditions
-  - Per-n full specs (16 files): DivN{1,2,3,4}Full.lean, DivN{1,2,3,4}FullShift0.lean,
-    ModN{1,2,3,4}Full.lean, ModN{1,2,3,4}FullShift0.lean — each covers base→base+1064
-  - Combined b≠0 specs: `evm_div_bnz_full_spec` (DivCombined.lean),
-    `evm_mod_bnz_full_spec` (ModCombined.lean) — by_cases on n (1/2/3/4) × shift (0/≠0)
-  - Stack-level b≠0 specs: `evm_div_bnz_stack_spec`, `evm_mod_bnz_stack_spec` (Spec.lean)
-    — uses evmWordIs for a, b, and existential result EvmWord
+    - Per-case concrete specs in `LoopBodyN{X}Concrete.lean` give exact output values
+  - Per-n full specs: removed (existentially quantified computation results → not useful)
+  - Stack-level b≠0 specs: TODO (needs semantic correctness bridge first)
 
   **Remaining work (semantic correctness):**
   - Multi-limb arithmetic foundations: `MultiLimb.lean` — half-word decomposition, rv64_divu/mulhu
@@ -415,26 +411,27 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     nonzero), `getLimbN_fromLimbs_match` / `getLimbN_fromLimbs_{0,1,2,3}` (fromLimbs round-trip for
     reconstructing evmWordIs from individual memory cells) (done)
   - **Semantic correctness path (three steps):**
-    - Step 1: Make `loopBodyPostN{1,2,3,4}` parametric — move existentially quantified output
-      values to definition parameters. Theorems wrap with `∃` in statements.
-      Status: ✅ Done (N4 complete, N1/N2/N3 complete, PR #197 merged)
-    - Step 2: Per-case concrete specs — replace `∃` with `mulsubN4`/`addbackN4` outputs in
-      postconditions. Four per-case theorems (max_skip, max_addback, call_skip, call_addback)
-      use case-specific concrete `q_hat` (no symbolic if-then-else).
-      Files: `LoopBodyN4Concrete.lean` — `divK_loop_body_n4_j0_{max,call}_{skip,addback}_concrete`
-      Bridge: `mulsubN4_val256_eq` connects `mulsubN4` to the Euclidean equation
-      `val256(u) + c3*2^256 = val256(u_new) + q*val256(v)`.
-      Status: ✅ Done for N4 (4 per-case specs + semantic bridge theorem)
-    - Step 3: Combine per-case specs into unified concrete spec via general case-split lemma,
-      then apply `mulsubN4_val256_eq` → `single_iteration_correct` →
-      `val256_euclidean_to_div_mod` to prove semantic correctness.
+    - Step 1: Make `loopBodyPostN{1,2,3,4}` parametric — move output values to definition
+      parameters so per-case concrete specs can fill them in concretely.
+      Status: ✅ Done (PRs #197 + #202)
+    - Step 2: Per-case concrete loop body specs (j=0) — four theorems per N (max_skip,
+      max_addback, call_skip, call_addback) with concrete `q_hat` and mulsub/addback outputs.
+      Files: `LoopBodyN{1,2,3,4}Concrete.lean`
+      Bridge: `mulsubN4_val256_eq` connects register ops to Euclidean equation.
+      Status: ✅ Done for N4; ✅ Done for N1/N2/N3 (per-case specs complete)
+    - Step 3: Re-create per-n loop body single-iteration specs with concrete postconditions
+      (replacing the deleted ∃-postcondition versions). Use the per-case concrete specs from
+      step 2 and a case-split to produce a single `cpsTriple` with explicit output values.
+      Files: replace deleted `LoopBodyN{X}.lean` `j0_spec`/`combined_spec` with concrete versions.
       Status: Not started
-    - Note: unified concrete postcondition using `trialQuotientN4` (with if-then-else on
-      `BitVec.ult u_top v3`) is blocked by `isDefEq` limitation — the kernel cannot resolve
-      `if (symbolic_bool) then X else Y` using propositional hypotheses. Per-case approach
-      avoids this. An `intro_lets` tactic could unblock the unified approach in the future.
-  - Stack-level specs with `evmWordIs (sp+32) (EvmWord.div a b)` / `(EvmWord.mod a b)` in postcondition
-  - Combined spec merging b=0 + b≠0 into single `evm_div_stack_spec`/`evm_mod_stack_spec`
+    - Step 4: Re-create per-n full-path composition theorems (base→base+1064) with concrete
+      postconditions — composing pre-loop (normalization) + loop body + post-loop (denorm/epilogue).
+      Replaces deleted `DivN{1-4}Full.lean` / `ModN{1-4}Full.lean` and their Shift0 variants.
+      Status: Not started
+    - Step 5: Combined b≠0 full spec with concrete postcondition (replaces deleted
+      `DivCombined.lean`/`ModCombined.lean`); then stack-level spec using `evmWordIs`
+      and proving `EvmWord.div`/`EvmWord.mod` correctness via the semantic bridge.
+      Status: Not started
 
 #### 4.3 SDIV and SMOD (Signed)
 - **Approach**: Check signs, compute unsigned div/mod, apply sign correction.
