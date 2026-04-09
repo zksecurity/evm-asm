@@ -411,6 +411,9 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
   - Addback carry bridge: `DivAddbackCarry.lean` — `or_toNat_eq_add_of_le_one` (OR = ADD for {0,1}
     Words), `addback_carries_exclusive` (two overflow flags can't both fire), `addback_limb_nat_word_eq`
     (per-limb addback with OR carry), `addback_register_4limb_val256` (4-limb addback → val256) (done)
+  - Stack spec bridge: `DivLimbBridge.lean` — `ne_zero_iff_getLimbN_or` (EvmWord nonzero ↔ limbs OR
+    nonzero), `getLimbN_fromLimbs_match` / `getLimbN_fromLimbs_{0,1,2,3}` (fromLimbs round-trip for
+    reconstructing evmWordIs from individual memory cells) (done)
   - Remaining: prove algorithm output satisfies Nat-level Euclidean property
     (carry chain analysis connecting specific register expressions to val256 equations)
   - Stack-level specs with `evmWordIs (sp+32) (EvmWord.div a b)` / `(EvmWord.mod a b)` in postcondition

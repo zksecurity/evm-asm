@@ -90,6 +90,88 @@ theorem fromLimbs_ne_zero_of_or (b0 b1 b2 b3 : Word)
     have := congr_arg BitVec.toNat heq; simpa using this
   linarith [val256_pos_of_or_ne_zero b0 b1 b2 b3 h]
 
+-- ============================================================================
+-- EvmWord nonzero ↔ getLimbN OR nonzero
+-- ============================================================================
+
+private theorem or_eq_zero_imp_left {a b : Word} (h : a ||| b = 0) : a = 0 := by
+  bv_decide
+
+private theorem or_eq_zero_imp_right {a b : Word} (h : a ||| b = 0) : b = 0 := by
+  bv_decide
+
+/-- An EvmWord is nonzero iff the OR of its four limbs is nonzero.
+    Forward direction: needed to bridge `b ≠ 0` (EvmWord-level) to the
+    limb-level `b0 ||| b1 ||| b2 ||| b3 ≠ 0` required by combined specs. -/
+theorem ne_zero_iff_getLimbN_or (v : EvmWord) :
+    v ≠ 0 ↔ v.getLimbN 0 ||| v.getLimbN 1 ||| v.getLimbN 2 ||| v.getLimbN 3 ≠ 0 := by
+  constructor
+  · -- → : v ≠ 0 implies OR of limbs ≠ 0 (contrapositive: OR = 0 → v = 0)
+    intro hv hor
+    apply hv
+    -- OR is left-associated: ((a ||| b) ||| c) ||| d = 0
+    have h3 := or_eq_zero_imp_right hor
+    have h012 := or_eq_zero_imp_left hor
+    have h2 := or_eq_zero_imp_right h012
+    have h01 := or_eq_zero_imp_left h012
+    have h1 := or_eq_zero_imp_right h01
+    have h0 := or_eq_zero_imp_left h01
+    -- All limbs 0 → v.toNat = 0 → v = 0
+    have hd := toNat_getLimb_decompose v
+    rw [getLimb_eq_getLimbN, getLimb_eq_getLimbN, getLimb_eq_getLimbN, getLimb_eq_getLimbN,
+        show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
+        show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl,
+        h0, h1, h2, h3] at hd
+    -- hd : v.toNat = 0 + 0 * 2^64 + 0 * 2^128 + 0 * 2^192
+    simp at hd
+    exact BitVec.eq_of_toNat_eq hd
+  · -- ← : OR of limbs ≠ 0 implies v ≠ 0
+    intro hor hv
+    subst hv
+    simp [getLimbN, getLimb] at hor
+
+-- ============================================================================
+-- fromLimbs reconstruction: individual Word values → EvmWord with known limbs
+-- ============================================================================
+
+/-- Construct an EvmWord from 4 Words via fromLimbs, with getLimbN round-trip.
+    This is the key bridge for folding individual `↦ₘ` assertions back into
+    `evmWordIs` in stack-level spec postconditions. -/
+theorem getLimbN_fromLimbs_match (w0 w1 w2 w3 : Word) :
+    let result := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => w0 | 1 => w1 | 2 => w2 | 3 => w3
+    result.getLimbN 0 = w0 ∧ result.getLimbN 1 = w1 ∧
+    result.getLimbN 2 = w2 ∧ result.getLimbN 3 = w3 := by
+  intro result
+  refine ⟨?_, ?_, ?_, ?_⟩ <;>
+  · simp only [result, getLimbN, show (0 : Nat) < 4 from by omega,
+               show (1 : Nat) < 4 from by omega,
+               show (2 : Nat) < 4 from by omega,
+               show (3 : Nat) < 4 from by omega, dite_true]
+    exact getLimb_fromLimbs _ _
+
+/-- Variant: the getLimbN of fromLimbs equals the corresponding input word.
+    Useful for rewriting individual limb assertions. -/
+theorem getLimbN_fromLimbs_0 (w0 w1 w2 w3 : Word) :
+    (fromLimbs fun i : Fin 4 =>
+      match i with | 0 => w0 | 1 => w1 | 2 => w2 | 3 => w3).getLimbN 0 = w0 :=
+  (getLimbN_fromLimbs_match w0 w1 w2 w3).1
+
+theorem getLimbN_fromLimbs_1 (w0 w1 w2 w3 : Word) :
+    (fromLimbs fun i : Fin 4 =>
+      match i with | 0 => w0 | 1 => w1 | 2 => w2 | 3 => w3).getLimbN 1 = w1 :=
+  (getLimbN_fromLimbs_match w0 w1 w2 w3).2.1
+
+theorem getLimbN_fromLimbs_2 (w0 w1 w2 w3 : Word) :
+    (fromLimbs fun i : Fin 4 =>
+      match i with | 0 => w0 | 1 => w1 | 2 => w2 | 3 => w3).getLimbN 2 = w2 :=
+  (getLimbN_fromLimbs_match w0 w1 w2 w3).2.2.1
+
+theorem getLimbN_fromLimbs_3 (w0 w1 w2 w3 : Word) :
+    (fromLimbs fun i : Fin 4 =>
+      match i with | 0 => w0 | 1 => w1 | 2 => w2 | 3 => w3).getLimbN 3 = w3 :=
+  (getLimbN_fromLimbs_match w0 w1 w2 w3).2.2.2
+
 end EvmWord
 
 end EvmAsm.Evm64
