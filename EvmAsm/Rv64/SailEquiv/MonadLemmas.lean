@@ -269,4 +269,35 @@ theorem runSail_get_arch_pc (s : SailState) (pc : BitVec 64)
     pure, EStateM.pure, bind, EStateM.bind, EStateM.get,
     get, MonadState.get, getThe, MonadStateOf.get]
 
+-- ============================================================================
+-- Branch/jump infrastructure
+-- ============================================================================
+
+/-- readReg PC returns the PC value without modifying state. -/
+theorem runSail_readReg_PC (s : SailState) (pc : BitVec 64)
+    (h : s.regs.get? Register.PC = some pc) :
+    runSail (readReg Register.PC : SailM (BitVec 64)) s = some (pc, s) := by
+  simp [runSail, PreSail.readReg, h,
+    pure, EStateM.pure, bind, EStateM.bind, EStateM.get,
+    get, MonadState.get, getThe, MonadStateOf.get]
+
+/-- set_next_pc writes the nextPC register (+ two no-op callbacks). -/
+theorem runSail_set_next_pc (target : BitVec 64) (s : SailState) :
+    runSail (set_next_pc target) s =
+      some (⟨⟩, { s with regs := s.regs.insert Register.nextPC target }) := by
+  simp [runSail, set_next_pc, sail_branch_announce, redirect_callback,
+    PreSail.writeReg, EStateM.modifyGet, modify, MonadState.modifyGet,
+    modifyGet, MonadStateOf.modifyGet,
+    bind, EStateM.bind, pure, EStateM.pure,
+    get, MonadState.get, getThe, MonadStateOf.get,
+    LeanRV64D.Functions.xlen]
+
+/-- get_next_pc reads the nextPC register. -/
+theorem runSail_get_next_pc (s : SailState) (v : BitVec 64)
+    (h : s.regs.get? Register.nextPC = some v) :
+    runSail (get_next_pc ()) s = some (v, s) := by
+  simp [runSail, get_next_pc, PreSail.readReg, h,
+    pure, EStateM.pure, bind, EStateM.bind, EStateM.get,
+    get, MonadState.get, getThe, MonadStateOf.get]
+
 end EvmAsm.Rv64.SailEquiv
