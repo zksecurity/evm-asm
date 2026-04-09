@@ -29,7 +29,7 @@ open EvmAsm.Rv64
 -- ============================================================================
 
 /-- For n=2: u_addr = u_base + signExtend12 4080 -/
-private theorem u_addr_eq_n2 (sp j : Word) :
+theorem u_addr_eq_n2 (sp j : Word) :
     sp + signExtend12 4056 - (j + (2 : Word)) <<< (3 : BitVec 6).toNat =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4080 := by
   simp only [show (3 : BitVec 6).toNat = 3 from by native_decide,
@@ -38,7 +38,7 @@ private theorem u_addr_eq_n2 (sp j : Word) :
   bv_omega
 
 /-- For n=2: (u_base + signExtend12 4080) + 8 = u_base + signExtend12 4088 -/
-private theorem u_addr8_eq_n2 (sp j : Word) :
+theorem u_addr8_eq_n2 (sp j : Word) :
     ((sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4080) + 8 =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   simp only [show (3 : BitVec 6).toNat = 3 from by native_decide,
@@ -48,7 +48,7 @@ private theorem u_addr8_eq_n2 (sp j : Word) :
   bv_omega
 
 /-- For n=2: vtop_base + signExtend12 32 = sp + signExtend12 40 -/
-private theorem vtop_eq_v1_n2 (sp : Word) :
+theorem vtop_eq_v1_n2 (sp : Word) :
     (sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat) + signExtend12 32 =
     sp + signExtend12 40 := by
   simp only [show (3 : BitVec 6).toNat = 3 from by native_decide,
