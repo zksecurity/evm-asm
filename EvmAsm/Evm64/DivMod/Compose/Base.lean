@@ -350,4 +350,47 @@ theorem denormModPost_unfold (sp shift u0 u1 u2 u3 : Word) :
     ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3') := by
   delta denormModPost; rfl
 
+-- ============================================================================
+-- Postcondition bundle for normB (PhaseAB + CLZ + PhaseC2 + NormB)
+-- ============================================================================
+
+/-- Postcondition after PhaseAB + CLZ + PhaseC2(ntaken) + NormB.
+    Encapsulates shift, anti_shift, and normalized b'[0..3]. -/
+@[irreducible]
+def normBPost (sp n_val shift b0 b1 b2 b3 : Word) : Assertion :=
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+  (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+  (.x2 ↦ᵣ anti_shift) **
+  ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+  ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3') **
+  ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+  ((sp + signExtend12 3992) ↦ₘ shift)
+
+theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
+    normBPost sp n_val shift b0 b1 b2 b3 =
+    let anti_shift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+    (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) **
+    (.x2 ↦ᵣ anti_shift) **
+    ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+    ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3') **
+    ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+    ((sp + signExtend12 3992) ↦ₘ shift) := by
+  delta normBPost; rfl
+
 end EvmAsm.Evm64
