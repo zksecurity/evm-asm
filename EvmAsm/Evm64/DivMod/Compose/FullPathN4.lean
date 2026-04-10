@@ -84,12 +84,10 @@ def isSkipBorrowN4Max (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
    then (1 : Word) else 0) = (0 : Word)
 
 -- ============================================================================
--- Loop body n=4, max+skip, j=0: normalized sp-relative precondition
+-- Loop body n=4, max+skip/addback, j=0: normalized sp-relative precondition
 -- ============================================================================
 
-/-- Loop body n=4, max+skip, j=0 with sp-relative addresses in precondition.
-    Uses (sp + K) for v[] cells and (sp + signExtend12 K) for u[]/q[] cells,
-    matching the forms used in loopSetupPost. -/
+/-- Loop body n=4, max+skip, j=0 with sp-relative addresses in precondition. -/
 theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
     (j_old v5_old v6_old v7_old v10_old v11_old v2_old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -193,11 +191,9 @@ theorem divK_loop_body_n4_max_addback_j0_norm (sp base : Word)
 
 -- ============================================================================
 -- Pre-loop + loop body (max+skip): base → base+904
--- Shift ≠ 0, BLTU not taken (q_hat = max), borrow = 0 (skip addback)
 -- ============================================================================
 
-/-- n=4 pre-loop + max+skip loop body: base → base+904 (shift ≠ 0).
-    Composes evm_div_n4_to_loopSetup_spec with divK_loop_body_n4_max_skip_j0_norm. -/
+/-- n=4 pre-loop + max+skip loop body: base → base+904 (shift ≠ 0). -/
 theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
@@ -244,7 +240,6 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem))
       (preloopMaxSkipPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3) := by
-  -- Unfold condition/postcondition defs to expose let bindings
   unfold isMaxTrialN4 at hbltu
   unfold isSkipBorrowN4Max at hborrow
   let shift := (clzResult b3).1
@@ -258,23 +253,19 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
   let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
   let u0 := a0 <<< (shift.toNat % 64)
-  -- Derive v[] validity from ValidMemRange
   have hv_v0 : isValidDwordAccess (sp + 32) = true := hvalid 4 (by omega)
   have hv_v1 : isValidDwordAccess (sp + 40) = true := hvalid 5 (by omega)
   have hv_v2 : isValidDwordAccess (sp + 48) = true := hvalid 6 (by omega)
   have hv_v3 : isValidDwordAccess (sp + 56) = true := hvalid 7 (by omega)
-  -- 1. Pre-loop: base → base+448
   have hPre := evm_div_n4_to_loopSetup_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem
     hbnz hb3nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift
-  -- Frame pre-loop with x11, j_mem
   have hPreF := cpsTriple_frame_left _ _ _ _ _
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem))
     (by pcFree) hPre
-  -- 2. Loop body (normalized): base+448 → base+904
   have hLoop := divK_loop_body_n4_max_skip_j0_norm sp base
     j_mem (4 : Word) shift u0 (a0 >>> (anti_shift.toNat % 64)) v11_old anti_shift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
@@ -282,7 +273,6 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     hbltu
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
-  -- Frame loop body with: a[], q[1-3], padding, shift_mem
   have hLoopF := cpsTriple_frame_left _ _ _ _ _
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -294,7 +284,6 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
      ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hLoop'
-  -- 3. Compose pre-loop + loop body
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
       delta loopSetupPost at hp
@@ -304,5 +293,48 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopMaxSkipPostN4; xperm_hyp hq)
     hFull
+
+-- ============================================================================
+-- Full n=4 DIV path (max+skip, shift≠0): base → base+1064
+-- ============================================================================
+
+/-- Unfold preloopMaxSkipPostN4 to expanded form with sp-relative addresses. -/
+theorem preloopMaxSkipPostN4_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    preloopMaxSkipPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3 =
+    let shift := (clzResult b3).1
+    let anti_shift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    let u4 := a3 >>> (anti_shift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+    let u0 := a0 <<< (shift.toNat % 64)
+    let q_hat : Word := signExtend12 4095
+    let ms := mulsubN4 q_hat b0' b1' b2' b3' u0 u1 u2 u3
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ signExtend12 4095) **
+     (.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ sp + signExtend12 4056) **
+     (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x10 ↦ᵣ ms.2.2.2.2) ** (.x11 ↦ᵣ q_hat) **
+     (.x2 ↦ᵣ ms.2.2.2.1) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+     ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ ms.1) **
+     ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ ms.2.1) **
+     ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ ms.2.2.1) **
+     ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ ms.2.2.2.1) **
+     ((sp + signExtend12 4024) ↦ₘ u4 - ms.2.2.2.2) **
+     ((sp + signExtend12 4088) ↦ₘ q_hat)) **
+    ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+    ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+    ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+    ((sp + signExtend12 3992) ↦ₘ shift) := by
+  delta preloopMaxSkipPostN4
+  simp only [loopBodyN4SkipPost, loopExitPostN4_j0_eq, se12_32, se12_40, se12_48, se12_56]
 
 end EvmAsm.Evm64
