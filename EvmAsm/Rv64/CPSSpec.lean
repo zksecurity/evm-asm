@@ -200,6 +200,24 @@ theorem cpsBranch_merge (entry l_t l_f exit_ : Word) (cr1 cr_t cr_f : CodeReq)
     obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := h_f F hF s1 hcrf' hQ_f hpc_f
     exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
 
+/-- Like cpsBranch_merge but with the same CodeReq for all three specs.
+    No disjointness needed since code requirements are shared. -/
+theorem cpsBranch_merge_same_cr (entry l_t l_f exit_ : Word) (cr : CodeReq)
+    (P Q_t Q_f R : Assertion)
+    (hbr   : cpsBranch entry cr P l_t Q_t l_f Q_f)
+    (h_t   : cpsTriple l_t exit_ cr Q_t R)
+    (h_f   : cpsTriple l_f exit_ cr Q_f R) :
+    cpsTriple entry exit_ cr P R := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, s1, hstep1, hbranch⟩ := hbr F hF s hcr hPF hpc
+  rcases hbranch with ⟨hpc_t, hQ_t⟩ | ⟨hpc_f, hQ_f⟩
+  · have hcr' := CodeReq.SatisfiedBy_preserved cr k1 s s1 hstep1 hcr
+    obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := h_t F hF s1 hcr' hQ_t hpc_t
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
+  · have hcr' := CodeReq.SatisfiedBy_preserved cr k1 s s1 hstep1 hcr
+    obtain ⟨k2, s2, hstep2, hpc2, hR⟩ := h_f F hF s1 hcr' hQ_f hpc_f
+    exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
+
 /-- Extract the taken path from a cpsBranch when the not-taken postcondition
     is unsatisfiable (e.g., contains a contradictory pure fact). -/
 theorem cpsBranch_elim_taken (entry l_t l_f : Word) (cr : CodeReq)
