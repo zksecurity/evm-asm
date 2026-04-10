@@ -470,11 +470,6 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
     (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
     (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTriple (base + 912) (base + 1064) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
        (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
@@ -484,15 +479,12 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
        ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
        ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
        ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ q0) ** (.x6 ↦ᵣ q1) ** (.x7 ↦ᵣ q2) **
-       (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ q3) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3') **
-       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
-       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
-       ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
-       ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)) := by
-  intro anti_shift u0' u1' u2' u3'
+      (denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3) := by
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
   -- Step 1: Denorm body (base+912 → base+1004)
   have hDenorm := divK_denorm_body_spec sp u0 u1 u2 u3 v2 v5 v7 shift base
     hv_u0 hv_u1 hv_u2 hv_u3
@@ -521,7 +513,7 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hDenormF hEpiF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
+    (fun h hq => by delta denormDivPost; xperm_hyp hq)
     hFull
 
 -- ============================================================================
@@ -539,11 +531,6 @@ theorem evm_mod_denorm_epilogue_spec (sp base : Word)
     (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
     (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTriple (base + 912) (base + 1064) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
        (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
@@ -551,13 +538,12 @@ theorem evm_mod_denorm_epilogue_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
        ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ u0') ** (.x6 ↦ᵣ u1') ** (.x7 ↦ᵣ u2') **
-       (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ u3') **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3') **
-       ((sp + 32) ↦ₘ u0') ** ((sp + 40) ↦ₘ u1') **
-       ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3')) := by
-  intro anti_shift u0' u1' u2' u3'
+      (denormModPost sp shift u0 u1 u2 u3) := by
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
   -- Step 1: Denorm body (base+912 → base+1004, modCode)
   have hDenorm := mod_denorm_body_spec sp u0 u1 u2 u3 v2 v5 v7 shift base
     hv_u0 hv_u1 hv_u2 hv_u3
@@ -583,7 +569,7 @@ theorem evm_mod_denorm_epilogue_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hDenormF hEpiF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
+    (fun h hq => by delta denormModPost; xperm_hyp hq)
     hFull
 
 -- ============================================================================
@@ -607,11 +593,6 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
     (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
     (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTriple (base + 904) (base + 1064) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
@@ -622,16 +603,8 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
        ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
        ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
        ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ q0) ** (.x6 ↦ᵣ q1) ** (.x7 ↦ᵣ q2) **
-       (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ q3) **
-       ((sp + signExtend12 3992) ↦ₘ shift) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3') **
-       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
-       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
-       ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
-       ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)) := by
-  intro anti_shift u0' u1' u2' u3'
+      (denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3 **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
   -- Step 1: Preamble (base+904 → base+912)
   have hPre := divK_denorm_preamble_spec sp shift v5 v6 v7 v2 v10 base hv_shift hshift_nz
   -- Frame preamble with u[], q[], output memory
@@ -646,7 +619,6 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
   -- Step 2: Denorm + Epilogue (base+912 → base+1064)
   have hDE := evm_div_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
     q0 q1 q2 q3 m0 m8 m16 m24 hvalid hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
-  intro_lets at hDE
   -- Frame epilogue with shift_mem
   have hDEF := cpsTriple_frame_left _ _ _ _ _
     (((sp + signExtend12 3992) ↦ₘ shift))
@@ -750,11 +722,6 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
     (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
     (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (anti_shift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (anti_shift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (anti_shift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTriple (base + 904) (base + 1064) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
@@ -763,14 +730,8 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
        ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ u0') ** (.x6 ↦ᵣ u1') ** (.x7 ↦ᵣ u2') **
-       (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ u3') **
-       ((sp + signExtend12 3992) ↦ₘ shift) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3') **
-       ((sp + 32) ↦ₘ u0') ** ((sp + 40) ↦ₘ u1') **
-       ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3')) := by
-  intro anti_shift u0' u1' u2' u3'
+      (denormModPost sp shift u0 u1 u2 u3 **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
   -- Step 1: Preamble (base+904 → base+912)
   have hPre := mod_denorm_preamble_spec sp shift v5 v6 v7 v2 v10 base hv_shift hshift_nz
   -- Frame preamble with u[], output memory
@@ -783,7 +744,6 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
   -- Step 2: Denorm + MOD Epilogue (base+912 → base+1064)
   have hDE := evm_mod_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
     m0 m8 m16 m24 hvalid hv_u0 hv_u1 hv_u2 hv_u3
-  intro_lets at hDE
   -- Frame epilogue with shift_mem
   have hDEF := cpsTriple_frame_left _ _ _ _ _
     (((sp + signExtend12 3992) ↦ₘ shift))
