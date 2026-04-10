@@ -116,17 +116,6 @@ theorem evm_div_n3_to_loopSetup_spec (sp base : Word)
     (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true)
     (hv_n  : isValidDwordAccess (sp + signExtend12 3984) = true)
     (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true) :
-    let shift := (clzResult b2).1
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-    let b0' := b0 <<< (shift.toNat % 64)
-    let u4 := a3 >>> (anti_shift.toNat % 64)
-    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
-    let u0 := a0 <<< (shift.toNat % 64)
     cpsTriple base (base + 448) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
@@ -143,23 +132,18 @@ theorem evm_div_n3_to_loopSetup_spec (sp base : Word)
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
        ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (3 : Word)) ** (.x10 ↦ᵣ (a0 >>> (anti_shift.toNat % 64))) **
-       (.x0 ↦ᵣ (0 : Word)) **
-       (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ u0) ** (.x2 ↦ᵣ anti_shift) **
-       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (3 : Word)) **
-       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
-       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3') **
-       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ u4) **
-       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (3 : Word)) **
-       ((sp + signExtend12 3992) ↦ₘ shift)) := by
-  intro shift anti_shift b3' b2' b1' b0' u4 u3 u2 u1 u0
+      (loopSetupPost sp (3 : Word) (clzResult b2).1 a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
   -- Step 1: PhaseAB(n=3) + CLZ (base → base+212)
   have hABCLZ := evm_div_phaseAB_n3_clz_spec sp base b0 b1 b2 b3 v5 v6 v7 v10
     q0 q1 q2 q3 u5 u6 u7 n_mem hbnz hb3z hb2nz hvalid
@@ -258,7 +242,7 @@ theorem evm_div_n3_to_loopSetup_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hNA hLSf
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
+    (fun h hq => by delta loopSetupPost; xperm_hyp hq)
     hFull
 
 -- ============================================================================
