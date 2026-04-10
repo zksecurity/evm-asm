@@ -23,7 +23,7 @@ private theorem j0_shift0 : (0 : Word) <<< (3 : BitVec 6).toNat = (0 : Word) := 
 
 theorem u_base_j0 (sp : Word) :
     sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat = sp + signExtend12 4056 := by
-  rw [j0_shift0]; simp [BitVec.sub_zero]
+  simp only [j0_shift0]; exact BitVec.sub_zero _
 
 theorem u_base_off0_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
@@ -47,7 +47,7 @@ theorem u_base_off4064_j0 (sp : Word) :
 
 theorem q_addr_j0 (sp : Word) :
     sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat = sp + signExtend12 4088 := by
-  rw [j0_shift0]; simp [BitVec.sub_zero]
+  simp only [j0_shift0]; exact BitVec.sub_zero _
 
 -- ============================================================================
 -- Loop body j=0 extended to divCode (from sharedDivModCode)
