@@ -414,29 +414,36 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
     - Step 1: Make `loopBodyPostN{1,2,3,4}` parametric — move output values to definition
       parameters so per-case concrete specs can fill them in concretely.
       Status: ✅ Done (PRs #197 + #202)
-    - Step 2: Per-case concrete loop body specs (j=0) — four theorems per N (max_skip,
-      max_addback, call_skip, call_addback) with concrete `q_hat` and mulsub/addback outputs.
-      **Removed**: `LoopBodyN{1,2,3,4}Concrete.lean` and `LoopBodyN4Unified.lean` were not in
-      the default build, fell out of sync with `LoopDefs.lean` (duplicate `mulsubN4`/`addbackN4`),
-      and stopped compiling. Key content to recover when revisiting:
-        - `trialQuotientN4`: trial quotient computation (div128 or MAX64 based on BLTU)
-        - `mulsubN4_val256_eq`: semantic bridge (`val256(u) + c3 * 2^256 = val256(un) + q * val256(v)`)
-          — proved via `mulsub_register_4limb_val256` after unfolding `mulsubN4`
-        - Per-case concrete specs: instantiate `divK_loop_body_n4_{max,call}_{skip,addback}_spec`
-          at j=0 with concrete output values from `mulsubN4`/`addbackN4`
-        - `loopIterN4`/`loopBodyN4_fullpost`: unified iteration output (case-split on borrow)
-        - `divK_loop_body_n4_j0_unified`: single theorem covering all 4 paths
-      Status: Removed (rebuild needed when semantic correctness work resumes)
-    - Step 3: Per-n loop body single-iteration specs with concrete postconditions.
-      Use the per-case concrete specs from step 2 and a case-split to produce a single
-      `cpsTriple` with explicit output values.
-      Status: Not started (blocked on step 2 rebuild)
-    - Step 4: Per-n full-path composition theorems (base→base+1064) with concrete
-      postconditions — composing pre-loop (normalization) + loop body + post-loop (denorm/epilogue).
-      Status: Not started
-    - Step 5: Combined b≠0 full spec with concrete postcondition; then stack-level spec
-      using `evmWordIs` and proving `EvmWord.div`/`EvmWord.mod` correctness via the semantic bridge.
-      Status: Not started
+    - Step 2: Per-n loop iteration cpsTriple specs at j=0 using `divK_store_loop_j0_spec`.
+      Four theorems per N (max_skip, max_addback, call_skip, call_addback).
+      Status: ✅ Done for n=4 (`LoopIterN4.lean`), not started for n=1,2,3
+    - Step 3: Per-n full-path composition theorems (base→base+1064) with bundled postconditions.
+      Composes pre-loop (normalization) + loop body + post-loop (denorm/epilogue).
+      Status: ✅ Done for n=4 — all 6 sub-cases proved:
+        - shift≠0: `evm_div_n4_full_{max,call}_{skip,addback}_spec` (`FullPathN4.lean`)
+        - shift=0: `evm_div_n4_full_shift0_call_{skip,addback}_spec` (`FullPathN4Shift0.lean`)
+      Not started for n=1,2,3 (need multi-iteration loop unrolling via `divK_store_loop_jgt0_spec`)
+    - Step 4: Semantic correctness bridge — connect algorithm computations to `EvmWord.div`.
+      Infrastructure exists: `div_correct_n4_no_shift`, `remainder_lt_of_ge_floor`,
+      `mulsub_no_underflow_correct`, `mulsub_addback_correct`, `mulsubN4_val256_eq`.
+      Partial progress:
+        - ✅ Max trial overestimate: `val256_div_lt_pow64` — when b3≠0, val256(a)/val256(b) ≤ 2^64-1
+        - ✅ Skip path correctness: `n4_max_skip_correct` — c3=0 + max trial → EvmWord.div correct
+        - **Missing math theorem (Knuth's Theorem B)**: for the addback and call paths, need:
+          1. **Mulsub borrow bound**: prove that `mulsubN4` borrow c3 has `c3.toNat ≤ 1`
+             when the trial quotient overestimates by ≤ 1 (i.e., q_hat ≤ ⌊u/v⌋ + 1).
+             This ensures the 2^256 terms cancel in the mulsub+addback combined equation.
+          2. **Call path trial quotient overestimate**: prove that `div128Quot u_top u3 v3`
+             produces a quotient q̂ satisfying `⌊u/v⌋ ≤ q̂ ≤ ⌊u/v⌋ + 1` when the divisor's
+             leading limb has its MSB set (normalized). This is the formal version of
+             Knuth TAOCP Vol 2 §4.3.1 Theorem B.
+          3. **Addback combined equation**: given c3=1 (borrow) and carry=1 (addback carry),
+             derive `val256(a) = (q_hat-1) * val256(b) + val256(aun)` from `mulsubN4_val256_eq`
+             + `addbackN4_val256_eq`.
+      Status: In progress (`DivN4Overestimate.lean`)
+    - Step 5: Stack-level spec using `evmWordIs`. Case-split on b=0/≠0, then on n,
+      apply full-path spec + semantic bridge to prove `evmWordIs (sp+32) (EvmWord.div a b)`.
+      Status: Not started (blocked on Step 4)
 
 #### 4.3 SDIV and SMOD (Signed)
 - **Approach**: Check signs, compute unsigned div/mod, apply sign correction.
