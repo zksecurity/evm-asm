@@ -19,7 +19,7 @@ open EvmAsm.Rv64
 -- Address normalization lemmas for j=0
 -- ============================================================================
 
-private theorem j0_shift0 : (0 : Word) <<< (3 : BitVec 6).toNat = (0 : Word) := by native_decide
+private theorem j0_shift0 : (0 : Word) <<< (3 : BitVec 6).toNat = (0 : Word) := by decide
 
 theorem u_base_j0 (sp : Word) :
     sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat = sp + signExtend12 4056 := by
