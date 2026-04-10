@@ -37,7 +37,7 @@ theorem val256_div_lt_pow64 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (hb3nz : b3 ≠ 0) 
 
 /-- signExtend12 4095 as Word has toNat = 2^64 - 1. -/
 theorem signExtend12_4095_toNat : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by
-  native_decide
+  decide
 
 /-- Max trial quotient overestimate for n=4: when b3 ≠ 0,
     ⌊val256(a)/val256(b)⌋ ≤ (signExtend12 4095).toNat.
@@ -55,7 +55,6 @@ theorem max_trial_overestimate_n4 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (hb3nz : b3 �
     the max trial quotient (2^64-1) equals ⌊val256(a)/val256(b)⌋
     and fromLimbs [q_hat, 0, 0, 0] = EvmWord.div a b. -/
 theorem n4_max_skip_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hc3_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0) :
     let q_hat : Word := signExtend12 4095
@@ -70,6 +69,9 @@ theorem n4_max_skip_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
       match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
     q = EvmWord.div a b ∧ r = EvmWord.mod a b := by
   intro q_hat ms q r a b
+  -- Derive hbnz from hb3nz
+  have hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0 := by
+    intro h; exact hb3nz (BitVec.or_eq_zero_iff.mp h).2
   -- From mulsubN4_val256_eq: val256(u) + c3 * 2^256 = val256(un) + q * val256(v)
   have hmulsub_raw := mulsubN4_val256_eq q_hat b0 b1 b2 b3 a0 a1 a2 a3
   simp only [] at hmulsub_raw
