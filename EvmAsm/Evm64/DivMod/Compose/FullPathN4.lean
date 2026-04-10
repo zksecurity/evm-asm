@@ -28,6 +28,62 @@ private theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by deci
 private theorem x1_val_n4 : signExtend12 (4 : BitVec 12) - (4 : Word) = (0 : Word) := by decide
 
 -- ============================================================================
+-- Postcondition and condition functions for n=4 composition
+-- ============================================================================
+
+/-- Postcondition for pre-loop + max+skip loop body at n=4.
+    Computes normalized b[], u[] from shift = clz(b3), then wraps loopBodyN4SkipPost
+    with frame atoms (a[], q[1-3]=0, padding, shift_mem). -/
+@[irreducible]
+def preloopMaxSkipPostN4 (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b3).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  loopBodyN4SkipPost sp (0 : Word) (signExtend12 4095) b0' b1' b2' b3' u0 u1 u2 u3 u4 **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 3992) ↦ₘ shift)
+
+/-- Max trial quotient condition at n=4: u4 ≥ normalized b3 (BLTU not taken). -/
+def isMaxTrialN4 (a3 b2 b3 : Word) : Prop :=
+  let shift := (clzResult b3).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  ¬BitVec.ult u4 b3'
+
+/-- Skip addback condition at n=4 with max trial quotient: borrow = 0. -/
+def isSkipBorrowN4Max (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+  let shift := (clzResult b3).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let q_hat : Word := signExtend12 4095
+  (if BitVec.ult u4 (mulsubN4_c3 q_hat b0' b1' b2' b3' u0 u1 u2 u3)
+   then (1 : Word) else 0) = (0 : Word)
+
+-- ============================================================================
 -- Loop body n=4, max+skip, j=0: normalized sp-relative precondition
 -- ============================================================================
 
@@ -70,18 +126,15 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
        ((sp + signExtend12 4088) ↦ₘ q_old))
       (loopBodyN4SkipPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro q_hat hborrow
-  -- Convert validity hypotheses: sp-relative → raw form (small terms, no recursion issue)
   rw [← se12_32] at hv_v0; rw [← se12_40] at hv_v1
   rw [← se12_48] at hv_v2; rw [← se12_56] at hv_v3
   rw [← u_base_off0_j0] at hv_u0; rw [← u_base_off4088_j0] at hv_u1
   rw [← u_base_off4080_j0] at hv_u2; rw [← u_base_off4072_j0] at hv_u3
   rw [← u_base_off4064_j0] at hv_u4; rw [← q_addr_j0] at hv_q
-  -- Get raw spec
   have raw := divK_loop_body_n4_max_skip_j0_divCode sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
     hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2
     hv_v3 hv_u3 hv_u4 hv_q hbltu hborrow
-  -- Normalize raw addresses in the type of raw to sp-relative form
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
              u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
@@ -170,22 +223,9 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     (hv_j  : isValidDwordAccess (sp + signExtend12 3976) = true)
     (hv_uhi : isValidDwordAccess (sp + signExtend12 4056 - (0 + (4 : Word)) <<< (3 : BitVec 6).toNat) = true)
     (hv_ulo : isValidDwordAccess ((sp + signExtend12 4056 - (0 + (4 : Word)) <<< (3 : BitVec 6).toNat) + 8) = true)
-    (hv_vtop : isValidDwordAccess (sp + ((4 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) = true) :
-    let shift := (clzResult b3).1
-    let anti_shift := signExtend12 (0 : BitVec 12) - shift
-    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-    let b0' := b0 <<< (shift.toNat % 64)
-    let u4 := a3 >>> (anti_shift.toNat % 64)
-    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
-    let u0 := a0 <<< (shift.toNat % 64)
-    let q_hat : Word := signExtend12 4095
-    ¬BitVec.ult u4 b3' →
-    (if BitVec.ult u4 (mulsubN4_c3 q_hat b0' b1' b2' b3' u0 u1 u2 u3)
-     then (1 : Word) else 0) = (0 : Word) →
+    (hv_vtop : isValidDwordAccess (sp + ((4 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) = true)
+    (hbltu : isMaxTrialN4 a3 b2 b3)
+    (hborrow : isSkipBorrowN4Max a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 904) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
@@ -204,17 +244,21 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
        ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem))
-      (loopBodyN4SkipPost sp (0 : Word) q_hat b0' b1' b2' b3' u0 u1 u2 u3 u4 **
-       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 3992) ↦ₘ shift)) := by
-  intro shift anti_shift b3' b2' b1' b0' u4 u3 u2 u1 u0 q_hat hbltu hborrow
+      (preloopMaxSkipPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3) := by
+  -- Unfold condition/postcondition defs to expose let bindings
+  unfold isMaxTrialN4 at hbltu
+  unfold isSkipBorrowN4Max at hborrow
+  let shift := (clzResult b3).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
   -- Derive v[] validity from ValidMemRange
   have hv_v0 : isValidDwordAccess (sp + 32) = true := hvalid 4 (by omega)
   have hv_v1 : isValidDwordAccess (sp + 40) = true := hvalid 5 (by omega)
@@ -259,7 +303,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
       xperm_hyp hp) hPreF hLoopF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
+    (fun h hq => by delta preloopMaxSkipPostN4; xperm_hyp hq)
     hFull
 
 end EvmAsm.Evm64
