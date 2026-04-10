@@ -196,7 +196,6 @@ theorem divK_loop_body_n4_max_addback_j0_norm (sp base : Word)
 -- Shift ≠ 0, BLTU not taken (q_hat = max), borrow = 0 (skip addback)
 -- ============================================================================
 
-set_option maxHeartbeats 800000 in
 /-- n=4 pre-loop + max+skip loop body: base → base+904 (shift ≠ 0).
     Composes evm_div_n4_to_loopSetup_spec with divK_loop_body_n4_max_skip_j0_norm. -/
 theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
