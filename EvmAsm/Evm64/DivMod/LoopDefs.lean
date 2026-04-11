@@ -465,6 +465,65 @@ def loopN3MaxPost (sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion 
   ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1)
 
 -- ============================================================================
+-- Unified per-iteration result for n=3 call path (BLTU taken)
+-- ============================================================================
+
+/-- Per-iteration computation for n=3 when the trial quotient comes from div128 (BLTU taken).
+    Internally handles both skip (borrow=0) and addback (borrow≠0) paths.
+    Returns (q_j, un0, un1, un2, un3, u4). -/
+def iterN3Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let q_hat := div128Quot u3 u2 v2
+  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  if BitVec.ult u_top c3 then
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - c3) v0 v1 v2 v3
+    (q_hat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2)
+  else
+    (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, u_top - c3)
+
+/-- Unified postcondition for one n=3 call-path loop iteration.
+    Uses iterN3Call for the result values, plus div128 scratch cells. -/
+@[irreducible]
+def loopIterPostN3Call (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
+  let r := iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let q_hat := div128Quot u3 u2 v2
+  let c3 := (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+  loopExitPostN3 sp j r.1 c3 r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2 v0 v1 v2 v3 **
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ v2) **
+  (sp + signExtend12 3952 ↦ₘ div128DLo v2) **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
+
+-- ============================================================================
+-- Two-iteration loop precondition/postcondition for n=3 (call path)
+-- ============================================================================
+
+/-- Precondition for the n=3 two-iteration loop with scratch cells.
+    Used when at least one iteration takes the call (div128) path. -/
+@[irreducible]
+def loopN3PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
+    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+  loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old **
+  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3960 ↦ₘ d_mem) **
+  (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+  (sp + signExtend12 3944 ↦ₘ scratch_un0)
+
+/-- Postcondition for the full n=3 two-iteration loop (both iterations call path).
+    Uses iterN3Call for each iteration. Scratch cells have j=0's values. -/
+@[irreducible]
+def loopN3CallCallPost (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion :=
+  let r1 := iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  loopIterPostN3Call sp base (0 : Word) v0 v1 v2 v3
+    u0_orig r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 **
+  ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1)
+
+-- ============================================================================
 -- Legacy two-iteration postconditions (max+skip × max+skip specific case)
 -- ============================================================================
 
