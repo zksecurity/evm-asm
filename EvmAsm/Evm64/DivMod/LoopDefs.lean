@@ -253,11 +253,36 @@ def loopExitPostN3 (sp j q_f c3 un0_f un1_f un2_f un3_f u4_f
   ((u_base + signExtend12 4064) ↦ₘ u4_f) **
   (q_addr ↦ₘ q_f)
 
+theorem loopExitPostN3_unfold (sp j q_f c3 un0_f un1_f un2_f un3_f u4_f
+    v0 v1 v2 v3 : Word) :
+    loopExitPostN3 sp j q_f c3 un0_f un1_f un2_f un3_f u4_f v0 v1 v2 v3 =
+    let u_base := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+    let j' := j + signExtend12 4095
+    let q_addr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
+    (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j') **
+    (.x5 ↦ᵣ j <<< (3 : BitVec 6).toNat) ** (.x6 ↦ᵣ u_base) **
+    (.x7 ↦ᵣ q_addr) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_f) **
+    (.x2 ↦ᵣ un3_f) ** (.x0 ↦ᵣ (0 : Word)) **
+    (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+    ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_f) **
+    ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_f) **
+    ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_f) **
+    ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_f) **
+    ((u_base + signExtend12 4064) ↦ₘ u4_f) **
+    (q_addr ↦ₘ q_f) := by
+  delta loopExitPostN3; rfl
+
 /-- Full mulsub-skip postcondition for n=3 loop body. -/
 @[irreducible]
 def loopBodyN3SkipPost (sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
   let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
   loopExitPostN3 sp j q_hat ms.2.2.2.2 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - ms.2.2.2.2) v0 v1 v2 v3
+
+theorem loopBodyN3SkipPost_unfold (sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+    loopBodyN3SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+    loopExitPostN3 sp j q_hat ms.2.2.2.2 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - ms.2.2.2.2) v0 v1 v2 v3 := by
+  delta loopBodyN3SkipPost; rfl
 
 /-- Full mulsub-addback postcondition for n=3 loop body. -/
 @[irreducible]
