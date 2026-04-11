@@ -416,7 +416,7 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
       Status: ✅ Done (PRs #197 + #202)
     - Step 2: Per-n loop iteration cpsTriple specs at j=0 using `divK_store_loop_j0_spec`.
       Four theorems per N (max_skip, max_addback, call_skip, call_addback).
-      Status: ✅ Done for n=4 (`LoopIterN4.lean`), not started for n=1,2,3
+      Status: ✅ Done for n=4 (`LoopIterN4.lean`), ✅ n=3 j=0 all 4 paths done + j=1 max paths done (`LoopIterN3.lean`), not started for n=1,2
     - Step 3: Per-n full-path composition theorems (base→base+1064) with bundled postconditions.
       Composes pre-loop (normalization) + loop body + post-loop (denorm/epilogue).
       Status: ✅ Done for n=4 — all 6 sub-cases proved:
