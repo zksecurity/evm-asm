@@ -64,10 +64,7 @@ theorem divK_loop_n3_max_max_divCode
 /-- signExtend12(4) - 3 = 1, for x1 register in loopSetupPost at n=3. -/
 theorem x1_val_n3 : signExtend12 (4 : BitVec 12) - (3 : Word) = (1 : Word) := by decide
 
-theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
-theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by decide
-theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by decide
-theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by decide
+-- se12_32, se12_40, se12_48, se12_56 are in Base.lean
 
 -- Address normalization: signExtend12/<<</>> → concrete values via simp, then bv_omega.
 -- bv_addr only handles (a+k1)+k2=a+k3; these involve subtraction and shifts.
