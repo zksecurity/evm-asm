@@ -8,6 +8,7 @@
 
 import EvmAsm.Evm64.DivMod.LoopComposeN3
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3
+import EvmAsm.Evm64.DivMod.Compose.FullPathN4Loop
 
 open EvmAsm.Rv64.Tactics
 
@@ -1124,5 +1125,702 @@ theorem evm_div_n3_preloop_call_max_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopN3CallMaxPost; xperm_hyp hq)
     hFull
+
+-- ============================================================================
+-- loopExitPostN3 at j=0: address normalization to sp-relative form
+-- ============================================================================
+
+/-- At j=0, loopExitPostN3 normalizes to sp-relative addresses. -/
+theorem loopExitPostN3_j0_eq (sp q_f c3 un0_f un1_f un2_f un3_f u4_f
+    v0 v1 v2 v3 : Word) :
+    loopExitPostN3 sp (0 : Word) q_f c3 un0_f un1_f un2_f un3_f u4_f v0 v1 v2 v3 =
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ signExtend12 4095) **
+     (.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ sp + signExtend12 4056) **
+     (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_f) **
+     (.x2 ↦ᵣ un3_f) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) ** (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ un0_f) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ un1_f) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ un2_f) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ un3_f) **
+     ((sp + signExtend12 4024) ↦ₘ u4_f) **
+     ((sp + signExtend12 4088) ↦ₘ q_f)) := by
+  simp only [loopExitPostN3_unfold]
+  rw [u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
+      u_base_off4072_j0, u_base_off4064_j0, u_base_j0, q_addr_j0]
+  simp only [show (0 : Word) <<< (3 : BitVec 6).toNat = (0 : Word) from by decide]
+  rw [show (0 : Word) + signExtend12 4095 = signExtend12 4095 from BitVec.zero_add _]
+
+-- No standalone unfold lemma — the 2-iteration N3 postcondition is too deeply
+-- nested for simp to prove the equality. Instead, unfold directly in perm callbacks.
+
+-- ============================================================================
+-- Full n=3 DIV path (max×max, shift≠0): base → base+1064
+-- ============================================================================
+
+/-- Full path postcondition for n=3 DIV (shift ≠ 0, max×max).
+    Computes normalized b[], u[], runs two max-path loop iterations,
+    then denormalizes remainder and outputs quotient. -/
+@[irreducible]
+def fullDivN3MaxMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Max b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Max b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 0 0 **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1)
+
+/-- Full n=3 DIV path: base → base+1064 (shift ≠ 0, max×max).
+    Composes pre-loop + two-iteration loop + denorm + epilogue. -/
+theorem evm_div_n3_full_max_max_spec (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
+    (hshift_nz : (clzResult b2).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true)
+    (hv_u5 : isValidDwordAccess (sp + signExtend12 4016) = true)
+    (hv_u6 : isValidDwordAccess (sp + signExtend12 4008) = true)
+    (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true)
+    (hv_n  : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_j  : isValidDwordAccess (sp + signExtend12 3976) = true)
+    (hbltu_1 : isMaxTrialN3_j1 a3 b1 b2)
+    (hbltu_0 : isMaxTrialN3_j0 a0 a1 a2 a3 b0 b1 b2 b3) :
+    cpsTriple base (base + 1064) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
+       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11_old) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4056) ↦ₘ u0_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
+       ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
+       ((sp + signExtend12 4024) ↦ₘ u4_old) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem) **
+       ((sp + signExtend12 3976) ↦ₘ j_mem))
+      (fullDivN3MaxMaxPost sp a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Max b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Max b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let c3_0 := (mulsubN4 (signExtend12 4095 : Word) b0' b1' b2' b3'
+    u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+  -- 1. Pre-loop + loop body: base → base+904
+  have hA := evm_div_n3_preloop_max_max_spec sp base
+    a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+    hbnz hb3z hb2nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+    hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hbltu_1 hbltu_0
+  -- 2. Post-loop: base+904 → base+1064
+  have hB := evm_div_preamble_denorm_epilogue_spec sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    c3_0 r0.1 r1.1 0 0
+    b0' b1' b2' b3'
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  -- Frame post-loop with remainder atoms
+  have hBF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+     ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+     ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+     (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1))
+    (by pcFree) hB
+  -- 3. Compose A + B
+  have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by
+      delta preloopN3MaxMaxPost at hp
+      simp only [loopN3MaxPost, loopIterPostN3Max, loopExitPostN3_j0_eq,
+        n3_ub1_off4064, n3_qa1, se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp) hA hBF
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by delta fullDivN3MaxMaxPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    hFull
+
+-- ============================================================================
+-- Full n=3 DIV path (call×call, shift≠0): base → base+1064
+-- ============================================================================
+
+@[irreducible]
+def fullDivN3CallCallPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Call b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Call b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 0 0 **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ b2') **
+  (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1)
+
+theorem evm_div_n3_full_call_call_spec (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
+    (hshift_nz : (clzResult b2).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true)
+    (hv_u5 : isValidDwordAccess (sp + signExtend12 4016) = true)
+    (hv_u6 : isValidDwordAccess (sp + signExtend12 4008) = true)
+    (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true)
+    (hv_n  : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_j  : isValidDwordAccess (sp + signExtend12 3976) = true)
+    (hv_ret : isValidDwordAccess (sp + signExtend12 3968) = true)
+    (hv_d   : isValidDwordAccess (sp + signExtend12 3960) = true)
+    (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
+    (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu_1 : isCallTrialN3_j1 a3 b1 b2)
+    (hbltu_0 : isCallTrialN3_j0_afterCall a0 a1 a2 a3 b0 b1 b2 b3) :
+    cpsTriple base (base + 1064) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
+       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11_old) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4056) ↦ₘ u0_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
+       ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
+       ((sp + signExtend12 4024) ↦ₘ u4_old) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem) **
+       ((sp + signExtend12 3976) ↦ₘ j_mem) **
+       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
+       ((sp + signExtend12 3960) ↦ₘ d_mem) **
+       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3944) ↦ₘ scratch_un0))
+      (fullDivN3CallCallPost sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Call b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Call b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  have hA := evm_div_n3_preloop_call_call_spec sp base
+    a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+    ret_mem d_mem dlo_mem scratch_un0
+    hbnz hb3z hb2nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+    hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0
+    halign hbltu_1 hbltu_0
+  have hB := evm_div_preamble_denorm_epilogue_spec sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    (let q_hat := div128Quot r1.2.2.2.1 r1.2.2.1 b2'
+     (mulsubN4 q_hat b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2)
+    r0.1 r1.1 0 0
+    b0' b1' b2' b3'
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  have hBF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+     ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+     ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+     (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+     (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ b2') **
+     (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1))
+    (by pcFree) hB
+  have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by
+      delta preloopN3CallCallPost at hp
+      simp only [loopN3CallCallPost, loopIterPostN3Call, loopExitPostN3_j0_eq,
+        n3_ub1_off4064, n3_qa1, se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp) hA hBF
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by delta fullDivN3CallCallPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    hFull
+
+-- ============================================================================
+-- Full n=3 DIV path (max×call, shift≠0): base → base+1064
+-- ============================================================================
+
+@[irreducible]
+def fullDivN3MaxCallPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Max b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Call b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 0 0 **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ b2') **
+  (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1)
+
+theorem evm_div_n3_full_max_call_spec (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
+    (hshift_nz : (clzResult b2).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true)
+    (hv_u5 : isValidDwordAccess (sp + signExtend12 4016) = true)
+    (hv_u6 : isValidDwordAccess (sp + signExtend12 4008) = true)
+    (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true)
+    (hv_n  : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_j  : isValidDwordAccess (sp + signExtend12 3976) = true)
+    (hv_ret : isValidDwordAccess (sp + signExtend12 3968) = true)
+    (hv_d   : isValidDwordAccess (sp + signExtend12 3960) = true)
+    (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
+    (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu_1 : isMaxTrialN3_j1 a3 b1 b2)
+    (hbltu_0 : isCallTrialN3_j0_afterMax a0 a1 a2 a3 b0 b1 b2 b3) :
+    cpsTriple base (base + 1064) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
+       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11_old) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4056) ↦ₘ u0_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
+       ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
+       ((sp + signExtend12 4024) ↦ₘ u4_old) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem) **
+       ((sp + signExtend12 3976) ↦ₘ j_mem) **
+       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
+       ((sp + signExtend12 3960) ↦ₘ d_mem) **
+       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3944) ↦ₘ scratch_un0))
+      (fullDivN3MaxCallPost sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Max b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Call b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  have hA := evm_div_n3_preloop_max_call_spec sp base
+    a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+    ret_mem d_mem dlo_mem scratch_un0
+    hbnz hb3z hb2nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+    hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0
+    halign hbltu_1 hbltu_0
+  have hB := evm_div_preamble_denorm_epilogue_spec sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    (let q_hat := div128Quot r1.2.2.2.1 r1.2.2.1 b2'
+     (mulsubN4 q_hat b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2)
+    r0.1 r1.1 0 0
+    b0' b1' b2' b3'
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  have hBF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+     ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+     ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+     (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+     (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ b2') **
+     (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1))
+    (by pcFree) hB
+  have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by
+      delta preloopN3MaxCallPost at hp
+      simp only [loopN3MaxCallPost, loopIterPostN3Call, loopExitPostN3_j0_eq,
+        n3_ub1_off4064, n3_qa1, se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp) hA hBF
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by delta fullDivN3MaxCallPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    hFull
+
+-- ============================================================================
+-- Full n=3 DIV path (call×max, shift≠0): base → base+1064
+-- ============================================================================
+
+@[irreducible]
+def fullDivN3CallMaxPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Call b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Max b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 0 0 **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  -- scratch cells from j=1 call (unchanged by j=0 max):
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ b2') **
+  (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 u3)
+
+-- ============================================================================
+-- Helper infrastructure for call×max (WHNF timeout with direct 14-let chain).
+-- Strategy: pre-prove assertion-level lemmas as separate theorems, each with
+-- its own heartbeat budget. The main theorem just chains opaque defs.
+-- ============================================================================
+
+/-- Denorm epilogue helper for call×max. Takes r0/r1 as explicit params (short WHNF).
+    Precondition atom order matches preloopN3CallMaxPost's unfolded form exactly,
+    so the perm callback in denorm_comp can use `exact hp` (no xperm needed). -/
+private theorem evm_div_n3_call_max_denorm' (sp base shift b0' b1' b2' b3' u3 : Word)
+    (r0_un0 r0_un1 r0_un2 r0_un3 r0_u4 r0_q : Word)
+    (r1_q r1_u4 : Word) (c3_0 : Word)
+    (a0 a1 a2 a3 : Word)
+    (hshift_nz : shift ≠ 0) (hvalid : ValidMemRange sp 8)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
+    cpsTriple (base + 904) (base + 1064) (divCode base)
+      -- Flat left-associated chain matching preloopN3CallMaxPost's unfolded order:
+      (-- loopExitPostN3 at j=0:
+      (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ signExtend12 4095) **
+      (.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ sp + signExtend12 4056) **
+      (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x10 ↦ᵣ c3_0) ** (.x11 ↦ᵣ r0_q) **
+      (.x2 ↦ᵣ r0_un3) ** (.x0 ↦ᵣ (0 : Word)) **
+      (sp + signExtend12 3976 ↦ₘ (0 : Word)) ** (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+      ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ r0_un0) **
+      ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ r0_un1) **
+      ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ r0_un2) **
+      ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ r0_un3) **
+      ((sp + signExtend12 4024) ↦ₘ r0_u4) **
+      ((sp + signExtend12 4088) ↦ₘ r0_q) **
+      -- carry from j=1:
+      ((sp + signExtend12 4016) ↦ₘ r1_u4) ** ((sp + signExtend12 4080) ↦ₘ r1_q) **
+      -- scratch from j=1 call:
+      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+      (sp + signExtend12 3960 ↦ₘ b2') **
+      (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+      (sp + signExtend12 3944 ↦ₘ div128Un0 u3) **
+      -- outer frame:
+      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+      ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
+      ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+      ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+      ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+      ((sp + signExtend12 3992) ↦ₘ shift))
+      (denormDivPost sp shift r0_un0 r0_un1 r0_un2 r0_un3 r0_q r1_q 0 0 **
+       ((sp + signExtend12 3992) ↦ₘ shift) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4024) ↦ₘ r0_u4) **
+       ((sp + signExtend12 4016) ↦ₘ r1_u4) **
+       ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+       (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+       (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0_q) **
+       (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+       (sp + signExtend12 3960 ↦ₘ b2') **
+       (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+       (sp + signExtend12 3944 ↦ₘ div128Un0 u3)) := by
+  -- Apply denorm epilogue (takes 20 atoms), frame with remaining 16
+  have hB := evm_div_preamble_denorm_epilogue_spec sp base
+    r0_un0 r0_un1 r0_un2 r0_un3 shift
+    r0_un3 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    c3_0 r0_q r1_q 0 0
+    b0' b1' b2' b3'
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  have hBF := cpsTriple_frame_left _ _ _ _ _
+    (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ r0_u4) **
+     ((sp + signExtend12 4016) ↦ₘ r1_u4) **
+     ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+     (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0_q) **
+     (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ b2') **
+     (sp + signExtend12 3952 ↦ₘ div128DLo b2') **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 u3))
+    (by pcFree) hB
+  -- xperm on parameterized atoms (r0_un0 etc.) is cheap — no deep WHNF
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    hBF
+
+/-- Denorm composition for call×max: preloopN3CallMaxPost → fullDivN3CallMaxPost.
+    Separate theorem with own heartbeat budget. No intermediate def needed —
+    directly composes the denorm epilogue with the preloop postcondition. -/
+theorem evm_div_n3_call_max_denorm_comp (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hshift_nz : (clzResult b2).1 ≠ 0) (hvalid : ValidMemRange sp 8)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true) :
+    cpsTriple (base + 904) (base + 1064) (divCode base)
+      (preloopN3CallMaxPost sp base a0 a1 a2 a3 b0 b1 b2 b3)
+      (fullDivN3CallMaxPost sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b2).1
+  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (anti_shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let r1 := iterN3Call b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)
+  let r0 := iterN3Max b0' b1' b2' b3' u0 r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let c3_0 := (mulsubN4 (signExtend12 4095 : Word) b0' b1' b2' b3'
+    u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+  -- Use denorm helper with r0/r1 as params (no WHNF chain).
+  -- Pre-weakening is `exact hp` (no xperm) because the denorm helper's precondition
+  -- atom order matches the preloop postcondition's unfolded order exactly.
+  have hD := evm_div_n3_call_max_denorm' sp base shift b0' b1' b2' b3' u3
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.2.2.2.2.2 r0.1
+    r1.1 r1.2.2.2.2.2 c3_0 a0 a1 a2 a3
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by
+      delta preloopN3CallMaxPost at hp
+      simp only [loopN3CallMaxPost, loopIterPostN3Max, loopExitPostN3_j0_eq,
+        n3_ub1_off4064, n3_qa1, se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp)
+    (fun h hq => by delta fullDivN3CallMaxPost; xperm_hyp hq)
+    hD
+
+-- (Old evm_div_n3_call_max_denorm removed — superseded by evm_div_n3_call_max_denorm' above)
+
+/-- Full n=3 DIV path: base → base+1064 (shift ≠ 0, call×max). -/
+theorem evm_div_n3_full_call_max_spec (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
+    (hshift_nz : (clzResult b2).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
+    (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
+    (hv_q3 : isValidDwordAccess (sp + signExtend12 4064) = true)
+    (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
+    (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
+    (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
+    (hv_u3 : isValidDwordAccess (sp + signExtend12 4032) = true)
+    (hv_u4 : isValidDwordAccess (sp + signExtend12 4024) = true)
+    (hv_u5 : isValidDwordAccess (sp + signExtend12 4016) = true)
+    (hv_u6 : isValidDwordAccess (sp + signExtend12 4008) = true)
+    (hv_u7 : isValidDwordAccess (sp + signExtend12 4000) = true)
+    (hv_n  : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (hv_j  : isValidDwordAccess (sp + signExtend12 3976) = true)
+    (hv_ret : isValidDwordAccess (sp + signExtend12 3968) = true)
+    (hv_d   : isValidDwordAccess (sp + signExtend12 3960) = true)
+    (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
+    (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu_1 : isCallTrialN3_j1 a3 b1 b2)
+    (hbltu_0 : isMaxTrialN3_j0_afterCall a0 a1 a2 a3 b0 b1 b2 b3) :
+    cpsTriple base (base + 1064) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
+       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11_old) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4056) ↦ₘ u0_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
+       ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
+       ((sp + signExtend12 4024) ↦ₘ u4_old) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 3992) ↦ₘ shift_mem) **
+       ((sp + signExtend12 3976) ↦ₘ j_mem) **
+       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
+       ((sp + signExtend12 3960) ↦ₘ d_mem) **
+       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3944) ↦ₘ scratch_un0))
+      (fullDivN3CallMaxPost sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+  -- 1. Preloop+loop: base → base+904
+  have hA := evm_div_n3_preloop_call_max_spec sp base
+    a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+    ret_mem d_mem dlo_mem scratch_un0
+    hbnz hb3z hb2nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+    hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0
+    halign hbltu_1 hbltu_0
+  -- 2. Denorm composition (separate theorem, own heartbeat budget)
+  have hD := evm_div_n3_call_max_denorm_comp sp base a0 a1 a2 a3 b0 b1 b2 b3
+    hshift_nz hvalid hv_shift hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3
+  -- 3. Compose preloop+denorm
+  exact cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp) hA hD
 
 end EvmAsm.Evm64

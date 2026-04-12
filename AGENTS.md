@@ -427,6 +427,58 @@ exact ⟨k1 + k2, s2, stepN_add_eq ..., hpc2, ...⟩
 
 `DivN4Full.lean` imports both `LoopBodyN4` and `FullPath.lean`. Since `LoopBody.lean` → `Compose.lean` already forms a chain, do NOT add `DivN4Full` to `Compose.lean`'s imports — it would create a cycle. `DivN4Full` stands alone.
 
+## XPerm Scaling Limits and Sub-Assertion Bundling
+
+`xperm_hyp` is O(n^2) in the number of atoms, with each pair comparison
+potentially triggering deep WHNF reduction. At ~36 atoms with complex
+sub-expressions (e.g., `iterN3Call` + `iterN3Max` iteration results), this
+can exceed the 200k heartbeat budget even in a dedicated theorem.
+
+### Symptoms
+
+- `xperm_hyp hp` times out in perm/consequence callbacks
+- The same proof structure works for simpler atom expressions (e.g., all
+  `iterN3Max`) but fails when atom values involve mixed function calls
+- The let-binding chain itself passes `sorry` tests — the timeout is
+  specifically in the `xperm` atom matching
+
+### Solution: bundle sub-assertions as `@[irreducible] def`
+
+Wrap logical groups of atoms into `@[irreducible] def`s so that `xperm`
+sees a few opaque atoms instead of 36 individual ones:
+
+```lean
+-- Instead of 20 flat atoms for denorm input:
+@[irreducible]
+def denormInputN3 (sp shift u0 u1 u2 u3 q0 q1 b0' b1' b2' b3' : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** ... ** ((sp + 56) ↦ₘ b3')
+
+-- And 16 flat atoms for the frame:
+@[irreducible]
+def denormFrameN3 (sp base r0_u4 r1_u4 r0_q a0 a1 a2 a3 b2' u2 : Word) : Assertion :=
+  ((sp + 0) ↦ₘ a0) ** ... ** (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
+```
+
+Then `xperm` only matches 2-3 opaque atoms instead of 36, avoiding
+the O(n^2) blowup. Each sub-assertion is unfolded via `delta` only
+when needed (e.g., in the denorm epilogue's own pre-weakening callback).
+
+### When to apply
+
+When a composition has **30+ atoms** in the intermediate assertion and
+the atom values involve **two or more complex functions** (e.g., mixed
+`iterN3Call`/`iterN3Max` results). Same-function compositions (all
+`iterN3Max`) tend to stay within budget because `isDefEq` is faster
+when comparing structurally similar expressions.
+
+### Guideline for new compositions
+
+- Keep each `xperm` call to **≤ 20 atoms** with complex sub-expressions
+- For multi-iteration loops, define per-iteration postconditions as
+  `@[irreducible] def`s (already done: `loopBodyN3SkipPost`, etc.)
+- For full-path compositions, also bundle the denorm input and frame
+  groups as `@[irreducible] def`s
+
 ## Roadmap (PLAN.md)
 
 The project roadmap is maintained in `PLAN.md`. See `CLAUDE.md` for the
