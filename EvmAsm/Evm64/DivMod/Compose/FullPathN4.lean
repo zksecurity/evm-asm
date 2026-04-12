@@ -19,10 +19,7 @@ open EvmAsm.Rv64
 -- Address form helpers: signExtend12 K = K for small offsets
 -- ============================================================================
 
-private theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
-private theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by decide
-private theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by decide
-private theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by decide
+-- se12_32, se12_40, se12_48, se12_56 are in Base.lean
 
 /-- signExtend12(4) - 4 = 0, used for x1 register in loopSetupPost at n=4. -/
 private theorem x1_val_n4 : signExtend12 (4 : BitVec 12) - (4 : Word) = (0 : Word) := by decide

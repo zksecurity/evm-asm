@@ -22,17 +22,9 @@ open EvmAsm.Rv64
 -- Address form helpers (duplicated from FullPathN4 where they are private)
 -- ============================================================================
 
-private theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
-private theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by decide
-private theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by decide
-private theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by decide
+-- se12_32, se12_40, se12_48, se12_56, ult_zero_of_ne are in Base.lean
 
 private theorem x1_val_n4 : signExtend12 (4 : BitVec 12) - (4 : Word) = (0 : Word) := by decide
-
-/-- When b ≠ 0, 0 < b in unsigned ordering (BitVec.ult). -/
-theorem ult_zero_of_ne {b : Word} (h : b ≠ 0) : BitVec.ult 0 b := by
-  unfold BitVec.ult; simp
-  exact Nat.pos_of_ne_zero (fun h0 => h (by exact BitVec.eq_of_toNat_eq h0))
 
 -- ============================================================================
 -- Condition definitions for shift=0 call path

@@ -393,4 +393,18 @@ theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
     ((sp + signExtend12 3992) ↦ₘ shift) := by
   delta normBPost; rfl
 
+-- ============================================================================
+-- Shared signExtend12 normalization lemmas (used by FullPathN3/N4 compositions)
+-- ============================================================================
+
+theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
+theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by decide
+theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by decide
+theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by decide
+
+/-- When b ≠ 0, 0 < b in unsigned ordering (BitVec.ult). -/
+theorem ult_zero_of_ne {b : Word} (h : b ≠ 0) : BitVec.ult 0 b := by
+  unfold BitVec.ult; simp
+  exact Nat.pos_of_ne_zero (fun h0 => h (by exact BitVec.eq_of_toNat_eq h0))
+
 end EvmAsm.Evm64

@@ -134,11 +134,7 @@ private theorem normB_sub (base : Word) (sub_prog : List Instr) (k : Nat)
   exact divK_normB_code_sub_divCode base a i
     (CodeReq.ofProg_mono_sub (base + 228) _ divK_normB _ k rfl hslice hk hbound a i h)
 
--- signExtend12 for offsets used by normB merge spec
-private theorem se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by native_decide
-private theorem se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by native_decide
-private theorem se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by native_decide
-private theorem se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by native_decide
+-- se12_32, se12_40, se12_48, se12_56 are in Base.lean
 
 set_option maxHeartbeats 12800000 in
 set_option maxRecDepth 4096 in
