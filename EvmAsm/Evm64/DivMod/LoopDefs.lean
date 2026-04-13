@@ -799,6 +799,7 @@ def loopIterPostN2 (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word
 /-- Precondition for the n=2 three-iteration loop (j starts at 2).
     Includes j=2's iteration precondition plus pre-existing atoms
     for j=1 (u0_orig_1, q1_old) and j=0 (u0_orig_0, q0_old). -/
+@[irreducible]
 def loopN2Pre (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_1 u0_orig_0
@@ -848,6 +849,7 @@ def loopN2PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
 
 /-- Precondition for n=2 two-iteration loop (j=1, j=0).
     Same structure as loopN3Pre but with n_mem = 2. -/
+@[irreducible]
 def loopN2Iter10Pre (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word) : Assertion :=
   let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
