@@ -556,6 +556,7 @@ def loopN3CallMaxPost (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : A
 /-- Per-iteration computation for n=2 when the trial quotient is max (BLTU not taken).
     Internally handles both skip (borrow=0) and addback (borrow≠0) paths.
     Returns (q_j, un0, un1, un2, un3, u4). -/
+@[irreducible]
 def iterN2Max (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   let q_hat : Word := signExtend12 4095
@@ -583,6 +584,7 @@ def loopIterPostN2Max (sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
     For n=2: div128 uses u_hi=u2, u_lo=u1, v_top=v1.
     Internally handles both skip (borrow=0) and addback (borrow≠0) paths.
     Returns (q_j, un0, un1, un2, un3, u4). -/
+@[irreducible]
 def iterN2Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   let q_hat := div128Quot u2 u1 v1
