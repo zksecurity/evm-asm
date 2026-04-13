@@ -21,7 +21,9 @@ open EvmAsm.Rv64
 -- ============================================================================
 -- Address normalization lemmas for n=2 preloop+loop composition
 -- Maps u_base(j)/q_addr(j) relative offsets to flat sp+signExtend12 offsets.
--- Pattern matches LoopComposeN3.lean / FullPathN3Loop.lean.
+-- signExtend12/<<</>> → concrete values via simp, then bv_omega.
+-- bv_addr only handles (a+k1)+k2=a+k3; these involve subtraction and shifts,
+-- so bv_omega is required. Pattern matches FullPathN3Loop.lean:69.
 -- ============================================================================
 
 /-- signExtend12(4) - 2 = 2, for x1 register in loopSetupPost at n=2. -/
