@@ -10,6 +10,7 @@
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPath
 import EvmAsm.Evm64.DivMod.Compose.FullPathN4Loop
+import EvmAsm.Evm64.DivMod.Compose.FullPathN2Cases
 
 open EvmAsm.Rv64.Tactics
 
@@ -365,14 +366,82 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  -- Case split FIRST, then define let bindings with concrete iter functions.
-  -- This ensures r0/r1/r2 use iterN2Max/iterN2Call directly (not iterN2 false/true).
-  -- TODO: complete the unified proof for all 8 cases.
-  -- Each case follows the pattern from evm_div_n2_full_all_max_spec:
-  -- define r2/r1/r0/c3_0 with correct iterN2Max/iterN2Call, apply hA+hB,
-  -- frame with per-case scratch, compose + bridge + consequence.
-  -- The bridge tactic (delta + simp (config := { decide := true }) + xperm_hyp)
-  -- is identical across all cases.
-  cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> sorry
+  -- Dispatch to per-case lemmas (each uses iterN2Max/iterN2Call directly).
+  -- Then bridge from per-case postcondition to fullDivN2UnifiedPost via consequence.
+  cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> (
+    simp only [isTrialN2_j2, isTrialN2_j1, isTrialN2_j0, iterN2_false, iterN2_true] at hbltu_2 hbltu_1 hbltu_0
+    first
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2AllMaxPost at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_all_max_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_FFT_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_FFT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_FTF_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_FTF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_FTT_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_FTT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_TFF_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_TFF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_TFT_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_TFT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_TTF_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_TTF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0)
+    | exact cpsTriple_consequence _ _ _ _ _ _ _
+        (fun h hp => hp) (fun h hq => by delta fullDivN2UnifiedPost fullDivN2_TTT_Post at hq ⊢; xperm_hyp hq)
+        (evm_div_n2_full_TTT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+          ret_mem d_mem dlo_mem scratch_un0
+          hbnz hb3z hb2z hb1nz hshift_nz hvalid
+          hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
+          hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
+          hbltu_2 hbltu_1 hbltu_0))
 
 end EvmAsm.Evm64
