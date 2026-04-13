@@ -421,20 +421,23 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
       Status:
         - ✅ n=4: j=0 all 4 paths done (`LoopIterN4.lean`)
         - ✅ n=3: j=0 all 4 paths + j=1 all 4 paths + unified specs (`LoopIterN3.lean`, `LoopComposeN3.lean`)
-        - 🔧 n=2: j=0 all 4 paths + j=1 all 4 paths + j=2 max_skip only (`LoopIterN2.lean`); j=2 remaining 3 specs needed
+        - ✅ n=2: j=0,j=1,j=2 all 4 paths + unified specs (`LoopIterN2.lean`, `LoopComposeN2.lean`)
         - ❌ n=1: not started
-    - Step 2b: **Bool-parameterized loop composition** (Issue #262, PRs #267 + #268).
+    - Step 2b: **Bool-parameterized loop composition** (Issue #262, PRs #267–#272).
       Unifies max/call branch paths via `(bltu : Bool)` parameter so that
       2^k path combinations collapse to 1 theorem.
       Status:
-        - ✅ Unified defs: `iterN3`, `iterN2`, `loopIterPostN3`, `loopN3UnifiedPost` (`LoopDefs.lean`)
-        - ✅ Unified 2-iteration composition: `divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)` (`LoopUnifiedN3.lean`)
-        - ✅ Unified preloop+loop: `evm_div_n3_preloop_loop_unified_spec` (`Compose/FullPathN3LoopUnified.lean`)
+        - ✅ Unified defs: `iterN3`, `iterN2`, `loopIterPostN3`, `loopN3UnifiedPost`, `loopN2UnifiedPost` (`LoopDefs.lean`)
+        - ✅ n=3 unified 2-iteration composition: `divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)` (`LoopUnifiedN3.lean`)
+        - ✅ n=3 unified preloop+loop: `evm_div_n3_preloop_loop_unified_spec` (`Compose/FullPathN3LoopUnified.lean`)
+        - ✅ n=2 unified 3-iteration composition: `divK_loop_n2_unified_spec (bltu_2 bltu_1 bltu_0 : Bool)` (`LoopUnifiedN2.lean`)
+          Layered: iter10 (4 cases) → max/call+iter10 (2 lemmas) → unified dispatch
+        - `iterN2Max`/`iterN2Call` marked `@[irreducible]` to prevent stuck if-reduction in projections
         - Unified condition predicates: `isTrialN3_j1/j0` (`FullPathN3LoopUnified.lean`)
       Immediate next steps:
+        - n=2 full-path composition (preloop+loop+denorm+epilogue, now unblocked)
+        - n=1 loop iteration specs + composition (4 iterations, Bool approach gives 1 theorem vs 16)
         - Unified full-path for n=3 (preloop+loop+denorm+epilogue, base→base+1064)
-        - Complete n=2 j=2 iteration specs, then build `LoopComposeN2.lean` with Bool params directly (1 theorem vs 8)
-        - n=1 loop composition (4 iterations, Bool approach gives 1 theorem vs 16)
     - Step 3: Per-n full-path composition theorems (base→base+1064) with bundled postconditions.
       Composes pre-loop (normalization) + loop body + post-loop (denorm/epilogue).
       Status:
@@ -442,7 +445,7 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
         - ✅ n=4 shift=0: `evm_div_n4_full_shift0_call_{skip,addback}_spec` (`FullPathN4Shift0.lean`)
         - ✅ n=3 shift≠0: 4 full-path theorems (`FullPathN3Loop.lean`) — can be replaced by unified version
         - ✅ n=3 shift=0: 2 full-path theorems (`FullPathN3Shift0.lean`)
-        - ❌ n=2: blocked on Step 2 (loop composition)
+        - 🔧 n=2: unblocked (loop composition done), needs preloop+denorm+epilogue
         - ❌ n=1: blocked on Step 2
       Immediate next steps:
         - Unified n=3 full-path theorem (1 theorem with Bool params, delegates to existing 4)
@@ -474,7 +477,7 @@ All phases below target **Evm64** primarily. Files are under `EvmAsm/Evm64/`.
       Status: Not started (blocked on Steps 3+4 for all n values)
 
   **Path to EVM-level DIV/MOD specs (summary):**
-  1. Complete n=2 loop iteration specs (3 missing j=2 specs) → build LoopComposeN2 with Bool unification
+  1. ✅ Complete n=2 loop composition with Bool unification (PRs #270–#272)
   2. Complete n=1 loop iteration specs → build LoopComposeN1 with Bool unification
   3. Build n=2 and n=1 full-path compositions (preloop+loop+denorm+epilogue)
   4. Complete Knuth's Theorem B (Step 4) — can proceed in parallel with 1-3
