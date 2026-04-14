@@ -144,6 +144,52 @@ theorem rem_full_equiv (a b : BitVec 64) :
   · simp only [show (b == 0#64) = false from by simp [hb], ite_false, Bool.false_eq_true]
     exact signed_rem_equiv a b
 
+/-- -(2^63) and 2^63 are the same mod 2^64 at the BitVec level. -/
+private theorem to_bits_truncate_neg_pow63 :
+    to_bits_truncate (l := 64) (-(((2 : Int) ^ 63))) =
+    to_bits_truncate (l := 64) (((2 : Int) ^ 63)) := by
+  rw [to_bits_truncate_eq_ofInt, to_bits_truncate_eq_ofInt]
+  apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_ofInt]
+
+/-- For 64-bit signed values, Int.tdiv can only reach 2^63 in the overflow case,
+    so the SAIL overflow guard (clamping to -(2^63)) produces the same to_bits_truncate. -/
+private theorem overflow_guard_div (a b : BitVec 64) (hb : b ≠ 0#64) :
+    let q := a.toInt.tdiv b.toInt
+    to_bits_truncate (l := 64)
+      (if ((q ≥b ((2 : Int) ^ 63)) : Bool) then (-((2 : Int) ^ 63)) else q) =
+    to_bits_truncate (l := 64) q := by
+  simp only []
+  by_cases hq : (9223372036854775808 : Int) ≤ a.toInt.tdiv b.toInt
+  · simp [hq]
+    -- |tdiv a b| ≤ |a| ≤ 2^63, combined with ≥ 2^63 gives exactly 2^63
+    have hq_eq : a.toInt.tdiv b.toInt = (9223372036854775808 : Int) := by
+      have := Int.natAbs_tdiv_le_natAbs a.toInt b.toInt
+      have := @BitVec.toInt_lt 64 a
+      have := @BitVec.le_toInt 64 a
+      omega
+    rw [hq_eq]; exact to_bits_truncate_neg_pow63
+  · simp [hq]
+
+set_option maxHeartbeats 3200000 in
+/-- Full DIV (signed) value equivalence, including b=0 and overflow cases.
+    Matches the exact post-simp form of execute_DIV with is_unsigned=false. -/
+theorem div_full_equiv_applied (a b : BitVec 64) :
+    to_bits_truncate (l := 64)
+      (if (((if ((b.toInt == (0 : Int)) : Bool) then (-1 : Int)
+           else a.toInt.tdiv b.toInt) ≥b ((2 : Int) ^ ((LeanRV64D.Functions.xlen : Int) - 1))) : Bool)
+       then (-((2 : Int) ^ ((LeanRV64D.Functions.xlen : Int) - 1)))
+       else (if ((b.toInt == (0 : Int)) : Bool) then (-1 : Int) else a.toInt.tdiv b.toInt)) =
+    rv64_div a b := by
+  simp only [LeanRV64D.Functions.xlen]
+  unfold rv64_div; rw [int_toInt_beq_zero]
+  by_cases hb : b = 0#64
+  · subst hb
+    -- q = -1, guard condition is 2^63 ≤ -1 which is false
+    simp (config := { decide := true }) [to_bits_truncate_neg1]
+  · simp only [show (b == 0#64) = false from by simp [hb], ite_false, Bool.false_eq_true]
+    -- Apply overflow guard then signed_div_equiv
+    exact (overflow_guard_div a b hb).symm ▸ signed_div_equiv a b
+
 -- ============================================================================
 -- Instruction proofs
 -- ============================================================================
@@ -180,7 +226,36 @@ theorem div_sail_equiv (s_rv : MachineState) (s_sail : SailState)
     ∃ s_sail',
       runSail (execute_DIV (regToRegidx rs2) (regToRegidx rs1) (regToRegidx rd) false) s_sail
         = some (RETIRE_SUCCESS, s_sail') ∧
-      StateRel (execInstrBr s_rv (.DIV rd rs1 rs2)) s_sail' := by sorry
+      StateRel (execInstrBr s_rv (.DIV rd rs1 rs2)) s_sail' := by
+  unfold execute_DIV
+  simp only [runSail_bind, runSail_rX_bits_of_stateRel s_rv s_sail hrel, runSail_pure,
+    LeanRV64D.Functions.not,
+    Bool.not_false, Bool.true_and, ite_true, ite_false, Bool.false_eq_true]
+  conv in to_bits_truncate _ => rw [div_full_equiv_applied]
+  cases rd <;>
+    simp only [regToRegidx,
+      runSail_wX_bits_x0, runSail_wX_bits_x1, runSail_wX_bits_x2,
+      runSail_wX_bits_x5, runSail_wX_bits_x6, runSail_wX_bits_x7,
+      runSail_wX_bits_x10, runSail_wX_bits_x11, runSail_wX_bits_x12]
+  all_goals first
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x0 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x1 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x2 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x5 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x6 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x7 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x10 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x11 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
+    | exact ⟨_, rfl, ⟨fun r => by simpa [execInstrBr, MachineState.setPC] using reg_agree_after_insert s_sail s_rv hrel .x12 _ r,
+        fun a => by simpa [execInstrBr, MachineState.setPC] using hrel.mem_agree a⟩⟩
 
 theorem divu_sail_equiv (s_rv : MachineState) (s_sail : SailState)
     (hrel : StateRel s_rv s_sail) (rd rs1 rs2 : Reg) :

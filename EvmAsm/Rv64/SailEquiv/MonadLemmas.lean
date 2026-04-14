@@ -317,14 +317,68 @@ private theorem align4_bit1 (v : BitVec 64) (h : v &&& 3 = 0) :
   show v.getLsbD 1 = false
   have := congrArg (·.getLsbD 1) h; simp at this; exact this
 
+/-- currentlyEnabled Ext_Zca succeeds when misa is readable.
+    Returns the MISA C-bit check result without modifying state. -/
+-- currentlyEnabled Ext_Zca → Ext_C → readReg misa. Both hartSupports are true.
+private theorem currentlyEnabled_Ext_C_result (s : SailState) (misa_val : BitVec 64)
+    (h_misa : s.regs.get? Register.misa = some misa_val) :
+    currentlyEnabled extension.Ext_C s =
+      EStateM.Result.ok ((_get_Misa_C misa_val) == 1#1) s := by
+  rw [currentlyEnabled.eq_def]
+  simp [hartSupports, _get_Misa_C, LeanRV64D.Functions.not, LeanRV64D.Functions.xlen,
+    PreSail.readReg, h_misa,
+    pure, EStateM.pure, bind, EStateM.bind, EStateM.get,
+    get, MonadState.get, getThe, MonadStateOf.get]
+
+theorem currentlyEnabled_Ext_Zca_result (s : SailState) (misa_val : BitVec 64)
+    (h_misa : s.regs.get? Register.misa = some misa_val) :
+    currentlyEnabled extension.Ext_Zca s =
+      EStateM.Result.ok ((_get_Misa_C misa_val) == 1#1) s := by
+  rw [currentlyEnabled.eq_def]
+  simp [hartSupports, LeanRV64D.Functions.not, LeanRV64D.Functions.xlen,
+    currentlyEnabled_Ext_C_result s misa_val h_misa,
+    pure, EStateM.pure, bind, EStateM.bind]
+
+private theorem align4_getLsbD0 (v : BitVec 64) (h : v &&& 3 = 0) :
+    v.getLsbD 0 = false := by
+  have := congrArg (·.getLsbD 0) h; simp at this; exact this
+
+private theorem align4_getLsbD1 (v : BitVec 64) (h : v &&& 3 = 0) :
+    v.getLsbD 1 = false := by
+  have := congrArg (·.getLsbD 1) h; simp at this; exact this
+
+set_option maxHeartbeats 8000000 in
 /-- jump_to succeeds for 4-byte aligned targets: writes nextPC, returns RETIRE_SUCCESS.
-    Requires 4-byte alignment (bits 0,1 = 0) and that `currentlyEnabled Ext_Zca`
-    succeeds in the SAIL state. The alignment makes the Zca result irrelevant
-    (bit_to_bool(target[1]) = false), but the monadic call must still succeed. -/
+    Requires 4-byte alignment (bits 0,1 = 0) and that misa is readable in the
+    SAIL state. Alignment makes the Ext_Zca result irrelevant (bit 1 = 0). -/
 theorem runSail_jump_to (target : BitVec 64) (s : SailState)
-    (h_align : target &&& 3 = 0) :
+    (misa_val : BitVec 64)
+    (h_align : target &&& 3 = 0)
+    (h_misa : s.regs.get? Register.misa = some misa_val) :
     runSail (jump_to target) s =
       some (RETIRE_SUCCESS, { s with regs := s.regs.insert Register.nextPC target }) := by
-  sorry  -- Blocked on currentlyEnabled Ext_Zca monadic call succeeding
+  have hb0 : target.getLsbD 0 = false := align4_getLsbD0 target h_align
+  have hb1 : target.getLsbD 1 = false := align4_getLsbD1 target h_align
+  -- target[0] and target[1] are definitionally target.getLsbD 0/1
+  have hb0' : target[0] = false := hb0
+  have hb1' : target[1] = false := hb1
+  have h_zca := currentlyEnabled_Ext_Zca_result s misa_val h_misa
+  unfold jump_to runSail
+  simp [SailME.run, PreSail.PreSailME.run,
+    ext_control_check_pc,
+    assert, PreSail.assert,
+    hb0', hb1', BitVec.ofBool,
+    bit_to_bool, bool_bit_backwards,
+    h_zca, LeanRV64D.Functions.not,
+    set_next_pc, sail_branch_announce, redirect_callback,
+    PreSail.writeReg, EStateM.modifyGet,
+    modify, MonadState.modifyGet, modifyGet, MonadStateOf.modifyGet,
+    pure, EStateM.pure, bind, EStateM.bind, EStateM.get,
+    get, MonadState.get, getThe, MonadStateOf.get,
+    MonadLift.monadLift, monadLift, liftM, Functor.map, Function.comp,
+    ExceptT.run, ExceptT.mk, ExceptT.pure,
+    ExceptT.bind, ExceptT.bindCont, ExceptT.lift,
+    ExceptT.instMonadLift, EStateM.map,
+    LeanRV64D.Functions.xlen, RETIRE_SUCCESS]
 
 end EvmAsm.Rv64.SailEquiv
