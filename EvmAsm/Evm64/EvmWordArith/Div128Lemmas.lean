@@ -154,6 +154,64 @@ theorem trial_quotient_range (u_hi un1 d_hi d_lo : Nat)
   ⟨trial_quotient_ge u_hi un1 d_hi d_lo (by omega) hun1,
    trial_quotient_le u_hi un1 d_hi d_lo hd_hi_bound hd_lo hun1 hu hnorm⟩
 
+-- ============================================================================
+-- Product check correction: reduces overestimate from ≤ 2 to ≤ 1
+-- ============================================================================
+
+-- After computing q̂ = ⌊u_hi / d_hi⌋ and r̂ = u_hi mod d_hi, the div128
+-- algorithm checks: is q̂ * d_lo > r̂ * B + un1?
+-- If yes, q̂ overestimates by ≥ 1, so decrement.
+-- After at most one correction, the overestimate is ≤ 1.
+
+/-- Product check soundness: if `q̂ * d_lo > r̂ * B + un1`,
+    then `q̂ > q_true` (the trial quotient strictly overestimates).
+
+    Proof: q̂ * d = q̂ * d_hi * B + q̂ * d_lo > r̂ * d_hi * B + r̂ * B + un1
+    and from r̂ = u_hi - q̂ * d_hi: q̂ * d_hi = u_hi - r̂,
+    so q̂ * d > (u_hi - r̂) * B + r̂ * B + un1 = u_hi * B + un1. -/
+theorem product_check_gt_imp_overestimate (u_hi un1 d_hi d_lo q_hat r_hat : Nat)
+    (B : Nat := 2^32)
+    (hd_pos : 0 < d_hi * B + d_lo)
+    (hr_hat : r_hat = u_hi - q_hat * d_hi)
+    (hq_mul : q_hat * d_hi ≤ u_hi)
+    (hcheck : q_hat * d_lo > r_hat * B + un1) :
+    q_hat > (u_hi * B + un1) / (d_hi * B + d_lo) := by
+  set d := d_hi * B + d_lo
+  set X := u_hi * B + un1
+  -- q̂ * d = q̂ * d_hi * B + q̂ * d_lo > (u_hi - r̂) * B + r̂ * B + un1 = X
+  have hqd_gt : q_hat * d > X := by
+    calc q_hat * d = q_hat * (d_hi * B + d_lo) := rfl
+      _ = q_hat * d_hi * B + q_hat * d_lo := by ring
+      _ > q_hat * d_hi * B + r_hat * B + un1 := by omega
+      _ = (q_hat * d_hi + r_hat) * B + un1 := by ring
+      _ = u_hi * B + un1 := by
+            rw [hr_hat, Nat.add_sub_cancel' hq_mul]
+  exact (Nat.div_lt_iff_lt_mul hd_pos).mpr hqd_gt
+
+/-- After the product check correction, the overestimate is ≤ 1.
+    If the product check passes (no correction needed), then q̂ ≤ q_true + 1.
+    If the product check fails and we decrement, the result ≤ q_true + 1
+    since the initial overestimate was ≤ 2. -/
+theorem corrected_quotient_le (u_hi un1 d_hi d_lo q_hat : Nat)
+    (hd_hi_pos : 0 < d_hi)
+    (hq_mul : q_hat * d_hi ≤ u_hi)
+    (r_hat : Nat) (hr_hat : r_hat = u_hi - q_hat * d_hi)
+    (hcheck_pass : q_hat * d_lo ≤ r_hat * 2^32 + un1) :
+    q_hat ≤ (u_hi * 2^32 + un1) / (d_hi * 2^32 + d_lo) + 1 := by
+  set d := d_hi * 2^32 + d_lo
+  set X := u_hi * 2^32 + un1
+  have hd_pos : 0 < d := by positivity
+  -- q̂ * d_lo ≤ r̂ * B + un1, so q̂ * d ≤ (q̂*d_hi + r̂)*B + un1 = u_hi*B + un1 = X
+  have hqd_le : q_hat * d ≤ X := by
+    calc q_hat * d = q_hat * d_hi * 2^32 + q_hat * d_lo := by ring
+      _ ≤ q_hat * d_hi * 2^32 + r_hat * 2^32 + un1 := by omega
+      _ = (q_hat * d_hi + r_hat) * 2^32 + un1 := by ring
+      _ = u_hi * 2^32 + un1 := by
+            rw [hr_hat, Nat.add_sub_cancel' hq_mul]
+  -- From q̂ * d ≤ X: q̂ ≤ X / d
+  have : q_hat ≤ X / d := Nat.le_div_iff_mul_le hd_pos |>.mpr hqd_le
+  omega
+
 end EvmWord
 
 end EvmAsm.Evm64
