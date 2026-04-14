@@ -326,14 +326,14 @@ theorem mulsubN4_c3_eq_one_v3_zero (q v0 v1 v2 u0 u1 u2 u3 : Word)
 
 -- When the trial quotient overestimates by exactly 2 (detected by c3=1 and
 -- first addback carry=0), a second addback produces carry=1, giving a clean
--- Euclidean equation: val256(u) = (q-2) * val256(v) + val256(ab2).
+-- Euclidean equation: val256(u) = (q-2) * val256(v) + val256(ab').
 
 /-- Second addback carry is 1 when the first was 0.
 
     From c3=1: val256(u) + 2^256 = val256(un) + q*val256(v)
     From carry1=0: val256(un) + val256(v) = val256(ab1)  (no overflow)
-    Second addback: val256(ab1) + val256(v) = val256(ab2) + carry2*2^256
-    Combining: val256(u) + 2^256 = val256(ab2) + carry2*2^256 + (q-2)*val256(v)
+    Second addback: val256(ab1) + val256(v) = val256(ab') + carry2*2^256
+    Combining: val256(u) + 2^256 = val256(ab') + carry2*2^256 + (q-2)*val256(v)
     Since q ≤ ⌊u/v⌋ + 2: (q-2)*val256(v) ≤ val256(u), hence carry2 = 1. -/
 theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
     (hbnz : v0 ||| v1 ||| v2 ||| v3 ≠ 0)
@@ -361,14 +361,14 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hc1_val : (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3).toNat = 0 := by
     rw [hcarry_zero]; decide
   rw [hc1_val] at hab1
-  -- Second addback: val256(ab1) + val256(v) = val256(ab2) + carry2 * 2^256
-  have hab2 := addbackN4_val256_eq ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
-  simp only [] at hab2
+  -- Second addback: val256(ab1) + val256(v) = val256(ab') + carry2 * 2^256
+  have hab' := addbackN4_val256_eq ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
+  simp only [] at hab'
   -- Bounds
   have hv_pos := val256_pos_of_or_ne_zero v0 v1 v2 v3 hbnz
   have hun_bound := val256_bound ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
   have hab1_bound := val256_bound ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
-  have hab2_result_bound := val256_bound
+  have hab'_result_bound := val256_bound
     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3).1
     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3).2.1
     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3).2.2.1
@@ -401,9 +401,9 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   -- val256(ab1) + val256(v) ≥ 2^256
   have h_ab1_v_ge : val256 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 +
       val256 v0 v1 v2 v3 ≥ 2 ^ 256 := by nlinarith
-  -- carry2 = 1: from hab2 and h_ab1_v_ge
-  -- val256(ab2_result) + carry2 * 2^256 = val256(ab) + val256(v) ≥ 2^256
-  -- So carry2 * 2^256 ≥ 2^256 - val256(ab2_result) ≥ 1, hence carry2 ≥ 1
+  -- carry2 = 1: from hab' and h_ab1_v_ge
+  -- val256(ab'_result) + carry2 * 2^256 = val256(ab) + val256(v) ≥ 2^256
+  -- So carry2 * 2^256 ≥ 2^256 - val256(ab'_result) ≥ 1, hence carry2 ≥ 1
   -- Also val256(ab) + val256(v) < 2 * 2^256, so carry2 < 2
   set carry2 := (addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3).toNat
   -- Upper bound: carry2 * 2^256 < 2 * 2^256
@@ -412,21 +412,21 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
       linarith
     linarith
   -- Lower bound: carry2 ≥ 1
-  -- If carry2 = 0 then hab2 gives val256(ab)+val256(v) = val256(ab2_result) < 2^256,
+  -- If carry2 = 0 then hab' gives val256(ab)+val256(v) = val256(ab'_result) < 2^256,
   -- contradicting h_ab1_v_ge.
   have hc2_ge : carry2 ≥ 1 := by
     by_contra h; push_neg at h
     have hc2_zero : carry2 = 0 := by omega
-    rw [hc2_zero] at hab2
-    -- hab2: val256(ab) + val256(v) = val256(ab2_result) + 0 * 2^256
-    -- = val256(ab2_result) < 2^256, contradicting ≥ 2^256
+    rw [hc2_zero] at hab'
+    -- hab': val256(ab) + val256(v) = val256(ab'_result) + 0 * 2^256
+    -- = val256(ab'_result) < 2^256, contradicting ≥ 2^256
     linarith
   have h256_pos : (0 : Nat) < 2 ^ 256 := by positivity
   have : carry2 < 2 := (Nat.mul_lt_mul_right h256_pos).mp hc2_lt
   omega
 
 /-- Combined Euclidean equation for the double-addback case:
-    val256(u) = (q.toNat - 2) * val256(v) + val256(ab2_result). -/
+    val256(u) = (q.toNat - 2) * val256(v) + val256(ab'_result). -/
 theorem mulsub_double_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
     (hbnz : v0 ||| v1 ||| v2 ||| v3 ≠ 0)
     (hq_over : q.toNat ≤ val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3 + 2)
@@ -440,10 +440,10 @@ theorem mulsub_double_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
     (hq_ge_2 : q.toNat ≥ 2) :
     let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 v0 v1 v2 v3
-    let ab2 := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
+    let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
     val256 u0 u1 u2 u3 = (q.toNat - 2) * val256 v0 v1 v2 v3 +
-      val256 ab2.1 ab2.2.1 ab2.2.2.1 ab2.2.2.2.1 := by
-  intro ms ab ab2
+      val256 ab'.1 ab'.2.1 ab'.2.2.1 ab'.2.2.2.1 := by
+  intro ms ab ab'
   -- Mulsub equation with c3 = 1
   have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
   simp only [] at hmulsub
@@ -460,13 +460,13 @@ theorem mulsub_double_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hcarry2 := addbackN4_second_carry_one q v0 v1 v2 v3 u0 u1 u2 u3
     hbnz hq_over hc3_one hcarry_zero
   simp only [] at hcarry2
-  have hab2_eq := addbackN4_val256_eq ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
-  simp only [] at hab2_eq
-  rw [hcarry2] at hab2_eq
+  have hab'_eq := addbackN4_val256_eq ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
+  simp only [] at hab'_eq
+  rw [hcarry2] at hab'_eq
   -- Combine: val256(u) + 2^256 = val256(un) + q*v (mulsub, c3=1)
   -- val256(un) + val256(v) = val256(ab1) (addback, carry=0)
-  -- val256(ab1) + val256(v) = val256(ab2) + 2^256 (addback2, carry=1)
-  -- So: val256(u) = (q-2)*val256(v) + val256(ab2)
+  -- val256(ab1) + val256(v) = val256(ab') + 2^256 (addback2, carry=1)
+  -- So: val256(u) = (q-2)*val256(v) + val256(ab')
   suffices h : (q.toNat - 2) * val256 v0 v1 v2 v3 + 2 * val256 v0 v1 v2 v3 =
       q.toNat * val256 v0 v1 v2 v3 by linarith
   have : q.toNat = (q.toNat - 2) + 2 := by omega
