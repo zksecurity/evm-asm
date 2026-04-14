@@ -234,6 +234,39 @@ theorem correction_step_overestimate_le_one (u_hi un1 d_hi d_lo q_hat r_hat : Na
       hd_pos hr_hat hq_mul hpass
     omega
 
+-- ============================================================================
+-- Full half-round: overflow clamp + product check = overestimate ≤ 1
+-- ============================================================================
+
+/-- Full half-round: any quotient q satisfying q_true ≤ q ≤ q_true + 2
+    (the trial quotient range) can be corrected to q_true ≤ q' ≤ q_true + 1
+    via the product check, provided q * d_hi ≤ u_hi (the trial division invariant).
+
+    This captures both the overflow correction case (which reduces the bound
+    from ≤ q_true + 2 to ≤ q_true + 1) and the no-overflow case (where
+    correction_step_overestimate_le_one applies directly). -/
+theorem half_round_overestimate_le_one (u_hi un1 d_hi d_lo q r : Nat)
+    (hd_pos : 0 < d_hi * 2^32 + d_lo)
+    (hr : r = u_hi - q * d_hi)
+    (hq_mul : q * d_hi ≤ u_hi)
+    (hq_ge : (u_hi * 2^32 + un1) / (d_hi * 2^32 + d_lo) ≤ q)
+    (hq_le : q ≤ (u_hi * 2^32 + un1) / (d_hi * 2^32 + d_lo) + 2) :
+    let q_true := (u_hi * 2^32 + un1) / (d_hi * 2^32 + d_lo)
+    let q' := if q * d_lo > r * 2^32 + un1 then q - 1 else q
+    q_true ≤ q' ∧ q' ≤ q_true + 1 := by
+  constructor
+  · -- Lower bound: q' ≥ q_true
+    split
+    · rename_i hfail
+      have hgt : q > (u_hi * 2^32 + un1) / (d_hi * 2^32 + d_lo) :=
+        product_check_gt_imp_overestimate u_hi un1 d_hi d_lo q r (2^32)
+          hd_pos hr hq_mul hfail
+      omega
+    · exact hq_ge
+  · -- Upper bound: q' ≤ q_true + 1
+    exact correction_step_overestimate_le_one u_hi un1 d_hi d_lo q r (2^32)
+      hd_pos hr hq_mul hq_le
+
 end EvmWord
 
 end EvmAsm.Evm64
