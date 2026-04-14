@@ -154,6 +154,86 @@ theorem trial_quotient_range (u_hi un1 d_hi d_lo : Nat)
   ⟨trial_quotient_ge u_hi un1 d_hi d_lo (by omega) hun1,
    trial_quotient_le u_hi un1 d_hi d_lo hd_hi_bound hd_lo hun1 hu hnorm⟩
 
+-- ============================================================================
+-- Product check correction: reduces overestimate from ≤ 2 to ≤ 1
+-- ============================================================================
+
+-- After computing q̂ = ⌊u_hi / d_hi⌋ and r̂ = u_hi mod d_hi, the div128
+-- algorithm checks: is q̂ * d_lo > r̂ * B + un1?
+-- If yes, q̂ overestimates by ≥ 1, so decrement.
+-- After at most one correction, the overestimate is ≤ 1.
+
+/-- Product check soundness: if `q̂ * d_lo > r̂ * B + un1`,
+    then `q̂ > q_true` (the trial quotient strictly overestimates).
+
+    Proof: q̂ * d = q̂ * d_hi * B + q̂ * d_lo > r̂ * d_hi * B + r̂ * B + un1
+    and from r̂ = u_hi - q̂ * d_hi: q̂ * d_hi = u_hi - r̂,
+    so q̂ * d > (u_hi - r̂) * B + r̂ * B + un1 = u_hi * B + un1. -/
+theorem product_check_gt_imp_overestimate (u_hi un1 d_hi d_lo q_hat r_hat : Nat)
+    (B : Nat := 2^32)
+    (hd_pos : 0 < d_hi * B + d_lo)
+    (hr_hat : r_hat = u_hi - q_hat * d_hi)
+    (hq_mul : q_hat * d_hi ≤ u_hi)
+    (hcheck : q_hat * d_lo > r_hat * B + un1) :
+    q_hat > (u_hi * B + un1) / (d_hi * B + d_lo) := by
+  set d := d_hi * B + d_lo
+  set X := u_hi * B + un1
+  -- q̂ * d = q̂ * d_hi * B + q̂ * d_lo > (u_hi - r̂) * B + r̂ * B + un1 = X
+  have hqd_gt : q_hat * d > X := by
+    calc q_hat * d = q_hat * (d_hi * B + d_lo) := rfl
+      _ = q_hat * d_hi * B + q_hat * d_lo := by ring
+      _ > q_hat * d_hi * B + r_hat * B + un1 := by omega
+      _ = (q_hat * d_hi + r_hat) * B + un1 := by ring
+      _ = u_hi * B + un1 := by
+            rw [hr_hat, Nat.add_sub_cancel' hq_mul]
+  exact (Nat.div_lt_iff_lt_mul hd_pos).mpr hqd_gt
+
+/-- If the product check passes (`q̂ * d_lo ≤ r̂ * B + un1`), then `q̂ ≤ q_true`.
+    The trial quotient does NOT overestimate the true quotient in this branch. -/
+theorem product_check_pass_imp_le (u_hi un1 d_hi d_lo q_hat r_hat : Nat)
+    (B : Nat := 2^32)
+    (hd_pos : 0 < d_hi * B + d_lo)
+    (hr_hat : r_hat = u_hi - q_hat * d_hi)
+    (hq_mul : q_hat * d_hi ≤ u_hi)
+    (hcheck_pass : q_hat * d_lo ≤ r_hat * B + un1) :
+    q_hat ≤ (u_hi * B + un1) / (d_hi * B + d_lo) := by
+  set d := d_hi * B + d_lo
+  set X := u_hi * B + un1
+  have hqd_le : q_hat * d ≤ X := by
+    calc q_hat * d = q_hat * (d_hi * B + d_lo) := rfl
+      _ = q_hat * d_hi * B + q_hat * d_lo := by ring
+      _ ≤ q_hat * d_hi * B + r_hat * B + un1 := by omega
+      _ = (q_hat * d_hi + r_hat) * B + un1 := by ring
+      _ = u_hi * B + un1 := by
+            rw [hr_hat, Nat.add_sub_cancel' hq_mul]
+  exact Nat.le_div_iff_mul_le hd_pos |>.mpr hqd_le
+
+/-- Full correction step: after at most one correction (decrement when product check
+    fails), the trial quotient overestimates by at most 1.
+    - If check passes: `q̂ ≤ q_true` (from `product_check_pass_imp_le`)
+    - If check fails: `q̂ - 1 ≤ q_true + 1` since `q̂ > q_true` and `q̂ ≤ q_true + 2` -/
+theorem correction_step_overestimate_le_one (u_hi un1 d_hi d_lo q_hat r_hat : Nat)
+    (B : Nat := 2^32)
+    (hd_pos : 0 < d_hi * B + d_lo)
+    (hr_hat : r_hat = u_hi - q_hat * d_hi)
+    (hq_mul : q_hat * d_hi ≤ u_hi)
+    (hq_upper : q_hat ≤ (u_hi * B + un1) / (d_hi * B + d_lo) + 2) :
+    (if q_hat * d_lo > r_hat * B + un1 then q_hat - 1 else q_hat) ≤
+      (u_hi * B + un1) / (d_hi * B + d_lo) + 1 := by
+  set q_true := (u_hi * B + un1) / (d_hi * B + d_lo)
+  split
+  · -- Product check fails: decrement. q̂ > q_true and q̂ ≤ q_true + 2.
+    rename_i hfail
+    have hgt : q_hat > q_true := product_check_gt_imp_overestimate u_hi un1 d_hi d_lo q_hat r_hat B
+      hd_pos hr_hat hq_mul hfail
+    exact Nat.sub_le_of_le_add (by omega : q_hat ≤ q_true + 1 + 1)
+  · -- Product check passes: q̂ ≤ q_true, so q̂ ≤ q_true + 1 trivially.
+    rename_i hpass
+    simp only [not_lt] at hpass
+    have := product_check_pass_imp_le u_hi un1 d_hi d_lo q_hat r_hat B
+      hd_pos hr_hat hq_mul hpass
+    omega
+
 end EvmWord
 
 end EvmAsm.Evm64
