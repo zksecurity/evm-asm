@@ -27,7 +27,6 @@ Before sending work for review:
 
 - Keep imports at the top of the file.
 - Follow the naming conventions and proof patterns documented in [`AGENTS.md`](AGENTS.md).
-- Use `bv_addr` (not `bv_omega`) for address offset equalities — see the Build Performance section of `AGENTS.md`.
 
 ## Git Workflow
 
