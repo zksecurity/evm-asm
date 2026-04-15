@@ -1406,32 +1406,29 @@ def iterWithDoubleAddback (q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
   else
     (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, u_top - c3)
 
-@[irreducible]
+-- Note: iter*_da are NOT @[irreducible], matching iterN3Max/iterN3Call convention.
+-- This allows `delta loopN3MaxPost_da` to fully expand in composition proofs.
+
 def iterN1Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-@[irreducible]
 def iterN1Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-@[irreducible]
 def iterN2Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-@[irreducible]
 def iterN2Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u2 u1 v1) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-@[irreducible]
 def iterN3Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-@[irreducible]
 def iterN3Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -1503,5 +1500,68 @@ def loopIterPostN3_da (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : W
   match bltu with
   | true => loopIterPostN3Call_da sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top
   | false => loopIterPostN3Max_da sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top ** empAssertion
+
+-- ============================================================================
+-- Two-iteration path postconditions with double addback for n=3
+-- ============================================================================
+
+/-- Postcondition for n=3 two-iteration loop (both max path) with double addback. -/
+@[irreducible]
+def loopN3MaxPost_da (sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion :=
+  let r1 := iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  loopIterPostN3Max_da sp (0 : Word) v0 v1 v2 v3
+    u0_orig r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 **
+  ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1)
+
+/-- Postcondition for n=3 two-iteration loop (both call path) with double addback. -/
+@[irreducible]
+def loopN3CallCallPost_da (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion :=
+  let r1 := iterN3Call_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  loopIterPostN3Call_da sp base (0 : Word) v0 v1 v2 v3
+    u0_orig r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 **
+  ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1)
+
+/-- Postcondition for n=3 two-iteration loop (j=1 max, j=0 call) with double addback. -/
+@[irreducible]
+def loopN3MaxCallPost_da (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion :=
+  let r1 := iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  loopIterPostN3Call_da sp base (0 : Word) v0 v1 v2 v3
+    u0_orig r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 **
+  ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1)
+
+/-- Postcondition for n=3 two-iteration loop (j=1 call, j=0 max) with double addback. -/
+@[irreducible]
+def loopN3CallMaxPost_da (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : Assertion :=
+  let r1 := iterN3Call_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  loopIterPostN3Max_da sp (0 : Word) v0 v1 v2 v3
+    u0_orig r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 **
+  ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1) **
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ v2) **
+  (sp + signExtend12 3952 ↦ₘ div128DLo v2) **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
+
+/-- Unified n=3 two-iteration postcondition with double addback. -/
+def loopN3UnifiedPost_da (bltu_1 bltu_0 : Bool)
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word)
+    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+  match bltu_1, bltu_0 with
+  | false, false =>
+    loopN3MaxPost_da sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig **
+    (sp + signExtend12 3968 ↦ₘ ret_mem) **
+    (sp + signExtend12 3960 ↦ₘ d_mem) **
+    (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+    (sp + signExtend12 3944 ↦ₘ scratch_un0)
+  | true,  true  => loopN3CallCallPost_da sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
+  | false, true  => loopN3MaxCallPost_da sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
+  | true,  false => loopN3CallMaxPost_da sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
 
 end EvmAsm.Evm64

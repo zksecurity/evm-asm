@@ -1235,4 +1235,134 @@ theorem divK_loop_body_n3_call_unified_j0_da_spec
         exact hp)
       J0
 
+-- ============================================================================
+-- Double-addback (_da) two-iteration max×max composition
+-- Case-splits on j=1 borrow to use raw skip/beq specs, then composes with
+-- j=0 _da spec. Uses iterN3Max_da (non-irreducible) for postcondition matching.
+-- ============================================================================
+
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+theorem divK_loop_n3_max_max_da_spec
+    (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
+    (base : Word)
+    (hv_j : isValidDwordAccess (sp + signExtend12 3976) = true)
+    (hv_n1 : isValidDwordAccess (sp + signExtend12 3984) = true)
+    (hv_uhi_1 : isValidDwordAccess (sp + signExtend12 4056 - (1 + (3 : Word)) <<< (3 : BitVec 6).toNat) = true)
+    (hv_ulo_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 + (3 : Word)) <<< (3 : BitVec 6).toNat) + 8) = true)
+    (hv_vtop : isValidDwordAccess (sp + ((3 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) = true)
+    (hv_v0 : isValidDwordAccess (sp + signExtend12 32) = true)
+    (hv_v1 : isValidDwordAccess (sp + signExtend12 40) = true)
+    (hv_v2 : isValidDwordAccess (sp + signExtend12 48) = true)
+    (hv_v3 : isValidDwordAccess (sp + signExtend12 56) = true)
+    (hv_u0_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
+    (hv_u1_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088) = true)
+    (hv_u2_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080) = true)
+    (hv_u3_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
+    (hv_u4_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
+    (hv_q1 : isValidDwordAccess (sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) = true)
+    (hv_uhi_0 : isValidDwordAccess (sp + signExtend12 4056 - (0 + (3 : Word)) <<< (3 : BitVec 6).toNat) = true)
+    (hv_ulo_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 + (3 : Word)) <<< (3 : BitVec 6).toNat) + 8) = true)
+    (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
+    (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
+    (hbltu_1 : ¬BitVec.ult u3 v2)
+    (hbltu_0 : ¬BitVec.ult (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+      (loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+        v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old)
+      (loopN3MaxPost_da sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
+  delta loopN3Pre; simp only []
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+  -- 1. j=1 _da iteration spec
+  have J1 := divK_loop_body_n3_max_unified_j1_da_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old base
+    hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1 hbltu_1
+  intro_lets at J1
+  -- Frame j=1 with u0_orig and q0_old
+  have J1f := cpsTriple_frame_left _ _ _ _ _
+    (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
+    (by pcFree) J1
+  -- 2. Derive j=0 validity hypotheses via address rewriting
+  have hv_u1_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088) = true := by
+    rw [← u_j1_0_eq_j0_4088]; exact hv_u0_1
+  have hv_u2_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080) = true := by
+    rw [← u_j1_4088_eq_j0_4080]; exact hv_u1_1
+  have hv_u3_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true := by
+    rw [← u_j1_4080_eq_j0_4072]; exact hv_u2_1
+  have hv_u4_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
+    rw [← u_j1_4072_eq_j0_4064]; exact hv_u3_1
+  -- 3. j=0 _da iteration spec (inputs from j=1 via iterN3Max_da)
+  have J0 := divK_loop_body_n3_max_unified_j0_da_spec sp (1 : Word)
+    ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
+    ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
+    ((iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).1)
+    ((iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
+    v0 v1 v2 v3
+    u0_orig
+    (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+    (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+    (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+    (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1
+    q0_old base
+    hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
+    hbltu_0
+  intro_lets at J0
+  -- Frame j=0 with j=1's carried atoms (u4, q[1])
+  have J0f := cpsTriple_frame_left _ _ _ _ _
+    (((u_base_1 + signExtend12 4064) ↦ₘ (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
+     (q_addr_1 ↦ₘ (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
+    (by pcFree) J0
+  -- 4. Compose: rewrite j=1 _da postcondition → j=0 precondition
+  --    loopIterPostN3Max_da unfolds to if-then-else, so we case-split on borrow
+  --    then unfold the branch to get concrete assertions for xperm_hyp.
+  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    (fun h hp => by
+      -- J1 postcondition is loopIterPostN3Max_da (branching). Unfold and case-split.
+      -- Also reduce iterN3Max_da projections in goal (from J0 instantiation).
+      unfold loopIterPostN3Max_da at hp
+      by_cases hb : BitVec.ult u_top (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+      · simp only [if_pos hb] at hp
+        delta loopBodyAddbackBeqPost loopBodyN3AddbackBeqPost loopExitPostN3 loopExitPost at hp
+        by_cases hc : addbackN4_carry
+            (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).1
+            (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.1
+            (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.1
+            (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.1
+            v0 v1 v2 v3 = 0
+        · simp only [if_pos hc] at hp
+          -- Reduce iter_da projections in goal to match concrete values
+          simp only [iterN3Max_da, iterWithDoubleAddback, if_pos hb, if_pos hc] at hp ⊢
+          have hj' : (1 : Word) + signExtend12 4095 = (0 : Word) := by decide
+          rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
+              u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+          rw [sepConj_assoc'] at hp
+          xperm_hyp hp
+        · simp only [if_neg hc] at hp
+          simp only [iterN3Max_da, iterWithDoubleAddback, if_pos hb, if_neg hc] at hp ⊢
+          have hj' : (1 : Word) + signExtend12 4095 = (0 : Word) := by decide
+          rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
+              u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+          rw [sepConj_assoc'] at hp
+          xperm_hyp hp
+      · simp only [if_neg hb] at hp
+        delta loopBodySkipPost loopBodyN3SkipPost loopExitPostN3 loopExitPost at hp
+        simp only [iterN3Max_da, iterWithDoubleAddback, if_neg hb] at hp ⊢
+        have hj' : (1 : Word) + signExtend12 4095 = (0 : Word) := by decide
+        rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
+            u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+        rw [sepConj_assoc'] at hp
+        xperm_hyp hp)
+    J1f J0f
+  -- 5. Clean up postcondition
+  exact cpsTriple_consequence _ _ _ _ _ _ _
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by
+      delta loopN3MaxPost_da
+      exact hp)
+    full
+
 end EvmAsm.Evm64
