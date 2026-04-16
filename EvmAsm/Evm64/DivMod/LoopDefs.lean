@@ -518,6 +518,24 @@ def isAddbackCarry2NzN2Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
 def isAddbackCarry2NzN2Max (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
+/-- Specialization of `isAddbackCarry2Nz` for n=3 call path, where
+    `q_hat = div128Quot u3 u2 v2`. -/
+def isAddbackCarry2NzN3Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
+  isAddbackCarry2Nz (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3 u_top
+
+/-- Specialization of `isAddbackCarry2Nz` for n=3 max path. -/
+def isAddbackCarry2NzN3Max (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
+  isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
+
+/-- Specialization of `isAddbackCarry2Nz` for n=4 call path, where
+    `q_hat = div128Quot u_top u3 v3`. -/
+def isAddbackCarry2NzN4Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
+  isAddbackCarry2Nz (div128Quot u_top u3 v3) v0 v1 v2 v3 u0 u1 u2 u3 u_top
+
+/-- Specialization of `isAddbackCarry2Nz` for n=4 max path. -/
+def isAddbackCarry2NzN4Max (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
+  isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
+
 -- ============================================================================
 -- Generic j versions of n=1 call path postconditions
 -- ============================================================================
