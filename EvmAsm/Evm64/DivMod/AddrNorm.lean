@@ -100,6 +100,13 @@ open EvmAsm.Rv64
 @[divmod_addr, grind =] theorem word_shl3_4 : (4 : Word) <<< 3 = (32 : Word) := by decide
 
 -- ============================================================================
+-- Algebraic identities for Word (needed when simp evaluates signExtend12
+-- to a concrete literal, leaving `0 + literal` behind).
+-- ============================================================================
+
+@[divmod_addr, grind =] theorem word_zero_add (x : Word) : (0 : Word) + x = x := BitVec.zero_add x
+
+-- ============================================================================
 -- `divmod_addr` tactic
 --
 -- Primary: `grind` (sees all @[grind =]-registered atomic facts).

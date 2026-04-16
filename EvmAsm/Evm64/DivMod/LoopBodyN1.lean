@@ -33,29 +33,19 @@ open EvmAsm.Rv64
 theorem u_addr_eq_n1 (sp j : Word) :
     sp + signExtend12 4056 - (j + (1 : Word)) <<< (3 : BitVec 6).toNat =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
-  simp only [show (3 : BitVec 6).toNat = 3 from by decide,
-    show signExtend12 (4056 : BitVec 12) = (18446744073709551576 : Word) from by decide,
-    show signExtend12 (4088 : BitVec 12) = (18446744073709551608 : Word) from by decide]
-  bv_omega
+  divmod_addr
 
 /-- For n=1: (u_base + signExtend12 4088) + 8 = u_base + signExtend12 0 -/
 theorem u_addr8_eq_n1 (sp j : Word) :
     ((sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4088) + 8 =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 0 := by
-  simp only [show (3 : BitVec 6).toNat = 3 from by decide,
-    show signExtend12 (4056 : BitVec 12) = (18446744073709551576 : Word) from by decide,
-    show signExtend12 (4088 : BitVec 12) = (18446744073709551608 : Word) from by decide,
-    show signExtend12 (0 : BitVec 12) = (0 : Word) from by decide]
-  bv_omega
+  divmod_addr
 
 /-- For n=1: vtop_base + signExtend12 32 = sp + signExtend12 32 -/
 theorem vtop_eq_v0_n1 (sp : Word) :
     (sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat) + signExtend12 32 =
     sp + signExtend12 32 := by
-  simp only [show (3 : BitVec 6).toNat = 3 from by decide,
-    show signExtend12 (4095 : BitVec 12) = (18446744073709551615 : Word) from by decide,
-    show signExtend12 (32 : BitVec 12) = (32 : Word) from by decide]
-  bv_omega
+  divmod_addr
 
 -- ============================================================================
 -- Section 12n1: Full loop body cpsBranch for n=1, BLTU not-taken + BEQ skip

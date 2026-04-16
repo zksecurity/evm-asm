@@ -19,35 +19,33 @@ open EvmAsm.Rv64
 -- Address normalization lemmas for j=0
 -- ============================================================================
 
-private theorem j0_shift0 : (0 : Word) <<< (3 : BitVec 6).toNat = (0 : Word) := by decide
-
 theorem u_base_j0 (sp : Word) :
     sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat = sp + signExtend12 4056 := by
-  simp only [j0_shift0]; exact BitVec.sub_zero _
+  divmod_addr
 
 theorem u_base_off0_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
-    sp + signExtend12 4056 := by rw [u_base_j0]; bv_addr
+    sp + signExtend12 4056 := by divmod_addr
 
 theorem u_base_off4088_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 =
-    sp + signExtend12 4048 := by rw [u_base_j0]; bv_addr
+    sp + signExtend12 4048 := by divmod_addr
 
 theorem u_base_off4080_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 =
-    sp + signExtend12 4040 := by rw [u_base_j0]; bv_addr
+    sp + signExtend12 4040 := by divmod_addr
 
 theorem u_base_off4072_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 =
-    sp + signExtend12 4032 := by rw [u_base_j0]; bv_addr
+    sp + signExtend12 4032 := by divmod_addr
 
 theorem u_base_off4064_j0 (sp : Word) :
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064 =
-    sp + signExtend12 4024 := by rw [u_base_j0]; bv_addr
+    sp + signExtend12 4024 := by divmod_addr
 
 theorem q_addr_j0 (sp : Word) :
     sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat = sp + signExtend12 4088 := by
-  simp only [j0_shift0]; exact BitVec.sub_zero _
+  divmod_addr
 
 -- ============================================================================
 -- loopExitPostN4 at j=0: address normalization to sp-relative form
@@ -71,8 +69,7 @@ theorem loopExitPostN4_j0_eq (sp q_f c3 un0_f un1_f un2_f un3_f u4_f
   simp only [loopExitPost_unfold]
   rw [u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
       u_base_off4072_j0, u_base_off4064_j0, u_base_j0, q_addr_j0]
-  simp only [j0_shift0]
-  rw [show (0 : Word) + signExtend12 4095 = signExtend12 4095 from BitVec.zero_add _]
+  simp only [divmod_addr]
 
 -- ============================================================================
 -- Loop body j=0 extended to divCode (from sharedDivModCode)
