@@ -25,3 +25,4 @@ import EvmAsm.Rv64.Tactics.LiftSpec
 import EvmAsm.Rv64.ByteOps
 import EvmAsm.Rv64.HalfwordOps
 import EvmAsm.Rv64.WordOps
+import EvmAsm.Rv64.RLP

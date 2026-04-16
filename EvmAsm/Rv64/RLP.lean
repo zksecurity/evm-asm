@@ -1,0 +1,16 @@
+/-
+  EvmAsm.Rv64.RLP
+
+  Root import file for the RISC-V RLP decoder (EL.3).
+
+  Six-phase decoder bridging the pure RLP spec in `EvmAsm.EL.RLP` to
+  RV64IM execution:
+    Phase 1 — Prefix classifier  (5-way cascade on the first byte)
+    Phase 2 — Length extraction  (planned)
+    Phase 3 — Single-item decode (planned)
+    Phase 4 — HINT_READ pipeline (planned)
+    Phase 5 — Recursive list decode with explicit stack (planned)
+    Phase 6 — Top-level pipeline (planned)
+-/
+
+import EvmAsm.Rv64.RLP.Phase1

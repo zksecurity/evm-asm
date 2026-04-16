@@ -578,8 +578,11 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
 - `generic_lbu_spec`: CPS spec for LBU in terms of `extractByte` on containing dword
 - `generic_sb_spec`: CPS spec for SB in terms of `replaceByte` on containing dword
 
-### EL.3 RLP RISC-V Decoder (planned)
-- Phase 1: Prefix classifier (cascade BLTUs, 5 exits)
+### EL.3 RLP RISC-V Decoder (in progress)
+- **Files**: `EvmAsm/Rv64/RLP/`
+- Phase 1: Prefix classifier (cascade BLTUs, 5 exits) — ⏳ in progress
+  - `rlp_phase1_step_prog` / `rlp_phase1_step_spec` cascade-step building
+    block landed. Full 5-exit `cpsNBranch` composition pending.
 - Phase 2: Length extraction (short inline + long big-endian loop)
 - Phase 3: Single-item flat decode (byte strings only)
 - Phase 4: HINT_READ integration (load RLP input into memory buffer)
