@@ -1406,22 +1406,43 @@ def iterWithDoubleAddback (q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
   else
     (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, u_top - c3)
 
--- Note: iter*_da are NOT @[irreducible], matching iterN3Max/iterN3Call convention.
--- This allows `delta loopN3MaxPost_da` to fully expand in composition proofs.
+-- Equation lemmas for iterWithDoubleAddback in each branch.
+-- These avoid expanding the full definition inline; producers `rw` with them.
 
-def iterN1Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+theorem iterWithDoubleAddback_borrow (q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : BitVec.ult u_top (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
+    let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - ms.2.2.2.2) v0 v1 v2 v3
+    let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
+    iterWithDoubleAddback q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    if carry = 0 then
+      (q_hat + signExtend12 4095 + signExtend12 4095,
+       ab'.1, ab'.2.1, ab'.2.2.1, ab'.2.2.2.1, ab'.2.2.2.2)
+    else
+      (q_hat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2) := by
+  simp only [iterWithDoubleAddback, if_pos hb]
+
+theorem iterWithDoubleAddback_no_borrow (q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : ¬BitVec.ult u_top (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
+    let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+    iterWithDoubleAddback q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, u_top - ms.2.2.2.2) := by
+  simp only [iterWithDoubleAddback, if_neg hb]
+
+@[irreducible] def iterN1Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-def iterN1Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+@[irreducible] def iterN1Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-def iterN2Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+@[irreducible] def iterN2Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-def iterN2Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+@[irreducible] def iterN2Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u2 u1 v1) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
@@ -1443,11 +1464,11 @@ theorem iterN2_da_false (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     iterN2Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
   simp [iterN2_da]
 
-def iterN3Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+@[irreducible] def iterN3Max_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
-def iterN3Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+@[irreducible] def iterN3Call_da (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
     Word × Word × Word × Word × Word × Word :=
   iterWithDoubleAddback (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
@@ -1516,21 +1537,56 @@ def loopIterPostN2_da (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : W
   | true => loopIterPostN2Call_da sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top
   | false => loopIterPostN2Max_da sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top ** empAssertion
 
-def loopIterPostN3Max_da (sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
-  let q_hat : Word := signExtend12 4095
-  let c3 := (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
-  if BitVec.ult u_top c3 then
-    loopBodyAddbackBeqPost (3 : Word) sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top
-  else
-    loopBodySkipPost (3 : Word) sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top
+@[irreducible] def loopIterPostN3Max_da (sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
+  let r := iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  let c3 := (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+  loopExitPostN3 sp j r.1 c3 r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2 v0 v1 v2 v3
 
-def loopIterPostN3Call_da (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
+/-- Producer equation: addback beq postcondition equals loopIterPostN3Max_da when borrow holds. -/
+theorem loopIterPostN3Max_da_addback (sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)) :
+    loopBodyN3AddbackBeqPost sp j (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    loopIterPostN3Max_da sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
+  delta loopIterPostN3Max_da iterN3Max_da iterWithDoubleAddback
+        loopBodyN3AddbackBeqPost loopBodyAddbackBeqPost loopExitPostN3 loopExitPost
+  unfold mulsubN4_c3 at hb; simp only [if_pos hb]; split <;> rfl
+
+/-- Producer equation: skip postcondition equals loopIterPostN3Max_da when ¬borrow. -/
+theorem loopIterPostN3Max_da_skip (sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : ¬BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)) :
+    loopBodyN3SkipPost sp j (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    loopIterPostN3Max_da sp j v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
+  delta loopIterPostN3Max_da iterN3Max_da iterWithDoubleAddback
+        loopBodyN3SkipPost loopBodySkipPost loopExitPostN3 loopExitPost
+  unfold mulsubN4_c3 at hb; simp only [if_neg hb]
+
+@[irreducible] def loopIterPostN3Call_da (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
+  let r := iterN3Call_da v0 v1 v2 v3 u0 u1 u2 u3 u_top
   let q_hat := div128Quot u3 u2 v2
   let c3 := (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
-  if BitVec.ult u_top c3 then
-    loopBodyN3CallAddbackBeqPostJ sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top
-  else
-    loopBodyN3CallSkipPostJ sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  loopExitPostN3 sp j r.1 c3 r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2 v0 v1 v2 v3 **
+  (sp + signExtend12 3968 ↦ₘ (base + 516)) **
+  (sp + signExtend12 3960 ↦ₘ v2) **
+  (sp + signExtend12 3952 ↦ₘ div128DLo v2) **
+  (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
+
+/-- Producer equation: call addback beq postcondition equals loopIterPostN3Call_da when borrow holds. -/
+theorem loopIterPostN3Call_da_addback (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : BitVec.ult u_top (mulsubN4_c3 (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3)) :
+    loopBodyN3CallAddbackBeqPostJ sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    loopIterPostN3Call_da sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
+  delta loopIterPostN3Call_da iterN3Call_da iterWithDoubleAddback
+        loopBodyN3CallAddbackBeqPostJ loopBodyN3AddbackBeqPost loopBodyAddbackBeqPost loopExitPostN3 loopExitPost
+  unfold mulsubN4_c3 at hb; simp only [if_pos hb]; split <;> rfl
+
+/-- Producer equation: call skip postcondition equals loopIterPostN3Call_da when ¬borrow. -/
+theorem loopIterPostN3Call_da_skip (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (hb : ¬BitVec.ult u_top (mulsubN4_c3 (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3)) :
+    loopBodyN3CallSkipPostJ sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    loopIterPostN3Call_da sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
+  delta loopIterPostN3Call_da iterN3Call_da iterWithDoubleAddback
+        loopBodyN3CallSkipPostJ loopBodyN3SkipPost loopBodySkipPost loopExitPostN3 loopExitPost
+  unfold mulsubN4_c3 at hb; simp only [if_neg hb]
 
 def loopIterPostN3_da (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
   match bltu with
