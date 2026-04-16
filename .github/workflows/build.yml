@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: File-size guardrail
+        run: scripts/check-file-size.sh
       - uses: leanprover/lean-action@v1
         with:
           use-mathlib-cache: true

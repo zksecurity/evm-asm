@@ -134,6 +134,12 @@ All deleted spec files have been recreated. See **Pending: Recreate Deleted Spec
   Conventions, layout patterns, empirical justification, rules of thumb, and
   rollout roadmap are documented in `GRIND.md` (single source of truth for
   simp/grind-set conventions; `CLAUDE.md` and `AGENTS.md` link to it).
+- **File-size guardrail** (`scripts/check-file-size.sh`, issue #314): CI step
+  enforcing per-file line caps (1200 for `Compose/**`, 1500 elsewhere; `Program.lean`
+  exempt). Files may opt out with a `-- file-size-exception: <reason>` comment in
+  the first 20 lines. 6 oversize files grandfathered with exception comments
+  pointing to their tracking issues (#312, #283, #266). Documented in `AGENTS.md`
+  ("File-size guardrail") and `CONTRIBUTING.md`.
 - **LP64 Calling Convention** (`Evm64/CallingConvention.lean`): LP64-aligned
   calling convention for the x0–x12 register subset, per zkvm-standards.
   - x1 (ra) = return address, x2 (sp) = call stack (grows down, callee-saved)

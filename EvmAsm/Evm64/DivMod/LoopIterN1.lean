@@ -1,3 +1,4 @@
+-- file-size-exception: tracked by issue #283 (per-j iteration spec consolidation). Each j-value specialization currently lives inline; grandfathered pending unification.
 /-
   EvmAsm.Evm64.DivMod.LoopIterN1
 
