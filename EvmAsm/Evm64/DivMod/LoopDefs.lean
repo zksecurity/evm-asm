@@ -361,6 +361,12 @@ def loopBodyN3CallAddbackBeqPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Wor
   (sp + signExtend12 3952 ↦ₘ div128DLo v2) **
   (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
 
+/-- Bridge: j=0 specific call addback beq = generic-j at j=0. -/
+theorem loopBodyN3CallAddbackBeqPost_eq_J (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) :
+    loopBodyN3CallAddbackBeqPost sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top =
+    loopBodyN3CallAddbackBeqPostJ sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
+  delta loopBodyN3CallAddbackBeqPost loopBodyN3CallAddbackBeqPostJ; rfl
+
 -- ============================================================================
 -- Two-iteration loop precondition for n=3
 -- ============================================================================

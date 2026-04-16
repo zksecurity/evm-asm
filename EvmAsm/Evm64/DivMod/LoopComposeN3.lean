@@ -1187,9 +1187,9 @@ theorem divK_loop_body_n3_call_unified_j0_da_spec
     intro_lets at J0
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
-      -- TODO: loopBodyN3CallAddbackBeqPost (j=0 specific) vs loopIterPostN3Call_da
-      -- Need equation lemma for the j=0 specific variant
-      (fun h hp => by sorry)
+      (fun h hp => by
+        rw [loopBodyN3CallAddbackBeqPost_eq_J] at hp
+        rw [← loopIterPostN3Call_da_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J0
   · -- skip path
     have hborrow : isSkipBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -1200,7 +1200,11 @@ theorem divK_loop_body_n3_call_unified_j0_da_spec
     intro_lets at J0
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
-      (fun h hp => by sorry)
+      (fun h hp => by
+        delta loopIterPostN3Call_da iterN3Call_da iterWithDoubleAddback
+              loopBodyN3CallSkipPost loopBodyN3SkipPost loopBodySkipPost
+              loopExitPostN3 loopExitPost at hp ⊢
+        unfold mulsubN4_c3 at hb; simp only [if_neg hb] at hp ⊢; exact hp)
       J0
 
 -- ============================================================================
