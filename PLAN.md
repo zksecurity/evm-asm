@@ -632,6 +632,10 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
     (`EvmAsm/Rv64/RLP/Phase2LongLoopFour.lean`): four-iteration
     closure (lenLen = 4). Composes body spec (iter 1) with three-byte
     closure (iters 2–4). All four bytes assumed in same doubleword.
+  - `rlp_phase2_long_loop_five_byte_spec`
+    (`EvmAsm/Rv64/RLP/Phase2LongLoopFive.lean`): five-iteration
+    closure (lenLen = 5). Composes body spec (iter 1) with four-byte
+    closure (iters 2–5). All five bytes assumed in same doubleword.
   - General `n`-iteration closure (induction over `cnt`) still pending
     (initial attempt hit Lean-level issues around
     `BitVec.ofNat 64 n` arithmetic and associativity normalization;
