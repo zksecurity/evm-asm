@@ -483,37 +483,6 @@ theorem rlp_phase1_classifier_spec_pure (v5 v10 : Word) (base : Word)
 -- Spec: 5-exit classifier with accumulated dispatch facts
 -- ============================================================================
 
-/-- Merge a trailing framed pure fact into the existing pure fact at depth 3,
-    swapping the order:
-    `(A ** B ** C ** ⌜P⌝) ** ⌜Q⌝ → A ** B ** C ** ⌜Q ∧ P⌝`.
-
-    The outer left-associated shape is what `cpsBranch_frame_left` produces
-    when framed with `⌜Q⌝`; the inner right-associated shape is what the
-    accumulated-chain classifier spec consumes. -/
-private theorem sepConj_merge_pure_and_end3
-    (A B C : Assertion) (P Q : Prop) :
-    ∀ h, ((A ** B ** C ** ⌜P⌝) ** ⌜Q⌝) h → (A ** B ** C ** ⌜Q ∧ P⌝) h := by
-  intro h hp
-  obtain ⟨hL, hR, _hdLR, huLR, hL_prop, ⟨eR, hQ⟩⟩ := hp
-  subst eR
-  rw [PartialState.union_empty_right] at huLR
-  subst huLR
-  refine sepConj_mono_right (sepConj_mono_right (sepConj_mono_right ?_)) _ hL_prop
-  intro h' ⟨eh, hP⟩
-  exact ⟨eh, hQ, hP⟩
-
-/-- Reshape a right-associated 4-chain into the left-associated outer form
-    produced by `cpsBranch_frame_left` on a 3-chain pre-assertion:
-    `A ** B ** C ** D → (A ** B ** C) ** D`. -/
-private theorem sepConj_chain_push_outer
-    (A B C D : Assertion) :
-    ∀ h, (A ** B ** C ** D) h → ((A ** B ** C) ** D) h := by
-  intro h hp
-  refine (sepConj_assoc _ _ _ _).mpr ?_
-  refine sepConj_mono_right ?_ _ hp
-  intro h' hp'
-  exact (sepConj_assoc _ _ _ _).mpr hp'
-
 /-- Cascade step with accumulator: frames `rlp_phase1_step_spec` with a pure
     prefix `⌜Acc⌝` and merges it with the step's own dispatch fact into a
     single `⌜Acc ∧ …⌝` conjunction.
