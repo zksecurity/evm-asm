@@ -61,10 +61,10 @@ theorem evm_eq_spec (sp : Word) (base : Word)
   simp only [signExtend12_32] at A
   have S0 := sd_spec_gen .x12 .x7 (sp + 32)
     (if BitVec.ult ((a0 ^^^ b0) ||| (a1 ^^^ b1) ||| (a2 ^^^ b2) ||| (a3 ^^^ b3)) (1 : Word) then (1 : Word) else 0)
-    b0 0 (base + 68) (by validMem)
-  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 72) (by validMem)
-  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 76) (by validMem)
-  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 80) (by validMem)
+    b0 0 (base + 68)
+  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 72)
+  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 76)
+  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 80)
   runBlock L0 L1 L2 L3 T A S0 S1 S2 S3
 
 -- ============================================================================

@@ -55,13 +55,13 @@ theorem shl_merge_limb_spec (src_off prev_off dst_off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ shifted_prev) ** (.x11 ↦ᵣ mask) **
        (mem_src ↦ₘ src) ** (mem_prev ↦ₘ prev) ** (mem_dst ↦ₘ result)) := by
-  have L1 := ld_spec_gen .x5 .x12 sp v5 src src_off base (by nofun) hvalid_src
+  have L1 := ld_spec_gen .x5 .x12 sp v5 src src_off base (by nofun)
   have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have L2 := ld_spec_gen .x10 .x12 sp v10 prev prev_off (base + 8) (by nofun) hvalid_prev
+  have L2 := ld_spec_gen .x10 .x12 sp v10 prev prev_off (base + 8) (by nofun)
   have SR := srl_spec_gen_rd_eq_rs1 .x10 .x7 prev anti_shift (base + 12) (by nofun)
   have AN := and_spec_gen_rd_eq_rs1 .x10 .x11 (prev >>> (anti_shift.toNat % 64)) mask (base + 16) (by nofun)
   have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 (src <<< (bit_shift.toNat % 64)) ((prev >>> (anti_shift.toNat % 64)) &&& mask) (base + 20) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (anti_shift.toNat % 64)) &&& mask)) dst_old dst_off (base + 24) hvalid_dst
+  have SD_ := sd_spec_gen .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (anti_shift.toNat % 64)) &&& mask)) dst_old dst_off (base + 24)
   runBlock L1 SL L2 SR AN OR_ SD_
 
 -- ============================================================================
@@ -91,9 +91,9 @@ theorem shl_first_limb_spec (dst_off : BitVec 12)
        (mem_src ↦ₘ src) ** (mem_dst ↦ₘ dst_old))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
        (mem_src ↦ₘ src) ** (mem_dst ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 0 base (by nofun) hvalid_src
+  have L := ld_spec_gen .x5 .x12 sp v5 src 0 base (by nofun)
   have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) dst_old dst_off (base + 8) hvalid_dst
+  have SD_ := sd_spec_gen .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) dst_old dst_off (base + 8)
   runBlock L SL SD_
 
 -- ============================================================================
@@ -128,13 +128,13 @@ theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ shifted_prev) ** (.x11 ↦ᵣ mask) **
        (mem_loc ↦ₘ result) ** (mem_prev ↦ₘ prev)) := by
-  have L1 := ld_spec_gen .x5 .x12 sp v5 src off base (by nofun) hvalid_loc
+  have L1 := ld_spec_gen .x5 .x12 sp v5 src off base (by nofun)
   have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have L2 := ld_spec_gen .x10 .x12 sp v10 prev prev_off (base + 8) (by nofun) hvalid_prev
+  have L2 := ld_spec_gen .x10 .x12 sp v10 prev prev_off (base + 8) (by nofun)
   have SR := srl_spec_gen_rd_eq_rs1 .x10 .x7 prev anti_shift (base + 12) (by nofun)
   have AN := and_spec_gen_rd_eq_rs1 .x10 .x11 (prev >>> (anti_shift.toNat % 64)) mask (base + 16) (by nofun)
   have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 (src <<< (bit_shift.toNat % 64)) ((prev >>> (anti_shift.toNat % 64)) &&& mask) (base + 20) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (anti_shift.toNat % 64)) &&& mask)) src off (base + 24) hvalid_loc
+  have SD_ := sd_spec_gen .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (anti_shift.toNat % 64)) &&& mask)) src off (base + 24)
   runBlock L1 SL L2 SR AN OR_ SD_
 
 -- ============================================================================
@@ -158,9 +158,9 @@ theorem shl_first_limb_inplace_spec
     cpsTriple base (base + 12) cr
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 0 base (by nofun) hvalid
+  have L := ld_spec_gen .x5 .x12 sp v5 src 0 base (by nofun)
   have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) src 0 (base + 8) hvalid
+  have SD_ := sd_spec_gen .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) src 0 (base + 8)
   runBlock L SL SD_
 
 -- ============================================================================
@@ -190,9 +190,9 @@ theorem shl_body_3_spec (sp : Word)
        (.x7 ↦ᵣ anti_shift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
        (sp ↦ₘ 0) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ result3)) := by
   have FL := shl_first_limb_spec 24 sp v0 v3 v5 bit_shift base (by validMem) (by validMem)
-  have S0 := sd_x0_spec_gen .x12 sp v2 16 (base + 12) (by validMem)
-  have S1 := sd_x0_spec_gen .x12 sp v1 8 (base + 16) (by validMem)
-  have S2 := sd_x0_spec_gen .x12 sp v0 0 (base + 20) (by validMem)
+  have S0 := sd_x0_spec_gen .x12 sp v2 16 (base + 12)
+  have S1 := sd_x0_spec_gen .x12 sp v1 8 (base + 16)
+  have S2 := sd_x0_spec_gen .x12 sp v0 0 (base + 20)
   have JL := jal_x0_spec_gen jal_off (base + 24)
   rw [hexit] at JL
   runBlock FL S0 S1 S2 JL
@@ -226,8 +226,8 @@ theorem shl_body_2_spec (sp : Word)
   have FL := shl_first_limb_spec 16 sp v0 v2
     ((v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (anti_shift.toNat % 64)) &&& mask))
     bit_shift (base + 28) (by validMem) (by validMem)
-  have S0 := sd_x0_spec_gen .x12 sp v1 8 (base + 40) (by validMem)
-  have S1 := sd_x0_spec_gen .x12 sp v0 0 (base + 44) (by validMem)
+  have S0 := sd_x0_spec_gen .x12 sp v1 8 (base + 40)
+  have S1 := sd_x0_spec_gen .x12 sp v0 0 (base + 44)
   have JL := jal_x0_spec_gen jal_off (base + 48)
   rw [hexit] at JL
   runBlock MM FL S0 S1 JL
@@ -268,7 +268,7 @@ theorem shl_body_1_spec (sp : Word)
   have FL := shl_first_limb_spec 8 sp v0 v1
     ((v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (anti_shift.toNat % 64)) &&& mask))
     bit_shift (base + 56) (by validMem) (by validMem)
-  have S0 := sd_x0_spec_gen .x12 sp v0 0 (base + 68) (by validMem)
+  have S0 := sd_x0_spec_gen .x12 sp v0 0 (base + 68)
   have JL := jal_x0_spec_gen jal_off (base + 72)
   rw [hexit] at JL
   runBlock MM1 MM2 FL S0 JL

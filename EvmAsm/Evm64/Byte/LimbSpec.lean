@@ -49,10 +49,10 @@ theorem byte_phase_a_or_reduce_spec (sp v5 v10 idx1 idx2 idx3 : Word) (base : Wo
        ((sp + signExtend12 8) ↦ₘ idx1) **
        ((sp + signExtend12 16) ↦ₘ idx2) **
        ((sp + signExtend12 24) ↦ₘ idx3)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 idx1 8 base (by nofun) hv1
-  have I1 := ld_spec_gen .x10 .x12 sp v10 idx2 16 (base + 4) (by nofun) hv2
+  have I0 := ld_spec_gen .x5 .x12 sp v5 idx1 8 base (by nofun)
+  have I1 := ld_spec_gen .x10 .x12 sp v10 idx2 16 (base + 4) (by nofun)
   have I2 := or_spec_gen_rd_eq_rs1 .x5 .x10 idx1 idx2 (base + 8) (by nofun)
-  have I3 := ld_spec_gen .x10 .x12 sp idx2 idx3 24 (base + 12) (by nofun) hv3
+  have I3 := ld_spec_gen .x10 .x12 sp idx2 idx3 24 (base + 12) (by nofun)
   have I4 := or_spec_gen_rd_eq_rs1 .x5 .x10 (idx1 ||| idx2) idx3 (base + 16) (by nofun)
   runBlock I0 I1 I2 I3 I4
 
@@ -71,7 +71,7 @@ theorem byte_phase_a_low_check_spec (sp v5 idx0 v10 : Word) (base : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ idx0) **
        (.x10 ↦ᵣ (if BitVec.ult idx0 (signExtend12 32) then (1 : Word) else 0)) **
        ((sp + signExtend12 0) ↦ₘ idx0)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 idx0 0 (base + 24) (by nofun) hvalid
+  have I0 := ld_spec_gen .x5 .x12 sp v5 idx0 0 (base + 24) (by nofun)
   have I1 := sltiu_spec_gen .x10 .x5 v10 idx0 32 (base + 28) (by nofun)
   runBlock I0 I1
 
@@ -124,7 +124,7 @@ theorem byte_body_3_spec (sp v5 shift_amount limb : Word) (base : Word)
        ((sp + signExtend12 32) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 32) ↦ₘ limb)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 32 base (by nofun) hvalid
+  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 32 base (by nofun)
   have I1 := srl_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
   have I2 := andi_spec_gen_same .x5 (limb >>> (shift_amount.toNat % 64)) 255 (base + 8) (by nofun)
   have I3 := jal_x0_spec_gen (48 : BitVec 21) (base + 12)
@@ -146,7 +146,7 @@ theorem byte_body_2_spec (sp v5 shift_amount limb : Word) (base : Word)
        ((sp + signExtend12 40) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 40) ↦ₘ limb)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 40 base (by nofun) hvalid
+  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 40 base (by nofun)
   have I1 := srl_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
   have I2 := andi_spec_gen_same .x5 (limb >>> (shift_amount.toNat % 64)) 255 (base + 8) (by nofun)
   have I3 := jal_x0_spec_gen (32 : BitVec 21) (base + 12)
@@ -168,7 +168,7 @@ theorem byte_body_1_spec (sp v5 shift_amount limb : Word) (base : Word)
        ((sp + signExtend12 48) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 48) ↦ₘ limb)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 48 base (by nofun) hvalid
+  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 48 base (by nofun)
   have I1 := srl_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
   have I2 := andi_spec_gen_same .x5 (limb >>> (shift_amount.toNat % 64)) 255 (base + 8) (by nofun)
   have I3 := jal_x0_spec_gen (16 : BitVec 21) (base + 12)
@@ -190,7 +190,7 @@ theorem byte_body_0_spec (sp v5 shift_amount limb : Word) (base : Word)
        ((sp + signExtend12 56) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 56) ↦ₘ limb)) := by
-  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 56 base (by nofun) hvalid
+  have I0 := ld_spec_gen .x5 .x12 sp v5 limb 56 base (by nofun)
   have I1 := srl_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
   have I2 := andi_spec_gen_same .x5 (limb >>> (shift_amount.toNat % 64)) 255 (base + 8) (by nofun)
   runBlock I0 I1 I2
@@ -216,10 +216,10 @@ theorem byte_store_spec (sp result m0 m8 m16 m24 : Word) (base : Word)
        ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ (0 : Word)) **
        ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) := by
   have I0 := addi_spec_gen_same .x12 sp 32 base (by nofun)
-  have I1 := sd_spec_gen .x12 .x5 (sp + signExtend12 32) result m0 0 (base + 4) (by validMem)
-  have I2 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m8 8 (base + 8) (by validMem)
-  have I3 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m16 16 (base + 12) (by validMem)
-  have I4 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m24 24 (base + 16) (by validMem)
+  have I1 := sd_spec_gen .x12 .x5 (sp + signExtend12 32) result m0 0 (base + 4)
+  have I2 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m8 8 (base + 8)
+  have I3 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m16 16 (base + 12)
+  have I4 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m24 24 (base + 16)
   have I5 := jal_x0_spec_gen (24 : BitVec 21) (base + 20)
   runBlock I0 I1 I2 I3 I4 I5
 
@@ -244,10 +244,10 @@ theorem byte_zero_path_spec (sp m0 m8 m16 m24 : Word) (base : Word)
        ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) **
        ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) := by
   have I0 := addi_spec_gen_same .x12 sp 32 base (by nofun)
-  have I1 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m0 0 (base + 4) (by validMem)
-  have I2 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m8 8 (base + 8) (by validMem)
-  have I3 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m16 16 (base + 12) (by validMem)
-  have I4 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m24 24 (base + 16) (by validMem)
+  have I1 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m0 0 (base + 4)
+  have I2 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m8 8 (base + 8)
+  have I3 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m16 16 (base + 12)
+  have I4 := sd_x0_spec_gen .x12 (sp + signExtend12 32) m24 24 (base + 16)
   runBlock I0 I1 I2 I3 I4
 
 -- ============================================================================

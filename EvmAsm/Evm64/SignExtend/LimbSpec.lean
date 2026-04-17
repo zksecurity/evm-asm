@@ -46,10 +46,10 @@ theorem signext_inplace_spec (off : BitVec 12)
        ((sp + signExtend12 off) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shift_amount) **
        ((sp + signExtend12 off) ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 limb off base (by nofun) hvalid
+  have L := ld_spec_gen .x5 .x12 sp v5 limb off base (by nofun)
   have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 limb shift_amount (base + 4) (by nofun)
   have SR := sra_spec_gen_rd_eq_rs1 .x5 .x6 (limb <<< (shift_amount.toNat % 64)) shift_amount (base + 8) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) limb off (base + 12) hvalid
+  have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) limb off (base + 12)
   runBlock L SL SR SD_
 
 -- ============================================================================
@@ -108,7 +108,7 @@ theorem signext_body_2_spec (sp : Word)
   simp only [h63] at SR
   have S0 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v2 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v3 56 (base + 20) (by validMem)
+    v3 56 (base + 20)
   have JL := jal_x0_spec_gen jal_off (base + 24)
   rw [hexit] at JL
   runBlock IP SR S0 JL
@@ -141,10 +141,10 @@ theorem signext_body_1_spec (sp : Word)
   simp only [h63] at SR
   have S0 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v2 48 (base + 20) (by validMem)
+    v2 48 (base + 20)
   have S1 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v3 56 (base + 24) (by validMem)
+    v3 56 (base + 24)
   have JL := jal_x0_spec_gen jal_off (base + 28)
   rw [hexit] at JL
   runBlock IP SR S0 S1 JL
@@ -177,13 +177,13 @@ theorem signext_body_0_spec (sp : Word)
   simp only [h63] at SR
   have S0 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v1 40 (base + 20) (by validMem)
+    v1 40 (base + 20)
   have S1 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v2 48 (base + 24) (by validMem)
+    v2 48 (base + 24)
   have S2 := sd_spec_gen .x12 .x10 sp
     (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)) 63)
-    v3 56 (base + 28) (by validMem)
+    v3 56 (base + 28)
   runBlock IP SR S0 S1 S2
 
 -- ============================================================================
@@ -244,7 +244,7 @@ theorem signext_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     cpsTriple base (base + 8) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
-  have L := ld_spec_gen .x10 .x12 sp prev_x10 val off base (by nofun) hvalid
+  have L := ld_spec_gen .x10 .x12 sp prev_x10 val off base (by nofun)
   have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 acc val (base + 4) (by nofun)
   runBlock L OR_
 
@@ -375,7 +375,6 @@ theorem signext_phase_a_spec (sp r5 r10 : Word)
   let cr_beq := CodeReq.singleton (base + 32) (.BEQ .x10 .x0 156)
   -- ── Part 1: Linear chain base..base+20 (LD + LD/OR + LD/OR) ──
   have lw1 := ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun)
-    (by simp only [signExtend12_8]; exact hv8)
   simp only [signExtend12_8] at lw1
   have lor2 := signext_ld_or_acc_spec sp b1 r10 b2 16 (base + 4)
     (by simp only [signExtend12_16]; exact hv16)
@@ -460,7 +459,6 @@ theorem signext_phase_a_spec (sp r5 r10 : Word)
   -- ── Part 3: Fall-through path (base+24..base+32): LD + SLTIU + BEQ ──
   have lw5 := ld_spec_gen .x5 .x12 sp
     (b1 ||| b2 ||| b3) b0 0 (base + 24) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0)
   simp only [signExtend12_0] at lw5
   rw [show sp + (0 : Word) = sp from by bv_omega] at lw5
   rw [ha24] at lw5

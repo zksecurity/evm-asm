@@ -116,12 +116,8 @@ theorem cc_prologue_spec (base sp_val ra_val old_slot : Word)
   have hADDI := addi_spec_gen_same .x2 sp_val (-16 : BitVec 12) base (by nofun)
   simp only [signExtend12_neg16] at hADDI
   rw [show sp_val + (-16 : Word) = sp_val - 16 from by bv_omega] at hADDI
-  have haddr : (sp_val - 16) + signExtend12 (8 : BitVec 12) = sp_val - 8 := by
-    simp only [signExtend12_8]; bv_omega
-  have hvalid' : isValidDwordAccess ((sp_val - 16) + signExtend12 (8 : BitVec 12)) = true := by
-    rw [haddr]; exact hvalid
   have hSD := sd_spec_gen .x2 .x1 (sp_val - 16) ra_val old_slot
-    (8 : BitVec 12) (base + 4) hvalid'
+    (8 : BitVec 12) (base + 4)
   simp only [signExtend12_8] at hSD
   rw [show (sp_val - 16 : Word) + (8 : Word) = sp_val - 8 from by bv_omega] at hSD
   runBlock hADDI hSD
@@ -139,10 +135,8 @@ theorem cc_epilogue_spec (base sp_val old_x1 saved_ra : Word)
       ((.x2 ↦ᵣ sp_val) ** (.x1 ↦ᵣ old_x1) ** ((sp_val + 8) ↦ₘ saved_ra))
       ((.x2 ↦ᵣ (sp_val + 16)) ** (.x1 ↦ᵣ saved_ra) ** ((sp_val + 8) ↦ₘ saved_ra)) := by
   -- LD x1, x2, 8: load saved_ra into x1
-  have hvalid' : isValidDwordAccess (sp_val + signExtend12 (8 : BitVec 12)) = true := by
-    simp only [signExtend12_8]; exact hvalid
   have hLD := ld_spec_gen .x1 .x2 sp_val old_x1 saved_ra (8 : BitVec 12) base
-    (by nofun) hvalid'
+    (by nofun)
   simp only [signExtend12_8] at hLD
   -- ADDI x2, x2, 16: deallocate frame
   have hADDI := addi_spec_gen_same .x2 sp_val (16 : BitVec 12) (base + 4) (by nofun)

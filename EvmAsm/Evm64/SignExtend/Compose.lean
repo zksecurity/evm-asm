@@ -246,8 +246,7 @@ theorem signext_nochange_high_spec (sp base : Word)
     have := hvalid.get (i := 3) (by omega); simpa using this
   -- Step 1: LD x5 x12 8 at base → extend to signextCode
   have h1 := cpsTriple_extend_code (ld_b1_sub_signextCode base)
-    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun)
-      (by simp only [signExtend12_8]; exact hv8))
+    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun))
   simp only [signExtend12_8] at h1
   -- Step 2: LD/OR at base+4
   have h2 := cpsTriple_extend_code (ld_or_16_sub_signextCode base)
@@ -359,7 +358,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
     have := hvalid.get (i := 3) (by omega); simpa using this
   -- Steps 1-3: Same linear chain
   have h1 := cpsTriple_extend_code (ld_b1_sub_signextCode base)
-    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun) (by simp only [signExtend12_8]; exact hv8))
+    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun))
   simp only [signExtend12_8] at h1
   have h2 := cpsTriple_extend_code (ld_or_16_sub_signextCode base)
     (signext_ld_or_acc_spec sp b1 r10 b2 16 (base + 4) (by simp only [signExtend12_16]; exact hv16))
@@ -403,7 +402,6 @@ theorem signext_nochange_geq31_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h123 hbne_framed
   -- Step 5: LD x5 x12 0 at base+24
   have hld_raw := ld_spec_gen .x5 .x12 sp (b1 ||| b2 ||| b3) b0 0 (base + 24) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0)
   simp only [signExtend12_0] at hld_raw
   rw [show sp + (0 : Word) = sp from by bv_omega, se_off_24] at hld_raw
   have hld := cpsTriple_extend_code (ld_b0_sub_signextCode base) hld_raw
@@ -568,7 +566,7 @@ theorem signext_body_spec (sp base : Word)
     have := hvalid.get (i := 3) (by omega); simpa using this
   -- Phase A: base → base+36 (same as no-change geq31 path but BEQ ntaken)
   have h1 := cpsTriple_extend_code (ld_b1_sub_signextCode base)
-    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun) (by simp only [signExtend12_8]; exact hv8))
+    (ld_spec_gen .x5 .x12 sp r5 b1 8 base (by nofun))
   simp only [signExtend12_8] at h1
   have h2 := cpsTriple_extend_code (ld_or_16_sub_signextCode base)
     (signext_ld_or_acc_spec sp b1 r10 b2 16 (base + 4) (by simp only [signExtend12_16]; exact hv16))
@@ -602,7 +600,6 @@ theorem signext_body_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h123 hbne_f
   -- LD b0
   have hld_raw := ld_spec_gen .x5 .x12 sp (b1 ||| b2 ||| b3) b0 0 (base + 24) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0)
   simp only [signExtend12_0] at hld_raw; rw [show sp + (0 : Word) = sp from by bv_omega, se_off_24] at hld_raw
   have hld := cpsTriple_extend_code (ld_b0_sub_signextCode base) hld_raw
   -- SLTIU

@@ -645,7 +645,7 @@ theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift)) := by
   -- 1. LD x6 x12 3992 at base+904 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun) hv_shift
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun)
   rw [show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h
@@ -789,7 +789,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
        ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
        ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)) := by
   -- 1. LD x6 x12 3992 at base+904 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun) hv_shift
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun)
   rw [show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h
@@ -884,7 +884,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
        ((sp + 32) ↦ₘ u0) ** ((sp + 40) ↦ₘ u1) **
        ((sp + 48) ↦ₘ u2) ** ((sp + 56) ↦ₘ u3)) := by
   -- 1. LD x6 x12 3992 at base+904 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun) hv_shift
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 904) (by nofun)
   rw [show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h

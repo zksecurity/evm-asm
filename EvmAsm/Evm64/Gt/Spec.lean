@@ -64,10 +64,10 @@ theorem evm_gt_spec (sp : Word) (base : Word)
   -- Store phase
   have A := addi_spec_gen_same .x12 sp 32 (base + 84) (by nofun)
   simp only [signExtend12_32] at A
-  have S0 := sd_spec_gen .x12 .x5 (sp + 32) borrow3 b0 0 (base + 88) (by validMem)
-  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 92) (by validMem)
-  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 96) (by validMem)
-  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 100) (by validMem)
+  have S0 := sd_spec_gen .x12 .x5 (sp + 32) borrow3 b0 0 (base + 88)
+  have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 92)
+  have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 96)
+  have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 100)
   runBlock L0 L1 L2 L3 A S0 S1 S2 S3
 
 -- ============================================================================

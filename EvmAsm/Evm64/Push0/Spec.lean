@@ -29,10 +29,10 @@ theorem evm_push0_spec (nsp base : Word)
   have LADDI := addi_spec_gen_same .x12 (nsp + 32) (-32) base (by nofun)
   simp only [signExtend12_neg32] at LADDI
   rw [show (nsp + 32 : Word) + (-32 : Word) = nsp from by bv_omega] at LADDI
-  have L0 := sd_x0_spec_gen .x12 nsp d0 0 (base + 4) (by validMem)
-  have L1 := sd_x0_spec_gen .x12 nsp d1 8 (base + 8) (by validMem)
-  have L2 := sd_x0_spec_gen .x12 nsp d2 16 (base + 12) (by validMem)
-  have L3 := sd_x0_spec_gen .x12 nsp d3 24 (base + 16) (by validMem)
+  have L0 := sd_x0_spec_gen .x12 nsp d0 0 (base + 4)
+  have L1 := sd_x0_spec_gen .x12 nsp d1 8 (base + 8)
+  have L2 := sd_x0_spec_gen .x12 nsp d2 16 (base + 12)
+  have L3 := sd_x0_spec_gen .x12 nsp d3 24 (base + 16)
   runBlock LADDI L0 L1 L2 L3
 
 /-- PUSH0 stack spec: pushes EvmWord 0 onto stack. -/

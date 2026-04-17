@@ -442,7 +442,6 @@ theorem evm_byte_zero_geq32_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hOR_f hbne_framed
   -- Step 3: LD x5 x12 0 at base+24
   have hld_raw := ld_spec_gen .x5 .x12 sp (i1 ||| i2 ||| i3) i0 0 (base + 24) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0)
   simp only [signExtend12_0] at hld_raw
   rw [show sp + (0 : Word) = sp from by bv_omega, byte_off_24] at hld_raw
   have hld := cpsTriple_extend_code (byte_ld0_sub base) hld_raw
@@ -625,7 +624,6 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hOR_f hbne_framed
   -- LD x5 x12 0 at base+24
   have hld_raw := ld_spec_gen .x5 .x12 sp (i1 ||| i2 ||| i3) i0 0 (base + 24) (by nofun)
-    (by simp only [signExtend12_0]; rw [show sp + (0 : Word) = sp from by bv_omega]; exact hv0)
   simp only [signExtend12_0] at hld_raw
   rw [show sp + (0 : Word) = sp from by bv_omega, byte_off_24] at hld_raw
   have hld := cpsTriple_extend_code (byte_ld0_sub base) hld_raw

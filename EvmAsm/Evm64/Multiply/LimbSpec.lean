@@ -41,11 +41,11 @@ theorem mul_col3_spec (sp : Word) (base : Word)
        (sp ↦ₘ a0) ** ((sp + 56) ↦ₘ b3))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b3) ** (.x6 ↦ᵣ a0 * b3) ** (.x10 ↦ᵣ r3_in + a0 * b3) **
        (sp ↦ₘ a0) ** ((sp + 56) ↦ₘ r3_in + a0 * b3)) := by
-  have L1 := ld_spec_gen .x5 .x12 sp v5 b3 56 base (by nofun) (by validMem)
-  have L2 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
+  have L1 := ld_spec_gen .x5 .x12 sp v5 b3 56 base (by nofun)
+  have L2 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun)
   have M := mul_spec_gen_rd_eq_rs1 .x6 .x5 a0 b3 (base + 8) (by nofun)
   have A := add_spec_gen_rd_eq_rs1 .x10 .x6 r3_in (a0 * b3) (base + 12) (by nofun)
-  have S := sd_spec_gen .x12 .x10 sp (r3_in + a0 * b3) b3 56 (base + 16) (by validMem)
+  have S := sd_spec_gen .x12 .x10 sp (r3_in + a0 * b3) b3 56 (base + 16)
   runBlock L1 L2 M A S
 
 -- ============================================================================
@@ -76,18 +76,18 @@ theorem mul_col2_spec (sp : Word) (base : Word)
        (.x10 ↦ᵣ r3_out) ** (.x11 ↦ᵣ r2_out) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p) ** ((sp + 48) ↦ₘ r2_out)) := by
   intro lo_a0b2 hi_a0b2 r2_out carry02 r3_contrib r3_out
-  have I0 := ld_spec_gen .x5 .x12 sp v5 b2 48 base (by nofun) (by validMem)
-  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
+  have I0 := ld_spec_gen .x5 .x12 sp v5 b2 48 base (by nofun)
+  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b2 (base + 8) (by nofun)
   have I3 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a0 b2 (base + 12) (by nofun)
   have I4 := add_spec_gen_rd_eq_rs1 .x11 .x7 r2_in lo_a0b2 (base + 16) (by nofun)
   have I5 := sltu_spec_gen_rd_eq_rs2 .x7 .x11 r2_out lo_a0b2 (base + 20) (by nofun)
   have I6 := add_spec_gen_rd_eq_rs1 .x6 .x7 hi_a0b2 carry02 (base + 24) (by nofun)
-  have I7 := sd_spec_gen .x12 .x11 sp r2_out b2 48 (base + 28) (by validMem)
-  have I8 := ld_spec_gen .x7 .x12 sp carry02 a1 8 (base + 32) (by nofun) (by validMem)
+  have I7 := sd_spec_gen .x12 .x11 sp r2_out b2 48 (base + 28)
+  have I8 := ld_spec_gen .x7 .x12 sp carry02 a1 8 (base + 32) (by nofun)
   have I9 := mul_spec_gen_rd_eq_rs1 .x7 .x5 a1 b2 (base + 36) (by nofun)
   have I10 := add_spec_gen_rd_eq_rs1 .x6 .x7 (hi_a0b2 + carry02) (a1 * b2) (base + 40) (by nofun)
-  have I11 := ld_spec_gen .x10 .x12 sp v10 r3p 16 (base + 44) (by nofun) (by validMem)
+  have I11 := ld_spec_gen .x10 .x12 sp v10 r3p 16 (base + 44) (by nofun)
   have I12 := add_spec_gen_rd_eq_rs1 .x10 .x6 r3p r3_contrib (base + 48) (by nofun)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12
 
@@ -121,14 +121,14 @@ theorem mul_col1_partA_spec (sp : Word) (base : Word)
        (.x10 ↦ᵣ carry_r2_1) ** (.x11 ↦ᵣ r2_acc1) **
        (sp ↦ₘ a0) ** ((sp + 40) ↦ₘ r1_out)) := by
   intro lo_a0b1 hi_a0b1 r1_out carry01 r2_contrib1 r2_acc1 carry_r2_1
-  have I0 := ld_spec_gen .x5 .x12 sp v5 b1 40 base (by nofun) (by validMem)
-  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
+  have I0 := ld_spec_gen .x5 .x12 sp v5 b1 40 base (by nofun)
+  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b1 (base + 8) (by nofun)
   have I3 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a0 b1 (base + 12) (by nofun)
   have I4 := add_spec_gen_rd_eq_rs1 .x10 .x7 r1_in lo_a0b1 (base + 16) (by nofun)
   have I5 := sltu_spec_gen_rd_eq_rs2 .x7 .x10 r1_out lo_a0b1 (base + 20) (by nofun)
   have I6 := add_spec_gen_rd_eq_rs1 .x6 .x7 hi_a0b1 carry01 (base + 24) (by nofun)
-  have I7 := sd_spec_gen .x12 .x10 sp r1_out b1 40 (base + 28) (by validMem)
+  have I7 := sd_spec_gen .x12 .x10 sp r1_out b1 40 (base + 28)
   have I8 := add_spec_gen_rd_eq_rs1 .x11 .x6 r2_in r2_contrib1 (base + 32) (by nofun)
   have I9 := sltu_spec_gen .x10 .x11 .x6 r1_out r2_acc1 r2_contrib1 (base + 36) (by nofun)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9
@@ -158,19 +158,19 @@ theorem mul_col1_partB_spec (sp : Word) (base : Word)
        (.x10 ↦ᵣ r3_spill) ** (.x11 ↦ᵣ r2_out) **
        ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3_spill) ** ((sp + 24) ↦ₘ r3p0)) := by
   intro lo_a1b1 hi_a1b1 r2_out carry_r2_2 r3_contrib1 r3_spill
-  have I0 := ld_spec_gen .x6 .x12 sp v6 a1 8 (base + 40) (by nofun) (by validMem)
+  have I0 := ld_spec_gen .x6 .x12 sp v6 a1 8 (base + 40) (by nofun)
   have I1 := mul_spec_gen .x7 .x6 .x5 v7 a1 b1 (base + 44) (by nofun)
   have I2 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a1 b1 (base + 48) (by nofun)
   have I3 := add_spec_gen_rd_eq_rs1 .x11 .x7 r2_acc1 lo_a1b1 (base + 52) (by nofun)
   have I4 := sltu_spec_gen_rd_eq_rs2 .x7 .x11 r2_out lo_a1b1 (base + 56) (by nofun)
   have I5 := add_spec_gen_rd_eq_rs1 .x6 .x7 hi_a1b1 carry_r2_2 (base + 60) (by nofun)
   have I6 := add_spec_gen_rd_eq_rs1 .x10 .x6 carry_r2_1 r3_contrib1 (base + 64) (by nofun)
-  have I7 := ld_spec_gen .x6 .x12 sp r3_contrib1 a2 16 (base + 68) (by nofun) (by validMem)
+  have I7 := ld_spec_gen .x6 .x12 sp r3_contrib1 a2 16 (base + 68) (by nofun)
   have I8 := mul_spec_gen_rd_eq_rs1 .x6 .x5 a2 b1 (base + 72) (by nofun)
   have I9 := add_spec_gen_rd_eq_rs1 .x10 .x6 (carry_r2_1 + r3_contrib1) (a2 * b1) (base + 76) (by nofun)
-  have I10 := ld_spec_gen .x6 .x12 sp (a2 * b1) r3p0 24 (base + 80) (by nofun) (by validMem)
+  have I10 := ld_spec_gen .x6 .x12 sp (a2 * b1) r3p0 24 (base + 80) (by nofun)
   have I11 := add_spec_gen_rd_eq_rs1 .x10 .x6 (carry_r2_1 + r3_contrib1 + a2 * b1) r3p0 (base + 84) (by nofun)
-  have I12 := sd_spec_gen .x12 .x10 sp r3_spill a2 16 (base + 88) (by validMem)
+  have I12 := sd_spec_gen .x12 .x10 sp r3_spill a2 16 (base + 88)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12
 
 -- Full column 1 code (used by evm_mul_code)
@@ -240,12 +240,12 @@ theorem mul_col0_partA_spec (sp : Word) (base : Word)
        (.x10 ↦ᵣ r1_acc) ** (.x11 ↦ᵣ hi_a1b0 + carry_r1) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 32) ↦ₘ r0)) := by
   intro r0 hi_a0b0 lo_a1b0 hi_a1b0 r1_acc carry_r1
-  have I0 := ld_spec_gen .x5 .x12 sp v5 b0 32 base (by nofun) (by validMem)
-  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun) (by validMem)
+  have I0 := ld_spec_gen .x5 .x12 sp v5 b0 32 base (by nofun)
+  have I1 := ld_spec_gen .x6 .x12 sp v6 a0 0 (base + 4) (by nofun)
   have I2 := mul_spec_gen .x7 .x6 .x5 v7 a0 b0 (base + 8) (by nofun)
   have I3 := mulhu_spec_gen .x10 .x6 .x5 v10 a0 b0 (base + 12) (by nofun)
-  have I4 := sd_spec_gen .x12 .x7 sp r0 b0 32 (base + 16) (by validMem)
-  have I5 := ld_spec_gen .x6 .x12 sp a0 a1 8 (base + 20) (by nofun) (by validMem)
+  have I4 := sd_spec_gen .x12 .x7 sp r0 b0 32 (base + 16)
+  have I5 := ld_spec_gen .x6 .x12 sp a0 a1 8 (base + 20) (by nofun)
   have I6 := mul_spec_gen .x7 .x6 .x5 r0 a1 b0 (base + 24) (by nofun)
   have I7 := mulhu_spec_gen .x11 .x6 .x5 v11 a1 b0 (base + 28) (by nofun)
   have I8 := add_spec_gen_rd_eq_rs1 .x10 .x7 hi_a0b0 lo_a1b0 (base + 32) (by nofun)
@@ -277,16 +277,16 @@ theorem mul_col0_partB_spec (sp : Word) (base : Word)
        (.x11 ↦ᵣ r2_acc) **
        ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ r3p)) := by
   intro lo_a2b0 hi_a2b0 r2_acc carry_r2 r3p
-  have I0 := ld_spec_gen .x6 .x12 sp v6 a2 16 (base + 44) (by nofun) (by validMem)
+  have I0 := ld_spec_gen .x6 .x12 sp v6 a2 16 (base + 44) (by nofun)
   have I1 := mul_spec_gen .x7 .x6 .x5 v7 a2 b0 (base + 48) (by nofun)
   have I2 := mulhu_spec_gen_rd_eq_rs1 .x6 .x5 a2 b0 (base + 52) (by nofun)
   have I3 := add_spec_gen_rd_eq_rs1 .x11 .x7 r2_partial lo_a2b0 (base + 56) (by nofun)
   have I4 := sltu_spec_gen_rd_eq_rs2 .x7 .x11 r2_acc lo_a2b0 (base + 60) (by nofun)
   have I5 := add_spec_gen_rd_eq_rs1 .x6 .x7 hi_a2b0 carry_r2 (base + 64) (by nofun)
-  have I6 := ld_spec_gen .x7 .x12 sp carry_r2 a3 24 (base + 68) (by nofun) (by validMem)
+  have I6 := ld_spec_gen .x7 .x12 sp carry_r2 a3 24 (base + 68) (by nofun)
   have I7 := mul_spec_gen_rd_eq_rs1 .x7 .x5 a3 b0 (base + 72) (by nofun)
   have I8 := add_spec_gen_rd_eq_rs1 .x6 .x7 (hi_a2b0 + carry_r2) (a3 * b0) (base + 76) (by nofun)
-  have I9 := sd_spec_gen .x12 .x6 sp r3p a3 24 (base + 80) (by validMem)
+  have I9 := sd_spec_gen .x12 .x6 sp r3p a3 24 (base + 80)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9
 
 -- Full column 0 code (used by evm_mul_code)
