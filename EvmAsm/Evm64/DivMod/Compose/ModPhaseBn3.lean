@@ -7,6 +7,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Evm64.DivMod.AddrNorm (se12_3 se12_4)
 
 -- ============================================================================
 -- MOD Phase B n=3 (b[3]=0, b[2]≠0)
@@ -63,7 +64,7 @@ theorem evm_mod_phaseB_n3_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) hinit1f hinit2f
   -- ---- Cascade step 0: ADDI x5=4 (base+68 → base+72)
   have haddi0_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
-  simp only [mod_phB_addi_4, mod_divK_se12_4] at haddi0_raw
+  simp only [mod_phB_addi_4, se12_4] at haddi0_raw
   have haddi0 := cpsTriple_extend_code (addi_x5_singleton_sub_modCode base) haddi0_raw
   have haddi0f := cpsTriple_frame_left _ _ _ _ _
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
@@ -98,7 +99,7 @@ theorem evm_mod_phaseB_n3_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h123 hbne0f
   -- ---- Cascade step 1: ADDI x5=3 (base+76 → base+80)
   have haddi1_raw := addi_x0_spec_gen .x5 (4 : Word) 3 (base + 76) (by nofun)
-  simp only [mod_phB_step1_4, mod_divK_se12_3] at haddi1_raw
+  simp only [mod_phB_step1_4, se12_3] at haddi1_raw
   have haddi1 := cpsTriple_extend_code (addi_x5_3_sub_modCode base) haddi1_raw
   have haddi1f := cpsTriple_frame_left _ _ _ _ _
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
@@ -133,7 +134,7 @@ theorem evm_mod_phaseB_n3_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h12345 hbne1f
   -- ---- Tail (base+96 → base+116)
   have htail_raw := divK_phaseB_tail_spec sp (3 : Word) b2 n_mem (base + 96)
-  simp only [mod_phB_t_20, mod_divK_phaseB_n3_nm1_x8, mod_divK_se12_32,
+  simp only [mod_phB_t_20, mod_divK_phaseB_n3_nm1_x8, se12_32,
     mod_phB_sp16_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   have htailf := cpsTriple_frame_left _ _ _ _ _

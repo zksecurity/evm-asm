@@ -13,6 +13,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Evm64.DivMod.AddrNorm (se12_1 se12_2 se12_3 se12_4 se12_4095)
 
 -- ============================================================================
 -- MOD CodeReq subsumption lemmas for blocks 0 and 1
@@ -94,15 +95,10 @@ theorem mod_phB_bne_4 (base : Word) : (base + 72 : Word) + 4 = base + 76 := by b
 theorem mod_phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
 theorem mod_signExtend13_24 : signExtend13 (24 : BitVec 13) = (24 : Word) := by
   decide
-theorem mod_divK_se12_4 : signExtend12 (4 : BitVec 12) = (4 : Word) := by decide
-theorem mod_divK_phaseB_n4_nm1_x8 :
-    signExtend12 (8 : BitVec 12) = (8 : Word) := by decide
-theorem mod_divK_se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
 theorem mod_phB_sp24_32 (sp : Word) :
     sp + ((4 : Word) + signExtend12 (4095 : BitVec 12)) <<< (3 : BitVec 6).toNat +
       signExtend12 (32 : BitVec 12) = sp + 56 := by
-  simp only [show signExtend12 (4095 : BitVec 12) = (18446744073709551615 : Word) from by decide,
-             show signExtend12 (32 : BitVec 12) = (32 : Word) from by decide]
+  simp only [se12_4095, se12_32]
   bv_addr
 
 -- ============================================================================
@@ -149,7 +145,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   seqFrame hinit1f hinit2
   -- ---- Step 3: ADDI x5 x0 4 at base+68 → base+72
   have haddi_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
-  simp only [mod_phB_addi_4, mod_divK_se12_4] at haddi_raw
+  simp only [mod_phB_addi_4, se12_4] at haddi_raw
   have haddi := cpsTriple_extend_code (addi_x5_singleton_sub_modCode base) haddi_raw
   seqFrame hinit1fhinit2 haddi
   -- ---- Step 4: BNE x10 x0 24 at base+72, elim ntaken (b3=0 absurd)
@@ -246,10 +242,7 @@ theorem addi_x5_1_sub_modCode (base : Word) :
 -- MOD Phase B cascade constants and address lemmas
 -- ============================================================================
 
--- signExtend constants for cascade steps
-theorem mod_divK_se12_3 : signExtend12 (3 : BitVec 12) = (3 : Word) := by decide
-theorem mod_divK_se12_2 : signExtend12 (2 : BitVec 12) = (2 : Word) := by decide
-theorem mod_divK_se12_1 : signExtend12 (1 : BitVec 12) = (1 : Word) := by decide
+-- signExtend13 constants for cascade branches (se12_* come from AddrNorm)
 theorem mod_signExtend13_16 : signExtend13 (16 : BitVec 13) = (16 : Word) := by
   decide
 theorem mod_signExtend13_8 : signExtend13 (8 : BitVec 13) = (8 : Word) := by decide
