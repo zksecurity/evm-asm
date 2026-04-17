@@ -47,6 +47,27 @@ theorem evmWordIs_sp_unfold (sp : Word) (v : EvmWord) :
     ((sp ↦ₘ v.getLimbN 0) ** ((sp + 8) ↦ₘ v.getLimbN 1) **
      ((sp + 16) ↦ₘ v.getLimbN 2) ** ((sp + 24) ↦ₘ v.getLimbN 3)) := rfl
 
+/-- Rewrite `evmWordIs (sp+32) v` to four limb atoms given explicit getLimbN
+    equalities. Caller-friendly alternative to `evmWordIs_sp32_unfold` when the
+    target limb values are already known concretely — avoids the
+    match-expression unification issues that arise when `v = fromLimbs …`. -/
+theorem evmWordIs_sp32_limbs_eq (sp : Word) (v : EvmWord) (w0 w1 w2 w3 : Word)
+    (h0 : v.getLimbN 0 = w0) (h1 : v.getLimbN 1 = w1)
+    (h2 : v.getLimbN 2 = w2) (h3 : v.getLimbN 3 = w3) :
+    evmWordIs (sp + 32) v =
+    (((sp + 32) ↦ₘ w0) ** ((sp + 40) ↦ₘ w1) **
+     ((sp + 48) ↦ₘ w2) ** ((sp + 56) ↦ₘ w3)) := by
+  rw [evmWordIs_sp32_unfold, h0, h1, h2, h3]
+
+/-- Same as `evmWordIs_sp32_limbs_eq` but for `evmWordIs sp v`. -/
+theorem evmWordIs_sp_limbs_eq (sp : Word) (v : EvmWord) (w0 w1 w2 w3 : Word)
+    (h0 : v.getLimbN 0 = w0) (h1 : v.getLimbN 1 = w1)
+    (h2 : v.getLimbN 2 = w2) (h3 : v.getLimbN 3 = w3) :
+    evmWordIs sp v =
+    ((sp ↦ₘ w0) ** ((sp + 8) ↦ₘ w1) **
+     ((sp + 16) ↦ₘ w2) ** ((sp + 24) ↦ₘ w3)) := by
+  rw [evmWordIs_sp_unfold, h0, h1, h2, h3]
+
 -- ============================================================================
 -- DIV: Zero divisor stack spec (b = 0 → result = 0)
 -- ============================================================================
@@ -82,12 +103,10 @@ theorem evm_div_bzero_stack_spec (sp base : Word)
   have hr3 : (EvmWord.div a 0).getLimbN 3 = 0 := EvmWord.div_getLimb_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      rw [evmWordIs_sp32_unfold] at hp
-      simp only [hg0, hg1, hg2, hg3] at hp
+      rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
       xperm_hyp hp)
     (fun h hq => by
-      rw [evmWordIs_sp32_unfold]
-      simp only [hr0, hr1, hr2, hr3]
+      rw [evmWordIs_sp32_limbs_eq sp _ 0 0 0 0 hr0 hr1 hr2 hr3]
       have w0 := sepConj_mono_left (regIs_to_regOwn .x5 _) h
         ((congrFun (show _ =
           ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) **
@@ -135,12 +154,10 @@ theorem evm_mod_bzero_stack_spec (sp base : Word)
   have hr3 : (EvmWord.mod a 0).getLimbN 3 = 0 := EvmWord.mod_getLimb_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
-      rw [evmWordIs_sp32_unfold] at hp
-      simp only [hg0, hg1, hg2, hg3] at hp
+      rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
       xperm_hyp hp)
     (fun h hq => by
-      rw [evmWordIs_sp32_unfold]
-      simp only [hr0, hr1, hr2, hr3]
+      rw [evmWordIs_sp32_limbs_eq sp _ 0 0 0 0 hr0 hr1 hr2 hr3]
       have w0 := sepConj_mono_left (regIs_to_regOwn .x5 _) h
         ((congrFun (show _ =
           ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) **
