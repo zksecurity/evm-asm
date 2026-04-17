@@ -27,8 +27,6 @@ open EvmAsm.Rv64
 -- n=2, BLTU not-taken (max path) + BEQ skip, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, max+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n2_max_skip_j0_spec
@@ -131,8 +129,6 @@ theorem divK_loop_body_n2_max_skip_j0_spec
 -- n=2, BLTU taken (call path) + BEQ skip, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, call+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n2_call_skip_j0_spec
@@ -265,8 +261,6 @@ theorem divK_loop_body_n2_call_skip_j0_spec
 -- n=2, BLTU not-taken (max path) + BEQ skip, j=1 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, max+skip, j=1.
     Since j=1, the BGE loop-back is taken (j' = 0 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n2_max_skip_j1_spec
@@ -355,8 +349,6 @@ theorem divK_loop_body_n2_max_skip_j1_spec
 -- n=2, BLTU taken (call path) + BEQ skip, j=1 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, call+skip, j=1.
     Since j=1, the BGE loop-back is taken, giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n2_call_skip_j1_spec
@@ -482,8 +474,6 @@ theorem divK_loop_body_n2_call_skip_j1_spec
 -- For j=2: j' = 2 + signExtend12 4095 = 1, BGE taken.
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, max+skip, j=2.
     Since j=2, the BGE loop-back is taken (j' = 1 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n2_max_skip_j2_spec
@@ -572,8 +562,6 @@ theorem divK_loop_body_n2_max_skip_j2_spec
 -- n=2, BLTU taken (call path) + BEQ skip, j=2 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=2, call+skip, j=2.
     Since j=2, the BGE loop-back is taken (j' = 1 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n2_call_skip_j2_spec
@@ -703,8 +691,6 @@ theorem divK_loop_body_n2_call_skip_j2_spec
 -- n=2, BLTU not-taken (max path) + BEQ addback, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_max_addback_j0_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -788,8 +774,6 @@ theorem divK_loop_body_n2_max_addback_j0_beq_spec
 -- n=2, BLTU taken (call path) + BEQ addback, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_call_addback_j0_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -918,8 +902,6 @@ theorem divK_loop_body_n2_call_addback_j0_beq_spec
 -- n=2, BLTU not-taken (max path) + BEQ addback, j=1 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_max_addback_j1_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -1004,8 +986,6 @@ theorem divK_loop_body_n2_max_addback_j1_beq_spec
 -- n=2, BLTU taken (call path) + BEQ addback, j=1 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_call_addback_j1_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -1126,8 +1106,6 @@ theorem divK_loop_body_n2_call_addback_j1_beq_spec
 -- n=2, BLTU not-taken (max path) + BEQ addback, j=2 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_max_addback_j2_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -1212,8 +1190,6 @@ theorem divK_loop_body_n2_max_addback_j2_beq_spec
 -- n=2, BLTU taken (call path) + BEQ addback, j=2 → cpsTriple to base+448
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 theorem divK_loop_body_n2_call_addback_j2_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)

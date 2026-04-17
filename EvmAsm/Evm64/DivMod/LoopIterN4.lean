@@ -19,8 +19,6 @@ open EvmAsm.Rv64
 -- n=4, BLTU not-taken (max path) + BEQ skip, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=4, max+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n4_max_skip_j0_spec
@@ -126,8 +124,6 @@ theorem divK_loop_body_n4_max_skip_j0_spec
 -- n=4, BLTU taken (call path) + BEQ skip, j=0 → cpsTriple to base+904
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=4, call+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n4_call_skip_j0_spec
@@ -267,8 +263,6 @@ theorem divK_loop_body_n4_call_skip_j0_spec
 -- Uses divK_mulsub_correction_addback_beq_spec to eliminate sorry.
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=4, max+addback (beq variant), j=0.
     Uses the beq_spec which handles both carry=0 and carry≠0 internally,
     eliminating the sorry for aco3 ≠ 0. -/
@@ -366,8 +360,6 @@ theorem divK_loop_body_n4_max_addback_j0_beq_spec
 -- Uses divK_mulsub_correction_addback_beq_spec to eliminate sorry.
 -- ============================================================================
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 6400000 in
 /-- Loop body cpsTriple for n=4, call+addback (beq variant), j=0.
     Uses the beq_spec which handles both carry=0 and carry≠0 internally,
     eliminating the sorry for aco3 ≠ 0. -/
