@@ -601,7 +601,10 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
     two-instruction `SLLI x11, x11, 8 ; ADD x11, x11, x12` big-endian
     accumulation core of the long-form length-of-length loop. Post:
     `x11 ← (len <<< 8) + byte`.
-  - Full long-form loop (byte load, counter decrement, branch-back,
+  - `rlp_phase2_long_load_acc_spec` (`EvmAsm/Rv64/RLP/Phase2LongLoad.lean`):
+    three-instruction `LBU x12, x13, 0` prefix over the accumulation
+    step. Reads one byte from `mem[x13]` and folds it into `x11`.
+  - Full long-form loop (pointer/counter advance, branch-back,
     invariant) still pending.
 - Phase 3: Single-item flat decode (byte strings only)
 - Phase 4: HINT_READ integration (load RLP input into memory buffer)
