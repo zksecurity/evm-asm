@@ -590,7 +590,13 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
   - Optional accumulated-chain variant (each exit carries *all* prior
     negations plus the current taken fact) not yet implemented; downstream
     phases that only need the current-step fact can use `_pure` as-is.
-- Phase 2: Length extraction (short inline + long big-endian loop)
+- Phase 2: Length extraction — ⏳ short form landed
+  - `rlp_phase2_short_length_spec` (`EvmAsm/Rv64/RLP/Phase2Short.lean`):
+    one-instruction `ADDI x11, x5, -k` extractor for short byte strings
+    (k = 0x80) and short lists (k = 0xC0). Concrete tests verify
+    0x85 → 5, 0xB7 → 55, 0xC3 → 3, 0x80 → 0 via `decide`.
+  - Long form (length-of-length big-endian loop for 0xB8..0xBF /
+    0xF8..0xFF prefixes) still pending.
 - Phase 3: Single-item flat decode (byte strings only)
 - Phase 4: HINT_READ integration (load RLP input into memory buffer)
 - Phase 5: Recursive list decode (iterative with explicit stack)
