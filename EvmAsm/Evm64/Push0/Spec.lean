@@ -19,7 +19,7 @@ open EvmAsm.Rv64
     5 instructions = 20 bytes. nsp is the NEW stack pointer (after decrement). -/
 theorem evm_push0_spec (nsp base : Word)
     (d0 d1 d2 d3 : Word)
-    (hvalid : ValidMemRange nsp 4) :
+    (_hvalid : ValidMemRange nsp 4) :
     let code := evm_push0_code base
     cpsTriple base (base + 20) code
       ((.x12 ↦ᵣ (nsp + 32)) **

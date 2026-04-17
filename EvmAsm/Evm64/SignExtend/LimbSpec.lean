@@ -38,7 +38,7 @@ abbrev signext_inplace_code (off : BitVec 12) (base : Word) : CodeReq :=
     Result = BitVec.sshiftRight (limb <<< (sa % 64)) (sa % 64) -/
 theorem signext_inplace_spec (off : BitVec 12)
     (sp limb v5 shift_amount : Word) (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let result := BitVec.sshiftRight (limb <<< (shift_amount.toNat % 64)) (shift_amount.toNat % 64)
     let code := signext_inplace_code off base
     cpsTriple base (base + 16) code
@@ -239,7 +239,7 @@ abbrev signext_ld_or_acc_code (off : BitVec 12) (base : Word) : CodeReq :=
 
 theorem signext_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let code := signext_ld_or_acc_code off base
     cpsTriple base (base + 8) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))

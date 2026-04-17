@@ -38,9 +38,9 @@ abbrev shl_merge_limb_code (base : Word) (src_off prev_off dst_off : BitVec 12) 
     Mirror of shr_merge_limb_spec with SLL/SRL swapped. -/
 theorem shl_merge_limb_spec (src_off prev_off dst_off : BitVec 12)
     (sp src prev dst_old v5 v10 bit_shift anti_shift mask : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 src_off) = true)
-    (hvalid_prev : isValidDwordAccess (sp + signExtend12 prev_off) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 src_off) = true)
+    (_hvalid_prev : isValidDwordAccess (sp + signExtend12 prev_off) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let mem_src := sp + signExtend12 src_off
     let mem_prev := sp + signExtend12 prev_off
     let mem_dst := sp + signExtend12 dst_off
@@ -80,8 +80,8 @@ abbrev shl_first_limb_code (base : Word) (dst_off : BitVec 12) : CodeReq :=
     Mirror of shr_last_limb_spec: reads from offset 0 (lowest limb), uses SLL. -/
 theorem shl_first_limb_spec (dst_off : BitVec 12)
     (sp src dst_old v5 bit_shift : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let mem_src := sp + signExtend12 (0 : BitVec 12)
     let mem_dst := sp + signExtend12 dst_off
     let result := src <<< (bit_shift.toNat % 64)
@@ -113,8 +113,8 @@ abbrev shl_merge_limb_inplace_code (base : Word) (off prev_off : BitVec 12) : Co
     Same as shl_merge_limb_spec but src_off = dst_off. -/
 theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
     (sp src prev v5 v10 bit_shift anti_shift mask : Word) (base : Word)
-    (hvalid_loc : isValidDwordAccess (sp + signExtend12 off) = true)
-    (hvalid_prev : isValidDwordAccess (sp + signExtend12 prev_off) = true) :
+    (_hvalid_loc : isValidDwordAccess (sp + signExtend12 off) = true)
+    (_hvalid_prev : isValidDwordAccess (sp + signExtend12 prev_off) = true) :
     let mem_loc := sp + signExtend12 off
     let mem_prev := sp + signExtend12 prev_off
     let shifted_src := src <<< (bit_shift.toNat % 64)
@@ -151,7 +151,7 @@ abbrev shl_first_limb_inplace_code (base : Word) : CodeReq :=
     Reads and writes the same memory cell at sp+0. -/
 theorem shl_first_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 (0 : BitVec 12)) = true) :
     let mem := sp + signExtend12 (0 : BitVec 12)
     let result := src <<< (bit_shift.toNat % 64)
     let cr := shl_first_limb_inplace_code base

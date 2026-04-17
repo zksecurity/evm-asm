@@ -48,7 +48,7 @@ set_option maxHeartbeats 3200000 in
 /-- Denorm preamble for shift≠0: LD shift from memory + BEQ not taken.
     base+904 → base+912. Bridges the gap between loop body exit and denorm body. -/
 theorem divK_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
-    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (_hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
     (hshift_nz : shift ≠ 0) :
     cpsTriple (base + 904) (base + 912) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **

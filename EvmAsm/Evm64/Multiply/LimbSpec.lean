@@ -34,7 +34,7 @@ abbrev mul_col3_code (base : Word) : CodeReq :=
     5 instructions: LD b3; LD a0; MUL a0*b3; ADD acc; SD result. -/
 theorem mul_col3_spec (sp : Word) (base : Word)
     (a0 b3 r3_in v5 v6 : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let code := mul_col3_code base
     cpsTriple base (base + 20) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x10 ↦ᵣ r3_in) **
@@ -60,7 +60,7 @@ abbrev mul_col2_code (base : Word) : CodeReq :=
     Output: x10 = r3 total, sp+48 = r2 stored. -/
 theorem mul_col2_spec (sp : Word) (base : Word)
     (a0 a1 b2 r2_in r3p v5 v6 v7 v10 : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let lo_a0b2 := a0 * b2
     let hi_a0b2 := rv64_mulhu a0 b2
     let r2_out := r2_in + lo_a0b2
@@ -104,7 +104,7 @@ abbrev mul_col1_partA_code (base : Word) : CodeReq :=
     10 instructions at base..base+36. -/
 theorem mul_col1_partA_spec (sp : Word) (base : Word)
     (a0 b1 r1_in r2_in v5 v6 v7 : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let lo_a0b1 := a0 * b1
     let hi_a0b1 := rv64_mulhu a0 b1
     let r1_out := r1_in + lo_a0b1
@@ -142,7 +142,7 @@ abbrev mul_col1_partB_code (base : Word) : CodeReq :=
     13 instructions at base+40..base+88. -/
 theorem mul_col1_partB_spec (sp : Word) (base : Word)
     (a1 a2 b1 r3p0 v6 v7 carry_r2_1 r2_acc1 : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let lo_a1b1 := a1 * b1
     let hi_a1b1 := rv64_mulhu a1 b1
     let r2_out := r2_acc1 + lo_a1b1
@@ -224,7 +224,7 @@ abbrev mul_col0_partA_code (base : Word) : CodeReq :=
     11 instructions at base..base+40. -/
 theorem mul_col0_partA_spec (sp : Word) (base : Word)
     (a0 a1 b0 v5 v6 v7 v10 v11 : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let r0 := a0 * b0
     let hi_a0b0 := rv64_mulhu a0 b0
     let lo_a1b0 := a1 * b0
@@ -262,7 +262,7 @@ abbrev mul_col0_partB_code (base : Word) : CodeReq :=
     10 instructions at base+44..base+80. -/
 theorem mul_col0_partB_spec (sp : Word) (base : Word)
     (a2 a3 b0 v6 v7 r2_partial : Word)
-    (hvalid : ValidMemRange sp 8) :
+    (_hvalid : ValidMemRange sp 8) :
     let lo_a2b0 := a2 * b0
     let hi_a2b0 := rv64_mulhu a2 b0
     let r2_acc := r2_partial + lo_a2b0

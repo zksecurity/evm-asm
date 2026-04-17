@@ -23,8 +23,8 @@ open EvmAsm.Rv64
     SD x6 to A, SD x7 to B. Swaps values at offsets off_a and off_b. -/
 theorem swap_limb_spec (sp : Word)
     (off_a off_b : BitVec 12) (a_val b_val v7 v6 : Word) (base : Word)
-    (hvalid_a : isValidDwordAccess (sp + signExtend12 off_a) = true)
-    (hvalid_b : isValidDwordAccess (sp + signExtend12 off_b) = true) :
+    (_hvalid_a : isValidDwordAccess (sp + signExtend12 off_a) = true)
+    (_hvalid_b : isValidDwordAccess (sp + signExtend12 off_b) = true) :
     cpsTriple base (base + 16)
       (CodeReq.singleton base (.LD .x7 .x12 off_a) |>.union
         (CodeReq.singleton (base + 4) (.LD .x6 .x12 off_b) |>.union

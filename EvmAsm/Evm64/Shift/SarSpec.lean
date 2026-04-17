@@ -34,8 +34,8 @@ abbrev sar_last_limb_code (base : Word) (dst_off : BitVec 12) : CodeReq :=
     Mirror of shr_last_limb_spec with SRA (arithmetic shift right). -/
 theorem sar_last_limb_spec (dst_off : BitVec 12)
     (sp src dst_old v5 bit_shift : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let mem_src := sp + signExtend12 (24 : BitVec 12)
     let mem_dst := sp + signExtend12 dst_off
     let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
@@ -64,7 +64,7 @@ abbrev sar_last_limb_inplace_code (base : Word) : CodeReq :=
     Reads and writes the same memory cell at sp+24. -/
 theorem sar_last_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true) :
     let mem := sp + signExtend12 (24 : BitVec 12)
     let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
     let cr := sar_last_limb_inplace_code base
@@ -265,8 +265,8 @@ abbrev sar_sign_fill_path_code (base : Word) : CodeReq :=
 theorem sar_sign_fill_path_spec (sp : Word)
     (v5 v10 : Word)
     (v0 v1 v2 v3 : Word)
-    (base : Word) (hvalid_v3 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true)
-    (hvalid : ValidMemRange (sp + 32) 4) :
+    (base : Word) (_hvalid_v3 : isValidDwordAccess (sp + signExtend12 (56 : BitVec 12)) = true)
+    (_hvalid : ValidMemRange (sp + 32) 4) :
     let sign_ext := BitVec.sshiftRight v3 63
     let cr := sar_sign_fill_path_code base
     cpsTriple base (base + 28) cr

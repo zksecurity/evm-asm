@@ -23,8 +23,8 @@ open EvmAsm.Rv64
     Copies src_val from src address to dst address. -/
 theorem dup_pair_spec (sp : Word)
     (off_src off_dst : BitVec 12) (src_val dst_old v7 : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 off_src) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 off_dst) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 off_src) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 off_dst) = true) :
     cpsTriple base (base + 8)
       (CodeReq.singleton base (.LD .x7 .x12 off_src) |>.union
         (CodeReq.singleton (base + 4) (.SD .x12 .x7 off_dst)))

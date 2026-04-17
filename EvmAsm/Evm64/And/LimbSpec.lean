@@ -19,8 +19,8 @@ open EvmAsm.Rv64
     Loads A[i] and B[i], computes AND, stores result at B[i]'s location. -/
 theorem and_limb_spec (off_a off_b : BitVec 12)
     (sp a_limb b_limb v7 v6 : Word) (base : Word)
-    (hvalid_a : isValidDwordAccess (sp + signExtend12 off_a) = true)
-    (hvalid_b : isValidDwordAccess (sp + signExtend12 off_b) = true) :
+    (_hvalid_a : isValidDwordAccess (sp + signExtend12 off_a) = true)
+    (_hvalid_b : isValidDwordAccess (sp + signExtend12 off_b) = true) :
     let mem_a := sp + signExtend12 off_a
     let mem_b := sp + signExtend12 off_b
     let cr :=

@@ -109,7 +109,7 @@ theorem ret_spec' (base : Word) (ra_val : Word) :
     sp_val is the ORIGINAL sp on entry.
     After prologue: sp = sp_val - 16, ra saved at mem[sp_val - 8]. -/
 theorem cc_prologue_spec (base sp_val ra_val old_slot : Word)
-    (hvalid : isValidDwordAccess (sp_val - 8) = true) :
+    (_hvalid : isValidDwordAccess (sp_val - 8) = true) :
     cpsTriple base (base + 8) (cc_prologue_code base)
       ((.x2 ↦ᵣ sp_val) ** (.x1 ↦ᵣ ra_val) ** ((sp_val - 8) ↦ₘ old_slot))
       ((.x2 ↦ᵣ (sp_val - 16)) ** (.x1 ↦ᵣ ra_val) ** ((sp_val - 8) ↦ₘ ra_val)) := by
@@ -130,7 +130,7 @@ theorem cc_prologue_spec (base sp_val ra_val old_slot : Word)
     sp_val is the FRAME sp (= original - 16).
     After epilogue: sp = sp_val + 16 (= original), ra restored, jumps to saved_ra. -/
 theorem cc_epilogue_spec (base sp_val old_x1 saved_ra : Word)
-    (hvalid : isValidDwordAccess (sp_val + 8) = true) :
+    (_hvalid : isValidDwordAccess (sp_val + 8) = true) :
     cpsTriple base (saved_ra &&& ~~~1) (cc_epilogue_code base)
       ((.x2 ↦ᵣ sp_val) ** (.x1 ↦ᵣ old_x1) ** ((sp_val + 8) ↦ₘ saved_ra))
       ((.x2 ↦ᵣ (sp_val + 16)) ** (.x1 ↦ᵣ saved_ra) ** ((sp_val + 8) ↦ₘ saved_ra)) := by

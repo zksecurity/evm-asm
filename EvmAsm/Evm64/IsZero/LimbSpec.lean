@@ -19,7 +19,7 @@ open EvmAsm.Rv64
     Loads a limb and OR-accumulates into x7. -/
 theorem iszero_or_limb_spec (off : BitVec 12)
     (sp a_limb v6 acc : Word) (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let mem := sp + signExtend12 off
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x6 .x12 off))

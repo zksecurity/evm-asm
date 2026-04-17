@@ -38,9 +38,9 @@ abbrev shr_merge_limb_code (src_off next_off dst_off : BitVec 12) (base : Word) 
 
 theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
     (sp src next dst_old v5 v10 bit_shift anti_shift mask : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 src_off) = true)
-    (hvalid_next : isValidDwordAccess (sp + signExtend12 next_off) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 src_off) = true)
+    (_hvalid_next : isValidDwordAccess (sp + signExtend12 next_off) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let mem_src := sp + signExtend12 src_off
     let mem_next := sp + signExtend12 next_off
     let mem_dst := sp + signExtend12 dst_off
@@ -71,8 +71,8 @@ abbrev shr_last_limb_code (dst_off : BitVec 12) (base : Word) : CodeReq :=
 
 theorem shr_last_limb_spec (dst_off : BitVec 12)
     (sp src dst_old v5 bit_shift : Word) (base : Word)
-    (hvalid_src : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true)
-    (hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
+    (_hvalid_src : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true)
+    (_hvalid_dst : isValidDwordAccess (sp + signExtend12 dst_off) = true) :
     let mem_src := sp + signExtend12 (24 : BitVec 12)
     let mem_dst := sp + signExtend12 dst_off
     let result := src >>> (bit_shift.toNat % 64)
@@ -94,8 +94,8 @@ abbrev shr_merge_limb_inplace_code (off next_off : BitVec 12) (base : Word) : Co
 
 theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
     (sp src next v5 v10 bit_shift anti_shift mask : Word) (base : Word)
-    (hvalid_loc : isValidDwordAccess (sp + signExtend12 off) = true)
-    (hvalid_next : isValidDwordAccess (sp + signExtend12 next_off) = true) :
+    (_hvalid_loc : isValidDwordAccess (sp + signExtend12 off) = true)
+    (_hvalid_next : isValidDwordAccess (sp + signExtend12 next_off) = true) :
     let mem_loc := sp + signExtend12 off
     let mem_next := sp + signExtend12 next_off
     let shifted_src := src >>> (bit_shift.toNat % 64)
@@ -125,7 +125,7 @@ abbrev shr_last_limb_inplace_code (base : Word) : CodeReq :=
 
 theorem shr_last_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 (24 : BitVec 12)) = true) :
     let mem := sp + signExtend12 (24 : BitVec 12)
     let result := src >>> (bit_shift.toNat % 64)
     let code := shr_last_limb_inplace_code base
@@ -148,7 +148,7 @@ set_option maxHeartbeats 3200000 in
 theorem shr_zero_path_spec (sp : Word)
     (d0 d1 d2 d3 : Word)
     (base : Word)
-    (hvalid : ValidMemRange (sp + 32) 4) :
+    (_hvalid : ValidMemRange (sp + 32) 4) :
     let nsp := sp + 32
     let code := shr_zero_path_code base
     cpsTriple base (base + 20) code
@@ -203,7 +203,7 @@ abbrev shr_ld_or_acc_code (off : BitVec 12) (base : Word) : CodeReq :=
 
 theorem shr_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     (base : Word)
-    (hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
+    (_hvalid : isValidDwordAccess (sp + signExtend12 off) = true) :
     let code := shr_ld_or_acc_code off base
     cpsTriple base (base + 8) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))

@@ -635,7 +635,7 @@ set_option maxHeartbeats 3200000 in
 /-- Denorm preamble for shift≠0 with modCode: LD shift from memory + BEQ not taken.
     base+904 → base+912. -/
 theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
-    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (_hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
     (hshift_nz : shift ≠ 0) :
     cpsTriple (base + 904) (base + 912) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -768,7 +768,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word)
     (hshift_z : shift = 0)
     (hvalid : ValidMemRange sp 8)
-    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (_hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
     (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
     (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
@@ -863,7 +863,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
     (m0 m8 m16 m24 : Word)
     (hshift_z : shift = 0)
     (hvalid : ValidMemRange sp 8)
-    (hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
+    (_hv_shift : isValidDwordAccess (sp + signExtend12 3992) = true)
     (hv_u0 : isValidDwordAccess (sp + signExtend12 4056) = true)
     (hv_u1 : isValidDwordAccess (sp + signExtend12 4048) = true)
     (hv_u2 : isValidDwordAccess (sp + signExtend12 4040) = true)
