@@ -245,7 +245,7 @@ theorem ld_spec_same (rd : Reg) (v_addr mem_val : Word) (offset : BitVec 12) (ba
   have hrd : s.getReg rd = v_addr :=
     (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hmem : s.getMem (v_addr + signExtend12 offset) = mem_val :=
-    (holdsFor_memIs _ _ s).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
+    holdsFor_memIs_getMem (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
   have hstep' : step s = some (execInstrBr s (.LD rd rd offset)) :=
     step_ld s rd rd offset hfetch (hrd ▸ hvalid)
   have hexec' : execInstrBr s (.LD rd rd offset) = (s.setReg rd mem_val).setPC (s.pc + 4) := by

@@ -606,7 +606,7 @@ theorem generic_ld_spec (rd rs1 : Reg) (v_addr v_old mem_val : Word)
     (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_left hPR))
   have hmem : s.getMem (v_addr + signExtend12 offset) = mem_val :=
-    (holdsFor_memIs _ _ s).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right
+    holdsFor_memIs_getMem (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right
       (holdsFor_sepConj_elim_left hPR)))
   -- Step proof using step_ld
   have hstep' : step s = some (execInstrBr s (.LD rd rs1 offset)) :=
