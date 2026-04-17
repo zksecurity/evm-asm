@@ -514,7 +514,7 @@ theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hqv_gt_u : q.toNat * val256 v0 v1 v2 v3 > val256 u0 u1 u2 u3 := by nlinarith
   -- q ≥ 1
   have hq_ge_1 : q.toNat ≥ 1 := by
-    by_contra h; push_neg at h
+    by_contra h
     have : q.toNat = 0 := by omega
     simp [this] at hqv_gt_u
   -- (q-1) * val256(v) ≤ val256(u) (from hq_over: q ≤ ⌊u/v⌋ + 1)
@@ -540,7 +540,7 @@ theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   -- carry * 2^256 ≥ 1, so carry ≥ 1
   -- Also val256(un) + val256(v) < 2 * 2^256, so carry < 2
   have hc_ge : carry ≥ 1 := by
-    by_contra h; push_neg at h
+    by_contra h
     have : carry = 0 := by omega
     rw [this] at hab
     linarith

@@ -118,15 +118,15 @@ theorem rlp_phase2_long_loop_body_spec
     by_cases h0 : a = base
     · simp [h0]
     by_cases h1 : a = base + 4#64
-    · simp [h0, h1]
+    · simp [h1]
     by_cases h2 : a = base + 8#64
-    · simp [h0, h1, h2]
+    · simp [h2]
     by_cases h3 : a = base + 12#64
-    · simp [h0, h1, h2, h3]
+    · simp [h3]
     by_cases h4 : a = base + 16#64
-    · simp [h0, h1, h2, h3, h4]
+    · simp [h4]
     by_cases h5 : a = base + 20#64
-    · simp [h0, h1, h2, h3, h4, h5]
+    · simp [h5]
     simp [h0, h1, h2, h3, h4]
   rw [hcr_eq]
   simp only [rlp_phase2_long_loop_body_post_unfold]
