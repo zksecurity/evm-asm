@@ -628,7 +628,14 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
     (`EvmAsm/Rv64/RLP/Phase2LongLoopThree.lean`): three-iteration
     closure (lenLen = 3). Composes body spec (iter 1) with two-byte
     closure (iters 2–3). All three bytes assumed in same doubleword.
-  - General `n`-iteration closure (induction over `cnt`) still pending.
+  - `rlp_phase2_long_loop_four_byte_spec`
+    (`EvmAsm/Rv64/RLP/Phase2LongLoopFour.lean`): four-iteration
+    closure (lenLen = 4). Composes body spec (iter 1) with three-byte
+    closure (iters 2–4). All four bytes assumed in same doubleword.
+  - General `n`-iteration closure (induction over `cnt`) still pending
+    (initial attempt hit Lean-level issues around
+    `BitVec.ofNat 64 n` arithmetic and associativity normalization;
+    unrolling is catching up in the meantime).
 - Phase 3: Single-item flat decode (byte strings only)
 - Phase 4: HINT_READ integration (load RLP input into memory buffer)
 - Phase 5: Recursive list decode (iterative with explicit stack)
