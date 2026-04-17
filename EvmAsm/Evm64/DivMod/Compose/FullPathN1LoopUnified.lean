@@ -23,13 +23,13 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 -- ============================================================================
--- Double-addback (_da) condition predicates for n=1 preloop+loop composition
+-- Double-addback () condition predicates for n=1 preloop+loop composition
 -- ============================================================================
 
 /-- j=3 trial condition for n=1 (double-addback): `bltu_3 = BitVec.ult u_hi_norm v_top_norm`
     where `shift = clz(b0)`, `u_hi_norm = a3 >>> anti_shift`,
     `v_top_norm = b0 <<< shift`. -/
-def isTrialN1_j3_da (bltu_3 : Bool) (a3 b0 : Word) : Prop :=
+def isTrialN1_j3 (bltu_3 : Bool) (a3 b0 : Word) : Prop :=
   let shift := (clzResult b0).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   bltu_3 = BitVec.ult
@@ -38,7 +38,7 @@ def isTrialN1_j3_da (bltu_3 : Bool) (a3 b0 : Word) : Prop :=
 
 /-- j=2 trial condition for n=1 (double-addback), dependent on j=3 path (bltu_3).
     Checks the BLTU condition after the j=3 iteration result. -/
-def isTrialN1_j2_da (bltu_3 bltu_2 : Bool) (a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+def isTrialN1_j2 (bltu_3 bltu_2 : Bool) (a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -48,11 +48,11 @@ def isTrialN1_j2_da (bltu_3 bltu_2 : Bool) (a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
   bltu_2 = BitVec.ult
-    (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+    (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
     v0'
 
 /-- j=1 trial condition for n=1 (double-addback), dependent on j=3 and j=2 paths. -/
-def isTrialN1_j1_da (bltu_3 bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+def isTrialN1_j1 (bltu_3 bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -62,13 +62,13 @@ def isTrialN1_j1_da (bltu_3 bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) 
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r3 := iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
+  let r3 := iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
   bltu_1 = BitVec.ult
-    (iterN1_da bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1).2.1
+    (iterN1 bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1).2.1
     v0'
 
 /-- j=0 trial condition for n=1 (double-addback), dependent on j=3, j=2, and j=1 paths. -/
-def isTrialN1_j0_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+def isTrialN1_j0 (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -79,10 +79,10 @@ def isTrialN1_j0_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r3 := iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
-  let r2 := iterN1_da bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+  let r3 := iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
+  let r2 := iterN1 bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
   bltu_0 = BitVec.ult
-    (iterN1_da bltu_1 v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.1
+    (iterN1 bltu_1 v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.1
     v0'
 
 -- ============================================================================
@@ -90,10 +90,10 @@ def isTrialN1_j0_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b
 -- ============================================================================
 
 /-- Unified postcondition for preloop+loop at n=1 (double-addback).
-    Wraps loopN1UnifiedPost_da (with normalized values computed from a[],b[])
+    Wraps loopN1UnifiedPost (with normalized values computed from a[],b[])
     plus frame atoms: a[0..3], spare q3 slot, spare u7 slot, shift. -/
 @[irreducible]
-def preloopN1UnifiedPost_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+def preloopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b0).1
@@ -106,7 +106,7 @@ def preloopN1UnifiedPost_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
   let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  loopN1UnifiedPost_da bltu_3 bltu_2 bltu_1 bltu_0 sp base
+  loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
     v0' v1' v2' v3' u3_s (a3 >>> (anti_shift.toNat % 64)) (0 : Word) (0 : Word) (0 : Word)
     u2_s u1_s u0_s
     ret_mem d_mem dlo_mem scratch_un0 **
@@ -120,7 +120,7 @@ def preloopN1UnifiedPost_da (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
 
 /-- Helper: instantiate unified n=1 loop (double-addback) with explicit normalized values.
     Separates the loop application from the composition for heartbeat budgeting. -/
-private theorem evm_div_n1_loop_unified_da_inst
+private theorem evm_div_n1_loop_unified_inst
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (shift anti_shift v0' v1' v2' v3' u0_s u1_s u2_s u3_s u4_s : Word)
     (v10_val v11_old j_mem : Word)
@@ -159,46 +159,46 @@ private theorem evm_div_n1_loop_unified_da_inst
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_3 : bltu_3 = BitVec.ult u4_s v0')
     (hbltu_2 : bltu_2 = BitVec.ult
-      (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1 v0')
+      (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1 v0')
     (hbltu_1 : bltu_1 = BitVec.ult
-      (iterN1_da bltu_2 v0' v1' v2' v3' u2_s
-        (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
-        (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
-        (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
-        (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
+      (iterN1 bltu_2 v0' v1' v2' v3' u2_s
+        (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
       v0')
     (hbltu_0 : bltu_0 = BitVec.ult
-      (iterN1_da bltu_1 v0' v1' v2' v3' u1_s
-        (iterN1_da bltu_2 v0' v1' v2' v3' u2_s
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
-        (iterN1_da bltu_2 v0' v1' v2' v3' u2_s
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
-        (iterN1_da bltu_2 v0' v1' v2' v3' u2_s
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.1
-        (iterN1_da bltu_2 v0' v1' v2' v3' u2_s
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
-          (iterN1_da bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.2.1).2.1
+      (iterN1 bltu_1 v0' v1' v2' v3' u1_s
+        (iterN1 bltu_2 v0' v1' v2' v3' u2_s
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2_s
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2_s
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2_s
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.2.1).2.1
       v0') :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN1PreWithScratch sp j_mem (1 : Word) shift u0_s v10_val v11_old anti_shift
         v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
         u2_s u1_s u0_s (0 : Word) (0 : Word) (0 : Word) (0 : Word)
         ret_mem d_mem dlo_mem scratch_un0)
-      (loopN1UnifiedPost_da bltu_3 bltu_2 bltu_1 bltu_0 sp base
+      (loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
         v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
         u2_s u1_s u0_s ret_mem d_mem dlo_mem scratch_un0) :=
-  divK_loop_n1_unified_da_divCode bltu_3 bltu_2 bltu_1 bltu_0
+  divK_loop_n1_unified_divCode bltu_3 bltu_2 bltu_1 bltu_0
     sp j_mem (1 : Word) shift u0_s v10_val v11_old anti_shift
     v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
     u2_s u1_s u0_s (0 : Word) (0 : Word) (0 : Word) (0 : Word)
@@ -221,7 +221,7 @@ set_option maxHeartbeats 12800000 in
     Covers all 16 path combinations.
     Precondition always includes scratch cells.
     Composes preloop (base→base+448) with unified loop (base+448→base+904). -/
-theorem evm_div_n1_preloop_loop_unified_da_spec
+theorem evm_div_n1_preloop_loop_unified_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
@@ -250,10 +250,10 @@ theorem evm_div_n1_preloop_loop_unified_da_spec
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_3 : isTrialN1_j3_da bltu_3 a3 b0)
-    (hbltu_2 : isTrialN1_j2_da bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
-    (hbltu_1 : isTrialN1_j1_da bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN1_j0_da bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
+    (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
+    (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 908) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b0).2 >>> (63 : Nat)) **
@@ -276,7 +276,7 @@ theorem evm_div_n1_preloop_loop_unified_da_spec
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (preloopN1UnifiedPost_da bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+      (preloopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
         ret_mem d_mem dlo_mem scratch_un0) := by
   -- 1. Pre-loop: base → base+448
   have hPre := evm_div_n1_to_loopSetup_spec sp base
@@ -294,7 +294,7 @@ theorem evm_div_n1_preloop_loop_unified_da_spec
      (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
   -- 2. Loop: base+448 → base+904 (unified da, with explicit normalized values)
-  have hLoop := evm_div_n1_loop_unified_da_inst bltu_3 bltu_2 bltu_1 bltu_0 sp base
+  have hLoop := evm_div_n1_loop_unified_inst bltu_3 bltu_2 bltu_1 bltu_0 sp base
     (clzResult b0).1 (signExtend12 (0 : BitVec 12) - (clzResult b0).1)
     (b0 <<< (((clzResult b0).1).toNat % 64))
     ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
@@ -349,7 +349,7 @@ theorem evm_div_n1_preloop_loop_unified_da_spec
       xperm_hyp hp) hPreF hLoopF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta preloopN1UnifiedPost_da; xperm_hyp hq)
+    (fun h hq => by delta preloopN1UnifiedPost; xperm_hyp hq)
     hFull
 
 end EvmAsm.Evm64

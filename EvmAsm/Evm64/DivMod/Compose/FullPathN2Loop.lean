@@ -125,11 +125,11 @@ theorem loopExitPostN2_j0_eq (sp q_f c3 un0_f un1_f un2_f un3_f u4_f
   rw [show (0 : Word) + signExtend12 4095 = signExtend12 4095 from BitVec.zero_add _]
 
 -- ============================================================================
--- Lift unified n=2 _da loop from sharedDivModCode to divCode
+-- Lift unified n=2  loop from sharedDivModCode to divCode
 -- ============================================================================
 
-/-- Lift the unified n=2 3-iteration _da loop spec from sharedDivModCode to divCode. -/
-theorem divK_loop_n2_unified_da_divCode (bltu_2 bltu_1 bltu_0 : Bool)
+/-- Lift the unified n=2 3-iteration  loop spec from sharedDivModCode to divCode. -/
+theorem divK_loop_n2_unified_divCode (bltu_2 bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
      u0_orig_1 u0_orig_0
@@ -165,21 +165,21 @@ theorem divK_loop_n2_unified_da_divCode (bltu_2 bltu_1 bltu_0 : Bool)
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_2 : bltu_2 = BitVec.ult u2 v1)
-    (hbltu_1 : bltu_1 = BitVec.ult (iterN2_da bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1 v1)
-    (hbltu_0 : bltu_0 = BitVec.ult (iterN2_da bltu_1 v0 v1 v2 v3 u0_orig_1
-      (iterN2_da bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
-      (iterN2_da bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
-      (iterN2_da bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-      (iterN2_da bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.1 v1) :
+    (hbltu_1 : bltu_1 = BitVec.ult (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1 v1)
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN2 bltu_1 v0 v1 v2 v3 u0_orig_1
+      (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+      (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+      (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+      (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.1 v1) :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN2PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
         u0_orig_1 u0_orig_0 q2_old q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
-      (loopN2UnifiedPost_da bltu_2 bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
+      (loopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
         u0_orig_1 u0_orig_0 ret_mem d_mem dlo_mem scratch_un0) :=
   cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
-    (divK_loop_n2_unified_da_spec bltu_2 bltu_1 bltu_0
+    (divK_loop_n2_unified_spec bltu_2 bltu_1 bltu_0
       sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig_1 u0_orig_0 q2_old q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base

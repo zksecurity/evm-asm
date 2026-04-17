@@ -119,19 +119,19 @@ theorem u_n1_j1_4072_eq_j0_4064 (sp : Word) :
   divmod_addr
 
 -- ============================================================================
--- Double-addback (_da) unified per-iteration specs
+-- Double-addback () unified per-iteration specs
 -- These use _beq specs in the addback branch and _skip specs in the skip branch,
--- producing loopIterPostN1Max_da / loopIterPostN1Call_da postconditions.
+-- producing loopIterPostN1Max / loopIterPostN1Call postconditions.
 -- ============================================================================
 
 -- ============================================================================
--- Unified per-iteration max-path _da specs
+-- Unified per-iteration max-path  specs
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=3 max-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_max_unified_j3_da_spec
+/-- Unified j=3 max-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_max_unified_j3_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (base : Word)
@@ -166,7 +166,7 @@ theorem divK_loop_body_n1_max_unified_j3_da_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (loopIterPostN1Max_da sp (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Max sp (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -180,7 +180,7 @@ theorem divK_loop_body_n1_max_unified_j3_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J3 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -192,13 +192,13 @@ theorem divK_loop_body_n1_max_unified_j3_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J3 hborrow)
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=2 max-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_max_unified_j2_da_spec
+/-- Unified j=2 max-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_max_unified_j2_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (base : Word)
@@ -233,7 +233,7 @@ theorem divK_loop_body_n1_max_unified_j2_da_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (loopIterPostN1Max_da sp (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Max sp (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -247,7 +247,7 @@ theorem divK_loop_body_n1_max_unified_j2_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J2 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -259,13 +259,13 @@ theorem divK_loop_body_n1_max_unified_j2_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J2 hborrow)
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=1 max-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_max_unified_j1_da_spec
+/-- Unified j=1 max-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_max_unified_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (base : Word)
@@ -300,7 +300,7 @@ theorem divK_loop_body_n1_max_unified_j1_da_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (loopIterPostN1Max_da sp (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Max sp (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -314,7 +314,7 @@ theorem divK_loop_body_n1_max_unified_j1_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J1 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -326,14 +326,14 @@ theorem divK_loop_body_n1_max_unified_j1_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J1 hborrow)
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=0 max-path _da spec: uses _beq spec for addback, _skip for skip.
+/-- Unified j=0 max-path  spec: uses _beq spec for addback, _skip for skip.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
-theorem divK_loop_body_n1_max_unified_j0_da_spec
+theorem divK_loop_body_n1_max_unified_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (base : Word)
@@ -368,7 +368,7 @@ theorem divK_loop_body_n1_max_unified_j0_da_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (loopIterPostN1Max_da sp (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Max sp (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -382,7 +382,7 @@ theorem divK_loop_body_n1_max_unified_j0_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J0 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -394,17 +394,17 @@ theorem divK_loop_body_n1_max_unified_j0_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Max_da_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J0 hborrow)
 
 -- ============================================================================
--- Unified per-iteration call-path _da specs
+-- Unified per-iteration call-path  specs
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=3 call-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_call_unified_j3_da_spec
+/-- Unified j=3 call-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_call_unified_j3_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -449,7 +449,7 @@ theorem divK_loop_body_n1_call_unified_j3_da_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopIterPostN1Call_da sp base (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Call sp base (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -464,7 +464,7 @@ theorem divK_loop_body_n1_call_unified_j3_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J3
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -476,13 +476,13 @@ theorem divK_loop_body_n1_call_unified_j3_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J3
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=2 call-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_call_unified_j2_da_spec
+/-- Unified j=2 call-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_call_unified_j2_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -527,7 +527,7 @@ theorem divK_loop_body_n1_call_unified_j2_da_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopIterPostN1Call_da sp base (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Call sp base (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -542,7 +542,7 @@ theorem divK_loop_body_n1_call_unified_j2_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J2
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -554,13 +554,13 @@ theorem divK_loop_body_n1_call_unified_j2_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J2
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=1 call-path _da spec: uses _beq spec for addback, _skip for skip. -/
-theorem divK_loop_body_n1_call_unified_j1_da_spec
+/-- Unified j=1 call-path  spec: uses _beq spec for addback, _skip for skip. -/
+theorem divK_loop_body_n1_call_unified_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -605,7 +605,7 @@ theorem divK_loop_body_n1_call_unified_j1_da_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopIterPostN1Call_da sp base (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Call sp base (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -620,7 +620,7 @@ theorem divK_loop_body_n1_call_unified_j1_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J1
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -632,14 +632,14 @@ theorem divK_loop_body_n1_call_unified_j1_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J1
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified j=0 call-path _da spec: uses _beq spec for addback, _skip for skip.
+/-- Unified j=0 call-path  spec: uses _beq spec for addback, _skip for skip.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
-theorem divK_loop_body_n1_call_unified_j0_da_spec
+theorem divK_loop_body_n1_call_unified_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -684,7 +684,7 @@ theorem divK_loop_body_n1_call_unified_j0_da_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopIterPostN1Call_da sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopIterPostN1Call sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
   by_cases hb : BitVec.ult u_top (mulsubN4_c3 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)
   · -- addback path
@@ -699,7 +699,7 @@ theorem divK_loop_body_n1_call_unified_j0_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J0
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -711,7 +711,7 @@ theorem divK_loop_body_n1_call_unified_j0_da_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        rw [← loopIterPostN1Call_da_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J0
 
 end EvmAsm.Evm64

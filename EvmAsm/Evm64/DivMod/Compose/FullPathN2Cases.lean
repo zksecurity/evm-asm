@@ -24,13 +24,13 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 -- ============================================================================
--- Double-addback variant: Case (F,F,T) — r2=Max_da, r1=Max_da, r0=Call_da
+-- Double-addback variant: Case (F,F,T) — r2=Max, r1=Max, r0=Call
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (F,F,T).
-    Same as `fullDivN2_FFT_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_FFT_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_FFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_FFT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -42,9 +42,9 @@ def fullDivN2_FFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -63,7 +63,7 @@ def fullDivN2_FFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_FFT_da_spec (sp base : Word)
+theorem evm_div_n2_full_FFT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -91,9 +91,9 @@ theorem evm_div_n2_full_FFT_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da false a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da false false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da false false true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 false false a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 false false true a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -116,7 +116,7 @@ theorem evm_div_n2_full_FFT_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_FFT_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_FFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -128,12 +128,12 @@ theorem evm_div_n2_full_FFT_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec false false true sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec false false true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -164,26 +164,26 @@ theorem evm_div_n2_full_FFT_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_false, ite_false] at hp
-      delta loopN2Iter10Post_da loopN2MaxCallPost_da loopIterPostN2Call_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_false, ite_false] at hp
+      delta loopN2Iter10Post loopN2MaxCallPost loopIterPostN2Call at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_FFT_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_FFT_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (F,T,F) — r2=Max_da, r1=Call_da, r0=Max_da
+-- Double-addback variant: Case (F,T,F) — r2=Max, r1=Call, r0=Max
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (F,T,F).
-    Same as `fullDivN2_FTF_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_FTF_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_FTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_FTF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -195,9 +195,9 @@ def fullDivN2_FTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -216,7 +216,7 @@ def fullDivN2_FTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_FTF_da_spec (sp base : Word)
+theorem evm_div_n2_full_FTF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -244,9 +244,9 @@ theorem evm_div_n2_full_FTF_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da false a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da false true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da false true false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 false true a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 false true false a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -269,7 +269,7 @@ theorem evm_div_n2_full_FTF_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_FTF_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_FTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -281,12 +281,12 @@ theorem evm_div_n2_full_FTF_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec false true false sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec false true false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -317,26 +317,26 @@ theorem evm_div_n2_full_FTF_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_false, ite_false] at hp
-      delta loopN2Iter10Post_da loopN2CallMaxPost_da loopIterPostN2Max_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_false, ite_false] at hp
+      delta loopN2Iter10Post loopN2CallMaxPost loopIterPostN2Max at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_FTF_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_FTF_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (F,T,T) — r2=Max_da, r1=Call_da, r0=Call_da
+-- Double-addback variant: Case (F,T,T) — r2=Max, r1=Call, r0=Call
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (F,T,T).
-    Same as `fullDivN2_FTT_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_FTT_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_FTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_FTT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -348,9 +348,9 @@ def fullDivN2_FTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -369,7 +369,7 @@ def fullDivN2_FTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_FTT_da_spec (sp base : Word)
+theorem evm_div_n2_full_FTT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -397,9 +397,9 @@ theorem evm_div_n2_full_FTT_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da false a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da false true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da false true true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 false true a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 false true true a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -422,7 +422,7 @@ theorem evm_div_n2_full_FTT_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_FTT_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_FTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -434,12 +434,12 @@ theorem evm_div_n2_full_FTT_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Max_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Max v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec false true true sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec false true true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -470,26 +470,26 @@ theorem evm_div_n2_full_FTT_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_false, ite_false] at hp
-      delta loopN2Iter10Post_da loopN2CallCallPost_da loopIterPostN2Call_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_false, ite_false] at hp
+      delta loopN2Iter10Post loopN2CallCallPost loopIterPostN2Call at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_FTT_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_FTT_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (T,F,F) — r2=Call_da, r1=Max_da, r0=Max_da
+-- Double-addback variant: Case (T,F,F) — r2=Call, r1=Max, r0=Max
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (T,F,F).
-    Same as `fullDivN2_TFF_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_TFF_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_TFF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_TFF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -501,9 +501,9 @@ def fullDivN2_TFF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -522,7 +522,7 @@ def fullDivN2_TFF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_TFF_da_spec (sp base : Word)
+theorem evm_div_n2_full_TFF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -550,9 +550,9 @@ theorem evm_div_n2_full_TFF_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da true a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da true false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da true false false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 true false a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 true false false a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -575,7 +575,7 @@ theorem evm_div_n2_full_TFF_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_TFF_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_TFF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -587,12 +587,12 @@ theorem evm_div_n2_full_TFF_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec true false false sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec true false false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -623,26 +623,26 @@ theorem evm_div_n2_full_TFF_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_true, ite_true] at hp
-      delta loopN2Iter10Post_da loopN2MaxPost_da loopIterPostN2Max_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_true, ite_true] at hp
+      delta loopN2Iter10Post loopN2MaxPost loopIterPostN2Max at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_TFF_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_TFF_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (T,F,T) — r2=Call_da, r1=Max_da, r0=Call_da
+-- Double-addback variant: Case (T,F,T) — r2=Call, r1=Max, r0=Call
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (T,F,T).
-    Same as `fullDivN2_TFT_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_TFT_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_TFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_TFT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -654,9 +654,9 @@ def fullDivN2_TFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -675,7 +675,7 @@ def fullDivN2_TFT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_TFT_da_spec (sp base : Word)
+theorem evm_div_n2_full_TFT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -703,9 +703,9 @@ theorem evm_div_n2_full_TFT_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da true a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da true false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da true false true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 true false a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 true false true a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -728,7 +728,7 @@ theorem evm_div_n2_full_TFT_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_TFT_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_TFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -740,12 +740,12 @@ theorem evm_div_n2_full_TFT_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Max_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec true false true sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec true false true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -776,26 +776,26 @@ theorem evm_div_n2_full_TFT_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_true, ite_true] at hp
-      delta loopN2Iter10Post_da loopN2MaxCallPost_da loopIterPostN2Call_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_true, ite_true] at hp
+      delta loopN2Iter10Post loopN2MaxCallPost loopIterPostN2Call at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_TFT_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_TFT_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (T,T,F) — r2=Call_da, r1=Call_da, r0=Max_da
+-- Double-addback variant: Case (T,T,F) — r2=Call, r1=Call, r0=Max
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (T,T,F).
-    Same as `fullDivN2_TTF_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_TTF_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_TTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_TTF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -807,9 +807,9 @@ def fullDivN2_TTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -828,7 +828,7 @@ def fullDivN2_TTF_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_TTF_da_spec (sp base : Word)
+theorem evm_div_n2_full_TTF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -856,9 +856,9 @@ theorem evm_div_n2_full_TTF_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da true a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da true true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da true true false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 true true a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 true true false a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -881,7 +881,7 @@ theorem evm_div_n2_full_TTF_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_TTF_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_TTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -893,12 +893,12 @@ theorem evm_div_n2_full_TTF_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Max_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec true true false sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec true true false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -929,26 +929,26 @@ theorem evm_div_n2_full_TTF_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_true, ite_true] at hp
-      delta loopN2Iter10Post_da loopN2CallMaxPost_da loopIterPostN2Max_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_true, ite_true] at hp
+      delta loopN2Iter10Post loopN2CallMaxPost loopIterPostN2Max at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_TTF_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_TTF_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 -- ============================================================================
--- Double-addback variant: Case (T,T,T) — r2=Call_da, r1=Call_da, r0=Call_da
+-- Double-addback variant: Case (T,T,T) — r2=Call, r1=Call, r0=Call
 -- ============================================================================
 
 /-- Full path postcondition for n=2 DIV with double addback, case (T,T,T).
-    Same as `fullDivN2_TTT_Post` but uses `iterN2Max_da`/`iterN2Call_da`. -/
+    Same as `fullDivN2_TTT_Post` but uses `iterN2Max`/`iterN2Call`. -/
 @[irreducible]
-def fullDivN2_TTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+def fullDivN2_TTT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -960,9 +960,9 @@ def fullDivN2_TTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 r0.1 r1.1 r2.1 (0 : Word) **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -981,7 +981,7 @@ def fullDivN2_TTT_Post_da (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-theorem evm_div_n2_full_TTT_da_spec (sp base : Word)
+theorem evm_div_n2_full_TTT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -1009,9 +1009,9 @@ theorem evm_div_n2_full_TTT_da_spec (sp base : Word)
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da true a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da true true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da true true true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 true true a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 true true true a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -1034,7 +1034,7 @@ theorem evm_div_n2_full_TTT_da_spec (sp base : Word)
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (fullDivN2_TTT_Post_da sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
+      (fullDivN2_TTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -1046,12 +1046,12 @@ theorem evm_div_n2_full_TTT_da_spec (sp base : Word)
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2Call_da v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-  let r1 := iterN2Call_da v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
-  let r0 := iterN2Call_da v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let r2 := iterN2Call v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+  let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
     u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
-  have hA := evm_div_n2_preloop_loop_unified_da_spec true true true sp base
+  have hA := evm_div_n2_preloop_loop_unified_spec true true true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
     ret_mem d_mem dlo_mem scratch_un0
@@ -1082,16 +1082,16 @@ theorem evm_div_n2_full_TTT_da_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
-      delta preloopN2UnifiedPost_da loopN2UnifiedPost_da at hp
-      simp (config := { decide := true }) only [iterN2_da_true, ite_true] at hp
-      delta loopN2Iter10Post_da loopN2CallCallPost_da loopIterPostN2Call_da at hp
+      delta preloopN2UnifiedPost loopN2UnifiedPost at hp
+      simp (config := { decide := true }) only [iterN2_true, ite_true] at hp
+      delta loopN2Iter10Post loopN2CallCallPost loopIterPostN2Call at hp
       simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta fullDivN2_TTT_Post_da; rw [sepConj_assoc'] at hq; xperm_hyp hq)
+    (fun h hq => by delta fullDivN2_TTT_Post; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
 
 end EvmAsm.Evm64

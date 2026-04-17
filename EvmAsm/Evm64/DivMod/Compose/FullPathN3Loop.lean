@@ -77,11 +77,11 @@ theorem n3_ulo_0_addr (sp : Word) :
   divmod_addr
 
 -- ============================================================================
--- Lift unified n=3 _da loop from sharedDivModCode to divCode
+-- Lift unified n=3  loop from sharedDivModCode to divCode
 -- ============================================================================
 
-/-- Lift the unified n=3 2-iteration _da loop spec from sharedDivModCode to divCode. -/
-theorem divK_loop_n3_unified_da_divCode (bltu_1 bltu_0 : Bool)
+/-- Lift the unified n=3 2-iteration  loop spec from sharedDivModCode to divCode. -/
+theorem divK_loop_n3_unified_divCode (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -111,15 +111,15 @@ theorem divK_loop_n3_unified_da_divCode (bltu_1 bltu_0 : Bool)
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_1 : bltu_1 = BitVec.ult u3 v2)
-    (hbltu_0 : bltu_0 = BitVec.ult (iterN3_da bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN3 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
-      (loopN3UnifiedPost_da bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
+      (loopN3UnifiedPost bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
         ret_mem d_mem dlo_mem scratch_un0) :=
   cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
-    (divK_loop_n3_unified_da_spec bltu_1 bltu_0
+    (divK_loop_n3_unified_spec bltu_1 bltu_0
       sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base

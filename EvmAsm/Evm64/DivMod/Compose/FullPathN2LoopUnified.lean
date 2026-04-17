@@ -23,12 +23,12 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 -- ============================================================================
--- Double-addback (_da) condition predicates for n=2 preloop+loop composition
+-- Double-addback () condition predicates for n=2 preloop+loop composition
 -- ============================================================================
 
 /-- j=2 trial condition for n=2 (double-addback): same as `isTrialN2_j2`
     since the first iteration doesn't use `iterN2`. -/
-def isTrialN2_j2_da (bltu_2 : Bool) (a3 b0 b1 : Word) : Prop :=
+def isTrialN2_j2 (bltu_2 : Bool) (a3 b0 b1 : Word) : Prop :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   bltu_2 = BitVec.ult
@@ -36,8 +36,8 @@ def isTrialN2_j2_da (bltu_2 : Bool) (a3 b0 b1 : Word) : Prop :=
     ((b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64)))
 
 /-- j=1 trial condition for n=2 (double-addback), dependent on j=2 path (bltu_2).
-    Checks the BLTU condition after the j=2 iteration result using `iterN2_da`. -/
-def isTrialN2_j1_da (bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+    Checks the BLTU condition after the j=2 iteration result using `iterN2`. -/
+def isTrialN2_j1 (bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -48,11 +48,11 @@ def isTrialN2_j1_da (bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop 
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
   bltu_1 = BitVec.ult
-    (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1
+    (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1
     v1'
 
 /-- j=0 trial condition for n=2 (double-addback), dependent on j=2 and j=1 paths. -/
-def isTrialN2_j0_da (bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+def isTrialN2_j0 (bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -63,9 +63,9 @@ def isTrialN2_j0_da (bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Wor
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
   let u4_s := a3 >>> (anti_shift.toNat % 64)
-  let r2 := iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
+  let r2 := iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
   bltu_0 = BitVec.ult
-    (iterN2_da bltu_1 v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.2.1
+    (iterN2 bltu_1 v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.2.1
     v1'
 
 -- ============================================================================
@@ -73,10 +73,10 @@ def isTrialN2_j0_da (bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Wor
 -- ============================================================================
 
 /-- Unified postcondition for preloop+loop at n=2 (double-addback).
-    Wraps loopN2UnifiedPost_da (with normalized values computed from a[],b[])
+    Wraps loopN2UnifiedPost (with normalized values computed from a[],b[])
     plus frame atoms: a[0..3], spare q3 slot, spare u7 slot, shift. -/
 @[irreducible]
-def preloopN2UnifiedPost_da (bltu_2 bltu_1 bltu_0 : Bool)
+def preloopN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b1).1
@@ -89,7 +89,7 @@ def preloopN2UnifiedPost_da (bltu_2 bltu_1 bltu_0 : Bool)
   let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
   let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
   let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  loopN2UnifiedPost_da bltu_2 bltu_1 bltu_0 sp base
+  loopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
     v0' v1' v2' v3' u2_s u3_s (a3 >>> (anti_shift.toNat % 64)) (0 : Word) (0 : Word)
     u1_s u0_s
     ret_mem d_mem dlo_mem scratch_un0 **
@@ -105,7 +105,7 @@ def preloopN2UnifiedPost_da (bltu_2 bltu_1 bltu_0 : Bool)
 
 /-- Helper: instantiate unified n=2 loop (double-addback) with explicit normalized values.
     Separates the loop application from the composition for heartbeat budgeting. -/
-private theorem evm_div_n2_loop_unified_da_inst
+private theorem evm_div_n2_loop_unified_inst
     (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (shift anti_shift v0' v1' v2' v3' u0_s u1_s u2_s u3_s u4_s : Word)
     (v10_val v11_old j_mem : Word)
@@ -140,23 +140,23 @@ private theorem evm_div_n2_loop_unified_da_inst
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_2 : bltu_2 = BitVec.ult u4_s v1')
     (hbltu_1 : bltu_1 = BitVec.ult
-      (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1 v1')
+      (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1 v1')
     (hbltu_0 : bltu_0 = BitVec.ult
-      (iterN2_da bltu_1 v0' v1' v2' v3' u1_s
-        (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.1
-        (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1
-        (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.2.1
-        (iterN2_da bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
+      (iterN2 bltu_1 v0' v1' v2' v3' u1_s
+        (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.1
+        (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.1
+        (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.2.1
+        (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
       v1') :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN2PreWithScratch sp j_mem (2 : Word) shift u0_s v10_val v11_old anti_shift
         v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
         u1_s u0_s (0 : Word) (0 : Word) (0 : Word)
         ret_mem d_mem dlo_mem scratch_un0)
-      (loopN2UnifiedPost_da bltu_2 bltu_1 bltu_0 sp base
+      (loopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
         v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
         u1_s u0_s ret_mem d_mem dlo_mem scratch_un0) :=
-  divK_loop_n2_unified_da_divCode bltu_2 bltu_1 bltu_0
+  divK_loop_n2_unified_divCode bltu_2 bltu_1 bltu_0
     sp j_mem (2 : Word) shift u0_s v10_val v11_old anti_shift
     v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
     u1_s u0_s (0 : Word) (0 : Word) (0 : Word)
@@ -178,7 +178,7 @@ set_option maxHeartbeats 12800000 in
     Covers all 8 path combinations.
     Precondition always includes scratch cells.
     Composes preloop (base→base+448) with unified loop (base+448→base+904). -/
-theorem evm_div_n2_preloop_loop_unified_da_spec
+theorem evm_div_n2_preloop_loop_unified_spec
     (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
@@ -207,9 +207,9 @@ theorem evm_div_n2_preloop_loop_unified_da_spec
     (hv_dlo : isValidDwordAccess (sp + signExtend12 3952) = true)
     (hv_scratch_un0 : isValidDwordAccess (sp + signExtend12 3944) = true)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu_2 : isTrialN2_j2_da bltu_2 a3 b0 b1)
-    (hbltu_1 : isTrialN2_j1_da bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0_da bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_2 : isTrialN2_j2 bltu_2 a3 b0 b1)
+    (hbltu_1 : isTrialN2_j1 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN2_j0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
     cpsTriple base (base + 908) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -232,7 +232,7 @@ theorem evm_div_n2_preloop_loop_unified_da_spec
        ((sp + signExtend12 3960) ↦ₘ d_mem) **
        ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
-      (preloopN2UnifiedPost_da bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+      (preloopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
         ret_mem d_mem dlo_mem scratch_un0) := by
   -- 1. Pre-loop: base → base+448
   have hPre := evm_div_n2_to_loopSetup_spec sp base
@@ -250,7 +250,7 @@ theorem evm_div_n2_preloop_loop_unified_da_spec
      (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
   -- 2. Loop: base+448 → base+904 (unified da, with explicit normalized values)
-  have hLoop := evm_div_n2_loop_unified_da_inst bltu_2 bltu_1 bltu_0 sp base
+  have hLoop := evm_div_n2_loop_unified_inst bltu_2 bltu_1 bltu_0 sp base
     (clzResult b1).1 (signExtend12 (0 : BitVec 12) - (clzResult b1).1)
     (b0 <<< (((clzResult b1).1).toNat % 64))
     ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
@@ -304,7 +304,7 @@ theorem evm_div_n2_preloop_loop_unified_da_spec
       xperm_hyp hp) hPreF hLoopF
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta preloopN2UnifiedPost_da; xperm_hyp hq)
+    (fun h hq => by delta preloopN2UnifiedPost; xperm_hyp hq)
     hFull
 
 end EvmAsm.Evm64

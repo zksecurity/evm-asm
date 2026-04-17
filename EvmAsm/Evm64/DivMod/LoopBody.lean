@@ -970,16 +970,16 @@ private theorem lb_lc_taken (base : Word) :
   rw [this]; bv_addr
 private theorem lb_lc_exit (base : Word) : (base + 900 : Word) + 8 = base + 908 := by bv_addr
 
-private theorem lb_beq_da_ntaken (base : Word) : (base + 880 : Word) + 4 = base + 884 := by bv_addr
+private theorem lb_beq_back_ntaken (base : Word) : (base + 880 : Word) + 4 = base + 884 := by bv_addr
 
 /-- BEQ passthrough at [108]: when carry (x7) ≠ 0, BEQ falls through from base+880 to base+884.
     Used to bridge addback exit (base+880) to store_loop entry (base+884). -/
-theorem divK_beq_da_passthrough (carry : Word) (base : Word) (hne : carry ≠ 0) :
+theorem divK_beq_passthrough (carry : Word) (base : Word) (hne : carry ≠ 0) :
     cpsTriple (base + 880) (base + 884) (sharedDivModCode base)
       ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word)))
       ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word))) := by
   have hbeq := beq_spec_gen .x7 .x0 (8044 : BitVec 13) carry 0 (base + 880)
-  rw [lb_beq_da_ntaken] at hbeq
+  rw [lb_beq_back_ntaken] at hbeq
   have hbeq_ext := cpsBranch_extend_code (hmono :=
     lb_sub base 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
   have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ hbeq_ext (fun hp hQt => by
@@ -992,7 +992,7 @@ theorem divK_beq_da_passthrough (carry : Word) (base : Word) (hne : carry ≠ 0)
     ntaken
 
 -- Address normalization for BEQ taken (double-addback backward branch)
-private theorem lb_beq_da_taken (base : Word) :
+private theorem lb_beq_back_taken (base : Word) :
     (base + 880 : Word) + signExtend13 (8044 : BitVec 13) = base + 732 := by
   rw [show signExtend13 (8044 : BitVec 13) = (18446744073709551468 : Word) from by decide]
   bv_addr
@@ -1057,7 +1057,7 @@ theorem divK_double_addback_beq_spec
         upc2' ac1_2' aun2' ac2_2' aco2' upc3' ac1_3' aun3' ac2_3' aco3' aun4' q_hat''
   -- 1. BEQ at [108] taken (carry = 0, x7 = 0 = x0) → base+732
   have hbeq := beq_spec_gen .x7 .x0 (8044 : BitVec 13) (0 : Word) 0 (base + 880)
-  rw [lb_beq_da_taken, lb_beq_da_ntaken] at hbeq
+  rw [lb_beq_back_taken, lb_beq_back_ntaken] at hbeq
   have hbeq_ext := cpsBranch_extend_code (hmono :=
     lb_sub base 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
   -- Eliminate not-taken path (⌜0 ≠ 0⌝ is absurd)
@@ -1080,7 +1080,7 @@ theorem divK_double_addback_beq_spec
     unfold addbackN4_carry at hcarry2_nz
     simp only [] at hcarry2_nz
     exact hcarry2_nz
-  have BPT := divK_beq_da_passthrough aco3' base haco3_nz
+  have BPT := divK_beq_passthrough aco3' base haco3_nz
   -- 4. Compose: BEQ taken (→732) + addback2 (732→880) + BEQ ntaken (880→884)
   -- Frame BEQ with addback atoms
   have beq_f := cpsTriple_frame_left _ _ _ _ _
@@ -1787,7 +1787,7 @@ theorem divK_mulsub_correction_addback_spec
     hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4
   dsimp only [] at CA
   -- 3. BEQ passthrough (base+880 → base+884) with carry ≠ 0
-  have BEQ := divK_beq_da_passthrough aco3 base hcarry
+  have BEQ := divK_beq_passthrough aco3 base hcarry
   -- 4. Compose mulsub + correction_addback (→880)
   seqFrame MS CA
   -- 5. Frame BEQ with remaining atoms and compose (880→884)

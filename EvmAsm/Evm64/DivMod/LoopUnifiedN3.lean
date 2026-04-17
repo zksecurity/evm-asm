@@ -21,9 +21,9 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 -- ============================================================================
--- Double-addback (_da) unified two-iteration composition
--- Same pattern as divK_loop_n3_unified_spec but with _da postconditions.
--- Uses iterN3_da for the j=0 branch condition.
+-- Double-addback () unified two-iteration composition
+-- Same pattern as divK_loop_n3_unified_spec but with  postconditions.
+-- Uses iterN3 for the j=0 branch condition.
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
@@ -31,8 +31,8 @@ set_option maxHeartbeats 12800000 in
 /-- Unified n=3 two-iteration loop composition with double addback,
     parameterized by `(bltu_1 bltu_0 : Bool)`.
     Covers all 4 path combinations (max×max, call×call, max×call, call×max).
-    Postcondition is loopN3UnifiedPost_da which uses iterN*_da values. -/
-theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
+    Postcondition is loopN3UnifiedPost which uses iterN* values. -/
+theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
@@ -61,22 +61,22 @@ theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
     (hv_ulo_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 + (3 : Word)) <<< (3 : BitVec 6).toNat) + 8) = true)
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
-    -- Unified branch conditions (using iterN3_da for j=0)
+    -- Unified branch conditions (using iterN3 for j=0)
     (hbltu_1 : bltu_1 = BitVec.ult u3 v2)
-    (hbltu_0 : bltu_0 = BitVec.ult (iterN3_da bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN3 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
-      (loopN3UnifiedPost_da bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
+      (loopN3UnifiedPost bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
         ret_mem d_mem dlo_mem scratch_un0) := by
-  cases bltu_1 <;> cases bltu_0 <;> simp only [iterN3_da_true, iterN3_da_false] at hbltu_0
+  cases bltu_1 <;> cases bltu_0 <;> simp only [iterN3_true, iterN3_false] at hbltu_0
   · -- (false, false) = max×max
     have hbltu_1' : ¬BitVec.ult u3 v2 := by
       rw [show BitVec.ult u3 v2 = false from hbltu_1.symm]; decide
-    have hbltu_0' : ¬BitVec.ult (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 := by
+    have hbltu_0' : ¬BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 := by
       rw [show BitVec.ult _ v2 = false from hbltu_0.symm]; decide
-    have hMM := divK_loop_n3_max_max_da_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have hMM := divK_loop_n3_max_max_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_v1 hv_v2 hv_v3
       hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
@@ -90,14 +90,14 @@ theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
       (by pcFree) hMM
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by delta loopN3PreWithScratch at hp; xperm_hyp hp)
-      (fun h hp => by delta loopN3UnifiedPost_da; xperm_hyp hp)
+      (fun h hp => by delta loopN3UnifiedPost; xperm_hyp hp)
       hMMF
   · -- (false, true) = max×call
     have hbltu_1' : ¬BitVec.ult u3 v2 := by
       rw [show BitVec.ult u3 v2 = false from hbltu_1.symm]; decide
-    have hbltu_0' : BitVec.ult (iterN3Max_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 :=
+    have hbltu_0' : BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 :=
       hbltu_0.symm ▸ rfl
-    have hMC := divK_loop_n3_max_call_da_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have hMC := divK_loop_n3_max_call_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop
@@ -108,13 +108,13 @@ theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
       hbltu_1' hbltu_0'
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
-      (fun h hp => by delta loopN3UnifiedPost_da; exact hp)
+      (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hMC
   · -- (true, false) = call×max
     have hbltu_1' : BitVec.ult u3 v2 := hbltu_1.symm ▸ rfl
-    have hbltu_0' : ¬BitVec.ult (iterN3Call_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 := by
+    have hbltu_0' : ¬BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 := by
       rw [show BitVec.ult _ v2 = false from hbltu_0.symm]; decide
-    have hCM := divK_loop_n3_call_max_da_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have hCM := divK_loop_n3_call_max_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop
@@ -125,13 +125,13 @@ theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
       hbltu_1' hbltu_0'
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
-      (fun h hp => by delta loopN3UnifiedPost_da; exact hp)
+      (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hCM
   · -- (true, true) = call×call
     have hbltu_1' : BitVec.ult u3 v2 := hbltu_1.symm ▸ rfl
-    have hbltu_0' : BitVec.ult (iterN3Call_da v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 :=
+    have hbltu_0' : BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2 :=
       hbltu_0.symm ▸ rfl
-    have hCC := divK_loop_n3_call_call_da_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have hCC := divK_loop_n3_call_call_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop
@@ -142,7 +142,7 @@ theorem divK_loop_n3_unified_da_spec (bltu_1 bltu_0 : Bool)
       hbltu_1' hbltu_0'
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
-      (fun h hp => by delta loopN3UnifiedPost_da; exact hp)
+      (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hCC
 
 end EvmAsm.Evm64
