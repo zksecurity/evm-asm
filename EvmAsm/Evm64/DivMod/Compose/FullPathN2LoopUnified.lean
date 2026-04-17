@@ -122,7 +122,7 @@ private theorem evm_div_n2_loop_unified_inst
         (iterN2 bltu_2 v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
       v1')
     (hcarry2 : Carry2NzAll v0' v1' v2' v3') :
-    cpsTriple (base + 448) (base + 908) (divCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       (loopN2PreWithScratch sp j_mem (2 : Word) shift u0_s v10_val v11_old anti_shift
         v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
         u1_s u0_s (0 : Word) (0 : Word) (0 : Word)
@@ -165,7 +165,7 @@ theorem evm_div_n2_preloop_loop_unified_spec
       ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
       ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
       ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
-    cpsTriple base (base + 908) (divCode base)
+    cpsTriple base (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **

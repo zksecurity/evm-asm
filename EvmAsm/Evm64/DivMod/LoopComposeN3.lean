@@ -66,7 +66,7 @@ theorem divK_loop_n3_max_skip_skip_spec
     -- Branch conditions (j=0, depend on j=1 mulsub output)
     (hbltu_0 : isMaxBltuN3After_j1_skip v0 v1 v2 v3 u0 u1 u2 u3)
     (hborrow_0 : isSkipBorrowN3After_j1_skip v0 v1 v2 v3 u0 u1 u2 u3 u0_orig) :
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old)
       (loopN3MaxSkipSkipPost sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
@@ -133,7 +133,7 @@ theorem divK_loop_body_n3_max_unified_j1_spec
     (hcarry2_nz : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -184,7 +184,7 @@ theorem divK_loop_body_n3_max_unified_j0_spec
     (hcarry2_nz : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -237,7 +237,7 @@ theorem divK_loop_body_n3_call_unified_j1_spec
     (hcarry2_nz : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -295,7 +295,7 @@ theorem divK_loop_body_n3_call_unified_j0_spec
     (hcarry2_nz : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -357,7 +357,7 @@ theorem divK_loop_n3_max_max_spec
     (hbltu_1 : ¬BitVec.ult u3 v2)
     (hbltu_0 : ¬BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
     (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old)
       (loopN3MaxPost sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
@@ -439,7 +439,7 @@ theorem divK_loop_n3_call_call_spec
     (hbltu_1 : BitVec.ult u3 v2)
     (hbltu_0 : BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
     (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
@@ -526,7 +526,7 @@ theorem divK_loop_n3_max_call_spec
     (hbltu_1 : ¬BitVec.ult u3 v2)
     (hbltu_0 : BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
     (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
@@ -614,7 +614,7 @@ theorem divK_loop_n3_call_max_spec
     (hbltu_1 : BitVec.ult u3 v2)
     (hbltu_0 : ¬BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
     (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)

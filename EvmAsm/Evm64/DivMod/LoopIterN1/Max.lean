@@ -28,7 +28,7 @@ theorem divK_loop_body_n1_max_skip_j0_spec
     let q_hat : Word := signExtend12 4095
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -130,7 +130,7 @@ theorem divK_loop_body_n1_max_skip_j3_spec
     let q_hat : Word := signExtend12 4095
     let q_addr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (3 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -218,7 +218,7 @@ theorem divK_loop_body_n1_max_skip_j1_spec
     let q_hat : Word := signExtend12 4095
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -306,7 +306,7 @@ theorem divK_loop_body_n1_max_skip_j2_spec
     let q_hat : Word := signExtend12 4095
     let q_addr := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (2 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **

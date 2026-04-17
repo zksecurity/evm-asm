@@ -22,7 +22,7 @@ open EvmAsm.Rv64
 -- Master subsumption: ofProg (base+1072) divK_div128 ⊆ sharedDivModCode base
 -- Block 12 in sharedDivModCode's unionAll; skip blocks 0-11.
 private theorem divK_div128_ofProg_sub_sharedCode (base : Word) :
-    ∀ a i, (CodeReq.ofProg (base + 1072) divK_div128) a = some i →
+    ∀ a i, (CodeReq.ofProg (base + div128Off) divK_div128) a = some i →
       (sharedDivModCode base) a = some i := by
   unfold sharedDivModCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
@@ -44,23 +44,23 @@ private theorem CodeReq_union_sub {cr1 cr2 target : CodeReq}
 -- Used to prove each singleton in a block's cr is subsumed by sharedDivModCode.
 private theorem d128_sub (base : Word) (k : Nat) (addr : Word) (instr : Instr)
     (hk : k < divK_div128.length)
-    (h_addr : addr = (base + 1072) + BitVec.ofNat 64 (4 * k))
+    (h_addr : addr = (base + div128Off) + BitVec.ofNat 64 (4 * k))
     (h_instr : divK_div128.get ⟨k, hk⟩ = instr) :
     ∀ a i, CodeReq.singleton addr instr a = some i →
       (sharedDivModCode base) a = some i := by
   subst h_addr; subst h_instr
   exact fun a i h => divK_div128_ofProg_sub_sharedCode base a i
     (CodeReq.singleton_mono
-      (CodeReq.ofProg_lookup (base + 1072) divK_div128 k hk (by decide)) a i h)
+      (CodeReq.ofProg_lookup (base + div128Off) divK_div128 k hk (by decide)) a i h)
 
 -- Abbreviation for repeated `by decide` / `by bv_addr` calls
 -- Each block's subsumption uses: CodeReq_union_sub (d128_sub ...) (CodeReq_union_sub ...)
 
--- Address normalization: block entry offsets relative to (base + 1072)
-private theorem d128_off_40 (base : Word) : (base + 1072 : Word) + 40 = base + 1112 := by bv_addr
-private theorem d128_off_100 (base : Word) : (base + 1072 : Word) + 100 = base + 1172 := by bv_addr
-private theorem d128_off_120 (base : Word) : (base + 1072 : Word) + 120 = base + 1192 := by bv_addr
-private theorem d128_off_180 (base : Word) : (base + 1072 : Word) + 180 = base + 1252 := by bv_addr
+-- Address normalization: block entry offsets relative to (base + div128Off)
+private theorem d128_off_40 (base : Word) : (base + div128Off : Word) + 40 = base + 1112 := by bv_addr
+private theorem d128_off_100 (base : Word) : (base + div128Off : Word) + 100 = base + 1172 := by bv_addr
+private theorem d128_off_120 (base : Word) : (base + div128Off : Word) + 120 = base + 1192 := by bv_addr
+private theorem d128_off_180 (base : Word) : (base + div128Off : Word) + 180 = base + 1252 := by bv_addr
 
 -- ============================================================================
 -- div128_spec: compose 5 block specs into single subroutine theorem.
@@ -101,7 +101,7 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
     let q0' := if BitVec.ult rhat2_un0 q0_dlo then q0c + signExtend12 4095 else q0c
     -- End: combine q1' and q0'
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
-    cpsTriple (base + 1072) ret_addr (sharedDivModCode base)
+    cpsTriple (base + div128Off) ret_addr (sharedDivModCode base)
       (-- Precondition: caller registers + scratch memory
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (.x10 ↦ᵣ d) **
        (.x5 ↦ᵣ u_lo) ** (.x7 ↦ᵣ u_hi) **
@@ -127,8 +127,8 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
   -- Saves ret/d, splits d and u_lo into halves.
   -- ================================================================
   have hph1 := divK_div128_phase1_spec sp ret_addr d u_lo u_hi v1_old v6_old v11_old
-    ret_mem d_mem dlo_mem un0_mem (base + 1072)
-  rw [show (base + 1072 : Word) + 40 = base + 1112 from by bv_addr] at hph1
+    ret_mem d_mem dlo_mem un0_mem (base + div128Off)
+  rw [show (base + div128Off : Word) + 40 = base + 1112 from by bv_addr] at hph1
   -- Extend phase1 cr to sharedDivModCode
   have hph1e := cpsTriple_extend_code (hmono := by
     -- phase1 cr: 10 singletons at (base+1072)+{0,4,...,36}, indices 0-9

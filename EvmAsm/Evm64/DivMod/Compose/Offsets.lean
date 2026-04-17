@@ -23,12 +23,12 @@
     [normAOff     = 312] divK_normA         (84 bytes)
     [copyAUOff    = 396] divK_copyAU        (36 bytes)
     [loopSetupOff = 432] divK_loopSetup     (16 bytes)
-    [loopBodyOff  = 448] divK_loopBody     (456 bytes)
-    [denormOff    = 904] divK_denorm       (100 bytes)
-    [epilogueOff  =1004] divK_{div,mod}_epilogue (40 bytes)
-    [zeroPathOff  =1044] divK_zeroPath      (20 bytes)
-    [nopOff       =1064] ADDI x0, x0, 0      (4 bytes)
-    [div128Off    =1068] divK_div128       (196 bytes)
+    [loopBodyOff  = 448] divK_loopBody     (460 bytes)
+    [denormOff    = 908] divK_denorm       (100 bytes)
+    [epilogueOff  =1008] divK_{div,mod}_epilogue (40 bytes)
+    [zeroPathOff  =1048] divK_zeroPath      (20 bytes)
+    [nopOff       =1068] ADDI x0, x0, 0      (4 bytes)
+    [div128Off    =1072] divK_div128       (196 bytes)
 -/
 
 import EvmAsm.Evm64.DivMod.Program

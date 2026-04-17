@@ -58,7 +58,7 @@ theorem divK_trial_max_full_spec_n1
     (hbltu : ¬BitVec.ult u1 v0) :
     let u_base := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let vtop_base := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 516) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -115,7 +115,7 @@ theorem divK_trial_call_full_spec_n1
     let rhat2_un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
     let q0' := if BitVec.ult rhat2_un0 q0_dlo then q0c + signExtend12 4095 else q0c
     let q_hat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
-    cpsTriple (base + 448) (base + 516) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -168,7 +168,7 @@ theorem divK_loop_body_n1_max_skip_spec
     let q_addr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
     -- Hypothesis: borrow = 0
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsBranch (base + 448) (sharedDivModCode base)
+    cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -180,8 +180,8 @@ theorem divK_loop_body_n1_max_skip_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (base + 448) (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top)
-      (base + 908) (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (base + loopBodyOff) (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+      (base + denormOff) (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_hat q_addr hborrow
   -- Expand mulsub computation locally for intermediate steps
   let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
@@ -280,7 +280,7 @@ theorem divK_loop_body_n1_max_addback_spec
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) →
     -- Hypothesis: borrow ≠ 0
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word) →
-    cpsBranch (base + 448) (sharedDivModCode base)
+    cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -292,8 +292,8 @@ theorem divK_loop_body_n1_max_addback_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old))
-      (base + 448) (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top)
-      (base + 908) (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (base + loopBodyOff) (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+      (base + denormOff) (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_hat q_addr ms ab hcarry2_nz hborrow
   -- Local lets matching beq_spec structure
   let c3 := ms.2.2.2.2
@@ -397,7 +397,7 @@ theorem divK_loop_body_n1_call_skip_spec
     let q_addr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
     -- Hypothesis: borrow = 0
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
-    cpsBranch (base + 448) (sharedDivModCode base)
+    cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -413,13 +413,13 @@ theorem divK_loop_body_n1_call_skip_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (base + 448)
+      (base + loopBodyOff)
       (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v0) **
        (sp + signExtend12 3952 ↦ₘ d_lo) **
        (sp + signExtend12 3944 ↦ₘ div_un0))
-      (base + 908)
+      (base + denormOff)
       (loopBodyN1SkipPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v0) **
@@ -555,7 +555,7 @@ theorem divK_loop_body_n1_call_addback_spec
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) →
     -- Hypothesis: borrow ≠ 0
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word) →
-    cpsBranch (base + 448) (sharedDivModCode base)
+    cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -571,13 +571,13 @@ theorem divK_loop_body_n1_call_addback_spec
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (base + 448)
+      (base + loopBodyOff)
       (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v0) **
        (sp + signExtend12 3952 ↦ₘ d_lo) **
        (sp + signExtend12 3944 ↦ₘ div_un0))
-      (base + 908)
+      (base + denormOff)
       (loopBodyN1AddbackBeqPost sp j q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v0) **

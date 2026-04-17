@@ -31,7 +31,7 @@ theorem evm_div_phaseAB_n4_clz_spec (sp base : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0) :
-    cpsTriple base (base + 212) (divCode base)
+    cpsTriple base (base + phaseC2Off) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -83,7 +83,7 @@ theorem evm_div_n4_to_normB_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0) :
-    cpsTriple base (base + 312) (divCode base)
+    cpsTriple base (base + normAOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -157,7 +157,7 @@ theorem evm_div_n4_to_loopSetup_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0) :
-    cpsTriple base (base + 448) (divCode base)
+    cpsTriple base (base + loopBodyOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -262,7 +262,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_z : (clzResult b3).1 = 0) :
-    cpsTriple base (base + 448) (divCode base)
+    cpsTriple base (base + loopBodyOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -397,7 +397,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
 theorem evm_div_denorm_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 v2 v5 v7 v10 shift : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word) :
-    cpsTriple (base + 916) (base + 1068) (divCode base)
+    cpsTriple (base + 916) (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
        (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -453,7 +453,7 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
 theorem evm_mod_denorm_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 v2 v5 v7 v10 shift : Word)
     (m0 m8 m16 m24 : Word) :
-    cpsTriple (base + 916) (base + 1068) (modCode base)
+    cpsTriple (base + 916) (base + nopOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
        (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -505,7 +505,7 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word)
     (hshift_nz : shift ≠ 0) :
-    cpsTriple (base + 908) (base + 1068) (divCode base)
+    cpsTriple (base + denormOff) (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift) **
@@ -551,7 +551,7 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
 /-- Denorm code (block 9) is subsumed by modCode.
     Re-proved here because the version in ModEpilogue.lean is private. -/
 private theorem divK_denorm_code_sub_modCode' (base : Word) :
-    ∀ a i, (CodeReq.ofProg (base + 908) divK_denorm) a = some i → (modCode base) a = some i := by
+    ∀ a i, (CodeReq.ofProg (base + denormOff) divK_denorm) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
@@ -561,7 +561,7 @@ private theorem divK_denorm_code_sub_modCode' (base : Word) :
     base+908 → base+916. -/
 theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
     (hshift_nz : shift ≠ 0) :
-    cpsTriple (base + 908) (base + 916) (modCode base)
+    cpsTriple (base + denormOff) (base + 916) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift))
@@ -569,23 +569,23 @@ theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift)) := by
   -- 1. LD x6 x12 3992 at base+908 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 908) (by nofun)
-  rw [show (base + 908 : Word) + 4 = base + 912 from by bv_addr] at hld
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + denormOff) (by nofun)
+  rw [show (base + denormOff : Word) + 4 = base + 912 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_modCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 908) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff) divK_denorm
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + 1008 from by
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
         rw [show signExtend13 (96 : BitVec 13) = (96 : Word) from by decide]
         bv_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_modCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 912) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + 912) divK_denorm
         [.BEQ .x6 .x0 96] 1 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hbeq
   -- 3. Eliminate taken branch: shift ≠ 0 means BEQ not taken
   have hbeq_exit := cpsBranch_elim_ntaken _ _ _ _ _ _ _ hbeqe
@@ -625,7 +625,7 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
     (m0 m8 m16 m24 : Word)
     (hshift_nz : shift ≠ 0) :
-    cpsTriple (base + 908) (base + 1068) (modCode base)
+    cpsTriple (base + denormOff) (base + nopOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift) **
@@ -666,7 +666,7 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
 /-- Denorm code (block 9) is subsumed by divCode.
     Re-proved here because the version in Epilogue.lean is private. -/
 private theorem divK_denorm_code_sub_divCode' (base : Word) :
-    ∀ a i, (CodeReq.ofProg (base + 908) divK_denorm) a = some i → (divCode base) a = some i := by
+    ∀ a i, (CodeReq.ofProg (base + denormOff) divK_denorm) a = some i → (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
@@ -683,7 +683,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
     (_u0 _u1 _u2 _u3 shift v2 v5 v6 v7 v10 : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word)
     (hshift_z : shift = 0) :
-    cpsTriple (base + 908) (base + 1068) (divCode base)
+    cpsTriple (base + denormOff) (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift) **
@@ -699,23 +699,23 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
        ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
        ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)) := by
   -- 1. LD x6 x12 3992 at base+908 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 908) (by nofun)
-  rw [show (base + 908 : Word) + 4 = base + 912 from by bv_addr] at hld
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + denormOff) (by nofun)
+  rw [show (base + denormOff : Word) + 4 = base + 912 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_divCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 908) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff) divK_denorm
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + 1008 from by
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
         rw [show signExtend13 (96 : BitVec 13) = (96 : Word) from by decide]
         bv_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_divCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 912) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + 912) divK_denorm
         [.BEQ .x6 .x0 96] 1 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hbeq
   -- 3. Eliminate not-taken branch: shift = 0 means BEQ taken
   --    BEQ not-taken postcondition: (.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ 0) ** ⌜shift ≠ 0⌝
@@ -770,7 +770,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
     (m0 m8 m16 m24 : Word)
     (hshift_z : shift = 0) :
-    cpsTriple (base + 908) (base + 1068) (modCode base)
+    cpsTriple (base + denormOff) (base + nopOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift) **
@@ -786,23 +786,23 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
        ((sp + 32) ↦ₘ u0) ** ((sp + 40) ↦ₘ u1) **
        ((sp + 48) ↦ₘ u2) ** ((sp + 56) ↦ₘ u3)) := by
   -- 1. LD x6 x12 3992 at base+908 (denorm instr [0])
-  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + 908) (by nofun)
-  rw [show (base + 908 : Word) + 4 = base + 912 from by bv_addr] at hld
+  have hld := ld_spec_gen .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + denormOff) (by nofun)
+  rw [show (base + denormOff : Word) + 4 = base + 912 from by bv_addr] at hld
   have hlde := cpsTriple_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_modCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 908) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff) divK_denorm
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + 1008 from by
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
         rw [show signExtend13 (96 : BitVec 13) = (96 : Word) from by decide]
         bv_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
     exact divK_denorm_code_sub_modCode' base a i
-      (CodeReq.ofProg_mono_sub (base + 908) (base + 912) divK_denorm
+      (CodeReq.ofProg_mono_sub (base + denormOff) (base + 912) divK_denorm
         [.BEQ .x6 .x0 96] 1 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hbeq
   -- 3. Eliminate not-taken branch: shift = 0 means BEQ taken
   --    BEQ not-taken postcondition: (.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ 0) ** ⌜shift ≠ 0⌝

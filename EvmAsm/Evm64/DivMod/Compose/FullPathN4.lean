@@ -93,7 +93,7 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
     let q_hat : Word := signExtend12 4095
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 908) (divCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -129,7 +129,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     (hshift_nz : (clzResult b3).1 ≠ 0)
     (hbltu : isMaxTrialN4 a3 b2 b3)
     (hborrow : isSkipBorrowN4Max a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 908) (divCode base)
+    cpsTriple base (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -284,7 +284,7 @@ theorem evm_div_n4_full_max_skip_spec (sp base : Word)
     (hshift_nz : (clzResult b3).1 ≠ 0)
     (hbltu : isMaxTrialN4 a3 b2 b3)
     (hborrow : isSkipBorrowN4Max a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 1068) (divCode base)
+    cpsTriple base (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -413,7 +413,7 @@ theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
     let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
-    cpsTriple (base + 448) (base + 908) (divCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -535,7 +535,7 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : isCallTrialN4 a3 b2 b3)
     (hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 908) (divCode base)
+    cpsTriple base (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -655,7 +655,7 @@ theorem evm_div_n4_full_call_skip_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : isCallTrialN4 a3 b2 b3)
     (hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 1068) (divCode base)
+    cpsTriple base (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **

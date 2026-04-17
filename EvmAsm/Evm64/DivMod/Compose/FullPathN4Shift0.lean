@@ -77,7 +77,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec (sp base : Word)
     (hshift_z : (clzResult b3).1 = 0)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hborrow : isSkipBorrowN4Shift0 a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 908) (divCode base)
+    cpsTriple base (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -234,7 +234,7 @@ theorem evm_div_n4_full_shift0_call_skip_spec (sp base : Word)
     (hshift_z : (clzResult b3).1 = 0)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hborrow : isSkipBorrowN4Shift0 a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 1068) (divCode base)
+    cpsTriple base (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) ** (.x11 ↦ᵣ v11_old) **

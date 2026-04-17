@@ -29,7 +29,7 @@ theorem evm_mod_phaseAB_n3_clz_spec (sp base : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2nz : b2 ≠ 0) :
-    cpsTriple base (base + 212) (modCode base)
+    cpsTriple base (base + phaseC2Off) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -94,7 +94,7 @@ theorem evm_mod_n3_to_loopSetup_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
     (hshift_nz : (clzResult b2).1 ≠ 0) :
-    cpsTriple base (base + 448) (modCode base)
+    cpsTriple base (base + loopBodyOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -235,7 +235,7 @@ theorem evm_mod_n3_shift0_to_loopSetup_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2nz : b2 ≠ 0)
     (hshift_z : (clzResult b2).1 = 0) :
-    cpsTriple base (base + 448) (modCode base)
+    cpsTriple base (base + loopBodyOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b2).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **

@@ -91,7 +91,7 @@ theorem mod_phB_off_28 (base : Word) : (base + 32 : Word) + 28 = base + 60 := by
 theorem mod_phB_i2_8 (base : Word) : (base + 60 : Word) + 8 = base + 68 := by bv_addr
 theorem mod_phB_addi_4 (base : Word) : (base + 68 : Word) + 4 = base + 72 := by bv_addr
 theorem mod_phB_bne_4 (base : Word) : (base + 72 : Word) + 4 = base + 76 := by bv_addr
-theorem mod_phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + 116 := by bv_addr
+theorem mod_phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
 theorem mod_signExtend13_24 : signExtend13 (24 : BitVec 13) = (24 : Word) := by
   decide
 theorem mod_divK_se12_4 : signExtend12 (4 : BitVec 12) = (4 : Word) := by decide
@@ -116,7 +116,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3nz : b3 ≠ 0) :
-    cpsTriple (base + 32) (base + 116) (modCode base)
+    cpsTriple (base + 32) (base + clzOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **

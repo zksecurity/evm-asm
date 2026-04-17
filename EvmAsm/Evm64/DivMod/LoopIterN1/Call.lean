@@ -29,7 +29,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -151,7 +151,7 @@ theorem divK_loop_body_n1_call_skip_j1_spec
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -274,7 +274,7 @@ theorem divK_loop_body_n1_call_skip_j2_spec
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (2 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -397,7 +397,7 @@ theorem divK_loop_body_n1_call_skip_j3_spec
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (3 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **

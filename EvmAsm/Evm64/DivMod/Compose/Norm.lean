@@ -15,7 +15,7 @@ open EvmAsm.Rv64
 
 /-- Phase C2 code (block 3) is subsumed by divCode. -/
 private theorem divK_phaseC2_code_sub_divCode (base : Word) :
-    ∀ a i, (divK_phaseC2_code 172 (base + 212)) a = some i → (divCode base) a = some i := by
+    ∀ a i, (divK_phaseC2_code 172 (base + phaseC2Off)) a = some i → (divCode base) a = some i := by
   unfold divCode divK_phaseC2_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left _ _
@@ -25,10 +25,10 @@ private theorem beq_shift_sub_divCode (base : Word) :
     ∀ a i, (CodeReq.singleton (base + 224) (.BEQ .x6 .x0 172)) a = some i →
       (divCode base) a = some i := by
   intro a i h
-  have hlookup := CodeReq.ofProg_lookup (base + 212) (divK_phaseC2 172) 3
+  have hlookup := CodeReq.ofProg_lookup (base + phaseC2Off) (divK_phaseC2 172) 3
     (by decide) (by decide)
   rw [show BitVec.ofNat 64 (4 * 3) = (12 : Word) from by decide,
-      show (base + 212 : Word) + 12 = base + 224 from by bv_addr] at hlookup
+      show (base + phaseC2Off : Word) + 12 = base + 224 from by bv_addr] at hlookup
   exact divK_phaseC2_code_sub_divCode base a i
     (CodeReq.singleton_mono hlookup a i h)
 
@@ -37,29 +37,29 @@ private theorem signExtend13_172 : signExtend13 (172 : BitVec 13) = (172 : Word)
 /-- Phase C2 body (base+212 → base+224): store shift, compute anti_shift.
     Extends to divCode. Uses first 3 instructions of phaseC2. -/
 private theorem divK_phaseC2_body_divCode (sp shift v2 shift_mem : Word) (base : Word) :
-    cpsTriple (base + 212) (base + 224) (divCode base)
+    cpsTriple (base + phaseC2Off) (base + 224) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem))
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
-  have hbody := divK_phaseC2_body_spec sp shift v2 shift_mem 172 (base + 212)
-  rw [show (base + 212 : Word) + 12 = base + 224 from by bv_addr] at hbody
+  have hbody := divK_phaseC2_body_spec sp shift v2 shift_mem 172 (base + phaseC2Off)
+  rw [show (base + phaseC2Off : Word) + 12 = base + 224 from by bv_addr] at hbody
   exact cpsTriple_extend_code (divK_phaseC2_code_sub_divCode base) hbody
 
 /-- Phase C2 when shift ≠ 0: falls through to normB at base+228.
     Stores shift to scratch, computes anti_shift = -shift. -/
 theorem divK_phaseC2_ntaken_spec (sp shift v2 shift_mem : Word) (base : Word)
     (hshift_nz : shift ≠ 0) :
-    cpsTriple (base + 212) (base + 228) (divCode base)
+    cpsTriple (base + phaseC2Off) (base + normBOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem))
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
   have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base
   have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
-  rw [show (base + 224 : Word) + signExtend13 172 = base + 396 from by
+  rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by
         rw [signExtend13_172]; bv_addr,
-      show (base + 224 : Word) + 4 = base + 228 from by bv_addr] at hbeq_raw
+      show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -80,16 +80,16 @@ theorem divK_phaseC2_ntaken_spec (sp shift v2 shift_mem : Word) (base : Word)
     Stores shift (=0) to scratch, computes anti_shift = 0. -/
 theorem divK_phaseC2_taken_spec (sp shift v2 shift_mem : Word) (base : Word)
     (hshift_z : shift = 0) :
-    cpsTriple (base + 212) (base + 396) (divCode base)
+    cpsTriple (base + phaseC2Off) (base + copyAUOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem))
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
   have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base
   have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
-  rw [show (base + 224 : Word) + signExtend13 172 = base + 396 from by
+  rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by
         rw [signExtend13_172]; bv_addr,
-      show (base + 224 : Word) + 4 = base + 228 from by bv_addr] at hbeq_raw
+      show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
@@ -113,7 +113,7 @@ theorem divK_phaseC2_taken_spec (sp shift v2 shift_mem : Word) (base : Word)
 
 /-- NormB code (block 4) is subsumed by divCode. -/
 private theorem divK_normB_code_sub_divCode (base : Word) :
-    ∀ a i, (CodeReq.ofProg (base + 228) divK_normB) a = some i → (divCode base) a = some i := by
+    ∀ a i, (CodeReq.ofProg (base + normBOff) divK_normB) a = some i → (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left _ _
@@ -123,11 +123,11 @@ private theorem normB_sub (base : Word) (sub_prog : List Instr) (k : Nat)
     (hk : k + sub_prog.length ≤ divK_normB.length)
     (hslice : (divK_normB.drop k).take sub_prog.length = sub_prog)
     (hbound : 4 * divK_normB.length < 2 ^ 64) :
-    ∀ a i, (CodeReq.ofProg ((base + 228) + BitVec.ofNat 64 (4 * k)) sub_prog) a = some i →
+    ∀ a i, (CodeReq.ofProg ((base + normBOff) + BitVec.ofNat 64 (4 * k)) sub_prog) a = some i →
       (divCode base) a = some i := by
   intro a i h
   exact divK_normB_code_sub_divCode base a i
-    (CodeReq.ofProg_mono_sub (base + 228) _ divK_normB _ k rfl hslice hk hbound a i h)
+    (CodeReq.ofProg_mono_sub (base + normBOff) _ divK_normB _ k rfl hslice hk hbound a i h)
 
 -- se12_32, se12_40, se12_48, se12_56 are in Base.lean
 
@@ -136,7 +136,7 @@ private theorem normB_sub (base : Word) (sub_prog : List Instr) (k : Nat)
 private theorem divK_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (base : Word) :
     let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
     let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-    cpsTriple (base + 228) (base + 276) (divCode base)
+    cpsTriple (base + normBOff) (base + 276) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -147,12 +147,12 @@ private theorem divK_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) 
        ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
   intro b3' b2'
   -- Merge 1: b[3] with b[2] (base+228 → base+252)
-  have hm1 := divK_normB_merge_spec 56 48 sp b3 b2 v5 v7 shift anti_shift (base + 228)
+  have hm1 := divK_normB_merge_spec 56 48 sp b3 b2 v5 v7 shift anti_shift (base + normBOff)
   simp only [se12_56, se12_48] at hm1
-  rw [show (base + 228 : Word) + 24 = base + 252 from by bv_addr] at hm1
+  rw [show (base + normBOff : Word) + 24 = base + 252 from by bv_addr] at hm1
   have hm1e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_divCode base a i
-      (CodeReq.ofProg_mono_sub (base + 228) (base + 228) divK_normB
+      (CodeReq.ofProg_mono_sub (base + normBOff) (base + normBOff) divK_normB
         (divK_normB_merge_prog 56 48) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm1
   -- Frame merge1 with b[0], b[1] (not touched by merge1)
@@ -166,7 +166,7 @@ private theorem divK_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) 
   rw [show (base + 252 : Word) + 24 = base + 276 from by bv_addr] at hm2
   have hm2e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_divCode base a i
-      (CodeReq.ofProg_mono_sub (base + 228) (base + 252) divK_normB
+      (CodeReq.ofProg_mono_sub (base + normBOff) (base + 252) divK_normB
         (divK_normB_merge_prog 48 40) 6
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm2
   have hm2ef := cpsTriple_frame_left _ _ _ _ _
@@ -184,7 +184,7 @@ private theorem divK_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) 
 private theorem divK_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base : Word) :
     let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
     let b0' := b0 <<< (shift.toNat % 64)
-    cpsTriple (base + 276) (base + 312) (divCode base)
+    cpsTriple (base + 276) (base + normAOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b2') ** (.x7 ↦ᵣ (b1 >>> (anti_shift.toNat % 64))) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -201,7 +201,7 @@ private theorem divK_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (bas
   rw [show (base + 276 : Word) + 24 = base + 300 from by bv_addr] at hm3
   have hm3e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_divCode base a i
-      (CodeReq.ofProg_mono_sub (base + 228) (base + 276) divK_normB
+      (CodeReq.ofProg_mono_sub (base + normBOff) (base + 276) divK_normB
         (divK_normB_merge_prog 40 32) 12
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm3
   have hm3ef := cpsTriple_frame_left _ _ _ _ _
@@ -210,10 +210,10 @@ private theorem divK_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (bas
   -- Last: b[0] alone (base+300 → base+312)
   have hl := divK_normB_last_spec 32 sp b0 b1' shift (base + 300)
   simp only [se12_32] at hl
-  rw [show (base + 300 : Word) + 12 = base + 312 from by bv_addr] at hl
+  rw [show (base + 300 : Word) + 12 = base + normAOff from by bv_addr] at hl
   have hle := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_divCode base a i
-      (CodeReq.ofProg_mono_sub (base + 228) (base + 300) divK_normB
+      (CodeReq.ofProg_mono_sub (base + normBOff) (base + 300) divK_normB
         (divK_normB_last_prog 32) 18
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hl
   have hlef := cpsTriple_frame_left _ _ _ _ _
@@ -236,7 +236,7 @@ theorem divK_normB_full_spec (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (bas
     let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
     let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
     let b0' := b0 <<< (shift.toNat % 64)
-    cpsTriple (base + 228) (base + 312) (divCode base)
+    cpsTriple (base + normBOff) (base + normAOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ anti_shift) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **

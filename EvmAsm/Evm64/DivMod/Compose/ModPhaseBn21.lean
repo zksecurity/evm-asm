@@ -21,7 +21,7 @@ theorem evm_mod_phaseB_n2_spec (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0) :
-    cpsTriple (base + 32) (base + 116) (modCode base)
+    cpsTriple (base + 32) (base + clzOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -201,7 +201,7 @@ theorem evm_mod_phaseB_n1_spec (sp base : Word)
     (b0 b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0) :
-    cpsTriple (base + 32) (base + 116) (modCode base)
+    cpsTriple (base + 32) (base + clzOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **

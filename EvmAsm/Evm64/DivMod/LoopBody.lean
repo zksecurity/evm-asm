@@ -782,7 +782,7 @@ private theorem lb_bltu_taken (base : Word) : (base + 500 : Word) + signExtend13
   rw [this]; bv_addr
 private theorem lb_bltu_ntaken (base : Word) : (base + 500 : Word) + 4 = base + 504 := by bv_addr
 private theorem lb_trial_max_end (base : Word) : (base + 504 : Word) + 12 = base + 516 := by bv_addr
-private theorem lb_jal_target (base : Word) : (base + 512 : Word) + signExtend21 (560 : BitVec 21) = base + 1072 := by
+private theorem lb_jal_target (base : Word) : (base + 512 : Word) + signExtend21 (560 : BitVec 21) = base + div128Off := by
   have : signExtend21 (560 : BitVec 21) = (560 : Word) := by decide
   rw [this]; bv_addr
 private theorem lb_jal_ret (base : Word) : (base + 512 : Word) + 4 = base + 516 := by bv_addr
@@ -905,7 +905,7 @@ private theorem lb_lc_taken (base : Word) :
     (base + 900 : Word) + 4 + signExtend13 (7736 : BitVec 13) = base + loopBodyOff := by
   have : signExtend13 (7736 : BitVec 13) = (18446744073709551160 : Word) := by decide
   rw [this]; bv_addr
-private theorem lb_lc_exit (base : Word) : (base + 900 : Word) + 8 = base + 908 := by bv_addr
+private theorem lb_lc_exit (base : Word) : (base + 900 : Word) + 8 = base + denormOff := by bv_addr
 
 private theorem lb_beq_back_ntaken (base : Word) : (base + 880 : Word) + 4 = base + 884 := by bv_addr
 
@@ -1088,7 +1088,7 @@ theorem divK_store_loop_spec
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) **
        (q_addr ↦ₘ q_hat))
-      (base + 908)
+      (base + denormOff)
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) **
        (q_addr ↦ₘ q_hat)) := by
@@ -1126,7 +1126,7 @@ theorem divK_store_loop_spec
       (base + loopBodyOff)
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_hat))
-      (base + 908)
+      (base + denormOff)
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_hat)) :=
     cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
@@ -1158,7 +1158,7 @@ theorem divK_store_loop_j0_spec
     (base : Word) :
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
     let j' := (0 : Word) + signExtend12 4095
-    cpsTriple (base + 884) (base + 908) (sharedDivModCode base)
+    cpsTriple (base + 884) (base + denormOff) (sharedDivModCode base)
       ((.x1 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (q_addr ↦ₘ q_old))
@@ -1185,7 +1185,7 @@ theorem divK_store_loop_j0_spec
   rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by
         rw [show signExtend13 (7736 : BitVec 13) = (18446744073709551160 : Word) from by decide]
         bv_addr,
-      show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hbge_raw
+      show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranch_extend_code (hmono := by
     exact lb_sub base 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
   -- 4. Eliminate taken branch: j' = -1 < 0, so BGE is not taken
@@ -1244,7 +1244,7 @@ theorem divK_store_loop_jgt0_spec
     let j_x8 := j <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - j_x8
     let j' := j + signExtend12 4095
-    cpsTriple (base + 884) (base + 448) (sharedDivModCode base)
+    cpsTriple (base + 884) (base + loopBodyOff) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (q_addr ↦ₘ q_old))
@@ -1268,10 +1268,10 @@ theorem divK_store_loop_jgt0_spec
     exact lb_sub base 113 _ _ (by decide) (by bv_addr) (by decide)) haddi
   -- 3. BGE x1 x0 7736 at base+904 (instr [114])
   have hbge_raw := bge_spec_gen .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + 904)
-  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + 448 from by
+  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by
         rw [show signExtend13 (7736 : BitVec 13) = (18446744073709551160 : Word) from by decide]
         bv_addr,
-      show (base + 904 : Word) + 4 = base + 908 from by bv_addr] at hbge_raw
+      show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranch_extend_code (hmono := by
     exact lb_sub base 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
   -- 4. Eliminate not-taken branch: j' = j-1 ≥ 0, so BGE is taken

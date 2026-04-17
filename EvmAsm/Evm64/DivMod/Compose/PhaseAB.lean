@@ -43,7 +43,7 @@ private theorem divK_phaseA_code_sub_divCode (base : Word) :
 
 /-- Zero path code (5 instructions, block 11) is subsumed by divCode. -/
 private theorem divK_zeroPath_code_sub_divCode (base : Word) :
-    ∀ a i, (divK_zeroPath_code (base + 1048)) a = some i → (divCode base) a = some i := by
+    ∀ a i, (divK_zeroPath_code (base + zeroPathOff)) a = some i → (divCode base) a = some i := by
   unfold divCode divK_zeroPath_code; simp only [CodeReq.unionAll_cons]
   -- Skip blocks 0-10, then match block 11
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
@@ -155,7 +155,7 @@ private theorem phB_t_4 (base : Word) : (base + 96 : Word) + 4 = base + 100 := b
 private theorem phB_t_8 (base : Word) : (base + 96 : Word) + 8 = base + 104 := by bv_addr
 private theorem phB_t_12 (base : Word) : (base + 96 : Word) + 12 = base + 108 := by bv_addr
 private theorem phB_t_16 (base : Word) : (base + 96 : Word) + 16 = base + 112 := by bv_addr
-private theorem phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + 116 := by bv_addr
+private theorem phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
 private theorem phB_sp24_32 (sp : Word) : (sp + (24 : Word) + (32 : Word)) = sp + 56 := by bv_addr
 
 -- ============================================================================
@@ -200,7 +200,7 @@ theorem phaseB_zeroed_mem_unfold (sp : Word) :
 theorem evm_div_bzero_spec (sp base : Word)
     (b0 b1 b2 b3 v5 v10 : Word)
     (hbz : b0 ||| b1 ||| b2 ||| b3 = 0) :
-    cpsTriple base (base + 1068) (divCode base)
+    cpsTriple base (base + nopOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
        ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -213,7 +213,7 @@ theorem evm_div_bzero_spec (sp base : Word)
     (divK_phaseA_body_spec sp base b0 b1 b2 b3 v5 v10)
   -- Step 2: BEQ at base+28, eliminate ntaken via hbz
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
-  rw [show (base + 28 : Word) + signExtend13 1020 = base + 1048 from by
+  rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
         rw [signExtend13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + 32 from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
@@ -234,8 +234,8 @@ theorem evm_div_bzero_spec (sp base : Word)
   -- Step 5: ZeroPath (base+1048 → base+1068)
   -- Extend to divCode CodeReq
   have hzp := cpsTriple_extend_code (divK_zeroPath_code_sub_divCode base)
-    (divK_zeroPath_spec sp (base + 1048) b0 b1 b2 b3)
-  rw [show (base + 1048 : Word) + 20 = base + 1068 from by bv_addr] at hzp
+    (divK_zeroPath_spec sp (base + zeroPathOff) b0 b1 b2 b3)
+  rw [show (base + zeroPathOff : Word) + 20 = base + nopOff from by bv_addr] at hzp
   -- Frame ZP with x5 + x10 + x0
   have hzp_framed := cpsTriple_frame_left _ _ _ _ _
     ((.x5 ↦ᵣ (b0 ||| b1 ||| b2 ||| b3)) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)))
@@ -271,7 +271,7 @@ theorem evm_div_phaseA_ntaken_spec (sp base : Word)
     (divK_phaseA_body_spec sp base b0 b1 b2 b3 v5 v10)
   -- Step 2: BEQ at base+28, eliminate taken path (b=0 absurd since hbnz)
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
-  rw [show (base + 28 : Word) + signExtend13 1020 = base + 1048 from by
+  rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
         rw [signExtend13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + 32 from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
@@ -307,7 +307,7 @@ theorem evm_div_phaseB_n4_spec (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3nz : b3 ≠ 0) :
-    cpsTriple (base + 32) (base + 116) (divCode base)
+    cpsTriple (base + 32) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -377,7 +377,7 @@ theorem evm_div_phaseAB_n4_spec (sp base : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0) :
-    cpsTriple base (base + 116) (divCode base)
+    cpsTriple base (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -530,7 +530,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3z : b3 = 0) (hb2nz : b2 ≠ 0) :
-    cpsTriple (base + 32) (base + 116) (divCode base)
+    cpsTriple (base + 32) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -673,7 +673,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0) :
-    cpsTriple (base + 32) (base + 116) (divCode base)
+    cpsTriple (base + 32) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -852,7 +852,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
     (b0 b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 n_mem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0) :
-    cpsTriple (base + 32) (base + 116) (divCode base)
+    cpsTriple (base + 32) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
