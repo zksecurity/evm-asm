@@ -27,16 +27,16 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 -- ============================================================================
--- Two-iteration (j=1, j=0) unified composition
--- Same pattern as divK_loop_n2_iter10_unified_spec but with n=1 per-iteration specs
+-- Double-addback () two-iteration (j=1, j=0) unified composition
+-- Same pattern as divK_loop_n1_iter10_unified_spec but with  per-iteration specs
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified n=1 two-iteration loop composition for j=1 and j=0,
+/-- Unified n=1 two-iteration  loop composition for j=1 and j=0,
     parameterized by `(bltu_1 bltu_0 : Bool)`.
-    Covers all 4 path combinations (max*max, call*call, max*call, call*max).
-    Dispatches to existing per-iteration specs in LoopComposeN1.lean. -/
+    Covers all 4 path combinations (max×max, call×call, max×call, call×max).
+    Dispatches to existing  per-iteration specs in LoopComposeN1.lean. -/
 theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
@@ -67,16 +67,17 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     (hv_ulo_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 + (1 : Word)) <<< (3 : BitVec 6).toNat) + 8) = true)
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
-    -- Unified branch conditions
+    -- Unified branch conditions (using iterN1 for j=0)
     (hbltu_1 : bltu_1 = BitVec.ult u1 v0)
-    (hbltu_0 : bltu_0 = BitVec.ult (iterN1 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1 v0) :
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN1 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1Iter10PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
         ret_mem d_mem dlo_mem scratch_un0)
       (loopN1Iter10Post bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
         ret_mem d_mem dlo_mem scratch_un0) := by
-  -- Dispatch to per-iteration specs via case analysis on (bltu_1, bltu_0)
+  -- Dispatch to per-iteration  specs via case analysis on (bltu_1, bltu_0)
   cases bltu_1 <;> cases bltu_0 <;> simp only [iterN1_true, iterN1_false] at hbltu_0
   · -- (false, false) = max*max
     have hbltu_1' : ¬BitVec.ult u1 v0 := by
@@ -88,11 +89,12 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    -- j=1 max spec
+    -- j=1 max  spec
     have J1 := divK_loop_body_n1_max_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1
       hbltu_1'
+      (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old, and scratch
     have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -109,7 +111,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       rw [← u_n1_j1_4080_eq_j0_4072]; exact hv_u2_1
     have hv_u4_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
       rw [← u_n1_j1_4072_eq_j0_4064]; exact hv_u3_1
-    -- j=0 max spec (inputs from j=1 via iterN1Max)
+    -- j=0 max  spec (inputs from j=1 via iterN1Max)
     have J0 := divK_loop_body_n1_max_unified_j0_spec sp (1 : Word)
       ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
       ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -124,6 +126,11 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       q0_old base
       hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
       hbltu_0'
+      (hcarry2 (signExtend12 4095) u0_orig
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms and scratch
     have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -143,7 +150,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         rw [sepConj_assoc'] at hp
         xperm_hyp hp)
       J1f J0f
-    -- Bridge to unified postcondition
+    -- Bridge to unified  postcondition
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by
@@ -161,11 +168,12 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    -- j=1 max spec
+    -- j=1 max  spec
     have J1 := divK_loop_body_n1_max_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1
       hbltu_1'
+      (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     have J1f := cpsTriple_frame_left _ _ _ _ _
       (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old) **
@@ -181,7 +189,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       rw [← u_n1_j1_4080_eq_j0_4072]; exact hv_u2_1
     have hv_u4_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
       rw [← u_n1_j1_4072_eq_j0_4064]; exact hv_u3_1
-    -- j=0 call spec (includes scratch in pre/post)
+    -- j=0 call  spec (includes scratch in pre/post)
     have J0 := divK_loop_body_n1_call_unified_j0_spec sp (1 : Word)
       ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
       ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -197,6 +205,11 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
       hbltu_0'
+      (hcarry2 (div128Quot (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1 u0_orig v0) u0_orig
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms only
     have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -229,12 +242,13 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    -- j=1 call spec (includes scratch)
+    -- j=1 call  spec (includes scratch)
     have J1 := divK_loop_body_n1_call_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1
       hbltu_1'
+      (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old only (scratch is in call spec)
     have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -249,7 +263,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       rw [← u_n1_j1_4080_eq_j0_4072]; exact hv_u2_1
     have hv_u4_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
       rw [← u_n1_j1_4072_eq_j0_4064]; exact hv_u3_1
-    -- j=0 max spec (no scratch)
+    -- j=0 max  spec (no scratch)
     have J0 := divK_loop_body_n1_max_unified_j0_spec sp (1 : Word)
       ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
       ((mulsubN4 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -264,6 +278,11 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       q0_old base
       hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
       hbltu_0'
+      (hcarry2 (signExtend12 4095) u0_orig
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms + j=1 scratch (persists from call)
     have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -300,12 +319,13 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    -- j=1 call spec (includes scratch)
+    -- j=1 call  spec (includes scratch)
     have J1 := divK_loop_body_n1_call_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1
       hbltu_1'
+      (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old only
     have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -320,7 +340,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       rw [← u_n1_j1_4080_eq_j0_4072]; exact hv_u2_1
     have hv_u4_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
       rw [← u_n1_j1_4072_eq_j0_4064]; exact hv_u3_1
-    -- j=0 call spec (includes scratch -- j=0 overwrites j=1's scratch)
+    -- j=0 call  spec (includes scratch -- j=0 overwrites j=1's scratch)
     have J0 := divK_loop_body_n1_call_unified_j0_spec sp (1 : Word)
       ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
       ((mulsubN4 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -337,6 +357,11 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
       hbltu_0'
+      (hcarry2 (div128Quot (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1 u0_orig v0) u0_orig
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms only
     have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -362,14 +387,14 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       full
 
 -- ============================================================================
--- Three-iteration: compose j=2 with iter10 -- separate lemmas per case
+-- Three-iteration : compose j=2 with iter10 -- separate lemmas per case
 -- Postcondition uses @[irreducible] loopN1Iter210Post
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Three-iteration composition when j=2 is max (bltu_2 = false).
-    Composes j=2 max spec with the 2-iteration iter10 unified spec. -/
+/-- Three-iteration  composition when j=2 is max (bltu_2 = false).
+    Composes j=2  max spec with the 2-iteration iter10 unified  spec. -/
 theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -411,7 +436,8 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
       (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
       (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
       (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-      (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0) :
+      (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1Iter210PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -435,11 +461,12 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
     rw [← u_n1_j2_4080_eq_j1_4072]; exact hv_u2_2
   have hv_u4_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
     rw [← u_n1_j2_4072_eq_j1_4064]; exact hv_u3_2
-  -- j=2 max spec
+  -- j=2 max  spec
   have J2 := divK_loop_body_n1_max_unified_j2_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q2_old base
     hv_j hv_n1 hv_uhi_2 hv_ulo_2 hv_vtop hv_v0 hv_u0_2 hv_v1 hv_u1_2 hv_v2 hv_u2_2 hv_v3 hv_u3_2 hv_u4_2 hv_q2
     hbltu_2
+    (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
   -- Frame j=2 with iter10 extra atoms and scratch
   have J2f := cpsTriple_frame_left _ _ _ _ _
@@ -448,7 +475,7 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) J2
-  -- iter10 unified spec (inputs from j=2 max output)
+  -- iter10  unified spec (inputs from j=2 max  output)
   have H10 := divK_loop_n1_iter10_unified_spec bltu_1 bltu_0
     sp (2 : Word) ((2 : Word) <<< (3 : BitVec 6).toNat) u_base_2 q_addr_2
     ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -462,7 +489,7 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
     hv_v0 hv_v1 hv_v2 hv_v3
     hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
     hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-    hbltu_1 hbltu_0
+    hbltu_1 hbltu_0 hcarry2
   -- Frame iter10 with j=2 carried atoms
   have H10f := cpsTriple_frame_left _ _ _ _ _
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
@@ -483,14 +510,14 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
     (fun h hp => by delta loopN1Iter210PreWithScratch loopN1Iter210Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1Iter210Post loopN1Iter10Post at hp ⊢
-      simp only [iterN1_false] at hp ⊢
+      simp only [iterN1_false, Bool.false_eq_true, ↓reduceIte] at hp ⊢
       cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
     full
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Three-iteration composition when j=2 is call (bltu_2 = true).
-    Composes j=2 call spec with the 2-iteration iter10 unified spec. -/
+/-- Three-iteration  composition when j=2 is call (bltu_2 = true).
+    Composes j=2  call spec with the 2-iteration iter10 unified  spec. -/
 theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -532,7 +559,8 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
       (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
       (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
       (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0) :
+      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1Iter210PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -556,19 +584,20 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
     rw [← u_n1_j2_4080_eq_j1_4072]; exact hv_u2_2
   have hv_u4_1 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
     rw [← u_n1_j2_4072_eq_j1_4064]; exact hv_u3_2
-  -- j=2 call spec (includes scratch)
+  -- j=2 call  spec (includes scratch)
   have J2 := divK_loop_body_n1_call_unified_j2_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q2_old ret_mem d_mem dlo_mem scratch_un0 base
     hv_j hv_n1 hv_uhi_2 hv_ulo_2 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_2 hv_v1 hv_u1_2 hv_v2 hv_u2_2 hv_v3 hv_u3_2 hv_u4_2 hv_q2
     hbltu_2
+    (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
   -- Frame j=2 with iter10 extra atoms only (scratch consumed by call)
   have J2f := cpsTriple_frame_left _ _ _ _ _
     (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J2
-  -- iter10 unified spec (inputs from j=2 call output, scratch = j=2 call values)
+  -- iter10  unified spec (inputs from j=2 call  output, scratch = j=2 call values)
   have H10 := divK_loop_n1_iter10_unified_spec bltu_1 bltu_0
     sp (2 : Word) ((2 : Word) <<< (3 : BitVec 6).toNat) u_base_2 q_addr_2
     ((mulsubN4 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -582,7 +611,7 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
     hv_v0 hv_v1 hv_v2 hv_v3
     hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
     hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-    hbltu_1 hbltu_0
+    hbltu_1 hbltu_0 hcarry2
   -- Frame iter10 with j=2 carried atoms
   have H10f := cpsTriple_frame_left _ _ _ _ _
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
@@ -603,17 +632,17 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
     (fun h hp => by delta loopN1Iter210PreWithScratch loopN1Iter210Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1Iter210Post loopN1Iter10Post at hp ⊢
-      simp only [iterN1_true] at hp ⊢
+      simp only [iterN1_true, ite_true] at hp ⊢
       cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
     full
 
 -- ============================================================================
--- Three-iteration unified dispatch: cases bltu_2
+-- Three-iteration  unified dispatch: cases bltu_2
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified n=1 three-iteration loop composition, parameterized by
+/-- Unified n=1 three-iteration  loop composition, parameterized by
     `(bltu_2 bltu_1 bltu_0 : Bool)`.  Covers all 8 path combinations.
     Dispatches to divK_loop_n1_max_iter10_spec / divK_loop_n1_call_iter10_spec. -/
 theorem divK_loop_n1_iter210_unified_spec (bltu_2 bltu_1 bltu_0 : Bool)
@@ -657,7 +686,8 @@ theorem divK_loop_n1_iter210_unified_spec (bltu_2 bltu_1 bltu_0 : Bool)
       (iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
       (iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
       (iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-      (iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0) :
+      (iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1Iter210PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -678,7 +708,7 @@ theorem divK_loop_n1_iter210_unified_spec (bltu_2 bltu_1 bltu_0 : Bool)
       hv_u0_2 hv_u1_2 hv_u2_2 hv_u3_2 hv_u4_2 hv_q2
       hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_2' hbltu_1 hbltu_0
+      hbltu_2' hbltu_1 hbltu_0 hcarry2
   · -- bltu_2 = true -> call
     have hbltu_2' : BitVec.ult u1 v0 := hbltu_2.symm ▸ rfl
     exact divK_loop_n1_call_iter10_spec bltu_1 bltu_0
@@ -690,17 +720,17 @@ theorem divK_loop_n1_iter210_unified_spec (bltu_2 bltu_1 bltu_0 : Bool)
       hv_u0_2 hv_u1_2 hv_u2_2 hv_u3_2 hv_u4_2 hv_q2
       hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_2' hbltu_1 hbltu_0
+      hbltu_2' hbltu_1 hbltu_0 hcarry2
 
 -- ============================================================================
--- Full four-iteration: compose j=3 with iter210 -- separate lemmas per case
+-- Full four-iteration : compose j=3 with iter210 -- separate lemmas per case
 -- Postcondition uses @[irreducible] loopN1UnifiedPost
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Four-iteration composition when j=3 is max (bltu_3 = false).
-    Composes j=3 max spec with the 3-iteration iter210 unified spec. -/
+/-- Four-iteration  composition when j=3 is max (bltu_3 = false).
+    Composes j=3  max spec with the 3-iteration iter210 unified  spec. -/
 theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -767,7 +797,8 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
         (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
         (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
         (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0) :
+        (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -793,11 +824,12 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     rw [← u_n1_j3_4080_eq_j2_4072]; exact hv_u2_3
   have hv_u4_2 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
     rw [← u_n1_j3_4072_eq_j2_4064]; exact hv_u3_3
-  -- j=3 max spec
+  -- j=3 max  spec
   have J3 := divK_loop_body_n1_max_unified_j3_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q3_old base
     hv_j hv_n1 hv_uhi_3 hv_ulo_3 hv_vtop hv_v0 hv_u0_3 hv_v1 hv_u1_3 hv_v2 hv_u2_3 hv_v3 hv_u3_3 hv_u4_3 hv_q3
     hbltu_3
+    (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J3
   -- Frame j=3 with iter210 extra atoms and scratch
   have J3f := cpsTriple_frame_left _ _ _ _ _
@@ -807,7 +839,7 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) J3
-  -- iter210 unified spec (inputs from j=3 max output)
+  -- iter210  unified spec (inputs from j=3 max  output)
   have H210 := divK_loop_n1_iter210_unified_spec bltu_2 bltu_1 bltu_0
     sp (3 : Word) ((3 : Word) <<< (3 : BitVec 6).toNat) u_base_3 q_addr_3
     ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -823,7 +855,7 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     hv_u0_2 hv_u1_2 hv_u2_2 hv_u3_2 hv_u4_2 hv_q2
     hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
     hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame iter210 with j=3 carried atoms
   have H210f := cpsTriple_frame_left _ _ _ _ _
     (((u_base_3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) ** (q_addr_3 ↦ₘ r3.1))
@@ -843,20 +875,20 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by delta loopN1PreWithScratch loopN1Pre at hp; xperm_hyp hp)
     (fun h hp => by
-      delta loopN1UnifiedPost loopN1Iter210Post at hp ⊢
-      simp only [iterN1_false] at hp ⊢
+      delta loopN1UnifiedPost loopN1Iter210Post loopN1Iter10Post loopIterPostN1 at hp ⊢
+      simp only [iterN1_false, Bool.false_eq_true, ↓reduceIte, sepConj_emp_right'] at hp ⊢
       have hr3 : r3 = iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top := rfl
       have hub3 : u_base_3 = sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat := rfl
       have hqa3 : q_addr_3 = sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat := rfl
       simp only [hr3, hub3, hqa3] at hp
       rw [sepConj_assoc'] at hp
-      cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> (simp only [sepConj_emp_right'] at hp ⊢; xperm_hyp hp))
+      cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
     full
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Four-iteration composition when j=3 is call (bltu_3 = true).
-    Composes j=3 call spec with the 3-iteration iter210 unified spec. -/
+/-- Four-iteration  composition when j=3 is call (bltu_3 = true).
+    Composes j=3  call spec with the 3-iteration iter210 unified  spec. -/
 theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -923,7 +955,8 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
         (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
         (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
         (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0) :
+        (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -949,12 +982,13 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     rw [← u_n1_j3_4080_eq_j2_4072]; exact hv_u2_3
   have hv_u4_2 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true := by
     rw [← u_n1_j3_4072_eq_j2_4064]; exact hv_u3_3
-  -- j=3 call spec (includes scratch)
+  -- j=3 call  spec (includes scratch)
   have J3 := divK_loop_body_n1_call_unified_j3_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q3_old ret_mem d_mem dlo_mem scratch_un0 base
     hv_j hv_n1 hv_uhi_3 hv_ulo_3 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_3 hv_v1 hv_u1_3 hv_v2 hv_u2_3 hv_v3 hv_u3_3 hv_u4_3 hv_q3
     hbltu_3
+    (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J3
   -- Frame j=3 with iter210 extra atoms only (scratch consumed by call)
   have J3f := cpsTriple_frame_left _ _ _ _ _
@@ -962,7 +996,7 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
      ((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J3
-  -- iter210 unified spec (inputs from j=3 call output, scratch = j=3 call values)
+  -- iter210  unified spec (inputs from j=3 call  output, scratch = j=3 call values)
   have H210 := divK_loop_n1_iter210_unified_spec bltu_2 bltu_1 bltu_0
     sp (3 : Word) ((3 : Word) <<< (3 : BitVec 6).toNat) u_base_3 q_addr_3
     ((mulsubN4 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
@@ -978,7 +1012,7 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     hv_u0_2 hv_u1_2 hv_u2_2 hv_u3_2 hv_u4_2 hv_q2
     hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
     hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame iter210 with j=3 carried atoms
   have H210f := cpsTriple_frame_left _ _ _ _ _
     (((u_base_3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) ** (q_addr_3 ↦ₘ r3.1))
@@ -998,23 +1032,23 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by delta loopN1PreWithScratch loopN1Pre at hp; xperm_hyp hp)
     (fun h hp => by
-      delta loopN1UnifiedPost loopN1Iter210Post at hp ⊢
-      simp only [iterN1_true] at hp ⊢
+      delta loopN1UnifiedPost loopN1Iter210Post loopN1Iter10Post loopIterPostN1 at hp ⊢
+      simp only [iterN1_true, ite_true, sepConj_emp_right'] at hp ⊢
       have hr3 : r3 = iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := rfl
       have hub3 : u_base_3 = sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat := rfl
       have hqa3 : q_addr_3 = sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat := rfl
       simp only [hr3, hub3, hqa3] at hp
       rw [sepConj_assoc'] at hp
-      cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> (simp only [sepConj_emp_right'] at hp ⊢; xperm_hyp hp))
+      cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
     full
 
 -- ============================================================================
--- Final unified dispatch: cases bltu_3, delegates to max/call lemmas
+-- Final  unified dispatch: cases bltu_3, delegates to max/call  lemmas
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Unified n=1 four-iteration loop composition, parameterized by
+/-- Unified n=1 four-iteration  loop composition, parameterized by
     `(bltu_3 bltu_2 bltu_1 bltu_0 : Bool)`.  Covers all 16 path combinations.
     Dispatches to divK_loop_n1_max_iter210_spec / divK_loop_n1_call_iter210_spec. -/
 theorem divK_loop_n1_unified_spec (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
@@ -1083,7 +1117,8 @@ theorem divK_loop_n1_unified_spec (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-        (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0) :
+        (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN1PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -1106,7 +1141,7 @@ theorem divK_loop_n1_unified_spec (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
       hv_uhi_2 hv_ulo_2 hv_u0_2 hv_q2
       hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_3' hbltu_2 hbltu_1 hbltu_0
+      hbltu_3' hbltu_2 hbltu_1 hbltu_0 hcarry2
   · -- bltu_3 = true -> call
     have hbltu_3' : BitVec.ult u1 v0 := hbltu_3.symm ▸ rfl
     exact divK_loop_n1_call_iter210_spec bltu_2 bltu_1 bltu_0
@@ -1120,6 +1155,6 @@ theorem divK_loop_n1_unified_spec (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
       hv_uhi_2 hv_ulo_2 hv_u0_2 hv_q2
       hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_3' hbltu_2 hbltu_1 hbltu_0
+      hbltu_3' hbltu_2 hbltu_1 hbltu_0 hcarry2
 
 end EvmAsm.Evm64

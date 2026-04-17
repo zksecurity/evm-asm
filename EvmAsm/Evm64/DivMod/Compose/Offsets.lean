@@ -60,17 +60,17 @@ abbrev loopSetupOff : Word :=  432
 /-- Offset of `divK_loopBody` (Knuth Algorithm D main loop body). -/
 abbrev loopBodyOff  : Word :=  448
 /-- Offset of `divK_denorm` (denormalize result back to original shift). -/
-abbrev denormOff    : Word :=  904
+abbrev denormOff    : Word :=  908
 /-- Offset of the epilogue (`divK_div_epilogue` for DIV, `divK_mod_epilogue`
     for MOD; both are 40 bytes). -/
-abbrev epilogueOff  : Word := 1004
+abbrev epilogueOff  : Word := 1008
 /-- Offset of `divK_zeroPath` (b=0 quick return with result 0). -/
-abbrev zeroPathOff  : Word := 1044
+abbrev zeroPathOff  : Word := 1048
 /-- Offset of the NOP separator between `divK_zeroPath` and `divK_div128`.
     Ensures the subroutine entry differs from any block exit PC. -/
-abbrev nopOff       : Word := 1064
+abbrev nopOff       : Word := 1068
 /-- Offset of `divK_div128` (the 128÷64 long-division subroutine). -/
-abbrev div128Off    : Word := 1068
+abbrev div128Off    : Word := 1072
 
 -- ============================================================================
 -- Consistency / drift checks
@@ -86,8 +86,8 @@ abbrev div128Off    : Word := 1068
 -- reduce to concrete numerals).
 -- ============================================================================
 
-/-- phaseBOff = phaseAOff + 4 · |divK_phaseA 1016|. -/
-example : phaseBOff = phaseAOff + 4 * (divK_phaseA 1016).length := by decide
+/-- phaseBOff = phaseAOff + 4 · |divK_phaseA 1020|. -/
+example : phaseBOff = phaseAOff + 4 * (divK_phaseA 1020).length := by decide
 /-- clzOff = phaseBOff + 4 · |divK_phaseB|. -/
 example : clzOff = phaseBOff + 4 * divK_phaseB.length := by decide
 /-- phaseC2Off = clzOff + 4 · |divK_clz|. -/
@@ -100,10 +100,10 @@ example : normAOff = normBOff + 4 * divK_normB.length := by decide
 example : copyAUOff = normAOff + 4 * (divK_normA 40).length := by decide
 /-- loopSetupOff = copyAUOff + 4 · |divK_copyAU|. -/
 example : loopSetupOff = copyAUOff + 4 * divK_copyAU.length := by decide
-/-- loopBodyOff = loopSetupOff + 4 · |divK_loopSetup 460|. -/
-example : loopBodyOff = loopSetupOff + 4 * (divK_loopSetup 460).length := by decide
-/-- denormOff = loopBodyOff + 4 · |divK_loopBody 556 7740|. -/
-example : denormOff = loopBodyOff + 4 * (divK_loopBody 556 7740).length := by decide
+/-- loopBodyOff = loopSetupOff + 4 · |divK_loopSetup 464|. -/
+example : loopBodyOff = loopSetupOff + 4 * (divK_loopSetup 464).length := by decide
+/-- denormOff = loopBodyOff + 4 · |divK_loopBody 560 7736|. -/
+example : denormOff = loopBodyOff + 4 * (divK_loopBody 560 7736).length := by decide
 /-- epilogueOff = denormOff + 4 · |divK_denorm|. -/
 example : epilogueOff = denormOff + 4 * divK_denorm.length := by decide
 /-- zeroPathOff = epilogueOff + 4 · |divK_div_epilogue 24|

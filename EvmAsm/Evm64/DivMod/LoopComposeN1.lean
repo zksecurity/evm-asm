@@ -119,11 +119,18 @@ theorem u_n1_j1_4072_eq_j0_4064 (sp : Word) :
   divmod_addr
 
 -- ============================================================================
--- Unified per-iteration max-path specs: case-split skip/addback internally
+-- Double-addback () unified per-iteration specs
+-- These use _beq specs in the addback branch and _skip specs in the skip branch,
+-- producing loopIterPostN1Max / loopIterPostN1Call postconditions.
 -- ============================================================================
 
-/-- Unified j=3 max-path spec: handles both skip and addback internally.
-    Produces loopIterPostN1Max which uses iterN1Max for the result values. -/
+-- ============================================================================
+-- Unified per-iteration max-path  specs
+-- ============================================================================
+
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=3 max-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_max_unified_j3_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -143,7 +150,8 @@ theorem divK_loop_body_n1_max_unified_j3_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : ¬BitVec.ult u1 v0) :
+    (hbltu : ¬BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -164,18 +172,15 @@ theorem divK_loop_body_n1_max_unified_j3_spec
   · -- addback path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
                     then (1 : Word) else 0) ≠ (0 : Word) := by rw [if_pos hb]; decide
-    have J3 := divK_loop_body_n1_max_addback_j3_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J3 := divK_loop_body_n1_max_addback_j3_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu
+      hcarry2_nz
     intro_lets at J3
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J3 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -187,15 +192,12 @@ theorem divK_loop_body_n1_max_unified_j3_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J3 hborrow)
 
-/-- Unified j=2 max-path spec: handles both skip and addback internally.
-    Produces loopIterPostN1Max which uses iterN1Max for the result values. -/
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=2 max-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_max_unified_j2_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -215,7 +217,8 @@ theorem divK_loop_body_n1_max_unified_j2_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : ¬BitVec.ult u1 v0) :
+    (hbltu : ¬BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -236,18 +239,15 @@ theorem divK_loop_body_n1_max_unified_j2_spec
   · -- addback path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
                     then (1 : Word) else 0) ≠ (0 : Word) := by rw [if_pos hb]; decide
-    have J2 := divK_loop_body_n1_max_addback_j2_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J2 := divK_loop_body_n1_max_addback_j2_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu
+      hcarry2_nz
     intro_lets at J2
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J2 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -259,15 +259,12 @@ theorem divK_loop_body_n1_max_unified_j2_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J2 hborrow)
 
-/-- Unified j=1 max-path spec: handles both skip and addback internally.
-    Produces loopIterPostN1Max which uses iterN1Max for the result values. -/
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=1 max-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_max_unified_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -287,7 +284,8 @@ theorem divK_loop_body_n1_max_unified_j1_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : ¬BitVec.ult u1 v0) :
+    (hbltu : ¬BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -308,18 +306,15 @@ theorem divK_loop_body_n1_max_unified_j1_spec
   · -- addback path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
                     then (1 : Word) else 0) ≠ (0 : Word) := by rw [if_pos hb]; decide
-    have J1 := divK_loop_body_n1_max_addback_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J1 := divK_loop_body_n1_max_addback_j1_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu
+      hcarry2_nz
     intro_lets at J1
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J1 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -331,14 +326,12 @@ theorem divK_loop_body_n1_max_unified_j1_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J1 hborrow)
 
-/-- Unified j=0 max-path spec: handles both skip and addback internally.
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=0 max-path  spec: uses _beq spec for addback, _skip for skip.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n1_max_unified_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
@@ -359,10 +352,11 @@ theorem divK_loop_body_n1_max_unified_j0_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : ¬BitVec.ult u1 v0) :
+    (hbltu : ¬BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 904) (sharedDivModCode base)
+    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -380,18 +374,15 @@ theorem divK_loop_body_n1_max_unified_j0_spec
   · -- addback path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
                     then (1 : Word) else 0) ≠ (0 : Word) := by rw [if_pos hb]; decide
-    have J0 := divK_loop_body_n1_max_addback_j0_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J0 := divK_loop_body_n1_max_addback_j0_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu
+      hcarry2_nz
     intro_lets at J0
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_addback _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J0 hborrow)
   · -- skip path
     have hborrow : (if BitVec.ult u_top (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
@@ -403,18 +394,16 @@ theorem divK_loop_body_n1_max_unified_j0_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Max iterN1Max mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Max_skip _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       (J0 hborrow)
 
 -- ============================================================================
--- Unified per-iteration call-path specs
+-- Unified per-iteration call-path  specs
 -- ============================================================================
 
-/-- Unified j=3 call-path spec: handles both skip and addback internally. -/
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=3 call-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_call_unified_j3_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -440,7 +429,8 @@ theorem divK_loop_body_n1_call_unified_j3_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : BitVec.ult u1 v0) :
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -465,19 +455,16 @@ theorem divK_loop_body_n1_call_unified_j3_spec
   · -- addback path
     have hborrow : isAddbackBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN1Call; simp only []; rw [if_pos hb]; decide
-    have J3 := divK_loop_body_n1_call_addback_j3_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J3 := divK_loop_body_n1_call_addback_j3_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hborrow
+      hcarry2_nz
     intro_lets at J3
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1CallAddbackPostJ loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J3
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -489,14 +476,12 @@ theorem divK_loop_body_n1_call_unified_j3_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1CallSkipPostJ loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J3
 
-/-- Unified j=2 call-path spec: handles both skip and addback internally. -/
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=2 call-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_call_unified_j2_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -522,7 +507,8 @@ theorem divK_loop_body_n1_call_unified_j2_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : BitVec.ult u1 v0) :
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -547,19 +533,16 @@ theorem divK_loop_body_n1_call_unified_j2_spec
   · -- addback path
     have hborrow : isAddbackBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN1Call; simp only []; rw [if_pos hb]; decide
-    have J2 := divK_loop_body_n1_call_addback_j2_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J2 := divK_loop_body_n1_call_addback_j2_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hborrow
+      hcarry2_nz
     intro_lets at J2
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1CallAddbackPostJ loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J2
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -571,14 +554,12 @@ theorem divK_loop_body_n1_call_unified_j2_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1CallSkipPostJ loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J2
 
-/-- Unified j=1 call-path spec: handles both skip and addback internally. -/
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=1 call-path  spec: uses _beq spec for addback, _skip for skip. -/
 theorem divK_loop_body_n1_call_unified_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
@@ -604,7 +585,8 @@ theorem divK_loop_body_n1_call_unified_j1_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : BitVec.ult u1 v0) :
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + 448) (base + 448) (sharedDivModCode base)
@@ -629,19 +611,16 @@ theorem divK_loop_body_n1_call_unified_j1_spec
   · -- addback path
     have hborrow : isAddbackBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN1Call; simp only []; rw [if_pos hb]; decide
-    have J1 := divK_loop_body_n1_call_addback_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J1 := divK_loop_body_n1_call_addback_j1_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hborrow
+      hcarry2_nz
     intro_lets at J1
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1CallAddbackPostJ loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J1
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -653,14 +632,12 @@ theorem divK_loop_body_n1_call_unified_j1_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1CallSkipPostJ loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J1
 
-/-- Unified j=0 call-path spec: handles both skip and addback internally.
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 12800000 in
+/-- Unified j=0 call-path  spec: uses _beq spec for addback, _skip for skip.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n1_call_unified_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
@@ -687,10 +664,11 @@ theorem divK_loop_body_n1_call_unified_j0_spec
     (hv_u3 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072) = true)
     (hv_u4 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064) = true)
     (hv_q : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
-    (hbltu : BitVec.ult u1 v0) :
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
     let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + 448) (base + 904) (sharedDivModCode base)
+    cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
@@ -712,19 +690,16 @@ theorem divK_loop_body_n1_call_unified_j0_spec
   · -- addback path
     have hborrow : isAddbackBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN1Call; simp only []; rw [if_pos hb]; decide
-    have J0 := divK_loop_body_n1_call_addback_j0_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
+    have J0 := divK_loop_body_n1_call_addback_j0_beq_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
       hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
       hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hborrow
+      hcarry2_nz
     intro_lets at J0
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_pos hb] at ⊢
-        delta loopBodyN1CallAddbackPostJ loopBodyN1AddbackPost loopBodyAddbackPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_addback _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J0
   · -- skip path
     have hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
@@ -736,11 +711,7 @@ theorem divK_loop_body_n1_call_unified_j0_spec
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by
-        delta loopIterPostN1Call iterN1Call mulsubN4_c3 at hb ⊢
-        simp only [] at ⊢
-        simp only [if_neg hb] at ⊢
-        delta loopBodyN1CallSkipPostJ loopBodyN1SkipPost loopBodySkipPost at hp
-        exact hp)
+        rw [← loopIterPostN1Call_skip _ _ _ _ _ _ _ _ _ _ _ _ hb]; exact hp)
       J0
 
 end EvmAsm.Evm64

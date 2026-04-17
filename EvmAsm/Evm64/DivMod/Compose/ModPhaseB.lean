@@ -27,7 +27,7 @@ open EvmAsm.Rv64
 private theorem sub_modCode_of_phaseB_left (base : Word) (rest : CodeReq) :
     ∀ a i,
       CodeReq.ofProg (base + phaseBOff) divK_phaseB a = some i →
-      ((CodeReq.ofProg base (divK_phaseA 1016)).union
+      ((CodeReq.ofProg base (divK_phaseA 1020)).union
         ((CodeReq.ofProg (base + phaseBOff) divK_phaseB).union rest)) a = some i :=
   CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range _ _ _ _

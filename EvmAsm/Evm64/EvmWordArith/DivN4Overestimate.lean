@@ -472,4 +472,93 @@ theorem mulsub_double_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have : q.toNat = (q.toNat - 2) + 2 := by omega
   nlinarith
 
+-- ============================================================================
+-- First addback carry is 1 when overestimate ≤ 1
+-- ============================================================================
+
+/-- When c3 = 1 (borrow) and q overestimates by at most 1, the first addback
+    carry is 1 (hence ≠ 0). This proves single addback suffices.
+
+    From c3=1: val256(u) + 2^256 = val256(un) + q*val256(v)
+    From q ≤ ⌊u/v⌋ + 1: (q-1)*val256(v) ≤ val256(u)
+    Therefore: val256(un) = val256(u) + 2^256 - q*val256(v)
+             = 2^256 - (q*val256(v) - val256(u))
+             ≥ 2^256 - val256(v)  (since q*v - u ≤ v from overestimate ≤ 1)
+    So: val256(un) + val256(v) ≥ 2^256, hence carry = 1. -/
+theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
+    (hbnz : v0 ||| v1 ||| v2 ||| v3 ≠ 0)
+    (hq_over : q.toNat ≤ val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3 + 1)
+    (hc3_one : (mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2 = 1) :
+    let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
+    (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3).toNat = 1 := by
+  intro ms
+  -- From mulsubN4_val256_eq with c3 = 1
+  have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
+  simp only [] at hmulsub
+  rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
+  have h1w : (1 : Word).toNat = 1 := by decide
+  rw [h1w] at hmulsub
+  -- hmulsub: val256(u) + 1 * 2^256 = val256(un) + q * val256(v)
+  -- First addback equation
+  have hab := addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 v0 v1 v2 v3
+  simp only [] at hab
+  set carry := (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3).toNat
+  set ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 v0 v1 v2 v3
+  -- Bounds
+  have hun_bound := val256_bound ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
+  have hv_bound := val256_bound v0 v1 v2 v3
+  have hu_bound := val256_bound u0 u1 u2 u3
+  have hab_bound := val256_bound ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
+  have hv_pos : 0 < val256 v0 v1 v2 v3 := val256_pos_of_or_ne_zero v0 v1 v2 v3 hbnz
+  -- q * val256(v) > val256(u) (from c3 = 1, i.e., borrow)
+  have hqv_gt_u : q.toNat * val256 v0 v1 v2 v3 > val256 u0 u1 u2 u3 := by nlinarith
+  -- q ≥ 1
+  have hq_ge_1 : q.toNat ≥ 1 := by
+    by_contra h; push_neg at h
+    have : q.toNat = 0 := by omega
+    simp [this] at hqv_gt_u
+  -- (q-1) * val256(v) ≤ val256(u) (from hq_over: q ≤ ⌊u/v⌋ + 1)
+  have hqm1_le : (q.toNat - 1) * val256 v0 v1 v2 v3 ≤ val256 u0 u1 u2 u3 := by
+    have hdiv := Nat.div_mul_le_self (val256 u0 u1 u2 u3) (val256 v0 v1 v2 v3)
+    calc (q.toNat - 1) * val256 v0 v1 v2 v3
+        ≤ (val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3) * val256 v0 v1 v2 v3 := by
+          apply Nat.mul_le_mul_right; omega
+      _ ≤ val256 u0 u1 u2 u3 := hdiv
+  -- q * val256(v) ≤ val256(u) + val256(v) (from hqm1_le)
+  have hqv_le : q.toNat * val256 v0 v1 v2 v3 ≤
+      val256 u0 u1 u2 u3 + val256 v0 v1 v2 v3 := by
+    have : q.toNat * val256 v0 v1 v2 v3 =
+        (q.toNat - 1) * val256 v0 v1 v2 v3 + val256 v0 v1 v2 v3 := by
+      have hq1 : q.toNat = (q.toNat - 1) + 1 := by omega
+      nlinarith
+    linarith
+  -- val256(un) + val256(v) ≥ 2^256
+  have h_ge : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 + val256 v0 v1 v2 v3 ≥ 2 ^ 256 := by
+    nlinarith
+  -- From hab: val256(un) + val256(v) = val256(ab) + carry * 2^256
+  -- Since val256(un) + val256(v) ≥ 2^256 and val256(ab) < 2^256:
+  -- carry * 2^256 ≥ 1, so carry ≥ 1
+  -- Also val256(un) + val256(v) < 2 * 2^256, so carry < 2
+  have hc_ge : carry ≥ 1 := by
+    by_contra h; push_neg at h
+    have : carry = 0 := by omega
+    rw [this] at hab
+    linarith
+  have hc_lt : carry * 2 ^ 256 < 2 * 2 ^ 256 := by linarith
+  have h256_pos : (0 : Nat) < 2 ^ 256 := by positivity
+  have : carry < 2 := (Nat.mul_lt_mul_right h256_pos).mp hc_lt
+  omega
+
+/-- When overestimate ≤ 1 and borrow = 1, addback carry is non-zero. -/
+theorem addbackN4_first_carry_ne_zero (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
+    (hbnz : v0 ||| v1 ||| v2 ||| v3 ≠ 0)
+    (hq_over : q.toNat ≤ val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3 + 1)
+    (hc3_one : (mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2 = 1) :
+    let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
+    addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3 ≠ 0 := by
+  intro ms h
+  have := addbackN4_first_carry_one q v0 v1 v2 v3 u0 u1 u2 u3 hbnz hq_over hc3_one
+  simp only [] at this
+  rw [h] at this; simp at this
+
 end EvmAsm.Evm64

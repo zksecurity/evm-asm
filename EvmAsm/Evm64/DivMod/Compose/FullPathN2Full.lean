@@ -1,8 +1,8 @@
 /-
   EvmAsm.Evm64.DivMod.Compose.FullPathN2Full
 
-  Full n=2 DIV path compositions (base → base+1064).
-  Composes preloop+loop (base → base+904) with denorm+epilogue (base+904 → base+1064).
+  Full n=2 DIV path compositions (base → base+1068).
+  Composes preloop+loop (base → base+904) with denorm+epilogue (base+904 → base+1068).
 
   Starts with the all-max case (bltu_2 = bltu_1 = bltu_0 = false) as the foundation.
 -/
@@ -21,12 +21,12 @@ open EvmAsm.Rv64
 -- loopExitPostN2_j0_eq is in FullPathN2Loop.lean
 
 -- ============================================================================
--- Full path postcondition for n=2 all-max (F,F,F)
+-- Double-addback full path postcondition for n=2 all-max (F,F,F)
 -- ============================================================================
 
-/-- Full path postcondition for n=2 DIV (shift ≠ 0, all-max: bltu_2=bltu_1=bltu_0=false).
-    Computes normalized b[], u[], runs three max-path loop iterations,
-    then denormalizes remainder and outputs quotient. -/
+/-- Full path postcondition for n=2 DIV with double addback
+    (shift ≠ 0, all-max: bltu_2=bltu_1=bltu_0=false).
+    Same as `fullDivN2AllMaxPost` but uses `iterN2Max` (with addback branching). -/
 @[irreducible]
 def fullDivN2AllMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
@@ -61,12 +61,12 @@ def fullDivN2AllMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word)
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
 
 -- ============================================================================
--- Full n=2 DIV path (all-max, shift≠0): base → base+1064
+-- Full n=2 DIV path with double addback (all-max, shift≠0): base → base+1068
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 set_option maxHeartbeats 12800000 in
-/-- Full n=2 DIV path (shift ≠ 0, all-max: bltu_2=bltu_1=bltu_0=false).
+/-- Full n=2 DIV path with double addback (shift ≠ 0, all-max: bltu_2=bltu_1=bltu_0=false).
     Composes pre-loop + three-iteration loop + denorm + epilogue. -/
 theorem evm_div_n2_full_all_max_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
@@ -98,8 +98,12 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 false false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 false false false a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 1064) (divCode base)
+    (hbltu_0 : isTrialN2_j0 false false false a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
+    cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -147,8 +151,8 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
-  -- 2. Post-loop: base+904 → base+1064
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
+  -- 2. Post-loop: base+904 → base+1068
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -175,9 +179,9 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by
       delta preloopN2UnifiedPost loopN2UnifiedPost at hp
-      simp (config := { decide := true }) only [iterN2_false,
-        loopIterPostN2_max, loopIterPostN2Max,
-        sepConj_emp_right', loopExitPostN2_j0_eq,
+      simp (config := { decide := true }) only [iterN2_false, ite_false] at hp
+      delta loopN2Iter10Post loopN2MaxPost loopIterPostN2Max at hp
+      simp (config := { decide := true }) only [loopExitPostN2_j0_eq,
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
@@ -187,10 +191,10 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
     hFull
 
 -- ============================================================================
--- Unified full path postcondition for n=2 (all 8 path combinations)
+-- Double-addback unified full path postcondition for n=2 (all 8 path combinations)
 -- ============================================================================
 
-/-- Unified full path postcondition for n=2 DIV (shift ≠ 0).
+/-- Unified full path postcondition for n=2 DIV with double addback (shift ≠ 0).
     Uses `iterN2` (which reduces to `iterN2Max`/`iterN2Call` for concrete bools).
     Scratch cells depend on the path: passthrough for all-max,
     div128 scratch for the last call-path iteration. -/
@@ -267,14 +271,14 @@ def fullDivN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.1)
 
 -- ============================================================================
--- Unified full n=2 DIV path (shift≠0): base → base+1064
+-- Unified full n=2 DIV path with double addback: base → base+1068
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
-set_option maxHeartbeats 25600000 in
-/-- Unified full n=2 DIV path (shift ≠ 0), covering all 8 path combinations.
-    Composes pre-loop + three-iteration loop + denorm + epilogue.
-    Proof: case-split on bltu_2/bltu_1/bltu_0, each case follows the all-max pattern. -/
+set_option maxHeartbeats 12800000 in
+/-- Unified full n=2 DIV path (shift ≠ 0) with double addback,
+    covering all 8 path combinations.
+    Dispatches to per-case  lemmas via postcondition bridge. -/
 theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
@@ -305,8 +309,12 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 bltu_2 a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
-    cpsTriple base (base + 1064) (divCode base)
+    (hbltu_0 : isTrialN2_j0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
+    cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -330,22 +338,9 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
         ret_mem d_mem dlo_mem scratch_un0) := by
-  -- Normalized values (shared across all cases)
-  let shift := (clzResult b1).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
-  let v0' := b0 <<< (shift.toNat % 64)
-  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-  let u0_s := a0 <<< (shift.toNat % 64)
-  let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
-  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  let u4_s := a3 >>> (anti_shift.toNat % 64)
-  -- Dispatch to per-case lemmas via postcondition bridge.
-  -- Each bridge shows fullDivN2UnifiedPost concrete_bools = fullDivN2_XXX_Post.
   cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;>
-    simp only [isTrialN2_j2, isTrialN2_j1, isTrialN2_j0, iterN2_false, iterN2_true]
+    simp only [isTrialN2_j2, isTrialN2_j1, isTrialN2_j0,
+               iterN2_false, iterN2_true]
       at hbltu_2 hbltu_1 hbltu_0
   · have h_eq : fullDivN2UnifiedPost false false false sp base a0 a1 a2 a3 b0 b1 b2 b3
         ret_mem d_mem dlo_mem scratch_un0 =
@@ -358,7 +353,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
       hbnz hb3z hb2z hb1nz hshift_nz hvalid
       hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
       hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-      hbltu_2 hbltu_1 hbltu_0
+      hbltu_2 hbltu_1 hbltu_0 hcarry2
   all_goals (
     first
     | (have h_eq : fullDivN2UnifiedPost false false true sp base a0 a1 a2 a3 b0 b1 b2 b3
@@ -369,7 +364,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost false true false sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_FTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_FTF_Post; rfl
@@ -378,7 +373,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost false true true sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_FTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_FTT_Post; rfl
@@ -387,7 +382,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true false false sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TFF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TFF_Post; rfl
@@ -396,7 +391,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true false true sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TFT_Post; rfl
@@ -405,7 +400,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true true false sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TTF_Post; rfl
@@ -414,7 +409,7 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0)
+          hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true true true sp base a0 a1 a2 a3 b0 b1 b2 b3
           ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TTT_Post; rfl
@@ -423,6 +418,6 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
           ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz hvalid
           hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
           hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-          hbltu_2 hbltu_1 hbltu_0))
+          hbltu_2 hbltu_1 hbltu_0 hcarry2))
 
 end EvmAsm.Evm64
