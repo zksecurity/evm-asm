@@ -51,6 +51,53 @@ theorem evmStackIs_nil (sp : Word) :
     evmStackIs sp [] = empAssertion := rfl
 
 -- ============================================================================
+-- evmWordIs unfold and limb-equality bridges
+-- ============================================================================
+
+/-- Unfold `evmWordIs sp v` into four limb-level memory atoms at
+    `sp, sp+8, sp+16, sp+24`. Trivial rewrite of the definition; provided as a
+    named lemma for readability at call sites in stack-level specs. -/
+theorem evmWordIs_sp_unfold (sp : Word) (v : EvmWord) :
+    evmWordIs sp v =
+    ((sp ↦ₘ v.getLimbN 0) ** ((sp + 8) ↦ₘ v.getLimbN 1) **
+     ((sp + 16) ↦ₘ v.getLimbN 2) ** ((sp + 24) ↦ₘ v.getLimbN 3)) := rfl
+
+/-- Unfold `evmWordIs (sp+32) v` into four limb-level memory atoms at the
+    absolute stack addresses `sp+32, sp+40, sp+48, sp+56`. Bridges the
+    separation-logic `evmWordIs` predicate and the raw limb atoms that the
+    limb-level specs produce for the `b`-operand on the EVM stack. -/
+theorem evmWordIs_sp32_unfold (sp : Word) (v : EvmWord) :
+    evmWordIs (sp + 32) v =
+    (((sp + 32) ↦ₘ v.getLimbN 0) ** ((sp + 40) ↦ₘ v.getLimbN 1) **
+     ((sp + 48) ↦ₘ v.getLimbN 2) ** ((sp + 56) ↦ₘ v.getLimbN 3)) := by
+  unfold evmWordIs
+  rw [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
+      show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
+      show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega]
+
+/-- Rewrite `evmWordIs sp v` to four limb atoms given explicit getLimbN
+    equalities. Decouples the caller's representation of `v` from the limb
+    form — works uniformly whether the equalities come from
+    `getLimbN_fromLimbs_*`, per-op bridge lemmas, or `by decide` facts. -/
+theorem evmWordIs_sp_limbs_eq (sp : Word) (v : EvmWord) (w0 w1 w2 w3 : Word)
+    (h0 : v.getLimbN 0 = w0) (h1 : v.getLimbN 1 = w1)
+    (h2 : v.getLimbN 2 = w2) (h3 : v.getLimbN 3 = w3) :
+    evmWordIs sp v =
+    ((sp ↦ₘ w0) ** ((sp + 8) ↦ₘ w1) **
+     ((sp + 16) ↦ₘ w2) ** ((sp + 24) ↦ₘ w3)) := by
+  rw [evmWordIs_sp_unfold, h0, h1, h2, h3]
+
+/-- Rewrite `evmWordIs (sp+32) v` to four limb atoms given explicit getLimbN
+    equalities. Companion to `evmWordIs_sp_limbs_eq` for the `b`-operand slot. -/
+theorem evmWordIs_sp32_limbs_eq (sp : Word) (v : EvmWord) (w0 w1 w2 w3 : Word)
+    (h0 : v.getLimbN 0 = w0) (h1 : v.getLimbN 1 = w1)
+    (h2 : v.getLimbN 2 = w2) (h3 : v.getLimbN 3 = w3) :
+    evmWordIs (sp + 32) v =
+    (((sp + 32) ↦ₘ w0) ** ((sp + 40) ↦ₘ w1) **
+     ((sp + 48) ↦ₘ w2) ** ((sp + 56) ↦ₘ w3)) := by
+  rw [evmWordIs_sp32_unfold, h0, h1, h2, h3]
+
+-- ============================================================================
 -- Shared infrastructure for stack operation specs
 -- ============================================================================
 
