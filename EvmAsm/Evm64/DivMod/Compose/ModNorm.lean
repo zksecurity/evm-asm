@@ -124,11 +124,7 @@ private theorem divK_normB_code_sub_modCode (base : Word) :
   skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left _ _
 
--- signExtend12 for offsets used by normB merge spec
-private theorem mod_se12_56 : signExtend12 (56 : BitVec 12) = (56 : Word) := by decide
-private theorem mod_se12_48 : signExtend12 (48 : BitVec 12) = (48 : Word) := by decide
-private theorem mod_se12_40 : signExtend12 (40 : BitVec 12) = (40 : Word) := by decide
-private theorem mod_se12_32 : signExtend12 (32 : BitVec 12) = (32 : Word) := by decide
+-- Reuse se12_32/40/48/56 from Compose.Base (no private shadows needed).
 
 /-- NormB first half: merge1 (b[3] with b[2]) + merge2 (b[2] with b[1]).
     base+228 -> base+276 (12 instructions). MOD mirror. -/
@@ -147,7 +143,7 @@ private theorem mod_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (
   intro b3' b2'
   -- Merge 1: b[3] with b[2] (base+228 -> base+252)
   have hm1 := divK_normB_merge_spec 56 48 sp b3 b2 v5 v7 shift anti_shift (base + normBOff)
-  simp only [mod_se12_56, mod_se12_48] at hm1
+  simp only [se12_56, se12_48] at hm1
   rw [show (base + normBOff : Word) + 24 = base + 252 from by bv_addr] at hm1
   have hm1e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_modCode base a i
@@ -161,7 +157,7 @@ private theorem mod_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (
   -- Merge 2: b[2] with b[1] (base+252 -> base+276)
   have hm2 := divK_normB_merge_spec 48 40 sp b2 b1 b3' (b2 >>> (anti_shift.toNat % 64))
     shift anti_shift (base + 252)
-  simp only [mod_se12_48, mod_se12_40] at hm2
+  simp only [se12_48, se12_40] at hm2
   rw [show (base + 252 : Word) + 24 = base + 276 from by bv_addr] at hm2
   have hm2e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_modCode base a i
@@ -196,7 +192,7 @@ private theorem mod_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base
   -- Merge 3: b[1] with b[0] (base+276 -> base+300)
   have hm3 := divK_normB_merge_spec 40 32 sp b1 b0
     b2' (b1 >>> (anti_shift.toNat % 64)) shift anti_shift (base + 276)
-  simp only [mod_se12_40, mod_se12_32] at hm3
+  simp only [se12_40, se12_32] at hm3
   rw [show (base + 276 : Word) + 24 = base + 300 from by bv_addr] at hm3
   have hm3e := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_modCode base a i
@@ -208,7 +204,7 @@ private theorem mod_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base
     (by pcFree) hm3e
   -- Last: b[0] alone (base+300 -> base+312)
   have hl := divK_normB_last_spec 32 sp b0 b1' shift (base + 300)
-  simp only [mod_se12_32] at hl
+  simp only [se12_32] at hl
   rw [show (base + 300 : Word) + 12 = base + normAOff from by bv_addr] at hl
   have hle := cpsTriple_extend_code (hmono := fun a i h =>
     divK_normB_code_sub_modCode base a i
