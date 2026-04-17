@@ -37,12 +37,6 @@ private theorem denorm_sub (base : Word) (sub_prog : List Instr) (k : Nat)
   exact divK_denorm_code_sub_divCode base a i
     (CodeReq.ofProg_mono_sub (base + denormOff) _ divK_denorm _ k rfl hslice hk hbound a i h)
 
--- signExtend12 for u[] offsets
-private theorem se12_4032' : signExtend12 (4032 : BitVec 12) = signExtend12 4032 := rfl
-private theorem se12_4040' : signExtend12 (4040 : BitVec 12) = signExtend12 4040 := rfl
-private theorem se12_4048' : signExtend12 (4048 : BitVec 12) = signExtend12 4048 := rfl
-private theorem se12_4056' : signExtend12 (4056 : BitVec 12) = signExtend12 4056 := rfl
-
 /-- Denorm preamble for shift≠0: LD shift from memory + BEQ not taken.
     base+908 → base+916. Bridges the gap between loop body exit and denorm body. -/
 theorem divK_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)

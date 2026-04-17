@@ -202,7 +202,7 @@ Every phase follows the same seven-step shape. Deviate only with a documented re
   2. `FullPathN1Loop.lean` (15) — **blocked on PR #300 merge**
   3. `FullPathN2Loop.lean` (13) + `FullPathN3Loop.lean` (13) — **blocked on PR #300 merge**
   4. `ModPhaseB.lean` (15) + `Compose/ModPhaseBn21.lean` + `Compose/ModPhaseBn3.lean`
-  5. `Compose/NormA.lean` + `Compose/Norm.lean` + `Compose/Epilogue.lean` — also delete their file-private `se12_*` shadows, which collide-by-name with `AddrNorm.lean`'s globals.
+  5. `Compose/NormA.lean` + `Compose/Norm.lean` + `Compose/Epilogue.lean` — also delete their file-private `se12_*` shadows, which collide-by-name with `AddrNorm.lean`'s globals. (Partial: NormA/Epilogue/ModNorm shadows removed — Norm.lean already uses Base.lean's public `se12_32..56` directly.)
   6. Sweep: grep for any remaining `simp only [show signExtend12 .* by decide]` in `EvmAsm/Evm64/DivMod/` and clean up.
 - **Dependencies:** PR #300 (double-addback) for sub-PRs 2–3. Sub-PRs 1, 4, 5, 6 are unblocked today.
 - **Stop criterion:** `grep -r "simp only \[show signExtend12" EvmAsm/Evm64/DivMod/` returns zero matches.

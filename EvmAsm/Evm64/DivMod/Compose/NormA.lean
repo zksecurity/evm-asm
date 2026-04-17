@@ -36,16 +36,9 @@ private theorem normA_sub (base : Word) (sub_prog : List Instr) (k : Nat)
   exact divK_normA_code_sub_divCode base a i
     (CodeReq.ofProg_mono_sub (base + normAOff) _ (divK_normA 40) _ k rfl hslice hk hbound a i h)
 
--- signExtend12 for src/dst offsets used by normA specs
-private theorem se12_24 : signExtend12 (24 : BitVec 12) = (24 : Word) := by decide
-private theorem se12_16 : signExtend12 (16 : BitVec 12) = (16 : Word) := by decide
-private theorem se12_8 : signExtend12 (8 : BitVec 12) = (8 : Word) := by decide
-private theorem se12_0 : signExtend12 (0 : BitVec 12) = (0 : Word) := by decide
-private theorem se12_4024 : signExtend12 (4024 : BitVec 12) = signExtend12 4024 := rfl
-private theorem se12_4032 : signExtend12 (4032 : BitVec 12) = signExtend12 4032 := rfl
-private theorem se12_4040 : signExtend12 (4040 : BitVec 12) = signExtend12 4040 := rfl
-private theorem se12_4048 : signExtend12 (4048 : BitVec 12) = signExtend12 4048 := rfl
-private theorem se12_4056 : signExtend12 (4056 : BitVec 12) = signExtend12 4056 := rfl
+-- signExtend12 rewrites pulled from the divmod_addr global set (AddrNorm.lean).
+open EvmAsm.Evm64.DivMod.AddrNorm (se12_0 se12_8 se12_16 se12_24)
+
 private theorem signExtend21_40 : signExtend21 (40 : BitVec 21) = (40 : Word) := by decide
 
 /-- Full NormA: normalize dividend a[0..3] → u[0..4] and jump to loopSetup.
