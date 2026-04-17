@@ -613,7 +613,12 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
     body as a `cpsBranch` — iteration body + `BNE x14, x0, back`.
     Taken at `(base+20) + signExtend13 back` with `⌜cnt' ≠ 0⌝`; fall-
     through at `base + 24` with `⌜cnt' = 0⌝`.
-  - Full loop closure (iteration invariant over `cnt`) still pending.
+  - `rlp_phase2_long_loop_one_byte_spec`
+    (`EvmAsm/Rv64/RLP/Phase2LongLoopOne.lean`): single-iteration
+    closure (lenLen = 1). When `x14 = 1` at entry, the taken branch is
+    unreachable (`cnt' = 0`), so the `cpsBranch` collapses to a plain
+    `cpsTriple` exiting at `base + 24`.
+  - General `n`-iteration closure (induction over `cnt`) still pending.
 - Phase 3: Single-item flat decode (byte strings only)
 - Phase 4: HINT_READ integration (load RLP input into memory buffer)
 - Phase 5: Recursive list decode (iterative with explicit stack)
