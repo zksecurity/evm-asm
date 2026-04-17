@@ -63,7 +63,8 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     -- Unified branch conditions (using iterN3 for j=0)
     (hbltu_1 : bltu_1 = BitVec.ult u3 v2)
-    (hbltu_0 : bltu_0 = BitVec.ult (iterN3 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN3 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
@@ -81,7 +82,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_v1 hv_v2 hv_v3
       hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_1' hbltu_0'
+      hbltu_1' hbltu_0' hcarry2
     have hMMF := cpsTriple_frame_left _ _ _ _ _
       ((sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -105,7 +106,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hv_v0 hv_v1 hv_v2 hv_v3
       hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_1' hbltu_0'
+      hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)
@@ -122,7 +123,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hv_v0 hv_v1 hv_v2 hv_v3
       hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_1' hbltu_0'
+      hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)
@@ -139,7 +140,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hv_v0 hv_v1 hv_v2 hv_v3
       hv_u0_1 hv_u1_1 hv_u2_1 hv_u3_1 hv_u4_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_1' hbltu_0'
+      hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)

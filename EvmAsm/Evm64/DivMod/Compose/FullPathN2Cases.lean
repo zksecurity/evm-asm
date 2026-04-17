@@ -93,7 +93,11 @@ theorem evm_div_n2_full_FFT_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 false false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 false false true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 false false true a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -140,7 +144,7 @@ theorem evm_div_n2_full_FFT_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -246,7 +250,11 @@ theorem evm_div_n2_full_FTF_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 false true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 false true false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 false true false a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -293,7 +301,7 @@ theorem evm_div_n2_full_FTF_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -399,7 +407,11 @@ theorem evm_div_n2_full_FTT_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 false a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 false true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 false true true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 false true true a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -446,7 +458,7 @@ theorem evm_div_n2_full_FTT_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -552,7 +564,11 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 true false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 true false false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 true false false a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -599,7 +615,7 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -705,7 +721,11 @@ theorem evm_div_n2_full_TFT_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 true false a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 true false true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 true false true a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -752,7 +772,7 @@ theorem evm_div_n2_full_TFT_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -858,7 +878,11 @@ theorem evm_div_n2_full_TTF_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 true true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 true true false a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 true true false a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -905,7 +929,7 @@ theorem evm_div_n2_full_TTF_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
@@ -1011,7 +1035,11 @@ theorem evm_div_n2_full_TTT_spec (sp base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : isTrialN2_j2 true a3 b0 b1)
     (hbltu_1 : isTrialN2_j1 true true a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN2_j0 true true true a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN2_j0 true true true a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b1).1).toNat % 64))
+      ((b1 <<< (((clzResult b1).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b2 <<< (((clzResult b1).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))
+      ((b3 <<< (((clzResult b1).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64)))) :
     cpsTriple base (base + 1068) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
@@ -1058,7 +1086,7 @@ theorem evm_div_n2_full_TTT_spec (sp base : Word)
     hbnz hb3z hb2z hb1nz hshift_nz hvalid
     hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4
     hv_u5 hv_u6 hv_u7 hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0 halign
-    hbltu_2 hbltu_1 hbltu_0
+    hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
     r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)

@@ -205,7 +205,8 @@ theorem divK_loop_n1_unified_divCode (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
         (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
-        (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0) :
+        (iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN1PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -225,6 +226,6 @@ theorem divK_loop_n1_unified_divCode (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
       hv_uhi_2 hv_ulo_2 hv_u0_2 hv_q2
       hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
       hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-      hbltu_3 hbltu_2 hbltu_1 hbltu_0)
+      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2)
 
 end EvmAsm.Evm64

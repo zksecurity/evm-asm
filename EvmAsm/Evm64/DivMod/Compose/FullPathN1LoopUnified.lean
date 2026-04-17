@@ -189,7 +189,8 @@ private theorem evm_div_n1_loop_unified_inst
           (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
           (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
           (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.2.1).2.1
-      v0') :
+      v0')
+    (hcarry2 : Carry2NzAll v0' v1' v2' v3') :
     cpsTriple (base + 448) (base + 908) (divCode base)
       (loopN1PreWithScratch sp j_mem (1 : Word) shift u0_s v10_val v11_old anti_shift
         v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
@@ -209,7 +210,7 @@ private theorem evm_div_n1_loop_unified_inst
     hv_uhi_2 hv_ulo_2 hv_u0_2 hv_q2
     hv_uhi_1 hv_ulo_1 hv_u0_1 hv_q1
     hv_uhi_0 hv_ulo_0 hv_u0_0 hv_q0
-    hbltu_3 hbltu_2 hbltu_1 hbltu_0
+    hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2
 
 -- ============================================================================
 -- Double-addback unified preloop+loop composition (base → base+904)
@@ -253,7 +254,11 @@ theorem evm_div_n1_preloop_loop_unified_spec
     (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
     (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
     (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b0).1).toNat % 64))
+      ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b2 <<< (((clzResult b0).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b3 <<< (((clzResult b0).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))) :
     cpsTriple base (base + 908) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b0).2 >>> (63 : Nat)) **
@@ -325,7 +330,7 @@ theorem evm_div_n1_preloop_loop_unified_spec
     (by rw [n3_ub1_off0]; exact hv_u1) (by rw [n3_qa1]; exact hv_q1)
     (by rw [n1_uhi_0_addr]; exact hv_u1) (by rw [n1_ulo_0_addr]; exact hv_u0)
     (by rw [n3_ub0_off0]; exact hv_u0) (by rw [n3_qa0]; exact hv_q0)
-    hbltu_3 hbltu_2 hbltu_1 hbltu_0
+    hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame loop with a[], shift_mem (no spare q/u for n=1)
   have hLoopF := cpsTriple_frame_left _ _ _ _ _
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **

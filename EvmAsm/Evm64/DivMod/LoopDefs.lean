@@ -436,6 +436,20 @@ def isAddbackCarry2NzN4Call (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
 def isAddbackCarry2NzN4Max (v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
+/-- Universal carry2-nz hypothesis for double-addback: for *any* trial quotient
+    and *any* per-iteration (u, u_top) state, the second addback carry is
+    nonzero whenever the first is zero.
+
+    This is a placeholder threaded through the Loop*/Compose layers until the
+    mathematical foundation of the double-addback fix is completed (Step 1 of
+    the double-addback plan — overestimate bound on `div128Quot` + the Knuth
+    (normalized divisor, max-path) overestimate bound). Any spec that invokes
+    a per-iteration `*_unified_j*_spec` requiring `isAddbackCarry2Nz*` discharges
+    its obligation by specializing this universal to the local q_hat and state. -/
+def Carry2NzAll (v0 v1 v2 v3 : Word) : Prop :=
+  ∀ q_hat u0 u1 u2 u3 u_top : Word,
+    isAddbackCarry2Nz q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top
+
 -- ============================================================================
 -- Generic j versions of n=1 call path postconditions
 -- ============================================================================

@@ -483,7 +483,8 @@ theorem divK_loop_n3_max_max_spec
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_1 : ¬BitVec.ult u3 v2)
-    (hbltu_0 : ¬BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : ¬BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       (loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old)
@@ -497,7 +498,7 @@ theorem divK_loop_n3_max_max_spec
   have J1 := divK_loop_body_n3_max_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old base
     hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1 hbltu_1
-    (by sorry : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+    (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
   have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -527,7 +528,11 @@ theorem divK_loop_n3_max_max_spec
     q0_old base
     hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
     hbltu_0
-    (by sorry)
+    (hcarry2 (signExtend12 4095) u0_orig
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
   have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -594,7 +599,8 @@ theorem divK_loop_n3_call_call_spec
     (hv_u0_0 : isValidDwordAccess ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0) = true)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     (hbltu_1 : BitVec.ult u3 v2)
-    (hbltu_0 : BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
@@ -610,7 +616,7 @@ theorem divK_loop_n3_call_call_spec
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base
     hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1 hbltu_1
-    (by sorry : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+    (hcarry2 (div128Quot u3 u2 v2) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
   have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -643,7 +649,13 @@ theorem divK_loop_n3_call_call_spec
     hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
     hbltu_0
-    (by sorry)
+    (hcarry2 (div128Quot (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+                          (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1 v2)
+      u0_orig
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
   have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -709,7 +721,8 @@ theorem divK_loop_n3_max_call_spec
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     -- Branch conditions: j=1 max (BLTU not taken), j=0 call (BLTU taken)
     (hbltu_1 : ¬BitVec.ult u3 v2)
-    (hbltu_0 : BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
@@ -724,7 +737,7 @@ theorem divK_loop_n3_max_call_spec
   have J1 := divK_loop_body_n3_max_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old base
     hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1 hbltu_1
-    (by sorry : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+    (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig, q0_old, AND scratch cells (max doesn't touch scratch)
   have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -759,7 +772,13 @@ theorem divK_loop_n3_max_call_spec
     hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
     hbltu_0
-    (by sorry)
+    (hcarry2 (div128Quot (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+                          (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1 v2)
+      u0_orig
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
   have J0f := cpsTriple_frame_left _ _ _ _ _
@@ -824,7 +843,8 @@ theorem divK_loop_n3_call_max_spec
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) = true)
     -- Branch conditions: j=1 call (BLTU taken), j=0 max (BLTU not taken)
     (hbltu_1 : BitVec.ult u3 v2)
-    (hbltu_0 : ¬BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2) :
+    (hbltu_0 : ¬BitVec.ult (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + 448) (base + 908) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
@@ -840,7 +860,7 @@ theorem divK_loop_n3_call_max_spec
     v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base
     hv_j hv_n1 hv_uhi_1 hv_ulo_1 hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0_1 hv_v1 hv_u1_1 hv_v2 hv_u2_1 hv_v3 hv_u3_1 hv_u4_1 hv_q1 hbltu_1
-    (by sorry : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
+    (hcarry2 (div128Quot u3 u2 v2) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
   have J1f := cpsTriple_frame_left _ _ _ _ _
@@ -870,7 +890,11 @@ theorem divK_loop_n3_call_max_spec
     q0_old base
     hv_j hv_n1 hv_uhi_0 hv_ulo_0 hv_vtop hv_v0 hv_u0_0 hv_v1 hv_u1_0 hv_v2 hv_u2_0 hv_v3 hv_u3_0 hv_u4_0 hv_q0
     hbltu_0
-    (by sorry)
+    (hcarry2 (signExtend12 4095) u0_orig
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
+      (iterN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1]) AND j=1's scratch cells
   have J0f := cpsTriple_frame_left _ _ _ _ _
