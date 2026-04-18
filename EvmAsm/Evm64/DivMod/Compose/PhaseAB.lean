@@ -14,6 +14,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (se13_8 se13_16 se13_24 se13_1020)
 
 -- ============================================================================
 -- Section 5: CodeReq subsumption lemmas (via mono_unionAll / mono_sub_unionAll)
@@ -207,7 +208,7 @@ theorem evm_div_bzero_spec (sp base : Word)
   -- Step 2: BEQ at base+28, eliminate ntaken via hbz
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
   rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
-        rw [signExtend13_1020]; bv_addr,
+        rw [se13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + phaseBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQf => by
@@ -265,7 +266,7 @@ theorem evm_div_phaseA_ntaken_spec (sp base : Word)
   -- Step 2: BEQ at base+28, eliminate taken path (b=0 absurd since hbnz)
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
   rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
-        rw [signExtend13_1020]; bv_addr,
+        rw [se13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + phaseBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQt => by
@@ -339,7 +340,7 @@ theorem evm_div_phaseB_n4_spec (sp base : Word)
   -- ---- Step 4: BNE x10 x0 24 at base+72, elim ntaken (b3=0 absurd)
   have hbne_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Word) + signExtend13 24 = base + 96 from by
-        rw [signExtend13_24]; bv_addr, phB_bne_4] at hbne_raw
+        rw [se13_24]; bv_addr, phB_bne_4] at hbne_raw
   have hbne_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
@@ -579,7 +580,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   -- ---- Cascade step 0: BNE x10 ntaken (base+72 → base+76, b3=0)
   have hbne0_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Word) + signExtend13 24 = base + 96 from by
-        rw [signExtend13_24]; bv_addr, phB_bne_4] at hbne0_raw
+        rw [se13_24]; bv_addr, phB_bne_4] at hbne0_raw
   have hbne0_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne0_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -614,7 +615,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   -- ---- Cascade step 1: BNE x7 taken (base+80 → base+96, b2≠0)
   have hbne1_raw := bne_spec_gen .x7 .x0 16 b2 (0 : Word) (base + 80)
   rw [show (base + 80 : Word) + signExtend13 16 = base + 96 from by
-        rw [signExtend13_16]; bv_addr, phB_step1_8] at hbne1_raw
+        rw [se13_16]; bv_addr, phB_step1_8] at hbne1_raw
   have hbne1_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne1_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
@@ -722,7 +723,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   -- ---- Cascade step 0: BNE x10 ntaken (base+72 → base+76, b3=0)
   have hbne0_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Word) + signExtend13 24 = base + 96 from by
-        rw [signExtend13_24]; bv_addr, phB_bne_4] at hbne0_raw
+        rw [se13_24]; bv_addr, phB_bne_4] at hbne0_raw
   have hbne0_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne0_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -757,7 +758,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   -- ---- Cascade step 1: BNE x7 ntaken (base+80 → base+84, b2=0)
   have hbne1_raw := bne_spec_gen .x7 .x0 16 b2 (0 : Word) (base + 80)
   rw [show (base + 80 : Word) + signExtend13 16 = base + 96 from by
-        rw [signExtend13_16]; bv_addr, phB_step1_8] at hbne1_raw
+        rw [se13_16]; bv_addr, phB_step1_8] at hbne1_raw
   have hbne1_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne1_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -792,7 +793,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   -- ---- Cascade step 2: BNE x6 taken (base+88 → base+96, b1≠0)
   have hbne2_raw := bne_spec_gen .x6 .x0 8 b1 (0 : Word) (base + 88)
   rw [show (base + 88 : Word) + signExtend13 8 = base + 96 from by
-        rw [signExtend13_8]; bv_addr, phB_step2_8] at hbne2_raw
+        rw [se13_8]; bv_addr, phB_step2_8] at hbne2_raw
   have hbne2_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne2_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
@@ -901,7 +902,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   -- ---- Cascade step 0: BNE x10 ntaken (base+72 → base+76, b3=0)
   have hbne0_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Word) + signExtend13 24 = base + 96 from by
-        rw [signExtend13_24]; bv_addr, phB_bne_4] at hbne0_raw
+        rw [se13_24]; bv_addr, phB_bne_4] at hbne0_raw
   have hbne0_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne0_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -936,7 +937,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   -- ---- Cascade step 1: BNE x7 ntaken (base+80 → base+84, b2=0)
   have hbne1_raw := bne_spec_gen .x7 .x0 16 b2 (0 : Word) (base + 80)
   rw [show (base + 80 : Word) + signExtend13 16 = base + 96 from by
-        rw [signExtend13_16]; bv_addr, phB_step1_8] at hbne1_raw
+        rw [se13_16]; bv_addr, phB_step1_8] at hbne1_raw
   have hbne1_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne1_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -971,7 +972,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   -- ---- Cascade step 2: BNE x6 ntaken (base+88 → base+92, b1=0)
   have hbne2_raw := bne_spec_gen .x6 .x0 8 b1 (0 : Word) (base + 88)
   rw [show (base + 88 : Word) + signExtend13 8 = base + 96 from by
-        rw [signExtend13_8]; bv_addr, phB_step2_8] at hbne2_raw
+        rw [se13_8]; bv_addr, phB_step2_8] at hbne2_raw
   have hbne2_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne2_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt

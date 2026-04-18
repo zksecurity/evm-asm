@@ -12,6 +12,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (se13_1020)
 
 -- ============================================================================
 -- Section 10l: Denorm composition (25 instructions at base+904)
@@ -305,7 +306,7 @@ private theorem beq_singleton_sub_modCode (base : Word) :
     (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1020) 7
       (by decide) (by decide)) a i h)
 
--- `signExtend13_1020` moved to `Compose/Base.lean` (shared).
+-- `se13_1020` moved to `Compose/Base.lean` (shared).
 
 -- ============================================================================
 -- Section 13: MOD zero path composition (b = 0)
@@ -330,7 +331,7 @@ theorem evm_mod_bzero_spec (sp base : Word)
   -- Step 2: BEQ at base+28, eliminate ntaken via hbz
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
   rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
-        rw [signExtend13_1020]; bv_addr,
+        rw [se13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + phaseBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQf => by
@@ -385,7 +386,7 @@ theorem evm_mod_phaseA_ntaken_spec (sp base : Word)
   -- Step 2: BEQ at base+28, eliminate taken path (b=0 absurd since hbnz)
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + 28)
   rw [show (base + 28 : Word) + signExtend13 1020 = base + zeroPathOff from by
-        rw [signExtend13_1020]; bv_addr,
+        rw [se13_1020]; bv_addr,
       show (base + 28 : Word) + 4 = base + phaseBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQt => by

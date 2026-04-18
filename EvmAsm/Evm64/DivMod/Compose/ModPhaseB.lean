@@ -14,6 +14,7 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 open EvmAsm.Evm64.DivMod.AddrNorm (se12_1 se12_2 se12_3 se12_4 se12_4095)
+open EvmAsm.Rv64.AddrNorm (se13_24)
 
 -- ============================================================================
 -- MOD CodeReq subsumption lemmas for blocks 0 and 1
@@ -95,7 +96,7 @@ theorem mod_phB_i2_8 (base : Word) : (base + 60 : Word) + 8 = base + 68 := by bv
 theorem mod_phB_addi_4 (base : Word) : (base + 68 : Word) + 4 = base + 72 := by bv_addr
 theorem mod_phB_bne_4 (base : Word) : (base + 72 : Word) + 4 = base + 76 := by bv_addr
 theorem mod_phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
--- `mod_signExtend13_24` → use `signExtend13_24` from `Compose/Base.lean`.
+-- `mod_signExtend13_24` → use `se13_24` from `Compose/Base.lean`.
 theorem mod_phB_sp24_32 (sp : Word) :
     sp + ((4 : Word) + signExtend12 (4095 : BitVec 12)) <<< (3 : BitVec 6).toNat +
       signExtend12 (32 : BitVec 12) = sp + 56 := by
@@ -152,7 +153,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   -- ---- Step 4: BNE x10 x0 24 at base+72, elim ntaken (b3=0 absurd)
   have hbne_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
   rw [show (base + 72 : Word) + signExtend13 24 = base + 96 from by
-        rw [signExtend13_24]; bv_addr, mod_phB_bne_4] at hbne_raw
+        rw [se13_24]; bv_addr, mod_phB_bne_4] at hbne_raw
   have hbne_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbne_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf

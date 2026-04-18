@@ -12,6 +12,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (se13_172)
 
 /-- Phase C2 code (block 3) is subsumed by divCode. -/
 private theorem divK_phaseC2_code_sub_divCode (base : Word) :
@@ -32,7 +33,7 @@ private theorem beq_shift_sub_divCode (base : Word) :
   exact divK_phaseC2_code_sub_divCode base a i
     (CodeReq.singleton_mono hlookup a i h)
 
--- `signExtend13_172` moved to `Compose/Base.lean` (shared with ModNorm).
+-- `se13_172` moved to `Compose/Base.lean` (shared with ModNorm).
 
 /-- Phase C2 body (base+212 → base+224): store shift, compute anti_shift.
     Extends to divCode. Uses first 3 instructions of phaseC2. -/
@@ -58,7 +59,7 @@ theorem divK_phaseC2_ntaken_spec (sp shift v2 shift_mem : Word) (base : Word)
   have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base
   have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
   rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by
-        rw [signExtend13_172]; bv_addr,
+        rw [se13_172]; bv_addr,
       show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQt => by
@@ -88,7 +89,7 @@ theorem divK_phaseC2_taken_spec (sp shift v2 shift_mem : Word) (base : Word)
   have hbody := divK_phaseC2_body_divCode sp shift v2 shift_mem base
   have hbeq_raw := beq_spec_gen .x6 .x0 172 shift (0 : Word) (base + 224)
   rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by
-        rw [signExtend13_172]; bv_addr,
+        rw [se13_172]; bv_addr,
       show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hbeq_raw
     (fun hp hQf => by
