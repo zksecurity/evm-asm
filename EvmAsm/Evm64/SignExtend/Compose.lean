@@ -745,7 +745,7 @@ theorem signext_body_spec (sp base : Word)
   -- Key facts
   -- Key arithmetic facts
   have hb0_lt31 : b0.toNat < 31 := by
-    rw [show signExtend12 (31 : BitVec 12) = (31 : Word) from by decide] at hsmall
+    rw [signExtend12_31] at hsmall
     exact BitVec.lt_def.mp (of_decide_eq_true hsmall)
   -- High limbs of b are zero
   have hb12_b3 := BitVec.or_eq_zero_iff.mp hhigh
