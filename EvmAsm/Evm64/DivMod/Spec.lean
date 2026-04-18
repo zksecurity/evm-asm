@@ -5,7 +5,38 @@
 
   Currently covers:
   - Zero divisor path (b = 0): evm_div_bzero_stack_spec, evm_mod_bzero_stack_spec
-  - Normal path (b ≠ 0): TODO (needs semantic correctness bridge: EvmWord.div_correct / mod_correct)
+  - Normal path (b ≠ 0): infrastructure complete; final composition pending.
+
+  Stack-spec infrastructure (for the n=4 max+skip sub-path and its symmetric
+  MOD counterpart):
+
+  * Precondition bundle: `divN4StackPre` (`modN4StackPre`) — `@[irreducible]`,
+    bundles 9 registers + `evmWordIs sp a` + `evmWordIs (sp+32) b` +
+    `divScratchValues` starting state. Unfold helpers: `_unfold`,
+    `_unfold_atoms`, `_unfold_atoms_right`.
+  * Postcondition bundle: `divN4MaxSkipStackPost` (`modN4MaxSkipStackPost`) —
+    `@[irreducible]`, bundles 9 registers (7 weakened to `regOwn`) +
+    `evmWordIs sp a` (preserved) + `evmWordIs (sp+32) (EvmWord.div a b)`
+    (`EvmWord.mod a b` for MOD) + `divScratchOwn`. Unfold helpers: `_unfold`,
+    `_unfold_atoms`, `_unfold_atoms_right`.
+  * Runtime condition wrappers (EvmWord form): `isMaxTrialN4Evm`,
+    `isSkipBorrowN4MaxEvm`, `isCallTrialN4Evm`, `isSkipBorrowN4CallEvm`,
+    `isAddbackBorrowN4CallEvm`. Each is a thin shim over the Word-level
+    predicate plus a `_def` `rfl` lemma.
+  * Semantic-correctness predicates: `n4MaxSkipSemanticHolds`,
+    `n4MaxAddbackSemanticHolds` — package the un-normalized `mulsubN4`-carry
+    hypotheses `n4_max_skip_div_mod_getLimbN` / `n4_max_addback_div_mod_getLimbN`
+    consume.
+  * Weakeners: `div_n4_max_skip_stack_weaken`, `mod_n4_max_skip_stack_weaken` —
+    turn specific register values + `evmWordIs` operand atoms + `divScratchValues`
+    into `divN4MaxSkipStackPost` / `modN4MaxSkipStackPost`.
+  * `pcFree` instances for every bundle (`divScratchOwn`, `divScratchValues`,
+    `divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`,
+    `modN4MaxSkipStackPost`, `fullDivN4MaxSkipPost`, `denormDivPost`,
+    `denormModPost`, `loopSetupPost`, `normBPost`).
+  * Pre-wrapper: `evm_div_n4_full_max_skip_stack_pre_spec` and its bundled
+    variant `evm_div_n4_full_max_skip_stack_pre_spec_bundled` — wrap the
+    limb-level full-path spec in the EvmWord-level pre shape.
 -/
 
 import EvmAsm.Evm64.DivMod.Compose
