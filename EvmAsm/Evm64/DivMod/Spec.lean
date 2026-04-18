@@ -426,6 +426,32 @@ theorem modN4MaxSkipStackPost_unfold_atoms (sp : Word) (a b : EvmWord) :
   rw [modN4MaxSkipStackPost_unfold, evmWordIs_sp_unfold, evmWordIs_sp32_unfold,
       divScratchOwn_unfold]
 
+/-- Mid-tree variant of the `divN4MaxSkipStackPost_unfold_atoms` family:
+    threads a remainder `Q` through the equality so `rw ←` can fold the
+    atoms back into the stack post bundle **even when they sit mid-chain**.
+    Parallel to `evmWordIs_sp_limbs_eq_right` / `divScratchValues_unfold_right`. -/
+theorem divN4MaxSkipStackPost_unfold_atoms_right (sp : Word) (a b : EvmWord)
+    (Q : Assertion) :
+    (((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
+      regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+      regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
+      ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+       ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3)) **
+      (((sp + 32) ↦ₘ (EvmWord.div a b).getLimbN 0) **
+       ((sp + 40) ↦ₘ (EvmWord.div a b).getLimbN 1) **
+       ((sp + 48) ↦ₘ (EvmWord.div a b).getLimbN 2) **
+       ((sp + 56) ↦ₘ (EvmWord.div a b).getLimbN 3)) **
+      (memOwn (sp + signExtend12 4088) ** memOwn (sp + signExtend12 4080) **
+       memOwn (sp + signExtend12 4072) ** memOwn (sp + signExtend12 4064) **
+       memOwn (sp + signExtend12 4056) ** memOwn (sp + signExtend12 4048) **
+       memOwn (sp + signExtend12 4040) ** memOwn (sp + signExtend12 4032) **
+       memOwn (sp + signExtend12 4024) ** memOwn (sp + signExtend12 4016) **
+       memOwn (sp + signExtend12 4008) ** memOwn (sp + signExtend12 4000) **
+       memOwn (sp + signExtend12 3992) ** memOwn (sp + signExtend12 3984) **
+       memOwn (sp + signExtend12 3976))) ** Q) =
+    (divN4MaxSkipStackPost sp a b ** Q) := by
+  rw [divN4MaxSkipStackPost_unfold_atoms]
+
 theorem pcFree_modN4MaxSkipStackPost (sp : Word) (a b : EvmWord) :
     (modN4MaxSkipStackPost sp a b).pcFree := by
   rw [modN4MaxSkipStackPost_unfold]; pcFree
