@@ -283,6 +283,18 @@ def divScratchOwn (sp : Word) : Assertion :=
   memOwn (sp + signExtend12 3984) **
   memOwn (sp + signExtend12 3976)
 
+theorem pcFree_divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shift_mem n_mem j_mem : Word) :
+    (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shift_mem n_mem j_mem).pcFree := by
+  unfold divScratchValues; pcFree
+
+instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem : Word) :
+    Assertion.PCFree (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shift_mem n_mem j_mem) :=
+  ⟨pcFree_divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shift_mem n_mem j_mem⟩
+
 /-- Weakening: any concrete scratch state implies ownership of the same 15
     cells. This lets a stack spec hide the scratch values on exit. -/
 theorem divScratchValues_implies_divScratchOwn
