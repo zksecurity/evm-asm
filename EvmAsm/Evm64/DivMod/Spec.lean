@@ -50,6 +50,40 @@ theorem isSkipBorrowN4MaxEvm_def (a b : EvmWord) :
     isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
+/-- Call trial condition at n=4 in EvmWord form: `u4 < b3'` after
+    normalization, i.e., the max trial is too large so the algorithm falls
+    through to `div128` for a tighter quotient. -/
+def isCallTrialN4Evm (a b : EvmWord) : Prop :=
+  isCallTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
+
+/-- Skip-addback condition at n=4 call path in EvmWord form: the runtime
+    borrow check does not fire, so the algorithm skips addback after the
+    `div128`-computed trial quotient. -/
+def isSkipBorrowN4CallEvm (a b : EvmWord) : Prop :=
+  isSkipBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+                     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+
+/-- Addback-needed condition at n=4 call path in EvmWord form: the runtime
+    borrow check fires, so the algorithm decrements the trial quotient and
+    adds back `v` to the partial remainder. -/
+def isAddbackBorrowN4CallEvm (a b : EvmWord) : Prop :=
+  isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+                        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+
+theorem isCallTrialN4Evm_def (a b : EvmWord) :
+    isCallTrialN4Evm a b =
+    isCallTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
+
+theorem isSkipBorrowN4CallEvm_def (a b : EvmWord) :
+    isSkipBorrowN4CallEvm a b =
+    isSkipBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
+
+theorem isAddbackBorrowN4CallEvm_def (a b : EvmWord) :
+    isAddbackBorrowN4CallEvm a b =
+    isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+                          (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
+
 -- ============================================================================
 -- Stack-level post state for n=4 max-skip DIV
 -- ============================================================================
