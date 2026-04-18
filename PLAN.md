@@ -213,29 +213,18 @@ corresponding non-Spec files.
 - **Shared infra** added to `Stack.lean`: `signExtend12_ofNat_small`,
   `evmStackIs_split_at`, `EvmWord.getLimb_zero`, `signExtend12_neg32`.
 
-#### 2. ShiftSpec.lean — SHR per-limb, phase, body specs
+#### ~~2. ShiftSpec.lean — SHR per-limb, phase, body specs~~ ✅ DONE
 
-- **File**: `Evm64/ShiftSpec.lean`
-- **Programs**: `evm_shr` defined in `Shift.lean` (90 instructions, 3 phases)
-- **What was in the old file**:
-  - Per-limb helpers: `shr_merge_limb_spec` (7 instrs), `shr_last_limb_spec` (3),
-    `shr_ld_or_acc_spec` (2), `shr_last_limb_inplace_spec` (4)
-  - Phase specs: `shr_cascade_step_spec` (ADDI+BEQ cpsBranch),
-    `shr_phase_c_spec` (cascade dispatch, cpsNBranch with 4 exits),
-    `shr_phase_a_code_spec` (9 instrs, LD+OR+BNE+LD+SLTIU+BEQ)
-  - Body specs: `shr_body_{0,1,2,3}_spec` (7-25 instrs each, `runBlock`)
-  - Zero path: `shr_zero_path_spec` (5 instrs)
-- **Approach**: Per-limb specs use `runBlock` auto mode (straightforward).
-  Phase/body specs also use `runBlock`. The cascade and branch compositions
-  previously used manual `cpsTriple_seq_cpsBranch_with_perm` — replace with
-  `cpsTriple_seq_cpsBranch_with_perm_same_cr` after extending sub-specs to
-  a common CR via `cpsTriple_extend_code`, or provide `(by crDisjoint)` for
-  the `hd` argument.
-- **Key pitfall**: `runBlock` for body specs involving `JAL .x0 jal_off`
-  (symbolic offset) — the JAL's exit address `base + K + signExtend21 jal_off`
-  needs `rw [hexit]` before `runBlock`. The `bv_omega` calls for addresses
-  involving `signExtend21` may leak diagnostics; `runTacticSilent` suppresses
-  these.
+- **Files**: `Evm64/Shift/LimbSpec.lean` (SHR per-limb + phase + body specs),
+  `Evm64/Shift/Compose.lean` (`shrCode` + subsumption + composition),
+  `Evm64/Shift/Semantic.lean` (stack-level `evm_shr_stack_spec`).
+- **Status**: Fully proved (0 sorry). Per-limb helpers (`shr_merge_limb_spec`,
+  `shr_last_limb_spec`, `shr_ld_or_acc_spec`, `shr_last_limb_inplace_spec`),
+  phase specs (`shr_cascade_step_spec`, `shr_phase_c_spec`,
+  `shr_phase_a_code_spec`), body specs (`shr_body_{0,1,2,3}_spec`), and
+  zero path (`shr_zero_path_spec`) all recreated under the new
+  `CodeReq` + `runBlock` conventions. Mirrors items #3 (ShlSpec) and
+  #4 (SarSpec) below.
 
 #### ~~3. ShlSpec.lean — SHL per-limb + body specs~~ ✅ DONE
 
