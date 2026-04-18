@@ -243,6 +243,23 @@ instance (sp : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
   ⟨pcFree_modN4StackPre sp a b v5 v6 v7 v10 v11
     q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem⟩
 
+/-- Named unfold for `modN4StackPre`. Mirror of `divN4StackPre_unfold`. -/
+theorem modN4StackPre_unfold (sp : Word) (a b : EvmWord)
+    (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shift_mem n_mem j_mem : Word) :
+    modN4StackPre sp a b v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem =
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     (.x2 ↦ᵣ (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)) **
+     (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+     (.x11 ↦ᵣ v11) **
+     evmWordIs sp a ** evmWordIs (sp + 32) b **
+     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+       shift_mem n_mem j_mem) := by
+  delta modN4StackPre; rfl
+
 /-- Named unfold for `divN4MaxSkipStackPost`. Restores access to the
     underlying definition once the `@[irreducible]` attribute has made
     `delta` the only way in at call sites. -/
