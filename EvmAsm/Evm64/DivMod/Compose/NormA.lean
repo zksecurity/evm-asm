@@ -38,8 +38,8 @@ private theorem normA_sub (base : Word) (sub_prog : List Instr) (k : Nat)
 
 -- signExtend12 rewrites pulled from the divmod_addr global set (AddrNorm.lean).
 open EvmAsm.Evm64.DivMod.AddrNorm (se12_0 se12_8 se12_16 se12_24)
-
--- `signExtend21_40` moved to `Compose/Base.lean` (shared with ModNormA).
+-- signExtend13/21 rewrites pulled from the rv64_addr global set (Rv64/AddrNorm.lean).
+open EvmAsm.Rv64.AddrNorm (se13_464 se21_40)
 
 /-- Full NormA: normalize dividend a[0..3] → u[0..4] and jump to loopSetup.
     base+312 → base+432 (21 instructions including JAL).
@@ -155,7 +155,7 @@ theorem divK_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
   -- JAL x0 40 at base+392 → base+432 (1 instruction, empAssertion pre/post)
   have hjal := jal_x0_spec_gen 40 (base + 392)
   rw [show (base + 392 : Word) + signExtend21 40 = base + loopSetupOff from by
-        rw [signExtend21_40]; bv_addr] at hjal
+        rw [se21_40]; bv_addr] at hjal
   have hjale := cpsTriple_extend_code (hmono := by
     intro a i h
     exact divK_normA_code_sub_divCode base a i
@@ -246,7 +246,7 @@ private theorem blt_loopSetup_sub_divCode (base : Word) :
   exact divK_loopSetup_code_sub_divCode base a i
     (CodeReq.singleton_mono hlookup a i h)
 
--- `signExtend13_464` moved to `Compose/Base.lean` (shared with ModNormA).
+-- `se13_464` moved to `Compose/Base.lean` (shared with ModNormA).
 
 /-- LoopSetup when m ≥ 0 (n ≤ 4): falls through to loop body at base+448.
     Loads n from scratch, computes m = 4-n, BLT not taken. -/
@@ -264,7 +264,7 @@ theorem divK_loopSetup_ntaken_spec (sp n v1 v5 : Word) (base : Word)
   have hbodye := cpsTriple_extend_code (divK_loopSetup_code_sub_divCode base) hbody
   have hblt_raw := blt_spec_gen .x1 .x0 464 m (0 : Word) (base + 444)
   rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by
-        rw [signExtend13_464]; bv_addr,
+        rw [se13_464]; bv_addr,
       show (base + 444 : Word) + 4 = base + loopBodyOff from by bv_addr] at hblt_raw
   have hblt_clean := cpsBranch_elim_ntaken_strip_pure2 _ _ _ _ _ _ _ _ _ hblt_raw
     (fun hp hQt => by
@@ -296,7 +296,7 @@ theorem divK_loopSetup_taken_spec (sp n v1 v5 : Word) (base : Word)
   have hbodye := cpsTriple_extend_code (divK_loopSetup_code_sub_divCode base) hbody
   have hblt_raw := blt_spec_gen .x1 .x0 464 m (0 : Word) (base + 444)
   rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by
-        rw [signExtend13_464]; bv_addr,
+        rw [se13_464]; bv_addr,
       show (base + 444 : Word) + 4 = base + loopBodyOff from by bv_addr] at hblt_raw
   have hblt_clean := cpsBranch_elim_taken_strip_pure2 _ _ _ _ _ _ _ _ _ hblt_raw
     (fun hp hQf => by
