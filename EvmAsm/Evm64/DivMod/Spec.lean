@@ -79,10 +79,6 @@ def divN4MaxSkipStackPost (sp : Word) (a b : EvmWord) : Assertion :=
 -- DIV: Zero divisor stack spec (b = 0 → result = 0)
 -- ============================================================================
 
--- ============================================================================
--- DIV: Zero divisor stack spec (b = 0 → result = 0)
--- ============================================================================
-
 /-- Stack-level DIV spec for the zero divisor path: when b = 0, result is 0.
     Uses evmWordIs for the b-operand at sp+32. The a-operand at sp is untouched. -/
 theorem evm_div_bzero_stack_spec (sp base : Word)
