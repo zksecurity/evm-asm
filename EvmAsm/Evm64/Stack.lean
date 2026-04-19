@@ -82,6 +82,24 @@ theorem evmStackIs_pair (sp : Word) (a b : EvmWord) :
     evmStackIs sp [a, b] = (evmWordIs sp a ** evmWordIs (sp + 32) b) := by
   rw [evmStackIs_cons_cons_nil, sepConj_emp_right']
 
+/-- Symmetric companion of `evmStackIs_pair`: singleton stack collapses to a
+    single `evmWordIs`. -/
+theorem evmStackIs_single (sp : Word) (v : EvmWord) :
+    evmStackIs sp [v] = evmWordIs sp v := by
+  rw [evmStackIs_cons_nil, sepConj_emp_right']
+
+/-- Three-element stack unfold without the trailing `empAssertion`:
+    `evmStackIs sp [a, b, c] = evmWordIs sp a ** evmWordIs (sp+32) b **
+    evmWordIs (sp+64) c`. Derived from `evmStackIs_cons_cons_cons_nil` by
+    applying `sepConj_emp_right'`. Ternary-op stack specs (ADDMOD /
+    MULMOD) want this cleaner 3-atom form rather than the raw definition.
+    Parallels `evmStackIs_pair` / `evmStackIs_single`. -/
+theorem evmStackIs_triple (sp : Word) (a b c : EvmWord) :
+    evmStackIs sp [a, b, c] =
+    (evmWordIs sp a ** evmWordIs (sp + 32) b **
+     evmWordIs (sp + 32 + 32) c) := by
+  rw [evmStackIs_cons_cons_cons_nil, sepConj_emp_right']
+
 -- ============================================================================
 -- evmWordIs unfold and limb-equality bridges
 -- ============================================================================
@@ -180,6 +198,28 @@ theorem signExtend12_ofNat_small (m : Nat) (hm : m < 2048) :
   rw [BitVec.signExtend_eq_setWidth_of_msb_false]
   · exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) (by omega)
   · rw [BitVec.msb_eq_false_iff_two_mul_lt]; simp [BitVec.toNat_ofNat]; omega
+
+/-- Concatenation: `evmStackIs sp (xs ++ ys)` splits into `xs` at `sp` and
+    `ys` at `sp + 32 * xs.length`. Companion to `evmStackIs_split_at` —
+    where `split_at` isolates the kth element, `append` composes two
+    contiguous stack segments. Useful for "preserve some cells, append
+    a new element" stack transitions (PUSH / stack extension specs). -/
+theorem evmStackIs_append (sp : Word) (xs ys : List EvmWord) :
+    evmStackIs sp (xs ++ ys) =
+    (evmStackIs sp xs ** evmStackIs (sp + BitVec.ofNat 64 (xs.length * 32)) ys) := by
+  induction xs generalizing sp with
+  | nil =>
+    simp only [List.nil_append, List.length_nil, Nat.zero_mul,
+               evmStackIs_nil, sepConj_emp_left']
+    rw [show (BitVec.ofNat 64 0 : Word) = 0 from rfl]
+    rw [show sp + (0 : Word) = sp from by bv_omega]
+  | cons v vs ih =>
+    have hshift : sp + (32 : Word) + BitVec.ofNat 64 (vs.length * 32) =
+                  sp + BitVec.ofNat 64 ((vs.length + 1) * 32) := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [List.cons_append, evmStackIs_cons, List.length_cons]
+    rw [ih (sp + 32), hshift, sepConj_assoc']
 
 /-- Split evmStackIs at position k: extract the kth element (0-indexed). -/
 theorem evmStackIs_split_at (sp : Word) (stack : List EvmWord) (k : Nat)
