@@ -112,7 +112,7 @@ theorem divK_loop_body_n1_max_skip_j0_spec
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
   -- 8. Permute final cpsTriple to match target
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by delta loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost; rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -201,7 +201,7 @@ theorem divK_loop_body_n1_max_skip_j3_spec
     (by pcFree) SL
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by delta loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost; rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -290,7 +290,7 @@ theorem divK_loop_body_n1_max_skip_j1_spec
     (by pcFree) SL
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by delta loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost; rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -379,7 +379,7 @@ theorem divK_loop_body_n1_max_skip_j2_spec
     (by pcFree) SL
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by delta loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost; rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full

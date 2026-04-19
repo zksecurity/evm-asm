@@ -106,7 +106,7 @@ theorem evm_mul_stack_spec (sp base : Word)
   simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
              EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3]
     at h0 h1 h2 h3
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       -- Pre: unfold `evmWordIs sp a` and `evmWordIs (sp+32) b` into 4 raw
       -- memIs atoms each, then permute to match the raw evm_mul_spec pre.

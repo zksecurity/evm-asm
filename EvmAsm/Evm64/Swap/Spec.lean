@@ -121,7 +121,7 @@ theorem evm_swap_evmword_spec (sp base : Word)
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have ha24 : (sp + BitVec.ofNat 64 (n * 32) : Word) + 24 = sp + BitVec.ofNat 64 (n*32+24) := by
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs, ha8, ha16, ha24] at hp
       xperm_hyp hp)
@@ -177,7 +177,7 @@ theorem evm_swap_stack_spec (sp base : Word)
     (by pcFree)
     (evm_swap_evmword_spec sp base n hn1 hn16 top nth v7 v6)
   have haddr32 : (sp + BitVec.ofNat 64 (1 * 32) : Word) = sp + 32 := by bv_omega
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       rw [hsplit0] at hp
       simp only [Nat.zero_mul, List.take_zero, evmStackIs_nil, sepConj_emp_left',

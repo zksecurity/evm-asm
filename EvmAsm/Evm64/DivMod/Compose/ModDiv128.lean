@@ -242,7 +242,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
   have h12345 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h1234 hendf
   -- Final permutation to canonical pre/post order
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12345

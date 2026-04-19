@@ -89,7 +89,7 @@ private theorem mod_clz_stage_combined
   · push Not at h
     simp only [if_neg (show ¬(val >>> K.toNat ≠ 0) from not_not.mpr h)]
     have hs := divK_clz_stage_ntaken_spec K M_s M_a val count v7 base h
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun _ hp => hp)
       (fun _ hp => by rw [show (val >>> K.toNat : Word) = 0 from h]; exact hp) hs
 
@@ -108,7 +108,7 @@ private theorem mod_clz_last_combined (val count v7 : Word) (base : Word) :
   · push Not at h
     simp only [if_neg (show ¬(val >>> (63 : Nat) ≠ 0) from not_not.mpr h)]
     have hs := divK_clz_last_ntaken_spec val count v7 base h
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun _ hp => hp)
       (fun _ hp => by rw [show (val >>> (63 : Nat) : Word) = 0 from h]; exact hp) hs
 
@@ -194,7 +194,7 @@ theorem mod_clz_spec (val v6_old v7_old : Word) (base : Word) :
   rw [mod_clz_addr6] at S5e
   seqFrame IefS0eS1eS2eS3eS4e S5e
   -- Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     IefS0eS1eS2eS3eS4eS5e

@@ -110,7 +110,7 @@ theorem rlp_phase2_long_loop_three_byte_spec
       ((.x11 ↦ᵣ ((len <<< 8) + byte1)) ** (.x13 ↦ᵣ (ptr + 1)) **
        (.x14 ↦ᵣ (2 : Word)) ** (.x12 ↦ᵣ byte1) **
        (.x0 ↦ᵣ (0 : Word)) ** (dwordAddr ↦ₘ word_val)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun _ hp => hp)
       (fun h hp => by
         simp only [rlp_phase2_long_loop_body_post_unfold] at hp
@@ -135,7 +135,7 @@ theorem rlp_phase2_long_loop_three_byte_spec
   have composed :=
     cpsTriple_seq_with_perm_same_cr base base (base + 24) _ _ _ _ _
       (fun h hp => by xperm_hyp hp) tri1' two_byte
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
     composed

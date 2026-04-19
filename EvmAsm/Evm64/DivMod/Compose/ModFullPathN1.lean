@@ -74,7 +74,7 @@ theorem evm_mod_phaseAB_n1_clz_spec (sp base : Word)
     (by pcFree) hCLZ
   have hABCLZ := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hAB hCLZf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     hABCLZ
@@ -215,7 +215,7 @@ theorem evm_mod_n1_to_loopSetup_spec (sp base : Word)
     (by pcFree) hLS
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hNA hLSf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta loopSetupPost; xperm_hyp hq)
     hFull
@@ -344,7 +344,7 @@ theorem evm_mod_n1_shift0_to_loopSetup_spec (sp base : Word)
     (by pcFree) hLS
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hABC2C hLSf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     hFull

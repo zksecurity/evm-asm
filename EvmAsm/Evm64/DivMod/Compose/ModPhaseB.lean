@@ -168,7 +168,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   seqFrame hinit1fhinit2haddihbne htail
   -- ---- Final consequence — permute assertions
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     hinit1fhinit2haddihbnehtail

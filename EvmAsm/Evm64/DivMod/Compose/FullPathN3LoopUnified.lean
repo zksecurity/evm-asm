@@ -205,7 +205,7 @@ theorem evm_div_n3_preloop_loop_unified_spec (bltu_1 bltu_0 : Bool) (sp base : W
                   n3_ub1_off4072 sp, n3_ub1_off4064 sp, n3_ub0_off0 sp,
                   n3_qa1 sp, n3_qa0 sp, se12_32, se12_40, se12_48, se12_56]
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopN3UnifiedPost; xperm_hyp hq)
     hFull

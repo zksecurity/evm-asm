@@ -115,7 +115,7 @@ theorem rlp_phase2_long_load_acc_spec (len ptr v12_old word_val dwordAddr : Word
        (dwordAddr ↦ₘ word_val))
       ((.x11 ↦ᵣ len) ** (.x13 ↦ᵣ ptr) ** (.x12 ↦ᵣ byte_zext) **
        (dwordAddr ↦ₘ word_val)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _ (.x11 ↦ᵣ len) (by pcFree) lbu)
@@ -129,7 +129,7 @@ theorem rlp_phase2_long_load_acc_spec (len ptr v12_old word_val dwordAddr : Word
        (dwordAddr ↦ₘ word_val))
       ((.x11 ↦ᵣ ((len <<< 8) + byte_zext)) ** (.x13 ↦ᵣ ptr) **
        (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _

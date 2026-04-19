@@ -283,7 +283,7 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
       delta loopSetupPost at hp
       simp only [EvmAsm.Evm64.DivMod.AddrNorm.se12_4, BitVec.sub_self] at hp
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopMaxAddbackBeqPostN4; xperm_hyp hq)
     hFull
@@ -441,7 +441,7 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
       delta loopSetupPost at hp
       simp only [EvmAsm.Evm64.DivMod.AddrNorm.se12_4, BitVec.sub_self] at hp
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopCallAddbackBeqPostN4; xperm_hyp hq)
     hFull
@@ -645,7 +645,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
     (fun h hp => by
       simp only [preloopMaxAddbackBeqPostN4_unfold] at hp
       xperm_hyp hp) hA hBF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullDivN4MaxAddbackBeqPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
@@ -862,7 +862,7 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
     (by pcFree) hB
   have hFull := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by simp only [preloopCallAddbackBeqPostN4_unfold] at hp; xperm_hyp hp) hA hBF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullDivN4CallAddbackBeqPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull

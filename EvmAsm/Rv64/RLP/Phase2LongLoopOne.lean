@@ -100,7 +100,7 @@ theorem rlp_phase2_long_loop_one_byte_spec
   -- Weaken the post: unfold the `@[irreducible]` wrapper and strip the
   -- trailing `⌜(0 : Word) = 0⌝ = True` pure fact (via 5 `mono_right` wraps
   -- reaching the innermost `F ** ⌜P⌝`).
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => hp)
     (fun h hp => by
       simp only [rlp_phase2_long_loop_body_post_unfold] at hp

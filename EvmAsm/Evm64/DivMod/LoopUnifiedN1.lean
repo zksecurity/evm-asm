@@ -119,7 +119,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         xperm_hyp hp)
       J1f J0f
     -- Bridge to unified  postcondition
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by
         delta loopN1Iter10Post loopIterPostN1
@@ -185,7 +185,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         rw [sepConj_assoc'] at hp
         xperm_hyp hp)
       J1f J0f
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by
         delta loopN1Iter10Post loopIterPostN1
@@ -253,7 +253,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         rw [sepConj_assoc'] at hp
         xperm_hyp hp)
       J1f J0f
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by
         delta loopN1Iter10Post loopIterPostN1
@@ -319,7 +319,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         rw [sepConj_assoc'] at hp
         xperm_hyp hp)
       J1f J0f
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by
         delta loopN1Iter10Post loopIterPostN1
@@ -407,7 +407,7 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN1Iter210PreWithScratch loopN1Iter210Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1Iter210Post loopN1Iter10Post at hp ⊢
@@ -488,7 +488,7 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN1Iter210PreWithScratch loopN1Iter210Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1Iter210Post loopN1Iter10Post at hp ⊢
@@ -653,7 +653,7 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J3f H210f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN1PreWithScratch loopN1Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1UnifiedPost loopN1Iter210Post loopN1Iter10Post loopIterPostN1 at hp ⊢
@@ -760,7 +760,7 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J3f H210f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN1PreWithScratch loopN1Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN1UnifiedPost loopN1Iter210Post loopN1Iter10Post loopIterPostN1 at hp ⊢

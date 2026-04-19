@@ -119,7 +119,7 @@ theorem evm_dup_evmword_spec (nsp base : Word)
     (src.getLimbN 0) (src.getLimbN 1) (src.getLimbN 2) (src.getLimbN 3)
     (dst.getLimbN 0) (dst.getLimbN 1) (dst.getLimbN 2) (dst.getLimbN 3)
     v7
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => by
       simp only [evmWordIs, haddr8, haddr16, haddr24] at hp
       xperm_hyp hp)
@@ -164,7 +164,7 @@ theorem evm_dup_stack_spec (nsp base : Word)
      evmStackIs (nsp + BitVec.ofNat 64 (n * 32 + 32)) (stack.drop n))
     (by pcFree)
     (evm_dup_evmword_spec nsp base n hn1 hn16 vn d v7)
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => by rw [hsplit] at hp; xperm_hyp hp)
     (fun _ hq => by rw [hsplit]; xperm_hyp hq)
     h_main
