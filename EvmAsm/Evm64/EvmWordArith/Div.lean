@@ -46,6 +46,29 @@ theorem mod_getLimb_zero_right (a : EvmWord) (i : Fin 4) :
     (mod a 0).getLimb i = 0 := by
   rw [mod_zero_right]; exact getLimb_zero i
 
+/-- `Nat`-indexed version of `div_getLimb_zero_right`: for any `k : Nat`,
+    `(div a 0).getLimbN k = 0`. Handles both the in-range case (`k < 4`, via
+    `div_zero_right` + `getLimbN`'s zero-EvmWord behavior) and the
+    out-of-range case (`k ≥ 4`, via `getLimbN_ge`) uniformly. Avoids callers
+    needing to wrap `k` as `Fin 4` or reason about concrete indices. -/
+theorem div_getLimbN_zero_right (a : EvmWord) (k : Nat) :
+    (div a 0).getLimbN k = 0 := by
+  rw [div_zero_right]
+  unfold getLimbN
+  split_ifs with hk
+  · exact getLimb_zero ⟨k, hk⟩
+  · rfl
+
+/-- `Nat`-indexed version of `mod_getLimb_zero_right`. Mirror of
+    `div_getLimbN_zero_right`. -/
+theorem mod_getLimbN_zero_right (a : EvmWord) (k : Nat) :
+    (mod a 0).getLimbN k = 0 := by
+  rw [mod_zero_right]
+  unfold getLimbN
+  split_ifs with hk
+  · exact getLimb_zero ⟨k, hk⟩
+  · rfl
+
 -- ============================================================================
 -- b = 0 ↔ all limbs OR to zero (bridge for program specs)
 -- ============================================================================
