@@ -14,7 +14,9 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_8 se13_16 se13_24 se13_1020)
+open EvmAsm.Rv64.AddrNorm (se13_8 se13_16 se13_24 se13_1020
+  bv64_4mul_9 bv64_4mul_10 bv64_4mul_11 bv64_4mul_12 bv64_4mul_13
+  bv64_4mul_14 bv64_4mul_15)
 
 -- ============================================================================
 -- Section 5: CodeReq subsumption lemmas (via mono_unionAll / mono_sub_unionAll)
@@ -91,7 +93,7 @@ private theorem addi_x5_singleton_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 9
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 9) = (36 : Word) from by decide,
+  rw [bv64_4mul_9,
       show (base + phaseBOff : Word) + 36 = base + 68 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -104,7 +106,7 @@ private theorem bne_x10_singleton_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 10
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 10) = (40 : Word) from by decide,
+  rw [bv64_4mul_10,
       show (base + phaseBOff : Word) + 40 = base + 72 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -421,7 +423,7 @@ private theorem addi_x5_3_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 11
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 11) = (44 : Word) from by decide,
+  rw [bv64_4mul_11,
       show (base + phaseBOff : Word) + 44 = base + 76 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -434,7 +436,7 @@ private theorem bne_x7_16_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 12
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 12) = (48 : Word) from by decide,
+  rw [bv64_4mul_12,
       show (base + phaseBOff : Word) + 48 = base + 80 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -447,7 +449,7 @@ private theorem addi_x5_2_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 13
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 13) = (52 : Word) from by decide,
+  rw [bv64_4mul_13,
       show (base + phaseBOff : Word) + 52 = base + 84 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -460,7 +462,7 @@ private theorem bne_x6_8_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 14
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 14) = (56 : Word) from by decide,
+  rw [bv64_4mul_14,
       show (base + phaseBOff : Word) + 56 = base + 88 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1
@@ -473,7 +475,7 @@ private theorem addi_x5_1_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 15
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 15) = (60 : Word) from by decide,
+  rw [bv64_4mul_15,
       show (base + phaseBOff : Word) + 60 = base + 92 from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left base _ a i h1

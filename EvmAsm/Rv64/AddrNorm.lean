@@ -113,6 +113,33 @@ theorem word_add_zero (x : Word) : x + (0 : Word) = x := BitVec.add_zero x
 @[rv64_addr, grind =] theorem se21_560 : signExtend21 (560 : BitVec 21) = (560 : Word) := by decide
 
 -- ============================================================================
+-- `BitVec.ofNat 64 (4 * N)` evaluations (RV64 instruction stride × index)
+--
+-- `CodeReq.ofProg_lookup` produces address offsets of the form
+-- `BitVec.ofNat 64 (4 * k)` where `4` is the RV64 instruction width in bytes
+-- and `k` is the instruction index inside a program. Lean does not reduce
+-- `BitVec.ofNat 64 (4 * k)` to a numeric literal automatically, so ~34
+-- consumer sites historically close the address match with an ad-hoc
+-- `show BitVec.ofNat 64 (4 * N) = (4·N : Word) from by decide` rewrite
+-- (Compose/{PhaseAB,ModPhaseB,ModNorm,ModNormA,Epilogue,ModEpilogue,Norm}.lean).
+-- Migrating those sites to the `rv64_addr` grindset localizes the knowledge.
+-- ============================================================================
+
+@[rv64_addr, grind =] theorem bv64_4mul_1  : BitVec.ofNat 64 (4 * 1)  = (4  : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_3  : BitVec.ofNat 64 (4 * 3)  = (12 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_5  : BitVec.ofNat 64 (4 * 5)  = (20 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_9  : BitVec.ofNat 64 (4 * 9)  = (36 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_10 : BitVec.ofNat 64 (4 * 10) = (40 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_11 : BitVec.ofNat 64 (4 * 11) = (44 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_12 : BitVec.ofNat 64 (4 * 12) = (48 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_13 : BitVec.ofNat 64 (4 * 13) = (52 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_14 : BitVec.ofNat 64 (4 * 14) = (56 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_15 : BitVec.ofNat 64 (4 * 15) = (60 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_17 : BitVec.ofNat 64 (4 * 17) = (68 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_20 : BitVec.ofNat 64 (4 * 20) = (80 : Word) := by decide
+@[rv64_addr, grind =] theorem bv64_4mul_21 : BitVec.ofNat 64 (4 * 21) = (84 : Word) := by decide
+
+-- ============================================================================
 -- `rv64_addr` tactic
 --
 -- Primary: `grind` (sees every `@[grind =]` fact in this file + BitVec
@@ -154,5 +181,8 @@ example (a : Word) : a + signExtend13 (7736 : BitVec 13) =
 
 -- signExtend21 on a small positive offset.
 example (a : Word) : a + signExtend21 (252 : BitVec 21) = a + 252 := by rv64_addr
+
+-- `BitVec.ofNat 64 (4 * k)` embedded in `CodeReq.ofProg_lookup` style goals.
+example (a : Word) : a + BitVec.ofNat 64 (4 * 12) = a + 48 := by rv64_addr
 
 end Sanity

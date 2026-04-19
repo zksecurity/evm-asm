@@ -39,7 +39,7 @@ private theorem normA_sub (base : Word) (sub_prog : List Instr) (k : Nat)
 -- signExtend12 rewrites pulled from the divmod_addr global set (AddrNorm.lean).
 open EvmAsm.Evm64.DivMod.AddrNorm (se12_0 se12_8 se12_16 se12_24)
 -- signExtend13/21 rewrites pulled from the rv64_addr global set (Rv64/AddrNorm.lean).
-open EvmAsm.Rv64.AddrNorm (se13_464 se21_40)
+open EvmAsm.Rv64.AddrNorm (se13_464 se21_40 bv64_4mul_3)
 
 /-- Full NormA: normalize dividend a[0..3] → u[0..4] and jump to loopSetup.
     base+312 → base+432 (21 instructions including JAL).
@@ -241,7 +241,7 @@ private theorem blt_loopSetup_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + loopSetupOff) (divK_loopSetup 464) 3
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 3) = (12 : Word) from by decide,
+  rw [bv64_4mul_3,
       show (base + loopSetupOff : Word) + 12 = base + 444 from by bv_addr] at hlookup
   exact divK_loopSetup_code_sub_divCode base a i
     (CodeReq.singleton_mono hlookup a i h)
