@@ -253,9 +253,9 @@ def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
   ((sp + signExtend12 3984) ↦ₘ n_mem) **
   ((sp + signExtend12 3976) ↦ₘ j_mem)
 
-/-- Unfold `divScratchValues` into its 15 underlying memory atoms. Since
-    `divScratchValues` is not `@[irreducible]` the `delta`/`unfold` tactics
-    reduce it directly, but this named rewrite is convenient at call sites. -/
+/-- Unfold `divScratchValues` into its 15 underlying memory atoms. The bundle
+    is `@[irreducible]`, so `unfold` won't see through it — this named rewrite
+    is the supported way in at call sites (parallel to `divScratchOwn_unfold`). -/
 theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shift_mem n_mem j_mem : Word) :
     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
