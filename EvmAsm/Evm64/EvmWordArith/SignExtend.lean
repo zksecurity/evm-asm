@@ -26,22 +26,22 @@ def signextFill (limb sa : Word) : Word :=
 
 /-- EVM SIGNEXTEND: sign-extend x from byte b.
     If b >= 31, x is unchanged.
-    Otherwise, limbs below limb_idx are unchanged, the target limb is
+    Otherwise, limbs below limbIdx are unchanged, the target limb is
     sign-extended in place, and higher limbs are filled with the sign bit.
-    limb_idx = b.toNat / 8, sa = 56 - (b.toNat % 8) * 8. -/
+    limbIdx = b.toNat / 8, sa = 56 - (b.toNat % 8) * 8. -/
 def signextend (b x : EvmWord) : EvmWord :=
   if b.toNat ≥ 31 then x
   else
     let bn := b.toNat
-    let limb_idx := bn / 8
-    let sa_nat := 56 - (bn % 8) * 8
-    let sa : Word := BitVec.ofNat 64 sa_nat
-    let target_limb := x.getLimbN limb_idx
-    let ext := signextLimb target_limb sa
-    let fill := signextFill target_limb sa
+    let limbIdx := bn / 8
+    let saNat := 56 - (bn % 8) * 8
+    let sa : Word := BitVec.ofNat 64 saNat
+    let targetLimb := x.getLimbN limbIdx
+    let ext := signextLimb targetLimb sa
+    let fill := signextFill targetLimb sa
     EvmWord.fromLimbs fun i =>
-      if i.val < limb_idx then x.getLimb i
-      else if i.val = limb_idx then ext
+      if i.val < limbIdx then x.getLimb i
+      else if i.val = limbIdx then ext
       else fill
 
 /-- When b >= 31, signextend is the identity. -/
@@ -49,7 +49,7 @@ theorem signextend_ge31 (b x : EvmWord) (h : b.toNat ≥ 31) :
     signextend b x = x := by
   simp [signextend, h]
 
-/-- When b < 31, getLimb of signextend for limbs below limb_idx. -/
+/-- When b < 31, getLimb of signextend for limbs below limbIdx. -/
 theorem signextend_getLimb_below (b x : EvmWord) (h : ¬ b.toNat ≥ 31)
     (i : Fin 4) (hi : i.val < b.toNat / 8) :
     (signextend b x).getLimb i = x.getLimb i := by
@@ -65,7 +65,7 @@ theorem signextend_getLimb_target (b x : EvmWord) (h : ¬ b.toNat ≥ 31)
   simp only [show ¬ (i.val < b.toNat / 8) from by omega, ite_false]
   simp only [hi, ite_true]
 
-/-- When b < 31, getLimb of signextend for limbs above limb_idx. -/
+/-- When b < 31, getLimb of signextend for limbs above limbIdx. -/
 theorem signextend_getLimb_above (b x : EvmWord) (h : ¬ b.toNat ≥ 31)
     (i : Fin 4) (hi : i.val > b.toNat / 8) :
     (signextend b x).getLimb i = signextFill (x.getLimbN (b.toNat / 8))
