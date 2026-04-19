@@ -81,7 +81,7 @@ theorem divK_phaseA_spec (sp : Word) (base : Word)
   have hbeq_raw := beq_spec_gen .x5 .x0 1020 bor (0 : Word) (base + 28)
   have ha1 : (base + 28 : Word) + 4 = base + 32 := by bv_addr
   rw [ha1] at hbeq_raw
-  have hbeq := cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+  have hbeq := cpsBranch_weaken
     (fun _ hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)

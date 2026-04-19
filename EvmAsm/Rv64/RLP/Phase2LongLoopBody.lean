@@ -172,7 +172,7 @@ theorem rlp_phase2_long_loop_body_spec
          (dwordAddr ↦ₘ word_val) ** ⌜cnt' = 0⌝) := by
     have h_eq_20_4 : (base + 20 : Word) + 4 = base + 24 := by bv_omega
     rw [h_eq_20_4] at bne_raw
-    exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+    exact cpsBranch_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)

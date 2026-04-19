@@ -64,7 +64,7 @@ theorem divK_phaseB_cascade_step_spec (n_val : BitVec 12) (rx : Reg) (check v5 :
         ((rx ↦ᵣ check) ** (.x0 ↦ᵣ (0 : Word)))
       (base + 8)
         ((rx ↦ᵣ check) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+    cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
