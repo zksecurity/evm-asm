@@ -267,7 +267,7 @@ theorem signext_nochange_high_spec (sp base : Word)
     _ _ _ _
     (fun h hp => by xperm_hyp hp) hAB hdone_framed
   -- Final: weaken regs to regOwn + perm
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
       simp only [signExtend12_32] at hq
@@ -395,7 +395,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
     (by pcFree) hdone
   have hfull := cpsTriple_seq_with_perm_same_cr base (base + 188) (base + 192) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h1234567 hdone_framed
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
       simp only [signExtend12_32] at hq
@@ -623,11 +623,11 @@ theorem signext_body_spec (sp base : Word)
     have w3 := sepConj_mono_right (sepConj_mono_right (sepConj_mono_right (sepConj_mono_left (regIs_to_regOwn .x10 _)))) h w2
     xperm_hyp w3
   -- Apply weakening to each body+done
-  have hbd0_w := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbd0_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd0
-  have hbd1_w := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbd1_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd1
-  have hbd2_w := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbd2_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd2
   -- Body 3 has no x10 — need to introduce regOwn .x10 from x10 in Phase C frame
   -- After merge, the precondition will include (.x10 ↦ᵣ _) from Phase C exit post.
@@ -790,7 +790,7 @@ theorem signext_body_spec (sp base : Word)
   -- Body 3 bridge: limb_idx ≠ 0,1,2 → limb_idx = 3 → outputs match signextend getLimb
   -- Body 3 doesn't have x10, so we frame it from Phase C exit 3's (.x10 ↦ᵣ (0 + signExtend12 2))
   have hbd3_x10 := cpsTriple_frame_left _ _ _ _ _ ((.x10 ↦ᵣ ((0 : Word) + signExtend12 2))) (by pcFree) hbd3
-  have hbd3_w := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbd3_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body3_post_weaken _ _ _ _ h (by xperm_hyp hq)) hbd3_x10
   have hbd3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
     hbd3_w (fun (hli : limb_idx ≠ 0 ∧ limb_idx ≠ (0 : Word) + signExtend12 1 ∧ limb_idx ≠ (0 : Word) + signExtend12 2) h hq => by
@@ -830,16 +830,16 @@ theorem signext_body_spec (sp base : Word)
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · -- Exit 0: limb_idx = 0 → body_0 at base+156
-        exact cpsTriple_consequence _ _ _ _ _ _ _
+        exact cpsTriple_weaken
           (fun h hp => by xperm_hyp hp) (fun _ hq => hq) hbd0_ev
       · -- Exit 1: limb_idx = 1 → body_1 at base+124
-        exact cpsTriple_consequence _ _ _ _ _ _ _
+        exact cpsTriple_weaken
           (fun h hp => by xperm_hyp hp) (fun _ hq => hq) hbd1_ev
       · -- Exit 2: limb_idx = 2 → body_2 at base+96
-        exact cpsTriple_consequence _ _ _ _ _ _ _
+        exact cpsTriple_weaken
           (fun h hp => by xperm_hyp hp) (fun _ hq => hq) hbd2_ev
       · -- Exit 3: limb_idx ≠ 0,1,2 → body_3 at base+76
-        exact cpsTriple_consequence _ _ _ _ _ _ _
+        exact cpsTriple_weaken
           (fun h hp => by xperm_hyp hp) (fun _ hq => hq) hbd3_ev)
   -- Flatten hphaseAB postcondition for composition
   have hphaseAB' : cpsTriple base (base + 56) (signextCode base)
@@ -850,7 +850,7 @@ theorem signext_body_spec (sp base : Word)
        (.x12 ↦ᵣ sp) **
        (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
        ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hq => by xperm_hyp hq)
       hphaseAB
@@ -858,7 +858,7 @@ theorem signext_body_spec (sp base : Word)
   have hfull := cpsTriple_seq_with_perm_same_cr base (base + 56) (base + 192) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hphaseAB' hphaseCD
   -- Final consequence: permute to match goal shape
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     hfull

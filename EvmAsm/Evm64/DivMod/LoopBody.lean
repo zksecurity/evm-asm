@@ -213,7 +213,7 @@ theorem divK_mulsub_4limbs_spec
   -- Compose (L0+L1+L2) + L3
   seqFrame L0fL1eL2e L3e
   -- Final permutation to match goal pre/postcondition order
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     L0fL1eL2eL3e
@@ -375,7 +375,7 @@ theorem divK_addback_full_spec
     AF
   seqFrame IfA0eA1eA2eA3e AFe
   -- Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     IfA0eA1eA2eA3eAFe
@@ -498,7 +498,7 @@ theorem divK_mulsub_full_spec
   -- Compose (setup+mulsub) + sub_carry
   seqFrame SfM SCe
   -- Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     SfMSCe
@@ -551,7 +551,7 @@ theorem divK_correction_skip_spec
   have skip_clean : cpsTriple (base + 728) (base + 884) (sharedDivModCode base)
       ((.x7 ↦ᵣ (0 : Word)) ** (.x0 ↦ᵣ (0 : Word)))
       ((.x7 ↦ᵣ (0 : Word)) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -566,7 +566,7 @@ theorem divK_correction_skip_spec
      ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
      ((u_base + signExtend12 4064) ↦ₘ u4))
     (by pcFree) skip_clean
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     skip_framed
@@ -635,7 +635,7 @@ theorem divK_correction_addback_spec
   have ntaken_clean : cpsTriple (base + 728) (base + 732) (sharedDivModCode base)
       ((.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ (0 : Word)))
       ((.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -655,7 +655,7 @@ theorem divK_correction_addback_spec
     borrow v5_old v2_old base
   dsimp only [] at AB
   seqFrame ntaken_framed AB
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     ntaken_framedAB
@@ -753,7 +753,7 @@ theorem divK_save_trial_load_spec
   -- 3. Compose save_j + trial_load
   seqFrame SJf TLe
   -- Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     SJfTLe
@@ -876,7 +876,7 @@ theorem divK_trial_call_path_spec
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) Jf D
   -- 5. Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     full
@@ -909,7 +909,7 @@ theorem divK_beq_passthrough (carry : Word) (base : Word) (hne : carry ≠ 0) :
   have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ hbeq_ext (fun hp hQt => by
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
     exact hne hpure)
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -980,7 +980,7 @@ theorem divK_double_addback_beq_spec
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
     exact hpure rfl)
   -- Strip pure fact from taken postcondition
-  have beq_taken' := cpsTriple_consequence _ _ _ _ _ _ _
+  have beq_taken' := cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -1023,7 +1023,7 @@ theorem divK_double_addback_beq_spec
   -- Compose (BEQ+addback2) → BEQ passthrough
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) beq_ab2 BPTf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     full
@@ -1102,7 +1102,7 @@ theorem divK_store_loop_spec
        (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_old))
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_hat)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
@@ -1181,7 +1181,7 @@ theorem divK_store_loop_j0_spec
       obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
       exact hpure j0_slt_zero)
   -- Strip pure fact from not-taken postcondition
-  have hbge_exit := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbge_exit := cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -1193,7 +1193,7 @@ theorem divK_store_loop_j0_spec
       ((.x1 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ (0 : Word) <<< (3 : BitVec 6).toNat) ** (.x7 ↦ᵣ q_addr) **
        (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_hat)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
@@ -1212,7 +1212,7 @@ theorem divK_store_loop_j0_spec
   -- 7. Compose: store_qj → (ADDI → BGE exit)
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) SQx0 addi_bge_framed
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     full
@@ -1267,7 +1267,7 @@ theorem divK_store_loop_jgt0_spec
       obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
       exact absurd hpure (by rw [hj_pos]; exact Bool.false_ne_true))
   -- Strip pure fact from taken postcondition
-  have hbge_exit := cpsTriple_consequence _ _ _ _ _ _ _
+  have hbge_exit := cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
@@ -1278,7 +1278,7 @@ theorem divK_store_loop_jgt0_spec
        (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_old))
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) ** (.x0 ↦ᵣ (0 : Word)) ** (q_addr ↦ₘ q_hat)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
@@ -1297,7 +1297,7 @@ theorem divK_store_loop_jgt0_spec
   -- 7. Compose: store_qj → (ADDI → BGE exit)
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) SQx0 addi_bge_framed
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     full
@@ -1382,7 +1382,7 @@ theorem divK_mulsub_correction_skip_spec
     u4_new un3 base
   -- 4. Compose mulsub(borrow=0) + correction_skip
   seqFrame MS CS
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     MSCS
@@ -1493,7 +1493,7 @@ theorem divK_mulsub_correction_addback_880_spec
   dsimp only [] at CA
   -- 3. Compose mulsub + correction_addback
   seqFrame MS CA
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     MSCA
@@ -1657,7 +1657,7 @@ theorem divK_mulsub_correction_addback_spec
     (by pcFree) BEQ
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) MSCA BEQf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     full
@@ -1708,7 +1708,7 @@ theorem divK_trial_max_full_spec
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
     exact hbltu hpure)
   -- Strip pure fact
-  have ntaken_clean := cpsTriple_consequence _ _ _ _ _ _ _
+  have ntaken_clean := cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp) ntaken
@@ -1721,7 +1721,7 @@ theorem divK_trial_max_full_spec
   -- 5. Frame BLTU ntaken result with x0 + memory, compose with trial_max
   seqFrame STLfntaken_clean TM
   -- 6. Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     STLfntaken_cleanTM
@@ -1810,7 +1810,7 @@ theorem divK_trial_call_full_spec
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
     exact hpure hbltu)
   -- Strip pure fact from taken postcondition
-  have taken_clean := cpsTriple_consequence _ _ _ _ _ _ _
+  have taken_clean := cpsTriple_weaken
     (fun h hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp) taken
@@ -1832,7 +1832,7 @@ theorem divK_trial_call_full_spec
   -- 6. Compose (save_trial_load + BLTU) + trial_call_path
   seqFrame STLftaken_clean TCP
   -- 7. Final permutation
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     STLftaken_cleanTCP
@@ -1934,7 +1934,7 @@ theorem divK_mulsub_correction_addback_beq_spec
     -- Compose MCA_N(→880) with DAf(880→884)
     have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
       (fun h hp => by xperm_hyp hp) MCA_N DAf
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       full

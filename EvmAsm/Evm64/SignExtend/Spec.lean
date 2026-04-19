@@ -45,7 +45,7 @@ private theorem signext_nochange_lift (sp base : Word)
   subst hresult
   -- Frame x6 through the no-change spec, then weaken to regOwn
   have hmain_f := cpsTriple_frame_left _ _ _ _ _ (.x6 ↦ᵣ r6) (by pcFree) hmain
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs] at hp
       simp only [spAddr32_8, spAddr32_16, spAddr32_24] at hp
@@ -107,7 +107,7 @@ theorem evm_signextend_stack_spec (sp base : Word)
       · rfl
     -- Use the body path theorem from Compose, lifting to evmWordIs
     have h_raw := signext_body_spec sp base b x r5 r6 r10 hhigh hsmall
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by
         simp only [evmWordIs] at hp
         simp only [spAddr32_8, spAddr32_16, spAddr32_24] at hp
