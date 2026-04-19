@@ -103,8 +103,7 @@ theorem divK_loopSetup_spec (sp n v1 v5 : Word)
     · simp at h) hblt_framed
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hblt_ext
-  exact cpsBranch_consequence _ _
-    _ _ _ _ _ _ _ _
+  exact cpsBranch_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)

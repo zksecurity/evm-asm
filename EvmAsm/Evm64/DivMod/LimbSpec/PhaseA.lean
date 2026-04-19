@@ -108,8 +108,7 @@ theorem divK_phaseA_spec (sp : Word) (base : Word)
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
   -- 6. Final permutation of postconditions
-  exact cpsBranch_consequence _ _
-    _ _ _ _ _ _ _ _
+  exact cpsBranch_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)

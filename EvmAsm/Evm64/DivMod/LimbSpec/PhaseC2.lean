@@ -106,8 +106,7 @@ theorem divK_phaseC2_spec (sp shift v2 shift_mem : Word)
     · simp at h) hbeq_framed
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
-  exact cpsBranch_consequence _ _
-    _ _ _ _ _ _ _ _
+  exact cpsBranch_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
