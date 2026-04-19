@@ -75,7 +75,7 @@ theorem divK_div128_clamp_q1_merged_spec (q1 rhat d_hi v5_old : Word) (base : Wo
         simp only [cr, CodeReq.union, CodeReq.singleton]
         have h0 : ¬(base + 4 = base) := by bv_omega
         simp only [beq_iff_eq, h0, ↓reduceIte]))) hPR hpc
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
   by_cases hcond : hi = 0
   · have hq : q1' = q1 := if_pos hcond
@@ -160,7 +160,7 @@ theorem divK_div128_clamp_q0_merged_spec (q0 rhat2 d_hi v1_old : Word) (base : W
         simp only [cr, CodeReq.union, CodeReq.singleton]
         have h0 : ¬(base + 4 = base) := by bv_omega
         simp only [beq_iff_eq, h0, ↓reduceIte]))) hPR hpc
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
   by_cases hcond : hi = 0
   · have hq : q0' = q0 := if_pos hcond

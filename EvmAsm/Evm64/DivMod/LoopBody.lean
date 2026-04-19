@@ -1126,7 +1126,7 @@ theorem divK_store_loop_spec
          (q_addr ↦ₘ q_hat))
         (by pcFree) LCe)
   -- 5. Compose store_qj(+x0) → loop_control(reshaped)
-  exact cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  exact cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => hp) SQx0 LCp
 
 -- ============================================================================

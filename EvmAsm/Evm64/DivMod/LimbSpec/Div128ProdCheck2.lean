@@ -97,7 +97,7 @@ theorem divK_div128_prodcheck2_merged_spec
         have h3 : ¬(base + 20 = base + 12) := by bv_omega
         have h4 : ¬(base + 20 = base + 16) := by bv_omega
         simp only [beq_iff_eq, h0, h1, h2, h3, h4, ↓reduceIte]))) hPR hpc
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbltu_ext
   by_cases hcond : BitVec.ult rhat2_un0 q0_dlo
   · have hq : q0' = q0 + signExtend12 4095 := if_pos hcond

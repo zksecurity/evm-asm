@@ -104,7 +104,7 @@ theorem divK_phaseC2_spec (sp shift v2 shift_mem : Word)
       exact CodeReq.ofProg_lookup base (divK_phaseC2 shift0_off) 3
         (by omega) (by omega)
     · simp at h) hbeq_framed
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
   exact cpsBranch_consequence _ _
     _ _ _ _ _ _ _ _
