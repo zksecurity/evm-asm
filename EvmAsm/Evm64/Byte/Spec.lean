@@ -15,6 +15,7 @@
 
 import EvmAsm.Evm64.Byte.LimbSpec
 import EvmAsm.Evm64.EvmWordArith
+import EvmAsm.Evm64.SpAddr
 import EvmAsm.Rv64.AddrNorm
 import Mathlib.Tactic.Set
 
@@ -488,17 +489,13 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by
         unfold evmWordIs at hp
-        simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                   show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                   show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega] at hp
+        simp only [spAddr32_8, spAddr32_16, spAddr32_24] at hp
         xperm_hyp hp)
       (fun h hq => by
         simp only [EvmWord.getLimb_as_getLimbN_0, EvmWord.getLimb_as_getLimbN_1,
                    EvmWord.getLimb_as_getLimbN_2, EvmWord.getLimb_as_getLimbN_3] at hq
         unfold evmWordIs
-        simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                   show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                   show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega]
+        simp only [spAddr32_8, spAddr32_16, spAddr32_24]
         xperm_hyp hq)
       h_raw
   -- Now prove h_raw in flat memIs form
@@ -933,15 +930,11 @@ theorem evm_byte_stack_spec (sp base : Word)
     exact cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by
         unfold evmWordIs at hp
-        simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                   show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                   show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega] at hp
+        simp only [spAddr32_8, spAddr32_16, spAddr32_24] at hp
         xperm_hyp hp)
       (fun h hq => by
         unfold evmWordIs
-        simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                   show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                   show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
+        simp only [spAddr32_8, spAddr32_16, spAddr32_24,
                    EvmWord.getLimbN_zero]
         have w := sepConj_mono_right (regIs_to_regOwn .x6 _) h hq
         xperm_hyp w)
@@ -974,15 +967,11 @@ theorem evm_byte_stack_spec (sp base : Word)
       exact cpsTriple_consequence _ _ _ _ _ _ _
         (fun h hp => by
           unfold evmWordIs at hp
-          simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                     show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                     show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega] at hp
+          simp only [spAddr32_8, spAddr32_16, spAddr32_24] at hp
           xperm_hyp hp)
         (fun h hq => by
           unfold evmWordIs
-          simp only [show (sp + 32 : Word) + 8 = sp + 40 from by bv_omega,
-                     show (sp + 32 : Word) + 16 = sp + 48 from by bv_omega,
-                     show (sp + 32 : Word) + 24 = sp + 56 from by bv_omega,
+          simp only [spAddr32_8, spAddr32_16, spAddr32_24,
                      EvmWord.getLimbN_zero]
           have w := sepConj_mono_right (regIs_to_regOwn .x6 _) h hq
           xperm_hyp w)

@@ -548,7 +548,7 @@ theorem signext_body_spec (sp base : Word)
   let limb_idx := b0 >>> (3 : BitVec 6).toNat
   have hphaseB := cpsTriple_extend_code (phase_b_sub_signextCode base)
     (signext_phase_b_spec b0 r6 sltiu_val (base + 36))
-  rw [show (base + 36 : Word) + 20 = base + 56 from by bv_omega] at hphaseB
+  rw [show (base + 36 : Word) + 20 = base + 56 from by bv_addr] at hphaseB
   have hphaseB_f := cpsTriple_frame_left (base + 36) (base + 56) _ _ _
     ((.x12 ↦ᵣ sp) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hphaseB
@@ -568,7 +568,7 @@ theorem signext_body_spec (sp base : Word)
     (signext_body_1_spec sp limb_idx ((0 : Word) + signExtend12 1) shift_amount v1 v2 v3 (base + 124) (base + 188) 36 (se_body1_exit base))
   have hbody0 := cpsTriple_extend_code (body_0_sub_signextCode base)
     (signext_body_0_spec sp limb_idx byte_shift shift_amount v0 v1 v2 v3 (base + 156))
-  rw [show (base + 156 : Word) + 32 = base + 188 from by bv_omega] at hbody0
+  rw [show (base + 156 : Word) + 32 = base + 188 from by bv_addr] at hbody0
   have hdone := cpsTriple_extend_code (done_sub_signextCode base) (signext_done_spec sp (base + 188))
   rw [se_done_exit] at hdone
   -- Frame bodies with b-mem + x0
