@@ -354,6 +354,15 @@ instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem : Word) :
   ⟨pcFree_divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shift_mem n_mem j_mem⟩
 
+/-- `divScratchOwn` is pc-free: all its 15 atoms are `memOwn`. Proof goes
+    through the `_unfold` rewrite since the bundle is `@[irreducible]`. -/
+theorem pcFree_divScratchOwn (sp : Word) : (divScratchOwn sp).pcFree := by
+  rw [divScratchOwn_unfold]; pcFree
+
+instance pcFreeInst_divScratchOwn (sp : Word) :
+    Assertion.PCFree (divScratchOwn sp) :=
+  ⟨pcFree_divScratchOwn sp⟩
+
 /-- Weakening: any concrete scratch state implies ownership of the same 15
     cells. This lets a stack spec hide the scratch values on exit. -/
 theorem divScratchValues_implies_divScratchOwn

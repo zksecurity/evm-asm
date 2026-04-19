@@ -393,12 +393,6 @@ theorem divN4MaxSkipStackPost_unfold_atoms (sp : Word) (a b : EvmWord) :
   rw [divN4MaxSkipStackPost_unfold, evmWordIs_sp_unfold, evmWordIs_sp32_unfold,
       divScratchOwn_unfold]
 
-theorem pcFree_divScratchOwn (sp : Word) : (divScratchOwn sp).pcFree := by
-  unfold divScratchOwn; pcFree
-
-instance (sp : Word) : Assertion.PCFree (divScratchOwn sp) :=
-  ⟨pcFree_divScratchOwn sp⟩
-
 theorem pcFree_divN4MaxSkipStackPost (sp : Word) (a b : EvmWord) :
     (divN4MaxSkipStackPost sp a b).pcFree := by
   rw [divN4MaxSkipStackPost_unfold]; pcFree
