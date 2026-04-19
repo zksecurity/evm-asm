@@ -17,7 +17,8 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_24 se13_60 se13_100 se13_156 se13_168 se21_36 se21_68 se21_96)
+open EvmAsm.Rv64.AddrNorm (se13_24 se13_60 se13_100 se13_156 se13_168 se21_36 se21_68 se21_96
+  zero_add_se12_1_toNat zero_add_se12_2_toNat)
 
 -- ============================================================================
 -- Section 1: signextCode definition and helpers
@@ -786,7 +787,7 @@ theorem signext_body_spec (sp base : Word)
     hbd1_w (fun (hli : limb_idx = (0 : Word) + signExtend12 1) h hq => by
       have hL : b.toNat / 8 = 1 := by
         have := congrArg BitVec.toNat hli; rw [hlimb_idx_eq] at this
-        simp only [show ((0 : Word) + signExtend12 1).toNat = 1 from by decide] at this; exact this
+        simp only [zero_add_se12_1_toNat] at this; exact this
       have hv1_eq : v1 = x.getLimbN (b.toNat / 8) := by rw [hL]; exact rfl
       have heq0 := EvmWord.signextend_getLimb_below b x hnotge (0 : Fin 4) (by simp [hL])
       have heq1 := EvmWord.signextend_getLimb_target b x hnotge (1 : Fin 4) (by simp [hL])
@@ -803,7 +804,7 @@ theorem signext_body_spec (sp base : Word)
     hbd2_w (fun (hli : limb_idx = (0 : Word) + signExtend12 2) h hq => by
       have hL : b.toNat / 8 = 2 := by
         have := congrArg BitVec.toNat hli; rw [hlimb_idx_eq] at this
-        simp only [show ((0 : Word) + signExtend12 2).toNat = 2 from by decide] at this; exact this
+        simp only [zero_add_se12_2_toNat] at this; exact this
       have hv2_eq : v2 = x.getLimbN (b.toNat / 8) := by rw [hL]; exact rfl
       have heq0 := EvmWord.signextend_getLimb_below b x hnotge (0 : Fin 4) (by simp [hL])
       have heq1 := EvmWord.signextend_getLimb_below b x hnotge (1 : Fin 4) (by simp [hL])
@@ -829,11 +830,11 @@ theorem signext_body_spec (sp base : Word)
         have hn1 : limb_idx.toNat ≠ 1 :=
           fun hc => h1 (BitVec.eq_of_toNat_eq (by
             show limb_idx.toNat = ((0 : Word) + signExtend12 1).toNat
-            simp only [show ((0 : Word) + signExtend12 1).toNat = 1 from by decide]; exact hc))
+            simp only [zero_add_se12_1_toNat]; exact hc))
         have hn2 : limb_idx.toNat ≠ 2 :=
           fun hc => h2 (BitVec.eq_of_toNat_eq (by
             show limb_idx.toNat = ((0 : Word) + signExtend12 2).toNat
-            simp only [show ((0 : Word) + signExtend12 2).toNat = 2 from by decide]; exact hc))
+            simp only [zero_add_se12_2_toNat]; exact hc))
         omega
       have hv3_eq : v3 = x.getLimbN (b.toNat / 8) := by rw [hL]; exact rfl
       have heq0 := EvmWord.signextend_getLimb_below b x hnotge (0 : Fin 4) (by simp [hL])
