@@ -172,6 +172,26 @@ theorem toNat_ge_of_ushiftRight_63 {val : Word}
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at hne
   have := val.isLt; omega
 
+/-- General form: `val >>> K = 0` iff `val.toNat < 2^K`. -/
+theorem ushiftRight_eq_zero_iff {val : Word} (K : Nat) :
+    val >>> K = 0 ↔ val.toNat < 2 ^ K := by
+  constructor
+  · intro hz
+    have h0 : (val >>> K).toNat = 0 := by rw [hz]; rfl
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at h0
+    rcases (Nat.div_eq_zero_iff).mp h0 with hc | hc
+    · exact absurd hc (by positivity)
+    · exact hc
+  · intro hlt
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    simp [Nat.div_eq_zero_iff, hlt]
+
+/-- Contrapositive form: `val >>> K ≠ 0` iff `val.toNat ≥ 2^K`. -/
+theorem ushiftRight_ne_zero_iff {val : Word} (K : Nat) :
+    val >>> K ≠ 0 ↔ val.toNat ≥ 2 ^ K := by
+  rw [ne_eq, ushiftRight_eq_zero_iff K]; omega
+
 -- ============================================================================
 -- Backward pass: if pipeline count = 0, all stages passed and value = val
 -- ============================================================================
