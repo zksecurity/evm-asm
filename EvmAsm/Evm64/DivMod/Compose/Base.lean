@@ -517,6 +517,15 @@ theorem denormModPost_unfold (sp shift u0 u1 u2 u3 : Word) :
     ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3') := by
   delta denormModPost; rfl
 
+/-- `denormModPost` is pc-free: all its atoms are `regIs` / `memIs`. -/
+theorem pcFree_denormModPost (sp shift u0 u1 u2 u3 : Word) :
+    (denormModPost sp shift u0 u1 u2 u3).pcFree := by
+  rw [denormModPost_unfold]; pcFree
+
+instance pcFreeInst_denormModPost (sp shift u0 u1 u2 u3 : Word) :
+    Assertion.PCFree (denormModPost sp shift u0 u1 u2 u3) :=
+  ⟨pcFree_denormModPost sp shift u0 u1 u2 u3⟩
+
 -- ============================================================================
 -- Postcondition bundle for normB (PhaseAB + CLZ + PhaseC2 + NormB)
 -- ============================================================================
