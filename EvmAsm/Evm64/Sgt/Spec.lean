@@ -13,6 +13,7 @@ import EvmAsm.Evm64.Sgt.Program
 import EvmAsm.Evm64.Compare.LimbSpec
 import EvmAsm.Evm64.EvmWordArith
 import EvmAsm.Evm64.SpAddr
+import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.ControlFlow
 
 open EvmAsm.Rv64.Tactics
@@ -20,6 +21,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (se13_12 se21_64)
 
 /-- CodeReq for the 256-bit EVM SGT operation.
     25 instructions = 100 bytes. SGT(a, b) = SLT(b, a): swapped load order. -/
@@ -73,8 +75,7 @@ theorem evm_sgt_spec (sp : Word) (base : Word)
     have M := slt_msb_load_spec 56 24 sp b3 b3 v7 v6 base
     -- BEQ taken (b3 = b3)
     have B := beq_eq_spec .x7 .x6 (12 : BitVec 13) b3 (base + 8)
-    have hsig13 : signExtend13 (12 : BitVec 13) = (12 : Word) := by decide
-    simp only [hsig13] at B
+    simp only [se13_12] at B
     -- Lower limb borrow chain (swapped: b-limbs into x7, a-limbs into x6)
     have L0 := lt_limb0_spec 32 0 sp b0 a0 b3 b3 v5 (base + 20)
     have L1 := lt_limb_carry_spec 40 8 sp b1 a1 b0 a0 borrow0 v11 (base + 32)
@@ -97,8 +98,7 @@ theorem evm_sgt_spec (sp : Word) (base : Word)
     have S := slt_spec_gen .x5 .x7 .x6 v5 b3 a3 (base + 12) (by nofun)
     -- JAL to store
     have J := jal_x0_spec_gen (64 : BitVec 21) (base + 16)
-    have hsig21 : signExtend21 (64 : BitVec 21) = (64 : Word) := by decide
-    simp only [hsig21] at J
+    simp only [se21_64] at J
     -- Store phase
     have A := addi_spec_gen_same .x12 sp 32 (base + 80) (by nofun)
     simp only [signExtend12_32] at A
