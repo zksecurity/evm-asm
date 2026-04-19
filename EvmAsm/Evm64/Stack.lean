@@ -279,11 +279,8 @@ theorem evmWordIs_zero (addr : Word) :
     ((addr ↦ₘ (0 : Word)) ** ((addr + 8) ↦ₘ (0 : Word)) **
      ((addr + 16) ↦ₘ (0 : Word)) ** ((addr + 24) ↦ₘ (0 : Word))) := by
   unfold evmWordIs
-  have h0 : (0 : EvmWord).getLimbN 0 = (0 : Word) := by decide
-  have h1 : (0 : EvmWord).getLimbN 1 = (0 : Word) := by decide
-  have h2 : (0 : EvmWord).getLimbN 2 = (0 : Word) := by decide
-  have h3 : (0 : EvmWord).getLimbN 3 = (0 : Word) := by decide
-  rw [h0, h1, h2, h3]
+  rw [EvmWord.getLimbN_zero 0, EvmWord.getLimbN_zero 1,
+      EvmWord.getLimbN_zero 2, EvmWord.getLimbN_zero 3]
 
 -- ============================================================================
 -- Shared infrastructure for stack operation specs
