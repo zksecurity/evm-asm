@@ -603,19 +603,6 @@ instance (sp : Word) (a b : EvmWord) :
 -- pcFree for DivMod post bundles
 -- ============================================================================
 
-/-- `fullDivN4MaxSkipPost` is pc-free: all its atoms (inside the
-    `denormDivPost` sub-bundle plus the top-level wrapper atoms) are
-    `regIs` / `memIs`. Proof goes through `delta` since the bundle is
-    `@[irreducible]` and has no dedicated `_unfold` theorem. -/
-theorem pcFree_fullDivN4MaxSkipPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3).pcFree := by
-  delta fullDivN4MaxSkipPost
-  pcFree
-
-instance (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    Assertion.PCFree (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  ⟨pcFree_fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3⟩
-
 /-- Named unfold for `fullDivN4MaxSkipPost`. Restores access to the
     underlying sepConj structure once the `@[irreducible]` attribute in
     `FullPathN4.lean` makes `delta` the only way in. Parallel to the

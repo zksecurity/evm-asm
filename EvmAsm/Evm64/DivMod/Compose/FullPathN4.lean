@@ -274,6 +274,21 @@ def fullDivN4MaxSkipPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
   (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ q_hat)
 
+/-- `fullDivN4MaxSkipPost` is pc-free: all its atoms (inside the
+    `denormDivPost` sub-bundle plus the top-level wrapper atoms) are
+    `regIs` / `memIs`. Proof goes through `delta` since the bundle is
+    `@[irreducible]`; the inner `denormDivPost` is handled by its
+    own `Assertion.PCFree` instance. -/
+theorem pcFree_fullDivN4MaxSkipPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3).pcFree := by
+  delta fullDivN4MaxSkipPost
+  pcFree
+
+instance pcFreeInst_fullDivN4MaxSkipPost
+    (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    Assertion.PCFree (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
+  ⟨pcFree_fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3⟩
+
 /-- Full n=4 DIV path: base → base+1068 (shift ≠ 0, max+skip).
     Composes pre-loop + loop body + denorm + epilogue. -/
 theorem evm_div_n4_full_max_skip_spec (sp base : Word)
