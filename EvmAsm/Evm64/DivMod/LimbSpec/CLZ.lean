@@ -95,7 +95,7 @@ theorem divK_clz_stage_taken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val coun
     runBlock I0
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbne_ext
-  have taken := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+  have taken := cpsBranch_takenPath composed (fun hp hQf => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
     exact hne ((sepConj_pure_right _ _ _).1 h_x0p).2)
   intro R hR s hcr hPR hpc
@@ -148,7 +148,7 @@ theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val cou
     runBlock I0
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbne_ext
-  have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+  have ntaken := cpsBranch_ntakenPath composed (fun hp hQt => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
     exact ((sepConj_pure_right _ _ _).1 h_x0p).2 (by rw [heq]))
   have I1 := slli_spec_gen_same .x5 val M_s (base + 8) (by nofun)
@@ -160,7 +160,7 @@ theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val cou
   have hframed := cpsTriple_frameR
     ((.x7 ↦ᵣ (val >>> K.toNat)) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) hslli_addi
-  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_perm_same_cr
     (fun h hp => by
       have hp' := sepConj_mono_left (sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
@@ -220,7 +220,7 @@ theorem divK_clz_last_taken_spec (val count v7 : Word) (base : Word)
     runBlock I0
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbne_ext
-  have taken := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+  have taken := cpsBranch_takenPath composed (fun hp hQf => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
     exact hne ((sepConj_pure_right _ _ _).1 h_x0p).2)
   intro R hR s hcr hPR hpc
@@ -275,7 +275,7 @@ theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Word)
     runBlock I0
   have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody hbne_ext
-  have ntaken := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+  have ntaken := cpsBranch_ntakenPath composed (fun hp hQt => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
     exact ((sepConj_pure_right _ _ _).1 h_x0p).2 (by rw [heq]))
   have I2 := addi_spec_gen_same .x6 count 1 (base + 8) (by nofun)
@@ -286,7 +286,7 @@ theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Word)
   have hframed := cpsTriple_frameR
     ((.x5 ↦ᵣ val) ** (.x7 ↦ᵣ (val >>> 63)) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) haddi
-  have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_perm_same_cr
     (fun h hp => by
       have hp' := sepConj_mono_left (sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp

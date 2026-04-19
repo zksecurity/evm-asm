@@ -101,7 +101,7 @@ theorem divK_div128_prodcheck1_merged_spec
   · have hq : q1' = q1 + signExtend12 4095 := if_pos hcond
     have hr : rhat' = rhat + d_hi := if_pos hcond
     rw [hq, hr]
-    have taken_br := cpsBranch_elim_taken _ _ _ _ _ _ _ composed (fun hp hQf => by
+    have taken_br := cpsBranch_takenPath composed (fun hp hQf => by
       obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQf
       exact ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
     have I4 := addi_spec_gen_same .x10 q1 4095 (base + 24) (by nofun)
@@ -114,7 +114,7 @@ theorem divK_div128_prodcheck1_merged_spec
       ((.x1 ↦ᵣ rhat_un1) ** (.x5 ↦ᵣ q_dlo) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ un1) **
        (sp + signExtend12 3952 ↦ₘ dlo))
       (by pcFree) hcorr
-    have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+    have full := cpsTriple_seq_perm_same_cr
       (fun h hp => by
         have hp' := sepConj_mono_left (sepConj_mono_right
           (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
@@ -126,7 +126,7 @@ theorem divK_div128_prodcheck1_merged_spec
   · have hq : q1' = q1 := if_neg hcond
     have hr : rhat' = rhat := if_neg hcond
     rw [hq, hr]
-    have ntaken_br := cpsBranch_elim_ntaken _ _ _ _ _ _ _ composed (fun hp hQt => by
+    have ntaken_br := cpsBranch_ntakenPath composed (fun hp hQt => by
       obtain ⟨_, _, _, _, ⟨_, _, _, _, _, h_x0p⟩, _⟩ := hQt
       exact absurd ((sepConj_pure_right _ _ _).1 h_x0p).2 hcond)
     have I_jal := jal_x0_spec_gen 12 (base + 20)
@@ -167,7 +167,7 @@ theorem divK_div128_prodcheck1_merged_spec
     exact cpsTriple_weaken
       (fun _ hp => hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
+      (cpsTriple_seq_perm_same_cr
         (fun _ hp => hp)
         ntaken_clean hjal_framed)
 
