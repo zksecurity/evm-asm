@@ -829,11 +829,11 @@ theorem evm_div_bzero_stack_spec (sp base : Word)
     ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3)
     v5 v10 hlimbs_or
   simp only [hg0, hg1, hg2, hg3] at h_raw
-  -- Bridge: div a 0 = 0, getLimb (div a 0) k = 0
-  have hr0 : (EvmWord.div a 0).getLimbN 0 = 0 := EvmWord.div_getLimb_zero_right a 0
-  have hr1 : (EvmWord.div a 0).getLimbN 1 = 0 := EvmWord.div_getLimb_zero_right a 1
-  have hr2 : (EvmWord.div a 0).getLimbN 2 = 0 := EvmWord.div_getLimb_zero_right a 2
-  have hr3 : (EvmWord.div a 0).getLimbN 3 = 0 := EvmWord.div_getLimb_zero_right a 3
+  -- Bridge: div a 0 = 0, getLimbN (div a 0) k = 0 via the Nat-indexed lemma.
+  have hr0 := EvmWord.div_getLimbN_zero_right a 0
+  have hr1 := EvmWord.div_getLimbN_zero_right a 1
+  have hr2 := EvmWord.div_getLimbN_zero_right a 2
+  have hr3 := EvmWord.div_getLimbN_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
@@ -881,10 +881,10 @@ theorem evm_mod_bzero_stack_spec (sp base : Word)
     ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3)
     v5 v10 hlimbs_or
   simp only [hg0, hg1, hg2, hg3] at h_raw
-  have hr0 : (EvmWord.mod a 0).getLimbN 0 = 0 := EvmWord.mod_getLimb_zero_right a 0
-  have hr1 : (EvmWord.mod a 0).getLimbN 1 = 0 := EvmWord.mod_getLimb_zero_right a 1
-  have hr2 : (EvmWord.mod a 0).getLimbN 2 = 0 := EvmWord.mod_getLimb_zero_right a 2
-  have hr3 : (EvmWord.mod a 0).getLimbN 3 = 0 := EvmWord.mod_getLimb_zero_right a 3
+  have hr0 := EvmWord.mod_getLimbN_zero_right a 0
+  have hr1 := EvmWord.mod_getLimbN_zero_right a 1
+  have hr2 := EvmWord.mod_getLimbN_zero_right a 2
+  have hr3 := EvmWord.mod_getLimbN_zero_right a 3
   exact cpsTriple_consequence _ _ _ _ _ _ _
     (fun h hp => by
       rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
