@@ -1035,4 +1035,99 @@ theorem evm_div_n4_max_skip_stack_spec (sp base : Word)
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+-- ============================================================================
+-- MOD: n=4 max+skip stack spec
+-- ============================================================================
+
+/-- EVM-stack-level MOD spec on the n=4 max+skip sub-path.
+
+    Mirror of `evm_div_n4_max_skip_stack_spec` but for MOD. In addition to
+    the five runtime + semantic conditions the DIV stack spec takes, MOD
+    also needs the CLZ top-limb bound
+    `b.getLimbN 3 < 2^(64 - clz(b.getLimbN 3))`, since the post reshape
+    goes through the denormalization round-trip. This bound is implicit
+    in the CLZ algorithm's semantics and expected to be discharged at call
+    sites by a future CLZ correctness lemma.
+
+    Reduces to `evm_mod_n4_full_max_skip_stack_pre_spec_bundled` + a post
+    reshape via `output_slot_to_evmWordIs_mod_n4_max_skip_denorm` and
+    `mod_n4_max_skip_stack_weaken`. -/
+theorem evm_mod_n4_max_skip_stack_spec (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     n_mem shift_mem j_mem : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isMaxTrialN4Evm a b)
+    (hborrow : isSkipBorrowN4MaxEvm a b)
+    (hsem : n4MaxSkipSemanticHolds a b)
+    (hb3_bound : (b.getLimbN 3).toNat <
+        2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat)) :
+    cpsTriple base (base + nopOff) (modCode base)
+      (modN4StackPre sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem)
+      (modN4MaxSkipStackPost sp a b) := by
+  have h_pre := evm_mod_n4_full_max_skip_stack_pre_spec_bundled sp base a b
+    v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 n_mem shift_mem j_mem
+    hbnz hb3nz hshift_nz hbltu hborrow
+  -- Shift bound: clzResult.1.toNat ≤ 63, and hshift_nz gives it > 0.
+  have hshift_le_63 := clzResult_fst_toNat_le (b.getLimbN 3)
+  have hshift_pos : 0 < (clzResult (b.getLimbN 3)).1.toNat := by
+    by_contra h
+    push Not at h
+    apply hshift_nz
+    apply BitVec.eq_of_toNat_eq
+    have h0 : (0 : Word).toNat = 0 := by decide
+    omega
+  have hshift_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
+  have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  -- c3_n ≤ u_top from runtime skip borrow, specialized to our shift form.
+  have hc3_le := EvmWord.c3_le_u_top_of_skip_borrow
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hborrow
+  simp only [] at hc3_le
+  -- Normalize `% 64` and `signExtend12 0 - shift` to the `(64 - s)` form
+  -- the Lemma G adapter uses.
+  have h0se12 : signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1 =
+      -((clzResult (b.getLimbN 3)).1) := by
+    rw [show signExtend12 (0 : BitVec 12) = (0 : Word) from by decide]
+    simp
+  have hanti_toNat_mod :
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat := by
+    rw [h0se12, BitVec.toNat_neg]
+    have : ((clzResult (b.getLimbN 3)).1).toNat ≤ 2^64 := by
+      have := ((clzResult (b.getLimbN 3)).1).isLt; omega
+    have : ((clzResult (b.getLimbN 3)).1).toNat ≤ 63 := hshift_le_63
+    omega
+  rw [hmod_eq, hanti_toNat_mod] at hc3_le
+  -- hsem unfolds to the un-normalized c3 = 0.
+  have hc3_un : (mulsubN4 (signExtend12 4095)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0 := hsem
+  -- Invoke the stack-spec adapter (Lemma G).
+  have h_slot := EvmWord.output_slot_to_evmWordIs_mod_n4_max_skip_denorm sp a b
+    hb3nz (clzResult (b.getLimbN 3)).1.toNat hshift_pos hshift_lt_64
+    hb3_bound hc3_un hc3_le
+  refine cpsTriple_weaken (fun _ hp => hp) ?_ h_pre
+  intro h hq
+  simp only [fullModN4MaxSkipPost_unfold, denormModPost_unfold] at hq
+  apply mod_n4_max_skip_stack_weaken sp a b _ _ _ _ _ _ _
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h
+  -- Expose address atoms on the goal side via unfolds.
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+       ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
+      from evmWordIs_sp_unfold sp a]
+  -- Fold the four denorm output slots into `evmWordIs (sp+32) (EvmWord.mod a b)`.
+  rw [show evmWordIs (sp + 32) (EvmWord.mod a b) = _ from h_slot.symm]
+  rw [divScratchValues_unfold]
+  -- Normalize `sp + 0` on the hypothesis side.
+  rw [word_add_zero] at hq
+  -- Also normalize `shift.toNat % 64` inside hq (the post uses `.toNat % 64`).
+  simp only [hmod_eq, hanti_toNat_mod] at hq
+  xperm_hyp hq
+
 end EvmAsm.Evm64
