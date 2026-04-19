@@ -193,7 +193,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
       delta loopSetupPost at hp
       simp only [x1_val_n4] at hp
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopMaxSkipPostN4; xperm_hyp hq)
     hFull
@@ -479,7 +479,7 @@ theorem evm_div_n4_full_max_skip_spec (sp base : Word)
     (fun h hp => by
       simp only [preloopMaxSkipPostN4_unfold] at hp
       xperm_hyp hp) hA hBF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullDivN4MaxSkipPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
@@ -736,7 +736,7 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
       delta loopSetupPost at hp
       simp only [x1_val_n4] at hp
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopCallSkipPostN4; xperm_hyp hq)
     hFull
@@ -859,7 +859,7 @@ theorem evm_div_n4_full_call_skip_spec (sp base : Word)
     (fun h hp => by
       simp only [preloopCallSkipPostN4_unfold] at hp
       xperm_hyp hp) hA hBF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullDivN4CallSkipPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull

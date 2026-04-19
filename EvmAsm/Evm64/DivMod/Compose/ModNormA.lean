@@ -165,13 +165,13 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
     ((sp + signExtend12 4056) ↦ₘ u0)
   have hjalef := cpsTriple_frame_left _ _ _ _ _ postAll (by pcFree) hjale
   have hjal_clean : cpsTriple (base + 392) (base + loopSetupOff) (modCode base) postAll postAll :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by show (empAssertion ** postAll) h; rw [sepConj_emp_left']; exact hp)
       (fun h hp => by rw [sepConj_emp_left'] at hp; exact hp)
       hjalef
   have h123456 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h12345 hjal_clean
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h123456
@@ -264,7 +264,7 @@ theorem mod_loopSetup_ntaken_spec (sp n v1 v5 : Word) (base : Word)
     (by pcFree) hblte
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbodye hbltef
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12
@@ -297,7 +297,7 @@ theorem mod_loopSetup_taken_spec (sp n v1 v5 : Word) (base : Word)
     (by pcFree) hblte
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbodye hbltef
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12
