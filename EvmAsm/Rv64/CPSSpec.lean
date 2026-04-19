@@ -265,9 +265,10 @@ theorem cpsBranch_merge_same_cr (entry l_t l_f exit_ : Word) (cr : CodeReq)
     exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hR⟩
 
 /-- Extract the taken path from a cpsBranch when the not-taken postcondition
-    is unsatisfiable (e.g., contains a contradictory pure fact). -/
-theorem cpsBranch_elim_taken (entry l_t l_f : Word) (cr : CodeReq)
-    (P Q_t Q_f : Assertion)
+    is unsatisfiable (e.g., contains a contradictory pure fact).
+    All position/code/pre/post arguments are implicit — unify from `hbr`. -/
+theorem cpsBranch_takenPath {entry l_t l_f : Word} {cr : CodeReq}
+    {P Q_t Q_f : Assertion}
     (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
     (h_absurd : ∀ hp, Q_f hp → False) :
     cpsTriple entry l_t cr P Q_t := by
@@ -278,10 +279,21 @@ theorem cpsBranch_elim_taken (entry l_t l_f : Word) (cr : CodeReq)
   · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQf, hR'⟩ := hQ_fR
     exact absurd hQf (h_absurd h1)
 
-/-- Extract the not-taken path from a cpsBranch when the taken postcondition
-    is unsatisfiable (e.g., contains a contradictory pure fact). -/
-theorem cpsBranch_elim_ntaken (entry l_t l_f : Word) (cr : CodeReq)
+/-- Explicit-argument variant of `cpsBranch_takenPath`. Kept for backwards
+    compatibility; prefer `cpsBranch_takenPath` in new code. -/
+@[deprecated cpsBranch_takenPath (since := "2026-04-19")]
+theorem cpsBranch_elim_taken (entry l_t l_f : Word) (cr : CodeReq)
     (P Q_t Q_f : Assertion)
+    (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
+    (h_absurd : ∀ hp, Q_f hp → False) :
+    cpsTriple entry l_t cr P Q_t :=
+  cpsBranch_takenPath hbr h_absurd
+
+/-- Extract the not-taken path from a cpsBranch when the taken postcondition
+    is unsatisfiable (e.g., contains a contradictory pure fact).
+    All position/code/pre/post arguments are implicit — unify from `hbr`. -/
+theorem cpsBranch_ntakenPath {entry l_t l_f : Word} {cr : CodeReq}
+    {P Q_t Q_f : Assertion}
     (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
     (h_absurd : ∀ hp, Q_t hp → False) :
     cpsTriple entry l_f cr P Q_f := by
@@ -291,6 +303,16 @@ theorem cpsBranch_elim_ntaken (entry l_t l_f : Word) (cr : CodeReq)
   · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQt, hR'⟩ := hQ_tR
     exact absurd hQt (h_absurd h1)
   · exact ⟨k, s', hstep, hpc_f, hQ_fR⟩
+
+/-- Explicit-argument variant of `cpsBranch_ntakenPath`. Kept for backwards
+    compatibility; prefer `cpsBranch_ntakenPath` in new code. -/
+@[deprecated cpsBranch_ntakenPath (since := "2026-04-19")]
+theorem cpsBranch_elim_ntaken (entry l_t l_f : Word) (cr : CodeReq)
+    (P Q_t Q_f : Assertion)
+    (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
+    (h_absurd : ∀ hp, Q_t hp → False) :
+    cpsTriple entry l_f cr P Q_f :=
+  cpsBranch_ntakenPath hbr h_absurd
 
 /-- Eliminate the not-taken path from a cpsBranch AND strip the trailing pure fact
     from the taken postcondition (depth 3: A ** B ** C ** ⌜P⌝ → A ** B ** C).
