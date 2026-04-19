@@ -19,6 +19,7 @@
 
 import EvmAsm.Evm64.EvmWordArith.DenormLemmas
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
+import EvmAsm.Evm64.EvmWordArith.Val256ModBridge
 import EvmAsm.Evm64.DivMod.LoopSemantic
 
 namespace EvmAsm.Evm64
@@ -86,6 +87,23 @@ theorem val256_normalized_mulsub_eq
   rw [h_norm_b] at h_mulsub
   linarith
 
+/-- Under the CLZ top-limb bound `b3 < 2^(64 - s)`, the full 256-bit value
+    satisfies `val256(b) < 2^(256 - s)`, which is what bounds `val256(b) * 2^s`
+    within 2^256. Elementary expansion + `nlinarith`. -/
+theorem val256_lt_of_b3_bound (b0 b1 b2 b3 : Word) (s : Nat) (hs : s ≤ 64)
+    (hb3_bound : b3.toNat < 2 ^ (64 - s)) :
+    val256 b0 b1 b2 b3 < 2 ^ (256 - s) := by
+  unfold val256
+  have h0 := b0.isLt
+  have h1 := b1.isLt
+  have h2 := b2.isLt
+  -- val256 b ≤ (2^64 - 1)(1 + 2^64 + 2^128) + (2^(64-s) - 1) * 2^192 = 2^(256-s) - 1.
+  have hpow : (2 : Nat) ^ (256 - s) = 2 ^ (64 - s) * 2 ^ 192 := by
+    rw [← pow_add, show (64 - s) + 192 = 256 - s from by omega]
+  rw [hpow]
+  nlinarith [h0, h1, h2, hb3_bound,
+             (show 0 < 2 ^ (64 - s) from by positivity)]
+
 /-- Fully abstract Nat-level `u_top = c3_n` lemma. Takes all relevant
     Euclidean equations and bounds as plain Nat facts — lets the caller
     plug in `val256(ms_un)`, `val256(a) * 2^s`, etc. without forcing
@@ -133,6 +151,68 @@ theorem u_top_eq_c3_nat_form
   have h_eq_form : Vms_un * 2 ^ s =
       Vms_n + (u_top - c3_n) * 2 ^ 256 := by omega
   exact nat_top_eq_of_lt_pow256 h_c3_le h_eq_form h_bound
+
+/-- Word-level wrapper: `u_top = c3_n` for the n=4 max+skip path.
+    Specializes `u_top_eq_c3_nat_form` to the concrete normalized limbs
+    `a_i <<< s | a_{i-1} >>> (64-s)` etc. Takes the CLZ top-limb bound on
+    `b3` and the un-normalized / normalized skip conditions, and concludes
+    that the normalization overflow `a3 >>> (64-s)` equals the normalized
+    mulsub carry. -/
+theorem u_top_eq_c3_n_max_skip
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3nz : b3 ≠ 0)
+    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    (hb3_bound : b3.toNat < 2 ^ (64 - s))
+    (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
+    (hc3_n_le_u_top :
+        (mulsubN4 (signExtend12 4095)
+          (b0 <<< s)
+          ((b1 <<< s) ||| (b0 >>> (64 - s)))
+          ((b2 <<< s) ||| (b1 >>> (64 - s)))
+          ((b3 <<< s) ||| (b2 >>> (64 - s)))
+          (a0 <<< s)
+          ((a1 <<< s) ||| (a0 >>> (64 - s)))
+          ((a2 <<< s) ||| (a1 >>> (64 - s)))
+          ((a3 <<< s) ||| (a2 >>> (64 - s)))).2.2.2.2.toNat ≤
+        (a3 >>> (64 - s)).toNat) :
+    (a3 >>> (64 - s)).toNat =
+    (mulsubN4 (signExtend12 4095)
+      (b0 <<< s)
+      ((b1 <<< s) ||| (b0 >>> (64 - s)))
+      ((b2 <<< s) ||| (b1 >>> (64 - s)))
+      ((b3 <<< s) ||| (b2 >>> (64 - s)))
+      (a0 <<< s)
+      ((a1 <<< s) ||| (a0 >>> (64 - s)))
+      ((a2 <<< s) ||| (a1 >>> (64 - s)))
+      ((a3 <<< s) ||| (a2 >>> (64 - s)))).2.2.2.2.toNat := by
+  -- Derive the 4 Euclidean-style hypotheses at Nat level.
+  have h_un_raw := mulsubN4_val256_eq (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3
+  simp only [] at h_un_raw
+  rw [hc3_un_zero, show (0 : Word).toNat = 0 from by decide,
+      Nat.zero_mul, Nat.add_zero] at h_un_raw
+  -- h_un_raw : val256(a) = val256(ms_un) + q_hat * val256(b)
+  have h_n_raw := mulsubN4_val256_eq (signExtend12 4095)
+    (b0 <<< s)
+    ((b1 <<< s) ||| (b0 >>> (64 - s)))
+    ((b2 <<< s) ||| (b1 >>> (64 - s)))
+    ((b3 <<< s) ||| (b2 >>> (64 - s)))
+    (a0 <<< s)
+    ((a1 <<< s) ||| (a0 >>> (64 - s)))
+    ((a2 <<< s) ||| (a1 >>> (64 - s)))
+    ((a3 <<< s) ||| (a2 >>> (64 - s)))
+  simp only [] at h_n_raw
+  -- h_n_raw : val256(u) + c3_n * 2^256 = val256(ms_n) + q_hat * val256(b_norm)
+  have h_norm_u := val256_normalize_general hs0 hs a0 a1 a2 a3
+  have h_norm_b := val256_normalize hs0 hs b0 b1 b2 b3 hb3_bound
+  have h_ms_un_lt_b :=
+    val256_ms_un_lt_val256_b_max_skip a0 a1 a2 a3 b0 b1 b2 b3 hbnz hb3nz hc3_un_zero
+  simp only [] at h_ms_un_lt_b
+  have h_b_lt_pow := val256_lt_of_b3_bound b0 b1 b2 b3 s (by omega) hb3_bound
+  have hs_pos : 0 < 2 ^ s := by positivity
+  exact u_top_eq_c3_nat_form (Q := (signExtend12 (4095 : BitVec 12)).toNat) s
+    h_un_raw h_norm_u h_norm_b h_n_raw h_ms_un_lt_b h_b_lt_pow (by omega) hs_pos
+    hc3_n_le_u_top
 
 end EvmWord
 
