@@ -126,6 +126,26 @@ theorem evmStackIs_single_right (sp : Word) (v : EvmWord) (Q : Assertion) :
     (evmWordIs sp v ** Q) = (evmStackIs sp [v] ** Q) := by
   rw [evmStackIs_single]
 
+/-- Mid-tree variant of `evmStackIs_triple`: threads a remainder `Q` so
+    `rw ←` can fold three `evmWordIs` atoms into an `evmStackIs [a, b, c]`
+    bundle mid-chain. Third address is in the non-flat `sp + 32 + 32`
+    form — use `evmStackIs_triple_flat_right` for the `sp + 64` form. -/
+theorem evmStackIs_triple_right (sp : Word) (a b c : EvmWord) (Q : Assertion) :
+    ((evmWordIs sp a ** evmWordIs (sp + 32) b **
+      evmWordIs (sp + 32 + 32) c) ** Q) =
+    (evmStackIs sp [a, b, c] ** Q) := by
+  rw [evmStackIs_triple]
+
+/-- Mid-tree variant of `evmStackIs_triple_flat`: same as
+    `evmStackIs_triple_right` but with the flat `sp + 64` offset for the
+    third address. -/
+theorem evmStackIs_triple_flat_right (sp : Word) (a b c : EvmWord)
+    (Q : Assertion) :
+    ((evmWordIs sp a ** evmWordIs (sp + 32) b **
+      evmWordIs (sp + 64) c) ** Q) =
+    (evmStackIs sp [a, b, c] ** Q) := by
+  rw [evmStackIs_triple_flat]
+
 -- ============================================================================
 -- evmWordIs unfold and limb-equality bridges
 -- ============================================================================
