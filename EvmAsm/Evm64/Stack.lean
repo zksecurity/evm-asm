@@ -438,6 +438,20 @@ theorem evmStackIs_snoc (sp : Word) (xs : List EvmWord) (v : EvmWord) :
     (evmStackIs sp xs ** evmWordIs (sp + BitVec.ofNat 64 (xs.length * 32)) v) := by
   rw [evmStackIs_append, evmStackIs_single]
 
+/-- `evmStackIs sp ([] ++ xs) = evmStackIs sp xs`. Trivial consequence of
+    `List.nil_append`. Named so call sites can reach for it by name
+    rather than chaining `List.nil_append` + `evmStackIs_congr`. -/
+theorem evmStackIs_nil_append (sp : Word) (xs : List EvmWord) :
+    evmStackIs sp ([] ++ xs) = evmStackIs sp xs := by
+  rw [List.nil_append]
+
+/-- `evmStackIs sp (xs ++ []) = evmStackIs sp xs`. Symmetric companion
+    of `evmStackIs_nil_append`. Useful when a `List.map`-produced
+    suffix turns out to be empty. -/
+theorem evmStackIs_append_nil (sp : Word) (xs : List EvmWord) :
+    evmStackIs sp (xs ++ []) = evmStackIs sp xs := by
+  rw [List.append_nil]
+
 /-- Mid-tree variant of `evmStackIs_append`: threads a remainder `Q` so
     `rw ←` can fold two contiguous `evmStackIs` segments back into a single
     `evmStackIs sp (xs ++ ys)` bundle even when they sit in the middle of a
