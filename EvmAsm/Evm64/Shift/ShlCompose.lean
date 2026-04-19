@@ -18,7 +18,8 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_32 se13_92 se13_176 se13_308 se13_320 se21_24 se21_124 se21_200 se21_252)
+open EvmAsm.Rv64.AddrNorm (se13_32 se13_92 se13_176 se13_308 se13_320 se21_24 se21_124 se21_200 se21_252
+  zero_add_se12_1_toNat zero_add_se12_2_toNat)
 
 -- ============================================================================
 -- Section 1: shlCode definition and helpers
@@ -840,7 +841,7 @@ theorem evm_shl_body_evmWord_spec (sp base : Word)
         show value <<< shift.toNat = value <<< s0.toNat; congr 1
       have hL : (s0 >>> (6 : BitVec 6).toNat).toNat = 1 := by
         have := congrArg BitVec.toNat hls
-        simp only [show ((0 : Word) + signExtend12 1).toNat = 1 from by decide] at this
+        simp only [zero_add_se12_1_toNat] at this
         exact this
       have eq0 := shl_bridge_zero value s0 result hresult 1 0 hL (by omega)
       have eq1 := shl_bridge_first value s0 result hresult 1 1 hL (by omega)
@@ -859,7 +860,7 @@ theorem evm_shl_body_evmWord_spec (sp base : Word)
         show value <<< shift.toNat = value <<< s0.toNat; congr 1
       have hL : (s0 >>> (6 : BitVec 6).toNat).toNat = 2 := by
         have := congrArg BitVec.toNat hls
-        simp only [show ((0 : Word) + signExtend12 2).toNat = 2 from by decide] at this
+        simp only [zero_add_se12_2_toNat] at this
         exact this
       have eq0 := shl_bridge_zero value s0 result hresult 2 0 hL (by omega)
       have eq1 := shl_bridge_zero value s0 result hresult 2 1 hL (by omega)
@@ -888,12 +889,12 @@ theorem evm_shl_body_evmWord_spec (sp base : Word)
         have hn1 : limb_shift.toNat ≠ 1 :=
           fun hc => h1 (BitVec.eq_of_toNat_eq (by
             show limb_shift.toNat = ((0 : Word) + signExtend12 1).toNat
-            simp only [show ((0 : Word) + signExtend12 1).toNat = 1 from by decide]
+            simp only [zero_add_se12_1_toNat]
             exact hc))
         have hn2 : limb_shift.toNat ≠ 2 :=
           fun hc => h2 (BitVec.eq_of_toNat_eq (by
             show limb_shift.toNat = ((0 : Word) + signExtend12 2).toNat
-            simp only [show ((0 : Word) + signExtend12 2).toNat = 2 from by decide]
+            simp only [zero_add_se12_2_toNat]
             exact hc))
         show limb_shift.toNat = 3; omega
       have eq0 := shl_bridge_zero value s0 result hresult 3 0 hL (by omega)

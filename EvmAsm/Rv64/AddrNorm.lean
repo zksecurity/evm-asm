@@ -140,6 +140,25 @@ theorem word_add_zero (x : Word) : x + (0 : Word) = x := BitVec.add_zero x
 @[rv64_addr, grind =] theorem bv64_4mul_21 : BitVec.ofNat 64 (4 * 21) = (84 : Word) := by decide
 
 -- ============================================================================
+-- `((0 : Word) + signExtend12 N).toNat` evaluations
+--
+-- This shape appears in shift/sign-extend/byte opcodes where a BLTU/BEQ
+-- postcondition returns `((0 : Word) + signExtend12 1).toNat` (or `... 2`)
+-- as the PC offset. The expression is ground but Lean does not reduce
+-- `((0 : Word) + signExtend12 N).toNat` automatically, so ~16 consumer sites
+-- (Shift/{Compose,ShlCompose,SarCompose}.lean, SignExtend/Compose.lean,
+-- Byte/Spec.lean) close the address match with an inline
+--     show ((0 : Word) + signExtend12 N).toNat = N from by decide
+-- rewrite. Centralising the identity here lets `rv64_addr` / `grind` handle
+-- it uniformly.
+-- ============================================================================
+
+@[rv64_addr, grind =] theorem zero_add_se12_1_toNat :
+    ((0 : Word) + signExtend12 1).toNat = 1 := by decide
+@[rv64_addr, grind =] theorem zero_add_se12_2_toNat :
+    ((0 : Word) + signExtend12 2).toNat = 2 := by decide
+
+-- ============================================================================
 -- `rv64_addr` tactic
 --
 -- Primary: `grind` (sees every `@[grind =]` fact in this file + BitVec

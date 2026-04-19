@@ -23,7 +23,8 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_20 se13_44 se13_68 se13_128 se13_140 se21_16 se21_24 se21_32 se21_48)
+open EvmAsm.Rv64.AddrNorm (se13_20 se13_44 se13_68 se13_128 se13_140 se21_16 se21_24 se21_32 se21_48
+  zero_add_se12_1_toNat zero_add_se12_2_toNat)
 
 -- ============================================================================
 -- Full program CodeReq
@@ -750,11 +751,11 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     have hn1 : limb_from_msb.toNat ≠ 1 :=
       fun hc => h1 (BitVec.eq_of_toNat_eq (by
         show limb_from_msb.toNat = ((0 : Word) + signExtend12 1).toNat
-        simp only [show ((0 : Word) + signExtend12 1).toNat = 1 from by decide]; exact hc))
+        simp only [zero_add_se12_1_toNat]; exact hc))
     have hn2 : limb_from_msb.toNat ≠ 2 :=
       fun hc => h2 (BitVec.eq_of_toNat_eq (by
         show limb_from_msb.toNat = ((0 : Word) + signExtend12 2).toNat
-        simp only [show ((0 : Word) + signExtend12 2).toNat = 2 from by decide]; exact hc))
+        simp only [zero_add_se12_2_toNat]; exact hc))
     have hlt4 : limb_from_msb.toNat < 4 := by omega
     omega
   -- Build body+store specs WITHOUT the dispatch fact (just compose and weaken regs)
