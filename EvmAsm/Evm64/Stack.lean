@@ -196,6 +196,15 @@ theorem evmStackIs_congr_sp {sp sp' : Word} (xs : List EvmWord)
     evmStackIs sp xs = evmStackIs sp' xs :=
   congrArg (fun s => evmStackIs s xs) hsp
 
+/-- Joint congruence for `evmWordIs`: rewrite both the address and the
+    stored value at once. Useful when both sides change together (e.g.
+    moving to a normalized address *and* collapsing a `div a 0` to `0`
+    in a single rewrite). -/
+theorem evmWordIs_congr_both {a b : Word} {v w : EvmWord}
+    (ha : a = b) (hv : v = w) :
+    evmWordIs a v = evmWordIs b w := by
+  rw [ha, hv]
+
 -- ============================================================================
 -- evmWordIs unfold and limb-equality bridges
 -- ============================================================================
