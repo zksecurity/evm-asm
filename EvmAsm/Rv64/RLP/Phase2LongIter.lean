@@ -27,11 +27,13 @@ import EvmAsm.Rv64.ByteOps
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.CPSSpec
 import EvmAsm.Rv64.Program
+import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Rv64.RLP
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (se12_0 se12_1 bv6_toNat_8)
 
 -- ============================================================================
 -- Program definition
@@ -123,9 +125,9 @@ theorem rlp_phase2_long_iter_spec
   simp only [rlp_phase2_long_iter_post_unfold]
   rw [iter_code_split]
   -- Helpers: `signExtend12 1 = 1` and `signExtend12 0 = 0`.
-  have h_se1 : signExtend12 (1 : BitVec 12) = (1 : Word) := by decide
-  have h_se0 : signExtend12 (0 : BitVec 12) = (0 : Word) := by decide
-  have h_shamt : (8 : BitVec 6).toNat = 8 := by decide
+  have h_se1 := se12_1
+  have h_se0 := se12_0
+  have h_shamt := bv6_toNat_8
   -- Distinct-addresses plumbing.
   obtain ⟨h01, h02, h03, h04, h12, h13, h14, h23, h24, h34⟩ :=
     iter_addrs_distinct base

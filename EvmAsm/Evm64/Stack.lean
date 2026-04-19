@@ -308,6 +308,17 @@ theorem evmWordIs_fromLimbs_const (addr : Word) (w : Word) :
   rw [EvmWord.getLimbN_fromLimbs_const_0, EvmWord.getLimbN_fromLimbs_const_1,
       EvmWord.getLimbN_fromLimbs_const_2, EvmWord.getLimbN_fromLimbs_const_3]
 
+/-- Mid-tree variant of `evmWordIs_fromLimbs_const`: threads a remainder
+    `Q` so `rw ←` can fold four identical-valued memIs atoms back into
+    `evmWordIs addr (fromLimbs (fun _ => w))` even when they sit in the
+    middle of a longer sepConj chain. -/
+theorem evmWordIs_fromLimbs_const_right (addr : Word) (w : Word) (Q : Assertion) :
+    ((addr ↦ₘ w) ** ((addr + 8) ↦ₘ w) **
+     ((addr + 16) ↦ₘ w) ** ((addr + 24) ↦ₘ w) ** Q) =
+    (evmWordIs addr (EvmWord.fromLimbs (fun _ => w)) ** Q) := by
+  rw [evmWordIs_fromLimbs_const]
+  rw [sepConj_assoc', sepConj_assoc', sepConj_assoc']
+
 /-- Mid-tree variant of `evmWordIs_zero`: threads a remainder `Q` so
     `rw ←` can fold four zero memIs atoms back into `evmWordIs addr 0`
     even when they sit in the middle of a longer sepConj chain. -/
