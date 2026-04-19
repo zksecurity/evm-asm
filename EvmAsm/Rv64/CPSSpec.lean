@@ -462,15 +462,28 @@ theorem cpsTriple_seq_cpsBranch_same_cr (entry mid : Word) (cr : CodeReq)
   obtain ⟨k2, s2, hstep2, hbranch⟩ := h2 R hR s1 hcr' hQR hpc1
   exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hbranch⟩
 
-/-- Sequential composition with permutation: cpsTriple followed by cpsBranch, same CodeReq. -/
-theorem cpsTriple_seq_cpsBranch_with_perm_same_cr (entry mid : Word) (cr : CodeReq)
-    (P Q1 Q2 : Assertion) (exit_t : Word) (Q_t : Assertion) (exit_f : Word) (Q_f : Assertion)
+/-- Sequential composition with permutation: cpsTriple followed by cpsBranch, same CodeReq.
+    All position/code/pre/post args implicit — \`entry\`/\`mid\`/\`cr\`/\`P\`/\`Q1\` unify
+    from \`h1\`, \`Q2\`/\`exit_t\`/\`Q_t\`/\`exit_f\`/\`Q_f\` from \`h2\`. -/
+theorem cpsTriple_seq_cpsBranch_perm_same_cr {entry mid : Word} {cr : CodeReq}
+    {P Q1 Q2 : Assertion} {exit_t : Word} {Q_t : Assertion} {exit_f : Word} {Q_f : Assertion}
     (hperm : ∀ h, Q1 h → Q2 h)
     (h1 : cpsTriple entry mid cr P Q1)
     (h2 : cpsBranch mid cr Q2 exit_t Q_t exit_f Q_f) :
     cpsBranch entry cr P exit_t Q_t exit_f Q_f :=
   cpsTriple_seq_cpsBranch_same_cr entry mid cr P Q2 exit_t Q_t exit_f Q_f
     (cpsTriple_consequence entry mid cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+
+/-- Explicit-argument variant of `cpsTriple_seq_cpsBranch_perm_same_cr`. Deprecated;
+    prefer `cpsTriple_seq_cpsBranch_perm_same_cr` in new code. -/
+@[deprecated cpsTriple_seq_cpsBranch_perm_same_cr (since := "2026-04-19")]
+theorem cpsTriple_seq_cpsBranch_with_perm_same_cr (entry mid : Word) (cr : CodeReq)
+    (P Q1 Q2 : Assertion) (exit_t : Word) (Q_t : Assertion) (exit_f : Word) (Q_f : Assertion)
+    (hperm : ∀ h, Q1 h → Q2 h)
+    (h1 : cpsTriple entry mid cr P Q1)
+    (h2 : cpsBranch mid cr Q2 exit_t Q_t exit_f Q_f) :
+    cpsBranch entry cr P exit_t Q_t exit_f Q_f :=
+  cpsTriple_seq_cpsBranch_perm_same_cr hperm h1 h2
 
 -- ============================================================================
 -- N-exit CPS specifications

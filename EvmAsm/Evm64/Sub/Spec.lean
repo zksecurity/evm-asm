@@ -106,7 +106,7 @@ theorem evm_sub_stack_spec (sp base : Word)
     v7 v6 v5 v11
   -- Get the borrow chain correctness
   have ⟨h0, h1, h2, h3⟩ := EvmWord.sub_borrow_chain_correct a b
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs] at hp
       rw [spAddr32_8, spAddr32_16, spAddr32_24] at hp

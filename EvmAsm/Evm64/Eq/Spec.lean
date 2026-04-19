@@ -95,7 +95,7 @@ theorem evm_eq_stack_spec (sp base : Word)
     (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     v7 v6 v5 v11
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs] at hp
       rw [spAddr32_8, spAddr32_16, spAddr32_24] at hp
