@@ -68,7 +68,7 @@ theorem evm_not_stack_spec (sp base : Word)
   have h_main := evm_not_spec sp base
     (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     v7
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs] at hp
       xperm_hyp hp)
