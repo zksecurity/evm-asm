@@ -61,6 +61,14 @@ theorem evmStackIs_cons_right (sp : Word) (v : EvmWord) (vs : List EvmWord)
 theorem evmStackIs_nil (sp : Word) :
     evmStackIs sp [] = empAssertion := rfl
 
+/-- Mid-tree variant of `evmStackIs_nil`: threads a remainder `Q` so
+    `rw ←` can fold a stray `empAssertion` back into `evmStackIs sp []`
+    even when it sits in the middle of a longer sepConj chain. Useful
+    when a stack spec's post has a dangling empty-stack residual that
+    the stack-level consumer wants expressed as `evmStackIs sp []`. -/
+theorem evmStackIs_nil_right (sp : Word) (Q : Assertion) :
+    (empAssertion ** Q) = (evmStackIs sp [] ** Q) := rfl
+
 /-- Two-element stack: `evmStackIs sp [a, b]` unfolds to
     `evmWordIs sp a ** evmWordIs (sp + 32) b ** empAssertion`. The
     trailing `** empAssertion` comes from the single-element recursion
