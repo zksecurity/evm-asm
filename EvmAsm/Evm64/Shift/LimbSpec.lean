@@ -378,8 +378,7 @@ theorem shr_cascade_step_spec (v5 v10 : Word)
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)))
       target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)))
       (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k))) :=
-    cpsBranch_consequence _ _ _ _
-      target _ _ (base + 8) _ _
+    cpsBranch_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
@@ -426,8 +425,7 @@ theorem shr_cascade_step_spec_pure (v5 v10 : Word)
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)))
       target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)) ** ⌜v5 = (0 : Word) + signExtend12 k⌝)
       (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)) ** ⌜v5 ≠ (0 : Word) + signExtend12 k⌝) :=
-    cpsBranch_consequence _ _ _ _
-      target _ _ (base + 8) _ _
+    cpsBranch_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
@@ -494,7 +492,7 @@ theorem shr_phase_c_spec (v5 v10 : Word) (base : Word)
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)))
       e0 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)))
       (base + 4) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsBranch_consequence base _ _ _ e0 _ _ (base + 4) _ _
+    cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ (v5 = (0 : Word)) h').1 hp').1) h hp)
@@ -997,8 +995,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
        (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3)) := by
     rw [← hcr_eq]
-    exact cpsBranch_consequence base _ _ _
-      zero_path _ _ (base + 36) _ _
+    exact cpsBranch_weaken
       (fun h hp => by xperm_hyp hp)
       (fun _ hp => hp)
       (fun h hp => by
