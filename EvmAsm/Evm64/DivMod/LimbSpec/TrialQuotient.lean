@@ -45,7 +45,7 @@ theorem divK_correction_branch_spec (borrow : Word) (skip_off : BitVec 13) (base
       ((.x7 ↦ᵣ borrow) ** (.x0 ↦ᵣ 0)) := by
   intro cr
   have hbeq := beq_spec_gen .x7 .x0 skip_off borrow 0 base
-  exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+  exact cpsBranch_weaken
     (fun _ hp => hp)
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)

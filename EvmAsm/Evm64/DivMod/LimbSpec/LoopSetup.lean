@@ -78,7 +78,7 @@ theorem divK_loopSetup_spec (sp n v1 v5 : Word)
         ((.x1 ↦ᵣ m) ** (.x0 ↦ᵣ (0 : Word)))
       (base + 16)
         ((.x1 ↦ᵣ m) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+    cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)

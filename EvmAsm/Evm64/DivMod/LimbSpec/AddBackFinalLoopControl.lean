@@ -78,7 +78,7 @@ theorem divK_loop_control_spec (j : Word) (loop_back_off : BitVec 13)
         ((.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0))
       (base + 8)
         ((.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0)) :=
-    cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+    cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)

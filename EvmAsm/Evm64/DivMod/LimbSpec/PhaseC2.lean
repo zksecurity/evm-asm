@@ -81,7 +81,7 @@ theorem divK_phaseC2_spec (sp shift v2 shift_mem : Word)
         ((.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ (0 : Word)))
       (base + 16)
         ((.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ (0 : Word))) :=
-    cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
+    cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
