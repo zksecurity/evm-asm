@@ -603,15 +603,6 @@ instance (sp : Word) (a b : EvmWord) :
 -- pcFree for DivMod post bundles
 -- ============================================================================
 
-/-- `normBPost` is pc-free: all its atoms are `regIs` / `memIs`. -/
-theorem pcFree_normBPost (sp n_val shift b0 b1 b2 b3 : Word) :
-    (normBPost sp n_val shift b0 b1 b2 b3).pcFree := by
-  rw [normBPost_unfold]; pcFree
-
-instance (sp n_val shift b0 b1 b2 b3 : Word) :
-    Assertion.PCFree (normBPost sp n_val shift b0 b1 b2 b3) :=
-  ⟨pcFree_normBPost sp n_val shift b0 b1 b2 b3⟩
-
 /-- `fullDivN4MaxSkipPost` is pc-free: all its atoms (inside the
     `denormDivPost` sub-bundle plus the top-level wrapper atoms) are
     `regIs` / `memIs`. Proof goes through `delta` since the bundle is

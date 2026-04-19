@@ -579,6 +579,15 @@ theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
     ((sp + signExtend12 3992) ↦ₘ shift) := by
   delta normBPost; rfl
 
+/-- `normBPost` is pc-free: all its atoms are `regIs` / `memIs`. -/
+theorem pcFree_normBPost (sp n_val shift b0 b1 b2 b3 : Word) :
+    (normBPost sp n_val shift b0 b1 b2 b3).pcFree := by
+  rw [normBPost_unfold]; pcFree
+
+instance pcFreeInst_normBPost (sp n_val shift b0 b1 b2 b3 : Word) :
+    Assertion.PCFree (normBPost sp n_val shift b0 b1 b2 b3) :=
+  ⟨pcFree_normBPost sp n_val shift b0 b1 b2 b3⟩
+
 -- ============================================================================
 -- `se12_32`/`se12_40`/`se12_48`/`se12_56` were deleted by issue #493 / #494:
 -- they now live canonically in `Rv64/AddrNorm.lean` as part of the
@@ -599,12 +608,6 @@ theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
 -- in PhaseAB.lean and `mod_phB_off_28` in ModPhaseB.lean.
 -- ============================================================================
 
-theorem phB_off_4  (base : Word) : (base + phaseBOff : Word) + 4  = base + 36 := by bv_addr
-theorem phB_off_8  (base : Word) : (base + phaseBOff : Word) + 8  = base + 40 := by bv_addr
-theorem phB_off_12 (base : Word) : (base + phaseBOff : Word) + 12 = base + 44 := by bv_addr
-theorem phB_off_16 (base : Word) : (base + phaseBOff : Word) + 16 = base + 48 := by bv_addr
-theorem phB_off_20 (base : Word) : (base + phaseBOff : Word) + 20 = base + 52 := by bv_addr
-theorem phB_off_24 (base : Word) : (base + phaseBOff : Word) + 24 = base + 56 := by bv_addr
 theorem phB_off_28 (base : Word) : (base + phaseBOff : Word) + 28 = base + 60 := by bv_addr
 
 -- n=4 special: x1 = signExtend12 4 - 4 = 0, used by the shift-0 fast path
