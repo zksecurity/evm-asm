@@ -133,6 +133,100 @@ theorem val256_denorm_eq_val256_mod_max_skip
   rw [h_denorm, h_ms_n_scaled, Nat.mul_div_cancel _ (by positivity : 0 < 2^s)]
   exact h_ms_un_eq_mod
 
+/-- Lemma F — lift from val256-level to `EvmWord.mod a b`: under the
+    max+skip conditions + CLZ top-limb bound, the denormalized remainder
+    limbs `u0', u1', u2', u3'` assembled via `fromLimbs` equal
+    `EvmWord.mod a b`. -/
+theorem denorm_limbs_eq_evmWord_mod_max_skip
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3nz : b3 ≠ 0)
+    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    (hb3_bound : b3.toNat < 2 ^ (64 - s))
+    (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
+    (hc3_n_le_u_top :
+        (mulsubN4 (signExtend12 4095)
+          (b0 <<< s)
+          ((b1 <<< s) ||| (b0 >>> (64 - s)))
+          ((b2 <<< s) ||| (b1 >>> (64 - s)))
+          ((b3 <<< s) ||| (b2 >>> (64 - s)))
+          (a0 <<< s)
+          ((a1 <<< s) ||| (a0 >>> (64 - s)))
+          ((a2 <<< s) ||| (a1 >>> (64 - s)))
+          ((a3 <<< s) ||| (a2 >>> (64 - s)))).2.2.2.2.toNat ≤
+        (a3 >>> (64 - s)).toNat) :
+    let b0' := b0 <<< s
+    let b1' := (b1 <<< s) ||| (b0 >>> (64 - s))
+    let b2' := (b2 <<< s) ||| (b1 >>> (64 - s))
+    let b3' := (b3 <<< s) ||| (b2 >>> (64 - s))
+    let u0 := a0 <<< s
+    let u1 := (a1 <<< s) ||| (a0 >>> (64 - s))
+    let u2 := (a2 <<< s) ||| (a1 >>> (64 - s))
+    let u3 := (a3 <<< s) ||| (a2 >>> (64 - s))
+    let ms_n := mulsubN4 (signExtend12 4095) b0' b1' b2' b3' u0 u1 u2 u3
+    let u0' := (ms_n.1 >>> s) ||| (ms_n.2.1 <<< (64 - s))
+    let u1' := (ms_n.2.1 >>> s) ||| (ms_n.2.2.1 <<< (64 - s))
+    let u2' := (ms_n.2.2.1 >>> s) ||| (ms_n.2.2.2.1 <<< (64 - s))
+    let u3' := ms_n.2.2.2.1 >>> s
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    let r := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => u0' | 1 => u1' | 2 => u2' | 3 => u3'
+    r = EvmWord.mod a b :=
+  mod_of_val256_eq_mod hbnz
+    (val256_denorm_eq_val256_mod_max_skip a0 a1 a2 a3 b0 b1 b2 b3
+      hbnz hb3nz s hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top)
+
+/-- Per-limb form of Lemma F: each of the four denormalized remainder limbs
+    equals the corresponding limb of `EvmWord.mod a b`. Specializes
+    `denorm_limbs_eq_evmWord_mod_max_skip` via `getLimbN_fromLimbs_k`. -/
+theorem denorm_limbN_eq_mod_max_skip
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3nz : b3 ≠ 0)
+    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    (hb3_bound : b3.toNat < 2 ^ (64 - s))
+    (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
+    (hc3_n_le_u_top :
+        (mulsubN4 (signExtend12 4095)
+          (b0 <<< s)
+          ((b1 <<< s) ||| (b0 >>> (64 - s)))
+          ((b2 <<< s) ||| (b1 >>> (64 - s)))
+          ((b3 <<< s) ||| (b2 >>> (64 - s)))
+          (a0 <<< s)
+          ((a1 <<< s) ||| (a0 >>> (64 - s)))
+          ((a2 <<< s) ||| (a1 >>> (64 - s)))
+          ((a3 <<< s) ||| (a2 >>> (64 - s)))).2.2.2.2.toNat ≤
+        (a3 >>> (64 - s)).toNat) :
+    let b0' := b0 <<< s
+    let b1' := (b1 <<< s) ||| (b0 >>> (64 - s))
+    let b2' := (b2 <<< s) ||| (b1 >>> (64 - s))
+    let b3' := (b3 <<< s) ||| (b2 >>> (64 - s))
+    let u0 := a0 <<< s
+    let u1 := (a1 <<< s) ||| (a0 >>> (64 - s))
+    let u2 := (a2 <<< s) ||| (a1 >>> (64 - s))
+    let u3 := (a3 <<< s) ||| (a2 >>> (64 - s))
+    let ms_n := mulsubN4 (signExtend12 4095) b0' b1' b2' b3' u0 u1 u2 u3
+    let a := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => a0 | 1 => a1 | 2 => a2 | 3 => a3
+    let b := fromLimbs fun i : Fin 4 =>
+      match i with | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3
+    (EvmWord.mod a b).getLimbN 0 = ((ms_n.1 >>> s) ||| (ms_n.2.1 <<< (64 - s))) ∧
+    (EvmWord.mod a b).getLimbN 1 = ((ms_n.2.1 >>> s) ||| (ms_n.2.2.1 <<< (64 - s))) ∧
+    (EvmWord.mod a b).getLimbN 2 = ((ms_n.2.2.1 >>> s) ||| (ms_n.2.2.2.1 <<< (64 - s))) ∧
+    (EvmWord.mod a b).getLimbN 3 = (ms_n.2.2.2.1 >>> s) := by
+  intro b0' b1' b2' b3' u0 u1 u2 u3 ms_n a b
+  have hr := denorm_limbs_eq_evmWord_mod_max_skip a0 a1 a2 a3 b0 b1 b2 b3
+    hbnz hb3nz s hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top
+  simp only [] at hr
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [← hr]; exact getLimbN_fromLimbs_0 _ _ _ _
+  · rw [← hr]; exact getLimbN_fromLimbs_1 _ _ _ _
+  · rw [← hr]; exact getLimbN_fromLimbs_2 _ _ _ _
+  · rw [← hr]; exact getLimbN_fromLimbs_3 _ _ _ _
+
 end EvmWord
 
 end EvmAsm.Evm64
