@@ -500,8 +500,6 @@ theorem evm_shr_zero_large_spec (sp base : Word)
 
 -- Address normalization lemmas for body path
 private theorem shr_off_64_20 (base : Word) : (base + 64 : Word) + 20 = base + 84 := by bv_omega
-private theorem shr_off_sp32 (sp : Word) : sp + signExtend12 (32 : BitVec 12) = sp + 32 := by
-  simp only [signExtend12_32]
 
 -- ============================================================================
 -- Section 5a: Phase A ntaken → Phase B composition
@@ -761,7 +759,7 @@ theorem evm_shr_body_evmWord_spec (sp base : Word)
   have hphaseB_raw := shr_phase_b_spec s0 sp r6 r7 r11 (base + 36)
   have hphaseB := cpsTriple_extend_code (phase_b_sub_shrCode base) hphaseB_raw
   rw [shr_off_36_28] at hphaseB
-  rw [shr_off_sp32] at hphaseB
+  simp only [signExtend12_32] at hphaseB
   have hphaseB_f := cpsTriple_frame_left (base + 36) (base + 64) _ _ _
     ((.x10 ↦ᵣ sltiu_val) **
      (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **

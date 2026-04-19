@@ -266,9 +266,6 @@ private theorem sar_body1_exit (base : Word) : ((base + 172 : Word) + 76) + sign
 private theorem sar_body0_exit (base : Word) : ((base + 252 : Word) + 96) + signExtend21 32 = base + 380 := by
   rw [se21_32]; bv_omega
 
-private theorem sar_off_sp32 (sp : Word) : sp + signExtend12 (32 : BitVec 12) = sp + 32 := by
-  simp only [signExtend12_32]
-
 -- ============================================================================
 -- Section 4: Sign-fill path composition
 -- ============================================================================
@@ -918,7 +915,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
   have hphaseB_raw := shr_phase_b_spec s0 sp r6 r7 r11 (base + 36)
   have hphaseB := cpsTriple_extend_code (phase_b_sub_sarCode base) hphaseB_raw
   rw [sar_off_36_28] at hphaseB
-  rw [sar_off_sp32] at hphaseB
+  simp only [signExtend12_32] at hphaseB
   have hphaseB_f := cpsTriple_frame_left (base + 36) (base + 64) _ _ _
     ((.x10 ↦ᵣ sltiu_val) **
      (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
