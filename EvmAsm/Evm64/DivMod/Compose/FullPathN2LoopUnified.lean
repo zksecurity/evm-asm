@@ -198,7 +198,7 @@ theorem evm_div_n2_preloop_loop_unified_spec
 
 
   -- Frame preloop with .x11, j_mem, scratch cells
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -224,7 +224,7 @@ theorem evm_div_n2_preloop_loop_unified_spec
     halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame loop with a[], spare q3, spare u7, shift_mem
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **

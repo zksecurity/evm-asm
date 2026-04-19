@@ -67,7 +67,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
         (divK_normA_top_prog 24 4024) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) htop
   -- Frame top with x6, x10, a[0..2], u[0..3]
-  have htopef := cpsTriple_frame_left _ _ _ _ _
+  have htopef := cpsTriple_frameR
     ((.x10 ↦ᵣ v10) ** (.x6 ↦ᵣ shift) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
      ((sp + signExtend12 4032) ↦ₘ u3_old) **
@@ -83,7 +83,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
       (CodeReq.ofProg_mono_sub (base + normAOff) (base + 324) (divK_normA 40)
         (divK_normA_mergeA_prog 16 4032) 3
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hma1
-  have hma1ef := cpsTriple_frame_left _ _ _ _ _
+  have hma1ef := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4) **
      ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4048) ↦ₘ u1_old) **
@@ -101,7 +101,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
       (CodeReq.ofProg_mono_sub (base + normAOff) (base + 344) (divK_normA 40)
         (divK_normA_mergeB_prog 8 4040) 8
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hmb
-  have hmbef := cpsTriple_frame_left _ _ _ _ _
+  have hmbef := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4032) ↦ₘ u3) **
      ((sp + signExtend12 4048) ↦ₘ u1_old) ** ((sp + signExtend12 4056) ↦ₘ u0_old))
@@ -118,7 +118,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
       (CodeReq.ofProg_mono_sub (base + normAOff) (base + 364) (divK_normA 40)
         (divK_normA_mergeA_prog 0 4048) 13
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hma2
-  have hma2ef := cpsTriple_frame_left _ _ _ _ _
+  have hma2ef := cpsTriple_frameR
     (((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4032) ↦ₘ u3) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4056) ↦ₘ u0_old))
@@ -133,7 +133,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
       (CodeReq.ofProg_mono_sub (base + normAOff) (base + 384) (divK_normA 40)
         (divK_normA_last_prog 4056) 18
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hlast
-  have hlastef := cpsTriple_frame_left _ _ _ _ _
+  have hlastef := cpsTriple_frameR
     ((.x5 ↦ᵣ u1) ** (.x10 ↦ᵣ (a0 >>> (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -163,7 +163,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift anti_shift : Word)
     ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4032) ↦ₘ u3) **
     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4048) ↦ₘ u1) **
     ((sp + signExtend12 4056) ↦ₘ u0)
-  have hjalef := cpsTriple_frame_left _ _ _ _ _ postAll (by pcFree) hjale
+  have hjalef := cpsTriple_frameR postAll (by pcFree) hjale
   have hjal_clean : cpsTriple (base + 392) (base + loopSetupOff) (modCode base) postAll postAll :=
     cpsTriple_consequence _ _ _ _ _ _ _
       (fun h hp => by show (empAssertion ** postAll) h; rw [sepConj_emp_left']; exact hp)
@@ -259,7 +259,7 @@ theorem mod_loopSetup_ntaken_spec (sp n v1 v5 : Word) (base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hm_ge)
   have hblte := cpsTriple_extend_code (blt_loopSetup_sub_modCode base) hblt_clean
-  have hbltef := cpsTriple_frame_left _ _ _ _ _
+  have hbltef := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) ** ((sp + signExtend12 3984) ↦ₘ n))
     (by pcFree) hblte
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
@@ -292,7 +292,7 @@ theorem mod_loopSetup_taken_spec (sp n v1 v5 : Word) (base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd hm_lt ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hblte := cpsTriple_extend_code (blt_loopSetup_sub_modCode base) hblt_clean
-  have hbltef := cpsTriple_frame_left _ _ _ _ _
+  have hbltef := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) ** ((sp + signExtend12 3984) ↦ₘ n))
     (by pcFree) hblte
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _

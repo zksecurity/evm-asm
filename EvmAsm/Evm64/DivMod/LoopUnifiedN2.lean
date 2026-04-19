@@ -57,7 +57,7 @@ theorem divK_loop_n2_iter10_unified_spec (bltu_1 bltu_0 : Bool)
     have hMM := divK_loop_n2_max_max_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old base
       hbltu_1' hbltu_0' hcarry2
-    have hMMF := cpsTriple_frame_left _ _ _ _ _
+    have hMMF := cpsTriple_frameR
       ((sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
@@ -157,7 +157,7 @@ theorem divK_loop_n2_max_iter10_spec (bltu_1 bltu_0 : Bool)
     hbltu_2
     (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
-  have J2f := cpsTriple_frame_left _ _ _ _ _
+  have J2f := cpsTriple_frameR
     (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -175,7 +175,7 @@ theorem divK_loop_n2_max_iter10_spec (bltu_1 bltu_0 : Bool)
 
 
     hbltu_1 hbltu_0 hcarry2
-  have H10f := cpsTriple_frame_left _ _ _ _ _
+  have H10f := cpsTriple_frameR
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
     (by pcFree) H10
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
@@ -235,7 +235,7 @@ theorem divK_loop_n2_call_iter10_spec (bltu_1 bltu_0 : Bool)
     hbltu_2
     (hcarry2 (div128Quot u2 u1 v1) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
-  have J2f := cpsTriple_frame_left _ _ _ _ _
+  have J2f := cpsTriple_frameR
     (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J2
@@ -251,7 +251,7 @@ theorem divK_loop_n2_call_iter10_spec (bltu_1 bltu_0 : Bool)
 
 
     hbltu_1 hbltu_0 hcarry2
-  have H10f := cpsTriple_frame_left _ _ _ _ _
+  have H10f := cpsTriple_frameR
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
     (by pcFree) H10
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _

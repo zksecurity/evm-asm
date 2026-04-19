@@ -161,7 +161,7 @@ theorem divK_clz_spec (val v6_old v7_old : Word) (base : Word) :
   have Ie := cpsTriple_extend_code (hmono := clz_init_sub base) I
   rw [clz_addr0] at Ie
   -- Frame init with x5, x7
-  have Ief := cpsTriple_frame_left _ _ _ _ _
+  have Ief := cpsTriple_frameR
     ((.x5 ↦ᵣ val) ** (.x7 ↦ᵣ v7_old)) (by pcFree) Ie
   -- Stage 0: K=32, M_s=32, M_a=32 (base+120 → base+136)
   have S0 := divK_clz_stage_combined 32 32 32 val (signExtend12 0) v7_old

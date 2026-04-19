@@ -171,7 +171,7 @@ theorem evm_swap_stack_spec (sp base : Word)
     simp; congr 1; omega
   rw [haddr_src, haddr_rest, show (n - 1) + 1 = n from by omega, helem] at hsplit1
   -- Frame the swap spec with middle and rest stacks
-  have h_main := cpsTriple_frame_left _ _ _ _ _
+  have h_main := cpsTriple_frameR
     (evmStackIs (sp + 32) ((stack.drop 1).take (n - 1)) **
      evmStackIs (sp + BitVec.ofNat 64 ((n + 1) * 32)) ((stack.drop 1).drop n))
     (by pcFree)

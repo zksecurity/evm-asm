@@ -73,7 +73,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old, and scratch
-    have J1f := cpsTriple_frame_left _ _ _ _ _
+    have J1f := cpsTriple_frameR
       (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -101,7 +101,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms and scratch
-    have J0f := cpsTriple_frame_left _ _ _ _ _
+    have J0f := cpsTriple_frameR
       (((u_base_1 + signExtend12 4064) ↦ₘ (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
        (q_addr_1 ↦ₘ (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).1) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -143,7 +143,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       hbltu_1'
       (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
-    have J1f := cpsTriple_frame_left _ _ _ _ _
+    have J1f := cpsTriple_frameR
       (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -171,7 +171,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms only
-    have J0f := cpsTriple_frame_left _ _ _ _ _
+    have J0f := cpsTriple_frameR
       (((u_base_1 + signExtend12 4064) ↦ₘ (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
        (q_addr_1 ↦ₘ (iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
       (by pcFree) J0
@@ -210,7 +210,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old only (scratch is in call spec)
-    have J1f := cpsTriple_frame_left _ _ _ _ _
+    have J1f := cpsTriple_frameR
       (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
       (by pcFree) J1
     -- j=0 max  spec (no scratch)
@@ -235,7 +235,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms + j=1 scratch (persists from call)
-    have J0f := cpsTriple_frame_left _ _ _ _ _
+    have J0f := cpsTriple_frameR
       (((u_base_1 + signExtend12 4064) ↦ₘ (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
        (q_addr_1 ↦ₘ (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).1) **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
@@ -278,7 +278,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
       (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
     intro_lets at J1
     -- Frame j=1 with u0_orig, q0_old only
-    have J1f := cpsTriple_frame_left _ _ _ _ _
+    have J1f := cpsTriple_frameR
       (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
       (by pcFree) J1
     -- j=0 call  spec (includes scratch -- j=0 overwrites j=1's scratch)
@@ -305,7 +305,7 @@ theorem divK_loop_n1_iter10_unified_spec (bltu_1 bltu_0 : Bool)
         (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
     intro_lets at J0
     -- Frame j=0 with j=1's carried atoms only
-    have J0f := cpsTriple_frame_left _ _ _ _ _
+    have J0f := cpsTriple_frameR
       (((u_base_1 + signExtend12 4064) ↦ₘ (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
        (q_addr_1 ↦ₘ (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
       (by pcFree) J0
@@ -372,7 +372,7 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
     (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
   -- Frame j=2 with iter10 extra atoms and scratch
-  have J2f := cpsTriple_frame_left _ _ _ _ _
+  have J2f := cpsTriple_frameR
     (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -392,7 +392,7 @@ theorem divK_loop_n1_max_iter10_spec (bltu_1 bltu_0 : Bool)
 
     hbltu_1 hbltu_0 hcarry2
   -- Frame iter10 with j=2 carried atoms
-  have H10f := cpsTriple_frame_left _ _ _ _ _
+  have H10f := cpsTriple_frameR
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
     (by pcFree) H10
   -- Compose j=2 and iter10
@@ -455,7 +455,7 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
     (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J2
   -- Frame j=2 with iter10 extra atoms only (scratch consumed by call)
-  have J2f := cpsTriple_frame_left _ _ _ _ _
+  have J2f := cpsTriple_frameR
     (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J2
@@ -473,7 +473,7 @@ theorem divK_loop_n1_call_iter10_spec (bltu_1 bltu_0 : Bool)
 
     hbltu_1 hbltu_0 hcarry2
   -- Frame iter10 with j=2 carried atoms
-  have H10f := cpsTriple_frame_left _ _ _ _ _
+  have H10f := cpsTriple_frameR
     (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
     (by pcFree) H10
   -- Compose j=2 and iter10
@@ -619,7 +619,7 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J3
   -- Frame j=3 with iter210 extra atoms and scratch
-  have J3f := cpsTriple_frame_left _ _ _ _ _
+  have J3f := cpsTriple_frameR
     (((u_base_2 + signExtend12 0) ↦ₘ u0_orig_2) ** (q_addr_2 ↦ₘ q2_old) **
      ((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old) **
@@ -638,7 +638,7 @@ theorem divK_loop_n1_max_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     ret_mem d_mem dlo_mem scratch_un0 base halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame iter210 with j=3 carried atoms
-  have H210f := cpsTriple_frame_left _ _ _ _ _
+  have H210f := cpsTriple_frameR
     (((u_base_3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) ** (q_addr_3 ↦ₘ r3.1))
     (by pcFree) H210
   -- Compose j=3 and iter210
@@ -728,7 +728,7 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 u_top : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J3
   -- Frame j=3 with iter210 extra atoms only (scratch consumed by call)
-  have J3f := cpsTriple_frame_left _ _ _ _ _
+  have J3f := cpsTriple_frameR
     (((u_base_2 + signExtend12 0) ↦ₘ u0_orig_2) ** (q_addr_2 ↦ₘ q2_old) **
      ((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1_old) **
      ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0_old))
@@ -745,7 +745,7 @@ theorem divK_loop_n1_call_iter210_spec (bltu_2 bltu_1 bltu_0 : Bool)
     (base + 516) v0 (div128DLo v0) (div128Un0 u0) base halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- Frame iter210 with j=3 carried atoms
-  have H210f := cpsTriple_frame_left _ _ _ _ _
+  have H210f := cpsTriple_frameR
     (((u_base_3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) ** (q_addr_3 ↦ₘ r3.1))
     (by pcFree) H210
   -- Compose j=3 and iter210

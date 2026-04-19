@@ -157,7 +157,7 @@ theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val cou
       ((.x5 ↦ᵣ val) ** (.x6 ↦ᵣ count))
       ((.x5 ↦ᵣ (val <<< M_s.toNat)) ** (.x6 ↦ᵣ (count + signExtend12 M_a))) := by
     runBlock I1 I2
-  have hframed := cpsTriple_frame_left _ _ _ _ _
+  have hframed := cpsTriple_frameR
     ((.x7 ↦ᵣ (val >>> K.toNat)) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) hslli_addi
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
@@ -283,7 +283,7 @@ theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Word)
       (.x6 ↦ᵣ count)
       (.x6 ↦ᵣ (count + signExtend12 (1 : BitVec 12))) := by
     runBlock I2
-  have hframed := cpsTriple_frame_left _ _ _ _ _
+  have hframed := cpsTriple_frameR
     ((.x5 ↦ᵣ val) ** (.x7 ↦ᵣ (val >>> 63)) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) haddi
   have full := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _

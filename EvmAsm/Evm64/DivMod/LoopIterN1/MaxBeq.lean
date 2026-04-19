@@ -75,7 +75,7 @@ theorem divK_loop_body_n1_max_addback_j0_beq_spec
   have MCA0 := MCA hcarry2_nz hborrow
   have SL := divK_store_loop_j0_spec sp q_out u4_out carry_out q_old base
   intro_lets at SL
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
@@ -83,7 +83,7 @@ theorem divK_loop_body_n1_max_addback_j0_beq_spec
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCA0
-  have SLf := cpsTriple_frame_left _ _ _ _ _
+  have SLf := cpsTriple_frameR
     ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
@@ -158,7 +158,7 @@ theorem divK_loop_body_n1_max_addback_j3_beq_spec
   have hj_pos := slt_jpos_3
   have SL := divK_store_loop_jgt0_spec sp (3 : Word) q_out u4_out carry_out q_old base hj_pos
   intro_lets at SL
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
@@ -166,7 +166,7 @@ theorem divK_loop_body_n1_max_addback_j3_beq_spec
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCA0
-  have SLf := cpsTriple_frame_left _ _ _ _ _
+  have SLf := cpsTriple_frameR
     ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
      (sp + signExtend12 3976 ↦ₘ (3 : Word)) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
@@ -241,7 +241,7 @@ theorem divK_loop_body_n1_max_addback_j1_beq_spec
   have hj_pos := slt_jpos_1
   have SL := divK_store_loop_jgt0_spec sp (1 : Word) q_out u4_out carry_out q_old base hj_pos
   intro_lets at SL
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
@@ -249,7 +249,7 @@ theorem divK_loop_body_n1_max_addback_j1_beq_spec
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCA0
-  have SLf := cpsTriple_frame_left _ _ _ _ _
+  have SLf := cpsTriple_frameR
     ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
      (sp + signExtend12 3976 ↦ₘ (1 : Word)) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
@@ -324,7 +324,7 @@ theorem divK_loop_body_n1_max_addback_j2_beq_spec
   have hj_pos := slt_jpos_2
   have SL := divK_store_loop_jgt0_spec sp (2 : Word) q_out u4_out carry_out q_old base hj_pos
   intro_lets at SL
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
@@ -332,7 +332,7 @@ theorem divK_loop_body_n1_max_addback_j2_beq_spec
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCA0
-  have SLf := cpsTriple_frame_left _ _ _ _ _
+  have SLf := cpsTriple_frameR
     ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
      (sp + signExtend12 3976 ↦ₘ (2 : Word)) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **

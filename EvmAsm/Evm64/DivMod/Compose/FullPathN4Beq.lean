@@ -257,7 +257,7 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
     hbnz hb3nz hshift_nz
 
 
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem))
     (by pcFree) hPre
   have hLoop := divK_loop_body_n4_max_addback_j0_beq_norm sp base
@@ -267,7 +267,7 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
     hbltu hcarry2_nz
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -415,7 +415,7 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
     hbnz hb3nz hshift_nz
 
 
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -429,7 +429,7 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
     hbltu hcarry2_nz
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4064) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
@@ -630,7 +630,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
     c3 q_out 0 0 0
     b0' b1' b2' b3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4_out) **
@@ -850,7 +850,7 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
     c3 q_out 0 0 0
     b0' b1' b2' b3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4_out) **
      ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **

@@ -137,7 +137,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
   have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_modCode base) hinit1_raw
-  have hinit1f := cpsTriple_frame_left _ _ _ _ _
+  have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 3984) ↦ₘ n_mem))

@@ -183,7 +183,7 @@ theorem evm_div_bzero_spec (sp base : Word)
   -- Extend BEQ to divCode CodeReq
   have hbeq := cpsTriple_extend_code (beq_singleton_sub_divCode base) hbeq_clean
   -- Step 3: Frame BEQ with regs + mem (no code atoms needed in frame)
-  have hbeq_framed := cpsTriple_frame_left _ _ _ _ _
+  have hbeq_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -197,7 +197,7 @@ theorem evm_div_bzero_spec (sp base : Word)
     (divK_zeroPath_spec sp (base + zeroPathOff) b0 b1 b2 b3)
   rw [show (base + zeroPathOff : Word) + 20 = base + nopOff from by bv_addr] at hzp
   -- Frame ZP with x5 + x10 + x0
-  have hzp_framed := cpsTriple_frame_left _ _ _ _ _
+  have hzp_framed := cpsTriple_frameR
     ((.x5 ↦ᵣ (b0 ||| b1 ||| b2 ||| b3)) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) hzp
   -- Step 6: Compose AB → ZP: base → base+1068
@@ -241,7 +241,7 @@ theorem evm_div_phaseA_ntaken_spec (sp base : Word)
   -- Extend BEQ to divCode CodeReq
   have hbeq := cpsTriple_extend_code (beq_singleton_sub_divCode base) hbeq_clean
   -- Step 3: Frame BEQ with regs + mem
-  have hbeq_framed := cpsTriple_frame_left _ _ _ _ _
+  have hbeq_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -288,7 +288,7 @@ theorem evm_div_phaseB_n4_spec (sp base : Word)
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
   have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_divCode base) hinit1_raw
-  have hinit1f := cpsTriple_frame_left _ _ _ _ _
+  have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 3984) ↦ₘ n_mem))
@@ -355,7 +355,7 @@ theorem evm_div_phaseAB_n4_spec (sp base : Word)
        ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
        ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (4 : Word))) := by
   have hA := evm_div_phaseA_ntaken_spec sp base b0 b1 b2 b3 v5 v10 hbnz
-  have hAf := cpsTriple_frame_left _ _ _ _ _
+  have hAf := cpsTriple_frameR
     ((.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
@@ -365,7 +365,7 @@ theorem evm_div_phaseAB_n4_spec (sp base : Word)
   have hB := evm_div_phaseB_n4_spec sp base b1 b2 b3
     (b0 ||| b1 ||| b2 ||| b3) v6 v7 q0 q1 q2 q3 u5 u6 u7 n_mem
     hb3nz
-  have hBf := cpsTriple_frame_left _ _ _ _ _
+  have hBf := cpsTriple_frameR
     (((sp + 32) ↦ₘ b0))
     (by pcFree) hB
   have hAB := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
@@ -508,7 +508,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
   have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_divCode base) hinit1_raw
-  have hinit1f := cpsTriple_frame_left _ _ _ _ _
+  have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 3984) ↦ₘ n_mem))
@@ -517,7 +517,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   have hinit2_raw := divK_phaseB_init2_spec sp (base + 60) b1 b2 v6 v7
   simp only [phB_i2_8] at hinit2_raw
   have hinit2 := cpsTriple_extend_code (divK_phaseB_init2_code_sub_divCode base) hinit2_raw
-  have hinit2f := cpsTriple_frame_left _ _ _ _ _
+  have hinit2f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -532,7 +532,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   have haddi0_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
   simp only [phB_addi_4, signExtend12_4] at haddi0_raw
   have haddi0 := cpsTriple_extend_code (addi_x5_singleton_sub_divCode base) haddi0_raw
-  have haddi0f := cpsTriple_frame_left _ _ _ _ _
+  have haddi0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -552,7 +552,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb3z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne0 := cpsTriple_extend_code (bne_x10_singleton_sub_divCode base) hbne0_clean
-  have hbne0f := cpsTriple_frame_left _ _ _ _ _
+  have hbne0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (4 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -567,7 +567,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   have haddi1_raw := addi_x0_spec_gen .x5 (4 : Word) 3 (base + 76) (by nofun)
   simp only [phB_step1_4, signExtend12_3] at haddi1_raw
   have haddi1 := cpsTriple_extend_code (addi_x5_3_sub_divCode base) haddi1_raw
-  have haddi1f := cpsTriple_frame_left _ _ _ _ _
+  have haddi1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -587,7 +587,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hb2nz)
   have hbne1 := cpsTriple_extend_code (bne_x7_16_sub_divCode base) hbne1_clean
-  have hbne1f := cpsTriple_frame_left _ _ _ _ _
+  have hbne1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (3 : Word)) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -602,7 +602,7 @@ theorem evm_div_phaseB_n3_spec (sp base : Word)
   have htail_raw := divK_phaseB_tail_spec sp (3 : Word) b2 n_mem (base + 96)
   simp only [phB_t_20, divK_phaseB_n3_nm1_x8, signExtend12_32, phB_sp16_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_divCode base) htail_raw
-  have htailf := cpsTriple_frame_left _ _ _ _ _
+  have htailf := cpsTriple_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -651,7 +651,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
   have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_divCode base) hinit1_raw
-  have hinit1f := cpsTriple_frame_left _ _ _ _ _
+  have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 3984) ↦ₘ n_mem))
@@ -660,7 +660,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have hinit2_raw := divK_phaseB_init2_spec sp (base + 60) b1 b2 v6 v7
   simp only [phB_i2_8] at hinit2_raw
   have hinit2 := cpsTriple_extend_code (divK_phaseB_init2_code_sub_divCode base) hinit2_raw
-  have hinit2f := cpsTriple_frame_left _ _ _ _ _
+  have hinit2f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -675,7 +675,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have haddi0_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
   simp only [phB_addi_4, signExtend12_4] at haddi0_raw
   have haddi0 := cpsTriple_extend_code (addi_x5_singleton_sub_divCode base) haddi0_raw
-  have haddi0f := cpsTriple_frame_left _ _ _ _ _
+  have haddi0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -695,7 +695,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb3z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne0 := cpsTriple_extend_code (bne_x10_singleton_sub_divCode base) hbne0_clean
-  have hbne0f := cpsTriple_frame_left _ _ _ _ _
+  have hbne0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (4 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -710,7 +710,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have haddi1_raw := addi_x0_spec_gen .x5 (4 : Word) 3 (base + 76) (by nofun)
   simp only [phB_step1_4, signExtend12_3] at haddi1_raw
   have haddi1 := cpsTriple_extend_code (addi_x5_3_sub_divCode base) haddi1_raw
-  have haddi1f := cpsTriple_frame_left _ _ _ _ _
+  have haddi1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -730,7 +730,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb2z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne1 := cpsTriple_extend_code (bne_x7_16_sub_divCode base) hbne1_clean
-  have hbne1f := cpsTriple_frame_left _ _ _ _ _
+  have hbne1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (3 : Word)) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -745,7 +745,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have haddi2_raw := addi_x0_spec_gen .x5 (3 : Word) 2 (base + 84) (by nofun)
   simp only [phB_step2_4, signExtend12_2] at haddi2_raw
   have haddi2 := cpsTriple_extend_code (addi_x5_2_sub_divCode base) haddi2_raw
-  have haddi2f := cpsTriple_frame_left _ _ _ _ _
+  have haddi2f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) ** (.x6 ↦ᵣ b1) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -765,7 +765,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hb1nz)
   have hbne2 := cpsTriple_extend_code (bne_x6_8_sub_divCode base) hbne2_clean
-  have hbne2f := cpsTriple_frame_left _ _ _ _ _
+  have hbne2f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (2 : Word)) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -780,7 +780,7 @@ theorem evm_div_phaseB_n2_spec (sp base : Word)
   have htail_raw := divK_phaseB_tail_spec sp (2 : Word) b1 n_mem (base + 96)
   simp only [phB_t_20, divK_phaseB_n2_nm1_x8, signExtend12_32, phB_sp8_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_divCode base) htail_raw
-  have htailf := cpsTriple_frame_left _ _ _ _ _
+  have htailf := cpsTriple_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -830,7 +830,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
   have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_divCode base) hinit1_raw
-  have hinit1f := cpsTriple_frame_left _ _ _ _ _
+  have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 3984) ↦ₘ n_mem))
@@ -839,7 +839,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have hinit2_raw := divK_phaseB_init2_spec sp (base + 60) b1 b2 v6 v7
   simp only [phB_i2_8] at hinit2_raw
   have hinit2 := cpsTriple_extend_code (divK_phaseB_init2_code_sub_divCode base) hinit2_raw
-  have hinit2f := cpsTriple_frame_left _ _ _ _ _
+  have hinit2f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -854,7 +854,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have haddi0_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
   simp only [phB_addi_4, signExtend12_4] at haddi0_raw
   have haddi0 := cpsTriple_extend_code (addi_x5_singleton_sub_divCode base) haddi0_raw
-  have haddi0f := cpsTriple_frame_left _ _ _ _ _
+  have haddi0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -874,7 +874,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb3z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne0 := cpsTriple_extend_code (bne_x10_singleton_sub_divCode base) hbne0_clean
-  have hbne0f := cpsTriple_frame_left _ _ _ _ _
+  have hbne0f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (4 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -889,7 +889,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have haddi1_raw := addi_x0_spec_gen .x5 (4 : Word) 3 (base + 76) (by nofun)
   simp only [phB_step1_4, signExtend12_3] at haddi1_raw
   have haddi1 := cpsTriple_extend_code (addi_x5_3_sub_divCode base) haddi1_raw
-  have haddi1f := cpsTriple_frame_left _ _ _ _ _
+  have haddi1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -909,7 +909,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb2z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne1 := cpsTriple_extend_code (bne_x7_16_sub_divCode base) hbne1_clean
-  have hbne1f := cpsTriple_frame_left _ _ _ _ _
+  have hbne1f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (3 : Word)) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -924,7 +924,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have haddi2_raw := addi_x0_spec_gen .x5 (3 : Word) 2 (base + 84) (by nofun)
   simp only [phB_step2_4, signExtend12_2] at haddi2_raw
   have haddi2 := cpsTriple_extend_code (addi_x5_2_sub_divCode base) haddi2_raw
-  have haddi2f := cpsTriple_frame_left _ _ _ _ _
+  have haddi2f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) ** (.x6 ↦ᵣ b1) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -944,7 +944,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd hb1z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbne2 := cpsTriple_extend_code (bne_x6_8_sub_divCode base) hbne2_clean
-  have hbne2f := cpsTriple_frame_left _ _ _ _ _
+  have hbne2f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (2 : Word)) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -959,7 +959,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have haddi3_raw := addi_x0_spec_gen .x5 (2 : Word) 1 (base + 92) (by nofun)
   simp only [phB_fall_4, signExtend12_1] at haddi3_raw
   have haddi3 := cpsTriple_extend_code (addi_x5_1_sub_divCode base) haddi3_raw
-  have haddi3f := cpsTriple_frame_left _ _ _ _ _
+  have haddi3f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -974,7 +974,7 @@ theorem evm_div_phaseB_n1_spec (sp base : Word)
   have htail_raw := divK_phaseB_tail_spec sp (1 : Word) b0 n_mem (base + 96)
   simp only [phB_t_20, divK_phaseB_n1_nm1_x8, signExtend12_32, phB_sp0_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_divCode base) htail_raw
-  have htailf := cpsTriple_frame_left _ _ _ _ _
+  have htailf := cpsTriple_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **

@@ -130,7 +130,7 @@ theorem divK_loop_body_n3_max_skip_spec
   intro_lets at SL
   -- 4. Frame TF with mulsub cells that DON'T overlap
   --    (u_base+4072 ↦ₘ u3, u_base+4080 ↦ₘ u2, sp+48 ↦ₘ v2 are already in TF)
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
@@ -230,7 +230,7 @@ theorem divK_loop_body_n3_max_addback_spec
   have SL := divK_store_loop_spec sp j q_out u4_out carry_out q_old base
   intro_lets at SL
   -- 4. Frame TF with non-overlapping cells
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     ((.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
@@ -382,7 +382,7 @@ theorem divK_loop_body_n3_call_skip_spec
   intro_lets at SL
   -- 4. Frame TF (trial_call includes scratch memory, so don't add those to frame)
   --    For n=3: u_base+4072 ↦ u3, u_base+4080 ↦ u2, sp+48 ↦ v2 are in the trial
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     (((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **
@@ -528,7 +528,7 @@ theorem divK_loop_body_n3_call_addback_spec
   have SL := divK_store_loop_spec sp j q_out u4_out carry_out q_old base
   intro_lets at SL
   -- 4. Frame TF
-  have TFf := cpsTriple_frame_left _ _ _ _ _
+  have TFf := cpsTriple_frameR
     (((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **

@@ -173,7 +173,7 @@ theorem rlp_phase2_long_iter_spec
        (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val)) :=
     frame_and_perm
       (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x11 ↦ᵣ len) ** (.x14 ↦ᵣ cnt)) (by pcFree) lbu_raw)
   -- Step 2 (SLLI x11 x11 8) — leaves (x13, x14, x12, mem) untouched.
   have s2 : cpsTriple (base + 4) (base + 8)
@@ -184,7 +184,7 @@ theorem rlp_phase2_long_iter_spec
        (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val)) :=
     frame_and_perm
       (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ cnt) ** (.x12 ↦ᵣ byte_zext) **
          (dwordAddr ↦ₘ word_val)) (by pcFree) slli_raw)
   -- Step 3 (ADD x11 x11 x12) — uses (x11, x12); frames (x13, x14, mem).
@@ -197,7 +197,7 @@ theorem rlp_phase2_long_iter_spec
        (dwordAddr ↦ₘ word_val)) :=
     frame_and_perm
       (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ cnt) ** (dwordAddr ↦ₘ word_val))
         (by pcFree) add_raw)
   -- Step 4 (ADDI x13 x13 1) — mutates x13; frames the rest.
@@ -211,7 +211,7 @@ theorem rlp_phase2_long_iter_spec
        (dwordAddr ↦ₘ word_val)) :=
     frame_and_perm
       (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x11 ↦ᵣ ((len <<< 8) + byte_zext)) ** (.x14 ↦ᵣ cnt) **
          (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val))
         (by pcFree) addi_ptr_raw)
@@ -226,7 +226,7 @@ theorem rlp_phase2_long_iter_spec
        (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val)) :=
     frame_and_perm
       (fun h hp => by xperm_hyp hp) (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x11 ↦ᵣ ((len <<< 8) + byte_zext)) ** (.x13 ↦ᵣ (ptr + 1)) **
          (.x12 ↦ᵣ byte_zext) ** (dwordAddr ↦ₘ word_val))
         (by pcFree) addi_cnt_raw)

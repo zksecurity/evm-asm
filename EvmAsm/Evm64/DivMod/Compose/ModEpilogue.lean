@@ -56,7 +56,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
         [.ADDI .x2 .x0 0] 2
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) haddi
   -- Frame ADDI with x12, x5, x7, x6, and all memory
-  have haddief := cpsTriple_frame_left _ _ _ _ _
+  have haddief := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ shift) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
@@ -73,7 +73,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
             show (base + denormOff : Word) + 12 = base + 920 from by bv_addr] at hlookup
         exact hlookup) a i h)) hsub
   -- Frame SUB with x12, x5, x7, x0, and all memory
-  have hsubf := cpsTriple_frame_left _ _ _ _ _
+  have hsubf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
@@ -88,7 +88,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 924) divK_denorm
         (divK_denorm_merge_prog 4056 4048) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm0
-  have hm0ef := cpsTriple_frame_left _ _ _ _ _
+  have hm0ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
     (by pcFree) hm0e
@@ -103,7 +103,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 948) divK_denorm
         (divK_denorm_merge_prog 4048 4040) 10
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm1
-  have hm1ef := cpsTriple_frame_left _ _ _ _ _
+  have hm1ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4032) ↦ₘ u3))
     (by pcFree) hm1e
@@ -118,7 +118,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 972) divK_denorm
         (divK_denorm_merge_prog 4040 4032) 16
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm2
-  have hm2ef := cpsTriple_frame_left _ _ _ _ _
+  have hm2ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1'))
     (by pcFree) hm2e
@@ -132,7 +132,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 996) divK_denorm
         (divK_denorm_last_prog 4032) 22
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hl
-  have hlef := cpsTriple_frame_left _ _ _ _ _
+  have hlef := cpsTriple_frameR
     ((.x7 ↦ᵣ (u3 <<< (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
      ((sp + signExtend12 4040) ↦ₘ u2'))
