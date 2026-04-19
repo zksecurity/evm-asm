@@ -63,7 +63,7 @@ theorem divK_loop_n2_iter10_unified_spec (bltu_1 bltu_0 : Bool)
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (by pcFree) hMM
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by delta loopN2Iter10PreWithScratch at hp; xperm_hyp hp)
       (fun h hp => by delta loopN2Iter10Post; xperm_hyp hp)
       hMMF
@@ -79,7 +79,7 @@ theorem divK_loop_n2_iter10_unified_spec (bltu_1 bltu_0 : Bool)
 
 
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN2Iter10Post; exact hp)
       hMC
@@ -94,7 +94,7 @@ theorem divK_loop_n2_iter10_unified_spec (bltu_1 bltu_0 : Bool)
 
 
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN2Iter10Post; exact hp)
       hCM
@@ -109,7 +109,7 @@ theorem divK_loop_n2_iter10_unified_spec (bltu_1 bltu_0 : Bool)
 
 
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN2Iter10Post; exact hp)
       hCC
@@ -189,7 +189,7 @@ theorem divK_loop_n2_max_iter10_spec (bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN2PreWithScratch loopN2Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN2UnifiedPost loopN2Iter10Post at hp ⊢
@@ -265,7 +265,7 @@ theorem divK_loop_n2_call_iter10_spec (bltu_1 bltu_0 : Bool)
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by delta loopN2PreWithScratch loopN2Pre at hp; xperm_hyp hp)
     (fun h hp => by
       delta loopN2UnifiedPost loopN2Iter10Post at hp ⊢
