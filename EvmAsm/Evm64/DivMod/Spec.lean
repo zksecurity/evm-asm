@@ -30,10 +30,13 @@
   * Weakeners: `div_n4_max_skip_stack_weaken`, `mod_n4_max_skip_stack_weaken` —
     turn specific register values + `evmWordIs` operand atoms + `divScratchValues`
     into `divN4MaxSkipStackPost` / `modN4MaxSkipStackPost`.
-  * `pcFree` instances for every bundle (`divScratchOwn`, `divScratchValues`,
-    `divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`,
-    `modN4MaxSkipStackPost`, `fullDivN4MaxSkipPost`, `denormDivPost`,
-    `denormModPost`, `loopSetupPost`, `normBPost`).
+  * `pcFree` instances for the stack-pre/post bundles defined here
+    (`divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`,
+    `modN4MaxSkipStackPost`). `pcFree` instances for the post bundles
+    defined in `Compose/Base.lean` (`divScratchOwn`, `denormDivPost`,
+    `denormModPost`, `loopSetupPost`, `normBPost`) live next to their
+    defs, as does `pcFree_fullDivN4MaxSkipPost` in
+    `Compose/FullPathN4.lean`.
   * Pre-wrapper: `evm_div_n4_full_max_skip_stack_pre_spec` and its bundled
     variant `evm_div_n4_full_max_skip_stack_pre_spec_bundled` — wrap the
     limb-level full-path spec in the EvmWord-level pre shape.
