@@ -133,6 +133,7 @@ theorem word_add_zero (x : Word) : x + (0 : Word) = x := BitVec.add_zero x
 @[rv64_addr, grind =] theorem se12_2  : signExtend12 (2  : BitVec 12) = (2  : Word) := by decide
 @[rv64_addr, grind =] theorem se12_3  : signExtend12 (3  : BitVec 12) = (3  : Word) := by decide
 @[rv64_addr, grind =] theorem se12_4  : signExtend12 (4  : BitVec 12) = (4  : Word) := by decide
+@[rv64_addr, grind =] theorem se12_7  : signExtend12 (7  : BitVec 12) = (7  : Word) := by decide
 @[rv64_addr, grind =] theorem se12_8  : signExtend12 (8  : BitVec 12) = (8  : Word) := by decide
 @[rv64_addr, grind =] theorem se12_12 : signExtend12 (12 : BitVec 12) = (12 : Word) := by decide
 @[rv64_addr, grind =] theorem se12_16 : signExtend12 (16 : BitVec 12) = (16 : Word) := by decide
@@ -171,6 +172,7 @@ theorem word_add_zero (x : Word) : x + (0 : Word) = x := BitVec.add_zero x
 @[rv64_addr, grind =] theorem bv6_toNat_2  : (2  : BitVec 6).toNat = 2  := by decide
 @[rv64_addr, grind =] theorem bv6_toNat_3  : (3  : BitVec 6).toNat = 3  := by decide
 @[rv64_addr, grind =] theorem bv6_toNat_4  : (4  : BitVec 6).toNat = 4  := by decide
+@[rv64_addr, grind =] theorem bv6_toNat_6  : (6  : BitVec 6).toNat = 6  := by decide
 @[rv64_addr, grind =] theorem bv6_toNat_8  : (8  : BitVec 6).toNat = 8  := by decide
 @[rv64_addr, grind =] theorem bv6_toNat_16 : (16 : BitVec 6).toNat = 16 := by decide
 @[rv64_addr, grind =] theorem bv6_toNat_32 : (32 : BitVec 6).toNat = 32 := by decide
