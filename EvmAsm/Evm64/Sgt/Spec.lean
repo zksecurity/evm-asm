@@ -48,9 +48,9 @@ theorem evm_sgt_spec (sp : Word) (base : Word)
     let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
     let borrow2 := borrow2a ||| borrow2b
     -- Signed comparison of MSB limbs (swapped: b3 vs a3)
-    let sgt_msb := if BitVec.slt b3 a3 then (1 : Word) else 0
+    let sgtMsb := if BitVec.slt b3 a3 then (1 : Word) else 0
     -- Result: signed GT
-    let result := if b3 = a3 then borrow2 else sgt_msb
+    let result := if b3 = a3 then borrow2 else sgtMsb
     let code := evm_sgt_code base
     cpsTriple base (base + 100) code
       (-- Registers + memory
@@ -65,7 +65,7 @@ theorem evm_sgt_spec (sp : Word) (base : Word)
        (.x11 ↦ᵣ (if b3 = a3 then borrow2a else v11)) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
        ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
-  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 sgt_msb
+  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 sgtMsb
   -- Don't intro result; let simp inline it via if_pos/if_neg
   by_cases h : b3 = a3
   · -- Case: MSB limbs equal → BEQ taken, lower compare path
@@ -102,7 +102,7 @@ theorem evm_sgt_spec (sp : Word) (base : Word)
     -- Store phase
     have A := addi_spec_gen_same .x12 sp 32 (base + 80) (by nofun)
     simp only [signExtend12_32] at A
-    have S0 := sd_spec_gen .x12 .x5 (sp + 32) sgt_msb b0 0 (base + 84)
+    have S0 := sd_spec_gen .x12 .x5 (sp + 32) sgtMsb b0 0 (base + 84)
     have S1 := sd_x0_spec_gen .x12 (sp + 32) b1 8 (base + 88)
     have S2 := sd_x0_spec_gen .x12 (sp + 32) b2 16 (base + 92)
     have S3 := sd_x0_spec_gen .x12 (sp + 32) b3 24 (base + 96)
@@ -127,8 +127,8 @@ theorem evm_sgt_stack_spec (sp base : Word)
     let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
     let borrow2 := borrow2a ||| borrow2b
     -- Signed comparison of MSB limbs (swapped: b3 vs a3)
-    let sgt_msb := if BitVec.slt (b.getLimbN 3) (a.getLimbN 3) then (1 : Word) else 0
-    let result := if b.getLimbN 3 = a.getLimbN 3 then borrow2 else sgt_msb
+    let sgtMsb := if BitVec.slt (b.getLimbN 3) (a.getLimbN 3) then (1 : Word) else 0
+    let result := if b.getLimbN 3 = a.getLimbN 3 then borrow2 else sgtMsb
     let code := evm_sgt_code base
     cpsTriple base (base + 100) code
       (-- Registers + memory
@@ -141,7 +141,7 @@ theorem evm_sgt_stack_spec (sp base : Word)
        (.x5 ↦ᵣ result) **
        (.x11 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2a else v11)) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt b a then 1 else 0)) := by
-  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 sgt_msb result
+  intro borrow0 borrow1a temp1 borrow1b borrow1 borrow2a temp2 borrow2b borrow2 sgtMsb result
   have h_main := evm_sgt_spec sp base
     (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
