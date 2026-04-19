@@ -292,6 +292,18 @@ theorem evmStackIs_snoc (sp : Word) (xs : List EvmWord) (v : EvmWord) :
     (evmStackIs sp xs ** evmWordIs (sp + BitVec.ofNat 64 (xs.length * 32)) v) := by
   rw [evmStackIs_append, evmStackIs_single]
 
+/-- Mid-tree variant of `evmStackIs_append`: threads a remainder `Q` so
+    `rw ←` can fold two contiguous `evmStackIs` segments back into a single
+    `evmStackIs sp (xs ++ ys)` bundle even when they sit in the middle of a
+    longer sepConj chain. Parallels the `_right` family on the other
+    `evmStackIs` unfolds. -/
+theorem evmStackIs_append_right (sp : Word) (xs ys : List EvmWord)
+    (Q : Assertion) :
+    ((evmStackIs sp xs **
+      evmStackIs (sp + BitVec.ofNat 64 (xs.length * 32)) ys) ** Q) =
+    (evmStackIs sp (xs ++ ys) ** Q) := by
+  rw [evmStackIs_append]
+
 /-- Split evmStackIs at position k: extract the kth element (0-indexed). -/
 theorem evmStackIs_split_at (sp : Word) (stack : List EvmWord) (k : Nat)
     (hk : k < stack.length) :
