@@ -18,7 +18,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_7736 se13_8044)
+open EvmAsm.Rv64.AddrNorm (se13_12 se13_156 se13_7736 se13_8044 se21_560)
 
 -- ============================================================================
 -- Section 1: CodeReq subsumption infrastructure for loop body instructions
@@ -511,8 +511,7 @@ theorem divK_mulsub_full_spec
 -- ============================================================================
 
 private theorem lb_beq_taken (base : Word) : (base + 728 : Word) + signExtend13 (156 : BitVec 13) = base + 884 := by
-  have : signExtend13 (156 : BitVec 13) = (156 : Word) := by decide
-  rw [this]; bv_addr
+  rw [se13_156]; bv_addr
 
 private theorem lb_beq_ntaken (base : Word) : (base + 728 : Word) + 4 = base + 732 := by bv_addr
 
@@ -771,13 +770,11 @@ theorem divK_save_trial_load_spec
 
 -- Address normalization for trial quotient
 private theorem lb_bltu_taken (base : Word) : (base + 500 : Word) + signExtend13 (12 : BitVec 13) = base + 512 := by
-  have : signExtend13 (12 : BitVec 13) = (12 : Word) := by decide
-  rw [this]; bv_addr
+  rw [se13_12]; bv_addr
 private theorem lb_bltu_ntaken (base : Word) : (base + 500 : Word) + 4 = base + 504 := by bv_addr
 private theorem lb_trial_max_end (base : Word) : (base + 504 : Word) + 12 = base + 516 := by bv_addr
 private theorem lb_jal_target (base : Word) : (base + 512 : Word) + signExtend21 (560 : BitVec 21) = base + div128Off := by
-  have : signExtend21 (560 : BitVec 21) = (560 : Word) := by decide
-  rw [this]; bv_addr
+  rw [se21_560]; bv_addr
 private theorem lb_jal_ret (base : Word) : (base + 512 : Word) + 4 = base + 516 := by bv_addr
 
 -- ============================================================================
@@ -896,8 +893,7 @@ theorem divK_trial_call_path_spec
 private theorem lb_sqj (base : Word) : (base + 884 : Word) + 16 = base + 900 := by bv_addr
 private theorem lb_lc_taken (base : Word) :
     (base + 900 : Word) + 4 + signExtend13 (7736 : BitVec 13) = base + loopBodyOff := by
-  have : signExtend13 (7736 : BitVec 13) = (18446744073709551160 : Word) := by decide
-  rw [this]; bv_addr
+  rw [se13_7736]; bv_addr
 private theorem lb_lc_exit (base : Word) : (base + 900 : Word) + 8 = base + denormOff := by bv_addr
 
 private theorem lb_beq_back_ntaken (base : Word) : (base + 880 : Word) + 4 = base + 884 := by bv_addr
