@@ -105,7 +105,7 @@ theorem divK_phaseA_spec (sp : Word) (base : Word)
       (by decide) (by decide)
     ) hbeq_framed
   -- 5. Compose body → BEQ with permutation (same CR)
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbeq_ext
   -- 6. Final permutation of postconditions
   exact cpsBranch_consequence _ _

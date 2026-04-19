@@ -88,7 +88,7 @@ theorem divK_phaseB_cascade_step_spec (n_val : BitVec 12) (rx : Reg) (check v5 :
       simp only [beq_iff_eq, h0, ↓reduceIte]
     · simp at h) hbne_framed
   -- 5. Compose
-  have composed := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by xperm_hyp hp) hbody hbne_ext
   exact cpsBranch_consequence _ _
     _ _ _ _ _ _ _ _

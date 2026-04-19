@@ -153,7 +153,7 @@ theorem divK_loop_body_n4_max_skip_spec
      (sp + signExtend12 3984 ↦ₘ (4 : Word)))
     (by pcFree) SL
   -- 7. Compose pre_store (cpsTriple) with SLf (cpsBranch)
-  have full := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
   -- 8. Permute final cpsBranch to match target
   exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
@@ -253,7 +253,7 @@ theorem divK_loop_body_n4_max_addback_spec
      (sp + signExtend12 3984 ↦ₘ (4 : Word)))
     (by pcFree) SL
   -- 7. Compose
-  have full := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0 SLf
   exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
@@ -408,7 +408,7 @@ theorem divK_loop_body_n4_call_skip_spec
      (sp + signExtend12 3944 ↦ₘ div_un0))
     (by pcFree) SL
   -- 7. Compose
-  have full := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
   exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
@@ -554,7 +554,7 @@ theorem divK_loop_body_n4_call_addback_spec
      (sp + signExtend12 3944 ↦ₘ div_un0))
     (by pcFree) SL
   -- 7. Compose
-  have full := cpsTriple_seq_cpsBranch_with_perm_same_cr _ _ _ _ _ _ _ _ _ _
+  have full := cpsTriple_seq_cpsBranch_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0 SLf
   exact cpsBranch_consequence _ _ _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp)
