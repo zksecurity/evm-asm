@@ -132,8 +132,7 @@ theorem rlp_phase1_step_spec (v5 v10 : Word)
         ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) **
          (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)) **
          ⌜¬ BitVec.ult v5 ((0 : Word) + signExtend12 k)⌝) :=
-    cpsBranch_consequence _ _ _ _
-      target _ _ (base + 8) _ _
+    cpsBranch_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
@@ -153,7 +152,7 @@ theorem rlp_phase1_step_spec_plain (v5 v10 : Word)
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ k_val))
       (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ k_val)) :=
-  cpsBranch_consequence _ _ _ _ target _ _ (base + 8) _ _
+  cpsBranch_weaken
     (fun _ hp => hp)
     (sepConj_strip_pure_end3 _ _ _ _)
     (sepConj_strip_pure_end3 _ _ _ _)
@@ -508,7 +507,7 @@ theorem rlp_phase1_step_spec_acc (Acc : Prop) (v5 v10 : Word)
     ⌜Acc⌝ (pcFree_pure Acc) h
   -- hf has pre `(regs_3chain) ** ⌜Acc⌝`; target theorem has the 4-chain
   -- `regs ** ⌜Acc⌝`. Reshape via the associativity helper.
-  exact cpsBranch_consequence _ _ _ _ target _ _ (base + 8) _ _
+  exact cpsBranch_weaken
     (sepConj_chain_push_outer _ _ _ _)
     (sepConj_merge_pure_and_end3 _ _ _ _ _)
     (sepConj_merge_pure_and_end3 _ _ _ _ _)
