@@ -62,9 +62,9 @@ private theorem mod_pow64_div_mod256_eq (a B : Nat) (hB : B + 8 ≤ 64) :
     This connects the RISC-V limb-level BYTE implementation to the
     EVM-level BYTE semantics. -/
 theorem byte_extract_correct (x : EvmWord) (i : Nat) (hi : i < 32) :
-    let limb_idx : Fin 4 := ⟨3 - i / 8, by omega⟩
-    let bit_shift := 56 - (i % 8) * 8
-    ((x.getLimb limb_idx).toNat / 2 ^ bit_shift) % 256 =
+    let limbIdx : Fin 4 := ⟨3 - i / 8, by omega⟩
+    let bitShift := 56 - (i % 8) * 8
+    ((x.getLimb limbIdx).toNat / 2 ^ bitShift) % 256 =
     (x.toNat / 2 ^ ((31 - i) * 8)) % 256 := by
   simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
   -- Goal: x.toNat / 2^((3-i/8)*64) % 2^64 / 2^(56-(i%8)*8) % 256 =
