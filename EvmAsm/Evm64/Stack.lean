@@ -173,6 +173,29 @@ theorem evmWordIs_congr (addr : Word) {v w : EvmWord} (hv : v = w) :
     evmWordIs addr v = evmWordIs addr w :=
   congrArg (evmWordIs addr) hv
 
+/-- Address-side congruence: if two addresses agree, `evmWordIs` at them
+    agrees too. Counterpart of `evmWordIs_congr` for the address argument.
+    Useful after `bv_addr` / `bv_omega` normalizes an address expression
+    but leaves the `evmWordIs` call site pinned to the un-normalized form. -/
+theorem evmWordIs_congr_addr {a b : Word} (v : EvmWord) (ha : a = b) :
+    evmWordIs a v = evmWordIs b v :=
+  congrArg (fun x => evmWordIs x v) ha
+
+/-- List-side congruence for `evmStackIs`: if two stack-value lists agree,
+    `evmStackIs` at the same sp agrees. Useful when `List.map` / spec-side
+    computation produces a list that matches another up to propositional
+    equality but not definitionally. -/
+theorem evmStackIs_congr (sp : Word) {xs ys : List EvmWord} (hxy : xs = ys) :
+    evmStackIs sp xs = evmStackIs sp ys :=
+  congrArg (evmStackIs sp) hxy
+
+/-- sp-side congruence for `evmStackIs`. Counterpart of `evmStackIs_congr`
+    for the base-address argument. -/
+theorem evmStackIs_congr_sp {sp sp' : Word} (xs : List EvmWord)
+    (hsp : sp = sp') :
+    evmStackIs sp xs = evmStackIs sp' xs :=
+  congrArg (fun s => evmStackIs s xs) hsp
+
 -- ============================================================================
 -- evmWordIs unfold and limb-equality bridges
 -- ============================================================================
