@@ -547,13 +547,13 @@ theorem signext_body_spec (sp base : Word)
   rw [se_done_exit] at hdone
   -- Frame bodies with b-mem + x0
   let bmem := (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3)
-  have hbody3_f := cpsTriple_frame_left _ _ _ _ _ ((.x0 ↦ᵣ (0 : Word)) ** bmem **
+  have hbody3_f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** bmem **
     ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2)) (by pcFree) hbody3
-  have hbody2_f := cpsTriple_frame_left _ _ _ _ _ ((.x0 ↦ᵣ (0 : Word)) ** bmem **
+  have hbody2_f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** bmem **
     ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1)) (by pcFree) hbody2
-  have hbody1_f := cpsTriple_frame_left _ _ _ _ _ ((.x0 ↦ᵣ (0 : Word)) ** bmem **
+  have hbody1_f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** bmem **
     ((sp + 32) ↦ₘ v0)) (by pcFree) hbody1
-  have hbody0_f := cpsTriple_frame_left _ _ _ _ _ ((.x0 ↦ᵣ (0 : Word)) ** bmem) (by pcFree) hbody0
+  have hbody0_f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** bmem) (by pcFree) hbody0
   -- Compose each body with done (body: base+X → base+188, done: base+188 → base+192)
   -- Body 3 + done
   have hdone3_f := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
@@ -789,7 +789,7 @@ theorem signext_body_spec (sp base : Word)
       rw [hL] at hq; exact hq)
   -- Body 3 bridge: limb_idx ≠ 0,1,2 → limb_idx = 3 → outputs match signextend getLimb
   -- Body 3 doesn't have x10, so we frame it from Phase C exit 3's (.x10 ↦ᵣ (0 + signExtend12 2))
-  have hbd3_x10 := cpsTriple_frame_left _ _ _ _ _ ((.x10 ↦ᵣ ((0 : Word) + signExtend12 2))) (by pcFree) hbd3
+  have hbd3_x10 := cpsTriple_frameR ((.x10 ↦ᵣ ((0 : Word) + signExtend12 2))) (by pcFree) hbd3
   have hbd3_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body3_post_weaken _ _ _ _ h (by xperm_hyp hq)) hbd3_x10
   have hbd3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _

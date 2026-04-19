@@ -167,7 +167,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     hbnz hb3nz hshift_nz
 
 
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem))
     (by pcFree) hPre
   have hLoop := divK_loop_body_n4_max_skip_j0_norm sp base
@@ -177,7 +177,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
     hbltu
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -463,7 +463,7 @@ theorem evm_div_n4_full_max_skip_spec (sp base : Word)
     b0' b1' b2' b3'
     hshift_nz
   -- Frame post-loop with remainder atoms
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ (a3 >>> (anti_shift.toNat % 64)) - ms.2.2.2.2) **
@@ -707,7 +707,7 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
     hbnz hb3nz hshift_nz
 
 
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -720,7 +720,7 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
     hbltu
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -839,7 +839,7 @@ theorem evm_div_n4_full_call_skip_spec (sp base : Word)
     ms.2.2.2.2 q_hat 0 0 0
     b0' b1' b2' b3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ u4 - ms.2.2.2.2) **

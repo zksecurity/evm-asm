@@ -165,7 +165,7 @@ theorem divK_mulsub_4limbs_spec
       (lb_sub base 43 _ _ (by decide) (by bv_addr) (by decide))))))))))))
     L1
   -- Frame L0 with memory for limbs 1-3 (so seqFrame can find L1's precondition atoms)
-  have L0f := cpsTriple_frame_left _ _ _ _ _
+  have L0f := cpsTriple_frameR
     (((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3))
@@ -294,7 +294,7 @@ theorem divK_addback_full_spec
   have Ie := cpsTriple_extend_code (hmono := by
     exact lb_sub base 71 _ _ (by decide) (by bv_addr) (by decide)) I
   -- Frame init with all addback state
-  have If := cpsTriple_frame_left _ _ _ _ _
+  have If := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) ** (.x11 ↦ᵣ q_hat) **
      (.x5 ↦ᵣ v5_init) ** (.x2 ↦ᵣ v2_init) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
@@ -473,7 +473,7 @@ theorem divK_mulsub_full_spec
      (CodeReq.union_sub (lb_sub base 20 _ _ (by decide) (by bv_addr) (by decide))
       (lb_sub base 21 _ _ (by decide) (by bv_addr) (by decide)))))) S
   -- Frame setup with all memory + x7/x2 for mulsub
-  have Sf := cpsTriple_frame_left _ _ _ _ _
+  have Sf := cpsTriple_frameR
     ((.x7 ↦ᵣ v7_old) ** (.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
      ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
@@ -557,7 +557,7 @@ theorem divK_correction_skip_spec
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
       skip
   -- Frame with all other state and permute
-  have skip_framed := cpsTriple_frame_left _ _ _ _ _
+  have skip_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) **
      (.x11 ↦ᵣ q_hat) ** (.x5 ↦ᵣ v5_old) ** (.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
@@ -641,7 +641,7 @@ theorem divK_correction_addback_spec
         (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
       ntaken
   -- Frame ntaken with all addback state
-  have ntaken_framed := cpsTriple_frame_left _ _ _ _ _
+  have ntaken_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) **
      (.x11 ↦ᵣ q_hat) ** (.x5 ↦ᵣ v5_old) ** (.x2 ↦ᵣ v2_old) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
@@ -725,7 +725,7 @@ theorem divK_save_trial_load_spec
   have SJe := cpsTriple_extend_code (hmono :=
     lb_sub base 0 _ _ (by decide) (by bv_addr) (by decide)) SJ
   -- Frame save_j with trial_load state
-  have SJf := cpsTriple_frame_left _ _ _ _ _
+  have SJf := cpsTriple_frameR
     ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
      (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) **
      (sp + signExtend12 3984 ↦ₘ n) **
@@ -862,7 +862,7 @@ theorem divK_trial_call_path_spec
     halign
   dsimp only [] at D
   -- 3. Frame JAL with all registers/memory for div128
-  have Jf := cpsTriple_frame_left _ _ _ _ _
+  have Jf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
      (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtop_base) **
      (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
@@ -998,7 +998,7 @@ theorem divK_double_addback_beq_spec
   have BPT := divK_beq_passthrough aco3' base haco3_nz
   -- 4. Compose: BEQ taken (→732) + addback2 (732→880) + BEQ ntaken (880→884)
   -- Frame BEQ with addback atoms
-  have beq_f := cpsTriple_frame_left _ _ _ _ _
+  have beq_f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) **
      (.x11 ↦ᵣ q_hat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ aun0) **
@@ -1011,7 +1011,7 @@ theorem divK_double_addback_beq_spec
   have beq_ab2 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) beq_f AB2
   -- Frame BEQ passthrough with addback2 postcondition atoms
-  have BPTf := cpsTriple_frame_left _ _ _ _ _
+  have BPTf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) **
      (.x11 ↦ᵣ q_hat'') ** (.x5 ↦ᵣ aun4') ** (.x2 ↦ᵣ aun3') **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ aun0') **
@@ -1105,7 +1105,7 @@ theorem divK_store_loop_spec
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
+      (cpsTriple_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
   -- 4. Frame loop_control with store_qj postcondition atoms, then reshape
   have LCp : cpsBranch (base + 900) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
@@ -1196,15 +1196,15 @@ theorem divK_store_loop_j0_spec
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
+      (cpsTriple_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
   -- 6. Frame ADDI with x0 (BGE needs x0), then frame both with remaining atoms
-  have haddi_x0 := cpsTriple_frame_left _ _ _ _ _
+  have haddi_x0 := cpsTriple_frameR
       (.x0 ↦ᵣ (0 : Word)) (by pcFree) haddi_e
   -- Compose ADDI+x0 → BGE exit (both have x1 ** x0)
   have addi_bge := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) haddi_x0 hbge_exit
   -- Frame with remaining atoms
-  have addi_bge_framed := cpsTriple_frame_left _ _ _ _ _
+  have addi_bge_framed := cpsTriple_frameR
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ (0 : Word) <<< (3 : BitVec 6).toNat) ** (.x7 ↦ᵣ q_addr) **
        (q_addr ↦ₘ q_hat))
@@ -1281,15 +1281,15 @@ theorem divK_store_loop_jgt0_spec
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
+      (cpsTriple_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
   -- 6. Frame ADDI with x0, then frame both with remaining atoms
-  have haddi_x0 := cpsTriple_frame_left _ _ _ _ _
+  have haddi_x0 := cpsTriple_frameR
       (.x0 ↦ᵣ (0 : Word)) (by pcFree) haddi_e
   -- Compose ADDI+x0 → BGE exit (both have x1 ** x0)
   have addi_bge := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) haddi_x0 hbge_exit
   -- Frame with remaining atoms
-  have addi_bge_framed := cpsTriple_frame_left _ _ _ _ _
+  have addi_bge_framed := cpsTriple_frameR
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ q_addr) **
        (q_addr ↦ₘ q_hat))
@@ -1644,7 +1644,7 @@ theorem divK_mulsub_correction_addback_spec
   -- 4. Compose mulsub + correction_addback (→880)
   seqFrame MS CA
   -- 5. Frame BEQ with remaining atoms and compose (880→884)
-  have BEQf := cpsTriple_frame_left _ _ _ _ _
+  have BEQf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat') **
      (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ aun4) ** (.x6 ↦ᵣ u_base) **
      (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ aun3) **
@@ -1715,7 +1715,7 @@ theorem divK_trial_max_full_spec
   -- 3. Trial max (base+504 → base+516)
   have TM := divK_trial_max_extended v11_old base
   -- 4. Frame save_trial_load with x11 + x0, compose with BLTU ntaken
-  have STLf := cpsTriple_frame_left _ _ _ _ _
+  have STLf := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word))) (by pcFree) STL
   seqFrame STLf ntaken_clean
   -- 5. Frame BLTU ntaken result with x0 + memory, compose with trial_max
@@ -1820,7 +1820,7 @@ theorem divK_trial_call_full_spec
     halign
   dsimp only [] at TCP
   -- 4. Frame save_trial_load with x2, x11, x0, scratch memory
-  have STLf := cpsTriple_frame_left _ _ _ _ _
+  have STLf := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -1927,7 +1927,7 @@ theorem divK_mulsub_correction_addback_beq_spec
       ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2
       base hcarry2
     -- Frame DA with extra atoms from MCA_N postcondition
-    have DAf := cpsTriple_frame_left _ _ _ _ _
+    have DAf := cpsTriple_frameR
       ((.x1 ↦ᵣ j) ** (.x10 ↦ᵣ c3) **
        (sp + signExtend12 3976 ↦ₘ j))
       (by pcFree) DA

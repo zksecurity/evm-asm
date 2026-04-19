@@ -67,11 +67,11 @@ theorem divK_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
     hbeq_exit
   -- 4. Frame LD with x0, x5, x7, x2, x10
-  have hldf := cpsTriple_frame_left _ _ _ _ _
+  have hldf := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
     (by pcFree) hlde
   -- 5. Frame BEQ exit with x12, x5, x7, x2, x10, shift_mem
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq_clean
@@ -111,7 +111,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
         [.ADDI .x2 .x0 0] 2
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) haddi
   -- Frame ADDI with x12, x5, x7, x6, and all memory
-  have haddief := cpsTriple_frame_left _ _ _ _ _
+  have haddief := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ shift) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
@@ -128,7 +128,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
             show (base + denormOff : Word) + 12 = base + 920 from by bv_addr] at hlookup
         exact hlookup) a i h)) hsub
   -- Frame SUB with x12, x5, x7, x0, and all memory
-  have hsubf := cpsTriple_frame_left _ _ _ _ _
+  have hsubf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
@@ -143,7 +143,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 924) divK_denorm
         (divK_denorm_merge_prog 4056 4048) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm0
-  have hm0ef := cpsTriple_frame_left _ _ _ _ _
+  have hm0ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
     (by pcFree) hm0e
@@ -158,7 +158,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 948) divK_denorm
         (divK_denorm_merge_prog 4048 4040) 10
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm1
-  have hm1ef := cpsTriple_frame_left _ _ _ _ _
+  have hm1ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4032) ↦ₘ u3))
     (by pcFree) hm1e
@@ -173,7 +173,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 972) divK_denorm
         (divK_denorm_merge_prog 4040 4032) 16
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm2
-  have hm2ef := cpsTriple_frame_left _ _ _ _ _
+  have hm2ef := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1'))
     (by pcFree) hm2e
@@ -187,7 +187,7 @@ theorem divK_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Wor
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + 996) divK_denorm
         (divK_denorm_last_prog 4032) 22
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hl
-  have hlef := cpsTriple_frame_left _ _ _ _ _
+  have hlef := cpsTriple_frameR
     ((.x7 ↦ᵣ (u3 <<< (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
      ((sp + signExtend12 4040) ↦ₘ u2'))
@@ -248,11 +248,11 @@ theorem divK_div_epilogue_spec (sp : Word) (base : Word)
         (divK_epilogue_store_prog 24) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hstore
   -- Frame load with output memory
-  have hloadef := cpsTriple_frame_left _ _ _ _ _
+  have hloadef := cpsTriple_frameR
     (((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) ** ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
     (by pcFree) hloade
   -- Frame store with scratch memory
-  have hstoref := cpsTriple_frame_left _ _ _ _ _
+  have hstoref := cpsTriple_frameR
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3))
     (by pcFree) hstoree
@@ -327,7 +327,7 @@ theorem evm_mod_bzero_spec (sp base : Word)
       exact absurd hbz ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbeq := cpsTriple_extend_code (beq_singleton_sub_modCode base) hbeq_clean
   -- Step 3: Frame BEQ with regs + mem
-  have hbeq_framed := cpsTriple_frame_left _ _ _ _ _
+  have hbeq_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -340,7 +340,7 @@ theorem evm_mod_bzero_spec (sp base : Word)
     (divK_zeroPath_spec sp (base + zeroPathOff) b0 b1 b2 b3)
   rw [show (base + zeroPathOff : Word) + 20 = base + nopOff from by bv_addr] at hzp
   -- Frame ZP with x5 + x10 + x0
-  have hzp_framed := cpsTriple_frame_left _ _ _ _ _
+  have hzp_framed := cpsTriple_frameR
     ((.x5 ↦ᵣ (b0 ||| b1 ||| b2 ||| b3)) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) hzp
   -- Step 6: Compose AB → ZP: base → base+1068
@@ -382,7 +382,7 @@ theorem evm_mod_phaseA_ntaken_spec (sp base : Word)
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hbnz)
   have hbeq := cpsTriple_extend_code (beq_singleton_sub_modCode base) hbeq_clean
   -- Step 3: Frame BEQ with regs + mem
-  have hbeq_framed := cpsTriple_frame_left _ _ _ _ _
+  have hbeq_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -444,11 +444,11 @@ theorem divK_mod_epilogue_spec (sp : Word) (base : Word)
         (divK_epilogue_store_prog 24) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hstore
   -- Frame load with output memory
-  have hloadef := cpsTriple_frame_left _ _ _ _ _
+  have hloadef := cpsTriple_frameR
     (((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) ** ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
     (by pcFree) hloade
   -- Frame store with scratch memory
-  have hstoref := cpsTriple_frame_left _ _ _ _ _
+  have hstoref := cpsTriple_frameR
     (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
     (by pcFree) hstoree

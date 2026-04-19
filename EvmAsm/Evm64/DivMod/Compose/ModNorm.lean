@@ -72,7 +72,7 @@ theorem mod_phaseC2_ntaken_spec (sp shift v2 shift_mem : Word) (base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 (show shift ≠ (0 : Word) from hshift_nz))
   have hbeq := cpsTriple_extend_code (beq_shift_sub_modCode base) hbeq_clean
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq
@@ -102,7 +102,7 @@ theorem mod_phaseC2_taken_spec (sp shift v2 shift_mem : Word) (base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd hshift_z ((sepConj_pure_right _ _ _).mp h_rest).2)
   have hbeq := cpsTriple_extend_code (beq_shift_sub_modCode base) hbeq_clean
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq
@@ -152,7 +152,7 @@ private theorem mod_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (
         (divK_normB_merge_prog 56 48) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm1
   -- Frame merge1 with b[0], b[1] (not touched by merge1)
-  have hm1ef := cpsTriple_frame_left _ _ _ _ _
+  have hm1ef := cpsTriple_frameR
     (((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1))
     (by pcFree) hm1e
   -- Merge 2: b[2] with b[1] (base+252 -> base+276)
@@ -165,7 +165,7 @@ private theorem mod_normB_half1 (sp b0 b1 b2 b3 v5 v7 shift anti_shift : Word) (
       (CodeReq.ofProg_mono_sub (base + normBOff) (base + 252) divK_normB
         (divK_normB_merge_prog 48 40) 6
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm2
-  have hm2ef := cpsTriple_frame_left _ _ _ _ _
+  have hm2ef := cpsTriple_frameR
     (((sp + 32) ↦ₘ b0) ** ((sp + 56) ↦ₘ b3'))
     (by pcFree) hm2e
   have h12 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
@@ -200,7 +200,7 @@ private theorem mod_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base
       (CodeReq.ofProg_mono_sub (base + normBOff) (base + 276) divK_normB
         (divK_normB_merge_prog 40 32) 12
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm3
-  have hm3ef := cpsTriple_frame_left _ _ _ _ _
+  have hm3ef := cpsTriple_frameR
     (((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
     (by pcFree) hm3e
   -- Last: b[0] alone (base+300 -> base+312)
@@ -212,7 +212,7 @@ private theorem mod_normB_half2 (sp b0 b1 b2' b3' shift anti_shift : Word) (base
       (CodeReq.ofProg_mono_sub (base + normBOff) (base + 300) divK_normB
         (divK_normB_last_prog 32) 18
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hl
-  have hlef := cpsTriple_frame_left _ _ _ _ _
+  have hlef := cpsTriple_frameR
     ((.x7 ↦ᵣ (b0 >>> (anti_shift.toNat % 64))) ** (.x2 ↦ᵣ anti_shift) **
      ((sp + 40) ↦ₘ b1') ** ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3'))
     (by pcFree) hle

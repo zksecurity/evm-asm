@@ -129,7 +129,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
       (d128_sub_mod base 9 _ _ (by decide) (by bv_addr) (by decide)))))))))))
     hph1
   -- Frame phase1 with x0=0 (not used by phase1)
-  have hph1f := cpsTriple_frame_left _ _ _ _ _
+  have hph1f := cpsTriple_frameR
     (.x0 ↦ᵣ (0 : Word))
     (by pcFree) hph1e
   -- ================================================================
@@ -157,7 +157,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
       (d128_sub_mod base 24 _ _ (by decide) (by bv_addr) (by decide))))))))))))))))
     hst1
   -- Frame step1 with x2, mem[3968], mem[3960], mem[3944]
-  have hst1f := cpsTriple_frame_left _ _ _ _ _
+  have hst1f := cpsTriple_frameR
     ((.x2 ↦ᵣ ret_addr) ** (sp + signExtend12 3968 ↦ₘ ret_addr) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3944 ↦ₘ un0))
     (by pcFree) hst1e
@@ -179,7 +179,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
       (d128_sub_mod base 29 _ _ (by decide) (by bv_addr) (by decide))))))
     hcu
   -- Frame compute_un21 with x6, x0, x2, mem[3968], mem[3960], mem[3944]
-  have hcuf := cpsTriple_frame_left _ _ _ _ _
+  have hcuf := cpsTriple_frameR
     ((.x6 ↦ᵣ d_hi) ** (.x0 ↦ᵣ (0 : Word)) **
      (.x2 ↦ᵣ ret_addr) ** (sp + signExtend12 3968 ↦ₘ ret_addr) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3944 ↦ₘ un0))
@@ -212,7 +212,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
       (d128_sub_mod base 44 _ _ (by decide) (by bv_addr) (by decide))))))))))))))))
     hst2
   -- Frame step2 with x10, x2, mem[3968], mem[3960]
-  have hst2f := cpsTriple_frame_left _ _ _ _ _
+  have hst2f := cpsTriple_frameR
     ((.x10 ↦ᵣ q1') ** (.x2 ↦ᵣ ret_addr) **
      (sp + signExtend12 3968 ↦ₘ ret_addr) ** (sp + signExtend12 3960 ↦ₘ d))
     (by pcFree) hst2e
@@ -232,7 +232,7 @@ theorem mod_div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
       (d128_sub_mod base 48 _ _ (by decide) (by bv_addr) (by decide)))))
     hend
   -- Frame end with x7, x6, x1, x0, mem[3960], mem[3952], mem[3944]
-  have hendf := cpsTriple_frame_left _ _ _ _ _
+  have hendf := cpsTriple_frameR
     ((.x7 ↦ᵣ q0_dlo) ** (.x6 ↦ᵣ d_hi) ** (.x1 ↦ᵣ rhat2_un0) **
      (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3952 ↦ₘ d_lo) **

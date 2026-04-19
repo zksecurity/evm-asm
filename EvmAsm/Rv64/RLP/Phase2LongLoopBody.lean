@@ -149,7 +149,7 @@ theorem rlp_phase2_long_loop_body_spec
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) iter)
+      (cpsTriple_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) iter)
   -- BNE x14, x0, back at (base + 20). Taken when x14 ≠ 0, not taken when x14 = 0.
   have bne_raw := bne_spec_gen .x14 .x0 back cnt' (0 : Word) (base + 20)
   -- Frame BNE with all the other state (x11, x13, x12, dwordAddr) and

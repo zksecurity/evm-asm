@@ -98,7 +98,7 @@ theorem rlp_phase2_long_acc_spec (len byte : Word) (base : Word) :
       (CodeReq.singleton base (.SLLI .x11 .x11 8))
       ((.x11 ↦ᵣ len) ** (.x12 ↦ᵣ byte))
       ((.x11 ↦ᵣ (len <<< (8 : BitVec 6).toNat)) ** (.x12 ↦ᵣ byte)) :=
-    cpsTriple_frame_left _ _ _ _ _ (.x12 ↦ᵣ byte) (by pcFree) s1_base
+    cpsTriple_frameR (.x12 ↦ᵣ byte) (by pcFree) s1_base
   -- Step 2: ADD x11, x11, x12 — `add_spec_gen_rd_eq_rs1` (rd = rs1 = x11,
   -- rs2 = x12). No framing needed.
   have s2 := add_spec_gen_rd_eq_rs1 .x11 .x12

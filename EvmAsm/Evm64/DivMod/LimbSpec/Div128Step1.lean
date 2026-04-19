@@ -85,7 +85,7 @@ theorem divK_div128_step1_spec
   have h1 : cpsTriple base (base + 12) cr _ _ :=
     cpsTriple_extend_code (h := h1_raw) (hmono := by
       rw [hcr_eq]; exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_left _ _)))
-  have h1f := cpsTriple_frame_left _ _ _ _ _
+  have h1f := cpsTriple_frameR
     ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
      (sp + signExtend12 3952 ↦ₘ dlo))
     (by pcFree) h1
@@ -108,7 +108,7 @@ theorem divK_div128_step1_spec
           · split at h
             · next hab => rw [beq_iff_eq] at hab; subst hab; simp_all [CodeReq.beq_offset_self_left, CodeReq.beq_base_offset]
             · simp at h)
-  have h2f := cpsTriple_frame_left _ _ _ _ _
+  have h2f := cpsTriple_frameR
     ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1_old) ** (.x12 ↦ᵣ sp) **
      (sp + signExtend12 3952 ↦ₘ dlo))
     (by pcFree) h2
@@ -146,7 +146,7 @@ theorem divK_div128_step1_spec
                   · split at h
                     · next hab => rw [beq_iff_eq] at hab; subst hab; simp_all [CodeReq.beq_offset_self_left, CodeReq.beq_base_offset]
                     · simp at h)
-  have h3f := cpsTriple_frame_left _ _ _ _ _
+  have h3f := cpsTriple_frameR
     ((.x0 ↦ᵣ 0))
     (by pcFree) h3
   have h123 := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _

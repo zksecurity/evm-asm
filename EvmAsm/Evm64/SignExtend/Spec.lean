@@ -44,7 +44,7 @@ private theorem signext_nochange_lift (sp base : Word)
        evmWordIs sp b ** evmWordIs (sp + 32) result) := by
   subst hresult
   -- Frame x6 through the no-change spec, then weaken to regOwn
-  have hmain_f := cpsTriple_frame_left _ _ _ _ _ (.x6 ↦ᵣ r6) (by pcFree) hmain
+  have hmain_f := cpsTriple_frameR (.x6 ↦ᵣ r6) (by pcFree) hmain
   exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs] at hp

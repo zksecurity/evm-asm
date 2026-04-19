@@ -118,7 +118,7 @@ theorem rlp_phase2_long_load_acc_spec (len ptr v12_old word_val dwordAddr : Word
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x11 ↦ᵣ len) (by pcFree) lbu)
+      (cpsTriple_frameR (.x11 ↦ᵣ len) (by pcFree) lbu)
   -- Step 2: accumulation step at `base + 4`. Frame with `x13` and memory.
   have acc := rlp_phase2_long_acc_spec len byte_zext (base + 4)
   simp only [rlp_phase2_long_acc_post_unfold] at acc
@@ -132,7 +132,7 @@ theorem rlp_phase2_long_load_acc_spec (len ptr v12_old word_val dwordAddr : Word
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _
+      (cpsTriple_frameR
         ((.x13 ↦ᵣ ptr) ** (dwordAddr ↦ₘ word_val)) (by pcFree) acc)
   exact cpsTriple_seq _ _ _ _ _ hd _ _ _ lbu_framed acc_framed
 

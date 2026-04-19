@@ -110,7 +110,7 @@ theorem divK_div128_prodcheck2_merged_spec
         (.x5 ↦ᵣ q0)
         (.x5 ↦ᵣ (q0 + signExtend12 4095)) := by
       runBlock I5
-    have hcorr_framed := cpsTriple_frame_left _ _ _ _ _
+    have hcorr_framed := cpsTriple_frameR
       ((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ un0) **
        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
       (by pcFree) hcorr
@@ -140,7 +140,7 @@ theorem divK_div128_prodcheck2_merged_spec
       · next heq => rw [beq_iff_eq] at heq; subst heq; simp_all [cr, CodeReq.union, CodeReq.singleton]
       · simp at h
     have I_jal_cr := cpsTriple_extend_code hcr_jal I_jal
-    have hjal_framed := cpsTriple_frame_left _ _ _ _ _
+    have hjal_framed := cpsTriple_frameR
       ((.x1 ↦ᵣ rhat2_un0) ** (.x7 ↦ᵣ q0_dlo) ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) **
        (.x11 ↦ᵣ un0) **
        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))

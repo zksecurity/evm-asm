@@ -369,7 +369,7 @@ theorem shr_cascade_step_spec (v5 v10 : Word)
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x5 ↦ᵣ v5) (by pcFree) s1)
+      (cpsTriple_frameR (.x5 ↦ᵣ v5) (by pcFree) s1)
   -- Step 2: BEQ x5, x10, offset at base+4 (singleton CR)
   have s2_raw := beq_spec_gen .x5 .x10 offset v5 ((0 : Word) + signExtend12 k) (base + 4)
   rw [htarget, ha1] at s2_raw
@@ -419,7 +419,7 @@ theorem shr_cascade_step_spec_pure (v5 v10 : Word)
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x5 ↦ᵣ v5) (by pcFree) s1)
+      (cpsTriple_frameR (.x5 ↦ᵣ v5) (by pcFree) s1)
   have s2_raw := beq_spec_gen .x5 .x10 offset v5 ((0 : Word) + signExtend12 k) (base + 4)
   rw [htarget, ha1] at s2_raw
   -- Keep pure facts: frame with x0 + permute, preserving ⌜v5 = k_val⌝ / ⌜v5 ≠ k_val⌝

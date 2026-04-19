@@ -315,7 +315,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   -- Step 1: ADDI x10 x0 1 at base+4 (extend to cr, frame with x5)
   have addi1_raw := addi_spec_gen .x10 .x0 v10 (0 : Word) 1 (base + 4) (by nofun)
   have addi1_cr := cpsTriple_extend_code (byte_pc_sub_1 base) addi1_raw
-  have addi1f := cpsTriple_frame_left _ _ _ _ _
+  have addi1f := cpsTriple_frameR
     (.x5 ↦ᵣ v5) (by pcFree) addi1_cr
   -- Normalize ADDI1 exit PC
   have haddi1_exit : (base + 4 : Word) + 4 = base + 8 := by bv_omega
@@ -364,7 +364,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   -- Step 3: ADDI x10 x0 2 at base+12 (extend to cr, frame with x5)
   have addi2_raw := addi_spec_gen .x10 .x0 ((0 : Word) + signExtend12 1) (0 : Word) 2 (base + 12) (by nofun)
   have addi2_cr := cpsTriple_extend_code (byte_pc_sub_3 base) addi2_raw
-  have addi2f := cpsTriple_frame_left _ _ _ _ _
+  have addi2f := cpsTriple_frameR
     (.x5 ↦ᵣ v5) (by pcFree) addi2_cr
   -- Normalize ADDI2 exit PC
   have haddi2_exit : (base + 12 : Word) + 4 = base + 16 := by bv_omega

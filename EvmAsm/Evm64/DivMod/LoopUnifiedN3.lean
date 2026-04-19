@@ -55,7 +55,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
     have hMM := divK_loop_n3_max_max_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old base
       hbltu_1' hbltu_0' hcarry2
-    have hMMF := cpsTriple_frame_left _ _ _ _ _
+    have hMMF := cpsTriple_frameR
       ((sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **

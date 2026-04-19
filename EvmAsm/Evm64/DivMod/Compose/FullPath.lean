@@ -55,7 +55,7 @@ theorem evm_div_phaseAB_n4_clz_spec (sp base : Word)
   -- CLZ: base+116 → base+212, needs x5=b3 (leading limb), x6=b1, x7=b2
   have hCLZ := divK_clz_spec b3 b1 b2 base
   -- Frame CLZ with x12, x10, and all memory atoms
-  have hCLZf := cpsTriple_frame_left _ _ _ _ _
+  have hCLZf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
      ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -101,7 +101,7 @@ theorem evm_div_n4_to_normB_spec (sp base : Word)
   have hABCLZ := evm_div_phaseAB_n4_clz_spec sp base b0 b1 b2 b3 v5 v6 v7 v10
     q0 q1 q2 q3 u5 u6 u7 n_mem hbnz hb3nz
   -- Frame AB+CLZ with x2 and shift_mem (not touched by AB or CLZ)
-  have hABCLZf := cpsTriple_frame_left _ _ _ _ _
+  have hABCLZf := cpsTriple_frameR
     ((.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
      ((sp + signExtend12 3992) ↦ₘ shift_mem))
     (by pcFree) hABCLZ
@@ -110,7 +110,7 @@ theorem evm_div_n4_to_normB_spec (sp base : Word)
   have hC2 := divK_phaseC2_ntaken_spec sp shift ((clzResult b3).2 >>> (63 : Nat))
     shift_mem base hshift_nz
   -- Frame C2 with x5, x10, and all other memory
-  have hC2f := cpsTriple_frame_left _ _ _ _ _
+  have hC2f := cpsTriple_frameR
     ((.x5 ↦ᵣ (clzResult b3).2) ** (.x10 ↦ᵣ b3) **
      (.x7 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
@@ -129,7 +129,7 @@ theorem evm_div_n4_to_normB_spec (sp base : Word)
     shift anti_shift base
   intro_lets at hNB
   -- Frame NormB with x10, x0, and non-b[] memory
-  have hNBf := cpsTriple_frame_left _ _ _ _ _
+  have hNBf := cpsTriple_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
@@ -191,7 +191,7 @@ theorem evm_div_n4_to_loopSetup_spec (sp base : Word)
     q0 q1 q2 q3 u5 u6 u7 n_mem shift_mem hbnz hb3nz hshift_nz
 
   -- Frame NormB result with a[], u[] scratch, x1
-  have hNormBf := cpsTriple_frame_left _ _ _ _ _
+  have hNormBf := cpsTriple_frameR
     ((.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -205,7 +205,7 @@ theorem evm_div_n4_to_loopSetup_spec (sp base : Word)
     u0_old u1_old u2_old u3_old u4_old base
   intro_lets at hNormA
   -- Frame NormA with x0, b[], scratch q/u5-7/n/shift
-  have hNormAf := cpsTriple_frame_left _ _ _ _ _
+  have hNormAf := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
      ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
@@ -225,7 +225,7 @@ theorem evm_div_n4_to_loopSetup_spec (sp base : Word)
     (signExtend12 (4 : BitVec 12) - (4 : Word)) u1 base
     (by decide)
   -- Frame LoopSetup with everything except x5, x1, x0 + n_mem
-  have hLSf := cpsTriple_frame_left _ _ _ _ _
+  have hLSf := cpsTriple_frameR
     ((.x10 ↦ᵣ (a0 >>> (anti_shift.toNat % 64))) **
      (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ u0) ** (.x2 ↦ᵣ anti_shift) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -299,7 +299,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
   have hABCLZ := evm_div_phaseAB_n4_clz_spec sp base b0 b1 b2 b3 v5 v6 v7 v10
     q0 q1 q2 q3 u5 u6 u7 n_mem hbnz hb3nz
   -- Frame AB+CLZ with x2, x1, a[], u[0..4], shift_mem
-  have hABCLZf := cpsTriple_frame_left _ _ _ _ _
+  have hABCLZf := cpsTriple_frameR
     ((.x2 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
      (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -313,7 +313,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
   have hC2 := divK_phaseC2_taken_spec sp ((clzResult b3).1)
     ((clzResult b3).2 >>> (63 : Nat)) shift_mem base hshift_z
   -- Frame C2 with everything not in C2's assertion
-  have hC2f := cpsTriple_frame_left _ _ _ _ _
+  have hC2f := cpsTriple_frameR
     ((.x5 ↦ᵣ (clzResult b3).2) ** (.x10 ↦ᵣ b3) **
      (.x7 ↦ᵣ (clzResult b3).2 >>> (63 : Nat)) **
      (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -339,7 +339,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
   -- Normalize signExtend12 0 → 0 in CopyAU spec for xperm matching
   simp only [EvmAsm.Evm64.DivMod.AddrNorm.se12_0] at hCopy
   -- Frame CopyAU with registers and memory not in CopyAU
-  have hCopyf := cpsTriple_frame_left _ _ _ _ _
+  have hCopyf := cpsTriple_frameR
     ((.x6 ↦ᵣ (clzResult b3).1) **
      (.x2 ↦ᵣ signExtend12 (0 : BitVec 12) - (clzResult b3).1) **
      (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ b3) **
@@ -362,7 +362,7 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
     (signExtend12 (4 : BitVec 12) - (4 : Word)) a3 base
     (by decide)
   -- Frame LoopSetup
-  have hLSf := cpsTriple_frame_left _ _ _ _ _
+  have hLSf := cpsTriple_frameR
     ((.x10 ↦ᵣ b3) **
      (.x6 ↦ᵣ (clzResult b3).1) **
      (.x2 ↦ᵣ signExtend12 (0 : BitVec 12) - (clzResult b3).1) **
@@ -418,7 +418,7 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
 
   intro_lets at hDenorm
   -- Frame denorm with x10, q[], output memory
-  have hDenormF := cpsTriple_frame_left _ _ _ _ _
+  have hDenormF := cpsTriple_frameR
     ((.x10 ↦ᵣ v10) **
      ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
@@ -431,7 +431,7 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
     u3' shift (u3 <<< (anti_shift.toNat % 64)) v10 m0 m8 m16 m24
 
   -- Frame epilogue with x2, x0, u'[]
-  have hEpiF := cpsTriple_frame_left _ _ _ _ _
+  have hEpiF := cpsTriple_frameR
     ((.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
      ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3'))
@@ -472,7 +472,7 @@ theorem evm_mod_denorm_epilogue_spec (sp base : Word)
 
   intro_lets at hDenorm
   -- Frame denorm with x10, output memory
-  have hDenormF := cpsTriple_frame_left _ _ _ _ _
+  have hDenormF := cpsTriple_frameR
     ((.x10 ↦ᵣ v10) **
      ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
      ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
@@ -484,7 +484,7 @@ theorem evm_mod_denorm_epilogue_spec (sp base : Word)
     u3' shift (u3 <<< (anti_shift.toNat % 64)) v10 m0 m8 m16 m24
 
   -- Frame epilogue with x2, x0
-  have hEpiF := cpsTriple_frame_left _ _ _ _ _
+  have hEpiF := cpsTriple_frameR
     ((.x2 ↦ᵣ anti_shift) ** (.x0 ↦ᵣ (0 : Word)))
     (by pcFree) hEpi
   -- Compose denorm → epilogue
@@ -521,7 +521,7 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
   -- Step 1: Preamble (base+908 → base+916)
   have hPre := divK_denorm_preamble_spec sp shift v5 v6 v7 v2 v10 base hshift_nz
   -- Frame preamble with u[], q[], output memory
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
      ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
@@ -533,7 +533,7 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
   have hDE := evm_div_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
     q0 q1 q2 q3 m0 m8 m16 m24
   -- Frame epilogue with shift_mem
-  have hDEF := cpsTriple_frame_left _ _ _ _ _
+  have hDEF := cpsTriple_frameR
     (((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hDE
   -- Compose preamble → denorm+epilogue
@@ -599,11 +599,11 @@ theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
     hbeq_exit
   -- 4. Frame LD with x0, x5, x7, x2, x10
-  have hldf := cpsTriple_frame_left _ _ _ _ _
+  have hldf := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
     (by pcFree) hlde
   -- 5. Frame BEQ exit with x12, x5, x7, x2, x10, shift_mem
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq_clean
@@ -639,7 +639,7 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
   -- Step 1: Preamble (base+908 → base+916)
   have hPre := mod_denorm_preamble_spec sp shift v5 v6 v7 v2 v10 base hshift_nz
   -- Frame preamble with u[], output memory
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
      ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
@@ -649,7 +649,7 @@ theorem evm_mod_preamble_denorm_epilogue_spec (sp base : Word)
   have hDE := evm_mod_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
     m0 m8 m16 m24
   -- Frame epilogue with shift_mem
-  have hDEF := cpsTriple_frame_left _ _ _ _ _
+  have hDEF := cpsTriple_frameR
     (((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hDE
   -- Compose preamble → denorm+epilogue
@@ -725,11 +725,11 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd hshift_z ((sepConj_pure_right _ _ _).mp h_rest).2)
   -- 4. Frame LD with x0, x5, x7, x2, x10
-  have hldf := cpsTriple_frame_left _ _ _ _ _
+  have hldf := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
     (by pcFree) hlde
   -- 5. Frame BEQ taken with x12, x5, x7, x2, x10, shift_mem
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq_exit
@@ -737,7 +737,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
   have hPre := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hldf hbeqf
   -- Frame preamble with q[], output memory
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
@@ -748,7 +748,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
     v5 shift v7 v10 m0 m8 m16 m24
 
   -- Frame epilogue with x2, x0, shift_mem
-  have hEpiF := cpsTriple_frame_left _ _ _ _ _
+  have hEpiF := cpsTriple_frameR
     ((.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hEpi
@@ -812,11 +812,11 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd hshift_z ((sepConj_pure_right _ _ _).mp h_rest).2)
   -- 4. Frame LD with x0, x5, x7, x2, x10
-  have hldf := cpsTriple_frame_left _ _ _ _ _
+  have hldf := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10))
     (by pcFree) hlde
   -- 5. Frame BEQ taken with x12, x5, x7, x2, x10, shift_mem
-  have hbeqf := cpsTriple_frame_left _ _ _ _ _
+  have hbeqf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hbeq_exit
@@ -824,7 +824,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
   have hPre := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hldf hbeqf
   -- Frame preamble with u[], output memory
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
      ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
      ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
@@ -835,7 +835,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
     v5 shift v7 v10 m0 m8 m16 m24
 
   -- Frame epilogue with x2, x0, shift_mem
-  have hEpiF := cpsTriple_frame_left _ _ _ _ _
+  have hEpiF := cpsTriple_frameR
     ((.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
     (by pcFree) hEpi

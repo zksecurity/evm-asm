@@ -108,7 +108,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec (sp base : Word)
 
 
   -- Frame preloop with x11, j_mem, ret_mem, d_mem, dlo_mem, scratch_un0
-  have hPreF := cpsTriple_frame_left _ _ _ _ _
+  have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -125,7 +125,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec (sp base : Word)
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
   -- Frame loop body with a[], q[1-3]=0, padding, shift=0
-  have hLoopF := cpsTriple_frame_left _ _ _ _ _
+  have hLoopF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -269,7 +269,7 @@ theorem evm_div_n4_full_shift0_call_skip_spec (sp base : Word)
     b0 b1 b2 b3
     rfl
   -- Frame post-loop with remaining atoms
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4056) ↦ₘ ms.1) **

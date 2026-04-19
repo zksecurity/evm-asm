@@ -114,7 +114,7 @@ theorem rlp_phase1_step_spec (v5 v10 : Word)
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frame_left _ _ _ _ _ (.x5 ↦ᵣ v5) (by pcFree) s1)
+      (cpsTriple_frameR (.x5 ↦ᵣ v5) (by pcFree) s1)
   -- Step 2: BLTU x5, x10, offset at base+4
   have s2_raw := bltu_spec_gen .x5 .x10 offset v5
     ((0 : Word) + signExtend12 k) (base + 4)

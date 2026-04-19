@@ -415,7 +415,7 @@ theorem divK_loop_n2_max_max_spec
     (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
-  have J1f := cpsTriple_frame_left _ _ _ _ _
+  have J1f := cpsTriple_frameR
     (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J1
   -- 3. j=0  iteration spec (inputs from j=1 via iterN2Max)
@@ -440,7 +440,7 @@ theorem divK_loop_n2_max_max_spec
       (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
-  have J0f := cpsTriple_frame_left _ _ _ _ _
+  have J0f := cpsTriple_frameR
     (((u_base_1 + signExtend12 4064) ↦ₘ (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
      (q_addr_1 ↦ₘ (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
     (by pcFree) J0
@@ -492,7 +492,7 @@ theorem divK_loop_n2_call_call_spec
     (hcarry2 (div128Quot u2 u1 v1) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
-  have J1f := cpsTriple_frame_left _ _ _ _ _
+  have J1f := cpsTriple_frameR
     (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J1
   -- 3. j=0 call  iteration spec (inputs from j=1 via iterN2Call)
@@ -521,7 +521,7 @@ theorem divK_loop_n2_call_call_spec
       (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
-  have J0f := cpsTriple_frame_left _ _ _ _ _
+  have J0f := cpsTriple_frameR
     (((u_base_1 + signExtend12 4064) ↦ₘ (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
      (q_addr_1 ↦ₘ (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
     (by pcFree) J0
@@ -577,7 +577,7 @@ theorem divK_loop_n2_max_call_spec
     (hcarry2 (signExtend12 4095) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig, q0_old, AND scratch cells (max doesn't touch scratch)
-  have J1f := cpsTriple_frame_left _ _ _ _ _
+  have J1f := cpsTriple_frameR
     (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -609,7 +609,7 @@ theorem divK_loop_n2_max_call_spec
       (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1])
-  have J0f := cpsTriple_frame_left _ _ _ _ _
+  have J0f := cpsTriple_frameR
     (((u_base_1 + signExtend12 4064) ↦ₘ (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
      (q_addr_1 ↦ₘ (iterN2Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).1))
     (by pcFree) J0
@@ -666,7 +666,7 @@ theorem divK_loop_n2_call_max_spec
     (hcarry2 (div128Quot u2 u1 v1) u0 u1 u2 u3 u_top : isAddbackCarry2NzN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
   -- Frame j=1 with u0_orig and q0_old
-  have J1f := cpsTriple_frame_left _ _ _ _ _
+  have J1f := cpsTriple_frameR
     (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old))
     (by pcFree) J1
   -- 3. j=0 max  spec (inputs from j=1 via iterN2Call)
@@ -691,7 +691,7 @@ theorem divK_loop_n2_call_max_spec
       (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1)
   intro_lets at J0
   -- Frame j=0 with j=1's carried atoms (u4, q[1]) AND j=1's scratch cells
-  have J0f := cpsTriple_frame_left _ _ _ _ _
+  have J0f := cpsTriple_frameR
     (((u_base_1 + signExtend12 4064) ↦ₘ (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.2) **
      (q_addr_1 ↦ₘ (iterN2Call v0 v1 v2 v3 u0 u1 u2 u3 u_top).1) **
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **

@@ -159,7 +159,7 @@ theorem evm_dup_stack_spec (nsp base : Word)
     apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   rw [haddr_src, haddr_rest, show n - 1 + 1 = n from by omega] at hsplit
   -- Frame the evm_dup_evmword_spec with the stack prefix and suffix
-  have h_main := cpsTriple_frame_left _ _ _ _ _
+  have h_main := cpsTriple_frameR
     (evmStackIs (nsp + 32) (stack.take (n - 1)) **
      evmStackIs (nsp + BitVec.ofNat 64 (n * 32 + 32)) (stack.drop n))
     (by pcFree)

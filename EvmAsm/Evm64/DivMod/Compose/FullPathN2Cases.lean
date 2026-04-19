@@ -128,7 +128,7 @@ theorem evm_div_n2_full_FFT_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -261,7 +261,7 @@ theorem evm_div_n2_full_FTF_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -394,7 +394,7 @@ theorem evm_div_n2_full_FTT_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -527,7 +527,7 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -660,7 +660,7 @@ theorem evm_div_n2_full_TFT_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -793,7 +793,7 @@ theorem evm_div_n2_full_TTF_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
@@ -926,7 +926,7 @@ theorem evm_div_n2_full_TTT_spec (sp base : Word)
     c3_0 r0.1 r1.1 r2.1 (0 : Word)
     v0' v1' v2' v3'
     hshift_nz
-  have hBF := cpsTriple_frame_left _ _ _ _ _
+  have hBF := cpsTriple_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
