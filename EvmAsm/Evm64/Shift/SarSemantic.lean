@@ -101,11 +101,11 @@ private theorem sar_sign_fill_lift (sp base : Word)
        ((sp + 48) ↦ₘ BitVec.sshiftRight (value.getLimb 3) 63) **
        ((sp + 56) ↦ₘ BitVec.sshiftRight (value.getLimb 3) 63) **
        (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hq => by xperm_hyp hq)
       hframed
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       simp only [evmWordIs, ← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
                  ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3] at hp

@@ -61,7 +61,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (by pcFree) hMM
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => by delta loopN3PreWithScratch at hp; xperm_hyp hp)
       (fun h hp => by delta loopN3UnifiedPost; xperm_hyp hp)
       hMMF
@@ -74,7 +74,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hMC
@@ -86,7 +86,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hCM
@@ -98,7 +98,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
       ret_mem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
-    exact cpsTriple_consequence _ _ _ _ _ _ _
+    exact cpsTriple_weaken
       (fun h hp => hp)
       (fun h hp => by delta loopN3UnifiedPost; exact hp)
       hCC

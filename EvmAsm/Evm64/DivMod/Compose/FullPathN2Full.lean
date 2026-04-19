@@ -162,7 +162,7 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
         n2_ub2_off4064, n3_ub1_off4064, n2_qa2, n3_qa1,
         se12_32, se12_40, se12_48, se12_56] at hp
       xperm_hyp hp) hA hBF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullDivN2AllMaxPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull

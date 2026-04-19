@@ -282,7 +282,7 @@ theorem evm_div_n1_preloop_loop_unified_spec
                   n1_qa3 sp, n2_qa2 sp, n3_qa1 sp, n3_qa0 sp,
                   se12_32, se12_40, se12_48, se12_56]
       xperm_hyp hp) hPreF hLoopF
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopN1UnifiedPost; xperm_hyp hq)
     hFull

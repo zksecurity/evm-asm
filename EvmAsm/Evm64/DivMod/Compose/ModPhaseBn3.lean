@@ -148,7 +148,7 @@ theorem evm_mod_phaseB_n3_spec (sp base : Word)
     (by pcFree) htail
   have hphaseB := cpsTriple_seq_with_perm_same_cr _ _ _ _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h123456 htailf
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     hphaseB

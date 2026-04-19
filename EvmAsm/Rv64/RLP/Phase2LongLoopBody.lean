@@ -146,7 +146,7 @@ theorem rlp_phase2_long_loop_body_spec
        (.x13 ↦ᵣ (ptr + 1)) ** (.x14 ↦ᵣ cnt') **
        (.x12 ↦ᵣ byte_zext) ** (.x0 ↦ᵣ (0 : Word)) **
        (dwordAddr ↦ₘ word_val)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (cpsTriple_frame_left _ _ _ _ _ (.x0 ↦ᵣ (0 : Word)) (by pcFree) iter)

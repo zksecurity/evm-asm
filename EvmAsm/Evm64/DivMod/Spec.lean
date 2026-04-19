@@ -701,7 +701,7 @@ theorem evm_div_n4_full_max_skip_stack_pre_spec (sp base : Word)
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7
     n_mem shift_mem j_mem
     hbnz' hb3nz hshift_nz hbltu hborrow
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ rfl rfl rfl rfl,
           evmWordIs_sp32_limbs_eq sp b _ _ _ _ rfl rfl rfl rfl,
@@ -751,7 +751,7 @@ theorem evm_div_n4_full_max_skip_stack_pre_spec_bundled (sp base : Word)
   have h := evm_div_n4_full_max_skip_stack_pre_spec sp base a b
     v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     n_mem shift_mem j_mem hbnz hb3nz hshift_nz hbltu hborrow
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => by rw [divN4StackPre_unfold] at hp; exact hp)
     (fun _ hq => hq)
     h
@@ -785,7 +785,7 @@ theorem evm_div_bzero_stack_spec (sp base : Word)
   have hr1 := EvmWord.div_getLimbN_zero_right a 1
   have hr2 := EvmWord.div_getLimbN_zero_right a 2
   have hr3 := EvmWord.div_getLimbN_zero_right a 3
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
       xperm_hyp hp)
@@ -836,7 +836,7 @@ theorem evm_mod_bzero_stack_spec (sp base : Word)
   have hr1 := EvmWord.mod_getLimbN_zero_right a 1
   have hr2 := EvmWord.mod_getLimbN_zero_right a 2
   have hr3 := EvmWord.mod_getLimbN_zero_right a 3
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by
       rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
       xperm_hyp hp)

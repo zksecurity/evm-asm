@@ -114,7 +114,7 @@ theorem rlp_phase2_long_loop_two_byte_spec
       ((.x11 ↦ᵣ ((len <<< 8) + byte1)) ** (.x13 ↦ᵣ (ptr + 1)) **
        (.x14 ↦ᵣ (1 : Word)) ** (.x12 ↦ᵣ byte1) **
        (.x0 ↦ᵣ (0 : Word)) ** (dwordAddr ↦ₘ word_val)) :=
-    cpsTriple_consequence _ _ _ _ _ _ _
+    cpsTriple_weaken
       (fun _ hp => hp)
       (fun h hp => by
         simp only [rlp_phase2_long_loop_body_post_unfold] at hp
@@ -136,7 +136,7 @@ theorem rlp_phase2_long_loop_two_byte_spec
   -- Final post: rewrite `ptr + 1 + 1 = ptr + 2` and reshape.
   have h_ptr_2 : (ptr + 1 : Word) + 1 = ptr + 2 := by bv_omega
   rw [h_ptr_2] at composed
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
     composed
