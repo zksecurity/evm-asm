@@ -14,7 +14,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_464 se21_40)
+open EvmAsm.Rv64.AddrNorm (se13_464 se21_40 bv64_4mul_3)
 
 -- ============================================================================
 -- MOD CodeReq subsumption lemmas for blocks 5, 6, 7
@@ -240,7 +240,7 @@ private theorem blt_loopSetup_sub_modCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + loopSetupOff) (divK_loopSetup 464) 3
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 3) = (12 : Word) from by decide,
+  rw [bv64_4mul_3,
       show (base + loopSetupOff : Word) + 12 = base + 444 from by bv_addr] at hlookup
   exact divK_loopSetup_code_sub_modCode base a i
     (CodeReq.singleton_mono hlookup a i h)

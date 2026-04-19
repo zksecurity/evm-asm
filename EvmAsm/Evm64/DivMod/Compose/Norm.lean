@@ -12,7 +12,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_172)
+open EvmAsm.Rv64.AddrNorm (se13_172 bv64_4mul_3)
 
 /-- Phase C2 code (block 3) is subsumed by divCode. -/
 private theorem divK_phaseC2_code_sub_divCode (base : Word) :
@@ -28,7 +28,7 @@ private theorem beq_shift_sub_divCode (base : Word) :
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseC2Off) (divK_phaseC2 172) 3
     (by decide) (by decide)
-  rw [show BitVec.ofNat 64 (4 * 3) = (12 : Word) from by decide,
+  rw [bv64_4mul_3,
       show (base + phaseC2Off : Word) + 12 = base + 224 from by bv_addr] at hlookup
   exact divK_phaseC2_code_sub_divCode base a i
     (CodeReq.singleton_mono hlookup a i h)

@@ -13,6 +13,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (bv64_4mul_3)
 
 -- ============================================================================
 -- Denorm code subsumption for modCode (block 9, skip 9 blocks)
@@ -79,7 +80,7 @@ theorem mod_denorm_body_spec (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word
       (CodeReq.singleton_mono (by
         have hlookup := CodeReq.ofProg_lookup (base + denormOff) divK_denorm 3
           (by decide) (by decide)
-        rw [show BitVec.ofNat 64 (4 * 3) = (12 : Word) from by decide,
+        rw [bv64_4mul_3,
             show (base + denormOff : Word) + 12 = base + 920 from by bv_addr] at hlookup
         exact hlookup) a i h)) hsub
   -- Frame SUB with x12, x5, x7, x0, and all memory
