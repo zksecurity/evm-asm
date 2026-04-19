@@ -29,41 +29,41 @@ open EvmAsm.Rv64
 
 /-- Loop exit postcondition for n. Both taken (loop-back) and ntaken (exit)
     paths produce this same assertion shape, differing only in the output values.
-    Encapsulates u_base/j'/q_addr address computation + 21-atom assertion chain. -/
+    Encapsulates uBase/j'/q_addr address computation + 21-atom assertion chain. -/
 @[irreducible]
 def loopExitPost (n : Word) (sp j q_f c3 un0_f un1_f un2_f un3_f u4_f
     v0 v1 v2 v3 : Word) : Assertion :=
-  let u_base := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+  let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
   let j' := j + signExtend12 4095
   let q_addr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
   (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j') **
-  (.x5 ↦ᵣ j <<< (3 : BitVec 6).toNat) ** (.x6 ↦ᵣ u_base) **
+  (.x5 ↦ᵣ j <<< (3 : BitVec 6).toNat) ** (.x6 ↦ᵣ uBase) **
   (.x7 ↦ᵣ q_addr) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_f) **
   (.x2 ↦ᵣ un3_f) ** (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
-  ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_f) **
-  ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_f) **
-  ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_f) **
-  ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_f) **
-  ((u_base + signExtend12 4064) ↦ₘ u4_f) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0_f) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1_f) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2_f) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3_f) **
+  ((uBase + signExtend12 4064) ↦ₘ u4_f) **
   (q_addr ↦ₘ q_f)
 
 theorem loopExitPost_unfold (n: Word) (sp j q_f c3 un0_f un1_f un2_f un3_f u4_f
     v0 v1 v2 v3 : Word) :
     loopExitPost n sp j q_f c3 un0_f un1_f un2_f un3_f u4_f v0 v1 v2 v3 =
-    let u_base := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+    let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let j' := j + signExtend12 4095
     let q_addr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
     (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j') **
-    (.x5 ↦ᵣ j <<< (3 : BitVec 6).toNat) ** (.x6 ↦ᵣ u_base) **
+    (.x5 ↦ᵣ j <<< (3 : BitVec 6).toNat) ** (.x6 ↦ᵣ uBase) **
     (.x7 ↦ᵣ q_addr) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_f) **
     (.x2 ↦ᵣ un3_f) ** (.x0 ↦ᵣ (0 : Word)) **
     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
-    ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_f) **
-    ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_f) **
-    ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_f) **
-    ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_f) **
-    ((u_base + signExtend12 4064) ↦ₘ u4_f) **
+    ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0_f) **
+    ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1_f) **
+    ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2_f) **
+    ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3_f) **
+    ((uBase + signExtend12 4064) ↦ₘ u4_f) **
     (q_addr ↦ₘ q_f) := by
   delta loopExitPost; rfl
 
@@ -220,7 +220,7 @@ theorem loopBodyN3CallAddbackBeqPost_eq_J (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
 
 /-- Call+skip postcondition for n=1 loop body, generic j.
     Bundles div128Quot computation + loopBodyN1SkipPost + scratch cells.
-    For n=1: div128 uses u_hi=u1, u_lo=u0, v_top=v0. -/
+    For n=1: div128 uses u_hi=u1, u_lo=u0, vTop=v0. -/
 @[irreducible]
 def loopBodyN1CallSkipPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
   let q_hat := div128Quot u1 u0 v0
@@ -257,7 +257,7 @@ def loopBodyN1CallAddbackBeqPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Wor
 
 /-- Call+skip postcondition for n=2 loop body, generic j.
     Bundles div128Quot computation + loopBodyN2SkipPost + scratch cells.
-    For n=2: div128 uses u_hi=u2, u_lo=u1, v_top=v1. -/
+    For n=2: div128 uses u_hi=u2, u_lo=u1, vTop=v1. -/
 @[irreducible]
 def loopBodyN2CallSkipPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word) : Assertion :=
   let q_hat := div128Quot u2 u1 v1

@@ -97,7 +97,7 @@ elab "intro_lets" "at" h:ident : tactic => withMainContext do
       return none
     match existingFvar? with
     | some existingFvarId =>
-      -- Reuse existing let-def (avoids name collision like u_base vs u_base✝)
+      -- Reuse existing let-def (avoids name collision like uBase vs uBase✝)
       ty := _body.instantiate1 (.fvar existingFvarId)
     | none =>
       -- Add new local let-definition: `name : binderType := value`

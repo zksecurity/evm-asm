@@ -29,7 +29,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
-    let u_base := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
@@ -37,18 +37,18 @@ theorem divK_loop_body_n1_call_skip_j0_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-       ((u_base + signExtend12 4064) ↦ₘ u_top) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallSkipPostJ sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
-  intro u_base q_addr
+  intro uBase q_addr
   let d_hi := v0 >>> (32 : BitVec 6).toNat
   let d_lo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let div_un1 := u0 >>> (32 : BitVec 6).toNat
@@ -107,20 +107,20 @@ theorem divK_loop_body_n1_call_skip_j0_spec
   have SL := divK_store_loop_j0_spec sp q_hat u4_new (0 : Word) q_old base
   intro_lets at SL
   have TFf := cpsTriple_frameR
-    (((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **
+    (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ u_top) **
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCS0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
+    ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3) **
-     ((u_base + signExtend12 4064) ↦ₘ u4_new) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
+     ((uBase + signExtend12 4064) ↦ₘ u4_new) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v0) **
@@ -152,7 +152,7 @@ theorem divK_loop_body_n1_call_skip_j1_spec
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
-    let u_base := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+    let uBase := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
@@ -160,18 +160,18 @@ theorem divK_loop_body_n1_call_skip_j1_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-       ((u_base + signExtend12 4064) ↦ₘ u_top) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallSkipPostJ sp base (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
-  intro u_base q_addr
+  intro uBase q_addr
   let d_hi := v0 >>> (32 : BitVec 6).toNat
   let d_lo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let div_un1 := u0 >>> (32 : BitVec 6).toNat
@@ -231,20 +231,20 @@ theorem divK_loop_body_n1_call_skip_j1_spec
   have SL := divK_store_loop_jgt0_spec sp (1 : Word) q_hat u4_new (0 : Word) q_old base hj_pos
   intro_lets at SL
   have TFf := cpsTriple_frameR
-    (((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **
+    (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ u_top) **
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCS0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
+    ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ (1 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3) **
-     ((u_base + signExtend12 4064) ↦ₘ u4_new) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
+     ((uBase + signExtend12 4064) ↦ₘ u4_new) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v0) **
@@ -276,7 +276,7 @@ theorem divK_loop_body_n1_call_skip_j2_spec
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
-    let u_base := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
+    let uBase := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (2 : Word)) **
@@ -284,18 +284,18 @@ theorem divK_loop_body_n1_call_skip_j2_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-       ((u_base + signExtend12 4064) ↦ₘ u_top) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallSkipPostJ sp base (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
-  intro u_base q_addr
+  intro uBase q_addr
   let d_hi := v0 >>> (32 : BitVec 6).toNat
   let d_lo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let div_un1 := u0 >>> (32 : BitVec 6).toNat
@@ -355,20 +355,20 @@ theorem divK_loop_body_n1_call_skip_j2_spec
   have SL := divK_store_loop_jgt0_spec sp (2 : Word) q_hat u4_new (0 : Word) q_old base hj_pos
   intro_lets at SL
   have TFf := cpsTriple_frameR
-    (((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **
+    (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ u_top) **
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCS0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
+    ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ (2 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3) **
-     ((u_base + signExtend12 4064) ↦ₘ u4_new) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
+     ((uBase + signExtend12 4064) ↦ₘ u4_new) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v0) **
@@ -400,7 +400,7 @@ theorem divK_loop_body_n1_call_skip_j3_spec
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
-    let u_base := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
+    let uBase := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
     let q_addr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (3 : Word)) **
@@ -408,18 +408,18 @@ theorem divK_loop_body_n1_call_skip_j3_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-       ((u_base + signExtend12 4064) ↦ₘ u_top) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallSkipPostJ sp base (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
-  intro u_base q_addr
+  intro uBase q_addr
   let d_hi := v0 >>> (32 : BitVec 6).toNat
   let d_lo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let div_un1 := u0 >>> (32 : BitVec 6).toNat
@@ -479,20 +479,20 @@ theorem divK_loop_body_n1_call_skip_j3_spec
   have SL := divK_store_loop_jgt0_spec sp (3 : Word) q_hat u4_new (0 : Word) q_old base hj_pos
   intro_lets at SL
   have TFf := cpsTriple_frameR
-    (((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4080) ↦ₘ u2) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4064) ↦ₘ u_top) **
+    (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ u_top) **
      (q_addr ↦ₘ q_old))
     (by pcFree) TF
   seqFrame TFf MCS0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
+    ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ (3 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3) **
-     ((u_base + signExtend12 4064) ↦ₘ u4_new) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
+     ((uBase + signExtend12 4064) ↦ₘ u4_new) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v0) **

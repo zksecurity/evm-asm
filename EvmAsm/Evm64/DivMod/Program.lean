@@ -32,7 +32,7 @@
     x1  = loop counter j / temp
     x2  = anti_shift / subroutine return addr
     x5  = general temp
-    x6  = general temp / u_base in mul-sub
+    x6  = general temp / uBase in mul-sub
     x7  = general temp
     x10 = general temp / carry in mul-sub
     x11 = general temp / q_hat
@@ -227,9 +227,9 @@ def divK_loopSetup (blt_off : BitVec 13) : Program :=
 
     Layout within loop body (instruction indices relative to loop_start):
       [0]     SD save j
-      [1..13] load u[j+n], u[j+n-1], v_top; check u_hi>=v_top; call 128/64
+      [1..13] load u[j+n], u[j+n-1], vTop; check u_hi>=vTop; call 128/64
       [14]    LD restore j
-      [15..17] mul-sub setup (u_base, carry=0)
+      [15..17] mul-sub setup (uBase, carry=0)
       [18..61] mul-sub 4 limbs (4 × 11 instrs)
       [62..65] subtract carry from u[j+4]
       [66]    BEQ skip correction
@@ -251,29 +251,29 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   LD .x7 .x5 0 ;;                             -- [6] x7 = u[j+n] (hi)
   LD .x5 .x5 8 ;;                             -- [7] x5 = u[j+n-1] (lo)
 
-  -- Load v_top = b[n-1]
+  -- Load vTop = b[n-1]
   LD .x6 .x12 3984 ;;                         -- [8] n
   ADDI .x6 .x6 4095 ;;                        -- [9] n-1
   SLLI .x6 .x6 3 ;;                           -- [10] (n-1)*8
   single (.ADD .x6 .x12 .x6) ;;              -- [11] &b[n-1]
-  LD .x10 .x6 32 ;;                            -- [12] x10 = v_top = b[n-1]
+  LD .x10 .x6 32 ;;                            -- [12] x10 = vTop = b[n-1]
 
   -- Trial quotient
-  single (.BLTU .x7 .x10 12) ;;              -- [13] u_hi < v_top? → [16] call 128/64
+  single (.BLTU .x7 .x10 12) ;;              -- [13] u_hi < vTop? → [16] call 128/64
   ADDI .x11 .x0 4095 ;;                       -- [14] q_hat = MAX64
   JAL .x0 8 ;;                                 -- [15] skip call → [17]
   JAL .x2 subr_off ;;                          -- [16] call 128/64 subroutine
 
-  -- Restore j, compute u_base
+  -- Restore j, compute uBase
   LD .x1 .x12 3976 ;;                         -- [17] restore j
   SLLI .x5 .x1 3 ;;                           -- [18] j*8
   ADDI .x6 .x12 4056 ;;                       -- [19] sp-40
-  single (.SUB .x6 .x6 .x5) ;;               -- [20] x6 = u_base = &u[j]
+  single (.SUB .x6 .x6 .x5) ;;               -- [20] x6 = uBase = &u[j]
 
   -- Init carry = 0
   ADDI .x10 .x0 0 ;;                          -- [21] carry = 0
 
-  -- MUL-SUB LIMB 0: v[0] at sp+32, u[j+0] at u_base+0
+  -- MUL-SUB LIMB 0: v[0] at sp+32, u[j+0] at uBase+0
   LD .x5 .x12 32 ;;                           -- [22]
   single (.MUL .x7 .x11 .x5) ;;              -- [23] prod_lo
   single (.MULHU .x5 .x11 .x5) ;;            -- [24] prod_hi
@@ -286,7 +286,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.ADD .x10 .x10 .x5) ;;             -- [31] carry_out
   SD .x6 .x2 0 ;;                             -- [32] store u[j+0]
 
-  -- MUL-SUB LIMB 1: v[1] at sp+40, u[j+1] at u_base-8 (4088)
+  -- MUL-SUB LIMB 1: v[1] at sp+40, u[j+1] at uBase-8 (4088)
   LD .x5 .x12 40 ;;                           -- [33]
   single (.MUL .x7 .x11 .x5) ;;              -- [34]
   single (.MULHU .x5 .x11 .x5) ;;            -- [35]
@@ -299,7 +299,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.ADD .x10 .x10 .x5) ;;             -- [42]
   SD .x6 .x2 4088 ;;                          -- [43]
 
-  -- MUL-SUB LIMB 2: v[2] at sp+48, u[j+2] at u_base-16 (4080)
+  -- MUL-SUB LIMB 2: v[2] at sp+48, u[j+2] at uBase-16 (4080)
   LD .x5 .x12 48 ;;                           -- [44]
   single (.MUL .x7 .x11 .x5) ;;              -- [45]
   single (.MULHU .x5 .x11 .x5) ;;            -- [46]
@@ -312,7 +312,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.ADD .x10 .x10 .x5) ;;             -- [53]
   SD .x6 .x2 4080 ;;                          -- [54]
 
-  -- MUL-SUB LIMB 3: v[3] at sp+56, u[j+3] at u_base-24 (4072)
+  -- MUL-SUB LIMB 3: v[3] at sp+56, u[j+3] at uBase-24 (4072)
   LD .x5 .x12 56 ;;                           -- [55]
   single (.MUL .x7 .x11 .x5) ;;              -- [56]
   single (.MULHU .x5 .x11 .x5) ;;            -- [57]
@@ -325,7 +325,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.ADD .x10 .x10 .x5) ;;             -- [64]
   SD .x6 .x2 4072 ;;                          -- [65]
 
-  -- SUBTRACT CARRY FROM u[j+4]: u_base-32 (4064)
+  -- SUBTRACT CARRY FROM u[j+4]: uBase-32 (4064)
   LD .x5 .x6 4064 ;;                          -- [66] u[j+4]
   single (.SLTU .x7 .x5 .x10) ;;             -- [67] borrow
   single (.SUB .x5 .x5 .x10) ;;              -- [68]

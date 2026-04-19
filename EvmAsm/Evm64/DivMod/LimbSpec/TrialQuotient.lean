@@ -8,7 +8,7 @@
     * `divK_trial_load_u_spec` — 7-instruction block loading the high
       two limbs of `u[j..]` into x7/x5 at `uAddr = sp + 4056 - (j+n)*8`.
     * `divK_trial_load_vtop_spec` — 5-instruction block loading
-      `v_top = b[n-1]` and leaving its address in x6.
+      `vTop = b[n-1]` and leaving its address in x6.
     * `divK_trial_max_spec` — 2-instruction MAX path (ADDI x11, JAL)
       that clamps q_hat to MAX64 and jumps past the div128 call.
 
@@ -91,10 +91,10 @@ theorem divK_trial_load_u_spec (sp j n v5_old v7_old u_hi u_lo : Word)
   have I6 := ld_spec_gen_same .x5 uAddr u_lo 8 (base + 24) (by nofun)
   runBlock I0 I1 I2 I3 I4 I5 I6
 
-/-- Load v_top = b[n-1] for trial quotient estimation.
+/-- Load vTop = b[n-1] for trial quotient estimation.
     vtop_addr = sp + (n + signExtend12 4095) <<< 3.
-    v_top = mem[vtop_addr + 32]. -/
-theorem divK_trial_load_vtop_spec (sp n v6_old v10_old v_top : Word)
+    vTop = mem[vtop_addr + 32]. -/
+theorem divK_trial_load_vtop_spec (sp n v6_old v10_old vTop : Word)
     (base : Word) :
     let nm1 := n + signExtend12 4095
     let nm1_x8 := nm1 <<< (3 : BitVec 6).toNat
@@ -107,15 +107,15 @@ theorem divK_trial_load_vtop_spec (sp n v6_old v10_old v_top : Word)
        (CodeReq.singleton (base + 16) (.LD .x10 .x6 32)))))
     cpsTriple base (base + 20) cr
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6_old) ** (.x10 ↦ᵣ v10_old) **
-       (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ v_top))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ vtopBase) ** (.x10 ↦ᵣ v_top) **
-       (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ v_top)) := by
+       (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ vTop))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ vtopBase) ** (.x10 ↦ᵣ vTop) **
+       (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
   intro nm1 nm1_x8 vtopBase cr
   have I0 := ld_spec_gen .x6 .x12 sp v6_old n 3984 base (by nofun)
   have I1 := addi_spec_gen_same .x6 n 4095 (base + 4) (by nofun)
   have I2 := slli_spec_gen_same .x6 nm1 3 (base + 8) (by nofun)
   have I3 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1_x8 (base + 12) (by nofun)
-  have I4 := ld_spec_gen .x10 .x6 vtopBase v10_old v_top 32 (base + 16) (by nofun)
+  have I4 := ld_spec_gen .x10 .x6 vtopBase v10_old vTop 32 (base + 16) (by nofun)
   runBlock I0 I1 I2 I3 I4
 
 /-- Trial quotient MAX path: set q_hat = MAX64, jump over div128 call. -/

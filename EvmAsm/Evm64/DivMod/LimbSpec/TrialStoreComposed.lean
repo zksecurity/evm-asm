@@ -3,7 +3,7 @@
 
   Two straight-line composition specs for the Knuth loop body:
     * `divK_trial_load_spec` — 12-instruction composition (trial_load_u
-      + trial_load_vtop) that fetches `u_hi`, `u_lo`, and `v_top` from
+      + trial_load_vtop) that fetches `u_hi`, `u_lo`, and `vTop` from
       memory in preparation for the trial-quotient estimation.
     * `divK_store_qj_spec` — 4-instruction composition (store_qj_addr
       + store_qj_write) that computes `qAddr = sp + 4088 - 8*j` and
@@ -29,11 +29,11 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
-/-- Trial quotient load: fetch u_hi, u_lo, v_top from memory.
+/-- Trial quotient load: fetch u_hi, u_lo, vTop from memory.
     Instrs [1]-[12] of loop body.
-    Output: x7 = u_hi, x5 = u_lo, x10 = v_top, x6 = vtopBase. -/
+    Output: x7 = u_hi, x5 = u_lo, x10 = vTop, x6 = vtopBase. -/
 theorem divK_trial_load_spec
-    (sp j n v5_old v6_old v7_old v10_old u_hi u_lo v_top : Word)
+    (sp j n v5_old v6_old v7_old v10_old u_hi u_lo vTop : Word)
     (base : Word) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
     let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
@@ -56,13 +56,13 @@ theorem divK_trial_load_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) **
        (sp + signExtend12 3984 ↦ₘ n) **
        (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
-       (vtopBase + signExtend12 32 ↦ₘ v_top))
+       (vtopBase + signExtend12 32 ↦ₘ vTop))
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
+       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ vTop) **
        (sp + signExtend12 3984 ↦ₘ n) **
        (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
-       (vtopBase + signExtend12 32 ↦ₘ v_top)) := by
+       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
   intro uAddr vtopBase cr
   let jpn := j + n
   let jpn_x8 := jpn <<< (3 : BitVec 6).toNat
@@ -82,7 +82,7 @@ theorem divK_trial_load_spec
   have I8 := addi_spec_gen_same .x6 n 4095 (base + 32) (by nofun)
   have I9 := slli_spec_gen_same .x6 nm1 3 (base + 36) (by nofun)
   have I10 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1_x8 (base + 40) (by nofun)
-  have I11 := ld_spec_gen .x10 .x6 vtopBase v10_old v_top 32 (base + 44) (by nofun)
+  have I11 := ld_spec_gen .x10 .x6 vtopBase v10_old vTop 32 (base + 44) (by nofun)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11
 
 /-- Store q[j]: compute address and store q_hat. 4 instructions.
