@@ -617,9 +617,9 @@ theorem signext_phase_c_spec (v5 v10 : Word) (base : Word)
        (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)))] := by
   -- Address arithmetic
   have hc1 : ((base + 4 : Word) + 4) + signExtend13 60 = e1 := by
-    rw [show (base + 4 : Word) + 4 = base + 8 from by bv_omega]; exact he1
+    rw [show (base + 4 : Word) + 4 = base + 8 from by bv_addr]; exact he1
   have hc2 : ((base + 12 : Word) + 4) + signExtend13 24 = e2 := by
-    rw [show (base + 12 : Word) + 4 = base + 16 from by bv_omega]; exact he2
+    rw [show (base + 12 : Word) + 4 = base + 16 from by bv_addr]; exact he2
   -- Sub-CRs
   let cr_beq0 := CodeReq.singleton base (.BEQ .x5 .x0 100)
   let cr_cs1 := signext_cascade_step_code 1 60 (base + 4)
@@ -661,10 +661,10 @@ theorem signext_phase_c_spec (v5 v10 : Word) (base : Word)
     (.x10 ↦ᵣ v10) (by pcFree) beq0
   -- Step 1: cascade step at base+4
   have cs1 := signext_cascade_step_spec v5 v10 1 60 (base + 4) e1 hc1
-  rw [show (base + 4 : Word) + 8 = base + 12 from by bv_omega] at cs1
+  rw [show (base + 4 : Word) + 8 = base + 12 from by bv_addr] at cs1
   -- Step 2: cascade step at base+12
   have cs2 := signext_cascade_step_spec v5 ((0 : Word) + signExtend12 1) 2 24 (base + 12) e2 hc2
-  rw [show (base + 12 : Word) + 8 = base + 20 from by bv_omega] at cs2
+  rw [show (base + 12 : Word) + 8 = base + 20 from by bv_addr] at cs2
   -- Fallthrough at base+20
   have ft := cpsNBranch_refl (base + 20)
     ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)))
@@ -765,9 +765,9 @@ theorem signext_phase_c_spec_pure (v5 v10 : Word) (base : Word)
        (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
        (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
   have hc1 : ((base + 4 : Word) + 4) + signExtend13 60 = e1 := by
-    rw [show (base + 4 : Word) + 4 = base + 8 from by bv_omega]; exact he1
+    rw [show (base + 4 : Word) + 4 = base + 8 from by bv_addr]; exact he1
   have hc2 : ((base + 12 : Word) + 4) + signExtend13 24 = e2 := by
-    rw [show (base + 12 : Word) + 4 = base + 16 from by bv_omega]; exact he2
+    rw [show (base + 12 : Word) + 4 = base + 16 from by bv_addr]; exact he2
   let cr_beq0 := CodeReq.singleton base (.BEQ .x5 .x0 100)
   let cr_cs1 := signext_cascade_step_code 1 60 (base + 4)
   let cr_cs2 := signext_cascade_step_code 2 24 (base + 12)
@@ -801,7 +801,7 @@ theorem signext_phase_c_spec_pure (v5 v10 : Word) (base : Word)
       (cpsBranch_frame_left _ _ _ _ _ _ _ (.x10 ↦ᵣ v10) (by pcFree) beq0_raw)
   -- Step 1: cascade step at base+4
   have cs1_raw := signext_cascade_step_spec_pure v5 v10 1 60 (base + 4) e1 hc1
-  rw [show (base + 4 : Word) + 8 = base + 12 from by bv_omega] at cs1_raw
+  rw [show (base + 4 : Word) + 8 = base + 12 from by bv_addr] at cs1_raw
   have cs1f := cpsBranch_frame_left _ _ _ _ _ _ _ (⌜v5 ≠ (0 : Word)⌝) (pcFree_pure _) cs1_raw
   have cs1_clean : cpsBranch (base + 4) cr_cs1
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 ≠ (0 : Word)⌝)
@@ -819,7 +819,7 @@ theorem signext_phase_c_spec_pure (v5 v10 : Word) (base : Word)
       cs1f
   -- Step 2: cascade step at base+12
   have cs2_raw := signext_cascade_step_spec_pure v5 ((0 : Word) + signExtend12 1) 2 24 (base + 12) e2 hc2
-  rw [show (base + 12 : Word) + 8 = base + 20 from by bv_omega] at cs2_raw
+  rw [show (base + 12 : Word) + 8 = base + 20 from by bv_addr] at cs2_raw
   have cs2f := cpsBranch_frame_left _ _ _ _ _ _ _
     (⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝) (pcFree_pure _) cs2_raw
   have cs2_clean : cpsBranch (base + 12) cr_cs2
