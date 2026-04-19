@@ -103,6 +103,53 @@ theorem val256_lt_of_b3_bound (b0 b1 b2 b3 : Word) (s : Nat) (hs : s ≤ 64)
   nlinarith [h0, h1, h2, hb3_bound,
              (show 0 < 2 ^ (64 - s) from by positivity)]
 
+/-- Fully abstract Nat-level `u_top = c3_n` lemma. Takes all relevant
+    Euclidean equations and bounds as plain Nat facts — lets the caller
+    plug in `val256(ms_un)`, `val256(a) * 2^s`, etc. without forcing
+    the elaborator to unfold `mulsubN4` or `val256_normalized_mulsub_eq`
+    internals. Composes the un-normalized Euclidean equation with the
+    normalization identity and the 2^256 pigeonhole to collapse
+    `u_top - c3_n = 0`. -/
+theorem u_top_eq_c3_nat_form
+    {Va Vb Vms_un Vms_n Vu Vbn : Nat}
+    {u_top c3_n Q : Nat}
+    (s : Nat)
+    (h_Va : Va = Vms_un + Q * Vb)
+    (h_norm_u : Vu + u_top * 2 ^ 256 = Va * 2 ^ s)
+    (h_norm_b : Vbn = Vb * 2 ^ s)
+    (h_Vn : Vu + c3_n * 2 ^ 256 = Vms_n + Q * Vbn)
+    (h_Vms_un_lt_Vb : Vms_un < Vb)
+    (h_Vb_bound : Vb < 2 ^ (256 - s))
+    (hs_le : s ≤ 256)
+    (hs_pos : 0 < 2 ^ s)
+    (h_c3_le : c3_n ≤ u_top) :
+    u_top = c3_n := by
+  -- Scale un-normalized Euclidean by 2^s.
+  have h_Va_scaled : Va * 2 ^ s = Vms_un * 2 ^ s + Q * Vb * 2 ^ s := by
+    rw [h_Va]; ring
+  -- Merge the two Euclidean equations (via Va*2^s pivot).
+  have h_n_combined : Vu + c3_n * 2 ^ 256 = Vms_n + Q * (Vb * 2 ^ s) := by
+    rw [h_norm_b] at h_Vn; exact h_Vn
+  -- Va * 2^s + c3_n * 2^256 = Vms_n + Q * Vb * 2^s + u_top * 2^256
+  have h_shifted : Va * 2 ^ s + c3_n * 2 ^ 256 =
+      Vms_n + Q * Vb * 2 ^ s + u_top * 2 ^ 256 := by
+    have hqa : Q * (Vb * 2 ^ s) = Q * Vb * 2 ^ s := by ring
+    linarith [h_norm_u, h_n_combined, hqa]
+  -- Substitute h_Va_scaled and cancel Q * Vb * 2^s:
+  have h_cancel : Vms_un * 2 ^ s + c3_n * 2 ^ 256 = Vms_n + u_top * 2 ^ 256 := by
+    linarith
+  -- Bound Vms_un * 2^s < 2^256.
+  have hpow : (2 : Nat) ^ (256 - s) * 2 ^ s = 2 ^ 256 := by
+    rw [← pow_add, show (256 - s) + s = 256 from by omega]
+  have h_bound : Vms_un * 2 ^ s < 2 ^ 256 := by
+    calc Vms_un * 2 ^ s
+        < Vb * 2 ^ s := Nat.mul_lt_mul_right hs_pos |>.mpr h_Vms_un_lt_Vb
+      _ < 2 ^ (256 - s) * 2 ^ s := Nat.mul_lt_mul_right hs_pos |>.mpr h_Vb_bound
+      _ = 2 ^ 256 := hpow
+  -- Pigeonhole: from h_cancel + h_bound + h_c3_le → u_top = c3_n.
+  have h_eq_form : Vms_un * 2 ^ s =
+      Vms_n + (u_top - c3_n) * 2 ^ 256 := by omega
+  exact nat_top_eq_of_lt_pow256 h_c3_le h_eq_form h_bound
 
 end EvmWord
 
