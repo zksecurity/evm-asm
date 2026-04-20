@@ -136,8 +136,7 @@ theorem rlp_phase2_long_iter_spec
     rw [se12_0]; simpa using hvalid
   have lbu_raw := generic_lbu_spec .x12 .x13 ptr v12Old 0 base dwordAddr wordVal
     (by nofun) halign0 hvalid0
-  rw [show ptr + signExtend12 (0 : BitVec 12) = ptr from by
-        rw [se12_0]; bv_omega] at lbu_raw
+  rw [show ptr + signExtend12 (0 : BitVec 12) = ptr from by rv64_addr] at lbu_raw
   -- Step 2: SLLI x11, x11, 8.
   have slli_raw := slli_spec_gen_same .x11 len 8 (base + 4) (by nofun)
   rw [show (base + 4 : Word) + 4 = base + 8 from by bv_omega] at slli_raw
