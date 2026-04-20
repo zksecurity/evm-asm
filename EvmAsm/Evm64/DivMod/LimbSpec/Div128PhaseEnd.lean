@@ -34,7 +34,7 @@ open EvmAsm.Rv64
     Output: x6=dHi, x11=un1, x5=un0 (saved), x7=u_hi (unchanged). -/
 theorem divK_div128_phase1_spec
     (sp retAddr d u_lo u_hi v1_old v6_old v11_old
-     ret_mem d_mem dlo_mem un0_mem : Word) (base : Word) :
+     retMem d_mem dlo_mem un0_mem : Word) (base : Word) :
     let dHi := d >>> (32 : BitVec 6).toNat
     let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let un1 := u_lo >>> (32 : BitVec 6).toNat
@@ -54,7 +54,7 @@ theorem divK_div128_phase1_spec
       ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
        (.x6 ↦ᵣ v6_old) ** (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ u_lo) **
        (.x11 ↦ᵣ v11_old) ** (.x7 ↦ᵣ u_hi) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ un0_mem))
@@ -66,7 +66,7 @@ theorem divK_div128_phase1_spec
        (sp + signExtend12 3952 ↦ₘ dLo) **
        (sp + signExtend12 3944 ↦ₘ un0)) := by
   intro dHi dLo un1 un0 cr
-  have I0 := sd_spec_gen .x12 .x2 sp retAddr ret_mem 3968 base
+  have I0 := sd_spec_gen .x12 .x2 sp retAddr retMem 3968 base
   have I1 := sd_spec_gen .x12 .x10 sp d d_mem 3960 (base + 4)
   have I2 := srli_spec_gen .x6 .x10 v6_old d 32 (base + 8) (by nofun)
   have I3 := slli_spec_gen .x1 .x10 v1_old d 32 (base + 12) (by nofun)

@@ -61,10 +61,10 @@ def loopN3Pre (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
 @[irreducible]
 def loopN3PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN3Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -111,11 +111,11 @@ def loopN2PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_1 u0_orig_0
     q2_old q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN2Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_1 u0_orig_0 q2_old q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -152,10 +152,10 @@ def loopN2Iter10Pre (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
 @[irreducible]
 def loopN2Iter10PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN2Iter10Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -206,11 +206,11 @@ def loopN1PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_2 u0_orig_1 u0_orig_0
     q3_old q2_old q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN1Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_2 u0_orig_1 u0_orig_0 q3_old q2_old q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -247,10 +247,10 @@ def loopN1Iter10Pre (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
 @[irreducible]
 def loopN1Iter10PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN1Iter10Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -295,11 +295,11 @@ def loopN1Iter210PreWithScratch (sp j_old v5_old v6_old v7_old v10_old v11_old v
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_1 u0_orig_0
     q2_old q1_old q0_old
-    ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   loopN1Iter210Pre sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
     v0 v1 v2 v3 u0 u1 u2 u3 u_top
     u0_orig_1 u0_orig_0 q2_old q1_old q0_old **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
   (sp + signExtend12 3960 ↦ₘ d_mem) **
   (sp + signExtend12 3952 ↦ₘ dlo_mem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)

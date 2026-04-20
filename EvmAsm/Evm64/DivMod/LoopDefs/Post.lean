@@ -520,11 +520,11 @@ def loopN3CallMaxPost (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : A
 /-- Unified n=3 two-iteration postcondition with double addback. -/
 def loopN3UnifiedPost (bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    (retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   match bltu_1, bltu_0 with
   | false, false =>
     loopN3MaxPost sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig **
-    (sp + signExtend12 3968 ↦ₘ ret_mem) **
+    (sp + signExtend12 3968 ↦ₘ retMem) **
     (sp + signExtend12 3960 ↦ₘ d_mem) **
     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
     (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -583,11 +583,11 @@ def loopN2CallMaxPost (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word) : A
 /-- Unified n=2 two-iteration postcondition with double addback. -/
 def loopN2Iter10Post (bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    (retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   match bltu_1, bltu_0 with
   | false, false =>
     loopN2MaxPost sp v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig **
-    (sp + signExtend12 3968 ↦ₘ ret_mem) **
+    (sp + signExtend12 3968 ↦ₘ retMem) **
     (sp + signExtend12 3960 ↦ₘ d_mem) **
     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
     (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -601,14 +601,14 @@ def loopN2Iter10Post (bltu_1 bltu_0 : Bool)
 def loopN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
      u0_orig_1 u0_orig_0
-     ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+     retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   -- Compute j=2 result
   let r2 := iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top
   -- Address bases for j=2 carried atoms
   let u_base_2 := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
   let q_addr_2 := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
   -- Scratch values: call path overwrites them, max path passes through
-  let scratch_ret := if bltu_2 then (base + 516) else ret_mem
+  let scratch_ret := if bltu_2 then (base + 516) else retMem
   let scratch_d := if bltu_2 then v1 else d_mem
   let scratch_dlo := if bltu_2 then div128DLo v1 else dlo_mem
   let scratch_un0 := if bltu_2 then div128Un0 u1 else scratch_un0
@@ -627,7 +627,7 @@ def loopN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     Same structure as loopN1Iter10Post but uses iterN1 and loopIterPostN1. -/
 def loopN1Iter10Post (bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
-     ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+     retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   let r1 := iterN1 bltu_1 v0 v1 v2 v3 u0 u1 u2 u3 u_top
   let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
   let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
@@ -636,7 +636,7 @@ def loopN1Iter10Post (bltu_1 bltu_0 : Bool)
   ((u_base_1 + signExtend12 4064) ↦ₘ r1.2.2.2.2.2) ** (q_addr_1 ↦ₘ r1.1) **
   match bltu_1, bltu_0 with
   | false, false =>
-    (sp + signExtend12 3968 ↦ₘ ret_mem) **
+    (sp + signExtend12 3968 ↦ₘ retMem) **
     (sp + signExtend12 3960 ↦ₘ d_mem) **
     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
     (sp + signExtend12 3944 ↦ₘ scratch_un0)
@@ -654,12 +654,12 @@ def loopN1Iter10Post (bltu_1 bltu_0 : Bool)
 def loopN1Iter210Post (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
      u0_orig_1 u0_orig_0
-     ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+     retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   let r2 := iterN1 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 u_top
   let u_base_2 := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
   let q_addr_2 := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
   -- Scratch values: call path overwrites them, max path passes through
-  let scratch_ret := if bltu_2 then (base + 516) else ret_mem
+  let scratch_ret := if bltu_2 then (base + 516) else retMem
   let scratch_d := if bltu_2 then v0 else d_mem
   let scratch_dlo := if bltu_2 then div128DLo v0 else dlo_mem
   let scratch_un0 := if bltu_2 then div128Un0 u0 else scratch_un0
@@ -676,14 +676,14 @@ def loopN1Iter210Post (bltu_2 bltu_1 bltu_0 : Bool)
 def loopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
      u0_orig_2 u0_orig_1 u0_orig_0
-     ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+     retMem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
   -- Compute j=3 result
   let r3 := iterN1 bltu_3 v0 v1 v2 v3 u0 u1 u2 u3 u_top
   -- Address bases for j=3 carried atoms
   let u_base_3 := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
   let q_addr_3 := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
   -- Scratch values: call path overwrites them, max path passes through
-  let scratch_ret := if bltu_3 then (base + 516) else ret_mem
+  let scratch_ret := if bltu_3 then (base + 516) else retMem
   let scratch_d := if bltu_3 then v0 else d_mem
   let scratch_dlo := if bltu_3 then div128DLo v0 else dlo_mem
   let scratch_un0 := if bltu_3 then div128Un0 u0 else scratch_un0

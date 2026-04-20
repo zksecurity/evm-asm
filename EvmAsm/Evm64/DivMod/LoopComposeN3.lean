@@ -231,7 +231,7 @@ theorem divK_loop_body_n3_max_unified_j0_spec
 theorem divK_loop_body_n3_call_unified_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u3 v2)
@@ -250,7 +250,7 @@ theorem divK_loop_body_n3_call_unified_j1_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -261,7 +261,7 @@ theorem divK_loop_body_n3_call_unified_j1_spec
     have hborrow : isAddbackBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN3Call; simp only []; rw [if_pos hb]; decide
     have J1 := divK_loop_body_n3_call_addback_beq_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
+      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem d_mem dlo_mem scratch_un0 base
       halign
       hbltu hborrow hcarry2_nz
     intro_lets at J1
@@ -272,7 +272,7 @@ theorem divK_loop_body_n3_call_unified_j1_spec
   · -- skip path
     have hborrow : isSkipBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
     have J1 := divK_loop_body_n3_call_skip_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
+      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem d_mem dlo_mem scratch_un0 base
       halign
       hbltu hborrow
     intro_lets at J1
@@ -289,7 +289,7 @@ theorem divK_loop_body_n3_call_unified_j1_spec
 theorem divK_loop_body_n3_call_unified_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u3 v2)
@@ -308,7 +308,7 @@ theorem divK_loop_body_n3_call_unified_j0_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -319,7 +319,7 @@ theorem divK_loop_body_n3_call_unified_j0_spec
     have hborrow : isAddbackBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := by
       delta isAddbackBorrowN3Call; simp only []; rw [if_pos hb]; decide
     have J0 := divK_loop_body_n3_call_addback_beq_j0_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
+      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem d_mem dlo_mem scratch_un0 base
       halign
       hbltu hborrow hcarry2_nz
     intro_lets at J0
@@ -332,7 +332,7 @@ theorem divK_loop_body_n3_call_unified_j0_spec
   · -- skip path
     have hborrow : isSkipBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top := if_neg hb
     have J0 := divK_loop_body_n3_call_skip_j0_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
+      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem d_mem dlo_mem scratch_un0 base
       halign
       hbltu hborrow
     intro_lets at J0
@@ -434,7 +434,7 @@ theorem divK_loop_n3_max_max_spec
 theorem divK_loop_n3_call_call_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_1 : BitVec.ult u3 v2)
@@ -443,7 +443,7 @@ theorem divK_loop_n3_call_call_spec
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem d_mem dlo_mem scratch_un0)
       (loopN3CallCallPost sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
   delta loopN3PreWithScratch loopN3Pre; simp only []
   let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
@@ -452,7 +452,7 @@ theorem divK_loop_n3_call_call_spec
   let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
   -- 1. j=1 call  iteration spec
   have J1 := divK_loop_body_n3_call_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base halign
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old retMem d_mem dlo_mem scratch_un0 base halign
     hbltu_1
     (hcarry2 (div128Quot u3 u2 v2) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1
@@ -520,7 +520,7 @@ theorem divK_loop_n3_call_call_spec
 theorem divK_loop_n3_max_call_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     -- Branch conditions: j=1 max (BLTU not taken), j=0 call (BLTU taken)
@@ -530,7 +530,7 @@ theorem divK_loop_n3_max_call_spec
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem d_mem dlo_mem scratch_un0)
       (loopN3MaxCallPost sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
   delta loopN3PreWithScratch loopN3Pre; simp only []
   let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
@@ -546,7 +546,7 @@ theorem divK_loop_n3_max_call_spec
   -- Frame j=1 with u0_orig, q0_old, AND scratch cells (max doesn't touch scratch)
   have J1f := cpsTriple_frameR
     (((u_base_0 + signExtend12 0) ↦ₘ u0_orig) ** (q_addr_0 ↦ₘ q0_old) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) J1
   -- 3. j=0 call  spec (inputs from j=1 via iterN3Max, scratch from frame)
@@ -562,7 +562,7 @@ theorem divK_loop_n3_max_call_spec
     (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.1
     (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top).2.2.2.2.1
     q0_old
-    ret_mem d_mem dlo_mem scratch_un0
+    retMem d_mem dlo_mem scratch_un0
     base
     halign
 
@@ -608,7 +608,7 @@ theorem divK_loop_n3_max_call_spec
 theorem divK_loop_n3_call_max_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     -- Branch conditions: j=1 call (BLTU taken), j=0 max (BLTU not taken)
@@ -618,7 +618,7 @@ theorem divK_loop_n3_call_max_spec
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem d_mem dlo_mem scratch_un0)
       (loopN3CallMaxPost sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig) := by
   delta loopN3PreWithScratch loopN3Pre; simp only []
   let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
@@ -627,7 +627,7 @@ theorem divK_loop_n3_call_max_spec
   let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
   -- 1. j=1 call  spec (with scratch cells)
   have J1 := divK_loop_body_n3_call_unified_j1_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old ret_mem d_mem dlo_mem scratch_un0 base
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top q1_old retMem d_mem dlo_mem scratch_un0 base
     halign hbltu_1
     (hcarry2 (div128Quot u3 u2 v2) u0 u1 u2 u3 u_top : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top)
   intro_lets at J1

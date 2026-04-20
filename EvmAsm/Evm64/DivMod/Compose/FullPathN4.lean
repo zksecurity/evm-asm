@@ -537,7 +537,7 @@ def isAddbackBorrowN4Call (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
     (j_old v5_old v6_old v7_old v10_old v11_old v2_old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u_top v3) :
     let q_hat := div128Quot u_top u3 v3
@@ -557,7 +557,7 @@ theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + signExtend12 4024) ↦ₘ u_top) **
        ((sp + signExtend12 4088) ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -568,7 +568,7 @@ theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
        (sp + signExtend12 3944 ↦ₘ div_un0)) := by
   intro q_hat dLo div_un0 hborrow
   have raw := divK_loop_body_n4_call_skip_j0_divCode sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base halign hbltu
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem d_mem dlo_mem scratch_un0 base halign hbltu
   have raw' := raw hborrow
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
@@ -660,7 +660,7 @@ theorem preloopCallSkipPostN4_unfold (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
 theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0)
@@ -685,7 +685,7 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
        ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (preloopCallSkipPostN4 sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   unfold isCallTrialN4 at hbltu
@@ -709,13 +709,13 @@ theorem evm_div_n4_preloop_call_skip_spec (sp base : Word)
 
   have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ jMem) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
   have hLoop := divK_loop_body_n4_call_skip_j0_norm sp base
     jMem (4 : Word) shift u0 (a0 >>> (anti_shift.toNat % 64)) v11_old anti_shift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
-    ret_mem d_mem dlo_mem scratch_un0 halign
+    retMem d_mem dlo_mem scratch_un0 halign
 
     hbltu
   intro_lets at hLoop
@@ -780,7 +780,7 @@ def fullDivN4CallSkipPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 theorem evm_div_n4_full_call_skip_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
     (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0)
@@ -805,7 +805,7 @@ theorem evm_div_n4_full_call_skip_spec (sp base : Word)
        ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -829,7 +829,7 @@ theorem evm_div_n4_full_call_skip_spec (sp base : Word)
   have hA := evm_div_n4_preloop_call_skip_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
     q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    retMem d_mem dlo_mem scratch_un0
     hbnz hb3nz hshift_nz halign
     hbltu hborrow
   -- 2. Post-loop: base+904 → base+1068

@@ -137,7 +137,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_skip_j0_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -156,7 +156,7 @@ theorem divK_loop_body_n2_call_skip_j0_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -191,7 +191,7 @@ theorem divK_loop_body_n2_call_skip_j0_spec
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full (base+448 → base+516)
   have TF := divK_trial_call_full_spec sp (0 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (0 : Word)] at TF
@@ -359,7 +359,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_skip_j1_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -378,7 +378,7 @@ theorem divK_loop_body_n2_call_skip_j1_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -410,7 +410,7 @@ theorem divK_loop_body_n2_call_skip_j1_spec
   unfold isSkipBorrowN2Call div128Quot at hborrow
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (1 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (1 : Word)] at TF
@@ -574,7 +574,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_skip_j2_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -593,7 +593,7 @@ theorem divK_loop_body_n2_call_skip_j2_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -625,7 +625,7 @@ theorem divK_loop_body_n2_call_skip_j2_spec
   unfold isSkipBorrowN2Call div128Quot at hborrow
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (2 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (2 : Word)] at TF
@@ -786,7 +786,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_addback_j0_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -806,7 +806,7 @@ theorem divK_loop_body_n2_call_addback_j0_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -856,7 +856,7 @@ theorem divK_loop_body_n2_call_addback_j0_beq_spec
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full (base+448 → base+516)
   have TF := divK_trial_call_full_spec sp (0 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (0 : Word)] at TF
@@ -1000,7 +1000,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_addback_j1_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -1020,7 +1020,7 @@ theorem divK_loop_body_n2_call_addback_j1_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -1067,7 +1067,7 @@ theorem divK_loop_body_n2_call_addback_j1_beq_spec
     else carry
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (1 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (1 : Word)] at TF
@@ -1206,7 +1206,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n2_call_addback_j2_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u2 v1)
@@ -1226,7 +1226,7 @@ theorem divK_loop_body_n2_call_addback_j2_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -1273,7 +1273,7 @@ theorem divK_loop_body_n2_call_addback_j2_beq_spec
     else carry
   let vtopBase := sp + ((2 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (2 : Word) (2 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u2 u1 v1 ret_mem d_mem dlo_mem scratch_un0 base
+    u2 u1 v1 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n2 sp (2 : Word)] at TF

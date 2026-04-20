@@ -804,7 +804,7 @@ private theorem divK_trial_max_extended (v11_old : Word) (base : Word) :
 theorem divK_trial_call_path_spec
     (sp j u_lo u_hi v_top vtopBase : Word) (base : Word)
     (v2_old v11_old : Word)
-    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (retMem d_mem dlo_mem un0_mem : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516) :
     -- div128 intermediates (same as div128_spec)
     let dHi := v_top >>> (32 : BitVec 6).toNat
@@ -837,7 +837,7 @@ theorem divK_trial_call_path_spec
        (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
        (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
        (.x2 ↦ᵣ v2_old) ** (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ un0_mem))
@@ -858,7 +858,7 @@ theorem divK_trial_call_path_spec
     lb_sub base 16 _ _ (by decide) (by bv_addr) (by decide)) J
   -- 2. div128 subroutine: base+1072 → base+516
   have D := div128_spec sp (base + 516) v_top u_lo u_hi base
-    j vtopBase v11_old ret_mem d_mem dlo_mem un0_mem
+    j vtopBase v11_old retMem d_mem dlo_mem un0_mem
     halign
   dsimp only [] at D
   -- 3. Frame JAL with all registers/memory for div128
@@ -867,7 +867,7 @@ theorem divK_trial_call_path_spec
      (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
      (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ v_top) **
      (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) **
      (sp + signExtend12 3944 ↦ₘ un0_mem))
@@ -1738,7 +1738,7 @@ set_option maxRecDepth 4096 in
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_call_full_spec
     (sp j n j_old v5_old v6_old v7_old v10_old v11_old v2_old u_hi u_lo v_top : Word)
-    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (retMem d_mem dlo_mem un0_mem : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u_hi v_top) :
@@ -1778,7 +1778,7 @@ theorem divK_trial_call_full_spec
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ n) **
        (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
        (vtopBase + signExtend12 32 ↦ₘ v_top) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ un0_mem))
@@ -1816,13 +1816,13 @@ theorem divK_trial_call_full_spec
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp) taken
   -- 3. Trial call path (base+512 → base+516)
   have TCP := divK_trial_call_path_spec sp j u_lo u_hi v_top vtopBase base
-    v2_old v11_old ret_mem d_mem dlo_mem un0_mem
+    v2_old v11_old retMem d_mem dlo_mem un0_mem
     halign
   dsimp only [] at TCP
   -- 4. Frame save_trial_load with x2, x11, x0, scratch memory
   have STLf := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) **
      (sp + signExtend12 3944 ↦ₘ un0_mem))

@@ -269,7 +269,7 @@ theorem divK_loop_body_n3_max_addback_spec
 theorem divK_loop_body_n3_call_skip_spec
     (sp j j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u3 v2) :
@@ -315,7 +315,7 @@ theorem divK_loop_body_n3_call_skip_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -365,7 +365,7 @@ theorem divK_loop_body_n3_call_skip_spec
   let vtopBase := sp + ((3 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full (base+448 → base+516)
   have TF := divK_trial_call_full_spec sp j (3 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u3 u2 v2 ret_mem d_mem dlo_mem scratch_un0 base
+    u3 u2 v2 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n3 sp j] at TF
@@ -424,7 +424,7 @@ theorem divK_loop_body_n3_call_skip_spec
 theorem divK_loop_body_n3_call_addback_spec
     (sp j j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u3 v2) :
@@ -475,7 +475,7 @@ theorem divK_loop_body_n3_call_addback_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (qAddr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -512,7 +512,7 @@ theorem divK_loop_body_n3_call_addback_spec
   let vtopBase := sp + ((3 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full (base+448 → base+516)
   have TF := divK_trial_call_full_spec sp j (3 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u3 u2 v2 ret_mem d_mem dlo_mem scratch_un0 base
+    u3 u2 v2 retMem d_mem dlo_mem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n3 sp j] at TF

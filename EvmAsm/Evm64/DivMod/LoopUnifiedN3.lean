@@ -33,7 +33,7 @@ open EvmAsm.Rv64
 theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem d_mem dlo_mem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     -- Unified branch conditions (using iterN3 for j=0)
@@ -43,9 +43,9 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       (loopN3PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem d_mem dlo_mem scratch_un0)
       (loopN3UnifiedPost bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig
-        ret_mem d_mem dlo_mem scratch_un0) := by
+        retMem d_mem dlo_mem scratch_un0) := by
   cases bltu_1 <;> cases bltu_0 <;> simp only [iterN3_true, iterN3_false] at hbltu_0
   · -- (false, false) = max×max
     have hbltu_1' : ¬BitVec.ult u3 v2 := by
@@ -56,7 +56,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old base
       hbltu_1' hbltu_0' hcarry2
     have hMMF := cpsTriple_frameR
-      ((sp + signExtend12 3968 ↦ₘ ret_mem) **
+      ((sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
@@ -72,7 +72,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hbltu_0.symm ▸ rfl
     have hMC := divK_loop_n3_max_call_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-      ret_mem d_mem dlo_mem scratch_un0 base halign
+      retMem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_weaken
       (fun h hp => hp)
@@ -84,7 +84,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       rw [show BitVec.ult _ v2 = false from hbltu_0.symm]; decide
     have hCM := divK_loop_n3_call_max_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-      ret_mem d_mem dlo_mem scratch_un0 base halign
+      retMem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_weaken
       (fun h hp => hp)
@@ -96,7 +96,7 @@ theorem divK_loop_n3_unified_spec (bltu_1 bltu_0 : Bool)
       hbltu_0.symm ▸ rfl
     have hCC := divK_loop_n3_call_call_spec sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig q1_old q0_old
-      ret_mem d_mem dlo_mem scratch_un0 base halign
+      retMem d_mem dlo_mem scratch_un0 base halign
       hbltu_1' hbltu_0' hcarry2
     exact cpsTriple_weaken
       (fun h hp => hp)

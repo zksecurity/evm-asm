@@ -32,7 +32,7 @@ open EvmAsm.Rv64
 
 /-- div128 Phase 1a: save x2 (return addr) and x10 (d), compute dHi and dLo. -/
 theorem divK_div128_save_split_d_spec (sp retAddr d v1_old v6_old
-    ret_mem d_mem dlo_mem : Word) (base : Word) :
+    retMem d_mem dlo_mem : Word) (base : Word) :
     let dHi := d >>> (32 : BitVec 6).toNat
     let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let cr :=
@@ -45,7 +45,7 @@ theorem divK_div128_save_split_d_spec (sp retAddr d v1_old v6_old
     cpsTriple base (base + 24) cr
       ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
        (.x6 ↦ᵣ v6_old) ** (.x1 ↦ᵣ v1_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem))
       ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
