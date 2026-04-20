@@ -1070,7 +1070,15 @@ elab "crMono" : tactic => do
 /-- Lightweight address arithmetic: proves `(a + k₁) + k₂ = a + k₃` via
     BitVec associativity + constant folding. Generates much smaller kernel
     proof terms than `bv_omega` (one `add_assoc` rewrite + `rfl` vs full
-    Presburger arithmetic proof). -/
+    Presburger arithmetic proof).
+
+    **Prefer `rv64_addr`** (in `EvmAsm/Rv64/AddrNorm.lean`) for new code:
+    it subsumes `bv_addr` via its simp fallback and additionally handles
+    goals that mix `signExtend13`/`signExtend21` evaluations on the
+    common branch/jump offsets — shapes this macro cannot close. `bv_addr`
+    remains here because >400 existing call-sites are still pure
+    associativity and migrating them is net-neutral churn; pick `rv64_addr`
+    only when a `signExtend` is in the goal. -/
 macro "bv_addr" : tactic =>
   `(tactic| (simp only [BitVec.add_assoc]; rfl))
 
