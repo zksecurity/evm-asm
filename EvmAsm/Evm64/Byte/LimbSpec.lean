@@ -332,7 +332,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   have cs1_composed := cpsTriple_seq_cpsBranch_with_perm_same_cr
     (base + 4) (base + 8) cr _ _ _ e1 _ (base + 12) _
     (fun h hp => by xperm_hyp hp) addi1f beq1f
-  -- Clean up cs1 to canonical form via cpsBranch_consequence
+  -- Clean up cs1 to canonical form via cpsBranch_weaken
   have cs1_clean : cpsBranch (base + 4) cr
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       e1 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝)
