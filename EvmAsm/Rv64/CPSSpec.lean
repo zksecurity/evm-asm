@@ -18,7 +18,7 @@
 
   Structural rules:
   - cpsTriple_seq: sequential composition
-  - cpsTriple_consequence: pre/post strengthening/weakening
+  - cpsTriple_weaken: pre/post strengthening/weakening
   - cpsBranch_merge: merge two branch exits into a single continuation
 
   All assertions are `Assertion` (predicates on PartialState), bridged to
@@ -82,8 +82,7 @@ theorem cpsTriple_seq (l1 l2 l3 : Word) (cr1 cr2 : CodeReq)
     because (P' ** R).holdsFor s → (P ** R).holdsFor s requires P' h → P h pointwise.
 
     All pre/post-condition arguments are implicit: `P`/`Q` unify from the triple
-    `h`, `P'`/`Q'` from the expected goal type. Prefer this over
-    `cpsTriple_consequence` (which takes seven explicit `_` arguments). -/
+    `h`, `P'`/`Q'` from the expected goal type. -/
 theorem cpsTriple_weaken {entry exit_ : Word} {cr : CodeReq}
     {P P' Q Q' : Assertion}
     (hpre  : ∀ h, P' h → P h)
@@ -98,17 +97,6 @@ theorem cpsTriple_weaken {entry exit_ : Word} {cr : CodeReq}
   exact ⟨k, s', hstep, hpc', by
     obtain ⟨hp, hcompat, hpq⟩ := hQR
     exact ⟨hp, hcompat, sepConj_mono_left hpost hp hpq⟩⟩
-
-/-- Explicit-argument variant of `cpsTriple_weaken`. Kept for backwards
-    compatibility; prefer `cpsTriple_weaken` in new code. -/
-@[deprecated cpsTriple_weaken (since := "2026-04-19")]
-theorem cpsTriple_consequence (entry exit_ : Word) (cr : CodeReq)
-    (P P' Q Q' : Assertion)
-    (hpre  : ∀ h, P' h → P h)
-    (hpost : ∀ h, Q h → Q' h)
-    (h : cpsTriple entry exit_ cr P Q) :
-    cpsTriple entry exit_ cr P' Q' :=
-  cpsTriple_weaken hpre hpost h
 
 /-- Strip a pure hypothesis from a `cpsTriple`'s precondition and use it
     simultaneously to weaken the postcondition. The pre-assertion `P ** ⌜fact⌝`
@@ -144,8 +132,7 @@ theorem cpsTriple_strip_pure_and_convert
 /-- Rule of consequence for cpsBranch: strengthen pre, weaken both posts.
 
     All pre/post-condition arguments are implicit: `P`/`Q_t`/`Q_f` unify from
-    the branch `h`, and `P'`/`Q_t'`/`Q_f'` from the expected goal type. Prefer
-    this over `cpsBranch_consequence` (which takes nine explicit `_` arguments). -/
+    the branch `h`, and `P'`/`Q_t'`/`Q_f'` from the expected goal type. -/
 theorem cpsBranch_weaken {entry : Word} {cr : CodeReq}
     {P P' : Assertion} {exit_t : Word} {Q_t Q_t' : Assertion}
     {exit_f : Word} {Q_f Q_f' : Assertion}
@@ -166,19 +153,6 @@ theorem cpsBranch_weaken {entry : Word} {cr : CodeReq}
   · exact ⟨k, s', hstep, Or.inr ⟨hpc_f, by
       obtain ⟨hp, hcompat, hpq⟩ := hQR_f
       exact ⟨hp, hcompat, sepConj_mono_left hpost_f hp hpq⟩⟩⟩
-
-/-- Explicit-argument variant of `cpsBranch_weaken`. Kept for backwards
-    compatibility; prefer `cpsBranch_weaken` in new code. -/
-@[deprecated cpsBranch_weaken (since := "2026-04-19")]
-theorem cpsBranch_consequence (entry : Word) (cr : CodeReq)
-    (P P' : Assertion) (exit_t : Word) (Q_t Q_t' : Assertion)
-    (exit_f : Word) (Q_f Q_f' : Assertion)
-    (hpre : ∀ h, P' h → P h)
-    (hpost_t : ∀ h, Q_t h → Q_t' h)
-    (hpost_f : ∀ h, Q_f h → Q_f' h)
-    (h : cpsBranch entry cr P exit_t Q_t exit_f Q_f) :
-    cpsBranch entry cr P' exit_t Q_t' exit_f Q_f' :=
-  cpsBranch_weaken hpre hpost_t hpost_f h
 
 /-- Swap the two branch targets of a cpsBranch. -/
 theorem cpsBranch_swap (entry : Word) (cr : CodeReq) (P : Assertion)
@@ -296,16 +270,6 @@ theorem cpsBranch_takenPath {entry l_t l_f : Word} {cr : CodeReq}
   · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQf, hR'⟩ := hQ_fR
     exact absurd hQf (h_absurd h1)
 
-/-- Explicit-argument variant of `cpsBranch_takenPath`. Kept for backwards
-    compatibility; prefer `cpsBranch_takenPath` in new code. -/
-@[deprecated cpsBranch_takenPath (since := "2026-04-19")]
-theorem cpsBranch_elim_taken (entry l_t l_f : Word) (cr : CodeReq)
-    (P Q_t Q_f : Assertion)
-    (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
-    (h_absurd : ∀ hp, Q_f hp → False) :
-    cpsTriple entry l_t cr P Q_t :=
-  cpsBranch_takenPath hbr h_absurd
-
 /-- Extract the not-taken path from a cpsBranch when the taken postcondition
     is unsatisfiable (e.g., contains a contradictory pure fact).
     All position/code/pre/post arguments are implicit — unify from `hbr`. -/
@@ -320,16 +284,6 @@ theorem cpsBranch_ntakenPath {entry l_t l_f : Word} {cr : CodeReq}
   · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQt, hR'⟩ := hQ_tR
     exact absurd hQt (h_absurd h1)
   · exact ⟨k, s', hstep, hpc_f, hQ_fR⟩
-
-/-- Explicit-argument variant of `cpsBranch_ntakenPath`. Kept for backwards
-    compatibility; prefer `cpsBranch_ntakenPath` in new code. -/
-@[deprecated cpsBranch_ntakenPath (since := "2026-04-19")]
-theorem cpsBranch_elim_ntaken (entry l_t l_f : Word) (cr : CodeReq)
-    (P Q_t Q_f : Assertion)
-    (hbr : cpsBranch entry cr P l_t Q_t l_f Q_f)
-    (h_absurd : ∀ hp, Q_t hp → False) :
-    cpsTriple entry l_f cr P Q_f :=
-  cpsBranch_ntakenPath hbr h_absurd
 
 /-- Eliminate the not-taken path from a cpsBranch AND strip the trailing pure fact
     from the taken postcondition (depth 2: A ** B ** ⌜P⌝ → A ** B). All arguments
@@ -432,18 +386,7 @@ theorem cpsTriple_seq_cpsBranch_perm_same_cr {entry mid : Word} {cr : CodeReq}
     (h2 : cpsBranch mid cr Q2 exit_t Q_t exit_f Q_f) :
     cpsBranch entry cr P exit_t Q_t exit_f Q_f :=
   cpsTriple_seq_cpsBranch_same_cr entry mid cr P Q2 exit_t Q_t exit_f Q_f
-    (cpsTriple_consequence entry mid cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
-
-/-- Explicit-argument variant of `cpsTriple_seq_cpsBranch_perm_same_cr`. Deprecated;
-    prefer `cpsTriple_seq_cpsBranch_perm_same_cr` in new code. -/
-@[deprecated cpsTriple_seq_cpsBranch_perm_same_cr (since := "2026-04-19")]
-theorem cpsTriple_seq_cpsBranch_with_perm_same_cr (entry mid : Word) (cr : CodeReq)
-    (P Q1 Q2 : Assertion) (exit_t : Word) (Q_t : Assertion) (exit_f : Word) (Q_f : Assertion)
-    (hperm : ∀ h, Q1 h → Q2 h)
-    (h1 : cpsTriple entry mid cr P Q1)
-    (h2 : cpsBranch mid cr Q2 exit_t Q_t exit_f Q_f) :
-    cpsBranch entry cr P exit_t Q_t exit_f Q_f :=
-  cpsTriple_seq_cpsBranch_perm_same_cr hperm h1 h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 -- ============================================================================
 -- N-exit CPS specifications
@@ -710,7 +653,7 @@ theorem cpsTriple_seq_with_perm (s m e : Word) (cr1 cr2 : CodeReq)
     (h2 : cpsTriple m e cr2 Q2 R) :
     cpsTriple s e (cr1.union cr2) P R :=
   cpsTriple_seq s m e cr1 cr2 hd P Q2 R
-    (cpsTriple_consequence s m cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Sequence with same CodeReq: compose two CPS triples sharing the same CodeReq.
     Unlike `cpsTriple_seq`, does not require disjointness (same cr on both sides). -/
@@ -728,24 +671,13 @@ theorem cpsTriple_seq_same_cr (l1 l2 l3 : Word) (cr : CodeReq)
     Like `cpsTriple_seq_with_perm` but for same-CR (no disjointness required).
 
     All position/code/assertion arguments are implicit: `s`, `m`, `e`, `cr`,
-    `P`, `Q1`, `R` unify from `h1`/`h2`, and `Q2` from `hperm`. Prefer this
-    over `cpsTriple_seq_with_perm_same_cr` (which takes nine explicit
-    arguments before the proof inputs). -/
+    `P`, `Q1`, `R` unify from `h1`/`h2`, and `Q2` from `hperm`. -/
 theorem cpsTriple_seq_perm_same_cr {s m e : Word} {cr : CodeReq}
     {P Q1 Q2 R : Assertion} (hperm : ∀ h, Q1 h → Q2 h)
     (h1 : cpsTriple s m cr P Q1) (h2 : cpsTriple m e cr Q2 R) :
     cpsTriple s e cr P R :=
   cpsTriple_seq_same_cr s m e cr P Q2 R
-    (cpsTriple_consequence s m cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
-
-/-- Explicit-argument variant of `cpsTriple_seq_perm_same_cr`. Kept for
-    backwards compatibility; prefer `cpsTriple_seq_perm_same_cr` in new code. -/
-@[deprecated cpsTriple_seq_perm_same_cr (since := "2026-04-19")]
-theorem cpsTriple_seq_with_perm_same_cr (s m e : Word) (cr : CodeReq)
-    (P Q1 Q2 R : Assertion) (hperm : ∀ h, Q1 h → Q2 h)
-    (h1 : cpsTriple s m cr P Q1) (h2 : cpsTriple m e cr Q2 R) :
-    cpsTriple s e cr P R :=
-  cpsTriple_seq_perm_same_cr hperm h1 h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 -- ============================================================================
 -- Cascade composition (for dispatch chains like Phase C)
@@ -778,7 +710,7 @@ theorem cpsTriple_seq_cpsNBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq
     (h2 : cpsNBranch mid cr2 Q2 exits) :
     cpsNBranch entry (cr1.union cr2) P exits :=
   cpsTriple_seq_cpsNBranch entry mid cr1 cr2 hd P Q2 exits
-    (cpsTriple_consequence entry mid cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Sequential composition: cpsTriple followed by cpsBranch.
     If code reaches mid with Q, and from mid it branches, then the
@@ -806,7 +738,7 @@ theorem cpsTriple_seq_cpsBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq)
     (h2 : cpsBranch mid cr2 Q2 exit_t Q_t exit_f Q_f) :
     cpsBranch entry (cr1.union cr2) P exit_t Q_t exit_f Q_f :=
   cpsTriple_seq_cpsBranch entry mid cr1 cr2 hd P Q2 exit_t Q_t exit_f Q_f
-    (cpsTriple_consequence entry mid cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Compose a cpsBranch with a cpsNBranch on the not-taken (false) path.
     The taken path becomes a new exit prepended to the cpsNBranch exits. -/
@@ -898,9 +830,7 @@ theorem cpsBranch_seq_cpsBranch_with_perm
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
     cpsBranch entry (cr1.union cr2) P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsBranch entry mid target exit_f cr1 cr2 hd P Q_t1 R Q_t2 Q_f2 Q_t
-    (cpsBranch_consequence entry cr1
-      _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
 /-- Weaken postconditions of all exits in a cpsNBranch. -/
@@ -923,8 +853,7 @@ theorem cpsNBranch_weaken_posts (entry : Word) (cr : CodeReq)
 
 /-- Frame a pcFree assertion `F` on the right of a cpsTriple: pre becomes
     `P ** F` and post becomes `Q ** F`. Position/code/pre/post args are all
-    implicit; prefer this over `cpsTriple_frame_left` (which takes five
-    explicit `_` arguments before the frame `F`). -/
+    implicit. -/
 theorem cpsTriple_frameR {entry exit_ : Word} {cr : CodeReq} {P Q : Assertion}
     (F : Assertion) (hF : F.pcFree)
     (h : cpsTriple entry exit_ cr P Q) :
@@ -933,16 +862,6 @@ theorem cpsTriple_frameR {entry exit_ : Word} {cr : CodeReq} {P Q : Assertion}
   have hPFR' := holdsFor_sepConj_assoc.mp hPFR
   obtain ⟨k, s', hstep, hpc', hpost⟩ := h (F ** R) (pcFree_sepConj hF hR) s hcr hPFR' hpc
   exact ⟨k, s', hstep, hpc', holdsFor_sepConj_assoc.mpr hpost⟩
-
-/-- Explicit-argument variant of `cpsTriple_frameR`. Kept for backwards
-    compatibility; prefer `cpsTriple_frameR` in new code. Note the name
-    is a misnomer — it adds `F` to the *right* of the sepConj chain. -/
-@[deprecated cpsTriple_frameR (since := "2026-04-19")]
-theorem cpsTriple_frame_left (entry exit_ : Word) (cr : CodeReq)
-    (P Q F : Assertion) (hF : F.pcFree)
-    (h : cpsTriple entry exit_ cr P Q) :
-    cpsTriple entry exit_ cr (P ** F) (Q ** F) :=
-  cpsTriple_frameR F hF h
 
 /-- Frame a pcFree assertion `F` on the left of a cpsTriple: pre becomes
     `F ** P` and post becomes `F ** Q`. Position/code/pre/post args are all
@@ -957,8 +876,7 @@ theorem cpsTriple_frameL {entry exit_ : Word} {cr : CodeReq} {P Q : Assertion}
   exact ⟨k, s', hstep, hpc', holdsFor_sepConj_pull_second.mpr hpost⟩
 
 /-- Frame for cpsBranch: add `F` on the right. Position/code/pre/post args
-    are all implicit; prefer this over `cpsBranch_frame_left` (which takes
-    seven explicit `_` arguments before the frame `F`). -/
+    are all implicit. -/
 theorem cpsBranch_frameR {entry : Word} {cr : CodeReq} {P : Assertion}
     {exit_t : Word} {Q_t : Assertion} {exit_f : Word} {Q_f : Assertion}
     (F : Assertion) (hF : F.pcFree)
@@ -970,17 +888,6 @@ theorem cpsBranch_frameR {entry : Word} {cr : CodeReq} {P : Assertion}
   exact ⟨k, s', hstep, hcase.elim
     (fun ⟨hpc', hpost⟩ => Or.inl ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)
     (fun ⟨hpc', hpost⟩ => Or.inr ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)⟩
-
-/-- Explicit-argument variant of `cpsBranch_frameR`. Kept for backwards
-    compatibility; prefer `cpsBranch_frameR` in new code. -/
-@[deprecated cpsBranch_frameR (since := "2026-04-19")]
-theorem cpsBranch_frame_left (entry : Word) (cr : CodeReq)
-    (P : Assertion) (exit_t : Word) (Q_t : Assertion)
-    (exit_f : Word) (Q_f : Assertion)
-    (F : Assertion) (hF : F.pcFree)
-    (h : cpsBranch entry cr P exit_t Q_t exit_f Q_f) :
-    cpsBranch entry cr (P ** F) exit_t (Q_t ** F) exit_f (Q_f ** F) :=
-  cpsBranch_frameR F hF h
 
 /-- Frame on the right for cpsHaltTriple. -/
 theorem cpsHaltTriple_frame_left (entry : Word) (cr : CodeReq)
@@ -1048,9 +955,7 @@ theorem cpsTriple_loop_with_perm
     (hperm_Q : ∀ h, Q' h → Q h)
     : ∀ n, cpsTriple entry exit_ cr (inv n) Q := by
   have h_step' : ∀ n, cpsBranch entry cr (inv (n + 1)) exit_ Q entry (inv n) :=
-    fun n => cpsBranch_consequence entry cr
-      (inv (n + 1)) (inv (n + 1)) exit_ Q' Q entry (inv' n) (inv n)
-      (fun _ h => h) hperm_Q (hperm_inv n) (h_step n)
+    fun n => cpsBranch_weaken (fun _ h => h) hperm_Q (hperm_inv n) (h_step n)
   exact cpsTriple_loop entry exit_ cr inv Q h_base h_step'
 
 -- ============================================================================
@@ -1092,9 +997,7 @@ theorem cpsBranch_seq_cpsBranch_with_perm_same_cr
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
     cpsBranch entry cr P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsBranch_same_cr entry mid target exit_f cr P Q_t1 R Q_t2 Q_f2 Q_t
-    (cpsBranch_consequence entry cr
-      _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
 /-- Compose a cpsBranch (ntaken exit) with a cpsTriple, same CodeReq.
@@ -1126,8 +1029,7 @@ theorem cpsBranch_seq_cpsTriple_with_perm_same_cr (entry mid target exit_f : Wor
     (ht1 : ∀ h, Q_t1 h → Q_t h) :
     cpsBranch entry cr P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsTriple_same_cr entry mid target exit_f cr P Q_t1 R Q_f2 Q_t
-    (cpsBranch_consequence entry cr _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1
 
 /-- Compose a cpsBranch with a cpsNBranch on the not-taken path, same CodeReq. -/

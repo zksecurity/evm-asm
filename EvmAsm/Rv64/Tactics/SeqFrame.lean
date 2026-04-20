@@ -17,7 +17,7 @@
 
   1. Extracts postcondition Q1 of h1 and precondition P2 of h2
   2. Computes frame F = Q1 \ P2 (atoms in Q1 not matched by P2)
-  3. Frames h2: `cpsTriple_frame_left` produces `cpsTriple mid exit (P2 ** F) (Q2 ** F)`
+  3. Frames h2: `cpsTriple_frameR` produces `cpsTriple mid exit (P2 ** F) (Q2 ** F)`
   4. Builds permutation proof Q1 → (P2 ** F)
   5. Composes via `cpsTriple_seq_with_perm`
 
@@ -886,7 +886,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
     let hperm ← mkPermLambda postQ1 preP2
     -- Same-CR fast path
     if ← withoutModifyingState (isDefEq cr1 cr2) then
-      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
         #[entry, mid1, exit_, cr1, preP, postQ1, preP2, postQ2,
           hperm, h1Expr, h2Expr]
     -- Different CRs
@@ -902,7 +902,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
     catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
 
   -- h2Framed : cpsTriple mid exit_ cr2 (P2 ** F) (Q2 ** F)
-  let h2Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frame_left)
+  let h2Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frameR)
     #[mid2, exit_, cr2, preP2, postQ2, frameExpr, pcFreeProof, h2Expr]
 
   -- When P2 = empAssertion, simplify (empAssertion ** F) to F and (Q2 ** F) similarly.
@@ -938,14 +938,14 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
       let hpost ← mkIdLambda q2StarFrame
       Pure.pure (q2StarFrame, hpost)
     -- h2Simplified : cpsTriple mid exit_ cr2 F actualPost
-    let h2Simplified := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+    let h2Simplified := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
       #[mid2, exit_, cr2, empStarFrame, frameExpr, q2StarFrame, actualPost,
         hpre, hpost, h2Framed]
     -- Permutation: Q1 = F (since frame = all Q1 atoms)
     let hperm ← mkPermLambda postQ1 frameExpr
     -- Same-CR fast path
     if ← withoutModifyingState (isDefEq cr1 cr2) then
-      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
         #[entry, mid1, exit_, cr1, preP, postQ1, frameExpr, actualPost,
           hperm, h1Expr, h2Simplified]
     -- Different CRs
@@ -962,7 +962,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
 
   -- Same-CR fast path: skip disjointness proof
   if ← withoutModifyingState (isDefEq cr1 cr2) then
-    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
       #[entry, mid1, exit_, cr1, preP, postQ1, p2StarFrame, q2StarFrame,
         hperm, h1Expr, h2Framed]
 
@@ -1006,7 +1006,7 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
       Pure.pure extended
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
-  goal.assign (mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+  goal.assign (mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
     #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, result'])
 
 /-- `seqFrame h1 h2` composes two `cpsTriple` hypotheses with automatic framing.

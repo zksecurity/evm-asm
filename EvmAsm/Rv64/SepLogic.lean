@@ -1308,11 +1308,11 @@ theorem sepConj_extract_pure_end3 (A B C : Assertion) (P : Prop) :
 
 /-- Push the outer atom of a 4-chain left-associated `(3-chain) ** D`
     into the right-associated 4-chain — the inverse of the tree shape
-    `cpsBranch_frame_left` produces when framing a 3-atom pre with a
+    `cpsBranch_frameR` produces when framing a 3-atom pre with a
     single-atom frame:
     `A ** B ** C ** D → (A ** B ** C) ** D`.
 
-    Useful to reconcile `cpsBranch_frame_left` output with a theorem
+    Useful to reconcile `cpsBranch_frameR` output with a theorem
     statement written in right-associated form. -/
 theorem sepConj_chain_push_outer (A B C D : Assertion) :
     ∀ h, (A ** B ** C ** D) h → ((A ** B ** C) ** D) h := by
@@ -1326,7 +1326,7 @@ theorem sepConj_chain_push_outer (A B C D : Assertion) :
     swapping the order:
     `(A ** B ** C ** ⌜P⌝) ** ⌜Q⌝ → A ** B ** C ** ⌜Q ∧ P⌝`.
 
-    The outer left-associated shape is what `cpsBranch_frame_left` produces
+    The outer left-associated shape is what `cpsBranch_frameR` produces
     when framed with `⌜Q⌝`; the right-associated output is what downstream
     consumers with a single accumulated pure fact expect. -/
 theorem sepConj_merge_pure_and_end3 (A B C : Assertion) (P Q : Prop) :

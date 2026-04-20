@@ -593,7 +593,7 @@ def loopBodyPostN2
 
 
 -- ============================================================================
--- Unified max-path loop body 
+-- Unified max-path loop body
 -- ============================================================================
 
 /-- Unified loop body (BLTU ntaken) for n=2, parameterized by borrow condition.
@@ -628,25 +628,23 @@ theorem divK_loop_body_n2_max_unified_spec
   · -- false (addback+BEQ path)
     rw [if_neg (by decide)] at hborrow
     simp only [loopBodyUnifiedPostN2, loopBodyUnifiedPost_false]
-    have base_spec := divK_loop_body_n2_max_addback_spec
-      sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu (hcarry (by decide)) hborrow
     exact cpsBranch_weaken
       (fun _ hp => by delta loopBodyPre at hp; xperm_hyp hp)
       (fun _ hp => hp)
       (fun _ hp => hp)
-      base_spec
+      (divK_loop_body_n2_max_addback_spec
+        sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu (hcarry (by decide)) hborrow)
   · -- true (skip path)
     rw [if_pos rfl] at hborrow
     simp only [loopBodyUnifiedPostN2, loopBodyUnifiedPost_true]
-    have base_spec := divK_loop_body_n2_max_skip_spec
-      sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow
     exact cpsBranch_weaken
       (fun _ hp => by delta loopBodyPre at hp; xperm_hyp hp)
       (fun _ hp => hp)
       (fun _ hp => hp)
-      base_spec
+      (divK_loop_body_n2_max_skip_spec
+        sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
 
 /-- Unified loop body (BLTU taken, call path) for n=2, parameterized by borrow condition.
     `borrow_zero = true` → skip path; `borrow_zero = false` → addback+BEQ path.
@@ -691,26 +689,24 @@ theorem divK_loop_body_n2_call_unified_spec
   · -- false (addback+BEQ path)
     rw [if_neg (by decide)] at hborrow
     simp only [loopBodyUnifiedPostN2, loopBodyUnifiedPost_false]
-    have base_spec := divK_loop_body_n2_call_addback_spec
-      sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
-      base halign hbltu (hcarry (by decide)) hborrow
     exact cpsBranch_weaken
       (fun _ hp => by delta loopBodyPreWithScratch loopBodyPre at hp; xperm_hyp hp)
       (fun _ hp => hp)
       (fun _ hp => hp)
-      base_spec
+      (divK_loop_body_n2_call_addback_spec
+        sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
+        base halign hbltu (hcarry (by decide)) hborrow)
   · -- true (skip path)
     rw [if_pos rfl] at hborrow
     simp only [loopBodyUnifiedPostN2, loopBodyUnifiedPost_true]
-    have base_spec := divK_loop_body_n2_call_skip_spec
-      sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
-      base halign hbltu hborrow
     exact cpsBranch_weaken
       (fun _ hp => by delta loopBodyPreWithScratch loopBodyPre at hp; xperm_hyp hp)
       (fun _ hp => hp)
       (fun _ hp => hp)
-      base_spec
+      (divK_loop_body_n2_call_skip_spec
+        sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
+        base halign hbltu hborrow)
 
 end EvmAsm.Evm64

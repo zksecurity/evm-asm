@@ -171,7 +171,8 @@ theorem evm_mod_phaseB_n2_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h1234567 hbne2f
   -- ---- Tail (base+96 → base+116)
   have htail_raw := divK_phaseB_tail_spec sp (2 : Word) b1 nMem (base + 96)
-  simp only [mod_phB_t_20, mod_divK_phaseB_n2_nm1_x8, se12_32,
+  simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
+    mod_phB_t_20, mod_divK_phaseB_n2_nm1_x8, se12_32,
     mod_phB_sp8_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   have htailf := cpsTriple_frameR
@@ -366,7 +367,8 @@ theorem evm_mod_phaseB_n1_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h12345678 haddi3f
   -- ---- Tail (base+96 → base+116)
   have htail_raw := divK_phaseB_tail_spec sp (1 : Word) b0 nMem (base + 96)
-  simp only [mod_phB_t_20, mod_divK_phaseB_n1_nm1_x8, se12_32,
+  simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
+    mod_phB_t_20, mod_divK_phaseB_n1_nm1_x8, se12_32,
     mod_phB_sp0_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   have htailf := cpsTriple_frameR

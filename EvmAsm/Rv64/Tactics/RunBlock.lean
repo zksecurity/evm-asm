@@ -415,7 +415,7 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
     -- P = preP1 (from s1), P' = goalPre (what we want), hpre : goalPre → preP1
     let prePermProof ← mkPermLambda goalPre preP1
     let postIdProof ← mkIdLambda postQ1
-    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
       #[entry, exit_, cr1, preP1, goalPre, postQ1, postQ1, prePermProof, postIdProof, s1Expr]
   -- Build frame expression
   let frameExpr ← buildSepConjChain frameAtoms
@@ -423,7 +423,7 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
   let pcFreeProof ← try buildPcFreeProof frameExpr
     catch _ => throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
   -- Frame s1: cpsTriple entry exit cr1 (P1 ** F) (Q1 ** F)
-  let s1Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frame_left)
+  let s1Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_frameR)
     #[entry, exit_, cr1, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
   -- Permute precondition: goalPre → (P1 ** F)
   let p1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP1 frameExpr
@@ -432,7 +432,7 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
   let prePermProof ← mkPermLambda goalPre p1StarFrame
   let q1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ1 frameExpr
   let postIdProof ← mkIdLambda q1StarFrame
-  return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+  return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
     #[entry, exit_, cr1, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
       prePermProof, postIdProof, s1Framed]
 
@@ -993,7 +993,7 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
       | throwError "runBlock: internal error — composed result is not a cpsTriple"
     let postPerm ← mkPermLambda resultPost goalPost
     let idPre ← mkIdLambda gPre
-    let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+    let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
       #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
     workingGoal.assign permuted
     replaceMainGoal []
