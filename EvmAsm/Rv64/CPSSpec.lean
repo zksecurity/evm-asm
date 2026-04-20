@@ -889,9 +889,10 @@ theorem cpsBranch_frameR {entry : Word} {cr : CodeReq} {P : Assertion}
     (fun ⟨hpc', hpost⟩ => Or.inl ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)
     (fun ⟨hpc', hpost⟩ => Or.inr ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)⟩
 
-/-- Frame on the right for cpsHaltTriple. -/
-theorem cpsHaltTriple_frame_left (entry : Word) (cr : CodeReq)
-    (P Q F : Assertion) (hF : F.pcFree)
+/-- Frame on the right for cpsHaltTriple (F appears on the right of P ** F).
+    Matches the `cpsTriple_frameR` / `cpsBranch_frameR` naming convention from #331. -/
+theorem cpsHaltTriple_frameR {entry : Word} {cr : CodeReq}
+    {P Q : Assertion} (F : Assertion) (hF : F.pcFree)
     (h : cpsHaltTriple entry cr P Q) :
     cpsHaltTriple entry cr (P ** F) (Q ** F) := by
   intro R hR s hcr hPFR hpc
