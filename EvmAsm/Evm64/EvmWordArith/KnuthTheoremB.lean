@@ -16,6 +16,10 @@
   - `rv64_divu_toNat` (Step 1a — RV64 divu → Nat div bridge).
   - `val256_ge_pow255_of_normalized` — normalized divisor ≥ 2^255.
   - `val256_split_hi2` — split val256 into (hi2-limb * 2^128 + lo2-limb) form.
+  - `knuth_u_hat_mul_pow192_le` — trial-numerator * 2^192 ≤ u_nat.
+  - `knuth_v_nat_lt_v_top_succ_mul_pow192` — v_nat < (v_top + 1) * 2^192.
+  - `knuth_v_nat_ge_pow255_abstract` — Nat-level v_nat ≥ 2^255.
+  - `knuth_q_hat_clamp_le_div` / `knuth_q_hat_clamp_lt_pow64` — min-clamp bounds.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -73,5 +77,55 @@ theorem val256_split_hi2 (a0 a1 a2 a3 : Word) :
       (a3.toNat * 2^64 + a2.toNat) * 2^128 +
       (a1.toNat * 2^64 + a0.toNat) := by
   unfold val256; ring
+
+/-- Knuth B — trial numerator scales up to at most the full numerator.
+    `u_nat = u_top * 2^256 + u_next * 2^192 + u_rest` implies
+    `(u_top * 2^64 + u_next) * 2^192 ≤ u_nat` since `u_rest ≥ 0` and
+    `2^64 * 2^192 = 2^256`. -/
+theorem knuth_u_hat_mul_pow192_le
+    (u_nat u_top u_next u_rest : Nat)
+    (h_u_split : u_top * 2^256 + u_next * 2^192 + u_rest = u_nat) :
+    (u_top * 2^64 + u_next) * 2^192 ≤ u_nat := by
+  have hpow : (2:Nat)^64 * 2^192 = 2^256 := by rw [← pow_add]
+  have h1 : (u_top * 2^64 + u_next) * 2^192 = u_top * 2^256 + u_next * 2^192 := by
+    rw [Nat.add_mul, Nat.mul_assoc, hpow]
+  omega
+
+/-- Knuth B — full divisor is strictly less than `(v_top + 1) * 2^192`.
+    Follows from `v_rest < 2^192`. -/
+theorem knuth_v_nat_lt_v_top_succ_mul_pow192
+    (v_nat v_top v_rest : Nat)
+    (h_v_split : v_nat = v_top * 2^192 + v_rest)
+    (h_v_rest : v_rest < 2^192) :
+    v_nat < (v_top + 1) * 2^192 := by
+  have : (v_top + 1) * 2^192 = v_top * 2^192 + 2^192 := by ring
+  omega
+
+/-- Knuth B — Nat-level version of `v_nat ≥ 2^255` under normalization.
+    Abstract counterpart of `val256_ge_pow255_of_normalized`. -/
+theorem knuth_v_nat_ge_pow255_abstract
+    (v_nat v_top v_rest : Nat)
+    (h_v_norm : v_top ≥ 2^63)
+    (h_v_split : v_nat = v_top * 2^192 + v_rest) :
+    v_nat ≥ 2^255 := by
+  have h1 : v_top * 2^192 ≥ 2^63 * 2^192 := Nat.mul_le_mul_right _ h_v_norm
+  have h2 : (2:Nat)^63 * 2^192 = 2^255 := by rw [← pow_add]
+  omega
+
+/-- Knuth B — the min-clamp quotient `q_hat = min((u_top*B + u_next)/v_top, B-1)`
+    is at most the raw trial quotient. Trivial from `min_le_left`. -/
+theorem knuth_q_hat_clamp_le_div (u_top u_next v_top q_hat : Nat)
+    (hq : q_hat = min ((u_top * 2^64 + u_next) / v_top) (2^64 - 1)) :
+    q_hat ≤ (u_top * 2^64 + u_next) / v_top := by
+  rw [hq]; exact Nat.min_le_left _ _
+
+/-- Knuth B — the min-clamp quotient is strictly less than `2^64`. -/
+theorem knuth_q_hat_clamp_lt_pow64 (u_top u_next v_top q_hat : Nat)
+    (hq : q_hat = min ((u_top * 2^64 + u_next) / v_top) (2^64 - 1)) :
+    q_hat < 2^64 := by
+  rw [hq]
+  have := Nat.min_le_right ((u_top * 2^64 + u_next) / v_top) (2^64 - 1)
+  have hpow : (0:Nat) < 2^64 := by positivity
+  omega
 
 end EvmAsm.Evm64
