@@ -1,20 +1,25 @@
 /-
   EvmAsm.Evm64.EvmWordArith.MaxTrialVacuity
 
-  Toward `isMaxTrialN4_false_of_shift_nz` (Option A of the
-  max-trial vacuity discovery — see
-  `memory/project_max_trial_vacuous_discovery.md`).
+  Max-trial vacuity: proves `isMaxTrialN4_false_of_shift_nz` — under
+  `hshift_nz : (clzResult b3).1 ≠ 0`, the max-trial condition cannot hold.
 
-  The main claim (to be proven via 3 sublemmas):
-  `isMaxTrialN4 a3 b2 b3 ∧ (clzResult b3).1 ≠ 0 → False`.
+  This resolves the max+addback stack spec roadmap (Issue #61): all
+  max-trial specs under `hshift_nz` describe dead runtime code, so any
+  such stack spec with those hypotheses is vacuously provable via
+  `exfalso; exact isMaxTrialN4_false_of_shift_nz … hbltu`.
 
-  This file hosts the sublemma pieces. Currently contains:
-  - `clzStep_snd_ge` (Step 1 helper).
-  - `clzPipeline_snd_ge_pow62` (Step 1 of the plan).
-  - `u_top_lt_pow63_of_shift_nz` (Step 3 of the plan).
+  Theorems (from the 2026-04-20 discovery plan):
+  - `clzStep_snd_ge` / `clzPipeline_snd_ge_pow62` (Step 1): pipeline.2 ≥ 2^62.
+  - `b3_shifted_ge_pow63` (Step 2): `(b3 <<< clz(b3)).toNat ≥ 2^63`.
+  - `u_top_lt_pow63_of_shift_nz` (Step 3): `u_top.toNat < 2^63` under shift ≠ 0.
+  - `isMaxTrialN4_false_of_shift_nz` (final): composition.
+
+  See `memory/project_max_trial_vacuous_discovery.md` for the full discovery.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.CLZLemmas
+import EvmAsm.Evm64.DivMod.Compose.FullPathN4
 
 namespace EvmAsm.Evm64
 
@@ -115,5 +120,74 @@ theorem u_top_lt_pow63_of_shift_nz (a3 shift : Word)
     rw [hsplit, Nat.mul_comm] at ha3
     exact Nat.div_lt_of_lt_mul ha3
   exact lt_of_lt_of_le hlt_pow_shift (Nat.pow_le_pow_right (by norm_num) h63)
+
+/-- After left-shifting `b3` by `(clzResult b3).1` bits, the result is at least `2^63`.
+    This is Step 2 of the vacuity chain. Uses case analysis on stage 5 (pass/fail):
+    * Pass: clzResult.1 = pipeline.1, and b3 << pipeline.1 = pipeline.2 ≥ 2^63
+      (from the pass condition `pipeline.2 >>> 63 ≠ 0`).
+    * Fail: clzResult.1 = pipeline.1 + 1, and b3 << (pipeline.1 + 1) = 2 * pipeline.2
+      ≥ 2 * 2^62 = 2^63 (by Step 1). -/
+theorem b3_shifted_ge_pow63 (b3 : Word) (hb3nz : b3 ≠ 0) :
+    (b3 <<< ((clzResult b3).1.toNat % 64)).toNat ≥ 2^63 := by
+  obtain ⟨hinv, hcount⟩ := clzPipeline_invariant b3
+  have hsnd_ge := clzPipeline_snd_ge_pow62 b3 hb3nz
+  have hsnd_lt : (clzPipeline b3).2.toNat < 2^64 := (clzPipeline b3).2.isLt
+  rw [clzResult_fst_eq]
+  by_cases h5 : (clzPipeline b3).2 >>> 63 ≠ 0
+  · rw [if_pos h5]
+    have hmod : (clzPipeline b3).1.toNat % 64 = (clzPipeline b3).1.toNat := by omega
+    rw [hmod]
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hinv]
+    rw [Nat.mod_eq_of_lt hsnd_lt]
+    exact toNat_ge_of_ushiftRight_63 h5
+  · simp only [h5, if_false]
+    push Not at h5
+    have hp2_lt : (clzPipeline b3).2.toNat < 2^63 :=
+      (ushiftRight_eq_zero_iff 63).mp h5
+    have hsum_toNat :
+        ((clzPipeline b3).1 + signExtend12 (1 : BitVec 12)).toNat =
+        (clzPipeline b3).1.toNat + 1 := by
+      rw [BitVec.toNat_add]
+      have : (signExtend12 (1 : BitVec 12) : Word).toNat = 1 := by decide
+      rw [this]
+      exact Nat.mod_eq_of_lt (by omega : (clzPipeline b3).1.toNat + 1 < 2^64)
+    rw [hsum_toNat]
+    have hmod : ((clzPipeline b3).1.toNat + 1) % 64 = (clzPipeline b3).1.toNat + 1 := by omega
+    rw [hmod]
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
+    have hinv_doubled : b3.toNat * 2^((clzPipeline b3).1.toNat + 1) =
+        2 * (clzPipeline b3).2.toNat := by
+      rw [pow_succ, ← Nat.mul_assoc, hinv]; ring
+    rw [hinv_doubled]
+    rw [Nat.mod_eq_of_lt (by linarith : 2 * (clzPipeline b3).2.toNat < 2^64)]
+    linarith
+
+/-- **Max-trial is vacuously false under `hshift_nz`.** Combining Steps 2 and 3:
+    `u_top.toNat < 2^63 ≤ (b3 <<< shift).toNat ≤ b3'.toNat` (the last inequality
+    by OR monotonicity), so `BitVec.ult u4 b3'` holds, i.e., `¬ isMaxTrialN4`. -/
+theorem isMaxTrialN4_false_of_shift_nz (a3 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0) (hshift_nz : (clzResult b3).1 ≠ 0) :
+    ¬ isMaxTrialN4 a3 b2 b3 := by
+  unfold isMaxTrialN4
+  simp only [not_not]
+  have h_shift_le := clzResult_fst_toNat_le b3
+  have h_shift_pos : 1 ≤ (clzResult b3).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult b3).1.toNat with h | h
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h])
+    · exact h
+  have h_u4 := u_top_lt_pow63_of_shift_nz a3 (clzResult b3).1 h_shift_pos h_shift_le
+  have h_b3_shifted := b3_shifted_ge_pow63 b3 hb3nz
+  have h_or_ge : (((b3 <<< ((clzResult b3).1.toNat % 64))) |||
+                   (b2 >>> ((signExtend12 (0 : BitVec 12) -
+                     (clzResult b3).1).toNat % 64))).toNat ≥
+                 (b3 <<< ((clzResult b3).1.toNat % 64)).toNat := by
+    rw [BitVec.toNat_or]
+    exact Nat.left_le_or
+  have h_lt : (a3 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64)).toNat <
+              (b3 <<< ((clzResult b3).1.toNat % 64) |||
+                b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64)).toNat :=
+    Nat.lt_of_lt_of_le h_u4 (le_trans h_b3_shifted h_or_ge)
+  exact (EvmWord.ult_iff _ _).mpr h_lt
 
 end EvmAsm.Evm64
