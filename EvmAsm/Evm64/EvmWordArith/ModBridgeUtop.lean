@@ -5,7 +5,7 @@
 
   During algorithm D's normalization step, the top bits of the dividend
   `a3 >>> (64 - s)` become an implicit 5th limb `uTop`. The mulsub on
-  the normalized 4-limb dividend + divisor produces `ms_n` with carry
+  the normalized 4-limb dividend + divisor produces `msN` with carry
   `c3_n`. This lemma proves that under the max+skip conditions,
   `uTop = c3_n` (not merely `uTop ≥ c3_n` as the runtime skip check
   gives). The identity is the key missing invariant for the MOD
@@ -66,13 +66,13 @@ theorem val256_normalized_mulsub_eq
     let u1 := (a1 <<< s) ||| (a0 >>> (64 - s))
     let u0 := a0 <<< s
     let uTop := a3 >>> (64 - s)
-    let q_hat : Word := signExtend12 4095
-    let ms := mulsubN4 q_hat b0' b1' b2' b3' u0 u1 u2 u3
+    let qHat : Word := signExtend12 4095
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
     val256 a0 a1 a2 a3 * 2^s + ms.2.2.2.2.toNat * 2 ^ 256
-      = q_hat.toNat * (val256 b0 b1 b2 b3 * 2^s) +
+      = qHat.toNat * (val256 b0 b1 b2 b3 * 2^s) +
         val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
         uTop.toNat * 2 ^ 256 := by
-  intro b3' b2' b1' b0' u3 u2 u1 u0 uTop q_hat ms
+  intro b3' b2' b1' b0' u3 u2 u1 u0 uTop qHat ms
   -- Normalize the dividend limbs.
   have h_norm_a : val256 u0 u1 u2 u3 + uTop.toNat * 2 ^ 256 =
       val256 a0 a1 a2 a3 * 2^s :=
@@ -81,7 +81,7 @@ theorem val256_normalized_mulsub_eq
   have h_norm_b : val256 b0' b1' b2' b3' = val256 b0 b1 b2 b3 * 2^s :=
     val256_normalize hs0 hs b0 b1 b2 b3 hb3_bound
   -- Apply mulsubN4_val256_eq on the normalized limbs.
-  have h_mulsub := mulsubN4_val256_eq q_hat b0' b1' b2' b3' u0 u1 u2 u3
+  have h_mulsub := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
   simp only [] at h_mulsub
   -- Substitute the normalization facts and solve linearly.
   rw [h_norm_b] at h_mulsub
@@ -191,7 +191,7 @@ theorem u_top_eq_c3_n_max_skip
   simp only [] at h_un_raw
   rw [hc3_un_zero, show (0 : Word).toNat = 0 from by decide,
       Nat.zero_mul, Nat.add_zero] at h_un_raw
-  -- h_un_raw : val256(a) = val256(ms_un) + q_hat * val256(b)
+  -- h_un_raw : val256(a) = val256(ms_un) + qHat * val256(b)
   have h_n_raw := mulsubN4_val256_eq (signExtend12 4095)
     (b0 <<< s)
     ((b1 <<< s) ||| (b0 >>> (64 - s)))
@@ -202,7 +202,7 @@ theorem u_top_eq_c3_n_max_skip
     ((a2 <<< s) ||| (a1 >>> (64 - s)))
     ((a3 <<< s) ||| (a2 >>> (64 - s)))
   simp only [] at h_n_raw
-  -- h_n_raw : val256(u) + c3_n * 2^256 = val256(ms_n) + q_hat * val256(b_norm)
+  -- h_n_raw : val256(u) + c3_n * 2^256 = val256(msN) + qHat * val256(b_norm)
   have h_norm_u := val256_normalize_general hs0 hs a0 a1 a2 a3
   have h_norm_b := val256_normalize hs0 hs b0 b1 b2 b3 hb3_bound
   have h_ms_un_lt_b :=
