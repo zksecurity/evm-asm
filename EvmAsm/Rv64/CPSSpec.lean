@@ -498,10 +498,11 @@ theorem cpsNBranch_merge (entry exit_ : Word) (cr : CodeReq)
   obtain ⟨k2, s2, hstep2, hpc2, hRF⟩ := hall ex hmem F hF s1 hcr1 hQF hpc1
   exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, hpc2, hRF⟩
 
-/-- Consequence: strengthen the precondition of an N-branch. -/
-theorem cpsNBranch_weaken_pre (entry : Word) (cr : CodeReq)
-    (P P' : Assertion)
-    (exits : List (Word × Assertion))
+/-- Consequence: strengthen the precondition of an N-branch.
+    All position/code/assertion arguments are implicit — inferred from `h`/`hpre`/goal type. -/
+theorem cpsNBranch_weaken_pre {entry : Word} {cr : CodeReq}
+    {P P' : Assertion}
+    {exits : List (Word × Assertion)}
     (hpre : ∀ h, P' h → P h) (h : cpsNBranch entry cr P exits) :
     cpsNBranch entry cr P' exits := by
   intro R hR s hcr hP'R hpc
@@ -829,9 +830,10 @@ theorem cpsBranch_seq_cpsBranch_with_perm
     (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
-/-- Weaken postconditions of all exits in a cpsNBranch. -/
-theorem cpsNBranch_weaken_posts (entry : Word) (cr : CodeReq)
-    (P : Assertion) (exits exits' : List (Word × Assertion))
+/-- Weaken postconditions of all exits in a cpsNBranch.
+    All position/code/assertion arguments are implicit — inferred from `h`/goal type. -/
+theorem cpsNBranch_weaken_posts {entry : Word} {cr : CodeReq}
+    {P : Assertion} {exits exits' : List (Word × Assertion)}
     (h : cpsNBranch entry cr P exits)
     (hmap : ∀ ex ∈ exits, ∃ ex' ∈ exits', ex'.1 = ex.1 ∧ ∀ h, ex.2 h → ex'.2 h) :
     cpsNBranch entry cr P exits' := by

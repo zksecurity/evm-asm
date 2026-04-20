@@ -622,7 +622,7 @@ theorem sar_phase_c_spec_pure (v5 v10 : Word) (base : Word)
     simp only [hunion_empty]; rfl
   intro code
   have n1_rw := hcr_eq ▸ n1
-  exact cpsNBranch_weaken_posts _ _ _ _ _ (cpsNBranch_weaken_pre _ _ _ _ _ (fun h hp => by xperm_hyp hp) n1_rw)
+  exact cpsNBranch_weaken_posts (cpsNBranch_weaken_pre (fun h hp => by xperm_hyp hp) n1_rw)
     (fun ex hmem => by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
