@@ -121,7 +121,7 @@ theorem rlp_phase2_long_iter_spec
       (CodeReq.ofProg base rlp_phase2_long_iter_prog)
       ((.x11 ↦ᵣ len) ** (.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ cnt) **
        (.x12 ↦ᵣ v12Old) ** (dwordAddr ↦ₘ word_val))
-      (rlp_phase2_long_iter_post len ptr cnt byte_zext word_val dwordAddr) := by
+      (rlp_phase2_long_iter_post len ptr cnt byteZext word_val dwordAddr) := by
   simp only [rlp_phase2_long_iter_post_unfold]
   rw [iter_code_split]
   -- Helpers: `signExtend12 1 = 1` and `signExtend12 0 = 0`.
