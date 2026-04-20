@@ -225,16 +225,14 @@ theorem signext_nochange_high_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h2
-  have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _
-    _ _ _ _
+  have h12 := cpsTriple_seq_perm_same_cr 
     (fun h hp => by xperm_hyp hp) h1f h2f
   have h3f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h3
-  have h123 := cpsTriple_seq_with_perm_same_cr base (base + 12) (base + 20) _
-    _ _ _ _
+  have h123 := cpsTriple_seq_perm_same_cr 
     (fun h hp => by xperm_hyp hp) h12 h3f
   -- Step 4: BNE at base+20 → extend, eliminate ntaken
   have hbne_raw := bne_spec_gen .x5 .x0 168 (b1 ||| b2 ||| b3) (0 : Word) (base + 20)
@@ -251,8 +249,7 @@ theorem signext_nochange_high_spec (sp base : Word)
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hbne_taken
   -- Compose → BNE
-  have hAB := cpsTriple_seq_with_perm_same_cr base (base + 20) (base + 188) _
-    _ _ _ _
+  have hAB := cpsTriple_seq_perm_same_cr 
     (fun h hp => by xperm_hyp hp) h123 hbne_framed
   -- Step 5: Done (base+188 → base+192) → extend
   have hdone := cpsTriple_extend_code (done_sub_signextCode base)
@@ -263,8 +260,7 @@ theorem signext_nochange_high_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hdone
-  have hfull := cpsTriple_seq_with_perm_same_cr base (base + 188) (base + 192) _
-    _ _ _ _
+  have hfull := cpsTriple_seq_perm_same_cr 
     (fun h hp => by xperm_hyp hp) hAB hdone_framed
   -- Final: weaken regs to regOwn + perm
   exact cpsTriple_weaken
@@ -319,15 +315,13 @@ theorem signext_nochange_geq31_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h2
-  have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1f h2f
+  have h12 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h1f h2f
   have h3f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h3
-  have h123 := cpsTriple_seq_with_perm_same_cr base (base + 12) (base + 20) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h12 h3f
+  have h123 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h12 h3f
   -- Step 4: BNE at base+20 → eliminate TAKEN (b1|||b2|||b3 = 0)
   have hbne_raw := bne_spec_gen .x5 .x0 168 (b1 ||| b2 ||| b3) (0 : Word) (base + 20)
   rw [se_bne_target, se_off_20] at hbne_raw
@@ -341,8 +335,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hbne_ntaken
-  have h1234 := cpsTriple_seq_with_perm_same_cr base (base + 20) (base + 24) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123 hbne_framed
+  have h1234 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h123 hbne_framed
   -- Step 5: LD x5 x12 0 at base+24
   have hld_raw := ld_spec_gen .x5 .x12 sp (b1 ||| b2 ||| b3) b0 0 (base + 24) (by nofun)
   simp only [signExtend12_0] at hld_raw
@@ -362,10 +355,8 @@ theorem signext_nochange_geq31_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hsltiu
-  have h56 := cpsTriple_seq_with_perm_same_cr (base + 24) (base + 28) (base + 32) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hld_f hsltiu_f
-  have h123456 := cpsTriple_seq_with_perm_same_cr base (base + 24) (base + 32) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1234 h56
+  have h56 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hld_f hsltiu_f
+  have h123456 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h1234 h56
   -- Step 7: BEQ at base+32 → eliminate ntaken (sltiuVal = 0 since b0 >= 31)
   let sltiuVal := (if BitVec.ult b0 (signExtend12 (31 : BitVec 12)) then (1 : Word) else (0 : Word))
   have hbeq_raw := beq_spec_gen .x10 .x0 156 sltiuVal (0 : Word) (base + 32)
@@ -382,8 +373,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hbeq_taken
-  have h1234567 := cpsTriple_seq_with_perm_same_cr base (base + 32) (base + 188) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123456 hbeq_framed
+  have h1234567 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h123456 hbeq_framed
   -- Step 8: Done (base+188 → base+192)
   have hdone := cpsTriple_extend_code (done_sub_signextCode base)
     (signext_done_spec sp (base + 188))
@@ -393,8 +383,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hdone
-  have hfull := cpsTriple_seq_with_perm_same_cr base (base + 188) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1234567 hdone_framed
+  have hfull := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h1234567 hdone_framed
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
@@ -466,13 +455,11 @@ theorem signext_body_spec (sp base : Word)
   have h2f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) h2
-  have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1f h2f
+  have h12 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h1f h2f
   have h3f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) h3
-  have h123 := cpsTriple_seq_with_perm_same_cr base (base + 12) (base + 20) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h12 h3f
+  have h123 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h12 h3f
   -- BNE ntaken
   have hbne_raw := bne_spec_gen .x5 .x0 168 (b1 ||| b2 ||| b3) (0 : Word) (base + 20)
   rw [se_bne_target, se_off_20] at hbne_raw
@@ -482,8 +469,7 @@ theorem signext_body_spec (sp base : Word)
   have hbne_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hbne_nt
-  have h1234 := cpsTriple_seq_with_perm_same_cr base (base + 20) (base + 24) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123 hbne_f
+  have h1234 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h123 hbne_f
   -- LD b0
   have hld_raw := ld_spec_gen .x5 .x12 sp (b1 ||| b2 ||| b3) b0 0 (base + 24) (by nofun)
   simp only [signExtend12_0] at hld_raw; rw [word_add_zero, se_off_24] at hld_raw
@@ -498,10 +484,8 @@ theorem signext_body_spec (sp base : Word)
   have hsltiu_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hsltiu
-  have h56 := cpsTriple_seq_with_perm_same_cr (base + 24) (base + 28) (base + 32) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hld_f hsltiu_f
-  have h123456 := cpsTriple_seq_with_perm_same_cr base (base + 24) (base + 32) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h1234 h56
+  have h56 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hld_f hsltiu_f
+  have h123456 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h1234 h56
   -- BEQ ntaken (sltiuVal = 1 since b0 < 31)
   let sltiuVal := (if BitVec.ult b0 (signExtend12 (31 : BitVec 12)) then (1 : Word) else (0 : Word))
   have hsltiu_eq : sltiuVal = (1 : Word) := by simp only [sltiuVal, hsmall]; decide
@@ -513,8 +497,7 @@ theorem signext_body_spec (sp base : Word)
   have hbeq_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hbeq_nt
-  have hphaseA := cpsTriple_seq_with_perm_same_cr base (base + 32) (base + 36) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) h123456 hbeq_f
+  have hphaseA := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) h123456 hbeq_f
   -- Phase B: base+36 → base+56
   let byteInLimb := b0 &&& signExtend12 (7 : BitVec 12)
   let byteShift := byteInLimb <<< (3 : BitVec 6).toNat
@@ -526,8 +509,7 @@ theorem signext_body_spec (sp base : Word)
   have hphaseB_f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hphaseB
-  have hphaseAB := cpsTriple_seq_with_perm_same_cr base (base + 36) (base + 56) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hphaseA hphaseB_f
+  have hphaseAB := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hphaseA hphaseB_f
   -- Phase C with pure dispatch facts
   have hphaseC_raw := signext_phase_c_spec_pure limbIdx byteShift (base + 56)
     (base + 156) (base + 124) (base + 96) (base + 76)
@@ -563,8 +545,7 @@ theorem signext_body_spec (sp base : Word)
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) **
      ((sp + 56) ↦ₘ (BitVec.sshiftRight (v3 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))))
     (by pcFree) hdone
-  have hbd3 := cpsTriple_seq_with_perm_same_cr (base + 76) (base + 188) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hbody3_f hdone3_f
+  have hbd3 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hbody3_f hdone3_f
   -- Body 2 + done
   have hdone2_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
@@ -575,8 +556,7 @@ theorem signext_body_spec (sp base : Word)
      ((sp + 48) ↦ₘ (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
      ((sp + 56) ↦ₘ (BitVec.sshiftRight (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)))
     (by pcFree) hdone
-  have hbd2 := cpsTriple_seq_with_perm_same_cr (base + 96) (base + 188) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hbody2_f hdone2_f
+  have hbd2 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hbody2_f hdone2_f
   -- Body 1 + done
   have hdone1_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
@@ -588,8 +568,7 @@ theorem signext_body_spec (sp base : Word)
      ((sp + 48) ↦ₘ (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)) **
      ((sp + 56) ↦ₘ (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)))
     (by pcFree) hdone
-  have hbd1 := cpsTriple_seq_with_perm_same_cr (base + 124) (base + 188) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hbody1_f hdone1_f
+  have hbd1 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hbody1_f hdone1_f
   -- Body 0 + done
   have hdone0_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
@@ -601,8 +580,7 @@ theorem signext_body_spec (sp base : Word)
      ((sp + 48) ↦ₘ (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)) **
      ((sp + 56) ↦ₘ (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)))
     (by pcFree) hdone
-  have hbd0 := cpsTriple_seq_with_perm_same_cr (base + 156) (base + 188) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hbody0_f hdone0_f
+  have hbd0 := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hbody0_f hdone0_f
   -- Address normalization: done spec produces signExtend12 32, goal needs 32
   have hse32 : sp + signExtend12 (32 : BitVec 12) = sp + 32 := by rw [signExtend12_32]
   -- Helper: weaken body+done postconditions to regOwn + concrete mem values
@@ -855,8 +833,7 @@ theorem signext_body_spec (sp base : Word)
       (fun h hq => by xperm_hyp hq)
       hphaseAB
   -- Final: Phase AB -> Phase CD
-  have hfull := cpsTriple_seq_with_perm_same_cr base (base + 56) (base + 192) _ _ _ _ _
-    (fun h hp => by xperm_hyp hp) hphaseAB' hphaseCD
+  have hfull := cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hphaseAB' hphaseCD
   -- Final consequence: permute to match goal shape
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
