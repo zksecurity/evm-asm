@@ -64,8 +64,8 @@ def fullDivN2_FFT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_FFT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -92,12 +92,12 @@ theorem evm_div_n2_full_FFT_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_FFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -115,11 +115,11 @@ theorem evm_div_n2_full_FFT_spec (sp base : Word)
   let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec false false true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -197,8 +197,8 @@ def fullDivN2_FTF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_FTF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -225,12 +225,12 @@ theorem evm_div_n2_full_FTF_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_FTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -248,11 +248,11 @@ theorem evm_div_n2_full_FTF_spec (sp base : Word)
   let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec false true false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -330,8 +330,8 @@ def fullDivN2_FTT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_FTT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -358,12 +358,12 @@ theorem evm_div_n2_full_FTT_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_FTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -381,11 +381,11 @@ theorem evm_div_n2_full_FTT_spec (sp base : Word)
   let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec false true true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -459,12 +459,12 @@ def fullDivN2_TFF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   (sp + signExtend12 3968 ↦ₘ (base + 516)) **
   (sp + signExtend12 3960 ↦ₘ v1') **
   (sp + signExtend12 3952 ↦ₘ div128DLo v1') **
-  (sp + signExtend12 3944 ↦ₘ div128Un0 u3_s)
+  (sp + signExtend12 3944 ↦ₘ div128Un0 u3S)
 
 theorem evm_div_n2_full_TFF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -491,12 +491,12 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_TFF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -514,11 +514,11 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
   let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec true false false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -540,7 +540,7 @@ theorem evm_div_n2_full_TFF_spec (sp base : Word)
      (sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v1') **
      (sp + signExtend12 3952 ↦ₘ div128DLo v1') **
-     (sp + signExtend12 3944 ↦ₘ div128Un0 u3_s))
+     (sp + signExtend12 3944 ↦ₘ div128Un0 u3S))
     (by pcFree) hB
   have hFull := cpsTriple_seq_perm_same_cr
     (fun h hp => by
@@ -596,8 +596,8 @@ def fullDivN2_TFT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_TFT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -624,12 +624,12 @@ theorem evm_div_n2_full_TFT_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_TFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -647,11 +647,11 @@ theorem evm_div_n2_full_TFT_spec (sp base : Word)
   let r1 := iterN2Max v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec true false true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -729,8 +729,8 @@ def fullDivN2_TTF_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_TTF_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -757,12 +757,12 @@ theorem evm_div_n2_full_TTF_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_TTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -780,11 +780,11 @@ theorem evm_div_n2_full_TTF_spec (sp base : Word)
   let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Max v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (signExtend12 4095 : Word) v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec true true false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
@@ -862,8 +862,8 @@ def fullDivN2_TTT_Post (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 theorem evm_div_n2_full_TTT_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -890,12 +890,12 @@ theorem evm_div_n2_full_TTT_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem) **
        ((sp + signExtend12 3976) ↦ₘ jMem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2_TTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b1).1
@@ -913,11 +913,11 @@ theorem evm_div_n2_full_TTT_spec (sp base : Word)
   let r1 := iterN2Call v0' v1' v2' v3' u1_s r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
   let r0 := iterN2Call v0' v1' v2' v3' u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
   let c3_0 := (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v1') v0' v1' v2' v3'
-    u0_s r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+    u0S r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
   have hA := evm_div_n2_preloop_loop_unified_spec true true true sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shiftMem jMem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shiftMem jMem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   have hB := evm_div_preamble_denorm_epilogue_spec sp base

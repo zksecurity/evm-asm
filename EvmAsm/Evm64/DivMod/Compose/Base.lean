@@ -236,7 +236,7 @@ theorem sharedDivModCode_sub_modCode (base : Word) :
     - `q0..q3` at `sp + signExtend12 4088/4080/4072/4064` — accumulated quotient digits
     - `u0..u4` at `sp + signExtend12 4056/4048/4040/4032/4024` — normalized dividend
     - `u5..u7` at `sp + signExtend12 4016/4008/4000` — overflow/scratch
-    - `shiftMem` at `sp + signExtend12 3992`, `n_mem` at `sp + signExtend12 3984`
+    - `shiftMem` at `sp + signExtend12 3992`, `nMem` at `sp + signExtend12 3984`
     - `jMem` at `sp + signExtend12 3976`
 
     This is the precondition shape — specific starting values for every cell.
@@ -245,7 +245,7 @@ theorem sharedDivModCode_sub_modCode (base : Word) :
     with fifteen `↦ₘ` lines at every call site. -/
 @[irreducible]
 def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem n_mem jMem : Word) : Assertion :=
+    shiftMem nMem jMem : Word) : Assertion :=
   ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
   ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
   ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -253,16 +253,16 @@ def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
   ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
   ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
   ((sp + signExtend12 3992) ↦ₘ shiftMem) **
-  ((sp + signExtend12 3984) ↦ₘ n_mem) **
+  ((sp + signExtend12 3984) ↦ₘ nMem) **
   ((sp + signExtend12 3976) ↦ₘ jMem)
 
 /-- Unfold `divScratchValues` into its 15 underlying memory atoms. The bundle
     is `@[irreducible]`, so `unfold` won't see through it — this named rewrite
     is the supported way in at call sites (parallel to `divScratchOwn_unfold`). -/
 theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem n_mem jMem : Word) :
+    shiftMem nMem jMem : Word) :
     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem n_mem jMem =
+        shiftMem nMem jMem =
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -270,7 +270,7 @@ theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
      ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
      ((sp + signExtend12 3992) ↦ₘ shiftMem) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem) **
+     ((sp + signExtend12 3984) ↦ₘ nMem) **
      ((sp + signExtend12 3976) ↦ₘ jMem)) := by
   delta divScratchValues; rfl
 
@@ -281,7 +281,7 @@ theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     composition where scratch atoms are scattered across the unfolded
     `fullDivN4MaxSkipPost` post. -/
 theorem divScratchValues_unfold_right (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem n_mem jMem : Word) (Q : Assertion) :
+    shiftMem nMem jMem : Word) (Q : Assertion) :
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -289,10 +289,10 @@ theorem divScratchValues_unfold_right (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
      ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
      ((sp + signExtend12 3992) ↦ₘ shiftMem) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem) **
+     ((sp + signExtend12 3984) ↦ₘ nMem) **
      ((sp + signExtend12 3976) ↦ₘ jMem) ** Q) =
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      shiftMem n_mem jMem ** Q) := by
+      shiftMem nMem jMem ** Q) := by
   rw [divScratchValues_unfold]
   iterate 14 rw [sepConj_assoc']
 
@@ -346,16 +346,16 @@ theorem divScratchOwn_unfold_right (sp : Word) (Q : Assertion) :
   rw [divScratchOwn_unfold]
 
 theorem pcFree_divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem n_mem jMem : Word) :
+    shiftMem nMem jMem : Word) :
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      shiftMem n_mem jMem).pcFree := by
+      shiftMem nMem jMem).pcFree := by
   unfold divScratchValues; pcFree
 
-instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem n_mem jMem : Word) :
+instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem : Word) :
     Assertion.PCFree (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem n_mem jMem) :=
+        shiftMem nMem jMem) :=
   ⟨pcFree_divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem n_mem jMem⟩
+    shiftMem nMem jMem⟩
 
 /-- `divScratchOwn` is pc-free: all its 15 atoms are `memOwn`. Proof goes
     through the `_unfold` rewrite since the bundle is `@[irreducible]`. -/
@@ -369,9 +369,9 @@ instance pcFreeInst_divScratchOwn (sp : Word) :
 /-- Weakening: any concrete scratch state implies ownership of the same 15
     cells. This lets a stack spec hide the scratch values on exit. -/
 theorem divScratchValues_implies_divScratchOwn
-    (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem n_mem jMem : Word) :
+    (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem : Word) :
     ∀ h, divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem n_mem jMem h → divScratchOwn sp h := by
+        shiftMem nMem jMem h → divScratchOwn sp h := by
   unfold divScratchValues divScratchOwn
   -- Weaken each of the 15 memIs cells to memOwn, left to right.
   iterate 14 apply sepConj_mono (memIs_implies_memOwn _ _)
@@ -407,7 +407,7 @@ def loopSetupPost (sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
   ((sp + signExtend12 4024) ↦ₘ u4) **
   ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ nVal) **
   ((sp + signExtend12 3992) ↦ₘ shift)
 
 /-- Unfold the opaque loopSetupPost back to its expanded form. -/
@@ -437,19 +437,19 @@ theorem loopSetupPost_unfold (sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
     ((sp + signExtend12 4024) ↦ₘ u4) **
     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ nVal) **
     ((sp + signExtend12 3992) ↦ₘ shift) := by
   delta loopSetupPost; rfl
 
 /-- `loopSetupPost` is pc-free: all its atoms are `regIs` / `memIs`. -/
-theorem pcFree_loopSetupPost (sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    (loopSetupPost sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3).pcFree := by
+theorem pcFree_loopSetupPost (sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    (loopSetupPost sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3).pcFree := by
   rw [loopSetupPost_unfold]; pcFree
 
 instance pcFreeInst_loopSetupPost
-    (sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    Assertion.PCFree (loopSetupPost sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3) :=
-  ⟨pcFree_loopSetupPost sp n_val shift a0 a1 a2 a3 b0 b1 b2 b3⟩
+    (sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    Assertion.PCFree (loopSetupPost sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3) :=
+  ⟨pcFree_loopSetupPost sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3⟩
 
 -- ============================================================================
 -- Postcondition bundles for denorm + epilogue paths
@@ -560,7 +560,7 @@ def normBPost (sp n_val shift b0 b1 b2 b3 : Word) : Assertion :=
   ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
   ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
   ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ nVal) **
   ((sp + signExtend12 3992) ↦ₘ shift)
 
 theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
@@ -578,18 +578,18 @@ theorem normBPost_unfold (sp n_val shift b0 b1 b2 b3 : Word) :
     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ n_val) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ nVal) **
     ((sp + signExtend12 3992) ↦ₘ shift) := by
   delta normBPost; rfl
 
 /-- `normBPost` is pc-free: all its atoms are `regIs` / `memIs`. -/
-theorem pcFree_normBPost (sp n_val shift b0 b1 b2 b3 : Word) :
-    (normBPost sp n_val shift b0 b1 b2 b3).pcFree := by
+theorem pcFree_normBPost (sp nVal shift b0 b1 b2 b3 : Word) :
+    (normBPost sp nVal shift b0 b1 b2 b3).pcFree := by
   rw [normBPost_unfold]; pcFree
 
-instance pcFreeInst_normBPost (sp n_val shift b0 b1 b2 b3 : Word) :
-    Assertion.PCFree (normBPost sp n_val shift b0 b1 b2 b3) :=
-  ⟨pcFree_normBPost sp n_val shift b0 b1 b2 b3⟩
+instance pcFreeInst_normBPost (sp nVal shift b0 b1 b2 b3 : Word) :
+    Assertion.PCFree (normBPost sp nVal shift b0 b1 b2 b3) :=
+  ⟨pcFree_normBPost sp nVal shift b0 b1 b2 b3⟩
 
 -- ============================================================================
 -- `se12_32`/`se12_40`/`se12_48`/`se12_56` were deleted by issue #493 / #494:
