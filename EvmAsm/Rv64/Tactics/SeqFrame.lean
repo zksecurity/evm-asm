@@ -938,7 +938,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
       let hpost ← mkIdLambda q2StarFrame
       Pure.pure (q2StarFrame, hpost)
     -- h2Simplified : cpsTriple mid exit_ cr2 F actualPost
-    let h2Simplified := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+    let h2Simplified := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
       #[mid2, exit_, cr2, empStarFrame, frameExpr, q2StarFrame, actualPost,
         hpre, hpost, h2Framed]
     -- Permutation: Q1 = F (since frame = all Q1 atoms)
@@ -1006,7 +1006,7 @@ def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do
       Pure.pure extended
   let postPerm ← mkPermLambda resultPost goalPost
   let idPre ← mkIdLambda gPre
-  goal.assign (mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_consequence)
+  goal.assign (mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
     #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, result'])
 
 /-- `seqFrame h1 h2` composes two `cpsTriple` hypotheses with automatic framing.
