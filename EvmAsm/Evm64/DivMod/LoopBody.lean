@@ -1168,9 +1168,7 @@ theorem divK_store_loop_j0_spec
     exact lb_sub base 113 _ _ (by decide) (by bv_addr) (by decide)) haddi
   -- 3. BGE x1 x0 7736 at base+904 (instr [114])
   have hbge_raw := bge_spec_gen .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + 904)
-  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by
-        rw [se13_7736]
-        bv_addr,
+  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
       show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranch_extend_code (hmono := by
     exact lb_sub base 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
@@ -1254,9 +1252,7 @@ theorem divK_store_loop_jgt0_spec
     exact lb_sub base 113 _ _ (by decide) (by bv_addr) (by decide)) haddi
   -- 3. BGE x1 x0 7736 at base+904 (instr [114])
   have hbge_raw := bge_spec_gen .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + 904)
-  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by
-        rw [se13_7736]
-        bv_addr,
+  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
       show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranch_extend_code (hmono := by
     exact lb_sub base 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
