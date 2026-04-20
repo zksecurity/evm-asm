@@ -215,12 +215,12 @@ theorem signext_nochange_high_spec (sp base : Word)
   simp only [signExtend12_24] at h3
   rw [se_off_12] at h3
   -- Frame + compose linear chain
-  have h1f := cpsTriple_frame_left base (base + 4) _ _ _
+  have h1f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
      (sp ↦ₘ b0) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h1
-  have h2f := cpsTriple_frame_left (base + 4) (base + 12) _ _ _
+  have h2f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -228,7 +228,7 @@ theorem signext_nochange_high_spec (sp base : Word)
   have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _
     _ _ _ _
     (fun h hp => by xperm_hyp hp) h1f h2f
-  have h3f := cpsTriple_frame_left (base + 12) (base + 20) _ _ _
+  have h3f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -245,7 +245,7 @@ theorem signext_nochange_high_spec (sp base : Word)
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd ((sepConj_pure_right _ _ _).mp h_rest).2 hhigh)
   -- Frame BNE
-  have hbne_framed := cpsTriple_frame_left (base + 20) (base + 188) _ _ _
+  have hbne_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -258,7 +258,7 @@ theorem signext_nochange_high_spec (sp base : Word)
   have hdone := cpsTriple_extend_code (done_sub_signextCode base)
     (signext_done_spec sp (base + 188))
   rw [se_done_exit] at hdone
-  have hdone_framed := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone_framed := cpsTriple_frameR
     ((.x5 ↦ᵣ (b1 ||| b2 ||| b3)) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ b3) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -309,19 +309,19 @@ theorem signext_nochange_geq31_spec (sp base : Word)
   have h3 := cpsTriple_extend_code (ld_or_24_sub_signextCode base)
     (signext_ld_or_acc_spec sp (b1 ||| b2) b2 b3 24 (base + 12))
   simp only [signExtend12_24] at h3; rw [se_off_12] at h3
-  have h1f := cpsTriple_frame_left base (base + 4) _ _ _
+  have h1f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
      (sp ↦ₘ b0) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h1
-  have h2f := cpsTriple_frame_left (base + 4) (base + 12) _ _ _
+  have h2f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) h2
   have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h1f h2f
-  have h3f := cpsTriple_frame_left (base + 12) (base + 20) _ _ _
+  have h3f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -336,7 +336,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
       exact ((sepConj_pure_right _ _ _).mp h_rest).2 hlow)
-  have hbne_framed := cpsTriple_frame_left (base + 20) (base + 24) _ _ _
+  have hbne_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -352,12 +352,12 @@ theorem signext_nochange_geq31_spec (sp base : Word)
   have hsltiu_raw := sltiu_spec_gen .x10 .x5 b3 b0 31 (base + 28) (by nofun)
   rw [se_off_28] at hsltiu_raw
   have hsltiu := cpsTriple_extend_code (sltiu_sub_signextCode base) hsltiu_raw
-  have hld_f := cpsTriple_frame_left (base + 24) (base + 28) _ _ _
+  have hld_f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ b3) **
      ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
     (by pcFree) hld
-  have hsltiu_f := cpsTriple_frame_left (base + 28) (base + 32) _ _ _
+  have hsltiu_f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -377,7 +377,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact ((sepConj_pure_right _ _ _).mp h_rest).2 hsltiu_eq)
-  have hbeq_framed := cpsTriple_frame_left (base + 32) (base + 188) _ _ _
+  have hbeq_framed := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -388,7 +388,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
   have hdone := cpsTriple_extend_code (done_sub_signextCode base)
     (signext_done_spec sp (base + 188))
   rw [se_done_exit] at hdone
-  have hdone_framed := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone_framed := cpsTriple_frameR
     ((.x5 ↦ᵣ b0) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ sltiuVal) **
      (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
@@ -460,15 +460,15 @@ theorem signext_body_spec (sp base : Word)
   have h3 := cpsTriple_extend_code (ld_or_24_sub_signextCode base)
     (signext_ld_or_acc_spec sp (b1 ||| b2) b2 b3 24 (base + 12))
   simp only [signExtend12_24] at h3; rw [se_off_12] at h3
-  have h1f := cpsTriple_frame_left base (base + 4) _ _ _
+  have h1f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) ** (sp ↦ₘ b0) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) h1
-  have h2f := cpsTriple_frame_left (base + 4) (base + 12) _ _ _
+  have h2f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) h2
   have h12 := cpsTriple_seq_with_perm_same_cr base (base + 4) (base + 12) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) h1f h2f
-  have h3f := cpsTriple_frame_left (base + 12) (base + 20) _ _ _
+  have h3f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) h3
   have h123 := cpsTriple_seq_with_perm_same_cr base (base + 12) (base + 20) _ _ _ _ _
@@ -479,7 +479,7 @@ theorem signext_body_spec (sp base : Word)
   have hbne := cpsBranch_extend_code (bne_sub_signextCode base) hbne_raw
   have hbne_nt := cpsBranch_ntakenStripPure2 hbne
     (fun hp hQt => by obtain ⟨_, _, _, _, _, h_rest⟩ := hQt; exact ((sepConj_pure_right _ _ _).mp h_rest).2 hhigh)
-  have hbne_f := cpsTriple_frame_left (base + 20) (base + 24) _ _ _
+  have hbne_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hbne_nt
   have h1234 := cpsTriple_seq_with_perm_same_cr base (base + 20) (base + 24) _ _ _ _ _
@@ -492,10 +492,10 @@ theorem signext_body_spec (sp base : Word)
   have hsltiu_raw := sltiu_spec_gen .x10 .x5 b3 b0 31 (base + 28) (by nofun)
   rw [se_off_28] at hsltiu_raw
   have hsltiu := cpsTriple_extend_code (sltiu_sub_signextCode base) hsltiu_raw
-  have hld_f := cpsTriple_frame_left (base + 24) (base + 28) _ _ _
+  have hld_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ b3) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hld
-  have hsltiu_f := cpsTriple_frame_left (base + 28) (base + 32) _ _ _
+  have hsltiu_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hsltiu
   have h56 := cpsTriple_seq_with_perm_same_cr (base + 24) (base + 28) (base + 32) _ _ _ _ _
@@ -510,7 +510,7 @@ theorem signext_body_spec (sp base : Word)
   have hbeq := cpsBranch_extend_code (beq_sub_signextCode base) hbeq_raw
   have hbeq_nt := cpsBranch_ntakenStripPure2 hbeq
     (fun hp hQt => by obtain ⟨_, _, _, _, _, h_rest⟩ := hQt; have := ((sepConj_pure_right _ _ _).mp h_rest).2; simp [hsltiu_eq] at this)
-  have hbeq_f := cpsTriple_frame_left (base + 32) (base + 36) _ _ _
+  have hbeq_f := cpsTriple_frameR
     ((.x6 ↦ᵣ r6) ** (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hbeq_nt
   have hphaseA := cpsTriple_seq_with_perm_same_cr base (base + 32) (base + 36) _ _ _ _ _
@@ -523,7 +523,7 @@ theorem signext_body_spec (sp base : Word)
   have hphaseB := cpsTriple_extend_code (phase_b_sub_signextCode base)
     (signext_phase_b_spec b0 r6 sltiuVal (base + 36))
   rw [show (base + 36 : Word) + 20 = base + 56 from by bv_addr] at hphaseB
-  have hphaseB_f := cpsTriple_frame_left (base + 36) (base + 56) _ _ _
+  have hphaseB_f := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
      ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) (by pcFree) hphaseB
   have hphaseAB := cpsTriple_seq_with_perm_same_cr base (base + 36) (base + 56) _ _ _ _ _
@@ -556,7 +556,7 @@ theorem signext_body_spec (sp base : Word)
   have hbody0_f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** bmem) (by pcFree) hbody0
   -- Compose each body with done (body: base+X → base+188, done: base+188 → base+192)
   -- Body 3 + done
-  have hdone3_f := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone3_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v3 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
      (.x6 ↦ᵣ shiftAmount) **
      (.x0 ↦ᵣ (0 : Word)) ** bmem **
@@ -566,7 +566,7 @@ theorem signext_body_spec (sp base : Word)
   have hbd3 := cpsTriple_seq_with_perm_same_cr (base + 76) (base + 188) (base + 192) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody3_f hdone3_f
   -- Body 2 + done
-  have hdone2_f := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone2_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
      (.x6 ↦ᵣ shiftAmount) **
      (.x10 ↦ᵣ (BitVec.sshiftRight (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)) **
@@ -578,7 +578,7 @@ theorem signext_body_spec (sp base : Word)
   have hbd2 := cpsTriple_seq_with_perm_same_cr (base + 96) (base + 188) (base + 192) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody2_f hdone2_f
   -- Body 1 + done
-  have hdone1_f := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone1_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
      (.x6 ↦ᵣ shiftAmount) **
      (.x10 ↦ᵣ (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)) **
@@ -591,7 +591,7 @@ theorem signext_body_spec (sp base : Word)
   have hbd1 := cpsTriple_seq_with_perm_same_cr (base + 124) (base + 188) (base + 192) _ _ _ _ _
     (fun h hp => by xperm_hyp hp) hbody1_f hdone1_f
   -- Body 0 + done
-  have hdone0_f := cpsTriple_frame_left (base + 188) (base + 192) _ _ _
+  have hdone0_f := cpsTriple_frameR
     ((.x5 ↦ᵣ (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))) **
      (.x6 ↦ᵣ shiftAmount) **
      (.x10 ↦ᵣ (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)) **
