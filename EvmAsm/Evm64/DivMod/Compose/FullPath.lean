@@ -19,7 +19,6 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_96)
 
 -- ============================================================================
 -- Phase AB(n=4) → CLZ composition: base → base+212
@@ -579,9 +578,7 @@ theorem mod_denorm_preamble_spec (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
-        rw [se13_96]
-        bv_addr,
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by rv64_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
@@ -709,9 +706,7 @@ theorem evm_div_shift0_epilogue_spec (sp base : Word)
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
-        rw [se13_96]
-        bv_addr,
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by rv64_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
@@ -796,9 +791,7 @@ theorem evm_mod_shift0_epilogue_spec (sp base : Word)
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
   have hbeq := beq_spec_gen .x6 .x0 (96 : BitVec 13) shift (0 : Word) (base + 912)
-  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by
-        rw [se13_96]
-        bv_addr,
+  rw [show (base + 912 : Word) + signExtend13 (96 : BitVec 13) = base + epilogueOff from by rv64_addr,
       show (base + 912 : Word) + 4 = base + 916 from by bv_addr] at hbeq
   have hbeqe := cpsBranch_extend_code (hmono := by
     intro a i h
