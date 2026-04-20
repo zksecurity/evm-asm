@@ -35,8 +35,8 @@ open EvmAsm.Rv64
     4 instructions: LD, SLTU, SUB, SD. Produces borrow (x7). -/
 theorem divK_sub_carry_spec (uBase carryIn v5_old v7_old uTop : Word)
     (u_off : BitVec 12) (base : Word) :
-    let borrow := if BitVec.ult u_top carryIn then (1 : Word) else 0
-    let uNew := u_top - carryIn
+    let borrow := if BitVec.ult uTop carryIn then (1 : Word) else 0
+    let uNew := uTop - carryIn
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x5 .x6 u_off))
       (CodeReq.union (CodeReq.singleton (base + 4) (.SLTU .x7 .x5 .x10))

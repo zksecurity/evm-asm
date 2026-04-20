@@ -396,7 +396,7 @@ set_option maxRecDepth 4096 in
     53 instructions, loop body indices [17]-[69].
     Entry: base+516, Exit: base+728, CodeReq: sharedDivModCode base. -/
 theorem divK_mulsub_full_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
@@ -434,8 +434,8 @@ theorem divK_mulsub_full_spec
     let un3 := u3 - fs3
     let c3 := pc3 + bs3
     -- Sub-carry intermediates
-    let borrow := if BitVec.ult u_top c3 then (1 : Word) else 0
-    let u4_new := u_top - c3
+    let borrow := if BitVec.ult uTop c3 then (1 : Word) else 0
+    let u4_new := uTop - c3
     cpsTriple (base + 516) (base + 728) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
@@ -446,7 +446,7 @@ theorem divK_mulsub_full_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_new) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ borrow) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
@@ -479,7 +479,7 @@ theorem divK_mulsub_full_spec
      ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-     ((uBase + signExtend12 4064) ↦ₘ u_top))
+     ((uBase + signExtend12 4064) ↦ₘ uTop))
     (by pcFree) Se
   -- 2. Mulsub 4 limbs: instrs [22]-[65] at base+536
   have M := divK_mulsub_4limbs_spec sp uBase q_hat v0 v1 v2 v3 u0 u1 u2 u3
@@ -488,7 +488,7 @@ theorem divK_mulsub_full_spec
   -- Compose setup + mulsub
   seqFrame Sf M
   -- 3. Sub-carry: instrs [66]-[69] at base+712
-  have SC := divK_sub_carry_spec uBase c3 bs3 fs3 u_top 4064 (base + 712)
+  have SC := divK_sub_carry_spec uBase c3 bs3 fs3 uTop 4064 (base + 712)
   rw [lb_sc] at SC
   have SCe := cpsTriple_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub base 66 _ _ (by decide) (by bv_addr) (by decide))
@@ -695,11 +695,11 @@ theorem divK_correction_addback_named_spec
 private theorem lb_save_j (base : Word) : (base + loopBodyOff : Word) + 4 = base + 452 := by bv_addr
 private theorem lb_trial_load (base : Word) : (base + 452 : Word) + 48 = base + 500 := by bv_addr
 
-/-- Save j + trial load: save j to memory, then load u_hi, u_lo, vTop for trial quotient.
+/-- Save j + trial load: save j to memory, then load uHi, uLo, vTop for trial quotient.
     13 instructions, loop body indices [0]-[12].
     Entry: base+448, Exit: base+500, CodeReq: sharedDivModCode base. -/
 theorem divK_save_trial_load_spec
-    (sp j n j_old v5_old v6_old v7_old v10_old u_hi u_lo vTop : Word)
+    (sp j n j_old v5_old v6_old v7_old v10_old uHi uLo vTop : Word)
     (base : Word) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
     let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
@@ -709,14 +709,14 @@ theorem divK_save_trial_load_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) **
        (sp + signExtend12 3976 ↦ₘ j_old) **
        (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop))
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ vTop) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
        (sp + signExtend12 3976 ↦ₘ j) **
        (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
   intro uAddr vtopBase
   -- 1. Save j: instr [0] at base+448
@@ -729,11 +729,11 @@ theorem divK_save_trial_load_spec
     ((.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
      (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) **
      (sp + signExtend12 3984 ↦ₘ n) **
-     (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
      (vtopBase + signExtend12 32 ↦ₘ vTop))
     (by pcFree) SJe
   -- 2. Trial load: instrs [1]-[12] at base+452
-  have TL := divK_trial_load_spec sp j n v5_old v6_old v7_old v10_old u_hi u_lo vTop
+  have TL := divK_trial_load_spec sp j n v5_old v6_old v7_old v10_old uHi uLo vTop
     (base + 452)
   dsimp only [] at TL
   rw [lb_trial_load] at TL
@@ -760,10 +760,10 @@ theorem divK_save_trial_load_spec
 
 -- ============================================================================
 -- Section 8: Trial quotient BLTU branch + div128/max composition
--- After trial_load (base+500): x7=u_hi, x10=vTop, x5=u_lo.
+-- After trial_load (base+500): x7=uHi, x10=vTop, x5=uLo.
 -- BLTU x7 x10 12 at base+500:
---   Taken (u_hi < vTop) → base+512: JAL x2 560 → div128 → base+516, x11=q
---   Not-taken (u_hi >= vTop) → base+504: ADDI x11 x0 4095 + JAL x0 8 → base+516
+--   Taken (uHi < vTop) → base+512: JAL x2 560 → div128 → base+516, x11=q
+--   Not-taken (uHi >= vTop) → base+504: ADDI x11 x0 4095 + JAL x0 8 → base+516
 -- ============================================================================
 
 -- Address normalization for trial quotient
@@ -776,7 +776,7 @@ private theorem lb_jal_target (base : Word) : (base + 512 : Word) + signExtend21
 private theorem lb_jal_ret (base : Word) : (base + 512 : Word) + 4 = base + 516 := by bv_addr
 
 -- ============================================================================
--- Section 8a: Trial quotient NOT-TAKEN path (u_hi >= vTop)
+-- Section 8a: Trial quotient NOT-TAKEN path (uHi >= vTop)
 -- Instrs [14]-[15] at base+504: ADDI x11 x0 4095 + JAL x0 8 → base+516.
 -- ============================================================================
 
@@ -794,25 +794,25 @@ private theorem divK_trial_max_extended (v11_old : Word) (base : Word) :
       (lb_sub base 15 _ _ (by decide) (by bv_addr) (by decide))) TM
 
 -- ============================================================================
--- Section 8b: Trial quotient TAKEN path (u_hi < vTop)
+-- Section 8b: Trial quotient TAKEN path (uHi < vTop)
 -- Instr [16] JAL x2 560 at base+512 → div128 at base+1072 → returns to base+516.
 -- ============================================================================
 
 /-- Trial call path: JAL x2 560 (instr [16]) + div128 subroutine.
     Entry: base+512, Exit: base+516, CodeReq: sharedDivModCode base.
-    Computes q_hat = div128(u_hi, u_lo, vTop). -/
+    Computes q_hat = div128(uHi, uLo, vTop). -/
 theorem divK_trial_call_path_spec
-    (sp j u_lo u_hi vTop vtopBase : Word) (base : Word)
+    (sp j uLo uHi vTop vtopBase : Word) (base : Word)
     (v2_old v11_old : Word)
     (ret_mem d_mem dlo_mem un0_mem : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516) :
     -- div128 intermediates (same as div128_spec)
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let un1 := u_lo >>> (32 : BitVec 6).toNat
-    let un0 := (u_lo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu u_hi dHi
-    let rhat := u_hi - q1 * dHi
+    let un1 := uLo >>> (32 : BitVec 6).toNat
+    let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
     let hi1 := q1 >>> (32 : BitVec 6).toNat
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
     let rhatc := if hi1 = 0 then rhat else rhat + dHi
@@ -834,8 +834,8 @@ theorem divK_trial_call_path_spec
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + 512) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ vTop) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
        (.x2 ↦ᵣ v2_old) ** (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -857,15 +857,15 @@ theorem divK_trial_call_path_spec
   have Je := cpsTriple_extend_code (hmono :=
     lb_sub base 16 _ _ (by decide) (by bv_addr) (by decide)) J
   -- 2. div128 subroutine: base+1072 → base+516
-  have D := div128_spec sp (base + 516) vTop u_lo u_hi base
+  have D := div128_spec sp (base + 516) vTop uLo uHi base
     j vtopBase v11_old ret_mem d_mem dlo_mem un0_mem
     halign
   dsimp only [] at D
   -- 3. Frame JAL with all registers/memory for div128
   have Jf := cpsTriple_frameR
     ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-     (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
-     (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ vTop) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
      (.x11 ↦ᵣ v11_old) ** (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3968 ↦ₘ ret_mem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -1311,7 +1311,7 @@ theorem divK_store_loop_jgt0_spec
     Takes borrow as explicit parameter to avoid let-binding expansion issues.
     Entry: base+516, Exit: base+880, CodeReq: sharedDivModCode base. -/
 theorem divK_mulsub_correction_skip_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
@@ -1340,9 +1340,9 @@ theorem divK_mulsub_correction_skip_spec
     let pc3 := ba3 + p3_hi
     let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
     let un3 := u3 - fs3; let c3 := pc3 + bs3
-    let u4_new := u_top - c3
+    let u4_new := uTop - c3
     -- Hypothesis: mulsub borrow = 0
-    (if BitVec.ult u_top c3 then (1 : Word) else 0) = (0 : Word) →
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + 516) (base + 884) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
@@ -1353,7 +1353,7 @@ theorem divK_mulsub_correction_skip_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_new) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
@@ -1371,7 +1371,7 @@ theorem divK_mulsub_correction_skip_spec
         p3_lo p3_hi fs3 ba3 pc3 bs3 un3 c3 u4_new
         hborrow
   -- 1. Mulsub full (base+516 → base+728)
-  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1_old v5_old v6_old v7_old v10_old v2_old base
 
   dsimp only [] at MS hborrow
@@ -1395,7 +1395,7 @@ theorem divK_mulsub_correction_skip_spec
     Entry: base+516, Exit: base+880 (before BEQ at [108]).
     CodeReq: sharedDivModCode base. -/
 theorem divK_mulsub_correction_addback_880_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
@@ -1424,7 +1424,7 @@ theorem divK_mulsub_correction_addback_880_spec
     let pc3 := ba3 + p3_hi
     let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
     let un3 := u3 - fs3; let c3 := pc3 + bs3
-    let u4_new := u_top - c3
+    let u4_new := uTop - c3
     -- Addback intermediates
     let upc0 := un0 + (signExtend12 0 : Word)
     let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
@@ -1449,7 +1449,7 @@ theorem divK_mulsub_correction_addback_880_spec
     let aun4 := u4_new + aco3
     let q_hat' := q_hat + signExtend12 4095
     -- Hypothesis: borrow ≠ 0
-    (if BitVec.ult u_top c3 then (1 : Word) else 0) ≠ (0 : Word) →
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) ≠ (0 : Word) →
     cpsTriple (base + 516) (base + 880) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
@@ -1460,7 +1460,7 @@ theorem divK_mulsub_correction_addback_880_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat') **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ aun4) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ aco3) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ aun3) **
@@ -1480,13 +1480,13 @@ theorem divK_mulsub_correction_addback_880_spec
         upc2 ac1_2 aun2 ac2_2 aco2 upc3 ac1_3 aun3 ac2_3 aco3 aun4 q_hat'
         hborrow
   -- 1. Mulsub full (base+516 → base+728)
-  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1_old v5_old v6_old v7_old v10_old v2_old base
 
   dsimp only [] at MS hborrow
   -- 2. Correction addback (base+728 → base+880) with borrow ≠ 0
   have CA := divK_correction_addback_spec sp uBase
-    (if BitVec.ult u_top c3 then (1 : Word) else 0)
+    (if BitVec.ult uTop c3 then (1 : Word) else 0)
     q_hat v0 v1 v2 v3 un0 un1 un2 un3 u4_new
     u4_new un3 base hborrow
 
@@ -1501,16 +1501,16 @@ theorem divK_mulsub_correction_addback_880_spec
 /-- Mulsub + correction addback (→880), named postcondition variant.
     Uses addbackN4/addbackN4_carry in postcondition for rewritability. -/
 theorem divK_mulsub_correction_addback_named_880_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
     let c3 := ms.2.2.2.2
-    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - c3) v0 v1 v2 v3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
     let q_hat' := q_hat + signExtend12 4095
     -- Hypothesis: borrow ≠ 0
-    (if BitVec.ult u_top c3 then (1 : Word) else 0) ≠ (0 : Word) →
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) ≠ (0 : Word) →
     cpsTriple (base + 516) (base + 880) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
@@ -1521,7 +1521,7 @@ theorem divK_mulsub_correction_addback_named_880_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat') **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ ab.2.2.2.2) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ ab.2.2.2.1) **
@@ -1533,7 +1533,7 @@ theorem divK_mulsub_correction_addback_named_880_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ab.2.2.2.1) **
        ((uBase + signExtend12 4064) ↦ₘ ab.2.2.2.2)) := by
   intro uBase ms c3 ab q_hat' hborrow
-  exact (divK_mulsub_correction_addback_880_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  exact (divK_mulsub_correction_addback_880_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1_old v5_old v6_old v7_old v10_old v2_old base) hborrow
 
 set_option maxRecDepth 4096 in
@@ -1541,7 +1541,7 @@ set_option maxRecDepth 4096 in
     run addback, then BEQ falls through (carry ≠ 0).
     Entry: base+516, Exit: base+884, CodeReq: sharedDivModCode base. -/
 theorem divK_mulsub_correction_addback_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
@@ -1570,7 +1570,7 @@ theorem divK_mulsub_correction_addback_spec
     let pc3 := ba3 + p3_hi
     let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
     let un3 := u3 - fs3; let c3 := pc3 + bs3
-    let u4_new := u_top - c3
+    let u4_new := uTop - c3
     -- Addback intermediates
     let upc0 := un0 + (signExtend12 0 : Word)
     let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
@@ -1595,7 +1595,7 @@ theorem divK_mulsub_correction_addback_spec
     let aun4 := u4_new + aco3
     let q_hat' := q_hat + signExtend12 4095
     -- Hypothesis: borrow ≠ 0
-    (if BitVec.ult u_top c3 then (1 : Word) else 0) ≠ (0 : Word) →
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) ≠ (0 : Word) →
     -- Hypothesis: addback carry ≠ 0 (single addback sufficient)
     aco3 ≠ 0 →
     cpsTriple (base + 516) (base + 884) (sharedDivModCode base)
@@ -1608,7 +1608,7 @@ theorem divK_mulsub_correction_addback_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat') **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ aun4) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ aco3) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ aun3) **
@@ -1628,13 +1628,13 @@ theorem divK_mulsub_correction_addback_spec
         upc2 ac1_2 aun2 ac2_2 aco2 upc3 ac1_3 aun3 ac2_3 aco3 aun4 q_hat'
         hborrow hcarry
   -- 1. Mulsub full (base+516 → base+728)
-  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  have MS := divK_mulsub_full_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1_old v5_old v6_old v7_old v10_old v2_old base
 
   dsimp only [] at MS hborrow
   -- 2. Correction addback (base+728 → base+880) with borrow ≠ 0
   have CA := divK_correction_addback_spec sp uBase
-    (if BitVec.ult u_top c3 then (1 : Word) else 0)
+    (if BitVec.ult uTop c3 then (1 : Word) else 0)
     q_hat v0 v1 v2 v3 un0 un1 un2 un3 u4_new
     u4_new un3 base hborrow
 
@@ -1670,12 +1670,12 @@ theorem divK_mulsub_correction_addback_spec
 
 set_option maxRecDepth 4096 in
 /-- Trial quotient max path: save j + load + BLTU not-taken + trial_max.
-    When u_hi >= vTop, sets q_hat = MAX64 without calling div128.
+    When uHi >= vTop, sets q_hat = MAX64 without calling div128.
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_max_full_spec
-    (sp j n j_old v5_old v6_old v7_old v10_old v11_old u_hi u_lo vTop : Word)
+    (sp j n j_old v5_old v6_old v7_old v10_old v11_old uHi uLo vTop : Word)
     (base : Word)
-    (hbltu : ¬BitVec.ult u_hi vTop) :
+    (hbltu : ¬BitVec.ult uHi vTop) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
     let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
@@ -1684,26 +1684,26 @@ theorem divK_trial_max_full_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop))
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ u_lo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ u_hi) ** (.x10 ↦ᵣ vTop) ** (.x11 ↦ᵣ signExtend12 4095) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) ** (.x11 ↦ᵣ signExtend12 4095) **
        (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
   intro uAddr vtopBase
   -- 1. Save j + trial load (base+448 → base+500)
-  have STL := divK_save_trial_load_spec sp j n j_old v5_old v6_old v7_old v10_old u_hi u_lo vTop
+  have STL := divK_save_trial_load_spec sp j n j_old v5_old v6_old v7_old v10_old uHi uLo vTop
     base
   dsimp only [] at STL
   -- 2. BLTU x7 x10 12 at base+500
-  have hbltu_raw := bltu_spec_gen .x7 .x10 (12 : BitVec 13) u_hi vTop (base + 500)
+  have hbltu_raw := bltu_spec_gen .x7 .x10 (12 : BitVec 13) uHi vTop (base + 500)
   rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
   have hbltu_ext := cpsBranch_extend_code (hmono :=
     lb_sub base 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
-  -- Eliminate taken path (⌜BitVec.ult u_hi vTop⌝ contradicts hbltu)
+  -- Eliminate taken path (⌜BitVec.ult uHi vTop⌝ contradicts hbltu)
   have ntaken := cpsBranch_ntakenPath hbltu_ext (fun hp hQt => by
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
     exact hbltu hpure)
@@ -1728,29 +1728,29 @@ theorem divK_trial_max_full_spec
 
 -- ============================================================================
 -- Section 11b: Trial quotient call path (BLTU taken): save + load + BLTU + JAL + div128
--- When u_hi < vTop, calls div128 to compute the trial quotient.
+-- When uHi < vTop, calls div128 to compute the trial quotient.
 -- Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base.
 -- ============================================================================
 
 set_option maxRecDepth 4096 in
 /-- Trial quotient call path: save j + load + BLTU taken + JAL + div128.
-    When u_hi < vTop, computes q_hat = div128(u_hi, u_lo, vTop).
+    When uHi < vTop, computes q_hat = div128(uHi, uLo, vTop).
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_call_full_spec
-    (sp j n j_old v5_old v6_old v7_old v10_old v11_old v2_old u_hi u_lo vTop : Word)
+    (sp j n j_old v5_old v6_old v7_old v10_old v11_old v2_old uHi uLo vTop : Word)
     (ret_mem d_mem dlo_mem un0_mem : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu : BitVec.ult u_hi vTop) :
+    (hbltu : BitVec.ult uHi vTop) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
     let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
     -- div128 intermediates
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let un1 := u_lo >>> (32 : BitVec 6).toNat
-    let un0_div := (u_lo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu u_hi dHi
-    let rhat := u_hi - q1 * dHi
+    let un1 := uLo >>> (32 : BitVec 6).toNat
+    let un0_div := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
     let hi1 := q1 >>> (32 : BitVec 6).toNat
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
     let rhatc := if hi1 = 0 then rhat else rhat + dHi
@@ -1776,7 +1776,7 @@ theorem divK_trial_call_full_spec
        (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
        (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j_old) ** (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
@@ -1787,7 +1787,7 @@ theorem divK_trial_call_full_spec
        (.x7 ↦ᵣ q0_dlo) ** (.x10 ↦ᵣ q1') ** (.x11 ↦ᵣ q) **
        (.x2 ↦ᵣ (base + 516)) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ u_hi) ** ((uAddr + 8) ↦ₘ u_lo) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop) **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ vTop) **
@@ -1797,15 +1797,15 @@ theorem divK_trial_call_full_spec
         dHi dLo un1 un0_div q1 rhat hi1 q1c rhatc q_dlo rhat_un1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0_dlo rhat2_un0 q0' q
   -- 1. Save j + trial load (base+448 → base+500)
-  have STL := divK_save_trial_load_spec sp j n j_old v5_old v6_old v7_old v10_old u_hi u_lo vTop
+  have STL := divK_save_trial_load_spec sp j n j_old v5_old v6_old v7_old v10_old uHi uLo vTop
     base
   dsimp only [] at STL
   -- 2. BLTU x7 x10 12 at base+500
-  have hbltu_raw := bltu_spec_gen .x7 .x10 (12 : BitVec 13) u_hi vTop (base + 500)
+  have hbltu_raw := bltu_spec_gen .x7 .x10 (12 : BitVec 13) uHi vTop (base + 500)
   rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
   have hbltu_ext := cpsBranch_extend_code (hmono :=
     lb_sub base 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
-  -- Eliminate ntaken path (⌜¬BitVec.ult u_hi vTop⌝ contradicts hbltu)
+  -- Eliminate ntaken path (⌜¬BitVec.ult uHi vTop⌝ contradicts hbltu)
   have taken := cpsBranch_takenPath hbltu_ext (fun hp hQf => by
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
     exact hpure hbltu)
@@ -1815,7 +1815,7 @@ theorem divK_trial_call_full_spec
     (fun h hp => sepConj_mono_right
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp) taken
   -- 3. Trial call path (base+512 → base+516)
-  have TCP := divK_trial_call_path_spec sp j u_lo u_hi vTop vtopBase base
+  have TCP := divK_trial_call_path_spec sp j uLo uHi vTop vtopBase base
     v2_old v11_old ret_mem d_mem dlo_mem un0_mem
     halign
   dsimp only [] at TCP
@@ -1849,14 +1849,14 @@ theorem divK_trial_call_full_spec
     - carry = 0 (double addback): BEQ takes backward branch, second addback, then falls through
     Entry: base+516, Exit: base+884. -/
 theorem divK_mulsub_correction_addback_beq_spec
-    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top : Word)
+    (sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1_old v5_old v6_old v7_old v10_old v2_old : Word)
     (base : Word) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
     let c3 := ms.2.2.2.2
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
-    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (u_top - c3) v0 v1 v2 v3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
     -- Double-addback results (only used when carry = 0)
     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
     -- Final values depend on carry
@@ -1873,7 +1873,7 @@ theorem divK_mulsub_correction_addback_beq_spec
     -- Hypothesis: second addback carry nonzero (only needed if first carry = 0)
     (carry = 0 → addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) →
     -- Hypothesis: borrow ≠ 0
-    (if BitVec.ult u_top c3 then (1 : Word) else 0) ≠ (0 : Word) →
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) ≠ (0 : Word) →
     cpsTriple (base + 516) (base + 884) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
        (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
@@ -1884,7 +1884,7 @@ theorem divK_mulsub_correction_addback_beq_spec
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u_top))
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_out) **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_out) ** (.x6 ↦ᵣ uBase) **
        (.x7 ↦ᵣ carryOut) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
@@ -1898,7 +1898,7 @@ theorem divK_mulsub_correction_addback_beq_spec
   intro uBase ms c3 carry ab ab' q_out un0_out un1_out un2_out un3_out u4_out carryOut
         hcarry2_nz hborrow
   -- 1. Mulsub + first addback (base+516 → base+880)
-  have MCA := divK_mulsub_correction_addback_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+  have MCA := divK_mulsub_correction_addback_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1_old v5_old v6_old v7_old v10_old v2_old base
 
   intro_lets at MCA
@@ -1915,7 +1915,7 @@ theorem divK_mulsub_correction_addback_beq_spec
     have hc : carryOut = addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 := if_pos hcarry
     rw [hq, h0, h1, h2, h3, h4, hc]
     -- Use named 880 spec (→880 with addbackN4_carry in postcondition)
-    have MCA_N := (divK_mulsub_correction_addback_named_880_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
+    have MCA_N := (divK_mulsub_correction_addback_named_880_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
       v1_old v5_old v6_old v7_old v10_old v2_old base) hborrow
     -- Rewrite carry to 0
     rw [show addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3 = (0 : Word) from hcarry] at MCA_N

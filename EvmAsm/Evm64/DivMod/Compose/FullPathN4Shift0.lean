@@ -113,7 +113,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec (sp base : Word)
      (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
-  -- Loop body: base+448 → base+904, call+skip with v=b, u=a, u_top=0
+  -- Loop body: base+448 → base+904, call+skip with v=b, u=a, uTop=0
   have hbltu : BitVec.ult (0 : Word) b3 := ult_zero_of_ne hb3nz
   have hLoop := divK_loop_body_n4_call_skip_j0_norm sp base
     jMem (4 : Word) ((clzResult b3).1) ((clzResult b3).2 >>> (63 : Nat)) b3

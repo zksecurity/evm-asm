@@ -149,7 +149,7 @@ theorem n4_max_double_addback_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
   intro ms ab ab' q_hat'' a b q r
   have hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0 := by
     intro h; exact hb3nz (BitVec.or_eq_zero_iff.mp h).2
-  -- Bridge: for any u_top, addbackN4's low-4 outputs are the same. So both
+  -- Bridge: for any uTop, addbackN4's low-4 outputs are the same. So both
   -- the algorithm's `ab` (u4_new = 0 - c3) and lemma's ab (u4_new = 0) share
   -- low-4 limbs, and the second-addback low-4 outputs also match.
   have h_ab_indep := addbackN4_fst4_u4_indep ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
@@ -180,8 +180,8 @@ theorem n4_max_double_addback_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3 hbnz hq_over hc3_one hcarry1_zero hq_ge_2
   simp only [] at hcombined
   -- Bridge from lemma's ab' to algorithm's ab': both second addbacks compute
-  -- from the same low-4 ab limbs (low 4 are u_top-independent), and second
-  -- addback's low-4 outputs are themselves u_top-independent. So their
+  -- from the same low-4 ab limbs (low 4 are uTop-independent), and second
+  -- addback's low-4 outputs are themselves uTop-independent. So their
   -- low-4 val256s match.
   have h_ab'_alg_indep := addbackN4_fst4_u4_indep ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
     ab.2.2.2.2 0 b0 b1 b2 b3

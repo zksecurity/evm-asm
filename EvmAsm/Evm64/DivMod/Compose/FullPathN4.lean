@@ -88,10 +88,10 @@ def isSkipBorrowN4Max (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 /-- Loop body n=4, max+skip, j=0 with sp-relative addresses in precondition. -/
 theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
     (j_old v5_old v6_old v7_old v10_old v11_old v2_old : Word)
-    (v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (hbltu : ¬BitVec.ult u_top v3) :
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop q_old : Word)
+    (hbltu : ¬BitVec.ult uTop v3) :
     let q_hat : Word := signExtend12 4095
-    (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
+    (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
@@ -103,12 +103,12 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
        ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
        ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ u_top) **
+       ((sp + signExtend12 4024) ↦ₘ uTop) **
        ((sp + signExtend12 4088) ↦ₘ q_old))
-      (loopBodyN4SkipPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
+      (loopBodyN4SkipPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   intro q_hat hborrow
   have raw := divK_loop_body_n4_max_skip_j0_divCode sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop q_old base
 
     hbltu hborrow
   simp only [se12_32, se12_40, se12_48, se12_56,
@@ -536,14 +536,14 @@ def isAddbackBorrowN4Call (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 /-- Loop body n=4, call+skip, j=0 with sp-relative addresses. -/
 theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
     (j_old v5_old v6_old v7_old v10_old v11_old v2_old : Word)
-    (v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop q_old : Word)
     (ret_mem d_mem dlo_mem scratch_un0 : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
-    (hbltu : BitVec.ult u_top v3) :
-    let q_hat := div128Quot u_top u3 v3
+    (hbltu : BitVec.ult uTop v3) :
+    let q_hat := div128Quot uTop u3 v3
     let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    (if BitVec.ult u_top (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
+    (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
@@ -555,20 +555,20 @@ theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
        ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
        ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ u_top) **
+       ((sp + signExtend12 4024) ↦ₘ uTop) **
        ((sp + signExtend12 4088) ↦ₘ q_old) **
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopBodyN4SkipPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
+      (loopBodyN4SkipPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v3) **
        (sp + signExtend12 3952 ↦ₘ dLo) **
        (sp + signExtend12 3944 ↦ₘ div_un0)) := by
   intro q_hat dLo div_un0 hborrow
   have raw := divK_loop_body_n4_call_skip_j0_divCode sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base halign hbltu
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop q_old ret_mem d_mem dlo_mem scratch_un0 base halign hbltu
   have raw' := raw hborrow
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,

@@ -51,8 +51,8 @@ open EvmAsm.Rv64
 
 /-- 128/64-bit unsigned division subroutine (Hacker's Delight divlu).
     Called via JAL x2, offset. Returns via JALR x0, x2, 0.
-    Input: x7 = u_hi (< d), x5 = u_lo, x10 = d (normalized, >= 2^63)
-    Output: x11 = floor((u_hi * 2^64 + u_lo) / d)
+    Input: x7 = uHi (< d), x5 = uLo, x10 = d (normalized, >= 2^63)
+    Output: x11 = floor((uHi * 2^64 + uLo) / d)
     Clobbers: x1, x5, x6, x7, x10, x11. Preserves: x2, x12.
     Uses scratch memory at 3992, 3984, 3976, 3968 (offsets from x12). -/
 def divK_div128 : Program :=
@@ -63,12 +63,12 @@ def divK_div128 : Program :=
   SRLI .x6 .x10 32 ;;                         -- [2]  x6 = dHi (>= 2^31)
   SLLI .x1 .x10 32 ;; SRLI .x1 .x1 32 ;;     -- [3,4] x1 = dLo
   SD .x12 .x1 3952 ;;                         -- [5]  save dLo
-  -- Split u_lo: un1 = u_lo >> 32, un0 = (u_lo << 32) >> 32
+  -- Split uLo: un1 = uLo >> 32, un0 = (uLo << 32) >> 32
   SRLI .x11 .x5 32 ;;                         -- [6]  x11 = un1
   SLLI .x5 .x5 32 ;; SRLI .x5 .x5 32 ;;      -- [7,8] x5 = un0
   SD .x12 .x5 3944 ;;                         -- [9]  save un0
-  -- Step 1: q1 = DIVU(u_hi, dHi), rhat = u_hi - q1*dHi
-  -- x7 = u_hi, x6 = dHi
+  -- Step 1: q1 = DIVU(uHi, dHi), rhat = uHi - q1*dHi
+  -- x7 = uHi, x6 = dHi
   single (.DIVU .x10 .x7 .x6) ;;             -- [10] x10 = q1 (use x10 since we saved d)
   single (.MUL .x5 .x10 .x6) ;;              -- [11] x5 = q1 * dHi
   single (.SUB .x7 .x7 .x5) ;;               -- [12] x7 = rhat
@@ -227,7 +227,7 @@ def divK_loopSetup (blt_off : BitVec 13) : Program :=
 
     Layout within loop body (instruction indices relative to loop_start):
       [0]     SD save j
-      [1..13] load u[j+n], u[j+n-1], vTop; check u_hi>=vTop; call 128/64
+      [1..13] load u[j+n], u[j+n-1], vTop; check uHi>=vTop; call 128/64
       [14]    LD restore j
       [15..17] mul-sub setup (uBase, carry=0)
       [18..61] mul-sub 4 limbs (4 × 11 instrs)
@@ -259,7 +259,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   LD .x10 .x6 32 ;;                            -- [12] x10 = vTop = b[n-1]
 
   -- Trial quotient
-  single (.BLTU .x7 .x10 12) ;;              -- [13] u_hi < vTop? → [16] call 128/64
+  single (.BLTU .x7 .x10 12) ;;              -- [13] uHi < vTop? → [16] call 128/64
   ADDI .x11 .x0 4095 ;;                       -- [14] q_hat = MAX64
   JAL .x0 8 ;;                                 -- [15] skip call → [17]
   JAL .x2 subr_off ;;                          -- [16] call 128/64 subroutine
