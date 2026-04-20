@@ -22,6 +22,13 @@ namespace EvmWord
 def getLimb (v : EvmWord) (i : Fin 4) : Word :=
   v.extractLsb' (i.val * 64) 64
 
+/-- Concrete `Fin 4` `.val` projections. Used by `getLimb` rewrites
+    throughout `Basic.lean` and the `EvmWordArith` bridge lemmas. -/
+theorem fin4_val_0 : (0 : Fin 4).val = 0 := rfl
+theorem fin4_val_1 : (1 : Fin 4).val = 1 := rfl
+theorem fin4_val_2 : (2 : Fin 4).val = 2 := rfl
+theorem fin4_val_3 : (3 : Fin 4).val = 3 := rfl
+
 /-- Reconstruct a 256-bit value from 4 limbs. -/
 def fromLimbs (limbs : Fin 4 → Word) : EvmWord :=
   (limbs 0).zeroExtend 256 |||
@@ -58,31 +65,31 @@ theorem getLimb_not (x : EvmWord) (i : Fin 4) :
 theorem fromLimbs_getLimb (v : EvmWord) :
     EvmWord.fromLimbs (v.getLimb) = v := by
   simp only [fromLimbs, getLimb,
-    show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
-    show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl]
+    fin4_val_0, fin4_val_1,
+    fin4_val_2, fin4_val_3]
   bv_decide
 
 private theorem getLimb_fromLimbs_0 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 0 = limbs 0 := by
-  simp only [fromLimbs, getLimb, show (0 : Fin 4).val = 0 from rfl]
+  simp only [fromLimbs, getLimb, fin4_val_0]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
 private theorem getLimb_fromLimbs_1 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 1 = limbs 1 := by
-  simp only [fromLimbs, getLimb, show (1 : Fin 4).val = 1 from rfl]
+  simp only [fromLimbs, getLimb, fin4_val_1]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
 private theorem getLimb_fromLimbs_2 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 2 = limbs 2 := by
-  simp only [fromLimbs, getLimb, show (2 : Fin 4).val = 2 from rfl]
+  simp only [fromLimbs, getLimb, fin4_val_2]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
 private theorem getLimb_fromLimbs_3 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 3 = limbs 3 := by
-  simp only [fromLimbs, getLimb, show (3 : Fin 4).val = 3 from rfl]
+  simp only [fromLimbs, getLimb, fin4_val_3]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
@@ -110,7 +117,7 @@ theorem toNat_getLimb_decompose (v : EvmWord) :
   have h2 : (v.getLimb 2).toNat = v.toNat / 2^128 % 2^64 := by
     simp [getLimb, BitVec.extractLsb', Nat.shiftRight_eq_div_pow]
   have h3 : (v.getLimb 3).toNat = v.toNat / 2^192 % 2^64 := by
-    simp only [getLimb, show (3 : Fin 4).val = 3 from rfl,
+    simp only [getLimb, fin4_val_3,
                BitVec.extractLsb', Nat.shiftRight_eq_div_pow,
                show 3 * 64 = 192 from by decide, BitVec.toNat_ofNat]
   rw [h0, h1, h2, h3]; omega
@@ -144,8 +151,8 @@ theorem toNat_eq_getLimb0_of_high_zero (v : EvmWord)
   have h1 := or3_eq_zero_left _ _ _ h
   have h2 := or3_eq_zero_mid _ _ _ h
   have h3 := or3_eq_zero_right _ _ _ h
-  simp only [getLimb, show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
-    show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl] at *
+  simp only [getLimb, fin4_val_0, fin4_val_1,
+    fin4_val_2, fin4_val_3] at *
   have hn1 : (v.extractLsb' (1 * 64) 64).toNat = 0 := by rw [h1]; rfl
   have hn2 : (v.extractLsb' (2 * 64) 64).toNat = 0 := by rw [h2]; rfl
   have hn3 : (v.extractLsb' (3 * 64) 64).toNat = 0 := by rw [h3]; rfl

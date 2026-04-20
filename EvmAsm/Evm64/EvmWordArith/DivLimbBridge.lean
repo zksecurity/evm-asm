@@ -119,8 +119,8 @@ theorem ne_zero_iff_getLimbN_or (v : EvmWord) :
     -- All limbs 0 → v.toNat = 0 → v = 0
     have hd := toNat_getLimb_decompose v
     rw [getLimb_eq_getLimbN, getLimb_eq_getLimbN, getLimb_eq_getLimbN, getLimb_eq_getLimbN,
-        show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
-        show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl,
+        fin4_val_0, fin4_val_1,
+        fin4_val_2, fin4_val_3,
         h0, h1, h2, h3] at hd
     -- hd : v.toNat = 0 + 0 * 2^64 + 0 * 2^128 + 0 * 2^192
     simp at hd
