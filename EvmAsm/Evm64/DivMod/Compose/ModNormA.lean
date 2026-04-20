@@ -14,7 +14,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se13_464 se21_40 bv64_4mul_3)
+open EvmAsm.Rv64.AddrNorm (bv64_4mul_3)
 
 -- ============================================================================
 -- MOD CodeReq subsumption lemmas for blocks 5, 6, 7
@@ -144,8 +144,7 @@ theorem mod_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift antiShift : Word)
     (fun h hp => by xperm_hyp hp) h1234 hlastef
   -- JAL x0 40 at base+392 -> base+432 (1 instruction, empAssertion pre/post)
   have hjal := jal_x0_spec_gen 40 (base + 392)
-  rw [show (base + 392 : Word) + signExtend21 40 = base + loopSetupOff from by
-        rw [se21_40]; bv_addr] at hjal
+  rw [show (base + 392 : Word) + signExtend21 40 = base + loopSetupOff from by rv64_addr] at hjal
   have hjale := cpsTriple_extend_code (hmono := by
     intro a i h
     exact divK_normA_code_sub_modCode base a i
@@ -251,8 +250,7 @@ theorem mod_loopSetup_ntaken_spec (sp n v1 v5 : Word) (base : Word)
   rw [show (base + loopSetupOff : Word) + 12 = base + 444 from by bv_addr] at hbody
   have hbodye := cpsTriple_extend_code (divK_loopSetup_code_sub_modCode base) hbody
   have hblt_raw := blt_spec_gen .x1 .x0 464 m (0 : Word) (base + 444)
-  rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by
-        rw [se13_464]; bv_addr,
+  rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by rv64_addr,
       show (base + 444 : Word) + 4 = base + loopBodyOff from by bv_addr] at hblt_raw
   have hblt_clean := cpsBranch_ntakenStripPure2 hblt_raw
     (fun hp hQt => by
@@ -284,8 +282,7 @@ theorem mod_loopSetup_taken_spec (sp n v1 v5 : Word) (base : Word)
   rw [show (base + loopSetupOff : Word) + 12 = base + 444 from by bv_addr] at hbody
   have hbodye := cpsTriple_extend_code (divK_loopSetup_code_sub_modCode base) hbody
   have hblt_raw := blt_spec_gen .x1 .x0 464 m (0 : Word) (base + 444)
-  rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by
-        rw [se13_464]; bv_addr,
+  rw [show (base + 444 : Word) + signExtend13 464 = base + denormOff from by rv64_addr,
       show (base + 444 : Word) + 4 = base + loopBodyOff from by bv_addr] at hblt_raw
   have hblt_clean := cpsBranch_takenStripPure2 hblt_raw
     (fun hp hQf => by
