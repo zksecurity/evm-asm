@@ -26,7 +26,8 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 open EvmAsm.Rv64.AddrNorm (se12_7 se13_20 se13_44 se13_68 se13_128 se13_140
   se21_16 se21_24 se21_32 se21_48
-  zero_add_se12_1_toNat zero_add_se12_2_toNat bv6_toNat_3 word_add_zero)
+  zero_add_se12_1_toNat zero_add_se12_2_toNat bv6_toNat_3
+  word_toNat_7 word_toNat_32 word_toNat_255 word_add_zero)
 
 -- ============================================================================
 -- Full program CodeReq
@@ -219,7 +220,7 @@ private theorem bv_srl_mask_eq (x : Word) (n : Nat) (hn : n < 64) :
   have hn64 : n % 64 = n := Nat.mod_eq_of_lt hn
   rw [hn64]; apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
-             show (255 : Word).toNat = 255 from by decide,
+             word_toNat_255,
              BitVec.toNat_ofNat]
   rw [Nat.and_two_pow_sub_one_eq_mod _ 8]
   have hmod_lt : (x.toNat / 2 ^ n) % 256 < 2 ^ 64 := by
@@ -611,7 +612,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     show (byteInLimb <<< (3 : BitVec 6).toNat).toNat = (i0.toNat % 8) * 8
     rw [bv6_toNat_3]
     simp only [byteInLimb, BitVec.toNat_shiftLeft, BitVec.toNat_and, se12_7,
-               show (7 : Word).toNat = 7 from by decide]
+               word_toNat_7]
     rw [Nat.and_two_pow_sub_one_eq_mod _ 3]
     have : i0.toNat % 8 < 8 := Nat.mod_lt _ (by omega)
     have : (i0.toNat % 8) * 8 < 2 ^ 64 := by omega
@@ -913,7 +914,7 @@ theorem evm_byte_stack_spec (sp base : Word)
       -- Need: BitVec.ult i0 (signExtend12 32) = true
       have hlt_i0 : BitVec.ult i0 (signExtend12 (32 : BitVec 12)) = true := by
         simp only [BitVec.ult, signExtend12_32,
-                   show (32 : Word).toNat = 32 from by decide]
+                   word_toNat_32]
         have hidx_toNat : idx.toNat = i0.toNat :=
           EvmWord.toNat_eq_getLimb0_of_high_zero idx hhigh
         rw [decide_eq_true_eq]; omega
@@ -924,7 +925,7 @@ theorem evm_byte_stack_spec (sp base : Word)
       -- Need: BitVec.ult i0 (signExtend12 32) = false
       have hlarge : BitVec.ult i0 (signExtend12 (32 : BitVec 12)) = false := by
         simp only [BitVec.ult, signExtend12_32,
-                   show (32 : Word).toNat = 32 from by decide]
+                   word_toNat_32]
         have hidx_toNat : idx.toNat = i0.toNat :=
           EvmWord.toNat_eq_getLimb0_of_high_zero idx hhigh
         rw [decide_eq_false_iff_not]; omega
