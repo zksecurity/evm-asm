@@ -28,27 +28,27 @@ abbrev divK_phaseB_tail_code (base : Word) : CodeReq :=
   CodeReq.ofProg base (divK_phaseB.drop 16)
 
 /-- Phase B tail: store n to scratch, compute sp + (n-1)*8, load b[n-1].
-    x5 = n on entry. On exit, x5 = leading limb b[n-1]. -/
+    x5 = n on entry. On exit, x5 = leading limb b[n-1].
+
+    The leading-limb address `sp + (n-1)*8 + 32` is written inline in the
+    pre and post — callers already rewrite it to the concrete slot per
+    `n` via simp, so hoisting it into a `let` just added a leading
+    `intro` and made the statement less direct. -/
 theorem divK_phaseB_tail_spec (sp n leading_limb nMem : Word) (base : Word) :
-    let nm1 := n + signExtend12 4095
-    let nm1X8 := nm1 <<< (3 : BitVec 6).toNat
-    let addrLead := sp + nm1X8
-    let cr := divK_phaseB_tail_code base
-    cpsTriple base (base + 20) cr
-      (
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) **
+    cpsTriple base (base + 20) (divK_phaseB_tail_code base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) **
        ((sp + signExtend12 3984) ↦ₘ nMem) **
-       ((addrLead + signExtend12 32) ↦ₘ leading_limb))
-      (
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ leading_limb) **
+       ((sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) ↦ₘ leading_limb))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ leading_limb) **
        ((sp + signExtend12 3984) ↦ₘ n) **
-       ((addrLead + signExtend12 32) ↦ₘ leading_limb)) := by
-  intro nm1 nm1X8 addrLead cr
+       ((sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat + signExtend12 32) ↦ₘ leading_limb)) := by
   have I0 := sd_spec_gen .x12 .x5 sp n nMem 3984 base
   have I1 := addi_spec_gen_same .x5 n 4095 (base + 4) (by nofun)
-  have I2 := slli_spec_gen_same .x5 nm1 3 (base + 8) (by nofun)
-  have I3 := add_spec_gen_rd_eq_rs2 .x5 .x12 sp nm1X8 (base + 12) (by nofun)
-  have I4 := ld_spec_gen_same .x5 addrLead leading_limb 32 (base + 16) (by nofun)
+  have I2 := slli_spec_gen_same .x5 (n + signExtend12 4095) 3 (base + 8) (by nofun)
+  have I3 := add_spec_gen_rd_eq_rs2 .x5 .x12 sp
+    ((n + signExtend12 4095) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun)
+  have I4 := ld_spec_gen_same .x5
+    (sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat) leading_limb 32 (base + 16) (by nofun)
   runBlock I0 I1 I2 I3 I4
 
 end EvmAsm.Evm64
