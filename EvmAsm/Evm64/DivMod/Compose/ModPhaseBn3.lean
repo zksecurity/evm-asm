@@ -135,7 +135,8 @@ theorem evm_mod_phaseB_n3_spec (sp base : Word)
     (fun h hp => by xperm_hyp hp) h12345 hbne1f
   -- ---- Tail (base+96 → base+116)
   have htail_raw := divK_phaseB_tail_spec sp (3 : Word) b2 nMem (base + 96)
-  simp only [mod_phB_t_20, mod_divK_phaseB_n3_nm1_x8, se12_32,
+  simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
+    mod_phB_t_20, mod_divK_phaseB_n3_nm1_x8, se12_32,
     mod_phB_sp16_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   have htailf := cpsTriple_frameR

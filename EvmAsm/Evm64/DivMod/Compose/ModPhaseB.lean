@@ -164,7 +164,8 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   seqFrame hinit1fhinit2haddi hbne
   -- ---- Step 5: Tail (base+96 → base+116) — store n=4, load leading limb b[3]
   have htail_raw := divK_phaseB_tail_spec sp (4 : Word) b3 nMem (base + 96)
-  simp only [mod_phB_t_20, mod_phB_sp24_32] at htail_raw
+  simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
+             mod_phB_t_20, mod_phB_sp24_32] at htail_raw
   have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
   seqFrame hinit1fhinit2haddihbne htail
   -- ---- Final consequence — permute assertions
