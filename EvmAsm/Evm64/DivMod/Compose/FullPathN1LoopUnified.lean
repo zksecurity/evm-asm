@@ -28,26 +28,26 @@ open EvmAsm.Rv64.AddrNorm (se12_32 se12_40 se12_48 se12_56)
 -- ============================================================================
 
 /-- j=3 trial condition for n=1 (double-addback): `bltu_3 = BitVec.ult u_hi_norm v_top_norm`
-    where `shift = clz(b0)`, `u_hi_norm = a3 >>> anti_shift`,
+    where `shift = clz(b0)`, `u_hi_norm = a3 >>> antiShift`,
     `v_top_norm = b0 <<< shift`. -/
 def isTrialN1_j3 (bltu_3 : Bool) (a3 b0 : Word) : Prop :=
   let shift := (clzResult b0).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
   bltu_3 = BitVec.ult
-    (a3 >>> (anti_shift.toNat % 64))
+    (a3 >>> (antiShift.toNat % 64))
     (b0 <<< (shift.toNat % 64))
 
 /-- j=2 trial condition for n=1 (double-addback), dependent on j=3 path (bltu_3).
     Checks the BLTU condition after the j=3 iteration result. -/
 def isTrialN1_j2 (bltu_3 bltu_2 : Bool) (a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
-  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  let u4_s := a3 >>> (anti_shift.toNat % 64)
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u4_s := a3 >>> (antiShift.toNat % 64)
   bltu_2 = BitVec.ult
     (iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
     v0'
@@ -55,14 +55,14 @@ def isTrialN1_j2 (bltu_3 bltu_2 : Bool) (a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 /-- j=1 trial condition for n=1 (double-addback), dependent on j=3 and j=2 paths. -/
 def isTrialN1_j1 (bltu_3 bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
-  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  let u4_s := a3 >>> (anti_shift.toNat % 64)
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u4_s := a3 >>> (antiShift.toNat % 64)
   let r3 := iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
   bltu_1 = BitVec.ult
     (iterN1 bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1).2.1
@@ -71,15 +71,15 @@ def isTrialN1_j1 (bltu_3 bltu_2 bltu_1 : Bool) (a1 a2 a3 b0 b1 b2 b3 : Word) : P
 /-- j=0 trial condition for n=1 (double-addback), dependent on j=3, j=2, and j=1 paths. -/
 def isTrialN1_j0 (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   let shift := (clzResult b0).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
-  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
-  let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
-  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
-  let u4_s := a3 >>> (anti_shift.toNat % 64)
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u4_s := a3 >>> (antiShift.toNat % 64)
   let r3 := iterN1 bltu_3 v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
   let r2 := iterN1 bltu_2 v0' v1' v2' v3' u2_s r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
   bltu_0 = BitVec.ult
@@ -98,17 +98,17 @@ def preloopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b0).1
-  let anti_shift := signExtend12 (0 : BitVec 12) - shift
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
-  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (anti_shift.toNat % 64))
-  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (anti_shift.toNat % 64))
-  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (anti_shift.toNat % 64))
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
   let u0_s := a0 <<< (shift.toNat % 64)
-  let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (anti_shift.toNat % 64))
-  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (anti_shift.toNat % 64))
-  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (anti_shift.toNat % 64))
+  let u1_s := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u2_s := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u3_s := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
   loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
-    v0' v1' v2' v3' u3_s (a3 >>> (anti_shift.toNat % 64)) (0 : Word) (0 : Word) (0 : Word)
+    v0' v1' v2' v3' u3_s (a3 >>> (antiShift.toNat % 64)) (0 : Word) (0 : Word) (0 : Word)
     u2_s u1_s u0_s
     retMem dMem dloMem scratch_un0 **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -123,7 +123,7 @@ def preloopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     Separates the loop application from the composition for heartbeat budgeting. -/
 private theorem evm_div_n1_loop_unified_inst
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
-    (shift anti_shift v0' v1' v2' v3' u0_s u1_s u2_s u3_s u4_s : Word)
+    (shift antiShift v0' v1' v2' v3' u0_s u1_s u2_s u3_s u4_s : Word)
     (v10_val v11_old jMem : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
@@ -162,7 +162,7 @@ private theorem evm_div_n1_loop_unified_inst
       v0')
     (hcarry2 : Carry2NzAll v0' v1' v2' v3') :
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
-      (loopN1PreWithScratch sp jMem (1 : Word) shift u0_s v10_val v11_old anti_shift
+      (loopN1PreWithScratch sp jMem (1 : Word) shift u0_s v10_val v11_old antiShift
         v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
         u2_s u1_s u0_s (0 : Word) (0 : Word) (0 : Word) (0 : Word)
         retMem dMem dloMem scratch_un0)
@@ -170,7 +170,7 @@ private theorem evm_div_n1_loop_unified_inst
         v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
         u2_s u1_s u0_s retMem dMem dloMem scratch_un0) :=
   divK_loop_n1_unified_divCode bltu_3 bltu_2 bltu_1 bltu_0
-    sp jMem (1 : Word) shift u0_s v10_val v11_old anti_shift
+    sp jMem (1 : Word) shift u0_s v10_val v11_old antiShift
     v0' v1' v2' v3' u3_s u4_s (0 : Word) (0 : Word) (0 : Word)
     u2_s u1_s u0_s (0 : Word) (0 : Word) (0 : Word) (0 : Word)
     retMem dMem dloMem scratch_un0 base halign

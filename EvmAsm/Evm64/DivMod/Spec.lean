@@ -102,7 +102,7 @@ def isMaxTrialN4Evm (a b : EvmWord) : Prop :=
 
 /-- Skip-addback condition at n=4 max in EvmWord form: the runtime borrow
     check `u4 < mulsubN4_c3` does not fire, so the algorithm skips the
-    addback step and uses `q_hat` as the quotient digit. -/
+    addback step and uses `qHat` as the quotient digit. -/
 def isSkipBorrowN4MaxEvm (a b : EvmWord) : Prop :=
   isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
@@ -1083,7 +1083,7 @@ theorem evm_mod_n4_max_skip_stack_spec (sp base : Word)
   have hshift_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
   have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
       (clzResult (b.getLimbN 3)).1.toNat := by omega
-  -- c3_n ≤ u_top from runtime skip borrow, specialized to our shift form.
+  -- c3_n ≤ uTop from runtime skip borrow, specialized to our shift form.
   have hc3_le := EvmWord.c3_le_u_top_of_skip_borrow
     (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hborrow
