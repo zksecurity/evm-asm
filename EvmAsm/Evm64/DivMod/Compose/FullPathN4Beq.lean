@@ -76,7 +76,7 @@ theorem divK_loop_body_n4_max_addback_j0_beq_norm (sp base : Word)
 theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
     (j_old v5_old v6_old v7_old v10_old v11_old v2_old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hv_j : isValidDwordAccess (sp + signExtend12 3976) = true)
     (hv_n1 : isValidDwordAccess (sp + signExtend12 3984) = true)
     (hv_uhi : isValidDwordAccess (sp + signExtend12 4056 - (0 + (4 : Word)) <<< (3 : BitVec 6).toNat) = true)
@@ -116,9 +116,9 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + signExtend12 4024) ↦ₘ u_top) **
        ((sp + signExtend12 4088) ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN4AddbackBeqPost sp (0 : Word) q_hat v0 v1 v2 v3 u0 u1 u2 u3 u_top **
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
@@ -132,7 +132,7 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
   rw [← u_base_off4080_j0] at hv_u2; rw [← u_base_off4072_j0] at
   rw [← u_base_off4064_j0] at hv_u4; rw [← q_addr_j0] at
   have raw := divK_loop_body_n4_call_addback_j0_beq_divCode sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base
+    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old retMem dMem dloMem scratch_un0 base
     hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hcarry2_nz
   have raw' := raw hborrow
@@ -189,7 +189,7 @@ def isAddbackCarry2NzN4MaxAb (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 /-- n=4 pre-loop + max+addback BEQ loop body: base → base+908 (shift ≠ 0). -/
 theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0)
@@ -229,7 +229,7 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem))
       (preloopMaxAddbackBeqPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3) := by
@@ -253,7 +253,7 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
   have hv_v3 : isValidDwordAccess (sp + 56) = true := hvalid 7 (by omega)
   have hPre := evm_div_n4_to_loopSetup_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem
     hbnz hb3nz hshift_nz
 
 
@@ -344,8 +344,8 @@ def isAddbackCarry2NzN4CallAb (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 /-- n=4 pre-loop + call+addback BEQ loop body: base → base+908 (shift ≠ 0). -/
 theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0) (hvalid : ValidMemRange sp 8)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
@@ -386,10 +386,10 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
+       (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (preloopCallAddbackBeqPostN4 sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   unfold isCallTrialN4 at hbltu
   unfold isAddbackBorrowN4Call at hborrow
@@ -411,19 +411,19 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
   have hv_v3 : isValidDwordAccess (sp + 56) = true := hvalid 7 (by omega)
   have hPre := evm_div_n4_to_loopSetup_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem
     hbnz hb3nz hshift_nz
 
 
   have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
-     (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
+     (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
   have hLoop := divK_loop_body_n4_call_addback_j0_beq_norm sp base
     j_mem (4 : Word) shift u0 (a0 >>> (anti_shift.toNat % 64)) v11_old anti_shift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
-    ret_mem d_mem dlo_mem scratch_un0
+    retMem dMem dloMem scratch_un0
     hv_j hv_n hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
 
     hbltu hcarry2_nz
@@ -549,7 +549,7 @@ def fullDivN4MaxAddbackBeqPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 /-- Full n=4 DIV path: base → base+1068 (shift ≠ 0, max+addback BEQ). -/
 theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0)
@@ -589,7 +589,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem))
       (fullDivN4MaxAddbackBeqPost sp a0 a1 a2 a3 b0 b1 b2 b3) := by
@@ -619,7 +619,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   have hA := evm_div_n4_preloop_max_addback_beq_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
     hbnz hb3nz hshift_nz
 
 
@@ -760,8 +760,8 @@ def fullDivN4CallAddbackBeqPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Asser
 /-- Full n=4 DIV path: base → base+1068 (shift ≠ 0, call+addback BEQ). -/
 theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0) (hvalid : ValidMemRange sp 8)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
@@ -802,10 +802,10 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) ** (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
+       (sp + signExtend12 3968 ↦ₘ retMem) ** (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) ** (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (fullDivN4CallAddbackBeqPost sp base a0 a1 a2 a3 b0 b1 b2 b3) := by
   let shift := (clzResult b3).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
@@ -837,8 +837,8 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   have hA := evm_div_n4_preloop_call_addback_beq_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+    retMem dMem dloMem scratch_un0
     hbnz hb3nz hshift_nz
 
 

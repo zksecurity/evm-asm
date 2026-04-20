@@ -24,7 +24,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n1_call_addback_j0_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
@@ -44,9 +44,9 @@ theorem divK_loop_body_n1_call_addback_j0_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallAddbackBeqPostJ sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
@@ -76,7 +76,7 @@ theorem divK_loop_body_n1_call_addback_j0_beq_spec
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtop_base := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (0 : Word) (1 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u1 u0 v0 ret_mem d_mem dlo_mem scratch_un0 base
+    u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (0 : Word)] at TF
@@ -142,7 +142,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n1_call_addback_j1_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
@@ -162,9 +162,9 @@ theorem divK_loop_body_n1_call_addback_j1_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallAddbackBeqPostJ sp base (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
@@ -194,7 +194,7 @@ theorem divK_loop_body_n1_call_addback_j1_beq_spec
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtop_base := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (1 : Word) (1 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u1 u0 v0 ret_mem d_mem dlo_mem scratch_un0 base
+    u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (1 : Word)] at TF
@@ -261,7 +261,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n1_call_addback_j2_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
@@ -281,9 +281,9 @@ theorem divK_loop_body_n1_call_addback_j2_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallAddbackBeqPostJ sp base (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
@@ -313,7 +313,7 @@ theorem divK_loop_body_n1_call_addback_j2_beq_spec
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtop_base := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (2 : Word) (1 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u1 u0 v0 ret_mem d_mem dlo_mem scratch_un0 base
+    u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (2 : Word)] at TF
@@ -380,7 +380,7 @@ set_option maxRecDepth 4096 in
 theorem divK_loop_body_n1_call_addback_j3_beq_spec
     (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
      v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u1 v0)
@@ -400,9 +400,9 @@ theorem divK_loop_body_n1_call_addback_j3_beq_spec
        ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ u3) **
        ((u_base + signExtend12 4064) ↦ₘ u_top) **
        (q_addr ↦ₘ q_old) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN1CallAddbackBeqPostJ sp base (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
   intro u_base q_addr
@@ -432,7 +432,7 @@ theorem divK_loop_body_n1_call_addback_j3_beq_spec
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtop_base := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   have TF := divK_trial_call_full_spec sp (3 : Word) (1 : Word) j_old v5_old v6_old v7_old v10_old v11_old v2_old
-    u1 u0 v0 ret_mem d_mem dlo_mem scratch_un0 base
+    u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (3 : Word)] at TF

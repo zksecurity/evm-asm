@@ -236,7 +236,7 @@ theorem sharedDivModCode_sub_modCode (base : Word) :
     - `q0..q3` at `sp + signExtend12 4088/4080/4072/4064` — accumulated quotient digits
     - `u0..u4` at `sp + signExtend12 4056/4048/4040/4032/4024` — normalized dividend
     - `u5..u7` at `sp + signExtend12 4016/4008/4000` — overflow/scratch
-    - `shift_mem` at `sp + signExtend12 3992`, `n_mem` at `sp + signExtend12 3984`
+    - `shift_mem` at `sp + signExtend12 3992`, `nMem` at `sp + signExtend12 3984`
     - `j_mem` at `sp + signExtend12 3976`
 
     This is the precondition shape — specific starting values for every cell.
@@ -245,7 +245,7 @@ theorem sharedDivModCode_sub_modCode (base : Word) :
     with fifteen `↦ₘ` lines at every call site. -/
 @[irreducible]
 def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shift_mem n_mem j_mem : Word) : Assertion :=
+    shift_mem nMem j_mem : Word) : Assertion :=
   ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
   ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
   ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -253,16 +253,16 @@ def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
   ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
   ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
   ((sp + signExtend12 3992) ↦ₘ shift_mem) **
-  ((sp + signExtend12 3984) ↦ₘ n_mem) **
+  ((sp + signExtend12 3984) ↦ₘ nMem) **
   ((sp + signExtend12 3976) ↦ₘ j_mem)
 
 /-- Unfold `divScratchValues` into its 15 underlying memory atoms. The bundle
     is `@[irreducible]`, so `unfold` won't see through it — this named rewrite
     is the supported way in at call sites (parallel to `divScratchOwn_unfold`). -/
 theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shift_mem n_mem j_mem : Word) :
+    shift_mem nMem j_mem : Word) :
     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shift_mem n_mem j_mem =
+        shift_mem nMem j_mem =
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -270,7 +270,7 @@ theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
      ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
      ((sp + signExtend12 3992) ↦ₘ shift_mem) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem) **
+     ((sp + signExtend12 3984) ↦ₘ nMem) **
      ((sp + signExtend12 3976) ↦ₘ j_mem)) := by
   delta divScratchValues; rfl
 
@@ -281,7 +281,7 @@ theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     composition where scratch atoms are scattered across the unfolded
     `fullDivN4MaxSkipPost` post. -/
 theorem divScratchValues_unfold_right (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shift_mem n_mem j_mem : Word) (Q : Assertion) :
+    shift_mem nMem j_mem : Word) (Q : Assertion) :
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -289,10 +289,10 @@ theorem divScratchValues_unfold_right (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
      ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
      ((sp + signExtend12 3992) ↦ₘ shift_mem) **
-     ((sp + signExtend12 3984) ↦ₘ n_mem) **
+     ((sp + signExtend12 3984) ↦ₘ nMem) **
      ((sp + signExtend12 3976) ↦ₘ j_mem) ** Q) =
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      shift_mem n_mem j_mem ** Q) := by
+      shift_mem nMem j_mem ** Q) := by
   rw [divScratchValues_unfold]
   iterate 14 rw [sepConj_assoc']
 
@@ -346,16 +346,16 @@ theorem divScratchOwn_unfold_right (sp : Word) (Q : Assertion) :
   rw [divScratchOwn_unfold]
 
 theorem pcFree_divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shift_mem n_mem j_mem : Word) :
+    shift_mem nMem j_mem : Word) :
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      shift_mem n_mem j_mem).pcFree := by
+      shift_mem nMem j_mem).pcFree := by
   unfold divScratchValues; pcFree
 
-instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem : Word) :
+instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem nMem j_mem : Word) :
     Assertion.PCFree (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shift_mem n_mem j_mem) :=
+        shift_mem nMem j_mem) :=
   ⟨pcFree_divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shift_mem n_mem j_mem⟩
+    shift_mem nMem j_mem⟩
 
 /-- `divScratchOwn` is pc-free: all its 15 atoms are `memOwn`. Proof goes
     through the `_unfold` rewrite since the bundle is `@[irreducible]`. -/
@@ -369,9 +369,9 @@ instance pcFreeInst_divScratchOwn (sp : Word) :
 /-- Weakening: any concrete scratch state implies ownership of the same 15
     cells. This lets a stack spec hide the scratch values on exit. -/
 theorem divScratchValues_implies_divScratchOwn
-    (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem n_mem j_mem : Word) :
+    (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shift_mem nMem j_mem : Word) :
     ∀ h, divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shift_mem n_mem j_mem h → divScratchOwn sp h := by
+        shift_mem nMem j_mem h → divScratchOwn sp h := by
   unfold divScratchValues divScratchOwn
   -- Weaken each of the 15 memIs cells to memOwn, left to right.
   iterate 14 apply sepConj_mono (memIs_implies_memOwn _ _)

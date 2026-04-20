@@ -30,7 +30,7 @@ open EvmAsm.Rv64.AddrNorm (se12_32 se12_40 se12_48 se12_56)
     Same as `fullDivN2AllMaxPost` but uses `iterN2Max` (with addback branching). -/
 @[irreducible]
 def fullDivN2AllMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -56,9 +56,9 @@ def fullDivN2AllMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word)
   (sp + signExtend12 3984 ↦ₘ (2 : Word)) **
   (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
   (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
-  (sp + signExtend12 3968 ↦ₘ ret_mem) **
-  (sp + signExtend12 3960 ↦ₘ d_mem) **
-  (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
+  (sp + signExtend12 3960 ↦ₘ dMem) **
+  (sp + signExtend12 3952 ↦ₘ dloMem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
 
 -- ============================================================================
@@ -69,8 +69,8 @@ def fullDivN2AllMaxPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     Composes pre-loop + three-iteration loop + denorm + epilogue. -/
 theorem evm_div_n2_full_all_max_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -97,15 +97,15 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2AllMaxPost sp a0 a1 a2 a3 b0 b1 b2 b3
-        ret_mem d_mem dlo_mem scratch_un0) := by
+        retMem dMem dloMem scratch_un0) := by
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -125,8 +125,8 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
   -- 1. Pre-loop + loop body: base → base+904
   have hA := evm_div_n2_preloop_loop_unified_spec false false false sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-    ret_mem d_mem dlo_mem scratch_un0
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+    retMem dMem dloMem scratch_un0
     hbnz hb3z hb2z hb1nz hshift_nz halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2
   -- 2. Post-loop: base+904 → base+1068
@@ -147,9 +147,9 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
      (sp + signExtend12 3984 ↦ₘ (2 : Word)) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
      (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) **
-     (sp + signExtend12 3960 ↦ₘ d_mem) **
-     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
      (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hB
   -- 3. Compose A + B
@@ -178,7 +178,7 @@ theorem evm_div_n2_full_all_max_spec (sp base : Word)
 @[irreducible]
 def fullDivN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -207,9 +207,9 @@ def fullDivN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
   -- Scratch cells: bltu_0=true → j=0 call scratch; bltu_0=false → from previous iterations
   match bltu_2, bltu_1, bltu_0 with
   | false, false, false =>
-    (sp + signExtend12 3968 ↦ₘ ret_mem) **
-    (sp + signExtend12 3960 ↦ₘ d_mem) **
-    (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+    (sp + signExtend12 3968 ↦ₘ retMem) **
+    (sp + signExtend12 3960 ↦ₘ dMem) **
+    (sp + signExtend12 3952 ↦ₘ dloMem) **
     (sp + signExtend12 3944 ↦ₘ scratch_un0)
   | false, false, true  =>
     (sp + signExtend12 3968 ↦ₘ (base + 516)) **
@@ -256,8 +256,8 @@ def fullDivN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     Dispatches to per-case  lemmas via postcondition bridge. -/
 theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -284,91 +284,91 @@ theorem evm_div_n2_full_unified_spec (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Wo
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (fullDivN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
-        ret_mem d_mem dlo_mem scratch_un0) := by
+        retMem dMem dloMem scratch_un0) := by
   cases bltu_2 <;> cases bltu_1 <;> cases bltu_0 <;>
     simp only [isTrialN2_j2, isTrialN2_j1, isTrialN2_j0,
                iterN2_false, iterN2_true]
       at hbltu_2 hbltu_1 hbltu_0
   · have h_eq : fullDivN2UnifiedPost false false false sp base a0 a1 a2 a3 b0 b1 b2 b3
-        ret_mem d_mem dlo_mem scratch_un0 =
-      fullDivN2AllMaxPost sp a0 a1 a2 a3 b0 b1 b2 b3 ret_mem d_mem dlo_mem scratch_un0 := by
+        retMem dMem dloMem scratch_un0 =
+      fullDivN2AllMaxPost sp a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 := by
       delta fullDivN2UnifiedPost fullDivN2AllMaxPost; rfl
     rw [h_eq]; exact evm_div_n2_full_all_max_spec sp base
       a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-      q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-      ret_mem d_mem dlo_mem scratch_un0
+      q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+      retMem dMem dloMem scratch_un0
       hbnz hb3z hb2z hb1nz hshift_nz halign
       hbltu_2 hbltu_1 hbltu_0 hcarry2
   all_goals (
     first
     | (have h_eq : fullDivN2UnifiedPost false false true sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_FFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_FFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_FFT_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_FFT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost false true false sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_FTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_FTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_FTF_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_FTF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost false true true sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_FTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_FTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_FTT_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_FTT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true false false sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TFF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_TFF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TFF_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_TFF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true false true sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_TFT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TFT_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_TFT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true true false sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_TTF_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TTF_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_TTF_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2)
     | (have h_eq : fullDivN2UnifiedPost true true true sp base a0 a1 a2 a3 b0 b1 b2 b3
-          ret_mem d_mem dlo_mem scratch_un0 = fullDivN2_TTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
+          retMem dMem dloMem scratch_un0 = fullDivN2_TTT_Post sp base a0 a1 a2 a3 b0 b1 b2 b3
           := by delta fullDivN2UnifiedPost fullDivN2_TTT_Post; rfl
        rw [h_eq]; exact evm_div_n2_full_TTT_spec sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
-          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem
-          ret_mem d_mem dlo_mem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
+          q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem
+          retMem dMem dloMem scratch_un0 hbnz hb3z hb2z hb1nz hshift_nz
 
           halign
           hbltu_2 hbltu_1 hbltu_0 hcarry2))

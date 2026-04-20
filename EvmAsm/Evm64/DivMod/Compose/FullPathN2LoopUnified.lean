@@ -79,7 +79,7 @@ def isTrialN2_j0 (bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) 
 @[irreducible]
 def preloopN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word) : Assertion :=
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
   let shift := (clzResult b1).1
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   let v0' := b0 <<< (shift.toNat % 64)
@@ -93,7 +93,7 @@ def preloopN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
   loopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
     v0' v1' v2' v3' u2_s u3_s (a3 >>> (anti_shift.toNat % 64)) (0 : Word) (0 : Word)
     u1_s u0_s
-    ret_mem d_mem dlo_mem scratch_un0 **
+    retMem dMem dloMem scratch_un0 **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
   ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
   ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
@@ -110,7 +110,7 @@ private theorem evm_div_n2_loop_unified_inst
     (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (shift anti_shift v0' v1' v2' v3' u0_s u1_s u2_s u3_s u4_s : Word)
     (v10_val v11_old j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_2 : bltu_2 = BitVec.ult u4_s v1')
     (hbltu_1 : bltu_1 = BitVec.ult
@@ -127,15 +127,15 @@ private theorem evm_div_n2_loop_unified_inst
       (loopN2PreWithScratch sp j_mem (2 : Word) shift u0_s v10_val v11_old anti_shift
         v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
         u1_s u0_s (0 : Word) (0 : Word) (0 : Word)
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem dMem dloMem scratch_un0)
       (loopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
         v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
-        u1_s u0_s ret_mem d_mem dlo_mem scratch_un0) :=
+        u1_s u0_s retMem dMem dloMem scratch_un0) :=
   divK_loop_n2_unified_divCode bltu_2 bltu_1 bltu_0
     sp j_mem (2 : Word) shift u0_s v10_val v11_old anti_shift
     v0' v1' v2' v3' u2_s u3_s u4_s (0 : Word) (0 : Word)
     u1_s u0_s (0 : Word) (0 : Word) (0 : Word)
-    ret_mem d_mem dlo_mem scratch_un0 base halign
+    retMem dMem dloMem scratch_un0 base halign
 
 
 
@@ -153,8 +153,8 @@ private theorem evm_div_n2_loop_unified_inst
 theorem evm_div_n2_preloop_loop_unified_spec
     (bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old : Word)
-    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem j_mem : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem j_mem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0)
     (hshift_nz : (clzResult b1).1 ≠ 0)
@@ -181,28 +181,28 @@ theorem evm_div_n2_preloop_loop_unified_spec
        ((sp + signExtend12 4040) ↦ₘ u2_old) ** ((sp + signExtend12 4032) ↦ₘ u3_old) **
        ((sp + signExtend12 4024) ↦ₘ u4_old) **
        ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ n_mem) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
        ((sp + signExtend12 3992) ↦ₘ shift_mem) **
        ((sp + signExtend12 3976) ↦ₘ j_mem) **
-       ((sp + signExtend12 3968) ↦ₘ ret_mem) **
-       ((sp + signExtend12 3960) ↦ₘ d_mem) **
-       ((sp + signExtend12 3952) ↦ₘ dlo_mem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (preloopN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
-        ret_mem d_mem dlo_mem scratch_un0) := by
+        retMem dMem dloMem scratch_un0) := by
   -- 1. Pre-loop: base → base+448
   have hPre := evm_div_n2_to_loopSetup_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10
-    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 n_mem shift_mem
+    q0 q1 q2 q3 u0_old u1_old u2_old u3_old u4_old u5 u6 u7 nMem shift_mem
     hbnz hb3z hb2z hb1nz hshift_nz
 
 
   -- Frame preloop with .x11, j_mem, scratch cells
   have hPreF := cpsTriple_frameR
     ((.x11 ↦ᵣ v11_old) ** ((sp + signExtend12 3976) ↦ₘ j_mem) **
-     (sp + signExtend12 3968 ↦ₘ ret_mem) **
-     (sp + signExtend12 3960 ↦ₘ d_mem) **
-     (sp + signExtend12 3952 ↦ₘ dlo_mem) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
      (sp + signExtend12 3944 ↦ₘ scratch_un0))
     (by pcFree) hPre
   -- 2. Loop: base+448 → base+904 (unified da, with explicit normalized values)
@@ -219,7 +219,7 @@ theorem evm_div_n2_preloop_loop_unified_spec
     (a3 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64))
     (a0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b1).1).toNat % 64))
     v11_old j_mem
-    ret_mem d_mem dlo_mem scratch_un0
+    retMem dMem dloMem scratch_un0
 
     halign
     hbltu_2 hbltu_1 hbltu_0 hcarry2

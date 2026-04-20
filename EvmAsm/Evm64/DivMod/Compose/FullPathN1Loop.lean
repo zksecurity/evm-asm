@@ -107,7 +107,7 @@ theorem divK_loop_n1_unified_divCode (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
      v0 v1 v2 v3 u0 u1 u2 u3 u_top
      u0_orig_2 u0_orig_1 u0_orig_0
      q3_old q2_old q1_old q0_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu_3 : bltu_3 = BitVec.ult u1 v0)
@@ -143,15 +143,15 @@ theorem divK_loop_n1_unified_divCode (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
       (loopN1PreWithScratch sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
         v0 v1 v2 v3 u0 u1 u2 u3 u_top
         u0_orig_2 u0_orig_1 u0_orig_0 q3_old q2_old q1_old q0_old
-        ret_mem d_mem dlo_mem scratch_un0)
+        retMem dMem dloMem scratch_un0)
       (loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 u_top
-        u0_orig_2 u0_orig_1 u0_orig_0 ret_mem d_mem dlo_mem scratch_un0) :=
+        u0_orig_2 u0_orig_1 u0_orig_0 retMem dMem dloMem scratch_un0) :=
   cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
     (divK_loop_n1_unified_spec bltu_3 bltu_2 bltu_1 bltu_0
       sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
       v0 v1 v2 v3 u0 u1 u2 u3 u_top u0_orig_2 u0_orig_1 u0_orig_0
       q3_old q2_old q1_old q0_old
-      ret_mem d_mem dlo_mem scratch_un0 base halign
+      retMem dMem dloMem scratch_un0 base halign
       hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2)
 
 end EvmAsm.Evm64
