@@ -403,15 +403,16 @@ theorem my_spec ... :
   final `cpsTriple_weaken` callback.
 - Matches the existing `phaseB_zeroed_mem` pattern in `PhaseAB.lean`.
 
-### Scaling: external consequence lemma
+### Scaling: external weaken lemma
 
 As compositions grow, the inline `delta myPost; xperm_hyp hq` in each
 proof's `cpsTriple_weaken` callback may become a bottleneck. To avoid
 repeating this work in every consumer, extract the implication as a
-standalone lemma:
+standalone lemma (name it `_weaken` to match the `cpsTriple_weaken` /
+`cpsBranch_weaken` naming from #331):
 
 ```lean
-theorem myPost_consequence (sp param1 ... : Word) (h : PartialState)
+theorem myPost_weaken (sp param1 ... : Word) (h : PartialState)
     (hq : (expanded_postcondition) h) :
     myPost sp param1 ... h := by
   delta myPost; xperm_hyp hq
@@ -422,12 +423,12 @@ Then each theorem's final step becomes:
 ```lean
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => myPost_consequence sp param1 ... h hq)
+    (fun h hq => myPost_weaken sp param1 ... h hq)
     hFull
 ```
 
 This pays the `delta + xperm` cost once (when the lemma is checked) rather
-than in every theorem that produces `myPost`. Place the consequence lemma
+than in every theorem that produces `myPost`. Place the weaken lemma
 next to the `def` and `_unfold` lemma in the shared file.
 
 ### When to apply
