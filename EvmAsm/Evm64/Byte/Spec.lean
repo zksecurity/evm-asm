@@ -24,8 +24,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (se12_7 se13_20 se13_44 se13_68 se13_128 se13_140
-  se21_16 se21_24 se21_32 se21_48
+open EvmAsm.Rv64.AddrNorm (se12_7
   zero_add_se12_1_toNat zero_add_se12_2_toNat bv6_toNat_3
   word_toNat_7 word_toNat_32 word_toNat_255 word_add_zero)
 
@@ -163,35 +162,31 @@ private theorem byte_off_160_20 (base : Word) : (base + 160 : Word) + 20 = base 
 
 -- BNE/BEQ branch targets
 private theorem byte_bne_target (base : Word) : (base + 20 : Word) + signExtend13 140 = base + 160 := by
-  rw [se13_140]; bv_omega
+  rv64_addr
 private theorem byte_beq_target (base : Word) : (base + 32 : Word) + signExtend13 128 = base + 160 := by
-  rw [se13_128]; bv_omega
+  rv64_addr
 
 -- Phase C exit addresses
 private theorem byte_c_e0 (base : Word) : (base + 56 : Word) + signExtend13 68 = base + 124 := by
-  rw [se13_68]; bv_omega
+  rv64_addr
 private theorem byte_c_e1 (base : Word) : ((base + 56 : Word) + 8) + signExtend13 44 = base + 108 := by
-  rw [se13_44]; bv_omega
+  rv64_addr
 private theorem byte_c_e2 (base : Word) : ((base + 56 : Word) + 16) + signExtend13 20 = base + 92 := by
-  rw [se13_20]; bv_omega
+  rv64_addr
 private theorem byte_c_e3 (base : Word) : (base + 56 : Word) + 20 = base + 76 := by bv_omega
 
 -- Body exit addresses (JAL targets → store at base+136)
 private theorem byte_body_3_exit_eq (base : Word) :
-    (base + 76 + 12) + signExtend21 (48 : BitVec 21) = base + 136 := by
-  rw [se21_48]; bv_omega
+    (base + 76 + 12) + signExtend21 (48 : BitVec 21) = base + 136 := by rv64_addr
 private theorem byte_body_2_exit_eq (base : Word) :
-    (base + 92 + 12) + signExtend21 (32 : BitVec 21) = base + 136 := by
-  rw [se21_32]; bv_omega
+    (base + 92 + 12) + signExtend21 (32 : BitVec 21) = base + 136 := by rv64_addr
 private theorem byte_body_1_exit_eq (base : Word) :
-    (base + 108 + 12) + signExtend21 (16 : BitVec 21) = base + 136 := by
-  rw [se21_16]; bv_omega
+    (base + 108 + 12) + signExtend21 (16 : BitVec 21) = base + 136 := by rv64_addr
 -- body_0 is fallthrough: exits at base+124+12 = base+136 (no JAL)
 
 -- Store exit address
 private theorem byte_store_exit_eq (base : Word) :
-    (base + 136 + 20) + signExtend21 (24 : BitVec 21) = base + 180 := by
-  rw [se21_24]; bv_omega
+    (base + 136 + 20) + signExtend21 (24 : BitVec 21) = base + 180 := by rv64_addr
 
 -- ============================================================================
 -- Helper lemmas
