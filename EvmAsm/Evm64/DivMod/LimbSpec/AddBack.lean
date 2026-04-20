@@ -4,7 +4,7 @@
   CPS specs for one limb of the Knuth Algorithm D "add-back" correction,
   which un-does the mul-sub when `q_hat` over-shot by 1:
     * `divK_addback_partA_spec` — 5 instructions (LD, LD, ADD, SLTU, ADD):
-      load v[i] and u[j+i], form `uPlusCarry = u_i + carry_in`, its
+      load v[i] and u[j+i], form `uPlusCarry = u_i + carryIn`, its
       SLTU `carry1`, and `uNew = uPlusCarry + v_i`.
     * `divK_addback_partB_spec` — 3 instructions (SLTU, OR, SD): form
       `carry2 = uNew < v_i`, OR with `carry1` for `carryOut`, store
@@ -30,10 +30,10 @@ open EvmAsm.Rv64
 
 /-- Add-back Part A: LD v[i], LD u[j+i], ADD carry, SLTU carry1, ADD v[i].
     5 instructions. Produces sum (x2) and carry1 (x7). -/
-theorem divK_addback_partA_spec (sp u_base carry_in v5Old v2Old v_i u_i : Word)
+theorem divK_addback_partA_spec (sp uBase carryIn v5Old v2Old v_i u_i : Word)
     (v_off : BitVec 12) (u_off : BitVec 12) (base : Word) :
-    let uPlusCarry := u_i + carry_in
-    let carry1 := if BitVec.ult uPlusCarry carry_in then (1 : Word) else 0
+    let uPlusCarry := u_i + carryIn
+    let carry1 := if BitVec.ult uPlusCarry carryIn then (1 : Word) else 0
     let uNew := uPlusCarry + v_i
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 v_off))
@@ -42,7 +42,7 @@ theorem divK_addback_partA_spec (sp u_base carry_in v5Old v2Old v_i u_i : Word)
       (CodeReq.union (CodeReq.singleton (base + 12) (.SLTU .x7 .x2 .x7))
        (CodeReq.singleton (base + 16) (.ADD .x2 .x2 .x5)))))
     cpsTriple base (base + 20) cr
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ u_base) ** (.x7 ↦ᵣ carry_in) **
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ carryIn) **
        (.x5 ↦ᵣ v5Old) ** (.x2 ↦ᵣ v2Old) **
        ((sp + signExtend12 v_off) ↦ₘ v_i) **
        ((u_base + signExtend12 u_off) ↦ₘ u_i))
@@ -52,9 +52,9 @@ theorem divK_addback_partA_spec (sp u_base carry_in v5Old v2Old v_i u_i : Word)
        ((u_base + signExtend12 u_off) ↦ₘ u_i)) := by
   intro uPlusCarry carry1 uNew cr
   have I0 := ld_spec_gen .x5 .x12 sp v5Old v_i v_off base (by nofun)
-  have I1 := ld_spec_gen .x2 .x6 u_base v2Old u_i u_off (base + 4) (by nofun)
-  have I2 := add_spec_gen_rd_eq_rs1 .x2 .x7 u_i carry_in (base + 8) (by nofun)
-  have I3 := sltu_spec_gen_rd_eq_rs2 .x7 .x2 uPlusCarry carry_in (base + 12) (by nofun)
+  have I1 := ld_spec_gen .x2 .x6 uBase v2Old u_i u_off (base + 4) (by nofun)
+  have I2 := add_spec_gen_rd_eq_rs1 .x2 .x7 u_i carryIn (base + 8) (by nofun)
+  have I3 := sltu_spec_gen_rd_eq_rs2 .x7 .x2 uPlusCarry carryIn (base + 12) (by nofun)
   have I4 := add_spec_gen_rd_eq_rs1 .x2 .x5 uPlusCarry v_i (base + 16) (by nofun)
   runBlock I0 I1 I2 I3 I4
 

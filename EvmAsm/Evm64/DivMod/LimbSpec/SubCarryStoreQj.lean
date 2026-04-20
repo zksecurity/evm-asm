@@ -33,26 +33,26 @@ open EvmAsm.Rv64
 
 /-- Subtract carry from u[j+4].
     4 instructions: LD, SLTU, SUB, SD. Produces borrow (x7). -/
-theorem divK_sub_carry_spec (u_base carry_in v5Old v7Old u_top : Word)
+theorem divK_sub_carry_spec (uBase carryIn v5Old v7Old uTop : Word)
     (u_off : BitVec 12) (base : Word) :
-    let borrow := if BitVec.ult u_top carry_in then (1 : Word) else 0
-    let uNew := u_top - carry_in
+    let borrow := if BitVec.ult u_top carryIn then (1 : Word) else 0
+    let uNew := u_top - carryIn
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x5 .x6 u_off))
       (CodeReq.union (CodeReq.singleton (base + 4) (.SLTU .x7 .x5 .x10))
       (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x5 .x5 .x10))
        (CodeReq.singleton (base + 12) (.SD .x6 .x5 u_off))))
     cpsTriple base (base + 16) cr
-      ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carry_in) **
+      ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryIn) **
        (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) **
        ((u_base + signExtend12 u_off) ↦ₘ u_top))
-      ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carry_in) **
+      ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ carryIn) **
        (.x5 ↦ᵣ uNew) ** (.x7 ↦ᵣ borrow) **
        ((u_base + signExtend12 u_off) ↦ₘ uNew)) := by
   intro borrow uNew cr
-  have I0 := ld_spec_gen .x5 .x6 u_base v5Old u_top u_off base (by nofun)
-  have I1 := sltu_spec_gen .x7 .x5 .x10 v7Old u_top carry_in (base + 4) (by nofun)
-  have I2 := sub_spec_gen_rd_eq_rs1 .x5 .x10 u_top carry_in (base + 8) (by nofun)
+  have I0 := ld_spec_gen .x5 .x6 uBase v5Old uTop u_off base (by nofun)
+  have I1 := sltu_spec_gen .x7 .x5 .x10 v7Old uTop carryIn (base + 4) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x5 .x10 uTop carryIn (base + 8) (by nofun)
   have I3 := sd_spec_gen .x6 .x5 u_base uNew u_top u_off (base + 12)
   runBlock I0 I1 I2 I3
 
