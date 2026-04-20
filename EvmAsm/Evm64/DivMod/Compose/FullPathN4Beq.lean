@@ -280,7 +280,8 @@ theorem evm_div_n4_preloop_max_addback_beq_spec (sp base : Word)
   have hLoop := divK_loop_body_n4_max_addback_j0_beq_norm sp base
     jMem (4 : Word) shift u0 (a0 >>> (antiShift.toNat % 64)) v11Old antiShift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
-
+    hv_j hv_n hv_uhi hv_ulo hv_vtop
+    hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q0
     hbltu hcarry2_nz
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
@@ -442,7 +443,7 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
     retMem dMem dloMem scratch_un0
     hv_j hv_n hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
-
+    hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q0
     hbltu hcarry2_nz
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
@@ -570,6 +571,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
     (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
     (hv_q0 : isValidDwordAccess (sp + signExtend12 4088) = true)
     (hv_q1 : isValidDwordAccess (sp + signExtend12 4080) = true)
     (hv_q2 : isValidDwordAccess (sp + signExtend12 4072) = true)
@@ -637,9 +639,9 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
   have hA := evm_div_n4_preloop_max_addback_beq_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old
     q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7 nMem shiftMem jMem
-    hbnz hb3nz hshift_nz
-
-
+    hbnz hb3nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4 hv_u5 hv_u6 hv_u7
+    hv_n hv_shift hv_j hv_uhi hv_ulo hv_vtop
     hbltu hcarry2_nz hborrow
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
     un0Out un1Out un2Out un3Out shift
@@ -856,9 +858,9 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old
     q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7 nMem shiftMem jMem
     retMem dMem dloMem scratch_un0
-    hbnz hb3nz hshift_nz
-
-
+    hbnz hb3nz hshift_nz hvalid
+    hv_q0 hv_q1 hv_q2 hv_q3 hv_u0 hv_u1 hv_u2 hv_u3 hv_u4 hv_u5 hv_u6 hv_u7
+    hv_n hv_shift hv_j hv_ret hv_d hv_dlo hv_scratch_un0
     hv_uhi hv_ulo hv_vtop halign
     hbltu hcarry2_nz hborrow
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
