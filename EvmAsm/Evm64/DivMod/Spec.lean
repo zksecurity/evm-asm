@@ -54,7 +54,7 @@ open EvmAsm.Rv64.Tactics
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
-open EvmAsm.Rv64.AddrNorm (word_add_zero)
+open EvmAsm.Rv64.AddrNorm (word_add_zero word_toNat_0)
 
 /-- `evmWordIs addr (EvmWord.div a 0) = evmWordIs addr 0`. Specialized
     rewrite for the zero-divisor path, bundling `evmWordIs_congr` +
@@ -1361,7 +1361,7 @@ theorem evm_mod_n4_max_skip_stack_spec (sp base : Word)
     push Not at h
     apply hshift_nz
     apply BitVec.eq_of_toNat_eq
-    have h0 : (0 : Word).toNat = 0 := by decide
+    rw [word_toNat_0]
     omega
   have hshift_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
   have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
