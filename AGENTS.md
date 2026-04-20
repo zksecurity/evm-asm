@@ -224,7 +224,7 @@ Each EVM opcode follows a three-level proof hierarchy:
    - Address normalization lemmas (`bv_addr` proofs — see Build Performance section)
    - Path composition (zero-path/sign-fill for shift >= 256, body-path for shift < 256)
    - Bridge lemmas connecting per-limb results to `getLimb (result) i`
-3. **Semantic** (`Semantic.lean`, `ShlSemantic.lean`, `SarSemantic.lean`): Stack-level `evmWordIs` spec. Lifts composition to `EvmWord` assertions using `cpsTriple_consequence` + `xperm_hyp`.
+3. **Semantic** (`Semantic.lean`, `ShlSemantic.lean`, `SarSemantic.lean`): Stack-level `evmWordIs` spec. Lifts composition to `EvmWord` assertions using `cpsTriple_weaken` + `xperm_hyp`.
 
 ### Composition File Pattern (for shift opcodes)
 
@@ -388,7 +388,7 @@ theorem my_spec ... :
   let anti_shift := signExtend12 (0 : BitVec 12) - shift
   ... -- same let bindings as in myPost body
   -- ... composition steps (unchanged) ...
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta myPost; xperm_hyp hq)  -- delta unfolds @[irreducible]
     hFull
@@ -400,13 +400,13 @@ theorem my_spec ... :
   `@[irreducible]` adds safety: `simp` and `whnf` at default transparency also
   won't accidentally unfold it.
 - `delta` ignores transparency and always unfolds — use it in the proof's
-  final `cpsTriple_consequence` callback.
+  final `cpsTriple_weaken` callback.
 - Matches the existing `phaseB_zeroed_mem` pattern in `PhaseAB.lean`.
 
 ### Scaling: external consequence lemma
 
 As compositions grow, the inline `delta myPost; xperm_hyp hq` in each
-proof's `cpsTriple_consequence` callback may become a bottleneck. To avoid
+proof's `cpsTriple_weaken` callback may become a bottleneck. To avoid
 repeating this work in every consumer, extract the implication as a
 standalone lemma:
 
@@ -420,7 +420,7 @@ theorem myPost_consequence (sp param1 ... : Word) (h : PartialState)
 Then each theorem's final step becomes:
 
 ```lean
-  exact cpsTriple_consequence _ _ _ _ _ _ _
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => myPost_consequence sp param1 ... h hq)
     hFull
@@ -438,7 +438,7 @@ is `loopSetupPost` in `Compose/Base.lean` (11 let bindings, used by 8 theorems).
 
 ## End-to-End Composition with Existential Intermediates
 
-When composing specs where an intermediate postcondition has existentials (e.g., `loopBodyPostN4` which wraps computed values in `∃`), standard `cpsTriple_seq_with_perm_same_cr` doesn't work because the second spec's precondition depends on the existential witnesses.
+When composing specs where an intermediate postcondition has existentials (e.g., `loopBodyPostN4` which wraps computed values in `∃`), standard `cpsTriple_seq_perm_same_cr` doesn't work because the second spec's precondition depends on the existential witnesses.
 
 ### Approach: Unfold `cpsTriple` directly
 
@@ -468,7 +468,7 @@ exact ⟨k1 + k2, s2, stepN_add_eq ..., hpc2, ...⟩
 
 3. **`intro_lets` at hypothesis**: Expands let-bindings from spec postconditions (e.g., `anti_shift`, `u0'`) into local definitions that can be used as existential witnesses.
 
-4. **Combined frame approach**: When applying a `cpsTriple` spec directly (after unfolding), use `hDE (LEFTOVER ** F) hLOF_pcFree s1 ...` to pass both leftover atoms AND the original frame F as the frame parameter. This avoids a separate `cpsTriple_frame_left` step and the resulting 36+ atom xperm.
+4. **Combined frame approach**: When applying a `cpsTriple` spec directly (after unfolding), use `hDE (LEFTOVER ** F) hLOF_pcFree s1 ...` to pass both leftover atoms AND the original frame F as the frame parameter. This avoids a separate `cpsTriple_frameR` step and the resulting 36+ atom xperm.
 
 5. **Address canonicalization for `j=0`**: The `j0_*_addr_eq` lemmas convert `u_base`-relative addresses (from `loopBodyPostN4`) to canonical `sp + signExtend12 XXXX` form. Also need `signExtend12_32/40/48/56` to convert `sp + signExtend12 32` to `sp + 32`. Apply these with `simp only [...] at hLP` after `dsimp only [loopBodyPostN4]`.
 

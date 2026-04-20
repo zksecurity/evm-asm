@@ -658,7 +658,7 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
     (`EvmAsm/Rv64/RLP/Phase2LongLoopTwo.lean`): two-iteration closure
     (lenLen = 2). Composes the body spec (iter 1, BNE taken) with the
     one-byte closure (iter 2, fall-through) via
-    `cpsTriple_seq_with_perm_same_cr`. Assumes both bytes live in the
+    `cpsTriple_seq_perm_same_cr`. Assumes both bytes live in the
     same doubleword.
   - `rlp_phase2_long_loop_three_byte_spec`
     (`EvmAsm/Rv64/RLP/Phase2LongLoopThree.lean`): three-iteration

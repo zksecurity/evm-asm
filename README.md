@@ -97,7 +97,7 @@ postcondition says that after running 68 bytes of RISC-V code, the word at
 
 The proof composes four per-limb specs (one AND per 64-bit limb) using the
 `runBlock` tactic, then lifts to the `evmWordIs` abstraction via
-`cpsTriple_consequence`:
+`cpsTriple_weaken`:
 
 ```lean
   -- 1. Compose 4 per-limb ANDs + stack pointer adjustment (limb-level proof)
@@ -109,7 +109,7 @@ The proof composes four per-limb specs (one AND per 64-bit limb) using the
   runBlock L0 L1 L2 L3 LADDI
 
   -- 2. Lift to evmWordIs using EvmWord.getLimb_and semantic lemma
-  exact cpsTriple_consequence ...
+  exact cpsTriple_weaken ...
     (fun h hp => by simp only [evmWordIs] at hp; ... ; xperm_hyp hp)
     (fun h hq => by simp only [evmWordIs, EvmWord.getLimb_and]; ... ; xperm_hyp hq)
     h_main
@@ -235,7 +235,7 @@ This is a **prototype** demonstrating the approach. Current state:
     frame parameter and tactics instantiate it during composition.
   - The instruction specs with explicit frame in `compiler/src/compiler/GoFlatToRiscv.v`
     (lines 439-546) informed the design of composing instruction specs with
-    `cpsTriple_frame_left` + `cpsTriple_seq_with_perm`.
+    `cpsTriple_frameR` + `cpsTriple_seq_with_perm`.
 - Knuth, D.E. (1997). *The Art of Computer Programming, Volume 2:
   Seminumerical Algorithms* (3rd ed.), §4.3.1 "The Classical Algorithms."
   Addison-Wesley. Algorithm D is used for the DIV/MOD opcodes in `Evm64/DivMod.lean`.
