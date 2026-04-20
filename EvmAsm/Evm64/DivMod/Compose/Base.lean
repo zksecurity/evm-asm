@@ -391,6 +391,36 @@ instance (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem : Word) :
 theorem pcFree_divScratchOwn (sp : Word) : (divScratchOwn sp).pcFree := by
   rw [divScratchOwn_unfold]; pcFree
 
+/-- Value-agnostic counterpart to `divScratchValuesCall`: the same 19 cells
+    but with ownership only. Extends `divScratchOwn` with the 4 call-path
+    cells (at sp + 3968/3960/3952/3944).
+
+    Used for call-trial stack-spec postconditions that don't expose the
+    `div128` subroutine's internal state to callers. -/
+@[irreducible]
+def divScratchOwnCall (sp : Word) : Assertion :=
+  divScratchOwn sp **
+  memOwn (sp + signExtend12 3968) **
+  memOwn (sp + signExtend12 3960) **
+  memOwn (sp + signExtend12 3952) **
+  memOwn (sp + signExtend12 3944)
+
+/-- Named unfold for `divScratchOwnCall`. Parallel to `divScratchOwn_unfold`
+    and `divScratchValuesCall_unfold`. -/
+theorem divScratchOwnCall_unfold (sp : Word) :
+    divScratchOwnCall sp =
+    (divScratchOwn sp **
+     memOwn (sp + signExtend12 3968) **
+     memOwn (sp + signExtend12 3960) **
+     memOwn (sp + signExtend12 3952) **
+     memOwn (sp + signExtend12 3944)) := by
+  delta divScratchOwnCall; rfl
+
+/-- `divScratchOwnCall` is pc-free: all atoms are `memOwn` (chained from
+    `divScratchOwn` + 4 new `memOwn`). -/
+theorem pcFree_divScratchOwnCall (sp : Word) : (divScratchOwnCall sp).pcFree := by
+  rw [divScratchOwnCall_unfold, divScratchOwn_unfold]; pcFree
+
 instance pcFreeInst_divScratchOwn (sp : Word) :
     Assertion.PCFree (divScratchOwn sp) :=
   ⟨pcFree_divScratchOwn sp⟩
