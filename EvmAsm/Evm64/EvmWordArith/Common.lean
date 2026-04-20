@@ -49,8 +49,7 @@ theorem toNat_eq_limb_sum (v : EvmWord) :
     v.toNat = (v.getLimb 0).toNat + (v.getLimb 1).toNat * 2^64 +
               (v.getLimb 2).toNat * 2^128 + (v.getLimb 3).toNat * 2^192 := by
   simp only [getLimb, BitVec.extractLsb'_toNat,
-    show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
-    show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl,
+    fin4_val_0, fin4_val_1, fin4_val_2, fin4_val_3,
     Nat.zero_mul, Nat.shiftRight_zero]
   have hv := v.isLt  -- v.toNat < 2^256
   omega

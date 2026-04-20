@@ -116,7 +116,7 @@ theorem add_carry_chain_correct (a b : EvmWord) :
     simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]; rw [hS]; norm_num
   have key3 : ((a + b).getLimb 3).toNat = S % 2^256 / 2^192 % 2^64 := by
     simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow,
-      show (3 : Fin 4).val = 3 from rfl]; rw [hS]
+      fin4_val_3]; rw [hS]
   -- Factor S at each limb boundary using ring, then omega handles div/mod
   set W := (2 : Nat) ^ 64
   have hW : 0 < W := by positivity
@@ -361,7 +361,7 @@ theorem sub_borrow_chain_correct (a b : EvmWord) :
     simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]; rw [hD]; norm_num
   have key3 : ((a - b).getLimb 3).toNat = D % 2^256 / 2^192 % W := by
     simp only [getLimb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow,
-      show (3 : Fin 4).val = 3 from rfl]; rw [hD]
+      fin4_val_3]; rw [hD]
   -- Factor D using omega (ring doesn't work for Nat subtraction)
   have hD0 : D = (a0.toNat + W - b0.toNat) +
     (a1.toNat + W - 1 - b1.toNat + (a2.toNat + W - 1 - b2.toNat +
