@@ -804,7 +804,7 @@ private theorem divK_trial_max_extended (v11_old : Word) (base : Word) :
 theorem divK_trial_call_path_spec
     (sp j u_lo u_hi v_top vtop_base : Word) (base : Word)
     (v2_old v11_old : Word)
-    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (ret_mem d_mem dlo_mem un0Mem : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516) :
     -- div128 intermediates (same as div128_spec)
     let d_hi := v_top >>> (32 : BitVec 6).toNat
@@ -840,7 +840,7 @@ theorem divK_trial_call_path_spec
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-       (sp + signExtend12 3944 ↦ₘ un0_mem))
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ rhat2_un0) **
        (.x5 ↦ᵣ q0') ** (.x6 ↦ᵣ d_hi) **
        (.x7 ↦ᵣ q0_dlo) ** (.x10 ↦ᵣ q1') **
@@ -858,7 +858,7 @@ theorem divK_trial_call_path_spec
     lb_sub base 16 _ _ (by decide) (by bv_addr) (by decide)) J
   -- 2. div128 subroutine: base+1072 → base+516
   have D := div128_spec sp (base + 516) v_top u_lo u_hi base
-    j vtop_base v11_old ret_mem d_mem dlo_mem un0_mem
+    j vtop_base v11_old ret_mem d_mem dlo_mem un0Mem
     halign
   dsimp only [] at D
   -- 3. Frame JAL with all registers/memory for div128
@@ -870,7 +870,7 @@ theorem divK_trial_call_path_spec
      (sp + signExtend12 3968 ↦ₘ ret_mem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-     (sp + signExtend12 3944 ↦ₘ un0_mem))
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
     (by pcFree) Je
   -- 4. Compose JAL + div128
   have full := cpsTriple_seq_perm_same_cr
@@ -1738,7 +1738,7 @@ set_option maxRecDepth 4096 in
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_call_full_spec
     (sp j n j_old v5_old v6_old v7_old v10_old v11_old v2_old u_hi u_lo v_top : Word)
-    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (ret_mem d_mem dlo_mem un0Mem : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
     (hbltu : BitVec.ult u_hi v_top) :
@@ -1748,7 +1748,7 @@ theorem divK_trial_call_full_spec
     let d_hi := v_top >>> (32 : BitVec 6).toNat
     let d_lo := (v_top <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let un1 := u_lo >>> (32 : BitVec 6).toNat
-    let un0_div := (u_lo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let un0Div := (u_lo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let q1 := rv64_divu u_hi d_hi
     let rhat := u_hi - q1 * d_hi
     let hi1 := q1 >>> (32 : BitVec 6).toNat
@@ -1767,7 +1767,7 @@ theorem divK_trial_call_full_spec
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + d_hi
     let q0_dlo := q0c * d_lo
-    let rhat2_un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0_div
+    let rhat2_un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0Div
     let q0' := if BitVec.ult rhat2_un0 q0_dlo then q0c + signExtend12 4095 else q0c
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
@@ -1781,7 +1781,7 @@ theorem divK_trial_call_full_spec
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-       (sp + signExtend12 3944 ↦ₘ un0_mem))
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ rhat2_un0) **
        (.x5 ↦ᵣ q0') ** (.x6 ↦ᵣ d_hi) **
        (.x7 ↦ᵣ q0_dlo) ** (.x10 ↦ᵣ q1') ** (.x11 ↦ᵣ q) **
@@ -1792,9 +1792,9 @@ theorem divK_trial_call_full_spec
        (sp + signExtend12 3968 ↦ₘ (base + 516)) **
        (sp + signExtend12 3960 ↦ₘ v_top) **
        (sp + signExtend12 3952 ↦ₘ d_lo) **
-       (sp + signExtend12 3944 ↦ₘ un0_div)) := by
+       (sp + signExtend12 3944 ↦ₘ un0Div)) := by
   intro u_addr vtop_base
-        d_hi d_lo un1 un0_div q1 rhat hi1 q1c rhatc q_dlo rhat_un1 q1' rhat'
+        d_hi d_lo un1 un0Div q1 rhat hi1 q1c rhatc q_dlo rhat_un1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0_dlo rhat2_un0 q0' q
   -- 1. Save j + trial load (base+448 → base+500)
   have STL := divK_save_trial_load_spec sp j n j_old v5_old v6_old v7_old v10_old u_hi u_lo v_top
@@ -1816,7 +1816,7 @@ theorem divK_trial_call_full_spec
       (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp) taken
   -- 3. Trial call path (base+512 → base+516)
   have TCP := divK_trial_call_path_spec sp j u_lo u_hi v_top vtop_base base
-    v2_old v11_old ret_mem d_mem dlo_mem un0_mem
+    v2_old v11_old ret_mem d_mem dlo_mem un0Mem
     halign
   dsimp only [] at TCP
   -- 4. Frame save_trial_load with x2, x11, x0, scratch memory
@@ -1825,7 +1825,7 @@ theorem divK_trial_call_full_spec
      (sp + signExtend12 3968 ↦ₘ ret_mem) **
      (sp + signExtend12 3960 ↦ₘ d_mem) **
      (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-     (sp + signExtend12 3944 ↦ₘ un0_mem))
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
     (by pcFree) STL
   -- 5. Compose save_trial_load + BLTU taken
   seqFrame STLf taken_clean
@@ -1862,10 +1862,10 @@ theorem divK_mulsub_correction_addback_beq_spec
     -- Final values depend on carry
     let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                  else q_hat + signExtend12 4095
-    let un0_out := if carry = 0 then ab'.1 else ab.1
-    let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-    let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-    let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+    let un0Out := if carry = 0 then ab'.1 else ab.1
+    let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+    let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+    let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
     let u4_out := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
     let carry_out := if carry = 0 then
         addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3
@@ -1887,15 +1887,15 @@ theorem divK_mulsub_correction_addback_beq_spec
        ((u_base + signExtend12 4064) ↦ₘ u_top))
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_out) **
        (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_out) ** (.x6 ↦ᵣ u_base) **
-       (.x7 ↦ᵣ carry_out) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
+       (.x7 ↦ᵣ carry_out) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3Out) **
        (.x0 ↦ᵣ 0) **
        (sp + signExtend12 3976 ↦ₘ j) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_out) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_out) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_out) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0Out) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1Out) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2Out) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3Out) **
        ((u_base + signExtend12 4064) ↦ₘ u4_out)) := by
-  intro u_base ms c3 carry ab ab' q_out un0_out un1_out un2_out un3_out u4_out carry_out
+  intro u_base ms c3 carry ab ab' q_out un0Out un1Out un2Out un3Out u4_out carry_out
         hcarry2_nz hborrow
   -- 1. Mulsub + first addback (base+516 → base+880)
   have MCA := divK_mulsub_correction_addback_spec sp q_hat j v0 v1 v2 v3 u0 u1 u2 u3 u_top
@@ -1907,10 +1907,10 @@ theorem divK_mulsub_correction_addback_beq_spec
   by_cases hcarry : carry = 0
   · -- carry = 0: double addback path
     have hq : q_out = q_hat + signExtend12 4095 + signExtend12 4095 := if_pos hcarry
-    have h0 : un0_out = ab'.1 := if_pos hcarry
-    have h1 : un1_out = ab'.2.1 := if_pos hcarry
-    have h2 : un2_out = ab'.2.2.1 := if_pos hcarry
-    have h3 : un3_out = ab'.2.2.2.1 := if_pos hcarry
+    have h0 : un0Out = ab'.1 := if_pos hcarry
+    have h1 : un1Out = ab'.2.1 := if_pos hcarry
+    have h2 : un2Out = ab'.2.2.1 := if_pos hcarry
+    have h3 : un3Out = ab'.2.2.2.1 := if_pos hcarry
     have h4 : u4_out = ab'.2.2.2.2 := if_pos hcarry
     have hc : carry_out = addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 := if_pos hcarry
     rw [hq, h0, h1, h2, h3, h4, hc]
@@ -1940,10 +1940,10 @@ theorem divK_mulsub_correction_addback_beq_spec
       full
   · -- carry ≠ 0: single addback path (BEQ passthrough)
     have hq : q_out = q_hat + signExtend12 4095 := if_neg hcarry
-    have h0 : un0_out = ab.1 := if_neg hcarry
-    have h1 : un1_out = ab.2.1 := if_neg hcarry
-    have h2 : un2_out = ab.2.2.1 := if_neg hcarry
-    have h3 : un3_out = ab.2.2.2.1 := if_neg hcarry
+    have h0 : un0Out = ab.1 := if_neg hcarry
+    have h1 : un1Out = ab.2.1 := if_neg hcarry
+    have h2 : un2Out = ab.2.2.1 := if_neg hcarry
+    have h3 : un3Out = ab.2.2.2.1 := if_neg hcarry
     have h4 : u4_out = ab.2.2.2.2 := if_neg hcarry
     have hc : carry_out = carry := if_neg hcarry
     rw [hq, h0, h1, h2, h3, h4, hc]

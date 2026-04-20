@@ -55,7 +55,7 @@ private theorem d128_sub (base : Word) (k : Nat) (addr : Word) (instr : Instr)
 
 theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
     (v1_old v6_old v11_old : Word)
-    (ret_mem d_mem dlo_mem un0_mem : Word)
+    (ret_mem d_mem dlo_mem un0Mem : Word)
     (halign : (ret_addr + signExtend12 0) &&& ~~~1 = ret_addr) :
     -- Phase 1 intermediates
     let d_hi := d >>> (32 : BitVec 6).toNat
@@ -96,7 +96,7 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
        (sp + signExtend12 3968 ↦ₘ ret_mem) **
        (sp + signExtend12 3960 ↦ₘ d_mem) **
        (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-       (sp + signExtend12 3944 ↦ₘ un0_mem))
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
       (-- Postcondition: x11=quotient, all regs/mem updated
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (.x10 ↦ᵣ q1') **
        (.x5 ↦ᵣ q0') ** (.x7 ↦ᵣ q0_dlo) **
@@ -113,7 +113,7 @@ theorem div128_spec (sp ret_addr d u_lo u_hi : Word) (base : Word)
   -- Saves ret/d, splits d and u_lo into halves.
   -- ================================================================
   have hph1 := divK_div128_phase1_spec sp ret_addr d u_lo u_hi v1_old v6_old v11_old
-    ret_mem d_mem dlo_mem un0_mem (base + div128Off)
+    ret_mem d_mem dlo_mem un0Mem (base + div128Off)
   rw [show (base + div128Off : Word) + 40 = base + 1112 from by bv_addr] at hph1
   -- Extend phase1 cr to sharedDivModCode
   have hph1e := cpsTriple_extend_code (hmono := by

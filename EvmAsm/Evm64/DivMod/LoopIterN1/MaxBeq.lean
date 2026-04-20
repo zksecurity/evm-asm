@@ -52,10 +52,10 @@ theorem divK_loop_body_n1_max_addback_j0_beq_spec
   let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   let carry_out := if carry = 0 then
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3
@@ -84,12 +84,12 @@ theorem divK_loop_body_n1_max_addback_j0_beq_spec
     (by pcFree) TF
   seqFrame TFf MCA0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
+    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3Out) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_out) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_out) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_out) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0Out) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1Out) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2Out) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3Out) **
      ((u_base + signExtend12 4064) ↦ₘ u4_out) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)))
     (by pcFree) SL
@@ -134,10 +134,10 @@ theorem divK_loop_body_n1_max_addback_j3_beq_spec
   let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   let carry_out := if carry = 0 then
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3
@@ -167,12 +167,12 @@ theorem divK_loop_body_n1_max_addback_j3_beq_spec
     (by pcFree) TF
   seqFrame TFf MCA0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
+    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3Out) **
      (sp + signExtend12 3976 ↦ₘ (3 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_out) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_out) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_out) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0Out) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1Out) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2Out) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3Out) **
      ((u_base + signExtend12 4064) ↦ₘ u4_out) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)))
     (by pcFree) SL
@@ -217,10 +217,10 @@ theorem divK_loop_body_n1_max_addback_j1_beq_spec
   let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   let carry_out := if carry = 0 then
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3
@@ -250,12 +250,12 @@ theorem divK_loop_body_n1_max_addback_j1_beq_spec
     (by pcFree) TF
   seqFrame TFf MCA0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
+    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3Out) **
      (sp + signExtend12 3976 ↦ₘ (1 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_out) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_out) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_out) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0Out) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1Out) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2Out) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3Out) **
      ((u_base + signExtend12 4064) ↦ₘ u4_out) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)))
     (by pcFree) SL
@@ -300,10 +300,10 @@ theorem divK_loop_body_n1_max_addback_j2_beq_spec
   let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   let carry_out := if carry = 0 then
       addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3
@@ -333,12 +333,12 @@ theorem divK_loop_body_n1_max_addback_j2_beq_spec
     (by pcFree) TF
   seqFrame TFf MCA0
   have SLf := cpsTriple_frameR
-    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3_out) **
+    ((.x6 ↦ᵣ u_base) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3Out) **
      (sp + signExtend12 3976 ↦ₘ (2 : Word)) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0_out) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1_out) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2_out) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3_out) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((u_base + signExtend12 0) ↦ₘ un0Out) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((u_base + signExtend12 4088) ↦ₘ un1Out) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((u_base + signExtend12 4080) ↦ₘ un2Out) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((u_base + signExtend12 4072) ↦ₘ un3Out) **
      ((u_base + signExtend12 4064) ↦ₘ u4_out) **
      (sp + signExtend12 3984 ↦ₘ (1 : Word)))
     (by pcFree) SL

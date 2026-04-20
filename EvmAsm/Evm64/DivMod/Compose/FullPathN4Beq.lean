@@ -474,20 +474,20 @@ theorem preloopMaxAddbackBeqPostN4_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
     let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                  else q_hat + signExtend12 4095
-    let un0_out := if carry = 0 then ab'.1 else ab.1
-    let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-    let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-    let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+    let un0Out := if carry = 0 then ab'.1 else ab.1
+    let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+    let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+    let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
     let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
     ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ signExtend12 4095) **
      (.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ sp + signExtend12 4056) **
      (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_out) **
-     (.x2 ↦ᵣ un3_out) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x2 ↦ᵣ un3Out) ** (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-     ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ un0_out) **
-     ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ un1_out) **
-     ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ un2_out) **
-     ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ un3_out) **
+     ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ un0Out) **
+     ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ un1Out) **
+     ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ un2Out) **
+     ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ un3Out) **
      ((sp + signExtend12 4024) ↦ₘ u4_out) **
      ((sp + signExtend12 4088) ↦ₘ q_out)) **
     ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -529,12 +529,12 @@ def fullDivN4MaxAddbackBeqPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
-  denormDivPost sp shift un0_out un1_out un2_out un3_out q_out 0 0 0 **
+  denormDivPost sp shift un0Out un1Out un2Out un3Out q_out 0 0 0 **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
   ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -612,10 +612,10 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   have hA := evm_div_n4_preloop_max_addback_beq_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
@@ -625,8 +625,8 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
 
     hbltu hcarry2_nz hborrow
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
-    un0_out un1_out un2_out un3_out shift
-    un3_out (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    un0Out un1Out un2Out un3Out shift
+    un3Out (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
     c3 q_out 0 0 0
     b0' b1' b2' b3'
     hshift_nz
@@ -679,20 +679,20 @@ theorem preloopCallAddbackBeqPostN4_unfold (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Wo
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
     let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                  else q_hat + signExtend12 4095
-    let un0_out := if carry = 0 then ab'.1 else ab.1
-    let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-    let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-    let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+    let un0Out := if carry = 0 then ab'.1 else ab.1
+    let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+    let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+    let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
     let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
     ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ signExtend12 4095) **
      (.x5 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ sp + signExtend12 4056) **
      (.x7 ↦ᵣ sp + signExtend12 4088) ** (.x10 ↦ᵣ c3) ** (.x11 ↦ᵣ q_out) **
-     (.x2 ↦ᵣ un3_out) ** (.x0 ↦ᵣ (0 : Word)) **
+     (.x2 ↦ᵣ un3Out) ** (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-     ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ un0_out) **
-     ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ un1_out) **
-     ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ un2_out) **
-     ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ un3_out) **
+     ((sp + 32) ↦ₘ b0') ** ((sp + signExtend12 4056) ↦ₘ un0Out) **
+     ((sp + 40) ↦ₘ b1') ** ((sp + signExtend12 4048) ↦ₘ un1Out) **
+     ((sp + 48) ↦ₘ b2') ** ((sp + signExtend12 4040) ↦ₘ un2Out) **
+     ((sp + 56) ↦ₘ b3') ** ((sp + signExtend12 4032) ↦ₘ un3Out) **
      ((sp + signExtend12 4024) ↦ₘ u4_out) **
      ((sp + signExtend12 4088) ↦ₘ q_out)) **
     (sp + signExtend12 3968 ↦ₘ (base + 516)) **
@@ -736,12 +736,12 @@ def fullDivN4CallAddbackBeqPost (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Asser
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
-  denormDivPost sp shift un0_out un1_out un2_out un3_out q_out 0 0 0 **
+  denormDivPost sp shift un0Out un1Out un2Out un3Out q_out 0 0 0 **
   ((sp + signExtend12 3992) ↦ₘ shift) **
   ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
   ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -830,10 +830,10 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
   let q_out := if carry = 0 then q_hat + signExtend12 4095 + signExtend12 4095
                else q_hat + signExtend12 4095
-  let un0_out := if carry = 0 then ab'.1 else ab.1
-  let un1_out := if carry = 0 then ab'.2.1 else ab.2.1
-  let un2_out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-  let un3_out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+  let un0Out := if carry = 0 then ab'.1 else ab.1
+  let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+  let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+  let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
   let u4_out  := if carry = 0 then ab'.2.2.2.2 else ab.2.2.2.2
   have hA := evm_div_n4_preloop_call_addback_beq_spec sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11_old
@@ -845,8 +845,8 @@ theorem evm_div_n4_full_call_addback_beq_spec (sp base : Word)
     hv_uhi hv_ulo hv_vtop halign
     hbltu hcarry2_nz hborrow
   have hB := evm_div_preamble_denorm_epilogue_spec sp base
-    un0_out un1_out un2_out un3_out shift
-    un3_out (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    un0Out un1Out un2Out un3Out shift
+    un3Out (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
     c3 q_out 0 0 0
     b0' b1' b2' b3'
     hshift_nz
