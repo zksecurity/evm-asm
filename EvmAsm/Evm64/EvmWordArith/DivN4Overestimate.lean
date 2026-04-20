@@ -17,6 +17,7 @@ import EvmAsm.Evm64.DivMod.LoopSemantic
 namespace EvmAsm.Evm64
 
 open EvmWord EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (word_toNat_1)
 
 -- ============================================================================
 -- Max trial overestimate: qHat = 2^64 - 1 ≥ ⌊val256(a)/val256(b)⌋
@@ -117,7 +118,7 @@ theorem mulsub_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 u4_new : Word)
   -- Substitute c3 = 1 and carry = 1
   rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
   rw [hcarry_one] at haddback
-  have h1 : (1 : Word).toNat = 1 := by decide
+  have h1 := word_toNat_1
   rw [h1] at hmulsub haddback
   -- hmulsub: val256 u + 1 * 2^256 = val256 un + q * val256 v
   -- haddback: val256 un + val256 v = val256 aun + 1 * 2^256
@@ -189,7 +190,7 @@ theorem n4_max_addback_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     have hmulsub_raw := mulsubN4_val256_eq (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3
     simp only [] at hmulsub_raw
     rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub_raw
-    have h1 : (1 : Word).toNat = 1 := by decide
+    have h1 := word_toNat_1
     rw [h1] at hmulsub_raw
     -- hmulsub_raw: val256 u + 1 * 2^256 = val256 un + qHat * val256 v
     -- So qHat * val256 v ≥ val256 u + 1 (since 2^256 > val256 un)
@@ -317,7 +318,7 @@ theorem mulsubN4_c3_eq_one_v3_zero (q v0 v1 v2 u0 u1 u2 u3 : Word)
   have h := mulsubN4_c3_le_one_v3_zero q v0 v1 v2 u0 u1 u2 u3
   have hc3_pos : 0 < (mulsubN4 q v0 v1 v2 0 u0 u1 u2 u3).2.2.2.2.toNat := by
     exact Nat.pos_of_ne_zero (by intro h0; exact hc3_nz (BitVec.eq_of_toNat_eq h0))
-  have h1 : (1 : Word).toNat = 1 := by decide
+  have h1 := word_toNat_1
   exact BitVec.eq_of_toNat_eq (by omega)
 
 -- ============================================================================
@@ -353,7 +354,7 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
   simp only [] at hmulsub
   rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
-  have h1w : (1 : Word).toNat = 1 := by decide
+  have h1w := word_toNat_1
   rw [h1w] at hmulsub
   -- First addback: val256(un) + val256(v) = val256(ab1) + carry1 * 2^256
   have hab1 := addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 v0 v1 v2 v3
@@ -448,7 +449,7 @@ theorem mulsub_double_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
   simp only [] at hmulsub
   rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
-  have h1w : (1 : Word).toNat = 1 := by decide
+  have h1w := word_toNat_1
   rw [h1w] at hmulsub
   -- First addback with carry = 0
   have hab1 := addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 v0 v1 v2 v3
@@ -496,7 +497,7 @@ theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
   simp only [] at hmulsub
   rw [show ms.2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
-  have h1w : (1 : Word).toNat = 1 := by decide
+  have h1w := word_toNat_1
   rw [h1w] at hmulsub
   -- hmulsub: val256(u) + 1 * 2^256 = val256(un) + q * val256(v)
   -- First addback equation

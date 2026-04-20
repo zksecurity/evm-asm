@@ -20,6 +20,7 @@ import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
 namespace EvmAsm.Evm64
 
 open EvmWord EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm (word_toNat_1)
 
 /-- Local copy of `EvmWord.fromLimbs_match_getLimbN_id` with the match
     expression elaborated in this file's context, so that the auxiliary
@@ -59,7 +60,7 @@ theorem hq_over_from_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hmulsub := mulsubN4_val256_eq q v0 v1 v2 v3 u0 u1 u2 u3
   simp only [] at hmulsub
   rw [show (mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2 = (1 : Word) from hc3_one] at hmulsub
-  have h1w : (1 : Word).toNat = 1 := by decide
+  have h1w := word_toNat_1
   rw [h1w] at hmulsub
   -- First addback: val256(un) + val256(v) = val256(ab1) + 0 * 2^256 = val256(ab1)
   set ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3 with hms_def
