@@ -699,14 +699,14 @@ private theorem lb_trial_load (base : Word) : (base + 452 : Word) + 48 = base + 
     13 instructions, loop body indices [0]-[12].
     Entry: base+448, Exit: base+500, CodeReq: sharedDivModCode base. -/
 theorem divK_save_trial_load_spec
-    (sp j n jOld v5_old v6_old v7_old v10_old uHi uLo vTop : Word)
+    (sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop : Word)
     (base : Word) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
     let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
     cpsTriple (base + loopBodyOff) (base + 500) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
        (sp + signExtend12 3976 ↦ₘ jOld) **
        (sp + signExtend12 3984 ↦ₘ n) **
        (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
@@ -1062,14 +1062,14 @@ theorem divK_double_addback_beq_named_spec
     Entry: base+880. Taken exit: base+448 (loop back). Not-taken exit: base+908 (exit loop).
     CodeReq: sharedDivModCode base. -/
 theorem divK_store_loop_spec
-    (sp j qHat v5_old v7_old qOld : Word)
+    (sp j qHat v5Old v7Old qOld : Word)
     (base : Word) :
     let jX8 := j <<< (3 : BitVec 6).toNat
     let qAddr := sp + signExtend12 4088 - jX8
     let j' := j + signExtend12 4095
     cpsBranch (base + 884) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (qAddr ↦ₘ qOld))
       (base + loopBodyOff)
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
@@ -1081,7 +1081,7 @@ theorem divK_store_loop_spec
        (qAddr ↦ₘ qHat)) := by
   intro jX8 qAddr j'
   -- 1. Store q[j]: instrs [109]-[112] at base+884
-  have SQ := divK_store_qj_spec sp j qHat v5_old v7_old qOld (base + 884)
+  have SQ := divK_store_qj_spec sp j qHat v5Old v7Old qOld (base + 884)
   dsimp only [] at SQ
   rw [lb_sqj] at SQ
   have SQe := cpsTriple_extend_code (hmono := by
@@ -1099,7 +1099,7 @@ theorem divK_store_loop_spec
   -- 3. Add x0 to store_qj via frame, then reshape via consequence
   have SQx0 : cpsTriple (base + 884) (base + 900) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) :=
     cpsTriple_weaken
@@ -1141,20 +1141,20 @@ private theorem j0_slt_zero :
 /-- Store q[0] + loop exit at j=0. Since j' = -1 < 0, BGE is not taken,
     so this is a cpsTriple (not cpsBranch) to base+908. -/
 theorem divK_store_loop_j0_spec
-    (sp qHat v5_old v7_old qOld : Word)
+    (sp qHat v5Old v7Old qOld : Word)
     (base : Word) :
     let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
     let j' := (0 : Word) + signExtend12 4095
     cpsTriple (base + 884) (base + denormOff) (sharedDivModCode base)
       ((.x1 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ (0 : Word) <<< (3 : BitVec 6).toNat) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) **
        (qAddr ↦ₘ qHat)) := by
   intro qAddr j'
   -- 1. Store q[j]: instrs [109]-[112] at base+884
-  have SQ := divK_store_qj_spec sp (0 : Word) qHat v5_old v7_old qOld (base + 884)
+  have SQ := divK_store_qj_spec sp (0 : Word) qHat v5Old v7Old qOld (base + 884)
   dsimp only [] at SQ
   rw [lb_sqj] at SQ
   have SQe := cpsTriple_extend_code (hmono := by
@@ -1189,7 +1189,7 @@ theorem divK_store_loop_j0_spec
   -- 5. Build store_qj + x0 frame → base+900
   have SQx0 : cpsTriple (base + 884) (base + 900) (sharedDivModCode base)
       ((.x1 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ (0 : Word) <<< (3 : BitVec 6).toNat) ** (.x7 ↦ᵣ qAddr) **
        (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) :=
@@ -1225,7 +1225,7 @@ theorem divK_store_loop_j0_spec
 /-- Store q[j] + loop back at j > 0. Since j' = j-1 ≥ 0 (signed), BGE is taken,
     so this is a cpsTriple (not cpsBranch) to base+448. -/
 theorem divK_store_loop_jgt0_spec
-    (sp j qHat v5_old v7_old qOld : Word)
+    (sp j qHat v5Old v7Old qOld : Word)
     (base : Word)
     (hj_pos : BitVec.slt (j + signExtend12 4095) 0 = false) :
     let jX8 := j <<< (3 : BitVec 6).toNat
@@ -1233,14 +1233,14 @@ theorem divK_store_loop_jgt0_spec
     let j' := j + signExtend12 4095
     cpsTriple (base + 884) (base + loopBodyOff) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) **
        (qAddr ↦ₘ qHat)) := by
   intro jX8 qAddr j'
   -- 1. Store q[j]: instrs [109]-[112] at base+884
-  have SQ := divK_store_qj_spec sp j qHat v5_old v7_old qOld (base + 884)
+  have SQ := divK_store_qj_spec sp j qHat v5Old v7Old qOld (base + 884)
   dsimp only [] at SQ
   rw [lb_sqj] at SQ
   have SQe := cpsTriple_extend_code (hmono := by
@@ -1275,7 +1275,7 @@ theorem divK_store_loop_jgt0_spec
   -- 5. Build store_qj + x0 frame → base+900
   have SQx0 : cpsTriple (base + 884) (base + 900) (sharedDivModCode base)
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) :=
     cpsTriple_weaken
@@ -1673,7 +1673,7 @@ set_option maxRecDepth 4096 in
     When uHi >= vTop, sets qHat = MAX64 without calling div128.
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_max_full_spec
-    (sp j n jOld v5_old v6_old v7_old v10_old v11_old uHi uLo vTop : Word)
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old uHi uLo vTop : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult uHi vTop) :
     let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
@@ -1695,7 +1695,7 @@ theorem divK_trial_max_full_spec
        (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
   intro uAddr vtopBase
   -- 1. Save j + trial load (base+448 → base+500)
-  have STL := divK_save_trial_load_spec sp j n jOld v5_old v6_old v7_old v10_old uHi uLo vTop
+  have STL := divK_save_trial_load_spec sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop
     base
   dsimp only [] at STL
   -- 2. BLTU x7 x10 12 at base+500
@@ -1737,7 +1737,7 @@ set_option maxRecDepth 4096 in
     When uHi < vTop, computes qHat = div128(uHi, uLo, vTop).
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
 theorem divK_trial_call_full_spec
-    (sp j n jOld v5_old v6_old v7_old v10_old v11_old v2_old uHi uLo vTop : Word)
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old v2Old uHi uLo vTop : Word)
     (retMem dMem dloMem un0Mem : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
@@ -1772,9 +1772,9 @@ theorem divK_trial_call_full_spec
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
        (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
        (vtopBase + signExtend12 32 ↦ₘ vTop) **
@@ -1797,7 +1797,7 @@ theorem divK_trial_call_full_spec
         dHi dLo un1 un0Div q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' q
   -- 1. Save j + trial load (base+448 → base+500)
-  have STL := divK_save_trial_load_spec sp j n jOld v5_old v6_old v7_old v10_old uHi uLo vTop
+  have STL := divK_save_trial_load_spec sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop
     base
   dsimp only [] at STL
   -- 2. BLTU x7 x10 12 at base+500

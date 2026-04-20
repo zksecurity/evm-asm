@@ -22,7 +22,7 @@ set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, max+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
 theorem divK_loop_body_n1_max_skip_j0_spec
-    (sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -32,9 +32,9 @@ theorem divK_loop_body_n1_max_skip_j0_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -72,7 +72,7 @@ theorem divK_loop_body_n1_max_skip_j0_spec
   let u4_new := uTop - c3
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial max full (base+448 → base+516)
-  have TF := divK_trial_max_full_spec sp (0 : Word) (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec sp (0 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (0 : Word)] at TF
@@ -125,7 +125,7 @@ set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, max+skip, j=3.
     Since j=3, the BGE loop-back is taken (j' = 2 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n1_max_skip_j3_spec
-    (sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -135,9 +135,9 @@ theorem divK_loop_body_n1_max_skip_j3_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (3 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -167,7 +167,7 @@ theorem divK_loop_body_n1_max_skip_j3_spec
   let un3 := u3 - fs3; let c3 := pc3 + bs3
   let u4_new := uTop - c3
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  have TF := divK_trial_max_full_spec sp (3 : Word) (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec sp (3 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (3 : Word)] at TF
@@ -214,7 +214,7 @@ set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, max+skip, j=1.
     Since j=1, the BGE loop-back is taken (j' = 0 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n1_max_skip_j1_spec
-    (sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -224,9 +224,9 @@ theorem divK_loop_body_n1_max_skip_j1_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (1 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -256,7 +256,7 @@ theorem divK_loop_body_n1_max_skip_j1_spec
   let un3 := u3 - fs3; let c3 := pc3 + bs3
   let u4_new := uTop - c3
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  have TF := divK_trial_max_full_spec sp (1 : Word) (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec sp (1 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (1 : Word)] at TF
@@ -303,7 +303,7 @@ set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, max+skip, j=2.
     Since j=2, the BGE loop-back is taken (j' = 1 ≥ 0), giving a cpsTriple to base+448. -/
 theorem divK_loop_body_n1_max_skip_j2_spec
-    (sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -313,9 +313,9 @@ theorem divK_loop_body_n1_max_skip_j2_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (2 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -345,7 +345,7 @@ theorem divK_loop_body_n1_max_skip_j2_spec
   let un3 := u3 - fs3; let c3 := pc3 + bs3
   let u4_new := uTop - c3
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  have TF := divK_trial_max_full_spec sp (2 : Word) (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec sp (2 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp (2 : Word)] at TF

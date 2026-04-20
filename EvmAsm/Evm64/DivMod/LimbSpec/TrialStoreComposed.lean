@@ -87,7 +87,7 @@ theorem divK_trial_load_spec
 
 /-- Store q[j]: compute address and store qHat. 4 instructions.
     qAddr = sp + 4088 - j*8. -/
-theorem divK_store_qj_spec (sp j qHat v5_old v7_old qOld : Word)
+theorem divK_store_qj_spec (sp j qHat v5Old v7Old qOld : Word)
     (base : Word) :
     let jX8 := j <<< (3 : BitVec 6).toNat
     let qAddr := sp + signExtend12 4088 - jX8
@@ -98,7 +98,7 @@ theorem divK_store_qj_spec (sp j qHat v5_old v7_old qOld : Word)
        (CodeReq.singleton (base + 12) (.SD .x7 .x11 0))))
     cpsTriple base (base + 16) cr
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) **
        (qAddr ↦ₘ qOld))
       ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **

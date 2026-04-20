@@ -101,7 +101,7 @@ theorem loopExitPostN2_j0_eq (sp q_f c3 un0F un1F un2F un3F u4F
 
 /-- Lift the unified n=2 3-iteration  loop spec from sharedDivModCode to divCode. -/
 theorem divK_loop_n2_unified_divCode (bltu_2 bltu_1 bltu_0 : Bool)
-    (sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop
      u0_orig_1 u0_orig_0
      q2Old q1Old q0Old : Word)
@@ -117,7 +117,7 @@ theorem divK_loop_n2_unified_divCode (bltu_2 bltu_1 bltu_0 : Bool)
       (iterN2 bltu_2 v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.1).2.2.1 v1)
     (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
-      (loopN2PreWithScratch sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+      (loopN2PreWithScratch sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
         v0 v1 v2 v3 u0 u1 u2 u3 uTop
         u0_orig_1 u0_orig_0 q2Old q1Old q0Old
         retMem dMem dloMem scratch_un0)
@@ -125,8 +125,8 @@ theorem divK_loop_n2_unified_divCode (bltu_2 bltu_1 bltu_0 : Bool)
         u0_orig_1 u0_orig_0 retMem dMem dloMem scratch_un0) :=
   cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
     (divK_loop_n2_unified_spec bltu_2 bltu_1 bltu_0
-      sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0_orig_1 u0_orig_0 q2_old q1_old q0_old
+      sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0_orig_1 u0_orig_0 q2Old q1Old q0Old
       retMem dMem dloMem scratch_un0 base halign
 
 

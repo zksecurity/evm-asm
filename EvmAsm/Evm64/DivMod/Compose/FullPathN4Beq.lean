@@ -22,7 +22,7 @@ open EvmAsm.Rv64.AddrNorm (se12_32 se12_40 se12_48 se12_56)
 
 /-- Loop body n=4, max+addback (BEQ double-addback), j=0 with sp-relative addresses. -/
 theorem divK_loop_body_n4_max_addback_j0_beq_norm (sp base : Word)
-    (jOld v5_old v6_old v7_old v10_old v11_old v2_old : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (hv_j : isValidDwordAccess (sp + signExtend12 3976) = true)
     (hv_n1 : isValidDwordAccess (sp + signExtend12 3984) = true)
@@ -46,9 +46,9 @@ theorem divK_loop_body_n4_max_addback_j0_beq_norm (sp base : Word)
      then (1 : Word) else 0) ≠ (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
        ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
        ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -63,7 +63,7 @@ theorem divK_loop_body_n4_max_addback_j0_beq_norm (sp base : Word)
   rw [← u_base_off0_j0] at hv_u0; rw [← u_base_off4088_j0] at
   rw [← u_base_off4080_j0] at hv_u2; rw [← u_base_off4072_j0] at
   rw [← u_base_off4064_j0] at hv_u4; rw [← q_addr_j0] at
-  have raw := divK_loop_body_n4_max_addback_j0_beq_divCode sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+  have raw := divK_loop_body_n4_max_addback_j0_beq_divCode sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
 
     hv_v3 hv_u3 hv_u4 hv_q hbltu hcarry2_nz hborrow
@@ -74,7 +74,7 @@ theorem divK_loop_body_n4_max_addback_j0_beq_norm (sp base : Word)
 
 /-- Loop body n=4, call+addback (BEQ double-addback), j=0 with sp-relative addresses. -/
 theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
-    (jOld v5_old v6_old v7_old v10_old v11_old v2_old : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (hv_j : isValidDwordAccess (sp + signExtend12 3976) = true)
@@ -106,9 +106,9 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
      then (1 : Word) else 0) ≠ (0 : Word) →
     cpsTriple (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
        ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
        ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -131,7 +131,7 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
   rw [← u_base_off0_j0] at hv_u0; rw [← u_base_off4088_j0] at
   rw [← u_base_off4080_j0] at hv_u2; rw [← u_base_off4072_j0] at
   rw [← u_base_off4064_j0] at hv_u4; rw [← q_addr_j0] at
-  have raw := divK_loop_body_n4_call_addback_j0_beq_divCode sp jOld v5_old v6_old v7_old v10_old v11_old v2_old
+  have raw := divK_loop_body_n4_call_addback_j0_beq_divCode sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
     hv_j hv_n1 hv_uhi hv_ulo hv_vtop hv_ret hv_d hv_dlo hv_scratch_un0 halign
     hv_v0 hv_u0 hv_v1 hv_u1 hv_v2 hv_u2 hv_v3 hv_u3 hv_u4 hv_q hbltu hcarry2_nz

@@ -53,7 +53,7 @@ theorem vtop_eq_v0_n1 (sp : Word) :
 
 /-- Trial max full spec specialized for n=1, with addresses rewritten. -/
 theorem divK_trial_max_full_spec_n1
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old u1 u0 v0 : Word)
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old u1 u0 v0 : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
@@ -74,7 +74,7 @@ theorem divK_trial_max_full_spec_n1
        ((uBase + signExtend12 4088) ↦ₘ u1) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 32) ↦ₘ v0)) := by
   intro uBase vtopBase
-  have TF := divK_trial_max_full_spec sp j (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec sp j (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   rw [u_addr_eq_n1 sp j] at TF
@@ -84,7 +84,7 @@ theorem divK_trial_max_full_spec_n1
 
 /-- Trial call full spec specialized for n=1, with addresses rewritten. -/
 theorem divK_trial_call_full_spec_n1
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old u1 u0 v0 : Word)
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old u1 u0 v0 : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
     (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
@@ -117,9 +117,9 @@ theorem divK_trial_call_full_spec_n1
     let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((uBase + signExtend12 4088) ↦ₘ u1) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 32) ↦ₘ v0) **
@@ -141,7 +141,7 @@ theorem divK_trial_call_full_spec_n1
   intro uBase
         dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' qHat
-  have TF := divK_trial_call_full_spec sp j (1 : Word) jOld v5_old v6_old v7_old v10_old v11_old v2_old
+  have TF := divK_trial_call_full_spec sp j (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old v2Old
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
@@ -159,7 +159,7 @@ theorem divK_trial_call_full_spec_n1
     No overlapping cells: uHi=u1, uLo=u0, vTop=v0.
     Entry: base+448, cpsBranch to base+448/904. -/
 theorem divK_loop_body_n1_max_skip_spec
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -170,9 +170,9 @@ theorem divK_loop_body_n1_max_skip_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -214,7 +214,7 @@ theorem divK_loop_body_n1_max_skip_spec
   -- Abbreviation for vtopBase (register value, not a memory address)
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial max full for n=1 (base+448 → base+516)
-  have TF := divK_trial_max_full_spec_n1 sp j jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec_n1 sp j jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   -- 2. Mulsub + correction skip (base+516 → base+880)
@@ -266,7 +266,7 @@ theorem divK_loop_body_n1_max_skip_spec
     No overlapping cells: uHi=u1, uLo=u0, vTop=v0.
     Entry: base+448, cpsBranch to base+448/904. -/
 theorem divK_loop_body_n1_max_addback_spec
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (base : Word)
     (hbltu : ¬BitVec.ult u1 v0) :
@@ -282,9 +282,9 @@ theorem divK_loop_body_n1_max_addback_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word) →
     cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -311,7 +311,7 @@ theorem divK_loop_body_n1_max_addback_spec
     else carry
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial max full for n=1 (base+448 → base+516)
-  have TF := divK_trial_max_full_spec_n1 sp j jOld v5_old v6_old v7_old v10_old v11_old
+  have TF := divK_trial_max_full_spec_n1 sp j jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
   -- 2. Mulsub + correction addback + BEQ (base+516 → base+884)
@@ -361,7 +361,7 @@ theorem divK_loop_body_n1_max_addback_spec
     No overlapping cells: uHi=u1, uLo=u0, vTop=v0.
     Entry: base+448, cpsBranch to base+448/904. -/
 theorem divK_loop_body_n1_call_skip_spec
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
@@ -399,9 +399,9 @@ theorem divK_loop_body_n1_call_skip_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
     cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -459,7 +459,7 @@ theorem divK_loop_body_n1_call_skip_spec
   let j' := j + signExtend12 4095
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full for n=1 (base+448 → base+516)
-  have TF := divK_trial_call_full_spec_n1 sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+  have TF := divK_trial_call_full_spec_n1 sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
@@ -514,7 +514,7 @@ theorem divK_loop_body_n1_call_skip_spec
     No overlapping cells: uHi=u1, uLo=u0, vTop=v0.
     Entry: base+448, cpsBranch to base+448/904. -/
 theorem divK_loop_body_n1_call_addback_spec
-    (sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (base : Word)
@@ -557,9 +557,9 @@ theorem divK_loop_body_n1_call_addback_spec
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word) →
     cpsBranch (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ v5_old) ** (.x6 ↦ᵣ v6_old) **
-       (.x7 ↦ᵣ v7_old) ** (.x10 ↦ᵣ v10_old) ** (.x11 ↦ᵣ v11_old) **
-       (.x2 ↦ᵣ v2_old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
        (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
        ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
@@ -603,7 +603,7 @@ theorem divK_loop_body_n1_call_addback_spec
     else carry
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
   -- 1. Trial call full for n=1 (base+448 → base+516)
-  have TF := divK_trial_call_full_spec_n1 sp j jOld v5_old v6_old v7_old v10_old v11_old v2_old
+  have TF := divK_trial_call_full_spec_n1 sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
