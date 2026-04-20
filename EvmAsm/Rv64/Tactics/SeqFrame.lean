@@ -886,7 +886,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
     let hperm ← mkPermLambda postQ1 preP2
     -- Same-CR fast path
     if ← withoutModifyingState (isDefEq cr1 cr2) then
-      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
         #[entry, mid1, exit_, cr1, preP, postQ1, preP2, postQ2,
           hperm, h1Expr, h2Expr]
     -- Different CRs
@@ -945,7 +945,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
     let hperm ← mkPermLambda postQ1 frameExpr
     -- Same-CR fast path
     if ← withoutModifyingState (isDefEq cr1 cr2) then
-      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
         #[entry, mid1, exit_, cr1, preP, postQ1, frameExpr, actualPost,
           hperm, h1Expr, h2Simplified]
     -- Different CRs
@@ -962,7 +962,7 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
 
   -- Same-CR fast path: skip disjointness proof
   if ← withoutModifyingState (isDefEq cr1 cr2) then
-    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm_same_cr)
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_perm_same_cr)
       #[entry, mid1, exit_, cr1, preP, postQ1, p2StarFrame, q2StarFrame,
         hperm, h1Expr, h2Framed]
 
