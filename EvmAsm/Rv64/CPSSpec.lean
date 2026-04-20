@@ -544,7 +544,7 @@ theorem cpsNBranch_extend_code {entry : Word} {cr cr' : CodeReq}
     becomes `P ** F` and each exit assertion in the list becomes `ex.2 ** F`.
     Shared across Evm64 opcode compositions — previously 5× `private theorem`
     duplicates. -/
-theorem cpsNBranch_frame_left {entry : Word} {cr : CodeReq}
+theorem cpsNBranch_frameR {entry : Word} {cr : CodeReq}
     {P : Assertion} {exits : List (Word × Assertion)} {F : Assertion}
     (hF : F.pcFree) (h : cpsNBranch entry cr P exits) :
     cpsNBranch entry cr (P ** F) (exits.map (fun ex => (ex.1, ex.2 ** F))) := by

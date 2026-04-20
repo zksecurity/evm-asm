@@ -194,7 +194,7 @@ private theorem byte_store_exit_eq (base : Word) :
 
 -- `regIs_to_regOwn` lives in `Rv64/SepLogic.lean` (shared).
 
--- `cpsNBranch_extend_code` and `cpsNBranch_frame_left` live in
+-- `cpsNBranch_extend_code` and `cpsNBranch_frameR` live in
 -- `Rv64/CPSSpec.lean` (shared).
 
 -- `cpsTriple_strip_pure_and_convert` lives in `Rv64/CPSSpec.lean` (shared).
@@ -687,7 +687,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     cpsTriple_weaken
       (fun h hp => by xperm_hyp hp) (fun h hq => by xperm_hyp hq) hb0_val_f
   -- Frame Phase C and merge with bodies+store
-  have hphaseC_framed := cpsNBranch_frame_left
+  have hphaseC_framed := cpsNBranch_frameR
     (F := (.x6 ↦ᵣ shiftAmount) ** (.x12 ↦ᵣ sp) **
           (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
           ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))

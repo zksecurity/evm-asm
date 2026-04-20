@@ -409,7 +409,7 @@ theorem signext_nochange_geq31_spec (sp base : Word)
 
 -- `cpsTriple_strip_pure_and_convert` lives in `Rv64/CPSSpec.lean` (shared).
 
--- `cpsNBranch_extend_code` and `cpsNBranch_frame_left` live in
+-- `cpsNBranch_extend_code` and `cpsNBranch_frameR` live in
 -- `Rv64/CPSSpec.lean` (shared across Evm64 opcode compositions).
 
 -- ============================================================================
@@ -799,7 +799,7 @@ theorem signext_body_spec (sp base : Word)
   -- Frame Phase C with the full frame
   let phaseC_frame := (.x6 ↦ᵣ shiftAmount) ** (.x12 ↦ᵣ sp) ** bmem **
     ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)
-  have hphaseC_framed := cpsNBranch_frame_left
+  have hphaseC_framed := cpsNBranch_frameR
     (F := phaseC_frame) (by pcFree) hphaseC
   simp only [List.map] at hphaseC_framed
   -- Merge Phase C exits with body+done specs

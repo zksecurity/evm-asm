@@ -635,7 +635,7 @@ theorem sar_phase_c_spec_pure (v5 v10 : Word) (base : Word)
 -- Section 6: Helpers for body path composition
 -- ============================================================================
 
--- `cpsNBranch_extend_code` and `cpsNBranch_frame_left` live in
+-- `cpsNBranch_extend_code` and `cpsNBranch_frameR` live in
 -- `Rv64/CPSSpec.lean` (shared).
 
 -- `cpsTriple_strip_pure_and_convert` lives in `Rv64/CPSSpec.lean` (shared).
@@ -1059,7 +1059,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Frame Phase C and merge with body specs
-  have hphaseC_framed := cpsNBranch_frame_left
+  have hphaseC_framed := cpsNBranch_frameR
     (F := (.x6 ↦ᵣ bitShift) ** (.x7 ↦ᵣ antiShift) ** (.x11 ↦ᵣ mask) ** (.x12 ↦ᵣ (sp + 32)) **
           (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
           ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
