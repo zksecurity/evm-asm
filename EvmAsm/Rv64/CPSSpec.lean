@@ -681,10 +681,11 @@ theorem cpsTriple_seq_perm_same_cr {s m e : Word} {cr : CodeReq}
 
 /-- Sequential composition: cpsTriple followed by cpsNBranch.
     If code reaches mid with Q, and from mid it branches to one of exits,
-    then code branches from entry to one of exits. -/
-theorem cpsTriple_seq_cpsNBranch (entry mid : Word) (cr1 cr2 : CodeReq)
+    then code branches from entry to one of exits.
+    All position/code/assertion arguments are implicit — inferred from `h1`/`h2`. -/
+theorem cpsTriple_seq_cpsNBranch {entry mid : Word} {cr1 cr2 : CodeReq}
     (hd : cr1.Disjoint cr2)
-    (P Q : Assertion) (exits : List (Word × Assertion))
+    {P Q : Assertion} {exits : List (Word × Assertion)}
     (h1 : cpsTriple entry mid cr1 P Q)
     (h2 : cpsNBranch mid cr2 Q exits) :
     cpsNBranch entry (cr1.union cr2) P exits := by
@@ -705,7 +706,7 @@ theorem cpsTriple_seq_cpsNBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq
     (h1 : cpsTriple entry mid cr1 P Q1)
     (h2 : cpsNBranch mid cr2 Q2 exits) :
     cpsNBranch entry (cr1.union cr2) P exits :=
-  cpsTriple_seq_cpsNBranch entry mid cr1 cr2 hd P Q2 exits
+  cpsTriple_seq_cpsNBranch hd
     (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Sequential composition: cpsTriple followed by cpsBranch.
