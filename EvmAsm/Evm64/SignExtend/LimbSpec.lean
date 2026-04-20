@@ -493,9 +493,7 @@ theorem signext_phase_a_spec (sp r5 r10 : Word)
       hd_bne_tail
   -- Combine: br1 (taken → done_path, ntaken → base+24) with br2 (base+24 → done_path or base+36)
   have combined := cpsBranch_seq_cpsBranch_with_perm
-    base (base + 24) done_path (base + 36)
-    (crLinear.union crBne) crTail hd_br1_br2
-    _ _ _ _ _ _ _
+    hd_br1_br2
     br1 (fun h hp => by xperm_hyp hp) br2
     -- ht1: weaken BNE taken path (x5 = b1|||b2|||b3, x10 = b3) → regOwn
     (fun h hp => by

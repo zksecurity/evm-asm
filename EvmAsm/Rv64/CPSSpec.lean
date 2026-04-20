@@ -825,11 +825,12 @@ theorem cpsBranch_seq_cpsBranch (entry mid target exit_f : Word) (cr1 cr2 : Code
       exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
              Or.inr ⟨hpc_f2, hQ_f2R⟩⟩
 
-/-- Like `cpsBranch_seq_cpsBranch` but with a permutation between Q_f1 and R. -/
+/-- Like `cpsBranch_seq_cpsBranch` but with a permutation between Q_f1 and R.
+    All position/code/assertion arguments are implicit — inferred from `h1`/`h2`/`hperm`/`ht*`/goal. -/
 theorem cpsBranch_seq_cpsBranch_with_perm
-    (entry mid target exit_f : Word) (cr1 cr2 : CodeReq)
+    {entry mid target exit_f : Word} {cr1 cr2 : CodeReq}
     (hd : cr1.Disjoint cr2)
-    (P Q_t1 Q_f1 R Q_t2 Q_f2 Q_t : Assertion)
+    {P Q_t1 Q_f1 R Q_t2 Q_f2 Q_t : Assertion}
     (h1 : cpsBranch entry cr1 P target Q_t1 mid Q_f1)
     (hperm : ∀ h, Q_f1 h → R h)
     (h2 : cpsBranch mid cr2 R target Q_t2 exit_f Q_f2)

@@ -912,9 +912,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
       -- crBne
       (sd_tail (base + 20) _ (by bv_omega) (by bv_omega) (by bv_omega))
   have combined := cpsBranch_seq_cpsBranch_with_perm
-    base (base + 24) zero_path (base + 36)
-    (crLinear.union crBne) crTail hd_br1_br2
-    _ _ _ _ _ _ _
+    hd_br1_br2
     br1 (fun h hp => by xperm_hyp hp) br2
     -- ht1: weaken first taken path (BNE taken: x5 = s1|||s2|||s3, x10 = s3)
     (fun h hp => by
