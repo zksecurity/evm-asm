@@ -18,11 +18,11 @@ open EvmAsm.Rv64
 /-- SUB limb 0 spec (5 instructions): LD, LD, SLTU, SUB, SD.
     Computes diff = a - b (mod 2^64) and borrow = (a < b ? 1 : 0). -/
 theorem sub_limb0_spec (offA offB : BitVec 12)
-    (sp a_limb b_limb v7 v6 v5 : Word) (base : Word) :
+    (sp aLimb bLimb v7 v6 v5 : Word) (base : Word) :
     let memA := sp + signExtend12 offA
     let memB := sp + signExtend12 offB
-    let borrow := if BitVec.ult a_limb b_limb then (1 : Word) else 0
-    let diff := a_limb - b_limb
+    let borrow := if BitVec.ult aLimb bLimb then (1 : Word) else 0
+    let diff := aLimb - bLimb
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
       (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
@@ -31,19 +31,19 @@ theorem sub_limb0_spec (offA offB : BitVec 12)
        (CodeReq.singleton (base + 16) (.SD .x12 .x7 offB)))))
     cpsTriple base (base + 20) cr
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) **
-       (memA ↦ₘ a_limb) ** (memB ↦ₘ b_limb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ diff) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ borrow) **
-       (memA ↦ₘ a_limb) ** (memB ↦ₘ diff)) := by
+       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb))
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ diff) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
+       (memA ↦ₘ aLimb) ** (memB ↦ₘ diff)) := by
   runBlock
 
 /-- SUB carry limb phase 1 (4 instructions): LD, LD, SLTU, SUB.
-    Loads a_limb and b_limb, computes borrow1 = (a < b ? 1 : 0), temp = a - b. -/
+    Loads aLimb and bLimb, computes borrow1 = (a < b ? 1 : 0), temp = a - b. -/
 theorem sub_limb_carry_spec_phase1 (offA offB : BitVec 12)
     (sp a_limb b_limb v7 v6 borrowIn v11 : Word) (base : Word) :
     let memA := sp + signExtend12 offA
     let memB := sp + signExtend12 offB
-    let borrow1 := if BitVec.ult a_limb b_limb then (1 : Word) else 0
-    let temp := a_limb - b_limb
+    let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
+    let temp := aLimb - bLimb
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
       (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
@@ -74,7 +74,7 @@ theorem sub_limb_carry_spec_phase2 (offB : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ b_limb) ** (.x5 ↦ᵣ borrowIn) ** (.x11 ↦ᵣ borrow1) **
        (memA ↦ₘ a_limb) ** (memB ↦ₘ b_limb))
       ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
-       (memA ↦ₘ a_limb) ** (memB ↦ₘ result)) := by
+       (memA ↦ₘ aLimb) ** (memB ↦ₘ result)) := by
   runBlock
 
 /-- SUB carry limb spec (8 instructions): LD, LD, SLTU, SUB, SLTU, SUB, OR, SD.
