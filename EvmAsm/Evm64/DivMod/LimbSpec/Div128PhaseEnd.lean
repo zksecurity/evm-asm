@@ -30,11 +30,11 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 /-- div128 Phase 1: save return addr/d, split d and uLo. Instrs [0]-[9].
-    Input: x12=sp, x2=ret_addr, x10=d, x5=uLo, x7=uHi.
+    Input: x12=sp, x2=retAddr, x10=d, x5=uLo, x7=uHi.
     Output: x6=dHi, x11=un1, x5=un0 (saved), x7=uHi (unchanged). -/
 theorem divK_div128_phase1_spec
-    (sp ret_addr d uLo uHi v1_old v6_old v11_old
-     ret_mem d_mem dlo_mem un0_mem : Word) (base : Word) :
+    (sp retAddr d uLo uHi v1Old v6Old v11Old
+     retMem dMem dloMem un0Mem : Word) (base : Word) :
     let dHi := d >>> (32 : BitVec 6).toNat
     let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let un1 := uLo >>> (32 : BitVec 6).toNat
@@ -51,37 +51,37 @@ theorem divK_div128_phase1_spec
       (CodeReq.union (CodeReq.singleton (base + 32) (.SRLI .x5 .x5 32))
        (CodeReq.singleton (base + 36) (.SD .x12 .x5 3944))))))))))
     cpsTriple base (base + 40) cr
-      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (.x10 ↦ᵣ d) **
-       (.x6 ↦ᵣ v6_old) ** (.x1 ↦ᵣ v1_old) ** (.x5 ↦ᵣ uLo) **
-       (.x11 ↦ᵣ v11_old) ** (.x7 ↦ᵣ uHi) **
-       (sp + signExtend12 3968 ↦ₘ ret_mem) **
-       (sp + signExtend12 3960 ↦ₘ d_mem) **
-       (sp + signExtend12 3952 ↦ₘ dlo_mem) **
-       (sp + signExtend12 3944 ↦ₘ un0_mem))
-      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (.x10 ↦ᵣ d) **
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x5 ↦ᵣ uLo) **
+       (.x11 ↦ᵣ v11Old) ** (.x7 ↦ᵣ uHi) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
        (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ dLo) ** (.x5 ↦ᵣ un0) **
        (.x11 ↦ᵣ un1) ** (.x7 ↦ᵣ uHi) **
-       (sp + signExtend12 3968 ↦ₘ ret_addr) **
+       (sp + signExtend12 3968 ↦ₘ retAddr) **
        (sp + signExtend12 3960 ↦ₘ d) **
        (sp + signExtend12 3952 ↦ₘ dLo) **
        (sp + signExtend12 3944 ↦ₘ un0)) := by
   intro dHi dLo un1 un0 cr
   have I0 := sd_spec_gen .x12 .x2 sp retAddr retMem 3968 base
   have I1 := sd_spec_gen .x12 .x10 sp d dMem 3960 (base + 4)
-  have I2 := srli_spec_gen .x6 .x10 v6_old d 32 (base + 8) (by nofun)
-  have I3 := slli_spec_gen .x1 .x10 v1_old d 32 (base + 12) (by nofun)
+  have I2 := srli_spec_gen .x6 .x10 v6Old d 32 (base + 8) (by nofun)
+  have I3 := slli_spec_gen .x1 .x10 v1Old d 32 (base + 12) (by nofun)
   have I4 := srli_spec_gen_same .x1 (d <<< (32 : BitVec 6).toNat) 32 (base + 16) (by nofun)
-  have I5 := sd_spec_gen .x12 .x1 sp dLo dlo_mem 3952 (base + 20)
-  have I6 := srli_spec_gen .x11 .x5 v11_old uLo 32 (base + 24) (by nofun)
+  have I5 := sd_spec_gen .x12 .x1 sp dLo dloMem 3952 (base + 20)
+  have I6 := srli_spec_gen .x11 .x5 v11Old uLo 32 (base + 24) (by nofun)
   have I7 := slli_spec_gen_same .x5 uLo 32 (base + 28) (by nofun)
   have I8 := srli_spec_gen_same .x5 (uLo <<< (32 : BitVec 6).toNat) 32 (base + 32) (by nofun)
-  have I9 := sd_spec_gen .x12 .x5 sp un0 un0_mem 3944 (base + 36)
+  have I9 := sd_spec_gen .x12 .x5 sp un0 un0Mem 3944 (base + 36)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9
 
 /-- div128 end phase: combine q1,q0 into q, restore return addr, return.
     Instrs [45]-[48]. Exit to retAddr. -/
 theorem divK_div128_end_spec
-    (sp q1 q0 v2_old v11_old retAddr : Word) (base : Word)
+    (sp q1 q0 v2Old v11Old retAddr : Word) (base : Word)
     (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
     let q1Hi := q1 <<< (32 : BitVec 6).toNat
     let q := q1Hi ||| q0
@@ -91,14 +91,14 @@ theorem divK_div128_end_spec
       (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x2 .x12 3968))
        (CodeReq.singleton (base + 12) (.JALR .x0 .x2 0))))
     cpsTriple base retAddr cr
-      ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ v11_old) **
-       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ v2_old) ** (sp + signExtend12 3968 ↦ₘ retAddr))
+      ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ v11Old) **
+       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ v2Old) ** (sp + signExtend12 3968 ↦ₘ retAddr))
       ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q) **
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (sp + signExtend12 3968 ↦ₘ retAddr)) := by
   intro q1Hi q cr
-  have I0 := slli_spec_gen .x11 .x10 v11_old q1 32 base (by nofun)
+  have I0 := slli_spec_gen .x11 .x10 v11Old q1 32 base (by nofun)
   have I1 := or_spec_gen_rd_eq_rs1 .x11 .x5 q1Hi q0 (base + 4) (by nofun)
-  have I2 := ld_spec_gen .x2 .x12 sp v2_old retAddr 3968 (base + 8) (by nofun)
+  have I2 := ld_spec_gen .x2 .x12 sp v2Old retAddr 3968 (base + 8) (by nofun)
   have I3 := jalr_x0_spec_gen .x2 retAddr 0 (base + 12)
   rw [halign] at I3
   runBlock I0 I1 I2 I3

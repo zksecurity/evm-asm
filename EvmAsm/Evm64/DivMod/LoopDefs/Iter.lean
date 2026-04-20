@@ -126,10 +126,10 @@ def mulsubN4_c3 (qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Word :=
 -- div128 quotient computation (shared across all n-cases)
 -- ============================================================================
 
-/-- Trial quotient from the div128 subroutine: divides uHi:uLo by v_top. -/
-def div128Quot (uHi uLo v_top : Word) : Word :=
-  let dHi := v_top >>> (32 : BitVec 6).toNat
-  let dLo := (v_top <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+/-- Trial quotient from the div128 subroutine: divides uHi:uLo by vTop. -/
+def div128Quot (uHi uLo vTop : Word) : Word :=
+  let dHi := vTop >>> (32 : BitVec 6).toNat
+  let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let div_un1 := uLo >>> (32 : BitVec 6).toNat
   let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
   let q1 := rv64_divu uHi dHi

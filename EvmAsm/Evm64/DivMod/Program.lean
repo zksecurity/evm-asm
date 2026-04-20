@@ -227,7 +227,7 @@ def divK_loopSetup (bltOff : BitVec 13) : Program :=
 
     Layout within loop body (instruction indices relative to loop_start):
       [0]     SD save j
-      [1..13] load u[j+n], u[j+n-1], v_top; check uHi>=v_top; call 128/64
+      [1..13] load u[j+n], u[j+n-1], vTop; check uHi>=vTop; call 128/64
       [14]    LD restore j
       [15..17] mul-sub setup (uBase, carry=0)
       [18..61] mul-sub 4 limbs (4 × 11 instrs)
@@ -259,8 +259,8 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   LD .x10 .x6 32 ;;                            -- [12] x10 = vTop = b[n-1]
 
   -- Trial quotient
-  single (.BLTU .x7 .x10 12) ;;              -- [13] uHi < v_top? → [16] call 128/64
-  ADDI .x11 .x0 4095 ;;                       -- [14] q_hat = MAX64
+  single (.BLTU .x7 .x10 12) ;;              -- [13] uHi < vTop? → [16] call 128/64
+  ADDI .x11 .x0 4095 ;;                       -- [14] qHat = MAX64
   JAL .x0 8 ;;                                 -- [15] skip call → [17]
   JAL .x2 subr_off ;;                          -- [16] call 128/64 subroutine
 
