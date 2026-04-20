@@ -31,6 +31,8 @@
     (directly feeds abstract Knuth B's `h_v_norm`).
   - `isCallTrialN4_toNat_lt` — Word→Nat bridge converting `BitVec.ult u4 b3'`
     to the Nat comparison needed by abstract Knuth B's `hu_top_lt`.
+  - `antiShift_toNat_mod_eq` — `(signExtend12 0 - shift).toNat % 64 = 64 - shift.toNat`
+    for `1 ≤ shift.toNat ≤ 63` (the antiShift arithmetic helper).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -300,5 +302,28 @@ theorem isCallTrialN4_toNat_lt (a3 b2 b3 : Word)
         (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64))).toNat := by
   unfold isCallTrialN4 at h
   exact (EvmWord.ult_iff _ _).mp h
+
+/-- Antishift arithmetic: under `1 ≤ shift.toNat ≤ 63`, the algorithm's
+    `antiShift = signExtend12 0 - shift` satisfies `antiShift.toNat % 64 =
+    64 - shift.toNat`.
+
+    This reconciles the algorithm's `%64` modular form with `val256_normalize_general`'s
+    direct `64 - s` form — a prerequisite for lifting abstract Knuth B to Word-level
+    normalized limb values. Same proof pattern as in `u_top_lt_pow63_of_shift_nz`
+    (MaxTrialVacuity.lean), extracted as a reusable lemma. -/
+theorem antiShift_toNat_mod_eq (shift : Word)
+    (h1 : 1 ≤ shift.toNat) (h63 : shift.toNat ≤ 63) :
+    (signExtend12 (0 : BitVec 12) - shift).toNat % 64 = 64 - shift.toNat := by
+  have h0 : (signExtend12 (0 : BitVec 12) : Word) = 0 := by decide
+  rw [h0]
+  have hshift_toNat : ((0 : Word) - shift).toNat = 2^64 - shift.toNat := by
+    rw [BitVec.toNat_sub]; simp; omega
+  rw [hshift_toNat]
+  have hsplit : 2^64 - shift.toNat = (2^64 - 64) + (64 - shift.toNat) := by omega
+  rw [hsplit, Nat.add_mod]
+  have hmod64 : (2^64 - 64) % 64 = 0 := by decide
+  rw [hmod64]
+  simp
+  omega
 
 end EvmAsm.Evm64
