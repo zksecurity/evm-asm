@@ -24,7 +24,7 @@ import EvmAsm.Rv64.Tactics.XSimp
 import EvmAsm.Rv64.Tactics.RunBlock
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64.AddrNorm (se13_8 se21_8)
+open EvmAsm.Rv64.AddrNorm (se21_8)
 
 namespace EvmAsm.Evm64
 
@@ -68,7 +68,7 @@ theorem divK_div128_prodcheck2_merged_spec
     have I4 := or_spec_gen_rd_eq_rs1 .x1 .x11 (rhat2 <<< (32 : BitVec 6).toNat) un0 (base + 16) (by nofun)
     runBlock I0 I1 I2 I3 I4
   have hbltu_raw := bltu_spec_gen .x1 .x7 (8 : BitVec 13) rhat2Un0 q0Dlo (base + 20)
-  have ha_t : (base + 20) + signExtend13 (8 : BitVec 13) = base + 28 := by rw [se13_8]; bv_addr
+  have ha_t : (base + 20) + signExtend13 (8 : BitVec 13) = base + 28 := by rv64_addr
   have ha_f : (base + 20 : Word) + 4 = base + 24 := by bv_addr
   rw [ha_t, ha_f] at hbltu_raw
   have hbltu_framed := cpsBranch_frameR

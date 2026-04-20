@@ -29,7 +29,6 @@ import EvmAsm.Rv64.Tactics.XSimp
 import EvmAsm.Rv64.Tactics.RunBlock
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64.AddrNorm (se13_8 se13_12)
 open EvmAsm.Evm64.DivMod.AddrNorm (bv6_toNat_63)
 
 namespace EvmAsm.Evm64
@@ -66,7 +65,7 @@ theorem divK_clz_stage_taken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val coun
   intro cr
   have I0 := srli_spec_gen .x7 .x5 v7 val K base (by nofun)
   have hbne_raw := bne_spec_gen .x7 .x0 (12 : BitVec 13) (val >>> K.toNat) (0 : Word) (base + 4)
-  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rw [se13_12]; bv_addr
+  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rv64_addr
   have ha_f : (base + 4 : Word) + 4 = base + 8 := by bv_addr
   rw [ha_t, ha_f] at hbne_raw
   have hbne_framed := cpsBranch_frameR
@@ -120,7 +119,7 @@ theorem divK_clz_stage_ntaken_spec (K M_s : BitVec 6) (M_a : BitVec 12) (val cou
   intro cr
   have I0 := srli_spec_gen .x7 .x5 v7 val K base (by nofun)
   have hbne_raw := bne_spec_gen .x7 .x0 (12 : BitVec 13) (val >>> K.toNat) (0 : Word) (base + 4)
-  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rw [se13_12]; bv_addr
+  have ha_t : (base + 4) + signExtend13 (12 : BitVec 13) = base + 16 := by rv64_addr
   have ha_f : (base + 4 : Word) + 4 = base + 8 := by bv_addr
   rw [ha_t, ha_f] at hbne_raw
   have hbne_framed := cpsBranch_frameR
@@ -190,7 +189,7 @@ theorem divK_clz_last_taken_spec (val count v7 : Word) (base : Word)
   have I0 := srli_spec_gen .x7 .x5 v7 val 63 base (by nofun)
   simp only [bv6_toNat_63] at I0
   have hbne_raw := bne_spec_gen .x7 .x0 (8 : BitVec 13) (val >>> 63) (0 : Word) (base + 4)
-  have ha_t : (base + 4) + signExtend13 (8 : BitVec 13) = base + 12 := by rw [se13_8]; bv_addr
+  have ha_t : (base + 4) + signExtend13 (8 : BitVec 13) = base + 12 := by rv64_addr
   have ha_f : (base + 4 : Word) + 4 = base + 8 := by bv_addr
   rw [ha_t, ha_f] at hbne_raw
   have hbne_framed := cpsBranch_frameR
@@ -243,7 +242,7 @@ theorem divK_clz_last_ntaken_spec (val count v7 : Word) (base : Word)
   have I0 := srli_spec_gen .x7 .x5 v7 val 63 base (by nofun)
   simp only [bv6_toNat_63] at I0
   have hbne_raw := bne_spec_gen .x7 .x0 (8 : BitVec 13) (val >>> 63) (0 : Word) (base + 4)
-  have ha_t : (base + 4) + signExtend13 (8 : BitVec 13) = base + 12 := by rw [se13_8]; bv_addr
+  have ha_t : (base + 4) + signExtend13 (8 : BitVec 13) = base + 12 := by rv64_addr
   have ha_f : (base + 4 : Word) + 4 = base + 8 := by bv_addr
   rw [ha_t, ha_f] at hbne_raw
   have hbne_framed := cpsBranch_frameR
