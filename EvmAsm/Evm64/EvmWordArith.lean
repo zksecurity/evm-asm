@@ -37,3 +37,4 @@ import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
 import EvmAsm.Evm64.EvmWordArith.SkipBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract
+import EvmAsm.Evm64.EvmWordArith.AddbackPinning
