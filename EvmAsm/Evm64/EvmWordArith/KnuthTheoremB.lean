@@ -13,6 +13,7 @@
 
   Currently contains:
   - `val256_div_scale_invariant` (Step 0).
+  - `rv64_divu_toNat` (Step 1a — RV64 divu → Nat div bridge).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -32,5 +33,20 @@ theorem val256_div_scale_invariant
     val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 := by
   have hpos : 0 < (2 : Nat)^s := by positivity
   rw [Nat.mul_div_mul_right _ _ hpos]
+
+/-- RV64 unsigned divide maps to Nat div on toNat (for nonzero divisor).
+
+    Entry-level bridge for reasoning about `div128Quot`, which composes two
+    `rv64_divu` calls with correction steps. The zero-divisor case returns
+    `BitVec.allOnes 64` and is handled separately at call sites. -/
+theorem rv64_divu_toNat (a b : Word) (hb : b ≠ 0) :
+    (rv64_divu a b).toNat = a.toNat / b.toNat := by
+  unfold rv64_divu
+  split
+  · rename_i hbeq
+    exfalso; apply hb
+    simp at hbeq
+    exact hbeq
+  · rw [BitVec.toNat_udiv]
 
 end EvmAsm.Evm64
