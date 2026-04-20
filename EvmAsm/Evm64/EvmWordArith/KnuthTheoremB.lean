@@ -23,6 +23,8 @@
   - `knuth_core_ineq` — `x * z < y + 2 * z → x ≤ y / z + 2` (Knuth overshoot step).
   - `knuth_q_r_v_nat_bound` — `q_r * v_nat < u_nat + 2 * v_nat` under call-trial
     assumption `u_top < v_top` (feeds `knuth_core_ineq`).
+  - `val256_split_top_limb` — Word→Nat bridge exposing `h_v_split`/`h_v_rest`
+    for concrete 4-limb val256 values (feeds abstract Knuth B).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -210,5 +212,22 @@ theorem knuth_q_r_v_nat_bound
   have h_pos192 : (0:Nat) < 2^192 := by positivity
   have h_2vnat : 2 * v_nat ≥ 2 * 2^255 := Nat.mul_le_mul_left 2 hv_nat_ge
   omega
+
+/-- Word→Nat bridge — val256 decomposes into top limb * 2^192 + lower-3-limb
+    residue, where the residue is < 2^192.
+
+    Directly produces the `h_v_split`/`h_v_rest` form required by the
+    abstract Knuth B theorems (`knuth_q_r_v_nat_bound`,
+    `knuth_theorem_b_abstract`) from a concrete 4-limb Word value. -/
+theorem val256_split_top_limb (b0 b1 b2 b3 : Word) :
+    ∃ v_rest, v_rest < 2^192 ∧
+      val256 b0 b1 b2 b3 = b3.toNat * 2^192 + v_rest := by
+  refine ⟨b0.toNat + b1.toNat * 2^64 + b2.toNat * 2^128, ?_, ?_⟩
+  · have h0 := b0.isLt
+    have h1 := b1.isLt
+    have h2 := b2.isLt
+    -- b_i < 2^64, so b0 + b1*2^64 + b2*2^128 ≤ 2^192 - 1 < 2^192
+    nlinarith
+  · unfold val256; ring
 
 end EvmAsm.Evm64
