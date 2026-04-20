@@ -9,7 +9,7 @@
       splits `d` into `dHi`/`dLo`, splits `uLo` into `un1`/`un0`.
     * `divK_div128_end_spec` — Instrs [45]-[48], 4 instructions:
       SLLI+OR (combine_q → `q = q1<<32 | q0`) followed by LD+JALR
-      (restore return addr and jump back). Exits at `ret_addr`.
+      (restore return addr and jump back). Exits at `retAddr`.
 
   Twenty-seventh chunk of the `LimbSpec.lean` split tracked by issue #312.
   The consumer surface is unchanged: `LimbSpec.lean` re-exports this file
@@ -66,8 +66,8 @@ theorem divK_div128_phase1_spec
        (sp + signExtend12 3952 ↦ₘ dLo) **
        (sp + signExtend12 3944 ↦ₘ un0)) := by
   intro dHi dLo un1 un0 cr
-  have I0 := sd_spec_gen .x12 .x2 sp ret_addr ret_mem 3968 base
-  have I1 := sd_spec_gen .x12 .x10 sp d d_mem 3960 (base + 4)
+  have I0 := sd_spec_gen .x12 .x2 sp retAddr retMem 3968 base
+  have I1 := sd_spec_gen .x12 .x10 sp d dMem 3960 (base + 4)
   have I2 := srli_spec_gen .x6 .x10 v6_old d 32 (base + 8) (by nofun)
   have I3 := slli_spec_gen .x1 .x10 v1_old d 32 (base + 12) (by nofun)
   have I4 := srli_spec_gen_same .x1 (d <<< (32 : BitVec 6).toNat) 32 (base + 16) (by nofun)
@@ -79,27 +79,27 @@ theorem divK_div128_phase1_spec
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9
 
 /-- div128 end phase: combine q1,q0 into q, restore return addr, return.
-    Instrs [45]-[48]. Exit to ret_addr. -/
+    Instrs [45]-[48]. Exit to retAddr. -/
 theorem divK_div128_end_spec
-    (sp q1 q0 v2_old v11_old ret_addr : Word) (base : Word)
-    (halign : (ret_addr + signExtend12 0) &&& ~~~1 = ret_addr) :
-    let q1_hi := q1 <<< (32 : BitVec 6).toNat
-    let q := q1_hi ||| q0
+    (sp q1 q0 v2_old v11_old retAddr : Word) (base : Word)
+    (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
+    let q1Hi := q1 <<< (32 : BitVec 6).toNat
+    let q := q1Hi ||| q0
     let cr :=
       CodeReq.union (CodeReq.singleton base (.SLLI .x11 .x10 32))
       (CodeReq.union (CodeReq.singleton (base + 4) (.OR .x11 .x11 .x5))
       (CodeReq.union (CodeReq.singleton (base + 8) (.LD .x2 .x12 3968))
        (CodeReq.singleton (base + 12) (.JALR .x0 .x2 0))))
-    cpsTriple base ret_addr cr
+    cpsTriple base retAddr cr
       ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ v11_old) **
-       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ v2_old) ** (sp + signExtend12 3968 ↦ₘ ret_addr))
+       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ v2_old) ** (sp + signExtend12 3968 ↦ₘ retAddr))
       ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q) **
-       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ ret_addr) ** (sp + signExtend12 3968 ↦ₘ ret_addr)) := by
-  intro q1_hi q cr
+       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (sp + signExtend12 3968 ↦ₘ retAddr)) := by
+  intro q1Hi q cr
   have I0 := slli_spec_gen .x11 .x10 v11_old q1 32 base (by nofun)
-  have I1 := or_spec_gen_rd_eq_rs1 .x11 .x5 q1_hi q0 (base + 4) (by nofun)
-  have I2 := ld_spec_gen .x2 .x12 sp v2_old ret_addr 3968 (base + 8) (by nofun)
-  have I3 := jalr_x0_spec_gen .x2 ret_addr 0 (base + 12)
+  have I1 := or_spec_gen_rd_eq_rs1 .x11 .x5 q1Hi q0 (base + 4) (by nofun)
+  have I2 := ld_spec_gen .x2 .x12 sp v2_old retAddr 3968 (base + 8) (by nofun)
+  have I3 := jalr_x0_spec_gen .x2 retAddr 0 (base + 12)
   rw [halign] at I3
   runBlock I0 I1 I2 I3
 

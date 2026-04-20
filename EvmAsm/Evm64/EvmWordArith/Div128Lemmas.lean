@@ -81,7 +81,7 @@ theorem val128_mod_unique (uHi uLo : Word) (d q r : Nat)
 -- qTrue = ⌊(uHi * B + un1) / d⌋ where d = d_hi * B + d_lo, B = 2^32.
 --
 -- Bound 1 (no normalization needed): q̂ ≥ qTrue
--- Bound 2 (normalization: d_hi ≥ B/2): q̂ ≤ qTrue + 2
+-- Bound 2 (normalization: dHi ≥ B/2): q̂ ≤ qTrue + 2
 
 /-- Trial quotient upper bound: `⌊uHi / d_hi⌋ ≥ ⌊(uHi * B + un1) / d⌋`.
     The trial quotient never underestimates. No normalization needed.
@@ -119,13 +119,13 @@ theorem trial_quotient_le (uHi un1 d_hi d_lo : Nat)
   -- contradicting d_hi ≥ B/2 and d_lo < B.
   have hq_bound : qHat ≤ 2^32 + 1 := by
     by_contra h_contra; push Not at h_contra
-    have h1 : (2^32 + 2) * d_hi ≤ qHat * d_hi := Nat.mul_le_mul_right d_hi (by omega)
-    have h2 : 2 * d_hi ≤ d_lo := by omega
+    have h1 : (2^32 + 2) * dHi ≤ qHat * dHi := Nat.mul_le_mul_right dHi (by omega)
+    have h2 : 2 * dHi ≤ dLo := by omega
     omega
-  -- q̂ * d_lo < B² ≤ 2d
-  have hq_dlo_bound : qHat * d_lo < 2^64 := by
-    have : d_lo ≤ 2^32 - 1 := by omega
-    have : qHat * d_lo ≤ (2^32 + 1) * (2^32 - 1) := Nat.mul_le_mul hq_bound this
+  -- q̂ * dLo < B² ≤ 2d
+  have hq_dlo_bound : qHat * dLo < 2^64 := by
+    have : dLo ≤ 2^32 - 1 := by omega
+    have : qHat * dLo ≤ (2^32 + 1) * (2^32 - 1) := Nat.mul_le_mul hq_bound this
     norm_num at this ⊢; omega
   have h2d_ge : 2 * d ≥ 2^64 := by
     show 2 * (d_hi * 2^32 + d_lo) ≥ _; omega
@@ -168,7 +168,7 @@ theorem trial_quotient_range (uHi un1 d_hi d_lo : Nat)
 -- If yes, q̂ overestimates by ≥ 1, so decrement.
 -- After at most one correction, the overestimate is ≤ 1.
 
-/-- Product check soundness: if `q̂ * d_lo > r̂ * B + un1`,
+/-- Product check soundness: if `q̂ * dLo > r̂ * B + un1`,
     then `q̂ > qTrue` (the trial quotient strictly overestimates).
 
     Proof: q̂ * d = q̂ * d_hi * B + q̂ * d_lo > r̂ * d_hi * B + r̂ * B + un1
@@ -193,7 +193,7 @@ theorem product_check_gt_imp_overestimate (uHi un1 d_hi d_lo qHat r_hat : Nat)
             rw [hr_hat, Nat.add_sub_cancel' hq_mul]
   exact (Nat.div_lt_iff_lt_mul hd_pos).mpr hqd_gt
 
-/-- If the product check passes (`q̂ * d_lo ≤ r̂ * B + un1`), then `q̂ ≤ qTrue`.
+/-- If the product check passes (`q̂ * dLo ≤ r̂ * B + un1`), then `q̂ ≤ qTrue`.
     The trial quotient does NOT overestimate the true quotient in this branch. -/
 theorem product_check_pass_imp_le (uHi un1 d_hi d_lo qHat r_hat : Nat)
     (B : Nat := 2^32)

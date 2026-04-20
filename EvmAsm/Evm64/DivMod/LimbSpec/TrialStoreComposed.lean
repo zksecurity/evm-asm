@@ -7,7 +7,7 @@
       memory in preparation for the trial-quotient estimation.
     * `divK_store_qj_spec` — 4-instruction composition (store_qj_addr
       + store_qj_write) that computes `qAddr = sp + 4088 - 8*j` and
-      stores `q_hat` there.
+      stores `qHat` there.
 
   Twenty-eighth chunk of the `LimbSpec.lean` split tracked by issue #312.
   The consumer surface is unchanged: `LimbSpec.lean` re-exports this file
@@ -65,7 +65,7 @@ theorem divK_trial_load_spec
        (vtopBase + signExtend12 32 ↦ₘ v_top)) := by
   intro uAddr vtopBase cr
   let jpn := j + n
-  let jpn_x8 := jpn <<< (3 : BitVec 6).toNat
+  let jpnX8 := jpn <<< (3 : BitVec 6).toNat
   let u0_base := sp + signExtend12 4056
   have haddr0 : uAddr + signExtend12 (0 : BitVec 12) = uAddr := by rw [se12_0]; bv_omega
   have I0 := ld_spec_gen .x5 .x12 sp v5_old n 3984 base (by nofun)
@@ -77,38 +77,38 @@ theorem divK_trial_load_spec
   rw [haddr0] at I5
   have I6 := ld_spec_gen_same .x5 uAddr uLo 8 (base + 24) (by nofun)
   let nm1 := n + signExtend12 4095
-  let nm1_x8 := nm1 <<< (3 : BitVec 6).toNat
+  let nm1X8 := nm1 <<< (3 : BitVec 6).toNat
   have I7 := ld_spec_gen .x6 .x12 sp v6_old n 3984 (base + 28) (by nofun)
   have I8 := addi_spec_gen_same .x6 n 4095 (base + 32) (by nofun)
   have I9 := slli_spec_gen_same .x6 nm1 3 (base + 36) (by nofun)
-  have I10 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1_x8 (base + 40) (by nofun)
-  have I11 := ld_spec_gen .x10 .x6 vtopBase v10_old v_top 32 (base + 44) (by nofun)
+  have I10 := add_spec_gen_rd_eq_rs2 .x6 .x12 sp nm1X8 (base + 40) (by nofun)
+  have I11 := ld_spec_gen .x10 .x6 vtopBase v10_old vTop 32 (base + 44) (by nofun)
   runBlock I0 I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11
 
-/-- Store q[j]: compute address and store q_hat. 4 instructions.
+/-- Store q[j]: compute address and store qHat. 4 instructions.
     qAddr = sp + 4088 - j*8. -/
-theorem divK_store_qj_spec (sp j q_hat v5_old v7_old q_old : Word)
+theorem divK_store_qj_spec (sp j qHat v5_old v7_old q_old : Word)
     (base : Word) :
-    let j_x8 := j <<< (3 : BitVec 6).toNat
-    let qAddr := sp + signExtend12 4088 - j_x8
+    let jX8 := j <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - jX8
     let cr :=
       CodeReq.union (CodeReq.singleton base (.SLLI .x5 .x1 3))
       (CodeReq.union (CodeReq.singleton (base + 4) (.ADDI .x7 .x12 4088))
       (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))
        (CodeReq.singleton (base + 12) (.SD .x7 .x11 0))))
     cpsTriple base (base + 16) cr
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
+      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
        (.x5 ↦ᵣ v5_old) ** (.x7 ↦ᵣ v7_old) **
        (qAddr ↦ₘ q_old))
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ q_hat) **
-       (.x5 ↦ᵣ j_x8) ** (.x7 ↦ᵣ qAddr) **
-       (qAddr ↦ₘ q_hat)) := by
-  intro j_x8 qAddr cr
+      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **
+       (qAddr ↦ₘ qHat)) := by
+  intro jX8 qAddr cr
   have I0 := slli_spec_gen .x5 .x1 v5_old j 3 base (by nofun)
   have I1 := addi_spec_gen .x7 .x12 v7_old sp 4088 (base + 4) (by nofun)
-  have I2 := sub_spec_gen_rd_eq_rs1 .x7 .x5 (sp + signExtend12 4088) j_x8 (base + 8) (by nofun)
+  have I2 := sub_spec_gen_rd_eq_rs1 .x7 .x5 (sp + signExtend12 4088) jX8 (base + 8) (by nofun)
   have haddr : qAddr + signExtend12 (0 : BitVec 12) = qAddr := by rw [se12_0]; bv_omega
-  have I3 := sd_spec_gen .x7 .x11 qAddr q_hat q_old 0 (base + 12)
+  have I3 := sd_spec_gen .x7 .x11 qAddr qHat q_old 0 (base + 12)
   rw [haddr] at I3
   runBlock I0 I1 I2 I3
 
