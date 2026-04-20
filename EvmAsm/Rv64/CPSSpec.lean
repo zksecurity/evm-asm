@@ -432,7 +432,7 @@ theorem cpsTriple_seq_cpsBranch_perm_same_cr {entry mid : Word} {cr : CodeReq}
     (h2 : cpsBranch mid cr Q2 exit_t Q_t exit_f Q_f) :
     cpsBranch entry cr P exit_t Q_t exit_f Q_f :=
   cpsTriple_seq_cpsBranch_same_cr entry mid cr P Q2 exit_t Q_t exit_f Q_f
-    (cpsTriple_consequence entry mid cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Explicit-argument variant of `cpsTriple_seq_cpsBranch_perm_same_cr`. Deprecated;
     prefer `cpsTriple_seq_cpsBranch_perm_same_cr` in new code. -/
@@ -710,7 +710,7 @@ theorem cpsTriple_seq_with_perm (s m e : Word) (cr1 cr2 : CodeReq)
     (h2 : cpsTriple m e cr2 Q2 R) :
     cpsTriple s e (cr1.union cr2) P R :=
   cpsTriple_seq s m e cr1 cr2 hd P Q2 R
-    (cpsTriple_consequence s m cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Sequence with same CodeReq: compose two CPS triples sharing the same CodeReq.
     Unlike `cpsTriple_seq`, does not require disjointness (same cr on both sides). -/
@@ -736,7 +736,7 @@ theorem cpsTriple_seq_perm_same_cr {s m e : Word} {cr : CodeReq}
     (h1 : cpsTriple s m cr P Q1) (h2 : cpsTriple m e cr Q2 R) :
     cpsTriple s e cr P R :=
   cpsTriple_seq_same_cr s m e cr P Q2 R
-    (cpsTriple_consequence s m cr P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Explicit-argument variant of `cpsTriple_seq_perm_same_cr`. Kept for
     backwards compatibility; prefer `cpsTriple_seq_perm_same_cr` in new code. -/
@@ -778,7 +778,7 @@ theorem cpsTriple_seq_cpsNBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq
     (h2 : cpsNBranch mid cr2 Q2 exits) :
     cpsNBranch entry (cr1.union cr2) P exits :=
   cpsTriple_seq_cpsNBranch entry mid cr1 cr2 hd P Q2 exits
-    (cpsTriple_consequence entry mid cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Sequential composition: cpsTriple followed by cpsBranch.
     If code reaches mid with Q, and from mid it branches, then the
@@ -806,7 +806,7 @@ theorem cpsTriple_seq_cpsBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq)
     (h2 : cpsBranch mid cr2 Q2 exit_t Q_t exit_f Q_f) :
     cpsBranch entry (cr1.union cr2) P exit_t Q_t exit_f Q_f :=
   cpsTriple_seq_cpsBranch entry mid cr1 cr2 hd P Q2 exit_t Q_t exit_f Q_f
-    (cpsTriple_consequence entry mid cr1 P P Q1 Q2 (fun _ hp => hp) hperm h1) h2
+    (cpsTriple_weaken (fun _ hp => hp) hperm h1) h2
 
 /-- Compose a cpsBranch with a cpsNBranch on the not-taken (false) path.
     The taken path becomes a new exit prepended to the cpsNBranch exits. -/
@@ -898,9 +898,7 @@ theorem cpsBranch_seq_cpsBranch_with_perm
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
     cpsBranch entry (cr1.union cr2) P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsBranch entry mid target exit_f cr1 cr2 hd P Q_t1 R Q_t2 Q_f2 Q_t
-    (cpsBranch_consequence entry cr1
-      _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
 /-- Weaken postconditions of all exits in a cpsNBranch. -/
@@ -1048,9 +1046,7 @@ theorem cpsTriple_loop_with_perm
     (hperm_Q : ∀ h, Q' h → Q h)
     : ∀ n, cpsTriple entry exit_ cr (inv n) Q := by
   have h_step' : ∀ n, cpsBranch entry cr (inv (n + 1)) exit_ Q entry (inv n) :=
-    fun n => cpsBranch_consequence entry cr
-      (inv (n + 1)) (inv (n + 1)) exit_ Q' Q entry (inv' n) (inv n)
-      (fun _ h => h) hperm_Q (hperm_inv n) (h_step n)
+    fun n => cpsBranch_weaken (fun _ h => h) hperm_Q (hperm_inv n) (h_step n)
   exact cpsTriple_loop entry exit_ cr inv Q h_base h_step'
 
 -- ============================================================================
@@ -1092,9 +1088,7 @@ theorem cpsBranch_seq_cpsBranch_with_perm_same_cr
     (ht2 : ∀ h, Q_t2 h → Q_t h) :
     cpsBranch entry cr P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsBranch_same_cr entry mid target exit_f cr P Q_t1 R Q_t2 Q_f2 Q_t
-    (cpsBranch_consequence entry cr
-      _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1 ht2
 
 /-- Compose a cpsBranch (ntaken exit) with a cpsTriple, same CodeReq.
@@ -1126,8 +1120,7 @@ theorem cpsBranch_seq_cpsTriple_with_perm_same_cr (entry mid target exit_f : Wor
     (ht1 : ∀ h, Q_t1 h → Q_t h) :
     cpsBranch entry cr P target Q_t exit_f Q_f2 :=
   cpsBranch_seq_cpsTriple_same_cr entry mid target exit_f cr P Q_t1 R Q_f2 Q_t
-    (cpsBranch_consequence entry cr _ _ _ _ _ _ _ _
-      (fun _ hp => hp) (fun _ hp => hp) hperm h1)
+    (cpsBranch_weaken (fun _ hp => hp) (fun _ hp => hp) hperm h1)
     h2 ht1
 
 /-- Compose a cpsBranch with a cpsNBranch on the not-taken path, same CodeReq. -/
