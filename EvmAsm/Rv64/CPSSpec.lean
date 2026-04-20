@@ -691,10 +691,11 @@ theorem cpsTriple_seq_cpsNBranch (entry mid : Word) (cr1 cr2 : CodeReq)
   exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2, ex, hmem, hpc2, hER⟩
 
 /-- Sequential composition with permutation: cpsTriple followed by cpsNBranch
-    when the intermediate assertions are permutations. -/
-theorem cpsTriple_seq_cpsNBranch_with_perm (entry mid : Word) (cr1 cr2 : CodeReq)
+    when the intermediate assertions are permutations.
+    All position/code/assertion arguments are implicit — inferred from `h1`/`h2`/`hperm`. -/
+theorem cpsTriple_seq_cpsNBranch_with_perm {entry mid : Word} {cr1 cr2 : CodeReq}
     (hd : cr1.Disjoint cr2)
-    (P Q1 Q2 : Assertion) (exits : List (Word × Assertion))
+    {P Q1 Q2 : Assertion} {exits : List (Word × Assertion)}
     (hperm : ∀ h, Q1 h → Q2 h)
     (h1 : cpsTriple entry mid cr1 P Q1)
     (h2 : cpsNBranch mid cr2 Q2 exits) :
@@ -977,10 +978,11 @@ theorem cpsBranch_seq_cpsBranch_same_cr (entry mid target exit_f : Word) (cr : C
     · exact ⟨k1 + k2, s2, stepN_add_eq k1 k2 s s1 s2 hstep1 hstep2,
              Or.inr ⟨hpc_f2, hQ_f2R⟩⟩
 
-/-- Like cpsBranch_seq_cpsBranch_with_perm but with same CodeReq. -/
+/-- Like cpsBranch_seq_cpsBranch_with_perm but with same CodeReq.
+    All position/code/assertion arguments are implicit — inferred from `h1`/`h2`/`hperm`/`ht*`. -/
 theorem cpsBranch_seq_cpsBranch_with_perm_same_cr
-    (entry mid target exit_f : Word) (cr : CodeReq)
-    (P Q_t1 Q_f1 R Q_t2 Q_f2 Q_t : Assertion)
+    {entry mid target exit_f : Word} {cr : CodeReq}
+    {P Q_t1 Q_f1 R Q_t2 Q_f2 Q_t : Assertion}
     (h1 : cpsBranch entry cr P target Q_t1 mid Q_f1)
     (hperm : ∀ h, Q_f1 h → R h)
     (h2 : cpsBranch mid cr R target Q_t2 exit_f Q_f2)
