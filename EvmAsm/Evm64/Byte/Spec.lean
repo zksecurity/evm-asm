@@ -603,7 +603,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
   -- The approach: frame Phase C, then merge with body+store per exit.
   -- Each body: bodyBase → base+136 (extended to evm_byte_code)
   -- Store: base+136 → base+180 (extended to evm_byte_code)
-  -- Compose body → store, frame with x0/x10/idx_mem, weaken regs, bridge via bv_srl_mask_eq + byte_correct
+  -- Compose body → store, frame with x0/x10/idxMem, weaken regs, bridge via bv_srl_mask_eq + byte_correct
   --
   -- Due to the different x10 values per Phase C exit and the complex memory layouts,
   -- the composition is done inline in the merge callback.
