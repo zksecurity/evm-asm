@@ -628,6 +628,6 @@ theorem x1_val_n4 : signExtend12 (4 : BitVec 12) - (4 : Word) = (0 : Word) := by
 /-- When b ≠ 0, 0 < b in unsigned ordering (BitVec.ult). -/
 theorem ult_zero_of_ne {b : Word} (h : b ≠ 0) : BitVec.ult 0 b := by
   unfold BitVec.ult; simp
-  exact Nat.pos_of_ne_zero (fun h0 => h (by exact BitVec.eq_of_toNat_eq h0))
+  exact Nat.pos_of_ne_zero (fun h0 => h (BitVec.eq_of_toNat_eq h0))
 
 end EvmAsm.Evm64
