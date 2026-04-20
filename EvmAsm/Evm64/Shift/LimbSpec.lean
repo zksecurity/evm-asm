@@ -767,16 +767,8 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
       (CodeReq.Disjoint.singleton (by bv_omega) _ _)
       (CodeReq.Disjoint.singleton (by bv_omega) _ _)
   -- Compose LD + LD/OR (need to frame + perm)
-  have lw1f := cpsTriple_frame_left base (base + 4) crLd1
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** ((sp + 8) ↦ₘ s1))
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s1) ** ((sp + 8) ↦ₘ s1))
-    ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) ** (sp ↦ₘ s0) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
-    (by pcFree) lw1
-  have lor2f := cpsTriple_frame_left (base + 4) (base + 12) crLor2
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s1) ** (.x10 ↦ᵣ r10) ** ((sp + 16) ↦ₘ s2))
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (s1 ||| s2)) ** (.x10 ↦ᵣ s2) ** ((sp + 16) ↦ₘ s2))
-    ((.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 24) ↦ₘ s3))
-    (by pcFree) lor2
+  have lw1f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) ** (sp ↦ₘ s0) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3)) (by pcFree) lw1
+  have lor2f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 24) ↦ₘ s3)) (by pcFree) lor2
   have c12 := cpsTriple_seq_with_perm base (base + 4) (base + 12) crLd1 crLor2 hd_ld1_lor2
     _ _ _ _
     (fun h hp => by xperm_hyp hp) lw1f lor2f
@@ -784,11 +776,7 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
   have lor3 := shr_ld_or_acc_spec sp (s1 ||| s2) s2 s3 24 (base + 12)
   simp only [signExtend12_24] at lor3
   rw [ha128] at lor3
-  have lor3f := cpsTriple_frame_left (base + 12) (base + 20) crLor3
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (s1 ||| s2)) ** (.x10 ↦ᵣ s2) ** ((sp + 24) ↦ₘ s3))
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (s1 ||| s2 ||| s3)) ** (.x10 ↦ᵣ s3) ** ((sp + 24) ↦ₘ s3))
-    ((.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2))
-    (by pcFree) lor3
+  have lor3f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2)) (by pcFree) lor3
   -- Disjoint: (crLd1 ∪ crLor2) vs crLor3
   have hd_12_lor3 : (crLd1.union crLor2).Disjoint crLor3 :=
     CodeReq.Disjoint.union_left
@@ -860,16 +848,8 @@ theorem shr_phase_a_spec (sp r5 r10 : Word)
   have hd_ld5_sltiu : crLd5.Disjoint crSltiu :=
     CodeReq.Disjoint.singleton (by bv_omega) _ _
   -- Frame and compose LD + SLTIU
-  have lw5f := cpsTriple_frame_left (base + 24) (base + 28) crLd5
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (s1 ||| s2 ||| s3)) ** (sp ↦ₘ s0))
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (sp ↦ₘ s0))
-    ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ s3) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
-    (by pcFree) lw5
-  have sltiuf := cpsTriple_frame_left (base + 28) (base + 32) crSltiu
-    ((.x5 ↦ᵣ s0) ** (.x10 ↦ᵣ s3))
-    ((.x5 ↦ᵣ s0) ** (.x10 ↦ᵣ sltiuVal))
-    ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
-    (by pcFree) sltiu_raw
+  have lw5f := cpsTriple_frameR ((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ s3) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3)) (by pcFree) lw5
+  have sltiuf := cpsTriple_frameR ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3)) (by pcFree) sltiu_raw
   have c56 := cpsTriple_seq_with_perm (base + 24) (base + 28) (base + 32)
     crLd5 crSltiu hd_ld5_sltiu
     _ _ _ _
