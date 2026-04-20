@@ -69,13 +69,13 @@ theorem iter_accumulate_1 {uVal vVal q0_nat r_val : Nat}
 /-- 2 iterations (n=3 case): digits q1 (high) and q0 (low).
 
     Iteration 1 (j=1): operates on u[1..4], produces q1.
-      u_hi * 2^64 + u_lo_part = q1 * v + u'
+      uHi * 2^64 + u_lo_part = q1 * v + u'
     This means the "upper portion" of the dividend satisfies the equation.
 
     Iteration 0 (j=0): operates on u'[0..3], produces q0.
       u' = q0 * v + r
 
-    Combined: u_hi * 2^64 + u_lo_part = (q1 * 2^64 + q0) * v + r
+    Combined: uHi * 2^64 + u_lo_part = (q1 * 2^64 + q0) * v + r
     But we work at the full val level where the iteration equations are:
 
     iter 1: u_total = q1 * (v * 2^64) + u'_total  (q1 accounts for position)
@@ -264,17 +264,17 @@ theorem div_correct_n1_no_shift
 
     This handles all n-cases and both shift=0 and shift≠0. For shift=0,
     use s=0 (2^0 = 1, so the equation simplifies to val256(a) = q_val * val256(b) + r). -/
-theorem div_quotient_of_normalized {a_val b_val q_val r_norm : Nat} (s : Nat)
-    (hmulsub : a_val * 2^s = q_val * (b_val * 2^s) + r_norm)
-    (hlt : r_norm < b_val * 2^s) :
-    q_val = a_val / b_val :=
+theorem div_quotient_of_normalized {aVal bVal q_val r_norm : Nat} (s : Nat)
+    (hmulsub : aVal * 2^s = q_val * (bVal * 2^s) + r_norm)
+    (hlt : r_norm < bVal * 2^s) :
+    q_val = aVal / bVal :=
   (norm_euclidean_correct s hmulsub hlt).1
 
 /-- Normalization also recovers the remainder: r_norm / 2^s = a % b. -/
-theorem mod_remainder_of_normalized {a_val b_val q_val r_norm : Nat} (s : Nat)
-    (hmulsub : a_val * 2^s = q_val * (b_val * 2^s) + r_norm)
-    (hlt : r_norm < b_val * 2^s) :
-    r_norm / 2^s = a_val % b_val :=
+theorem mod_remainder_of_normalized {aVal bVal q_val r_norm : Nat} (s : Nat)
+    (hmulsub : aVal * 2^s = q_val * (bVal * 2^s) + r_norm)
+    (hlt : r_norm < bVal * 2^s) :
+    r_norm / 2^s = aVal % bVal :=
   (norm_euclidean_correct s hmulsub hlt).2
 
 /-- Bridge from val256-level quotient correctness to EvmWord.div.
