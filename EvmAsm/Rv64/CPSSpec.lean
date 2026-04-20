@@ -607,9 +607,10 @@ theorem cpsTriple_to_cpsHaltTriple (entry exit_ : Word) (cr : CodeReq)
   obtain ⟨k, s', hstep, hpc', hQR⟩ := h R hR s hcr hPR hpc
   exact ⟨k, s', hstep, hhalt R hR s' hQR hpc', hQR⟩
 
-/-- Consequence: strengthen precondition and weaken postcondition of a halt triple. -/
-theorem cpsHaltTriple_consequence (entry : Word) (cr : CodeReq)
-    (P P' Q Q' : Assertion)
+/-- Weaken: strengthen precondition and weaken postcondition of a halt triple.
+    Matches the `cpsTriple_weaken` / `cpsBranch_weaken` naming convention from #331. -/
+theorem cpsHaltTriple_weaken {entry : Word} {cr : CodeReq}
+    {P P' Q Q' : Assertion}
     (hpre  : ∀ h, P' h → P h)
     (hpost : ∀ h, Q h → Q' h)
     (h : cpsHaltTriple entry cr P Q) :
