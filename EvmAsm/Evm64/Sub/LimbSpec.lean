@@ -57,13 +57,13 @@ theorem sub_limb_carry_spec_phase1 (offA offB : BitVec 12)
   runBlock
 
 /-- SUB carry limb phase 2 (4 instructions): SLTU, SUB, OR, SD.
-    Takes temp, borrow1, borrow_in, computes borrow2 = (temp < borrow_in ? 1 : 0),
-    result = temp - borrow_in, borrowOut = borrow1 ||| borrow2. -/
+    Takes temp, borrow1, borrowIn, computes borrow2 = (temp < borrowIn ? 1 : 0),
+    result = temp - borrowIn, borrowOut = borrow1 ||| borrow2. -/
 theorem sub_limb_carry_spec_phase2 (offB : BitVec 12)
     (sp temp bLimb borrow_in borrow1 aLimb : Word) (memA : Word) (base : Word) :
     let memB := sp + signExtend12 offB
-    let borrow2 := if BitVec.ult temp borrow_in then (1 : Word) else 0
-    let result := temp - borrow_in
+    let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
+    let result := temp - borrowIn
     let borrowOut := borrow1 ||| borrow2
     let cr :=
       CodeReq.union (CodeReq.singleton base (.SLTU .x6 .x7 .x5))
