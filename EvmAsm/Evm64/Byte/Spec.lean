@@ -604,13 +604,12 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
   have hresult_high3 : getLimb result 3 = 0 :=
     byte_getLimb_high idx value (3 : Fin 4) (show (3 : Fin 4).val ≠ 0 by decide)
   have hresult_limb0 := byte_correct idx value hlt
-  have h3bv := bv6_toNat_3
   have hlimb_val : limbFromMsb.toNat = i0.toNat / 8 := by
     show (i0 >>> (3 : BitVec 6).toNat).toNat = i0.toNat / 8
-    rw [h3bv]; simp [BitVec.toNat_ushiftRight]; omega
+    rw [bv6_toNat_3]; simp [BitVec.toNat_ushiftRight]; omega
   have hbyte_shift_val : byteShift.toNat = (i0.toNat % 8) * 8 := by
     show (byteInLimb <<< (3 : BitVec 6).toNat).toNat = (i0.toNat % 8) * 8
-    rw [h3bv]
+    rw [bv6_toNat_3]
     simp only [byteInLimb, BitVec.toNat_shiftLeft, BitVec.toNat_and, se12_7,
                show (7 : Word).toNat = 7 from by decide]
     rw [Nat.and_two_pow_sub_one_eq_mod _ 3]
