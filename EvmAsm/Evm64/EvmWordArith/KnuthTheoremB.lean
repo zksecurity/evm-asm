@@ -29,6 +29,8 @@
     for concrete 4-limb val256 values (feeds abstract Knuth B).
   - `b3_prime_ge_pow63` — normalized divisor top limb `b3'` is ≥ 2^63
     (directly feeds abstract Knuth B's `h_v_norm`).
+  - `isCallTrialN4_toNat_lt` — Word→Nat bridge converting `BitVec.ult u4 b3'`
+    to the Nat comparison needed by abstract Knuth B's `hu_top_lt`.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -284,5 +286,19 @@ theorem b3_prime_ge_pow63 (b3 b2 : Word) (hb3nz : b3 ≠ 0)
       (b3 <<< ((clzResult b3).1.toNat % 64)).toNat := by
     rw [BitVec.toNat_or]; exact Nat.left_le_or
   exact le_trans h_b3_shifted h_or_ge
+
+/-- Word→Nat bridge — `isCallTrialN4` (defined via `BitVec.ult`) yields the
+    Nat comparison `u4.toNat < b3'.toNat`, which is the `hu_top_lt`
+    hypothesis required by abstract Knuth B.
+
+    Trivial `unfold + EvmWord.ult_iff`, but extracted so call sites can
+    apply abstract Knuth B without knowing the internal definition. -/
+theorem isCallTrialN4_toNat_lt (a3 b2 b3 : Word)
+    (h : isCallTrialN4 a3 b2 b3) :
+    (a3 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64)).toNat <
+      ((b3 <<< ((clzResult b3).1.toNat % 64)) |||
+        (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64))).toNat := by
+  unfold isCallTrialN4 at h
+  exact (EvmWord.ult_iff _ _).mp h
 
 end EvmAsm.Evm64
