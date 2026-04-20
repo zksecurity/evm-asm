@@ -88,7 +88,7 @@ theorem mod_sub_of_ge_lt (a b : EvmWord)
 -- ============================================================================
 
 /-- If the top limb b3 has MSB set (b3 ≥ 2^63), then its upper half-word
-    satisfies the normalization condition d_hi ≥ 2^31 for trial quotient bounds. -/
+    satisfies the normalization condition dHi ≥ 2^31 for trial quotient bounds. -/
 theorem msb_imp_hi32_ge (b3 : Word) (hmsb : b3.toNat ≥ 2^63) :
     (hi32 b3).toNat ≥ 2^31 := by
   unfold hi32

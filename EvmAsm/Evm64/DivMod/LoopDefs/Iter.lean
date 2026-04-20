@@ -119,8 +119,8 @@ theorem addbackN4_fst4_u4_indep (un0 un1 un2 un3 u4 u4' v0 v1 v2 v3 : Word) :
   refine ⟨rfl, rfl, rfl, rfl⟩
 
 /-- The mulsub carry c3 for n=4, used in borrow conditions. -/
-def mulsubN4_c3 (q_hat v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Word :=
-  (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+def mulsubN4_c3 (qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Word :=
+  (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
 
 -- ============================================================================
 -- div128 quotient computation (shared across all n-cases)
@@ -166,46 +166,46 @@ def div128Un0 (uLo : Word) : Word :=
 -- Double-addback iter variants (model the FIXED algorithm with double addback)
 -- ============================================================================
 
-/-- Helper: single iteration with double addback, parameterized by q_hat.
+/-- Helper: single iteration with double addback, parameterized by qHat.
     Used by all iter* variants. -/
-def iterWithDoubleAddback (q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+def iterWithDoubleAddback (qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
     Word × Word × Word × Word × Word × Word :=
-  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let c3 := ms.2.2.2.2
   if BitVec.ult uTop c3 then
     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
     if carry = 0 then
       let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
-      (q_hat + signExtend12 4095 + signExtend12 4095,
+      (qHat + signExtend12 4095 + signExtend12 4095,
        ab'.1, ab'.2.1, ab'.2.2.1, ab'.2.2.2.1, ab'.2.2.2.2)
     else
-      (q_hat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2)
+      (qHat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2)
   else
-    (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, uTop - c3)
+    (qHat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, uTop - c3)
 
 -- Equation lemmas for iterWithDoubleAddback in each branch.
 -- These avoid expanding the full definition inline; producers `rw` with them.
 
-theorem iterWithDoubleAddback_borrow (q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (hb : BitVec.ult uTop (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
-    let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+theorem iterWithDoubleAddback_borrow (qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hb : BitVec.ult uTop (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
+    let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
-    iterWithDoubleAddback q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    iterWithDoubleAddback qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop =
     if carry = 0 then
-      (q_hat + signExtend12 4095 + signExtend12 4095,
+      (qHat + signExtend12 4095 + signExtend12 4095,
        ab'.1, ab'.2.1, ab'.2.2.1, ab'.2.2.2.1, ab'.2.2.2.2)
     else
-      (q_hat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2) := by
+      (qHat + signExtend12 4095, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2.1, ab.2.2.2.2) := by
   simp only [iterWithDoubleAddback, if_pos hb]
 
-theorem iterWithDoubleAddback_no_borrow (q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (hb : ¬BitVec.ult uTop (mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
-    let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
-    iterWithDoubleAddback q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop =
-    (q_hat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, uTop - ms.2.2.2.2) := by
+theorem iterWithDoubleAddback_no_borrow (qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hb : ¬BitVec.ult uTop (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2) :
+    let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+    iterWithDoubleAddback qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    (qHat, ms.1, ms.2.1, ms.2.2.1, ms.2.2.2.1, uTop - ms.2.2.2.2) := by
   simp only [iterWithDoubleAddback, if_neg hb]
 
 @[irreducible] def iterN1Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
@@ -295,34 +295,34 @@ theorem iterN1_false (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
 
 /-- Borrow condition for n=1 call+skip: mulsub doesn't overflow. -/
 def isSkipBorrowN1Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
-  let q_hat := div128Quot u1 u0 v0
-  (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word)
+  let qHat := div128Quot u1 u0 v0
+  (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word)
 
 /-- Borrow condition for n=1 call+addback: mulsub overflows. -/
 def isAddbackBorrowN1Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
-  let q_hat := div128Quot u1 u0 v0
-  (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word)
+  let qHat := div128Quot u1 u0 v0
+  (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word)
 
-/-- Double-addback progress for given q_hat: if the first addback produces
+/-- Double-addback progress for given qHat: if the first addback produces
     carry 0, the second addback must produce nonzero carry. -/
-def isAddbackCarry2Nz (q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
-  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+def isAddbackCarry2Nz (qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
+  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
   addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3 = 0 →
     addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0
 
 /-- Specialization of `isAddbackCarry2Nz` for n=1 call path, where
-    `q_hat = div128Quot u1 u0 v0`. -/
+    `qHat = div128Quot u1 u0 v0`. -/
 def isAddbackCarry2NzN1Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 /-- Specialization of `isAddbackCarry2Nz` for n=1 max path, where
-    `q_hat = signExtend12 4095` (i.e. 2^64-1). -/
+    `qHat = signExtend12 4095` (i.e. 2^64-1). -/
 def isAddbackCarry2NzN1Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 /-- Specialization of `isAddbackCarry2Nz` for n=2 call path, where
-    `q_hat = div128Quot u2 u1 v1`. -/
+    `qHat = div128Quot u2 u1 v1`. -/
 def isAddbackCarry2NzN2Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (div128Quot u2 u1 v1) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
@@ -331,7 +331,7 @@ def isAddbackCarry2NzN2Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 /-- Specialization of `isAddbackCarry2Nz` for n=3 call path, where
-    `q_hat = div128Quot u3 u2 v2`. -/
+    `qHat = div128Quot u3 u2 v2`. -/
 def isAddbackCarry2NzN3Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
@@ -340,7 +340,7 @@ def isAddbackCarry2NzN3Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 /-- Specialization of `isAddbackCarry2Nz` for n=4 call path, where
-    `q_hat = div128Quot uTop u3 v3`. -/
+    `qHat = div128Quot uTop u3 v3`. -/
 def isAddbackCarry2NzN4Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
@@ -357,35 +357,35 @@ def isAddbackCarry2NzN4Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
     the double-addback plan — overestimate bound on `div128Quot` + the Knuth
     (normalized divisor, max-path) overestimate bound). Any spec that invokes
     a per-iteration `*_unified_j*_spec` requiring `isAddbackCarry2Nz*` discharges
-    its obligation by specializing this universal to the local q_hat and state. -/
+    its obligation by specializing this universal to the local qHat and state. -/
 def Carry2NzAll (v0 v1 v2 v3 : Word) : Prop :=
-  ∀ q_hat u0 u1 u2 u3 uTop : Word,
-    isAddbackCarry2Nz q_hat v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  ∀ qHat u0 u1 u2 u3 uTop : Word,
+    isAddbackCarry2Nz qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 
 /-- Borrow condition for n=2 call+skip: mulsub doesn't overflow. -/
 def isSkipBorrowN2Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
-  let q_hat := div128Quot u2 u1 v1
-  (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word)
+  let qHat := div128Quot u2 u1 v1
+  (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word)
 
 /-- Borrow condition for n=2 call+addback: mulsub overflows. -/
 def isAddbackBorrowN2Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
-  let q_hat := div128Quot u2 u1 v1
-  (if BitVec.ult uTop (mulsubN4_c3 q_hat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word)
+  let qHat := div128Quot u2 u1 v1
+  (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word)
 
 
 /-- j=0 BLTU condition for n=3 max path after j=1 max+skip: u3_j0 ≥ v2. -/
 def isMaxBltuN3After_j1_skip (v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Prop :=
-  let q_hat : Word := signExtend12 4095
-  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+  let qHat : Word := signExtend12 4095
+  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   ¬BitVec.ult ms.2.2.1 v2
 
 /-- j=0 borrow=0 condition for n=3 max path after j=1 max+skip. -/
-def isSkipBorrowN3After_j1_skip (v0 v1 v2 v3 u0 u1 u2 u3 u0_orig : Word) : Prop :=
-  let q_hat : Word := signExtend12 4095
-  let ms := mulsubN4 q_hat v0 v1 v2 v3 u0 u1 u2 u3
+def isSkipBorrowN3After_j1_skip (v0 v1 v2 v3 u0 u1 u2 u3 u0Orig : Word) : Prop :=
+  let qHat : Word := signExtend12 4095
+  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   (if BitVec.ult ms.2.2.2.1
-      (mulsubN4_c3 q_hat v0 v1 v2 v3 u0_orig ms.1 ms.2.1 ms.2.2.1)
+      (mulsubN4_c3 qHat v0 v1 v2 v3 u0Orig ms.1 ms.2.1 ms.2.2.1)
     then (1 : Word) else 0) = (0 : Word)
 
 end EvmAsm.Evm64

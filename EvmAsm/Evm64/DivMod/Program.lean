@@ -30,12 +30,12 @@
   Register allocation:
     x12 = EVM stack pointer (preserved)
     x1  = loop counter j / temp
-    x2  = anti_shift / subroutine return addr
+    x2  = antiShift / subroutine return addr
     x5  = general temp
     x6  = general temp / uBase in mul-sub
     x7  = general temp
     x10 = general temp / carry in mul-sub
-    x11 = general temp / q_hat
+    x11 = general temp / qHat
 -/
 
 import EvmAsm.Evm64.Stack
@@ -168,15 +168,15 @@ def divK_clz : Program :=
   SRLI .x7 .x5 63 ;; single (.BNE .x7 .x0 8) ;;
   ADDI .x6 .x6 1
 
-/-- Phase C2: Store shift, compute anti_shift, BEQ if shift=0.
-    4 instructions. x6 = shift, x2 = anti_shift. -/
+/-- Phase C2: Store shift, compute antiShift, BEQ if shift=0.
+    4 instructions. x6 = shift, x2 = antiShift. -/
 def divK_phaseC2 (shift0_off : BitVec 13) : Program :=
   SD .x12 .x6 3992 ;;
   ADDI .x2 .x0 0 ;; single (.SUB .x2 .x2 .x6) ;;
   single (.BEQ .x6 .x0 shift0_off)
 
 /-- Phase C3a: Normalize b in-place (shift > 0).
-    21 instructions. x6 = shift, x2 = anti_shift. -/
+    21 instructions. x6 = shift, x2 = antiShift. -/
 def divK_normB : Program :=
   LD .x5 .x12 56 ;; LD .x7 .x12 48 ;;
   single (.SLL .x5 .x5 .x6) ;; single (.SRL .x7 .x7 .x2) ;; single (.OR .x5 .x5 .x7) ;;
@@ -217,10 +217,10 @@ def divK_copyAU : Program :=
 
 /-- Loop setup: compute m = 4-n, j = m (start of loop counter).
     4 instructions. BLT if j < 0 (signed). -/
-def divK_loopSetup (blt_off : BitVec 13) : Program :=
+def divK_loopSetup (bltOff : BitVec 13) : Program :=
   LD .x5 .x12 3984 ;;
   ADDI .x1 .x0 4 ;; single (.SUB .x1 .x1 .x5) ;;
-  single (.BLT .x1 .x0 blt_off)
+  single (.BLT .x1 .x0 bltOff)
 
 /-- Loop body: trial quotient + multiply-subtract + correction + store q[j].
     Starts at loop_start. Includes save/restore of j.
@@ -260,7 +260,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
 
   -- Trial quotient
   single (.BLTU .x7 .x10 12) ;;              -- [13] uHi < vTop? → [16] call 128/64
-  ADDI .x11 .x0 4095 ;;                       -- [14] q_hat = MAX64
+  ADDI .x11 .x0 4095 ;;                       -- [14] qHat = MAX64
   JAL .x0 8 ;;                                 -- [15] skip call → [17]
   JAL .x2 subr_off ;;                          -- [16] call 128/64 subroutine
 
@@ -278,10 +278,10 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.MUL .x7 .x11 .x5) ;;              -- [23] prod_lo
   single (.MULHU .x5 .x11 .x5) ;;            -- [24] prod_hi
   single (.ADD .x7 .x7 .x10) ;;              -- [25] full_sub = prod_lo + carry
-  single (.SLTU .x10 .x7 .x10) ;;            -- [26] borrow_add
+  single (.SLTU .x10 .x7 .x10) ;;            -- [26] borrowAdd
   single (.ADD .x10 .x10 .x5) ;;             -- [27] partial_carry = borrow + prod_hi
   LD .x2 .x6 0 ;;                             -- [28] u[j+0]
-  single (.SLTU .x5 .x2 .x7) ;;              -- [29] borrow_sub
+  single (.SLTU .x5 .x2 .x7) ;;              -- [29] borrowSub
   single (.SUB .x2 .x2 .x7) ;;               -- [30] uNew
   single (.ADD .x10 .x10 .x5) ;;             -- [31] carryOut
   SD .x6 .x2 0 ;;                             -- [32] store u[j+0]
@@ -331,11 +331,11 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   single (.SUB .x5 .x5 .x10) ;;              -- [68]
   SD .x6 .x5 4064 ;;                          -- [69]
 
-  -- CORRECTION: if borrow (x7 != 0), add v back and q_hat--
+  -- CORRECTION: if borrow (x7 != 0), add v back and qHat--
   -- BEQ x7 x0 skips 38 instructions → offset = 38*4+4 = 156
   single (.BEQ .x7 .x0 156) ;;               -- [70] skip correction → [109]
 
-  -- Add-back: v[0..3] to u[j..j+3] with carry, then u[j+4]++, q_hat--
+  -- Add-back: v[0..3] to u[j..j+3] with carry, then u[j+4]++, qHat--
   ADDI .x7 .x0 0 ;;                           -- [71] carry = 0
   -- Limb 0
   LD .x5 .x12 32 ;; LD .x2 .x6 0 ;;          -- [72,73]
@@ -373,7 +373,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   LD .x5 .x6 4064 ;;                          -- [104]
   single (.ADD .x5 .x5 .x7) ;;               -- [105]
   SD .x6 .x5 4064 ;;                          -- [106]
-  -- q_hat--
+  -- qHat--
   ADDI .x11 .x11 4095 ;;                      -- [107]
 
   -- DOUBLE ADDBACK CHECK: if carry (x7) = 0, repeat addback
@@ -384,7 +384,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
   SLLI .x5 .x1 3 ;;                           -- [109] j*8
   ADDI .x7 .x12 4088 ;;                       -- [110] sp-8
   single (.SUB .x7 .x7 .x5) ;;               -- [111] &q[j]
-  SD .x7 .x11 0 ;;                            -- [112] q[j] = q_hat
+  SD .x7 .x11 0 ;;                            -- [112] q[j] = qHat
 
   -- LOOP CONTROL
   ADDI .x1 .x1 4095 ;;                        -- [113] j--
@@ -395,7 +395,7 @@ def divK_loopBody (subr_off : BitVec 21) (loop_back_off : BitVec 13) : Program :
 def divK_denorm : Program :=
   LD .x6 .x12 3992 ;;                         -- [0] shift
   single (.BEQ .x6 .x0 96) ;;                -- [1] if shift=0, skip → [25]
-  ADDI .x2 .x0 0 ;; single (.SUB .x2 .x2 .x6) ;; -- [2,3] anti_shift
+  ADDI .x2 .x0 0 ;; single (.SUB .x2 .x2 .x6) ;; -- [2,3] antiShift
   -- u[0]
   LD .x5 .x12 4056 ;; LD .x7 .x12 4048 ;;    -- [4,5]
   single (.SRL .x5 .x5 .x6) ;;               -- [6]

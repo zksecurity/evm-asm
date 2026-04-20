@@ -2,7 +2,7 @@
   EvmAsm.Evm64.DivMod.LimbSpec.AddBack
 
   CPS specs for one limb of the Knuth Algorithm D "add-back" correction,
-  which un-does the mul-sub when `q_hat` over-shot by 1:
+  which un-does the mul-sub when `qHat` over-shot by 1:
     * `divK_addback_partA_spec` — 5 instructions (LD, LD, ADD, SLTU, ADD):
       load v[i] and u[j+i], form `uPlusCarry = u_i + carryIn`, its
       SLTU `carry1`, and `uNew = uPlusCarry + v_i`.

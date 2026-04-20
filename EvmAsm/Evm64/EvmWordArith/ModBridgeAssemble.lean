@@ -87,9 +87,9 @@ theorem val256_denorm_eq_val256_mod_max_skip
   -- Massage h_n_raw to use Vb * 2^s for the divisor.
   rw [h_norm_b] at h_n_raw
   -- Now combine:
-  --   h_un_raw : val256 a = val256 ms_un + q_hat * val256 b
+  --   h_un_raw : val256 a = val256 ms_un + qHat * val256 b
   --   h_norm_u : val256 u + uTop * 2^256 = val256 a * 2^s
-  --   h_n_raw : val256 u + c3_n * 2^256 = val256 msN + q_hat * (val256 b * 2^s)
+  --   h_n_raw : val256 u + c3_n * 2^256 = val256 msN + qHat * (val256 b * 2^s)
   --   h_utop_eq : uTop.toNat = c3_n.toNat
   -- Derive: val256(msN) = val256(ms_un) * 2^s.
   have h_ms_n_scaled :
