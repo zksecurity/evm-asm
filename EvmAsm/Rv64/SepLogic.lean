@@ -411,7 +411,7 @@ theorem holdsFor_regIs {r : Reg} {v : Word} {s : MachineState} :
     exact ⟨_, (PartialState.CompatibleWith_singletonReg).mpr heq, rfl⟩
 
 @[simp]
-theorem holdsFor_memIs (a : Word) (v : Word) (s : MachineState) :
+theorem holdsFor_memIs {a : Word} {v : Word} {s : MachineState} :
     (memIs a v).holdsFor s ↔ s.getMem a = v ∧ isValidDwordAccess a = true := by
   simp only [Assertion.holdsFor, memIs]
   constructor
@@ -424,16 +424,16 @@ theorem holdsFor_memIs (a : Word) (v : Word) (s : MachineState) :
     then `a` is a valid dword-aligned memory address. -/
 theorem holdsFor_memIs_isValidDwordAccess {a : Word} {v : Word} {s : MachineState}
     (h : (memIs a v).holdsFor s) : isValidDwordAccess a = true :=
-  ((holdsFor_memIs a v s).mp h).2
+  ((holdsFor_memIs).mp h).2
 
 /-- The memory-content consequence of `memIs`: if `(a ↦ₘ v).holdsFor s`
     then `s.getMem a = v`. -/
 theorem holdsFor_memIs_getMem {a : Word} {v : Word} {s : MachineState}
     (h : (memIs a v).holdsFor s) : s.getMem a = v :=
-  ((holdsFor_memIs a v s).mp h).1
+  ((holdsFor_memIs).mp h).1
 
 @[simp]
-theorem holdsFor_pcIs (v : Word) (s : MachineState) :
+theorem holdsFor_pcIs {v : Word} {s : MachineState} :
     (pcIs v).holdsFor s ↔ s.pc = v := by
   simp only [Assertion.holdsFor, pcIs]
   constructor
@@ -443,20 +443,20 @@ theorem holdsFor_pcIs (v : Word) (s : MachineState) :
     exact ⟨_, (PartialState.CompatibleWith_singletonPC).mpr heq, rfl⟩
 
 @[simp]
-theorem holdsFor_emp (s : MachineState) :
+theorem holdsFor_emp {s : MachineState} :
     empAssertion.holdsFor s ↔ True := by
   simp only [Assertion.holdsFor, empAssertion, iff_true]
   exact ⟨PartialState.empty, PartialState.CompatibleWith_empty, rfl⟩
 
 @[simp]
-theorem holdsFor_regOwn (r : Reg) (s : MachineState) :
+theorem holdsFor_regOwn {r : Reg} {s : MachineState} :
     (regOwn r).holdsFor s ↔ True := by
   simp only [iff_true, regOwn, Assertion.holdsFor]
   exact ⟨_, (PartialState.CompatibleWith_singletonReg).mpr rfl,
          s.getReg r, rfl⟩
 
 @[simp]
-theorem holdsFor_memOwn (a : Word) (s : MachineState) :
+theorem holdsFor_memOwn {a : Word} {s : MachineState} :
     (memOwn a).holdsFor s ↔ isValidDwordAccess a = true := by
   simp only [memOwn, Assertion.holdsFor]
   constructor
@@ -940,7 +940,7 @@ def pure (P : Prop) : Assertion :=
 notation "⌜" P "⌝" => EvmAsm.Rv64.pure P
 
 @[simp]
-theorem holdsFor_pure (P : Prop) (s : MachineState) :
+theorem holdsFor_pure {P : Prop} {s : MachineState} :
     (⌜P⌝).holdsFor s ↔ P := by
   simp only [Assertion.holdsFor, pure]
   constructor
@@ -1015,7 +1015,7 @@ theorem CompatibleWith_singletonPublicValues {vals : List (BitVec 8)} {s : Machi
 end PartialState
 
 @[simp]
-theorem holdsFor_publicValuesIs (vals : List (BitVec 8)) (s : MachineState) :
+theorem holdsFor_publicValuesIs {vals : List (BitVec 8)} {s : MachineState} :
     (publicValuesIs vals).holdsFor s ↔ s.publicValues = vals := by
   simp only [Assertion.holdsFor, publicValuesIs]
   constructor
@@ -1094,7 +1094,7 @@ theorem CompatibleWith_singletonPrivateInput {vals : List (BitVec 8)} {s : Machi
 end PartialState
 
 @[simp]
-theorem holdsFor_privateInputIs (vals : List (BitVec 8)) (s : MachineState) :
+theorem holdsFor_privateInputIs {vals : List (BitVec 8)} {s : MachineState} :
     (privateInputIs vals).holdsFor s ↔ s.privateInput = vals := by
   simp only [Assertion.holdsFor, privateInputIs]
   constructor
@@ -1176,7 +1176,7 @@ def stateIs (target : MachineState) : Assertion :=
   fun h => h = PartialState.fullState target
 
 @[simp]
-theorem holdsFor_stateIs (target : MachineState) (s : MachineState) :
+theorem holdsFor_stateIs {target : MachineState} {s : MachineState} :
     (stateIs target).holdsFor s ↔
       (∀ r, s.getReg r = target.getReg r) ∧
       (∀ a, s.getMem a = target.getMem a) ∧
