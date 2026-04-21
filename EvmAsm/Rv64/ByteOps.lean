@@ -110,7 +110,7 @@ theorem generic_lbu_spec (rd rs1 : Reg) (v_addr vOld : Word)
       hrd_ne_x0 h1a
     have h3 := holdsFor_sepConj_assoc.mpr h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h4
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h4
 
 /-! ## LB generic spec
 
@@ -155,7 +155,7 @@ theorem generic_lb_spec (rd rs1 : Reg) (v_addr vOld : Word)
       hrd_ne_x0 h1a
     have h3 := holdsFor_sepConj_assoc.mpr h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h4
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h4
 
 /-! ## SB generic spec
 
@@ -199,6 +199,6 @@ theorem generic_sb_spec (rs1 rs2 : Reg) (v_addr v_data : Word)
       (v' := replaceByte wordOld (byteOffset (v_addr + signExtend12 offset)) (v_data.truncate 8)) h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
     have h5 := holdsFor_sepConj_pull_second.mpr h4
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h5
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h5
 
 end EvmAsm.Rv64
