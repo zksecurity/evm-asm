@@ -183,7 +183,7 @@ theorem generic_3reg_spec (instr : Instr) (rs1 rs2 rd : Reg)
 
 /-- Generic spec for instructions that only advance PC without changing state.
     Pre/Post: empAssertion  [frame handles the rest] -/
-theorem generic_nop_spec (instr : Instr) (base exit_ : Word)
+theorem generic_nop_spec (instr : Instr) {base exit_ : Word}
     (hexec : ∀ s, s.pc = base → execInstrBr s instr = s.setPC exit_)
     (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
     cpsTriple base exit_ (CodeReq.singleton base instr)

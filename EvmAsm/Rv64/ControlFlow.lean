@@ -221,7 +221,7 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
       (CodeReq.singleton addr (.JAL .x0 offset))
       empAssertion
       empAssertion :=
-  generic_nop_spec (.JAL .x0 offset) addr (addr + signExtend21 offset)
+  generic_nop_spec (.JAL .x0 offset)
     (by intro s hpc; simp [execInstrBr, MachineState.setReg, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
 
