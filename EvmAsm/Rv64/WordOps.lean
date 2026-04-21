@@ -60,7 +60,7 @@ theorem generic_lwu_spec (rd rs1 : Reg) (v_addr vOld : Word)
   have hfetch : s.code s.pc = some (.LWU rd rs1 offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.LWU rd rs1 offset) s).mp hcr
   have hrs1 : s.getReg rs1 = v_addr :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_left hPR))
   have hmem : s.getMem dwordAddr = wordVal :=
     holdsFor_memIs_getMem (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right
@@ -104,7 +104,7 @@ theorem generic_lw_spec (rd rs1 : Reg) (v_addr vOld : Word)
   have hfetch : s.code s.pc = some (.LW rd rs1 offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.LW rd rs1 offset) s).mp hcr
   have hrs1 : s.getReg rs1 = v_addr :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_left hPR))
   have hmem : s.getMem dwordAddr = wordVal :=
     holdsFor_memIs_getMem (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right
@@ -146,10 +146,10 @@ theorem generic_sw_spec (rs1 rs2 : Reg) (v_addr v_data : Word)
   have hfetch : s.code s.pc = some (.SW rs1 rs2 offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.SW rs1 rs2 offset) s).mp hcr
   have hrs1 : s.getReg rs1 = v_addr :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_left hPR))
   have hrs2 : s.getReg rs2 = v_data :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_right
       (holdsFor_sepConj_elim_left hPR)))
   have hmem : s.getMem dwordAddr = wordOld :=
     holdsFor_memIs_getMem (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right

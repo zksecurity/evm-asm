@@ -241,7 +241,7 @@ theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (bas
   have hfetch : s.code s.pc = some (.LD rd rd offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.LD rd rd offset) s).mp hcr
   have hrd : s.getReg rd = v_addr :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hmem_piece := holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR)
   have hmem : s.getMem (v_addr + signExtend12 offset) = memVal :=
     holdsFor_memIs_getMem hmem_piece
@@ -278,7 +278,7 @@ theorem sd_spec_same (rs : Reg) (v : Word) (memOld : Word) (offset : BitVec 12) 
   have hfetch : s.code s.pc = some (.SD rs rs offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.SD rs rs offset) s).mp hcr
   have hrs : s.getReg rs = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hvalid : isValidDwordAccess (v + signExtend12 offset) = true :=
     holdsFor_memIs_isValidDwordAccess (holdsFor_sepConj_elim_right
       (holdsFor_sepConj_elim_left hPR))
@@ -317,7 +317,7 @@ theorem beq_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
   have hfetch : s.code s.pc = some (.BEQ rs rs offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.BEQ rs rs offset) s).mp hcr
   have hrs : s.getReg rs = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left hPR)
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left hPR)
   have hstep' : step s = some (execInstrBr s (.BEQ rs rs offset)) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
   have hexec' : execInstrBr s (.BEQ rs rs offset) = s.setPC (s.pc + signExtend13 offset) := by
@@ -345,7 +345,7 @@ theorem bne_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
   have hfetch : s.code s.pc = some (.BNE rs rs offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.BNE rs rs offset) s).mp hcr
   have hrs : s.getReg rs = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left hPR)
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left hPR)
   have hstep' : step s = some (execInstrBr s (.BNE rs rs offset)) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
   have hexec' : execInstrBr s (.BNE rs rs offset) = s.setPC (s.pc + 4) := by
@@ -397,7 +397,7 @@ theorem jalr_spec_same (rd : Reg) (v : Word) (offset : BitVec 12) (base : Word)
   have hfetch : s.code s.pc = some (.JALR rd rd offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.JALR rd rd offset) s).mp hcr
   have hrd : s.getReg rd = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left hPR)
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left hPR)
   have hstep' : step s = some (execInstrBr s (.JALR rd rd offset)) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
   have hexec' : execInstrBr s (.JALR rd rd offset) =
