@@ -202,7 +202,7 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.pc_setByte, MachineState.pc_setHalfword,
     MachineState.pc_setWord32]
 
-@[simp] theorem committed_execInstrBr (s : MachineState) (i : Instr) :
+@[simp] theorem committed_execInstrBr {s : MachineState} {i : Instr} :
     (execInstrBr s i).committed = s.committed := by
   cases i <;> simp [execInstrBr, MachineState.committed_setPC,
     MachineState.committed_setReg, MachineState.committed_setMem,
@@ -210,7 +210,7 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.setWord32]
   all_goals split <;> simp [MachineState.committed_setPC]
 
-@[simp] theorem publicValues_execInstrBr (s : MachineState) (i : Instr) :
+@[simp] theorem publicValues_execInstrBr {s : MachineState} {i : Instr} :
     (execInstrBr s i).publicValues = s.publicValues := by
   cases i <;> simp [execInstrBr, MachineState.publicValues_setPC,
     MachineState.publicValues_setReg, MachineState.publicValues_setMem,
@@ -218,7 +218,7 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.setWord32]
   all_goals split <;> simp [MachineState.publicValues_setPC]
 
-@[simp] theorem privateInput_execInstrBr (s : MachineState) (i : Instr) :
+@[simp] theorem privateInput_execInstrBr {s : MachineState} {i : Instr} :
     (execInstrBr s i).privateInput = s.privateInput := by
   cases i <;> simp [execInstrBr, MachineState.privateInput_setPC,
     MachineState.privateInput_setReg, MachineState.privateInput_setMem,
@@ -226,7 +226,7 @@ theorem execInstrBr_eq_execInstr (s : MachineState) (i : Instr)
     MachineState.setWord32]
   all_goals split <;> simp [MachineState.privateInput_setPC]
 
-@[simp] theorem code_execInstrBr (s : MachineState) (i : Instr) :
+@[simp] theorem code_execInstrBr {s : MachineState} {i : Instr} :
     (execInstrBr s i).code = s.code := by
   cases i <;> simp [execInstrBr, MachineState.code_setPC,
     MachineState.code_setReg, MachineState.code_setMem,
