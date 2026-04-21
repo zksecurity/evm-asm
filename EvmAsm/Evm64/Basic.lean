@@ -37,22 +37,22 @@ def fromLimbs (limbs : Fin 4 → Word) : EvmWord :=
   ((limbs 3).zeroExtend 256 <<< 192)
 
 /-- Bitwise AND distributes over limbs. -/
-theorem getLimb_and (x y : EvmWord) (i : Fin 4) :
+theorem getLimb_and {x y : EvmWord} {i : Fin 4} :
     (x &&& y).getLimb i = x.getLimb i &&& y.getLimb i := by
   simp only [getLimb, BitVec.extractLsb'_and]
 
 /-- Bitwise OR distributes over limbs. -/
-theorem getLimb_or (x y : EvmWord) (i : Fin 4) :
+theorem getLimb_or {x y : EvmWord} {i : Fin 4} :
     (x ||| y).getLimb i = x.getLimb i ||| y.getLimb i := by
   simp only [getLimb, BitVec.extractLsb'_or]
 
 /-- Bitwise XOR distributes over limbs. -/
-theorem getLimb_xor (x y : EvmWord) (i : Fin 4) :
+theorem getLimb_xor {x y : EvmWord} {i : Fin 4} :
     (x ^^^ y).getLimb i = x.getLimb i ^^^ y.getLimb i := by
   simp only [getLimb, BitVec.extractLsb'_xor]
 
 /-- Bitwise NOT distributes over limbs. -/
-theorem getLimb_not (x : EvmWord) (i : Fin 4) :
+theorem getLimb_not {x : EvmWord} {i : Fin 4} :
     (~~~x).getLimb i = ~~~(x.getLimb i) := by
   simp only [getLimb]
   ext j
@@ -186,19 +186,19 @@ theorem getLimb_as_getLimbN_2 (v : EvmWord) : v.getLimb 2 = v.getLimbN 2 := by s
 theorem getLimb_as_getLimbN_3 (v : EvmWord) : v.getLimb 3 = v.getLimbN 3 := by simp [getLimbN]
 
 -- getLimbN versions of operation lemmas (for xperm AC fast path consistency)
-theorem getLimbN_and (x y : EvmWord) (k : Nat) :
+theorem getLimbN_and {x y : EvmWord} {k : Nat} :
     (x &&& y).getLimbN k = x.getLimbN k &&& y.getLimbN k := by
   simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_and]
 
-theorem getLimbN_or (x y : EvmWord) (k : Nat) :
+theorem getLimbN_or {x y : EvmWord} {k : Nat} :
     (x ||| y).getLimbN k = x.getLimbN k ||| y.getLimbN k := by
   simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_or]
 
-theorem getLimbN_xor (x y : EvmWord) (k : Nat) :
+theorem getLimbN_xor {x y : EvmWord} {k : Nat} :
     (x ^^^ y).getLimbN k = x.getLimbN k ^^^ y.getLimbN k := by
   simp [getLimbN]; split <;> simp [getLimb, BitVec.extractLsb'_xor]
 
-theorem getLimbN_not (x : EvmWord) (k : Nat) (hk : k < 4) :
+theorem getLimbN_not {x : EvmWord} {k : Nat} (hk : k < 4) :
     (~~~ x).getLimbN k = ~~~ (x.getLimbN k) := by
   simp only [getLimbN, hk, dif_pos, getLimb_not]
 
@@ -221,18 +221,18 @@ theorem getLimbN_one (k : Nat) :
 /-- `(1 : EvmWord).getLimbN k = 0` for `k ≠ 0`. Avoids the chained `getLimbN_one`
     + `show ¬((k : Nat) = 0) from by decide` idiom at call sites that know `k`
     is a concrete positive literal (issue #263). -/
-theorem getLimbN_one_of_ne_zero (k : Nat) (hk : k ≠ 0) :
+theorem getLimbN_one_of_ne_zero {k : Nat} (hk : k ≠ 0) :
     (1 : EvmWord).getLimbN k = 0 := by
   rw [getLimbN_one, if_neg hk]
 
 theorem getLimbN_one_zero : (1 : EvmWord).getLimbN 0 = 1 := by
   rw [getLimbN_one, if_pos rfl]
 theorem getLimbN_one_one : (1 : EvmWord).getLimbN 1 = 0 :=
-  getLimbN_one_of_ne_zero 1 (by decide)
+  getLimbN_one_of_ne_zero (by decide)
 theorem getLimbN_one_two : (1 : EvmWord).getLimbN 2 = 0 :=
-  getLimbN_one_of_ne_zero 2 (by decide)
+  getLimbN_one_of_ne_zero (by decide)
 theorem getLimbN_one_three : (1 : EvmWord).getLimbN 3 = 0 :=
-  getLimbN_one_of_ne_zero 3 (by decide)
+  getLimbN_one_of_ne_zero (by decide)
 
 theorem getLimbN_ite {c : Prop} [Decidable c] {x y : EvmWord} {k : Nat} :
     (if c then x else y).getLimbN k = if c then x.getLimbN k else y.getLimbN k := by
