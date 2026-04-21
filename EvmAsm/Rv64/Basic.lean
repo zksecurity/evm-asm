@@ -552,58 +552,58 @@ theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
 @[simp] theorem getMem_setPC (s : MachineState) (v : Word) (a : Word) :
     (s.setPC v).getMem a = s.getMem a := by simp [getMem, setPC]
 
-@[simp] theorem committed_setReg (s : MachineState) (r : Reg) (v : Word) :
+@[simp] theorem committed_setReg {s : MachineState} {r : Reg} {v : Word} :
     (s.setReg r v).committed = s.committed := by cases r <;> rfl
 
-@[simp] theorem committed_setMem (s : MachineState) (a : Word) (v : Word) :
+@[simp] theorem committed_setMem {s : MachineState} {a : Word} {v : Word} :
     (s.setMem a v).committed = s.committed := by simp [setMem]
 
-@[simp] theorem committed_setByte (s : MachineState) (addr : Word) (b : BitVec 8) :
+@[simp] theorem committed_setByte {s : MachineState} {addr : Word} {b : BitVec 8} :
     (s.setByte addr b).committed = s.committed := by simp [setByte]
 
-@[simp] theorem committed_setHalfword (s : MachineState) (addr : Word) (h : BitVec 16) :
+@[simp] theorem committed_setHalfword {s : MachineState} {addr : Word} {h : BitVec 16} :
     (s.setHalfword addr h).committed = s.committed := by simp [setHalfword]
 
-@[simp] theorem committed_setPC (s : MachineState) (v : Word) :
+@[simp] theorem committed_setPC {s : MachineState} {v : Word} :
     (s.setPC v).committed = s.committed := by simp [setPC]
 
-@[simp] theorem publicValues_setReg (s : MachineState) (r : Reg) (v : Word) :
+@[simp] theorem publicValues_setReg {s : MachineState} {r : Reg} {v : Word} :
     (s.setReg r v).publicValues = s.publicValues := by cases r <;> rfl
 
-@[simp] theorem publicValues_setMem (s : MachineState) (a : Word) (v : Word) :
+@[simp] theorem publicValues_setMem {s : MachineState} {a : Word} {v : Word} :
     (s.setMem a v).publicValues = s.publicValues := by simp [setMem]
 
-@[simp] theorem publicValues_setByte (s : MachineState) (addr : Word) (b : BitVec 8) :
+@[simp] theorem publicValues_setByte {s : MachineState} {addr : Word} {b : BitVec 8} :
     (s.setByte addr b).publicValues = s.publicValues := by simp [setByte]
 
-@[simp] theorem publicValues_setHalfword (s : MachineState) (addr : Word) (h : BitVec 16) :
+@[simp] theorem publicValues_setHalfword {s : MachineState} {addr : Word} {h : BitVec 16} :
     (s.setHalfword addr h).publicValues = s.publicValues := by simp [setHalfword]
 
-@[simp] theorem publicValues_setPC (s : MachineState) (v : Word) :
+@[simp] theorem publicValues_setPC {s : MachineState} {v : Word} :
     (s.setPC v).publicValues = s.publicValues := by simp [setPC]
 
-@[simp] theorem publicValues_appendCommit (s : MachineState) (a0 a1 : Word) :
+@[simp] theorem publicValues_appendCommit {s : MachineState} {a0 a1 : Word} :
     (s.appendCommit a0 a1).publicValues = s.publicValues := by simp [appendCommit]
 
-@[simp] theorem privateInput_setReg (s : MachineState) (r : Reg) (v : Word) :
+@[simp] theorem privateInput_setReg {s : MachineState} {r : Reg} {v : Word} :
     (s.setReg r v).privateInput = s.privateInput := by cases r <;> rfl
 
-@[simp] theorem privateInput_setMem (s : MachineState) (a : Word) (v : Word) :
+@[simp] theorem privateInput_setMem {s : MachineState} {a : Word} {v : Word} :
     (s.setMem a v).privateInput = s.privateInput := by simp [setMem]
 
-@[simp] theorem privateInput_setByte (s : MachineState) (addr : Word) (b : BitVec 8) :
+@[simp] theorem privateInput_setByte {s : MachineState} {addr : Word} {b : BitVec 8} :
     (s.setByte addr b).privateInput = s.privateInput := by simp [setByte]
 
-@[simp] theorem privateInput_setHalfword (s : MachineState) (addr : Word) (h : BitVec 16) :
+@[simp] theorem privateInput_setHalfword {s : MachineState} {addr : Word} {h : BitVec 16} :
     (s.setHalfword addr h).privateInput = s.privateInput := by simp [setHalfword]
 
-@[simp] theorem privateInput_setPC (s : MachineState) (v : Word) :
+@[simp] theorem privateInput_setPC {s : MachineState} {v : Word} :
     (s.setPC v).privateInput = s.privateInput := by simp [setPC]
 
-@[simp] theorem privateInput_appendCommit (s : MachineState) (a0 a1 : Word) :
+@[simp] theorem privateInput_appendCommit {s : MachineState} {a0 a1 : Word} :
     (s.appendCommit a0 a1).privateInput = s.privateInput := by simp [appendCommit]
 
-@[simp] theorem privateInput_appendPublicValues (s : MachineState) (bytes : List (BitVec 8)) :
+@[simp] theorem privateInput_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).privateInput = s.privateInput := by simp [appendPublicValues]
 
 -- appendCommit preservation lemmas
