@@ -1066,7 +1066,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
     (by pcFree) hphaseC
   simp only [List.map] at hphaseC_framed
   -- Merge Phase C + bodies
-  have hphaseCD := cpsNBranch_merge (base + 64) (base + 380) (sarCode base) _ _ _ hphaseC_framed
+  have hphaseCD := cpsNBranch_merge hphaseC_framed
     (fun exit hmem => by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩

@@ -491,9 +491,9 @@ theorem cpsNBranch_to_cpsBranch {entry : Word} {cr : CodeReq}
 /-- N-branch merge: if every exit leads to the same continuation,
     compose into a single cpsTriple. This is the main structural rule.
     Uses the same cr for all parts (simpler; use cpsTriple_extend_code to adapt). -/
-theorem cpsNBranch_merge (entry exit_ : Word) (cr : CodeReq)
-    (P R : Assertion)
-    (exits : List (Word × Assertion))
+theorem cpsNBranch_merge {entry exit_ : Word} {cr : CodeReq}
+    {P R : Assertion}
+    {exits : List (Word × Assertion)}
     (hbr : cpsNBranch entry cr P exits)
     (hall : ∀ exit ∈ exits, cpsTriple exit.1 exit_ cr exit.2 R) :
     cpsTriple entry exit_ cr P R := by

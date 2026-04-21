@@ -803,7 +803,7 @@ theorem signext_body_spec (sp base : Word)
     (F := phaseC_frame) (by pcFree) hphaseC
   simp only [List.map] at hphaseC_framed
   -- Merge Phase C exits with body+done specs
-  have hphaseCD := cpsNBranch_merge (base + 56) (base + 192) (signextCode base) _ _ _ hphaseC_framed
+  have hphaseCD := cpsNBranch_merge hphaseC_framed
     (fun exit hmem => by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩

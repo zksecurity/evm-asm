@@ -808,7 +808,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
       simp only [resultPost, hresult_high1, hresult_high2, hresult_high3]
       rw [← bridge v0 3 (derive_K_3 hd) (by omega) rfl]; exact hq)
   -- Merge Phase C with bodies
-  have hphaseCD := cpsNBranch_merge (base + 56) (base + 180) (evm_byte_code base) _ _ _ hphaseC_framed
+  have hphaseCD := cpsNBranch_merge hphaseC_framed
     (fun exit hmem => by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmem
       rcases hmem with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
