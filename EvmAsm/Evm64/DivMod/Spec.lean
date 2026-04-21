@@ -464,6 +464,9 @@ instance (sp : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
   ⟨pcFree_modN4StackPre sp a b v5 v6 v7 v10 v11
     q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem⟩
 
+-- `modN4StackPreCall` (MOD-side call-trial pre-bundle) lives in
+-- `DivMod/SpecCall.lean` to stay under the Spec.lean file-size guardrail.
+
 /-- Named unfold for `modN4StackPre`. Mirror of `divN4StackPre_unfold`. -/
 theorem modN4StackPre_unfold (sp : Word) (a b : EvmWord)
     (v5 v6 v7 v10 v11 : Word)
