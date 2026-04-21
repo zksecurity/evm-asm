@@ -119,7 +119,7 @@ theorem hq_over_from_second_carry_one (q : Word) {v0 v1 v2 v3 u0 u1 u2 u3 : Word
     Parallels `n4_max_addback_correct` (single-addback case); proof threads
     `hq_over_from_second_carry_one` + `mulsub_double_addback_val256_combined`
     + `val256_euclidean_to_div_mod`. -/
-theorem n4_max_double_addback_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+theorem n4_max_double_addback_correct {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hb3nz : b3 ≠ 0)
     (hc3_one : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 1)
     (hcarry1_zero : addbackN4_carry
@@ -306,8 +306,7 @@ theorem n4_max_double_addback_div_mod_limbs (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (EvmWord.mod a b).getLimbN 2 = ab'.2.2.1 ∧
     (EvmWord.mod a b).getLimbN 3 = ab'.2.2.2.1 := by
   intro ms ab ab' qHat'' a b
-  have ⟨hq, hr⟩ := n4_max_double_addback_correct a0 a1 a2 a3 b0 b1 b2 b3
-    hb3nz hc3_one hcarry1_zero hcarry2_one
+  have ⟨hq, hr⟩ := n4_max_double_addback_correct hb3nz hc3_one hcarry1_zero hcarry2_one
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← hq]; exact getLimbN_fromLimbs_0
   · rw [← hq]; exact getLimbN_fromLimbs_1
