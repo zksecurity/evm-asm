@@ -160,10 +160,10 @@ theorem u_top_eq_c3_nat_form
     that the normalization overflow `a3 >>> (64-s)` equals the normalized
     mulsub carry. -/
 theorem u_top_eq_c3_n_max_skip
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
-    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    {s : Nat} (hs0 : 0 < s) (hs : s < 64)
     (hb3_bound : b3.toNat < 2 ^ (64 - s))
     (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
     (hc3_n_le_u_top :

@@ -37,10 +37,10 @@ namespace EvmWord
     denormalized remainder limbs equal `val256(a) % val256(b)` at val256
     level. Combines Lemmas A, C, and the un-normalized modulus extraction. -/
 theorem val256_denorm_eq_val256_mod_max_skip
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
-    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    {s : Nat} (hs0 : 0 < s) (hs : s < 64)
     (hb3_bound : b3.toNat < 2 ^ (64 - s))
     (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
     (hc3_n_le_u_top :
@@ -73,8 +73,7 @@ theorem val256_denorm_eq_val256_mod_max_skip
   have h_denorm := val256_denormalize hs0 hs msN.1 msN.2.1 msN.2.2.1 msN.2.2.2.1
   -- h_denorm : val256(u') = val256(msN) / 2^s
   -- Step 2: Use Lemma C (uTop = c3_n) to derive val256(msN) = val256(ms_un) * 2^s.
-  have h_utop_eq := u_top_eq_c3_n_max_skip a0 a1 a2 a3 b0 b1 b2 b3
-    hbnz hb3nz s hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top
+  have h_utop_eq := u_top_eq_c3_n_max_skip hbnz hb3nz hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top
   -- Step 3: Derive val256(msN) = val256(ms_un) * 2^s from Lemma C + Euclidean equations.
   -- Using mulsubN4_val256_eq (normalized) + val256_normalize_general + val256_normalize.
   have h_un_raw := mulsubN4_val256_eq (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3
@@ -139,10 +138,10 @@ theorem val256_denorm_eq_val256_mod_max_skip
     limbs `u0', u1', u2', u3'` assembled via `fromLimbs` equal
     `EvmWord.mod a b`. -/
 theorem denorm_limbs_eq_evmWord_mod_max_skip
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3nz : b3 ≠ 0)
-    (s : Nat) (hs0 : 0 < s) (hs : s < 64)
+    {s : Nat} (hs0 : 0 < s) (hs : s < 64)
     (hb3_bound : b3.toNat < 2 ^ (64 - s))
     (hc3_un_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0)
     (hc3_n_le_u_top :
@@ -177,8 +176,7 @@ theorem denorm_limbs_eq_evmWord_mod_max_skip
       match i with | 0 => u0' | 1 => u1' | 2 => u2' | 3 => u3'
     r = EvmWord.mod a b :=
   mod_of_val256_eq_mod hbnz
-    (val256_denorm_eq_val256_mod_max_skip a0 a1 a2 a3 b0 b1 b2 b3
-      hbnz hb3nz s hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top)
+    (val256_denorm_eq_val256_mod_max_skip hbnz hb3nz hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top)
 
 /-- Per-limb form of Lemma F: each of the four denormalized remainder limbs
     equals the corresponding limb of `EvmWord.mod a b`. Specializes
@@ -219,8 +217,7 @@ theorem denorm_limbN_eq_mod_max_skip
     (EvmWord.mod a b).getLimbN 2 = ((msN.2.2.1 >>> s) ||| (msN.2.2.2.1 <<< (64 - s))) ∧
     (EvmWord.mod a b).getLimbN 3 = (msN.2.2.2.1 >>> s) := by
   intro b0' b1' b2' b3' u0 u1 u2 u3 msN a b
-  have hr := denorm_limbs_eq_evmWord_mod_max_skip a0 a1 a2 a3 b0 b1 b2 b3
-    hbnz hb3nz s hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top
+  have hr := denorm_limbs_eq_evmWord_mod_max_skip hbnz hb3nz hs0 hs hb3_bound hc3_un_zero hc3_n_le_u_top
   simp only [] at hr
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [← hr]; exact getLimbN_fromLimbs_0
