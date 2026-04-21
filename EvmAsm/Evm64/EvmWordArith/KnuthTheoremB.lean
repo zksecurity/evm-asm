@@ -49,6 +49,9 @@
   - `div128Quot_first_round_euclidean` — for nonzero `dHi`, the Word-level
     Euclidean equation `q1.toNat * dHi.toNat + rhat.toNat = uHi.toNat` holds
     where `rhat = uHi - q1 * dHi` (BitVec sub).
+  - `div128Quot_first_round_correction` — under `hi1 ≠ 0` and `dHi < 2^32`, the
+    corrected `q1c = q1 - 1`, `rhatc = rhat + dHi` preserve the Euclidean
+    equation: `q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat`.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -573,5 +576,87 @@ theorem div128Quot_first_round_euclidean (uHi dHi : Word) (hdHi_ne : dHi ≠ 0) 
     rw [BitVec.toNat_sub, hmul_toNat]
     omega
   omega
+
+/-- **Fourth Piece B building block — first-round correction.**
+
+    When `hi1 = q1 >>> 32 ≠ 0`, the algorithm corrects via
+    `q1c := q1 + signExtend12 4095` (= `q1 - 1`) and `rhatc := rhat + dHi`.
+    Under `dHi.toNat < 2^32` (always true since `dHi = vTop >>> 32`), the
+    corrected pair preserves the Euclidean invariant:
+
+    ```
+      q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat
+    ```
+
+    Proof relies on:
+    - `hi1 ≠ 0` ⟹ `q1.toNat ≥ 2^32` ≥ 1, so `q1 - 1` doesn't underflow.
+    - `rhat.toNat = uHi mod dHi < dHi`, so `rhat + dHi < 2 * dHi < 2^33`,
+      no Word overflow.
+    - Algebraic identity at Nat: `(q1 - 1) * dHi + (rhat + dHi) = q1 * dHi + rhat`. -/
+theorem div128Quot_first_round_correction (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0) (hdHi_lt : dHi.toNat < 2^32)
+    (hhi1_nz : (rv64_divu uHi dHi) >>> (32 : BitVec 6).toNat ≠ 0) :
+    (rv64_divu uHi dHi + signExtend12 4095).toNat * dHi.toNat +
+      (uHi - rv64_divu uHi dHi * dHi + dHi).toNat = uHi.toNat := by
+  set q1 := rv64_divu uHi dHi with hq1_def
+  set rhat := uHi - q1 * dHi with hrhat_def
+  -- Nat-level facts
+  have hq1_eq : q1.toNat = uHi.toNat / dHi.toNat := rv64_divu_toNat uHi dHi hdHi_ne
+  have h_eucl : q1.toNat * dHi.toNat + rhat.toNat = uHi.toNat := by
+    have := div128Quot_first_round_euclidean uHi dHi hdHi_ne
+    convert this using 2
+  have hdHi_pos : 0 < dHi.toNat := by
+    rcases Nat.eq_zero_or_pos dHi.toNat with h | h
+    · exfalso; apply hdHi_ne; exact BitVec.eq_of_toNat_eq (by simp [h])
+    · exact h
+  -- rhat.toNat < dHi.toNat
+  have hrhat_lt_dHi : rhat.toNat < dHi.toNat := by
+    have h_dam : dHi.toNat * (uHi.toNat / dHi.toNat) + uHi.toNat % dHi.toNat = uHi.toNat :=
+      Nat.div_add_mod _ _
+    have h_eucl_div :
+        (uHi.toNat / dHi.toNat) * dHi.toNat + rhat.toNat = uHi.toNat := by
+      rw [← hq1_eq]; exact h_eucl
+    have h_comm :
+        dHi.toNat * (uHi.toNat / dHi.toNat) = (uHi.toNat / dHi.toNat) * dHi.toNat :=
+      Nat.mul_comm _ _
+    have h_mod_lt : uHi.toNat % dHi.toNat < dHi.toNat := Nat.mod_lt _ hdHi_pos
+    omega
+  -- hi1 ≠ 0 ⟹ q1.toNat ≥ 2^32
+  have hq1_ge : q1.toNat ≥ 2^32 := by
+    by_contra h
+    push Not at h
+    apply hhi1_nz
+    apply BitVec.eq_of_toNat_eq
+    have h32 : (32 : BitVec 6).toNat = 32 := by decide
+    rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+    show q1.toNat / 2^32 = (0 : Word).toNat
+    rw [Nat.div_eq_of_lt h]
+    rfl
+  -- q1c.toNat = q1.toNat - 1
+  have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
+  have hq1c_toNat : (q1 + signExtend12 4095).toNat = q1.toNat - 1 := by
+    rw [BitVec.toNat_add, h_se_neg1]
+    have : q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 := by omega
+    rw [this, Nat.add_mod_right]
+    exact Nat.mod_eq_of_lt (by have := q1.isLt; omega)
+  -- rhatc.toNat = rhat.toNat + dHi.toNat (no overflow)
+  have hrhatc_toNat : (rhat + dHi).toNat = rhat.toNat + dHi.toNat := by
+    rw [BitVec.toNat_add]
+    apply Nat.mod_eq_of_lt
+    have : rhat.toNat + dHi.toNat < 2 * 2^32 := by omega
+    omega
+  rw [hq1c_toNat, hrhatc_toNat]
+  -- (q1 - 1) * dHi + (rhat + dHi) = q1 * dHi + rhat = uHi
+  have h_q1_ge_one : q1.toNat ≥ 1 := by omega
+  have key : (q1.toNat - 1) * dHi.toNat + (rhat.toNat + dHi.toNat) =
+             q1.toNat * dHi.toNat + rhat.toNat := by
+    have h1 : (q1.toNat - 1 + 1) * dHi.toNat =
+              (q1.toNat - 1) * dHi.toNat + dHi.toNat := by
+      rw [Nat.add_mul, Nat.one_mul]
+    have h_eq : q1.toNat - 1 + 1 = q1.toNat := by omega
+    have h2 : (q1.toNat - 1 + 1) * dHi.toNat = q1.toNat * dHi.toNat := by
+      rw [h_eq]
+    omega
+  rw [key]; exact h_eucl
 
 end EvmAsm.Evm64
