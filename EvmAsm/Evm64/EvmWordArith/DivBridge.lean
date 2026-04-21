@@ -49,7 +49,7 @@ theorem bv_lt_of_nat_lt {a b : EvmWord} (h : a.toNat < b.toNat) : a < b :=
     This is the master bridge theorem: to prove the algorithm computes
     the correct quotient, it suffices to show the Euclidean property at
     the Nat level. The no-overflow condition is automatic since `a < 2^256`. -/
-theorem div_of_nat_euclidean (a b q r : EvmWord) (hbnz : b ≠ 0)
+theorem div_of_nat_euclidean {a b q r : EvmWord} (hbnz : b ≠ 0)
     (h_nat_eq : a.toNat = b.toNat * q.toNat + r.toNat)
     (h_nat_lt : r.toNat < b.toNat) :
     q = EvmWord.div a b :=
@@ -60,7 +60,7 @@ theorem div_of_nat_euclidean (a b q r : EvmWord) (hbnz : b ≠ 0)
 
 /-- If the Nat-level Euclidean property holds (`a = b * q + r` with `r < b`),
     then `r = EvmWord.mod a b`. -/
-theorem mod_of_nat_euclidean (a b q r : EvmWord) (hbnz : b ≠ 0)
+theorem mod_of_nat_euclidean {a b q r : EvmWord} (hbnz : b ≠ 0)
     (h_nat_eq : a.toNat = b.toNat * q.toNat + r.toNat)
     (h_nat_lt : r.toNat < b.toNat) :
     r = EvmWord.mod a b :=
@@ -104,8 +104,8 @@ theorem div_from_mulsub {a b q r : EvmWord}
     (h_chain : a.toNat = b.toNat * q.toNat + r.toNat)
     (h_rem : r.toNat < b.toNat) :
     q = EvmWord.div a b ∧ r = EvmWord.mod a b :=
-  ⟨div_of_nat_euclidean a b q r hbnz h_chain h_rem,
-   mod_of_nat_euclidean a b q r hbnz h_chain h_rem⟩
+  ⟨div_of_nat_euclidean hbnz h_chain h_rem,
+   mod_of_nat_euclidean hbnz h_chain h_rem⟩
 
 end EvmWord
 
