@@ -438,7 +438,7 @@ theorem nop_spec (base : Word) :
     cpsTriple base (base + 4) (CodeReq.singleton base .NOP)
       empAssertion
       empAssertion :=
-  generic_nop_spec .NOP base (base + 4)
+  generic_nop_spec .NOP
     (by intro s hpc; simp [execInstrBr, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
 
@@ -451,7 +451,7 @@ theorem fence_spec (base : Word) :
     cpsTriple base (base + 4) (CodeReq.singleton base .FENCE)
       empAssertion
       empAssertion :=
-  generic_nop_spec .FENCE base (base + 4)
+  generic_nop_spec .FENCE
     (by intro s hpc; simp [execInstrBr, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
 
