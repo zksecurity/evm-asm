@@ -56,7 +56,7 @@ theorem max_trial_overestimate_n4 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (hb3nz : b3 �
 /-- Skip path (c3 = 0, max trial) at n=4: when mulsubN4 produces no borrow,
     the max trial quotient (2^64-1) equals ⌊val256(a)/val256(b)⌋
     and fromLimbs [qHat, 0, 0, 0] = EvmWord.div a b. -/
-theorem n4_max_skip_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+theorem n4_max_skip_correct {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hb3nz : b3 ≠ 0)
     (hc3_zero : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0) :
     let ms := mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3
@@ -142,7 +142,7 @@ theorem mulsub_addback_val256_combined (q v0 v1 v2 v3 u0 u1 u2 u3 u4_new : Word)
 /-- Addback path (c3 = 1, max trial) at n=4: when mulsubN4 underflows with
     borrow 1 and addback produces carry 1, the corrected quotient (qHat - 1)
     equals ⌊val256(a)/val256(b)⌋. -/
-theorem n4_max_addback_correct (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+theorem n4_max_addback_correct {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (hb3nz : b3 ≠ 0)
     (hc3_one : (mulsubN4 (signExtend12 4095) b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 1)
     (hcarry_one : addbackN4_carry
@@ -582,7 +582,7 @@ theorem n4_max_skip_div_mod_limbs (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (EvmWord.mod a b).getLimbN 2 = ms.2.2.1 ∧
     (EvmWord.mod a b).getLimbN 3 = ms.2.2.2.1 := by
   intro ms a b
-  have ⟨hq, hr⟩ := n4_max_skip_correct a0 a1 a2 a3 b0 b1 b2 b3 hb3nz hc3_zero
+  have ⟨hq, hr⟩ := n4_max_skip_correct hb3nz hc3_zero
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← hq]; exact getLimbN_fromLimbs_0
   · rw [← hq]; exact getLimbN_fromLimbs_1
@@ -621,7 +621,7 @@ theorem n4_max_addback_div_mod_limbs (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (EvmWord.mod a b).getLimbN 2 = ab.2.2.1 ∧
     (EvmWord.mod a b).getLimbN 3 = ab.2.2.2.1 := by
   intro ms ab qHat' a b
-  have ⟨hq, hr⟩ := n4_max_addback_correct a0 a1 a2 a3 b0 b1 b2 b3 hb3nz hc3_one hcarry_one
+  have ⟨hq, hr⟩ := n4_max_addback_correct hb3nz hc3_one hcarry_one
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← hq]; exact getLimbN_fromLimbs_0
   · rw [← hq]; exact getLimbN_fromLimbs_1
