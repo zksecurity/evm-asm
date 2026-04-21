@@ -1028,11 +1028,11 @@ theorem holdsFor_publicValuesIs (vals : List (BitVec 8)) (s : MachineState) :
 -- pcFree for publicValuesIs
 -- ============================================================================
 
-theorem pcFree_publicValuesIs (vals : List (BitVec 8)) : (publicValuesIs vals).pcFree := by
+theorem pcFree_publicValuesIs {vals : List (BitVec 8)} : (publicValuesIs vals).pcFree := by
   intro h hp; rw [publicValuesIs] at hp; subst hp; rfl
 
 instance (vals : List (BitVec 8)) : Assertion.PCFree (publicValuesIs vals) :=
-  ⟨pcFree_publicValuesIs vals⟩
+  ⟨pcFree_publicValuesIs⟩
 
 -- ============================================================================
 -- Disjointness lemmas for publicValuesIs composition
@@ -1107,11 +1107,11 @@ theorem holdsFor_privateInputIs (vals : List (BitVec 8)) (s : MachineState) :
 -- pcFree for privateInputIs
 -- ============================================================================
 
-theorem pcFree_privateInputIs (vals : List (BitVec 8)) : (privateInputIs vals).pcFree := by
+theorem pcFree_privateInputIs {vals : List (BitVec 8)} : (privateInputIs vals).pcFree := by
   intro h hp; rw [privateInputIs] at hp; subst hp; rfl
 
 instance (vals : List (BitVec 8)) : Assertion.PCFree (privateInputIs vals) :=
-  ⟨pcFree_privateInputIs vals⟩
+  ⟨pcFree_privateInputIs⟩
 
 -- ============================================================================
 -- Disjointness lemmas for privateInputIs composition
