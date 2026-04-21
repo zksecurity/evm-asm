@@ -67,6 +67,8 @@
     Euclidean equation `q1' * dHi + rhat' = uHi` is preserved.
   - `div128Quot_phase1b_post` — combined Phase 1b invariant covering both
     branches via case-split on the BitVec.ult check.
+  - `div128Quot_rhat_prime_lt_3dHi` — `rhat'.toNat < 3 * dHi.toNat` after
+    Phase 1b, regardless of branch (input bound for Round 2).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -901,5 +903,35 @@ theorem div128Quot_phase1b_post
   · -- Check doesn't fire: q1' = q1c, rhat' = rhatc, invariant is h_post
     simp only [q1', rhat', h_check]
     exact h_post
+
+/-- **Post-Phase-1b output bound on `rhat'`.** After Phase 1b, the
+    corrected remainder `rhat'` is bounded by `3 * dHi`:
+
+    - No-correction case: `rhat' = rhatc < 2 * dHi` (from
+      `div128Quot_rhatc_lt_2dHi`) `< 3 * dHi`.
+    - Correction case: `rhat' = rhatc + dHi`. Word addition doesn't
+      overflow because `rhatc < 2 * dHi`, `dHi < 2^32`, so
+      `rhatc + dHi < 3 * 2^32 < 2^64`.
+
+    Used by the Round 2 entry analysis: `cu_rhat_un1 = (rhat' << 32) | div_un1`
+    needs `rhat' < 2^32` to avoid OR-shift bit overlap, but the weaker
+    `rhat' < 3 * dHi < 3 * 2^32` is sufficient for `un21` overflow analysis. -/
+theorem div128Quot_rhat_prime_lt_3dHi (dHi rhatc : Word)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (h_rhatc_lt : rhatc.toNat < 2 * dHi.toNat) (rhatUn1 qDlo : Word) :
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    rhat'.toNat < 3 * dHi.toNat := by
+  intro rhat'
+  by_cases h_check : BitVec.ult rhatUn1 qDlo
+  · -- Correction: rhat' = rhatc + dHi
+    show (if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc).toNat < _
+    rw [if_pos h_check, BitVec.toNat_add]
+    have h_sum_lt : rhatc.toNat + dHi.toNat < 2^64 := by omega
+    rw [Nat.mod_eq_of_lt h_sum_lt]
+    omega
+  · -- No correction: rhat' = rhatc < 2 * dHi < 3 * dHi
+    show (if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc).toNat < _
+    rw [if_neg h_check]
+    omega
 
 end EvmAsm.Evm64
