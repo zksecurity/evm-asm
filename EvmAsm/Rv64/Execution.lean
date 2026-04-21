@@ -689,20 +689,20 @@ def stepN : Nat → MachineState → Option MachineState
 -- ============================================================================
 
 @[simp]
-theorem stepN_zero (s : MachineState) :
+theorem stepN_zero {s : MachineState} :
     stepN 0 s = some s := rfl
 
 @[simp]
-theorem stepN_succ (s : MachineState) (n : Nat) :
+theorem stepN_succ {s : MachineState} {n : Nat} :
     stepN (n + 1) s = (step s).bind (stepN n ·) := rfl
 
-theorem stepN_one (s : MachineState) :
+theorem stepN_one {s : MachineState} :
     stepN 1 s = step s := by
   simp [stepN, Option.bind]
   cases step s <;> simp
 
 /-- Composing step counts: n+m steps = n steps then m steps. -/
-theorem stepN_add (n m : Nat) (s : MachineState) :
+theorem stepN_add {n m : Nat} {s : MachineState} :
     stepN (n + m) s = (stepN n s).bind (stepN m ·) := by
   induction n generalizing s with
   | zero => simp [Option.bind]
