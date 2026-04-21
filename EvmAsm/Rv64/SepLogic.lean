@@ -194,7 +194,7 @@ theorem CompatibleWith_empty (s : MachineState) : empty.CompatibleWith s := by
          fun _ _ h => by simp [empty] at h, fun _ h => by simp [empty] at h,
          fun _ h => by simp [empty] at h, fun _ h => by simp [empty] at h⟩
 
-theorem CompatibleWith_singletonReg (r : Reg) (v : Word) (s : MachineState) :
+theorem CompatibleWith_singletonReg {r : Reg} {v : Word} {s : MachineState} :
     (singletonReg r v).CompatibleWith s ↔ s.getReg r = v := by
   constructor
   · intro ⟨hr, _, _, _, _, _⟩
@@ -212,7 +212,7 @@ theorem CompatibleWith_singletonReg (r : Reg) (v : Word) (s : MachineState) :
       simp at h; rw [← h]; exact heq
     · simp at h
 
-theorem CompatibleWith_singletonMem (a : Word) (v : Word) (s : MachineState) :
+theorem CompatibleWith_singletonMem {a : Word} {v : Word} {s : MachineState} :
     (singletonMem a v).CompatibleWith s ↔ s.getMem a = v := by
   constructor
   · intro ⟨_, hm, _, _, _, _⟩
@@ -231,7 +231,7 @@ theorem CompatibleWith_singletonMem (a : Word) (v : Word) (s : MachineState) :
       simp at h; rw [← h]; exact heq
     · simp at h
 
-theorem CompatibleWith_singletonPC (v : Word) (s : MachineState) :
+theorem CompatibleWith_singletonPC {v : Word} {s : MachineState} :
     (singletonPC v).CompatibleWith s ↔ s.pc = v := by
   constructor
   · intro ⟨_, _, _, hpc, _, _⟩
@@ -406,9 +406,9 @@ theorem holdsFor_regIs (r : Reg) (v : Word) (s : MachineState) :
   simp only [Assertion.holdsFor, regIs]
   constructor
   · rintro ⟨h, hcompat, rfl⟩
-    exact (PartialState.CompatibleWith_singletonReg r v s).mp hcompat
+    exact (PartialState.CompatibleWith_singletonReg).mp hcompat
   · intro heq
-    exact ⟨_, (PartialState.CompatibleWith_singletonReg r v s).mpr heq, rfl⟩
+    exact ⟨_, (PartialState.CompatibleWith_singletonReg).mpr heq, rfl⟩
 
 @[simp]
 theorem holdsFor_memIs (a : Word) (v : Word) (s : MachineState) :
@@ -416,9 +416,9 @@ theorem holdsFor_memIs (a : Word) (v : Word) (s : MachineState) :
   simp only [Assertion.holdsFor, memIs]
   constructor
   · rintro ⟨h, hcompat, rfl, hvalid⟩
-    exact ⟨(PartialState.CompatibleWith_singletonMem a v s).mp hcompat, hvalid⟩
+    exact ⟨(PartialState.CompatibleWith_singletonMem).mp hcompat, hvalid⟩
   · rintro ⟨heq, hvalid⟩
-    exact ⟨_, (PartialState.CompatibleWith_singletonMem a v s).mpr heq, rfl, hvalid⟩
+    exact ⟨_, (PartialState.CompatibleWith_singletonMem).mpr heq, rfl, hvalid⟩
 
 /-- The validity hypothesis that `memIs` now encodes: if `(a ↦ₘ v).holdsFor s`
     then `a` is a valid dword-aligned memory address. -/
@@ -438,9 +438,9 @@ theorem holdsFor_pcIs (v : Word) (s : MachineState) :
   simp only [Assertion.holdsFor, pcIs]
   constructor
   · rintro ⟨h, hcompat, rfl⟩
-    exact (PartialState.CompatibleWith_singletonPC v s).mp hcompat
+    exact (PartialState.CompatibleWith_singletonPC).mp hcompat
   · intro heq
-    exact ⟨_, (PartialState.CompatibleWith_singletonPC v s).mpr heq, rfl⟩
+    exact ⟨_, (PartialState.CompatibleWith_singletonPC).mpr heq, rfl⟩
 
 @[simp]
 theorem holdsFor_emp (s : MachineState) :
@@ -452,7 +452,7 @@ theorem holdsFor_emp (s : MachineState) :
 theorem holdsFor_regOwn (r : Reg) (s : MachineState) :
     (regOwn r).holdsFor s ↔ True := by
   simp only [iff_true, regOwn, Assertion.holdsFor]
-  exact ⟨_, (PartialState.CompatibleWith_singletonReg r (s.getReg r) s).mpr rfl,
+  exact ⟨_, (PartialState.CompatibleWith_singletonReg).mpr rfl,
          s.getReg r, rfl⟩
 
 @[simp]
@@ -462,7 +462,7 @@ theorem holdsFor_memOwn (a : Word) (s : MachineState) :
   constructor
   · rintro ⟨_, _, _, _, hvalid⟩; exact hvalid
   · intro hvalid
-    exact ⟨_, (PartialState.CompatibleWith_singletonMem a (s.getMem a) s).mpr rfl,
+    exact ⟨_, (PartialState.CompatibleWith_singletonMem).mpr rfl,
            s.getMem a, rfl, hvalid⟩
 
 theorem regIs_implies_regOwn (r : Reg) (v : Word) :
@@ -515,13 +515,13 @@ theorem holdsFor_sepConj_regIs_regIs {r1 r2 : Reg} {v1 v2 : Word} {s : MachineSt
     rw [regIs] at hp1 hp2; subst hp1; subst hp2
     rw [← hunion] at hcompat
     rw [PartialState.CompatibleWith_union hd] at hcompat
-    exact ⟨(PartialState.CompatibleWith_singletonReg r1 v1 s).mp hcompat.1,
-           (PartialState.CompatibleWith_singletonReg r2 v2 s).mp hcompat.2⟩
+    exact ⟨(PartialState.CompatibleWith_singletonReg).mp hcompat.1,
+           (PartialState.CompatibleWith_singletonReg).mp hcompat.2⟩
   · intro ⟨h1, h2⟩
     have hd := singletonReg_disjoint_singletonReg hne (v1 := v1) (v2 := v2)
     exact ⟨_, (PartialState.CompatibleWith_union hd).mpr
-      ⟨(PartialState.CompatibleWith_singletonReg r1 v1 s).mpr h1,
-       (PartialState.CompatibleWith_singletonReg r2 v2 s).mpr h2⟩,
+      ⟨(PartialState.CompatibleWith_singletonReg).mpr h1,
+       (PartialState.CompatibleWith_singletonReg).mpr h2⟩,
       _, _, hd, rfl, rfl, rfl⟩
 
 theorem holdsFor_sepConj_regIs_memIs {r : Reg} {v : Word} {a : Word} {w : Word}
@@ -533,14 +533,14 @@ theorem holdsFor_sepConj_regIs_memIs {r : Reg} {v : Word} {a : Word} {w : Word}
     rw [regIs] at hp1; obtain ⟨hp2, hvalid⟩ := hp2; subst hp1; subst hp2
     rw [← hunion] at hcompat
     rw [PartialState.CompatibleWith_union hd] at hcompat
-    exact ⟨(PartialState.CompatibleWith_singletonReg r v s).mp hcompat.1,
-           (PartialState.CompatibleWith_singletonMem a w s).mp hcompat.2,
+    exact ⟨(PartialState.CompatibleWith_singletonReg).mp hcompat.1,
+           (PartialState.CompatibleWith_singletonMem).mp hcompat.2,
            hvalid⟩
   · intro ⟨h1, h2, hvalid⟩
     have hd := singletonReg_disjoint_singletonMem r v a w
     exact ⟨_, (PartialState.CompatibleWith_union hd).mpr
-      ⟨(PartialState.CompatibleWith_singletonReg r v s).mpr h1,
-       (PartialState.CompatibleWith_singletonMem a w s).mpr h2⟩,
+      ⟨(PartialState.CompatibleWith_singletonReg).mpr h1,
+       (PartialState.CompatibleWith_singletonMem).mpr h2⟩,
       _, _, hd, rfl, rfl, ⟨rfl, hvalid⟩⟩
 
 -- ============================================================================
@@ -1055,12 +1055,12 @@ theorem holdsFor_sepConj_regIs_publicValuesIs {r : Reg} {v : Word}
     rw [regIs] at hp1; rw [publicValuesIs] at hp2; subst hp1; subst hp2
     rw [← hunion] at hcompat
     rw [PartialState.CompatibleWith_union hd] at hcompat
-    exact ⟨(PartialState.CompatibleWith_singletonReg r v s).mp hcompat.1,
+    exact ⟨(PartialState.CompatibleWith_singletonReg).mp hcompat.1,
            (PartialState.CompatibleWith_singletonPublicValues vals s).mp hcompat.2⟩
   · intro ⟨h1, h2⟩
     have hd := singletonReg_disjoint_singletonPublicValues r v vals
     exact ⟨_, (PartialState.CompatibleWith_union hd).mpr
-      ⟨(PartialState.CompatibleWith_singletonReg r v s).mpr h1,
+      ⟨(PartialState.CompatibleWith_singletonReg).mpr h1,
        (PartialState.CompatibleWith_singletonPublicValues vals s).mpr h2⟩,
       _, _, hd, rfl, rfl, rfl⟩
 
@@ -1134,12 +1134,12 @@ theorem holdsFor_sepConj_regIs_privateInputIs {r : Reg} {v : Word}
     rw [regIs] at hp1; rw [privateInputIs] at hp2; subst hp1; subst hp2
     rw [← hunion] at hcompat
     rw [PartialState.CompatibleWith_union hd] at hcompat
-    exact ⟨(PartialState.CompatibleWith_singletonReg r v s).mp hcompat.1,
+    exact ⟨(PartialState.CompatibleWith_singletonReg).mp hcompat.1,
            (PartialState.CompatibleWith_singletonPrivateInput vals s).mp hcompat.2⟩
   · intro ⟨h1, h2⟩
     have hd := singletonReg_disjoint_singletonPrivateInput r v vals
     exact ⟨_, (PartialState.CompatibleWith_union hd).mpr
-      ⟨(PartialState.CompatibleWith_singletonReg r v s).mpr h1,
+      ⟨(PartialState.CompatibleWith_singletonReg).mpr h1,
        (PartialState.CompatibleWith_singletonPrivateInput vals s).mpr h2⟩,
       _, _, hd, rfl, rfl, rfl⟩
 
@@ -1384,9 +1384,9 @@ theorem holdsFor_sepConj_regIs_regIs_regIs {r1 r2 r3 : Reg} {v1 v2 v3 : Word}
   have ⟨hc_r1, hc_r23⟩ := (PartialState.CompatibleWith_union hd_outer).mp hcompat
   rw [← hunion_inner] at hc_r23
   have ⟨hc_r2, hc_r3⟩ := (PartialState.CompatibleWith_union hd_inner).mp hc_r23
-  exact ⟨(PartialState.CompatibleWith_singletonReg r1 v1 s).mp hc_r1,
-         (PartialState.CompatibleWith_singletonReg r2 v2 s).mp hc_r2,
-         (PartialState.CompatibleWith_singletonReg r3 v3 s).mp hc_r3⟩
+  exact ⟨(PartialState.CompatibleWith_singletonReg).mp hc_r1,
+         (PartialState.CompatibleWith_singletonReg).mp hc_r2,
+         (PartialState.CompatibleWith_singletonReg).mp hc_r3⟩
 
 -- ============================================================================
 -- Preservation of holdsFor through setReg for disjoint registers
@@ -1400,9 +1400,9 @@ theorem holdsFor_regIs_setReg_other {r r' : Reg} {v v' : Word} {s : MachineState
   obtain ⟨h_partial, hcompat, hreg⟩ := h
   simp only [regIs] at hreg; subst hreg
   have hcompat' : (PartialState.singletonReg r v).CompatibleWith (s.setReg r' v') := by
-    apply (PartialState.CompatibleWith_singletonReg r v (s.setReg r' v')).mpr
+    apply (PartialState.CompatibleWith_singletonReg).mpr
     rw [MachineState.getReg_setReg_ne s r' r v' hne.symm]
-    exact (PartialState.CompatibleWith_singletonReg r v s).mp hcompat
+    exact (PartialState.CompatibleWith_singletonReg).mp hcompat
   exact ⟨PartialState.singletonReg r v, hcompat', rfl⟩
 
 /-- If a 2-register conjunction doesn't mention register r, it's preserved by setReg r. -/
@@ -1417,14 +1417,14 @@ theorem holdsFor_sepConj_regIs_regIs_setReg_other {r1 r2 r : Reg} {v1 v2 v' : Wo
   have hcompat' : (PartialState.singletonReg r1 v1).union (PartialState.singletonReg r2 v2) |>.CompatibleWith (s.setReg r v') := by
     apply (PartialState.CompatibleWith_union hd).mpr
     constructor
-    · apply (PartialState.CompatibleWith_singletonReg r1 v1 (s.setReg r v')).mpr
+    · apply (PartialState.CompatibleWith_singletonReg).mpr
       rw [MachineState.getReg_setReg_ne s r r1 v' hne1.symm]
       have ⟨hc1, _⟩ := (PartialState.CompatibleWith_union hd).mp hcompat
-      exact (PartialState.CompatibleWith_singletonReg r1 v1 s).mp hc1
-    · apply (PartialState.CompatibleWith_singletonReg r2 v2 (s.setReg r v')).mpr
+      exact (PartialState.CompatibleWith_singletonReg).mp hc1
+    · apply (PartialState.CompatibleWith_singletonReg).mpr
       rw [MachineState.getReg_setReg_ne s r r2 v' hne2.symm]
       have ⟨_, hc2⟩ := (PartialState.CompatibleWith_union hd).mp hcompat
-      exact (PartialState.CompatibleWith_singletonReg r2 v2 s).mp hc2
+      exact (PartialState.CompatibleWith_singletonReg).mp hc2
   exact ⟨(PartialState.singletonReg r1 v1).union (PartialState.singletonReg r2 v2), hcompat',
           PartialState.singletonReg r1 v1, PartialState.singletonReg r2 v2, hd, rfl, rfl, rfl⟩
 
@@ -1935,7 +1935,7 @@ theorem progAt_append (base : Word) (p1 p2 : List Instr) :
 
 namespace PartialState
 
-theorem CompatibleWith_singletonCode (a : Word) (i : Instr) (s : MachineState) :
+theorem CompatibleWith_singletonCode {a : Word} {i : Instr} {s : MachineState} :
     (singletonCode a i).CompatibleWith s ↔ s.code a = some i := by
   constructor
   · intro ⟨_, _, hc, _, _, _⟩
@@ -1966,9 +1966,9 @@ theorem holdsFor_instrAt (a : Word) (i : Instr) (s : MachineState) :
   simp only [Assertion.holdsFor, instrAt]
   constructor
   · rintro ⟨h, hcompat, rfl⟩
-    exact (PartialState.CompatibleWith_singletonCode a i s).mp hcompat
+    exact (PartialState.CompatibleWith_singletonCode).mp hcompat
   · intro heq
-    exact ⟨_, (PartialState.CompatibleWith_singletonCode a i s).mpr heq, rfl⟩
+    exact ⟨_, (PartialState.CompatibleWith_singletonCode).mpr heq, rfl⟩
 
 -- ============================================================================
 -- pcFree for code assertions
