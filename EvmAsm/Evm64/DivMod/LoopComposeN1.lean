@@ -33,25 +33,25 @@ open EvmAsm.Rv64
 -- ============================================================================
 
 /-- j=3 un0 at uBase(3)+0 = j=2 u1 at uBase(2)-8 -/
-theorem u_n1_j3_0_eq_j2_4088 (sp : Word) :
+theorem u_n1_j3_0_eq_j2_4088 {sp : Word} :
     (sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   divmod_addr
 
 /-- j=3 un1 at uBase(3)-8 = j=2 u2 at uBase(2)-16 -/
-theorem u_n1_j3_4088_eq_j2_4080 (sp : Word) :
+theorem u_n1_j3_4088_eq_j2_4080 {sp : Word} :
     (sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 =
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 := by
   divmod_addr
 
 /-- j=3 un2 at uBase(3)-16 = j=2 u3 at uBase(2)-24 -/
-theorem u_n1_j3_4080_eq_j2_4072 (sp : Word) :
+theorem u_n1_j3_4080_eq_j2_4072 {sp : Word} :
     (sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 =
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 := by
   divmod_addr
 
 /-- j=3 un3 at uBase(3)+4072 = j=2 uTop at uBase(2)+4064 -/
-theorem u_n1_j3_4072_eq_j2_4064 (sp : Word) :
+theorem u_n1_j3_4072_eq_j2_4064 {sp : Word} :
     (sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 =
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064 := by
   divmod_addr
@@ -64,25 +64,25 @@ theorem u_n1_j3_4072_eq_j2_4064 (sp : Word) :
 -- ============================================================================
 
 /-- j=2 un0 at uBase(2)+0 = j=1 u1 at uBase(1)-8 -/
-theorem u_n1_j2_0_eq_j1_4088 (sp : Word) :
+theorem u_n1_j2_0_eq_j1_4088 {sp : Word} :
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   divmod_addr
 
 /-- j=2 un1 at uBase(2)-8 = j=1 u2 at uBase(1)-16 -/
-theorem u_n1_j2_4088_eq_j1_4080 (sp : Word) :
+theorem u_n1_j2_4088_eq_j1_4080 {sp : Word} :
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 =
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 := by
   divmod_addr
 
 /-- j=2 un2 at uBase(2)-16 = j=1 u3 at uBase(1)-24 -/
-theorem u_n1_j2_4080_eq_j1_4072 (sp : Word) :
+theorem u_n1_j2_4080_eq_j1_4072 {sp : Word} :
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 =
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 := by
   divmod_addr
 
 /-- j=2 un3 at uBase(2)+4072 = j=1 uTop at uBase(1)+4064 -/
-theorem u_n1_j2_4072_eq_j1_4064 (sp : Word) :
+theorem u_n1_j2_4072_eq_j1_4064 {sp : Word} :
     (sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 =
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064 := by
   divmod_addr
@@ -95,25 +95,25 @@ theorem u_n1_j2_4072_eq_j1_4064 (sp : Word) :
 -- ============================================================================
 
 /-- j=1 un0 at uBase(1)+0 = j=0 u1 at uBase(0)-8 -/
-theorem u_n1_j1_0_eq_j0_4088 (sp : Word) :
+theorem u_n1_j1_0_eq_j0_4088 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   divmod_addr
 
 /-- j=1 un1 at uBase(1)-8 = j=0 u2 at uBase(0)-16 -/
-theorem u_n1_j1_4088_eq_j0_4080 (sp : Word) :
+theorem u_n1_j1_4088_eq_j0_4080 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 := by
   divmod_addr
 
 /-- j=1 un2 at uBase(1)-16 = j=0 u3 at uBase(0)-24 -/
-theorem u_n1_j1_4080_eq_j0_4072 (sp : Word) :
+theorem u_n1_j1_4080_eq_j0_4072 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 := by
   divmod_addr
 
 /-- j=1 un3 at uBase(1)+4072 = j=0 uTop at uBase(0)+4064 -/
-theorem u_n1_j1_4072_eq_j0_4064 (sp : Word) :
+theorem u_n1_j1_4072_eq_j0_4064 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064 := by
   divmod_addr

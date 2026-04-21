@@ -180,8 +180,8 @@ theorem divK_loop_n2_max_iter10_spec (bltu_1 bltu_0 : Bool)
       delta loopN2Iter10PreWithScratch loopN2Iter10Pre at ⊢
       simp only [] at hp ⊢
       have hj' := jpred_2
-      rw [hj', u_j2_0_eq_j1_4088 sp, u_j2_4088_eq_j1_4080 sp,
-          u_j2_4080_eq_j1_4072 sp, u_j2_4072_eq_j1_4064 sp] at hp
+      rw [hj', u_j2_0_eq_j1_4088, u_j2_4088_eq_j1_4080,
+          u_j2_4080_eq_j1_4072, u_j2_4072_eq_j1_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f
@@ -255,8 +255,8 @@ theorem divK_loop_n2_call_iter10_spec (bltu_1 bltu_0 : Bool)
       delta loopN2Iter10PreWithScratch loopN2Iter10Pre at ⊢
       simp only [] at hp ⊢
       have hj' := jpred_2
-      rw [hj', u_j2_0_eq_j1_4088 sp, u_j2_4088_eq_j1_4080 sp,
-          u_j2_4080_eq_j1_4072 sp, u_j2_4072_eq_j1_4064 sp] at hp
+      rw [hj', u_j2_0_eq_j1_4088, u_j2_4088_eq_j1_4080,
+          u_j2_4080_eq_j1_4072, u_j2_4072_eq_j1_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J2f H10f

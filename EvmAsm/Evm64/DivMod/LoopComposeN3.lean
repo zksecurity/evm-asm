@@ -27,25 +27,25 @@ open EvmAsm.Evm64.DivMod.AddrNorm (jpred_1)
 -- ============================================================================
 
 /-- j=1 un0 at uBase(1)+0 = j=0 u1 at uBase(0)-8 -/
-theorem u_j1_0_eq_j0_4088 (sp : Word) :
+theorem u_j1_0_eq_j0_4088 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 0 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   divmod_addr
 
 /-- j=1 un1 at uBase(1)-8 = j=0 u2 at uBase(0)-16 -/
-theorem u_j1_4088_eq_j0_4080 (sp : Word) :
+theorem u_j1_4088_eq_j0_4080 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4088 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 := by
   divmod_addr
 
 /-- j=1 un2 at uBase(1)-16 = j=0 u3 at uBase(0)-24 -/
-theorem u_j1_4080_eq_j0_4072 (sp : Word) :
+theorem u_j1_4080_eq_j0_4072 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4080 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 := by
   divmod_addr
 
 /-- j=1 un3 at uBase(1)-24 = j=0 uTop at uBase(0)-32 -/
-theorem u_j1_4072_eq_j0_4064 (sp : Word) :
+theorem u_j1_4072_eq_j0_4064 {sp : Word} :
     (sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4072 =
     (sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat) + signExtend12 4064 := by
   divmod_addr
@@ -108,8 +108,8 @@ theorem divK_loop_n3_max_skip_skip_spec
       delta loopBodyN3SkipPost loopBodySkipPost loopExitPostN3 loopExitPost at hp
       simp only [] at hp ⊢
       have hj' := jpred_1
-      rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
-          u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J1f J0f
@@ -412,8 +412,8 @@ theorem divK_loop_n3_max_max_spec
       delta loopIterPostN3Max loopExitPostN3 loopExitPost at hp
       simp only [] at hp ⊢
       have hj' := jpred_1
-      rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
-          u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J1f J0f
@@ -498,8 +498,8 @@ theorem divK_loop_n3_call_call_spec
       delta loopIterPostN3Call loopExitPostN3 loopExitPost at hp
       simp only [] at hp ⊢
       have hj' := jpred_1
-      rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
-          u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J1f J0f
@@ -586,8 +586,8 @@ theorem divK_loop_n3_max_call_spec
       delta loopIterPostN3Max loopExitPostN3 loopExitPost at hp
       simp only [] at hp ⊢
       have hj' := jpred_1
-      rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
-          u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J1f J0f
@@ -671,8 +671,8 @@ theorem divK_loop_n3_call_max_spec
       delta loopIterPostN3Call loopExitPostN3 loopExitPost at hp
       simp only [] at hp ⊢
       have hj' := jpred_1
-      rw [hj', u_j1_0_eq_j0_4088 sp, u_j1_4088_eq_j0_4080 sp,
-          u_j1_4080_eq_j0_4072 sp, u_j1_4072_eq_j0_4064 sp] at hp
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     J1f J0f
