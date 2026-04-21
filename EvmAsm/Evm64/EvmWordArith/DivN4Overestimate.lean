@@ -315,8 +315,7 @@ theorem mulsubN4_c3_eq_one_v3_zero (q v0 v1 v2 u0 u1 u2 u3 : Word)
   have h := mulsubN4_c3_le_one_v3_zero q v0 v1 v2 u0 u1 u2 u3
   have hc3_pos : 0 < (mulsubN4 q v0 v1 v2 0 u0 u1 u2 u3).2.2.2.2.toNat := by
     exact Nat.pos_of_ne_zero (by intro h0; exact hc3_nz (BitVec.eq_of_toNat_eq h0))
-  have h1 := word_toNat_1
-  exact BitVec.eq_of_toNat_eq (by omega)
+  exact BitVec.eq_of_toNat_eq (by have := word_toNat_1; omega)
 
 -- ============================================================================
 -- Double addback: second carry is 1 when first carry was 0
