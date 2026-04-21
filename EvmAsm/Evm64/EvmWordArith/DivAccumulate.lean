@@ -295,7 +295,7 @@ theorem div_of_val256_eq_div
   have ha : a.toNat = val256 a0 a1 a2 a3 := (val256_eq_fromLimbs_toNat a0 a1 a2 a3).symm
   have hb : b.toNat = val256 b0 b1 b2 b3 := (val256_eq_fromLimbs_toNat b0 b1 b2 b3).symm
   have hq_val : q.toNat = val256 q0 q1 q2 q3 := (val256_eq_fromLimbs_toNat q0 q1 q2 q3).symm
-  have hbnz' : b ≠ 0 := fromLimbs_ne_zero_of_or b0 b1 b2 b3 hbnz
+  have hbnz' : b ≠ 0 := fromLimbs_ne_zero_of_or hbnz
   -- q.toNat = a.toNat / b.toNat
   have hq_nat : q.toNat = a.toNat / b.toNat := by rw [hq_val, ha, hb]; exact hq
   -- (EvmWord.div a b).toNat = a.toNat / b.toNat
@@ -321,7 +321,7 @@ theorem mod_of_val256_eq_mod
   have ha : a.toNat = val256 a0 a1 a2 a3 := (val256_eq_fromLimbs_toNat a0 a1 a2 a3).symm
   have hb : b.toNat = val256 b0 b1 b2 b3 := (val256_eq_fromLimbs_toNat b0 b1 b2 b3).symm
   have hr_val : r.toNat = val256 r0 r1 r2 r3 := (val256_eq_fromLimbs_toNat r0 r1 r2 r3).symm
-  have hbnz' : b ≠ 0 := fromLimbs_ne_zero_of_or b0 b1 b2 b3 hbnz
+  have hbnz' : b ≠ 0 := fromLimbs_ne_zero_of_or hbnz
   have hr_nat : r.toNat = a.toNat % b.toNat := by rw [hr_val, ha, hb]; exact hr
   have hmod : (EvmWord.mod a b).toNat = a.toNat % b.toNat := by
     unfold EvmWord.mod; rw [if_neg hbnz']; exact BitVec.toNat_umod
