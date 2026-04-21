@@ -343,7 +343,7 @@ theorem cpsTriple_extend_code {entry exit_ : Word} {cr cr' : CodeReq} {P Q : Ass
     (h : cpsTriple entry exit_ cr P Q) :
     cpsTriple entry exit_ cr' P Q := by
   intro R hR s hcr' hPR hpc
-  exact h R hR s (CodeReq.SatisfiedBy_mono s hmono hcr') hPR hpc
+  exact h R hR s (CodeReq.SatisfiedBy_mono hmono hcr') hPR hpc
 
 /-- Monotonicity for cpsBranch: extend to a larger CodeReq. -/
 theorem cpsBranch_extend_code {entry : Word} {cr cr' : CodeReq}
@@ -352,7 +352,7 @@ theorem cpsBranch_extend_code {entry : Word} {cr cr' : CodeReq}
     (h : cpsBranch entry cr P exit_t Q_t exit_f Q_f) :
     cpsBranch entry cr' P exit_t Q_t exit_f Q_f := by
   intro R hR s hcr' hPR hpc
-  exact h R hR s (CodeReq.SatisfiedBy_mono s hmono hcr') hPR hpc
+  exact h R hR s (CodeReq.SatisfiedBy_mono hmono hcr') hPR hpc
 
 /-- Sequential composition: cpsTriple followed by cpsBranch, same CodeReq.
     Unlike `cpsTriple_seq_cpsBranch`, does not require disjointness.
@@ -537,7 +537,7 @@ theorem cpsNBranch_extend_code {entry : Word} {cr cr' : CodeReq}
     (h : cpsNBranch entry cr P exits) :
     cpsNBranch entry cr' P exits := by
   intro R hR s hcr' hPR hpc
-  exact h R hR s (CodeReq.SatisfiedBy_mono s hmono hcr') hPR hpc
+  exact h R hR s (CodeReq.SatisfiedBy_mono hmono hcr') hPR hpc
 
 /-- Frame a `cpsNBranch` on the left by a PC-free frame `F`: the pre-assertion
     becomes `P ** F` and each exit assertion in the list becomes `ex.2 ** F`.

@@ -2624,7 +2624,7 @@ theorem CodeReq.SatisfiedBy_preserved (cr : CodeReq) (k : Nat) (s s' : MachineSt
   exact hcr a i hcri
 
 /-- Monotonicity: if cr2 subsumes cr1, any state satisfying cr2 also satisfies cr1. -/
-theorem CodeReq.SatisfiedBy_mono {cr1 cr2 : CodeReq} (s : MachineState)
+theorem CodeReq.SatisfiedBy_mono {cr1 cr2 : CodeReq} {s : MachineState}
     (hmono : ∀ a i, cr1 a = some i → cr2 a = some i)
     (h : cr2.SatisfiedBy s) : cr1.SatisfiedBy s :=
   fun a i hcr1 => h a i (hmono a i hcr1)
