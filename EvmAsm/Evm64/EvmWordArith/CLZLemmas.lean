@@ -211,7 +211,7 @@ private theorem pipeline_snd_chain {val : Word}
   unfold clzS0; rw [clzStep_snd_of_pass hval]
 
 /-- If the pipeline count is 0, all 5 stages passed and the pipeline value = val. -/
-private theorem clzPipeline_zero (val : Word) (h : (clzPipeline val).1 = 0) :
+private theorem clzPipeline_zero {val : Word} (h : (clzPipeline val).1 = 0) :
     (clzPipeline val).2 = val := by
   rw [clzPipeline_unfold] at h
   have ⟨hc3, hv3⟩ := clzStep_fst_zero (by have := se_2; omega) (clzS3_no_overflow val) h
@@ -235,7 +235,7 @@ theorem clz_zero_imp_msb {val : Word} (h : (clzResult val).1 = 0) :
   split at h
   · -- Stage 5 passed: pipeline count = 0
     rename_i h5_pass
-    have hsnd := clzPipeline_zero val h
+    have hsnd := clzPipeline_zero h
     rw [hsnd] at h5_pass
     exact toNat_ge_of_ushiftRight_63 h5_pass
   · -- Stage 5 failed: pipeline.1 + 1 = 0, contradicts bound ≤ 62
@@ -254,7 +254,7 @@ theorem clz_zero_imp_snd {val : Word} (h : (clzResult val).1 = 0) :
   rw [clzResult_fst_eq] at h
   have hbnd := clzPipeline_fst_le val
   split at h
-  · rw [clzResult_snd_eq]; exact clzPipeline_zero val h
+  · rw [clzResult_snd_eq]; exact clzPipeline_zero h
   · exfalso
     have h0 : ((clzPipeline val).1 + signExtend12 1).toNat = 0 := by rw [h]; rfl
     rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by have := se_1; omega)] at h0
@@ -299,7 +299,7 @@ private theorem clzStep_of_pass {K M_s : Nat} {m : Word} {p : Word × Word}
   unfold clzStep; exact Prod.ext (if_pos hpass) (if_pos hpass)
 
 /-- When MSB is set, the entire pipeline is the identity (all stages pass). -/
-private theorem clzPipeline_of_msb (val : Word) (hmsb : val >>> (63 : Nat) ≠ 0) :
+private theorem clzPipeline_of_msb {val : Word} (hmsb : val >>> (63 : Nat) ≠ 0) :
     clzPipeline val = ((0 : Word), val) := by
   have h32 := ushiftRight_ne_zero_of_msb (K := 32) (by omega) hmsb
   have h48 := ushiftRight_ne_zero_of_msb (K := 48) (by omega) hmsb
@@ -321,7 +321,7 @@ private theorem clzPipeline_of_msb (val : Word) (hmsb : val >>> (63 : Nat) ≠ 0
 /-- When the MSB is set (val ≥ 2^63), CLZ reports shift=0. -/
 theorem msb_imp_clz_zero {val : Word} (hmsb : val >>> (63 : Nat) ≠ 0) :
     (clzResult val).1 = 0 := by
-  rw [clzResult_fst_eq, clzPipeline_of_msb val hmsb]; exact if_pos hmsb
+  rw [clzResult_fst_eq, clzPipeline_of_msb hmsb]; exact if_pos hmsb
 
 -- ============================================================================
 -- Biconditional characterization
