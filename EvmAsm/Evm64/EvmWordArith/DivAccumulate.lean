@@ -31,17 +31,17 @@ namespace EvmWord
 -- ============================================================================
 
 /-- val256 with upper 3 limbs zero: reduces to single limb. -/
-theorem val256_zero_upper_3 (q0 : Word) :
+theorem val256_zero_upper_3 {q0 : Word} :
     val256 q0 0 0 0 = q0.toNat := by
   unfold val256; simp
 
 /-- val256 with upper 2 limbs zero: reduces to 2-limb value. -/
-theorem val256_zero_upper_2 (q0 q1 : Word) :
+theorem val256_zero_upper_2 {q0 q1 : Word} :
     val256 q0 q1 0 0 = q0.toNat + q1.toNat * 2^64 := by
   unfold val256; simp
 
 /-- val256 with upper 1 limb zero: reduces to 3-limb value. -/
-theorem val256_zero_upper_1 (q0 q1 q2 : Word) :
+theorem val256_zero_upper_1 {q0 q1 q2 : Word} :
     val256 q0 q1 q2 0 = q0.toNat + q1.toNat * 2^64 + q2.toNat * 2^128 := by
   unfold val256; simp
 
@@ -158,7 +158,7 @@ theorem div_correct_n4_no_shift
   have hv := val256_pos_of_or_ne_zero hbnz
   have ⟨_, hr_lt⟩ := remainder_lt_of_ge_floor hv hmulsub hge
   -- val256(q0, 0, 0, 0) = q0.toNat
-  have hq_val : val256 q0 0 0 0 = q0.toNat := val256_zero_upper_3 q0
+  have hq_val : val256 q0 0 0 0 = q0.toNat := val256_zero_upper_3
   have hmulsub' : val256 a0 a1 a2 a3 =
       val256 q0 0 0 0 * val256 b0 b1 b2 b3 + val256 r0 r1 r2 r3 := by
     rw [hq_val]; exact hmulsub

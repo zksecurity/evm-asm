@@ -260,7 +260,7 @@ theorem n4_max_double_addback_correct {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
   -- Rewrite the Euclidean equation in val256_euclidean_to_div_mod's expected form.
   have hq_hat''_toNat : qHat''.toNat = (signExtend12 (4095 : BitVec 12) : Word).toNat - 2 := by
     simp only [qHat'']; decide
-  have hq_val : val256 qHat'' 0 0 0 = qHat''.toNat := val256_zero_upper_3 qHat''
+  have hq_val : val256 qHat'' 0 0 0 = qHat''.toNat := val256_zero_upper_3
   have heuclid : val256 a0 a1 a2 a3 =
       val256 qHat'' 0 0 0 * val256 b0 b1 b2 b3 +
       val256 ab'.1 ab'.2.1 ab'.2.2.1 ab'.2.2.2.1 := by
