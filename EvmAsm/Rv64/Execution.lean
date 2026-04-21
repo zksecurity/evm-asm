@@ -605,17 +605,17 @@ theorem step_sh_trap {s : MachineState} {rs1 rs2 : Reg} {offset : BitVec 12}
   omega
 
 /-- step for EBREAK (always traps). -/
-theorem step_ebreak (s : MachineState)
+theorem step_ebreak {s : MachineState}
     (hfetch : s.code s.pc = some .EBREAK) :
     step s = none := by
   simp [step, hfetch]
 
-theorem step_ecall_halt (s : MachineState)
+theorem step_ecall_halt {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL) (ht0 : s.getReg .x5 = 0) :
     step s = none := by
   simp [step, hfetch, ht0]
 
-theorem step_ecall_continue (s : MachineState)
+theorem step_ecall_continue {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 ≠ 0)
     (ht0_nw : s.getReg .x5 ≠ (0x02 : Word))
@@ -626,7 +626,7 @@ theorem step_ecall_continue (s : MachineState)
   simp only [step, hfetch, beq_iff_eq, ht0, ht0_nw, ht0_nc, ht0_nhl, ht0_nhr, ↓reduceIte]
 
 /-- COMMIT syscall (SP1 convention: t0 = 0x10) appends (a0, a1) to committed outputs. -/
-theorem step_ecall_commit (s : MachineState)
+theorem step_ecall_commit {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0x10) :
     step s =
@@ -634,7 +634,7 @@ theorem step_ecall_commit (s : MachineState)
   simp [step, hfetch, ht0]
 
 /-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends bytes from memory. -/
-theorem step_ecall_write_public (s : MachineState)
+theorem step_ecall_write_public {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0x02)
     (hfd : s.getReg .x10 = 13) :
@@ -643,7 +643,7 @@ theorem step_ecall_write_public (s : MachineState)
   simp [step, hfetch, ht0, hfd]
 
 /-- WRITE syscall to non-public-values fd (t0 = 0x02, fd ≠ 13) just advances PC. -/
-theorem step_ecall_write_other (s : MachineState)
+theorem step_ecall_write_other {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0x02)
     (hfd : s.getReg .x10 ≠ (13 : Word)) :
@@ -652,7 +652,7 @@ theorem step_ecall_write_other (s : MachineState)
   simp (config := { decide := true })
 
 /-- HINT_LEN syscall (SP1 convention: t0 = 0xF0) returns privateInput.length in a0. -/
-theorem step_ecall_hint_len (s : MachineState)
+theorem step_ecall_hint_len {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0xF0) :
     step s =
@@ -660,7 +660,7 @@ theorem step_ecall_hint_len (s : MachineState)
   simp [step, hfetch, ht0]
 
 /-- HINT_READ syscall (SP1 convention: t0 = 0xF1) reads bytes from privateInput into memory as LE dwords. -/
-theorem step_ecall_hint_read (s : MachineState)
+theorem step_ecall_hint_read {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0xF1)
     (hsuff : (s.getReg .x11).toNat ≤ s.privateInput.length) :
@@ -672,7 +672,7 @@ theorem step_ecall_hint_read (s : MachineState)
   simp [step, hfetch, ht0, hsuff]
 
 /-- HINT_READ syscall traps when not enough input is available. -/
-theorem step_ecall_hint_read_trap (s : MachineState)
+theorem step_ecall_hint_read_trap {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0xF1)
     (hinsuff : ¬ ((s.getReg .x11).toNat ≤ s.privateInput.length)) :

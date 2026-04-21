@@ -357,7 +357,7 @@ namespace EvmAsm.Rv64
     holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR)))
   refine ⟨0, s, rfl, ?_, hPR⟩
-  simp only [isHalted, step_ecall_halt s hfetch hx5, Option.isNone]
+  simp only [isHalted, step_ecall_halt hfetch hx5, Option.isNone]
 
 -- ============================================================================
 -- 3-register ALU specs (all distinct)
