@@ -58,6 +58,8 @@
     actual `q1c` and `rhatc` regardless of which branch is taken.
   - `div128Quot_q1c_lt_pow33` — `q1c < 2^33` after Phase 1a correction,
     regardless of branch (Phase 1b prerequisite).
+  - `div128Quot_rhatc_lt_2dHi` — `rhatc.toNat < 2 * dHi.toNat` after Phase 1a,
+    regardless of branch (Phase 1b overflow-bound prerequisite).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -739,6 +741,56 @@ theorem div128Quot_q1c_lt_pow33 (uHi dHi : Word) (hdHi_ge : dHi.toNat ≥ 2^31) 
     rw [h_eq, Nat.add_mod_right]
     have hq1_lt_word : q1.toNat - 1 < 2^64 := by have := q1.isLt; omega
     rw [Nat.mod_eq_of_lt hq1_lt_word]
+    omega
+
+/-- **Phase 1b overflow-bound prerequisite — `rhatc.toNat < 2 * dHi.toNat`.**
+
+    After Phase 1a's hi1-correction, the post-correction remainder `rhatc`
+    is bounded by `2 * dHi`, regardless of which branch was taken. This
+    bounds Phase 1b's analysis (where `rhat' = rhatc + dHi` could have
+    overflowed without it).
+
+    - No-correction case (`hi1 = 0`): `rhatc = rhat = uHi mod dHi < dHi`
+      (using the Euclidean equation + `Nat.mod_lt`).
+    - Correction case (`hi1 ≠ 0`): `rhatc = rhat + dHi < 2 * dHi` (since
+      `rhat < dHi`, and the Word addition doesn't overflow because
+      `dHi < 2^32` ⟹ `rhat + dHi < 2^33 < 2^64`). -/
+theorem div128Quot_rhatc_lt_2dHi (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0) (hdHi_lt : dHi.toNat < 2^32) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    rhatc.toNat < 2 * dHi.toNat := by
+  intro q1 rhat hi1 rhatc
+  -- rhat.toNat < dHi.toNat (Phase 1a output: rhat = uHi mod dHi)
+  have hq1_eq : q1.toNat = uHi.toNat / dHi.toNat := rv64_divu_toNat uHi dHi hdHi_ne
+  have h_eucl : q1.toNat * dHi.toNat + rhat.toNat = uHi.toNat :=
+    div128Quot_first_round_euclidean uHi dHi hdHi_ne
+  have hdHi_pos : 0 < dHi.toNat := by
+    rcases Nat.eq_zero_or_pos dHi.toNat with h | h
+    · exfalso; apply hdHi_ne; exact BitVec.eq_of_toNat_eq (by simp [h])
+    · exact h
+  have hrhat_lt_dHi : rhat.toNat < dHi.toNat := by
+    have h_dam : dHi.toNat * (uHi.toNat / dHi.toNat) + uHi.toNat % dHi.toNat = uHi.toNat :=
+      Nat.div_add_mod _ _
+    have h_eucl_div :
+        (uHi.toNat / dHi.toNat) * dHi.toNat + rhat.toNat = uHi.toNat := by
+      rw [← hq1_eq]; exact h_eucl
+    have h_comm :
+        dHi.toNat * (uHi.toNat / dHi.toNat) = (uHi.toNat / dHi.toNat) * dHi.toNat :=
+      Nat.mul_comm _ _
+    have h_mod_lt : uHi.toNat % dHi.toNat < dHi.toNat := Nat.mod_lt _ hdHi_pos
+    omega
+  by_cases h_hi1 : hi1 = 0
+  · -- rhatc = rhat < dHi < 2 * dHi
+    simp only [rhatc, h_hi1, ↓reduceIte]
+    omega
+  · -- rhatc = rhat + dHi (Word add). Word add doesn't overflow (rhat + dHi < 2^33).
+    simp only [rhatc, h_hi1, ↓reduceIte]
+    rw [BitVec.toNat_add]
+    have h_sum_lt : rhat.toNat + dHi.toNat < 2^64 := by omega
+    rw [Nat.mod_eq_of_lt h_sum_lt]
     omega
 
 end EvmAsm.Evm64
