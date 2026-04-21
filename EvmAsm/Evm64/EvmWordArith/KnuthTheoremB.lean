@@ -42,6 +42,8 @@
     shift: 4-limb normalized value + overflow = `val256(a) * 2^clz(b3)`.
   - `knuth_theorem_b_from_clz` — **full Word-level Knuth B corollary** from raw
     (a, b, hb3nz, hshift_nz, hcall). No normalization hypotheses needed.
+  - `div128Quot_dHi_ge_pow31` — under `vTop ≥ 2^63`, the algorithm's `dHi =
+    vTop >>> 32` satisfies `dHi ≥ 2^31` (first Piece B building block).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -501,5 +503,21 @@ theorem knuth_theorem_b_from_clz
     (clzResult b3).1.toNat
     (by linarith [hnorm_u])
     hnorm_v hb3prime hu4_lt
+
+/-- **Piece B entry — first building block for `div128Quot` correctness.**
+
+    Under the normalization precondition `vTop ≥ 2^63`, the `div128Quot`
+    algorithm's `dHi = vTop >>> 32` satisfies `dHi.toNat ≥ 2^31`.
+
+    Feeds subsequent Piece B proofs that bound the first-round quotient
+    `q1 = rv64_divu uHi dHi` (in particular `q1 < 2^33` when `uHi < 2^64`). -/
+theorem div128Quot_dHi_ge_pow31 (vTop : Word) (h : vTop.toNat ≥ 2^63) :
+    (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+  rw [BitVec.toNat_ushiftRight]
+  have h32 : (32 : BitVec 6).toNat = 32 := by decide
+  rw [h32, Nat.shiftRight_eq_div_pow]
+  have h1 : (2:Nat)^63 / 2^32 ≤ vTop.toNat / 2^32 := Nat.div_le_div_right h
+  have h2 : (2:Nat)^63 / 2^32 = 2^31 := by decide
+  omega
 
 end EvmAsm.Evm64
