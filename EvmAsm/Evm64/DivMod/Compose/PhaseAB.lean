@@ -143,10 +143,10 @@ private theorem divK_phaseB_n4_nm1_x8 :
 
 -- Address normalization lemmas `phB_off_{4..28}` now live in `Compose/Base.lean`
 -- and are shared with the MOD-side files (ModPhaseB / ModPhaseBn3 / ModPhaseBn21).
-private theorem phB_i2_8 (base : Word) : (base + 60 : Word) + 8 = base + 68 := by bv_addr
-private theorem phB_addi_4 (base : Word) : (base + 68 : Word) + 4 = base + 72 := by bv_addr
-private theorem phB_bne_4 (base : Word) : (base + 72 : Word) + 4 = base + 76 := by bv_addr
-private theorem phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
+private theorem phB_i2_8 {base : Word} : (base + 60 : Word) + 8 = base + 68 := by bv_addr
+private theorem phB_addi_4 {base : Word} : (base + 68 : Word) + 4 = base + 72 := by bv_addr
+private theorem phB_bne_4 {base : Word} : (base + 72 : Word) + 4 = base + 76 := by bv_addr
+private theorem phB_t_20 {base : Word} : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
 private theorem phB_sp24_32 (sp : Word) : (sp + (24 : Word) + (32 : Word)) = sp + 56 := by bv_addr
 
 -- ============================================================================
@@ -463,11 +463,11 @@ private theorem divK_phaseB_n1_nm1_x8 :
   decide
 
 -- Cascade address normalization
-private theorem phB_step1_4 (base : Word) : (base + 76 : Word) + 4 = base + 80 := by bv_addr
-private theorem phB_step1_8 (base : Word) : (base + 80 : Word) + 4 = base + 84 := by bv_addr
-private theorem phB_step2_4 (base : Word) : (base + 84 : Word) + 4 = base + 88 := by bv_addr
-private theorem phB_step2_8 (base : Word) : (base + 88 : Word) + 4 = base + 92 := by bv_addr
-private theorem phB_fall_4 (base : Word) : (base + 92 : Word) + 4 = base + 96 := by bv_addr
+private theorem phB_step1_4 {base : Word} : (base + 76 : Word) + 4 = base + 80 := by bv_addr
+private theorem phB_step1_8 {base : Word} : (base + 80 : Word) + 4 = base + 84 := by bv_addr
+private theorem phB_step2_4 {base : Word} : (base + 84 : Word) + 4 = base + 88 := by bv_addr
+private theorem phB_step2_8 {base : Word} : (base + 88 : Word) + 4 = base + 92 := by bv_addr
+private theorem phB_fall_4 {base : Word} : (base + 92 : Word) + 4 = base + 96 := by bv_addr
 
 -- Tail memory address normalization
 private theorem phB_sp16_32 (sp : Word) : (sp + (16 : Word) + (32 : Word)) = sp + 48 := by bv_addr
