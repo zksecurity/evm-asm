@@ -300,7 +300,7 @@ theorem shiftLeft_geq_256 (v : EvmWord) (n : Nat) (h : n ≥ 256) :
     `getLimb (v <<< n) i = (getLimbN v (i - ls) <<< bs) ||| ((getLimbN v (i - ls - 1) >>> (64 - bs)) &&& mask)`
 
     The condition `i * 64 ≥ n` ensures all 64 extracted bits come from `v`. -/
-theorem getLimb_shiftLeft (v : EvmWord) (n : Nat) (i : Fin 4) (hge : i.val * 64 ≥ n) :
+theorem getLimb_shiftLeft {v : EvmWord} {n : Nat} {i : Fin 4} (hge : i.val * 64 ≥ n) :
     getLimb (v <<< n) i =
     (getLimbN v (i.val - n / 64) <<< (n % 64)) |||
     ((getLimbN v (i.val - n / 64 - 1) >>> (64 - n % 64)) &&&
@@ -356,7 +356,7 @@ theorem getLimb_shiftLeft (v : EvmWord) (n : Nat) (i : Fin 4) (hge : i.val * 64 
 
 /-- **SHL bridge lemma (first limb).** When `i = n / 64`, the i-th limb of `v <<< n` equals
     the lowest limb of `v` shifted left by `n % 64`. -/
-theorem getLimb_shiftLeft_eq_div (v : EvmWord) (n : Nat) (i : Fin 4) (heq : i.val = n / 64) :
+theorem getLimb_shiftLeft_eq_div {v : EvmWord} {n : Nat} {i : Fin 4} (heq : i.val = n / 64) :
     getLimb (v <<< n) i = getLimbN v 0 <<< (n % 64) := by
   simp only [getLimb]
   rw [getLimbN_eq_extractLsb']
@@ -375,7 +375,7 @@ theorem getLimb_shiftLeft_eq_div (v : EvmWord) (n : Nat) (i : Fin 4) (heq : i.va
 
 /-- **SHL bridge lemma (zero limb).** When `(i + 1) * 64 ≤ n`, the i-th limb of `v <<< n`
     is zero (all extracted bits are below the shift amount). -/
-theorem getLimb_shiftLeft_low (v : EvmWord) (n : Nat) (i : Fin 4) (hlo : (i.val + 1) * 64 ≤ n) :
+theorem getLimb_shiftLeft_low {v : EvmWord} {n : Nat} {i : Fin 4} (hlo : (i.val + 1) * 64 ≤ n) :
     getLimb (v <<< n) i = 0 := by
   simp only [getLimb]
   ext j
@@ -385,7 +385,7 @@ theorem getLimb_shiftLeft_low (v : EvmWord) (n : Nat) (i : Fin 4) (hlo : (i.val 
   simp [hlt]
 
 /-- Shifting a 256-bit word right by 0 is the identity on each limb. -/
-theorem getLimb_ushiftRight_zero (v : EvmWord) (i : Fin 4) :
+theorem getLimb_ushiftRight_zero {v : EvmWord} {i : Fin 4} :
     getLimb (v >>> 0) i = v.getLimb i := by
   simp [getLimb]
 
@@ -485,7 +485,7 @@ theorem eq_zero_iff_limbs (a : EvmWord) :
 /-- For merge limbs (all 64 extracted bits within v), sshiftRight agrees with ushiftRight.
     When `(i+1)*64 + n ≤ 256`, all bit positions `i*64 + j` (j < 64) satisfy
     `n + (i*64 + j) < 256`, so no sign extension occurs. -/
-theorem getLimb_sshiftRight_eq_ushiftRight (v : EvmWord) (n : Nat) (i : Fin 4)
+theorem getLimb_sshiftRight_eq_ushiftRight {v : EvmWord} {n : Nat} {i : Fin 4}
     (h : (i.val + 1) * 64 + n ≤ 256) :
     getLimb (BitVec.sshiftRight v n) i = getLimb (v >>> n) i := by
   simp only [getLimb]
@@ -500,7 +500,7 @@ theorem getLimb_sshiftRight_eq_ushiftRight (v : EvmWord) (n : Nat) (i : Fin 4)
 /-- **SAR bridge lemma (last limb).** When `i + n/64 = 3`, the i-th limb of
     `sshiftRight v n` equals `sshiftRight (v.getLimb 3) (n % 64)`.
     This is the limb that gets arithmetic (sign-preserving) shift. -/
-theorem getLimb_sshiftRight_last (v : EvmWord) (n : Nat) (i : Fin 4)
+theorem getLimb_sshiftRight_last {v : EvmWord} {n : Nat} {i : Fin 4}
     (hiL : i.val + n / 64 = 3) :
     getLimb (BitVec.sshiftRight v n) i =
     BitVec.sshiftRight (v.getLimb ⟨3, by omega⟩) (n % 64) := by
@@ -526,7 +526,7 @@ theorem getLimb_sshiftRight_last (v : EvmWord) (n : Nat) (i : Fin 4)
 
 /-- **SAR bridge lemma (sign limb via getLimb 3).** When `i + n/64 ≥ 4`, the i-th limb of
     `sshiftRight v n` equals `sshiftRight (v.getLimb 3) 63`. -/
-theorem getLimb_sshiftRight_sign' (v : EvmWord) (n : Nat) (i : Fin 4)
+theorem getLimb_sshiftRight_sign' {v : EvmWord} {n : Nat} {i : Fin 4}
     (hiL : i.val + n / 64 ≥ 4) :
     getLimb (BitVec.sshiftRight v n) i =
     BitVec.sshiftRight (v.getLimb ⟨3, by omega⟩) 63 := by
@@ -557,7 +557,7 @@ theorem getLimb_sshiftRight_sign' (v : EvmWord) (n : Nat) (i : Fin 4)
 theorem getLimb_sshiftRight_geq_256 (v : EvmWord) (n : Nat) (h : n ≥ 256) (i : Fin 4) :
     getLimb (BitVec.sshiftRight v n) i =
     BitVec.sshiftRight (v.getLimb ⟨3, by omega⟩) 63 :=
-  getLimb_sshiftRight_sign' v n i (by omega)
+  getLimb_sshiftRight_sign' (by omega)
 
 /-- `getLimb` of `fromLimbs` with a constant function. -/
 theorem getLimb_fromLimbs_const (w : Word) (i : Fin 4) :
