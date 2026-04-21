@@ -1314,7 +1314,7 @@ theorem sepConj_extract_pure_end3 (A B C : Assertion) (P : Prop) :
 
     Useful to reconcile `cpsBranch_frameR` output with a theorem
     statement written in right-associated form. -/
-theorem sepConj_chain_push_outer (A B C D : Assertion) :
+theorem sepConj_chain_push_outer {A B C D : Assertion} :
     ∀ h, (A ** B ** C ** D) h → ((A ** B ** C) ** D) h := by
   intro h hp
   refine (sepConj_assoc _ _ _ _).mpr ?_
@@ -1329,7 +1329,7 @@ theorem sepConj_chain_push_outer (A B C D : Assertion) :
     The outer left-associated shape is what `cpsBranch_frameR` produces
     when framed with `⌜Q⌝`; the right-associated output is what downstream
     consumers with a single accumulated pure fact expect. -/
-theorem sepConj_merge_pure_and_end3 (A B C : Assertion) (P Q : Prop) :
+theorem sepConj_merge_pure_and_end3 {A B C : Assertion} {P Q : Prop} :
     ∀ h, ((A ** B ** C ** ⌜P⌝) ** ⌜Q⌝) h → (A ** B ** C ** ⌜Q ∧ P⌝) h := by
   intro h hp
   obtain ⟨hL, hR, _hdLR, huLR, hL_prop, ⟨eR, hQ⟩⟩ := hp

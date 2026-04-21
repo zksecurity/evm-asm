@@ -491,9 +491,9 @@ theorem rlp_phase1_step_spec_acc (Acc : Prop) (v5 v10 : Word)
   -- hf has pre `(regs_3chain) ** ⌜Acc⌝`; target theorem has the 4-chain
   -- `regs ** ⌜Acc⌝`. Reshape via the associativity helper.
   exact cpsBranch_weaken
-    (sepConj_chain_push_outer _ _ _ _)
-    (sepConj_merge_pure_and_end3 _ _ _ _ _)
-    (sepConj_merge_pure_and_end3 _ _ _ _ _)
+    sepConj_chain_push_outer
+    sepConj_merge_pure_and_end3
+    sepConj_merge_pure_and_end3
     hf
 
 /-- Bundled exit postcondition with a single accumulated dispatch fact. -/
