@@ -978,4 +978,52 @@ theorem div128Quot_phase1a_quotient_bound (uHi dHi : Word)
     have h_div_lt := (Nat.div_lt_iff_lt_mul hdHi_pos).mpr h_lt
     omega
 
+/-- **KB-2: Phase 1b quotient bound.** After Phase 1b's multiplication-check
+    correction, the corrected quotient `q1'` is within 2 below the true
+    64/32 quotient `uHi / dHi`:
+
+    ```
+    uHi.toNat / dHi.toNat - 2 ≤ q1'.toNat ≤ uHi.toNat / dHi.toNat
+    ```
+
+    Composes KB-1 (`div128Quot_phase1a_quotient_bound`: q1c ∈ [uHi/dHi - 1,
+    uHi/dHi]) with the Phase 1b decrement property:
+
+    - Check doesn't fire → `q1' = q1c` (bound preserved).
+    - Check fires → `q1' = q1c - 1` (both bounds shift down by 1, using
+      `div128Quot_phase1b_check_implies_q1c_pos` for the "no underflow"
+      justification).
+
+    Second concrete lemma of the top-down Knuth-B Piece B attack. -/
+theorem div128Quot_phase1b_quotient_bound (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0) (hdHi_lt : dHi.toNat < 2^32)
+    (dLo rhatUn1 : Word) :
+    let q1 := rv64_divu uHi dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    q1'.toNat + 2 ≥ uHi.toNat / dHi.toNat ∧
+    q1'.toNat ≤ uHi.toNat / dHi.toNat := by
+  intro q1 hi1 q1c q1'
+  -- Extract KB-1 bounds at the right types (matching our local let-chain).
+  have h_kb1 := div128Quot_phase1a_quotient_bound uHi dHi hdHi_ne hdHi_lt
+  have h_upper_q1c : q1c.toNat ≤ uHi.toNat / dHi.toNat := h_kb1.1
+  have h_lower_q1c : uHi.toNat / dHi.toNat ≤ q1c.toNat + 1 := h_kb1.2
+  by_cases h_check : BitVec.ult rhatUn1 (q1c * dLo)
+  · have h_q1c_pos := div128Quot_phase1b_check_implies_q1c_pos q1c dLo rhatUn1 h_check
+    have h_q1'_eq : q1'.toNat = q1c.toNat - 1 := by
+      show (if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095 else q1c).toNat = _
+      rw [if_pos h_check]
+      have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
+      rw [BitVec.toNat_add, h_se_neg1]
+      have h_q1c_lt : q1c.toNat - 1 < 2^64 := by have := q1c.isLt; omega
+      rw [show q1c.toNat + (2^64 - 1) = (q1c.toNat - 1) + 2^64 from by omega,
+          Nat.add_mod_right, Nat.mod_eq_of_lt h_q1c_lt]
+    exact ⟨by omega, by omega⟩
+  · have h_q1'_eq : q1'.toNat = q1c.toNat := by
+      show (if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095 else q1c).toNat = _
+      rw [if_neg h_check]
+    exact ⟨by omega, by omega⟩
+
 end EvmAsm.Evm64
