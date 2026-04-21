@@ -820,7 +820,7 @@ theorem div128Quot_phase1b_check_implies_q1c_pos
   have hq1c_eq : q1c = 0 := BitVec.eq_of_toNat_eq (by simp [hq1c_zero])
   rw [hq1c_eq] at h_check
   have h_lt : rhatUn1.toNat < ((0 : Word) * dLo).toNat :=
-    (EvmWord.ult_iff _ _).mp h_check
+    (EvmWord.ult_iff).mp h_check
   have hmul_zero : ((0 : Word) * dLo).toNat = 0 := by
     rw [BitVec.toNat_mul]; simp
   rw [hmul_zero] at h_lt
