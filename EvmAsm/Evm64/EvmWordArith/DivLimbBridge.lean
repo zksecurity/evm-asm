@@ -70,7 +70,7 @@ theorem val256_ge_pow192_of_limb3 (b0 b1 b2 b3 : Word) (h : b3 ≠ 0) :
 -- ============================================================================
 
 /-- OR-reduce nonzero implies val256 > 0. -/
-theorem val256_pos_of_or_ne_zero (b0 b1 b2 b3 : Word)
+theorem val256_pos_of_or_ne_zero {b0 b1 b2 b3 : Word}
     (h : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
     val256 b0 b1 b2 b3 > 0 := by
   rcases limbs_or_ne_zero_imp b0 b1 b2 b3 h with h0 | h1 | h2 | h3
@@ -88,7 +88,7 @@ theorem fromLimbs_ne_zero_of_or (b0 b1 b2 b3 : Word)
   have h0 : val256 b0 b1 b2 b3 = 0 := by
     rw [val256_eq_fromLimbs_toNat]
     have := congr_arg BitVec.toNat heq; simpa using this
-  linarith [val256_pos_of_or_ne_zero b0 b1 b2 b3 h]
+  linarith [val256_pos_of_or_ne_zero h]
 
 -- ============================================================================
 -- EvmWord nonzero ↔ getLimbN OR nonzero
