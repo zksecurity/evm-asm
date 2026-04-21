@@ -134,7 +134,7 @@ theorem fromLimbs_toNat (f : Fin 4 → Word) :
 def toLimbs (v : EvmWord) : List Word :=
   List.ofFn fun i : Fin 4 => v.getLimb i
 
-theorem toLimbs_length (v : EvmWord) : v.toLimbs.length = 4 := by
+theorem toLimbs_length {v : EvmWord} : v.toLimbs.length = 4 := by
   simp [toLimbs]
 
 private theorem or3_eq_zero_left (a b c : BitVec 64) (h : a ||| b ||| c = 0) : a = 0 := by
@@ -560,7 +560,7 @@ theorem getLimb_sshiftRight_geq_256 (v : EvmWord) (n : Nat) (h : n ≥ 256) (i :
   getLimb_sshiftRight_sign' v n i (by omega)
 
 /-- `getLimb` of `fromLimbs` with a constant function. -/
-theorem getLimb_fromLimbs_const (w : Word) (i : Fin 4) :
+theorem getLimb_fromLimbs_const {w : Word} {i : Fin 4} :
     (fromLimbs (fun _ => w)).getLimb i = w := by
   match i with
   | ⟨0, _⟩ => simp [fromLimbs, getLimb]; bv_decide
@@ -569,7 +569,7 @@ theorem getLimb_fromLimbs_const (w : Word) (i : Fin 4) :
   | ⟨3, _⟩ => simp [fromLimbs, getLimb]; bv_decide
   | ⟨n+4, h⟩ => exact absurd h (by omega)
 
-theorem getLimbN_fromLimbs_const (w : Word) (k : Nat) :
+theorem getLimbN_fromLimbs_const {w : Word} {k : Nat} :
     (fromLimbs (fun _ => w)).getLimbN k = if k < 4 then w else 0 := by
   unfold getLimbN
   split
