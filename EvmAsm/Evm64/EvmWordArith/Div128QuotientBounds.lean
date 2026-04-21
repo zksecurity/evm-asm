@@ -437,4 +437,51 @@ theorem div128Quot_cu_rhat_un1_toNat (rhat' uLo : Word) :
   rw [← h32]
   exact Word_ushiftRight_32_lt_pow32 uLo
 
+/-- **KB-3i: un21.toNat Nat formula.** Composes KB-3f (q1' * dLo no-wrap
+    under hcall) + KB-3h (cu_rhat_un1 formula) + `BitVec.toNat_sub` to
+    give an explicit modular-arithmetic formula for `un21.toNat`:
+
+    ```
+    un21.toNat =
+      ((rhat'.toNat % 2^32) * 2^32 + (uLo >>> 32).toNat + 2^64
+         - q1'.toNat * dLo.toNat) % 2^64
+    ```
+
+    under the standard hcall preconditions (`dHi ≥ 2^31`, `dLo < 2^32`,
+    `uHi < dHi * 2^32 + dLo`).
+
+    The `% 2^64` captures potential BitVec wraparound when `cu_q1_dlo`
+    exceeds `cu_rhat_un1` (which happens in the "correction" case of
+    Phase 2).  Subsequent lemmas can case-split on the wraparound. -/
+theorem div128Quot_un21_toNat (uHi dHi dLo uLo rhatUn1 : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    un21.toNat = ((rhat'.toNat % 2^32) * 2^32 + div_un1.toNat + 2^64 -
+                   q1'.toNat * dLo.toNat) % 2^64 := by
+  intro q1 rhat hi1 q1c rhatc q1' rhat' div_un1 cu_rhat_un1 cu_q1_dlo un21
+  have h_cu_rhat : cu_rhat_un1.toNat =
+      (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat :=
+    div128Quot_cu_rhat_un1_toNat rhat' uLo
+  have h_cu_q1 : cu_q1_dlo.toNat = q1'.toNat * dLo.toNat :=
+    div128Quot_q1_prime_dLo_no_wrap uHi dHi dLo rhatUn1
+      hdHi_ge hdLo_lt huHi_lt_vTop
+  show (cu_rhat_un1 - cu_q1_dlo).toNat = _
+  rw [BitVec.toNat_sub, h_cu_rhat, h_cu_q1]
+  -- Reassociation modulo 2^64.
+  congr 1
+  omega
+
 end EvmAsm.Evm64
