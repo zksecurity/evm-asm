@@ -266,7 +266,7 @@ private theorem aAnd_pure_right_of_true {P : Assertion} {prop : Prop}
     fun _ _ _ h2 => by simp [PartialState.empty] at h2,
     fun _ _ _ h2 => by simp [PartialState.empty] at h2,
     fun _ _ _ h2 => by simp [PartialState.empty] at h2⟩,
-    PartialState.union_empty_right h, hp, rfl, hprop⟩
+    PartialState.union_empty_right, hp, rfl, hprop⟩
 
 /-- The if_eq macro satisfies a cpsBranch spec: it either goes to
     the then-body entry (base+4) with equality, or to the else-body

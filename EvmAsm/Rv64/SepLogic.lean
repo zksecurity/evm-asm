@@ -128,20 +128,20 @@ theorem Disjoint.symm {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
   obtain ⟨hr, hm, hc, hpc, hpv, hpi⟩ := hd
   exact ⟨fun r => (hr r).symm, fun a => (hm a).symm, fun a => (hc a).symm, hpc.symm, hpv.symm, hpi.symm⟩
 
-theorem Disjoint_empty_left (h : PartialState) : empty.Disjoint h := by
+theorem Disjoint_empty_left {h : PartialState} : empty.Disjoint h := by
   exact ⟨fun _ => Or.inl rfl, fun _ => Or.inl rfl, fun _ => Or.inl rfl, Or.inl rfl, Or.inl rfl, Or.inl rfl⟩
 
-theorem Disjoint_empty_right (h : PartialState) : h.Disjoint empty := by
-  exact (Disjoint_empty_left h).symm
+theorem Disjoint_empty_right {h : PartialState} : h.Disjoint empty := by
+  exact Disjoint_empty_left.symm
 
 -- ============================================================================
 -- Union lemmas
 -- ============================================================================
 
-theorem union_empty_left (h : PartialState) : empty.union h = h := by
+theorem union_empty_left {h : PartialState} : empty.union h = h := by
   simp [union, empty]
 
-theorem union_self (h : PartialState) : h.union h = h := by
+theorem union_self {h : PartialState} : h.union h = h := by
   obtain ⟨regs, mem, code, pc, publicValues, privateInput⟩ := h
   simp only [union, PartialState.mk.injEq]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -152,7 +152,7 @@ theorem union_self (h : PartialState) : h.union h = h := by
   · cases publicValues <;> rfl
   · cases privateInput <;> rfl
 
-theorem union_empty_right (h : PartialState) : h.union empty = h := by
+theorem union_empty_right {h : PartialState} : h.union empty = h := by
   simp only [union, empty]
   obtain ⟨regs, mem, code, pc, publicValues, privateInput⟩ := h
   simp only [PartialState.mk.injEq]
@@ -189,7 +189,7 @@ theorem union_comm_of_disjoint {h1 h2 : PartialState} (hd : h1.Disjoint h2) :
 -- CompatibleWith lemmas
 -- ============================================================================
 
-theorem CompatibleWith_empty (s : MachineState) : empty.CompatibleWith s := by
+theorem CompatibleWith_empty {s : MachineState} : empty.CompatibleWith s := by
   exact ⟨fun _ _ h => by simp [empty] at h, fun _ _ h => by simp [empty] at h,
          fun _ _ h => by simp [empty] at h, fun _ h => by simp [empty] at h,
          fun _ h => by simp [empty] at h, fun _ h => by simp [empty] at h⟩
@@ -446,7 +446,7 @@ theorem holdsFor_pcIs (v : Word) (s : MachineState) :
 theorem holdsFor_emp (s : MachineState) :
     empAssertion.holdsFor s ↔ True := by
   simp only [Assertion.holdsFor, empAssertion, iff_true]
-  exact ⟨PartialState.empty, PartialState.CompatibleWith_empty s, rfl⟩
+  exact ⟨PartialState.empty, PartialState.CompatibleWith_empty, rfl⟩
 
 @[simp]
 theorem holdsFor_regOwn (r : Reg) (s : MachineState) :
@@ -622,8 +622,8 @@ theorem sepConj_emp_left (P : Assertion) :
     rw [PartialState.union_empty_left] at hunion
     rw [← hunion]; exact hp
   · intro hp
-    exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left h,
-           PartialState.union_empty_left h, rfl, hp⟩
+    exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left,
+           PartialState.union_empty_left, rfl, hp⟩
 
 theorem sepConj_emp_right (P : Assertion) :
     ∀ h, (P ** empAssertion) h ↔ P h := by
@@ -945,7 +945,7 @@ theorem holdsFor_pure (P : Prop) (s : MachineState) :
   simp only [Assertion.holdsFor, pure]
   constructor
   · rintro ⟨h, _, rfl, hp⟩; exact hp
-  · intro hp; exact ⟨PartialState.empty, PartialState.CompatibleWith_empty s, rfl, hp⟩
+  · intro hp; exact ⟨PartialState.empty, PartialState.CompatibleWith_empty, rfl, hp⟩
 
 theorem pcFree_pure {P : Prop} : (⌜P⌝).pcFree := by
   intro h ⟨hemp, _⟩; subst hemp; rfl
@@ -963,8 +963,8 @@ theorem sepConj_pure_left (P : Prop) (Q : Assertion) :
     subst hemp; rw [PartialState.union_empty_left] at hunion
     exact ⟨hp, hunion ▸ hq⟩
   · intro ⟨hp, hq⟩
-    exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left h,
-           PartialState.union_empty_left h, ⟨rfl, hp⟩, hq⟩
+    exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left,
+           PartialState.union_empty_left, ⟨rfl, hp⟩, hq⟩
 
 theorem sepConj_pure_right (P : Assertion) (Q : Prop) :
     ∀ h, (P ** ⌜Q⌝) h ↔ P h ∧ Q := by
@@ -1789,7 +1789,7 @@ theorem aAnd_holdsFor_intro {P Q : Assertion} {s : MachineState} {h : PartialSta
     (hcompat : h.CompatibleWith s) (hp : P h) (hq : Q h) :
     (P ⋒ Q).holdsFor s :=
   ⟨h, hcompat, h, h, PartialState.AgreesWith_refl h,
-    PartialState.union_self h, hp, hq⟩
+    PartialState.union_self, hp, hq⟩
 
 theorem aAnd_left {P Q : Assertion} :
     ∀ h, (P ⋒ Q) h → ∃ h1, P h1 :=
