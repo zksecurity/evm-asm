@@ -640,43 +640,43 @@ theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
 
 -- readWords / writeWords simp lemmas
 
-@[simp] theorem readWords_zero (s : MachineState) (base : Word) :
+@[simp] theorem readWords_zero {s : MachineState} {base : Word} :
     s.readWords base 0 = [] := rfl
 
-@[simp] theorem readWords_succ (s : MachineState) (base : Word) (n : Nat) :
+@[simp] theorem readWords_succ {s : MachineState} {base : Word} {n : Nat} :
     s.readWords base (n + 1) = s.getMem base :: s.readWords (base + 8) n := rfl
 
-@[simp] theorem writeWords_nil (s : MachineState) (base : Word) :
+@[simp] theorem writeWords_nil {s : MachineState} {base : Word} :
     s.writeWords base [] = s := rfl
 
-@[simp] theorem writeWords_cons (s : MachineState) (base : Word) (w : Word) (ws : List Word) :
+@[simp] theorem writeWords_cons {s : MachineState} {base : Word} {w : Word} {ws : List Word} :
     s.writeWords base (w :: ws) = (s.setMem base w).writeWords (base + 8) ws := rfl
 
-@[simp] theorem pc_writeWords (s : MachineState) (base : Word) (words : List Word) :
+@[simp] theorem pc_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).pc = s.pc := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
 
-@[simp] theorem committed_writeWords (s : MachineState) (base : Word) (words : List Word) :
+@[simp] theorem committed_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).committed = s.committed := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
 
-@[simp] theorem publicValues_writeWords (s : MachineState) (base : Word) (words : List Word) :
+@[simp] theorem publicValues_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).publicValues = s.publicValues := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
 
-@[simp] theorem privateInput_writeWords (s : MachineState) (base : Word) (words : List Word) :
+@[simp] theorem privateInput_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).privateInput = s.privateInput := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
 
-@[simp] theorem getReg_writeWords (s : MachineState) (base : Word) (words : List Word) (r : Reg) :
+@[simp] theorem getReg_writeWords {s : MachineState} {base : Word} {words : List Word} {r : Reg} :
     (s.writeWords base words).getReg r = s.getReg r := by
   induction words generalizing s base with
   | nil => rfl
@@ -686,18 +686,18 @@ theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
 
 -- readBytes simp lemmas
 
-@[simp] theorem readBytes_zero (s : MachineState) (base : Word) :
+@[simp] theorem readBytes_zero {s : MachineState} {base : Word} :
     s.readBytes base 0 = [] := rfl
 
-@[simp] theorem readBytes_succ (s : MachineState) (base : Word) (n : Nat) :
+@[simp] theorem readBytes_succ {s : MachineState} {base : Word} {n : Nat} :
     s.readBytes base (n + 1) = s.getByte base :: s.readBytes (base + 1) n := rfl
 
 -- writeBytesAsWords simp lemmas
 
-@[simp] theorem writeBytesAsWords_nil (s : MachineState) (base : Word) :
+@[simp] theorem writeBytesAsWords_nil {s : MachineState} {base : Word} :
     s.writeBytesAsWords base [] = s := by unfold writeBytesAsWords; rfl
 
-@[simp] theorem pc_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) :
+@[simp] theorem pc_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
     (s.writeBytesAsWords base bytes).pc = s.pc := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
@@ -708,7 +708,7 @@ theorem getReg_setReg_eq (s : MachineState) (r : Reg) (v : Word)
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
 
-@[simp] theorem code_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) :
+@[simp] theorem code_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
     (s.writeBytesAsWords base bytes).code = s.code := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
@@ -719,7 +719,7 @@ decreasing_by simp [List.length_drop]; omega
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
 
-@[simp] theorem committed_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) :
+@[simp] theorem committed_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
     (s.writeBytesAsWords base bytes).committed = s.committed := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
@@ -730,7 +730,7 @@ decreasing_by simp [List.length_drop]; omega
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
 
-@[simp] theorem publicValues_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) :
+@[simp] theorem publicValues_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
     (s.writeBytesAsWords base bytes).publicValues = s.publicValues := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
@@ -741,7 +741,7 @@ decreasing_by simp [List.length_drop]; omega
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
 
-@[simp] theorem privateInput_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) :
+@[simp] theorem privateInput_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
     (s.writeBytesAsWords base bytes).privateInput = s.privateInput := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
@@ -752,7 +752,7 @@ decreasing_by simp [List.length_drop]; omega
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
 
-@[simp] theorem getReg_writeBytesAsWords (s : MachineState) (base : Word) (bytes : List (BitVec 8)) (r : Reg) :
+@[simp] theorem getReg_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} {r : Reg} :
     (s.writeBytesAsWords base bytes).getReg r = s.getReg r := by
   match bytes with
   | [] => unfold writeBytesAsWords; rfl
