@@ -350,7 +350,7 @@ private theorem align4_getLsbD1 (v : BitVec 64) (h : v &&& 3 = 0) :
 /-- jump_to succeeds for 4-byte aligned targets: writes nextPC, returns RETIRE_SUCCESS.
     Requires 4-byte alignment (bits 0,1 = 0) and that misa is readable in the
     SAIL state. Alignment makes the Ext_Zca result irrelevant (bit 1 = 0). -/
-theorem runSail_jump_to (target : BitVec 64) (s : SailState)
+theorem runSail_jump_to {target : BitVec 64} {s : SailState}
     (misa_val : BitVec 64)
     (h_align : target &&& 3 = 0)
     (h_misa : s.regs.get? Register.misa = some misa_val) :

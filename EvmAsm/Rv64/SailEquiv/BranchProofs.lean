@@ -93,7 +93,7 @@ theorem beq_sail_equiv (sRv : MachineState) (sSail : SailState)
   by_cases h : sRv.getReg rs1 == sRv.getReg rs2
   · simp only [h, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -118,7 +118,7 @@ theorem bne_sail_equiv (sRv : MachineState) (sSail : SailState)
   by_cases h : sRv.getReg rs1 != sRv.getReg rs2
   · simp only [h, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -143,7 +143,7 @@ theorem blt_sail_equiv (sRv : MachineState) (sSail : SailState)
   by_cases h : BitVec.slt (sRv.getReg rs1) (sRv.getReg rs2)
   · simp only [h, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -176,7 +176,7 @@ theorem bge_sail_equiv (sRv : MachineState) (sSail : SailState)
     simp only [show BitVec.slt (sRv.getReg rs1) (sRv.getReg rs2) = false from by simp [h],
       Bool.not_false, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -197,7 +197,7 @@ theorem bltu_sail_equiv (sRv : MachineState) (sSail : SailState)
   by_cases h : BitVec.ult (sRv.getReg rs1) (sRv.getReg rs2)
   · simp only [h, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -230,7 +230,7 @@ theorem bgeu_sail_equiv (sRv : MachineState) (sSail : SailState)
     simp only [show BitVec.ult (sRv.getReg rs1) (sRv.getReg rs2) = false from by simp [h],
       Bool.not_false, ite_true, runSail_bind,
       runSail_readReg_PC h_pc, runSail_pure, sign_extend_13_eq]
-    rw [runSail_jump_to _ _ misa_val h_align h_misa]
+    rw [runSail_jump_to misa_val h_align h_misa]
     exact ⟨_, rfl, stateRel_nextPC
       ⟨fun r => by simp [execInstrBr, h]; exact hrel.reg_agree r,
        fun a => by simp [execInstrBr, h]; exact hrel.mem_agree a⟩ _⟩
@@ -260,7 +260,7 @@ theorem jal_sail_equiv (sRv : MachineState) (sSail : SailState)
     runSail_get_next_pc h_nextpc,
     runSail_readReg_PC h_pc,
     sign_extend_21_eq]
-  rw [runSail_jump_to _ _ misa_val h_align h_misa]
+  rw [runSail_jump_to misa_val h_align h_misa]
   simp only [RETIRE_SUCCESS, runSail_bind, runSail_pure]
   cases rd <;>
     simp only [regToRegidx,
@@ -331,7 +331,7 @@ theorem jalr_sail_equiv (sRv : MachineState) (sSail : SailState)
   -- Rewrite BitVec.update to &&& ~~~1 before applying jump_to
   simp only [show @Sail.BitVec.update (m := 64) (sRv.getReg rs1 + signExtend12 offset) 0 0#1 =
     (sRv.getReg rs1 + signExtend12 offset) &&& ~~~1#64 from jalr_mask_equiv _]
-  rw [runSail_jump_to _ _ misa_val h_align h_misa_mid]
+  rw [runSail_jump_to misa_val h_align h_misa_mid]
   simp only [RETIRE_SUCCESS, runSail_bind, runSail_pure]
   cases rd <;>
     simp only [regToRegidx,
