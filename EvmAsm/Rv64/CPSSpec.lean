@@ -118,12 +118,12 @@ theorem cpsTriple_strip_pure_and_convert
   have hfact : fact := by
     obtain ⟨hp, _, hpq⟩ := hPFR
     obtain ⟨h1, _, _, _, hPF, _⟩ := hpq
-    exact ((sepConj_pure_right P fact h1).1 hPF).2
+    exact ((sepConj_pure_right h1).1 hPF).2
   have hPR : (P ** R).holdsFor s := by
     obtain ⟨hp, hcompat, hpq⟩ := hPFR
     exact ⟨hp, hcompat, by
       obtain ⟨h1, h2, hd, hunion, hPF, hR_⟩ := hpq
-      exact ⟨h1, h2, hd, hunion, ((sepConj_pure_right P fact h1).1 hPF).1, hR_⟩⟩
+      exact ⟨h1, h2, hd, hunion, ((sepConj_pure_right h1).1 hPF).1, hR_⟩⟩
   obtain ⟨k, s', hstep, hpc', hQR⟩ := hbody R hR s hcr hPR hpc
   exact ⟨k, s', hstep, hpc', by
     obtain ⟨hp', hcompat', hpq'⟩ := hQR

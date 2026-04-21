@@ -966,7 +966,7 @@ theorem sepConj_pure_left (P : Prop) (Q : Assertion) :
     exact ⟨PartialState.empty, h, PartialState.Disjoint_empty_left h,
            PartialState.union_empty_left h, ⟨rfl, hp⟩, hq⟩
 
-theorem sepConj_pure_right (P : Assertion) (Q : Prop) :
+theorem sepConj_pure_right {P : Assertion} {Q : Prop} :
     ∀ h, (P ** ⌜Q⌝) h ↔ P h ∧ Q := by
   intro h
   rw [sepConj_comm]
@@ -1284,13 +1284,13 @@ theorem sepConj_mono {P P' Q Q' : Assertion} (hp : ∀ h, P h → P' h) (hq : �
 theorem sepConj_strip_pure_end2 {A B : Assertion} {P : Prop} :
     ∀ h, (A ** B ** ⌜P⌝) h → (A ** B) h :=
   fun h hp => sepConj_mono_right
-    (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp
+    (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp
 
 /-- Strip a pure fact at depth 3: A ** B ** C ** ⌜P⌝ → A ** B ** C -/
 theorem sepConj_strip_pure_end3 {A B C : Assertion} {P : Prop} :
     ∀ h, (A ** B ** C ** ⌜P⌝) h → (A ** B ** C) h :=
   fun h hp => sepConj_mono_right (sepConj_mono_right
-    (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1)) h hp
+    (fun h' hp' => ((sepConj_pure_right h').1 hp').1)) h hp
 
 /-- Strip a pure fact at depth 3 (middle position): A ** B ** C ** ⌜P⌝ ** D → A ** B ** C ** D -/
 theorem sepConj_strip_pure_depth3 {A B C D : Assertion} {P : Prop} :
@@ -1304,7 +1304,7 @@ theorem sepConj_extract_pure_end3 {A B C : Assertion} {P : Prop} :
   fun h hp => by
     obtain ⟨_, _, _, _, _, h2⟩ := hp
     obtain ⟨_, _, _, _, _, h3⟩ := h2
-    exact ((sepConj_pure_right _ _ _).1 h3).2
+    exact ((sepConj_pure_right _).1 h3).2
 
 /-- Push the outer atom of a 4-chain left-associated `(3-chain) ** D`
     into the right-associated 4-chain — the inverse of the tree shape

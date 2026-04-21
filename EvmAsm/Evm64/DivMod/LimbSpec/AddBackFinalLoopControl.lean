@@ -81,9 +81,9 @@ theorem divK_loop_control_spec (j : Word) (loop_back_off : BitVec 13)
     cpsBranch_weaken
       (fun _ hp => hp)
       (fun h hp => sepConj_mono_right
-        (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
+        (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
       (fun h hp => sepConj_mono_right
-        (fun h' hp' => ((sepConj_pure_right _ _ h').1 hp').1) h hp)
+        (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
       hbge_raw
   have hbge_ext : cpsBranch (base + 4) cr
       ((.x1 ↦ᵣ j') ** (.x0 ↦ᵣ 0))
