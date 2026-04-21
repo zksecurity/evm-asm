@@ -96,13 +96,13 @@ noncomputable def clzResult (val : Word) : Word × Word :=
   (c5, v4)
 
 -- Address lemmas for CLZ stages
-private theorem clz_addr0 (base : Word) : (base + clzOff : Word) + 4 = base + 120 := by bv_addr
-private theorem clz_addr1 (base : Word) : (base + 120 : Word) + 16 = base + 136 := by bv_addr
-private theorem clz_addr2 (base : Word) : (base + 136 : Word) + 16 = base + 152 := by bv_addr
-private theorem clz_addr3 (base : Word) : (base + 152 : Word) + 16 = base + 168 := by bv_addr
-private theorem clz_addr4 (base : Word) : (base + 168 : Word) + 16 = base + 184 := by bv_addr
-private theorem clz_addr5 (base : Word) : (base + 184 : Word) + 16 = base + 200 := by bv_addr
-private theorem clz_addr6 (base : Word) : (base + 200 : Word) + 12 = base + phaseC2Off := by bv_addr
+private theorem clz_addr0 {base : Word} : (base + clzOff : Word) + 4 = base + 120 := by bv_addr
+private theorem clz_addr1 {base : Word} : (base + 120 : Word) + 16 = base + 136 := by bv_addr
+private theorem clz_addr2 {base : Word} : (base + 136 : Word) + 16 = base + 152 := by bv_addr
+private theorem clz_addr3 {base : Word} : (base + 152 : Word) + 16 = base + 168 := by bv_addr
+private theorem clz_addr4 {base : Word} : (base + 168 : Word) + 16 = base + 184 := by bv_addr
+private theorem clz_addr5 {base : Word} : (base + 184 : Word) + 16 = base + 200 := by bv_addr
+private theorem clz_addr6 {base : Word} : (base + 200 : Word) + 12 = base + phaseC2Off := by bv_addr
 
 /-- Combined CLZ stage: handles both taken and ntaken with conditional postcondition.
     After stage: val' = if (val>>>K≠0) then val else val<<<M_s,
