@@ -99,7 +99,7 @@ theorem mod_phB_addi_4 (base : Word) : (base + 68 : Word) + 4 = base + 72 := by 
 theorem mod_phB_bne_4 (base : Word) : (base + 72 : Word) + 4 = base + 76 := by bv_addr
 theorem mod_phB_t_20 (base : Word) : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
 -- `mod_signExtend13_24` → use `se13_24` from `Compose/Base.lean`.
-theorem mod_phB_sp24_32 (sp : Word) :
+theorem mod_phB_sp24_32 {sp : Word} :
     sp + ((4 : Word) + signExtend12 (4095 : BitVec 12)) <<< (3 : BitVec 6).toNat +
       signExtend12 (32 : BitVec 12) = sp + 56 := by
   simp only [se12_4095, se12_32]
@@ -269,11 +269,11 @@ theorem mod_phB_step2_8 (base : Word) : (base + 88 : Word) + 4 = base + 92 := by
 theorem mod_phB_fall_4 (base : Word) : (base + 92 : Word) + 4 = base + 96 := by bv_addr
 
 -- Tail memory address normalization
-theorem mod_phB_sp16_32 (sp : Word) :
+theorem mod_phB_sp16_32 {sp : Word} :
     (sp + (16 : Word) + (32 : Word)) = sp + 48 := by bv_addr
-theorem mod_phB_sp8_32 (sp : Word) :
+theorem mod_phB_sp8_32 {sp : Word} :
     (sp + (8 : Word) + (32 : Word)) = sp + 40 := by bv_addr
-theorem mod_phB_sp0_32 (sp : Word) :
+theorem mod_phB_sp0_32 {sp : Word} :
     (sp + (0 : Word) + (32 : Word)) = sp + 32 := by bv_addr
 
 end EvmAsm.Evm64
