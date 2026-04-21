@@ -44,6 +44,8 @@
     (a, b, hb3nz, hshift_nz, hcall). No normalization hypotheses needed.
   - `div128Quot_dHi_ge_pow31` — under `vTop ≥ 2^63`, the algorithm's `dHi =
     vTop >>> 32` satisfies `dHi ≥ 2^31` (first Piece B building block).
+  - `div128Quot_q1_lt_pow33` — under `dHi ≥ 2^31`, the first-round trial
+    quotient `q1 = rv64_divu uHi dHi` is strictly less than `2^33`.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -519,5 +521,26 @@ theorem div128Quot_dHi_ge_pow31 (vTop : Word) (h : vTop.toNat ≥ 2^63) :
   have h1 : (2:Nat)^63 / 2^32 ≤ vTop.toNat / 2^32 := Nat.div_le_div_right h
   have h2 : (2:Nat)^63 / 2^32 = 2^31 := by decide
   omega
+
+/-- **Second Piece B building block.** Under `dHi.toNat ≥ 2^31`, the
+    first-round trial quotient `q1 = rv64_divu uHi dHi` is strictly less
+    than `2^33`.
+
+    Proof: `q1.toNat * dHi.toNat ≤ uHi.toNat < 2^64 = 2^33 * 2^31`, and
+    `dHi.toNat ≥ 2^31`, so `q1.toNat * 2^31 ≤ q1.toNat * dHi.toNat <
+    2^33 * 2^31`, giving `q1.toNat < 2^33` after cancelling. -/
+theorem div128Quot_q1_lt_pow33 (uHi dHi : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31) :
+    (rv64_divu uHi dHi).toNat < 2^33 := by
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  rw [rv64_divu_toNat uHi dHi hdHi_ne]
+  have huHi_lt : uHi.toNat < 2^64 := uHi.isLt
+  have h_pow : (2:Nat)^33 * 2^31 = 2^64 := by rw [← pow_add]
+  set q1 := uHi.toNat / dHi.toNat with hq1_def
+  have hq_mul : q1 * dHi.toNat ≤ uHi.toNat := Nat.div_mul_le_self _ _
+  have hq_lower : q1 * 2^31 ≤ q1 * dHi.toNat := Nat.mul_le_mul_left q1 hdHi_ge
+  have hq_lt_mul : q1 * 2^31 < 2^33 * 2^31 := by omega
+  exact Nat.lt_of_mul_lt_mul_right hq_lt_mul
 
 end EvmAsm.Evm64
