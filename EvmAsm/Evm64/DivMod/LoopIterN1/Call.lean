@@ -78,9 +78,9 @@ theorem divK_loop_body_n1_call_skip_j0_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (0 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (0 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     rhat2Un0 q0' dHi q0Dlo q1' (base + 516) base
 
@@ -201,9 +201,9 @@ theorem divK_loop_body_n1_call_skip_j1_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (1 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (1 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     rhat2Un0 q0' dHi q0Dlo q1' (base + 516) base
 
@@ -324,9 +324,9 @@ theorem divK_loop_body_n1_call_skip_j2_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (2 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (2 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     rhat2Un0 q0' dHi q0Dlo q1' (base + 516) base
 
@@ -447,9 +447,9 @@ theorem divK_loop_body_n1_call_skip_j3_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (3 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (3 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     rhat2Un0 q0' dHi q0Dlo q1' (base + 516) base
 

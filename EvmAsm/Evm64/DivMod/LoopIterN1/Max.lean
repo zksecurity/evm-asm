@@ -75,9 +75,9 @@ theorem divK_loop_body_n1_max_skip_j0_spec
   have TF := divK_trial_max_full_spec sp (0 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (0 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (0 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   -- 2. Mulsub + correction skip (base+516 → base+880)
   have MCS := divK_mulsub_correction_skip_spec sp qHat (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     (0 : Word) u0 vtopBase u1 v0 v2Old base
@@ -170,9 +170,9 @@ theorem divK_loop_body_n1_max_skip_j3_spec
   have TF := divK_trial_max_full_spec sp (3 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (3 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (3 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     (3 : Word) u0 vtopBase u1 v0 v2Old base
 
@@ -258,9 +258,9 @@ theorem divK_loop_body_n1_max_skip_j1_spec
   have TF := divK_trial_max_full_spec sp (1 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (1 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (1 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     (1 : Word) u0 vtopBase u1 v0 v2Old base
 
@@ -346,9 +346,9 @@ theorem divK_loop_body_n1_max_skip_j2_spec
   have TF := divK_trial_max_full_spec sp (2 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (2 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (2 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   have MCS := divK_mulsub_correction_skip_spec sp qHat (2 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     (2 : Word) u0 vtopBase u1 v0 v2Old base
 

@@ -79,9 +79,9 @@ theorem divK_loop_body_n1_call_addback_j0_beq_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (0 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (0 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let c3 := ms.2.2.2.2
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
@@ -197,9 +197,9 @@ theorem divK_loop_body_n1_call_addback_j1_beq_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (1 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (1 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let c3 := ms.2.2.2.2
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
@@ -315,9 +315,9 @@ theorem divK_loop_body_n1_call_addback_j2_beq_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (2 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (2 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let c3 := ms.2.2.2.2
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
@@ -433,9 +433,9 @@ theorem divK_loop_body_n1_call_addback_j3_beq_spec
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp (3 : Word)] at TF
-  rw [u_addr8_eq_n1 sp (3 : Word)] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   let c3 := ms.2.2.2.2
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3

@@ -30,19 +30,19 @@ open EvmAsm.Rv64
 -- ============================================================================
 
 /-- For n=1: uAddr = uBase + signExtend12 4088 -/
-theorem u_addr_eq_n1 (sp j : Word) :
+theorem u_addr_eq_n1 {sp j : Word} :
     sp + signExtend12 4056 - (j + (1 : Word)) <<< (3 : BitVec 6).toNat =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4088 := by
   divmod_addr
 
 /-- For n=1: (uBase + signExtend12 4088) + 8 = uBase + signExtend12 0 -/
-theorem u_addr8_eq_n1 (sp j : Word) :
+theorem u_addr8_eq_n1 {sp j : Word} :
     ((sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 4088) + 8 =
     (sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat) + signExtend12 0 := by
   divmod_addr
 
 /-- For n=1: vtopBase + signExtend12 32 = sp + signExtend12 32 -/
-theorem vtop_eq_v0_n1 (sp : Word) :
+theorem vtop_eq_v0_n1 {sp : Word} :
     (sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat) + signExtend12 32 =
     sp + signExtend12 32 := by
   divmod_addr
@@ -77,9 +77,9 @@ theorem divK_trial_max_full_spec_n1
   have TF := divK_trial_max_full_spec sp j (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old
     u1 u0 v0 base hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp j] at TF
-  rw [u_addr8_eq_n1 sp j] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   exact TF
 
 /-- Trial call full spec specialized for n=1, with addresses rewritten. -/
@@ -145,9 +145,9 @@ theorem divK_trial_call_full_spec_n1
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   dsimp only [] at TF
-  rw [u_addr_eq_n1 sp j] at TF
-  rw [u_addr8_eq_n1 sp j] at TF
-  rw [vtop_eq_v0_n1 sp] at TF
+  rw [u_addr_eq_n1] at TF
+  rw [u_addr8_eq_n1] at TF
+  rw [vtop_eq_v0_n1] at TF
   exact TF
 
 -- ============================================================================
