@@ -65,6 +65,8 @@
   - `div128Quot_phase1b_correction_eucl` — when Phase 1b's check fires and
     correction triggers (q1' = q1c - 1, rhat' = rhatc + dHi), the
     Euclidean equation `q1' * dHi + rhat' = uHi` is preserved.
+  - `div128Quot_phase1b_post` — combined Phase 1b invariant covering both
+    branches via case-split on the BitVec.ult check.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -865,5 +867,39 @@ theorem div128Quot_phase1b_correction_eucl
   have h_eq : q1c.toNat - 1 + 1 = q1c.toNat := by omega
   rw [h_eq] at h_expand
   omega
+
+/-- **Combined Phase 1b invariant.** Whichever branch the algorithm takes
+    (Knuth multiplication-check fires or doesn't), the post-Phase-1b
+    `q1'`, `rhat'` pair satisfies the Word-level Euclidean equation:
+
+    ```
+      q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat
+    ```
+
+    Case-split on the `BitVec.ult rhatUn1 (q1c * dLo)` check:
+    - Check doesn't fire: `q1' = q1c`, `rhat' = rhatc`. Invariant unchanged
+      from Phase 1a (= the supplied `h_post` hypothesis).
+    - Check fires: `q1' = q1c - 1`, `rhat' = rhatc + dHi`. Apply
+      `div128Quot_phase1b_correction_eucl` (which itself uses
+      `div128Quot_phase1b_check_implies_q1c_pos` for safety). -/
+theorem div128Quot_phase1b_post
+    (uHi dHi q1c rhatc dLo rhatUn1 : Word)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (h_post : q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat)
+    (h_rhatc_lt : rhatc.toNat < 2 * dHi.toNat) :
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
+    q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat := by
+  intro q1' rhat'
+  by_cases h_check : BitVec.ult rhatUn1 (q1c * dLo)
+  · -- Check fires: apply correction case
+    simp only [q1', rhat', h_check]
+    have h_q1c_pos := div128Quot_phase1b_check_implies_q1c_pos q1c dLo rhatUn1 h_check
+    exact div128Quot_phase1b_correction_eucl uHi dHi q1c rhatc hdHi_lt
+      h_post h_q1c_pos h_rhatc_lt
+  · -- Check doesn't fire: q1' = q1c, rhat' = rhatc, invariant is h_post
+    simp only [q1', rhat', h_check]
+    exact h_post
 
 end EvmAsm.Evm64

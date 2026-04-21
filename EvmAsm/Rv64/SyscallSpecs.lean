@@ -354,7 +354,7 @@ namespace EvmAsm.Rv64
   have hfetch : s.code s.pc = some .ECALL :=
     (holdsFor_instrAt _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hx5 : s.getReg .x5 = (0 : Word) :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR)))
   refine ⟨0, s, rfl, ?_, hPR⟩
   simp only [isHalted, step_ecall_halt s hfetch hx5, Option.isNone]
