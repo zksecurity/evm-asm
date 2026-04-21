@@ -228,7 +228,7 @@ private theorem clzPipeline_zero (val : Word) (h : (clzPipeline val).1 = 0) :
 /-- When CLZ reports shift=0, the input value has its MSB set (val ≥ 2^63).
     This connects the shift=0 path condition in the division algorithm
     to the mathematical normalization condition needed for quotient bounds. -/
-theorem clz_zero_imp_msb (val : Word) (h : (clzResult val).1 = 0) :
+theorem clz_zero_imp_msb {val : Word} (h : (clzResult val).1 = 0) :
     val.toNat ≥ 2^63 := by
   rw [clzResult_fst_eq] at h
   have hbnd := clzPipeline_fst_le val
@@ -249,7 +249,7 @@ theorem clz_zero_imp_msb (val : Word) (h : (clzResult val).1 = 0) :
 -- ============================================================================
 
 /-- When CLZ reports shift=0, the shifted value equals the original. -/
-theorem clz_zero_imp_snd (val : Word) (h : (clzResult val).1 = 0) :
+theorem clz_zero_imp_snd {val : Word} (h : (clzResult val).1 = 0) :
     (clzResult val).2 = val := by
   rw [clzResult_fst_eq] at h
   have hbnd := clzPipeline_fst_le val
@@ -319,7 +319,7 @@ private theorem clzPipeline_of_msb (val : Word) (hmsb : val >>> (63 : Nat) ≠ 0
   exact clzStep_of_pass h62
 
 /-- When the MSB is set (val ≥ 2^63), CLZ reports shift=0. -/
-theorem msb_imp_clz_zero (val : Word) (hmsb : val >>> (63 : Nat) ≠ 0) :
+theorem msb_imp_clz_zero {val : Word} (hmsb : val >>> (63 : Nat) ≠ 0) :
     (clzResult val).1 = 0 := by
   rw [clzResult_fst_eq, clzPipeline_of_msb val hmsb]; exact if_pos hmsb
 
@@ -332,12 +332,12 @@ theorem clzResult_fst_eq_zero_iff (val : Word) :
     (clzResult val).1 = 0 ↔ val >>> (63 : Nat) ≠ 0 := by
   constructor
   · intro h
-    have hge := clz_zero_imp_msb val h
+    have hge := clz_zero_imp_msb h
     intro heq
     have : (val >>> (63 : Nat)).toNat = 0 := by rw [heq]; rfl
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
     have := val.isLt; omega
-  · exact msb_imp_clz_zero val
+  · exact msb_imp_clz_zero
 
 -- ============================================================================
 -- Pipeline invariant: val * 2^count = value.toNat (no overflow at each stage)
