@@ -246,7 +246,7 @@ theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
   · -- Taken: v1 ≠ v2
     have hexec' : execInstrBr s (.BNE rs1 rs2 offset) = s.setPC (s.pc + signExtend13 offset) := by
       simp only [execInstrBr, hrs1, hrs2, bne_iff_ne, ne_eq, heq, not_false_eq_true, ite_true]
@@ -260,7 +260,7 @@ theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
 
 /-- Generic spec for BEQ: branch if equal. -/
 theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
@@ -295,7 +295,7 @@ theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
   · -- Not taken: v1 ≠ v2
     have hexec' : execInstrBr s (.BEQ rs1 rs2 offset) = s.setPC (s.pc + 4) := by
       simp only [execInstrBr, hrs1, hrs2, beq_iff_eq, heq, ite_false]
@@ -309,7 +309,7 @@ theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
 
 -- ============================================================================
 -- Group 9b: Branch (BLTU) — cpsBranch (unsigned less than)
@@ -350,7 +350,7 @@ theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
   · -- Not taken: ¬(v1 <u v2)
     have hexec' : execInstrBr s (.BLTU rs1 rs2 offset) = s.setPC (s.pc + 4) := by
       simp [execInstrBr, hrs1, hrs2, hlt]
@@ -364,7 +364,7 @@ theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
 -- Group 9c: Branch (BGE) — cpsBranch (signed greater or equal)
@@ -405,7 +405,7 @@ theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
   · -- Taken: ¬slt v1 v2 → BGE branches
     have hexec' : execInstrBr s (.BGE rs1 rs2 offset) = s.setPC (s.pc + signExtend13 offset) := by
       simp [execInstrBr, hrs1, hrs2, hlt]
@@ -419,7 +419,7 @@ theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
 -- Group 9d: Branch (BLT) — cpsBranch (signed less than)
@@ -460,7 +460,7 @@ theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
   · -- Not taken: ¬slt v1 v2
     have hexec' : execInstrBr s (.BLT rs1 rs2 offset) = s.setPC (s.pc + 4) := by
       simp [execInstrBr, hrs1, hrs2, hlt]
@@ -474,7 +474,7 @@ theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
 -- Group 9e: Branch (BGEU) — cpsBranch (unsigned greater or equal)
@@ -515,7 +515,7 @@ theorem generic_bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
   · -- Taken: ¬ult v1 v2 → BGEU branches
     have hexec' : execInstrBr s (.BGEU rs1 rs2 offset) = s.setPC (s.pc + signExtend13 offset) := by
       simp [execInstrBr, hrs1, hrs2, hlt]
@@ -529,7 +529,7 @@ theorem generic_bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨h1a, h1b, hd1, hu1, hRs1,
-         (sepConj_pure_right _ _ h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
+         (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
 -- Group 10: JAL (jump and link)
