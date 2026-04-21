@@ -1,3 +1,4 @@
+-- file-size-exception: stack-spec hub for n=4 DIV/MOD; max-skip / max-addback / call-skip pre + post bundles + their wrappers naturally co-locate. Split to a SpecCallTrial.lean is tracked by issue #61 once call-trial path lands its semantic-bridge stack specs.
 /-
   EvmAsm.Evm64.DivMod.Spec
 
