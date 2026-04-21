@@ -57,7 +57,7 @@ theorem generic_1reg_spec (instr : Instr) (rd : Reg) (v result : Word) (base : W
     rw [hstep', hexec']; rfl
   · -- Postcondition
     have h1 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 hPR
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h1
 
 -- ============================================================================
 -- Group 2: Two registers, rd ≠ rs1 (rs1 preserved, rd updated)
@@ -95,7 +95,7 @@ theorem generic_2reg_spec (instr : Instr) (rs rd : Reg)
     -- h1 : (rd ** (rs ** R))
     have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1
     have h3 := holdsFor_sepConj_pull_second.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 -- ============================================================================
 -- Group 3: Two registers, rd = rs1 (rd updated, rs2 preserved)
@@ -134,7 +134,7 @@ theorem generic_2reg_rd_eq_rs1_spec (instr : Instr) (rd rs2 : Reg)
     have h2 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h1a
     -- Rearrange back: (rd' ** (rs2 ** R)) → ((rd' ** rs2) ** R)
     have h3 := holdsFor_sepConj_assoc.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 -- ============================================================================
 -- Group 4: Three distinct registers (rs1, rs2 preserved, rd updated)
@@ -174,7 +174,7 @@ theorem generic_3reg_spec (instr : Instr) (rs1 rs2 rd : Reg)
     have h3 := holdsFor_sepConj_regIs_setReg (v' := result) hrd_ne_x0 h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
     have h5 := holdsFor_sepConj_pull_second.mpr h4
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h5
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h5
 
 -- ============================================================================
 -- Group 5: NOP-like (just PC advance, no register/memory changes)
@@ -197,7 +197,7 @@ theorem generic_nop_spec (instr : Instr) (base exit_ : Word)
   refine ⟨1, s.setPC exit_, ?_, rfl, ?_⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
-  · exact holdsFor_pcFree_setPC (pcFree_sepConj pcFree_emp hR) _ _ hPR
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj pcFree_emp hR) hPR
 
 -- NOTE: LW/SW generic specs omitted for RV64.
 -- In RV64, LW uses getWord32 + signExtend and SW uses setWord32 + truncate,
@@ -241,7 +241,7 @@ theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
     · -- Add pure assertion ⌜v1 = v2⌝
       have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -255,7 +255,7 @@ theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -290,7 +290,7 @@ theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -304,7 +304,7 @@ theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -345,7 +345,7 @@ theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -359,7 +359,7 @@ theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -400,7 +400,7 @@ theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -414,7 +414,7 @@ theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -455,7 +455,7 @@ theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -469,7 +469,7 @@ theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (ba
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -510,7 +510,7 @@ theorem generic_bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + 4) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -524,7 +524,7 @@ theorem generic_bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (b
       rw [hstep', hexec']; rfl
     · have hpc_free : (((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) ** R).pcFree :=
         pcFree_sepConj (by pcFree) hR
-      have hPR' := holdsFor_pcFree_setPC hpc_free s (s.pc + signExtend13 offset) hPR
+      have hPR' := holdsFor_pcFree_setPC hpc_free (v := s.pc + signExtend13 offset) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, hP1, hR2⟩ := hPR'
       obtain ⟨h1a, h1b, hd1, hu1, hRs1, hRs2⟩ := hP1
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -553,7 +553,7 @@ theorem generic_jal_spec (rd : Reg) (vOld : Word) (offset : BitVec 21) (base : W
   · show (step s).bind (stepN 0) = some _
     rw [hstep']; rfl
   · have h1 := holdsFor_sepConj_regIs_setReg (v' := s.pc + 4) hrd_ne_x0 hPR
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h1
 
 /-- Generic spec for JALR: rd := PC + 4, PC := (rs1 + sext(offset)) & ~1.
     Pre:  (rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld)
@@ -582,7 +582,7 @@ theorem generic_jalr_spec (rd rs1 : Reg) (v1 vOld : Word) (offset : BitVec 12) (
     -- h1 : (rd ** (rs1 ** R))
     have h2 := holdsFor_sepConj_regIs_setReg (v' := s.pc + 4) hrd_ne_x0 h1
     have h3 := holdsFor_sepConj_pull_second.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 -- ============================================================================
 -- Group 11: LD (doubleword memory load)
@@ -628,7 +628,7 @@ theorem generic_ld_spec (rd rs1 : Reg) (v_addr vOld memVal : Word)
     have h2 := holdsFor_sepConj_regIs_setReg (v' := memVal) hrd_ne_x0 h1a
     have h3 := holdsFor_sepConj_assoc.mpr h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h4
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h4
 
 -- ============================================================================
 -- Group 12: SD (doubleword memory store)
@@ -672,7 +672,7 @@ theorem generic_sd_spec (rs1 rs2 : Reg) (v_addr v_data memOld : Word)
     have h3 := holdsFor_sepConj_memIs_setMem (v' := v_data) h2
     have h4 := holdsFor_sepConj_pull_second.mpr h3
     have h5 := holdsFor_sepConj_pull_second.mpr h4
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h5
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h5
 
 -- ============================================================================
 -- Group 8: SD with x0 (stores 0, no x0 register in pre/post)
@@ -706,6 +706,6 @@ theorem generic_sd_x0_spec (rs1 : Reg) (v_addr memOld : Word)
   · have h1 := holdsFor_sepConj_pull_second.mp hPR
     have h2 := holdsFor_sepConj_memIs_setMem (v' := (0 : Word)) h1
     have h3 := holdsFor_sepConj_pull_second.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 end EvmAsm.Rv64

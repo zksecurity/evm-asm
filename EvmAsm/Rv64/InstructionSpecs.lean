@@ -260,7 +260,7 @@ theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (bas
     have h2 := holdsFor_sepConj_regIs_setReg (v' := memVal) hrd_ne_x0 h1
     -- Reassociate: rd' ** (mem ** R) → (rd' ** mem) ** R
     have h3 := holdsFor_sepConj_assoc.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 /-- SD rs2, offset(rs1): mem[rs1 + sext(offset)] := rs2 (registers distinct) -/
 theorem sd_spec (rs1 rs2 : Reg) (v_addr v_data memOld : Word) (offset : BitVec 12) (base : Word) :
@@ -293,7 +293,7 @@ theorem sd_spec_same (rs : Reg) (v : Word) (memOld : Word) (offset : BitVec 12) 
   · have h1 := holdsFor_sepConj_pull_second.mp hPR
     have h2 := holdsFor_sepConj_memIs_setMem (v' := v) h1
     have h3 := holdsFor_sepConj_pull_second.mpr h2
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h3
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
 
 -- ============================================================================
 -- Branch Instructions (use cpsBranch for two exits)
@@ -325,7 +325,7 @@ theorem beq_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
   refine ⟨1, s.setPC (s.pc + signExtend13 offset), ?_, Or.inl ⟨rfl, ?_⟩⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
-  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ hPR
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
 
 /-- BNE rs1, rs2, offset: branch if rs1 ≠ rs2 (registers distinct) -/
 theorem bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
@@ -353,7 +353,7 @@ theorem bne_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
   refine ⟨1, s.setPC (s.pc + 4), ?_, Or.inr ⟨rfl, ?_⟩⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
-  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ hPR
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
 
 -- ============================================================================
 -- Branch Instructions: BGEU
@@ -407,7 +407,7 @@ theorem jalr_spec_same (rd : Reg) (v : Word) (offset : BitVec 12) (base : Word)
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
   · have h1 := holdsFor_sepConj_regIs_setReg (v' := s.pc + 4) hrd_ne_x0 hPR
-    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ h1
+    exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h1
 
 -- ============================================================================
 -- Pseudo Instructions

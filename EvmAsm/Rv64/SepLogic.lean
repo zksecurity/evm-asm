@@ -1501,7 +1501,7 @@ theorem holdsFor_setReg {P : Assertion} {r : Reg} {v : Word} {s : MachineState}
   obtain ⟨h, hcompat, hp⟩ := hP
   exact ⟨h, PartialState.CompatibleWith_setReg hcompat (hP_no_r h hp), hp⟩
 
-theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) (s : MachineState) (v : Word) :
+theorem holdsFor_pcFree_setPC {P : Assertion} (hP : P.pcFree) {s : MachineState} {v : Word} :
     P.holdsFor s → P.holdsFor (s.setPC v) := by
   intro ⟨h, hcompat, hp⟩
   have hpc_none := hP h hp

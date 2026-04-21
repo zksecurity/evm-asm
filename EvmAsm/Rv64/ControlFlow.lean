@@ -249,7 +249,7 @@ theorem execInstrBr_jalr_x0 (s : MachineState) (rs1 : Reg) (off : BitVec 12) :
   refine ⟨1, s.setPC ((v + signExtend12 offset) &&& ~~~1), ?_, rfl, ?_⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep, hexec]; rfl
-  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) _ _ hPR
+  · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
 
 -- ============================================================================
 -- CPS specification for if_eq
@@ -317,7 +317,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     · show (step s).bind (stepN 0) = some _
       rw [hstep', hexec']; rfl
     · -- Preserve assertions through setPC and add ⌜v1 = v2⌝
-      have hPR' := holdsFor_pcFree_setPC hpcfree s (s.pc + 4) hPR
+      have hPR' := holdsFor_pcFree_setPC hpcfree (v := s.pc + 4) hPR
       -- Strengthen the aAnd part: add ⌜v1 = v2⌝ to inner sepConj
       obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨ha, hb, hda, hua, hinstr, haand⟩, hR2⟩ := hPR'
       exact ⟨hp, hcompat, h1, h2, hd, hu,
@@ -339,8 +339,8 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     · show (step s).bind (stepN 0) = some _
       rw [hstep', hexec']; rfl
     · -- Preserve assertions through setPC and add ⌜v1 ≠ v2⌝
-      have hPR' := holdsFor_pcFree_setPC hpcfree s
-        (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) hPR
+      have hPR' := holdsFor_pcFree_setPC hpcfree
+        (v := s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) hPR
       obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨ha, hb, hda, hua, hinstr, haand⟩, hR2⟩ := hPR'
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨ha, hb, hda, hua, hinstr, aAnd_mono_right (aAnd_mono_right (aAnd_pure_right_of_true heq)) hb haand⟩, hR2⟩
@@ -415,7 +415,7 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
     have hexec' : execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) = s.setPC (s.pc + 4) := by
       simp only [execInstrBr, hrs1, hrs2, heq, bne_iff_ne, ne_eq, not_true_eq_false, ite_false]
     -- After BNE: all pcFree assertions preserved
-    have hPR1 := holdsFor_pcFree_setPC hpcfree_all s (s.pc + 4) hPR
+    have hPR1 := holdsFor_pcFree_setPC hpcfree_all (v := s.pc + 4) hPR
     -- Rearrange to (aand ** (bne ** jal ** R)), then strengthen aand with ⌜v1 = v2⌝
     have hPR1' : ((P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝) **
         ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) **
@@ -489,8 +489,8 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
         s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length) + 4 := by
       rw [hse]; bv_omega
     -- After BNE
-    have hPR1 := holdsFor_pcFree_setPC hpcfree_all s
-      (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) hPR
+    have hPR1 := holdsFor_pcFree_setPC hpcfree_all
+      (v := s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) hPR
     -- Rearrange to (aand_ne ** (bne ** jal ** R))
     have hPR1' : ((P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝) **
         ((s.pc ↦ᵢ Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) **
