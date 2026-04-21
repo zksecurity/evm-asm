@@ -241,7 +241,7 @@ theorem execInstrBr_jalr_x0 (s : MachineState) (rs1 : Reg) (off : BitVec 12) :
   have hfetch : s.code s.pc = some (.JALR .x0 rs1 offset) :=
     (CodeReq.singleton_satisfiedBy s.pc (.JALR .x0 rs1 offset) s).mp hcr
   have hrs1 : s.getReg rs1 = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left hPR)
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left hPR)
   have hexec : execInstrBr s (.JALR .x0 rs1 offset) = s.setPC ((v + signExtend12 offset) &&& ~~~1) := by
     rw [execInstrBr_jalr_x0, hrs1]
   have hstep : step s = some (execInstrBr s (.JALR .x0 rs1 offset)) :=
@@ -298,9 +298,9 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
   -- Extract register values from the aAnd part
   have haAnd := holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR)
   have hrs1 : s.getReg rs1 = v1 :=
-    (holdsFor_regIs _ _ s).mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).1
+    holdsFor_regIs.mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).1
   have hrs2 : s.getReg rs2 = v2 :=
-    (holdsFor_regIs _ _ s).mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).2
+    holdsFor_regIs.mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).2
   -- Execute the BNE instruction
   have hstep' : step s = some (execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
@@ -383,9 +383,9 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
   -- Extract register values from the aAnd part
   have haAnd := holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
   have hrs1 : s.getReg rs1 = v1 :=
-    (holdsFor_regIs _ _ s).mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).1
+    holdsFor_regIs.mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).1
   have hrs2 : s.getReg rs2 = v2 :=
-    (holdsFor_regIs _ _ s).mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).2
+    holdsFor_regIs.mp (aAnd_holdsFor_elim (aAnd_holdsFor_elim haAnd).2).2
   -- Execute BNE
   have hstep' : step s = some (execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)))) :=
     step_non_ecall_non_mem s _ hfetch_bne (by nofun) (by nofun) (by rfl)

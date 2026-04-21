@@ -401,7 +401,7 @@ def Assertion.pcFree (P : Assertion) : Prop := ∀ h, P h → h.pc = none
 -- ============================================================================
 
 @[simp]
-theorem holdsFor_regIs (r : Reg) (v : Word) (s : MachineState) :
+theorem holdsFor_regIs {r : Reg} {v : Word} {s : MachineState} :
     (regIs r v).holdsFor s ↔ s.getReg r = v := by
   simp only [Assertion.holdsFor, regIs]
   constructor

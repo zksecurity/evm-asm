@@ -81,9 +81,9 @@ theorem beq_eq_spec (rs1 rs2 : Reg) (offset : BitVec 13)
   have hfetch : s.code s.pc = some (.BEQ rs1 rs2 offset) :=
     hcr s.pc (.BEQ rs1 rs2 offset) (CodeReq.singleton_get s.pc (.BEQ rs1 rs2 offset))
   have hrs1 : s.getReg rs1 = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs2 : s.getReg rs2 = v :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
   have hstep' : step s = some (execInstrBr s (.BEQ rs1 rs2 offset)) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
   have hexec' : execInstrBr s (.BEQ rs1 rs2 offset) = s.setPC (s.pc + signExtend13 offset) := by
@@ -106,9 +106,9 @@ theorem beq_ne_spec (rs1 rs2 : Reg) (offset : BitVec 13)
   have hfetch : s.code s.pc = some (.BEQ rs1 rs2 offset) :=
     hcr s.pc (.BEQ rs1 rs2 offset) (CodeReq.singleton_get s.pc (.BEQ rs1 rs2 offset))
   have hrs1 : s.getReg rs1 = v1 :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_left (holdsFor_sepConj_elim_left hPR))
   have hrs2 : s.getReg rs2 = v2 :=
-    (holdsFor_regIs _ _ s).mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
+    holdsFor_regIs.mp (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR))
   have hstep' : step s = some (execInstrBr s (.BEQ rs1 rs2 offset)) :=
     step_non_ecall_non_mem s _ hfetch (by nofun) (by nofun) (by rfl)
   have hexec' : execInstrBr s (.BEQ rs1 rs2 offset) = s.setPC (s.pc + 4) := by
