@@ -340,7 +340,7 @@ theorem mod_of_val256_eq_mod
 theorem mod_of_denormalized_remainder
     {a0 a1 a2 a3 b0 b1 b2 b3 r0 r1 r2 r3 : Word}
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    {r_norm : Nat} (s : Nat)
+    {r_norm : Nat} {s : Nat}
     (hr_denorm : val256 r0 r1 r2 r3 = r_norm / 2^s)
     (hr_mod : r_norm / 2^s = val256 a0 a1 a2 a3 % val256 b0 b1 b2 b3) :
     let a := fromLimbs fun i : Fin 4 =>
@@ -388,7 +388,7 @@ theorem mod_correct_normalized
     let r := fromLimbs fun i : Fin 4 =>
       match i with | 0 => r0 | 1 => r1 | 2 => r2 | 3 => r3
     r = EvmWord.mod a b :=
-  mod_of_denormalized_remainder hbnz s hr_denorm (mod_remainder_of_normalized s hmulsub hlt)
+  mod_of_denormalized_remainder hbnz hr_denorm (mod_remainder_of_normalized s hmulsub hlt)
 
 end EvmWord
 
