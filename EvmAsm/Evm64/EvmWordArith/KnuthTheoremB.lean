@@ -60,6 +60,8 @@
     regardless of branch (Phase 1b prerequisite).
   - `div128Quot_rhatc_lt_2dHi` — `rhatc.toNat < 2 * dHi.toNat` after Phase 1a,
     regardless of branch (Phase 1b overflow-bound prerequisite).
+  - `div128Quot_phase1b_check_implies_q1c_pos` — when Phase 1b's BitVec.ult
+    check fires, `q1c.toNat ≥ 1` (proof: q1c = 0 ⟹ qDlo = 0 ⟹ check fails).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
@@ -792,5 +794,29 @@ theorem div128Quot_rhatc_lt_2dHi (uHi dHi : Word)
     have h_sum_lt : rhat.toNat + dHi.toNat < 2^64 := by omega
     rw [Nat.mod_eq_of_lt h_sum_lt]
     omega
+
+/-- **Phase 1b sub-step.** When Phase 1b's `BitVec.ult rhatUn1 qDlo` check
+    fires (the Knuth multiplication check), the post-Phase-1a quotient
+    `q1c` must be at least 1.
+
+    Proof by contradiction: if `q1c = 0`, then `qDlo = 0 * dLo = 0` and
+    `rhatUn1 < 0` is impossible at the Nat level. So `q1c ≥ 1`, which
+    means the upcoming `q1' = q1c + signExtend12 4095` (= `q1c - 1`)
+    decrement is safe (no underflow). -/
+theorem div128Quot_phase1b_check_implies_q1c_pos
+    (q1c dLo rhatUn1 : Word)
+    (h_check : BitVec.ult rhatUn1 (q1c * dLo)) :
+    q1c.toNat ≥ 1 := by
+  by_contra h
+  push Not at h
+  have hq1c_zero : q1c.toNat = 0 := by omega
+  have hq1c_eq : q1c = 0 := BitVec.eq_of_toNat_eq (by simp [hq1c_zero])
+  rw [hq1c_eq] at h_check
+  have h_lt : rhatUn1.toNat < ((0 : Word) * dLo).toNat :=
+    (EvmWord.ult_iff _ _).mp h_check
+  have hmul_zero : ((0 : Word) * dLo).toNat = 0 := by
+    rw [BitVec.toNat_mul]; simp
+  rw [hmul_zero] at h_lt
+  exact Nat.not_lt_zero _ h_lt
 
 end EvmAsm.Evm64
