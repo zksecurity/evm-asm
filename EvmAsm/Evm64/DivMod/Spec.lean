@@ -337,10 +337,10 @@ instance (sp : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
 
 /-- Named unfold for `divN4StackPre`. Restores access to the atomic
     components once `@[irreducible]` has made `delta` the only path in. -/
-theorem divN4StackPre_unfold (sp : Word) (a b : EvmWord)
-    (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem : Word) :
+theorem divN4StackPre_unfold {sp : Word} {a b : EvmWord}
+    {v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem : Word} :
     divN4StackPre sp a b v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem =
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -358,10 +358,10 @@ theorem divN4StackPre_unfold (sp : Word) (a b : EvmWord)
     Parallel to `divN4MaxSkipStackPost_unfold_atoms` — useful when proving
     the stack spec by unfolding the target and matching position-by-position
     against a concrete unfolded hypothesis. -/
-theorem divN4StackPre_unfold_atoms (sp : Word) (a b : EvmWord)
-    (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem : Word) :
+theorem divN4StackPre_unfold_atoms {sp : Word} {a b : EvmWord}
+    {v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem : Word} :
     divN4StackPre sp a b v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem =
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -478,10 +478,10 @@ instance (sp : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
 -- `DivMod/SpecCall.lean` to stay under the Spec.lean file-size guardrail.
 
 /-- Named unfold for `modN4StackPre`. Mirror of `divN4StackPre_unfold`. -/
-theorem modN4StackPre_unfold (sp : Word) (a b : EvmWord)
-    (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem : Word) :
+theorem modN4StackPre_unfold {sp : Word} {a b : EvmWord}
+    {v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem : Word} :
     modN4StackPre sp a b v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem =
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -497,10 +497,10 @@ theorem modN4StackPre_unfold (sp : Word) (a b : EvmWord)
 /-- Full-depth unfold of `modN4StackPre`: expands the bundle, both
     `evmWordIs` atoms, and `divScratchValues` into primitive `regIs` /
     `memIs` atoms. Mirror of `divN4StackPre_unfold_atoms`. -/
-theorem modN4StackPre_unfold_atoms (sp : Word) (a b : EvmWord)
-    (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem : Word) :
+theorem modN4StackPre_unfold_atoms {sp : Word} {a b : EvmWord}
+    {v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem : Word} :
     modN4StackPre sp a b v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem =
     ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -527,7 +527,7 @@ theorem modN4StackPre_unfold_atoms (sp : Word) (a b : EvmWord)
 /-- Named unfold for `divN4MaxSkipStackPost`. Restores access to the
     underlying definition once the `@[irreducible]` attribute has made
     `delta` the only way in at call sites. -/
-theorem divN4MaxSkipStackPost_unfold (sp : Word) (a b : EvmWord) :
+theorem divN4MaxSkipStackPost_unfold {sp : Word} {a b : EvmWord} :
     divN4MaxSkipStackPost sp a b =
     ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
      regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
@@ -542,7 +542,7 @@ theorem divN4MaxSkipStackPost_unfold (sp : Word) (a b : EvmWord) :
     which is the shape a position-by-position weakening proof wants to match
     against. Companion to the partial `_unfold` variant; both coexist because
     some call sites want the `evmWordIs` / `divScratchOwn` bundles kept. -/
-theorem divN4MaxSkipStackPost_unfold_atoms (sp : Word) (a b : EvmWord) :
+theorem divN4MaxSkipStackPost_unfold_atoms {sp : Word} {a b : EvmWord} :
     divN4MaxSkipStackPost sp a b =
     ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
      regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
@@ -617,7 +617,7 @@ def modN4MaxSkipStackPost (sp : Word) (a b : EvmWord) : Assertion :=
   divScratchOwn sp
 
 /-- Named unfold for `modN4MaxSkipStackPost`. -/
-theorem modN4MaxSkipStackPost_unfold (sp : Word) (a b : EvmWord) :
+theorem modN4MaxSkipStackPost_unfold {sp : Word} {a b : EvmWord} :
     modN4MaxSkipStackPost sp a b =
     ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
      regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
@@ -629,7 +629,7 @@ theorem modN4MaxSkipStackPost_unfold (sp : Word) (a b : EvmWord) :
 /-- Full-depth unfold of `modN4MaxSkipStackPost`: expands the bundle, its
     inner `evmWordIs` atoms, and `divScratchOwn` all at once. Mirror of
     `divN4MaxSkipStackPost_unfold_atoms`. -/
-theorem modN4MaxSkipStackPost_unfold_atoms (sp : Word) (a b : EvmWord) :
+theorem modN4MaxSkipStackPost_unfold_atoms {sp : Word} {a b : EvmWord} :
     modN4MaxSkipStackPost sp a b =
     ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
      regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
