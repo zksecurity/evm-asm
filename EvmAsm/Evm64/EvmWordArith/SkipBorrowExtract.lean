@@ -18,7 +18,7 @@ namespace EvmWord
 
 /-- From the Word-level skip-borrow predicate (`1` if `uTop < c3_n` else `0`,
     equal to `0`), extract the Nat-level inequality `c3_n.toNat ≤ uTop.toNat`. -/
-theorem c3_le_u_top_of_skip_borrow (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+theorem c3_le_u_top_of_skip_borrow {a0 a1 a2 a3 b0 b1 b2 b3 : Word}
     (h : isSkipBorrowN4Max a0 a1 a2 a3 b0 b1 b2 b3) :
     let shift := (clzResult b3).1
     let antiShift := signExtend12 (0 : BitVec 12) - shift

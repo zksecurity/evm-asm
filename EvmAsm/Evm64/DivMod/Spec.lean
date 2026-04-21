@@ -1401,9 +1401,7 @@ theorem evm_mod_n4_max_skip_stack_spec (sp base : Word)
   have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
       (clzResult (b.getLimbN 3)).1.toNat := by omega
   -- c3_n ≤ uTop from runtime skip borrow, specialized to our shift form.
-  have hc3_le := EvmWord.c3_le_u_top_of_skip_borrow
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hborrow
+  have hc3_le := EvmWord.c3_le_u_top_of_skip_borrow hborrow
   simp only [] at hc3_le
   -- Normalize `% 64` and `signExtend12 0 - shift` to the `(64 - s)` form
   -- the Lemma G adapter uses.
