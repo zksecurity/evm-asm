@@ -1340,7 +1340,7 @@ theorem evm_div_n4_max_skip_stack_spec (sp base : Word)
   rw [show evmWordIs sp a =
       ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
        ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
-      from evmWordIs_sp_unfold sp a]
+      from evmWordIs_sp_unfold]
   rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
       (((sp + 32) ↦ₘ (signExtend12 4095 : Word)) **
        ((sp + 40) ↦ₘ (0 : Word)) **
@@ -1435,7 +1435,7 @@ theorem evm_mod_n4_max_skip_stack_spec (sp base : Word)
   rw [show evmWordIs sp a =
       ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
        ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
-      from evmWordIs_sp_unfold sp a]
+      from evmWordIs_sp_unfold]
   -- Fold the four denorm output slots into `evmWordIs (sp+32) (EvmWord.mod a b)`.
   rw [show evmWordIs (sp + 32) (EvmWord.mod a b) = _ from h_slot.symm]
   rw [divScratchValues_unfold]

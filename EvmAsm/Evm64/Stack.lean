@@ -123,7 +123,7 @@ theorem evmStackIs_triple {sp : Word} (a b c : EvmWord) :
     `sp + 64` instead of `sp + 32 + 32`. Those are *not* definitionally equal
     for `Word = BitVec 64` (the addition associates around `sp`), so call
     sites that want the flat `sp + 64` form reach for this variant. -/
-theorem evmStackIs_triple_flat (sp : Word) (a b c : EvmWord) :
+theorem evmStackIs_triple_flat {sp : Word} {a b c : EvmWord} :
     evmStackIs sp [a, b, c] =
     (evmWordIs sp a ** evmWordIs (sp + 32) b ** evmWordIs (sp + 64) c) := by
   rw [evmStackIs_triple]
@@ -133,7 +133,7 @@ theorem evmStackIs_triple_flat (sp : Word) (a b c : EvmWord) :
     `rw ←` can fold two `evmWordIs` atoms into an `evmStackIs [a, b]`
     bundle **even when they sit in the middle of a longer sepConj chain**.
     Parallels the `_right` family on `evmWordIs_sp*_limbs_eq`. -/
-theorem evmStackIs_pair_right (sp : Word) (a b : EvmWord) (Q : Assertion) :
+theorem evmStackIs_pair_right {sp : Word} {a b : EvmWord} {Q : Assertion} :
     ((evmWordIs sp a ** evmWordIs (sp + 32) b) ** Q) =
     (evmStackIs sp [a, b] ** Q) := by
   rw [evmStackIs_pair]
@@ -141,7 +141,7 @@ theorem evmStackIs_pair_right (sp : Word) (a b : EvmWord) (Q : Assertion) :
 /-- Mid-tree variant of `evmStackIs_single`: threads a remainder `Q` so
     `rw ←` can fold a single `evmWordIs` atom into an `evmStackIs [v]`
     bundle mid-chain. Parallel to `evmStackIs_pair_right`. -/
-theorem evmStackIs_single_right (sp : Word) (v : EvmWord) (Q : Assertion) :
+theorem evmStackIs_single_right {sp : Word} {v : EvmWord} {Q : Assertion} :
     (evmWordIs sp v ** Q) = (evmStackIs sp [v] ** Q) := by
   rw [evmStackIs_single]
 
@@ -149,7 +149,7 @@ theorem evmStackIs_single_right (sp : Word) (v : EvmWord) (Q : Assertion) :
     `rw ←` can fold three `evmWordIs` atoms into an `evmStackIs [a, b, c]`
     bundle mid-chain. Third address is in the non-flat `sp + 32 + 32`
     form — use `evmStackIs_triple_flat_right` for the `sp + 64` form. -/
-theorem evmStackIs_triple_right (sp : Word) (a b c : EvmWord) (Q : Assertion) :
+theorem evmStackIs_triple_right {sp : Word} {a b c : EvmWord} {Q : Assertion} :
     ((evmWordIs sp a ** evmWordIs (sp + 32) b **
       evmWordIs (sp + 32 + 32) c) ** Q) =
     (evmStackIs sp [a, b, c] ** Q) := by
@@ -158,8 +158,8 @@ theorem evmStackIs_triple_right (sp : Word) (a b c : EvmWord) (Q : Assertion) :
 /-- Mid-tree variant of `evmStackIs_triple_flat`: same as
     `evmStackIs_triple_right` but with the flat `sp + 64` offset for the
     third address. -/
-theorem evmStackIs_triple_flat_right (sp : Word) (a b c : EvmWord)
-    (Q : Assertion) :
+theorem evmStackIs_triple_flat_right {sp : Word} {a b c : EvmWord}
+    {Q : Assertion} :
     ((evmWordIs sp a ** evmWordIs (sp + 32) b **
       evmWordIs (sp + 64) c) ** Q) =
     (evmStackIs sp [a, b, c] ** Q) := by
@@ -212,7 +212,7 @@ theorem evmWordIs_congr_both {a b : Word} {v w : EvmWord}
 /-- Unfold `evmWordIs sp v` into four limb-level memory atoms at
     `sp, sp+8, sp+16, sp+24`. Trivial rewrite of the definition; provided as a
     named lemma for readability at call sites in stack-level specs. -/
-theorem evmWordIs_sp_unfold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp_unfold {sp : Word} {v : EvmWord} :
     evmWordIs sp v =
     ((sp ↦ₘ v.getLimbN 0) ** ((sp + 8) ↦ₘ v.getLimbN 1) **
      ((sp + 16) ↦ₘ v.getLimbN 2) ** ((sp + 24) ↦ₘ v.getLimbN 3)) := rfl
@@ -224,18 +224,18 @@ theorem evmWordIs_sp_unfold (sp : Word) (v : EvmWord) :
     rewrite baked in, for use on post-conditions produced by the limb-level
     DIV/MOD specs (which naturally produce `sp + 0 ↦ₘ …` atoms). Sublemma
     "S3" from `project_div_n4_reshape_plan.md`. -/
-theorem evmWordIs_sp_fold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp_fold {sp : Word} {v : EvmWord} :
     (((sp + 0) ↦ₘ v.getLimbN 0) ** ((sp + 8) ↦ₘ v.getLimbN 1) **
      ((sp + 16) ↦ₘ v.getLimbN 2) ** ((sp + 24) ↦ₘ v.getLimbN 3)) =
     evmWordIs sp v := by
   rw [show (sp + 0 : Word) = sp from by bv_omega]
-  exact (evmWordIs_sp_unfold sp v).symm
+  exact evmWordIs_sp_unfold.symm
 
 /-- Unfold `evmWordIs (sp+32) v` into four limb-level memory atoms at the
     absolute stack addresses `sp+32, sp+40, sp+48, sp+56`. Bridges the
     separation-logic `evmWordIs` predicate and the raw limb atoms that the
     limb-level specs produce for the `b`-operand on the EVM stack. -/
-theorem evmWordIs_sp32_unfold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp32_unfold {sp : Word} {v : EvmWord} :
     evmWordIs (sp + 32) v =
     (((sp + 32) ↦ₘ v.getLimbN 0) ** ((sp + 40) ↦ₘ v.getLimbN 1) **
      ((sp + 48) ↦ₘ v.getLimbN 2) ** ((sp + 56) ↦ₘ v.getLimbN 3)) := by
@@ -245,17 +245,17 @@ theorem evmWordIs_sp32_unfold (sp : Word) (v : EvmWord) :
 /-- Companion of `evmWordIs_sp_fold` for the `b`-operand slot at `sp + 32`.
     Folds four limb atoms at `sp + 32, +40, +48, +56` into
     `evmWordIs (sp + 32) v`. -/
-theorem evmWordIs_sp32_fold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp32_fold {sp : Word} {v : EvmWord} :
     (((sp + 32) ↦ₘ v.getLimbN 0) ** ((sp + 40) ↦ₘ v.getLimbN 1) **
      ((sp + 48) ↦ₘ v.getLimbN 2) ** ((sp + 56) ↦ₘ v.getLimbN 3)) =
     evmWordIs (sp + 32) v :=
-  (evmWordIs_sp32_unfold sp v).symm
+  evmWordIs_sp32_unfold.symm
 
 /-- Unfold `evmWordIs (sp+64) v` into four limb-level memory atoms at the
     absolute stack addresses `sp+64, sp+72, sp+80, sp+88`. Third-slot
     counterpart to `evmWordIs_sp32_unfold` — useful for ternary-op stack
     specs (ADDMOD / MULMOD) whose third operand lives at `sp + 64`. -/
-theorem evmWordIs_sp64_unfold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp64_unfold {sp : Word} {v : EvmWord} :
     evmWordIs (sp + 64) v =
     (((sp + 64) ↦ₘ v.getLimbN 0) ** ((sp + 72) ↦ₘ v.getLimbN 1) **
      ((sp + 80) ↦ₘ v.getLimbN 2) ** ((sp + 88) ↦ₘ v.getLimbN 3)) := by
@@ -263,11 +263,11 @@ theorem evmWordIs_sp64_unfold (sp : Word) (v : EvmWord) :
   rw [spAddr64_8, spAddr64_16, spAddr64_24]
 
 /-- Third-slot companion (ternary ops / ADDMOD / MULMOD). -/
-theorem evmWordIs_sp64_fold (sp : Word) (v : EvmWord) :
+theorem evmWordIs_sp64_fold {sp : Word} {v : EvmWord} :
     (((sp + 64) ↦ₘ v.getLimbN 0) ** ((sp + 72) ↦ₘ v.getLimbN 1) **
      ((sp + 80) ↦ₘ v.getLimbN 2) ** ((sp + 88) ↦ₘ v.getLimbN 3)) =
     evmWordIs (sp + 64) v :=
-  (evmWordIs_sp64_unfold sp v).symm
+  evmWordIs_sp64_unfold.symm
 
 /-- Mid-tree variant of `evmWordIs_sp_unfold`: threads a remainder `Q` so
     `rw ←` can fold `(sp ↦ₘ v.getLimbN 0) ** …` back into `evmWordIs sp v`
