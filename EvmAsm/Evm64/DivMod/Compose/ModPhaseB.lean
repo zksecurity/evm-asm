@@ -39,7 +39,7 @@ private theorem sub_modCode_of_phaseB_left (base : Word) (rest : CodeReq) :
         simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
     (CodeReq.union_mono_left _ _)
 
-theorem divK_phaseB_init1_code_sub_modCode (base : Word) :
+theorem divK_phaseB_init1_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseB_init1_code (base + phaseBOff)) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   intro a i h
@@ -48,7 +48,7 @@ theorem divK_phaseB_init1_code_sub_modCode (base : Word) :
     (by bv_addr) (by decide) (by decide) (by decide) a i h
   exact sub_modCode_of_phaseB_left base _ a i h1
 
-theorem divK_phaseB_init2_code_sub_modCode (base : Word) :
+theorem divK_phaseB_init2_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseB_init2_code (base + 60)) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   intro a i h
@@ -57,7 +57,7 @@ theorem divK_phaseB_init2_code_sub_modCode (base : Word) :
     (by bv_addr) (by decide) (by decide) (by decide) a i h
   exact sub_modCode_of_phaseB_left base _ a i h1
 
-theorem addi_x5_singleton_sub_modCode (base : Word) :
+theorem addi_x5_singleton_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 68) (.ADDI .x5 .x0 4)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -69,7 +69,7 @@ theorem addi_x5_singleton_sub_modCode (base : Word) :
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_modCode_of_phaseB_left base _ a i h1
 
-theorem bne_x10_singleton_sub_modCode (base : Word) :
+theorem bne_x10_singleton_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 72) (.BNE .x10 .x0 24)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -81,7 +81,7 @@ theorem bne_x10_singleton_sub_modCode (base : Word) :
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_modCode_of_phaseB_left base _ a i h1
 
-theorem divK_phaseB_tail_code_sub_modCode (base : Word) :
+theorem divK_phaseB_tail_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseB_tail_code (base + 96)) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   intro a i h
@@ -136,7 +136,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   -- ---- Step 1: init1 (base+32 → base+60) — zero q[0..3] and u[5..7]
   have hinit1_raw := divK_phaseB_init1_spec sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
   simp only [phB_off_28] at hinit1_raw
-  have hinit1 := cpsTriple_extend_code (divK_phaseB_init1_code_sub_modCode base) hinit1_raw
+  have hinit1 := cpsTriple_extend_code divK_phaseB_init1_code_sub_modCode hinit1_raw
   have hinit1f := cpsTriple_frameR
     ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -145,12 +145,12 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
   -- ---- Step 2: init2 (base+60 → base+68) — load b[1], b[2]
   have hinit2_raw := divK_phaseB_init2_spec sp (base + 60) b1 b2 v6 v7
   simp only [mod_phB_i2_8] at hinit2_raw
-  have hinit2 := cpsTriple_extend_code (divK_phaseB_init2_code_sub_modCode base) hinit2_raw
+  have hinit2 := cpsTriple_extend_code divK_phaseB_init2_code_sub_modCode hinit2_raw
   seqFrame hinit1f hinit2
   -- ---- Step 3: ADDI x5 x0 4 at base+68 → base+72
   have haddi_raw := addi_x0_spec_gen .x5 v5 4 (base + 68) (by nofun)
   simp only [mod_phB_addi_4, se12_4] at haddi_raw
-  have haddi := cpsTriple_extend_code (addi_x5_singleton_sub_modCode base) haddi_raw
+  have haddi := cpsTriple_extend_code addi_x5_singleton_sub_modCode haddi_raw
   seqFrame hinit1fhinit2 haddi
   -- ---- Step 4: BNE x10 x0 24 at base+72, elim ntaken (b3=0 absurd)
   have hbne_raw := bne_spec_gen .x10 .x0 24 b3 (0 : Word) (base + 72)
@@ -160,13 +160,13 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
       exact absurd ((sepConj_pure_right _).mp h_rest).2 hb3nz)
-  have hbne := cpsTriple_extend_code (bne_x10_singleton_sub_modCode base) hbne_clean
+  have hbne := cpsTriple_extend_code bne_x10_singleton_sub_modCode hbne_clean
   seqFrame hinit1fhinit2haddi hbne
   -- ---- Step 5: Tail (base+96 → base+116) — store n=4, load leading limb b[3]
   have htail_raw := divK_phaseB_tail_spec sp (4 : Word) b3 nMem (base + 96)
   simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
              mod_phB_t_20, mod_phB_sp24_32] at htail_raw
-  have htail := cpsTriple_extend_code (divK_phaseB_tail_code_sub_modCode base) htail_raw
+  have htail := cpsTriple_extend_code divK_phaseB_tail_code_sub_modCode htail_raw
   seqFrame hinit1fhinit2haddihbne htail
   -- ---- Final consequence — permute assertions
   exact cpsTriple_weaken
@@ -179,7 +179,7 @@ theorem evm_mod_phaseB_n4_spec (sp base : Word)
 -- ============================================================================
 
 -- ADDI x5 x0 3 at base+76 (index 11 of phaseB)
-theorem addi_x5_3_sub_modCode (base : Word) :
+theorem addi_x5_3_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 76) (.ADDI .x5 .x0 3)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -192,7 +192,7 @@ theorem addi_x5_3_sub_modCode (base : Word) :
   exact sub_modCode_of_phaseB_left base _ a i h1
 
 -- BNE x7 x0 16 at base+80 (index 12 of phaseB)
-theorem bne_x7_16_sub_modCode (base : Word) :
+theorem bne_x7_16_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 80) (.BNE .x7 .x0 16)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -205,7 +205,7 @@ theorem bne_x7_16_sub_modCode (base : Word) :
   exact sub_modCode_of_phaseB_left base _ a i h1
 
 -- ADDI x5 x0 2 at base+84 (index 13 of phaseB)
-theorem addi_x5_2_sub_modCode (base : Word) :
+theorem addi_x5_2_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 84) (.ADDI .x5 .x0 2)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -218,7 +218,7 @@ theorem addi_x5_2_sub_modCode (base : Word) :
   exact sub_modCode_of_phaseB_left base _ a i h1
 
 -- BNE x6 x0 8 at base+88 (index 14 of phaseB)
-theorem bne_x6_8_sub_modCode (base : Word) :
+theorem bne_x6_8_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 88) (.BNE .x6 .x0 8)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
@@ -231,7 +231,7 @@ theorem bne_x6_8_sub_modCode (base : Word) :
   exact sub_modCode_of_phaseB_left base _ a i h1
 
 -- ADDI x5 x0 1 at base+92 (index 15 of phaseB)
-theorem addi_x5_1_sub_modCode (base : Word) :
+theorem addi_x5_1_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 92) (.ADDI .x5 .x0 1)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
