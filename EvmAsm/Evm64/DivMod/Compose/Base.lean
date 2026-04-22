@@ -150,7 +150,7 @@ private theorem shared_b12_div (b : Word) : ∀ a i, (CodeReq.ofProg (b + div128
   unfold divCode; simp only [CodeReq.unionAll_cons]; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; exact CodeReq.union_mono_left _ _
 
 /-- sharedDivModCode ⊆ divCode: every shared block is also in divCode. -/
-theorem sharedDivModCode_sub_divCode (base : Word) :
+theorem sharedDivModCode_sub_divCode {base : Word} :
     ∀ a i, (sharedDivModCode base) a = some i → (divCode base) a = some i := by
   unfold sharedDivModCode; simp only [CodeReq.unionAll_cons]
   exact CodeReq.union_split_mono (shared_b0_div base)
@@ -199,7 +199,7 @@ private theorem shared_b12_mod (b : Word) : ∀ a i, (CodeReq.ofProg (b + div128
 
 /-- sharedDivModCode ⊆ modCode: every shared block is also in modCode.
     Mirror of `sharedDivModCode_sub_divCode`. -/
-theorem sharedDivModCode_sub_modCode (base : Word) :
+theorem sharedDivModCode_sub_modCode {base : Word} :
     ∀ a i, (sharedDivModCode base) a = some i → (modCode base) a = some i := by
   unfold sharedDivModCode; simp only [CodeReq.unionAll_cons]
   exact CodeReq.union_split_mono (shared_b0_mod base)

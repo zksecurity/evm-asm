@@ -100,7 +100,7 @@ theorem divK_loop_body_n4_max_skip_j0_divCode
        (qAddr ↦ₘ qOld))
       (loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   intro uBase qHat qAddr hborrow
-  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_body_n4_max_skip_j0_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
 
@@ -167,7 +167,7 @@ theorem divK_loop_body_n4_max_skip_j0_modCode
         v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld)
       (loopBodyN4SkipPost sp (0 : Word) (signExtend12 4095)
         v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode base)
+  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode)
     (divK_loop_body_n4_max_skip_j0_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
   refine cpsTriple_weaken ?_ (fun _ hq => hq) h
@@ -276,7 +276,7 @@ theorem divK_loop_body_n4_call_skip_j0_divCode
         dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' qHat
         qAddr hborrow
-  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_body_n4_call_skip_j0_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
       halign hbltu hborrow)
@@ -310,7 +310,7 @@ theorem divK_loop_body_n4_max_addback_j0_beq_divCode
        (qAddr ↦ₘ qOld))
       (loopBodyN4AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   intro uBase qHat qAddr hborrow
-  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_body_n4_max_addback_j0_beq_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hcarry2_nz hborrow)
 
@@ -377,7 +377,7 @@ theorem divK_loop_body_n4_call_addback_j0_beq_divCode
         dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
         cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' qHat
         qAddr hborrow
-  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  exact cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_body_n4_call_addback_j0_beq_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
       halign hbltu hcarry2_nz hborrow)
@@ -495,7 +495,7 @@ theorem divK_loop_body_n4_call_skip_j0_modCode
         v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
       (loopBodyN4CallSkipJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   -- Apply the underlying spec (which has the algorithm's let-chain unfolded)
-  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode base)
+  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode)
     (divK_loop_body_n4_call_skip_j0_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
       halign hbltu hborrow)
@@ -617,7 +617,7 @@ theorem divK_loop_body_n4_call_addback_j0_beq_modCode
       (loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
         v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
       (loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode base)
+  have h := cpsTriple_extend_code (hmono := sharedDivModCode_sub_modCode)
     (divK_loop_body_n4_call_addback_j0_beq_spec sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
       halign hbltu hcarry2_nz hborrow)

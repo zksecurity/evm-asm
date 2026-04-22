@@ -146,7 +146,7 @@ theorem divK_loop_n1_unified_divCode (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
         retMem dMem dloMem scratch_un0)
       (loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop
         u0_orig_2 u0_orig_1 u0_orig_0 retMem dMem dloMem scratch_un0) :=
-  cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_n1_unified_spec bltu_3 bltu_2 bltu_1 bltu_0
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop u0_orig_2 u0_orig_1 u0_orig_0

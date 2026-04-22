@@ -80,7 +80,7 @@ theorem divK_loop_n3_unified_divCode (bltu_1 bltu_0 : Bool)
         retMem dMem dloMem scratch_un0)
       (loopN3UnifiedPost bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig
         retMem dMem dloMem scratch_un0) :=
-  cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode base)
+  cpsTriple_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_n3_unified_spec bltu_1 bltu_0
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig q1Old q0Old
