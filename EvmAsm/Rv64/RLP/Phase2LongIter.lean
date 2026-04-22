@@ -78,7 +78,7 @@ theorem rlp_phase2_long_iter_post_unfold
 
 /-- Split `ofProg base iter_prog` into five singleton CodeReqs plus an
     `empty` tail. Each instruction lives at a distinct 4-byte offset. -/
-private theorem iter_code_split (base : Word) :
+private theorem iter_code_split {base : Word} :
     CodeReq.ofProg base rlp_phase2_long_iter_prog =
     (CodeReq.singleton base (.LBU .x12 .x13 0)).union
     ((CodeReq.singleton (base + 4) (.SLLI .x11 .x11 8)).union
