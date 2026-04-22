@@ -167,25 +167,25 @@ private theorem byte_beq_target {base : Word} : (base + 32 : Word) + signExtend1
   rv64_addr
 
 -- Phase C exit addresses
-private theorem byte_c_e0 (base : Word) : (base + 56 : Word) + signExtend13 68 = base + 124 := by
+private theorem byte_c_e0 {base : Word} : (base + 56 : Word) + signExtend13 68 = base + 124 := by
   rv64_addr
-private theorem byte_c_e1 (base : Word) : ((base + 56 : Word) + 8) + signExtend13 44 = base + 108 := by
+private theorem byte_c_e1 {base : Word} : ((base + 56 : Word) + 8) + signExtend13 44 = base + 108 := by
   rv64_addr
-private theorem byte_c_e2 (base : Word) : ((base + 56 : Word) + 16) + signExtend13 20 = base + 92 := by
+private theorem byte_c_e2 {base : Word} : ((base + 56 : Word) + 16) + signExtend13 20 = base + 92 := by
   rv64_addr
-private theorem byte_c_e3 (base : Word) : (base + 56 : Word) + 20 = base + 76 := by bv_omega
+private theorem byte_c_e3 {base : Word} : (base + 56 : Word) + 20 = base + 76 := by bv_omega
 
 -- Body exit addresses (JAL targets → store at base+136)
-private theorem byte_body_3_exit_eq (base : Word) :
+private theorem byte_body_3_exit_eq {base : Word} :
     (base + 76 + 12) + signExtend21 (48 : BitVec 21) = base + 136 := by rv64_addr
-private theorem byte_body_2_exit_eq (base : Word) :
+private theorem byte_body_2_exit_eq {base : Word} :
     (base + 92 + 12) + signExtend21 (32 : BitVec 21) = base + 136 := by rv64_addr
-private theorem byte_body_1_exit_eq (base : Word) :
+private theorem byte_body_1_exit_eq {base : Word} :
     (base + 108 + 12) + signExtend21 (16 : BitVec 21) = base + 136 := by rv64_addr
 -- body_0 is fallthrough: exits at base+124+12 = base+136 (no JAL)
 
 -- Store exit address
-private theorem byte_store_exit_eq (base : Word) :
+private theorem byte_store_exit_eq {base : Word} :
     (base + 136 + 20) + signExtend21 (24 : BitVec 21) = base + 180 := by rv64_addr
 
 -- ============================================================================
@@ -554,7 +554,7 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
   -- Phase C: cascade dispatch at base+56
   have hphaseC_raw := byte_phase_c_spec limbFromMsb byteShift (base + 56)
     (base + 124) (base + 108) (base + 92) (base + 76)
-    (byte_c_e0 base) (byte_c_e1 base) (byte_c_e2 base) (byte_c_e3 base)
+    byte_c_e0 byte_c_e1 byte_c_e2 byte_c_e3
   have hphaseC := cpsNBranch_extend_code byte_phase_c_sub hphaseC_raw
   -- Body specs extended to evm_byte_code, then composed with store
   -- body_3: base+76 → base+136 (via JAL 48), then store: base+136 → base+180
