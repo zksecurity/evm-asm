@@ -830,7 +830,7 @@ theorem divK_trial_call_path_spec
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let q0Dlo := q0c * dLo
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
-    let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + 512) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
@@ -1763,7 +1763,7 @@ theorem divK_trial_call_full_spec
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let q0Dlo := q0c * dLo
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0Div
-    let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0Div
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + loopBodyOff) (base + 516) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **

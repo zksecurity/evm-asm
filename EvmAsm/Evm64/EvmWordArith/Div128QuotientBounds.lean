@@ -58,13 +58,13 @@ open EvmAsm.Rv64
 theorem div128Quot_phase1a_quotient_bound (uHi dHi : Word)
     (hdHi_ne : dHi ≠ 0) (hdHi_lt : dHi.toNat < 2^32) :
     let q1 := rv64_divu uHi dHi
-    let rhat := uHi - q1 * dHi
     let hi1 := q1 >>> (32 : BitVec 6).toNat
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let _rhatc := if hi1 = 0 then rhat else rhat + dHi
     q1c.toNat ≤ uHi.toNat / dHi.toNat ∧
     uHi.toNat / dHi.toNat ≤ q1c.toNat + 1 := by
-  intro q1 rhat hi1 q1c rhatc
+  intro q1 hi1 q1c
+  let rhat := uHi - q1 * dHi
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
   -- These match our local let-chain by zeta, so omega below sees matching atoms.
   have h_eucl : q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat :=
     div128Quot_first_round_post uHi dHi hdHi_ne hdHi_lt
@@ -148,9 +148,9 @@ theorem div128Quot_phase1b_no_underflow (uHi dHi : Word)
     (h_rhatc_lt : rhatc.toNat < 2 * dHi.toNat) :
     let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
                else q1c
-    let _rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
     q1'.toNat * dHi.toNat ≤ uHi.toNat := by
-  intro q1' rhat'
+  intro q1'
+  let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
   -- Extract Phase 1b Euclidean at the right types (matching our local lets).
   have h_eucl : q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat :=
     div128Quot_phase1b_post uHi dHi q1c rhatc dLo rhatUn1 hdHi_lt h_post h_rhatc_lt
@@ -254,7 +254,7 @@ theorem div128Quot_q1c_le_q1 (uHi dHi : Word) :
     rw [if_pos h_hi1]
   · have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide
@@ -373,7 +373,7 @@ theorem div128Quot_q1c_le_pow32 (uHi dHi dLo : Word)
   · -- hi1 ≠ 0 ⟹ q1 ≥ 2^32. KB-3c gives q1 ≤ 2^32 + 1, so q1c = q1 - 1 ≤ 2^32.
     have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide

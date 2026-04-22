@@ -39,7 +39,7 @@ theorem divK_div128_step2_spec
     let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
     let q0Dlo := q0c * dlo
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
-    let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dlo un0
     let cr :=
       CodeReq.union (CodeReq.singleton base (.DIVU .x5 .x7 .x6))
       (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x1 .x5 .x6))

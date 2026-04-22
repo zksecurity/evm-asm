@@ -71,7 +71,7 @@ theorem divK_loop_body_n1_call_addback_j0_beq_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
@@ -189,7 +189,7 @@ theorem divK_loop_body_n1_call_addback_j1_beq_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
@@ -307,7 +307,7 @@ theorem divK_loop_body_n1_call_addback_j2_beq_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
@@ -425,7 +425,7 @@ theorem divK_loop_body_n1_call_addback_j3_beq_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isAddbackBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat

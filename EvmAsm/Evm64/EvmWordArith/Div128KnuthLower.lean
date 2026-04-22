@@ -134,7 +134,7 @@ theorem div128Quot_q1c_ge_q_true_1
   · -- hi1 ≠ 0 ⟹ q1 ≥ 2^32. q1c = q1 - 1 ≥ 2^32 - 1 ≥ q_true_1.
     have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide
@@ -593,7 +593,6 @@ theorem knuth_compose_weak_lower_nat
     (q1' q0' un21 uHi uLo_hi uLo_lo vTop : Nat)
     (hvTop_pos : 0 < vTop)
     (h_ph1_tight : q1' * vTop + un21 = uHi * 2^32 + uLo_hi)
-    (_h_un21_lt : un21 < vTop)
     (h_ph2_weak : q0' + 2 ≥ (un21 * 2^32 + uLo_lo) / vTop) :
     (q1' * 2^32 + q0') + 2 ≥ (uHi * 2^64 + uLo_hi * 2^32 + uLo_lo) / vTop := by
   -- From Phase 1 tight: full dividend = q1' * vTop * 2^32 + un21 * 2^32 + uLo_lo.
