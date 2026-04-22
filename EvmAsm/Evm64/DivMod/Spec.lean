@@ -63,12 +63,12 @@ open EvmAsm.Rv64.AddrNorm (word_add_zero word_toNat_0)
     bzero spec's postcondition site. -/
 theorem evmWordIs_div_zero_right {addr : Word} {a : EvmWord} :
     evmWordIs addr (EvmWord.div a 0) = evmWordIs addr (0 : EvmWord) :=
-  evmWordIs_congr addr EvmWord.div_zero_right
+  evmWordIs_congr EvmWord.div_zero_right
 
 /-- MOD counterpart of `evmWordIs_div_zero_right`. -/
 theorem evmWordIs_mod_zero_right {addr : Word} {a : EvmWord} :
     evmWordIs addr (EvmWord.mod a 0) = evmWordIs addr (0 : EvmWord) :=
-  evmWordIs_congr addr EvmWord.mod_zero_right
+  evmWordIs_congr EvmWord.mod_zero_right
 
 /-- Full unfold of `evmWordIs addr (EvmWord.div a 0)` straight to four zero
     memIs atoms, bundling `evmWordIs_div_zero_right` + `evmWordIs_zero`
