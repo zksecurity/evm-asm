@@ -259,8 +259,8 @@ def divScratchValues (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
 /-- Unfold `divScratchValues` into its 15 underlying memory atoms. The bundle
     is `@[irreducible]`, so `unfold` won't see through it — this named rewrite
     is the supported way in at call sites (parallel to `divScratchOwn_unfold`). -/
-theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem nMem jMem : Word) :
+theorem divScratchValues_unfold {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shiftMem nMem jMem : Word} :
     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         shiftMem nMem jMem =
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
@@ -314,8 +314,8 @@ def divScratchValuesCall (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
   ((sp + signExtend12 3944) ↦ₘ scratch_un0)
 
 /-- Named unfold for `divScratchValuesCall`. -/
-theorem divScratchValuesCall_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) :
+theorem divScratchValuesCall_unfold {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
     divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         shiftMem nMem jMem retMem dMem dloMem scratch_un0 =
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem **
@@ -469,7 +469,7 @@ def loopSetupPost (sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   ((sp + signExtend12 3992) ↦ₘ shift)
 
 /-- Unfold the opaque loopSetupPost back to its expanded form. -/
-theorem loopSetupPost_unfold (sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem loopSetupPost_unfold {sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     loopSetupPost sp nVal shift a0 a1 a2 a3 b0 b1 b2 b3 =
     let antiShift := signExtend12 (0 : BitVec 12) - shift
     let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
@@ -531,7 +531,7 @@ def denormDivPost (sp shift u0 u1 u2 u3 q0 q1 q2 q3 : Word) : Assertion :=
   ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
   ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)
 
-theorem denormDivPost_unfold (sp shift u0 u1 u2 u3 q0 q1 q2 q3 : Word) :
+theorem denormDivPost_unfold {sp shift u0 u1 u2 u3 q0 q1 q2 q3 : Word} :
     denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3 =
     let antiShift := signExtend12 (0 : BitVec 12) - shift
     let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
@@ -573,7 +573,7 @@ def denormModPost (sp shift u0 u1 u2 u3 : Word) : Assertion :=
   ((sp + 32) ↦ₘ u0') ** ((sp + 40) ↦ₘ u1') **
   ((sp + 48) ↦ₘ u2') ** ((sp + 56) ↦ₘ u3')
 
-theorem denormModPost_unfold (sp shift u0 u1 u2 u3 : Word) :
+theorem denormModPost_unfold {sp shift u0 u1 u2 u3 : Word} :
     denormModPost sp shift u0 u1 u2 u3 =
     let antiShift := signExtend12 (0 : BitVec 12) - shift
     let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
@@ -621,7 +621,7 @@ def normBPost (sp nVal shift b0 b1 b2 b3 : Word) : Assertion :=
   ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ nVal) **
   ((sp + signExtend12 3992) ↦ₘ shift)
 
-theorem normBPost_unfold (sp nVal shift b0 b1 b2 b3 : Word) :
+theorem normBPost_unfold {sp nVal shift b0 b1 b2 b3 : Word} :
     normBPost sp nVal shift b0 b1 b2 b3 =
     let antiShift := signExtend12 (0 : BitVec 12) - shift
     let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
