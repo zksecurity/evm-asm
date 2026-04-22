@@ -134,7 +134,7 @@ theorem div128Quot_q1c_ge_q_true_1
   · -- hi1 ≠ 0 ⟹ q1 ≥ 2^32. q1c = q1 - 1 ≥ 2^32 - 1 ≥ q_true_1.
     have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide
