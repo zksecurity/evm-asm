@@ -25,7 +25,7 @@ import EvmAsm.Evm64.EvmWordArith.Div128FinalAssembly
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 EvmWord
 
 /-- **KB-Compose V2: accommodates `rhat' ≥ 2^32`.** Algebraic variant of
     `knuth_compose_qHat_vTop_le_nat` using `rhat' % 2^32` in the un21
@@ -231,5 +231,95 @@ theorem div128Quot_qHat_vTop_le
           rw [h_div_eq, h_vtop]
     _ ≤ uHi.toNat * 2^64 + div_un1.toNat * 2^32 + div_un0.toNat := h_compose
     _ = uHi.toNat * 2^64 + uLo.toNat := by rw [h_uLo]; ring
+
+-- ============================================================================
+-- Task 2: Compose qHat bound with Piece A (`knuth_theorem_b_from_clz`)
+-- ============================================================================
+
+/-- **Task 2: `div128Quot ≤ val256(a)/val256(b) + 2` under call-trial + norm.**
+
+    Composes Task 1 (`div128Quot_qHat_vTop_le`, multiplication form:
+    `qHat * vTop ≤ uHi * 2^64 + uLo`) with Piece A (`knuth_theorem_b_from_clz`:
+    `(u4 * 2^64 + un3) / b3' ≤ val256(a)/val256(b) + 2`) via
+    `Nat.le_div_iff_mul_le`, yielding:
+
+    ```
+    (div128Quot u4 un3 b3').toNat ≤ val256(a)/val256(b) + 2
+    ```
+
+    i.e., the algorithm's trial quotient overestimates `val256(a)/val256(b)`
+    by at most 2 under normalization + call-trial. Still conditional on
+    Task 1's two no-wrap hypotheses (TODO Tasks 4/5).
+
+    Identification: `uHi := u4`, `uLo := un3`, `vTop := b3'` where these are
+    the CLZ-normalized top halves of a/b. -/
+theorem div128Quot_le_val256_div_plus_two
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let u4 := a3 >>> antiShift
+    let un3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    -- Task 1 no-wrap hypotheses (specialized to u4, un3, b3'):
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let div_un0 := (un3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
+               else q0c
+    let rhat2' := if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c
+    q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat →
+    q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat →
+    q0'.toNat < 2^32 →
+    (div128Quot u4 un3 b3').toNat ≤
+      val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := by
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc
+    rhatUn1 q1' rhat' cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c rhat2Un0
+    q0' rhat2' h_ph1_no_wrap h_ph2_no_wrap hq0_lt
+  -- Discharge Task 1 preconditions.
+  have hb3prime_ge_pow63 : b3'.toNat ≥ 2^63 := b3_prime_ge_pow63 b3 b2 hb3nz _
+  have hdHi_ge : dHi.toNat ≥ 2^31 := div128Quot_dHi_ge_pow31 b3' hb3prime_ge_pow63
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hu4_lt_b3prime : u4.toNat < b3'.toNat := isCallTrialN4_toNat_lt a3 b2 b3 hcall
+  have h_vtop : b3'.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp b3'
+  have hu4_lt_vTop : u4.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vtop]; exact hu4_lt_b3prime
+  -- Task 1 gives multiplication bound.
+  have h_task1 := div128Quot_qHat_vTop_le u4 un3 b3' hdHi_ge hdLo_lt hu4_lt_vTop
+    h_ph1_no_wrap h_ph2_no_wrap hq0_lt
+  -- Convert multiplication bound to division bound via Nat.le_div_iff_mul_le.
+  have hb3prime_pos : 0 < b3'.toNat := by omega
+  have h_div_le : (div128Quot u4 un3 b3').toNat ≤
+      (u4.toNat * 2^64 + un3.toNat) / b3'.toNat :=
+    (Nat.le_div_iff_mul_le hb3prime_pos).mpr h_task1
+  -- Piece A gives the abstract bound.
+  have h_piece_a := knuth_theorem_b_from_clz a0 a1 a2 a3 b0 b1 b2 b3
+    hb3nz hshift_nz hcall
+  -- Transitivity.
+  calc (div128Quot u4 un3 b3').toNat
+      ≤ (u4.toNat * 2^64 + un3.toNat) / b3'.toNat := h_div_le
+    _ ≤ val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := h_piece_a
 
 end EvmAsm.Evm64
