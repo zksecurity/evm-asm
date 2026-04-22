@@ -48,8 +48,8 @@ def loopExitPost (n : Word) (sp j q_f c3 un0F un1F un2F un3F u4F
   ((uBase + signExtend12 4064) ↦ₘ u4F) **
   (qAddr ↦ₘ q_f)
 
-theorem loopExitPost_unfold (n: Word) (sp j q_f c3 un0F un1F un2F un3F u4F
-    v0 v1 v2 v3 : Word) :
+theorem loopExitPost_unfold {n: Word} {sp j q_f c3 un0F un1F un2F un3F u4F
+    v0 v1 v2 v3 : Word} :
     loopExitPost n sp j q_f c3 un0F un1F un2F un3F u4F v0 v1 v2 v3 =
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let j' := j + signExtend12 4095
@@ -244,7 +244,7 @@ def loopBodyN3CallAddbackBeqPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word
   (sp + signExtend12 3944 ↦ₘ div128Un0 u2)
 
 /-- Bridge: j=0 specific call addback beq = generic-j at j=0. -/
-theorem loopBodyN3CallAddbackBeqPost_eq_J (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+theorem loopBodyN3CallAddbackBeqPost_eq_J {sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word} :
     loopBodyN3CallAddbackBeqPost sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop =
     loopBodyN3CallAddbackBeqPostJ sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
   delta loopBodyN3CallAddbackBeqPost loopBodyN3CallAddbackBeqPostJ; rfl
