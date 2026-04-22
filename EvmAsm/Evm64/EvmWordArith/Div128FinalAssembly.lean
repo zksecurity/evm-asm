@@ -601,13 +601,11 @@ theorem div128Quot_toNat_eq (uHi uLo vTop : Word) :
     let hi2 := q0 >>> (32 : BitVec 6).toNat
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
-    let q0Dlo := q0c * dLo
-    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
     let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     q0'.toNat < 2^32 →
     (div128Quot uHi uLo vTop).toNat = (q1'.toNat % 2^32) * 2^32 + q0'.toNat := by
   intro dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
-        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' hq0
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' hq0
   show ((q1' <<< (32 : BitVec 6).toNat) ||| q0').toNat =
     (q1'.toNat % 2^32) * 2^32 + q0'.toNat
   have h32 : (32 : BitVec 6).toNat = 32 := by decide
@@ -654,13 +652,11 @@ theorem div128Quot_toNat_eq_strict (uHi uLo vTop : Word)
     let hi2 := q0 >>> (32 : BitVec 6).toNat
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
-    let q0Dlo := q0c * dLo
-    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
     let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     q0'.toNat < 2^32 →
     (div128Quot uHi uLo vTop).toNat = q1'.toNat * 2^32 + q0'.toNat := by
   intro dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
-        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0Dlo rhat2Un0 q0' hq0
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' hq0
   have h_kb6a := div128Quot_toNat_eq uHi uLo vTop hq0
   have h_q1'_lt : q1'.toNat < 2^32 :=
     div128Quot_q1_prime_lt_pow32 uHi dHi dLo uLo
