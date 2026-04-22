@@ -74,7 +74,7 @@ theorem mod_of_nat_euclidean (a b q r : EvmWord) (hbnz : b ≠ 0)
 -- ============================================================================
 
 /-- fromLimbs with a single nonzero limb in position 0: toNat = q.toNat. -/
-theorem fromLimbs_single_toNat (q : Word) :
+theorem fromLimbs_single_toNat {q : Word} :
     (fromLimbs fun i : Fin 4 => match i with | 0 => q | _ => 0).toNat = q.toNat := by
   rw [fromLimbs_toNat]; simp
 
