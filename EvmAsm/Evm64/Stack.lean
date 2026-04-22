@@ -491,7 +491,7 @@ theorem evmStackIs_append (sp : Word) (xs ys : List EvmWord) :
     evmWordIs (sp + 32 * xs.length) v`. Specialized corollary of
     `evmStackIs_append` with `ys = [v]` — PUSH-style stack extensions
     that tack exactly one element onto the top reach for this variant. -/
-theorem evmStackIs_snoc (sp : Word) (xs : List EvmWord) (v : EvmWord) :
+theorem evmStackIs_snoc {sp : Word} {xs : List EvmWord} {v : EvmWord} :
     evmStackIs sp (xs ++ [v]) =
     (evmStackIs sp xs ** evmWordIs (sp + BitVec.ofNat 64 (xs.length * 32)) v) := by
   rw [evmStackIs_append, evmStackIs_single]
@@ -499,14 +499,14 @@ theorem evmStackIs_snoc (sp : Word) (xs : List EvmWord) (v : EvmWord) :
 /-- `evmStackIs sp ([] ++ xs) = evmStackIs sp xs`. Trivial consequence of
     `List.nil_append`. Named so call sites can reach for it by name
     rather than chaining `List.nil_append` + `evmStackIs_congr`. -/
-theorem evmStackIs_nil_append (sp : Word) (xs : List EvmWord) :
+theorem evmStackIs_nil_append {sp : Word} {xs : List EvmWord} :
     evmStackIs sp ([] ++ xs) = evmStackIs sp xs := by
   rw [List.nil_append]
 
 /-- `evmStackIs sp (xs ++ []) = evmStackIs sp xs`. Symmetric companion
     of `evmStackIs_nil_append`. Useful when a `List.map`-produced
     suffix turns out to be empty. -/
-theorem evmStackIs_append_nil (sp : Word) (xs : List EvmWord) :
+theorem evmStackIs_append_nil {sp : Word} {xs : List EvmWord} :
     evmStackIs sp (xs ++ []) = evmStackIs sp xs := by
   rw [List.append_nil]
 
@@ -515,8 +515,8 @@ theorem evmStackIs_append_nil (sp : Word) (xs : List EvmWord) :
     `evmStackIs sp (xs ++ ys)` bundle even when they sit in the middle of a
     longer sepConj chain. Parallels the `_right` family on the other
     `evmStackIs` unfolds. -/
-theorem evmStackIs_append_right (sp : Word) (xs ys : List EvmWord)
-    (Q : Assertion) :
+theorem evmStackIs_append_right {sp : Word} {xs ys : List EvmWord}
+    {Q : Assertion} :
     ((evmStackIs sp xs **
       evmStackIs (sp + BitVec.ofNat 64 (xs.length * 32)) ys) ** Q) =
     (evmStackIs sp (xs ++ ys) ** Q) := by
