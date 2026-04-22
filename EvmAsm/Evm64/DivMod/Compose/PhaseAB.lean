@@ -147,7 +147,7 @@ private theorem phB_i2_8 {base : Word} : (base + 60 : Word) + 8 = base + 68 := b
 private theorem phB_addi_4 {base : Word} : (base + 68 : Word) + 4 = base + 72 := by bv_addr
 private theorem phB_bne_4 {base : Word} : (base + 72 : Word) + 4 = base + 76 := by bv_addr
 private theorem phB_t_20 {base : Word} : (base + 96 : Word) + 20 = base + clzOff := by bv_addr
-private theorem phB_sp24_32 (sp : Word) : (sp + (24 : Word) + (32 : Word)) = sp + 56 := by bv_addr
+private theorem phB_sp24_32 {sp : Word} : (sp + (24 : Word) + (32 : Word)) = sp + 56 := by bv_addr
 
 -- ============================================================================
 -- ============================================================================
@@ -470,9 +470,9 @@ private theorem phB_step2_8 {base : Word} : (base + 88 : Word) + 4 = base + 92 :
 private theorem phB_fall_4 {base : Word} : (base + 92 : Word) + 4 = base + 96 := by bv_addr
 
 -- Tail memory address normalization
-private theorem phB_sp16_32 (sp : Word) : (sp + (16 : Word) + (32 : Word)) = sp + 48 := by bv_addr
-private theorem phB_sp8_32 (sp : Word) : (sp + (8 : Word) + (32 : Word)) = sp + 40 := by bv_addr
-private theorem phB_sp0_32 (sp : Word) : (sp + (0 : Word) + (32 : Word)) = sp + 32 := by bv_addr
+private theorem phB_sp16_32 {sp : Word} : (sp + (16 : Word) + (32 : Word)) = sp + 48 := by bv_addr
+private theorem phB_sp8_32 {sp : Word} : (sp + (8 : Word) + (32 : Word)) = sp + 40 := by bv_addr
+private theorem phB_sp0_32 {sp : Word} : (sp + (0 : Word) + (32 : Word)) = sp + 32 := by bv_addr
 
 -- ============================================================================
 -- Section 10d: Phase B n=3 (b[3]=0, b[2]≠0)
