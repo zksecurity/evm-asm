@@ -280,8 +280,8 @@ theorem divScratchValues_unfold (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     to `evmWordIs_sp{_,32}_limbs_eq_right`. Used by the DIV/MOD stack-spec
     composition where scratch atoms are scattered across the unfolded
     `fullDivN4MaxSkipPost` post. -/
-theorem divScratchValues_unfold_right (sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem nMem jMem : Word) (Q : Assertion) :
+theorem divScratchValues_unfold_right {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shiftMem nMem jMem : Word} {Q : Assertion} :
     (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
      ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
      ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -361,7 +361,7 @@ theorem divScratchOwn_unfold {sp : Word} :
     equality so `rw ←` can fold the 15 ownership atoms into a `divScratchOwn`
     bundle **even when they sit in the middle of a longer sepConj chain**.
     Parallel to `divScratchValues_unfold_right`. -/
-theorem divScratchOwn_unfold_right (sp : Word) (Q : Assertion) :
+theorem divScratchOwn_unfold_right {sp : Word} {Q : Assertion} :
     ((memOwn (sp + signExtend12 4088) ** memOwn (sp + signExtend12 4080) **
       memOwn (sp + signExtend12 4072) ** memOwn (sp + signExtend12 4064) **
       memOwn (sp + signExtend12 4056) ** memOwn (sp + signExtend12 4048) **
