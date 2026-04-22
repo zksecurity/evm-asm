@@ -205,7 +205,7 @@ theorem loadProgram_at_index {base : Word} {prog : List Instr} {k : Nat}
   rw [this]; simp [hk]; omega
 
 /-- The length of an if_eq program. -/
-theorem if_eq_length (rs1 rs2 : Reg) (tb eb : Program) :
+theorem if_eq_length {rs1 rs2 : Reg} {tb eb : Program} :
     (if_eq rs1 rs2 tb eb).length = tb.length + eb.length + 2 := by
   simp only [if_eq, Program.length_append, List.length_cons, List.length_nil]; omega
 
