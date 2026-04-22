@@ -987,4 +987,43 @@ theorem div128Quot_q1_prime_ge_q_true_1_small_rhatc
     rw [if_neg h_check]
     exact h_q1c_ge
 
+/-- **KB-LB7: Phase 1b Knuth lower bound (unconditional under `uHi < 2^63`).**
+    Combines KB-LB5 (Phase 1b preserves lower bound when rhatc < 2^32) with
+    KB-LB6a/b (rhatc < 2^32 follows from `uHi < 2^63` + `dHi ≥ 2^31`):
+
+    ```
+    (uHi * 2^32 + div_un1) / vTop ≤ q1'.toNat
+    ```
+
+    The hypothesis `uHi.toNat < 2^63` is automatically satisfied when
+    `uHi = a3 >>> (64 - shift)` under `hshift_nz` (since the right shift
+    discards ≥ 1 bit of a3). Therefore in the algorithm's call-trial path,
+    Phase 1b never undershoots the abstract first-digit true quotient —
+    the `rhatc ≥ 2^32` corner I previously feared is unreachable. -/
+theorem div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_pow63
+    (uHi dHi dLo uLo : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (h_uHi_lt : uHi.toNat < 2^63)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    (uHi.toNat * 2^32 + div_un1.toNat) /
+      (dHi.toNat * 2^32 + dLo.toNat) ≤ q1'.toNat := by
+  intro q1 rhat hi1 q1c rhatc div_un1 rhatUn1 q1'
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_rhatc_lt : rhatc.toNat < 2^32 :=
+    div128Quot_rhatc_lt_pow32_of_uHi_lt_pow63 uHi dHi hdHi_ne h_uHi_lt hdHi_ge hdHi_lt
+  exact div128Quot_q1_prime_ge_q_true_1_small_rhatc uHi dHi dLo uLo
+    hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop h_rhatc_lt
+
 end EvmAsm.Evm64
