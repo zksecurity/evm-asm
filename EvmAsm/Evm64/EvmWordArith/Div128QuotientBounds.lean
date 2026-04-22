@@ -772,6 +772,99 @@ theorem knuth_theorem_c_abstract
   rw [h_expand]
   linarith
 
+/-- **KB-LB6a: Small uHi ⟹ Phase 1 trial < 2^32.** With `uHi.toNat < 2^63`
+    and `dHi.toNat ≥ 2^31`, the raw Phase 1 trial `rv64_divu uHi dHi` is
+    strictly less than `2^32`:
+
+    ```
+    (rv64_divu uHi dHi).toNat < 2^32
+    ```
+
+    Proof: `q1.toNat = uHi.toNat / dHi.toNat < 2^63 / 2^31 = 2^32`.
+
+    Together with KB-LB6b, this eliminates the "Phase 1a correction branch"
+    entirely, giving `rhatc < 2^32` — the precondition of KB-LB5. The
+    hypothesis `uHi < 2^63` holds automatically for `uHi = a3 >>> (64 - shift)`
+    under `hshift_nz` (shift > 0 means the right-shift discards ≥ 1 bit
+    of a3). -/
+theorem div128Quot_q1_lt_pow32_of_uHi_lt_pow63
+    (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (h_uHi_lt : uHi.toNat < 2^63)
+    (hdHi_ge : dHi.toNat ≥ 2^31) :
+    (rv64_divu uHi dHi).toNat < 2^32 := by
+  rw [rv64_divu_toNat uHi dHi hdHi_ne]
+  have hdHi_pos : 0 < dHi.toNat :=
+    Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h))
+  -- uHi / dHi ≤ uHi / 2^31 (since dHi ≥ 2^31).
+  have h_div_le : uHi.toNat / dHi.toNat ≤ uHi.toNat / 2^31 :=
+    Nat.div_le_div_left hdHi_ge (by decide : 0 < 2^31)
+  -- uHi / 2^31 < 2^63 / 2^31 = 2^32 (under uHi < 2^63).
+  have h_pow : (2^63 : Nat) = 2^32 * 2^31 := by decide
+  have h_div_lt : uHi.toNat / 2^31 < 2^32 := by
+    apply Nat.div_lt_of_lt_mul
+    omega
+  omega
+
+/-- **KB-LB6b: Under uHi < 2^63, Phase 1a doesn't correct; rhatc < 2^32.**
+    Composing KB-LB6a (q1 < 2^32) with the algorithm: when `q1 < 2^32`,
+    `hi1 = q1 >>> 32 = 0`, so Phase 1a takes the no-correction branch.
+    Then `rhatc = rhat = uHi mod dHi < dHi < 2^32`:
+
+    ```
+    rhatc.toNat < 2^32
+    ```
+
+    This is the precondition of KB-LB5 (Phase 1b preserves lower bound).
+    Together, KB-LB5 + KB-LB6a/b give an **unconditional Phase 1b lower
+    bound under `uHi < 2^63`**, automatically satisfied under `hshift_nz`. -/
+theorem div128Quot_rhatc_lt_pow32_of_uHi_lt_pow63
+    (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (h_uHi_lt : uHi.toNat < 2^63)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    rhatc.toNat < 2^32 := by
+  intro q1 rhat hi1 rhatc
+  have h_q1_lt : q1.toNat < 2^32 :=
+    div128Quot_q1_lt_pow32_of_uHi_lt_pow63 uHi dHi hdHi_ne h_uHi_lt hdHi_ge
+  have h_hi1 : hi1 = 0 := by
+    apply BitVec.eq_of_toNat_eq
+    have h32 : (32 : BitVec 6).toNat = 32 := by decide
+    show (q1 >>> (32 : BitVec 6).toNat).toNat = (0 : Word).toNat
+    rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+    rw [Nat.div_eq_of_lt h_q1_lt]
+    rfl
+  -- rhat = uHi mod dHi < dHi.
+  have hdHi_pos : 0 < dHi.toNat :=
+    Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h))
+  have h_rhat_lt : rhat.toNat < dHi.toNat := by
+    show (uHi - q1 * dHi).toNat < dHi.toNat
+    have h_q1_eq : q1.toNat = uHi.toNat / dHi.toNat := rv64_divu_toNat uHi dHi hdHi_ne
+    -- uHi - q1 * dHi at Word equals uHi - q1 * dHi at Nat (no wrap under q1 < 2^32, dHi < 2^32).
+    -- Apply first_round_post: q1c * dHi + rhatc = uHi at Nat. Under h_hi1, q1c = q1, rhatc = rhat.
+    have h_post : q1.toNat * dHi.toNat + rhat.toNat = uHi.toNat := by
+      have h := div128Quot_first_round_post uHi dHi hdHi_ne hdHi_lt
+      -- h binds its own q1/hi1/q1c/rhat/rhatc lets (via intro). Reduce them.
+      simp only [show (rv64_divu uHi dHi >>> (32 : BitVec 6).toNat) = 0 from h_hi1,
+                 if_true] at h
+      exact h
+    rw [h_q1_eq] at h_post
+    -- h_post: (uHi/dHi) * dHi + rhat = uHi. So rhat = uHi - (uHi/dHi)*dHi = uHi mod dHi.
+    have h_div_mul_add : uHi.toNat / dHi.toNat * dHi.toNat + uHi.toNat % dHi.toNat = uHi.toNat := by
+      have := Nat.div_add_mod uHi.toNat dHi.toNat
+      linarith
+    have h_rhat_eq : rhat.toNat = uHi.toNat % dHi.toNat := by omega
+    rw [h_rhat_eq]
+    exact Nat.mod_lt _ hdHi_pos
+  show (if hi1 = 0 then rhat else rhat + dHi).toNat < 2^32
+  rw [if_pos h_hi1]
+  omega
+
 /-- **KB-LB5: Phase 1b preserves lower bound (small-rhatc form).** When
     `rhatc.toNat < 2^32`, the Word-level Phase 1b check exactly matches
     Knuth Theorem C's abstract condition, so Phase 1b's correction
