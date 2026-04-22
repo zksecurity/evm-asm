@@ -456,7 +456,7 @@ theorem high_limbs_zero_of_toNat_lt {v : EvmWord} (h : v.toNat < 2^64) :
     (if c then x else y).getLimb i = if c then x.getLimb i else y.getLimb i := by
   split <;> rfl
 
-theorem eq_iff_limbs (a b : EvmWord) :
+theorem eq_iff_limbs {a b : EvmWord} :
     a = b ↔ (∀ i, a.getLimb i = b.getLimb i) := by
   constructor
   · intro h; subst h; intro; rfl
