@@ -1064,4 +1064,58 @@ theorem div128Quot_q0_prime_ge_q_true_0_of_un21_lt_pow63
     (uLo <<< (32 : BitVec 6).toNat)
     hdHi_ge hdHi_lt hdLo_lt h_un21_lt hun21_lt_vTop
 
+/-- **KB-LB9: Weak Phase 2 lower bound, unconditional.** Phase 2's output
+    `q0'` satisfies the abstract Knuth trial bound off by 2:
+
+    ```
+    q0' + 2 ≥ (un21 * 2^32 + div_un0) / vTop
+    ```
+
+    without any hypothesis on `un21`'s magnitude (only `dHi ≠ 0` and
+    `dHi < 2^32`). Composes KB-2 (Phase 1b quotient bound, at Phase 2
+    via uHi := un21) giving `q0' + 2 ≥ un21 / dHi`, with
+    `trial_quotient_ge_general` giving `(un21*2^32 + div_un0)/vTop ≤
+    un21/dHi`.
+
+    Weaker than the exact bound (`q0' ≥ q_true_0`) — off by at most 2.
+    Composed with KB-LB7 (Phase 1 tight lower), gives the "2-off"
+    composed bound `qHat ≥ q_true - 2`. Useful when the exact lower
+    bound isn't reachable (Phase 2 false-positive corner). -/
+theorem div128Quot_q0_prime_plus_2_ge_q_true_0_abstract
+    (un21 dHi dLo uLo : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (hdHi_lt : dHi.toNat < 2^32) :
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
+               else q0c
+    q0'.toNat + 2 ≥ (un21.toNat * 2^32 + div_un0.toNat) /
+                     (dHi.toNat * 2^32 + dLo.toNat) := by
+  intro q0 rhat2 hi2 q0c rhat2c div_un0 rhat2Un0 q0'
+  -- KB-2 at Phase 2 (uHi := un21, rhatUn1 := rhat2Un0).
+  have h_q0_bound : q0'.toNat + 2 ≥ un21.toNat / dHi.toNat :=
+    (div128Quot_phase1b_quotient_bound un21 dHi hdHi_ne hdHi_lt dLo rhat2Un0).1
+  -- div_un0 < 2^32.
+  have h_div_un0_lt : div_un0.toNat < 2^32 := by
+    show ((uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight]
+    have h32 : (32 : BitVec 6).toNat = 32 := by decide
+    rw [h32, Nat.shiftRight_eq_div_pow]
+    have h_shl : (uLo <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (uLo <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  -- trial_quotient_ge_general: (un21*2^32+div_un0)/vTop ≤ un21/dHi.
+  have h_trial : (un21.toNat * 2^32 + div_un0.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) ≤ un21.toNat / dHi.toNat := by
+    have hdHi_pos : 0 < dHi.toNat :=
+      Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h))
+    exact EvmWord.trial_quotient_ge_general un21.toNat div_un0.toNat
+      dHi.toNat dLo.toNat (2^32) hdHi_pos h_div_un0_lt
+  omega
+
 end EvmAsm.Evm64
