@@ -179,7 +179,7 @@ theorem divK_loop_body_n3_call_skip_j0_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   -- Unfold borrow condition to match proof-level qHat
   unfold isSkipBorrowN3Call div128Quot at hborrow
@@ -250,7 +250,7 @@ theorem divK_loop_body_n3_call_skip_j0_spec
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
-      delta loopBodyN3CallSkipPost div128Quot div128Quot_phase2b_q0' div128DLo div128Un0
+      delta loopBodyN3CallSkipPost div128Quot div128DLo div128Un0
             loopBodyN3SkipPost loopBodySkipPost mulsubN4 loopExitPostN3 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -415,7 +415,7 @@ theorem divK_loop_body_n3_call_skip_j1_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   -- Unfold borrow condition
   unfold isSkipBorrowN3Call div128Quot at hborrow
@@ -486,7 +486,7 @@ theorem divK_loop_body_n3_call_skip_j1_spec
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
-      delta loopBodyN3CallSkipPostJ div128Quot div128Quot_phase2b_q0' div128DLo div128Un0
+      delta loopBodyN3CallSkipPostJ div128Quot div128DLo div128Un0
             loopBodyN3SkipPost loopBodySkipPost mulsubN4 loopExitPostN3 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -639,7 +639,7 @@ theorem divK_loop_body_n3_call_addback_beq_j0_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   -- Unfold borrow condition to match proof-level qHat
   unfold isAddbackBorrowN3Call div128Quot at hborrow
@@ -708,7 +708,7 @@ theorem divK_loop_body_n3_call_addback_beq_j0_spec
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
-      delta loopBodyN3CallAddbackBeqPost div128Quot div128Quot_phase2b_q0' div128DLo div128Un0
+      delta loopBodyN3CallAddbackBeqPost div128Quot div128DLo div128Un0
             loopBodyN3AddbackBeqPost loopBodyAddbackBeqPost loopExitPostN3 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
@@ -861,7 +861,7 @@ theorem divK_loop_body_n3_call_addback_beq_j1_spec
   let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
   let q0Dlo := q0c * dLo
   let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   -- Unfold borrow condition
   unfold isAddbackBorrowN3Call div128Quot at hborrow
@@ -930,7 +930,7 @@ theorem divK_loop_body_n3_call_addback_beq_j1_spec
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
-      delta loopBodyN3CallAddbackBeqPostJ div128Quot div128Quot_phase2b_q0' div128DLo div128Un0
+      delta loopBodyN3CallAddbackBeqPostJ div128Quot div128DLo div128Un0
             loopBodyN3AddbackBeqPost loopBodyAddbackBeqPost loopExitPostN3 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full

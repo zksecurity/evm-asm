@@ -53,7 +53,7 @@ theorem divK_div128_prodcheck2_merged_spec
     (sp q0 rhat2 v1Old v7Old dlo un0 : Word) (base : Word) :
     let q0Dlo := q0 * dlo
     let rhat2Un0 := (rhat2 <<< (32 : BitVec 6).toNat) ||| un0
-    let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0 + signExtend12 4095 else q0
+    let q0' := div128Quot_phase2b_q0' q0 rhat2 dlo un0
     let cr :=
       CodeReq.union (CodeReq.singleton base (.LD .x1 .x12 3952))
       (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x7 .x5 .x1))

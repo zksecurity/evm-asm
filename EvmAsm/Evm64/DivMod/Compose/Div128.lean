@@ -84,7 +84,7 @@ theorem div128_spec (sp retAddr d uLo uHi : Word) (base : Word)
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let q0Dlo := q0c * dLo
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
-    let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0
     -- End: combine q1' and q0'
     let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
     cpsTriple (base + div128Off) retAddr (sharedDivModCode base)
