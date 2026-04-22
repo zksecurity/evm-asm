@@ -593,7 +593,7 @@ theorem knuth_compose_weak_lower_nat
     (q1' q0' un21 uHi uLo_hi uLo_lo vTop : Nat)
     (hvTop_pos : 0 < vTop)
     (h_ph1_tight : q1' * vTop + un21 = uHi * 2^32 + uLo_hi)
-    (h_un21_lt : un21 < vTop)
+    (_h_un21_lt : un21 < vTop)
     (h_ph2_weak : q0' + 2 ≥ (un21 * 2^32 + uLo_lo) / vTop) :
     (q1' * 2^32 + q0') + 2 ≥ (uHi * 2^64 + uLo_hi * 2^32 + uLo_lo) / vTop := by
   -- From Phase 1 tight: full dividend = q1' * vTop * 2^32 + un21 * 2^32 + uLo_lo.

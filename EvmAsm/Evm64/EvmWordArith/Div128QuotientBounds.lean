@@ -61,7 +61,7 @@ theorem div128Quot_phase1a_quotient_bound (uHi dHi : Word)
     let rhat := uHi - q1 * dHi
     let hi1 := q1 >>> (32 : BitVec 6).toNat
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let _rhatc := if hi1 = 0 then rhat else rhat + dHi
     q1c.toNat ≤ uHi.toNat / dHi.toNat ∧
     uHi.toNat / dHi.toNat ≤ q1c.toNat + 1 := by
   intro q1 rhat hi1 q1c rhatc
@@ -148,7 +148,7 @@ theorem div128Quot_phase1b_no_underflow (uHi dHi : Word)
     (h_rhatc_lt : rhatc.toNat < 2 * dHi.toNat) :
     let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
                else q1c
-    let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
+    let _rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi else rhatc
     q1'.toNat * dHi.toNat ≤ uHi.toNat := by
   intro q1' rhat'
   -- Extract Phase 1b Euclidean at the right types (matching our local lets).
