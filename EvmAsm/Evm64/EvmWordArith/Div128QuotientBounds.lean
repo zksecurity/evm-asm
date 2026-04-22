@@ -623,5 +623,33 @@ theorem div128Quot_q0_prime_lt_pow32 (un21 dHi dLo uLo : Word)
       div128Quot_q1_prime_le_q1c q0c dLo rhat2Un0
     omega
 
+/-- **KB-LB1: Knuth Phase 1 lower bound.** The raw Phase 1 trial
+    `rv64_divu uHi dHi` never under-estimates the true first-digit
+    quotient `(uHi.toNat * 2^32 + div_un1.toNat) / vTop.toNat`, where
+    `vTop.toNat = dHi.toNat * 2^32 + dLo.toNat`:
+
+    ```
+    (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo) ≤ (rv64_divu uHi dHi).toNat
+    ```
+
+    Direct application of `trial_quotient_ge_general` with Bk = 2^32.
+    This is **Knuth's Lemma A** (the "easy" direction of Theorem B):
+    the digit-wise top-parts ratio never underestimates the full ratio.
+
+    First step toward proving `div128Quot ≥ q_true` (Knuth's full-quotient
+    lower bound). To extend to `q1' ≥ true_digit_1`, one must show that
+    Phase 1a/1b corrections only decrement when the trial overshoots
+    (Knuth's multiplication-check correctness, ~100 lines). -/
+theorem div128Quot_q1_ge_q_true_1
+    (uHi dHi dLo div_un1 : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (h_div_un1_lt : div_un1.toNat < 2^32) :
+    (uHi.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat) ≤
+    (rv64_divu uHi dHi).toNat := by
+  rw [rv64_divu_toNat uHi dHi hdHi_ne]
+  have hdHi_pos : 0 < dHi.toNat :=
+    Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h))
+  exact EvmWord.trial_quotient_ge_general uHi.toNat div_un1.toNat
+    dHi.toNat dLo.toNat (2^32) hdHi_pos h_div_un1_lt
 
 end EvmAsm.Evm64
