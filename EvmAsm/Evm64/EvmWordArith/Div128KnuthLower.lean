@@ -641,4 +641,127 @@ theorem knuth_compose_qHat_le_abstract_trial_nat
     div_un1 div_un0 uHi h_ph1_eucl h_ph1_no_wrap h_un21_ph2 h_ph2_no_wrap
   exact (Nat.le_div_iff_mul_le hvTop_pos).mpr h
 
+-- ============================================================================
+-- Case A lower bound: `uHi < dHi * 2^32` variant of the Phase 1/2 chain.
+-- Extends KB-LB6..LB8's coverage (previously `uHi < 2^63`). Under `dHi ≥ 2^31`,
+-- the new hypothesis `uHi < dHi * 2^32` is strictly weaker (covers more).
+-- Useful for Phase 2 application where `un21` can exceed `2^63` but still
+-- satisfies `un21 < dHi * 2^32` (the "easy half" of the post-`hshift_nz`
+-- hard case).
+-- ============================================================================
+
+/-- **KB-LB6a': `uHi < dHi * 2^32 ⟹ q1 < 2^32`.** Case A variant of KB-LB6a
+    with a hypothesis on `dHi * 2^32` instead of `2^63`. Strictly weaker
+    under `dHi ≥ 2^31`. -/
+theorem div128Quot_q1_lt_pow32_of_uHi_lt_dHi_mul_pow32
+    (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (h_uHi_lt : uHi.toNat < dHi.toNat * 2^32) :
+    (rv64_divu uHi dHi).toNat < 2^32 := by
+  rw [rv64_divu_toNat uHi dHi hdHi_ne]
+  exact Nat.div_lt_of_lt_mul h_uHi_lt
+
+/-- **KB-LB6b': `rhatc < 2^32` under `uHi < dHi * 2^32`.** Case A analog of
+    KB-LB6b; same proof structure but uses KB-LB6a' for `q1 < 2^32`. -/
+theorem div128Quot_rhatc_lt_pow32_of_uHi_lt_dHi_mul_pow32
+    (uHi dHi : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (h_uHi_lt : uHi.toNat < dHi.toNat * 2^32)
+    (hdHi_lt : dHi.toNat < 2^32) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    rhatc.toNat < 2^32 := by
+  intro q1 rhat hi1 rhatc
+  have h_q1_lt : q1.toNat < 2^32 :=
+    div128Quot_q1_lt_pow32_of_uHi_lt_dHi_mul_pow32 uHi dHi hdHi_ne h_uHi_lt
+  have h_hi1 : hi1 = 0 := by
+    apply BitVec.eq_of_toNat_eq
+    have h32 : (32 : BitVec 6).toNat = 32 := by decide
+    show (q1 >>> (32 : BitVec 6).toNat).toNat = (0 : Word).toNat
+    rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+    rw [Nat.div_eq_of_lt h_q1_lt]
+    rfl
+  have hdHi_pos : 0 < dHi.toNat :=
+    Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h))
+  have h_rhat_lt : rhat.toNat < dHi.toNat := by
+    show (uHi - q1 * dHi).toNat < dHi.toNat
+    have h_q1_eq : q1.toNat = uHi.toNat / dHi.toNat :=
+      rv64_divu_toNat uHi dHi hdHi_ne
+    have h_post : q1.toNat * dHi.toNat + rhat.toNat = uHi.toNat := by
+      have h := div128Quot_first_round_post uHi dHi hdHi_ne hdHi_lt
+      simp only [show (rv64_divu uHi dHi >>> (32 : BitVec 6).toNat) = 0 from h_hi1,
+                 if_true] at h
+      exact h
+    rw [h_q1_eq] at h_post
+    have h_div_mul_add :
+        uHi.toNat / dHi.toNat * dHi.toNat + uHi.toNat % dHi.toNat = uHi.toNat := by
+      have := Nat.div_add_mod uHi.toNat dHi.toNat
+      linarith
+    have h_rhat_eq : rhat.toNat = uHi.toNat % dHi.toNat := by omega
+    rw [h_rhat_eq]
+    exact Nat.mod_lt _ hdHi_pos
+  show (if hi1 = 0 then rhat else rhat + dHi).toNat < 2^32
+  rw [if_pos h_hi1]
+  omega
+
+/-- **KB-LB7': Phase 1b Knuth lower bound under `uHi < dHi * 2^32`.** Case A
+    variant of KB-LB7, composing KB-LB5 (Phase 1b preserves lower when
+    rhatc < 2^32) with KB-LB6b'. Covers the case `dHi * 2^32 > 2^63`
+    (possible when dHi > 2^31), extending KB-LB7's `uHi < 2^63`. -/
+theorem div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_dHi_mul_pow32
+    (uHi dHi dLo uLo : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (h_uHi_lt : uHi.toNat < dHi.toNat * 2^32)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    (uHi.toNat * 2^32 + div_un1.toNat) /
+      (dHi.toNat * 2^32 + dLo.toNat) ≤ q1'.toNat := by
+  intro q1 rhat hi1 q1c rhatc div_un1 rhatUn1 q1'
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_rhatc_lt : rhatc.toNat < 2^32 :=
+    div128Quot_rhatc_lt_pow32_of_uHi_lt_dHi_mul_pow32 uHi dHi hdHi_ne h_uHi_lt hdHi_lt
+  exact div128Quot_q1_prime_ge_q_true_1_small_rhatc uHi dHi dLo uLo
+    hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop h_rhatc_lt
+
+/-- **KB-LB8': Phase 2 Knuth lower bound under `un21 < dHi * 2^32`.** Case A
+    variant of KB-LB8. Covers un21 values in `[0, dHi * 2^32)`, strictly
+    larger than KB-LB8's `[0, 2^63)` when `dHi > 2^31`. The remaining
+    hard case `un21 ∈ [dHi * 2^32, vTop)` (Case B) still requires
+    Phase 2b Word false-positive analysis. -/
+theorem div128Quot_q0_prime_ge_q_true_0_of_un21_lt_dHi_mul_pow32
+    (un21 dHi dLo uLo : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (h_un21_lt : un21.toNat < dHi.toNat * 2^32)
+    (hun21_lt_vTop : un21.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
+               else q0c
+    (un21.toNat * 2^32 + div_un0.toNat) /
+      (dHi.toNat * 2^32 + dLo.toNat) ≤ q0'.toNat := by
+  intro q0 rhat2 hi2 q0c rhat2c div_un0 rhat2Un0 q0'
+  exact div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_dHi_mul_pow32 un21 dHi dLo
+    (uLo <<< (32 : BitVec 6).toNat)
+    hdHi_ge hdHi_lt hdLo_lt h_un21_lt hun21_lt_vTop
+
 end EvmAsm.Evm64
