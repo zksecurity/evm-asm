@@ -322,6 +322,94 @@ theorem div128Quot_q1_prime_le_pow32_plus_one (uHi dHi dLo rhatUn1 : Word)
   have h_q1'_le_q1c : q1'.toNat ≤ q1c.toNat := div128Quot_q1_prime_le_q1c q1c dLo rhatUn1
   omega
 
+/-- **KB-3e': Tighter post-Phase-1a bound on q1c under hcall.** Phase 1a's
+    `hi1` correction absorbs one overshoot beyond `2^32`:
+
+    ```
+    q1c.toNat ≤ 2^32
+    ```
+
+    - hi1 = 0 branch: `q1 < 2^32` (by definition of hi1), so q1c = q1 < 2^32.
+    - hi1 ≠ 0 branch: `q1 ≥ 2^32`, combined with KB-3c `q1 ≤ 2^32 + 1`,
+      gives `q1 ∈ {2^32, 2^32 + 1}`, so `q1c = q1 - 1 ∈ {2^32 - 1, 2^32}`.
+
+    Tightens KB-3c (`q1 ≤ 2^32 + 1`) by one after Phase 1a. The
+    post-Phase-1b analogue `div128Quot_q1_prime_le_pow32` follows by
+    Phase 1b monotonicity (KB-3d2). -/
+theorem div128Quot_q1c_le_pow32 (uHi dHi dLo : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    q1c.toNat ≤ 2^32 := by
+  intro q1 hi1 q1c
+  have h_q1_le : q1.toNat ≤ 2^32 + 1 :=
+    div128Quot_q1_le_pow32_plus_one uHi dHi dLo hdHi_ge hdLo_lt huHi_lt_vTop
+  by_cases h_hi1 : hi1 = 0
+  · -- hi1 = 0 ⟹ q1 < 2^32 ⟹ q1c = q1 < 2^32.
+    have h32 : (32 : BitVec 6).toNat = 32 := by decide
+    have h_hi1_toNat : hi1.toNat = 0 := by rw [h_hi1]; rfl
+    have h_q1_div : q1.toNat / 2^32 = 0 := by
+      have : hi1.toNat = q1.toNat / 2^32 := by
+        rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+      omega
+    have hq1_lt : q1.toNat < 2^32 := by
+      have h_pos : (0 : Nat) < 2^32 := by decide
+      exact Nat.lt_of_div_eq_zero h_pos h_q1_div
+    show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ _
+    rw [if_pos h_hi1]
+    omega
+  · -- hi1 ≠ 0 ⟹ q1 ≥ 2^32. KB-3c gives q1 ≤ 2^32 + 1, so q1c = q1 - 1 ≤ 2^32.
+    have hq1_ge : q1.toNat ≥ 2^32 := by
+      by_contra h
+      push_neg at h
+      apply h_hi1
+      apply BitVec.eq_of_toNat_eq
+      have h32 : (32 : BitVec 6).toNat = 32 := by decide
+      rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+      show q1.toNat / 2^32 = (0 : Word).toNat
+      rw [Nat.div_eq_of_lt h]
+      rfl
+    show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ _
+    rw [if_neg h_hi1]
+    have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
+    rw [BitVec.toNat_add, h_se_neg1]
+    have hq1_lt_word : q1.toNat - 1 < 2^64 := by have := q1.isLt; omega
+    rw [show q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 from by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt hq1_lt_word]
+    omega
+
+/-- **KB-3e'': Tighter post-Phase-1b bound on q1' under hcall.** Composes
+    KB-3e' (`div128Quot_q1c_le_pow32`) with Phase 1b monotonicity
+    (KB-3d2) to give:
+
+    ```
+    q1'.toNat ≤ 2^32
+    ```
+
+    Strict tightening of KB-3e (`q1' ≤ 2^32 + 1`) by one. Brings us one
+    step closer to Knuth's `q1' < 2^32` invariant (needed for clean
+    `halfword_combine` on the final output, avoiding the `% 2^32` wrap
+    in KB-6a). -/
+theorem div128Quot_q1_prime_le_pow32 (uHi dHi dLo rhatUn1 : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+               else q1c
+    q1'.toNat ≤ 2^32 := by
+  intro q1 hi1 q1c q1'
+  have h_q1c_le : q1c.toNat ≤ 2^32 :=
+    div128Quot_q1c_le_pow32 uHi dHi dLo hdHi_ge hdLo_lt huHi_lt_vTop
+  have h_q1'_le_q1c : q1'.toNat ≤ q1c.toNat :=
+    div128Quot_q1_prime_le_q1c q1c dLo rhatUn1
+  omega
+
 /-- **KB-3f: No-wraparound for `q1' * dLo`.** Under the call-trial
     precondition, the Word-level product equals the Nat-level product:
 
