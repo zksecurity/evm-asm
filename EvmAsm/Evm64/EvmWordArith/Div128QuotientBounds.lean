@@ -254,7 +254,7 @@ theorem div128Quot_q1c_le_q1 (uHi dHi : Word) :
     rw [if_pos h_hi1]
   · have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide
@@ -373,7 +373,7 @@ theorem div128Quot_q1c_le_pow32 (uHi dHi dLo : Word)
   · -- hi1 ≠ 0 ⟹ q1 ≥ 2^32. KB-3c gives q1 ≤ 2^32 + 1, so q1c = q1 - 1 ≤ 2^32.
     have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
-      push_neg at h
+      push Not at h
       apply h_hi1
       apply BitVec.eq_of_toNat_eq
       have h32 : (32 : BitVec 6).toNat = 32 := by decide
