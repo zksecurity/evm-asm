@@ -263,7 +263,7 @@ def n4MaxDoubleAddbackSemanticHolds (a b : EvmWord) : Prop :=
   (addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).toNat = 1
 
-theorem n4MaxDoubleAddbackSemanticHolds_def (a b : EvmWord) :
+theorem n4MaxDoubleAddbackSemanticHolds_def {a b : EvmWord} :
     n4MaxDoubleAddbackSemanticHolds a b =
     (let ms := mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
@@ -1167,7 +1167,7 @@ theorem evm_mod_n4_full_max_skip_stack_pre_spec_bundled (sp base : Word)
     `n4MaxSkipSemanticHolds` (and shift non-zero), those values equal
     `(EvmWord.div a b).getLimbN 0..3`, so the four atoms fold into
     `evmWordIs (sp + 32) (EvmWord.div a b)`. -/
-theorem output_slot_to_evmWordIs_div_n4_max_skip (sp : Word) (a b : EvmWord)
+theorem output_slot_to_evmWordIs_div_n4_max_skip {sp : Word} {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxSkipSemanticHolds a b) :
     (((sp + 32) ↦ₘ (signExtend12 4095 : Word)) **
      ((sp + 40) ↦ₘ (0 : Word)) **
@@ -1181,7 +1181,7 @@ theorem output_slot_to_evmWordIs_div_n4_max_skip (sp : Word) (a b : EvmWord)
 
 /-- MOD counterpart of `output_slot_to_evmWordIs_div_n4_max_skip`: on the
     max+skip path, the mod result limbs equal the four `mulsubN4` outputs. -/
-theorem output_slot_to_evmWordIs_mod_n4_max_skip (sp : Word) (a b : EvmWord)
+theorem output_slot_to_evmWordIs_mod_n4_max_skip {sp : Word} {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxSkipSemanticHolds a b) :
     let ms := mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
@@ -1203,8 +1203,8 @@ theorem output_slot_to_evmWordIs_mod_n4_max_skip (sp : Word) (a b : EvmWord)
     `evmWordIs (sp+32) (EvmWord.div a b)` under the semantic-correctness
     precondition `n4MaxAddbackSemanticHolds`. Parallel to
     `output_slot_to_evmWordIs_div_n4_max_skip`. -/
-theorem output_slot_to_evmWordIs_div_n4_max_addback_single (sp : Word)
-    (a b : EvmWord)
+theorem output_slot_to_evmWordIs_div_n4_max_addback_single {sp : Word}
+    {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxAddbackSemanticHolds a b) :
     (((sp + 32) ↦ₘ (signExtend12 4095 + signExtend12 4095 : Word)) **
      ((sp + 40) ↦ₘ (0 : Word)) **
@@ -1223,8 +1223,8 @@ theorem output_slot_to_evmWordIs_div_n4_max_addback_single (sp : Word)
     The stack spec itself threads an additional CLZ top-limb bound when
     denormalizing (as in the max+skip MOD stack spec) — here we assert
     only the per-limb equalities at the un-normalized level. -/
-theorem output_slot_to_evmWordIs_mod_n4_max_addback_single (sp : Word)
-    (a b : EvmWord)
+theorem output_slot_to_evmWordIs_mod_n4_max_addback_single {sp : Word}
+    {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxAddbackSemanticHolds a b) :
     let ms := mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
@@ -1249,8 +1249,8 @@ theorem output_slot_to_evmWordIs_mod_n4_max_addback_single (sp : Word)
     zero fold into `evmWordIs (sp+32) (EvmWord.div a b)` under
     `n4MaxDoubleAddbackSemanticHolds`. Parallel to the single-addback
     reshape, but with `q_out = 2^64 - 3` instead of `2^64 - 2`. -/
-theorem output_slot_to_evmWordIs_div_n4_max_addback_double (sp : Word)
-    (a b : EvmWord)
+theorem output_slot_to_evmWordIs_div_n4_max_addback_double {sp : Word}
+    {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxDoubleAddbackSemanticHolds a b) :
     (((sp + 32) ↦ₘ
         (signExtend12 4095 + signExtend12 4095 + signExtend12 4095 : Word)) **
@@ -1269,8 +1269,8 @@ theorem output_slot_to_evmWordIs_div_n4_max_addback_double (sp : Word)
     fold into `evmWordIs (sp+32) (EvmWord.mod a b)` under
     `n4MaxDoubleAddbackSemanticHolds`. As with the single-addback MOD
     reshape, denormalization is threaded at the stack-spec call site. -/
-theorem output_slot_to_evmWordIs_mod_n4_max_addback_double (sp : Word)
-    (a b : EvmWord)
+theorem output_slot_to_evmWordIs_mod_n4_max_addback_double {sp : Word}
+    {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxDoubleAddbackSemanticHolds a b) :
     let ms := mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
