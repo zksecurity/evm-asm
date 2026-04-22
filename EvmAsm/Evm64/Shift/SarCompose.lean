@@ -249,21 +249,21 @@ private theorem sar_bne_target {base : Word} : (base + 20 : Word) + signExtend13
 private theorem sar_beq_target {base : Word} : (base + 32 : Word) + signExtend13 320 = base + 352 := by
   rv64_addr
 -- Phase C exit addresses
-private theorem sar_c_e0 (base : Word) : (base + 64 : Word) + signExtend13 188 = base + 252 := by
+private theorem sar_c_e0 {base : Word} : (base + 64 : Word) + signExtend13 188 = base + 252 := by
   rv64_addr
-private theorem sar_c_e1 (base : Word) : ((base + 64 : Word) + 8) + signExtend13 100 = base + 172 := by
+private theorem sar_c_e1 {base : Word} : ((base + 64 : Word) + 8) + signExtend13 100 = base + 172 := by
   rv64_addr
-private theorem sar_c_e2 (base : Word) : ((base + 64 : Word) + 16) + signExtend13 36 = base + 116 := by
+private theorem sar_c_e2 {base : Word} : ((base + 64 : Word) + 16) + signExtend13 36 = base + 116 := by
   rv64_addr
-private theorem sar_c_e3 (base : Word) : (base + 64 : Word) + 20 = base + 84 := by bv_omega
+private theorem sar_c_e3 {base : Word} : (base + 64 : Word) + 20 = base + 84 := by bv_omega
 -- Body exit addresses (JAL targets → base+380)
-private theorem sar_body3_exit (base : Word) : ((base + 84 : Word) + 28) + signExtend21 268 = base + 380 := by
+private theorem sar_body3_exit {base : Word} : ((base + 84 : Word) + 28) + signExtend21 268 = base + 380 := by
   rv64_addr
-private theorem sar_body2_exit (base : Word) : ((base + 116 : Word) + 52) + signExtend21 212 = base + 380 := by
+private theorem sar_body2_exit {base : Word} : ((base + 116 : Word) + 52) + signExtend21 212 = base + 380 := by
   rv64_addr
-private theorem sar_body1_exit (base : Word) : ((base + 172 : Word) + 76) + signExtend21 132 = base + 380 := by
+private theorem sar_body1_exit {base : Word} : ((base + 172 : Word) + 76) + signExtend21 132 = base + 380 := by
   rv64_addr
-private theorem sar_body0_exit (base : Word) : ((base + 252 : Word) + 96) + signExtend21 32 = base + 380 := by
+private theorem sar_body0_exit {base : Word} : ((base + 252 : Word) + 96) + signExtend21 32 = base + 380 := by
   rv64_addr
 
 -- ============================================================================
@@ -896,21 +896,21 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
   -- Phase C: cascade dispatch at base+64 (with pure dispatch facts)
   have hphaseC_raw := sar_phase_c_spec_pure limbShift sltiuVal (base + 64)
     (base + 252) (base + 172) (base + 116) (base + 84)
-    (sar_c_e0 base) (sar_c_e1 base) (sar_c_e2 base) (sar_c_e3 base)
+    sar_c_e0 sar_c_e1 sar_c_e2 sar_c_e3
   have hphaseC := cpsNBranch_extend_code sar_phase_c_sub_sarCode hphaseC_raw
   -- Body specs extended to sarCode
   have hbody3 := cpsTriple_extend_code sar_body_3_sub_sarCode
     (sar_body_3_spec (sp + 32) limbShift ((0 : Word) + signExtend12 2) bitShift antiShift mask
-      v0 v1 v2 v3 (base + 84) (base + 380) 268 (sar_body3_exit base))
+      v0 v1 v2 v3 (base + 84) (base + 380) 268 sar_body3_exit)
   have hbody2 := cpsTriple_extend_code sar_body_2_sub_sarCode
     (sar_body_2_spec (sp + 32) limbShift ((0 : Word) + signExtend12 2) bitShift antiShift mask
-      v0 v1 v2 v3 (base + 116) (base + 380) 212 (sar_body2_exit base))
+      v0 v1 v2 v3 (base + 116) (base + 380) 212 sar_body2_exit)
   have hbody1 := cpsTriple_extend_code sar_body_1_sub_sarCode
     (sar_body_1_spec (sp + 32) limbShift ((0 : Word) + signExtend12 1) bitShift antiShift mask
-      v0 v1 v2 v3 (base + 172) (base + 380) 132 (sar_body1_exit base))
+      v0 v1 v2 v3 (base + 172) (base + 380) 132 sar_body1_exit)
   have hbody0 := cpsTriple_extend_code sar_body_0_sub_sarCode
     (sar_body_0_spec (sp + 32) limbShift sltiuVal bitShift antiShift mask
-      v0 v1 v2 v3 (base + 252) (base + 380) 32 (sar_body0_exit base))
+      v0 v1 v2 v3 (base + 252) (base + 380) 32 sar_body0_exit)
   -- Frame each body with (x0=0 ** shiftMem)
   have hbody3_f := cpsTriple_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
