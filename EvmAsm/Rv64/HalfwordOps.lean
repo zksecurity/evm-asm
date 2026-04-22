@@ -9,7 +9,9 @@ import EvmAsm.Rv64.Basic
 import EvmAsm.Rv64.Execution
 import EvmAsm.Rv64.SepLogic
 import EvmAsm.Rv64.CPSSpec
-import Mathlib.Tactic
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.FinCases
+import Mathlib.Data.Fintype.Basic
 
 namespace EvmAsm.Rv64
 
