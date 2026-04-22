@@ -32,7 +32,6 @@
 import Lean
 import Lean.Meta.Tactic.AC.Main
 import EvmAsm.Rv64.SepLogic
-import EvmAsm.Rv64.Tactics.PerfTrace
 
 open Lean Meta Elab Tactic
 
