@@ -257,27 +257,27 @@ private theorem byte_pc_instr_sub (base addr : Word) (instr : Instr) (k : Nat)
     (by decide) h_addr)
 
 -- Per-instruction subsumption lemmas (k = 0..4)
-private theorem byte_pc_sub_0 (base : Word) :
+private theorem byte_pc_sub_0 {base : Word} :
     ∀ a i, CodeReq.singleton base (.BEQ .x5 .x0 68) a = some i →
       (byte_phase_c_code base) a = some i :=
   byte_pc_instr_sub base base _ 0 (by decide) (by bv_omega) (by decide)
 
-private theorem byte_pc_sub_1 (base : Word) :
+private theorem byte_pc_sub_1 {base : Word} :
     ∀ a i, CodeReq.singleton (base + 4) (.ADDI .x10 .x0 1) a = some i →
       (byte_phase_c_code base) a = some i :=
   byte_pc_instr_sub base (base + 4) _ 1 (by decide) (by bv_omega) (by decide)
 
-private theorem byte_pc_sub_2 (base : Word) :
+private theorem byte_pc_sub_2 {base : Word} :
     ∀ a i, CodeReq.singleton (base + 8) (.BEQ .x5 .x10 44) a = some i →
       (byte_phase_c_code base) a = some i :=
   byte_pc_instr_sub base (base + 8) _ 2 (by decide) (by bv_omega) (by decide)
 
-private theorem byte_pc_sub_3 (base : Word) :
+private theorem byte_pc_sub_3 {base : Word} :
     ∀ a i, CodeReq.singleton (base + 12) (.ADDI .x10 .x0 2) a = some i →
       (byte_phase_c_code base) a = some i :=
   byte_pc_instr_sub base (base + 12) _ 3 (by decide) (by bv_omega) (by decide)
 
-private theorem byte_pc_sub_4 (base : Word) :
+private theorem byte_pc_sub_4 {base : Word} :
     ∀ a i, CodeReq.singleton (base + 16) (.BEQ .x5 .x10 20) a = some i →
       (byte_phase_c_code base) a = some i :=
   byte_pc_instr_sub base (base + 16) _ 4 (by decide) (by bv_omega) (by decide)
@@ -302,7 +302,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   -- Step 0: BEQ x5 x0 68 at base — extend to cr, frame with x10
   have beq0_raw := beq_spec_gen .x5 .x0 68 v5 (0 : Word) base
   rw [he0] at beq0_raw
-  have beq0_cr := cpsBranch_extend_code (byte_pc_sub_0 base) beq0_raw
+  have beq0_cr := cpsBranch_extend_code byte_pc_sub_0 beq0_raw
   have beq0f : cpsBranch base cr
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       e0 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝)
@@ -314,7 +314,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
       (cpsBranch_frameR (.x10 ↦ᵣ v10) (by pcFree) beq0_cr)
   -- Step 1: ADDI x10 x0 1 at base+4 (extend to cr, frame with x5)
   have addi1_raw := addi_spec_gen .x10 .x0 v10 (0 : Word) 1 (base + 4) (by nofun)
-  have addi1_cr := cpsTriple_extend_code (byte_pc_sub_1 base) addi1_raw
+  have addi1_cr := cpsTriple_extend_code byte_pc_sub_1 addi1_raw
   have addi1f := cpsTriple_frameR
     (.x5 ↦ᵣ v5) (by pcFree) addi1_cr
   -- Normalize ADDI1 exit PC
@@ -323,7 +323,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   -- Step 2: BEQ x5 x10 44 at base+8 (extend to cr, frame with x0)
   have beq1_raw := beq_spec_gen .x5 .x10 44 v5 ((0 : Word) + signExtend12 1) (base + 8)
   rw [he1] at beq1_raw
-  have beq1_cr := cpsBranch_extend_code (byte_pc_sub_2 base) beq1_raw
+  have beq1_cr := cpsBranch_extend_code byte_pc_sub_2 beq1_raw
   -- Normalize BEQ1 ntaken exit
   have hbeq1_nf : (base + 8 : Word) + 4 = base + 12 := by bv_omega
   rw [hbeq1_nf] at beq1_raw beq1_cr
@@ -362,7 +362,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
       cs1_framed
   -- Step 3: ADDI x10 x0 2 at base+12 (extend to cr, frame with x5)
   have addi2_raw := addi_spec_gen .x10 .x0 ((0 : Word) + signExtend12 1) (0 : Word) 2 (base + 12) (by nofun)
-  have addi2_cr := cpsTriple_extend_code (byte_pc_sub_3 base) addi2_raw
+  have addi2_cr := cpsTriple_extend_code byte_pc_sub_3 addi2_raw
   have addi2f := cpsTriple_frameR
     (.x5 ↦ᵣ v5) (by pcFree) addi2_cr
   -- Normalize ADDI2 exit PC
@@ -371,7 +371,7 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
   -- Step 4: BEQ x5 x10 20 at base+16 (extend to cr, frame with x0)
   have beq2_raw := beq_spec_gen .x5 .x10 20 v5 ((0 : Word) + signExtend12 2) (base + 16)
   rw [he2] at beq2_raw
-  have beq2_cr := cpsBranch_extend_code (byte_pc_sub_4 base) beq2_raw
+  have beq2_cr := cpsBranch_extend_code byte_pc_sub_4 beq2_raw
   -- Normalize BEQ2 ntaken exit
   have hbeq2_nf : (base + 16 : Word) + 4 = base + 20 := by bv_omega
   rw [hbeq2_nf] at beq2_raw beq2_cr
