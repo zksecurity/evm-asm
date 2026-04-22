@@ -546,4 +546,36 @@ theorem div128Quot_un21_toNat_case (uHi dHi dLo uLo rhatUn1 : Word)
     show (A + 2^64 - B) % 2^64 = A + 2^64 - B
     exact Nat.mod_eq_of_lt (by omega)
 
+/-- **KB-3k: vTop decomposition.** The divisor `vTop` decomposes cleanly
+    into its high and low 32-bit halves `dHi` and `dLo`:
+
+    ```
+    vTop.toNat = dHi.toNat * 2^32 + dLo.toNat
+    ```
+
+    where `dHi := vTop >>> 32` and `dLo := (vTop <<< 32) >>> 32`.
+
+    Pure utility: holds unconditionally for any 64-bit `vTop`.  Used to
+    connect Phase 2's formula (involving `dHi` and `dLo` separately) with
+    abstract dividend quantities that use `vTop` directly. -/
+theorem div128Quot_vTop_decomp (vTop : Word) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    vTop.toNat = dHi.toNat * 2^32 + dLo.toNat := by
+  intro dHi dLo
+  have h32 : (32 : BitVec 6).toNat = 32 := by decide
+  have h_dHi : dHi.toNat = vTop.toNat / 2^32 := by
+    show (vTop >>> (32 : BitVec 6).toNat).toNat = _
+    rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow]
+  have h_dLo : dLo.toNat = vTop.toNat % 2^32 := by
+    show ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat = _
+    rw [BitVec.toNat_ushiftRight, h32, Nat.shiftRight_eq_div_pow,
+        BitVec.toNat_shiftLeft]
+    simp only [Nat.shiftLeft_eq]
+    rw [show (2^64 : Nat) = 2^32 * 2^32 from by decide,
+        Nat.mul_mod_mul_right, Nat.mul_div_cancel _ (by decide : (0:Nat) < 2^32)]
+  rw [h_dHi, h_dLo]
+  have := Nat.div_add_mod vTop.toNat (2^32)
+  omega
+
 end EvmAsm.Evm64
