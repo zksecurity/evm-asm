@@ -451,7 +451,7 @@ theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
 
 /-- Unfold preloopMaxAddbackBeqPostN4 to expanded form with sp-relative addresses.
     The `if carry = 0` branches in loopBodyAddbackBeqPost flow through unchanged. -/
-theorem preloopMaxAddbackBeqPostN4_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem preloopMaxAddbackBeqPostN4_unfold {sp a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     preloopMaxAddbackBeqPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3 =
     let shift := (clzResult b3).1
     let antiShift := signExtend12 (0 : BitVec 12) - shift
@@ -548,7 +548,7 @@ def fullDivN4MaxAddbackBeqPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
 /-- Named unfold for `fullDivN4MaxAddbackBeqPost`. Parallel to
     `fullDivN4MaxSkipPost_unfold` — restores access to the atomic
     components once `@[irreducible]` has made `delta` the only path. -/
-theorem fullDivN4MaxAddbackBeqPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem fullDivN4MaxAddbackBeqPost_unfold {sp a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     fullDivN4MaxAddbackBeqPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
     (let shift := (clzResult b3).1
      let antiShift := signExtend12 (0 : BitVec 12) - shift
@@ -677,7 +677,7 @@ theorem evm_div_n4_full_max_addback_beq_spec (sp base : Word)
 -- ============================================================================
 
 /-- Unfold preloopCallAddbackBeqPostN4 to expanded sp-relative form. -/
-theorem preloopCallAddbackBeqPostN4_unfold (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem preloopCallAddbackBeqPostN4_unfold {sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     preloopCallAddbackBeqPostN4 sp base a0 a1 a2 a3 b0 b1 b2 b3 =
     let shift := (clzResult b3).1
     let antiShift := signExtend12 (0 : BitVec 12) - shift

@@ -203,7 +203,7 @@ theorem evm_div_n4_preloop_max_skip_spec (sp base : Word)
 -- ============================================================================
 
 /-- Unfold preloopMaxSkipPostN4 to expanded form with sp-relative addresses. -/
-theorem preloopMaxSkipPostN4_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem preloopMaxSkipPostN4_unfold {sp a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     preloopMaxSkipPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3 =
     let shift := (clzResult b3).1
     let antiShift := signExtend12 (0 : BitVec 12) - shift
@@ -278,7 +278,7 @@ def fullDivN4MaxSkipPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
     underlying sepConj structure once the `@[irreducible]` attribute
     above makes `delta` the only way in. Parallel to the `_unfold`
     theorems for the other post bundles (`denormDivPost_unfold` etc.). -/
-theorem fullDivN4MaxSkipPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem fullDivN4MaxSkipPost_unfold {sp a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
     (let shift := (clzResult b3).1
      let antiShift := signExtend12 (0 : BitVec 12) - shift
@@ -365,7 +365,7 @@ def fullModN4MaxSkipPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
 
 /-- Named unfold for `fullModN4MaxSkipPost`. Mirror of
     `fullDivN4MaxSkipPost_unfold`. -/
-theorem fullModN4MaxSkipPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem fullModN4MaxSkipPost_unfold {sp a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     fullModN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
     (let shift := (clzResult b3).1
      let antiShift := signExtend12 (0 : BitVec 12) - shift
@@ -612,7 +612,7 @@ def preloopCallSkipPostN4 (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :
   ((sp + signExtend12 3992) ↦ₘ shift)
 
 /-- Unfold preloopCallSkipPostN4 to expanded sp-relative form. -/
-theorem preloopCallSkipPostN4_unfold (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem preloopCallSkipPostN4_unfold {sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     preloopCallSkipPostN4 sp base a0 a1 a2 a3 b0 b1 b2 b3 =
     let shift := (clzResult b3).1
     let antiShift := signExtend12 (0 : BitVec 12) - shift

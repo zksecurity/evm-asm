@@ -152,7 +152,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec (sp base : Word)
 -- ============================================================================
 
 /-- Unfold preloopShift0CallSkipPostN4 to expanded sp-relative form. -/
-theorem preloopShift0CallSkipPostN4_unfold (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+theorem preloopShift0CallSkipPostN4_unfold {sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word} :
     preloopShift0CallSkipPostN4 sp base a0 a1 a2 a3 b0 b1 b2 b3 =
     let qHat := div128Quot (0 : Word) a3 b3
     let dLo := (b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
