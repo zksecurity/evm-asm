@@ -109,11 +109,11 @@ def isSkipBorrowN4MaxEvm (a b : EvmWord) : Prop :=
   isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isMaxTrialN4Evm_def (a b : EvmWord) :
+theorem isMaxTrialN4Evm_def {a b : EvmWord} :
     isMaxTrialN4Evm a b =
     isMaxTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
-theorem isSkipBorrowN4MaxEvm_def (a b : EvmWord) :
+theorem isSkipBorrowN4MaxEvm_def {a b : EvmWord} :
     isSkipBorrowN4MaxEvm a b =
     isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
@@ -138,16 +138,16 @@ def isAddbackBorrowN4CallEvm (a b : EvmWord) : Prop :=
   isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isCallTrialN4Evm_def (a b : EvmWord) :
+theorem isCallTrialN4Evm_def {a b : EvmWord} :
     isCallTrialN4Evm a b =
     isCallTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
-theorem isSkipBorrowN4CallEvm_def (a b : EvmWord) :
+theorem isSkipBorrowN4CallEvm_def {a b : EvmWord} :
     isSkipBorrowN4CallEvm a b =
     isSkipBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
-theorem isAddbackBorrowN4CallEvm_def (a b : EvmWord) :
+theorem isAddbackBorrowN4CallEvm_def {a b : EvmWord} :
     isAddbackBorrowN4CallEvm a b =
     isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                           (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
@@ -159,7 +159,7 @@ def isAddbackCarry2NzN4CallEvm (a b : EvmWord) : Prop :=
   isAddbackCarry2NzN4CallAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                             (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isAddbackCarry2NzN4CallEvm_def (a b : EvmWord) :
+theorem isAddbackCarry2NzN4CallEvm_def {a b : EvmWord} :
     isAddbackCarry2NzN4CallEvm a b =
     isAddbackCarry2NzN4CallAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                               (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
@@ -172,7 +172,7 @@ def isAddbackBorrowN4MaxEvm (a b : EvmWord) : Prop :=
   isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isAddbackBorrowN4MaxEvm_def (a b : EvmWord) :
+theorem isAddbackBorrowN4MaxEvm_def {a b : EvmWord} :
     isAddbackBorrowN4MaxEvm a b =
     isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                          (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
@@ -185,7 +185,7 @@ def isAddbackCarry2NzN4MaxAbEvm (a b : EvmWord) : Prop :=
   isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isAddbackCarry2NzN4MaxAbEvm_def (a b : EvmWord) :
+theorem isAddbackCarry2NzN4MaxAbEvm_def {a b : EvmWord} :
     isAddbackCarry2NzN4MaxAbEvm a b =
     isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
@@ -210,7 +210,7 @@ def n4MaxSkipSemanticHolds (a b : EvmWord) : Prop :=
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
       (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0
 
-theorem n4MaxSkipSemanticHolds_def (a b : EvmWord) :
+theorem n4MaxSkipSemanticHolds_def {a b : EvmWord} :
     n4MaxSkipSemanticHolds a b =
     ((mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
@@ -230,7 +230,7 @@ def n4MaxAddbackSemanticHolds (a b : EvmWord) : Prop :=
   addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 1
 
-theorem n4MaxAddbackSemanticHolds_def (a b : EvmWord) :
+theorem n4MaxAddbackSemanticHolds_def {a b : EvmWord} :
     n4MaxAddbackSemanticHolds a b =
     (let ms := mulsubN4 (signExtend12 4095)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
