@@ -742,4 +742,34 @@ theorem div128Quot_q1c_ge_q_true_1
         Nat.add_mod_right, Nat.mod_eq_of_lt hq1_lt_word]
     omega
 
+/-- **KB-LB4: Knuth Theorem C (abstract algebra form).** The
+    multiplication-check inequality implies the trial overshoots the
+    true first digit:
+
+    ```
+    rhatc * 2^32 + div_un1 < q1c * dLo
+      → uHi * 2^32 + div_un1 < q1c * (dHi * 2^32 + dLo)
+    ```
+
+    Proof: use Phase 1a Euclidean (`q1c * dHi + rhatc = uHi`) to
+    substitute `rhatc = uHi - q1c * dHi`, then rearrange. Pure Nat
+    algebra on abstract (uHi, dHi, dLo, div_un1, rhatc, q1c). -/
+theorem knuth_theorem_c_abstract
+    (uHi dHi dLo div_un1 rhatc q1c : Word)
+    (h_eucl : q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat)
+    (h_check : rhatc.toNat * 2^32 + div_un1.toNat < q1c.toNat * dLo.toNat) :
+    uHi.toNat * 2^32 + div_un1.toNat <
+    q1c.toNat * (dHi.toNat * 2^32 + dLo.toNat) := by
+  -- Multiply Euclidean by 2^32: q1c * dHi * 2^32 + rhatc * 2^32 = uHi * 2^32.
+  have h_eucl_mul : q1c.toNat * dHi.toNat * 2^32 + rhatc.toNat * 2^32 =
+      uHi.toNat * 2^32 := by
+    have := congr_arg (· * 2^32) h_eucl
+    simp only [Nat.add_mul] at this
+    exact this
+  -- Distribute q1c * vTop:
+  have h_expand : q1c.toNat * (dHi.toNat * 2^32 + dLo.toNat) =
+      q1c.toNat * dHi.toNat * 2^32 + q1c.toNat * dLo.toNat := by ring
+  rw [h_expand]
+  linarith
+
 end EvmAsm.Evm64
