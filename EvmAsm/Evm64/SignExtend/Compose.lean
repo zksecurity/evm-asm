@@ -168,19 +168,19 @@ private theorem se_bne_target {base : Word} : (base + 20 : Word) + signExtend13 
 private theorem se_beq_target {base : Word} : (base + 32 : Word) + signExtend13 156 = base + 188 := by
   rv64_addr
 -- Phase C exit addresses
-private theorem se_c_e0 (base : Word) : (base + 56 : Word) + signExtend13 100 = base + 156 := by
+private theorem se_c_e0 {base : Word} : (base + 56 : Word) + signExtend13 100 = base + 156 := by
   rv64_addr
-private theorem se_c_e1 (base : Word) : ((base + 56 : Word) + 8) + signExtend13 60 = base + 124 := by
+private theorem se_c_e1 {base : Word} : ((base + 56 : Word) + 8) + signExtend13 60 = base + 124 := by
   rv64_addr
-private theorem se_c_e2 (base : Word) : ((base + 56 : Word) + 16) + signExtend13 24 = base + 96 := by
+private theorem se_c_e2 {base : Word} : ((base + 56 : Word) + 16) + signExtend13 24 = base + 96 := by
   rv64_addr
-private theorem se_c_e3 (base : Word) : (base + 56 : Word) + 20 = base + 76 := by bv_omega
+private theorem se_c_e3 {base : Word} : (base + 56 : Word) + 20 = base + 76 := by bv_omega
 -- Body exit addresses (JAL targets)
-private theorem se_body3_exit (base : Word) : ((base + 76 : Word) + 16) + signExtend21 96 = base + 188 := by
+private theorem se_body3_exit {base : Word} : ((base + 76 : Word) + 16) + signExtend21 96 = base + 188 := by
   rv64_addr
-private theorem se_body2_exit (base : Word) : ((base + 96 : Word) + 24) + signExtend21 68 = base + 188 := by
+private theorem se_body2_exit {base : Word} : ((base + 96 : Word) + 24) + signExtend21 68 = base + 188 := by
   rv64_addr
-private theorem se_body1_exit (base : Word) : ((base + 124 : Word) + 28) + signExtend21 36 = base + 188 := by
+private theorem se_body1_exit {base : Word} : ((base + 124 : Word) + 28) + signExtend21 36 = base + 188 := by
   rv64_addr
 private theorem se_done_exit {base : Word} : (base + 188 : Word) + 4 = base + 192 := by bv_omega
 
@@ -513,15 +513,15 @@ theorem signext_body_spec (sp base : Word)
   -- Phase C with pure dispatch facts
   have hphaseC_raw := signext_phase_c_spec_pure limbIdx byteShift (base + 56)
     (base + 156) (base + 124) (base + 96) (base + 76)
-    (se_c_e0 base) (se_c_e1 base) (se_c_e2 base) (se_c_e3 base)
+    se_c_e0 se_c_e1 se_c_e2 se_c_e3
   have hphaseC := cpsNBranch_extend_code phase_c_sub_signextCode hphaseC_raw
   -- Body specs + done, extended to signextCode
   have hbody3 := cpsTriple_extend_code body_3_sub_signextCode
-    (signext_body_3_spec sp limbIdx shiftAmount v3 (base + 76) (base + 188) 96 (se_body3_exit base))
+    (signext_body_3_spec sp limbIdx shiftAmount v3 (base + 76) (base + 188) 96 se_body3_exit)
   have hbody2 := cpsTriple_extend_code body_2_sub_signextCode
-    (signext_body_2_spec sp limbIdx ((0 : Word) + signExtend12 2) shiftAmount v2 v3 (base + 96) (base + 188) 68 (se_body2_exit base))
+    (signext_body_2_spec sp limbIdx ((0 : Word) + signExtend12 2) shiftAmount v2 v3 (base + 96) (base + 188) 68 se_body2_exit)
   have hbody1 := cpsTriple_extend_code body_1_sub_signextCode
-    (signext_body_1_spec sp limbIdx ((0 : Word) + signExtend12 1) shiftAmount v1 v2 v3 (base + 124) (base + 188) 36 (se_body1_exit base))
+    (signext_body_1_spec sp limbIdx ((0 : Word) + signExtend12 1) shiftAmount v1 v2 v3 (base + 124) (base + 188) 36 se_body1_exit)
   have hbody0 := cpsTriple_extend_code body_0_sub_signextCode
     (signext_body_0_spec sp limbIdx byteShift shiftAmount v0 v1 v2 v3 (base + 156))
   rw [show (base + 156 : Word) + 32 = base + 188 from by bv_addr] at hbody0
