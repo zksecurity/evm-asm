@@ -650,9 +650,8 @@ theorem div128Quot_first_round_correction (uHi dHi : Word)
     rw [Nat.div_eq_of_lt h]
     rfl
   -- q1c.toNat = q1.toNat - 1
-  have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
   have hq1c_toNat : (q1 + signExtend12 4095).toNat = q1.toNat - 1 := by
-    rw [BitVec.toNat_add, h_se_neg1]
+    rw [BitVec.toNat_add, signExtend12_4095_toNat]
     have : q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 := by omega
     rw [this, Nat.add_mod_right]
     exact Nat.mod_eq_of_lt (by have := q1.isLt; omega)
@@ -733,7 +732,6 @@ theorem div128Quot_q1c_lt_pow33 (uHi dHi : Word) (hdHi_ge : dHi.toNat ≥ 2^31) 
     exact hq1_lt
   · -- q1c = q1 + (-1). q1 ≥ 1, so q1c.toNat = q1.toNat - 1 < q1.toNat < 2^33.
     simp only [q1c, h_hi1, ↓reduceIte]
-    have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
     -- q1.toNat ≥ 2^32 (from hi1 ≠ 0)
     have hq1_ge : q1.toNat ≥ 2^32 := by
       by_contra h
@@ -745,7 +743,7 @@ theorem div128Quot_q1c_lt_pow33 (uHi dHi : Word) (hdHi_ge : dHi.toNat ≥ 2^31) 
       show q1.toNat / 2^32 = (0 : Word).toNat
       rw [Nat.div_eq_of_lt h]
       rfl
-    rw [BitVec.toNat_add, h_se_neg1]
+    rw [BitVec.toNat_add, signExtend12_4095_toNat]
     have h_eq : q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 := by omega
     rw [h_eq, Nat.add_mod_right]
     have hq1_lt_word : q1.toNat - 1 < 2^64 := by have := q1.isLt; omega
@@ -849,9 +847,8 @@ theorem div128Quot_phase1b_correction_eucl
     (q1c + signExtend12 4095).toNat * dHi.toNat +
       (rhatc + dHi).toNat = uHi.toNat := by
   -- q1' = q1c - 1
-  have h_se_neg1 : (signExtend12 (4095 : BitVec 12) : Word).toNat = 2^64 - 1 := by decide
   have hq1'_toNat : (q1c + signExtend12 4095).toNat = q1c.toNat - 1 := by
-    rw [BitVec.toNat_add, h_se_neg1]
+    rw [BitVec.toNat_add, signExtend12_4095_toNat]
     have h_eq : q1c.toNat + (2^64 - 1) = (q1c.toNat - 1) + 2^64 := by omega
     rw [h_eq, Nat.add_mod_right]
     have hq1c_lt_word : q1c.toNat - 1 < 2^64 := by have := q1c.isLt; omega
