@@ -1064,6 +1064,39 @@ theorem evm_div_n4_call_skip_stack_spec (sp base : Word)
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+/-- **Generic: `c3_un = 0` follows from `qHat * val256(b) ≤ val256(a)`.**
+
+    Takes only the un-normalized bound from T3 (or equivalent). Works for
+    any `qHat`, so it's usable by both max-skip (where the bound comes
+    from `isSkipBorrowN4Max`) and call-skip (where T3 supplies it via
+    `div128Quot_call_skip_mul_val256_b_le_val256_a`).
+
+    Proof: from `mulsubN4_val256_eq`,
+    `val256(a) + c3.toNat * 2^256 = val256(ms) + qHat.toNat * val256(b)`.
+    Combined with the hypothesis `qHat * val256(b) ≤ val256(a)` and the
+    bound `val256(ms) < 2^256`, we get `c3.toNat * 2^256 < 2^256`, i.e.
+    `c3.toNat = 0`. -/
+theorem c3_un_zero_of_qHat_mul_le
+    {a0 a1 a2 a3 b0 b1 b2 b3 qHat : Word}
+    (h : qHat.toNat * val256 b0 b1 b2 b3 ≤ val256 a0 a1 a2 a3) :
+    (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 := by
+  have heuc := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
+  simp only [] at heuc
+  have hms_lt : val256 (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).1
+                       (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.1
+                       (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.1
+                       (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.1 < 2^256 :=
+    EvmWord.val256_bound ..
+  have hc3_lt : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2.toNat < 2^64 :=
+    (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2.isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [show (0 : Word).toNat = 0 from rfl]
+  -- c3.toNat * 2^256 + val256(a) = val256(ms) + qHat.toNat * val256(b) ≤ val256(ms) + val256(a)
+  -- → c3.toNat * 2^256 ≤ val256(ms) < 2^256
+  -- → c3.toNat = 0
+  have h_pow : (2:Nat)^256 > 0 := by positivity
+  omega
+
 /-- **Call+skip n=4 MOD denorm adapter (SORRY).** Stack-level adapter folding
     the four denormalized remainder slots at `sp+32..sp+56` into
     `evmWordIs (sp+32) (EvmWord.mod a b)`. Mirror of
