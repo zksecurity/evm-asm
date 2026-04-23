@@ -564,4 +564,73 @@ theorem q_true_full_lt_q_true_1_succ_mul_pow32_nat
   rw [h_eq_rearr] at h_num_lt
   exact (Nat.div_lt_iff_lt_mul hvTop_pos).mpr h_num_lt
 
+-- ============================================================================
+-- Task 5 (post-#1138): exact lower bound for call-skip DIV
+-- ============================================================================
+
+/-- **Call-skip exact lower bound**: under hshift_nz + hcall + hskip + hbnz,
+    `val256(a)/val256(b) ≤ qHat.toNat` where qHat is the algorithm's trial.
+
+    Post-#1138 (Phase 2b guard landed), this is the critical missing piece
+    for closing the exact equality `qHat = val256(a)/val256(b)` needed by
+    `evm_div_n4_call_skip_stack_spec` (task #66).
+
+    Proof sketch (incremental per `feedback_loop_attack_blockers`):
+    1. Decompose qHat.toNat via `div128Quot_toNat_eq_strict`:
+         qHat.toNat = q1'.toNat * 2^32 + q0'.toNat.
+    2. Apply KB-LB7 (`div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_pow63`)
+       with uHi := u4. u4 < 2^63 follows from hshift_nz (u4 has only
+       `shift` bits < 64 bits of a3).
+    3. Apply KB-LB8 or KB-LB8' for q0' ≥ q_true_0. Under shift_nz +
+       hcall, un21 bounds need careful analysis. Case A: un21 < dHi*2^32
+       (covered by KB-LB8'). Case B: un21 ≥ dHi*2^32 — post-#1138 the
+       Phase 2b guard handles this correctly.
+    4. Combine via q_true_full_ge_q_true_1_mul_pow32_nat +
+       digit_tight_of_le_and_ge.
+    5. Bridge q_true_full to val256(a)/val256(b) via normalization
+       invariants (the 2^shift scaling cancels in the division).
+
+    TODO(#65): fill in the proof steps. Each is bounded; combined ~100-200
+    lines. -/
+theorem div128Quot_call_skip_ge_val256_div
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (hskip : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    let u4 := a3 >>> antiShift
+    let u3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 ≤
+      (div128Quot u4 u3 b3').toNat := by
+  sorry
+
+/-- **Call-skip exact equality**: combines the upper and lower bounds to
+    give `qHat.toNat = val256(a)/val256(b)` under the call+skip preconditions.
+    Trivial antisymmetry. Depends on `_ge_val256_div` (task #65). -/
+theorem div128Quot_call_skip_eq_val256_div
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (hskip : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    let u4 := a3 >>> antiShift
+    let u3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    (div128Quot u4 u3 b3').toNat =
+      val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 := by
+  intro shift antiShift b3' u4 u3
+  have h_upper : (div128Quot u4 u3 b3').toNat ≤
+      val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 :=
+    div128Quot_call_skip_le_val256_div a0 a1 a2 a3 b0 b1 b2 b3 hb3nz hshift_nz hskip
+  have h_lower : val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 ≤
+      (div128Quot u4 u3 b3').toNat :=
+    div128Quot_call_skip_ge_val256_div a0 a1 a2 a3 b0 b1 b2 b3
+      hb3nz hshift_nz hcall hskip
+  omega
+
 end EvmAsm.Evm64
