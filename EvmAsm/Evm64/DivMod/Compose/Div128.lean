@@ -206,6 +206,7 @@ theorem div128_spec (sp retAddr d uLo uHi : Word) (base : Word)
   -- ================================================================
   have hst2 := divK_div128_step2_spec sp un21 dHi cu_q1_dlo cu_rhat_un1 un1 dLo un0
     (base + 1192)
+  unfold divKDiv128Step2Code divKDiv128Step2Post at hst2
   rw [show (base + 1192 : Word) + 68 = base + 1260 from by bv_addr] at hst2
   have hst2e := cpsTriple_extend_code (hmono := by
     exact CodeReq.union_sub (d128_sub 30 _ _ (by decide) (by bv_addr) (by decide))
