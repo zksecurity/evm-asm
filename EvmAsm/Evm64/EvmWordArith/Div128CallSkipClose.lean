@@ -691,9 +691,11 @@ theorem div128Quot_call_skip_ge_val256_div
   have h_un21_lt_dHi_mul := div128Quot_shift_nz_un21_lt_dHi_mul_pow32
     u4 u3 b3' h_b3'_ge h_u4_lt_b3' h_u4_lt
   simp only [] at h_un21_lt_dHi_mul
-  -- Step 3b: Apply KB-LB8' to get Phase 2 tight q0' ≥ q_true_0 under un21 < dHi*2^32.
-  -- Step 4: Compose via digit_tight_of_le_and_ge and q_true_full bounds.
-  -- Step 5: Bridge q_true_full in normalized domain to val256(a)/val256(b).
+  -- Step 3b–5: Apply KB-LB8' and bridge q_true_full ↔ val256. The KB-LB8'
+  -- call needs `un21 < dHi*2^32 + dLo` (trivial from 3a), but the full
+  -- composition through Phase 2 letting, digit_tight, and val256
+  -- normalization bridge requires ~100 lines that are bounded and
+  -- mechanical — targeted in subsequent iterations.
   sorry
 
 /-- **Call-skip exact equality**: combines the upper and lower bounds to
