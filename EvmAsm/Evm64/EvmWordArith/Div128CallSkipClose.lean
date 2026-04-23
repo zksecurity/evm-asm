@@ -568,6 +568,44 @@ theorem q_true_full_lt_q_true_1_succ_mul_pow32_nat
 -- Task 5 (post-#1138): exact lower bound for call-skip DIV
 -- ============================================================================
 
+/-- **Phase 1b un21 bound under shift_nz**: the `div128Quot`'s internal un21
+    satisfies `un21 < dHi' * 2^32`. This is the precondition for applying
+    KB-LB8' (`div128Quot_q0_prime_ge_q_true_0_of_un21_lt_dHi_mul_pow32`).
+
+    Proof sketch: under Phase 1 tight (q1' = q_true_1 from KB-LB7), un21
+    equals the abstract-level remainder `(u4 * 2^32 + u3) mod b3'`.
+    Specifically, un21 < b3' = dHi'*2^32 + dLo'. Case A requires strict
+    un21 < dHi'*2^32, which holds when... [analysis needed].
+
+    Alternative: if this fails, must use Case B argument post-#1138 (where
+    the Phase 2b guard fires and q0' = q0c ≥ q_true_0 via Phase 2a trial
+    ≥ true digit).
+
+    TODO(#65): substantive proof — ~50-80 lines. -/
+theorem div128Quot_shift_nz_un21_lt_dHi_mul_pow32
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt : u4.toNat < 2^63) :
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    un21.toNat < dHi.toNat * 2^32 := by
+  sorry
+
+
 /-- **Call-skip exact lower bound**: under hshift_nz + hcall + hskip + hbnz,
     `val256(a)/val256(b) ≤ qHat.toNat` where qHat is the algorithm's trial.
 
@@ -649,27 +687,10 @@ theorem div128Quot_call_skip_ge_val256_div
     u3
     h_dHi'_ge h_dHi'_lt h_dLo'_lt h_u4_lt h_u4_lt_vTop
   simp only [] at h_q1'_ge
-  -- Step 3a: Extract un21 < dHi'*2^32 bound (Case A post-#1138).
-  -- TODO(#65): prove this from Phase 1b's post-state. Under Phase 1
-  -- tight (q1' = q_true_1), un21 = (u4 * 2^32 + u3) mod b3'. Since
-  -- b3' = dHi'*2^32 + dLo' with dLo' ≥ 0, un21 < b3'. Case A requires
-  -- un21 < dHi'*2^32 (strict), which needs additional analysis.
-  have h_un21_lt_dHi_mul :
-      let q1 := rv64_divu u4 (b3' >>> (32 : BitVec 6).toNat)
-      let rhat := u4 - q1 * (b3' >>> (32 : BitVec 6).toNat)
-      let hi1 := q1 >>> (32 : BitVec 6).toNat
-      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-      let rhatc := if hi1 = 0 then rhat else rhat + (b3' >>> (32 : BitVec 6).toNat)
-      let div_un1 := u3 >>> (32 : BitVec 6).toNat
-      let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-      let qDlo := q1c * ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
-      let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
-      let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + (b3' >>> (32 : BitVec 6).toNat) else rhatc
-      let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-      let cu_q1_dlo := q1' * ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
-      let un21 := cu_rhat_un1 - cu_q1_dlo
-      un21.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 := by
-    sorry
+  -- Step 3a: Extract un21 < dHi'*2^32 bound via the dedicated sub-theorem.
+  have h_un21_lt_dHi_mul := div128Quot_shift_nz_un21_lt_dHi_mul_pow32
+    u4 u3 b3' h_b3'_ge h_u4_lt_b3' h_u4_lt
+  simp only [] at h_un21_lt_dHi_mul
   -- Step 3b: Apply KB-LB8' to get Phase 2 tight q0' ≥ q_true_0 under un21 < dHi*2^32.
   -- Step 4: Compose via digit_tight_of_le_and_ge and q_true_full bounds.
   -- Step 5: Bridge q_true_full in normalized domain to val256(a)/val256(b).
