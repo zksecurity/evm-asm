@@ -37,16 +37,7 @@ theorem stateRel_nextPC {sRv : MachineState} {sSail : SailState}
     StateRel sRv { sSail with regs := sSail.regs.insert Register.nextPC v } :=
   ⟨fun r => by
     have ha := hrel.reg_agree r
-    cases r <;> simp only [sailRegVal, Std.ExtDHashMap.get?_insert,
-      show (Register.nextPC == Register.x1) = false from by decide,
-      show (Register.nextPC == Register.x2) = false from by decide,
-      show (Register.nextPC == Register.x5) = false from by decide,
-      show (Register.nextPC == Register.x6) = false from by decide,
-      show (Register.nextPC == Register.x7) = false from by decide,
-      show (Register.nextPC == Register.x10) = false from by decide,
-      show (Register.nextPC == Register.x11) = false from by decide,
-      show (Register.nextPC == Register.x12) = false from by decide,
-      ite_false] at ha ⊢ <;> exact ha,
+    cases r <;> simpa [sailRegVal, Std.ExtDHashMap.get?_insert] using ha,
    fun a => hrel.mem_agree a⟩
 
 -- Comparison operator equivalences (definitional: SAIL and Lean use the same operations)
