@@ -474,7 +474,7 @@ theorem div128Quot_q1_prime_lt_pow32 (uHi dHi dLo uLo : Word)
       show (uLo >>> (32 : BitVec 6).toNat).toNat < 2^32
       rw [BitVec.toNat_ushiftRight]
       rw [bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-      have h_ulo_isLt : uLo.toNat < 2^64 := uLo.isLt
+      have : uLo.toNat < 2^64 := uLo.isLt
       have h_eq : (2^64 : Nat) = 2^32 * 2^32 := by decide
       exact Nat.div_lt_of_lt_mul (by omega)
     -- rhatUn1.toNat = rhatc.toNat * 2^32 + div_un1.toNat.
@@ -554,10 +554,10 @@ theorem div128Quot_q0_prime_lt_pow32 (un21 dHi dLo uLo : Word)
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
     let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     q0'.toNat < 2^32 := by
-  intro q0 rhat2 hi2 q0c rhat2c div_un0 rhat2Un0 q0'
+  intro q0 rhat2 hi2 q0c rhat2c div_un0 q0'
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
   -- Reuse Phase 1 lemma with uHi := un21.
   have h_q0c_le : q0c.toNat ≤ 2^32 :=
     div128Quot_q1c_le_pow32 un21 dHi dLo hdHi_ge hdLo_lt hun21_lt_vTop

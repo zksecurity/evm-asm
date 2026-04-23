@@ -716,7 +716,7 @@ theorem signext_body_spec (sp base : Word)
     have : b.toNat % 8 < 8 := Nat.mod_lt _ (by omega)
     omega
   -- Body 0 bridge: limbIdx = 0 → outputs match signextend getLimb
-  have hbd0_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd0_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd0_w (fun (hli : limbIdx = 0) h hq => by
       have hL : b.toNat / 8 = 0 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this; simpa using this
@@ -732,7 +732,7 @@ theorem signext_body_spec (sp base : Word)
       simp only [resultPost, heq0, heq1, heq2, heq3]
       rw [hL] at hq; exact hq)
   -- Body 1 bridge: limbIdx = signExtend12 1 → outputs match signextend getLimb
-  have hbd1_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd1_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd1_w (fun (hli : limbIdx = (0 : Word) + signExtend12 1) h hq => by
       have hL : b.toNat / 8 = 1 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this
@@ -749,7 +749,7 @@ theorem signext_body_spec (sp base : Word)
       simp only [resultPost, heq0, heq1, heq2, heq3]
       rw [hL] at hq; exact hq)
   -- Body 2 bridge: limbIdx = signExtend12 2 → outputs match signextend getLimb
-  have hbd2_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd2_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd2_w (fun (hli : limbIdx = (0 : Word) + signExtend12 2) h hq => by
       have hL : b.toNat / 8 = 2 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this
@@ -770,7 +770,7 @@ theorem signext_body_spec (sp base : Word)
   have hbd3_x10 := cpsTriple_frameR ((.x10 ↦ᵣ ((0 : Word) + signExtend12 2))) (by pcFree) hbd3
   have hbd3_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body3_post_weaken _ _ _ _ h (by xperm_hyp hq)) hbd3_x10
-  have hbd3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd3_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd3_w (fun (hli : limbIdx ≠ 0 ∧ limbIdx ≠ (0 : Word) + signExtend12 1 ∧ limbIdx ≠ (0 : Word) + signExtend12 2) h hq => by
       have hL : b.toNat / 8 = 3 := by
         obtain ⟨h0, h1, h2⟩ := hli
