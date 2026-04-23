@@ -965,7 +965,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
      ((sp + 32) ↦ₘ getLimb result 0) ** ((sp + 40) ↦ₘ getLimb result 1) **
      ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)
   -- Body 0 (L=0): merge(0,1,2) + last(3)
-  have hbody0_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody0_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody0_w (fun (hls : limbShift = 0) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -981,7 +981,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 1 (L=1): merge(0,1) + last(2) + sign(3)
-  have hbody1_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody1_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody1_w (fun (hls : limbShift = (0 : Word) + signExtend12 1) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -1000,7 +1000,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 2 (L=2): merge(0) + last(1) + sign(2,3)
-  have hbody2_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody2_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody2_w (fun (hls : limbShift = (0 : Word) + signExtend12 2) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -1019,7 +1019,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 3 (L=3): last(0) + sign(1,2,3)
-  have hbody3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody3_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody3_w (fun (hls : limbShift ≠ 0 ∧ limbShift ≠ (0 : Word) + signExtend12 1 ∧
                 limbShift ≠ (0 : Word) + signExtend12 2) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by

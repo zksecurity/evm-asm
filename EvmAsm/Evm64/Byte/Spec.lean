@@ -790,19 +790,19 @@ theorem evm_byte_body_evmWord_spec (sp base : Word)
     (fun h hp => hp) (fun h hq => body_post_weaken _ _ h hq) hbs3
   -- Wrap each with cpsTriple_strip_pure_and_convert to accept dispatch fact and bridge to resultPost
   -- The dispatch fact is used to derive K, which is used by bridge to convert memory values
-  have hb0_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hb0_ev := cpsTriple_strip_pure_and_convert resultPost
     hbs0_w (fun (hd : limbFromMsb = 0) h hq => by
       simp only [resultPost, hresult_high1, hresult_high2, hresult_high3]
       rw [← bridge v3 0 (derive_K_0 hd) (by omega) rfl]; exact hq)
-  have hb1_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hb1_ev := cpsTriple_strip_pure_and_convert resultPost
     hbs1_w (fun (hd : limbFromMsb = (0 : Word) + signExtend12 1) h hq => by
       simp only [resultPost, hresult_high1, hresult_high2, hresult_high3]
       rw [← bridge v2 1 (derive_K_1 hd) (by omega) rfl]; exact hq)
-  have hb2_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hb2_ev := cpsTriple_strip_pure_and_convert resultPost
     hbs2_w (fun (hd : limbFromMsb = (0 : Word) + signExtend12 2) h hq => by
       simp only [resultPost, hresult_high1, hresult_high2, hresult_high3]
       rw [← bridge v1 2 (derive_K_2 hd) (by omega) rfl]; exact hq)
-  have hb3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hb3_ev := cpsTriple_strip_pure_and_convert resultPost
     hbs3_w (fun (hd : limbFromMsb ≠ 0 ∧ limbFromMsb ≠ (0 : Word) + signExtend12 1 ∧
       limbFromMsb ≠ (0 : Word) + signExtend12 2) h hq => by
       simp only [resultPost, hresult_high1, hresult_high2, hresult_high3]
