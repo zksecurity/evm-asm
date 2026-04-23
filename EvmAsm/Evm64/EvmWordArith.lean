@@ -44,3 +44,4 @@ import EvmAsm.Evm64.EvmWordArith.Div128QuotientBounds
 import EvmAsm.Evm64.EvmWordArith.Div128FinalAssembly
 import EvmAsm.Evm64.EvmWordArith.Div128KnuthLower
 import EvmAsm.Evm64.EvmWordArith.Div128CallSkipClose
+import EvmAsm.Evm64.EvmWordArith.Div128Shift0
