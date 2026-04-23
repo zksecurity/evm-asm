@@ -428,7 +428,6 @@ private theorem carry_chain_limb3 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
   have h_c2_r3 : c2_r3.toNat = (c1_r3p.toNat + c2_rc.toNat) % 2^64 :=
     BitVec.toNat_add c1_r3p c2_rc
   -- col3: r3_final = c2_r3 + a0 * b3
-  have h_lo03 : (a0 * b3).toNat = a0.toNat * b3.toNat % 2^64 := mul_toNat
   have h_r3 : r3_final.toNat = (c2_r3.toNat + (a0 * b3).toNat) % 2^64 :=
     BitVec.toNat_add c2_r3 (a0 * b3)
   -- Euclidean approach: convert every div/mod pair into carry*W + result = inputs
