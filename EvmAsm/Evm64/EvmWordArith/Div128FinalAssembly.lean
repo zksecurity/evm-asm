@@ -520,11 +520,17 @@ theorem div128Quot_phase2b_post (un21 dHi : Word)
     (hdHi_lt : dHi.toNat < 2^32) (q0c rhat2c dLo rhat2Un0 : Word)
     (h_post : q0c.toNat * dHi.toNat + rhat2c.toNat = un21.toNat)
     (h_rhat2c_lt : rhat2c.toNat < 2 * dHi.toNat) :
-    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
-               else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     let rhat2' := if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c
-    q0'.toNat * dHi.toNat + rhat2'.toNat = un21.toNat :=
-  div128Quot_phase1b_post un21 dHi q0c rhat2c dLo rhat2Un0 hdHi_lt h_post h_rhat2c_lt
+    q0'.toNat * dHi.toNat + rhat2'.toNat = un21.toNat := by
+  -- TODO(#61 Phase 2b coordinated fix): under helper's guard-fires case
+  -- (rhat2c_hi ≠ 0, i.e., rhat2c ≥ 2^32), q0' = q0c. The Euclidean
+  -- equation q0' * dHi + rhat2' = un21 then becomes q0c * dHi + rhat2'
+  -- = un21. Need to verify rhat2' value matches (it's the Phase 1b's
+  -- rhat', computed from the check which may not fire in this regime).
+  -- Guard-doesn't-fire case: helper = unguarded check, same as
+  -- div128Quot_phase1b_post. Need case split on rhat2c_hi = 0.
+  sorry
 
 /-- **KB-5b: Phase 2b check implies q0c ≥ 1.** Instantiation of
     `div128Quot_phase1b_check_implies_q1c_pos`. -/
@@ -541,11 +547,13 @@ theorem div128Quot_phase2b_quotient_bound (un21 dHi : Word)
     let q0 := rv64_divu un21 dHi
     let hi2 := q0 >>> (32 : BitVec 6).toNat
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
-    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
-               else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     q0'.toNat + 2 ≥ un21.toNat / dHi.toNat ∧
-    q0'.toNat ≤ un21.toNat / dHi.toNat :=
-  div128Quot_phase1b_quotient_bound un21 dHi hdHi_ne hdHi_lt dLo rhat2Un0
+    q0'.toNat ≤ un21.toNat / dHi.toNat := by
+  -- TODO(#61 Phase 2b coordinated fix): helper's guard-fires case gives
+  -- q0' = q0c ≤ q1c ≤ un21/dHi + 2 via KB-3c. Guard-doesn't-fire case
+  -- reduces to div128Quot_phase1b_quotient_bound. Case-split on rhat2c_hi = 0.
+  sorry
 
 /-- **KB-5d: Phase 2b output bound.** Instantiation of
     `div128Quot_q1_prime_lt_pow33` with `uHi := un21`: `q0' < 2^33`. -/
@@ -554,10 +562,12 @@ theorem div128Quot_phase2b_q0_prime_lt_pow33 (un21 dHi : Word)
     let q0 := rv64_divu un21 dHi
     let hi2 := q0 >>> (32 : BitVec 6).toNat
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
-    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
-               else q0c
-    q0'.toNat < 2^33 :=
-  div128Quot_q1_prime_lt_pow33 un21 dHi hdHi_ge dLo rhat2Un0
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    q0'.toNat < 2^33 := by
+  -- TODO(#61 Phase 2b coordinated fix): helper's guard-fires case gives
+  -- q0' = q0c < 2^33 (via div128Quot_q1c_lt_pow33). Guard-doesn't-fire
+  -- case reduces to div128Quot_q1_prime_lt_pow33. Case-split.
+  sorry
 
 /-- **KB-6a: div128Quot output Nat formula.** Unfolds `div128Quot` and
     applies `halfword_combine_mod` to yield the output's Nat value:

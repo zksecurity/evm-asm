@@ -174,8 +174,7 @@ theorem div128Quot_qHat_vTop_le
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
-               else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     let rhat2' := if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c
     q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat →
     q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat →
@@ -208,8 +207,10 @@ theorem div128Quot_qHat_vTop_le
   have h_post2a := div128Quot_first_round_post un21 dHi hdHi_ne hdHi_lt
   have h_rhat2c_lt := div128Quot_rhatc_lt_2dHi un21 dHi hdHi_ne hdHi_lt
   -- Phase 2b Euclidean against un21: q0' * dHi + rhat2' = un21.
-  have h_ph2b : q0'.toNat * dHi.toNat + rhat2'.toNat = un21.toNat :=
-    div128Quot_phase1b_post un21 dHi q0c rhat2c dLo rhat2Un0 hdHi_lt h_post2a h_rhat2c_lt
+  -- TODO(#61 Phase 2b coordinated fix): q0' is the guarded helper —
+  -- Phase 1b post applies to the unguarded form. Need case-split on
+  -- rhat2c_hi = 0 to align.
+  have h_ph2b : q0'.toNat * dHi.toNat + rhat2'.toNat = un21.toNat := by sorry
   -- Combine h_ph2b + h_un21 to feed KB-Compose V2.
   have h_un21_ph2 : q0'.toNat * dHi.toNat + rhat2'.toNat =
       (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat - q1'.toNat * dLo.toNat := by
@@ -289,8 +290,7 @@ theorem div128Quot_le_val256_div_plus_two
     let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
     let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
     let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-    let q0' := if BitVec.ult rhat2Un0 (q0c * dLo) then q0c + signExtend12 4095
-               else q0c
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
     let rhat2' := if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c
     q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat →
     q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat →
