@@ -24,6 +24,7 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 open EvmAsm.Rv64.AddrNorm (word_add_zero)
+open EvmWord (val256)
 
 /-- Call-trial counterpart to `modN4StackPre`. Identical to `modN4StackPre`
     except the scratch bundle: uses `divScratchValuesCall` (19 cells)
@@ -875,5 +876,49 @@ theorem evm_mod_n4_full_shift0_call_addback_beq_stack_pre_spec_bundled (sp base 
     (fun _ hp => by rw [modN4StackPreCall_unfold] at hp; exact hp)
     (fun _ hq => hq)
     h
+
+-- ============================================================================
+-- Semantic-correctness predicates for n=4 call+skip (task #66)
+-- ============================================================================
+
+/-- Semantic-correctness precondition for the n=4 call+skip sub-path: the
+    algorithm's trial quotient `qHat = div128Quot u4 u3 b3'` is at least
+    `⌊val256(a)/val256(b)⌋`.
+
+    Under the runtime skip-borrow check (`isSkipBorrowN4CallEvm`), the upper
+    bound `qHat ≤ ⌊val256(a)/val256(b)⌋` is automatic (via T3 =
+    `div128Quot_call_skip_le_val256_div`). Adding this hypothesis pins down
+    the tight equality `qHat = ⌊val256(a)/val256(b)⌋`, which then feeds
+    the stack-spec post reshape into `evmWordIs (sp+32) (EvmWord.div a b)`.
+
+    Mirror pattern of `n4MaxSkipSemanticHolds` (Spec.lean:208), which packages
+    the analogous `c3 = 0` hypothesis for max-skip. Here the semantic content
+    is the algorithmic lower bound rather than a mulsub carry. Proving this
+    from first principles is Knuth TAOCP Theorem A (normalized divisor
+    version) — deferred to a future task (formerly issue #65). The stack
+    spec delegates the proof to callers (e.g., the higher-level EVM semantic
+    composition), following the same contract as the max-skip family. -/
+def n4CallSkipSemanticHolds (a b : EvmWord) : Prop :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) ≤
+    (div128Quot u4 u3 b3').toNat
+
+theorem n4CallSkipSemanticHolds_def {a b : EvmWord} :
+    n4CallSkipSemanticHolds a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift :=
+       (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) ≤
+       (div128Quot u4 u3 b3').toNat) :=
+  rfl
 
 end EvmAsm.Evm64
