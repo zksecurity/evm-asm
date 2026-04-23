@@ -373,25 +373,25 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
       val256 v0 v1 v2 v3 ≤ val256 u0 u1 u2 u3 := Nat.div_mul_le_self _ _
   -- q ≥ 2: from c3=1 and carry1=0, q*v > u+v, so q ≥ 2
   have hqv_gt_u : q.toNat * val256 v0 v1 v2 v3 > val256 u0 u1 u2 u3 := by nlinarith
-  have hun_v_lt : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
+  have : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
       val256 v0 v1 v2 v3 < 2 ^ 256 := by nlinarith
-  have hu_v_lt_qv : val256 u0 u1 u2 u3 + val256 v0 v1 v2 v3 <
+  have : val256 u0 u1 u2 u3 + val256 v0 v1 v2 v3 <
       q.toNat * val256 v0 v1 v2 v3 := by nlinarith
   have hq_ge_2 : q.toNat ≥ 2 := by
     by_contra h; push Not at h
     have : q.toNat * val256 v0 v1 v2 v3 ≤ 1 * val256 v0 v1 v2 v3 :=
       Nat.mul_le_mul_right _ (by omega)
     linarith
-  have hqm2_le : (q.toNat - 2) * val256 v0 v1 v2 v3 ≤ val256 u0 u1 u2 u3 := by
+  have : (q.toNat - 2) * val256 v0 v1 v2 v3 ≤ val256 u0 u1 u2 u3 := by
     calc (q.toNat - 2) * val256 v0 v1 v2 v3
         ≤ (val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3) * val256 v0 v1 v2 v3 := by
           apply Nat.mul_le_mul_right; omega
       _ ≤ val256 u0 u1 u2 u3 := hdiv_mul_le
   -- val256(un) + 2*val256(v) ≥ 2^256
   have h_ge : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 + 2 * val256 v0 v1 v2 v3 ≥ 2 ^ 256 := by
-    have hq_split : q.toNat * val256 v0 v1 v2 v3 =
+    have : q.toNat * val256 v0 v1 v2 v3 =
         (q.toNat - 2) * val256 v0 v1 v2 v3 + 2 * val256 v0 v1 v2 v3 := by
-      have hq2 : q.toNat = (q.toNat - 2) + 2 := by omega
+      have : q.toNat = (q.toNat - 2) + 2 := by omega
       nlinarith
     nlinarith
   -- val256(ab1) + val256(v) ≥ 2^256
@@ -507,7 +507,7 @@ theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   -- q * val256(v) > val256(u) (from c3 = 1, i.e., borrow)
   have hqv_gt_u : q.toNat * val256 v0 v1 v2 v3 > val256 u0 u1 u2 u3 := by nlinarith
   -- q ≥ 1
-  have hq_ge_1 : q.toNat ≥ 1 := by
+  have : q.toNat ≥ 1 := by
     by_contra h
     have : q.toNat = 0 := by omega
     simp [this] at hqv_gt_u
@@ -533,7 +533,7 @@ theorem addbackN4_first_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   -- Since val256(un) + val256(v) ≥ 2^256 and val256(ab) < 2^256:
   -- carry * 2^256 ≥ 1, so carry ≥ 1
   -- Also val256(un) + val256(v) < 2 * 2^256, so carry < 2
-  have hc_ge : carry ≥ 1 := by
+  have : carry ≥ 1 := by
     by_contra h
     have : carry = 0 := by omega
     rw [this] at hab
