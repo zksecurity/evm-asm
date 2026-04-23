@@ -268,7 +268,6 @@ private theorem runSail_rX_bits_x31 {s : SailState} {v : BitVec 64}
 -- Bridge lemma: rX_bits from StateRel
 -- ============================================================================
 
-set_option maxHeartbeats 800000 in
 /-- If StateRel holds, reading any Rv64 register from the SAIL state via rX_bits
     returns the same value as getReg, without modifying state. -/
 theorem runSail_rX_bits_of_stateRel {sRv : MachineState} {sSail : SailState}
