@@ -706,6 +706,26 @@ theorem runSail_wX_bits_x31 {v : BitVec 64} {s : SailState} :
     bind, EStateM.bind, pure, EStateM.pure,
     get, MonadState.get, getThe, MonadStateOf.get]
 
+/-- Generic `wX_bits` dispatch: for any `rd : Reg`, the SAIL write reduces
+    uniformly to `sailStateWithReg sSail rd v`. Collapses the per-register
+    `cases rd <;> simp …` dispatch in downstream instruction proofs. -/
+theorem runSail_wX_bits_of_reg (sSail : SailState) (rd : Reg) (v : BitVec 64) :
+    runSail (wX_bits (regToRegidx rd) v) sSail =
+      some (⟨⟩, sailStateWithReg sSail rd v) := by
+  cases rd <;>
+    simp only [regToRegidx, sailStateWithReg,
+      runSail_wX_bits_x0, runSail_wX_bits_x1, runSail_wX_bits_x2,
+      runSail_wX_bits_x3, runSail_wX_bits_x4, runSail_wX_bits_x5,
+      runSail_wX_bits_x6, runSail_wX_bits_x7, runSail_wX_bits_x8,
+      runSail_wX_bits_x9, runSail_wX_bits_x10, runSail_wX_bits_x11,
+      runSail_wX_bits_x12, runSail_wX_bits_x13, runSail_wX_bits_x14,
+      runSail_wX_bits_x15, runSail_wX_bits_x16, runSail_wX_bits_x17,
+      runSail_wX_bits_x18, runSail_wX_bits_x19, runSail_wX_bits_x20,
+      runSail_wX_bits_x21, runSail_wX_bits_x22, runSail_wX_bits_x23,
+      runSail_wX_bits_x24, runSail_wX_bits_x25, runSail_wX_bits_x26,
+      runSail_wX_bits_x27, runSail_wX_bits_x28, runSail_wX_bits_x29,
+      runSail_wX_bits_x30, runSail_wX_bits_x31]
+
 -- ============================================================================
 -- xreg_write_callback — no-op on state
 -- ============================================================================
