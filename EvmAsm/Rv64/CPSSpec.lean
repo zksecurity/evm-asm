@@ -110,7 +110,7 @@ theorem cpsTriple_weaken {entry exit_ : Word} {cr : CodeReq}
     that previously each re-declared this as a `private theorem`. -/
 theorem cpsTriple_strip_pure_and_convert
     {entry exit_ : Word} {cr : CodeReq}
-    {P Q Q' : Assertion} {fact : Prop}
+    {P Q : Assertion} {fact : Prop} (Q' : Assertion)
     (hbody : cpsTriple entry exit_ cr P Q)
     (hpost : fact → ∀ h, Q h → Q' h) :
     cpsTriple entry exit_ cr (P ** ⌜fact⌝) Q' := by

@@ -191,7 +191,7 @@ private theorem se_done_exit {base : Word} : (base + 188 : Word) + 4 = base + 19
 /-- No-change path via BNE taken: high b limbs are nonzero → b >= 31 → x unchanged.
     Execution: LD b1 → LD/OR b2 → LD/OR b3 → BNE(taken) → done. -/
 theorem signext_nochange_high_spec (sp base : Word)
-    (b0 b1 b2 b3 v0 v1 v2 v3 r5 r10 : Word)
+    {b0 b1 b2 b3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
     (hhigh : b1 ||| b2 ||| b3 ≠ 0) :
     cpsTriple base (base + 192) (signextCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
@@ -285,7 +285,7 @@ theorem signext_nochange_high_spec (sp base : Word)
 /-- No-change path via BEQ taken: b1=b2=b3=0 but b[0] >= 31 → x unchanged.
     Execution: LD b1 → LD/OR b2 → LD/OR b3 → BNE(ntaken) → LD b0 → SLTIU → BEQ(taken) → done. -/
 theorem signext_nochange_geq31_spec (sp base : Word)
-    (b0 b1 b2 b3 v0 v1 v2 v3 r5 r10 : Word)
+    {b0 b1 b2 b3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
     (hlow : b1 ||| b2 ||| b3 = 0)
     (hlarge : BitVec.ult b0 (signExtend12 (31 : BitVec 12)) = false) :
     cpsTriple base (base + 192) (signextCode base)
@@ -585,7 +585,7 @@ theorem signext_body_spec (sp base : Word)
   have hse32 : sp + signExtend12 (32 : BitVec 12) = sp + 32 := by rw [signExtend12_32]
   -- Helper: weaken body+done postconditions to regOwn + concrete mem values
   -- For bodies 0,1,2 (which have x10 in postcondition):
-  have body_post_weaken : ∀ (r5v r6v r10v m32 m40 m48 m56 : Word),
+  have body_post_weaken : ∀ {r5v r6v r10v m32 m40 m48 m56 : Word},
       ∀ h, ((.x12 ↦ᵣ (sp + signExtend12 32)) ** (.x5 ↦ᵣ r5v) ** (.x6 ↦ᵣ r6v) **
             (.x10 ↦ᵣ r10v) **
             (.x0 ↦ᵣ (0 : Word)) ** bmem **
@@ -602,11 +602,11 @@ theorem signext_body_spec (sp base : Word)
     xperm_hyp w3
   -- Apply weakening to each body+done
   have hbd0_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd0
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbd0
   have hbd1_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd1
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbd1
   have hbd2_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbd2
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbd2
   -- Body 3 has no x10 — need to introduce regOwn .x10 from x10 in Phase C frame
   -- After merge, the precondition will include (.x10 ↦ᵣ _) from Phase C exit post.
   -- So we use cpsTriple_of_forall_regIs_to_regOwn to absorb x10 in precondition
@@ -716,7 +716,7 @@ theorem signext_body_spec (sp base : Word)
     have : b.toNat % 8 < 8 := Nat.mod_lt _ (by omega)
     omega
   -- Body 0 bridge: limbIdx = 0 → outputs match signextend getLimb
-  have hbd0_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd0_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd0_w (fun (hli : limbIdx = 0) h hq => by
       have hL : b.toNat / 8 = 0 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this; simpa using this
@@ -732,7 +732,7 @@ theorem signext_body_spec (sp base : Word)
       simp only [resultPost, heq0, heq1, heq2, heq3]
       rw [hL] at hq; exact hq)
   -- Body 1 bridge: limbIdx = signExtend12 1 → outputs match signextend getLimb
-  have hbd1_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd1_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd1_w (fun (hli : limbIdx = (0 : Word) + signExtend12 1) h hq => by
       have hL : b.toNat / 8 = 1 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this
@@ -749,7 +749,7 @@ theorem signext_body_spec (sp base : Word)
       simp only [resultPost, heq0, heq1, heq2, heq3]
       rw [hL] at hq; exact hq)
   -- Body 2 bridge: limbIdx = signExtend12 2 → outputs match signextend getLimb
-  have hbd2_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd2_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd2_w (fun (hli : limbIdx = (0 : Word) + signExtend12 2) h hq => by
       have hL : b.toNat / 8 = 2 := by
         have := congrArg BitVec.toNat hli; rw [hlimbIdx_eq] at this
@@ -770,7 +770,7 @@ theorem signext_body_spec (sp base : Word)
   have hbd3_x10 := cpsTriple_frameR ((.x10 ↦ᵣ ((0 : Word) + signExtend12 2))) (by pcFree) hbd3
   have hbd3_w := cpsTriple_weaken
     (fun h hp => hp) (fun h hq => body3_post_weaken _ _ _ _ h (by xperm_hyp hq)) hbd3_x10
-  have hbd3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbd3_ev := cpsTriple_strip_pure_and_convert resultPost
     hbd3_w (fun (hli : limbIdx ≠ 0 ∧ limbIdx ≠ (0 : Word) + signExtend12 1 ∧ limbIdx ≠ (0 : Word) + signExtend12 2) h hq => by
       have hL : b.toNat / 8 = 3 := by
         obtain ⟨h0, h1, h2⟩ := hli

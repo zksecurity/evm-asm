@@ -273,7 +273,7 @@ private theorem sar_body0_exit {base : Word} : ((base + 252 : Word) + 96) + sign
 /-- Sign-fill via BNE taken: high shift limbs are nonzero → shift ≥ 256 → result is sign extension.
     Execution: LD s1 → LD/OR s2 → LD/OR s3 → BNE(taken) → sign_fill_path. -/
 theorem evm_sar_sign_fill_high_spec (sp base : Word)
-    (s0 s1 s2 s3 v0 v1 v2 v3 r5 r10 : Word)
+    {s0 s1 s2 s3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
     (hhigh : s1 ||| s2 ||| s3 ≠ 0) :
     let sign_ext := BitVec.sshiftRight v3 63
     cpsTriple base (base + 380) (sarCode base)
@@ -370,7 +370,7 @@ theorem evm_sar_sign_fill_high_spec (sp base : Word)
 
 /-- Sign-fill via BEQ taken: s1=s2=s3=0 but s0 ≥ 256 → result is sign extension. -/
 theorem evm_sar_sign_fill_large_spec (sp base : Word)
-    (s0 s1 s2 s3 v0 v1 v2 v3 r5 r10 : Word)
+    {s0 s1 s2 s3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
     (hlow : s1 ||| s2 ||| s3 = 0)
     (hlarge : BitVec.ult s0 (signExtend12 (256 : BitVec 12)) = false) :
     let sign_ext := BitVec.sshiftRight v3 63
@@ -929,7 +929,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
   have ha56' : (sp + 32 : Word) + 24 = sp + 56 := by bv_omega
   simp only [ha40', ha48', ha56'] at hbody3_f hbody2_f hbody1_f hbody0_f
   -- Helper: weaken regs to regOwn while keeping concrete mem values
-  have body_post_weaken : ∀ (r5v r6v r7v r10v r11v m32 m40 m48 m56 : Word),
+  have body_post_weaken : ∀ {r5v r6v r7v r10v r11v m32 m40 m48 m56 : Word},
       ∀ h, ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ r5v) ** (.x6 ↦ᵣ r6v) ** (.x7 ↦ᵣ r7v) **
             (.x10 ↦ᵣ r10v) ** (.x11 ↦ᵣ r11v) **
             ((sp + 32) ↦ₘ m32) ** ((sp + 40) ↦ₘ m40) ** ((sp + 48) ↦ₘ m48) ** ((sp + 56) ↦ₘ m56) **
@@ -947,13 +947,13 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
     exact (congrFun (show _ = _ from by xperm) h).mp w5
   -- Apply weakening to each body (keep concrete mem values)
   have hbody0_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbody0_f
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbody0_f
   have hbody1_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbody1_f
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbody1_f
   have hbody2_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbody2_f
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbody2_f
   have hbody3_w := cpsTriple_weaken
-    (fun h hp => hp) (fun h hq => body_post_weaken _ _ _ _ _ _ _ _ _ h (by xperm_hyp hq)) hbody3_f
+    (fun h hp => hp) (fun h hq => body_post_weaken h (by xperm_hyp hq)) hbody3_f
   -- Bitvector bridge: common facts
   have hshift_toNat : shift.toNat = s0.toNat :=
     EvmWord.toNat_eq_getLimb0_of_high_zero hhigh_zero
@@ -965,7 +965,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
      ((sp + 32) ↦ₘ getLimb result 0) ** ((sp + 40) ↦ₘ getLimb result 1) **
      ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)
   -- Body 0 (L=0): merge(0,1,2) + last(3)
-  have hbody0_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody0_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody0_w (fun (hls : limbShift = 0) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -981,7 +981,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 1 (L=1): merge(0,1) + last(2) + sign(3)
-  have hbody1_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody1_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody1_w (fun (hls : limbShift = (0 : Word) + signExtend12 1) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -1000,7 +1000,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 2 (L=2): merge(0) + last(1) + sign(2,3)
-  have hbody2_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody2_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody2_w (fun (hls : limbShift = (0 : Word) + signExtend12 2) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by
         show BitVec.sshiftRight value shift.toNat = BitVec.sshiftRight value s0.toNat; congr 1
@@ -1019,7 +1019,7 @@ theorem evm_sar_body_evmWord_spec (sp base : Word)
            ((sp + 48) ↦ₘ getLimb result 2) ** ((sp + 56) ↦ₘ getLimb result 3)) h
       rw [← eq0, ← eq1, ← eq2, ← eq3]; exact hq)
   -- Body 3 (L=3): last(0) + sign(1,2,3)
-  have hbody3_ev := @cpsTriple_strip_pure_and_convert _ _ _ _ _ resultPost _
+  have hbody3_ev := cpsTriple_strip_pure_and_convert resultPost
     hbody3_w (fun (hls : limbShift ≠ 0 ∧ limbShift ≠ (0 : Word) + signExtend12 1 ∧
                 limbShift ≠ (0 : Word) + signExtend12 2) h hq => by
       have hresult : result = BitVec.sshiftRight value s0.toNat := by

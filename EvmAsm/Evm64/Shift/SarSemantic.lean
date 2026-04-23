@@ -25,7 +25,8 @@ open EvmAsm.Rv64
 -- `regIs_to_regOwn` lives in `Rv64/SepLogic.lean` (shared).
 
 /-- Weaken: sign-fill result + frame regs → evmWordIs sign_fill + regOwn. -/
-private theorem sar_sign_fill_evmWord_weaken (sp : Word) (s0 s1 s2 s3 r6 r7 r11 sign_ext : Word) :
+private theorem sar_sign_fill_evmWord_weaken (sp : Word) {s0 s1 s2 s3 : Word}
+    (r6 r7 r11 : Word) {sign_ext : Word} :
     ∀ h,
     ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
      (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
@@ -126,7 +127,7 @@ private theorem sar_sign_fill_lift (sp base : Word)
          ((sp + 48) ↦ₘ BitVec.sshiftRight (value.getLimb 3) 63) **
          ((sp + 56) ↦ₘ BitVec.sshiftRight (value.getLimb 3) 63) **
          (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11)) h := by xperm_hyp hq
-      have hw := sar_sign_fill_evmWord_weaken sp _ _ _ _ r6 r7 r11 _ h hq'
+      have hw := sar_sign_fill_evmWord_weaken sp r6 r7 r11 h hq'
       xperm_hyp hw)
     hflat
 
@@ -159,7 +160,7 @@ theorem evm_sar_stack_spec (sp base : Word)
     -- Sub-case: high limbs nonzero or s0 ≥ 256
     by_cases hhigh : shift.getLimb 1 ||| shift.getLimb 2 ||| shift.getLimb 3 ≠ 0
     · exact sar_sign_fill_lift sp base shift value r5 r6 r7 r10 r11
-        (evm_sar_sign_fill_high_spec sp base _ _ _ _ _ _ _ _ r5 r10 hhigh)
+        (evm_sar_sign_fill_high_spec sp base r5 r10 hhigh)
         result hresult
     · have hhigh' : shift.getLimb 1 ||| shift.getLimb 2 ||| shift.getLimb 3 = 0 :=
         Classical.byContradiction (fun h => hhigh h)
@@ -173,7 +174,7 @@ theorem evm_sar_stack_spec (sp base : Word)
         · rfl
         · simp at h; omega
       exact sar_sign_fill_lift sp base shift value r5 r6 r7 r10 r11
-        (evm_sar_sign_fill_large_spec sp base _ _ _ _ _ _ _ _ r5 r10 hhigh' hlarge)
+        (evm_sar_sign_fill_large_spec sp base r5 r10 hhigh' hlarge)
         result hresult
   · -- shift < 256: result = sshiftRight value shift.toNat
     have hlt : shift.toNat < 256 := Nat.lt_of_not_le hge
