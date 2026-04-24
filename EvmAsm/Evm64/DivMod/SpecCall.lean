@@ -1839,6 +1839,32 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
       (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
       (by omega) hvb_pos hb3_bound
+  -- Normalize identities at val256 level.
+  have h_norm_u :
+      val256 ((a.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
+        (((a.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((a.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+        (((a.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((a.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+        (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+      + ((a.getLimbN 3) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)).toNat * 2 ^ 256
+      = val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+          2 ^ (clzResult (b.getLimbN 3)).1.toNat :=
+    EvmWord.val256_normalize_general hshift_pos hshift_lt_64
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+  have h_norm_b :
+      val256 ((b.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
+        (((b.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((b.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+        (((b.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((b.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+        (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+          ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+      = val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+          2 ^ (clzResult (b.getLimbN 3)).1.toNat :=
+    EvmWord.val256_normalize hshift_pos hshift_lt_64
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
   -- Strategy: prove `val256(un_out) = (val256(a) mod val256(b)) * 2^s` via
   -- case split on `carry`, then apply `val256_denormalize` +
   -- `mod_of_val256_eq_mod` + `evmWordIs_sp32_limbs_eq`.
