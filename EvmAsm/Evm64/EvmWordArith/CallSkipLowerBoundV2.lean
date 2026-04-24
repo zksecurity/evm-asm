@@ -688,10 +688,48 @@ theorem algorithmUn21_eq_r1_math_of_tight
       (algorithmUn21 u4 u3 b3').toNat <
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat) :
     False := by
-  -- Composition: q1' ∈ {q_true_1, q_true_1 + 1} → un21 ≥ r1_math in both cases.
-  -- Case split + apply sub-cases _of_q1_prime_eq_q_true_1 and _plus_one.
-  -- Full proof deferred — requires q1' ≥ q_true_1 lower bound wrapped form.
-  sorry
+  -- Derive q1' ∈ {q_true_1, q_true_1 + 1}.
+  have h_q1_le := algorithmQ1Prime_le_q_true_1_plus_one u4 u3 b3'
+    hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
+  -- Lower bound: q1' ≥ q_true_1 (wrapped form). Need to establish.
+  have h_q1_ge : (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat
+      ≤ (algorithmQ1Prime u4 u3 b3').toNat := by
+    -- Use algorithmQ1Prime_ge_q_true_1 (already proven) + dHi bounds derivation.
+    have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+      rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+    have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+      rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      have : b3'.toNat < 2^64 := b3'.isLt
+      exact Nat.div_lt_of_lt_mul (by omega)
+    have h_dLo_lt :
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+      rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+        (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+      exact Nat.div_lt_of_lt_mul (by omega)
+    have h_v_eq := div128Quot_vTop_decomp b3'
+    have h_u4_lt_vTop : u4.toNat <
+        (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+      h_v_eq ▸ hu4_lt_b3'
+    have h := algorithmQ1Prime_ge_q_true_1 u4 u3 b3'
+      h_dHi_ge h_dHi_lt h_dLo_lt hu4_lt_dHi_pow32 h_u4_lt_vTop
+    rw [← h_v_eq] at h; exact h
+  -- q1' is q_true_1 or q_true_1 + 1.
+  set q_true_1 := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat
+  have h_q1'_or : (algorithmQ1Prime u4 u3 b3').toNat = q_true_1 ∨
+                  (algorithmQ1Prime u4 u3 b3').toNat = q_true_1 + 1 := by
+    omega
+  rcases h_q1'_or with h_eq | h_eq_plus_one
+  · -- Case q1' = q_true_1: un21 = r1_math. Contradicts h_tight.
+    have h_un21_eq := algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1 u4 u3 b3'
+      hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32 h_eq
+    omega
+  · -- Case q1' = q_true_1 + 1: un21 ≥ r1_math. Contradicts h_tight.
+    have h_un21_ge := algorithmUn21_ge_r1_math_of_q1_prime_eq_q_true_1_plus_one u4 u3 b3'
+      hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32 h_eq_plus_one
+    omega
 
 /-- **Bridge**: under standard hcall + `un21 < dHi*2^32`, the algorithm's un21
     is at least the mathematical remainder `(u4*2^32 + div_un1) % b3'`.
