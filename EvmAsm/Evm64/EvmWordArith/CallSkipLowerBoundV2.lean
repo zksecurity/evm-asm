@@ -53,14 +53,46 @@ open EvmWord (val256)
 -- A2's proof is decomposed into sub-lemmas (A2.S1–A2.S4 below).
 -- =============================================================================
 
+/-- **A2.S1.alg** (pure algebra): if `q1' * 2^32 + q0' ≥ u / vTop`, then
+    `(q1'*2^32 + q0' + 1) * vTop > u`. Wraps `Nat.div` semantics.
+
+    Used downstream to convert the "tight qHat" statement (qHat ≥ q_true)
+    into the "gap" statement (qHat + 1 > q_true), which is what A2 asks. -/
+theorem nat_succ_mul_gt_of_div_le (q u vTop : Nat) (hvTop_pos : 0 < vTop)
+    (h_div_le : u / vTop ≤ q) :
+    (q + 1) * vTop > u := by
+  have h_div_mod : u = vTop * (u / vTop) + u % vTop := (Nat.div_add_mod u vTop).symm
+  have h_mod_lt : u % vTop < vTop := Nat.mod_lt u hvTop_pos
+  have h_mul : vTop * (u / vTop) ≤ vTop * q := Nat.mul_le_mul_left _ h_div_le
+  calc u = vTop * (u / vTop) + u % vTop := h_div_mod
+    _ ≤ vTop * q + u % vTop := by omega
+    _ < vTop * q + vTop := by omega
+    _ = (q + 1) * vTop := by ring
+
+/-- **A2.S1.comp** (pure algebra): tight per-halfword combine.
+    If `q1' ≥ q_true_1` AND `q0' ≥ q_true_0` AND `q0' < 2^32` AND
+    `q_true_0 < 2^32`, then `q1'*2^32 + q0' ≥ q_true_1*2^32 + q_true_0`.
+    Used to combine Phase 1 and Phase 2 tight bounds into the halfword
+    `qHat ≥ q_true` bound. -/
+theorem halfword_combine_ge_of_tight (q1' q0' q_true_1 q_true_0 : Nat)
+    (h_q1'_ge : q1' ≥ q_true_1)
+    (h_q0'_ge : q0' ≥ q_true_0) :
+    q1' * 2^32 + q0' ≥ q_true_1 * 2^32 + q_true_0 := by
+  have h1 : q_true_1 * 2^32 ≤ q1' * 2^32 := Nat.mul_le_mul_right _ h_q1'_ge
+  exact Nat.add_le_add h1 h_q0'_ge
+
 /-- **A2.S1**: Case "normal" — when Phase 2's `un21 < vTop` holds, the
     per-phase tight bound gives the result.
 
     Takes `un21 < vTop` as an explicit hypothesis (satisfied when Phase 1b
     is tight). This is the easier case of A2.
 
-    **TODO**: ~100 lines via existing `div128Quot_toNat_eq_strict`
-    + Phase 1b/Phase 2b euclidean + q_true decomposition. -/
+    **Sub-decomposition**: closes via:
+    1. A2.S1.ph1: `q1' ≥ q_true_1` (Phase 1 tight, TODO).
+    2. A2.S1.ph2: `q0' ≥ q_true_0` (Phase 2 tight in range [0, vTop), TODO).
+    3. A2.S1.alg + A2.S1.comp + `div128Quot_toNat_eq_strict` to combine.
+
+    **TODO**: ~100 lines via Phase 1b + Phase 2b tight + halfword_combine. -/
 theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
