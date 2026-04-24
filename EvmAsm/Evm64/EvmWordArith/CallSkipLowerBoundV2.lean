@@ -371,7 +371,7 @@ theorem algorithmUn21_ge_r1_math
     (algorithmUn21 u4 u3 b3').toNat ≥
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
   by_contra h_lt
-  push_neg at h_lt
+  push Not at h_lt
   exact algorithmUn21_eq_r1_math_of_tight u4 u3 b3' hb3'_ge hu4_lt_b3'
     hu4_lt_dHi_pow32 h_un21_lt_dHi_pow32 h_lt
 
@@ -640,7 +640,7 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_compensation
   by_cases hu4 : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32
   · exact div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4 u4 u3 b3' hb3'_ge
       hu4_lt_b3' hu4
-  · push_neg at hu4
+  · push Not at hu4
     have h_un21 : (algorithmUn21 u4 u3 b3').toNat ≥
         (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 := by
       rcases h_compensation with h | h
