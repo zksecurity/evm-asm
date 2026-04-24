@@ -302,6 +302,15 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
       u3
       h_dHi_ge h_dHi_lt h_dLo_lt hu4_lt_dHi_pow32 h_u4_lt_vTop
+  -- Phase 2b bound: q0' < 2^32 (needed for `div128Quot_toNat_eq_strict`).
+  -- Note: q0' here uses `algorithmUn21` abstractly; div128Quot_toNat_eq_strict
+  -- requires div128Quot's internal q0' (same value up to algorithmUn21_unfold).
+  have h_q0'_lt_pow32 :=
+    div128Quot_q0_prime_lt_pow32 (algorithmUn21 u4 u3 b3')
+      (b3' >>> (32 : BitVec 6).toNat)
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
+      u3
+      h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_vTop
   -- The remaining gap:
   -- (a) Phase 1 tight: `q1' ≥ q_true_1` via `_of_uHi_lt_dHi_mul_pow32`.
   --     Requires `u4 < dHi*2^32`; narrow range [dHi*2^32, vTop) still open.
