@@ -251,7 +251,8 @@ theorem algorithmQ0Prime_ge_q_true_0
       hdHi_ge hdHi_lt hdLo_lt h_un21_lt_dHi_pow32 h_un21_lt_vTop
 
 /-- **Bridge sub-A (weak, `+2`)**: `algorithmQ1Prime.toNat ≤ q_true_1 + 2`
-    stepping stone (proof deferred — attempt hit maxRecDepth). -/
+    stepping stone. Combines Phase 1b's q1' ≤ u4/dHi with Knuth-B trial_le
+    giving u4/dHi ≤ q_true_1 + 2 (under normalization). -/
 theorem algorithmQ1Prime_le_q_true_1_plus_two
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
@@ -259,7 +260,51 @@ theorem algorithmQ1Prime_le_q_true_1_plus_two
     (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
     (algorithmQ1Prime u4 u3 b3').toNat ≤
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat + 2 := by
-  sorry
+  set dHi := b3' >>> (32 : BitVec 6).toNat with hdHi_def
+  set dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat with hdLo_def
+  set div_un1 := u3 >>> (32 : BitVec 6).toNat with hdiv_un1_def
+  have h_dHi_lt : dHi.toNat < 2^32 := by
+    show (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dHi_ge : dHi.toNat ≥ 2^31 := by
+    show (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat ≥ 2^63 := hb3'_ge
+    omega
+  have h_dLo_lt : dLo.toNat < 2^32 := by
+    show ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_div_un1_lt : div_un1.toNat < 2^32 := by
+    show (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_vTop_decomp : b3'.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_u4_lt_vTop : u4.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact hu4_lt_b3'
+  have h_dHi_ne : dHi ≠ 0 := by
+    intro heq
+    have : dHi.toNat = 0 := by rw [heq]; rfl
+    omega
+  have h_trial_le :=
+    EvmWord.trial_quotient_le u4.toNat div_un1.toNat dHi.toNat dLo.toNat
+      h_dHi_lt h_dLo_lt h_div_un1_lt h_u4_lt_vTop h_dHi_ge
+  rw [algorithmQ1Prime_unfold]
+  simp only []
+  let rhatUn1 : Word := (((if (rv64_divu u4 dHi) >>> (32 : BitVec 6).toNat = 0
+      then u4 - rv64_divu u4 dHi * dHi
+      else u4 - rv64_divu u4 dHi * dHi + dHi) <<< (32 : BitVec 6).toNat)
+      ||| div_un1)
+  have h_q1'_le := (div128Quot_phase1b_quotient_bound u4 dHi h_dHi_ne h_dHi_lt
+    dLo rhatUn1).2
+  rw [h_vTop_decomp]
+  exact Nat.le_trans h_q1'_le (by omega)
 
 /-- **Bridge sub-A** (Knuth-B upper at Phase 1b): under standard hcall,
     `algorithmQ1Prime.toNat ≤ (u4*2^32 + div_un1) / b3' + 1`. This is the
