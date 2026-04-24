@@ -9,8 +9,6 @@
   the intermediate `% 64` form that simp introduces.
 -/
 
-import EvmAsm.Rv64.SailEquiv.StateRel
-import EvmAsm.Rv64.SailEquiv.MonadLemmas
 import EvmAsm.Rv64.SailEquiv.ALUProofs
 
 open LeanRV64D.Functions
