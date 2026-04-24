@@ -347,6 +347,10 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
       u3
       h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi_pow32 h_un21_lt_vTop
+  -- NOTE: Phase 2 tight's q0' (via let-chain) and `algorithmQ0Prime` are
+  -- definitionally equal but `rw [← algorithmQ0Prime_unfold]` fails to
+  -- match (let-binding shape difference). Next iteration: try `change`
+  -- or prove a named equality lemma.
   -- Phase 1 tight: `(u4*2^32 + div_un1) / vTop ≤ q1'`.
   have h_u4_lt_vTop : u4.toNat <
       (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
