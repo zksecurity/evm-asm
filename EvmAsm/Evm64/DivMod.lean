@@ -13,6 +13,3 @@ import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
 -- FullPathN2Cases + FullPath.
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2Full
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3Shift0
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Shift0
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1Shift0
