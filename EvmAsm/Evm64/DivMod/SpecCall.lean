@@ -16,7 +16,6 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Spec
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4Shift0
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4Shift0
 import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 
