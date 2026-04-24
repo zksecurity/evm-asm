@@ -2152,4 +2152,44 @@ theorem evm_mod_n4_shift0_call_skip_stack_spec (sp base : Word)
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+/-- **Shift=0 call+addback-BEQ n=4 DIV getLimbN bridge (SCAFFOLD).**
+
+    Under shift=0 + `isAddbackBorrowN4Shift0Evm` (mulsub underflow = c3 ≠ 0)
+    + `isAddbackCarry2NzN4Shift0Evm` (BEQ precondition):
+
+    Claim: `q_out = 0 = (EvmWord.div a b).getLimbN 0`, limbs 1-3 = 0.
+
+    Mathematical argument:
+    - `qHat = div128Quot 0 a3 b3` satisfies `qHat.toNat ≤ 1` (Div128Shift0
+      `le_one`).
+    - Borrow fires ⟹ `c3 ≥ 1` ⟹ `qHat * val256(b) > val256(a)` ⟹ `qHat ≥ 1`
+      (otherwise `0 * val256(b) = 0 ≤ val256(a)`, no underflow).
+    - Combined: `qHat = 1`.
+    - `val256(a) < val256(b)` ⟹ `floor(val256(a)/val256(b)) = 0`.
+    - Post-first-addback: `q_out = qHat - 1 = 0`, remainder = `val256(a)`.
+    - Double-addback branch (`carry = 0`): VACUOUS under shift=0 since
+      first-addback's carry = 1 whenever `qHat = 1 ∧ c3 = 1`.
+
+    TODO(#67 follow-up): fill in the proof. The double-addback vacuity is
+    the non-trivial step — requires case-splitting on `carry` and deriving
+    a contradiction in the `carry = 0` branch via val256 arithmetic. -/
+theorem n4_shift0_call_addback_beq_div_getLimbN (a b : EvmWord)
+    (hbnz : b ≠ 0)
+    (hshift_z : (clzResult (b.getLimbN 3)).1 = 0)
+    (hborrow : isAddbackBorrowN4Shift0Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4Shift0Evm a b) :
+    let qHat := div128Quot (0 : Word) (a.getLimbN 3) (b.getLimbN 3)
+    let ms := mulsubN4 qHat
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    let q_out := if carry = 0 then qHat + signExtend12 4095 + signExtend12 4095
+                 else qHat + signExtend12 4095
+    (EvmWord.div a b).getLimbN 0 = q_out ∧
+    (EvmWord.div a b).getLimbN 1 = 0 ∧
+    (EvmWord.div a b).getLimbN 2 = 0 ∧
+    (EvmWord.div a b).getLimbN 3 = 0 := by
+  sorry
+
 end EvmAsm.Evm64
