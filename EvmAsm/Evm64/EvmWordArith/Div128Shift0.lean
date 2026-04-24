@@ -171,6 +171,22 @@ theorem div128Quot_shift0_rhatc_eq_zero (dHi : Word) (hdHi_ne : dHi ≠ 0) :
   rw [if_pos rfl]
   exact div128Quot_shift0_rhat_eq_zero dHi hdHi_ne
 
+/-- Under uHi=0 + hdHi_ne, Phase 1's rhatUn1 = (rhatc << 32) ||| div_un1 = div_un1
+    (since rhatc = 0). -/
+theorem div128Quot_shift0_rhatUn1_eq_div_un1 (dHi div_un1 : Word) (hdHi_ne : dHi ≠ 0) :
+    (let q1 := rv64_divu (0 : Word) dHi
+     let rhat := (0 : Word) - q1 * dHi
+     let hi1 := q1 >>> (32 : BitVec 6).toNat
+     let rhatc := if hi1 = 0 then rhat else rhat + dHi
+     (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1) = div_un1 := by
+  simp only []
+  rw [show (if (rv64_divu (0 : Word) dHi) >>> (32 : BitVec 6).toNat = 0 then
+            (0 : Word) - (rv64_divu (0 : Word) dHi) * dHi
+          else
+            ((0 : Word) - (rv64_divu (0 : Word) dHi) * dHi) + dHi) = 0 from
+    div128Quot_shift0_rhatc_eq_zero dHi hdHi_ne]
+  simp
+
 -- ============================================================================
 -- The main composite lemma — scaffolded with sorrys for Phase 1 tracing
 -- and Phase 2b reasoning. Filled incrementally per feedback_commit_sorry_intermediate.
