@@ -166,6 +166,16 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
        un21.toNat < dHi.toNat * 2^32)) :
     ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
       u4.toNat * 2^64 + u3.toNat := by
+  -- Standard precondition derivations.
+  have hb3'_pos : 0 < b3'.toNat := by omega
+  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat ≥ 2^63 := hb3'_ge
+    omega
+  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
   sorry
 
 /-- **A2.S2**: Case "compensation" — when `un21 ≥ dHi*2^32`. Includes
