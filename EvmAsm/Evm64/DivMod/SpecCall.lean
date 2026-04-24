@@ -2370,4 +2370,79 @@ theorem evm_div_n4_shift0_call_addback_beq_stack_spec (sp base : Word)
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+/-- **Shift=0 call+addback-BEQ n=4 MOD getLimbN bridge (SCAFFOLD).**
+
+    MOD counterpart to `n4_shift0_call_addback_beq_div_getLimbN`. Under
+    shift=0 + borrow-addback: `val256(a) < val256(b)`, so `a mod b = a`.
+    After first addback: `val256(ab_low4) = val256(a)`, so per-limb
+    equalities follow via `fromLimbs`.
+
+    TODO(#67): close this sorry. The proof mirrors the DIV bridge's
+    steps 1-6 (qHat = 1, c3 = 1, carry = 1) and concludes with
+    `val256(ab_low4) = val256(a)` via the Euclidean identities combined
+    with c3 = carry = 1. -/
+theorem n4_shift0_call_addback_beq_mod_getLimbN (a b : EvmWord)
+    (hbnz : b ≠ 0)
+    (hshift_z : (clzResult (b.getLimbN 3)).1 = 0)
+    (hborrow : isAddbackBorrowN4Shift0Evm a b) :
+    let qHat := div128Quot (0 : Word) (a.getLimbN 3) (b.getLimbN 3)
+    let ms := mulsubN4 qHat
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    let c3 := ms.2.2.2.2
+    let u4_new := (0 : Word) - c3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    let un0Out := if carry = 0 then ab'.1 else ab.1
+    let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
+    let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
+    let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+    (EvmWord.mod a b).getLimbN 0 = un0Out ∧
+    (EvmWord.mod a b).getLimbN 1 = un1Out ∧
+    (EvmWord.mod a b).getLimbN 2 = un2Out ∧
+    (EvmWord.mod a b).getLimbN 3 = un3Out := by
+  sorry
+
+/-- **EVM-stack-level MOD spec on the n=4 shift=0 call+addback-BEQ sub-path.**
+
+    MOD counterpart to `evm_div_n4_shift0_call_addback_beq_stack_spec`. -/
+theorem evm_mod_n4_shift0_call_addback_beq_stack_spec (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_z : (clzResult (b.getLimbN 3)).1 = 0)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hcarry2_nz : isAddbackCarry2NzN4Shift0Evm a b)
+    (hborrow : isAddbackBorrowN4Shift0Evm a b) :
+    cpsTriple base (base + nopOff) (modCode base)
+      (modN4StackPreCall sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (modN4CallSkipStackPost sp a b) := by
+  have h_pre := evm_mod_n4_full_shift0_call_addback_beq_stack_pre_spec_bundled
+    sp base a b v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem retMem dMem dloMem scratch_un0
+    hbnz hb3nz hshift_z halign hcarry2_nz hborrow
+  obtain ⟨hmod0, hmod1, hmod2, hmod3⟩ :=
+    n4_shift0_call_addback_beq_mod_getLimbN a b hbnz hshift_z hborrow
+  refine cpsTriple_weaken (fun _ hp => hp) ?_ h_pre
+  intro h hq
+  unfold fullModN4Shift0CallAddbackBeqPost at hq
+  apply mod_n4_call_skip_stack_weaken sp a b h
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+       ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
+      from evmWordIs_sp_unfold]
+  rw [evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b) _ _ _ _
+      hmod0 hmod1 hmod2 hmod3]
+  rw [divScratchValuesCall_unfold, divScratchValues_unfold]
+  rw [word_add_zero] at hq
+  xperm_hyp hq
+
 end EvmAsm.Evm64
