@@ -131,14 +131,13 @@ theorem b3_shifted_ge_pow63 {b3 : Word} (hb3nz : b3 ≠ 0) :
     (b3 <<< ((clzResult b3).1.toNat % 64)).toNat ≥ 2^63 := by
   obtain ⟨hinv, hcount⟩ := clzPipeline_invariant b3
   have := clzPipeline_snd_ge_pow62 hb3nz
-  have hsnd_lt : (clzPipeline b3).2.toNat < 2^64 := (clzPipeline b3).2.isLt
   rw [clzResult_fst_eq]
   by_cases h5 : (clzPipeline b3).2 >>> 63 ≠ 0
   · rw [if_pos h5]
     have hmod : (clzPipeline b3).1.toNat % 64 = (clzPipeline b3).1.toNat := by omega
     rw [hmod]
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hinv]
-    rw [Nat.mod_eq_of_lt hsnd_lt]
+    rw [Nat.mod_eq_of_lt (clzPipeline b3).2.isLt]
     exact toNat_ge_of_ushiftRight_63 h5
   · simp only [h5, if_false]
     push Not at h5
