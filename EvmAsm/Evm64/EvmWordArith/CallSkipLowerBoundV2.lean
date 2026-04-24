@@ -519,17 +519,44 @@ theorem algorithmQ1Prime_step5_ult_bridge
   rw [EvmWord.ult_iff, BitVec.toNat_mul, Nat.mod_eq_of_lt h_q1c_dLo_lt,
       h_rhatUn1_eq]
 
+/-- **_plus_one sub-step 6**: Word-level if → Nat-level if bridge for q1'.
+    The algorithm's q1' (Word if on ult) equals at the .toNat level the
+    Nat if on the underlying comparison. Decomposes into 2 cases: when
+    ult fires (q1' = q1c - 1, needs q1c > 0 via phase1b_check_implies_q1c_pos),
+    and when it doesn't (q1' = q1c).
+
+    Body deferred — requires careful handling of `q1c + signExtend12 4095`
+    as Nat subtraction by 1 (safe via phase1b_check_implies_q1c_pos). -/
+theorem algorithmQ1Prime_step6_word_nat_if_bridge
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    (algorithmQ1Prime u4 u3 b3').toNat =
+      (if q1c.toNat * dLo.toNat > rhatc.toNat * 2^32 + div_un1.toNat
+       then q1c.toNat - 1 else q1c.toNat) := by
+  sorry
+
 /-- **Bridge sub-A** (Knuth-B upper at Phase 1b): under standard hcall,
     `algorithmQ1Prime.toNat ≤ (u4*2^32 + div_un1) / b3' + 1`.
 
-    **Composition** (once all 5 sub-steps are filled):
+    **Composition** (once all 6 sub-steps are filled):
     1. `algorithmQ1Prime_step1_phase1a_euclidean` — q1c*dHi + rhatc = u4.
     2. `algorithmQ1Prime_step2_q1c_ge_q_true_1` — q_true_1 ≤ q1c.
     3. `algorithmQ1Prime_step3_q1c_le_q_true_1_plus_two` — q1c ≤ q_true_1 + 2.
-    4. `half_round_overestimate_le_one` — q' ≤ q_true_1 + 1 where q' is
-       the Nat-level if-then-else (branches on Nat comparison).
-    5. `algorithmQ1Prime_step5_ult_bridge` — connect q' to algorithmQ1Prime
-       via the Word-level ult ↔ Nat-level comparison. -/
+    4. `half_round_overestimate_le_one` (or `correction_step_overestimate_le_one`)
+       — q' ≤ q_true_1 + 1 where q' is the Nat-level if-then-else.
+    5. `algorithmQ1Prime_step5_ult_bridge` — Word ult ↔ Nat comparison.
+    6. `algorithmQ1Prime_step6_word_nat_if_bridge` — bridge algorithmQ1Prime.toNat
+       to the Nat-level if-then-else (given step5's Word↔Nat bridge). -/
 theorem algorithmQ1Prime_le_q_true_1_plus_one
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
