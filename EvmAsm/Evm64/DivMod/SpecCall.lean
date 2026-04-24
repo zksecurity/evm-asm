@@ -1590,22 +1590,104 @@ def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
     val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
       val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-/-- **EVM-stack-level DIV spec on the n=4 call+addback BEQ sub-path (SORRY).**
+theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
+    n4CallAddbackBeqSemanticHolds a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift :=
+       (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+     let q_out : Word :=
+       if carry = 0 then qHat + signExtend12 4095 + signExtend12 4095
+       else qHat + signExtend12 4095
+     q_out.toNat =
+       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) :=
+  rfl
+
+/-- **Call+addback BEQ n=4 div getLimbN bridge.** Under the runtime conditions
+    + `n4CallAddbackBeqSemanticHolds`, the post-addback corrected quotient
+    `q_out` equals `(EvmWord.div a b).getLimbN 0`, and the upper three
+    quotient limbs are zero.
+
+    Simpler than the call-skip bridge: hsem directly gives the tight equality
+    `q_out.toNat = val256(a)/val256(b)`, so we don't need to combine with T3.
+    From that, `(EvmWord.div a b).toNat = q_out.toNat` via `BitVec.toNat_udiv`,
+    and `q_out : Word` bounds pin the limbs. -/
+theorem n4_call_addback_beq_div_mod_getLimbN (a b : EvmWord)
+    (hbnz : b ≠ 0)
+    (hsem : n4CallAddbackBeqSemanticHolds a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+    let q_out : Word :=
+      if carry = 0 then qHat + signExtend12 4095 + signExtend12 4095
+      else qHat + signExtend12 4095
+    (EvmWord.div a b).getLimbN 0 = q_out ∧
+    (EvmWord.div a b).getLimbN 1 = 0 ∧
+    (EvmWord.div a b).getLimbN 2 = 0 ∧
+    (EvmWord.div a b).getLimbN 3 = 0 := by
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry q_out
+  rw [n4CallAddbackBeqSemanticHolds_def] at hsem
+  change q_out.toNat = val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) at hsem
+  have ha_val : val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      = a.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat a
+  have hb_val : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      = b.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat b
+  rw [ha_val, hb_val] at hsem
+  -- hsem : q_out.toNat = a.toNat / b.toNat
+  have hdiv_toNat : (EvmWord.div a b).toNat = a.toNat / b.toNat := by
+    unfold EvmWord.div
+    rw [if_neg hbnz]
+    exact BitVec.toNat_udiv
+  set q_target : EvmWord := EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with | 0 => q_out | 1 => 0 | 2 => 0 | 3 => 0 with hq_target
+  have hq_target_toNat : q_target.toNat = q_out.toNat := by
+    simp [q_target, EvmWord.fromLimbs_toNat]
+  have hq_eq_div : q_target = EvmWord.div a b :=
+    BitVec.eq_of_toNat_eq (by omega)
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [← hq_eq_div]; exact EvmWord.getLimbN_fromLimbs_0
+  · rw [← hq_eq_div]; exact EvmWord.getLimbN_fromLimbs_1
+  · rw [← hq_eq_div]; exact EvmWord.getLimbN_fromLimbs_2
+  · rw [← hq_eq_div]; exact EvmWord.getLimbN_fromLimbs_3
+
+/-- **EVM-stack-level DIV spec on the n=4 call+addback BEQ sub-path.**
 
     Mirror of `evm_div_n4_call_skip_stack_spec` for the addback BEQ branch.
-    Consumes runtime conditions (`isCallTrialN4Evm`, `isAddbackCarry2NzN4CallEvm`,
-    `isAddbackBorrowN4CallEvm`), shift non-zero, alignment, validity, and the
-    semantic-correctness fact `n4CallAddbackBeqSemanticHolds`.
-
-    Reduces to `evm_div_n4_full_call_addback_beq_stack_pre_spec_bundled` + a
-    postcondition reshape. The reshape pattern will mirror the call-skip version
-    (simp with `fullDivN4CallAddbackBeqPost_unfold` + `denormDivPost_unfold`,
-    `div_n4_call_skip_stack_weaken`, `evmWordIs_sp32_limbs_eq` with a new bridge
-    theorem, etc.). The main math gap is the bridge theorem:
-    `n4_call_addback_beq_div_mod_getLimbN` (TODO) — given hsem + runtime
-    conditions, the post-addback `q_out.toNat = val256(a)/val256(b)` pins
-    `(EvmWord.div a b).getLimbN 0 = q_out` + upper limbs = 0 analogously to
-    the call-skip bridge. -/
+    Consumes runtime conditions, shift-nonzero, alignment, validity, and
+    the semantic-correctness fact `n4CallAddbackBeqSemanticHolds`. Output
+    shape is `divN4CallSkipStackPost` (same as call-skip — both paths
+    produce identical stack layouts on success). -/
 theorem evm_div_n4_call_addback_beq_stack_spec (sp base : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -1624,11 +1706,25 @@ theorem evm_div_n4_call_addback_beq_stack_spec (sp base : Word)
          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
          shiftMem nMem jMem retMem dMem dloMem scratch_un0)
       (divN4CallSkipStackPost sp a b) := by
-  -- TODO(#66 follow-up): close using `evm_div_n4_full_call_addback_beq_stack_pre_spec_bundled`
-  -- + `n4_call_addback_beq_div_mod_getLimbN` bridge (to be added) +
-  -- `fullDivN4CallAddbackBeqPost_unfold` (in this PR) + the call-skip
-  -- weakener (output shape is the same as call-skip — `divN4CallSkipStackPost`
-  -- since both paths produce the same stack layout on success).
-  sorry
+  have h_pre := evm_div_n4_full_call_addback_beq_stack_pre_spec_bundled sp base a b
+    v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem retMem dMem dloMem scratch_un0
+    hbnz hb3nz hshift_nz hvalid halign hbltu hcarry2_nz hborrow
+  obtain ⟨hdiv0, hdiv1, hdiv2, hdiv3⟩ :=
+    n4_call_addback_beq_div_mod_getLimbN a b hbnz hsem
+  refine cpsTriple_weaken (fun _ hp => hp) ?_ h_pre
+  intro h hq
+  simp only [fullDivN4CallAddbackBeqPost_unfold, denormDivPost_unfold] at hq
+  apply div_n4_call_skip_stack_weaken sp a b h
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+       ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
+      from evmWordIs_sp_unfold]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) = _
+      from by rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+                  hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [divScratchValuesCall_unfold, divScratchValues_unfold]
+  rw [word_add_zero] at hq
+  xperm_hyp hq
 
 end EvmAsm.Evm64
