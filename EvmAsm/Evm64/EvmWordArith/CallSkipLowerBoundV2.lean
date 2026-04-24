@@ -422,86 +422,51 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
     have : (u3 <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
       (u3 <<< (32 : BitVec 6).toNat : Word).isLt
     exact Nat.div_lt_of_lt_mul (by omega)
-  -- Phase 2 tight: `(algorithmUn21*2^32 + div_un0) / vTop ≤ q0'` where
-  -- q0' is Phase 2's output. Uses the irreducible `algorithmUn21` wrapper
-  -- to keep the let-chain folded during unification.
-  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
-    Nat.lt_of_lt_of_le h_un21_lt_dHi_pow32 (Nat.le_add_right _ _)
-  have h_ph2_tight :=
-    div128Quot_q0_prime_ge_q_true_0_of_un21_lt_dHi_mul_pow32
-      (algorithmUn21 u4 u3 b3')
-      (b3' >>> (32 : BitVec 6).toNat)
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
-      u3
-      h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi_pow32 h_un21_lt_vTop
-  -- NOTE: Phase 2 tight's q0' (via let-chain) and `algorithmQ0Prime` are
-  -- definitionally equal but `rw [← algorithmQ0Prime_unfold]` fails to
-  -- match (let-binding shape difference). Next iteration: try `change`
-  -- or prove a named equality lemma.
-  -- Phase 1 tight: `(u4*2^32 + div_un1) / vTop ≤ q1'`.
+  -- All Phase tight bounds + halfword decomp via the wrapped lemmas.
   have h_u4_lt_vTop : u4.toNat <
       (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
     Nat.lt_of_lt_of_le hu4_lt_dHi_pow32 (Nat.le_add_right _ _)
+  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    Nat.lt_of_lt_of_le h_un21_lt_dHi_pow32 (Nat.le_add_right _ _)
+  -- Phase 1 tight (wrapped).
   have h_ph1_tight :=
-    div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_dHi_mul_pow32
-      u4
-      (b3' >>> (32 : BitVec 6).toNat)
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
-      u3
+    algorithmQ1Prime_ge_q_true_1 u4 u3 b3'
       h_dHi_ge h_dHi_lt h_dLo_lt hu4_lt_dHi_pow32 h_u4_lt_vTop
-  -- Phase 2b bound: q0' < 2^32 (needed for `div128Quot_toNat_eq_strict`).
-  -- Note: q0' here uses `algorithmUn21` abstractly; div128Quot_toNat_eq_strict
-  -- requires div128Quot's internal q0' (same value up to algorithmUn21_unfold).
-  have h_q0'_lt_pow32 :=
-    div128Quot_q0_prime_lt_pow32 (algorithmUn21 u4 u3 b3')
-      (b3' >>> (32 : BitVec 6).toNat)
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
-      u3
-      h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_vTop
-  -- Unfold algorithmUn21 so the q0' shape matches div128Quot_toNat_eq_strict.
-  rw [algorithmUn21_unfold] at h_q0'_lt_pow32
-  -- Halfword decomposition of qHat: `qHat.toNat = q1'.toNat * 2^32 + q0'.toNat`.
+  -- Phase 2 tight (wrapped).
+  have h_ph2_tight :=
+    algorithmQ0Prime_ge_q_true_0 u4 u3 b3'
+      h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi_pow32 h_un21_lt_vTop
+  -- q0' < 2^32 (wrapped form — derive via algorithmQ0Prime_unfold).
+  have h_q0'_lt : (algorithmQ0Prime u4 u3 b3').toNat < 2^32 := by
+    rw [algorithmQ0Prime_unfold]
+    exact
+      div128Quot_q0_prime_lt_pow32 (algorithmUn21 u4 u3 b3')
+        (b3' >>> (32 : BitVec 6).toNat)
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat) u3
+        h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_vTop
+  -- qHat halfword decomp (wrapped).
   have h_qHat_decomp :=
-    div128Quot_toNat_eq_strict u4 u3 b3' h_dHi_ge h_dHi_lt h_dLo_lt
-      (by rw [h_vTop_decomp] at hu4_lt_b3'; exact hu4_lt_b3') h_q0'_lt_pow32
-  -- True-quotient halfword decomposition via `two_step_div_identity`:
-  --   `(u4*2^64 + u3) / b3' = q_true_1 * 2^32 + q_true_0`
-  -- where q_true_1 = (u4*2^32 + div_un1) / b3',
-  --       q_true_0 = (r1_math * 2^32 + div_un0) / b3',
-  --       r1_math  = (u4*2^32 + div_un1) % b3'.
+    div128Quot_toNat_eq_algorithmQ1_Q0 u4 u3 b3'
+      h_dHi_ge h_dHi_lt h_dLo_lt
+      (by rw [h_vTop_decomp] at hu4_lt_b3'; exact hu4_lt_b3') h_q0'_lt
+  -- True-quotient halfword decomposition.
   have h_two_step :=
     two_step_div_identity u4.toNat
       (u3 >>> (32 : BitVec 6).toNat).toNat
       ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
       b3'.toNat hb3'_pos
-  -- Bridge: algorithm un21 ≥ r1_math, so Phase 2 tight's bound on algorithm
-  -- un21 yields a bound on q_true_0.
+  -- Bridge: algorithm un21 ≥ r1_math.
   have h_un21_ge_rmath :=
     algorithmUn21_ge_r1_math u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
       h_un21_lt_dHi_pow32
-  -- Compose: lift Phase 2 tight from algorithm un21 to r1_math.
-  -- (un21 * 2^32 + div_un0) / V ≤ q0' combined with un21 ≥ r1_math gives
-  -- q_true_0 = (r1_math * 2^32 + div_un0) / V ≤ q0'.
-  have h_mono_num : (algorithmUn21 u4 u3 b3').toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat ≥
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
-    Nat.add_le_add_right (Nat.mul_le_mul_right _ h_un21_ge_rmath) _
-  -- Rewrite goal to use halfword decomp.
-  rw [h_u3_decomp, h_qHat_decomp]
-  rw [show u4.toNat * 2^64 +
-        ((u3 >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-         ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) =
-      u4.toNat * 2^64 +
-        (u3 >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-        ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat from by ring]
-  -- Final composition: still blocked by q0' syntactic mismatch between
-  -- Phase 2 tight (uses `algorithmUn21`) and div128Quot (uses full let-chain).
-  -- Next iteration plan: introduce `algorithmQ0Prime` irreducible wrapper
-  -- so both sides use the same opaque symbol.
+  -- Composition: the pieces needed. Deferred to follow-up iteration —
+  -- current attempt hit type inference issues with the abstract q_true_0
+  -- expression. The structural path is clear though:
+  --   `qHat_plus_one_gt_u_via_tight_phases` with the four hypotheses:
+  --   V pos, h_two_step, h_ph1_tight, h_q_true_0_le (via monotonicity).
   sorry
 
 /-- **A2.S2**: Case "compensation" — when `un21 ≥ dHi*2^32`. Includes
