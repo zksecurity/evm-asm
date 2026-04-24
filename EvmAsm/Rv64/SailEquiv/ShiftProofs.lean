@@ -9,9 +9,7 @@
   the intermediate `% 64` form that simp introduces.
 -/
 
-import EvmAsm.Rv64.Execution
 import EvmAsm.Rv64.SailEquiv.ALUProofs
-import LeanRV64D
 
 open LeanRV64D.Functions
 open Sail

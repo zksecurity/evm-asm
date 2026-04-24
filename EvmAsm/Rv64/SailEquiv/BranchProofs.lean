@@ -11,9 +11,7 @@
   JAL/JALR additionally write a link register (rd := next_pc).
 -/
 
-import EvmAsm.Rv64.Execution
 import EvmAsm.Rv64.SailEquiv.ALUProofs
-import LeanRV64D
 
 open LeanRV64D.Functions
 open Sail

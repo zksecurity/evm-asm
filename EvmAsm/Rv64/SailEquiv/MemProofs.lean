@@ -16,9 +16,7 @@
   - The byte-level SAIL memory agrees with Rv64's doubleword memory (StateRel.mem_agree)
 -/
 
-import EvmAsm.Rv64.Execution
 import EvmAsm.Rv64.SailEquiv.ALUProofs
-import LeanRV64D
 
 open LeanRV64D.Functions
 open Sail
