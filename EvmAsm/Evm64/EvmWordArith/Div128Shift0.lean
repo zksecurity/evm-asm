@@ -624,8 +624,7 @@ theorem div128Quot_shift0_le_one (a3 b3 : Word)
        `(div128Quot 0 a3 b3).toNat = q0'.toNat`.
     3. Combine. -/
 theorem div128Quot_shift0_ge_a3_div_b3 (a3 b3 : Word)
-    (hb3_ge : b3.toNat ≥ 2^63)
-    (hb3_nz : b3 ≠ 0) :
+    (hb3_ge : b3.toNat ≥ 2^63) :
     (div128Quot (0 : Word) a3 b3).toNat ≥ a3.toNat / b3.toNat := by
   -- Setup: standard arithmetic facts under shift=0.
   have hdHi_ne := div128Quot_shift0_dHi_ne b3 hb3_ge
@@ -643,26 +642,50 @@ theorem div128Quot_shift0_ge_a3_div_b3 (a3 b3 : Word)
     have h_b3_decomp := word_hi32_lo32_decomp b3
     have := hi32_toNat_lt_pow32 a3
     omega
-  -- Apply KB-LB8 with un21 := a3 >>> 32, uLo := a3.
+  -- KB-LB8: q0'.toNat ≥ (a3>>>32 * 2^32 + (a3<<32)>>32) / (b3>>>32 * 2^32 + (b3<<32)>>32).
   have h_lb8 := div128Quot_q0_prime_ge_q_true_0_of_un21_lt_pow63
     (a3 >>> (32 : BitVec 6).toNat)
     (b3 >>> (32 : BitVec 6).toNat)
     ((b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
     a3 hdHi_ge hdHi_lt hdLo_lt h_un21_lt h_un21_lt_vTop
-  -- Simplify KB-LB8's LHS to a3.toNat / b3.toNat.
+  -- Chain's un21 equals a3 >>> 32 under shift=0.
+  have h_un21_eq := div128Quot_shift0_un21_eq_div_un1
+    (b3 >>> (32 : BitVec 6).toNat)
+    ((b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
+    (a3 >>> (32 : BitVec 6).toNat) hdHi_ne
+  -- Chain's q1' equals 0 under shift=0.
+  have h_q1'_zero := div128Quot_shift0_q1_prime_eq_zero
+    (b3 >>> (32 : BitVec 6).toNat)
+    ((b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
+    (a3 >>> (32 : BitVec 6).toNat) hdHi_ne
+  -- Rewrite the KB-LB8 LHS via word_hi32_lo32_decomp to get a3.toNat / b3.toNat.
   have h_a3 := word_hi32_lo32_decomp a3
   have h_b3 := word_hi32_lo32_decomp b3
-  -- TODO: continue — chain KB-LB8's q0' through div128Quot's q0' via
-  -- div128Quot_toNat_eq + q1'_eq_zero + un21_eq_div_un1.
-  sorry
+  dsimp only at h_lb8
+  rw [h_a3, h_b3] at h_lb8
+  -- Now h_lb8 : a3.toNat / b3.toNat ≤ (phase2b_q0' ...).toNat
+  -- Unfold div128Quot and substitute q1' = 0 and un21 = a3 >>> 32 in goal.
+  unfold div128Quot
+  dsimp only at h_q1'_zero h_un21_eq h_lb8 ⊢
+  rw [h_q1'_zero] at ⊢
+  have h_zero_shift : ((0 : Word) <<< (32 : BitVec 6).toNat) = 0 := by decide
+  rw [h_zero_shift]
+  have h_zero_or : ∀ x : Word, (0 ||| x) = x := fun x => by
+    apply BitVec.eq_of_toNat_eq
+    simp
+  rw [h_zero_or]
+  -- Now goal: (div128Quot's q0' with q1' := 0).toNat ≥ a3.toNat / b3.toNat
+  -- The Q0' here should unify with h_lb8's q0' via chain's un21 = a3 >>> 32.
+  rw [h_q1'_zero] at h_un21_eq
+  rw [h_un21_eq]
+  exact h_lb8
 
 /-- If `div128Quot 0 a3 b3 = 0` under shift=0, then a3 < b3. -/
 theorem div128Quot_shift0_eq_zero_implies_a3_lt_b3 (a3 b3 : Word)
     (hb3_ge : b3.toNat ≥ 2^63)
-    (hb3_nz : b3 ≠ 0)
     (hqHat_zero : div128Quot (0 : Word) a3 b3 = 0) :
     a3.toNat < b3.toNat := by
-  have h_ge := div128Quot_shift0_ge_a3_div_b3 a3 b3 hb3_ge hb3_nz
+  have h_ge := div128Quot_shift0_ge_a3_div_b3 a3 b3 hb3_ge
   have h_zero_toNat : (div128Quot (0 : Word) a3 b3).toNat = 0 := by
     rw [hqHat_zero]; rfl
   rw [h_zero_toNat] at h_ge
@@ -683,11 +706,10 @@ theorem div128Quot_shift0_eq_zero_implies_a3_lt_b3 (a3 b3 : Word)
     conclude `qHat = EvmWord.div a b` limb-0 under skip-borrow. -/
 theorem div128Quot_shift0_ge_val256_div (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (hb3_ge : b3.toNat ≥ 2^63)
-    (hb3_nz : b3 ≠ 0)
     (hb : val256 b0 b1 b2 b3 > 0) :
     val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 ≤
       (div128Quot (0 : Word) a3 b3).toNat := by
-  have h_algo := div128Quot_shift0_ge_a3_div_b3 a3 b3 hb3_ge hb3_nz
+  have h_algo := div128Quot_shift0_ge_a3_div_b3 a3 b3 hb3_ge
   have h_arith := a3_div_b3_ge_val256_div a0 a1 a2 a3 b0 b1 b2 b3 hb3_ge hb
   omega
 
