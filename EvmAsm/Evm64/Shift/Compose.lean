@@ -7,8 +7,8 @@
   - Body L (L=0..3, shift < 256): Phase A ntaken → B → C(exit L) → body_L → exit
 -/
 
+-- `Shift.ComposeBase → Shift.LimbSpec → Shift.Program → Evm64.Stack → SpAddr`.
 import EvmAsm.Evm64.Shift.ComposeBase
-import EvmAsm.Evm64.SpAddr
 import Mathlib.Tactic.Set
 
 open EvmAsm.Rv64.Tactics

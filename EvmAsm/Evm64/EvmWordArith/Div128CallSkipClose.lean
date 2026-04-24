@@ -20,10 +20,11 @@
   (which can occur under Phase 1b's check-fires branch).
 -/
 
+-- Both `Div128KnuthLower` and `Div128FinalAssembly` transitively reach
+-- `Div128QuotientBounds → KnuthTheoremB`, which imports `MaxTrialVacuity`
+-- (→ `Compose.FullPathN4`) and `DivN4Overestimate` (→ `DivMod.LoopSemantic`).
 import EvmAsm.Evm64.EvmWordArith.Div128KnuthLower
 import EvmAsm.Evm64.EvmWordArith.Div128FinalAssembly
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4
-import EvmAsm.Evm64.DivMod.LoopSemantic
 
 namespace EvmAsm.Evm64
 
