@@ -204,6 +204,10 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
     have : (u3 <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
       (u3 <<< (32 : BitVec 6).toNat : Word).isLt
     exact Nat.div_lt_of_lt_mul (by omega)
+  -- The remaining proof: apply Phase 2 tight on the algorithm's un21 with
+  -- uLo := u3, then Phase 1 tight, bridge algorithm un21/q1' to
+  -- mathematical r1_math/q_true_1, then compose via two_step_div_identity +
+  -- qHat_plus_one_gt_u_via_tight_phases. Deferred to follow-up iterations.
   sorry
 
 /-- **A2.S2**: Case "compensation" — when `un21 ≥ dHi*2^32`. Includes
