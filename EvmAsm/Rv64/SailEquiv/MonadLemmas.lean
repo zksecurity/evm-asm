@@ -6,7 +6,6 @@
 -/
 
 import EvmAsm.Rv64.SailEquiv.StateRel
-import LeanRV64D
 
 open LeanRV64D.Functions
 open Sail

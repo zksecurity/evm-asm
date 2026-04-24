@@ -14,7 +14,6 @@
 import EvmAsm.Rv64.SailEquiv.StateRel
 import EvmAsm.Rv64.SailEquiv.MonadLemmas
 import EvmAsm.Rv64.SailEquiv.ALUProofs
-import LeanRV64D
 
 open LeanRV64D.Functions
 open Sail
