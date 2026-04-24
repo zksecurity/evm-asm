@@ -1865,6 +1865,29 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
           2 ^ (clzResult (b.getLimbN 3)).1.toNat :=
     EvmWord.val256_normalize hshift_pos hshift_lt_64
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
+  -- Mulsub Euclidean (unconditional on qHat, q can be any Word):
+  -- val256(u_norm) + c3.toNat * 2^256 = val256(ms_low4) + qHat.toNat * val256(b_norm)
+  have h_mulsub_euclidean := mulsubN4_val256_eq
+    (div128Quot ((a.getLimbN 3) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat))
+      (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+       ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+      (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+       ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat))))
+    ((b.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
+    (((b.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((b.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+    (((b.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((b.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+    (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+    ((a.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
+    (((a.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((a.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+    (((a.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((a.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+    (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
+     ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
+  simp only [] at h_mulsub_euclidean
   -- Strategy: prove `val256(un_out) = (val256(a) mod val256(b)) * 2^s` via
   -- case split on `carry`, then apply `val256_denormalize` +
   -- `mod_of_val256_eq_mod` + `evmWordIs_sp32_limbs_eq`.
