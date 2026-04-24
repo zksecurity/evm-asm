@@ -9,8 +9,8 @@
   loop body cpsTriple specs and the final EvmWord.div/mod correctness.
 -/
 
+-- `LoopDefs → LoopDefs.Post → LoopDefs.Iter → Compose.Base → DivMod.AddrNorm`.
 import EvmAsm.Evm64.DivMod.LoopDefs
-import EvmAsm.Evm64.DivMod.AddrNorm
 import EvmAsm.Evm64.EvmWordArith.DivMulSubCarry
 import EvmAsm.Evm64.EvmWordArith.DivAddbackCarry
 

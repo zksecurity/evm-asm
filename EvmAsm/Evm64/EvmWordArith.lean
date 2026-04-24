@@ -19,20 +19,15 @@ import EvmAsm.Evm64.EvmWordArith.SignExtend
 -- MulCorrect covers Arithmetic → MultiLimb → Common.
 import EvmAsm.Evm64.EvmWordArith.MulCorrect
 
--- `DivN4DoubleAddback` and `AddbackPinning` both transitively bring
--- `DivAccumulate` (via `DivN4Overestimate`), which in turn covers
+-- Div128Shift0 → Div128CallSkipClose → {Div128FinalAssembly +
+-- Div128KnuthLower + Div128QuotientBounds → KnuthTheoremB →
+-- {DivN4Overestimate, MaxTrialVacuity → CLZLemmas → DivN4Lemmas,
+-- DenormLemmas}, DivMod.LoopSemantic → {DivMulSubCarry, DivAddbackCarry}}.
+-- `AddbackPinning` and `DivN4DoubleAddback` both import
+-- `DivN4Overestimate`, which in turn imports `DivAccumulate`, covering
 -- DivRemainderBound → DivAddbackLimb → DivMulSubLimb → DivLimbBridge →
 -- DivBridge → Normalization → MulSubChain → Div128Lemmas → MultiLimb →
 -- Div → Common.
-
--- Carry extensions of the Limb variants.
-import EvmAsm.Evm64.EvmWordArith.DivMulSubCarry
-import EvmAsm.Evm64.EvmWordArith.DivAddbackCarry
-
--- Div128Shift0 → Div128CallSkipClose → Div128FinalAssembly +
--- Div128KnuthLower + Div128QuotientBounds → KnuthTheoremB →
--- {DivN4Overestimate, MaxTrialVacuity → CLZLemmas → DivN4Lemmas,
--- DenormLemmas}.
 import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 
 -- ModBridgeAssemble covers ModBridgeUtop → Val256ModBridge.
