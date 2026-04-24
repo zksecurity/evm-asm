@@ -252,6 +252,13 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
       u3
       h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi_pow32 h_un21_lt_vTop
+  -- The remaining gap:
+  -- (a) Phase 1 tight: `q1' ≥ q_true_1` via `_of_uHi_lt_dHi_mul_pow32`.
+  --     Requires `u4 < dHi*2^32`; narrow range [dHi*2^32, vTop) still open.
+  -- (b) Bridge algorithm un21 to mathematical remainder `(u4*2^32+div_un1) % V`.
+  -- (c) Bridge algorithm q0' (internal div128Quot) to Phase 2 tight's q0'.
+  -- (d) Apply `two_step_div_identity` to decompose `(u4*2^64+u3) / V`.
+  -- (e) Apply `qHat_plus_one_gt_u_via_tight_phases` for final composition.
   sorry
 
 /-- **A2.S2**: Case "compensation" — when `un21 ≥ dHi*2^32`. Includes
