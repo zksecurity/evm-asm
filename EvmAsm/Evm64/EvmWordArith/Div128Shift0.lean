@@ -448,6 +448,32 @@ theorem hi32_eq_zero_of_toNat_le_one (x : Word) (hx : x.toNat ≤ 1) :
     omega
   exact Nat.div_eq_of_lt this
 
+/-- Under uHi=0 + b3 ≥ 2^63: in the div128Quot shift=0 chain, `hi2 = q0 >>> 32 = 0`.
+    Composes `div128Quot_shift0_q0_le_one` with `hi32_eq_zero_of_toNat_le_one`. -/
+theorem div128Quot_shift0_hi2_eq_zero (a3 b3 : Word)
+    (hb3_ge : b3.toNat ≥ 2^63) :
+    (let dHi := b3 >>> (32 : BitVec 6).toNat
+     let dLo := (b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     let div_un1 := (a3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     let q1 := rv64_divu (0 : Word) dHi
+     let rhat := (0 : Word) - q1 * dHi
+     let hi1 := q1 >>> (32 : BitVec 6).toNat
+     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+     let rhatc := if hi1 = 0 then rhat else rhat + dHi
+     let qDlo := q1c * dLo
+     let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+     let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+     let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+     let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+     let cu_q1_dlo := q1' * dLo
+     let un21 := cu_rhat_un1 - cu_q1_dlo
+     let q0 := rv64_divu un21 dHi
+     q0 >>> (32 : BitVec 6).toNat = 0) := by
+  simp only []
+  apply BitVec.eq_of_toNat_eq
+  rw [show (0 : Word).toNat = 0 from rfl]
+  exact hi32_eq_zero_of_toNat_le_one _ (div128Quot_shift0_q0_le_one a3 b3 hb3_ge)
+
 /-- Upper bound: under shift=0 (b3 ≥ 2^63), `div128Quot 0 a3 b3` is at most 1.
 
     Proof sketch:
