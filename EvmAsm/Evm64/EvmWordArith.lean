@@ -28,10 +28,11 @@ import EvmAsm.Evm64.EvmWordArith.DivAccumulate
 import EvmAsm.Evm64.EvmWordArith.DivMulSubCarry
 import EvmAsm.Evm64.EvmWordArith.DivAddbackCarry
 
--- Div128CallSkipClose covers Div128FinalAssembly + Div128KnuthLower +
--- Div128QuotientBounds → KnuthTheoremB → {DivN4Overestimate,
--- MaxTrialVacuity → CLZLemmas → DivN4Lemmas, DenormLemmas}.
-import EvmAsm.Evm64.EvmWordArith.Div128CallSkipClose
+-- Div128Shift0 → Div128CallSkipClose → Div128FinalAssembly +
+-- Div128KnuthLower + Div128QuotientBounds → KnuthTheoremB →
+-- {DivN4Overestimate, MaxTrialVacuity → CLZLemmas → DivN4Lemmas,
+-- DenormLemmas}.
+import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 
 -- ModBridgeAssemble covers ModBridgeUtop → Val256ModBridge.
 import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
@@ -41,5 +42,4 @@ import EvmAsm.Evm64.EvmWordArith.SkipBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.AddbackPinning
-import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2
