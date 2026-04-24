@@ -642,6 +642,38 @@ theorem algorithmQ1Prime_le_q_true_1_plus_one
           (b3' >>> (32 : BitVec 6).toNat) + (b3' >>> (32 : BitVec 6).toNat)).toNat)
     (B := 2^32) h_vTop_pos h_rhatc_eq h_q1c_mul_le h_q1c_le
 
+/-- **_of_tight sub-case "exact"**: when `q1' = q_true_1` (Phase 1b exactly
+    tight), the algorithm's un21 equals the mathematical remainder r1_math.
+
+    **TODO** (~40 lines): from Phase 1b Euclidean + KB-3m (un21 additive
+    identity under no-wrap, which holds when q1' = q_true_1). -/
+theorem algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_q1_prime_eq : (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
+    (algorithmUn21 u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
+  sorry
+
+/-- **_of_tight sub-case "off-by-one"**: when `q1' = q_true_1 + 1` (Phase 1b
+    false-alarms once), the algorithm's un21 = r1_math + (2^64 - V), which is
+    ≥ r1_math.
+
+    **TODO** (~40 lines): from Phase 1b Euclidean + Word wrap analysis. -/
+theorem algorithmUn21_ge_r1_math_of_q1_prime_eq_q_true_1_plus_one
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_q1_prime_eq : (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat + 1) :
+    (algorithmUn21 u4 u3 b3').toNat ≥
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
+  sorry
+
 /-- **Bridge sub-B** (algebraic consequence): given `q1' ≤ q_true_1 + 1` and
     `un21 < dHi*2^32`, the algorithm's un21 cannot be less than `r1_math`. -/
 theorem algorithmUn21_eq_r1_math_of_tight
@@ -656,6 +688,9 @@ theorem algorithmUn21_eq_r1_math_of_tight
       (algorithmUn21 u4 u3 b3').toNat <
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat) :
     False := by
+  -- Composition: q1' ∈ {q_true_1, q_true_1 + 1} → un21 ≥ r1_math in both cases.
+  -- Case split + apply sub-cases _of_q1_prime_eq_q_true_1 and _plus_one.
+  -- Full proof deferred — requires q1' ≥ q_true_1 lower bound wrapped form.
   sorry
 
 /-- **Bridge**: under standard hcall + `un21 < dHi*2^32`, the algorithm's un21
