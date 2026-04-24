@@ -2190,6 +2190,43 @@ theorem n4_shift0_call_addback_beq_div_getLimbN (a b : EvmWord)
     (EvmWord.div a b).getLimbN 1 = 0 ∧
     (EvmWord.div a b).getLimbN 2 = 0 ∧
     (EvmWord.div a b).getLimbN 3 = 0 := by
+  simp only []
+  set qHat := div128Quot (0 : Word) (a.getLimbN 3) (b.getLimbN 3) with hqHat_def
+  -- Step 1: Extract c3 ≠ 0 from hborrow.
+  rw [isAddbackBorrowN4Shift0Evm_def] at hborrow
+  unfold isAddbackBorrowN4Shift0 at hborrow
+  simp only [] at hborrow
+  have hc3_nz : mulsubN4_c3 qHat
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) ≠ 0 := by
+    intro h_c3_zero
+    apply hborrow
+    rw [h_c3_zero]
+    decide
+  -- Step 2: qHat ≤ 1 from Div128Shift0.
+  have hb3_ge : (b.getLimbN 3).toNat ≥ 2^63 := clz_zero_imp_msb hshift_z
+  have hqHat_le_one : qHat.toNat ≤ 1 := by
+    rw [hqHat_def]
+    exact div128Quot_shift0_le_one (a.getLimbN 3) (b.getLimbN 3) hb3_ge
+  -- Step 3: qHat ≠ 0 (else mulsub c3 = 0, contradicting hc3_nz).
+  have hqHat_nz : qHat ≠ 0 := by
+    intro h_qHat_zero
+    apply hc3_nz
+    show (mulsubN4 qHat
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0
+    apply c3_un_zero_of_qHat_mul_le
+    rw [h_qHat_zero]
+    show (0 : Word).toNat * _ ≤ _
+    rw [show (0 : Word).toNat = 0 from rfl, Nat.zero_mul]
+    exact Nat.zero_le _
+  -- Therefore qHat.toNat = 1.
+  have hqHat_eq_one : qHat.toNat = 1 := by
+    have h_ne_zero : qHat.toNat ≠ 0 := by
+      intro h; apply hqHat_nz; apply BitVec.eq_of_toNat_eq; rw [h]; rfl
+    omega
+  -- TODO(#67): remaining steps — derive carry = 1 of first addback, hence
+  -- q_out = qHat - 1 = 0, hence EvmWord.div a b = fromLimbs (0, 0, 0, 0).
   sorry
 
 end EvmAsm.Evm64
