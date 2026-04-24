@@ -660,7 +660,14 @@ theorem algorithmUn21_L1a_cu_rhat_un1_toNat
     let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
     ((rhat' <<< (32 : BitVec 6).toNat) ||| div_un1).toNat =
       (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat := by
-  sorry
+  intro dHi div_un1 q1 rhat hi1 q1c rhatc dLo qDlo rhatUn1 q1' rhat'
+  have h_div_un1_lt : div_un1.toNat < 2^32 := by
+    show (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  rw [show ((32 : BitVec 6).toNat : Nat) = 32 from by rfl]
+  exact halfword_combine_mod _ _ h_div_un1_lt
 
 /-- **_of_tight sub-case "exact" L1.b**: q1' * dLo no-wrap. Wraps
     `div128Quot_q1_prime_dLo_no_wrap`. ~10 lines. -/
