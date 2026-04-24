@@ -9,9 +9,8 @@
 -- WordOps, and Tactics.SpecDb. ControlFlow also covers Program directly.
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.ControlFlow
--- RunBlock → SeqFrame → {XCancel, PerfTrace, InstructionSpecs} + SpecDb.
-import EvmAsm.Rv64.Tactics.XPerm
-import EvmAsm.Rv64.Tactics.XSimp
+-- RunBlock → SeqFrame → {XCancel → XPerm, PerfTrace, InstructionSpecs} + SpecDb.
+-- LiftSpec → XSimp → XPerm.
 import EvmAsm.Rv64.Tactics.RunBlock
 import EvmAsm.Rv64.Tactics.LiftSpec
 import EvmAsm.Rv64.RLP
