@@ -1,6 +1,5 @@
 import EvmAsm.Evm64.DivMod.NormDefs
--- LimbSpec transitively imports Program.
-import EvmAsm.Evm64.DivMod.LimbSpec
+-- `LoopBody` transitively imports `LimbSpec` (via `Compose → Base → LimbSpec`).
 -- SpecCall covers Spec → Compose + FullPathN4 + FullPathN4Beq + ModFullPathN4
 -- + EvmWordArith + ModFullPathN4Shift0 + FullPathN4Shift0.
 -- LoopBody covers Compose + LoopDefs + EvmWordArith.DivN4Overestimate.
