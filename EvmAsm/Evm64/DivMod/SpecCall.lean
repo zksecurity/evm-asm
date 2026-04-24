@@ -1830,6 +1830,15 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     intro h; exact hb3nz (BitVec.or_eq_zero_iff.mp h).2
   have hvb_pos : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) > 0 :=
     EvmWord.val256_pos_of_or_ne_zero hbnz'
+  -- Key bound: (val256(a) mod val256(b)) * 2^s < 2^256. Ensures u4_out = 0.
+  have h_mod_mul_lt :
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ (clzResult (b.getLimbN 3)).1.toNat < 2 ^ 256 :=
+    EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      (by omega) hvb_pos hb3_bound
   -- Strategy: prove `val256(un_out) = (val256(a) mod val256(b)) * 2^s` via
   -- case split on `carry`, then apply `val256_denormalize` +
   -- `mod_of_val256_eq_mod` + `evmWordIs_sp32_limbs_eq`.
