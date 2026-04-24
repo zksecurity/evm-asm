@@ -9,6 +9,7 @@ import EvmAsm.Evm64.DivMod.LimbSpec
 -- + FullPathN4Loop. FullPathN2Full covers FullPathN2LoopUnified +
 -- FullPathN2Cases + FullPath.
 import EvmAsm.Evm64.DivMod.SpecCall
+import EvmAsm.Evm64.DivMod.Shift0AddbackMod
 import EvmAsm.Evm64.DivMod.LoopBody
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2Full
