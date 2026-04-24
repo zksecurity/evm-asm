@@ -363,9 +363,19 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
       ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
     Nat.add_le_add_right (Nat.mul_le_mul_right _ h_un21_ge_rmath) _
-  -- Remaining: q0' equality (div128Quot q0' = Phase 2 tight q0' after
-  -- algorithmUn21_unfold) + final composition via
-  -- qHat_plus_one_gt_u_via_tight_phases.
+  -- Rewrite goal to use halfword decomp.
+  rw [h_u3_decomp, h_qHat_decomp]
+  rw [show u4.toNat * 2^64 +
+        ((u3 >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+         ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) =
+      u4.toNat * 2^64 +
+        (u3 >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat from by ring]
+  -- Final composition remaining: match types between div128Quot's
+  -- internal q0'/q1' (from h_qHat_decomp) and Phase 1/2 tight's
+  -- internal q0'/q1' (from h_ph1_tight/h_ph2_tight). These are
+  -- definitionally equal but require careful rewriting to avoid
+  -- maxRecDepth. Deferred to follow-up iteration.
   sorry
 
 /-- **A2.S2**: Case "compensation" — when `un21 ≥ dHi*2^32`. Includes
