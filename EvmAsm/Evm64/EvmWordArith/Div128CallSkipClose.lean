@@ -572,16 +572,22 @@ theorem q_true_full_lt_q_true_1_succ_mul_pow32_nat
     satisfies `un21 < dHi' * 2^32`. This is the precondition for applying
     KB-LB8' (`div128Quot_q0_prime_ge_q_true_0_of_un21_lt_dHi_mul_pow32`).
 
-    Proof sketch: under Phase 1 tight (q1' = q_true_1 from KB-LB7), un21
-    equals the abstract-level remainder `(u4 * 2^32 + u3) mod b3'`.
-    Specifically, un21 < b3' = dHi'*2^32 + dLo'. Case A requires strict
-    un21 < dHi'*2^32, which holds when... [analysis needed].
+    ⚠️ **BLOCKER DISCOVERY (2026-04-24, per `project_un21_lt_vTop_plan.md`)**:
+    Even the weaker `un21 < vTop` is NOT a guaranteed invariant of
+    `div128Quot`'s direct output. Knuth's Phase 1b check can leave q1'
+    at `q_true_1 + 1` in corner cases, producing `un21 ∈ [vTop, 2*vTop)`.
+    Hence `un21 < dHi' * 2^32 < vTop` as stated here is similarly
+    non-invariant — this sorry may be unprovable as written.
 
-    Alternative: if this fails, must use Case B argument post-#1138 (where
-    the Phase 2b guard fires and q0' = q0c ≥ q_true_0 via Phase 2a trial
-    ≥ true digit).
+    **Alternative architectures** (from `project_un21_lt_vTop_plan.md`):
+    1. Bifurcate KB-LB8 on un21's regime: Case A `un21 < dHi*2^32` uses
+       KB-LB8'; Case B `un21 ≥ dHi*2^32` uses Phase 2b guard (post-#1138).
+       Then this theorem becomes conditional, taken as a hyp, not a fact.
+    2. Use Piece A's abstract `knuth_theorem_b_from_clz` (#817) directly
+       to derive `qHat.toNat ≤ val256(a)/val256(b) + 2`, composed with
+       skip-borrow to eliminate the +2.
 
-    TODO(#65): substantive proof — ~50-80 lines. -/
+    TODO(#65): re-architect using option 1 or 2. -/
 theorem div128Quot_shift_nz_un21_lt_dHi_mul_pow32
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
