@@ -687,7 +687,25 @@ theorem algorithmUn21_L1b_q1_prime_dLo_no_wrap
     let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
     let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
     (q1' * dLo).toNat = q1'.toNat * dLo.toNat := by
+  -- TODO: q1' depends on the rhatUn1 (post-Phase 1a-correction rhatc shifted),
+  -- which makes lemma specialization tricky. The whnf timeout suggests
+  -- another approach is needed (perhaps inline via algorithmQ1Prime_unfold).
   sorry
+
+/-- **_of_tight sub-case "exact" L3.a**: pure-Nat Euclidean decomposition for
+    `u4*2^32 + div_un1` divided by `V` (= `b3'.toNat`). Direct from
+    `Nat.div_add_mod`. ~3 lines. -/
+theorem algorithmUn21_L3a_u_decomp_via_vTop
+    (u : Nat) (V : Nat) :
+    (u / V) * V + u % V = u := by
+  rw [Nat.mul_comm]; exact Nat.div_add_mod u V
+
+/-- **_of_tight sub-case "exact" L3.b**: `q_true_1 * V ≤ u`. Trivial from
+    L3.a. ~3 lines. -/
+theorem algorithmUn21_L3b_q_true_1_V_le_u
+    (u : Nat) (V : Nat) :
+    (u / V) * V ≤ u := by
+  exact Nat.div_mul_le_self u V
 
 /-- **_of_tight sub-case "exact"**: when `q1' = q_true_1` (Phase 1b exactly
     tight), the algorithm's un21 equals the mathematical remainder r1_math.
