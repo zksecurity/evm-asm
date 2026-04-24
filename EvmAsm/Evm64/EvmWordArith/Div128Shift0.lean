@@ -187,8 +187,49 @@ theorem div128Quot_shift0_rhatUn1_eq_div_un1 (dHi div_un1 : Word) (hdHi_ne : dHi
     div128Quot_shift0_rhatc_eq_zero dHi hdHi_ne]
   simp
 
--- TODO: ult_false + q1_prime_eq_zero helpers — deferred due to BitVec.ult
--- simplification depth issue. Will retry with a cleaner formulation.
+/-- Under uHi=0 + hdHi_ne, Phase 2a's guard `BitVec.ult rhatUn1 qDlo = false`
+    since `qDlo = 0` and unsigned comparison `x < 0` is always false. -/
+theorem div128Quot_shift0_ult_false (dHi dLo div_un1 : Word) (hdHi_ne : dHi ≠ 0) :
+    (let q1 := rv64_divu (0 : Word) dHi
+     let rhat := (0 : Word) - q1 * dHi
+     let hi1 := q1 >>> (32 : BitVec 6).toNat
+     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+     let rhatc := if hi1 = 0 then rhat else rhat + dHi
+     let qDlo := q1c * dLo
+     let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+     BitVec.ult rhatUn1 qDlo) = false := by
+  simp only []
+  -- Reduce to `BitVec.ult rhatUn1 0 = false`. qDlo = 0 via helper.
+  have hqDlo : (if (rv64_divu (0 : Word) dHi) >>> (32 : BitVec 6).toNat = 0 then
+               rv64_divu (0 : Word) dHi
+             else
+               rv64_divu (0 : Word) dHi + signExtend12 4095) * dLo = 0 :=
+    div128Quot_shift0_qDlo_eq_zero dHi dLo hdHi_ne
+  rw [hqDlo]
+  -- Now goal: BitVec.ult rhatUn1 0 = false.
+  -- Use ult_iff + Nat.not_lt_zero.
+  rw [Bool.eq_false_iff]
+  intro h
+  rw [ult_iff] at h
+  rw [show (0 : Word).toNat = 0 from rfl] at h
+  exact Nat.not_lt_zero _ h
+
+/-- Under uHi=0 + hdHi_ne, Phase 2a's q1' = q1c = 0. -/
+theorem div128Quot_shift0_q1_prime_eq_zero (dHi dLo div_un1 : Word) (hdHi_ne : dHi ≠ 0) :
+    (let q1 := rv64_divu (0 : Word) dHi
+     let rhat := (0 : Word) - q1 * dHi
+     let hi1 := q1 >>> (32 : BitVec 6).toNat
+     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+     let rhatc := if hi1 = 0 then rhat else rhat + dHi
+     let qDlo := q1c * dLo
+     let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+     if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c) = 0 := by
+  simp only []
+  have hult := div128Quot_shift0_ult_false dHi dLo div_un1 hdHi_ne
+  simp only [] at hult
+  rw [hult]
+  simp only [Bool.false_eq_true, if_false]
+  exact div128Quot_shift0_q1c_eq_zero dHi hdHi_ne
 
 -- ============================================================================
 -- The main composite lemma — scaffolded with sorrys for Phase 1 tracing
