@@ -226,7 +226,7 @@ theorem mulsubN4_c3_le_one {q v0 v1 v2 v3 u0 u1 u2 u3 : Word}
   have hu_bound := val256_bound u0 u1 u2 u3
   have hun_bound := val256_bound ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
   have hv_bound := val256_bound v0 v1 v2 v3
-  have hv_pos := val256_pos_of_or_ne_zero hbnz
+  have := val256_pos_of_or_ne_zero hbnz
   -- From hq_over: q * val256(v) ≤ (⌊u/v⌋ + 1) * val256(v)
   --            = ⌊u/v⌋ * val256(v) + val256(v) ≤ val256(u) + val256(v)
   have hdiv_mul_le : val256 u0 u1 u2 u3 / val256 v0 v1 v2 v3 *
@@ -361,7 +361,7 @@ theorem addbackN4_second_carry_one (q v0 v1 v2 v3 u0 u1 u2 u3 : Word)
   have hab' := addbackN4_val256_eq ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 0 v0 v1 v2 v3
   simp only [] at hab'
   -- Bounds
-  have hv_pos := val256_pos_of_or_ne_zero hbnz
+  have := val256_pos_of_or_ne_zero hbnz
   have hun_bound := val256_bound ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
   have := val256_bound ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
   have hab'_result_bound := val256_bound
