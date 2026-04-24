@@ -5,9 +5,9 @@
   30 instructions total (5 + 3×8 + 1 ADDI).
 -/
 
+-- `Sub.LimbSpec → Sub.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Sub.LimbSpec
 import EvmAsm.Evm64.EvmWordArith.Arithmetic
-import EvmAsm.Evm64.SpAddr
 
 open EvmAsm.Rv64.Tactics
 

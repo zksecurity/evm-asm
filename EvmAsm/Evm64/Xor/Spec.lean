@@ -4,8 +4,8 @@
   Full 256-bit EVM XOR spec.
 -/
 
+-- `Xor.LimbSpec → Xor.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Xor.LimbSpec
-import EvmAsm.Evm64.SpAddr
 
 namespace EvmAsm.Evm64
 

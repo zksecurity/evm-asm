@@ -13,9 +13,9 @@
   6. body_0: idx ∈ [0,7], extract from limb 3 at sp+56
 -/
 
+-- `Byte.LimbSpec → Byte.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Byte.LimbSpec
 import EvmAsm.Evm64.EvmWordArith.ByteOps
-import EvmAsm.Evm64.SpAddr
 import EvmAsm.Rv64.AddrNorm
 import Mathlib.Tactic.Set
 
