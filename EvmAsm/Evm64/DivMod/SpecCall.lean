@@ -1782,14 +1782,52 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
      ((sp + 48) ↦ₘ ((un2Out >>> shift) ||| (un3Out <<< (64 - shift)))) **
      ((sp + 56) ↦ₘ (un3Out >>> shift))) =
     evmWordIs (sp + 32) (EvmWord.mod a b) := by
-  -- TODO(#66 follow-up): key math gap. Steps:
-  -- 1. From hsem, derive q_out * val256(b) ≤ val256(a) where q_out is
-  --    qHat + (1 or 2) × (-1). (q_out.toNat = val256(a)/val256(b), and
-  --    division q * b ≤ a is standard.)
-  -- 2. Via addback correctness + mulsub Euclidean + hsem, show
-  --    val256(un0Out..un3Out) = val256(a_norm) - q_out * val256(b_norm).
-  -- 3. Apply the parameterized denorm chain (landed in #1207) with
-  --    qHat = q_out to fold into EvmWord.mod a b.
+  -- Setup: shift bounds + CLZ top-limb bound.
+  have hshift_pos : 0 < (clzResult (b.getLimbN 3)).1.toNat := by
+    by_contra h
+    push Not at h
+    apply hshift_nz
+    apply BitVec.eq_of_toNat_eq
+    rw [show (0 : Word).toNat = 0 from rfl]; omega
+  have hshift_le_63 := clzResult_fst_toNat_le (b.getLimbN 3)
+  have hshift_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
+  have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  have h0se12 : signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1 =
+      -((clzResult (b.getLimbN 3)).1) := by rw [signExtend12_0]; simp
+  have hanti_toNat_mod :
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat := by
+    rw [h0se12, BitVec.toNat_neg]
+    have : ((clzResult (b.getLimbN 3)).1).toNat ≤ 2^64 := by
+      have := ((clzResult (b.getLimbN 3)).1).isLt; omega
+    omega
+  have hb3_bound : (b.getLimbN 3).toNat <
+      2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat) :=
+    clzResult_fst_top_bound (b.getLimbN 3)
+  -- Unfold runtime conditions to limb form.
+  rw [isAddbackBorrowN4CallEvm_def] at hborrow
+  rw [n4CallAddbackBeqSemanticHolds_def] at hsem
+  -- Derive u4 < c3 from addback borrow.
+  have hu4_lt_c3 := EvmWord.u_top_lt_c3_of_addback_borrow_call
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      hborrow
+  simp only [] at hu4_lt_c3
+  -- `val256(a_limbs) = a.toNat` and similar for b.
+  have ha_val : val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      = a.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat a
+  have hb_val : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      = b.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat b
+  -- TODO: Continue with case split on carry, derive c3 = 1, apply combined
+  -- addback Euclidean, chain through val256_normalize → denormalize →
+  -- mod_of_val256_eq_mod → evmWordIs_sp32_limbs_eq.
   sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
