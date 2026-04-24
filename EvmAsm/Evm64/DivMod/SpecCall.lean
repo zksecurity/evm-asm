@@ -1825,9 +1825,18 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
                ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
     exact EvmWord.val256_eq_toNat b
-  -- TODO: Continue with case split on carry, derive c3 = 1, apply combined
-  -- addback Euclidean, chain through val256_normalize → denormalize →
-  -- mod_of_val256_eq_mod → evmWordIs_sp32_limbs_eq.
+  -- Strategy: prove `val256(un_out) = (val256(a) mod val256(b)) * 2^s` via
+  -- case split on `carry`, then apply `val256_denormalize` +
+  -- `mod_of_val256_eq_mod` + `evmWordIs_sp32_limbs_eq`.
+  --
+  -- For each carry case (0 or 1), we need:
+  --   * `c3 = 1` (from runtime conditions + Knuth bound)
+  --   * Combined addback Euclidean equation at the normalized level
+  --   * Bridge via val256_normalize_general + val256_normalize
+  --   * u4 = 0 via val256_mod_mul_pow_lt_pow256_of_b3_bound
+  --
+  -- The `c3 = 1` derivation is deferred to Piece D (Knuth Theorem A)
+  -- for the double-addback case. Left as sorry — will close in follow-ups.
   sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
