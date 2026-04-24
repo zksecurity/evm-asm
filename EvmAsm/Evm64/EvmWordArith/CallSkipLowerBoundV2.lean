@@ -382,7 +382,50 @@ theorem algorithmQ1Prime_step3_q1c_le_q_true_1_plus_two
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
     q1c.toNat ≤
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat + 2 := by
-  sorry
+  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat ≥ 2^63 := hb3'_ge
+    omega
+  have h_dLo_lt :
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_div_un1_lt : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_v_eq : b3'.toNat =
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_u4_lt_vTop : u4.toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    h_v_eq ▸ hu4_lt_b3'
+  have h_dHi_ne : (b3' >>> (32 : BitVec 6).toNat) ≠ 0 := by
+    intro heq
+    have : (b3' >>> (32 : BitVec 6).toNat).toNat = 0 := by rw [heq]; rfl
+    omega
+  -- q1.toNat = u4.toNat / dHi.toNat
+  have h_q1_eq : (rv64_divu u4 (b3' >>> (32 : BitVec 6).toNat)).toNat =
+      u4.toNat / (b3' >>> (32 : BitVec 6).toNat).toNat :=
+    EvmWord.rv64_divu_toNat u4 _ h_dHi_ne
+  -- q1c ≤ q1 (Phase 1a monotonicity).
+  have h_q1c_le_q1 := div128Quot_q1c_le_q1 u4 (b3' >>> (32 : BitVec 6).toNat)
+  -- q1 ≤ q_true_1 + 2 (trial_quotient_le).
+  have h_q1_le :=
+    EvmWord.trial_quotient_le u4.toNat (u3 >>> (32 : BitVec 6).toNat).toNat
+      (b3' >>> (32 : BitVec 6).toNat).toNat
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
+      h_dHi_lt h_dLo_lt h_div_un1_lt h_u4_lt_vTop h_dHi_ge
+  rw [h_v_eq]
+  omega
 
 /-- **_plus_one sub-step 4**: `rhatc.toNat < 2^32` under `u4 < dHi*2^32`.
     Direct wrapping of `div128Quot_rhatc_lt_pow32_of_uHi_lt_dHi_mul_pow32`. -/
