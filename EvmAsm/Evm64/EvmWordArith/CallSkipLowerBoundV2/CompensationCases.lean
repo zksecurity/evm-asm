@@ -41,6 +41,26 @@ open EvmAsm.Rv64
 -- A2's proof is decomposed into sub-lemmas (A2.S1–A2.S4 below).
 -- =============================================================================
 
+/-- **OR-shift lower bound** (Word-level): for `a < 2^32`,
+    `((a <<< 32) ||| b).toNat ≥ a.toNat * 2^32`.
+
+    Proof: `(a <<< 32).toNat = a * 2^32` (since a < 2^32 ⟹ a*2^32 < 2^64),
+    and `(x ||| y).toNat ≥ x.toNat` (OR can only add bits). -/
+theorem div128Quot_or_shift_ge (a b : Word) (ha : a.toNat < 2^32) :
+    ((a <<< (32 : BitVec 6).toNat) ||| b).toNat ≥ a.toNat * 2^32 := by
+  rw [BitVec.toNat_or]
+  have h_shl : (a <<< (32 : BitVec 6).toNat).toNat = a.toNat * 2^32 := by
+    rw [BitVec.toNat_shiftLeft, AddrNorm.bv6_toNat_32]
+    simp only [Nat.shiftLeft_eq]
+    have h_lt : a.toNat * 2^32 < 2^64 := by
+      have h_pow : (2^32 : Nat) * 2^32 = 2^64 := by decide
+      have h_mul_lt : a.toNat * 2^32 < 2^32 * 2^32 :=
+        (Nat.mul_lt_mul_right (by omega : (0 : Nat) < 2^32)).mpr ha
+      omega
+    exact Nat.mod_eq_of_lt h_lt
+  rw [h_shl]
+  exact Nat.left_le_or
+
 /-- **A2.S1.alg** (pure algebra): if `q1' * 2^32 + q0' ≥ u / vTop`, then
     `(q1'*2^32 + q0' + 1) * vTop > u`. Wraps `Nat.div` semantics.
 
