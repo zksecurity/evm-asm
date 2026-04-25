@@ -19,12 +19,15 @@
   - **A2.S2 q1' helpers** (closed via OR-shift / contrapositive):
       - `_of_q1_prime_overshoot` (closed) — q1' ≥ q_true_1 + 1 case.
   - **A2.S2 q1' helpers** (q1' ≤ q_true_1 case, decomposed):
+      - `algorithmQ0Prime_compensates_phase1_deficit` (sorry) — Phase 2
+        deficit compensation: q0' ≥ q_true_full - q1'*2^32. The
+        algorithm-correctness math content; needs Knuth-B-style argument
+        on Phase 2.
       - `div128Quot_ge_q_true_full_of_q1_prime_not_overshoot` (sorry) —
-        the focused math: combined q1'*2^32 + q0' ≥ q_true_full. Needs
-        `KnuthTheoremB.lean` extension (per-phase fails — see
-        `memory/project_a2s2_per_phase_tightness_fails.md`).
+        global compensation: composes the deficit lemma + OR-shift
+        identity. Will close once both pieces land.
       - `_of_q1_prime_not_overshoot` (closed) — 3-line composition:
-        the math lemma + `nat_succ_mul_gt_of_div_le`.
+        the global lemma + `nat_succ_mul_gt_of_div_le`.
   - **A2.S2 sub-cases** (each delegating to the q1' helpers above):
       - `_narrow_u4_tight_un21`, `_narrow_u4_wide_un21`, `_narrow_u4`
       - `_wide_un21_narrow`, `_wide_un21_wide`, `_wide_un21`
@@ -409,6 +412,41 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     Nat.mul_le_mul_right _ h_div128_succ
   linarith [h_step1, h_qhat_plus_one]
 
+/-- **A2.S2 Phase 2 deficit compensation** (TODO — concrete math sub-step).
+
+    Under no-overshoot at Phase 1 (`q1' ≤ q_true_1`), Phase 2's `q0'`
+    absorbs the Phase 1 deficit by being at least
+    `q_true_full - q1' * 2^32`.
+
+    Algebraically: when `q1' ≤ q_true_1`, Phase 2's input numerator is
+    `un21 * 2^32 + a0` where `un21 = u_top - q1' * b3' (mod 2^64)`. In
+    the un-truncated math, this equals `(q_true_1 - q1') * b3' * 2^32 +
+    r1_math * 2^32 + a0`, dividing by `b3'` gives `(q_true_1 - q1') *
+    2^32 + q_true_0`, which equals `q_true_full - q1' * 2^32` by the
+    two-step division identity.
+
+    The TODO content is the algorithm-correctness step: show that the
+    Phase-2 trial-and-correct algorithm (post Phase 2a/2b corrections)
+    produces a `q0'` at least as large as the un-truncated Phase 2
+    quotient. This is the standard Knuth-B argument applied to Phase 2
+    — see `memory/project_a2s2_per_phase_tightness_fails.md` for why
+    per-phase tightness on Phase 2 alone also fails (Phase 2b's
+    rhat2c-truncation issue mirrors Phase 1b's). -/
+theorem algorithmQ0Prime_compensates_phase1_deficit
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (h_q1_le : (algorithmQ1Prime u4 u3 b3').toNat ≤
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
+    (algorithmQ0Prime u4 u3 b3').toNat ≥
+      (u4.toNat * 2^64 + u3.toNat) / b3'.toNat -
+      (algorithmQ1Prime u4 u3 b3').toNat * 2^32 := by
+  -- Suppress unused-variable warnings for the placeholder.
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := h_q1_le
+  sorry
+
 /-- **A2.S2 global Phase 1+2 compensation lemma** (TODO).
 
     The mathematical core of all 3 deep A2.S2 exact-case sub-cases. Under
@@ -423,11 +461,15 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     q_true_full bound — bypassing the per-phase decomposition by handling
     the carry compensation between Phase 1 and Phase 2 directly.
 
-    Sketch: in undershoot, q1' = q_true_1 - 1, so the algorithm's effective
-    "input" to Phase 2 is shifted by V (one whole quotient digit), which
-    Phase 2 absorbs via Knuth-B's compensation argument. Closure requires
-    a `KnuthTheoremB`-style two-phase argument that quantifies over the
-    combined `(q1', q0')` pair rather than each phase separately. -/
+    **Decomposition strategy**:
+    - Apply `algorithmQ0Prime_compensates_phase1_deficit` to get
+      `q0' ≥ q_true_full - q1' * 2^32`.
+    - Apply OR-shift identity (`div128Quot.toNat ≥ q1' * 2^32 + q0'`
+      via the disjoint-bit pattern, requires `q0' < 2^32` which itself
+      requires `un21 < vTop`; in the wide_un21 sub-case this needs
+      handling).
+    - Combine: `div128Quot.toNat ≥ q1' * 2^32 + q0' ≥ q1' * 2^32 +
+      (q_true_full - q1' * 2^32) = q_true_full`. -/
 theorem div128Quot_ge_q_true_full_of_q1_prime_not_overshoot
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)

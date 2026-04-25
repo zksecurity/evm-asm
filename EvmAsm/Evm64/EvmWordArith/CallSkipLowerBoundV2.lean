@@ -17,11 +17,15 @@
   **Top-level theorem `div128Quot_call_skip_ge_val256_div_v2` proven**
   via wrapper composition (assuming the single remaining sorry closes).
 
-  **1 sorry remains** (down from 4 → 2 → 1 over recent iterations):
+  **2 sorries remain** (after a productive decomposition iteration):
+  - `algorithmQ0Prime_compensates_phase1_deficit` in
+    `CompensationCases.lean` — the focused math sub-step: Phase 2's
+    `q0'` is at least `q_true_full - q1' * 2^32` under no-overshoot
+    at Phase 1. The Knuth-B algorithm-correctness content for Phase 2.
   - `div128Quot_ge_q_true_full_of_q1_prime_not_overshoot` in
-    `CompensationCases.lean` — the global Phase 1+2 compensation
-    lemma. Captures all the math content needed for the 3 deep A2.S2
-    exact-case sub-cases under `u4 ≥ dHi*2^32` or `un21 ≥ dHi*2^32`.
+    `CompensationCases.lean` — the high-level global compensation
+    wrapper. Will compose the deficit lemma + OR-shift identity once
+    both pieces land.
 
   Closure requires extending `KnuthTheoremB.lean` with a *global* qHat
   ≥ q_true_full lemma (handling the carry compensation between Phase 1
