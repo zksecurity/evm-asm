@@ -2025,13 +2025,18 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
   --   `val256_mod_mul_pow_lt_pow256_of_b3_bound`.
   -- - h_u4_lt_c3: directly from hborrow via `u_top_lt_c3_of_addback_borrow_call`.
   -- TODO: each precondition is a small focused derivation (~5-15 lines).
-  -- Step 1 (precondition derivation): h_u4_lt_c3 from hborrow.
+  -- Step 1: h_u4_lt_c3 from hborrow.
   rw [isAddbackBorrowN4CallEvm_def] at hborrow
   have h_u4_lt_c3 := EvmWord.u_top_lt_c3_of_addback_borrow_call
       (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
       hborrow
+  -- Step 2: h_post1_lt — val256(post1_low4) < 2^256 (val256 of any 4-limb is bounded).
+  let post1 := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+  have h_post1_lt : val256 post1.1 post1.2.1 post1.2.2.1 post1.2.2.2.1 < 2^256 :=
+    EvmWord.val256_bound _ _ _ _
   let _ := h_u4_lt_c3
+  let _ := h_post1_lt
   let _ := hbnz; let _ := hb3nz; let _ := hshift_nz
   let _ := hsem; let _ := hcarry_nz
   sorry
