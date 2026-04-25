@@ -2907,21 +2907,24 @@ theorem algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback
     quotient, matching `n4CallAddbackBeqSemanticHolds`).
 
     **Closure status (2026-04-25)**: math is fully proven UPSTREAM in this
-    file via 4 closed sub-stubs:
-    - `qHat_eq_div_plus_one_of_single_addback` — qHat = a/b + 1.
-    - `c3_n_eq_u4_plus_one_of_single_addback` — c3 = u4 + 1.
-    - `post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one` — val256(post1) = a%b*2^s.
-    - Plus pure-Nat building blocks for each step.
+    file via the closed wrapper
+    `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback` (in
+    irreducible-bundle form). The wrapper composes 6 closed Word-level
+    helpers through the closed Nat lemma `post1_val_eq_amod_pow_s_pure_nat`.
 
-    Direct sub-stub application here hits a 200k-heartbeat elaboration
-    timeout (parent's `set s := clz.1.toNat` no-`%64` form vs sub-stubs'
-    `% 64` form). Inline-or-refactor needed to bridge the let-chains.
+    **Remaining wiring**: parent's let-chain (`set s := clz.1.toNat % 64`
+    plus `64 - s` antiShift form) needs a bridge to the wrapper's
+    irreducible bundles (`algCallAddbackBeqPost1Val`, `algCallAddbackBeqCarry`).
+    Two bridge options:
+    1. Refactor the parent's `set` lines to use `(signExtend12 0 - clz).toNat % 64`
+       form (matching the irreducible defs' bodies), so rfl bridges work.
+    2. Establish explicit `have` equations using `algCallAddbackBeqCarry_unfold`
+       + `hanti_toNat_mod` rewrite chain.
 
-    See in-line single-addback-branch comment for the 4-step plan:
-    1. apply qHat_eq_div_plus_one (step 1, blocked by elab timeout).
-    2. apply c3_n_eq_u4_plus_one (step 2, same blocker).
-    3. apply post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one (step 3).
-    4. val256_denormalize + evmWordIs_sp32_limbs_eq fold (step 4, TODO). -/
+    Step 4 (val256_denormalize fold): once `val256(post1_low4) = a%b * 2^s`
+    is in scope (from the wrapper's conclusion), `EvmWord.val256_denormalize`
+    + `evmWordIs_sp32_limbs_eq` fold the un-normalized limbs back to
+    `evmWordIs (sp+32) (EvmWord.mod a b)`. -/
 theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     (sp : Word) (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
@@ -3100,39 +3103,23 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
   · -- Single-addback branch (carry_word = 1).
-    -- All 3 mathematical sub-stubs are closed UPSTREAM in this file:
-    --   * Step 1: `qHat_eq_div_plus_one_of_single_addback` → qHat = a/b + 1.
-    --   * Step 2: `c3_n_eq_u4_plus_one_of_single_addback` → c3 = u4 + 1.
-    --   * Step 3: `post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one`
-    --     → val256(post1_low4) = a%b * 2^s.
-    -- ⚠ Direct application HERE hits a 200k-heartbeat elaboration timeout
-    -- because the parent's let-chain (`set s := clz.1.toNat`, no `% 64`)
-    -- doesn't unify with the sub-stubs' (`shift := clz.1.toNat % 64`).
+    -- The wrapper `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback`
+    -- (CLOSED) gives val256(post1_low4) = a%b * 2^s in irreducible-bundle
+    -- form. The remaining work here is:
     --
-    -- Workarounds (each is ~refactor or duplication-grade):
-    --   (a) inline the c3_n proof body here (~260 lines duplication).
-    --   (b) wrap the deep let-chain in `@[irreducible]` defs per
-    --       `feedback_bundle_pre_post_no_lets`.
-    --   (c) reformulate the sub-stubs with `set s := clz.1.toNat` form
-    --       (no `% 64`), matching the parent. This keeps proof size small
-    --       but breaks the existing closed sub-stub proofs.
+    -- **Wiring step (1)**: bridge parent's `carry_word` to `algCallAddbackBeqCarry a b`
+    -- so that the wrapper's `hcarry_nz` precondition can be discharged from
+    -- the local `hcarry`. Either refactor parent's `set b1' := ... ||| (b0 >>> (64 - s))`
+    -- to `... ||| (b0 >>> antiShift)` (matching irreducibles), OR establish a
+    -- propositional bridge via `algCallAddbackBeqCarry_unfold` + `hanti_toNat_mod`.
     --
-    -- Step 4 (TODO): `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
-    -- This step needs val256(post1_low4) = a%b * 2^s (= step 3) and
-    -- denorms it back to the un-normalized 4 EvmWord limbs.
+    -- **Wiring step (2)**: bridge parent's val256 of the addback post1 limbs
+    -- to `algCallAddbackBeqPost1Val a b`, similarly via
+    -- `algCallAddbackBeqPost1Val_unfold` + `hanti_toNat_mod`.
     --
-    -- **TIMEOUT FINDING**: even after aligning the parent's `set s` with the
-    -- sub-stub's `% 64` form AND introducing irreducible bundles
-    -- (algCallAddbackBeqCarry / algCallAddbackBeqMsC3), the bridge from
-    -- parent's `carry_word` (let-bound) to the irreducible form ALSO times
-    -- out — the rfl/unfold step hits 200k heartbeats.
-    --
-    -- Conclusion: the deep let-chain in parent's local context is the root
-    -- bottleneck for whnf/isDefEq. No syntactic alignment fixes it; the only
-    -- robust closure path is to inline the c3_n proof body (~260 lines) into
-    -- the parent, OR fundamentally restructure the parent so it never builds
-    -- up the let-chain (e.g., expose all algorithm internals as @[irreducible]
-    -- defs from the algorithm scaffold).
+    -- **Step 4** (val256_denormalize fold): once we have val256(post1_low4) =
+    -- a%b * 2^s, apply `EvmWord.val256_denormalize` and `evmWordIs_sp32_limbs_eq`
+    -- to fold to `evmWordIs (sp+32) (EvmWord.mod a b)`.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
