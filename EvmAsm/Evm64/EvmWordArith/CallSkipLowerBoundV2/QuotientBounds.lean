@@ -12,10 +12,17 @@
   - `div128Quot_toNat_eq_algorithmQ1_Q0` — algorithmQ1 * 2^32 + algorithmQ0
     decomposition wrapper.
   - `algorithmQ1Prime_le_q_true_1_plus_two` — weak `+2` upper bound.
+    **Generalized**: applies in BOTH narrow_u4 (u4 < dHi*2^32) AND
+    wide-u4 regimes (since the proof internally only needs hu4_lt_b3').
   - `algorithmQ1Prime_step{1..6}_*` — six self-contained sub-steps
     composing the tight `+1` Knuth-B upper bound.
   - `algorithmQ1Prime_le_q_true_1_plus_one` — composition of step1/3/6 with
     `correction_step_overestimate_le_one` for the tight `+1` bound.
+    Requires u4 < dHi*2^32 (Phase 1b uses rhatc < 2^32 which fails in
+    narrow_u4 when dHi > 2^31).
+  - `algorithmQ1Prime_ge_q_true_1_under_narrow_u4` — Phase 1 LOWER bound
+    in the narrow_u4 regime. PARTIALLY UNPROVABLE per-phase (see
+    docstring on the lemma + memory).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.Algorithm
