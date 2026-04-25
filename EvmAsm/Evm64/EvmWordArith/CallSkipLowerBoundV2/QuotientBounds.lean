@@ -100,7 +100,23 @@ theorem algorithmQ1Prime_ge_q_true_1_under_narrow_u4
           rv64_divu u4 (b3' >>> (32 : BitVec 6).toNat)
         else rv64_divu u4 (b3' >>> (32 : BitVec 6).toNat) + signExtend12 4095) *
         ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat))
-  · -- Phase 1b correction fires. Genuine hard regime under rhatc ≥ 2^32.
+  · -- Phase 1b correction fires. q1' = q1c - 1.
+    -- Need: q_true_1 ≤ q1c.toNat - 1 (i.e., q1c.toNat ≥ q_true_1 + 1).
+    -- We have q1c.toNat ≥ q_true_1 (h_q1c_ge from KB-LB3). Need strict +1.
+    --
+    -- Math: Phase 1b's ult check firing means rhatUn1 < q1c * dLo (Word).
+    -- - Under rhatc < 2^32: KB-LB5 gives q1c > q_true_1 directly.
+    -- - Under rhatc ≥ 2^32 (only when dHi > 2^31): the Word truncation
+    --   `(rhatc << 32) | div_un1` discards rhatc's high bits. The truncated
+    --   rhatUn1 = (rhatc % 2^32) * 2^32 + div_un1 may be small enough that
+    --   the ult check fires SPURIOUSLY (i.e., q1c isn't actually too large).
+    --   In this case, q1' = q1c - 1 might undershoot q_true_1.
+    --
+    -- Knuth-B safeguards: under hb3'_ge (b3' ≥ 2^63), there's a precise
+    -- bound on how much rhatc can exceed 2^32, and the corresponding
+    -- effect on q1c * dLo. The full analysis closes this regime.
+    --
+    -- Stub for now; the full proof needs ~80 lines of Word arithmetic.
     rw [if_pos h_check]
     sorry
   · -- No Phase 1b correction. q1' = q1c, KB-LB3 closes.
