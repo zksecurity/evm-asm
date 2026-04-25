@@ -2069,9 +2069,18 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   by_cases hcarry : carry_word = 0
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
-  · -- Single-addback branch (carry_word = 1). Tractable from existing helpers.
-    -- Still sorry for now — needs Knuth bound to derive qHat ≤ floor + 1 at
-    -- the normalized level, so mulsubN4_c3_le_one gives c3 ≤ 1.
+  · -- Single-addback branch (carry_word = 1).
+    -- Step 1: qHat = a/b + 1 from `qHat_eq_div_plus_one_of_single_addback`
+    -- (closed sub-stub). Note: hsem still has original predicate form here.
+    -- Step 2: lift to qHat ≤ val256(u_norm)/val256(b_norm) + 1 via val256
+    -- normalization (val256(u_norm) = val256(a) * 2^s, similarly b_norm).
+    -- Step 3: apply `mulsubN4_c3_le_one` to get c3 ≤ 1.
+    -- Step 4: combine with `c3_un_zero_of_qHat_mul_le` contrapositive +
+    -- u4_lt_c3 to pin c3 = 1.
+    -- Step 5: combine with `h_ab_euclidean` + carry = 1 to pin the
+    -- post-addback val256 = val256(a_norm) - q_out * val256(b_norm).
+    -- Step 6: denormalize via `val256_denormalize` and fold into evmWordIs.
+    -- TODO: each step ~10-30 lines; close iteratively.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
