@@ -9,12 +9,13 @@
   If MSB limbs equal, use unsigned borrow chain on lower 3 limbs (b - a).
 -/
 
+-- `Sgt.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Sgt.Program
 import EvmAsm.Evm64.Compare.LimbSpec
-import EvmAsm.Evm64.EvmWordArith
-import EvmAsm.Evm64.SpAddr
+import EvmAsm.Evm64.EvmWordArith.Comparison
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.ControlFlow
+import EvmAsm.Rv64.Tactics.XSimp
 
 open EvmAsm.Rv64.Tactics
 

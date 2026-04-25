@@ -5,9 +5,10 @@
   21 instructions total (3 + 3×4 + 6 store).
 -/
 
+-- `Eq.LimbSpec → Eq.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Eq.LimbSpec
-import EvmAsm.Evm64.EvmWordArith
-import EvmAsm.Evm64.SpAddr
+import EvmAsm.Evm64.EvmWordArith.Eq
+import EvmAsm.Rv64.Tactics.XSimp
 
 open EvmAsm.Rv64.Tactics
 

@@ -25,10 +25,7 @@
 -/
 
 import EvmAsm.Rv64.SyscallSpecs
-import EvmAsm.Rv64.CPSSpec
-import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.AddrNorm
-import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Rv64.RLP
 

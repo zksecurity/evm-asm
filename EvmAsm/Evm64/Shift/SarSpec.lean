@@ -10,8 +10,8 @@
   - Reuses SHR phase A/B/C specs from ShiftSpec.lean (with different offsets)
 -/
 
+-- `Shift.LimbSpec` transitively imports `Rv64.AddrNorm`.
 import EvmAsm.Evm64.Shift.LimbSpec
-import EvmAsm.Rv64.AddrNorm
 
 open EvmAsm.Rv64.Tactics
 

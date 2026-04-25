@@ -10,7 +10,7 @@
   Two sub-cases: skip (borrow=0) and addback (borrow≠0).
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4
+-- `FullPathN4Beq` transitively imports `FullPathN4`.
 import EvmAsm.Evm64.DivMod.Compose.FullPathN4Beq
 
 open EvmAsm.Rv64.Tactics

@@ -18,7 +18,6 @@
   Issue #263.
 -/
 
-import EvmAsm.Rv64.Instructions
 import EvmAsm.Rv64.Tactics.SeqFrame
 
 namespace EvmAsm.Evm64

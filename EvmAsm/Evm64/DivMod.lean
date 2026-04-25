@@ -1,32 +1,12 @@
 import EvmAsm.Evm64.DivMod.NormDefs
-import EvmAsm.Evm64.DivMod.Program
-import EvmAsm.Evm64.DivMod.LimbSpec
-import EvmAsm.Evm64.DivMod.Compose
-import EvmAsm.Evm64.DivMod.Spec
-import EvmAsm.Evm64.DivMod.SpecCall
-import EvmAsm.Evm64.DivMod.LoopBody
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4Shift0
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4Shift0
-import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
-import EvmAsm.Evm64.DivMod.LoopIterN3
-import EvmAsm.Evm64.DivMod.LoopIterN2
-import EvmAsm.Evm64.DivMod.LoopComposeN3
-import EvmAsm.Evm64.DivMod.LoopComposeN2
-import EvmAsm.Evm64.DivMod.LoopUnifiedN3
-import EvmAsm.Evm64.DivMod.LoopUnifiedN2
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3Loop
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Loop
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Full
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Cases
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopFull
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3Shift0
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Shift0
-import EvmAsm.Evm64.DivMod.LoopIterN1
-import EvmAsm.Evm64.DivMod.LoopComposeN1
-import EvmAsm.Evm64.DivMod.LoopUnifiedN1
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1Loop
+-- SpecCall covers Spec → Compose + FullPathN4 + FullPathN4Beq + ModFullPathN4
+-- + EvmWordArith + ModFullPathN4Shift0 + FullPathN4Shift0.
+-- Shift0Dispatcher → Shift0AddbackMod → SpecCall transitively.
+-- FullPathN1LoopUnified transitively covers FullPathN1Loop + FullPathN3Loop,
+-- which pull in LoopUnifiedN{1,2,3} + LoopComposeN3 + FullPathN{1,2,3}
+-- + FullPathN4Loop → LoopIterN4 → LoopBodyN4 → LoopBody → Compose +
+-- LoopDefs + EvmWordArith.DivN4Overestimate. FullPathN2Full covers
+-- FullPathN2LoopUnified + FullPathN2Cases + FullPath.
+import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1Shift0
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1Full
+import EvmAsm.Evm64.DivMod.Compose.FullPathN2Full

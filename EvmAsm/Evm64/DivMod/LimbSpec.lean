@@ -5,20 +5,19 @@
   Bottom-up decomposition starting from the simplest phases.
 -/
 
-import EvmAsm.Evm64.DivMod.Program
+-- Every `LimbSpec.*` sub-file already imports `DivMod.Program`,
+-- `Rv64.SyscallSpecs`, `Rv64.ControlFlow`, `Rv64.Tactics.XSimp`, and
+-- `Rv64.Tactics.RunBlock`, so those direct imports would be redundant.
 import EvmAsm.Evm64.DivMod.LimbSpec.AddBack
 import EvmAsm.Evm64.DivMod.LimbSpec.AddBackFinalLoopControl
 import EvmAsm.Evm64.DivMod.LimbSpec.CLZ
 import EvmAsm.Evm64.DivMod.LimbSpec.CopyAU
 import EvmAsm.Evm64.DivMod.LimbSpec.Denorm
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128Phase1
+-- `Div128Step1` covers `Div128Clamp`, `Div128Phase1`, `Div128ProdCheck1`.
+-- `Div128Step2` covers `Div128Clamp`, `Div128ProdCheck2`, `Div128Tail`.
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128PhaseEnd
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck2
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128UnProdCheck
 import EvmAsm.Evm64.DivMod.LimbSpec.Epilogue
 import EvmAsm.Evm64.DivMod.LimbSpec.LoopSetup
@@ -36,10 +35,6 @@ import EvmAsm.Evm64.DivMod.LimbSpec.SubCarryStoreQj
 import EvmAsm.Evm64.DivMod.LimbSpec.TrialStoreComposed
 import EvmAsm.Evm64.DivMod.LimbSpec.TrialQuotient
 import EvmAsm.Evm64.DivMod.LimbSpec.ZeroPath
-import EvmAsm.Rv64.SyscallSpecs
-import EvmAsm.Rv64.ControlFlow
-import EvmAsm.Rv64.Tactics.XSimp
-import EvmAsm.Rv64.Tactics.RunBlock
 
 open EvmAsm.Rv64.Tactics
 

@@ -436,15 +436,14 @@ theorem b3_prime_val256_eq_scaled
       ((b3 <<< ((clzResult b3).1.toNat % 64)) |||
          (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64)))
       = val256 b0 b1 b2 b3 * 2^(clzResult b3).1.toNat := by
-  have h_shift_le := clzResult_fst_toNat_le b3
   have h_shift_pos : 1 ≤ (clzResult b3).1.toNat := by
     rcases Nat.eq_zero_or_pos (clzResult b3).1.toNat with h | h
     · exfalso; apply hshift_nz
       exact BitVec.eq_of_toNat_eq (by simp [h])
     · exact h
   have hsmod : (clzResult b3).1.toNat % 64 = (clzResult b3).1.toNat :=
-    Nat.mod_eq_of_lt (by omega)
-  rw [hsmod, antiShift_toNat_mod_eq h_shift_pos h_shift_le]
+    Nat.mod_eq_of_lt (by have := clzResult_fst_toNat_le b3; omega)
+  rw [hsmod, antiShift_toNat_mod_eq h_shift_pos (clzResult_fst_toNat_le b3)]
   have hb3_bound := clzResult_fst_top_bound b3
   exact val256_normalize h_shift_pos (by omega) b0 b1 b2 b3 hb3_bound
 
@@ -468,15 +467,14 @@ theorem u_val256_eq_scaled_with_overflow
     + (a3 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64)).toNat
       * 2^256
       = val256 a0 a1 a2 a3 * 2^(clzResult b3).1.toNat := by
-  have h_shift_le := clzResult_fst_toNat_le b3
   have h_shift_pos : 1 ≤ (clzResult b3).1.toNat := by
     rcases Nat.eq_zero_or_pos (clzResult b3).1.toNat with h | h
     · exfalso; apply hshift_nz
       exact BitVec.eq_of_toNat_eq (by simp [h])
     · exact h
   have hsmod : (clzResult b3).1.toNat % 64 = (clzResult b3).1.toNat :=
-    Nat.mod_eq_of_lt (by omega)
-  rw [hsmod, antiShift_toNat_mod_eq h_shift_pos h_shift_le]
+    Nat.mod_eq_of_lt (by have := clzResult_fst_toNat_le b3; omega)
+  rw [hsmod, antiShift_toNat_mod_eq h_shift_pos (clzResult_fst_toNat_le b3)]
   exact val256_normalize_general h_shift_pos (by omega) a0 a1 a2 a3
 
 /-- **Knuth's Theorem B at the Word level — full CLZ-driven corollary.**

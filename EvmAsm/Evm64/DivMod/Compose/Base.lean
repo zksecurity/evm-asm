@@ -5,10 +5,11 @@
   program length lemmas, and the skipBlock tactic macro.
 -/
 
+-- `LimbSpec` re-exports several sub-files that import `DivMod.AddrNorm`
+-- (CLZ, TrialQuotient, TrialStoreComposed, SubCarryStoreQj), which in
+-- turn imports `Rv64.AddrNorm`.
 import EvmAsm.Evm64.DivMod.LimbSpec
-import EvmAsm.Evm64.DivMod.AddrNorm
 import EvmAsm.Evm64.DivMod.Compose.Offsets
-import EvmAsm.Rv64.AddrNorm
 
 open EvmAsm.Rv64.Tactics
 

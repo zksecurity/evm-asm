@@ -7,7 +7,6 @@
   For n=4, the loop runs exactly 1 iteration (j=0 only).
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4
 import EvmAsm.Evm64.DivMod.Compose.FullPathN4Beq
 import EvmAsm.Evm64.DivMod.Compose.ModFullPath
 

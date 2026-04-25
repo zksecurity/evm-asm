@@ -6,7 +6,7 @@
   - Address normalization lemmas for j=0
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.FullPath
+-- `LoopIterN4 → LoopBodyN4 → LoopBody → Compose → FullPath`.
 import EvmAsm.Evm64.DivMod.LoopIterN4
 
 open EvmAsm.Rv64.Tactics

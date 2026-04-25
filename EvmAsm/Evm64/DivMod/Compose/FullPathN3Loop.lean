@@ -6,9 +6,10 @@
   preloop+loop specs (base → base+904).
 -/
 
-import EvmAsm.Evm64.DivMod.LoopComposeN3
+-- `LoopUnifiedN3` transitively imports `LoopComposeN3`.
+-- `FullPathN4Loop` (5-hop) transitively reaches `FullPathN3` via
+-- `LoopIterN4 → LoopBodyN4 → LoopBody → Compose → FullPathN3`.
 import EvmAsm.Evm64.DivMod.LoopUnifiedN3
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3
 import EvmAsm.Evm64.DivMod.Compose.FullPathN4Loop
 
 open EvmAsm.Rv64.Tactics
