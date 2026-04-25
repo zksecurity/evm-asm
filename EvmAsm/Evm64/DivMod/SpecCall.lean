@@ -2040,6 +2040,57 @@ theorem algCallAddbackBeqCarry_unfold {a b : EvmWord} :
   unfold algCallAddbackBeqCarry
   rfl
 
+/-- **Irreducible bundle: val256 of post1 limbs at normalized inputs.**
+
+    Captures the val256 of the 4 low outputs of `addbackN4 ms.1 ms.2.1
+    ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'` (i.e., the first-addback result
+    at carry-input 0). When the first-addback carry is 1 (single-addback
+    branch), this Nat value is exactly `val256(a)%val256(b) * 2^s` per
+    `post1_val_eq_amod_pow_s_pure_nat`.
+
+    Encapsulates the deep let-chain so consumers can talk about the
+    addback post1 val256 as a single opaque Nat, sidestepping the
+    elaboration-cost penalty observed in the parent adapter. -/
+@[irreducible]
+noncomputable def algCallAddbackBeqPost1Val (a b : EvmWord) : Nat :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let post1 := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+  val256 post1.1 post1.2.1 post1.2.2.1 post1.2.2.2.1
+
+/-- Unfolding lemma for `algCallAddbackBeqPost1Val`. -/
+theorem algCallAddbackBeqPost1Val_unfold {a b : EvmWord} :
+    algCallAddbackBeqPost1Val a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let post1 := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+     val256 post1.1 post1.2.1 post1.2.2.1 post1.2.2.2.1) := by
+  show algCallAddbackBeqPost1Val a b = _
+  unfold algCallAddbackBeqPost1Val
+  rfl
+
 /-- **Sub-stub: c3_n = u4 + 1 in single-addback** (CLOSED).
 
     The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
