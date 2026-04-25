@@ -22,10 +22,14 @@
       - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_narrow`
         (closed): narrow-u4 + narrow-un21 sub-case via existing helpers.
       - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide`
-        (sorry): narrow-u4 + un21 ∈ [dHi*2^32, vTop). Needs Phase 2
-        tightness for wide-un21 + un21 < 2^63.
+        (sorry): narrow-u4 + un21 ∈ [dHi*2^32, vTop).
+      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow`
+        (closed): wide-u4 + narrow-un21 sub-case via the wide-u4 un21 =
+        r1_math stub + existing Phase 2 tightness.
+      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide`
+        (sorry): wide-u4 + un21 ≥ dHi*2^32. Same blocker as narrow_wide.
       - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4`
-        (sorry): wide-u4. Uses `algorithmUn21_eq_r1_math_in_wide_u4_exact`.
+        (closed via dispatch on un21 regime).
       - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1` (closed
         via dispatch on u4 regime + un21 regime).
       - `algorithmQ0Prime_compensates_phase1_deficit` (closed via
@@ -436,6 +440,57 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     Nat.mul_le_mul_right _ h_div128_succ
   linarith [h_step1, h_qhat_plus_one]
 
+/-- **A2.S2 wide-u4 no-undershoot claim** (TODO — KEY STRUCTURAL CLAIM).
+
+    In wide-u4 (`u4 ≥ dHi*2^32`), Phase 1's q1' is never less than q_true_1.
+    I.e., the algorithm's Phase 1b spurious-fire (under Word truncation when
+    rhatc ≥ 2^32) does NOT cause undershoot in this specific regime.
+
+    Sketch:
+    - Wide-u4 has q1.toNat ≥ 2^32, so Phase 1a corrects: q1c.toNat = q1.toNat - 1.
+    - q_true_1 ≤ 2^32 - 1 (since u_top < b3' * 2^32).
+    - q1c.toNat ≥ 2^32 - 1 ≥ q_true_1.
+    - **Critical sub-claim**: when q1c = q_true_1 (boundary case where
+      undershoot would occur), Phase 1b's ult check does NOT fire, so
+      q1' = q1c = q_true_1 (no undershoot).
+
+    If this lemma holds, then in `_narrow_u4_*` flow (wide-u4 dispatch) +
+    no-overshoot hypothesis q1' ≤ q_true_1, we get q1' = q_true_1 (exact),
+    which means un21 = r1_math < vTop and the existing q0' < 2^32 strategy
+    closes via this exact case. Eliminates the wide-u4 undershoot blocker. -/
+theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
+      (algorithmQ1Prime u4 u3 b3').toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge
+  sorry
+
+/-- **A2.S2 un21 = r1_math, wide-u4 + Phase 1 exact** (TODO).
+
+    Wide-u4 variant of the existing
+    `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1` (which requires
+    narrow-u4). Used by both the un21 < vTop invariant in wide-u4 and
+    the Phase 2 tightness sub-stubs. -/
+theorem algorithmUn21_eq_r1_math_in_wide_u4_exact
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
+    (algorithmUn21 u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge
+  let _ := h_q1_eq
+  sorry
+
 /-- **Phase 2 tightness under Phase 1 exact, narrow-u4 + narrow-un21 sub-case** —
     closed via existing helpers.
 
@@ -520,11 +575,84 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide
   let _ := h_q1_eq
   sorry
 
-/-- **Phase 2 tightness, wide-u4 sub-case** (TODO).
+/-- **Phase 2 tightness, wide-u4 + narrow-un21 sub-case** — closed via
+    the wide-u4 un21 = r1_math stub + existing Phase 2 tightness.
 
-    u4 ≥ dHi*2^32. Uses the new `algorithmUn21_eq_r1_math_in_wide_u4_exact`
-    stub for un21 = r1_math, then Phase 2 tightness depending on whether
-    un21 < dHi*2^32 or un21 ∈ [dHi*2^32, vTop). -/
+    Parallel to `_narrow_narrow` but using `algorithmUn21_eq_r1_math_in_wide_u4_exact`
+    (sorry stub) instead of the narrow-u4 variant. -/
+theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_un21_lt_dHi : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
+    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
+      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
+    (algorithmQ0Prime u4 u3 b3').toNat := by
+  -- un21 = r1_math under wide-u4 + q1' = q_true_1 (via wide-u4 stub).
+  have h_un21_eq := algorithmUn21_eq_r1_math_in_wide_u4_exact u4 u3 b3'
+    hb3'_ge hu4_lt_b3' hu4_ge h_q1_eq
+  -- Standard b3' halves derivations.
+  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dLo_lt :
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_v_eq : b3'.toNat =
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_v_eq]
+    have : (algorithmUn21 u4 u3 b3').toNat <
+        (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 := h_un21_lt_dHi
+    omega
+  -- Apply existing Phase 2 tightness.
+  have h_ph2 := algorithmQ0Prime_ge_q_true_0 u4 u3 b3'
+    h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi h_un21_lt_vTop
+  rw [← h_v_eq] at h_ph2
+  rw [h_un21_eq] at h_ph2
+  exact h_ph2
+
+/-- **Phase 2 tightness, wide-u4 + wide-un21 sub-case** (TODO).
+
+    u4 ≥ dHi*2^32, un21 ∈ [dHi*2^32, vTop). Same blocker as `_narrow_wide`:
+    needs Phase 2 tightness for wide-un21 case + r1_math < 2^63 (NOT
+    guaranteed). -/
+theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_un21_ge_dHi : (algorithmUn21 u4 u3 b3').toNat ≥
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
+    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
+      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
+    (algorithmQ0Prime u4 u3 b3').toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge
+  let _ := h_un21_ge_dHi
+  let _ := h_q1_eq
+  sorry
+
+/-- **Phase 2 tightness, wide-u4 sub-case** — closed via dispatch on
+    un21 regime (narrow vs wide). -/
 theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
@@ -535,11 +663,13 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4
     (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
       ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
     (algorithmQ0Prime u4 u3 b3').toNat := by
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge
-  let _ := h_q1_eq
-  sorry
+  by_cases h_un21_lt : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32
+  · exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow
+      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h_un21_lt h_q1_eq
+  · push Not at h_un21_lt
+    exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide
+      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h_un21_lt h_q1_eq
 
 /-- **A2.S2 Phase 2 tightness under Phase 1 exact** — closed via 2x2 dispatch.
 
@@ -600,71 +730,6 @@ theorem algorithmUn21_lt_vTop_of_q1_prime_not_overshoot_hu4_lt
   have h_q1_eq := algorithmQ1Prime_eq_q_true_1_plus_one_of_un21_ge_vTop u4 u3 b3'
     hb3'_ge hu4_lt_b3' hu4_lt h_un21_ge
   omega
-
-/-- **A2.S2 wide-u4 no-undershoot claim** (TODO — KEY STRUCTURAL CLAIM).
-
-    In wide-u4 (`u4 ≥ dHi*2^32`), Phase 1's q1' is never less than q_true_1.
-    I.e., the algorithm's Phase 1b spurious-fire (under Word truncation when
-    rhatc ≥ 2^32) does NOT cause undershoot in this specific regime.
-
-    Sketch:
-    - Wide-u4 has q1.toNat ≥ 2^32, so Phase 1a corrects: q1c.toNat = q1.toNat - 1.
-    - q_true_1 ≤ 2^32 - 1 (since u_top < b3' * 2^32).
-    - q1c.toNat ≥ 2^32 - 1 ≥ q_true_1.
-    - **Critical sub-claim**: when q1c = q_true_1 (boundary case where
-      undershoot would occur), Phase 1b's ult check does NOT fire, so
-      q1' = q1c = q_true_1 (no undershoot).
-
-    If this lemma holds, then in `_narrow_u4_*` flow (wide-u4 dispatch) +
-    no-overshoot hypothesis q1' ≤ q_true_1, we get q1' = q_true_1 (exact),
-    which means un21 = r1_math < vTop and the existing q0' < 2^32 strategy
-    closes via this exact case. Eliminates the wide-u4 undershoot blocker. -/
-theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
-    (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
-      (algorithmQ1Prime u4 u3 b3').toNat := by
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge
-  sorry
-
-/-- **A2.S2 un21 < vTop under no-overshoot, wide-u4 case** (TODO — depends
-    on the wide-u4 no-undershoot claim above).
-
-    Under `u4 ≥ dHi*2^32` (Phase 1a corrects), the algorithm's behavior
-    is highly constrained:
-    - Phase 1a sets q1c.toNat = q1.toNat - 1 (with q1 ≥ 2^32).
-    - Phase 1b may correct to q1' = q1c or q1c - 1.
-    - From `u4 < b3'` (hu4_lt_b3'), q_true_1 < 2^32; combined with
-      `u4 ≥ dHi*2^32`, q_true_1 is large.
-    - Under `q1' ≤ q_true_1` (hypothesis), the *exact* case `q1' = q_true_1`
-      gives un21 = r1_math < vTop. ✓
-    - The *undershoot* case `q1' = q_true_1 - 1` would give un21 ≥ vTop ✗,
-      but this is **conjectured unreachable** (see
-      `algorithmQ1Prime_ge_q_true_1_in_wide_u4` above).
-
-    Composes (a) `algorithmQ1Prime_ge_q_true_1_in_wide_u4` and (b) a
-    wide-u4 variant of `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1`
-    to derive un21 = r1_math < vTop. -/
-theorem algorithmUn21_eq_r1_math_in_wide_u4_exact
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (algorithmUn21 u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
-  -- Wide-u4 variant of `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1`.
-  -- Stubbed pending the wide-u4 algorithm structural analysis.
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge
-  let _ := h_q1_eq
-  sorry
 
 theorem algorithmUn21_lt_vTop_of_q1_prime_not_overshoot_hu4_ge
     (u4 u3 b3' : Word)
