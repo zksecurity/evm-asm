@@ -718,13 +718,32 @@ theorem div128Quot_q0_prime_ge_q_true_0_of_rhat2c_lt_pow32_un21_level
     (un21.toNat * 2^32 + div_un0.toNat) /
       (dHi.toNat * 2^32 + dLo.toNat) ≤ q0'.toNat := by
   intro q0 rhat2 hi2 q0c rhat2c div_un0 q0'
-  let _ := hdHi_ge
-  let _ := hdHi_lt
-  let _ := hdLo_lt
-  let _ := h_un21_ge_pow63
-  let _ := h_un21_lt_vTop
-  let _ := h_rhat2c_lt
-  sorry
+  -- div_un0 < 2^32 (from `uLo << 32 >> 32`).
+  have h_div_un0_lt : div_un0.toNat < 2^32 := by
+    show ((uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h_shl : (uLo <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (uLo <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  show (un21.toNat * 2^32 + div_un0.toNat) /
+         (dHi.toNat * 2^32 + dLo.toNat) ≤
+       (div128Quot_phase2b_q0' q0c rhat2c dLo div_un0).toNat
+  unfold div128Quot_phase2b_q0'
+  split
+  · -- Guard doesn't fire: helper yields the no-guard check.
+    -- Apply `_small_rhatc` directly using our `rhat2c < 2^32` hypothesis.
+    -- TODO: convert h_rhat2c_lt (Nat form: un21 mod dHi + dHi < 2^32) to
+    -- the Word-level rhat2c.toNat < 2^32 expected by _small_rhatc. The
+    -- conversion uses Phase 2's rhat2 = un21 mod dHi (algorithm fact)
+    -- and rhat2c = rhat2 + dHi (when hi2 ≠ 0) or rhat2 (when hi2 = 0).
+    let _ := h_un21_ge_pow63
+    sorry
+  · -- Guard fires: helper = q0c. Use KB-LB3 at Phase 2 (uHi := un21).
+    -- Same as `_of_un21_lt_pow63`'s guard-fires branch.
+    have hdHi_ne : dHi ≠ 0 := by
+      intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+    exact div128Quot_q1c_ge_q_true_1 un21 dHi dLo div_un0 hdHi_ne
+      h_div_un0_lt h_un21_lt_vTop
 
 /-- **The single remaining sorry — Phase 2 tightness for un21 ≥ 2^63** (TODO).
 
