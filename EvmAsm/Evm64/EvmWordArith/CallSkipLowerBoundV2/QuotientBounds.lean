@@ -340,12 +340,11 @@ theorem algorithmQ1Prime_le_q_true_1_plus_two
 
 /-- **_plus_one sub-step 1**: Phase 1a Euclidean at Nat level. Under
     hcall, `q1c.toNat * dHi.toNat + rhatc.toNat = u4.toNat`.
-    Direct wrap of `div128Quot_first_round_post`. -/
+    Direct wrap of `div128Quot_first_round_post`. Only needs `b3' ≥ 2^63`
+    (for dHi ≠ 0 + dHi < 2^32). -/
 theorem algorithmQ1Prime_step1_phase1a_euclidean
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    (u4 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63) :
     let dHi := b3' >>> (32 : BitVec 6).toNat
     let q1 := rv64_divu u4 dHi
     let rhat := u4 - q1 * dHi
@@ -623,8 +622,7 @@ theorem algorithmQ1Prime_le_q_true_1_plus_one
       (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
     div128Quot_vTop_decomp b3'
-  have h_eucl := algorithmQ1Prime_step1_phase1a_euclidean u4 u3 b3'
-    hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
+  have h_eucl := algorithmQ1Prime_step1_phase1a_euclidean u4 b3' hb3'_ge
   have h_q1c_le := algorithmQ1Prime_step3_q1c_le_q_true_1_plus_two u4 u3 b3'
     hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
   have h_if_bridge := algorithmQ1Prime_step6_word_nat_if_bridge u4 u3 b3'
