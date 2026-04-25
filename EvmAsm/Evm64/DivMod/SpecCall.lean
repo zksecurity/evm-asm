@@ -2436,7 +2436,7 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
      ((sp + 56) ↦ₘ (un3Out >>> shift))) =
     evmWordIs (sp + 32) (EvmWord.mod a b) := by
   -- Abbreviations to keep the proof readable.
-  set s : Nat := (clzResult (b.getLimbN 3)).1.toNat with hs_def
+  set s : Nat := (clzResult (b.getLimbN 3)).1.toNat % 64 with hs_def
   set b0' : Word := (b.getLimbN 0) <<< s
   set b1' : Word := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
   set b2' : Word := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
@@ -2599,12 +2599,13 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     -- This step needs val256(post1_low4) = a%b * 2^s (= step 3) and
     -- denorms it back to the un-normalized 4 EvmWord limbs.
     --
-    -- **Workaround (b) PARTIAL ATTEMPT** (commits 4bce77e4, ae920163):
-    -- added `algCallAddbackBeqCarry` (irreducible Word) and
-    -- `algCallAddbackBeqMsC3_eq_u4_plus_one_of_single_addback` wrapper.
-    -- However, the bridge from parent's `carry_word` (let-bound) to the
-    -- irreducible form still requires unfolding the let-chain, which faces
-    -- the same elaboration cost. Need a deeper restructuring.
+    -- **TIMEOUT FINDING**: even after aligning the parent's `set s` with the
+    -- sub-stub's `% 64` form, applying c3_n_eq_u4_plus_one_of_single_addback
+    -- still hits the 200k-heartbeat elaboration timeout. The issue is
+    -- structural — the deep let-chain (~13 bindings) makes whnf/isDefEq
+    -- exponential during unification of the hcarry_nz parameter against
+    -- parent's hcarry. The `% 64` alignment was necessary but not sufficient.
+    -- Need workaround (a) inline (~260 lines duplication) for closure.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
