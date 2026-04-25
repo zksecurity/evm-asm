@@ -7,7 +7,6 @@
 
 import EvmAsm.Evm64.Basic
 import EvmAsm.Evm64.SpAddr
-import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64
 
