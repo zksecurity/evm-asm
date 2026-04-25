@@ -2103,6 +2103,35 @@ theorem algCallAddbackBeqPost1Val_lt_pow256 (a b : EvmWord) :
   simp only []
   exact EvmWord.val256_bound _ _ _ _
 
+/-- **Bound: `a%b * 2^s < 2^256` in the call+addback BEQ shape** (CLOSED).
+
+    Wraps `EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound` taking
+    `b3 ≠ 0` (rather than `b ≠ 0`) and giving the `% 64`-shifted exponent
+    form used by the algorithm scaffold. Useful as the `h_amod_pow_lt`
+    precondition of `post1_val_eq_amod_pow_s_pure_nat` when closing
+    `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback`. -/
+theorem algCallAddbackBeq_amod_pow_s_lt_pow256
+    (a b : EvmWord) (hb3nz : b.getLimbN 3 ≠ 0) :
+    val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+      2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) < 2 ^ 256 := by
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  have hbnz : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0 := by
+    intro h; exact hb3nz (BitVec.or_eq_zero_iff.mp h).2
+  have hvb_pos : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) > 0 :=
+    EvmWord.val256_pos_of_or_ne_zero hbnz
+  have hb3_bound : (b.getLimbN 3).toNat <
+      2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat) :=
+    clzResult_fst_top_bound (b.getLimbN 3)
+  rw [h_s_eq]
+  exact EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    (by omega) hvb_pos hb3_bound
+
 /-- **Sub-stub: c3_n = u4 + 1 in single-addback** (CLOSED).
 
     The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
