@@ -327,7 +327,38 @@ theorem algorithmUn21_L4_modular_identity_plus_one
     (h_qm1_V_le : (q - 1) * (dHi * 2^32 + dLo) ≤ u4 * 2^32 + div_un1) :
     (2^64 - q * dLo + (rhat % 2^32) * 2^32 + div_un1) % 2^64 =
       2^64 + (u4 * 2^32 + div_un1) % (dHi * 2^32 + dLo) - (dHi * 2^32 + dLo) := by
-  sorry
+  -- Compose with the q*dLo identity helper.
+  have h_qdLo := algorithmUn21_L4_qdLo_eq_plus_V_minus_r u4 div_un1 dHi dLo q rhat
+    hq_pos hV_pos h_eucl h_q_V_gt h_qm1_V_le
+  have h_combine := algorithmUn21_L4_halfword_combine rhat
+  -- r := u % V, with r < V.
+  have h_r_lt_V : (u4 * 2^32 + div_un1) % (dHi * 2^32 + dLo) < dHi * 2^32 + dLo :=
+    Nat.mod_lt _ (by omega)
+  have hq_le_64 : q * dLo ≤ 2^64 := le_of_lt h_q_dLo_no_wrap
+  -- Add (rhat/2^32)*2^64 to LHS_pre — preserves mod 2^64.
+  -- Algebraic result: LHS_pre + h*2^64 = 2^64 + r - V (which is < 2^64 since r < V).
+  have h_lhs_plus_h64 :
+      2^64 - q * dLo + rhat % 2^32 * 2^32 + div_un1 + (rhat / 2^32) * 2^64 =
+      2^64 + (u4 * 2^32 + div_un1) % (dHi * 2^32 + dLo) - (dHi * 2^32 + dLo) := by
+    have h_reorder :
+        2^64 - q * dLo + rhat % 2^32 * 2^32 + div_un1 + (rhat / 2^32) * 2^64 =
+        2^64 - q * dLo + (rhat % 2^32 * 2^32 + (rhat / 2^32) * 2^64) + div_un1 := by omega
+    rw [h_reorder, h_combine]
+    -- Goal: 2^64 - q*dLo + rhat*2^32 + div_un1 = 2^64 + r - V
+    -- From h_qdLo: q*dLo + r = rhat*2^32 + div_un1 + V
+    -- So rhat*2^32 + div_un1 = q*dLo + r - V (Nat-safe since q*dLo + r ≥ V from h_qdLo).
+    -- Then 2^64 - q*dLo + rhat*2^32 + div_un1 = 2^64 - q*dLo + (q*dLo + r - V) = 2^64 + r - V.
+    omega
+  -- (LHS_pre + (rhat/2^32)*2^64) % 2^64 = LHS_pre % 2^64.
+  have h_mod_eq :
+      (2^64 - q * dLo + rhat % 2^32 * 2^32 + div_un1) % 2^64 =
+      (2^64 - q * dLo + rhat % 2^32 * 2^32 + div_un1 + (rhat / 2^32) * 2^64) % 2^64 :=
+    (Nat.add_mul_mod_self_right _ _ _).symm
+  rw [h_mod_eq, h_lhs_plus_h64]
+  -- Goal: (2^64 + r - V) % 2^64 = 2^64 + r - V
+  -- Since 2^64 + r - V < 2^64 (r < V), mod is identity.
+  apply Nat.mod_eq_of_lt
+  omega
 
 /-- **_of_tight sub-case "exact" L2.a**: Phase 1b Euclidean invariant at u4.
     Wraps `div128Quot_phase1b_post`. After Phase 1b, the corrected pair
