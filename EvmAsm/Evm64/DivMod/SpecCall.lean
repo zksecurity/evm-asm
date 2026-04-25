@@ -2464,20 +2464,26 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
   · -- Single-addback branch (carry_word = 1).
-    -- Concrete closure plan:
-    -- Step 1+2 (CLOSED upstream): `qHat_eq_div_plus_one_of_single_addback`
-    --   and `c3_n_eq_u4_plus_one_of_single_addback` (both fully proved).
-    --   ⚠ Direct application HERE hits a 200k-heartbeat elaboration timeout
-    --   because the parent's let-chain (`set s := clz.1.toNat`, no `% 64`)
-    --   doesn't unify with the sub-stubs' (`shift := clz.1.toNat % 64`).
-    --   Workarounds:
-    --     a) inline the c3_n proof body here (~50 lines duplication).
-    --     b) wrap the deep let-chain in `@[irreducible]` defs per
-    --        `feedback_bundle_pre_post_no_lets`.
-    --     c) reformulate the sub-stubs with `set s := clz.1.toNat` form.
-    -- Step 3 (CLOSED upstream): `post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one`
-    --   takes c3 = u4 + 1 + Euclideans → val256(post1_low4) = a%b * 2^s.
+    -- All 3 mathematical sub-stubs are closed UPSTREAM in this file:
+    --   * Step 1: `qHat_eq_div_plus_one_of_single_addback` → qHat = a/b + 1.
+    --   * Step 2: `c3_n_eq_u4_plus_one_of_single_addback` → c3 = u4 + 1.
+    --   * Step 3: `post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one`
+    --     → val256(post1_low4) = a%b * 2^s.
+    -- ⚠ Direct application HERE hits a 200k-heartbeat elaboration timeout
+    -- because the parent's let-chain (`set s := clz.1.toNat`, no `% 64`)
+    -- doesn't unify with the sub-stubs' (`shift := clz.1.toNat % 64`).
+    --
+    -- Workarounds (each is ~refactor or duplication-grade):
+    --   (a) inline the c3_n proof body here (~260 lines duplication).
+    --   (b) wrap the deep let-chain in `@[irreducible]` defs per
+    --       `feedback_bundle_pre_post_no_lets`.
+    --   (c) reformulate the sub-stubs with `set s := clz.1.toNat` form
+    --       (no `% 64`), matching the parent. This keeps proof size small
+    --       but breaks the existing closed sub-stub proofs.
+    --
     -- Step 4 (TODO): `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
+    -- This step needs val256(post1_low4) = a%b * 2^s (= step 3) and
+    -- denorms it back to the un-normalized 4 EvmWord limbs.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
