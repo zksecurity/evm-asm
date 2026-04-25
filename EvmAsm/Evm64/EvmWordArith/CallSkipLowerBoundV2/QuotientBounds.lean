@@ -24,33 +24,26 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
-/-- **Phase 1 lower bound under narrow_u4** (STUB): in the regime u4 ≥ dHi*2^32,
-    Phase 1's q1' is still at least q_true_1 (Knuth-B's design rules out
-    undershoot). This is needed to convert `q1' ≤ q_true_1` (negative branch
-    of the case-split in A2.S2 sub-cases) into `q1' = q_true_1` exactly,
-    enabling the Phase 2 tight argument.
+/-- **Phase 1 lower bound under narrow_u4** (PARTIALLY UNPROVABLE AS STATED):
+    in the regime u4 ≥ dHi*2^32, Phase 1's q1' is NOT always ≥ q_true_1.
 
-    **Refined plan** based on Knuth-B analysis:
-    - KB-LB3 (`div128Quot_q1c_ge_q_true_1`) applies under hu4_lt_vTop alone
-      and gives `q_true_1 ≤ q1c.toNat` — the post-Phase-1a lower bound.
-      This works in narrow_u4 ✓.
-    - Phase 1b case-split:
-      - No correction: q1' = q1c, so q1' ≥ q_true_1 directly via KB-LB3. ✓
-      - Correction fires (q1' = q1c - 1): need q1c ≥ q_true_1 + 1.
-        - Under rhatc < 2^32 (always true when dHi = 2^31, sometimes when
-          dHi > 2^31): KB-LB5 gives this directly.
-        - Under rhatc ≥ 2^32 (only when dHi > 2^31): need separate analysis.
-          In our setting rhatc < 2*dHi, and rhatUn1 truncates rhatc's high
-          bits via the Word << 32 — so the Phase 1b ult check operates on
-          (rhatc % 2^32) * 2^32 + div_un1. The comparison q1c * dLo > rhatUn1
-          may fire spuriously due to truncation.
+    **Critical discovery** (see `memory/project_a2s2_per_phase_tightness_fails.md`):
+    Under `rhatc ≥ 2^32 + Phase 1b correction fires` (only when `dHi > 2^31`),
+    the Word truncation `(rhatc << 32) | div_un1` causes Phase 1b's ult check
+    to fire SPURIOUSLY. In this regime, `q1' = q1c - 1 = q_true_1 - 1`
+    (genuine undershoot).
 
-    Decomposition into:
-    - `algorithmQ1Prime_ge_q_true_1_under_narrow_u4_no_correction`: Phase 1b
-      check doesn't fire, q1' = q1c, KB-LB3 directly applies.
-    - `algorithmQ1Prime_ge_q_true_1_under_narrow_u4_with_correction`: Phase 1b
-      check fires. Genuine hard regime; stubbed.
-    -/
+    Per-phase tightness DOES NOT hold in this regime. The lemma's statement
+    is FALSE in this sub-case. The proof closes 3 of 4 sub-cases:
+    - rhatc < 2^32: closed via KB-LB5.
+    - rhatc ≥ 2^32 + no correction: closed via KB-LB3.
+    - rhatc ≥ 2^32 + correction: GENUINELY UNPROVABLE per-phase. Need
+      different proof structure (global qHat ≥ q_true_full, not per-phase).
+
+    Kept as a stub (with internal sorry on the unprovable sub-case) to
+    document the discovery. The 3 A2.S2 exact-case sorries that depend on
+    this lemma will need to be re-architected to use global Phase 1+2
+    compensation instead. -/
 theorem algorithmQ1Prime_ge_q_true_1_under_narrow_u4
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
