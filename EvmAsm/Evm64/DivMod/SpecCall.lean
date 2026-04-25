@@ -1762,10 +1762,49 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
     let u4 := (a.getLimbN 3) >>> antiShift
     (div128Quot u4 u3 b3').toNat = a.toNat / b.toNat + 1 := by
-  let _ := hbnz
-  let _ := hsem
-  let _ := hcarry_nz
-  sorry
+  intro shift antiShift b3' u3 u4
+  rw [n4CallAddbackBeqSemanticHolds_def] at hsem
+  -- Unfold the if in hsem using hcarry_nz.
+  simp only [if_neg hcarry_nz] at hsem
+  -- val256(a_limbs) = a.toNat, val256(b_limbs) = b.toNat.
+  have ha_val : val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      = a.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat a
+  have hb_val : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      = b.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat b
+  rw [ha_val, hb_val] at hsem
+  -- hsem : (qHat + signExtend12 4095).toNat = a.toNat / b.toNat
+  -- Rewrite the LHS via BitVec.toNat_add + signExtend12_4095_toNat.
+  rw [BitVec.toNat_add, signExtend12_4095_toNat] at hsem
+  -- hsem : (qHat.toNat + (2^64 - 1)) % 2^64 = a.toNat / b.toNat
+  set qHat := div128Quot u4 u3 b3' with hqHat_def
+  have h_div_lt : a.toNat / b.toNat < 2^64 := by
+    have := a.isLt; have := b.isLt
+    -- Dividing by anything ≥ 1 keeps result < 2^256. But we need < 2^64.
+    -- Use that hsem already pins (qHat + (-1)).toNat (which is < 2^64) = a/b.
+    -- Since LHS < 2^64 (it's a Word toNat after addition), a/b < 2^64.
+    have h_lhs_lt : ((qHat.toNat + (2^64 - 1)) % 2^64) < 2^64 := Nat.mod_lt _ (by decide)
+    omega
+  have hqHat_pos : qHat.toNat ≥ 1 := by
+    -- If qHat = 0, then (0 + (2^64-1)) % 2^64 = 2^64 - 1, but a/b < 2^64 and could
+    -- equal 2^64 - 1. This is the corner case — rule out separately.
+    -- (Closable in a future iteration; the call trial regime ensures qHat ≥ 1
+    -- when a/b < 2^64.)
+    sorry
+  -- (qHat.toNat + 2^64 - 1) % 2^64 = qHat.toNat - 1 when qHat ≥ 1.
+  have h_qHat_lt : qHat.toNat < 2^64 := qHat.isLt
+  have : (qHat.toNat + (2^64 - 1)) % 2^64 = qHat.toNat - 1 := by
+    rw [show qHat.toNat + (2^64 - 1) = (qHat.toNat - 1) + 2^64 from by omega]
+    rw [Nat.add_mod_right]
+    apply Nat.mod_eq_of_lt; omega
+  rw [this] at hsem
+  -- hsem : qHat.toNat - 1 = a.toNat / b.toNat
+  omega
 
 /-- **Call+addback BEQ n=4 MOD denorm adapter (SORRY).** Stack-level adapter
     folding the four denormalized remainder slots at `sp+32..sp+56` into
