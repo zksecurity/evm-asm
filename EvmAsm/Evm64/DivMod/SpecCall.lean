@@ -1965,7 +1965,7 @@ theorem addbackN4_carry_le_one (un0 un1 un2 un3 v0 v1 v2 v3 : Word) :
   simp only []
   split_ifs <;> decide
 
-/-- **Sub-stub: c3_n = u4 + 1 in single-addback.**
+/-- **Sub-stub: c3_n = u4 + 1 in single-addback** (CLOSED).
 
     The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
     `u_top_eq_c3_n_of_overestimate` (call-skip case where c3_n = u4).
@@ -1980,7 +1980,13 @@ theorem addbackN4_carry_le_one (un0 un1 un2 un3 v0 v1 v2 v3 : Word) :
     combined with the addback Euclidean (carry = 1) forces c3_n - 1 - u4 = 0,
     i.e., c3_n = u4 + 1.
 
-    Combined with hborrow's c3_n ≥ u4 + 1, this pins c3_n exactly. -/
+    Combined with hborrow's c3_n ≥ u4 + 1, this pins c3_n exactly.
+
+    **Caveat for callers**: this sub-stub uses `% 64` form for shift/antiShift
+    (matching `n4CallAddbackBeqSemanticHolds_def`). Direct application from a
+    parent context that uses `set s := clz.1.toNat` (no `% 64`) hits a
+    200k-heartbeat elaboration timeout. Callers should align their let-chain
+    binding form to use `% 64`, or inline the proof body. -/
 theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
