@@ -2192,10 +2192,21 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
                ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
     exact EvmWord.val256_eq_toNat b
-  -- Step 9 (TODO): combine h_mulsub_eq + h_norm_u + h_norm_b + h_qHat_eq +
-  -- ha_val + hb_val into h_mulsub. omega has trouble seeing val256(u0u1u2u3)
-  -- (input to mulsub via let-binding) as the same as the val256 in h_norm_u
-  -- (inline form). May need explicit show/rfl to align them.
+  -- Step 9 (TODO): h_mulsub composition. Have h_u_eq + h_b_eq (defeq rfl)
+  -- but omega doesn't unify val256(b_norm) (from h_norm_b) with val256(... <<< shift)
+  -- (from inline defeq) cleanly. Will need a more careful rewrite chain.
+  have h_u_eq : val256 u0 u1 u2 u3 =
+      val256 ((a.getLimbN 0) <<< shift)
+             (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
+             (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift))
+             (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)) := rfl
+  have h_b_eq : val256 b0' b1' b2' b3' =
+      val256 ((b.getLimbN 0) <<< shift)
+             (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
+             (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
+             (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)) := rfl
+  let _ := h_u_eq
+  let _ := h_b_eq
   let _ := h_qHat_eq
   let _ := h_mulsub_eq
   let _ := h_norm_u
