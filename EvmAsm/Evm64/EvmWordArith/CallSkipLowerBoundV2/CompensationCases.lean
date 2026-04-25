@@ -450,18 +450,28 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     I.e., the algorithm's Phase 1b spurious-fire (under Word truncation when
     rhatc ≥ 2^32) does NOT cause undershoot in this specific regime.
 
-    Sketch:
-    - Wide-u4 has q1.toNat ≥ 2^32, so Phase 1a corrects: q1c.toNat = q1.toNat - 1.
-    - q_true_1 ≤ 2^32 - 1 (since u_top < b3' * 2^32).
-    - q1c.toNat ≥ 2^32 - 1 ≥ q_true_1.
-    - **Critical sub-claim**: when q1c = q_true_1 (boundary case where
-      undershoot would occur), Phase 1b's ult check does NOT fire, so
-      q1' = q1c = q_true_1 (no undershoot).
+    **Sketch (refined boundary analysis)**:
+    - Wide-u4 has q1.toNat ≥ 2^32 (since u4 ≥ dHi*2^32), so Phase 1a fires:
+      q1c.toNat = q1.toNat - 1 (Word arithmetic with signExtend12 4095 = -1).
+    - q_true_1 < 2^32 strictly (since u_top < b3' * 2^32 ⟹ u_top/b3' < 2^32).
+    - **Sub-case A** (q1.toNat ≥ 2^32 + 1, i.e., q1c.toNat ≥ 2^32): then
+      q1c.toNat ≥ 2^32 > q_true_1. Phase 1b at most does q1' = q1c - 1, so
+      q1' ≥ 2^32 - 1 ≥ q_true_1. ✓
+    - **Sub-case B** (q1.toNat = 2^32 exactly, q1c.toNat = 2^32 - 1):
+      requires u4 ∈ [dHi*2^32, dHi*2^32 + dHi). Then rhat = u4 - q1*dHi =
+      u4 - dHi*2^32 ∈ [0, dHi), and rhatc = rhat + dHi ∈ [dHi, 2*dHi). With
+      dHi < 2^32, rhatc < 2^33 (no Word truncation when rhatc < 2^32; minor
+      truncation when rhatc ≥ 2^32 which only happens if rhat + dHi ≥ 2^32).
+      - **B.1** (q_true_1 < 2^32 - 1, i.e., q_true_1 ≤ 2^32 - 2): then
+        q1c = 2^32 - 1 > q_true_1. q1' ≥ q1c - 1 = 2^32 - 2 ≥ q_true_1. ✓
+      - **B.2** (q_true_1 = 2^32 - 1 exactly): boundary case. Need to show
+        Phase 1b ult check does NOT fire here. Open: requires careful Word
+        arithmetic on `(rhatc << 32 | div_un1).toNat < (q1c * dLo).toNat`
+        with rhatc, dLo, div_un1 in their constrained ranges.
 
-    If this lemma holds, then in `_narrow_u4_*` flow (wide-u4 dispatch) +
-    no-overshoot hypothesis q1' ≤ q_true_1, we get q1' = q_true_1 (exact),
-    which means un21 = r1_math < vTop and the existing q0' < 2^32 strategy
-    closes via this exact case. Eliminates the wide-u4 undershoot blocker. -/
+    If this lemma holds: no-overshoot (q1' ≤ q_true_1) + no-undershoot
+    (q1' ≥ q_true_1) ⟹ q1' = q_true_1 EXACTLY in all `_narrow_u4_*` paths.
+    Then un21 = r1_math < vTop and the q0' < 2^32 + halfword decomp works. -/
 theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
