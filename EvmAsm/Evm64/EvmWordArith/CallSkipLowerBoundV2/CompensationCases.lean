@@ -271,74 +271,6 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
   apply qHat_plus_one_gt_u_via_tight_phases _ _ _ _ _ _ hb3'_pos h_two_step h_ph1_tight
   exact h_q_true_0_le
 
-/-- **A2.S2.narrow_u4_tight_un21**: hu4_ge regime (Phase 1a corrects, hi1 ≠ 0)
-    AND un21 < dHi*2^32 (Phase 2 narrow path).
-
-    **Proof structure** (analogous to _normal but with adjusted Phase 1 bound):
-    - Phase 1a correction: q1 ≥ 2^32 (since u4 ≥ dHi * 2^32 → u4/dHi ≥ 2^32 → hi1 ≠ 0).
-    - Post-correction q1c = q1 - 1, and Phase 1b further refines.
-    - The wrapped algorithmQ1Prime_ge_q_true_1 still holds, but uses a different
-      version of the tight bound that accounts for u4 ≥ dHi*2^32. Need a new
-      wrapper, e.g. `algorithmQ1Prime_ge_q_true_1_of_u4_ge` that handles this.
-    - Phase 2 tight + halfword bridge (algorithmUn21_ge_r1_math) work the same.
-    - Final composition via qHat_plus_one_gt_u_via_tight_phases.
-
-    ~120 lines. The main blocker is the Phase 1 tight bound under hu4_ge. -/
-theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_tight_un21
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_lt : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
-    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
-      u4.toNat * 2^64 + u3.toNat := by
-  sorry
-
-/-- **A2.S2.narrow_u4_wide_un21**: hu4_ge regime AND un21 ≥ dHi*2^32.
-
-    **Proof structure** (the hardest sub-case):
-    - Phase 1a corrects (q1c = q1 - 1).
-    - Phase 2's narrow path doesn't directly apply; un21 ≥ dHi*2^32 means
-      q0 = un21/dHi ≥ 2^32, hi2 ≠ 0, Phase 2a corrects: q0c = q0 - 1.
-    - Phase 2b's ult check may further correct.
-    - The combined Phase 1a + 2a corrections compensate for any q' overshoot
-      in the qHat = q1' * 2^32 + q0' decomposition.
-    - Need a Phase 2 tight bound under un21 ≥ dHi*2^32 (currently the wrapper
-      assumes un21 < dHi*2^32). New wrapper needed:
-      `algorithmQ0Prime_ge_q_true_0_of_un21_ge`.
-    - Strategy: prove the "augmented" tight bound for the corrected q0' under
-      Phase 2a correction, then the same final composition via
-      qHat_plus_one_gt_u_via_tight_phases applies.
-
-    ~150 lines. -/
-theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_ge : (algorithmUn21 u4 u3 b3').toNat ≥
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
-    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
-      u4.toNat * 2^64 + u3.toNat := by
-  sorry
-
-/-- **A2.S2.narrow_u4**: compensation case when `u4 ≥ dHi*2^32`.
-    Dispatches to tight-un21 / wide-un21 sub-cases. -/
-theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
-    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
-      u4.toNat * 2^64 + u3.toNat := by
-  by_cases h : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32
-  · exact div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_tight_un21
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h
-  · exact div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge (by omega)
-
 /-- **A2.S2 helper: q1' overshoot closes the goal**. Under standard hyps +
     `q1' ≥ q_true_1 + 1`, the (qHat+1)*b3' > u inequality holds via the
     OR-shift trick (div128Quot.toNat ≥ q1'*2^32 > q_true_full).
@@ -467,6 +399,82 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
       ((u4.toNat * 2^64 + u3.toNat) / b3'.toNat + 2) * b3'.toNat :=
     Nat.mul_le_mul_right _ h_div128_succ
   linarith [h_step1, h_qhat_plus_one]
+/-- **A2.S2.narrow_u4_tight_un21**: hu4_ge regime (Phase 1a corrects, hi1 ≠ 0)
+    AND un21 < dHi*2^32 (Phase 2 narrow path).
+
+    **Decomposition via q1' upper bound + case-split**:
+    - From `algorithmQ1Prime_le_q_true_1_plus_two` (now generalized): q1' ≤ q_true_1 + 2.
+    - From `div128Quot_q1_prime_lt_pow32`: q1' < 2^32.
+    - So q1' ∈ {q_true_1, q_true_1 + 1, q_true_1 + 2} (in the relevant range).
+    - Sub-cases q1' ≥ q_true_1 + 1 (overshoot): closed via `_of_q1_prime_overshoot`.
+    - Sub-case q1' = q_true_1 (exact): genuinely hard, requires Phase 2 tight
+      under hu4_ge regime. Stubbed.
+    - Sub-case q1' < q_true_1: undershoot, ruled out by Knuth-B (TODO: prove). -/
+theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_tight_un21
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_un21_lt : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
+      u4.toNat * 2^64 + u3.toNat := by
+  -- Upper bound q1' ≤ q_true_1 + 2 (now applies to narrow_u4 regime).
+  have h_q1_le_2 := algorithmQ1Prime_le_q_true_1_plus_two u4 u3 b3' hb3'_ge hu4_lt_b3'
+  set q_true_1 := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat
+  -- Case-split on q1' ≥ q_true_1 + 1 (overshoot) vs q1' ≤ q_true_1 (exact/undershoot).
+  by_cases h_overshoot : (algorithmQ1Prime u4 u3 b3').toNat ≥ q_true_1 + 1
+  · -- Overshoot: directly apply the helper.
+    exact div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot u4 u3 b3'
+      hb3'_ge hu4_lt_b3' h_overshoot
+  · -- q1' ≤ q_true_1. Exact (q1' = q_true_1) or undershoot (q1' < q_true_1).
+    -- Genuinely hard regime under hu4_ge. Not yet attempted.
+    sorry
+
+/-- **A2.S2.narrow_u4_wide_un21**: hu4_ge regime AND un21 ≥ dHi*2^32.
+
+    **Proof structure** (the hardest sub-case):
+    - Phase 1a corrects (q1c = q1 - 1).
+    - Phase 2's narrow path doesn't directly apply; un21 ≥ dHi*2^32 means
+      q0 = un21/dHi ≥ 2^32, hi2 ≠ 0, Phase 2a corrects: q0c = q0 - 1.
+    - Phase 2b's ult check may further correct.
+    - The combined Phase 1a + 2a corrections compensate for any q' overshoot
+      in the qHat = q1' * 2^32 + q0' decomposition.
+    - Need a Phase 2 tight bound under un21 ≥ dHi*2^32 (currently the wrapper
+      assumes un21 < dHi*2^32). New wrapper needed:
+      `algorithmQ0Prime_ge_q_true_0_of_un21_ge`.
+    - Strategy: prove the "augmented" tight bound for the corrected q0' under
+      Phase 2a correction, then the same final composition via
+      qHat_plus_one_gt_u_via_tight_phases applies.
+
+    ~150 lines. -/
+theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_un21_ge : (algorithmUn21 u4 u3 b3').toNat ≥
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
+      u4.toNat * 2^64 + u3.toNat := by
+  sorry
+
+/-- **A2.S2.narrow_u4**: compensation case when `u4 ≥ dHi*2^32`.
+    Dispatches to tight-un21 / wide-un21 sub-cases. -/
+theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
+      u4.toNat * 2^64 + u3.toNat := by
+  by_cases h : (algorithmUn21 u4 u3 b3').toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32
+  · exact div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_tight_un21
+      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h
+  · exact div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
+      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge (by omega)
+
 /-- **A2.S2.wide_un21_narrow**: Phase 1 narrow-u4 (no Phase 1a correction) AND
     un21 ∈ [dHi*2^32, vTop) (Phase 2 wide range, before Phase 1 false-alarm).
 
