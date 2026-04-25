@@ -2401,6 +2401,44 @@ theorem algCallAddbackBeqMsC3_eq_u4_plus_one_of_single_addback
   rw [algCallAddbackBeqCarry_unfold] at hcarry_nz
   exact c3_n_eq_u4_plus_one_of_single_addback a b hb3nz hshift_nz hborrow hsem hcarry_nz
 
+/-- **Wrapper: post1Val = a%b * 2^s in single-addback (irreducible-form, SORRY).**
+
+    Given the algorithm's invariants in single-addback (carry ≠ 0), the val256
+    of the first-addback post1 limbs at normalized inputs equals
+    `val256(a) % val256(b) * 2^s` — i.e., the un-truncated form of the
+    Knuth-style remainder.
+
+    Stated in irreducible-bundle form (`algCallAddbackBeqPost1Val a b` =
+    val256-of-post1; `algCallAddbackBeqCarry a b ≠ 0` = single-addback)
+    so the call site doesn't pay the deep let-chain elaboration cost.
+
+    **Proof plan (~200 lines, mirrors `c3_n_eq_u4_plus_one_of_single_addback`)**:
+    1. Unfold the irreducibles to expose the let-chain.
+    2. Re-derive the 6 preconditions for `post1_val_eq_amod_pow_s_pure_nat`:
+       - `h_mulsub`: from `mulsubN4_val256_eq` + `qHat_eq_div_plus_one_of_single_addback`.
+       - `h_addback`: from `addbackN4_val256_eq` + carry = 1 (via `addbackN4_carry_le_one`).
+       - `h_u4_le`: u4 * 2^256 ≤ val256(a) * 2^s (val256 ≥ a3*2^192 + Nat.div_mul_le_self).
+       - `h_post1_lt`: val256 of any 4-limb < 2^256 (`val256_bound`).
+       - `h_amod_pow_lt`: `val256_mod_mul_pow_lt_pow256_of_b3_bound`.
+       - `h_u4_lt_c3`: `u_top_lt_c3_of_addback_borrow_call`.
+    3. Apply `post1_val_eq_amod_pow_s_pure_nat` to conclude.
+
+    Steps 1-3 duplicate ~150 lines of c3_n_eq_u4_plus_one's proof body.
+    To close in one shot, one option is to refactor c3_n_eq_u4_plus_one to
+    return the val256-level facts as outputs, then this wrapper chains. -/
+theorem algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback
+    (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
+    (hsem : n4CallAddbackBeqSemanticHolds a b)
+    (hcarry_nz : algCallAddbackBeqCarry a b ≠ 0) :
+    algCallAddbackBeqPost1Val a b =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+  sorry
+
 /-- **Sub-stub: post1 = a%b * 2^s from c3 = u4 + 1 (pure Nat).**
 
     Given the closed Nat lemmas + `c3_n_eq_u4_plus_one_of_single_addback`'s
