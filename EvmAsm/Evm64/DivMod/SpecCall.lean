@@ -2103,6 +2103,25 @@ theorem algCallAddbackBeqPost1Val_lt_pow256 (a b : EvmWord) :
   simp only []
   exact EvmWord.val256_bound _ _ _ _
 
+/-- **Bound: `algCallAddbackBeqU4 < algCallAddbackBeqMsC3`** (CLOSED).
+
+    Wraps `EvmWord.u_top_lt_c3_of_addback_borrow_call` in the irreducible-
+    bundle form, taking just `hborrow : isAddbackBorrowN4CallEvm a b`.
+    Useful as the `h_u4_lt_c3` precondition of
+    `post1_val_eq_amod_pow_s_pure_nat` when closing the wrapper. -/
+theorem algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat
+    (a b : EvmWord) (hborrow : isAddbackBorrowN4CallEvm a b) :
+    (algCallAddbackBeqU4 a b).toNat < (algCallAddbackBeqMsC3 a b).toNat := by
+  rw [show (algCallAddbackBeqU4 a b).toNat = _ from by
+        unfold algCallAddbackBeqU4; rfl,
+      show (algCallAddbackBeqMsC3 a b).toNat = _ from by
+        unfold algCallAddbackBeqMsC3; rfl]
+  rw [isAddbackBorrowN4CallEvm_def] at hborrow
+  exact EvmWord.u_top_lt_c3_of_addback_borrow_call
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    hborrow
+
 /-- **Bound: `a%b * 2^s < 2^256` in the call+addback BEQ shape** (CLOSED).
 
     Wraps `EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound` taking
