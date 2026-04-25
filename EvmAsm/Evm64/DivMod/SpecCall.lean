@@ -2162,9 +2162,43 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
   -- Step 6: h_qHat_eq — qHat.toNat = a/b + 1 from the closed sub-stub.
   have h_qHat_eq : qHat.toNat = a.toNat / b.toNat + 1 :=
     qHat_eq_div_plus_one_of_single_addback a b hshift_nz hborrow_orig hsem_orig hcarry_nz
+  -- Step 7: h_mulsub_eq — mulsub Euclidean at val256 level.
+  have h_mulsub_eq := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
+  simp only [] at h_mulsub_eq
+  -- Step 8: h_norm_u — val256(u_norm_low4) + u4*2^256 = val256(a)*2^s.
+  have h_norm_u : val256 u0 u1 u2 u3 + u4.toNat * 2^256 =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+    show val256 ((a.getLimbN 0) <<< shift)
+                (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
+                (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift))
+                (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)) +
+            ((a.getLimbN 3) >>> antiShift).toNat * 2^256 = _
+    have h_anti_unfold : antiShift = 64 - (clzResult (b.getLimbN 3)).1.toNat := h_anti_eq
+    have h_shift_unfold : shift = (clzResult (b.getLimbN 3)).1.toNat := h_s_eq
+    rw [h_anti_unfold, h_shift_unfold, h_s_eq]
+    have h_clz_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by
+      have := h_clz_le_63; omega
+    exact EvmWord.val256_normalize_general h_clz_pos h_clz_lt_64
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+  -- Step 9: combine h_mulsub_eq + h_norm_u + h_norm_b + h_qHat_eq → h_mulsub.
+  have ha_val : val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      = a.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat a
+  have hb_val : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+      = b.toNat := by
+    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
+               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
+    exact EvmWord.val256_eq_toNat b
+  -- Step 9 (TODO): combine h_mulsub_eq + h_norm_u + h_norm_b + h_qHat_eq +
+  -- ha_val + hb_val into h_mulsub. omega has trouble seeing val256(u0u1u2u3)
+  -- (input to mulsub via let-binding) as the same as the val256 in h_norm_u
+  -- (inline form). May need explicit show/rfl to align them.
   let _ := h_qHat_eq
-  -- Step 7 (TODO): h_mulsub — derive from mulsubN4_val256_eq + h_qHat_eq +
-  -- h_norm_u + h_norm_b.
+  let _ := h_mulsub_eq
+  let _ := h_norm_u
   let _ := h_carry_le
   let _ := h_carry_eq_one
   let _ := h_norm_b
