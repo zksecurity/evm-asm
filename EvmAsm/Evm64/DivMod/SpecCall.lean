@@ -2066,12 +2066,44 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
         (clzResult (b.getLimbN 3)).1).toNat % 64) := by
     show ((a.getLimbN 3) >>> antiShift).toNat = _
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  -- antiShift = 64 - s, derived via antiShift_toNat_mod_eq (needs 1 ≤ s ≤ 63).
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 = 64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
   have h_u4_le : u4.toNat * 2^256 ≤
       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
         2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
-    let _ := h_a3_val_ge
-    let _ := h_u4_toNat
-    sorry
+    rw [h_s_eq]
+    -- u4 * 2^antiShift ≤ a3 (Nat.div_mul_le_self).
+    have h_u4_mul : u4.toNat * 2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat)
+        ≤ (a.getLimbN 3).toNat := by
+      rw [h_u4_toNat, h_anti_eq]
+      exact Nat.div_mul_le_self _ _
+    -- Multiply both sides by 2^(192 + s) and use the val256 ≥ a3*2^192 bound.
+    set s := (clzResult (b.getLimbN 3)).1.toNat
+    have h_pow_split : (2 : Nat)^256 = 2^(64 - s) * (2^192 * 2^s) := by
+      rw [show (2 : Nat)^192 * 2^s = 2^(192 + s) from by rw [pow_add],
+          show (2 : Nat)^(64 - s) * 2^(192 + s) = 2^((64 - s) + (192 + s)) from
+            (pow_add 2 (64-s) (192+s)).symm,
+          show (64 - s) + (192 + s) = 256 from by omega]
+    rw [h_pow_split]
+    -- Goal: u4 * (2^(64-s) * (2^192 * 2^s)) ≤ val256(a) * 2^s.
+    calc u4.toNat * (2 ^ (64 - s) * (2 ^ 192 * 2 ^ s))
+        = (u4.toNat * 2 ^ (64 - s)) * (2 ^ 192 * 2 ^ s) := by ring
+      _ ≤ (a.getLimbN 3).toNat * (2 ^ 192 * 2 ^ s) :=
+          Nat.mul_le_mul_right _ h_u4_mul
+      _ = (a.getLimbN 3).toNat * 2 ^ 192 * 2 ^ s := by ring
+      _ ≤ val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) * 2 ^ s :=
+          Nat.mul_le_mul_right _ h_a3_val_ge
   let _ := h_u4_lt_c3
   let _ := h_post1_lt
   let _ := h_amod_pow_lt
