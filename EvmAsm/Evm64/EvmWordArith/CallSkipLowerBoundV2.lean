@@ -2,37 +2,42 @@
   EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2
 
   Replacement for PR #1154 (closed). Proves the call-skip exact lower bound
-  `val256(a)/val256(b) ≤ (div128Quot u4 u3 b3').toNat` under shift_nz + hcall
-  + hskip, via a **GLOBAL Phase 1+2 compensation argument** instead of the
-  per-phase tight bounds that PR #1154 attempted.
+  `val256(a)/val256(b) ≤ (div128Quot u4 u3 b3').toNat` under shift_nz + hcall,
+  via a **GLOBAL Phase 1+2 compensation argument** instead of the per-phase
+  tight bounds that PR #1154 attempted.
 
   Background (why per-phase fails): see
-  `memory/project_knuth_b_lower_large_rhatc.md`. The overall Knuth bound
+  `memory/project_knuth_b_lower_large_rhatc.md` and
+  `memory/project_a2s2_per_phase_tightness_fails.md`. The overall Knuth bound
   `qHat ≥ q_true_full` holds only because Phase 2 compensates Phase 1
   undershoots — a global, not per-phase, property.
 
-  ## Decomposition plan — §A (core) and §B (bridge)
+  ## Status (2026-04-25)
 
-  Each sub-section contains further decomposition into small sub-lemmas.
-  Sorrys are focused: each ≤ ~100 lines, addressable in one iteration.
+  **Top-level theorem `div128Quot_call_skip_ge_val256_div_v2` proven**
+  via wrapper composition (assuming dependent sorries close).
 
-  ### §A: core Knuth-B lower bound at 128/64
+  **4 sorries remain** in deep sub-cases of the A2 compensation proof:
+  - 3 in `CompensationCases.lean` (A2.S2 exact-case sub-cases under
+    `u4 ≥ dHi*2^32` or `un21 ≥ dHi*2^32`).
+  - 1 in `QuotientBounds.lean` (Phase 1 lower bound under narrow_u4 +
+    rhatc ≥ 2^32 + Phase 1b correction — this regime's per-phase
+    tightness is genuinely false; need global compensation).
 
-  - A1: Knuth-B UPPER form (context, ~100 lines).
-  - A2: Knuth-B LOWER form via Phase 1+2 compensation (the hard core, ~300 lines).
-  - A4 `div128Quot_ge_q_true_normalized`: wrapper, derived from A2.
+  Each remaining sorry has detailed docstring documenting the math and
+  pointing to memory entries for the proof strategy.
 
-  ### §B: val256 → 128/64 bridge
+  ## File structure (5 modules, ~2000 lines total)
 
-  - B3.1 `nat_trunc_div_add_lt`: (A*K + L) / (B*K) = A/B when 0 < K, 0 < B, L < K.
-    Pure Nat lemma, ~20 lines.
-  - B3.2 `val256_b_norm_ge_b3prime_mul_pow192`: val256(b_norm) ≥ b3'.toNat * 2^192.
-    Immediate from val256 definition, ~10 lines.
-  - B3.3 `a_scaled_decomp`: val256(a_norm) + u4 * 2^256 = (u4*2^64 + u3) * 2^192 + lower
-    where lower < 2^192 is the val256 of a_norm's bottom 3 limbs.
-    ~15 lines via val256 unfolding + bounds.
-  - B3.4 `val256_ratio_le_u_total_div_b3_prime`: the target. ~30 lines composing B3.1-B3.3.
-  - B4 `q_true_triple_bridge_to_val256_norm`: wrapper around B3.4.
+  - `CallSkipLowerBoundV2/Algorithm.lean` — irreducible algorithm bundles
+    (algorithmUn21, algorithmQ1Prime, algorithmQ0Prime).
+  - `CallSkipLowerBoundV2/QuotientBounds.lean` — Q1Prime / Q0Prime bounds,
+    `_plus_one` 6-step decomposition, narrow_u4 lower bound (1 sorry).
+  - `CallSkipLowerBoundV2/Un21Bridge.lean` — Layer 1/2/3 helpers, _of_tight
+    cases, algorithmUn21_ge_r1_math wrapper. SORRY-FREE.
+  - `CallSkipLowerBoundV2/CompensationCases.lean` — A2 normal +
+    compensation cases + A4 normalized (3 sorries in exact sub-cases).
+  - This file: §B (val256 bridge) and final composition.
 -/
 
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases
