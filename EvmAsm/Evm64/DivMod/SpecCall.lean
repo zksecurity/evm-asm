@@ -2024,7 +2024,9 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   have hb3_bound : (b.getLimbN 3).toNat <
       2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat) :=
     clzResult_fst_top_bound (b.getLimbN 3)
-  -- Unfold runtime conditions to limb form.
+  -- Save original hsem/hborrow for sub-stub applications, then unfold.
+  have hsem_orig := hsem
+  have hborrow_orig := hborrow
   rw [isAddbackBorrowN4CallEvm_def] at hborrow
   rw [n4CallAddbackBeqSemanticHolds_def] at hsem
   -- Derive u4 < c3 from addback borrow.
@@ -2130,23 +2132,14 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
   · -- Single-addback branch (carry_word = 1).
-    -- ALGEBRAIC FINDING: the val256(post1_low4) formula reduces to
-    -- (val256(a) % val256(b)) * 2^s + (c3 - 1 - u4) * 2^256. For
-    -- val256_denormalize to give exactly val256(a) % val256(b), we need
-    -- c3 = u4 + 1 (not just c3 ≤ 1 + c3 ≥ 1).
-    --
-    -- Mirror of call-skip's `u_top_eq_c3_n_of_overestimate` (which gives
-    -- c3_n = u4 in the skip case via qHat = a/b). Adapted to addback:
-    -- with qHat = a/b + 1, the algebraic counterpart should give c3_n = u4 + 1.
-    --
-    -- Concrete plan:
-    -- 1. Apply `qHat_eq_div_plus_one_of_single_addback` for qHat = a/b + 1.
-    -- 2. Derive c3 = u4 + 1 via mulsub Euclidean + addback Euclidean +
-    --    carry = 1, all at the val256 normalized level (analog of
-    --    `u_top_eq_c3_n_of_overestimate` for the addback path).
-    -- 3. Substitute into val256(post1_low4) formula to get
-    --    val256(post1_low4) = val256(a) % val256(b) * 2^s.
-    -- 4. Apply `val256_denormalize` and fold into evmWordIs.
+    -- Concrete closure plan (each step ~10-30 lines):
+    -- Step 1: qHat.toNat = a.toNat/b.toNat + 1 from
+    --   `qHat_eq_div_plus_one_of_single_addback` (closed sub-stub above).
+    --   The original predicates are saved as hsem_orig / hborrow_orig.
+    -- Step 2: c3_n = u4 + 1 from `c3_n_eq_u4_plus_one_of_single_addback`
+    --   (sorry stub above).
+    -- Step 3: substitute into val256(post1_low4) algebra → a%b*2^s.
+    -- Step 4: `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
