@@ -122,13 +122,24 @@ theorem algorithmUn21_L3b_q_true_1_V_le_u
       offset, leaving `r mod 2^64 = r` (since r < V < 2^64).
     - When rhat < 2^32: identity is direct.
 
-    Self-contained pure-Nat lemma. Stubbed for now; ~30 lines via direct
-    omega-friendly modular algebra. -/
+    Now also requires `rhat < 2^33` which is satisfied in our usage by
+    `div128Quot_rhat_prime_lt_3dHi` + narrow-u4 (rhat' < 2 * 2^32 in case
+    (ii); = rhatc < 2^32 in case (i)). This bound restricts `rhat / 2^32`
+    to {0, 1}, the two cases needed for the modular identity.
+
+    **Proof outline** (~60 lines, in progress):
+    1. Decompose: rhat = (rhat / 2^32) * 2^32 + rhat % 2^32 with quotient ≤ 1.
+    2. Establish q is the integer quotient: r := u % V = u - q*V is well-defined.
+    3. Rewrite r = rhat*2^32 + div_un1 - q*dLo (via h_eucl).
+    4. Case-split on rhat / 2^32:
+       - h = 0: LHS = (2^64 + r) % 2^64 = r.
+       - h = 1: rhat*2^32 ≥ 2^64, LHS = r % 2^64 = r.
+    -/
 theorem algorithmUn21_L4_modular_identity
     (u4 div_un1 dHi dLo q rhat : Nat)
     (hdiv_un1_lt : div_un1 < 2^32)
     (hdLo_lt : dLo < 2^32)
-    (hq_lt : q ≤ 2^32)
+    (hrhat_lt : rhat < 2^33)
     (hV_lt : dHi * 2^32 + dLo < 2^64)
     (h_eucl : q * dHi + rhat = u4)
     (h_q_dLo_no_wrap : q * dLo < 2^64)
