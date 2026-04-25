@@ -17,29 +17,20 @@
   **Top-level theorem `div128Quot_call_skip_ge_val256_div_v2` proven**
   via wrapper composition (assuming the single remaining sorry closes).
 
-  **3 sorries remain** — all precisely-stated focused sub-claims in
-  `CompensationCases.lean`. All higher-level wrappers are CLOSED via
-  composition.
+  **1 sorry remains** — a single precisely-stated math sub-claim in
+  `CompensationCases.lean`:
 
-  - `algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63` — Phase 2 tightness
-    extension to the un21 ≥ 2^63 wide-un21 range (which neither KB-LB8
-    nor KB-LB8' covers). Shared blocker for both narrow-u4 and wide-u4
-    `_ge_pow63` callers. See `memory/project_un21_lt_vTop_plan.md`.
-  - `algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_eq_pow32` (case B:
-    u4 ∈ [dHi*2^32, dHi*2^32 + dHi), q1 = 2^32) — boundary case with
-    sub-cases B.1 (q_true_1 ≤ 2^32 - 2, easy) and B.2 (q_true_1 = 2^32 - 1,
-    hard). Case A (u4 ≥ dHi*2^32 + dHi) is now CLOSED via the new
-    wrapped Phase 1b lower bound `algorithmQ1Prime_ge_q1_dHi_minus_two`
-    + the `q_true_1_lt_pow32` helper.
-  - `algorithmUn21_eq_r1_math_in_wide_u4_exact` — wide-u4 variant of
-    the existing un21 = r1_math equality.
+  - `algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63` (sorry) — Phase 2
+    tightness extension to un21 ∈ [2^63, vTop) range (which neither
+    KB-LB8 nor KB-LB8' covers). Used in narrow-u4 + un21 ≥ 2^63 Phase 2
+    tightness sub-case. See `memory/project_un21_lt_vTop_plan.md`.
 
-  Closure requires extending `KnuthTheoremB.lean` with a *global* qHat
-  ≥ q_true_full lemma (handling the carry compensation between Phase 1
-  and Phase 2 directly). The previously-stubbed per-phase Phase 1
-  lower bound under narrow_u4 was orphan-deleted from
-  `QuotientBounds.lean` since the new global path no longer needs it.
-  See `memory/project_a2s2_per_phase_tightness_fails.md`.
+  All wide-u4 sub-cases are now CLOSED VACUOUSLY via the `hu4_lt_pow63`
+  hypothesis (u4 < 2^63), threaded through from the top-level theorem
+  where it's derived via `u_top_lt_pow63_of_shift_nz` +
+  `clzResult_fst_toNat_le`. The "wide-u4 no-undershoot was FALSE"
+  finding from `memory/project_wide_u4_no_undershoot_false_in_b2.md` is
+  RESOLVED — the failing example is unreachable from the top-level call.
 
   ## File structure (5 modules, ~2000 lines total)
 

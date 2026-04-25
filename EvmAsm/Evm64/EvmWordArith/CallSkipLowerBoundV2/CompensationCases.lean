@@ -556,43 +556,6 @@ theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
   let _ := hu4_lt_b3'
   omega
 
-/-- **A2.S2 un21 = r1_math, wide-u4 + Phase 1 exact** (TODO).
-
-    Wide-u4 variant of the existing
-    `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1` (which requires
-    narrow-u4). Used by both the un21 < vTop invariant in wide-u4 and
-    the Phase 2 tightness sub-stubs.
-
-    **Math sketch**: under q1' = q_true_1 (Phase 1 exact), un21 represents
-    the true Phase 1 remainder. The algorithm computes:
-    - q1c = q1.toNat - 1 (Phase 1a corrects since q1 ≥ 2^32 in wide-u4).
-    - rhatc = u4 - q1c * dHi (Phase 1a-corrected remainder of u4 div dHi).
-    - un21 = (rhatc << 32 | div_un1) - q1' * dLo (Phase 1b adjustment).
-
-    Modulo Word truncation: un21 = u_top - q1' * b3' where u_top =
-    u4*2^32 + a1. Under q1' = q_true_1, this equals r1_math = u_top mod b3'.
-
-    **Sub-cases mirror `algorithmQ1Prime_ge_q_true_1_in_wide_u4`**:
-    - Sub-case A (q1 ≥ 2^32 + 1): rhatc < 2^32, no Word truncation in
-      Phase 1b's input. The standard un21 = u_top - q1' * b3' identity holds.
-    - Sub-case B (q1 = 2^32 exactly): rhatc = rhat + dHi ∈ [dHi, 2*dHi).
-      Could exceed 2^32 if dHi close to 2^32; needs careful Word
-      arithmetic on the high bit of (rhatc << 32). -/
-theorem algorithmUn21_eq_r1_math_in_wide_u4_exact
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (algorithmUn21 u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge
-  let _ := h_q1_eq
-  sorry
-
 /-- **Phase 2 tightness under Phase 1 exact, narrow-u4 + narrow-un21 sub-case** —
     closed via existing helpers.
 
@@ -820,189 +783,6 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide
     exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide_ge_pow63
       u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32 h h_q1_eq
 
-/-- **Phase 2 tightness, wide-u4 + narrow-un21 sub-case** — closed via
-    the wide-u4 un21 = r1_math stub + existing Phase 2 tightness.
-
-    Parallel to `_narrow_narrow` but using `algorithmUn21_eq_r1_math_in_wide_u4_exact`
-    (sorry stub) instead of the narrow-u4 variant. -/
-theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_lt_dHi : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
-    (algorithmQ0Prime u4 u3 b3').toNat := by
-  -- un21 = r1_math under wide-u4 + q1' = q_true_1 (via wide-u4 stub).
-  have h_un21_eq := algorithmUn21_eq_r1_math_in_wide_u4_exact u4 u3 b3'
-    hb3'_ge hu4_lt_b3' hu4_ge h_q1_eq
-  -- Standard b3' halves derivations.
-  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
-  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat < 2^64 := b3'.isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_dLo_lt :
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
-      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_v_eq : b3'.toNat =
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
-    div128Quot_vTop_decomp b3'
-  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
-    rw [← h_v_eq]
-    have : (algorithmUn21 u4 u3 b3').toNat <
-        (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 := h_un21_lt_dHi
-    omega
-  -- Apply existing Phase 2 tightness.
-  have h_ph2 := algorithmQ0Prime_ge_q_true_0 u4 u3 b3'
-    h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_dHi h_un21_lt_vTop
-  rw [← h_v_eq] at h_ph2
-  rw [h_un21_eq] at h_ph2
-  exact h_ph2
-
-/-- **Phase 2 tightness, wide-u4 + wide-un21 + un21 < 2^63 sub-case** —
-    closed via `_of_un21_lt_pow63` + un21 = r1_math (wide-u4 variant). -/
-theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide_lt_pow63
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_lt_pow63 : (algorithmUn21 u4 u3 b3').toNat < 2^63)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
-    (algorithmQ0Prime u4 u3 b3').toNat := by
-  have hb3'_pos : 0 < b3'.toNat := by have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
-  have h_un21_eq := algorithmUn21_eq_r1_math_in_wide_u4_exact u4 u3 b3'
-    hb3'_ge hu4_lt_b3' hu4_ge h_q1_eq
-  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
-  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat < 2^64 := b3'.isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_dLo_lt :
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
-      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_v_eq : b3'.toNat =
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
-    div128Quot_vTop_decomp b3'
-  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
-    rw [← h_v_eq, h_un21_eq]
-    exact Nat.mod_lt _ hb3'_pos
-  have h_ph2 := algorithmQ0Prime_ge_q_true_0_of_un21_lt_pow63 u4 u3 b3'
-    h_dHi_ge h_dHi_lt h_dLo_lt h_un21_lt_pow63 h_un21_lt_vTop
-  rw [← h_v_eq] at h_ph2
-  rw [h_un21_eq] at h_ph2
-  exact h_ph2
-
-/-- **Phase 2 tightness, wide-u4 + wide-un21 + un21 ≥ 2^63 sub-case** —
-    closed via composition of the shared `_of_un21_ge_pow63` stub with the
-    wide-u4 un21 = r1_math stub. -/
-theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide_ge_pow63
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_ge_pow63 : (algorithmUn21 u4 u3 b3').toNat ≥ 2^63)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
-    (algorithmQ0Prime u4 u3 b3').toNat := by
-  have hb3'_pos : 0 < b3'.toNat := by have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
-  have h_un21_eq := algorithmUn21_eq_r1_math_in_wide_u4_exact u4 u3 b3'
-    hb3'_ge hu4_lt_b3' hu4_ge h_q1_eq
-  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
-  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : b3'.toNat < 2^64 := b3'.isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_dLo_lt :
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
-    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
-    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
-      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
-    exact Nat.div_lt_of_lt_mul (by omega)
-  have h_v_eq : b3'.toNat =
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
-    div128Quot_vTop_decomp b3'
-  have h_un21_lt_vTop : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
-    rw [← h_v_eq, h_un21_eq]
-    exact Nat.mod_lt _ hb3'_pos
-  have h_ph2 := algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63 u4 u3 b3'
-    h_dHi_ge h_dHi_lt h_dLo_lt h_un21_ge_pow63 h_un21_lt_vTop
-  rw [← h_v_eq] at h_ph2
-  rw [h_un21_eq] at h_ph2
-  exact h_ph2
-
-/-- **Phase 2 tightness, wide-u4 + wide-un21 sub-case** — closed via
-    dispatch on un21 vs 2^63. -/
-theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_ge_dHi : (algorithmUn21 u4 u3 b3').toNat ≥
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
-    (algorithmQ0Prime u4 u3 b3').toNat := by
-  let _ := h_un21_ge_dHi
-  by_cases h : (algorithmUn21 u4 u3 b3').toNat < 2^63
-  · exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide_lt_pow63
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h h_q1_eq
-  · push Not at h
-    exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide_ge_pow63
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h h_q1_eq
-
-/-- **Phase 2 tightness, wide-u4 sub-case** — closed via dispatch on
-    un21 regime (narrow vs wide). -/
-theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4
-    (u4 u3 b3' : Word)
-    (hb3'_ge : b3'.toNat ≥ 2^63)
-    (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
-      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
-    (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
-      ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) ≤
-    (algorithmQ0Prime u4 u3 b3').toNat := by
-  by_cases h_un21_lt : (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32
-  · exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h_un21_lt h_q1_eq
-  · push Not at h_un21_lt
-    exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_ge h_un21_lt h_q1_eq
-
 /-- **A2.S2 Phase 2 tightness under Phase 1 exact** — closed via 2x2 dispatch.
 
     Under exact Phase 1 (`q1' = q_true_1`), Phase 2's `q0'` satisfies
@@ -1028,6 +808,7 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
     (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt_pow63 : u4.toNat < 2^63)
     (h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat =
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat) :
     (((u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2^32 +
@@ -1042,10 +823,18 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1
     · push Not at h_un21_lt
       exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide
         u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt h_un21_lt h_q1_eq
-  · -- Wide-u4: single sub-case (handles all un21 internally).
+  · -- Wide-u4: VACUOUS via hu4_lt_pow63 (u4 ≥ dHi*2^32 ≥ 2^63 ∧ u4 < 2^63).
+    exfalso
     push Not at hu4_lt
-    exact algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4
-      u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt h_q1_eq
+    have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+      rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+    have h1 : (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 ≥ 2^31 * 2^32 :=
+      Nat.mul_le_mul_right _ h_dHi_ge
+    have h2 : (2^31 : Nat) * 2^32 = 2^63 := by decide
+    let _ := hu4_lt_b3'
+    let _ := h_q1_eq
+    omega
 
 /-- **A2.S2 un21 < vTop under no-overshoot, narrow-u4 case** — closed via
     the existing contrapositive bridge `algorithmQ1Prime_eq_q_true_1_plus_one_of_un21_ge_vTop`. -/
@@ -1147,7 +936,7 @@ theorem algorithmQ0Prime_compensates_phase1_deficit
     omega
   -- Phase 2 tightness under exact: q0' ≥ q_true_0.
   have h_q0_ge := algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1
-    u4 u3 b3' hb3'_ge hu4_lt_b3' h_q1_eq
+    u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt_pow63 h_q1_eq
   -- Two-step division identity: q_true_full = q_true_1 * 2^32 + q_true_0.
   have h_two_step :=
     two_step_div_identity u4.toNat
