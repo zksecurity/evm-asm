@@ -10,6 +10,7 @@
 
 -- `Shift0AddbackMod` transitively imports `SpecCall`.
 import EvmAsm.Evm64.DivMod.Shift0AddbackMod
+import EvmAsm.Evm64.DivMod.SpecCallShift0
 
 namespace EvmAsm.Evm64
 
