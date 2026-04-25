@@ -608,7 +608,9 @@ theorem algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1
     false-alarms once), the algorithm's un21 = r1_math + (2^64 - V), which is
     ≥ r1_math.
 
-    **TODO** (~40 lines): from Phase 1b Euclidean + Word wrap analysis. -/
+    Composition: same structure as L5 (the exact case), but using L4_plus_one
+    (the sign-flipped modular identity) instead of L4. Yields
+    algorithmUn21.toNat = 2^64 + r - V (≥ r since V ≤ 2^64). -/
 theorem algorithmUn21_ge_r1_math_of_q1_prime_eq_q_true_1_plus_one
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
@@ -618,7 +620,89 @@ theorem algorithmUn21_ge_r1_math_of_q1_prime_eq_q_true_1_plus_one
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat + 1) :
     (algorithmUn21 u4 u3 b3').toNat ≥
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
-  sorry
+  have h_v_eq : b3'.toNat =
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_dLo_lt :
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_b3'_pos : 0 < b3'.toNat := by have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+  -- Establish all sub-facts.
+  have h_l1c := algorithmUn21_L1c_un21_toNat_case_simple u4 u3 b3'
+  have h_l1a := algorithmUn21_L1a_cu_rhat_un1_toNat u4 u3 b3'
+  have h_l1b := algorithmUn21_L1b_q1_prime_dLo_no_wrap u4 u3 b3' hb3'_ge hu4_lt_b3'
+  have h_l2a_w := algorithmUn21_L2a_wrapped u4 u3 b3' hb3'_ge
+  have h_l2b := algorithmUn21_L2b_rhat_prime_lt_pow33 u4 u3 b3' hb3'_ge hu4_lt_dHi_pow32
+  simp only [] at h_l1c h_l1a h_l1b h_l2a_w h_l2b
+  rw [h_q1_prime_eq] at h_l2a_w
+  rw [h_l1c, h_l1a, h_l1b]
+  have h_q1_unfold := (algorithmQ1Prime_unfold u4 u3 b3').symm
+  simp only [] at h_q1_unfold
+  rw [h_q1_unfold]
+  rw [h_q1_prime_eq]
+  set q := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat with hq_def
+  have h_div_un1_lt : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_V_lt : (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^64 := by
+    rw [← h_v_eq]; exact b3'.isLt
+  have h_V_pos : (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat ≥ 1 := by
+    rw [← h_v_eq]; omega
+  have h_q_le : q ≤ 2^32 := by
+    rw [hq_def]
+    apply Nat.div_le_of_le_mul
+    have : u4.toNat < b3'.toNat := hu4_lt_b3'
+    have : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := h_div_un1_lt
+    nlinarith
+  have h_qp1_dLo_no_wrap :
+      (q + 1) * ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^64 := by
+    have h_q_plus_1_le : q + 1 ≤ 2^32 + 1 := by omega
+    have h_dLo_le_pow : ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
+        ≤ 2^32 - 1 := by have := h_dLo_lt; omega
+    have h_prod_le : (q + 1) * ((b3' <<< (32 : BitVec 6).toNat) >>>
+        (32 : BitVec 6).toNat).toNat ≤ (2^32 + 1) * (2^32 - 1) :=
+      Nat.mul_le_mul h_q_plus_1_le h_dLo_le_pow
+    have h_eq : (2^32 + 1) * (2^32 - 1 : Nat) = 2^64 - 1 := by decide
+    omega
+  have h_qp1_V_gt :
+      (q + 1) * ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) >
+      u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_v_eq, hq_def]
+    exact algorithmUn21_L5_succ_mul_div_gt _ _ h_b3'_pos
+  have h_qp1m1_V_le :
+      (q + 1 - 1) * ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) ≤
+      u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat := by
+    have h_simp : q + 1 - 1 = q := Nat.add_sub_cancel q 1
+    rw [h_simp, ← h_v_eq, hq_def]
+    exact Nat.div_mul_le_self _ _
+  have h_qp1_pos : q + 1 ≥ 1 := Nat.le_add_left 1 q
+  rw [h_v_eq]
+  -- Reassociate and apply L4_plus_one.
+  rw [show ∀ a b c d e : Nat, (a + (b + c)) % d ≥ e ↔ (a + b + c) % d ≥ e from
+      fun a b c d e => by rw [Nat.add_assoc]]
+  rw [algorithmUn21_L4_modular_identity_plus_one u4.toNat
+    (u3 >>> (32 : BitVec 6).toNat).toNat
+    (b3' >>> (32 : BitVec 6).toNat).toNat
+    ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat (q + 1) _
+    h_div_un1_lt h_dLo_lt h_l2b h_V_lt h_qp1_pos h_V_pos h_l2a_w h_qp1_dLo_no_wrap
+    h_qp1_V_gt h_qp1m1_V_le]
+  -- Goal: 2^64 + r - V ≥ r. Since V ≤ 2^64 (h_V_lt), this holds.
+  have h_r_lt_V : (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) %
+      ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) <
+      ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :=
+    Nat.mod_lt _ (by linarith [h_V_pos])
+  omega
 
 /-- **Bridge sub-B** (algebraic consequence): given `q1' ≤ q_true_1 + 1` and
     `un21 < dHi*2^32`, the algorithm's un21 cannot be less than `r1_math`. -/
