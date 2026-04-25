@@ -1874,60 +1874,23 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
   -- hsem : qHat.toNat - 1 = a.toNat / b.toNat
   omega
 
-/-- **Sub-stub: u4 overflow is bounded by remainder * 2^s.**
+/-- **Sub-stub: c3_n = u4 + 1 in single-addback.**
 
-    Under the call-trial precondition `u4 < b3'` (i.e. `isCallTrialN4`), the
-    overflow limb `u4 = a3 >>> antiShift` satisfies the inequality:
+    The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
+    `u_top_eq_c3_n_of_overestimate` (call-skip case where c3_n = u4).
 
-    ```
-      val256(a) % val256(b) * 2^s ≥ u4 * 2^256
-    ```
+    Under hsem + hcarry_nz (single-addback) + hborrow (giving u4 < c3_n):
+    - From `qHat_eq_div_plus_one_of_single_addback`: qHat = val256(a)/val256(b) + 1.
+    - Mulsub Euclidean: c3_n*2^256 = val256(ms_n) + qHat*val256(b_norm) - val256(u_norm).
+    - val256(u_norm) = val256(a)*2^s - u4*2^256, val256(b_norm) = val256(b)*2^s.
+    - Algebra: c3_n*2^256 = val256(ms_n) + (val256(b) - val256(a)%val256(b))*2^s + u4*2^256.
 
-    Reasoning: in the call-trial regime, the val256(post-addback) value
-    output by the algorithm is val256(u_norm_low4) - q_out * val256(b_norm),
-    which equals (val256(a) % val256(b)) * 2^s - u4 * 2^256 algebraically.
-    Since val256 of any 4-limb value is non-negative, the inequality must
-    hold. The Word-level proof: `u4 < b3'` + `val256(b_norm) ≥ b3' * 2^192`
-    gives u4 * 2^256 < b3' * 2^256 ≤ val256(b_norm) * 2^64. The remaining
-    factor of 2^192 needs to come from the structure of the remainder. -/
-theorem u4_overflow_le_mod_times_pow_s (a b : EvmWord)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hbltu : isCallTrialN4Evm a b) :
-    let s := (clzResult (b.getLimbN 3)).1.toNat
-    let antiShift :=
-      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
-    let u4 := (a.getLimbN 3) >>> antiShift
-    val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
-      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) * 2^s ≥
-        u4.toNat * 2^256 := by
-  let _ := hbnz
-  let _ := hb3nz
-  let _ := hshift_nz
-  let _ := hbltu
-  sorry
+    The bound `0 ≤ val256(post1_low4) < 2^256` (from val256 being a 4-limb val)
+    combined with the addback Euclidean (carry = 1) forces c3_n - 1 - u4 = 0,
+    i.e., c3_n = u4 + 1.
 
-/-- **Sub-stub (single-addback): qHat ≤ val256(u_norm_low4)/val256(b_norm) + 1.**
-    Under the single-addback condition (`carry ≠ 0`), the trial quotient
-    `qHat = div128Quot u4 u3 b3'` is bounded by val256(u_norm_low4)/val256(b_norm)
-    + 1, the precondition for `mulsubN4_c3_le_one` at the normalized-limb level
-    (giving c3 ≤ 1 in this branch).
-
-    Closure path (concrete): `qHat_eq_div_plus_one_of_single_addback` gives
-    qHat = val256(a)/val256(b) + 1. Combining with `mulsubN4_val256_eq` at
-    the normalized-limb level:
-    - `val256(u_norm_low4) + c3*2^256 = val256(ms_low4) + qHat * val256(b_norm)`
-    - val256(u_norm_low4) = val256(a)*2^s - u4*2^256 (from `val256_normalize_general`)
-    - val256(b_norm) = val256(b)*2^s (from `val256_normalize`)
-
-    For c3 ≤ 1 we need `qHat * val256(b_norm) ≤ val256(u_norm_low4) + val256(b_norm)`,
-    which simplifies to `val256(a) % val256(b) * 2^s ≥ u4 * 2^256`. This is a
-    nontrivial bound — it says u4 is NOT TOO LARGE relative to the remainder.
-    The call-trial precondition `u4 < b3'` is the key here: combined with
-    val256(b_norm) ≥ b3' * 2^192, we should be able to derive the needed
-    inequality. -/
-theorem qHat_le_normalized_floor_plus_one_of_single_addback (a b : EvmWord)
+    Combined with hborrow's c3_n ≥ u4 + 1, this pins c3_n exactly. -/
+theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     (hbnz : b ≠ 0)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
@@ -1956,13 +1919,13 @@ theorem qHat_le_normalized_floor_plus_one_of_single_addback (a b : EvmWord)
     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
     let b0' := (b.getLimbN 0) <<< shift
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
     let u4 := (a.getLimbN 3) >>> antiShift
-    (div128Quot u4 u3 b3').toNat ≤
-      val256 ((a.getLimbN 0) <<< shift)
-            (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-            (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift))
-            (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift))
-        / val256 b0' b1' b2' b3' + 1 := by
+    let qHat := div128Quot u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    ms.2.2.2.2.toNat = u4.toNat + 1 := by
   let _ := hbnz
   let _ := hb3nz
   let _ := hshift_nz
