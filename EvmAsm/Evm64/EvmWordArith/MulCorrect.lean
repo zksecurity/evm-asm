@@ -31,7 +31,7 @@
       Same skeleton as limb 1 plus `carry_toNat` for the col0→col1 carry
       passing through this column.
 
-    Limb 3 (`mul_correct_limb3`) — the main event (~450 lines):
+    Limb 3 (`mul_correct_limb3`) — the main event:
       Euclidean linearization: every `x.toNat = (a+b) % 2^64` /
       `carry = (a+b) / 2^64` pair is combined into `carry*W + x = a+b`
       via `div_mod_eq`, producing only LINEAR equations for omega.
@@ -40,10 +40,10 @@
           the carry chain using `carry_telescoping` + `low_part_bound` to
           get `P / 2^192 % 2^64 = (D3 + C3) % 2^64`.
         * `carry_chain_limb3` — runs the implementation's actual carry
-          chain (22 toNat unfoldings for col0+col1+col2+col3) and reduces
+          chain (toNat unfoldings for col0+col1+col2+col3) and reduces
           the final equation to `carry_chain_mod_eq` (pure Nat identity).
-        * `carry_chain_mod_eq` — closed by omega after flattening the
-          nested div/mods via `qC{1,2,3}_simp_helper`.
+        * `carry_chain_mod_eq` — closed by a single `omega` call (modern
+          `omega` handles the cascading nested div/mod chain directly).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.MultiLimb
@@ -261,27 +261,14 @@ private theorem schoolbook_limb3 (a0 a1 a2 a3 b0 b1 b2 b3 : Nat) :
   rw [hDiv, show high = (D3 + C3) + (D4 + D5 * W + D6 * W^2) * W from by ring,
       Nat.add_mul_mod_self_right]
 
-/-- Generic: `(a*W + b + (c*W + d) + e) / W = a + c + (b + d + e) / W`. -/
-private theorem qC2_simp_helper (a b c d e : ℕ) :
-    (a * 2 ^ 64 + b + (c * 2 ^ 64 + d) + e) / 2 ^ 64 = a + c + (b + d + e) / 2 ^ 64 := by omega
-
-/-- Generic: `(a*W + b + (c*W + d) + (e*W + f) + (g + h + i)) / W = a + c + e + (b + d + f + g + h + i) / W`. -/
-private theorem qC3_simp_helper (a b c d e f g h i : ℕ) :
-    (a * 2 ^ 64 + b + (c * 2 ^ 64 + d) + (e * 2 ^ 64 + f) + (g + h + i)) / 2 ^ 64 =
-    a + c + e + (b + d + f + g + h + i) / 2 ^ 64 := by omega
-
 /-- After simp-flattening, the carry-chain mod equation reduces to this pure
-    Nat identity. Proved in a clean context (no let-defs) so `generalize h :`
-    and `omega` can flatten nested div/mod into linear constraints. -/
+    Nat identity. Closed by a single `omega` — modern `omega` handles the
+    cascading nested div/mod chain directly without intermediate helpers. -/
 private theorem carry_chain_mod_eq
     (mu00 lo00 lo10 mu10 lo20 mu20 lo30
      lo01 mu01 lo11 mu11
      lo02 mu02 lo21 lo12 lo03 mu03 mu12 mu21 mu30 : Nat)
-    -- Leaf bounds actually needed by omega (others are derivable)
-    (hb_mu00 : mu00 < 2 ^ 64) (hb_lo00 : lo00 < 2 ^ 64)
-    (hb_lo10 : lo10 < 2 ^ 64) (hb_mu10 : mu10 < 2 ^ 64)
-    (hb_lo01 : lo01 < 2 ^ 64) (hb_mu01 : mu01 < 2 ^ 64)
-    -- Product-consistency bounds (only the ones omega needs for the carry chain)
+    (hb_lo00 : lo00 < 2 ^ 64) (hb_lo01 : lo01 < 2 ^ 64)
     (hp00 : mu00 * 2 ^ 64 + lo00 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1))
     (hp10 : mu10 * 2 ^ 64 + lo10 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1))
     (hp01 : mu01 * 2 ^ 64 + lo01 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
@@ -305,13 +292,6 @@ private theorem carry_chain_mod_eq
         (mu20 * 2 ^ 64 + lo20) +
         (mu01 * 2 ^ 64 + lo01 + (mu10 * 2 ^ 64 + lo10) +
           (mu00 * 2 ^ 64 + lo00) / 2 ^ 64) / 2 ^ 64) / 2 ^ 64) % 2 ^ 64 := by
-  -- Simplify RHS via generic helpers (each omega runs in clean top-level context)
-  rw [Nat.add_comm (mu00 * 2^64) lo00, Nat.add_mul_div_right _ _ (by norm_num),
-      Nat.div_eq_of_lt hb_lo00, Nat.zero_add]
-  rw [qC2_simp_helper mu01 lo01 mu10 lo10 mu00]
-  rw [qC3_simp_helper mu02 lo02 mu11 lo11 mu20 lo20 mu01 mu10
-        ((lo01 + lo10 + mu00) / 2 ^ 64)]
-  -- RHS now has only 2 nested divs (was 3). Main omega closes the LHS-RHS equivalence.
   omega
 
 /-- The carry chain implementation produces the correct column sum mod 2^64.
@@ -475,8 +455,7 @@ private theorem carry_chain_limb3 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
       (a0 * b2).toNat (rv64_mulhu a0 b2).toNat (a2 * b1).toNat (a1 * b2).toNat
       (a0 * b3).toNat (rv64_mulhu a0 b3).toNat (rv64_mulhu a1 b2).toNat
       (rv64_mulhu a2 b1).toNat (rv64_mulhu a3 b0).toNat
-      (rv64_mulhu a0 b0).isLt (a0 * b0).isLt (a1 * b0).isLt (rv64_mulhu a1 b0).isLt
-      (a0 * b1).isLt (rv64_mulhu a0 b1).isLt
+      (a0 * b0).isLt (a0 * b1).isLt
       (prod_bound a0 b0) (prod_bound a1 b0) (prod_bound a0 b1)
   exact h_r3.trans h_suffices
 
