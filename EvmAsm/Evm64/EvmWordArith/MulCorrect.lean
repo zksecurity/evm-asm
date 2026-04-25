@@ -269,22 +269,9 @@ private theorem schoolbook_limb3 (a0 a1 a2 a3 b0 b1 b2 b3 : Nat) :
   rw [hDiv, show high = (D3 + C3) + (D4 + D5 * W + D6 * W^2) * W from by ring,
       Nat.add_mul_mod_self_right]
 
-/-- Generic algebraic identity: `(a*W + b)/W = a + b/W`. -/
-private theorem qC1_simp_helper (a b : ℕ) (hb : b < 2 ^ 64) :
-    (a * 2 ^ 64 + b) / 2 ^ 64 = a := by omega
-
-/-- Generic: `(a*W + b + (c*W + d) + e) / W = a + c + (b + d + e) / W`. -/
-private theorem qC2_simp_helper (a b c d e : ℕ) :
-    (a * 2 ^ 64 + b + (c * 2 ^ 64 + d) + e) / 2 ^ 64 = a + c + (b + d + e) / 2 ^ 64 := by omega
-
-/-- Generic: `(a*W + b + (c*W + d) + (e*W + f) + (g + h + i)) / W = a + c + e + (b + d + f + g + h + i) / W`. -/
-private theorem qC3_simp_helper (a b c d e f g h i : ℕ) :
-    (a * 2 ^ 64 + b + (c * 2 ^ 64 + d) + (e * 2 ^ 64 + f) + (g + h + i)) / 2 ^ 64 =
-    a + c + e + (b + d + f + g + h + i) / 2 ^ 64 := by omega
-
 /-- After simp-flattening, the carry-chain mod equation reduces to this pure
-    Nat identity. Proved in a clean context (no let-defs) so `generalize h :`
-    and `omega` can flatten nested div/mod into linear constraints. -/
+    Nat identity. Closed by a single `omega` — modern `omega` handles the
+    cascading nested div/mod chain directly without intermediate helpers. -/
 private theorem carry_chain_mod_eq
     (mu00 lo00 lo10 mu10 lo20 mu20 lo30
      lo01 mu01 lo11 mu11
@@ -317,12 +304,6 @@ private theorem carry_chain_mod_eq
         (mu20 * 2 ^ 64 + lo20) +
         (mu01 * 2 ^ 64 + lo01 + (mu10 * 2 ^ 64 + lo10) +
           (mu00 * 2 ^ 64 + lo00) / 2 ^ 64) / 2 ^ 64) / 2 ^ 64) % 2 ^ 64 := by
-  -- Simplify RHS via generic helpers (each omega runs in clean top-level context)
-  rw [qC1_simp_helper mu00 lo00 hb_lo00]
-  rw [qC2_simp_helper mu01 lo01 mu10 lo10 mu00]
-  rw [qC3_simp_helper mu02 lo02 mu11 lo11 mu20 lo20 mu01 mu10
-        ((lo01 + lo10 + mu00) / 2 ^ 64)]
-  -- RHS now has only 2 nested divs (was 3). Main omega closes the LHS-RHS equivalence.
   omega
 
 /-- The carry chain implementation produces the correct column sum mod 2^64.
