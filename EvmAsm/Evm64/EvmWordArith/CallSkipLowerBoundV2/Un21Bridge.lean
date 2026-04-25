@@ -305,6 +305,44 @@ theorem algorithmUn21_L1c_un21_toNat_case_simple (u4 u3 b3' : Word) :
   rw [algorithmUn21_unfold]
   exact BitVec.toNat_sub _ _
 
+/-- **_of_tight sub-case "exact" L2.b**: under narrow-u4, the post-Phase-1b
+    rhat' is bounded by 2^33. Composes step4 (rhatc < 2^32) with the Phase 1b
+    correction structure (rhat' ∈ {rhatc, rhatc + dHi}). -/
+theorem algorithmUn21_L2b_rhat_prime_lt_pow33
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    rhat'.toNat < 2^33 := by
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo rhatUn1 rhat'
+  have h_rhatc_lt : rhatc.toNat < 2^32 :=
+    algorithmQ1Prime_step4_rhatc_lt_pow32 u4 u3 b3' hb3'_ge hu4_lt_dHi_pow32
+  have h_dHi_lt : dHi.toNat < 2^32 := by
+    show (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  by_cases h_check : BitVec.ult rhatUn1 qDlo = true
+  · show (if BitVec.ult rhatUn1 qDlo = true then rhatc + dHi else rhatc).toNat < 2^33
+    rw [if_pos h_check]
+    rw [BitVec.toNat_add]
+    have h_no_wrap : rhatc.toNat + dHi.toNat < 2^64 := by omega
+    rw [Nat.mod_eq_of_lt h_no_wrap]
+    omega
+  · show (if BitVec.ult rhatUn1 qDlo = true then rhatc + dHi else rhatc).toNat < 2^33
+    rw [if_neg h_check]
+    omega
+
 /-- **_of_tight sub-case "exact"**: when `q1' = q_true_1` (Phase 1b exactly
     tight), the algorithm's un21 equals the mathematical remainder r1_math.
 
