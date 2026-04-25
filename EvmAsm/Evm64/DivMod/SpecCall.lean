@@ -1991,6 +1991,34 @@ noncomputable def algCallAddbackBeqCarry (a b : EvmWord) : Word :=
   let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
   addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
 
+/-- **Irreducible bundle: the call+addback BEQ algorithm's mulsub borrow c3.**
+
+    Parallel to `algCallAddbackBeqCarry`. Encapsulates the deep let-chain
+    needed to talk about the c3 = mulsub borrow at normalized limbs as a
+    single opaque Word value, sidestepping let-chain elaboration cost. -/
+@[irreducible]
+noncomputable def algCallAddbackBeqMsC3 (a b : EvmWord) : Word :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  ms.2.2.2.2
+
+/-- **Irreducible bundle: the call+addback BEQ algorithm's u4 (overflow limb).** -/
+@[irreducible]
+noncomputable def algCallAddbackBeqU4 (a b : EvmWord) : Word :=
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  (a.getLimbN 3) >>> antiShift
+
 /-- Unfolding lemma for `algCallAddbackBeqCarry`. -/
 theorem algCallAddbackBeqCarry_unfold {a b : EvmWord} :
     algCallAddbackBeqCarry a b =
@@ -2294,6 +2322,33 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3))
     ((clzResult (b.getLimbN 3)).1.toNat % 64) u4.toNat ms.2.2.2.2.toNat
     h_mulsub h_addback h_u4_le h_post1_lt h_amod_pow_lt' h_u4_lt_c3
+
+/-- **Wrapper: c3 = u4 + 1 in single-addback (irreducible-form).**
+
+    Wraps `c3_n_eq_u4_plus_one_of_single_addback` to take its hypothesis
+    in irreducible-bundle form (`algCallAddbackBeqCarry a b ≠ 0`), avoiding
+    the deep let-chain elaboration cost at the call site. The conclusion
+    is also stated in irreducible form for symmetry.
+
+    Internally unfolds the irreducible defs and applies the closed sub-stub.
+    Caller should provide hb3nz, hshift_nz, hborrow, hsem, and the
+    irreducible-form hcarry_nz. -/
+theorem algCallAddbackBeqMsC3_eq_u4_plus_one_of_single_addback
+    (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
+    (hsem : n4CallAddbackBeqSemanticHolds a b)
+    (hcarry_nz : algCallAddbackBeqCarry a b ≠ 0) :
+    (algCallAddbackBeqMsC3 a b).toNat = (algCallAddbackBeqU4 a b).toNat + 1 := by
+  -- Unfold the irreducible defs to get the let-chain forms.
+  show _ = _
+  rw [show (algCallAddbackBeqMsC3 a b).toNat = _ from by
+        unfold algCallAddbackBeqMsC3; rfl,
+      show (algCallAddbackBeqU4 a b).toNat = _ from by
+        unfold algCallAddbackBeqU4; rfl]
+  rw [algCallAddbackBeqCarry_unfold] at hcarry_nz
+  exact c3_n_eq_u4_plus_one_of_single_addback a b hb3nz hshift_nz hborrow hsem hcarry_nz
 
 /-- **Sub-stub: post1 = a%b * 2^s from c3 = u4 + 1 (pure Nat).**
 
