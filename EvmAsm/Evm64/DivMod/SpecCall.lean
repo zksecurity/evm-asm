@@ -2242,6 +2242,30 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     ((clzResult (b.getLimbN 3)).1.toNat % 64) u4.toNat ms.2.2.2.2.toNat
     h_mulsub h_addback h_u4_le h_post1_lt h_amod_pow_lt' h_u4_lt_c3
 
+/-- **Sub-stub: post1 = a%b * 2^s from c3 = u4 + 1 (pure Nat).**
+
+    Given the closed Nat lemmas + `c3_n_eq_u4_plus_one_of_single_addback`'s
+    output, this directly gives val256(post1_low4) = a%b * 2^s.
+
+    Composition of:
+    - `val256_post1_low4_eq_mod_times_pow_s_plus_c3_minus_one_minus_u4` (closed).
+    - `c3 = u4 + 1` (substituted in).
+
+    Result: post1_val + 0*2^256 = a%b * 2^s + 0, i.e., post1_val = a%b * 2^s. -/
+theorem post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one
+    (post1_val ms_val a_val b_val s u4 c3 : Nat)
+    (h_mulsub : c3 * 2^256 + (a_val * 2^s - u4 * 2^256) = ms_val + (a_val / b_val + 1) * (b_val * 2^s))
+    (h_addback : post1_val + 2^256 = ms_val + b_val * 2^s)
+    (h_u4_le : u4 * 2^256 ≤ a_val * 2^s)
+    (h_c3_eq : c3 = u4 + 1) :
+    post1_val = a_val % b_val * 2^s := by
+  have h_id := val256_post1_low4_eq_mod_times_pow_s_plus_c3_minus_one_minus_u4
+    post1_val ms_val a_val b_val s u4 c3 h_mulsub h_addback h_u4_le
+  -- h_id: post1_val + (u4 + 1) * 2^256 = a%b * 2^s + c3 * 2^256
+  -- h_c3_eq: c3 = u4 + 1
+  rw [h_c3_eq] at h_id
+  omega
+
 /-- **Call+addback BEQ n=4 MOD denorm adapter (SORRY).** Stack-level adapter
     folding the four denormalized remainder slots at `sp+32..sp+56` into
     `evmWordIs (sp+32) (EvmWord.mod a b)` for the call+addback BEQ path.
