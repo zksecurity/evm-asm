@@ -749,10 +749,28 @@ theorem algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63_rhat2c_lt_pow32
       ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) ≤
     (algorithmQ0Prime u4 u3 b3').toNat := by
-  -- Sub-case rhat2c < 2^32: Phase 2b's ult check is honest (no Word
-  -- truncation), so standard Knuth-B Phase 2 tightness reasoning closes
-  -- this sub-case. Stubbed pending the explicit composition with
-  -- existing helpers.
+  -- **Proof outline** (sub-case rhat2c < 2^32, no Word truncation):
+  --
+  -- 1. Phase 2 setup:
+  --    - q0 = un21/dHi. By `q0_le_pow32_plus_one`, q0 ≤ 2^32 + 1.
+  --    - hi2 = q0 >> 32. With un21 ≥ dHi*2^32 (≥ 2^63 ≥ dHi*2^32), q0 ≥ 2^32,
+  --      so hi2 ≠ 0. Phase 2a fires: q0c = q0 - 1, q0c ≤ 2^32.
+  --    - rhat2c = un21 mod dHi + dHi ∈ [dHi, 2*dHi). Hypothesis: rhat2c < 2^32.
+  -- 2. Phase 2b operands (no Word overflow):
+  --    - q0c * dLo < 2^64 by `q0c_mul_dLo_lt_pow64` (q0c ≤ 2^32, dLo < 2^32).
+  --    - (rhat2c << 32 | div_un0).toNat = rhat2c * 2^32 + div_un0 by
+  --      `EvmWord.halfword_combine` (both rhat2c < 2^32, div_un0 < 2^32).
+  -- 3. Honest Phase 2b ult check fires iff
+  --    `rhat2c * 2^32 + div_un0 < q0c * dLo` (Nat).
+  -- 4. Apply Knuth-B Phase 2 tightness: q0' ≥ q_true_0 from un-truncated
+  --    arithmetic. Specific argument: same as KB-LB8 (un21 < 2^63) but
+  --    with rhat2c < 2^32 substituted for un21 < 2^63 in the bounds.
+  --
+  -- TODO: formalize step 4. The remaining work is to either:
+  -- (a) Refactor KB-LB8's proof to a helper that takes rhat2c < 2^32 as
+  --     a sufficient condition (instead of un21 < 2^63), since both
+  --     ensure the same no-overflow property; OR
+  -- (b) Replicate the KB-LB8 proof structure with rhat2c < 2^32 directly.
   let _ := hdHi_ge
   let _ := hdHi_lt
   let _ := hdLo_lt
