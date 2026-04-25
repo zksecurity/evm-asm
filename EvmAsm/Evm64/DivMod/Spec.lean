@@ -44,15 +44,13 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Compose
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4Beq
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4
-import EvmAsm.Evm64.EvmWordArith.Div
-import EvmAsm.Evm64.EvmWordArith.DivLimbBridge
+-- `DivLimbBridge` reached transitively via `DivN4DoubleAddback →
+-- DivN4Overestimate → DivAccumulate → DivRemainderBound →
+-- DivAddbackLimb → DivMulSubLimb → DivLimbBridge`.
 import EvmAsm.Evm64.EvmWordArith.SkipBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
-import EvmAsm.Evm64.EvmWordArith.CLZLemmas
 import EvmAsm.Evm64.EvmWordArith.MaxTrialVacuity
 
 open EvmAsm.Rv64.Tactics

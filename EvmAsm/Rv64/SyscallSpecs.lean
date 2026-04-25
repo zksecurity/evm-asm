@@ -10,12 +10,9 @@
   Code is accessed via CodeReq.singleton side-condition (not instrAt in P/Q).
 -/
 
-import EvmAsm.Rv64.Basic
-import EvmAsm.Rv64.Instructions
-import EvmAsm.Rv64.SepLogic
-import EvmAsm.Rv64.Execution
-import EvmAsm.Rv64.CPSSpec
-import EvmAsm.Rv64.GenericSpecs
+-- `InstructionSpecs → GenericSpecs → Basic, Instructions, SepLogic,
+-- Execution, CPSSpec`. `ByteOps`/`HalfwordOps`/`WordOps` are independent
+-- leaves and remain as direct imports.
 import EvmAsm.Rv64.InstructionSpecs
 import EvmAsm.Rv64.ByteOps
 import EvmAsm.Rv64.HalfwordOps

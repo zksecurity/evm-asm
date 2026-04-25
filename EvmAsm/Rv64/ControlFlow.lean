@@ -10,12 +10,8 @@
   - Concrete examples verified by decide
 -/
 
-import EvmAsm.Rv64.Basic
-import EvmAsm.Rv64.Instructions
-import EvmAsm.Rv64.Program
-import EvmAsm.Rv64.SepLogic
-import EvmAsm.Rv64.Execution
-import EvmAsm.Rv64.CPSSpec
+-- `GenericSpecs` transitively imports `Basic`, `Instructions`, `Program`
+-- (via `Execution`), `SepLogic`, `Execution`, and `CPSSpec`.
 import EvmAsm.Rv64.GenericSpecs
 import EvmAsm.Rv64.Tactics.SpecDb
 

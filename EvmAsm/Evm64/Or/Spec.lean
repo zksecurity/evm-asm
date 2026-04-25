@@ -4,8 +4,8 @@
   Full 256-bit EVM OR spec.
 -/
 
+-- `Or.LimbSpec → Or.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Or.LimbSpec
-import EvmAsm.Evm64.SpAddr
 
 namespace EvmAsm.Evm64
 
