@@ -590,7 +590,19 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_wide_un21
       u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt (by omega)
 
 /-- **A2.S2**: Case "compensation" — when `u4 ≥ dHi*2^32 ∨ un21 ≥ dHi*2^32`.
-    Dispatches to `_narrow_u4` or `_wide_un21` sub-cases. -/
+    Dispatches to `_narrow_u4` or `_wide_un21` sub-cases.
+
+    **Status (2026-04-25)**: 3 sorries remain in the deep exact-case
+    sub-cases (`_narrow_u4_tight_un21`, `_narrow_u4_wide_un21`,
+    `_wide_un21_narrow`'s exact case). All 3 require GLOBAL Phase 1+2
+    compensation rather than per-phase tightness — the per-phase
+    approach genuinely fails under Word truncation when rhatc/rhat2c ≥
+    2^32 (see `memory/project_a2s2_per_phase_tightness_fails.md`).
+
+    The OVERSHOOT half of all 4 A2.S2 sub-cases is closed via the
+    `_of_q1_prime_overshoot` helper (OR-shift trick). The remaining hard
+    work is just the EXACT/UNDERSHOOT half — a substantially smaller
+    surface than the original A2.S2 sub-cases. -/
 theorem div128Quot_qHat_plus_one_times_b3_gt_u_compensation
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
