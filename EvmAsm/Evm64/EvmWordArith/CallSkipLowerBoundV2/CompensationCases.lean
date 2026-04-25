@@ -159,6 +159,40 @@ theorem two_step_div_identity (A a1 a0 V : Nat) (hV_pos : 0 < V) :
   rw [h_full, Nat.add_mul_div_right _ _ hV_pos, Nat.div_eq_of_lt h_r0_lt,
       Nat.zero_add]
 
+/-- **Wrapped Phase 1b lower bound** (parallel to
+    `algorithmQ1Prime_le_q_true_1_plus_two` for the upper direction).
+
+    `(algorithmQ1Prime u4 u3 b3').toNat + 2 ≥ u4.toNat / dHi.toNat`.
+    Wraps KB-2 (`div128Quot_phase1b_quotient_bound`) into the algorithmQ1Prime
+    bundle, exposing the Phase 1b Nat-level lower bound to downstream callers. -/
+theorem algorithmQ1Prime_ge_q1_dHi_minus_two
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63) :
+    (algorithmQ1Prime u4 u3 b3').toNat + 2 ≥
+      u4.toNat / (b3' >>> (32 : BitVec 6).toNat).toNat := by
+  set dHi := b3' >>> (32 : BitVec 6).toNat with hdHi_def
+  set dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat with hdLo_def
+  set div_un1 := u3 >>> (32 : BitVec 6).toNat with hdiv_un1_def
+  have h_dHi_lt : dHi.toNat < 2^32 := by
+    show (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dHi_ne : dHi ≠ 0 := by
+    intro heq
+    have h : (b3' >>> (32 : BitVec 6).toNat).toNat = 0 := by rw [← hdHi_def, heq]; rfl
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow] at h
+    have : b3'.toNat ≥ 2^63 := hb3'_ge
+    omega
+  rw [algorithmQ1Prime_unfold]
+  simp only []
+  let rhatUn1 : Word := (((if (rv64_divu u4 dHi) >>> (32 : BitVec 6).toNat = 0
+      then u4 - rv64_divu u4 dHi * dHi
+      else u4 - rv64_divu u4 dHi * dHi + dHi) <<< (32 : BitVec 6).toNat)
+      ||| div_un1)
+  exact (div128Quot_phase1b_quotient_bound u4 dHi h_dHi_ne h_dHi_lt
+    dLo rhatUn1).1
+
 /-- **q_true_1 < 2^32**: pure Nat helper. Under `u4 < b3'` and `a1 < 2^32`,
     `(u4 * 2^32 + a1) / b3' < 2^32`. Used by the wide-u4 no-undershoot
     sub-cases to bound q_true_1 against the algorithm's q1'. -/
@@ -477,19 +511,29 @@ theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_large
       (b3' >>> (32 : BitVec 6).toNat).toNat) :
     (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
       (algorithmQ1Prime u4 u3 b3').toNat := by
-  -- Proof sketch (TODO — needs let-chain beta-reduction to match KB-2's form):
-  -- 1. From hu4_ge_q1_pow32_plus_one: u4/dHi ≥ 2^32 + 1.
-  -- 2. From `q_true_1_lt_pow32`: q_true_1 < 2^32, hence q_true_1 ≤ 2^32 - 1.
-  -- 3. Apply KB-2 (`div128Quot_phase1b_quotient_bound`): q1' + 2 ≥ u4/dHi ≥ 2^32 + 1,
-  --    so q1' ≥ 2^32 - 1 ≥ q_true_1.
-  -- The blocker: KB-2's let-chain output doesn't syntactically match
-  -- algorithmQ1Prime_unfold's let-chain. Need a wrapped lemma that bridges
-  -- the two — parallel to how `algorithmQ1Prime_le_q_true_1_plus_two`
-  -- already wraps a similar Phase 1b upper bound.
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge_q1_pow32_plus_one
-  sorry
+  have h_dHi_pos : 0 < (b3' >>> (32 : BitVec 6).toNat).toNat := by
+    have h : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+      rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+    omega
+  -- u4/dHi ≥ 2^32 + 1 from u4 ≥ dHi*(2^32 + 1).
+  have h_u4_div : u4.toNat / (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^32 + 1 := by
+    apply Nat.le_div_iff_mul_le h_dHi_pos |>.mpr
+    have h_eq : (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        (b3' >>> (32 : BitVec 6).toNat).toNat =
+        (2^32 + 1) * (b3' >>> (32 : BitVec 6).toNat).toNat := by ring
+    omega
+  -- q_true_1 < 2^32.
+  have h_div_un1_lt : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_q_true_lt : (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat < 2^32 :=
+    q_true_1_lt_pow32 u4.toNat (u3 >>> (32 : BitVec 6).toNat).toNat b3'.toNat
+      hu4_lt_b3' h_div_un1_lt
+  -- Apply wrapped Phase 1b lower bound.
+  have h_q1' := algorithmQ1Prime_ge_q1_dHi_minus_two u4 u3 b3' hb3'_ge
+  omega
 
 /-- **Wide-u4 no-undershoot, sub-case B** (TODO — boundary regime).
 
