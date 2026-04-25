@@ -1982,7 +1982,6 @@ theorem addbackN4_carry_le_one (un0 un1 un2 un3 v0 v1 v2 v3 : Word) :
 
     Combined with hborrow's c3_n ≥ u4 + 1, this pins c3_n exactly. -/
 theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
-    (hbnz : b ≠ 0)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (hborrow : isAddbackBorrowN4CallEvm a b)
@@ -2192,36 +2191,56 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
                ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
     exact EvmWord.val256_eq_toNat b
-  -- Step 9 (TODO): h_mulsub composition. Have h_u_eq + h_b_eq (defeq rfl)
-  -- but omega doesn't unify val256(b_norm) (from h_norm_b) with val256(... <<< shift)
-  -- (from inline defeq) cleanly. Will need a more careful rewrite chain.
-  have h_u_eq : val256 u0 u1 u2 u3 =
-      val256 ((a.getLimbN 0) <<< shift)
-             (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-             (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift))
-             (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)) := rfl
-  have h_b_eq : val256 b0' b1' b2' b3' =
-      val256 ((b.getLimbN 0) <<< shift)
-             (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-             (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-             (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)) := rfl
-  let _ := h_u_eq
-  let _ := h_b_eq
-  let _ := h_qHat_eq
-  let _ := h_mulsub_eq
-  let _ := h_norm_u
-  let _ := h_carry_le
-  let _ := h_carry_eq_one
-  let _ := h_norm_b
-  let _ := h_addback
-  let _ := h_u4_lt_c3
-  let _ := h_post1_lt
-  let _ := h_amod_pow_lt
-  let _ := h_u4_le
-  let _ := h_addback_eq
-  let _ := hbnz; let _ := hb3nz; let _ := hshift_nz
-  let _ := hsem; let _ := hcarry_nz
-  sorry
+  -- Step 9: h_mulsub composition.
+  -- h_norm_b'  : val256(b0'..b3') = b.toNat * 2^s.
+  -- h_norm_u'  : val256(u0..u3) + u4*2^256 = a.toNat * 2^s.
+  have h_norm_b' : val256 b0' b1' b2' b3' = b.toNat *
+      2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+    rw [h_norm_b, hb_val]
+  have h_norm_u' : val256 u0 u1 u2 u3 + u4.toNat * 2^256 = a.toNat *
+      2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+    have h := h_norm_u
+    rw [ha_val] at h
+    exact h
+  -- ms_eq: ms.2.2.2.2 = (inline mulsubN4 ...).2.2.2.2 (defeq via set ms).
+  have h_ms_eq : ms.2.2.2.2 = (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2 := rfl
+  have h_ms_lo_eq : (val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 :)
+      = val256 (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).1
+               (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.1
+               (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.1
+               (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.1 := rfl
+  have h_mulsub : ms.2.2.2.2.toNat * 2^256 +
+      (val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) - u4.toNat * 2^256) =
+      val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
+        (val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+          val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 1) *
+          (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+            2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64)) := by
+    rw [ha_val, hb_val, h_ms_eq, h_ms_lo_eq]
+    have h := h_mulsub_eq
+    rw [h_qHat_eq, h_norm_b'] at h
+    have h_u_val : val256 u0 u1 u2 u3 =
+        a.toNat * 2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) - u4.toNat * 2^256 := by
+      have h2 := h_norm_u'
+      omega
+    rw [h_u_val] at h
+    omega
+  -- Align h_amod_pow_lt's `2^s` form (no `% 64`) with the Nat lemma's expected form.
+  have h_amod_pow_lt' :
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) < 2 ^ 256 := by
+    rw [h_s_eq]; exact h_amod_pow_lt
+  -- Final composition: apply the closed Nat lemma with all 6 preconditions.
+  show ms.2.2.2.2.toNat = u4.toNat + 1
+  exact c3_eq_u4_plus_one_from_mulsub_addback_bounds
+    (val256 post1.1 post1.2.1 post1.2.2.1 post1.2.2.2.1)
+    (val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1)
+    (val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3))
+    (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3))
+    ((clzResult (b.getLimbN 3)).1.toNat % 64) u4.toNat ms.2.2.2.2.toNat
+    h_mulsub h_addback h_u4_le h_post1_lt h_amod_pow_lt' h_u4_lt_c3
 
 /-- **Call+addback BEQ n=4 MOD denorm adapter (SORRY).** Stack-level adapter
     folding the four denormalized remainder slots at `sp+32..sp+56` into
