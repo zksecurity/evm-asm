@@ -1738,8 +1738,6 @@ theorem evm_div_n4_call_addback_beq_stack_spec (sp base : Word)
     single-addback branch, which is the missing piece for the addback-BEQ
     MOD adapter's single-addback closure. -/
 theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (hborrow : isAddbackBorrowN4CallEvm a b)
     (hsem : n4CallAddbackBeqSemanticHolds a b)
@@ -1857,16 +1855,15 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
     rw [h_anti_eq] at h_u4_lt_c3
     rw [show (clzResult (b.getLimbN 3)).1.toNat % 64 = (clzResult (b.getLimbN 3)).1.toNat
         from by omega] at h_u4_lt_c3
-    -- TODO: complete the syntactic alignment. After the rewrites above,
-    -- h_u4_lt_c3 has the inline form `mulsubN4 (div128Quot (a.getLimbN 3 >>>
-    -- (64 - clz)) ...)`, while h_c3_toNat_zero has the let-bound form
-    -- `mulsubN4 qHat ...` (where qHat unfolds to `div128Quot u4 u3 b3'`,
-    -- and u4, u3, b3' unfold to inline forms with `shift`/`antiShift`).
-    -- Need to fully unfold qHat, u4, u3, b3' (definitionally equal under
-    -- shift = clz, antiShift = 64 - clz). Three-step `simp only [hqHat_def,
-    -- show u4 = a3 >>> antiShift from rfl, ...]` plus rewriting antiShift
-    -- = 64 - clz aligns them. Closable as a small follow-up.
-    sorry
+    -- Unfold qHat/u4/u3/b3'/shift/antiShift in h_c3_toNat_zero to match h_u4_lt_c3's
+    -- fully-inlined form, then omega closes via c3 = 0 ∧ u4.toNat < c3.toNat.
+    have h_anti_unfold : antiShift = 64 - (clzResult (b.getLimbN 3)).1.toNat := h_anti_eq
+    rw [hqHat_def,
+        show u4 = a.getLimbN 3 >>> antiShift from rfl,
+        show u3 = a.getLimbN 3 <<< shift ||| a.getLimbN 2 >>> antiShift from rfl,
+        show b3' = b.getLimbN 3 <<< shift ||| b.getLimbN 2 >>> antiShift from rfl,
+        h_shift_eq, h_anti_unfold] at h_c3_toNat_zero
+    omega
   -- (qHat.toNat + 2^64 - 1) % 2^64 = qHat.toNat - 1 when qHat ≥ 1.
   have h_qHat_lt : qHat.toNat < 2^64 := qHat.isLt
   have : (qHat.toNat + (2^64 - 1)) % 2^64 = qHat.toNat - 1 := by
