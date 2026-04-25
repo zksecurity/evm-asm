@@ -444,6 +444,58 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     Nat.mul_le_mul_right _ h_div128_succ
   linarith [h_step1, h_qhat_plus_one]
 
+/-- **Wide-u4 no-undershoot, sub-case A** (TODO — but provably trivial).
+
+    Under `u4 ≥ dHi*2^32 + dHi` (i.e., q1.toNat = u4/dHi ≥ 2^32 + 1):
+    - q1c.toNat = q1.toNat - 1 ≥ 2^32 (Phase 1a's Word -1).
+    - q1' ≥ q1c - 1 ≥ 2^32 - 1 (Phase 1b corrects by at most 1).
+    - q_true_1 ≤ 2^32 - 1 (since u_top < b3' * 2^32).
+    - Hence q1' ≥ q_true_1. ✓
+
+    Closable via `algorithmQ1Prime_unfold` + tracking q1c, Phase 1b
+    structure. Stubbed for the structural decomposition. -/
+theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_large
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge_q1_pow32_plus_one : u4.toNat ≥
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      (b3' >>> (32 : BitVec 6).toNat).toNat) :
+    (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
+      (algorithmQ1Prime u4 u3 b3').toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge_q1_pow32_plus_one
+  sorry
+
+/-- **Wide-u4 no-undershoot, sub-case B** (TODO — boundary regime).
+
+    Under `u4 ∈ [dHi*2^32, dHi*2^32 + dHi)` (i.e., q1.toNat = 2^32 exactly):
+    - q1c.toNat = q1 - 1 = 2^32 - 1.
+    - rhat = u4 - q1*dHi = u4 - dHi*2^32 ∈ [0, dHi).
+    - rhatc = rhat + dHi ∈ [dHi, 2*dHi).
+    - Sub-case B.1 (q_true_1 ≤ 2^32 - 2): q1c > q_true_1, easy.
+    - Sub-case B.2 (q_true_1 = 2^32 - 1 boundary): need Phase 1b doesn't
+      fire to keep q1' = q1c = q_true_1. Hard.
+
+    The harder B.2 sub-case is where the Word arithmetic on Phase 1b's
+    ult check matters. Stubbed for now. -/
+theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_eq_pow32
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (hu4_lt_q1_pow32_plus_one : u4.toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      (b3' >>> (32 : BitVec 6).toNat).toNat) :
+    (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
+      (algorithmQ1Prime u4 u3 b3').toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge
+  let _ := hu4_lt_q1_pow32_plus_one
+  sorry
+
 /-- **A2.S2 wide-u4 no-undershoot claim** (TODO — KEY STRUCTURAL CLAIM).
 
     In wide-u4 (`u4 ≥ dHi*2^32`), Phase 1's q1' is never less than q_true_1.
@@ -479,10 +531,14 @@ theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
     (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
     (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
       (algorithmQ1Prime u4 u3 b3').toNat := by
-  let _ := hb3'_ge
-  let _ := hu4_lt_b3'
-  let _ := hu4_ge
-  sorry
+  by_cases h : u4.toNat ≥
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      (b3' >>> (32 : BitVec 6).toNat).toNat
+  · exact algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_large u4 u3 b3'
+      hb3'_ge hu4_lt_b3' h
+  · push Not at h
+    exact algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_eq_pow32 u4 u3 b3'
+      hb3'_ge hu4_lt_b3' hu4_ge h
 
 /-- **A2.S2 un21 = r1_math, wide-u4 + Phase 1 exact** (TODO).
 

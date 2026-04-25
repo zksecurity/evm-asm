@@ -25,8 +25,13 @@
     extension to the un21 ≥ 2^63 wide-un21 range (which neither KB-LB8
     nor KB-LB8' covers). Shared blocker for both narrow-u4 and wide-u4
     `_ge_pow63` callers. See `memory/project_un21_lt_vTop_plan.md`.
-  - `algorithmQ1Prime_ge_q_true_1_in_wide_u4` — KEY structural claim
-    that wide-u4 Phase 1 never undershoots q_true_1.
+  - `algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_large` (case A: u4 ≥
+    dHi*2^32 + dHi, q1 ≥ 2^32 + 1) — provably trivial, sorry pending
+    algorithm-unfold proof.
+  - `algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_eq_pow32` (case B:
+    u4 ∈ [dHi*2^32, dHi*2^32 + dHi), q1 = 2^32) — boundary case with
+    sub-cases B.1 (q_true_1 ≤ 2^32 - 2, easy) and B.2 (q_true_1 = 2^32 - 1,
+    hard).
   - `algorithmUn21_eq_r1_math_in_wide_u4_exact` — wide-u4 variant of
     the existing un21 = r1_math equality.
 
