@@ -1962,9 +1962,8 @@ theorem c3_eq_u4_plus_one_from_mulsub_addback_bounds
 theorem addbackN4_carry_le_one (un0 un1 un2 un3 v0 v1 v2 v3 : Word) :
     (addbackN4_carry un0 un1 un2 un3 v0 v1 v2 v3).toNat ≤ 1 := by
   unfold addbackN4_carry
-  -- Each ac1_i, ac2_i is `if ... then (1 : Word) else 0`, so OR-ing two such
-  -- yields 0 or 1.
-  sorry
+  simp only []
+  split_ifs <;> decide
 
 /-- **Sub-stub: c3_n = u4 + 1 in single-addback.**
 
