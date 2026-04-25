@@ -477,6 +477,15 @@ theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4_q1_large
       (b3' >>> (32 : BitVec 6).toNat).toNat) :
     (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
       (algorithmQ1Prime u4 u3 b3').toNat := by
+  -- Proof sketch (TODO — needs let-chain beta-reduction to match KB-2's form):
+  -- 1. From hu4_ge_q1_pow32_plus_one: u4/dHi ≥ 2^32 + 1.
+  -- 2. From `q_true_1_lt_pow32`: q_true_1 < 2^32, hence q_true_1 ≤ 2^32 - 1.
+  -- 3. Apply KB-2 (`div128Quot_phase1b_quotient_bound`): q1' + 2 ≥ u4/dHi ≥ 2^32 + 1,
+  --    so q1' ≥ 2^32 - 1 ≥ q_true_1.
+  -- The blocker: KB-2's let-chain output doesn't syntactically match
+  -- algorithmQ1Prime_unfold's let-chain. Need a wrapped lemma that bridges
+  -- the two — parallel to how `algorithmQ1Prime_le_q_true_1_plus_two`
+  -- already wraps a similar Phase 1b upper bound.
   let _ := hb3'_ge
   let _ := hu4_lt_b3'
   let _ := hu4_ge_q1_pow32_plus_one
