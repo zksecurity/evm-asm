@@ -108,6 +108,36 @@ theorem algorithmUn21_L3b_q_true_1_V_le_u
     (u / V) * V ≤ u := by
   exact Nat.div_mul_le_self u V
 
+/-- **_of_tight sub-case "exact" L4** (pure-Nat modular identity): the core
+    arithmetic claim used by L5. Given the standard preconditions
+    (u = u4*2^32 + div_un1, V = dHi*2^32 + dLo, q*dHi + rhat = u4, etc.),
+    the modular subtraction `(2^64 - q*dLo + (rhat % 2^32)*2^32 + div_un1) % 2^64`
+    equals `u % V`.
+
+    **Why this works** (without needing rhat < 2^32):
+    - Let r := u % V = u - q*V = (u4 - q*dHi)*2^32 + div_un1 - q*dLo = rhat*2^32 + div_un1 - q*dLo.
+    - When rhat ≥ 2^32: rhat % 2^32 = rhat - (rhat/2^32) * 2^32, so
+      `(rhat % 2^32) * 2^32 = rhat * 2^32 - (rhat/2^32) * 2^64`.
+      The `(rhat/2^32) * 2^64` term cancels modulo 2^64 with the `2^64`
+      offset, leaving `r mod 2^64 = r` (since r < V < 2^64).
+    - When rhat < 2^32: identity is direct.
+
+    Self-contained pure-Nat lemma. Stubbed for now; ~30 lines via direct
+    omega-friendly modular algebra. -/
+theorem algorithmUn21_L4_modular_identity
+    (u4 div_un1 dHi dLo q rhat : Nat)
+    (hdiv_un1_lt : div_un1 < 2^32)
+    (hdLo_lt : dLo < 2^32)
+    (hq_lt : q ≤ 2^32)
+    (hV_lt : dHi * 2^32 + dLo < 2^64)
+    (h_eucl : q * dHi + rhat = u4)
+    (h_q_dLo_no_wrap : q * dLo < 2^64)
+    (h_q_V_le : q * (dHi * 2^32 + dLo) ≤ u4 * 2^32 + div_un1)
+    (h_r_lt_V : (u4 * 2^32 + div_un1) - q * (dHi * 2^32 + dLo) < dHi * 2^32 + dLo) :
+    (2^64 - q * dLo + (rhat % 2^32) * 2^32 + div_un1) % 2^64 =
+      (u4 * 2^32 + div_un1) % (dHi * 2^32 + dLo) := by
+  sorry
+
 /-- **_of_tight sub-case "exact" L2.a**: Phase 1b Euclidean invariant at u4.
     Wraps `div128Quot_phase1b_post`. After Phase 1b, the corrected pair
     `(q1', rhat')` satisfies `q1'.toNat * dHi.toNat + rhat'.toNat = u4.toNat`. -/
