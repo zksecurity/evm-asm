@@ -1874,6 +1874,41 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
   -- hsem : qHat.toNat - 1 = a.toNat / b.toNat
   omega
 
+/-- **Pure-Nat algebraic identity: post1_low4 + (u4 + 1)*2^256 = a%b*2^s + c3*2^256.**
+
+    Combines the mulsub Euclidean, addback Euclidean, val256 normalization
+    identities, and qHat = a/b + 1 into a single Nat equation. Avoids Nat
+    subtraction by rearranging.
+
+    From this identity + bound `post1_low4 < 2^256` + `c3 < 2^256` + the
+    range of `a%b * 2^s < 2^256`, omega can derive c3 = u4 + 1 in single-
+    addback. (Note: the lemma exposes the algebra; the surrounding proof
+    must establish u4_lt_c3 from hborrow to pin c3 ≥ u4 + 1.) -/
+theorem val256_post1_low4_eq_mod_times_pow_s_plus_c3_minus_one_minus_u4
+    (post1_val ms_val a_val b_val s u4 c3 : Nat)
+    (h_mulsub : c3 * 2^256 + (a_val * 2^s - u4 * 2^256) = ms_val + (a_val / b_val + 1) * (b_val * 2^s))
+    (h_addback : post1_val + 2^256 = ms_val + b_val * 2^s)
+    (h_u4_le : u4 * 2^256 ≤ a_val * 2^s) :
+    post1_val + (u4 + 1) * 2^256 = a_val % b_val * 2^s + c3 * 2^256 := by
+  have h_dam_mul : a_val / b_val * b_val + a_val % b_val = a_val := by
+    rw [Nat.mul_comm]; exact Nat.div_add_mod a_val b_val
+  -- Replace `a_val / b_val * b_val * 2^s` with `a_val * 2^s - a_val % b_val * 2^s`
+  -- via h_dam_mul.
+  have h_div_mul_pow : a_val / b_val * b_val * 2^s + a_val % b_val * 2^s = a_val * 2^s := by
+    rw [← Nat.add_mul]; rw [h_dam_mul]
+  have h_expand : (a_val / b_val + 1) * (b_val * 2^s) =
+      a_val / b_val * b_val * 2^s + b_val * 2^s := by ring
+  -- h_mulsub_simp: c3 * 2^256 + a_val % b_val * 2^s = ms_val + b_val * 2^s + u4 * 2^256.
+  have h_mulsub_simp : c3 * 2^256 + a_val % b_val * 2^s =
+      ms_val + b_val * 2^s + u4 * 2^256 := by
+    -- Use h_mulsub + h_expand + h_div_mul_pow + h_u4_le.
+    have h1 : c3 * 2^256 + (a_val * 2^s - u4 * 2^256) =
+              ms_val + (a_val / b_val * b_val * 2^s + b_val * 2^s) := by
+      rw [← h_expand]; exact h_mulsub
+    omega
+  -- Combine with h_addback.
+  omega
+
 /-- **Sub-stub: c3_n = u4 + 1 in single-addback.**
 
     The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
