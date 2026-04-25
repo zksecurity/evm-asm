@@ -711,9 +711,6 @@ theorem algorithmUn21_eq_r1_math_of_tight
     (hb3'_ge : b3'.toNat ≥ 2^63)
     (hu4_lt_b3' : u4.toNat < b3'.toNat)
     (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_lt_dHi_pow32 :
-      (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
     (h_tight :
       (algorithmUn21 u4 u3 b3').toNat <
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat) :
@@ -776,16 +773,13 @@ theorem algorithmUn21_ge_r1_math
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
     (hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
-    (h_un21_lt_dHi_pow32 :
-      (algorithmUn21 u4 u3 b3').toNat <
-      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
     (algorithmUn21 u4 u3 b3').toNat ≥
       (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat := by
   by_contra h_lt
   push Not at h_lt
   exact algorithmUn21_eq_r1_math_of_tight u4 u3 b3' hb3'_ge hu4_lt_b3'
-    hu4_lt_dHi_pow32 h_un21_lt_dHi_pow32 h_lt
+    hu4_lt_dHi_pow32 h_lt
 
 /-- **Contrapositive of L5 exact case**: when the algorithm's un21 is at
     least as large as V (i.e., un21 ≥ b3'), Phase 1 must have false-alarmed

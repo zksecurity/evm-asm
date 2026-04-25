@@ -238,7 +238,6 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_normal
   -- Bridge: algorithm un21 ≥ r1_math.
   have h_un21_ge_rmath :=
     algorithmUn21_ge_r1_math u4 u3 b3' hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
-      h_un21_lt_dHi_pow32
   -- Monotonicity: lift Phase 2 tight from algorithm un21 to r1_math.
   have h_mono_num :
       (u4.toNat * 2 ^ 32 + (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat * 2 ^ 32 +
