@@ -662,37 +662,31 @@ theorem algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide_lt_pow6
   rw [h_un21_eq] at h_ph2
   exact h_ph2
 
-/-- **Shared blocker: Phase 2 tightness for un21 ≥ 2^63** (TODO).
+/-- **The single remaining sorry — Phase 2 tightness for un21 ≥ 2^63** (TODO).
 
-    The genuinely-hard regime un21 ∈ [max(dHi*2^32, 2^63), vTop) — neither
-    `_of_un21_lt_pow63` (KB-LB8) nor `_of_un21_lt_dHi_mul_pow32` (KB-LB8')
-    applies here.
+    Genuinely-hard regime: un21 ∈ [max(dHi*2^32, 2^63), vTop). Neither
+    KB-LB8' (`_of_un21_lt_dHi_mul_pow32`, requires un21 < dHi*2^32) nor
+    KB-LB8 (`_of_un21_lt_pow63`, requires un21 < 2^63) covers it.
 
-    **Why both existing variants miss this range**:
-    - KB-LB8' (`_of_un21_lt_dHi_mul_pow32`) requires un21 < dHi*2^32, but
-      our regime has un21 ≥ dHi*2^32 (wide-un21).
-    - KB-LB8 (`_of_un21_lt_pow63`) requires un21 < 2^63. With dHi ≥ 2^31,
-      we have dHi*2^32 ≥ 2^63, so un21 ≥ dHi*2^32 may equal or exceed 2^63
-      (typical when dHi > 2^31).
+    **Single caller**: `_narrow_wide_ge_pow63` (Phase 2 tightness in
+    narrow-u4 + un21 ∈ [dHi*2^32, vTop) ∩ [2^63, vTop)). The previously-
+    documented `_wide_wide_ge_pow63` co-caller was dropped along with
+    the wide-u4 Phase 2 tightness chain (vacuous via `hu4_lt_pow63`).
 
-    The remaining range un21 ∈ [max(dHi*2^32, 2^63), vTop) is where Phase
-    2b's ult check on `(rhat2c << 32 | div_un0) < q0c * dLo` may suffer
-    Word truncation when rhat2c ≥ 2^32 — analogous to Phase 1b's spurious
-    correction in narrow-u4 + rhatc ≥ 2^32 (the issue documented in
-    `project_a2s2_per_phase_tightness_fails.md`).
+    **Reachability**: Yes, this case is reachable. Under top-level
+    hypotheses (u4 < 2^63, narrow-u4 u4 < dHi*2^32, q1' = q_true_1):
+    un21 = r1_math = u_top mod b3' can range up to b3' - 1 ≈ 2^64 - 1.
+    No bound under our hypotheses forces un21 < 2^63.
 
-    **Path to closure** (per `project_un21_lt_vTop_plan.md`):
-    extend Knuth Theorem B (TAOCP §4.3.1) to handle the rhat2c ≥ 2^32
-    truncation regime via an analogous compensation argument. The
-    untruncated Phase 2 tightness holds; the work is showing the
-    truncated Word ult-check still produces a q0' that satisfies the
-    lower bound (or tracking the exact compensation shift if not).
+    **Mathematical content**: Phase 2b's ult check on
+    `(rhat2c << 32 | div_un0) < q0c * dLo` can suffer Word truncation
+    when rhat2c ≥ 2^32 (analogous to Phase 1b's narrow-u4 + rhatc ≥
+    2^32 issue documented in `project_a2s2_per_phase_tightness_fails.md`).
+    Closing requires extending Knuth Theorem B with the rhat2c ≥ 2^32
+    truncation handling — see `project_un21_lt_vTop_plan.md`.
 
-    Stated in terms of un21 directly (parallel to the existing Phase 2
-    tightness wrappers in QuotientBounds.lean). Used by both the
-    `_narrow_wide_ge_pow63` and `_wide_wide_ge_pow63` callers, which
-    differ only in how they derive un21 = r1_math (narrow-u4 helper vs
-    wide-u4 stub). -/
+    With this one sorry closed, PR #1289 (call-skip lower bound) is
+    fully proven. -/
 theorem algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63
     (u4 u3 b3' : Word)
     (hdHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
