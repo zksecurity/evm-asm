@@ -1874,6 +1874,40 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
   -- hsem : qHat.toNat - 1 = a.toNat / b.toNat
   omega
 
+/-- **Sub-stub: u4 overflow is bounded by remainder * 2^s.**
+
+    Under the call-trial precondition `u4 < b3'` (i.e. `isCallTrialN4`), the
+    overflow limb `u4 = a3 >>> antiShift` satisfies the inequality:
+
+    ```
+      val256(a) % val256(b) * 2^s ≥ u4 * 2^256
+    ```
+
+    Reasoning: in the call-trial regime, the val256(post-addback) value
+    output by the algorithm is val256(u_norm_low4) - q_out * val256(b_norm),
+    which equals (val256(a) % val256(b)) * 2^s - u4 * 2^256 algebraically.
+    Since val256 of any 4-limb value is non-negative, the inequality must
+    hold. The Word-level proof: `u4 < b3'` + `val256(b_norm) ≥ b3' * 2^192`
+    gives u4 * 2^256 < b3' * 2^256 ≤ val256(b_norm) * 2^64. The remaining
+    factor of 2^192 needs to come from the structure of the remainder. -/
+theorem u4_overflow_le_mod_times_pow_s (a b : EvmWord)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b) :
+    let s := (clzResult (b.getLimbN 3)).1.toNat
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) * 2^s ≥
+        u4.toNat * 2^256 := by
+  let _ := hbnz
+  let _ := hb3nz
+  let _ := hshift_nz
+  let _ := hbltu
+  sorry
+
 /-- **Sub-stub (single-addback): qHat ≤ val256(u_norm_low4)/val256(b_norm) + 1.**
     Under the single-addback condition (`carry ≠ 0`), the trial quotient
     `qHat = div128Quot u4 u3 b3'` is bounded by val256(u_norm_low4)/val256(b_norm)
