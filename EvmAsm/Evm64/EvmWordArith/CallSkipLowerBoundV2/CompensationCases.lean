@@ -422,26 +422,31 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot
     Nat.mul_le_mul_right _ h_div128_succ
   linarith [h_step1, h_qhat_plus_one]
 
-/-- **A2.S2 Phase 2 deficit compensation** (TODO — concrete math sub-step).
+/-- **A2.S2 Phase 2 deficit compensation** (TODO — but likely FALSE
+    in wide-u4 undershoot, see ARCHITECTURAL NOTE below).
 
-    Under no-overshoot at Phase 1 (`q1' ≤ q_true_1`), Phase 2's `q0'`
-    absorbs the Phase 1 deficit by being at least
-    `q_true_full - q1' * 2^32`.
+    Statement: under no-overshoot at Phase 1 (`q1' ≤ q_true_1`), Phase 2's
+    `q0'` is at least `q_true_full - q1' * 2^32`.
 
-    Algebraically: when `q1' ≤ q_true_1`, Phase 2's input numerator is
-    `un21 * 2^32 + a0` where `un21 = u_top - q1' * b3' (mod 2^64)`. In
-    the un-truncated math, this equals `(q_true_1 - q1') * b3' * 2^32 +
-    r1_math * 2^32 + a0`, dividing by `b3'` gives `(q_true_1 - q1') *
-    2^32 + q_true_0`, which equals `q_true_full - q1' * 2^32` by the
-    two-step division identity.
+    Algebraically: when `q1' ≤ q_true_1`, the un-truncated Phase 2 quotient
+    `(un21 * 2^32 + a0) / b3'` equals `(q_true_1 - q1') * 2^32 + q_true_0`
+    (= `q_true_full - q1' * 2^32` via the two-step division identity).
 
-    The TODO content is the algorithm-correctness step: show that the
-    Phase-2 trial-and-correct algorithm (post Phase 2a/2b corrections)
-    produces a `q0'` at least as large as the un-truncated Phase 2
-    quotient. This is the standard Knuth-B argument applied to Phase 2
-    — see `memory/project_a2s2_per_phase_tightness_fails.md` for why
-    per-phase tightness on Phase 2 alone also fails (Phase 2b's
-    rhat2c-truncation issue mirrors Phase 1b's). -/
+    **ARCHITECTURAL NOTE (2026-04-25)** — see
+    `memory/project_un21_invariant_wide_u4_false.md`:
+
+    In wide-u4 undershoot (q1' = q_true_1 - 1, only reachable when
+    q_true_1 = 2^32 - 1), the algorithm's Phase 2a clamp keeps q0' < 2^32.
+    But the un-truncated Phase 2 quotient is ~2^32 + q_true_0 ≥ 2^32.
+    So `q0' < 2^32 ≤ untruncated quotient = q_true_full - q1' * 2^32`,
+    meaning the deficit lemma AS STATED is FALSE in this regime.
+
+    **The current strategy (q0' < 2^32 + halfword decomp + deficit) cannot
+    close the wide-u4 undershoot sub-case.** The replacement plan needs to
+    either (a) prove wide-u4 undershoot is unreachable, or (b) use a
+    different decomposition that allows q0' to compensate via a different
+    mechanism (e.g., by recognizing the algorithm internally tracks a
+    "borrow" that converts the deficit between phases). -/
 theorem algorithmQ0Prime_compensates_phase1_deficit
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
