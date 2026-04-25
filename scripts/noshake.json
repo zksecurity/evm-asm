@@ -1,1 +1,4 @@
-{"ignoreImport": ["Init", "Lean"]}
+{"ignoreImport": ["Init", "Lean"],
+ "ignore":
+ {"EvmAsm.Rv64.ByteOps":
+  ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"]}}
