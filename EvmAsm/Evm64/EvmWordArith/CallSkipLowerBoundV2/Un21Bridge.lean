@@ -46,11 +46,10 @@ theorem algorithmUn21_L1a_cu_rhat_un1_toNat
     let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let qDlo := q1c * dLo
     let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
     let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
     ((rhat' <<< (32 : BitVec 6).toNat) ||| div_un1).toNat =
       (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat := by
-  intro dHi div_un1 q1 rhat hi1 q1c rhatc dLo qDlo rhatUn1 q1' rhat'
+  intro dHi div_un1 q1 rhat hi1 q1c rhatc dLo qDlo rhatUn1 rhat'
   have h_div_un1_lt : div_un1.toNat < 2^32 := by
     show (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32
     rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
