@@ -787,5 +787,66 @@ theorem algorithmUn21_ge_r1_math
   exact algorithmUn21_eq_r1_math_of_tight u4 u3 b3' hb3'_ge hu4_lt_b3'
     hu4_lt_dHi_pow32 h_un21_lt_dHi_pow32 h_lt
 
+/-- **Contrapositive of L5 exact case**: when the algorithm's un21 is at
+    least as large as V (i.e., un21 ≥ b3'), Phase 1 must have false-alarmed
+    (q1' = q_true_1 + 1).
+
+    Direct contrapositive of `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1`:
+    if q1' = q_true_1, then un21 = r1_math < V. So un21 ≥ V implies q1' ≠ q_true_1.
+    Combined with the upper bound q1' ≤ q_true_1 + 1, we get q1' = q_true_1 + 1. -/
+theorem algorithmQ1Prime_eq_q_true_1_plus_one_of_un21_ge_vTop
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_lt_dHi_pow32 : u4.toNat < (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32)
+    (h_un21_ge_vTop : (algorithmUn21 u4 u3 b3').toNat ≥ b3'.toNat) :
+    (algorithmQ1Prime u4 u3 b3').toNat =
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat + 1 := by
+  -- Get the upper bound q1' ≤ q_true + 1 from QuotientBounds.
+  have h_q1_le := algorithmQ1Prime_le_q_true_1_plus_one u4 u3 b3'
+    hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32
+  set q_true := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat with hq_true_def
+  -- Show q1' ≠ q_true via contradiction (using L5 exact case).
+  by_contra h_neq
+  -- Either q1' < q_true or q1' = q_true (since q1' ≤ q_true + 1).
+  have h_cases : (algorithmQ1Prime u4 u3 b3').toNat ≤ q_true := by
+    -- q1' ≤ q_true + 1 and q1' ≠ q_true + 1, so q1' ≤ q_true.
+    omega
+  -- We also need q1' ≥ q_true (Phase 1 tight).
+  have h_dHi_ge : (b3' >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+  have h_dHi_lt : (b3' >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : b3'.toNat < 2^64 := b3'.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dLo_lt :
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (b3' <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      (b3' <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_v_eq : b3'.toNat =
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_u4_lt_vTop : u4.toNat <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
+    h_v_eq ▸ hu4_lt_b3'
+  have h_q1_ge := algorithmQ1Prime_ge_q_true_1 u4 u3 b3'
+    h_dHi_ge h_dHi_lt h_dLo_lt hu4_lt_dHi_pow32 h_u4_lt_vTop
+  rw [← h_v_eq] at h_q1_ge
+  -- So q1' = q_true (since both ≤ and ≥).
+  have h_q1_eq : (algorithmQ1Prime u4 u3 b3').toNat = q_true := by omega
+  -- But L5 exact case says un21 = r1_math < V — contradiction with un21 ≥ V.
+  have h_un21_eq := algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1 u4 u3 b3'
+    hb3'_ge hu4_lt_b3' hu4_lt_dHi_pow32 h_q1_eq
+  have h_b3'_pos : 0 < b3'.toNat := by have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+  have h_r1_lt : (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) %
+      b3'.toNat < b3'.toNat := Nat.mod_lt _ h_b3'_pos
+  -- un21 ≥ V but un21 = r1_math < V — contradiction.
+  rw [h_un21_eq] at h_un21_ge_vTop
+  exact absurd h_un21_ge_vTop (Nat.not_le_of_gt h_r1_lt)
 
 end EvmAsm.Evm64
