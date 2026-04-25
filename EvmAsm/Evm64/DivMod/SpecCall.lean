@@ -1739,6 +1739,7 @@ theorem evm_div_n4_call_addback_beq_stack_spec (sp base : Word)
     MOD adapter's single-addback closure. -/
 theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
     (hbnz : b ≠ 0)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
     (hsem : n4CallAddbackBeqSemanticHolds a b)
     (hcarry_nz : let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
                  let antiShift :=
@@ -1791,10 +1792,50 @@ theorem qHat_eq_div_plus_one_of_single_addback (a b : EvmWord)
     have h_lhs_lt : ((qHat.toNat + (2^64 - 1)) % 2^64) < 2^64 := Nat.mod_lt _ (by decide)
     omega
   have hqHat_pos : qHat.toNat ≥ 1 := by
-    -- If qHat = 0, then (0 + (2^64-1)) % 2^64 = 2^64 - 1, but a/b < 2^64 and could
-    -- equal 2^64 - 1. This is the corner case — rule out separately.
-    -- (Closable in a future iteration; the call trial regime ensures qHat ≥ 1
-    -- when a/b < 2^64.)
+    -- From hborrow: c3 ≠ 0 (specifically u4 < c3 ≥ 1).
+    -- Contrapositive of `c3_un_zero_of_qHat_mul_le`: c3 ≠ 0 → qHat * b > a.
+    -- If qHat = 0, then 0 * b = 0 ≤ a, contradicting qHat * b > a.
+    by_contra hqHat_zero
+    push Not at hqHat_zero
+    -- hqHat_zero : qHat.toNat < 1, i.e., qHat.toNat = 0.
+    have hqHat_eq_zero : qHat.toNat = 0 := by omega
+    -- Then qHat * b = 0 ≤ a, so c3 = 0 by `c3_un_zero_of_qHat_mul_le`.
+    have h_mul_le : qHat.toNat *
+        val256 ((b.getLimbN 0) <<< shift)
+              (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> (64 - shift)))
+              (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> (64 - shift)))
+              (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> (64 - shift)))
+        ≤ val256 ((a.getLimbN 0) <<< shift)
+              (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> (64 - shift)))
+              (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> (64 - shift)))
+              (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> (64 - shift))) := by
+      rw [hqHat_eq_zero, Nat.zero_mul]; exact Nat.zero_le _
+    have h_c3_zero := c3_un_zero_of_qHat_mul_le h_mul_le
+    -- But hborrow gives u4 < c3, hence c3 ≥ 1 ≠ 0.
+    rw [isAddbackBorrowN4CallEvm_def] at hborrow
+    have h_u4_lt_c3 := EvmWord.u_top_lt_c3_of_addback_borrow_call
+        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+        hborrow
+    -- shift in `_call` form uses the un-modded clzResult; reconcile via rfl/match.
+    -- The c3 in h_c3_zero matches the c3 in h_u4_lt_c3 (same shift mod 64).
+    simp only [] at h_u4_lt_c3
+    -- Goal: False. From h_c3_zero (c3 = 0) and h_u4_lt_c3 (u4 < c3.toNat),
+    -- we have u4 < 0, contradiction.
+    have h_c3_toNat_zero : (mulsubN4 qHat
+        ((b.getLimbN 0) <<< shift)
+        (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> (64 - shift)))
+        (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> (64 - shift)))
+        (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> (64 - shift)))
+        ((a.getLimbN 0) <<< shift)
+        (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> (64 - shift)))
+        (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> (64 - shift)))
+        (((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> (64 - shift)))).2.2.2.2.toNat = 0 := by
+      rw [h_c3_zero]; rfl
+    -- The shifts and inner expressions need to align between h_u4_lt_c3 and h_c3_toNat_zero
+    -- — both use clzResult (b.getLimbN 3)).1.toNat for shift. The `_call` lemma uses
+    -- shift.toNat % 64, while our local shift is (clzResult ...).1.toNat % 64.
+    -- These are syntactically equal once we expand. Defer the alignment.
     sorry
   -- (qHat.toNat + 2^64 - 1) % 2^64 = qHat.toNat - 1 when qHat ≥ 1.
   have h_qHat_lt : qHat.toNat < 2^64 := qHat.isLt
