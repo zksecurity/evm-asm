@@ -404,21 +404,78 @@ theorem algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1
       (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat :=
     h_v_eq ▸ hu4_lt_b3'
-  -- L5 composition path:
-  -- 1. L1.c: algorithmUn21.toNat = (2^64 - cu_q1_dlo + cu_rhat_un1) % 2^64.
-  -- 2. L1.a: cu_rhat_un1.toNat = (rhat'.toNat % 2^32) * 2^32 + div_un1.
-  -- 3. L1.b: cu_q1_dlo.toNat = q1'.toNat * dLo (no-wrap).
-  -- 4. h_q1_prime_eq: q1'.toNat = q_true_1 := (u4*2^32 + div_un1) / b3'.
-  -- 5. L2.a: q1'.toNat * dHi + rhat'.toNat = u4.toNat.
-  -- 6. L2.b: rhat'.toNat < 2^33 (under narrow-u4).
-  -- 7. L4: combines 1-6 + Nat.div_add_mod into the modular identity.
-  -- BLOCKED: L4 application requires unifying h_l2a's q1' Word (let-bound
-  -- inside the algorithm's full chain) with q := (u4*2^32+div_un1)/b3' (Nat).
-  -- The substitution involves rewriting q1'.toNat → q in the let-chain, but
-  -- the let-bound q1' is wrapped in if-then-else over BitVec.ult that doesn't
-  -- naturally accept the rewrite. Need a small `algorithmUn21_L5_q_substitution`
-  -- helper that rewrites L2.a in terms of the wrapper-style q1' = algorithmQ1Prime.
-  sorry
+  -- Establish all sub-facts before rewrites to keep the chain intact.
+  have h_l1c := algorithmUn21_L1c_un21_toNat_case_simple u4 u3 b3'
+  have h_l1a := algorithmUn21_L1a_cu_rhat_un1_toNat u4 u3 b3'
+  have h_l1b := algorithmUn21_L1b_q1_prime_dLo_no_wrap u4 u3 b3' hb3'_ge hu4_lt_b3'
+  have h_l2a_w := algorithmUn21_L2a_wrapped u4 u3 b3' hb3'_ge
+  have h_l2b := algorithmUn21_L2b_rhat_prime_lt_pow33 u4 u3 b3' hb3'_ge hu4_lt_dHi_pow32
+  simp only [] at h_l1c h_l1a h_l1b h_l2a_w h_l2b
+  -- Substitute h_q1_prime_eq into L2.a-wrapped.
+  rw [h_q1_prime_eq] at h_l2a_w
+  -- h_l2a_w : q_true_1 * dHi.toNat + rhat'.toNat = u4.toNat
+  -- Apply L1.c, L1.a, L1.b to the goal.
+  rw [h_l1c, h_l1a, h_l1b]
+  -- Goal: (2^64 - q1'.toNat * dLo.toNat + (rhat'.toNat % 2^32)*2^32 + div_un1.toNat) % 2^64
+  --       = (u4.toNat * 2^32 + div_un1.toNat) % b3'.toNat
+  -- Use algorithmQ1Prime_unfold to transform q1' (let-bound) into algorithmQ1Prime.
+  have h_q1_unfold := (algorithmQ1Prime_unfold u4 u3 b3').symm
+  simp only [] at h_q1_unfold
+  rw [h_q1_unfold]
+  -- Now goal has algorithmQ1Prime in it. Substitute via h_q1_prime_eq.
+  rw [h_q1_prime_eq]
+  -- Set q := q_true_1 for L4.
+  set q := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat with hq_def
+  -- L4 hypotheses:
+  have h_div_un1_lt : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : u3.toNat < 2^64 := u3.isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_V_lt : (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^64 := by
+    rw [← h_v_eq]; exact b3'.isLt
+  have h_b3'_pos : 0 < b3'.toNat := by have : b3'.toNat ≥ 2^63 := hb3'_ge; omega
+  -- q*dLo < 2^64 (no-wrap).
+  have h_q_le : q ≤ 2^32 := by
+    rw [hq_def]
+    apply Nat.div_le_of_le_mul
+    have hb_b3'_ge : b3'.toNat ≥ 2^63 := hb3'_ge
+    have h_div_un1_v : (u3 >>> (32 : BitVec 6).toNat).toNat < 2^32 := h_div_un1_lt
+    have hu4 : u4.toNat < b3'.toNat := hu4_lt_b3'
+    nlinarith
+  have h_qdLo_no_wrap :
+      q * ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat < 2^64 := by
+    have h_dLo_le_pow : ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
+        ≤ 2^32 - 1 := by have := h_dLo_lt; omega
+    nlinarith
+  have h_q_V_le :
+      q * ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+            ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) ≤
+      u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_v_eq, hq_def]; exact Nat.div_mul_le_self _ _
+  have h_r_lt_V :
+      (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) -
+        q * ((b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+             ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) <
+      (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+        ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_v_eq]
+    have h_mod := Nat.mod_lt (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) h_b3'_pos
+    have h_div_mod : q * b3'.toNat + (u4.toNat * 2^32 +
+        (u3 >>> (32 : BitVec 6).toNat).toNat) % b3'.toNat =
+        u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat := by
+      rw [hq_def, Nat.mul_comm]; exact Nat.div_add_mod _ _
+    omega
+  -- Match the goal's RHS to L4's RHS via h_v_eq.
+  rw [h_v_eq]
+  -- Reassociate to match L4's exact LHS shape (left-assoc instead of right-assoc).
+  rw [show ∀ a b c d : Nat, (a + (b + c)) % d = (a + b + c) % d from
+      fun a b c d => by rw [Nat.add_assoc]]
+  -- Apply L4!
+  exact algorithmUn21_L4_modular_identity u4.toNat (u3 >>> (32 : BitVec 6).toNat).toNat
+    (b3' >>> (32 : BitVec 6).toNat).toNat
+    ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat q _
+    h_div_un1_lt h_dLo_lt h_l2b h_V_lt h_l2a_w h_qdLo_no_wrap h_q_V_le h_r_lt_V
 
 /-- **_of_tight sub-case "off-by-one"**: when `q1' = q_true_1 + 1` (Phase 1b
     false-alarms once), the algorithm's un21 = r1_math + (2^64 - V), which is
