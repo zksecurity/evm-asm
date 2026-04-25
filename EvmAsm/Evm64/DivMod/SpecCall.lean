@@ -2464,14 +2464,19 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
   · -- Single-addback branch (carry_word = 1).
-    -- Concrete closure plan (each step ~10-30 lines):
-    -- Step 1+2 (DONE): closed sub-stubs `qHat_eq_div_plus_one_of_single_addback`
-    --   and `c3_n_eq_u4_plus_one_of_single_addback` (both fully proved above).
-    --   Direct application here hits a 200k-heartbeat elaboration timeout from
-    --   the deep let-chain in hcarry's predicate. Workaround: inline the proof
-    --   body of c3_n_eq_u4_plus_one or restructure with @[irreducible] bundles.
-    -- Step 3 (TODO): substitute c3 = u4 + 1 into val256(post1_low4) algebra
-    --   → val256(post1_low4) = a%b * 2^s.
+    -- Concrete closure plan:
+    -- Step 1+2 (CLOSED upstream): `qHat_eq_div_plus_one_of_single_addback`
+    --   and `c3_n_eq_u4_plus_one_of_single_addback` (both fully proved).
+    --   ⚠ Direct application HERE hits a 200k-heartbeat elaboration timeout
+    --   because the parent's let-chain (`set s := clz.1.toNat`, no `% 64`)
+    --   doesn't unify with the sub-stubs' (`shift := clz.1.toNat % 64`).
+    --   Workarounds:
+    --     a) inline the c3_n proof body here (~50 lines duplication).
+    --     b) wrap the deep let-chain in `@[irreducible]` defs per
+    --        `feedback_bundle_pre_post_no_lets`.
+    --     c) reformulate the sub-stubs with `set s := clz.1.toNat` form.
+    -- Step 3 (CLOSED upstream): `post1_eq_mod_times_pow_s_of_c3_eq_u4_plus_one`
+    --   takes c3 = u4 + 1 + Euclideans → val256(post1_low4) = a%b * 2^s.
     -- Step 4 (TODO): `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
     sorry
 
