@@ -358,26 +358,17 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_wide_un21_narrow
 
 /-- **A2.S2.wide_un21_wide**: Phase 1 narrow-u4 AND un21 ≥ vTop (= b3'.toNat).
 
-    **Mathematical observation**: un21 ≥ b3' means the Word un21 wrapped around
-    AND the wrap-around result is at least V. This happens when the wrap residue
-    `2^64 - V + r1_math ≥ V`, i.e., `r1_math ≥ 2V - 2^64`. With V ≥ 2^63 and
-    r1_math < V, this is the regime r1_math ∈ [2V - 2^64, V).
+    **Math** (using the contrapositive bridge from Un21Bridge):
+    - un21 ≥ V → Phase 1 false-alarmed → q1' = q_true_1 + 1.
+    - div128Quot is OR-shift: div128Quot.toNat ≥ q1' * 2^32 (lower bound on OR).
+    - q1' = q_true_1 + 1, so div128Quot.toNat ≥ (q_true_1 + 1) * 2^32.
+    - By two_step_div_identity: q_true_full = q_true_1 * 2^32 + q_true_0, with
+      q_true_0 < 2^32. So q_true_full < (q_true_1 + 1) * 2^32 ≤ div128Quot.toNat.
+    - Hence div128Quot.toNat ≥ q_true_full + 1, and so
+      (div128Quot.toNat + 1) * b3' ≥ (q_true_full + 2) * b3' > u + b3' > u.
 
-    **Proof strategy**: Phase 1 false-alarmed (q1' = q_true_1 + 1, the off-by-one
-    case from Un21Bridge). Use:
-    - algorithmUn21_ge_r1_math (proven) to get un21 ≥ r1_math, then
-    - the Phase 2 fall-back: q0' has wide range, but the qHat = q1'*2^32 + q0'
-      still over-approximates q_true since q1' overshot by exactly 1.
-    - The (qHat + 1) * b3' > u inequality follows from the global compensation:
-      q_true ≤ qHat + 1 (since qHat = q1'*2^32 + q0' ≥ q_true). Hence
-      (qHat + 1) * b3' ≥ (q_true + 1) * b3' > u (by Nat.div_add_mod).
-
-    The key fact needed: q_true_full ≤ qHat. This is the core Knuth-B
-    statement, which doesn't need the tight per-phase bounds — it's a global
-    Phase 1+2 compensation lemma. May need a new sub-lemma
-    `qHat_ge_q_true_full_of_phase1_overshoot`.
-
-    ~150 lines. -/
+    Sub-lemma needed: `div128Quot_toNat_ge_q1_prime_mul_pow32` for the OR-shift
+    lower bound. Stubbed for now. -/
 theorem div128Quot_qHat_plus_one_times_b3_gt_u_wide_un21_wide
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
@@ -386,6 +377,13 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_wide_un21_wide
     (h_un21_ge_vTop : (algorithmUn21 u4 u3 b3').toNat ≥ b3'.toNat) :
     ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
       u4.toNat * 2^64 + u3.toNat := by
+  -- Phase 1 false-alarmed (from contrapositive bridge).
+  have h_q1_eq := algorithmQ1Prime_eq_q_true_1_plus_one_of_un21_ge_vTop u4 u3 b3'
+    hb3'_ge hu4_lt_b3' hu4_lt h_un21_ge_vTop
+  -- KEY MISSING SUB-LEMMA: div128Quot.toNat ≥ algorithmQ1Prime.toNat * 2^32.
+  -- This is the OR-shift lower bound: for x = (a << 32) ||| b with a < 2^32,
+  -- x.toNat ≥ a.toNat * 2^32 (regardless of b).
+  -- Combined with q1' = q_true_1 + 1, this gives a lower bound on div128Quot.
   sorry
 
 /-- **A2.S2.wide_un21**: compensation case when `u4 < dHi*2^32` but
