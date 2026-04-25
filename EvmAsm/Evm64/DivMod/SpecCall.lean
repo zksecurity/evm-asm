@@ -2441,13 +2441,14 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     sorry
   · -- Single-addback branch (carry_word = 1).
     -- Concrete closure plan (each step ~10-30 lines):
-    -- Step 1: qHat.toNat = a.toNat/b.toNat + 1 from
-    --   `qHat_eq_div_plus_one_of_single_addback` (closed sub-stub above).
-    --   The original predicates are saved as hsem_orig / hborrow_orig.
-    -- Step 2: c3_n = u4 + 1 from `c3_n_eq_u4_plus_one_of_single_addback`
-    --   (sorry stub above).
-    -- Step 3: substitute into val256(post1_low4) algebra → a%b*2^s.
-    -- Step 4: `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
+    -- Step 1+2 (DONE): closed sub-stubs `qHat_eq_div_plus_one_of_single_addback`
+    --   and `c3_n_eq_u4_plus_one_of_single_addback` (both fully proved above).
+    --   Direct application here hits a 200k-heartbeat elaboration timeout from
+    --   the deep let-chain in hcarry's predicate. Workaround: inline the proof
+    --   body of c3_n_eq_u4_plus_one or restructure with @[irreducible] bundles.
+    -- Step 3 (TODO): substitute c3 = u4 + 1 into val256(post1_low4) algebra
+    --   → val256(post1_low4) = a%b * 2^s.
+    -- Step 4 (TODO): `val256_denormalize` + `evmWordIs_sp32_limbs_eq` fold.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
