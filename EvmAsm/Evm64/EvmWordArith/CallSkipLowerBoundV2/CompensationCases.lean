@@ -10,62 +10,44 @@
 
   ## Contents
 
+  Down to ONE remaining sorry:
+  `algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63` (Phase 2 tightness for
+  un21 ∈ [max(dHi*2^32, 2^63), vTop) — see its docstring for math).
+  All wide-u4 sub-cases are vacuous via `hu4_lt_pow63 : u4 < 2^63`
+  threaded from the top-level theorem.
+
   - **A2.S1 helpers** (pure Nat algebra):
-      - `nat_succ_mul_gt_of_div_le`
-      - `halfword_combine_ge_of_tight`
-      - `two_step_div_identity`
-      - `qHat_plus_one_gt_u_via_tight_phases`
-  - **A2.S1 normal**: `_normal` (closed) — both un21 < dHi*2^32 and u4 < dHi*2^32.
-  - **A2.S2 q1' helpers** (closed via OR-shift / contrapositive):
+      `nat_succ_mul_gt_of_div_le`, `halfword_combine_ge_of_tight`,
+      `two_step_div_identity`, `qHat_plus_one_gt_u_via_tight_phases`,
+      `q_true_1_lt_pow32`.
+  - **A2.S1 normal**: `_normal` (closed) — un21 < dHi*2^32 ∧ u4 < dHi*2^32.
+  - **A2.S2 q1' helpers**:
       - `_of_q1_prime_overshoot` (closed) — q1' ≥ q_true_1 + 1 case.
-  - **A2.S2 q1' helpers** (q1' ≤ q_true_1 case, decomposed):
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_narrow`
-        (closed): narrow-u4 + narrow-un21 sub-case via existing helpers.
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_narrow_wide`
-        (closed via dispatch on un21 vs 2^63):
-          - `..._lt_pow63` (closed) — un21 < 2^63 case, via KB-LB8.
-          - `..._ge_pow63` (closed via the shared `_of_un21_ge_pow63` stub).
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_narrow`
-        (closed): wide-u4 + narrow-un21 sub-case via the wide-u4 un21 =
-        r1_math stub + existing Phase 2 tightness.
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_wide`
-        (closed via dispatch on un21 vs 2^63):
-          - `..._lt_pow63` (closed) — un21 < 2^63 case, via KB-LB8.
-          - `..._ge_pow63` (closed via the shared `_of_un21_ge_pow63` stub).
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1_wide_u4`
-        (closed via dispatch on un21 regime).
-      - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1` (closed
-        via dispatch on u4 regime + un21 regime).
-      - `algorithmQ0Prime_compensates_phase1_deficit` (closed via
-        composition) — Phase 2 deficit: q0' ≥ q_true_full - q1'*2^32.
-        Composes no-undershoot (existing for narrow-u4 + new stub for
-        wide-u4) with Phase 2 tightness via two-step division identity.
-      - `algorithmUn21_lt_vTop_of_q1_prime_not_overshoot` (closed via
-        case-split): the algorithm invariant un21 < vTop under no-overshoot.
-          - `..._hu4_lt` (closed): u4 < dHi*2^32 case, via the
-            contrapositive bridge `algorithmQ1Prime_eq_q_true_1_plus_one_of_un21_ge_vTop`.
-          - `..._hu4_ge` (closed via composition): u4 ≥ dHi*2^32 case.
-            Composes:
-            - `algorithmQ1Prime_ge_q_true_1_in_wide_u4` (sorry — KEY
-              structural claim that wide-u4 Phase 1 doesn't undershoot)
-            - `algorithmUn21_eq_r1_math_in_wide_u4_exact` (sorry — wide-u4
-              variant of the un21 = r1_math equality from `Un21Bridge.lean`)
-            - omega + `Nat.mod_lt`.
-      - `algorithmQ0Prime_lt_pow32_of_q1_prime_not_overshoot` (closed) —
-        q0' < 2^32 under no-overshoot, via the un21 invariant + existing
-        `div128Quot_q0_prime_lt_pow32` algorithm-correctness bound.
-      - `div128Quot_ge_q_true_full_of_q1_prime_not_overshoot` (closed) —
-        global compensation, composed from `_compensates_phase1_deficit`,
-        `_lt_pow32_of_q1_prime_not_overshoot`,
-        `div128Quot_toNat_eq_algorithmQ1_Q0`, and Nat algebra.
-      - `_of_q1_prime_not_overshoot` (closed) — 3-line composition:
-        the global lemma + `nat_succ_mul_gt_of_div_le`.
+      - `algorithmQ1Prime_ge_q1_dHi_minus_two` (closed) — wrapped Phase 1b
+        lower bound (KB-2 wrapped).
+      - `algorithmQ1Prime_ge_q_true_1_in_wide_u4` (closed VACUOUSLY via
+        hu4_lt_pow63).
+  - **Phase 2 tightness chain** (Phase 1 exact case):
+      - `_of_q1_prime_eq_q_true_1_narrow_narrow` (closed)
+      - `_of_q1_prime_eq_q_true_1_narrow_wide_lt_pow63` (closed via KB-LB8)
+      - `_of_q1_prime_eq_q_true_1_narrow_wide_ge_pow63` (closed via the
+        shared `_of_un21_ge_pow63` stub — THE LAST SORRY)
+      - `_of_q1_prime_eq_q_true_1_narrow_wide` (closed via dispatch)
+      - `_of_q1_prime_eq_q_true_1` umbrella (closed via 2x2 dispatch
+        with wide-u4 vacuous via hu4_lt_pow63)
+      - `algorithmQ0Prime_ge_q_true_0_of_un21_ge_pow63` (THE SORRY).
+  - **A2.S2 not-overshoot path**:
+      - `algorithmQ0Prime_compensates_phase1_deficit` (closed)
+      - `algorithmUn21_lt_vTop_of_q1_prime_not_overshoot` (closed)
+      - `algorithmQ0Prime_lt_pow32_of_q1_prime_not_overshoot` (closed)
+      - `div128Quot_ge_q_true_full_of_q1_prime_not_overshoot` (closed)
+      - `_of_q1_prime_not_overshoot` (closed)
   - **A2.S2 sub-cases** (each delegating to the q1' helpers above):
       - `_narrow_u4_tight_un21`, `_narrow_u4_wide_un21`, `_narrow_u4`
       - `_wide_un21_narrow`, `_wide_un21_wide`, `_wide_un21`
-  - **A2.S2 compensation**: `_compensation` (composes the two cases above).
-  - **A2 main**: `div128Quot_qHat_plus_one_times_b3_gt_u`.
-  - **A4 wrapper**: `div128Quot_ge_q_true_normalized`.
+  - **A2.S2 compensation**: `_compensation` (closed).
+  - **A2 main**: `div128Quot_qHat_plus_one_times_b3_gt_u` (closed).
+  - **A4 wrapper**: `div128Quot_ge_q_true_normalized` (closed).
 -/
 
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.Un21Bridge
