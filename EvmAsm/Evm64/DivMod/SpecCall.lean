@@ -2127,10 +2127,25 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
       apply BitVec.eq_of_toNat_eq
       rw [h_zero]; rfl
     omega
-  -- Step 5c (TODO): val256(b_norm) = val256(b) * 2^s via val256_normalize.
-  -- Step 5d (TODO): combine 5a + 5b + 5c → h_addback in the form expected by Nat lemma.
+  -- Step 5c: val256(b_norm) = val256(b) * 2^s via val256_normalize.
+  have h_norm_b : val256 b0' b1' b2' b3' =
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+    -- Unfold b0'..b3' and antiShift to bring the `(64 - s)` form into scope.
+    show val256 ((b.getLimbN 0) <<< shift)
+                (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
+                (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
+                (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)) = _
+    have h_anti_unfold : antiShift = 64 - (clzResult (b.getLimbN 3)).1.toNat := h_anti_eq
+    have h_shift_unfold : shift = (clzResult (b.getLimbN 3)).1.toNat := h_s_eq
+    rw [h_anti_unfold, h_shift_unfold, h_s_eq]
+    have h_clz_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by
+      have := h_clz_le_63; omega
+    exact EvmWord.val256_normalize h_clz_pos h_clz_lt_64
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
   let _ := h_carry_le
   let _ := h_carry_eq_one
+  let _ := h_norm_b
   let _ := h_u4_lt_c3
   let _ := h_post1_lt
   let _ := h_amod_pow_lt
