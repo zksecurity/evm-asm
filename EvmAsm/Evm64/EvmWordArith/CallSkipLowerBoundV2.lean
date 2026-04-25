@@ -17,19 +17,20 @@
   **Top-level theorem `div128Quot_call_skip_ge_val256_div_v2` proven**
   via wrapper composition (assuming the single remaining sorry closes).
 
-  **2 sorries remain** — both pure algorithm-correctness math sub-steps
-  in `CompensationCases.lean`. The high-level wrappers are all closed.
-  - `algorithmQ0Prime_compensates_phase1_deficit` — Phase 2's q0' is at
-    least q_true_full - q1' * 2^32 under no-overshoot at Phase 1.
-    Knuth-B algorithm correctness for Phase 2.
+  **3 sorries remain** — all precisely-stated algorithm-correctness
+  sub-claims in `CompensationCases.lean`. All higher-level wrappers
+  (deficit lemma, un21 invariants, q0' < 2^32, global compensation,
+  not-overshoot helper) are CLOSED via composition.
+
+  - `algorithmQ0Prime_ge_q_true_0_of_q1_prime_eq_q_true_1` — Phase 2
+    tightness under exact Phase 1 (q1' = q_true_1 → q0' ≥ q_true_0).
+    Wraps existing `algorithmQ0Prime_ge_q_true_0` with un21 bounds.
   - `algorithmQ1Prime_ge_q_true_1_in_wide_u4` — KEY structural claim
-    that wide-u4 Phase 1 never undershoots q_true_1. With this, the
-    wide-u4 un21 invariant CLOSES via no-overshoot + no-undershoot →
-    q1' = q_true_1 (exact).
+    that wide-u4 Phase 1 never undershoots q_true_1. With no-overshoot,
+    forces q1' = q_true_1 (exact).
   - `algorithmUn21_eq_r1_math_in_wide_u4_exact` — wide-u4 variant of
     the existing un21 = r1_math equality (currently only proven under
-    narrow-u4 `hu4_lt_dHi_pow32`). Used to derive un21 = r1_math < vTop
-    from q1' = q_true_1.
+    narrow-u4). Used to derive un21 = r1_math < vTop from q1' = q_true_1.
 
   Closure requires extending `KnuthTheoremB.lean` with a *global* qHat
   ≥ q_true_full lemma (handling the carry compensation between Phase 1
