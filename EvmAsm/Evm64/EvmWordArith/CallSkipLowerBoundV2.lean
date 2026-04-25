@@ -26,6 +26,11 @@
     vTop under no-overshoot in the wide-u4 sub-case (`u4 ≥ dHi*2^32`).
     The narrow-u4 case (`u4 < dHi*2^32`) is now closed via the existing
     contrapositive bridge.
+  - `algorithmQ1Prime_ge_q_true_1_in_wide_u4` — KEY structural claim
+    that wide-u4 Phase 1 never undershoots q_true_1. If this holds, the
+    above un21 invariant follows from no-overshoot + no-undershoot →
+    q1' = q_true_1 (exact). Resolves the wide-u4 undershoot blocker
+    documented in `memory/project_un21_invariant_wide_u4_false.md`.
 
   Closure requires extending `KnuthTheoremB.lean` with a *global* qHat
   ≥ q_true_full lemma (handling the carry compensation between Phase 1

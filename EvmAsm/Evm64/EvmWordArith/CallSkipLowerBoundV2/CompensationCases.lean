@@ -478,28 +478,58 @@ theorem algorithmUn21_lt_vTop_of_q1_prime_not_overshoot_hu4_lt
     hb3'_ge hu4_lt_b3' hu4_lt h_un21_ge
   omega
 
-/-- **A2.S2 un21 < vTop under no-overshoot, wide-u4 case** (TODO — likely
-    requires a different proof strategy).
+/-- **A2.S2 wide-u4 no-undershoot claim** (TODO — KEY STRUCTURAL CLAIM).
+
+    In wide-u4 (`u4 ≥ dHi*2^32`), Phase 1's q1' is never less than q_true_1.
+    I.e., the algorithm's Phase 1b spurious-fire (under Word truncation when
+    rhatc ≥ 2^32) does NOT cause undershoot in this specific regime.
+
+    Sketch:
+    - Wide-u4 has q1.toNat ≥ 2^32, so Phase 1a corrects: q1c.toNat = q1.toNat - 1.
+    - q_true_1 ≤ 2^32 - 1 (since u_top < b3' * 2^32).
+    - q1c.toNat ≥ 2^32 - 1 ≥ q_true_1.
+    - **Critical sub-claim**: when q1c = q_true_1 (boundary case where
+      undershoot would occur), Phase 1b's ult check does NOT fire, so
+      q1' = q1c = q_true_1 (no undershoot).
+
+    If this lemma holds, then in `_narrow_u4_*` flow (wide-u4 dispatch) +
+    no-overshoot hypothesis q1' ≤ q_true_1, we get q1' = q_true_1 (exact),
+    which means un21 = r1_math < vTop and the existing q0' < 2^32 strategy
+    closes via this exact case. Eliminates the wide-u4 undershoot blocker. -/
+theorem algorithmQ1Prime_ge_q_true_1_in_wide_u4
+    (u4 u3 b3' : Word)
+    (hb3'_ge : b3'.toNat ≥ 2^63)
+    (hu4_lt_b3' : u4.toNat < b3'.toNat)
+    (hu4_ge : u4.toNat ≥ (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
+    (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat ≤
+      (algorithmQ1Prime u4 u3 b3').toNat := by
+  let _ := hb3'_ge
+  let _ := hu4_lt_b3'
+  let _ := hu4_ge
+  sorry
+
+/-- **A2.S2 un21 < vTop under no-overshoot, wide-u4 case** (TODO — depends
+    on the wide-u4 no-undershoot claim above).
 
     Under `u4 ≥ dHi*2^32` (Phase 1a corrects), the algorithm's behavior
     is highly constrained:
-    - Phase 1a sets q1c = 2^32 - 1 (since hi1 ≠ 0).
-    - Phase 1b may correct to q1' ∈ {2^32 - 2, 2^32 - 1}.
+    - Phase 1a sets q1c.toNat = q1.toNat - 1 (with q1 ≥ 2^32).
+    - Phase 1b may correct to q1' = q1c or q1c - 1.
     - From `u4 < b3'` (hu4_lt_b3'), q_true_1 < 2^32; combined with
-      `u4 ≥ dHi*2^32`, q_true_1 is large (≥ ~2^32 - 2).
+      `u4 ≥ dHi*2^32`, q_true_1 is large.
     - Under `q1' ≤ q_true_1` (hypothesis), the *exact* case `q1' = q_true_1`
       gives un21 = r1_math < vTop. ✓
-    - The *undershoot* case `q1' = q_true_1 - 1` (specifically q1' = 2^32 - 2,
-      q_true_1 = 2^32 - 1) gives un21 = b3' + r1_math ≥ vTop. ✗
+    - The *undershoot* case `q1' = q_true_1 - 1` would give un21 ≥ vTop ✗,
+      but this is **conjectured unreachable** (see
+      `algorithmQ1Prime_ge_q_true_1_in_wide_u4` above).
 
-    **The un21 < vTop invariant is FALSE in the wide-u4 undershoot
-    sub-case**, which means our q0' < 2^32 + OR-shift halfword strategy
-    can't close the global compensation goal in that regime. The
-    undershoot sub-case will need a different decomposition for the
-    final closure (e.g., directly bounding div128Quot.toNat via the
-    `(_ ||| _).toNat ≥ _` Nat OR lower bound on q0' alone).
+    **Path forward**: combine `algorithmQ1Prime_ge_q_true_1_in_wide_u4`
+    (q1' ≥ q_true_1) with the hypothesis (q1' ≤ q_true_1) to derive
+    q1' = q_true_1 (exact). Then a wide-u4 variant of
+    `algorithmUn21_eq_r1_math_of_q1_prime_eq_q_true_1` (currently only
+    proven under hu4_lt_dHi_pow32) closes un21 = r1_math < vTop.
 
-    Stubbed pending the alternative-strategy redesign. -/
+    Stubbed pending both sub-pieces. -/
 theorem algorithmUn21_lt_vTop_of_q1_prime_not_overshoot_hu4_ge
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
