@@ -2143,9 +2143,23 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
       have := h_clz_le_63; omega
     exact EvmWord.val256_normalize h_clz_pos h_clz_lt_64
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
+  -- Step 5d: combine h_addback_eq + h_carry_eq_one + h_norm_b → h_addback.
+  have h_addback : val256 post1.1 post1.2.1 post1.2.2.1 post1.2.2.2.1 + 2^256 =
+      val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+          2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+    show val256 (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
+                (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
+                (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
+                (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.2.1 + 2^256 = _
+    rw [← h_norm_b]
+    have h := h_addback_eq
+    rw [h_carry_eq_one] at h
+    omega
   let _ := h_carry_le
   let _ := h_carry_eq_one
   let _ := h_norm_b
+  let _ := h_addback
   let _ := h_u4_lt_c3
   let _ := h_post1_lt
   let _ := h_amod_pow_lt
