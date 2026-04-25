@@ -433,21 +433,13 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_tight_un21
 
 /-- **A2.S2.narrow_u4_wide_un21**: hu4_ge regime AND un21 ≥ dHi*2^32.
 
-    **Proof structure** (the hardest sub-case):
-    - Phase 1a corrects (q1c = q1 - 1).
-    - Phase 2's narrow path doesn't directly apply; un21 ≥ dHi*2^32 means
-      q0 = un21/dHi ≥ 2^32, hi2 ≠ 0, Phase 2a corrects: q0c = q0 - 1.
-    - Phase 2b's ult check may further correct.
-    - The combined Phase 1a + 2a corrections compensate for any q' overshoot
-      in the qHat = q1' * 2^32 + q0' decomposition.
-    - Need a Phase 2 tight bound under un21 ≥ dHi*2^32 (currently the wrapper
-      assumes un21 < dHi*2^32). New wrapper needed:
-      `algorithmQ0Prime_ge_q_true_0_of_un21_ge`.
-    - Strategy: prove the "augmented" tight bound for the corrected q0' under
-      Phase 2a correction, then the same final composition via
-      qHat_plus_one_gt_u_via_tight_phases applies.
-
-    ~150 lines. -/
+    **Decomposition via q1' upper bound + case-split** (same as
+    `_narrow_u4_tight_un21`):
+    - q1' ≤ q_true_1 + 2 (from generalized weak upper bound).
+    - Sub-case q1' ≥ q_true_1 + 1 (overshoot): closed via
+      `_of_q1_prime_overshoot`.
+    - Sub-case q1' ≤ q_true_1 (exact/undershoot): genuinely hard,
+      requires Phase 2 tight under hu4_ge AND un21_ge regime. -/
 theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
     (u4 u3 b3' : Word)
     (hb3'_ge : b3'.toNat ≥ 2^63)
@@ -457,7 +449,14 @@ theorem div128Quot_qHat_plus_one_times_b3_gt_u_narrow_u4_wide_un21
       (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32) :
     ((div128Quot u4 u3 b3').toNat + 1) * b3'.toNat >
       u4.toNat * 2^64 + u3.toNat := by
-  sorry
+  set q_true_1 := (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) / b3'.toNat
+  by_cases h_overshoot : (algorithmQ1Prime u4 u3 b3').toNat ≥ q_true_1 + 1
+  · -- Overshoot: directly apply the helper.
+    exact div128Quot_qHat_plus_one_times_b3_gt_u_of_q1_prime_overshoot u4 u3 b3'
+      hb3'_ge hu4_lt_b3' h_overshoot
+  · -- q1' ≤ q_true_1. Genuinely hard regime; Phase 2 tight under hu4_ge and
+    -- un21_ge requires new wrappers. Not yet attempted.
+    sorry
 
 /-- **A2.S2.narrow_u4**: compensation case when `u4 ≥ dHi*2^32`.
     Dispatches to tight-un21 / wide-un21 sub-cases. -/
