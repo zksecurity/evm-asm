@@ -998,6 +998,45 @@ theorem div128Quot_kb6c_pure_nat
   have hvTop_pos : 0 < vTop := by omega
   exact Nat_le_div_add_two_of_mul_le _ _ _ hvTop_pos h_combined
 
+/-- **KB-6c-pure-nat-strict: tight version of pure-Nat KB-6c**.
+
+    Under the additional Phase 2 no-wrap hypothesis
+    `q0' * dLo ≤ rhat2' * 2^32 + div_un0`, the bound tightens by 2:
+
+    ```
+    q1' * 2^32 + q0' ≤ (uHi * 2^64 + uLo) / vTop
+    ```
+
+    (no `+2`). This matches the tighter `div128Quot_qHat_vTop_le`
+    bound from `Div128CallSkipClose.lean` (Task 1's
+    `qHat * vTop ≤ uHi*2^64 + uLo`).
+
+    Proof: KB-6c-aux1's identity
+    `(q1'*2^32 + q0')*vTop + rhat2'*2^32 + r1*2^96 + div_un0 =
+       uHi*2^64 + uLo + q0'*dLo`
+    plus Phase 2 no-wrap (`q0'*dLo ≤ rhat2'*2^32 + div_un0`) gives
+    `(q1'*2^32 + q0')*vTop ≤ uHi*2^64 + uLo`, then `Nat.le_div_iff_mul_le`
+    closes. -/
+theorem div128Quot_kb6c_pure_nat_strict
+    (q1' q0' rhat2' un21 uHi uLo vTop dHi dLo div_un1 div_un0 r1 : Nat)
+    (h_phase2b : q0' * dHi + rhat2' = un21)
+    (h_kb3m : un21 + r1 * 2^64 + q1' * vTop = uHi * 2^32 + div_un1)
+    (h_vTop : vTop = dHi * 2^32 + dLo)
+    (h_uLo : uLo = div_un1 * 2^32 + div_un0)
+    (h_phase2_no_wrap : q0' * dLo ≤ rhat2' * 2^32 + div_un0)
+    (hvTop_pos : 0 < vTop) :
+    q1' * 2^32 + q0' ≤ (uHi * 2^64 + uLo) / vTop := by
+  have h_id := div128Quot_kb6c_assembly_identity
+    q1' q0' rhat2' un21 uHi uLo vTop dHi dLo div_un1 div_un0 r1
+    h_phase2b h_kb3m h_vTop h_uLo
+  -- h_id: (q1'*2^32 + q0')*vTop + rhat2'*2^32 + r1*2^96 + div_un0
+  --       = uHi*2^64 + uLo + q0'*dLo.
+  -- Combined with q0'*dLo ≤ rhat2'*2^32 + div_un0:
+  -- (q1'*2^32 + q0')*vTop ≤ uHi*2^64 + uLo.
+  have h_mul_bound :
+      (q1' * 2^32 + q0') * vTop ≤ uHi * 2^64 + uLo := by omega
+  exact (Nat.le_div_iff_mul_le hvTop_pos).mpr h_mul_bound
+
 /-- **KB-6c: Quotient assembly upper bound (STUB).**
 
     The Nat-level composition of Phase 1b and Phase 2b quotient bounds:
