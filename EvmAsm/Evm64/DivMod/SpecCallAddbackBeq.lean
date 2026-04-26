@@ -1850,6 +1850,73 @@ theorem algCallAddbackBeqMsLowVal_plus_b_norm_lt_pow256_of_carry_zero
     (_hcarry_zero : algCallAddbackBeqCarry _a _b = 0) :
     True := trivial
 
+/-- **Variant attempt**: prove carry_zero Euclidean WITHOUT the `simp
+    [Nat.zero_mul, Nat.add_zero]` pre-pass. Maybe leaving `0 * 2^256`
+    in the equation lets omega's certificate match the carry_one
+    pattern (which has a `+ 1 * 2^256` term). -/
+theorem algCallAddbackBeq_addback_euclidean_carry_zero_v2
+    (a b : EvmWord)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcarry_zero : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqPost1Val a b + 0 * 2 ^ 256 =
+      algCallAddbackBeqMsLowVal a b +
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+          2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz; exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_clz_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 = 64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  have hb3_bound : (b.getLimbN 3).toNat <
+      2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat) :=
+    clzResult_fst_top_bound (b.getLimbN 3)
+  rw [algCallAddbackBeqPost1Val_unfold, algCallAddbackBeqMsLowVal_unfold]
+  simp only []
+  set shift := (clzResult (b.getLimbN 3)).1.toNat % 64 with hshift_def
+  set antiShift :=
+    (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64 with hanti_def
+  set b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  set b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  set b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  set b0' := (b.getLimbN 0) <<< shift
+  set u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  set u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  set u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  set u0 := (a.getLimbN 0) <<< shift
+  set u4 := (a.getLimbN 3) >>> antiShift
+  set qHat := div128Quot u4 u3 b3'
+  set ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  have h_addback_eq := addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+  simp only [] at h_addback_eq
+  rw [algCallAddbackBeqCarry_unfold] at hcarry_zero
+  simp only [] at hcarry_zero
+  have h_carry_eq_zero :
+      (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3').toNat = 0 := by
+    rw [hcarry_zero]; rfl
+  rw [h_carry_eq_zero] at h_addback_eq
+  -- DELIBERATELY skip `simp [Nat.zero_mul, Nat.add_zero]`. Goal LHS now has
+  -- `+ 0 * 2^256` to match the carry_one pattern's `+ 1 * 2^256`.
+  have h_norm_b : val256 b0' b1' b2' b3' =
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ shift := by
+    show val256 ((b.getLimbN 0) <<< shift)
+                (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
+                (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
+                (((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)) = _
+    rw [show shift = (clzResult (b.getLimbN 3)).1.toNat from h_s_eq,
+        show antiShift = 64 - (clzResult (b.getLimbN 3)).1.toNat from h_anti_eq]
+    exact EvmWord.val256_normalize h_clz_pos h_clz_lt_64
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
+  rw [h_norm_b] at h_addback_eq
+  omega
+
 /-- **Bound: `algCallAddbackBeqU4 < algCallAddbackBeqMsC3`** (CLOSED).
 
     Wraps `EvmWord.u_top_lt_c3_of_addback_borrow_call` in the irreducible-
