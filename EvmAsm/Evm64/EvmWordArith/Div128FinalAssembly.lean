@@ -854,6 +854,42 @@ def Div128PhaseNoWrapInv (uHi uLo vTop : Word) : Prop :=
   un21.toNat < dHi.toNat * 2^32 + dLo.toNat ∧
   q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat
 
+/-- **All-phases no-wrap invariant for `div128Quot`** — extends
+    `Div128PhaseNoWrapInv` with the Phase 2 no-wrap conjunct
+    `q0' * dLo ≤ rhat2' * 2^32 + div_un0`. Used by the strict
+    (`+0`) variant of KB-6d. -/
+def Div128AllPhasesNoWrapInv (uHi uLo vTop : Word) : Prop :=
+  let dHi := vTop >>> (32 : BitVec 6).toNat
+  let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un1 := uLo >>> (32 : BitVec 6).toNat
+  let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu uHi dHi
+  let rhat := uHi - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let cu_q1_dlo := q1' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+  let rhat2' := if rhat2cHi = 0 then
+                  (if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c)
+                else rhat2c
+  un21.toNat < dHi.toNat * 2^32 + dLo.toNat ∧
+  q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat ∧
+  q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat
+
 /-- **KB-6c-aux1: pure-Nat assembly identity for Phase 2b + KB-3m.**
 
     Pure Nat algebra. Composes Phase 2b post
@@ -1270,6 +1306,188 @@ theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
       hvTop_norm hcall h_inv
   simp only [] at h_assemble
   -- Step 5: combine.
+  rw [h_eq h_q0'_lt]
+  exact h_assemble
+
+/-- **Strict variant of KB-6c parent**: tight assembly bound under
+    the all-phases no-wrap invariant.
+
+    Mirrors `div128Quot_q1_prime_q0_prime_le_q_true_plus_two` but
+    drops the `+2` looseness by also assuming Phase 2 no-wrap.
+
+    ```
+    q1'.toNat * 2^32 + q0'.toNat ≤
+      (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat
+    ```
+
+    Composed via `div128Quot_kb6c_pure_nat_strict`. -/
+theorem div128Quot_q1_prime_q0_prime_le_q_true_strict
+    (uHi uLo vTop : Word)
+    (hvTop_norm : vTop.toNat ≥ 2^63)
+    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64)
+    (h_inv : Div128AllPhasesNoWrapInv uHi uLo vTop) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    q1'.toNat * 2^32 + q0'.toNat ≤
+      (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat := by
+  intro dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0'
+  have h_vtop := div128Quot_vTop_decomp vTop
+  simp only [] at h_vtop
+  have hdHi_ge : dHi.toNat ≥ 2^31 := by
+    show (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : vTop.toNat ≥ 2^63 := hvTop_norm
+    have : (2^63 : Nat) = 2^31 * 2^32 := by decide
+    omega
+  have hdHi_lt : dHi.toNat < 2^32 := by
+    show (vTop >>> (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h := vTop.isLt; omega
+  have hdLo_lt : dLo.toNat < 2^32 := by
+    show ((vTop <<< (32 : BitVec 6).toNat) >>>
+          (32 : BitVec 6).toNat).toNat < 2^32
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow,
+        BitVec.toNat_shiftLeft]
+    have h_mod : (vTop.toNat * 2^(32 : BitVec 6).toNat) % 2^64 < 2^64 :=
+      Nat.mod_lt _ (by norm_num)
+    omega
+  have h_uHi_lt_vTop_raw : uHi.toNat < vTop.toNat := by
+    by_contra h; push Not at h
+    have : vTop.toNat * 2^64 ≤ uHi.toNat * 2^64 := Nat.mul_le_mul_right _ h
+    have huLo := uLo.isLt
+    have : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64 := hcall
+    omega
+  have huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vtop]; exact h_uHi_lt_vTop_raw
+  -- Extract three conjuncts from the all-phases invariant.
+  simp only [Div128AllPhasesNoWrapInv] at h_inv
+  obtain ⟨h_un21_lt, h_no_wrap, h_phase2_no_wrap⟩ := h_inv
+  -- Discharge h_kb3m via KB-3m + Phase 1 no-wrap conjunct.
+  have h_kb3m_partial :=
+    div128Quot_un21_additive_identity uHi dHi dLo uLo vTop rhatUn1
+      hdHi_ge hdLo_lt huHi_lt_vTop rfl rfl
+  simp only [] at h_kb3m_partial
+  have h_kb3m : un21.toNat + (rhat'.toNat / 2^32) * 2^64 +
+      q1'.toNat * vTop.toNat = uHi.toNat * 2^32 + div_un1.toNat :=
+    h_kb3m_partial h_no_wrap
+  -- Discharge h_phase2b via Phase 2b post.
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_post_phase2a :=
+    div128Quot_first_round_post un21 dHi hdHi_ne hdHi_lt
+  simp only [] at h_post_phase2a
+  have h_rhat2c_bound :=
+    div128Quot_rhatc_lt_2dHi un21 dHi hdHi_ne hdHi_lt
+  simp only [] at h_rhat2c_bound
+  have h_phase2b_full :=
+    @div128Quot_phase2b_post div_un0 un21 dHi hdHi_lt q0c rhat2c dLo
+      h_post_phase2a h_rhat2c_bound
+  simp only [] at h_phase2b_full
+  set rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat with hrhat2cHi_def
+  set rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0 with hrhat2Un0_def
+  let rhat2'_used : Word :=
+    if rhat2cHi = 0 then
+      (if BitVec.ult rhat2Un0 (q0c * dLo) then rhat2c + dHi else rhat2c)
+    else rhat2c
+  have h_phase2b : q0'.toNat * dHi.toNat + rhat2'_used.toNat = un21.toNat :=
+    h_phase2b_full
+  -- uLo decomposition.
+  have h_uLo : uLo.toNat = div_un1.toNat * 2^32 + div_un0.toNat := by
+    show uLo.toNat = (uLo >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ushiftRight,
+        BitVec.toNat_shiftLeft, bv6_toNat_32]
+    simp only [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+    have h_lo : uLo.toNat * 2^32 % 2^64 / 2^32 = uLo.toNat % 2^32 := by
+      have := uLo.isLt; omega
+    rw [h_lo]
+    have := Nat.div_add_mod uLo.toNat (2^32)
+    omega
+  have hvTop_pos : 0 < vTop.toNat := by omega
+  exact div128Quot_kb6c_pure_nat_strict
+    q1'.toNat q0'.toNat rhat2'_used.toNat un21.toNat
+    uHi.toNat uLo.toNat vTop.toNat dHi.toNat dLo.toNat
+    div_un1.toNat div_un0.toNat (rhat'.toNat / 2^32)
+    h_phase2b h_kb3m h_vtop h_uLo h_phase2_no_wrap hvTop_pos
+
+/-- **Strict KB-6d**: `div128Quot.toNat ≤ q_true` (no `+2`) under the
+    all-phases no-wrap invariant.
+
+    Tight version of `div128Quot_le_q_true_plus_two`. Composes
+    KB-6a strict + the strict KB-6c parent. -/
+theorem div128Quot_le_q_true (uHi uLo vTop : Word)
+    (hvTop_norm : vTop.toNat ≥ 2^63)
+    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64)
+    (h_inv : Div128AllPhasesNoWrapInv uHi uLo vTop) :
+    (div128Quot uHi uLo vTop).toNat ≤
+      (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat := by
+  -- Derive intermediate preconditions (mirror KB-6d's preconditions block).
+  have h_vtop := div128Quot_vTop_decomp vTop
+  simp only [] at h_vtop
+  have hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h1 : vTop.toNat ≥ 2^63 := hvTop_norm
+    have h2 : (2^63 : Nat) = 2^31 * 2^32 := by decide
+    omega
+  have hdHi_lt : (vTop >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h := vTop.isLt; omega
+  have hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                  (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow,
+        BitVec.toNat_shiftLeft]
+    have h_mod : (vTop.toNat * 2^(32 : BitVec 6).toNat) % 2^64 < 2^64 :=
+      Nat.mod_lt _ (by norm_num)
+    omega
+  have h_uHi_lt_vTop_raw : uHi.toNat < vTop.toNat := by
+    by_contra h; push Not at h
+    have : vTop.toNat * 2^64 ≤ uHi.toNat * 2^64 := Nat.mul_le_mul_right _ h
+    have huLo := uLo.isLt
+    have : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64 := hcall
+    omega
+  have huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_vtop]; exact h_uHi_lt_vTop_raw
+  -- Extract un21 < vTop from the all-phases invariant for KB-6b.
+  have h_inv_unfolded := h_inv
+  simp only [Div128AllPhasesNoWrapInv] at h_inv_unfolded
+  have h_un21_lt := h_inv_unfolded.1
+  -- KB-6b: q0' < 2^32.
+  have h_q0'_lt :=
+    div128Quot_q0_prime_lt_pow32 _ _ _ uLo hdHi_ge hdHi_lt hdLo_lt h_un21_lt
+  simp only [] at h_q0'_lt
+  -- KB-6a strict: div128Quot.toNat = q1'.toNat * 2^32 + q0'.toNat.
+  have h_eq :=
+    div128Quot_toNat_eq_strict uHi uLo vTop
+      hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
+  simp only [] at h_eq
+  -- Strict KB-6c: q1'.toNat * 2^32 + q0'.toNat ≤ q_true.
+  have h_assemble :=
+    div128Quot_q1_prime_q0_prime_le_q_true_strict uHi uLo vTop
+      hvTop_norm hcall h_inv
+  simp only [] at h_assemble
   rw [h_eq h_q0'_lt]
   exact h_assemble
 
