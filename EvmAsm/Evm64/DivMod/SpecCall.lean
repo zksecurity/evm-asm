@@ -3533,26 +3533,32 @@ theorem qHat_ge_two_of_double_addback (a b : EvmWord)
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
     let u4 := (a.getLimbN 3) >>> antiShift
     (div128Quot u4 u3 b3').toNat ≥ 2 := by
-  -- Closer attempt this iteration: full proof structure compiles past the
-  -- elaborator (no errors), but **fails kernel deep-recursion** when reducing
-  -- `rfl` bridges through deeply-nested `mulsubN4` let-chains. Same family
-  -- of issue as the earlier B.5 combined Euclidean attempt before its `set`
-  -- + `rfl`-bridge fix.
+  -- **Two attempts blocked by kernel deep-recursion**:
   --
-  -- **Working proof outline** (algorithmic correctness, modulo kernel limit):
-  -- - by_contra: qHat.toNat < 2.
-  -- - Wrapper bridge: u4 < c3 via algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat.
-  -- - Case-split via `qHat.toNat = 0 ∨ qHat.toNat = 1` from h_lt + omega.
-  -- - qHat = 0: c3_un_zero_of_qHat_mul_le ⟹ c3 = 0, contradicts c3 ≥ 1.
-  -- - qHat = 1: mulsub Euclidean + first-addback Euclidean ⟹ val256(u_norm) +
-  --   c3*2^256 = val256(ab) < 2^256. With c3 ≥ 1: contradiction.
+  -- 1. **Direct proof** with `set ms := mulsubN4 ...` + `rfl`-bridges:
+  --    Elaborator passes; kernel rejects with deep recursion when reducing
+  --    `ms.2.2.2.2.toNat = (mulsubN4 ...).2.2.2.2.toNat := rfl`.
   --
-  -- **Next iteration** should restructure to avoid the kernel recursion:
-  --   - Replace `set ms := ...` + `rfl`-bridges with named `def` for the
-  --     algorithm's mulsub low4 + carry. (Bigger refactor.)
-  --   - Or precompute the contradiction at val256-of-mulsubN4 level
-  --     directly without going through `ms.2.2.2.2`.
-  --   - Or split into a sub-lemma that phrases the contradiction abstractly.
+  -- 2. **Abstract sub-lemma `qHat_ge_two_abstract`** (committed this iteration):
+  --    The pure-Nat algebra works in isolation. Wiring it up here, however,
+  --    requires passing the deep `addbackN4 (mulsubN4 ...).1 ... b0' b1' b2' b3'`
+  --    expression as the `ab` parameter, which **also triggers kernel
+  --    deep-recursion** (102 sec build, then fails) because the kernel tries
+  --    to fully reduce both sides of the unification at instantiation time.
+  --
+  -- **Next iteration paths**:
+  --   - **(a)** Add a named `noncomputable def` in `LoopDefs/Iter.lean` for
+  --     `(mulsubN4 ...).low4` and `(addbackN4 ...).low4` so the kernel sees
+  --     them as opaque. ~30 LOC for the def + 1 unfold lemma.
+  --   - **(b)** Prove an algorithm-specific sub-lemma in
+  --     `EvmWordArith/MultiLimb.lean` that takes the algorithm's let-chain
+  --     directly and outputs `qHat ≥ 2`, avoiding any cross-namespace
+  --     unification at the SpecCall level.
+  --   - **(c)** Use `Decidable` reflection for the qHat ∈ {0, 1} case-split,
+  --     avoiding the explicit val256 expressions.
+  --
+  -- The `qHat_ge_two_abstract` sub-lemma (lines ~3460+) is now in place
+  -- and ready to be wired up via path (a) or (b).
   sorry
 
 /-- **B.1 (#1338, NOT Knuth-B blocked):** qHat.toNat = a/b + 2
