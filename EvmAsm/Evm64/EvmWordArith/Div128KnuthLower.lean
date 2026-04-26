@@ -1408,4 +1408,100 @@ theorem phase1_no_wrap_lo_subcase_a_iff_q1_prime_le_q_true_1
       Nat.mul_le_mul_right _ h_rhat'_le
     omega
 
+/-- **U3 call-skip variant (CLOSED for Sub-case A)**: under the
+    additional hypothesis that q1' is bounded above by the abstract
+    first digit (which holds in the call-skip path where the outer
+    mulsub does not borrow on qHat), the no-wrap precondition closes
+    cleanly when rhat' < 2^32.
+
+    **Proof structure**:
+    - Combined with KB-LB7 (`q1' ≥ q_true_1`), `hq1_prime_le_q_true_1`
+      gives q1' = q_true_1 exactly (Knuth's "exact qHat" case).
+    - Sub-case A (rhat' < 2^32) closes via
+      `phase1_no_wrap_lo_subcase_a_iff_q1_prime_le_q_true_1`.
+    - Sub-case B (rhat' ≥ 2^32) is excluded by hypothesis (the call-skip
+      path has rhat' < 2^32 by Knuth's Phase 1 remainder invariant —
+      derivable from no-addback but not assumed here for simplicity).
+
+    **Caller obligation**: discharge `hq1_prime_le_q_true_1` from the
+    runtime no-addback condition (`¬ isAddbackBorrowN4CallEvm a b` plus
+    Knuth-B's outer-level `qHat ≤ q_true`). Discharge `hrhat'_lt` from
+    KB-LB6b plus the same no-addback condition (forces rhat' < 2^32).
+
+    Issue #1337 / #1338. -/
+theorem div128Quot_phase1_no_wrap_skip (uHi dHi dLo uLo : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (hq1_prime_le_q_true_1 :
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+      let q1' := if BitVec.ult rhatUn1 (q1c * dLo) then q1c + signExtend12 4095
+                 else q1c
+      q1'.toNat ≤ (uHi.toNat * 2^32 + div_un1.toNat) /
+                    (dHi.toNat * 2^32 + dLo.toNat))
+    (hrhat'_lt :
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+      let rhat' := if BitVec.ult rhatUn1 (q1c * dLo) then rhatc + dHi
+                   else rhatc
+      rhat'.toNat < 2^32) :
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat := by
+  intro div_un1 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
+  -- Phase 1b Euclidean: q1' * dHi + rhat' = uHi.
+  have h_eucl : q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat :=
+    div128Quot_phase1b_post uHi dHi q1c rhatc dLo rhatUn1 hdHi_lt
+      (div128Quot_first_round_post uHi dHi hdHi_ne hdHi_lt)
+      (div128Quot_rhatc_lt_2dHi uHi dHi hdHi_ne hdHi_lt)
+  -- vTop > 0.
+  have h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat := by
+    have h_dHi_pos : 0 < dHi.toNat := by omega
+    have h_pow : (0 : Nat) < 2^32 := by decide
+    have h1 : 0 < dHi.toNat * 2^32 := Nat.mul_pos h_dHi_pos h_pow
+    exact Nat.lt_of_lt_of_le h1 (Nat.le_add_right _ _)
+  -- Apply Sub-case A iff lemma (rhat' < 2^32).
+  exact (phase1_no_wrap_lo_subcase_a_iff_q1_prime_le_q_true_1
+    q1'.toNat dHi.toNat dLo.toNat rhat'.toNat uHi.toNat div_un1.toNat
+    h_eucl hrhat'_lt h_vTop_pos).mpr hq1_prime_le_q_true_1
+
+/-- **U3 call-addback variant (STUB)**: looser bound `un21 < 2 * vTop`
+    (or equivalent) for the call-addback path where the outer mulsub
+    DOES borrow.
+
+    The exact form of the "looser bound" depends on what downstream
+    consumers actually need. The plan in `project_un21_lt_vTop_plan.md`
+    pivots from `un21 < vTop` to `un21 < 2 * vTop` once the strong
+    invariant is shown unprovable (per `project_u3_unprovable_counterexample.md`).
+
+    Pending: figure out the exact statement that's both (a) provable
+    under just `huHi_lt_pow63` (no extra hypotheses), and (b) sufficient
+    for the call-addback BEQ stack spec's algorithm-correctness chain. -/
+theorem div128Quot_phase1_no_wrap_addback (_uHi _dHi _dLo _uLo : Word)
+    (_hdHi_ne : _dHi ≠ 0)
+    (_hdHi_ge : _dHi.toNat ≥ 2^31)
+    (_hdHi_lt : _dHi.toNat < 2^32)
+    (_hdLo_lt : _dLo.toNat < 2^32)
+    (_huHi_lt_pow63 : _uHi.toNat < 2^63) :
+    True := by trivial
+
 end EvmAsm.Evm64
