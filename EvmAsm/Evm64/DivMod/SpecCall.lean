@@ -3366,10 +3366,10 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     simp only [hms_def, hqHat_def, huTop_def, hb0_def, hb1_def, hb2_def, hb3_def,
                hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
     rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
-    -- Final step: rw with h_denorm + evmWordIs_sp32 — partial-progress closure
-    -- approach. The forward h_denorm rw + evmWordIs_sp32_unfold pattern leaves
-    -- residual sub-goals due to subtle form differences between the parent's
-    -- shift-positions and h_denorm's. Continue in next iteration.
+    -- Final fold remaining: h_denorm + evmWordIs_sp32_limbs_eq.symm produces
+    -- a Type mismatch that suggests subtle structural differences between
+    -- the witnesses and the goal's expected form (e.g., projection indices,
+    -- spacing of mulsubN4 ms.{1, 2.1, 2.2.1, 2.2.2.1}). Continue next iteration.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
