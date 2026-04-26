@@ -4034,6 +4034,84 @@ theorem mod_n4_call_addback_beq_single_addback_post1_limbs_close
     (X4 := algCallAddbackBeqPost1Limb3 a b)
     h_s_pos h_s_lt_64 hb3nz h_wrapper
 
+/-- **B.5 STUB (Knuth-B blocked, #1337):** val256 of double-addback's
+    second-addback equals `val256(a) % val256(b) * 2^s`.
+
+    Mirrors `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback`
+    for the **double-addback** branch (carry = 0). Where the single-
+    addback derivation closes via `c3 = u4 + 1` (deduced from
+    `qHat = a/b + 1`), the double-addback derivation requires the
+    Knuth bound `qHat ≤ a/b + 2` (#1337) plus a parallel `c3 = u4 + 1`
+    derivation (B.2 in #1338's plan).
+
+    Issue #1338 Phase B.5. Pending Knuth Theorem B closure (#1337).
+    Once #1337's `div128Quot_le_q_true_plus_two` lands, B.1/B.2/B.3
+    can be filled in and this stub becomes a `post1_val_eq_amod_pow_s_pure_nat`
+    composition like single-addback's wrapper. -/
+theorem algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback
+    (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b)
+    (_hsem : n4CallAddbackBeqSemanticHolds a b)
+    (_hcarry_zero : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqAbPrimeVal a b =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) := by
+  sorry
+
+/-- **B.7: per-limb mod equations for double-addback** (CLOSED modulo B.5).
+
+    Mirror of `mod_n4_call_addback_beq_single_addback_post1_limbs_close`
+    for the double-addback branch (carry = 0). Composes:
+      * `algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback` (B.5, sorry)
+      * `algCallAddbackBeqAbPrimeVal_eq_val256_limbs` (B.4, closed)
+      * `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` (existing)
+
+    The proof body is fully wired; closure depends only on B.5. -/
+theorem mod_n4_call_addback_beq_double_addback_abPrime_limbs_close
+    (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
+    (hsem : n4CallAddbackBeqSemanticHolds a b)
+    (hcarry_zero : algCallAddbackBeqCarry a b = 0) :
+    let s := (clzResult (b.getLimbN 3)).1.toNat % 64
+    (EvmWord.mod a b).getLimbN 0 =
+      ((algCallAddbackBeqAbPrimeLimb0 a b) >>> s) |||
+        ((algCallAddbackBeqAbPrimeLimb1 a b) <<< (64 - s)) ∧
+    (EvmWord.mod a b).getLimbN 1 =
+      ((algCallAddbackBeqAbPrimeLimb1 a b) >>> s) |||
+        ((algCallAddbackBeqAbPrimeLimb2 a b) <<< (64 - s)) ∧
+    (EvmWord.mod a b).getLimbN 2 =
+      ((algCallAddbackBeqAbPrimeLimb2 a b) >>> s) |||
+        ((algCallAddbackBeqAbPrimeLimb3 a b) <<< (64 - s)) ∧
+    (EvmWord.mod a b).getLimbN 3 =
+      (algCallAddbackBeqAbPrimeLimb3 a b) >>> s := by
+  intro s
+  have h_wrapper := algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback
+    a b hb3nz hshift_nz hcarry2_nz hborrow hsem hcarry_zero
+  rw [algCallAddbackBeqAbPrimeVal_eq_val256_limbs] at h_wrapper
+  have h_clz_pos : 0 < (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_s_pos : 0 < s := by show 0 < _; omega
+  have h_s_lt_64 : s < 64 := by show _ < 64; omega
+  exact denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
+    (a := a) (b := b)
+    (X1 := algCallAddbackBeqAbPrimeLimb0 a b)
+    (X2 := algCallAddbackBeqAbPrimeLimb1 a b)
+    (X3 := algCallAddbackBeqAbPrimeLimb2 a b)
+    (X4 := algCallAddbackBeqAbPrimeLimb3 a b)
+    h_s_pos h_s_lt_64 hb3nz h_wrapper
+
 /-- **Call+addback BEQ n=4 MOD denorm adapter** (single-addback CLOSED, double-addback SORRY).
 
     Stack-level adapter folding the 4 denormalized remainder slots at
@@ -4055,7 +4133,7 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     (sp : Word) (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
     (hborrow : isAddbackBorrowN4CallEvm a b)
     (hsem : n4CallAddbackBeqSemanticHolds a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
@@ -4070,8 +4148,21 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     evmWordIs (sp + 32) (EvmWord.mod a b) := by
   intro shift un0Out un1Out un2Out un3Out
   by_cases hcarry : algCallAddbackBeqCarry a b = 0
-  · -- Double-addback branch (carry = 0). Pending Knuth bound for c3 = 1.
-    sorry
+  · -- Double-addback branch (carry = 0). Wired via B.5 (#1338, blocked on
+    -- Knuth-B #1337) → B.7 → parent. Mirror of single-addback's structure.
+    rw [show un0Out = algCallAddbackBeqAbPrimeLimb0 a b from
+          algCallAddbackBeqUn0Out_eq_abPrimeLimb0_of_double_addback a b hcarry,
+        show un1Out = algCallAddbackBeqAbPrimeLimb1 a b from
+          algCallAddbackBeqUn1Out_eq_abPrimeLimb1_of_double_addback a b hcarry,
+        show un2Out = algCallAddbackBeqAbPrimeLimb2 a b from
+          algCallAddbackBeqUn2Out_eq_abPrimeLimb2_of_double_addback a b hcarry,
+        show un3Out = algCallAddbackBeqAbPrimeLimb3 a b from
+          algCallAddbackBeqUn3Out_eq_abPrimeLimb3_of_double_addback a b hcarry]
+    have h_limbs := mod_n4_call_addback_beq_double_addback_abPrime_limbs_close
+      a b hb3nz hshift_nz hcarry2_nz hborrow hsem hcarry
+    simp only [] at h_limbs
+    exact (evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b) _ _ _ _
+      h_limbs.1 h_limbs.2.1 h_limbs.2.2.1 h_limbs.2.2.2).symm
   · -- Single-addback branch: fold Un{i}Out → Post1Limb{i} via bridges.
     rw [show un0Out = algCallAddbackBeqPost1Limb0 a b from
           algCallAddbackBeqUn0Out_eq_post1Limb0_of_single_addback a b hcarry,
