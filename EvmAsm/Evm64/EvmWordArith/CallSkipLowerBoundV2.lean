@@ -269,4 +269,44 @@ theorem div128Quot_call_skip_ge_val256_div_v2
   have h_core := div128Quot_ge_q_true_normalized u4 u3 b3' h_b3'_ge h_u4_lt_b3' h_u4_lt_pow63
   exact Nat.le_trans h_bridge h_core
 
+/-- **Tight equality `qHat = val256(a)/val256(b)` under skip-borrow** (CLOSED).
+
+    Composes the upper bound (`div128Quot_call_skip_le_val256_div`
+    from `Div128CallSkipClose`, needs `isSkipBorrowN4Call`) with the
+    lower bound (`div128Quot_call_skip_ge_val256_div_v2`, this file,
+    needs only the call-trial preconditions). Yields the EXACT
+    equality:
+
+    ```
+    (div128Quot u4 un3 b3').toNat = val256(a)/val256(b)
+    ```
+
+    This is the "Knuth-D ideal" — the bare-trial `div128Quot`
+    matches the true 256-bit quotient exactly when the outer mulsub
+    doesn't borrow. All Knuth-B/C overshoot cases are excluded by
+    skip-borrow.
+
+    Building block for the discharge bridge: from this tight equality
+    we derive q1' = q_true_1 (Phase 1 tight) and q0' < 2^32
+    (Phase 2 sane), which together imply `Div128AllPhasesNoWrapInv`. -/
+theorem div128Quot_call_skip_eq_val256_div
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let u4 := a3 >>> antiShift
+    let un3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    (div128Quot u4 un3 b3').toNat = val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 := by
+  intro shift antiShift u4 un3 b3'
+  have h_le := div128Quot_call_skip_le_val256_div a0 a1 a2 a3 b0 b1 b2 b3
+    hb3nz hshift_nz hborrow
+  have h_ge := div128Quot_call_skip_ge_val256_div_v2 a0 a1 a2 a3 b0 b1 b2 b3
+    hb3nz hshift_nz hcall
+  simp only [] at h_le h_ge
+  exact Nat.le_antisymm h_le h_ge
+
 end EvmAsm.Evm64
