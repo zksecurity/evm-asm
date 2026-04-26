@@ -3557,6 +3557,41 @@ theorem algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     hborrow
 
+/-- **B.5 building block STUB: combined two-addback Euclidean** (#1338).
+
+    Mirror of `algCallAddbackBeq_addback_euclidean_carry_one` for the
+    **double-addback** path. Combines:
+    - First addback (carry₁ = 0): val256(ab) = val256(ms) + val256(b_norm).
+    - Second addback (carry₂ = 1, from `isAddbackCarry2NzN4CallEvm`):
+      val256(ab') + 2^256 = val256(ab) + val256(b_norm).
+
+    Combined: `AbPrimeVal + 2^256 = MsLowVal + 2 · (val256(b_limbs) · 2^s)`.
+
+    **Proof sketch** (~120 LOC, mirrors single-addback's structure):
+    - Setup clz bounds.
+    - Unfold AbPrimeVal and MsLowVal.
+    - Apply `addbackN4_val256_eq` to first addback; use `addbackN4_top_eq`
+      to get the 5th-limb input for second addback.
+    - Apply `addbackN4_val256_eq` to second addback (low4 of first addback's
+      output + b_norm).
+    - Use carry₁ = 0 (hcarry_zero) and carry₂ = 1 (from hcarry2_nz +
+      `addbackN4_carry_le_one`).
+    - Combine: val256(ab') + 2^256 = val256(ms) + 2 · val256(b_norm).
+    - Apply `val256_normalize` for b_norm.
+
+    Independent of Knuth-B (#1337). The complexity is mostly notational
+    (let-chains aligning across two addback applications). -/
+theorem algCallAddbackBeq_addback_combined_euclidean_carry2
+    (a b : EvmWord)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hcarry_zero : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqAbPrimeVal a b + 2 ^ 256 =
+      algCallAddbackBeqMsLowVal a b +
+        2 * (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+          2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64)) := by
+  sorry
+
 /-- **Mulsub Euclidean for the call+addback BEQ algorithm** (CLOSED).
 
     The val256-level mulsub Euclidean identity at normalized inputs,
