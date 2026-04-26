@@ -812,60 +812,47 @@ theorem div128Quot_toNat_eq_strict (uHi uLo vTop : Word)
       hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
   rw [h_kb6a, Nat.mod_eq_of_lt h_q1'_lt]
 
-/-- **KB-6c-pre: Phase 2 Knuth-C invariant `un21 < vTop ∧ no-wrap`
-    — KNOWN FALSE for some inputs in the stated preconditions.**
+/-- **Phase 1 no-wrap invariant for `div128Quot`.**
 
-    Concrete counterexample (memory `project_kb6d_false_counterexample.md`):
-      `dHi = 2^31`, `dLo = 2^32 - 1`, `vTop = 2^63 + 2^32 - 1`,
-      `uHi = 2^62 + 2^32`, `uLo = 0`.
-    Preconditions (`vTop ≥ 2^63` ∧ `uHi*2^64 + uLo < vTop*2^64`) hold.
-    Phase 1b yields `q1' = q_true_1 + 1 = 2^31 + 1` (textbook
-    Knuth-C tight case). Subsequent BitVec subtraction WRAPS,
-    producing `un21.toNat = 2^64 - 2^31 + 1 ≫ vTop`. So the
-    `un21 < vTop` conjunct is FALSE. Downstream KB-6d's claim
-    `div128Quot ≤ q_true + 2` is also FALSE in this case
-    (overshoot = 2^32 - 2).
+    Captures the Knuth-C tightening assumption that the Phase 2
+    running remainder `un21` is less than `vTop` AND no BitVec
+    subtraction wrap occurred. Both follow from the same Knuth-C
+    invariant (`q1' ≤ q_true_1` strictly).
 
-    **Why it's false**: Knuth's textbook Theorem C only gives
-    `q1' ≤ q_true_1 + 1`. The "+2 overshoot" guarantee in Knuth's
-    Theorem B refers to the per-digit final result *after the entire
-    algorithm including addback step D6*, not to the bare
-    trial-quotient computation. `div128Quot` performs only the trial
-    computation, no addback — so the assembled bare trial CAN
-    overshoot by ~2^32 when Phase 1 produces `q_true_1 + 1`.
+    **Important**: this invariant CAN FAIL under just `vTop ≥ 2^63`
+    + `hcall` — see `project_kb6d_false_counterexample.md` for a
+    concrete numerical example where Phase 1b yields
+    `q1' = q_true_1 + 1` (Knuth-C textbook tight case), causing the
+    BitVec subtraction to wrap.
 
-    **Required reformulation** (left for future work):
-    1. Add explicit hypothesis `un21 < vTop` (or no-wrap) to KB-6c/KB-6d,
-       making them CONDITIONAL theorems. Callers discharge the
-       hypothesis from runtime invariants. (Cleanest fix.)
-    2. Weaken KB-6d's conclusion to `≤ q_true + 2^32 + 2` or similar.
-    3. Add semantic addback (Knuth's D6) to `div128Quot` itself; prove
-       `≤ q_true + 2` for the augmented algorithm.
+    Used as an explicit hypothesis on KB-6c
+    (`div128Quot_q1_prime_q0_prime_le_q_true_plus_two`) and KB-6d
+    (`div128Quot_le_q_true_plus_two`), making them CONDITIONAL
+    theorems. Callers must discharge this from runtime invariants of
+    the surrounding algorithm (e.g., the addback machinery that
+    follows the bare `div128Quot` trial computation provides the
+    needed guarantee for our specific call patterns).
 
-    Until reformulated, this `sorry` is a HONEST acknowledgment of
-    the false claim — anyone attempting to close it will find it
-    impossible. Tracked in issue #1337. -/
-theorem div128Quot_un21_lt_vTop (uHi uLo vTop : Word)
-    (_hvTop_norm : vTop.toNat ≥ 2^63)
-    (_hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
-    let dHi := vTop >>> (32 : BitVec 6).toNat
-    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := uLo >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu uHi dHi
-    let rhat := uHi - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let qDlo := q1c * dLo
-    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
-    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-    let cu_q1_dlo := q1' * dLo
-    let un21 := cu_rhat_un1 - cu_q1_dlo
-    un21.toNat < dHi.toNat * 2^32 + dLo.toNat ∧
-    q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat := by
-  sorry
+    Tracked in issue #1337 for an unconditional formulation
+    (Knuth's D6 addback step would be one path). -/
+def Div128PhaseNoWrapInv (uHi uLo vTop : Word) : Prop :=
+  let dHi := vTop >>> (32 : BitVec 6).toNat
+  let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un1 := uLo >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu uHi dHi
+  let rhat := uHi - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let cu_q1_dlo := q1' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  un21.toNat < dHi.toNat * 2^32 + dLo.toNat ∧
+  q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat
 
 /-- **KB-6c-aux1: pure-Nat assembly identity for Phase 2b + KB-3m.**
 
@@ -1036,7 +1023,8 @@ theorem div128Quot_kb6c_pure_nat
 theorem div128Quot_q1_prime_q0_prime_le_q_true_plus_two
     (uHi uLo vTop : Word)
     (hvTop_norm : vTop.toNat ≥ 2^63)
-    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
+    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64)
+    (h_inv : Div128PhaseNoWrapInv uHi uLo vTop) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -1092,11 +1080,9 @@ theorem div128Quot_q1_prime_q0_prime_le_q_true_plus_two
     omega
   have huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
     rw [← h_vtop]; exact h_uHi_lt_vTop_raw
-  -- Apply Knuth-C invariant (STUB) to get un21 < vTop AND no-wrap.
-  have h_knuth_c :=
-    div128Quot_un21_lt_vTop uHi uLo vTop hvTop_norm hcall
-  simp only [] at h_knuth_c
-  obtain ⟨h_un21_lt, h_no_wrap⟩ := h_knuth_c
+  -- Apply Knuth-C invariant (now an EXPLICIT HYPOTHESIS h_inv).
+  simp only [Div128PhaseNoWrapInv] at h_inv
+  obtain ⟨h_un21_lt, h_no_wrap⟩ := h_inv
   -- Discharge h_kb3m via KB-3m + no-wrap conjunct.
   have h_kb3m_partial :=
     div128Quot_un21_additive_identity uHi dHi dLo uLo vTop rhatUn1
@@ -1187,7 +1173,8 @@ theorem div128Quot_q1_prime_q0_prime_le_q_true_plus_two
     Tracked in issue #1337. -/
 theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
     (hvTop_norm : vTop.toNat ≥ 2^63)
-    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
+    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64)
+    (h_inv : Div128PhaseNoWrapInv uHi uLo vTop) :
     (div128Quot uHi uLo vTop).toNat ≤
       (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat + 2 := by
   -- Step 0: derive intermediate preconditions from hvTop_norm + hcall.
@@ -1225,11 +1212,10 @@ theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
       (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
     rw [← h_vtop]; exact h_uHi_lt_vTop_raw
-  -- Step 1: un21 < vTop ∧ no-wrap  (Knuth-C invariant, STUB).
-  have h_knuth_c :=
-    div128Quot_un21_lt_vTop uHi uLo vTop hvTop_norm hcall
-  simp only [] at h_knuth_c
-  have h_un21_lt := h_knuth_c.1
+  -- Step 1: extract un21 < vTop ∧ no-wrap from explicit hypothesis.
+  have h_inv_unfolded := h_inv
+  simp only [Div128PhaseNoWrapInv] at h_inv_unfolded
+  have h_un21_lt := h_inv_unfolded.1
   -- Step 2: q0' < 2^32  (KB-6b, CLOSED, requires un21 < vTop).
   have h_q0'_lt :=
     div128Quot_q0_prime_lt_pow32 _ _ _ uLo hdHi_ge hdHi_lt hdLo_lt h_un21_lt
@@ -1239,10 +1225,10 @@ theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
     div128Quot_toNat_eq_strict uHi uLo vTop
       hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
   simp only [] at h_eq
-  -- Step 4: q1'.toNat * 2^32 + q0'.toNat ≤ q_true + 2  (KB-6c, STUB).
+  -- Step 4: q1'.toNat * 2^32 + q0'.toNat ≤ q_true + 2  (KB-6c, conditional).
   have h_assemble :=
     div128Quot_q1_prime_q0_prime_le_q_true_plus_two uHi uLo vTop
-      hvTop_norm hcall
+      hvTop_norm hcall h_inv
   simp only [] at h_assemble
   -- Step 5: combine.
   rw [h_eq h_q0'_lt]
