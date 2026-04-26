@@ -613,4 +613,43 @@ theorem div128Quot_le_val256_div_plus_two_with_inv
   -- Compose via transitivity.
   exact Nat.le_trans h_kb6d h_piece_a
 
+/-- **Discharge bridge (STUB)**: `isSkipBorrowN4Call` implies
+    `Div128AllPhasesNoWrapInv` for the call-trial CLZ-normalized case.
+
+    **Math sketch** (provable via existing infrastructure):
+
+    1. From `div128Quot_call_skip_le_val256_div` (CLOSED, line 462):
+       `qHat ≤ val256(a)/val256(b)`. Call this q_true_top.
+    2. From KB-LB7 chain (in `CallSkipLowerBoundV2/`):
+       `qHat ≥ q_true_top` under hcall + hshift_nz + hborrow.
+    3. Combined: `qHat = q_true_top` exactly.
+    4. Since q_true_top < 2^64, `(q1' << 32) | q0' = q_true_top`
+       implies q1' = q_true_top / 2^32 and q0' = q_true_top % 2^32.
+    5. q0' < 2^32 ⟹ no OR-overlap ⟹ KB-6b's precondition holds:
+       un21 < vTop (first conjunct).
+    6. q1' = q_true_1 exactly ⟹ no Phase 1 wrap (second conjunct).
+    7. q0' = q_true_0 = un21 / vTop's image at second digit ⟹
+       no Phase 2 wrap (third conjunct).
+
+    Each step is mechanical Nat algebra given the closed components
+    in (1) and (2). Estimated proof length: ~80-150 LOC.
+
+    **Why a stub now**: closes the gap structurally so call-trial
+    stack specs can use `div128Quot_le_val256_div_plus_two_with_inv`
+    by composing skip-borrow + this bridge. Future iterations close
+    the actual proof. -/
+theorem div128_all_phases_no_wrap_of_skip_borrow
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (_hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let u4 := a3 >>> antiShift
+    let un3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    Div128AllPhasesNoWrapInv u4 un3 b3' := by
+  sorry
+
 end EvmAsm.Evm64
