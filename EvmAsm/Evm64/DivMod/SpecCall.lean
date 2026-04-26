@@ -2845,6 +2845,159 @@ theorem algCallAddbackBeqPost1Limb3_eq_parent_64ms_form
       (clzResult (b.getLimbN 3)).1.toNat := by omega
   simp only [h_anti_eq, h_s_eq]
 
+/-- **Bridges: `algCallAddbackBeqAbPrimeLimb{i}` in parent-friendly `(64 - s)`
+    form** (Phase B.4 mechanical, CLOSED).
+
+    Mirror of `algCallAddbackBeqPost1Limb{i}_eq_parent_64ms_form` for the
+    double-addback's second-addback per-limb output. Same `simp_only`
+    proof pattern: rewrite the antiShift to `64 - s` and the `s % 64`
+    to `s`, both under `hshift_nz`.
+
+    Issue #1338. -/
+theorem algCallAddbackBeqAbPrimeLimb0_eq_parent_64ms_form
+    (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    algCallAddbackBeqAbPrimeLimb0 a b =
+    (let s := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let b0' := (b.getLimbN 0) <<< s
+     let b1' := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
+     let b2' := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
+     let b3' := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s))
+     let u0 := (a.getLimbN 0) <<< s
+     let u1 := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s))
+     let u2 := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s))
+     let u3 := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s))
+     let u4 := (a.getLimbN 3) >>> (64 - s)
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').1) := by
+  show algCallAddbackBeqAbPrimeLimb0 a b = _
+  unfold algCallAddbackBeqAbPrimeLimb0
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  simp only [h_anti_eq, h_s_eq]
+
+theorem algCallAddbackBeqAbPrimeLimb1_eq_parent_64ms_form
+    (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    algCallAddbackBeqAbPrimeLimb1 a b =
+    (let s := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let b0' := (b.getLimbN 0) <<< s
+     let b1' := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
+     let b2' := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
+     let b3' := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s))
+     let u0 := (a.getLimbN 0) <<< s
+     let u1 := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s))
+     let u2 := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s))
+     let u3 := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s))
+     let u4 := (a.getLimbN 3) >>> (64 - s)
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.1) := by
+  show algCallAddbackBeqAbPrimeLimb1 a b = _
+  unfold algCallAddbackBeqAbPrimeLimb1
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  simp only [h_anti_eq, h_s_eq]
+
+theorem algCallAddbackBeqAbPrimeLimb2_eq_parent_64ms_form
+    (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    algCallAddbackBeqAbPrimeLimb2 a b =
+    (let s := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let b0' := (b.getLimbN 0) <<< s
+     let b1' := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
+     let b2' := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
+     let b3' := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s))
+     let u0 := (a.getLimbN 0) <<< s
+     let u1 := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s))
+     let u2 := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s))
+     let u3 := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s))
+     let u4 := (a.getLimbN 3) >>> (64 - s)
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.2.1) := by
+  show algCallAddbackBeqAbPrimeLimb2 a b = _
+  unfold algCallAddbackBeqAbPrimeLimb2
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  simp only [h_anti_eq, h_s_eq]
+
+theorem algCallAddbackBeqAbPrimeLimb3_eq_parent_64ms_form
+    (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    algCallAddbackBeqAbPrimeLimb3 a b =
+    (let s := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let b0' := (b.getLimbN 0) <<< s
+     let b1' := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
+     let b2' := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
+     let b3' := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s))
+     let u0 := (a.getLimbN 0) <<< s
+     let u1 := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s))
+     let u2 := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s))
+     let u3 := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s))
+     let u4 := (a.getLimbN 3) >>> (64 - s)
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.2.2.1) := by
+  show algCallAddbackBeqAbPrimeLimb3 a b = _
+  unfold algCallAddbackBeqAbPrimeLimb3
+  have h_clz_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h0 | h0
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h0])
+    · exact h0
+  have h_clz_le_63 : (clzResult (b.getLimbN 3)).1.toNat ≤ 63 :=
+    clzResult_fst_toNat_le _
+  have h_anti_eq : (signExtend12 (0 : BitVec 12) -
+      (clzResult (b.getLimbN 3)).1).toNat % 64 =
+      64 - (clzResult (b.getLimbN 3)).1.toNat :=
+    antiShift_toNat_mod_eq h_clz_pos h_clz_le_63
+  have h_s_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
+      (clzResult (b.getLimbN 3)).1.toNat := by omega
+  simp only [h_anti_eq, h_s_eq]
+
 /-- **Bridge: `algCallAddbackBeqPost1Val` in parent-friendly `(64 - s)` form** (CLOSED).
 
     Parallel to `algCallAddbackBeqCarry_eq_parent_64ms_form`. Equates the
