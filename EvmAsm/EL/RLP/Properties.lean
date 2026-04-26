@@ -80,6 +80,28 @@ theorem decodeAux_empty_list (fuel : Nat) (rest : List Byte) :
     decodeAux (fuel + 1) ((0xC0 : Byte) :: rest) = some (.list [], rest) := by
   simp [decodeAux, takeBytes, decodeItems]
 
+/-! ## decode (top-level wrapper) trivial cases -/
+
+/-- `decode []` returns `none` because `decodeAux 0 []` returns `none`. -/
+theorem decode_nil : decode ([] : List Byte) = none := by
+  simp [decode, decodeAux]
+
+/-- `decode [pfx]` returns `(.bytes [pfx], [])` whenever `pfx < 0x80`.
+    Specializes `decodeAux_single_byte` at the top-level fuel. -/
+theorem decode_single_byte (pfx : Byte) (h : pfx.toNat < 0x80) :
+    decode [pfx] = some (.bytes [pfx], []) := by
+  simp [decode, decodeAux, h]
+
+/-- `decode [0x80] = some (.bytes [], [])` — the canonical empty-string
+    encoding. Specializes `decodeAux_empty_string` at the top-level fuel. -/
+theorem decode_empty_string : decode [(0x80 : Byte)] = some (.bytes [], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0xC0] = some (.list [], [])` — the canonical empty-list
+    encoding. Specializes `decodeAux_empty_list` at the top-level fuel. -/
+theorem decode_empty_list : decode [(0xC0 : Byte)] = some (.list [], []) := by
+  simp [decode, decodeAux, takeBytes, decodeItems]
+
 /-! ## Encoding produces non-empty output -/
 
 theorem encodeBytes_nonempty (data : List Byte) :
