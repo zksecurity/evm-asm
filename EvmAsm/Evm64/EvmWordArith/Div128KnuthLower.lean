@@ -1092,4 +1092,69 @@ theorem div128Quot_q1c_le_q_true_1_plus_two
         Nat.add_mod_right, Nat.mod_eq_of_lt h_q1_sub_lt]
     omega
 
+/-- **Strong Knuth Theorem C (abstract algebra form): trial overshoot
+    forces the multiplication check.** Given the Phase 1a Euclidean
+    `q1c * dHi + rhatc = uHi` and a 2-overshoot of the trial, the
+    Knuth multiplication-check inequality holds:
+
+    ```
+    q1c ≥ q_true_1 + 2  →  rhatc * 2^32 + div_un1 < q1c * dLo
+    ```
+
+    This is the **contrapositive** form needed to close Phase 1b's
+    upper bound: if the check doesn't fire (so `q1' = q1c`) but q1c
+    were ≥ q_true_1 + 2, this lemma would force the check to fire,
+    contradicting the assumption.
+
+    Proof: from overshoot `q1c ≥ q_true_1 + 2`, we have
+    `q1c * vTop ≥ (q_true_1 + 2) * vTop = (q_true_1 + 1) * vTop + vTop
+                 > (uHi * 2^32 + div_un1) + vTop`.
+    Use Phase 1a Euclidean to expand `q1c * vTop = uHi * 2^32 -
+    rhatc * 2^32 + q1c * dLo`. Combining: `q1c * dLo > rhatc * 2^32 +
+    div_un1 + vTop > rhatc * 2^32 + div_un1`. -/
+theorem knuth_theorem_c_strong_abstract
+    (uHi dHi dLo div_un1 rhatc q1c : Word)
+    (h_eucl : q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat)
+    (h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat)
+    (h_q1c_overshoot :
+        q1c.toNat ≥ (uHi.toNat * 2^32 + div_un1.toNat) /
+                      (dHi.toNat * 2^32 + dLo.toNat) + 2) :
+    rhatc.toNat * 2^32 + div_un1.toNat < q1c.toNat * dLo.toNat := by
+  set vTop := dHi.toNat * 2^32 + dLo.toNat with h_vTop_def
+  set q_true_1 := (uHi.toNat * 2^32 + div_un1.toNat) / vTop with h_q_true_1_def
+  -- Floor inequality: uHi * 2^32 + div_un1 < (q_true_1 + 1) * vTop.
+  set r := (uHi.toNat * 2^32 + div_un1.toNat) % vTop with h_r_def
+  have h_dvm : vTop * q_true_1 + r = uHi.toNat * 2^32 + div_un1.toNat :=
+    Nat.div_add_mod _ _
+  have h_mod_lt : r < vTop :=
+    Nat.mod_lt _ h_vTop_pos
+  have h_floor_lt : uHi.toNat * 2^32 + div_un1.toNat < (q_true_1 + 1) * vTop := by
+    have h_eq : (q_true_1 + 1) * vTop = vTop * q_true_1 + vTop := by ring
+    rw [h_eq]; omega
+  -- q1c * vTop ≥ (q_true_1 + 2) * vTop (monotonicity of overshoot).
+  have h_q1c_vTop_ge : q1c.toNat * vTop ≥ (q_true_1 + 2) * vTop :=
+    Nat.mul_le_mul_right _ h_q1c_overshoot
+  -- (q_true_1 + 2) * vTop = (q_true_1 + 1) * vTop + vTop.
+  have h_chain : q1c.toNat * vTop > uHi.toNat * 2^32 + div_un1.toNat + vTop := by
+    have h_split : (q_true_1 + 2) * vTop = (q_true_1 + 1) * vTop + vTop := by ring
+    linarith
+  -- Multiply Phase 1a Euclidean by 2^32:
+  --   uHi * 2^32 = q1c * dHi * 2^32 + rhatc * 2^32.
+  have h_eucl_mul :
+      uHi.toNat * 2^32 = q1c.toNat * dHi.toNat * 2^32 + rhatc.toNat * 2^32 := by
+    have hh : (q1c.toNat * dHi.toNat + rhatc.toNat) * 2^32 = uHi.toNat * 2^32 :=
+      congr_arg (· * 2^32) h_eucl
+    have : (q1c.toNat * dHi.toNat + rhatc.toNat) * 2^32 =
+        q1c.toNat * dHi.toNat * 2^32 + rhatc.toNat * 2^32 := by ring
+    linarith
+  -- Expand q1c * vTop = q1c * dHi * 2^32 + q1c * dLo.
+  have h_expand_vTop :
+      q1c.toNat * vTop = q1c.toNat * dHi.toNat * 2^32 + q1c.toNat * dLo.toNat := by
+    show q1c.toNat * (dHi.toNat * 2^32 + dLo.toNat) = _
+    ring
+  -- vTop ≥ 1 (positivity).
+  have h_vTop_ge_1 : 1 ≤ vTop := h_vTop_pos
+  -- Now linarith should combine h_chain, h_expand_vTop, h_eucl_mul, h_vTop_ge_1.
+  linarith
+
 end EvmAsm.Evm64
