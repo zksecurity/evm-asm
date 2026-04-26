@@ -2504,6 +2504,135 @@ theorem algCallAddbackBeqUn3Out_eq_post1Limb3_of_single_addback
   rw [if_neg hcarry]
   rfl
 
+/-- **Irreducible bundles: per-limb second-addback (ab') outputs.**
+
+    Mirror of `algCallAddbackBeqPost1Limb{i}` for the **double-addback**
+    branch (carry = 0): wraps the second `addbackN4` call's per-limb low
+    outputs (ab'.{i_low}). Used to keep the double-addback parent goal
+    manageable when reasoning per-limb.
+
+    Issue #1338 (Phase B.4 mechanical infrastructure).  -/
+@[irreducible]
+noncomputable def algCallAddbackBeqAbPrimeLimb0 (a b : EvmWord) : Word :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  let u4_new := u4 - c3
+  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+  (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').1
+
+@[irreducible]
+noncomputable def algCallAddbackBeqAbPrimeLimb1 (a b : EvmWord) : Word :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  let u4_new := u4 - c3
+  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+  (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.1
+
+@[irreducible]
+noncomputable def algCallAddbackBeqAbPrimeLimb2 (a b : EvmWord) : Word :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  let u4_new := u4 - c3
+  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+  (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.2.1
+
+@[irreducible]
+noncomputable def algCallAddbackBeqAbPrimeLimb3 (a b : EvmWord) : Word :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  let u4_new := u4 - c3
+  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+  (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.2.2.1
+
+/-- **Bridge: Un{i}Out = AbPrimeLimb{i} in double-addback** (Phase B.6, CLOSED).
+
+    When the first addback's carry is zero, the algorithm runs a second
+    addback. This bridge folds the parent's `un{i}Out` to the irreducible
+    `AbPrimeLimb{i}` form. Issue #1338. -/
+theorem algCallAddbackBeqUn0Out_eq_abPrimeLimb0_of_double_addback
+    (a b : EvmWord) (hcarry : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqUn0Out a b = algCallAddbackBeqAbPrimeLimb0 a b := by
+  show _ = _
+  rw [algCallAddbackBeqCarry_unfold] at hcarry
+  unfold algCallAddbackBeqUn0Out algCallAddbackBeqAbPrimeLimb0
+  simp only []
+  rw [if_pos hcarry]
+
+theorem algCallAddbackBeqUn1Out_eq_abPrimeLimb1_of_double_addback
+    (a b : EvmWord) (hcarry : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqUn1Out a b = algCallAddbackBeqAbPrimeLimb1 a b := by
+  show _ = _
+  rw [algCallAddbackBeqCarry_unfold] at hcarry
+  unfold algCallAddbackBeqUn1Out algCallAddbackBeqAbPrimeLimb1
+  simp only []
+  rw [if_pos hcarry]
+
+theorem algCallAddbackBeqUn2Out_eq_abPrimeLimb2_of_double_addback
+    (a b : EvmWord) (hcarry : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqUn2Out a b = algCallAddbackBeqAbPrimeLimb2 a b := by
+  show _ = _
+  rw [algCallAddbackBeqCarry_unfold] at hcarry
+  unfold algCallAddbackBeqUn2Out algCallAddbackBeqAbPrimeLimb2
+  simp only []
+  rw [if_pos hcarry]
+
+theorem algCallAddbackBeqUn3Out_eq_abPrimeLimb3_of_double_addback
+    (a b : EvmWord) (hcarry : algCallAddbackBeqCarry a b = 0) :
+    algCallAddbackBeqUn3Out a b = algCallAddbackBeqAbPrimeLimb3 a b := by
+  show _ = _
+  rw [algCallAddbackBeqCarry_unfold] at hcarry
+  unfold algCallAddbackBeqUn3Out algCallAddbackBeqAbPrimeLimb3
+  simp only []
+  rw [if_pos hcarry]
+
 /-- **Bridge: `algCallAddbackBeqPost1Limb0` in parent-friendly `(64 - s)` form** (CLOSED). -/
 theorem algCallAddbackBeqPost1Limb0_eq_parent_64ms_form
     (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
