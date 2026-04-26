@@ -1942,6 +1942,43 @@ theorem algCallAddbackBeqMsLowVal_plus_b_norm_lt_pow256
   have h_lt := algCallAddbackBeqPost1Val_lt_pow256 a b
   linarith
 
+/-- **Mulsub Euclidean — raw form (no qHat substitution)** (CLOSED).
+
+    The val256-level mulsub identity at the algorithm's normalized inputs,
+    expressed directly in terms of the irreducibles `algCallAddbackBeqMsC3`
+    and `algCallAddbackBeqMsLowVal` AND the algorithm's actual qHat
+    (no substitution with `a/b + 1` or `a/b + 2`):
+
+      `(MsC3 a b).toNat * 2^256 + val256(a) * 2^s
+         = MsLowVal a b + qHat.toNat * (val256(b) * 2^s)
+                        + (algCallAddbackBeqU4 a b).toNat * 2^256`
+
+    Notation: `qHat := div128Quot u4 u3 b3'` (the algorithm's actual
+    qHat in the let-chain).
+
+    This is the **`h_mulsub` precondition for `qHat_ge_two_abstract`**
+    in B.1a. Independent of B.1 (no qHat = a/b + 2 substitution),
+    so usable in B.1a's proof. -/
+theorem algCallAddbackBeq_mulsub_eucl_irreducible_form
+    (a b : EvmWord)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let qHat := div128Quot u4 u3 b3'
+    (algCallAddbackBeqMsC3 a b).toNat * 2 ^ 256 +
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) =
+    algCallAddbackBeqMsLowVal a b +
+      qHat.toNat *
+        (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+          2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64)) +
+      (algCallAddbackBeqU4 a b).toNat * 2 ^ 256 := by
+  sorry
+
 /-- **Bound: `algCallAddbackBeqU4 < algCallAddbackBeqMsC3`** (CLOSED).
 
     Wraps `EvmWord.u_top_lt_c3_of_addback_borrow_call` in the irreducible-
