@@ -721,6 +721,105 @@ theorem div128Quot_toNat_eq_strict (uHi uLo vTop : Word)
       hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
   rw [h_kb6a, Nat.mod_eq_of_lt h_q1'_lt]
 
+/-- **KB-6c-pre: `un21 < vTop` is the Phase 2 Knuth-C invariant (STUB).**
+
+    After Phase 1b, the running remainder
+    `un21 = (cu_rhat_un1 - cu_q1_dlo)` is strictly less than `vTop`.
+    This is **Knuth TAOCP Vol 2 §4.3.1 Theorem C** in our setting — the
+    Phase 2 Knuth-C tightness invariant.
+
+    **Why it's needed**: KB-6b (`div128Quot_q0_prime_lt_pow32`) takes
+    `un21 < vTop` (encoded as `un21.toNat < dHi.toNat * 2^32 + dLo.toNat`)
+    as its precondition. KB-6d's Knuth-B closure ultimately needs KB-6b
+    to fire, which means we must establish `un21 < vTop` from KB-6d's
+    preconditions (`vTop ≥ 2^63` + hcall).
+
+    **Proof outline** (project_un21_lt_vTop_plan.md, ~300-400 lines, hard):
+    - **U1**: `q1' ≤ q_true_1 + 1` (Knuth Theorem C at Phase 1) — Phase 1b
+      multiplication-check correctness, where
+      `q_true_1 := (uHi * 2^32 + div_un1) / vTop`.
+    - **U2**: `q1' ≥ q_true_1` (Knuth Theorem B lower under `dHi ≥ 2^31`).
+    - **U3**: no-wrap case (`B ≤ A` in KB-3j/m) — known to have a
+      counterexample under `uHi < 2^63`, so requires careful conditional
+      handling. See `project_u3_unprovable_counterexample.md`.
+    - **Compose**: KB-3m's additive identity
+      `un21 + (rhat'/2^32) * 2^64 = uHi * 2^32 + div_un1 - q1' * vTop`
+      with U1 + U2 gives `un21 ≤ vTop - 1` modulo the wrap term.
+
+    Tracked in issue #1337. -/
+theorem div128Quot_un21_lt_vTop (uHi uLo vTop : Word)
+    (_hvTop_norm : vTop.toNat ≥ 2^63)
+    (_hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+  sorry
+
+/-- **KB-6c: Quotient assembly upper bound (STUB).**
+
+    The Nat-level composition of Phase 1b and Phase 2b quotient bounds:
+
+    ```
+    q1'.toNat * 2^32 + q0'.toNat ≤
+      (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat + 2
+    ```
+
+    **Proof outline** (~80-150 lines):
+    - From KB-2 (`div128Quot_phase1b_quotient_bound`): `q1' ≤ uHi/dHi`.
+    - From KB-5c (`div128Quot_phase2b_quotient_bound`): `q0' ≤ un21/dHi`.
+    - Use `div128Quot_un21_additive_identity` (KB-3m): connects `un21` to
+      `uHi * 2^32 + div_un1 - q1' * vTop` modulo `(rhat'/2^32) * 2^64`.
+    - Nat-division algebra: relate `(q1' * 2^32 + q0') * vTop` to
+      `(uHi * 2^64 + uLo)` via the algorithm's invariants.
+    - Use `q_true ≥ q_true_1 * 2^32 + q_true_2 - 2^33` style bound from
+      Knuth's two-digit-quotient analysis to pin down the +2 slack.
+
+    Equivalent to **Knuth Theorem B for the assembled 64-bit quotient**,
+    instantiated to our algorithm's specific control flow. Tracked in
+    issue #1337. -/
+theorem div128Quot_q1_prime_q0_prime_le_q_true_plus_two
+    (uHi uLo vTop : Word)
+    (_hvTop_norm : vTop.toNat ≥ 2^63)
+    (_hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    q1'.toNat * 2^32 + q0'.toNat ≤
+      (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat + 2 := by
+  sorry
+
 /-- **KB-6d: `div128Quot` upper bound (Knuth Theorem B at div128Quot level).**
 
     The user-facing closing theorem of Knuth Theorem B for `div128Quot`:
@@ -737,29 +836,21 @@ theorem div128Quot_toNat_eq_strict (uHi uLo vTop : Word)
     This is the bound that downstream call-trial DIV/MOD stack specs need
     to reason about the at-most-2-addback correction chain.
 
-    **Closure path** (planned, currently STUB):
-    1. **KB-6c — Nat assembly**: Show `q1'.toNat * 2^32 + q0'.toNat ≤
-       (uHi*2^64 + uLo)/vTop + 2`, by composing KB-2 (Phase 1b q1' bounds)
-       with KB-5c (Phase 2b q0' bounds) at the Nat level.
-    2. **KB-6a strict** (already closed): under `q0' < 2^32` and `q1' < 2^32`,
-       `div128Quot.toNat = q1' * 2^32 + q0'`. Combined with KB-6c, gives the
-       upper bound.
+    **Composition** (sub-stubs separated for tractable proof attempts):
+    1. **`div128Quot_un21_lt_vTop`** (STUB, Knuth-C): `un21 < vTop`.
+    2. **`div128Quot_q0_prime_lt_pow32`** (KB-6b, CLOSED): under `un21 < vTop`,
+       `q0' < 2^32`.
+    3. **`div128Quot_toNat_eq_strict`** (KB-6a strict, CLOSED): under `q0' < 2^32`,
+       `div128Quot.toNat = q1'.toNat * 2^32 + q0'.toNat`.
+    4. **`div128Quot_q1_prime_q0_prime_le_q_true_plus_two`** (KB-6c, STUB):
+       `q1' * 2^32 + q0' ≤ q_true + 2`.
 
-    **Discharging KB-6a strict's `q0' < 2^32` precondition**:
-    KB-6b (already in `Div128QuotientBounds.lean`) gives `q0' < 2^32` under
-    `un21 < vTop`. The remaining work is establishing the `un21 < vTop` Phase-2
-    Knuth invariant (Theorem C of Knuth TAOCP). See
-    `project_un21_lt_vTop_plan.md` for the detailed sub-lemma decomposition
-    (Lemmas U1, U2, U3 — ~300-400 lines).
-
-    **Why Piece A composition doesn't shortcut this**:
-    `knuth_theorem_b_from_clz` (Piece A, on main) gives
-    `(uHi*2^64 + uLo)/vTop ≤ val256(a)/val256(b) + 2`. To close KB-6d
-    via this requires `div128Quot ≤ (uHi*2^64+uLo)/vTop` (no overshoot
-    at the 64-bit digit level). But Knuth-B at the digit level allows
-    `div128Quot ≤ (uHi*2^64+uLo)/vTop + 2`, which composes to
-    `div128Quot ≤ val256/val256 + 4` — too loose by 2. The tight bound
-    requires the same Knuth-C tightness that blocks U3 / un21 < vTop.
+    The composition itself is a mechanical chain of `have`s once the
+    two stubs above are filled. The hard math is isolated in those two
+    stubs:
+    - **`div128Quot_un21_lt_vTop`** (Knuth-C, ~300-400 lines).
+    - **`div128Quot_q1_prime_q0_prime_le_q_true_plus_two`** (KB-6c Nat
+      assembly, ~80-150 lines).
 
     Tracked in issue #1337. -/
 theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
