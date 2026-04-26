@@ -3770,6 +3770,43 @@ theorem algCallAddbackBeq_amod_pow_s_lt_pow256
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     (by omega) hvb_pos hb3_bound
 
+/-- **B.5 building block STUB: mulsub Euclidean for double-addback** (#1338).
+
+    Mirror of `algCallAddbackBeq_mulsub_euclidean` for the double-addback path.
+    The val256-level mulsub identity at normalized inputs, with the qHat factor
+    being `val256(a)/val256(b) + 2` (per B.1 `qHat_eq_div_plus_two_of_double_addback`):
+
+      c3_n · 2^256 + (val256(a)·2^s − u4·2^256) =
+        algCallAddbackBeqMsLowVal a b + (val256(a)/val256(b) + 2) · (val256(b)·2^s)
+
+    **Proof sketch** (~155 LOC, mirrors single-addback's structure):
+    - Setup clz bounds (same as single-addback).
+    - Bridge val256(a_limbs) = a.toNat, val256(b_limbs) = b.toNat.
+    - Apply `mulsubN4_val256_eq` for the val256-level identity.
+    - Substitute qHat via B.1 (`qHat_eq_div_plus_two_of_double_addback`).
+    - val256_normalize for u_norm and b_norm.
+
+    **Dependencies**: B.1 (sorry, `qHat_eq_div_plus_two_of_double_addback`).
+    Once B.1 is filled, this lemma's proof is straightforward (mirror of
+    single-addback). Issue #1338 Phase B.5. -/
+theorem algCallAddbackBeq_mulsub_euclidean_double
+    (a b : EvmWord)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hborrow : isAddbackBorrowN4CallEvm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hsem : n4CallAddbackBeqSemanticHolds a b)
+    (_hcarry_zero : algCallAddbackBeqCarry a b = 0) :
+    (algCallAddbackBeqMsC3 a b).toNat * 2 ^ 256 +
+      (val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64) -
+        (algCallAddbackBeqU4 a b).toNat * 2 ^ 256) =
+    algCallAddbackBeqMsLowVal a b +
+      (val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2) *
+      (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2 ^ ((clzResult (b.getLimbN 3)).1.toNat % 64)) := by
+  sorry
+
 /-- **Sub-stub: c3_n = u4 + 1 in single-addback** (CLOSED).
 
     The key algebraic identity for the call-addback BEQ MOD adapter, mirroring
