@@ -2253,25 +2253,24 @@ theorem qHat_ge_two_of_double_addback (a b : EvmWord)
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
     let u4 := (a.getLimbN 3) >>> antiShift
     (div128Quot u4 u3 b3').toNat ≥ 2 := by
-  -- Proof attempted but blocked on forward reference:
-  -- `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat` (the wrapper
-  -- around `EvmWord.u_top_lt_c3_of_addback_borrow_call`) is defined in the
-  -- file AFTER this lemma.
+  -- Detailed proof attempt failed at 3 technicalities (2026-04-26):
+  -- 1. omega in `h_c3_pos` couldn't bridge `(a3 >>> (64-clz)).toNat = u4.toNat`
+  --    even though `u4` is `set` to that expression — needs an explicit
+  --    `show u4.toNat = (a3 >>> (64-clz)).toNat from rfl` step.
+  -- 2. After `interval_cases qHat.toNat`, the substituted `qHat.toNat = 0`
+  --    isn't a definitional equality with the original `qHat = div128Quot ...`,
+  --    so `rfl` fails for `have h_qHat_eq_zero : qHat.toNat = 0 := rfl`.
+  --    Need to thread the case-introduced hypothesis instead.
+  -- 3. The mulsub Euclidean's val256(ms) form needs an extra `set ms := ...`
+  --    abstraction to align with `c3_un_zero_of_qHat_mul_le`'s output type.
   --
-  -- Working proof structure:
-  -- - by_contra h_lt: qHat.toNat < 2.
-  -- - interval_cases qHat.toNat:
-  --   - qHat = 0: c3_un_zero_of_qHat_mul_le gives c3 = 0; hborrow's u4 < c3
-  --     contradicts c3 = 0.
-  --   - qHat = 1: mulsub gives val256(u_norm) + c3*2^256 = val256(ms) + val256(b_norm).
-  --     hcarry_zero gives val256(ms) + val256(b_norm) = val256(ab) < 2^256.
-  --     Combined with c3 ≥ 1: val256(u_norm) + 2^256 ≤ val256(ab) < 2^256.
-  --     Contradiction.
+  -- Working proof structure (qHat = 0 + qHat = 1 cases) is correct in
+  -- principle. The implementation needs ~30 LOC of additional `show`/`rfl`
+  -- bridges + `set ms` introduction. Estimated total: ~120 LOC.
   --
-  -- Either move B.1a after `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat`,
-  -- or inline `EvmWord.u_top_lt_c3_of_addback_borrow_call` (with the
-  -- antiShift_toNat_mod_eq dance from `qHat_eq_div_plus_one_of_single_addback`'s
-  -- proof, lines 1929-1957).
+  -- Alternative (cleaner): move B.1a after
+  -- `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat` (line 3548)
+  -- to use that wrapper instead of the inline `EvmWord.u_top_lt_c3_of_addback_borrow_call`.
   sorry
 
 /-- **B.1 (#1338, NOT Knuth-B blocked):** qHat.toNat = a/b + 2
