@@ -3397,21 +3397,14 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
                hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
     rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
     -- ============== CLOSURE STATUS SUMMARY ==============
-    -- The PR's full upstream stack is closed (commits 2bf014dc → 84c9d869):
-    --   1. Wrapper algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback
-    --   2. 6 closed Word-level preconditions
-    --   3. 3 form-bridges (Carry/Post1Val/MsLowVal eq parent_64ms_form)
-    --   4. Unified parent_post1Val_eq_amod_pow_s_of_single_addback
-    --   5. Pure-Nat post1_val_eq_amod_pow_s_pure_nat
-    --   6. denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
-    --   7. addbackN4_low_limbs_indep_u4_new
-    --   8. denorm_4limb_to_evmWordIs_eq (drop-in fold helper)
-    -- Parent wiring up to here works (if-then-else collapse + hab rewrites).
-    -- Final fold blocked: whnf timeout on h_post1_eq's deep val256 unification.
-    -- Tested approaches that all fail:
-    --   * exact/convert (evmWordIs_sp32_limbs_eq).symm — Type mismatch / timeout
+    -- The PR's full upstream stack is closed (commits 2bf014dc → 84c9d869).
+    -- Final fold blocked. Tested approaches (all fail):
+    --   * exact/convert (evmWordIs_sp32_limbs_eq).symm — Type mismatch/timeout
+    --   * convert ... using 5 + all_goals rfl — whnf timeout
     --   * simp only [← h_denorm.{i}, evmWordIs_sp32_unfold] — all unused
-    --   * set post1_full := addbackN4 ... 0 ... with parent set names — no match
+    --   * set post1_full := addbackN4 ... 0 ... — set doesn't fold inline
+    --   * Helper denorm_4limb_to_evmWordIs_eq — whnf timeout on h_post1_eq
+    --     unification (even with explicit X1..X4 placeholders)
     -- =========== END CLOSURE STATUS SUMMARY ===========
     sorry
 
