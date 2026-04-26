@@ -1410,6 +1410,36 @@ theorem denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_2
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_3
 
+/-- **Memory-equation form of the val256-denormalize fold** (CLOSED).
+
+    Direct drop-in helper for adapter parents needing to fold the four
+    `↦ₘ` limb writes at `sp+32..sp+56` into `evmWordIs (sp+32) (EvmWord.mod a b)`.
+    Composes `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` with
+    `evmWordIs_sp32_limbs_eq.symm` internally — bypasses the form-
+    mismatch issues that arise when adapter callers try to chain these
+    manually. -/
+theorem denorm_4limb_to_evmWordIs_eq
+    {a b : EvmWord} (sp : Word) {X1 X2 X3 X4 : Word}
+    {s : Nat} (hs0 : 0 < s) (hs : s < 64)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (h_val_eq : val256 X1 X2 X3 X4 =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) * 2 ^ s) :
+    (((sp + 32) ↦ₘ ((X1 >>> s) ||| (X2 <<< (64 - s)))) **
+     ((sp + 40) ↦ₘ ((X2 >>> s) ||| (X3 <<< (64 - s)))) **
+     ((sp + 48) ↦ₘ ((X3 >>> s) ||| (X4 <<< (64 - s)))) **
+     ((sp + 56) ↦ₘ (X4 >>> s))) =
+    evmWordIs (sp + 32) (EvmWord.mod a b) := by
+  have h_denorm := denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
+    (a := a) (b := b) (X1 := X1) (X2 := X2) (X3 := X3) (X4 := X4)
+    hs0 hs hb3nz h_val_eq
+  exact (evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b)
+    ((X1 >>> s) ||| (X2 <<< (64 - s)))
+    ((X2 >>> s) ||| (X3 <<< (64 - s)))
+    ((X3 >>> s) ||| (X4 <<< (64 - s)))
+    (X4 >>> s)
+    h_denorm.1 h_denorm.2.1 h_denorm.2.2.1 h_denorm.2.2.2).symm
+
 /-- **Generic per-limb denorm→mod bridge at EvmWord level.**
 
     EvmWord wrapper over `denorm_limbN_eq_mod_of_overestimate`, taking
@@ -3366,13 +3396,10 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     simp only [hms_def, hqHat_def, huTop_def, hb0_def, hb1_def, hb2_def, hb3_def,
                hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
     rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
-    -- Final fold attempted with `simp only [evmWordIs_sp32_unfold, ←
-    -- h_denorm.{i}]` — simp says all 4 ←-rules are UNUSED (only the
-    -- evmWordIs_sp32_unfold fires). So h_denorm's RHS form doesn't match
-    -- the goal's post1 atom form, even after both have been simp-aligned
-    -- with [hmod_eq, hs_def]. The structural difference is real and
-    -- unreconcilable via simp/rw — closure may need an irreducible
-    -- bundle for the post1 limbs to opaque-ify the comparison.
+    -- Helper `denorm_4limb_to_evmWordIs_eq` is closed upstream. Direct
+    -- `exact` application with `h_post1_eq` triggers another whnf timeout
+    -- when Lean tries to unify h_post1_eq's val256 against the helper's
+    -- expected form. Closure pending; helper is in place for future use.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
