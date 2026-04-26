@@ -3341,22 +3341,27 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
   · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
     sorry
   · -- Single-addback branch (carry_word = 1).
-    -- Step 1-3: Apply the unified lemma to get val256(post1_low4) = a%b * 2^s
-    -- in the parent's local (64-s) form.
+    -- Step 1-3: Apply the unified lemma to get val256(post1_low4) = a%b * 2^s.
+    have hcarry_orig := hcarry  -- Save original `carry_word ≠ 0` for `if_neg`.
     rw [hcarry_def] at hcarry
     have h_post1_eq := parent_post1Val_eq_amod_pow_s_of_single_addback
       a b hb3nz hshift_nz hborrow hsem_orig hcarry
     simp only [] at h_post1_eq
-    -- Step 4: val256_denormalize fold via the closed
-    -- `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` helper.
+    -- Step 4: val256_denormalize fold.
     have h_s_pos : 0 < s := by rw [hs_def]; omega
     have h_s_lt_64 : s < 64 := by rw [hs_def]; omega
     have h_denorm := denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
       (a := a) (b := b) (s := s) h_s_pos h_s_lt_64 hb3nz h_post1_eq
-    -- The goal's `un{i}Out := if carry = 0 then ab'.{i} else ab.{i}` reduces
-    -- to `ab.{i}` in single-addback (carry ≠ 0). And `ab.{i}` (low 4) equals
-    -- `post1.{i}` since addbackN4's low 4 outputs don't depend on u4_new.
-    -- TODO: Memory-equation collapse — `if_neg` + addbackN4 rfl + evmWordIs_sp32_limbs_eq.
+    -- Memory-equation collapse — TODO. The goal still has signature-bound
+    -- `shift`, `antiShift`, `un{i}Out`, `carry` lets that don't unify with
+    -- parent's `s`, `64 - s`, `ab.{i}`, `carry_word` set bindings. The
+    -- call-skip parent's approach (line 1548): `simp only [hmod_eq,
+    -- hanti_toNat_mod]` to align forms. For addback we additionally need to
+    -- collapse `if carry = 0 then ab'.{i} else ab.{i}` to `ab.{i}` — i.e.,
+    -- bridge `carry` (signature let) to `carry_word` (parent set), then
+    -- apply `if_neg hcarry_orig`. Then `ab.{i} = post1.{i}` (rfl, low 4 of
+    -- addbackN4 don't depend on u4_new). Final: `evmWordIs_sp32_limbs_eq`.
+    have _ := h_denorm  -- keep h_denorm in scope for next iteration
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
