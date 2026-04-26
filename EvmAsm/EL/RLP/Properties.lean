@@ -118,6 +118,22 @@ theorem decode_two_byte_string (b1 b2 : Byte) :
     decode [(0x82 : Byte), b1, b2] = some (.bytes [b1, b2], []) := by
   simp [decode, decodeAux, takeBytes]
 
+/-! ## encodeBytes characterizations -/
+
+/-- Empty byte string encodes to the single prefix `[0x80]`. -/
+theorem encodeBytes_nil : encodeBytes [] = [BitVec.ofNat 8 0x80] := by
+  simp [encodeBytes]
+
+/-- Single small byte (`b < 0x80`): the byte is its own encoding. -/
+theorem encodeBytes_single_small (b : Byte) (h : b.toNat < 0x80) :
+    encodeBytes [b] = [b] := by
+  simp [encodeBytes, h]
+
+/-- Single large byte (`b ≥ 0x80`): encoded as `[0x81, b]`. -/
+theorem encodeBytes_single_large (b : Byte) (h : ¬ b.toNat < 0x80) :
+    encodeBytes [b] = [BitVec.ofNat 8 0x81, b] := by
+  simp [encodeBytes, h]
+
 /-! ## Encoding produces non-empty output -/
 
 theorem encodeBytes_nonempty (data : List Byte) :
