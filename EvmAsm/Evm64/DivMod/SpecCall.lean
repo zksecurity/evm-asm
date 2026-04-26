@@ -3453,6 +3453,47 @@ theorem algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     hborrow
 
+/-- **Abstract Nat-level sub-lemma for B.1a**: under mulsub Euclidean +
+    first-addback no-overflow + c3 ≥ 1 + standard val256 bounds,
+    `qHat ≥ 2`.
+
+    Pure Nat algebra. Used to factor B.1a's proof, avoiding the kernel
+    deep-recursion that arises when `rfl`-bridging through deeply-nested
+    `mulsubN4` let-chains.
+
+    Hypotheses encode:
+    - h_mulsub: `c3 · 2^256 + u_norm = ms + qHat · b_norm` (mulsubN4_val256_eq).
+    - h_addback: `ms + b_norm = ab` (first-addback Euclidean with carry₁ = 0).
+    - h_ab_lt: `ab < 2^256` (val256 bound on a 4-limb output).
+    - h_c3_pos: `c3 ≥ 1` (from hborrow's u4 < c3).
+
+    Issue #1338 Phase B.1a. -/
+theorem qHat_ge_two_abstract
+    (qHat ms u_norm b_norm ab c3 : Nat)
+    (h_mulsub : c3 * 2^256 + u_norm = ms + qHat * b_norm)
+    (h_addback : ms + b_norm = ab)
+    (h_ab_lt : ab < 2^256)
+    (h_c3_pos : c3 ≥ 1) :
+    qHat ≥ 2 := by
+  -- By contradiction.
+  by_contra h_lt
+  push Not at h_lt
+  -- h_lt : qHat < 2.
+  -- Case-split.
+  have h_case : qHat = 0 ∨ qHat = 1 := by omega
+  rcases h_case with h_qHat_zero | h_qHat_one
+  · -- qHat = 0: c3 * 2^256 + u_norm = ms. But ms + b_norm = ab < 2^256.
+    -- So ms < 2^256. With c3 ≥ 1: c3 * 2^256 ≥ 2^256, plus u_norm ≥ 0,
+    -- LHS ≥ 2^256. So ms ≥ 2^256. Contradicts ms < 2^256.
+    rw [h_qHat_zero] at h_mulsub
+    simp only [Nat.zero_mul, Nat.add_zero] at h_mulsub
+    omega
+  · -- qHat = 1: c3 * 2^256 + u_norm = ms + b_norm = ab < 2^256.
+    -- With c3 ≥ 1: 2^256 ≤ c3 * 2^256 + u_norm < 2^256. Contradiction.
+    rw [h_qHat_one] at h_mulsub
+    simp only [Nat.one_mul] at h_mulsub
+    omega
+
 /-- **B.1a (sub-lemma, sorry — pending bridges):** `qHat ≥ 2` under
     double-addback hypotheses.
 
