@@ -811,6 +811,50 @@ theorem div128Quot_kb6c_assembly_identity
              Nat.zero_le rhat2', Nat.zero_le r1, Nat.zero_le div_un0,
              Nat.zero_le dHi, Nat.zero_le dLo, Nat.zero_le div_un1]
 
+/-- **KB-6c-aux2: drop non-negative correction terms from KB-6c-aux1.**
+
+    From the KB-6c assembly identity, dropping the non-negative
+    correction terms `rhat2'*2^32 + r1*2^96 + div_un0` yields the
+    inequality:
+    ```
+    (q1'*2^32 + q0')*vTop ≤ uHi*2^64 + uLo + q0'*dLo
+    ```
+
+    Pure Nat algebra; trivial from KB-6c-aux1 + `Nat.le.intro`. -/
+theorem div128Quot_kb6c_assembly_inequality
+    (q1' q0' rhat2' un21 uHi uLo vTop dHi dLo div_un1 div_un0 r1 : Nat)
+    (h_phase2b : q0' * dHi + rhat2' = un21)
+    (h_kb3m : un21 + r1 * 2^64 + q1' * vTop = uHi * 2^32 + div_un1)
+    (h_vTop : vTop = dHi * 2^32 + dLo)
+    (h_uLo : uLo = div_un1 * 2^32 + div_un0) :
+    (q1' * 2^32 + q0') * vTop ≤ uHi * 2^64 + uLo + q0' * dLo := by
+  have h_id := div128Quot_kb6c_assembly_identity q1' q0' rhat2' un21 uHi uLo
+    vTop dHi dLo div_un1 div_un0 r1 h_phase2b h_kb3m h_vTop h_uLo
+  omega
+
+/-- **KB-6c-aux3: from `X*v ≤ Y + 2*v` derive `X ≤ Y/v + 2`.**
+
+    Pure Nat division lemma. Used to convert the KB-6c-aux2 inequality
+    (after bounding `q0'*dLo ≤ 2*vTop`) into the final
+    `q1'*2^32 + q0' ≤ q_true + 2` form. -/
+theorem Nat_le_div_add_two_of_mul_le
+    (X Y v : Nat) (hv : 0 < v)
+    (h : X * v ≤ Y + 2 * v) :
+    X ≤ Y / v + 2 := by
+  by_cases hX : X ≤ 2
+  · have h1 : 0 ≤ Y / v := Nat.zero_le _
+    omega
+  · push Not at hX
+    -- X ≥ 3, so X - 2 ≥ 1. Subtract 2*v from both sides of h.
+    have hX_sub : (X - 2) * v ≤ Y := by
+      have h_eq : X = (X - 2) + 2 := by omega
+      have h_split : X * v = (X - 2) * v + 2 * v := by
+        conv_lhs => rw [h_eq]
+        rw [Nat.add_mul]
+      linarith
+    have h_div : X - 2 ≤ Y / v := (Nat.le_div_iff_mul_le hv).mpr hX_sub
+    omega
+
 /-- **KB-6c: Quotient assembly upper bound (STUB).**
 
     The Nat-level composition of Phase 1b and Phase 2b quotient bounds:
