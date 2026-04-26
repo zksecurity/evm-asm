@@ -2633,6 +2633,82 @@ theorem algCallAddbackBeqUn3Out_eq_abPrimeLimb3_of_double_addback
   simp only []
   rw [if_pos hcarry]
 
+/-- **Irreducible bundle: val256 of ab' (second-addback) limbs at normalized inputs.**
+
+    Captures the val256 of the 4 low outputs of the **second** addback
+    `addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'`,
+    which fires in the double-addback branch (carry = 0).
+
+    Mirrors `algCallAddbackBeqPost1Val` for the double-addback path. The
+    Word-level wrapper `algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback`
+    (Phase B.5, blocked on Knuth-B #1337) will tie this Nat to
+    `val256(a) % val256(b) * 2^s` via the c3 = 1 derivation.
+
+    Issue #1338 (Phase B.4 mechanical infrastructure). -/
+@[irreducible]
+noncomputable def algCallAddbackBeqAbPrimeVal (a b : EvmWord) : Nat :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let qHat := div128Quot u4 u3 b3'
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let c3 := ms.2.2.2.2
+  let u4_new := u4 - c3
+  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+  let abPrime := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+  val256 abPrime.1 abPrime.2.1 abPrime.2.2.1 abPrime.2.2.2.1
+
+/-- Unfolding lemma for `algCallAddbackBeqAbPrimeVal`. -/
+theorem algCallAddbackBeqAbPrimeVal_unfold {a b : EvmWord} :
+    algCallAddbackBeqAbPrimeVal a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     let abPrime := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+     val256 abPrime.1 abPrime.2.1 abPrime.2.2.1 abPrime.2.2.2.1) := by
+  show algCallAddbackBeqAbPrimeVal a b = _
+  unfold algCallAddbackBeqAbPrimeVal
+  rfl
+
+/-- **Packaging: `algCallAddbackBeqAbPrimeVal = val256 of irreducible AbPrimeLimb`** (CLOSED).
+
+    Mirrors `algCallAddbackBeqPost1Val_eq_val256_limbs` for the double-
+    addback path. By definition both unfold to the same val256 expression
+    over the second-addback's low 4 outputs. Used when applying
+    `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` with the irreducible
+    AbPrimeLimb0..AbPrimeLimb3 limbs as X1..X4 (keeps the goal small). -/
+theorem algCallAddbackBeqAbPrimeVal_eq_val256_limbs (a b : EvmWord) :
+    algCallAddbackBeqAbPrimeVal a b =
+    val256 (algCallAddbackBeqAbPrimeLimb0 a b)
+           (algCallAddbackBeqAbPrimeLimb1 a b)
+           (algCallAddbackBeqAbPrimeLimb2 a b)
+           (algCallAddbackBeqAbPrimeLimb3 a b) := by
+  unfold algCallAddbackBeqAbPrimeVal
+    algCallAddbackBeqAbPrimeLimb0 algCallAddbackBeqAbPrimeLimb1
+    algCallAddbackBeqAbPrimeLimb2 algCallAddbackBeqAbPrimeLimb3
+  rfl
+
 /-- **Bridge: `algCallAddbackBeqPost1Limb0` in parent-friendly `(64 - s)` form** (CLOSED). -/
 theorem algCallAddbackBeqPost1Limb0_eq_parent_64ms_form
     (a b : EvmWord) (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
