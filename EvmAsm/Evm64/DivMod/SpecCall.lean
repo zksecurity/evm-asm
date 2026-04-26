@@ -3396,10 +3396,12 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     simp only [hms_def, hqHat_def, huTop_def, hb0_def, hb1_def, hb2_def, hb3_def,
                hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
     rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
-    -- Helper `denorm_4limb_to_evmWordIs_eq` is closed upstream. Direct
-    -- `exact` application with `h_post1_eq` triggers another whnf timeout
-    -- when Lean tries to unify h_post1_eq's val256 against the helper's
-    -- expected form. Closure pending; helper is in place for future use.
+    -- Helper `denorm_4limb_to_evmWordIs_eq` is closed upstream and provides
+    -- the right shape, but its application (whether via `exact` with implicit
+    -- X1..X4 or with `(X1 := _)`) hits whnf timeout — Lean can't unify
+    -- h_post1_eq's deep inline val256 against the helper's `val256 X1 X2 X3 X4`.
+    -- Closure pending: needs unification-free path, e.g., explicit X1..X4
+    -- as concrete addbackN4 terms.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
