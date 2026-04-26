@@ -2369,6 +2369,99 @@ noncomputable def algCallAddbackBeqUn3Out (a b : EvmWord) : Word :=
   let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
   if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
 
+/-- Unfolding lemmas for un{i}Out irreducibles (used by the parent to fold). -/
+theorem algCallAddbackBeqUn0Out_unfold {a b : EvmWord} :
+    algCallAddbackBeqUn0Out a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+     if carry = 0 then ab'.1 else ab.1) := by
+  show algCallAddbackBeqUn0Out a b = _; unfold algCallAddbackBeqUn0Out; rfl
+
+theorem algCallAddbackBeqUn1Out_unfold {a b : EvmWord} :
+    algCallAddbackBeqUn1Out a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+     if carry = 0 then ab'.2.1 else ab.2.1) := by
+  show algCallAddbackBeqUn1Out a b = _; unfold algCallAddbackBeqUn1Out; rfl
+
+theorem algCallAddbackBeqUn2Out_unfold {a b : EvmWord} :
+    algCallAddbackBeqUn2Out a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+     if carry = 0 then ab'.2.2.1 else ab.2.2.1) := by
+  show algCallAddbackBeqUn2Out a b = _; unfold algCallAddbackBeqUn2Out; rfl
+
+theorem algCallAddbackBeqUn3Out_unfold {a b : EvmWord} :
+    algCallAddbackBeqUn3Out a b =
+    (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+     let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+     let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+     let b0' := (b.getLimbN 0) <<< shift
+     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+     let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+     let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+     let u0 := (a.getLimbN 0) <<< shift
+     let u4 := (a.getLimbN 3) >>> antiShift
+     let qHat := div128Quot u4 u3 b3'
+     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+     let c3 := ms.2.2.2.2
+     let u4_new := u4 - c3
+     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
+     let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
+     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+     if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1) := by
+  show algCallAddbackBeqUn3Out a b = _; unfold algCallAddbackBeqUn3Out; rfl
+
 /-- **Bridge: `algCallAddbackBeqUn0Out = algCallAddbackBeqPost1Limb0` in single-addback** (CLOSED). -/
 theorem algCallAddbackBeqUn0Out_eq_post1Limb0_of_single_addback
     (a b : EvmWord) (hcarry : algCallAddbackBeqCarry a b ≠ 0) :
@@ -3583,251 +3676,58 @@ theorem mod_n4_call_addback_beq_single_addback_post1_limbs_close
     (X4 := algCallAddbackBeqPost1Limb3 a b)
     h_s_pos h_s_lt_64 hb3nz h_wrapper
 
-/-- **Call+addback BEQ n=4 MOD denorm adapter (SORRY).** Stack-level adapter
-    folding the four denormalized remainder slots at `sp+32..sp+56` into
-    `evmWordIs (sp+32) (EvmWord.mod a b)` for the call+addback BEQ path.
+/-- **Call+addback BEQ n=4 MOD denorm adapter** (single-addback CLOSED, double-addback SORRY).
 
-    Mirror of `output_slot_to_evmWordIs_mod_n4_call_skip_denorm` but for the
-    addback branch. The post's mulsub uses raw `qHat = div128Quot …`, then 1
-    or 2 addbacks correct it so the post-addback remainder equals
-    `val256(a_norm) - q_out * val256(b_norm)` (where q_out is the corrected
-    quotient, matching `n4CallAddbackBeqSemanticHolds`).
+    Stack-level adapter folding the 4 denormalized remainder slots at
+    sp+32..sp+56 into `evmWordIs (sp+32) (EvmWord.mod a b)` for the
+    call+addback BEQ path.
 
-    **Closure status (2026-04-25)**: math is fully proven UPSTREAM in this
-    file via the closed wrapper
-    `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback` (in
-    irreducible-bundle form). The wrapper composes 6 closed Word-level
-    helpers through the closed Nat lemma `post1_val_eq_amod_pow_s_pure_nat`.
+    Signature uses irreducible Un{i}Out bundles to keep the goal small
+    (a previous version had a 246-line proof body wrestling with deep
+    inline let-chains). The proof fans out via:
+      - `algCallAddbackBeqUn{i}Out_eq_post1Limb{i}_of_single_addback`
+        (folds Un{i}Out → Post1Limb{i} under hcarry ≠ 0).
+      - `mod_n4_call_addback_beq_single_addback_post1_limbs_close`
+        (per-limb mod equations in irreducible form).
+      - `evmWordIs_sp32_limbs_eq.symm` (final fold).
 
-    **Remaining wiring**: parent's let-chain (`set s := clz.1.toNat % 64`
-    plus `64 - s` antiShift form) needs a bridge to the wrapper's
-    irreducible bundles (`algCallAddbackBeqPost1Val`, `algCallAddbackBeqCarry`).
-    Two bridge options:
-    1. Refactor the parent's `set` lines to use `(signExtend12 0 - clz).toNat % 64`
-       form (matching the irreducible defs' bodies), so rfl bridges work.
-    2. Establish explicit `have` equations using `algCallAddbackBeqCarry_unfold`
-       + `hanti_toNat_mod` rewrite chain.
-
-    Step 4 (val256_denormalize fold): once `val256(post1_low4) = a%b * 2^s`
-    is in scope (from the wrapper's conclusion), `EvmWord.val256_denormalize`
-    + `evmWordIs_sp32_limbs_eq` fold the un-normalized limbs back to
-    `evmWordIs (sp+32) (EvmWord.mod a b)`. -/
+    Double-addback branch (carry = 0) remains sorry pending Knuth bound
+    for c3 = 1. -/
 theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     (sp : Word) (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
     (hborrow : isAddbackBorrowN4CallEvm a b)
     (hsem : n4CallAddbackBeqSemanticHolds a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
-    let antiShift :=
-      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
-    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
-    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
-    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
-    let b0' := (b.getLimbN 0) <<< shift
-    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
-    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
-    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
-    let u0 := (a.getLimbN 0) <<< shift
-    let u4 := (a.getLimbN 3) >>> antiShift
-    let qHat := div128Quot u4 u3 b3'
-    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
-    let c3 := ms.2.2.2.2
-    let u4_new := u4 - c3
-    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 u4_new b0' b1' b2' b3'
-    let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3'
-    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
-    let un0Out := if carry = 0 then ab'.1 else ab.1
-    let un1Out := if carry = 0 then ab'.2.1 else ab.2.1
-    let un2Out := if carry = 0 then ab'.2.2.1 else ab.2.2.1
-    let un3Out := if carry = 0 then ab'.2.2.2.1 else ab.2.2.2.1
+    let un0Out := algCallAddbackBeqUn0Out a b
+    let un1Out := algCallAddbackBeqUn1Out a b
+    let un2Out := algCallAddbackBeqUn2Out a b
+    let un3Out := algCallAddbackBeqUn3Out a b
     (((sp + 32) ↦ₘ ((un0Out >>> shift) ||| (un1Out <<< (64 - shift)))) **
      ((sp + 40) ↦ₘ ((un1Out >>> shift) ||| (un2Out <<< (64 - shift)))) **
      ((sp + 48) ↦ₘ ((un2Out >>> shift) ||| (un3Out <<< (64 - shift)))) **
      ((sp + 56) ↦ₘ (un3Out >>> shift))) =
     evmWordIs (sp + 32) (EvmWord.mod a b) := by
-  -- Abbreviations to keep the proof readable.
-  set s : Nat := (clzResult (b.getLimbN 3)).1.toNat % 64 with hs_def
-  set b0' : Word := (b.getLimbN 0) <<< s with hb0_def
-  set b1' : Word := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s)) with hb1_def
-  set b2' : Word := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s)) with hb2_def
-  set b3' : Word := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s)) with hb3_def
-  set u0 : Word := (a.getLimbN 0) <<< s with hu0_def
-  set u1 : Word := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s)) with hu1_def
-  set u2 : Word := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s)) with hu2_def
-  set u3 : Word := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s)) with hu3_def
-  set uTop : Word := (a.getLimbN 3) >>> (64 - s) with huTop_def
-  set qHat : Word := div128Quot uTop u3 b3' with hqHat_def
-  -- Setup: shift bounds + CLZ top-limb bound.
-  have hshift_pos : 0 < (clzResult (b.getLimbN 3)).1.toNat := by
-    by_contra h
-    push Not at h
-    apply hshift_nz
-    apply BitVec.eq_of_toNat_eq
-    rw [show (0 : Word).toNat = 0 from rfl]; omega
-  have hshift_le_63 := clzResult_fst_toNat_le (b.getLimbN 3)
-  have hshift_lt_64 : (clzResult (b.getLimbN 3)).1.toNat < 64 := by omega
-  have hmod_eq : (clzResult (b.getLimbN 3)).1.toNat % 64 =
-      (clzResult (b.getLimbN 3)).1.toNat := by omega
-  have h0se12 : signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1 =
-      -((clzResult (b.getLimbN 3)).1) := by rw [signExtend12_0]; simp
-  have hanti_toNat_mod :
-      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64 =
-      64 - (clzResult (b.getLimbN 3)).1.toNat := by
-    rw [h0se12, BitVec.toNat_neg]
-    have : ((clzResult (b.getLimbN 3)).1).toNat ≤ 2^64 := by
-      have := ((clzResult (b.getLimbN 3)).1).isLt; omega
-    omega
-  have hb3_bound : (b.getLimbN 3).toNat <
-      2 ^ (64 - (clzResult (b.getLimbN 3)).1.toNat) :=
-    clzResult_fst_top_bound (b.getLimbN 3)
-  -- Save original hsem/hborrow for sub-stub applications, then unfold.
-  have hsem_orig := hsem
-  have hborrow_orig := hborrow
-  rw [isAddbackBorrowN4CallEvm_def] at hborrow
-  rw [n4CallAddbackBeqSemanticHolds_def] at hsem
-  -- Derive u4 < c3 from addback borrow.
-  have hu4_lt_c3 := EvmWord.u_top_lt_c3_of_addback_borrow_call
-      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-      hborrow
-  simp only [] at hu4_lt_c3
-  -- `val256(a_limbs) = a.toNat` and similar for b.
-  have ha_val : val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-      = a.toNat := by
-    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
-               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
-    exact EvmWord.val256_eq_toNat a
-  have hb_val : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-      = b.toNat := by
-    simp only [← EvmWord.getLimb_as_getLimbN_0, ← EvmWord.getLimb_as_getLimbN_1,
-               ← EvmWord.getLimb_as_getLimbN_2, ← EvmWord.getLimb_as_getLimbN_3]
-    exact EvmWord.val256_eq_toNat b
-  -- b3 ≠ 0 ⟹ val256(b_limbs) > 0.
-  have hbnz' : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0 := by
-    intro h; exact hb3nz (BitVec.or_eq_zero_iff.mp h).2
-  have hvb_pos : val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) > 0 :=
-    EvmWord.val256_pos_of_or_ne_zero hbnz'
-  -- Key bound: (val256(a) mod val256(b)) * 2^s < 2^256. Ensures u4_out = 0.
-  have h_mod_mul_lt :
-      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
-        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
-        2 ^ (clzResult (b.getLimbN 3)).1.toNat < 2 ^ 256 :=
-    EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound
-      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-      (by omega) hvb_pos hb3_bound
-  -- Normalize identities at val256 level.
-  have h_norm_u :
-      val256 ((a.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
-        (((a.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((a.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-        (((a.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((a.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-        (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-      + ((a.getLimbN 3) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)).toNat * 2 ^ 256
-      = val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
-          2 ^ (clzResult (b.getLimbN 3)).1.toNat :=
-    EvmWord.val256_normalize_general hshift_pos hshift_lt_64
-      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-  have h_norm_b :
-      val256 ((b.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
-        (((b.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((b.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-        (((b.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((b.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-        (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-          ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-      = val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
-          2 ^ (clzResult (b.getLimbN 3)).1.toNat :=
-    EvmWord.val256_normalize hshift_pos hshift_lt_64
-      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3_bound
-  -- Mulsub Euclidean (unconditional on qHat, q can be any Word):
-  -- val256(u_norm) + c3.toNat * 2^256 = val256(ms_low4) + qHat.toNat * val256(b_norm)
-  have h_mulsub_euclidean := mulsubN4_val256_eq
-    (div128Quot ((a.getLimbN 3) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat))
-      (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-       ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-      (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-       ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat))))
-    ((b.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
-    (((b.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((b.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-    (((b.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((b.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-    (((b.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((b.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-    ((a.getLimbN 0) <<< (clzResult (b.getLimbN 3)).1.toNat)
-    (((a.getLimbN 1) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((a.getLimbN 0) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-    (((a.getLimbN 2) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((a.getLimbN 1) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-    (((a.getLimbN 3) <<< (clzResult (b.getLimbN 3)).1.toNat) |||
-     ((a.getLimbN 2) >>> (64 - (clzResult (b.getLimbN 3)).1.toNat)))
-  simp only [] at h_mulsub_euclidean
-  -- `ms` is the mulsub result using normalized limbs (and raw qHat).
-  set ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3 with hms_def
-  -- First addback's val256 Euclidean:
-  -- val256(u_post1_low4) + val256(b_norm) = val256(ab_low4) + carry * 2^256
-  -- where ab_low4 are the low 4 outputs of addbackN4.
-  have h_ab_euclidean :
-      val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 + val256 b0' b1' b2' b3' =
-      val256 (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
-             (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
-             (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
-             (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.2.1
-      + (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3').toNat * 2 ^ 256 := by
-    have := addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
-    simp only [] at this
-    exact this
-  -- Case-split on the first-addback carry. carry = 0 means single addback wasn't
-  -- enough; double-addback branch. carry ≠ 0 (= 1) means single addback sufficed.
-  set carry_word : Word := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
-    with hcarry_def
-  by_cases hcarry : carry_word = 0
-  · -- Double-addback branch. Still sorry — needs Knuth bound for c3 = 1.
+  intro shift un0Out un1Out un2Out un3Out
+  by_cases hcarry : algCallAddbackBeqCarry a b = 0
+  · -- Double-addback branch (carry = 0). Pending Knuth bound for c3 = 1.
     sorry
-  · -- Single-addback branch (carry_word = 1).
-    -- Step 1-3: Apply the unified lemma to get val256(post1_low4) = a%b * 2^s.
-    have hcarry_orig := hcarry  -- Save original `carry_word ≠ 0` for `if_neg`.
-    rw [hcarry_def] at hcarry
-    have h_post1_eq := parent_post1Val_eq_amod_pow_s_of_single_addback
-      a b hb3nz hshift_nz hborrow hsem_orig hcarry
-    simp only [] at h_post1_eq
-    -- Step 4: val256_denormalize fold.
-    have h_s_pos : 0 < s := by rw [hs_def]; omega
-    have h_s_lt_64 : s < 64 := by rw [hs_def]; omega
-    have h_denorm := denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
-      (a := a) (b := b) (s := s) h_s_pos h_s_lt_64 hb3nz h_post1_eq
-    -- Normalize the goal to fully inline form, then unfold parent's set
-    -- bindings in `hcarry` so its form matches the goal's inline if-condition.
-    dsimp only []
-    simp only [hanti_toNat_mod, hs_def, hmod_eq]
-    simp only [hms_def, hqHat_def, huTop_def,
-               hb0_def, hb1_def, hb2_def, hb3_def,
-               hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq, hanti_toNat_mod] at hcarry
-    rw [if_neg hcarry]
-    -- Bridge ab.{i} to post1.{i} via low-4-output independence of u4_new.
-    have hab := addbackN4_low_limbs_indep_u4_new
-      ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) b0' b1' b2' b3'
-    simp only [hms_def, hqHat_def, huTop_def, hb0_def, hb1_def, hb2_def, hb3_def,
-               hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
-    rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
-    -- Restructure plan (option 2 from session): reorganize the parent's
-    -- proof to introduce the irreducible Limb bundles via `set` BEFORE
-    -- the if-collapse and hab rewrites. The post1 atoms in the goal
-    -- would then be `set`-replaced to Limb names directly, sidestepping
-    -- the form-mismatch.
-    -- Concrete steps (deferred):
-    --   1. Move the `set` chain (s, b0'..b3', u0..u3, etc.) to define
-    --      `set post1Limb0 := (addbackN4 ms.1 ... 0 b0' ...).1` etc.
-    --   2. Use the existing bridges to relate parent's set names to
-    --      irreducible bundles (algCallAddbackBeqPost1Limb{i} a b).
-    --   3. The if-then-else collapse and hab rewrites rewrite goal in
-    --      terms of `post1Limb{i}` set names, matching h_limbs's form.
-    sorry
+  · -- Single-addback branch: fold Un{i}Out → Post1Limb{i} via bridges.
+    rw [show un0Out = algCallAddbackBeqPost1Limb0 a b from
+          algCallAddbackBeqUn0Out_eq_post1Limb0_of_single_addback a b hcarry,
+        show un1Out = algCallAddbackBeqPost1Limb1 a b from
+          algCallAddbackBeqUn1Out_eq_post1Limb1_of_single_addback a b hcarry,
+        show un2Out = algCallAddbackBeqPost1Limb2 a b from
+          algCallAddbackBeqUn2Out_eq_post1Limb2_of_single_addback a b hcarry,
+        show un3Out = algCallAddbackBeqPost1Limb3 a b from
+          algCallAddbackBeqUn3Out_eq_post1Limb3_of_single_addback a b hcarry]
+    have h_limbs := mod_n4_call_addback_beq_single_addback_post1_limbs_close
+      a b hb3nz hshift_nz hborrow hsem hcarry
+    simp only [] at h_limbs
+    exact (evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b) _ _ _ _
+      h_limbs.1 h_limbs.2.1 h_limbs.2.2.1 h_limbs.2.2.2).symm
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
 
@@ -3880,6 +3780,10 @@ theorem evm_mod_n4_call_addback_beq_stack_spec (sp base : Word)
   refine cpsTriple_weaken (fun _ hp => hp) ?_ h_pre
   intro h hq
   simp only [fullModN4CallAddbackBeqPost_unfold, denormModPost_unfold] at hq
+  -- Fold hq's inline un{i}Out forms to the irreducible Un{i}Out names
+  -- (matching the parent adapter's new signature).
+  simp only [← algCallAddbackBeqUn0Out_unfold, ← algCallAddbackBeqUn1Out_unfold,
+             ← algCallAddbackBeqUn2Out_unfold, ← algCallAddbackBeqUn3Out_unfold] at hq
   apply mod_n4_call_skip_stack_weaken sp a b h
   rw [show evmWordIs sp a =
       ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
