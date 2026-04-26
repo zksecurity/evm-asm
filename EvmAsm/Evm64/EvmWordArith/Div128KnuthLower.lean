@@ -1157,4 +1157,37 @@ theorem knuth_theorem_c_strong_abstract
   -- Now linarith should combine h_chain, h_expand_vTop, h_eucl_mul, h_vTop_ge_1.
   linarith
 
+/-- **Strong Knuth-C contrapositive (abstract algebra form):
+    no-check ⟹ q1c ≤ q_true_1 + 1.** The contrapositive of
+    `knuth_theorem_c_strong_abstract`: when the multiplication check
+    inequality fails (i.e., `q1c * dLo ≤ rhatc * 2^32 + div_un1`),
+    the Phase 1a-corrected trial is at most `q_true_1 + 1`:
+
+    ```
+    q1c * dLo ≤ rhatc * 2^32 + div_un1
+      → q1c ≤ q_true_1 + 1
+    ```
+
+    This is the form ready to use in Phase 1b's "check doesn't fire"
+    branch: q1' = q1c there, so q1' ≤ q_true_1 + 1 directly.
+
+    Direct contrapositive of `knuth_theorem_c_strong_abstract`. -/
+theorem knuth_theorem_c_strong_contrapositive
+    (uHi dHi dLo div_un1 rhatc q1c : Word)
+    (h_eucl : q1c.toNat * dHi.toNat + rhatc.toNat = uHi.toNat)
+    (h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat)
+    (h_no_check : q1c.toNat * dLo.toNat ≤ rhatc.toNat * 2^32 + div_un1.toNat) :
+    q1c.toNat ≤
+      (uHi.toNat * 2^32 + div_un1.toNat) /
+        (dHi.toNat * 2^32 + dLo.toNat) + 1 := by
+  by_contra h
+  push Not at h
+  have h_overshoot : q1c.toNat ≥
+      (uHi.toNat * 2^32 + div_un1.toNat) /
+        (dHi.toNat * 2^32 + dLo.toNat) + 2 := by omega
+  have h_check :=
+    knuth_theorem_c_strong_abstract uHi dHi dLo div_un1 rhatc q1c
+      h_eucl h_vTop_pos h_overshoot
+  omega
+
 end EvmAsm.Evm64
