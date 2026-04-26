@@ -854,10 +854,65 @@ theorem div128Quot_q1_prime_q0_prime_le_q_true_plus_two
 
     Tracked in issue #1337. -/
 theorem div128Quot_le_q_true_plus_two (uHi uLo vTop : Word)
-    (_hvTop_norm : vTop.toNat ≥ 2^63)
-    (_hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
+    (hvTop_norm : vTop.toNat ≥ 2^63)
+    (hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
     (div128Quot uHi uLo vTop).toNat ≤
       (uHi.toNat * 2^64 + uLo.toNat) / vTop.toNat + 2 := by
-  sorry
+  -- Step 0: derive intermediate preconditions from hvTop_norm + hcall.
+  -- vTop = dHi * 2^32 + dLo  (KB-3k, unconditional).
+  have h_vtop := div128Quot_vTop_decomp vTop
+  simp only [] at h_vtop
+  -- hdHi_ge: dHi ≥ 2^31  (from vTop ≥ 2^63 + decomp + dLo < 2^32).
+  have hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h1 : vTop.toNat ≥ 2^63 := hvTop_norm
+    have h2 : (2^63 : Nat) = 2^31 * 2^32 := by decide
+    omega
+  -- hdHi_lt: dHi < 2^32  (from vTop < 2^64).
+  have hdHi_lt : (vTop >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have h := vTop.isLt
+    omega
+  -- hdLo_lt: dLo < 2^32  (mod-2^32 of a Nat).
+  have hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                  (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow,
+        BitVec.toNat_shiftLeft]
+    have h_mod : (vTop.toNat * 2^(32 : BitVec 6).toNat) % 2^64 < 2^64 :=
+      Nat.mod_lt _ (by norm_num)
+    omega
+  -- huHi_lt_vTop: uHi < vTop  (from hcall + uLo ≥ 0; written via dHi*2^32+dLo).
+  have h_uHi_lt_vTop_raw : uHi.toNat < vTop.toNat := by
+    by_contra h
+    push Not at h
+    have : vTop.toNat * 2^64 ≤ uHi.toNat * 2^64 := Nat.mul_le_mul_right _ h
+    have huLo := uLo.isLt
+    have : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64 := hcall
+    omega
+  have huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat := by
+    rw [← h_vtop]; exact h_uHi_lt_vTop_raw
+  -- Step 1: un21 < vTop  (Knuth-C invariant, STUB).
+  have h_un21_lt :=
+    div128Quot_un21_lt_vTop uHi uLo vTop hvTop_norm hcall
+  simp only [] at h_un21_lt
+  -- Step 2: q0' < 2^32  (KB-6b, CLOSED, requires un21 < vTop).
+  have h_q0'_lt :=
+    div128Quot_q0_prime_lt_pow32 _ _ _ uLo hdHi_ge hdHi_lt hdLo_lt h_un21_lt
+  simp only [] at h_q0'_lt
+  -- Step 3: div128Quot.toNat = q1'.toNat * 2^32 + q0'.toNat  (KB-6a strict, CLOSED).
+  have h_eq :=
+    div128Quot_toNat_eq_strict uHi uLo vTop
+      hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
+  simp only [] at h_eq
+  -- Step 4: q1'.toNat * 2^32 + q0'.toNat ≤ q_true + 2  (KB-6c, STUB).
+  have h_assemble :=
+    div128Quot_q1_prime_q0_prime_le_q_true_plus_two uHi uLo vTop
+      hvTop_norm hcall
+  simp only [] at h_assemble
+  -- Step 5: combine.
+  rw [h_eq h_q0'_lt]
+  exact h_assemble
 
 end EvmAsm.Evm64
