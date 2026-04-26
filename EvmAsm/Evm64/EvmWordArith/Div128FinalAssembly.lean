@@ -855,6 +855,63 @@ theorem Nat_le_div_add_two_of_mul_le
     have h_div : X - 2 ≤ Y / v := (Nat.le_div_iff_mul_le hv).mpr hX_sub
     omega
 
+/-- **KB-6c-aux4: `q0' * dLo ≤ 2 * vTop` under normalization.**
+
+    Pure Nat arithmetic. Under the standard div128Quot preconditions:
+    - `q0' < 2^32` (KB-6b under un21 < vTop).
+    - `dLo < 2^32` (definition).
+    - `vTop ≥ 2^63` (normalization).
+
+    We have `q0' * dLo < 2^32 * 2^32 = 2^64 ≤ 2 * 2^63 ≤ 2 * vTop`.
+    Used in KB-6c to convert `(q1'*2^32 + q0')*vTop ≤ uHi*2^64 + uLo
+    + q0'*dLo` into the form needed for `Nat_le_div_add_two_of_mul_le`. -/
+theorem div128Quot_kb6c_q0_dLo_bound
+    (q0' dLo vTop : Nat)
+    (hq0' : q0' < 2^32)
+    (hdLo : dLo < 2^32)
+    (hvTop : vTop ≥ 2^63) :
+    q0' * dLo ≤ 2 * vTop := by
+  have h1 : q0' * dLo ≤ (2^32 - 1) * (2^32 - 1) := by
+    apply Nat.mul_le_mul <;> omega
+  have h2 : (2^32 - 1) * (2^32 - 1) ≤ 2 * 2^63 := by decide
+  have h3 : 2 * 2^63 ≤ 2 * vTop := by omega
+  omega
+
+/-- **KB-6c-pure-nat: pure-Nat KB-6c quotient assembly bound.**
+
+    Composes KB-6c-aux1 (assembly identity), KB-6c-aux2 (drop
+    corrections), KB-6c-aux4 (q0'*dLo ≤ 2*vTop), and the
+    Nat division step (`Nat_le_div_add_two_of_mul_le`):
+
+    ```
+    q1' * 2^32 + q0' ≤ (uHi * 2^64 + uLo) / vTop + 2
+    ```
+
+    All hypotheses are pure-Nat. The algorithm-level KB-6c
+    (`div128Quot_q1_prime_q0_prime_le_q_true_plus_two`) becomes a
+    one-step application of this lemma, after extracting the relevant
+    Nat values from the algorithm's let-chain and discharging
+    h_phase2b/h_kb3m/h_vTop/h_uLo/hq0' from the existing infrastructure
+    (Phase 2b post, KB-3m, KB-3k, uLo decomposition, KB-6b). -/
+theorem div128Quot_kb6c_pure_nat
+    (q1' q0' rhat2' un21 uHi uLo vTop dHi dLo div_un1 div_un0 r1 : Nat)
+    (h_phase2b : q0' * dHi + rhat2' = un21)
+    (h_kb3m : un21 + r1 * 2^64 + q1' * vTop = uHi * 2^32 + div_un1)
+    (h_vTop : vTop = dHi * 2^32 + dLo)
+    (h_uLo : uLo = div_un1 * 2^32 + div_un0)
+    (hq0' : q0' < 2^32)
+    (hdLo : dLo < 2^32)
+    (hvTopNorm : vTop ≥ 2^63) :
+    q1' * 2^32 + q0' ≤ (uHi * 2^64 + uLo) / vTop + 2 := by
+  have h_ineq := div128Quot_kb6c_assembly_inequality
+    q1' q0' rhat2' un21 uHi uLo vTop dHi dLo div_un1 div_un0 r1
+    h_phase2b h_kb3m h_vTop h_uLo
+  have h_q0_dLo := div128Quot_kb6c_q0_dLo_bound q0' dLo vTop hq0' hdLo hvTopNorm
+  have h_combined :
+      (q1' * 2^32 + q0') * vTop ≤ uHi * 2^64 + uLo + 2 * vTop := by omega
+  have hvTop_pos : 0 < vTop := by omega
+  exact Nat_le_div_add_two_of_mul_le _ _ _ hvTop_pos h_combined
+
 /-- **KB-6c: Quotient assembly upper bound (STUB).**
 
     The Nat-level composition of Phase 1b and Phase 2b quotient bounds:
