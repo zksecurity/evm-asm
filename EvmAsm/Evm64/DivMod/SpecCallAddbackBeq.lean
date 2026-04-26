@@ -2216,7 +2216,7 @@ theorem qHat_ge_two_of_double_addback (a b : EvmWord)
     4. With c3 - u4 ≥ 1: (qHat - 1) * b * 2^s > a * 2^s, hence
        (qHat - 1) * b > a, hence qHat - 1 > a/b, hence qHat ≥ a/b + 2.
 
-    **Proof structure**: composes B.1a (qHat ≥ 2, sorry above) with
+    **Proof structure**: composes B.1a (qHat ≥ 2, CLOSED above) with
     Word arithmetic on hsem (this proof, ~50 LOC, fully closed).
 
     Issue #1338 Phase B.1. -/
@@ -2589,9 +2589,9 @@ theorem algCallAddbackBeq_amod_pow_s_lt_pow256
     - Substitute qHat via B.1 (`qHat_eq_div_plus_two_of_double_addback`).
     - val256_normalize for u_norm and b_norm.
 
-    **Dependencies**: B.1 (sorry, `qHat_eq_div_plus_two_of_double_addback`).
-    Once B.1 is filled, this lemma's proof is straightforward (mirror of
-    single-addback). Issue #1338 Phase B.5. -/
+    **Dependencies**: B.1 (CLOSED, `qHat_eq_div_plus_two_of_double_addback`).
+    Mirror of single-addback's `algCallAddbackBeq_mulsub_euclidean`.
+    Issue #1338 Phase B.5. -/
 theorem algCallAddbackBeq_mulsub_euclidean_double
     (a b : EvmWord)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
@@ -3251,13 +3251,13 @@ theorem mod_n4_call_addback_beq_single_addback_post1_limbs_close
 
     **Proof structure** (matches single-addback's): direct application
     of `abPrime_val_eq_amod_pow_s_pure_nat` (B.3, CLOSED) with the 6
-    closed/sorry'd Word-level preconditions:
+    closed Word-level preconditions:
     - `algCallAddbackBeqAbPrimeVal_lt_pow256`                      (h_abPrime_lt, CLOSED)
     - `algCallAddbackBeq_amod_pow_s_lt_pow256`                     (h_amod_pow_lt, CLOSED, reused)
     - `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat`   (h_u4_lt_c3, CLOSED, reused)
     - `algCallAddbackBeqU4_mul_pow256_le_val256_mul_pow_s`         (h_u4_le, CLOSED, reused)
-    - `algCallAddbackBeq_addback_combined_euclidean_carry2`         (h_addback_combined, sorry)
-    - `algCallAddbackBeq_mulsub_euclidean_double`                  (h_mulsub, sorry)
+    - `algCallAddbackBeq_addback_combined_euclidean_carry2`         (h_addback_combined, CLOSED)
+    - `algCallAddbackBeq_mulsub_euclidean_double`                  (h_mulsub, CLOSED)
 
     Issue #1338 Phase B.5. -/
 theorem algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback
@@ -3354,8 +3354,10 @@ theorem mod_n4_call_addback_beq_double_addback_abPrime_limbs_close
         (per-limb mod equations in irreducible form).
       - `evmWordIs_sp32_limbs_eq.symm` (final fold).
 
-    Double-addback branch (carry = 0) remains sorry pending Knuth bound
-    for c3 = 1. -/
+    Both branches CLOSED. The double-addback branch (carry = 0) closes
+    via B.5 (`mod_n4_call_addback_beq_double_addback_abPrime_limbs_close`),
+    which uses the now-closed `algCallAddbackBeq_mulsub_euclidean_double`
+    chain (#1338 B.1a → B.1 → B.5 → B.7 cascade). -/
 theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     (sp : Word) (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
@@ -3405,13 +3407,13 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     exact (evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b) _ _ _ _
       h_limbs.1 h_limbs.2.1 h_limbs.2.2.1 h_limbs.2.2.2).symm
 
-/-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
+/-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path.**
 
-    Mirror of `evm_div_n4_call_addback_beq_stack_spec` for MOD. Depends on
-    the `output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm` adapter
-    above (currently sorry). Once the adapter is filled in, this stack spec
-    reduces mechanically using the template from
-    `evm_mod_n4_call_skip_stack_spec` (landed in #1207). -/
+    Mirror of `evm_div_n4_call_addback_beq_stack_spec` for MOD. Composes
+    the closed `output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm`
+    adapter (above) with the runtime + memory bookkeeping from
+    `evm_mod_n4_full_call_addback_beq_stack_pre_spec_bundled`. Mirrors
+    the template from `evm_mod_n4_call_skip_stack_spec` (landed in #1207). -/
 theorem evm_mod_n4_call_addback_beq_stack_spec (sp base : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
