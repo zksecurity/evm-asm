@@ -802,4 +802,51 @@ theorem div128Quot_q0_prime_ge_q_true_0_of_un21_lt_dHi_mul_pow32
     exact div128Quot_q1c_ge_q_true_1 un21 dHi dLo div_un0 hdHi_ne
       h_div_un0_lt hun21_lt_vTop
 
+/-- **U3: Phase 1 no-wrap (SORRY).** The Phase 1b no-wrap precondition that
+    feeds T1 (`div128Quot_qHat_vTop_le`):
+
+    ```
+    q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat
+    ```
+
+    Under `dHi ≥ 2^31` (normalization), `dLo < 2^32` (uniform halfword
+    bound), `uHi < 2^63` (auto under hshift_nz, gives KB-LB6b's
+    `rhatc < 2^32`).
+
+    **Closure path** (case-split on Phase 1b check):
+
+    - **Check doesn't fire** (¬ult rhatUn1 (q1c * dLo)):
+      - q1' = q1c, rhat' = rhatc.
+      - `(q1c * dLo).toNat = q1c * dLo` (no overflow: q1c < 2^32, dLo < 2^32).
+      - `rhatUn1.toNat = rhatc * 2^32 + div_un1` (halfword_combine, since
+        rhatc < 2^32 by KB-LB6b).
+      - Negation of ult gives `rhatUn1.toNat ≥ q1c * dLo`, i.e.,
+        `q1c * dLo ≤ rhatc * 2^32 + div_un1`. ✓
+
+    - **Check fires** (ult rhatUn1 (q1c * dLo)):
+      - q1' = q1c - 1, rhat' = rhatc + dHi (Phase 1b correction).
+      - Need `(q1c - 1) * dLo ≤ ((rhatc + dHi) % 2^32) * 2^32 + div_un1`.
+      - Knuth's correction restores the no-wrap invariant: from check firing
+        plus the new rhat' = rhatc + dHi, the new (rhat' % 2^32) * 2^32 +
+        div_un1 ≥ (q1c - 1) * dLo. Algebraic argument requires careful
+        tracking of (rhatc + dHi) overflow into 2^32 boundary.
+
+    Tracked in #1337 as part of the un21 < vTop plan. -/
+theorem div128Quot_phase1_no_wrap (uHi dHi dLo uLo : Word)
+    (_hdHi_ge : dHi.toNat ≥ 2^31)
+    (_hdLo_lt : dLo.toNat < 2^32)
+    (_huHi_lt_pow63 : uHi.toNat < 2^63) :
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat := by
+  sorry
+
 end EvmAsm.Evm64
