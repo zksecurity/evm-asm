@@ -2253,6 +2253,25 @@ theorem qHat_ge_two_of_double_addback (a b : EvmWord)
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
     let u4 := (a.getLimbN 3) >>> antiShift
     (div128Quot u4 u3 b3').toNat ≥ 2 := by
+  -- Proof attempted but blocked on forward reference:
+  -- `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat` (the wrapper
+  -- around `EvmWord.u_top_lt_c3_of_addback_borrow_call`) is defined in the
+  -- file AFTER this lemma.
+  --
+  -- Working proof structure:
+  -- - by_contra h_lt: qHat.toNat < 2.
+  -- - interval_cases qHat.toNat:
+  --   - qHat = 0: c3_un_zero_of_qHat_mul_le gives c3 = 0; hborrow's u4 < c3
+  --     contradicts c3 = 0.
+  --   - qHat = 1: mulsub gives val256(u_norm) + c3*2^256 = val256(ms) + val256(b_norm).
+  --     hcarry_zero gives val256(ms) + val256(b_norm) = val256(ab) < 2^256.
+  --     Combined with c3 ≥ 1: val256(u_norm) + 2^256 ≤ val256(ab) < 2^256.
+  --     Contradiction.
+  --
+  -- Either move B.1a after `algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat`,
+  -- or inline `EvmWord.u_top_lt_c3_of_addback_borrow_call` (with the
+  -- antiShift_toNat_mod_eq dance from `qHat_eq_div_plus_one_of_single_addback`'s
+  -- proof, lines 1929-1957).
   sorry
 
 /-- **B.1 (#1338, NOT Knuth-B blocked):** qHat.toNat = a/b + 2
