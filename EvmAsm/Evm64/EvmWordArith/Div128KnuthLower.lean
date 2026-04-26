@@ -1326,4 +1326,73 @@ theorem div128Quot_q1_prime_le_q_true_1_plus_one
         h_eucl h_vTop_pos h_no_check_nat
     omega
 
+/-- **U3 Sub-case A reduction (abstract algebra form):
+    no-wrap-lo ↔ q1' ≤ q_true_1 when rhat' < 2^32.** Under Phase 1b
+    Euclidean `q1' * dHi + rhat' = uHi` and the small-rhat' regime
+    (`rhat' < 2^32`), the algorithm's no-wrap precondition for `un21`
+    is equivalent to the bound `q1' ≤ q_true_1`:
+
+    ```
+    q1' * dLo ≤ (rhat' % 2^32) * 2^32 + div_un1
+      ↔ q1' ≤ (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo)
+    ```
+
+    This is the clean algebraic content of U3's Sub-case A. The
+    remaining gap is the **quotient** direction: prove `q1' ≤ q_true_1`
+    (i.e., rule out q1' = q_true_1 + 1, the Knuth-C borderline case).
+
+    Combined with KB-LB7 (q1' ≥ q_true_1, lower bound) and KB-LB12
+    (q1' ≤ q_true_1 + 1, Theorem-C upper bound), the only open case
+    is q1' = q_true_1 + 1. Ruling it out under `rhat' < 2^32` is the
+    deep Knuth invariant.
+
+    Decomposes U3's hard case into:
+    1. **Algebra** (this lemma, fully proven): biconditional reduction.
+    2. **Quotient bound** (open): `q1' ≤ q_true_1` under rhat' < 2^32. -/
+theorem phase1_no_wrap_lo_subcase_a_iff_q1_prime_le_q_true_1
+    (q1' dHi dLo rhat' uHi div_un1 : Nat)
+    (h_eucl : q1' * dHi + rhat' = uHi)
+    (h_rhat'_lt_pow32 : rhat' < 2^32)
+    (h_vTop_pos : 0 < dHi * 2^32 + dLo) :
+    (q1' * dLo ≤ (rhat' % 2^32) * 2^32 + div_un1) ↔
+    (q1' ≤ (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo)) := by
+  set vTop := dHi * 2^32 + dLo with h_vTop_def
+  rw [Nat.mod_eq_of_lt h_rhat'_lt_pow32]
+  -- q1' * vTop expands and substitutes via Phase 1b Euclidean.
+  have h_expand : q1' * vTop = q1' * dHi * 2^32 + q1' * dLo := by
+    show q1' * (dHi * 2^32 + dLo) = _; ring
+  -- q1' * dHi * 2^32 = (uHi - rhat') * 2^32 (Nat subtraction valid).
+  have h_rhat'_le : rhat' ≤ uHi := by omega
+  have h_eucl_mul : q1' * dHi * 2^32 = uHi * 2^32 - rhat' * 2^32 := by
+    have h1 : q1' * dHi = uHi - rhat' := by omega
+    rw [h1, Nat.sub_mul]
+  constructor
+  · -- Forward: q1' * dLo ≤ rhat' * 2^32 + div_un1 ⟹ q1' ≤ q_true_1.
+    intro h_no_wrap
+    -- q1' * vTop ≤ uHi * 2^32 + div_un1.
+    have h_q1_vTop : q1' * vTop ≤ uHi * 2^32 + div_un1 := by
+      rw [h_expand, h_eucl_mul]
+      have h_rhat_pow : rhat' * 2^32 ≤ uHi * 2^32 :=
+        Nat.mul_le_mul_right _ h_rhat'_le
+      omega
+    -- Conclude q1' ≤ q_true_1 via division.
+    exact (Nat.le_div_iff_mul_le h_vTop_pos).mpr
+      (by linarith [Nat.mul_comm q1' vTop])
+  · -- Backward: q1' ≤ q_true_1 ⟹ q1' * dLo ≤ rhat' * 2^32 + div_un1.
+    intro h_q1_le
+    -- q1' * vTop ≤ q_true_1 * vTop ≤ uHi * 2^32 + div_un1.
+    have h_q1_vTop : q1' * vTop ≤ uHi * 2^32 + div_un1 := by
+      have h1 : q1' * vTop ≤
+          ((uHi * 2^32 + div_un1) / vTop) * vTop :=
+        Nat.mul_le_mul_right _ h_q1_le
+      have h2 : ((uHi * 2^32 + div_un1) / vTop) * vTop ≤
+          uHi * 2^32 + div_un1 :=
+        Nat.div_mul_le_self _ _
+      omega
+    -- Substitute via Phase 1b Euclidean.
+    rw [h_expand, h_eucl_mul] at h_q1_vTop
+    have h_rhat_pow : rhat' * 2^32 ≤ uHi * 2^32 :=
+      Nat.mul_le_mul_right _ h_rhat'_le
+    omega
+
 end EvmAsm.Evm64
