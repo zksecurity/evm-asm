@@ -1035,4 +1035,61 @@ theorem div128Quot_q1_le_q_true_1_plus_two
   -- But q_true_1 < 2^32 contradicts q_true_1 ≥ 2^32.
   omega
 
+/-- **KB-LB11: Phase 1a preserves the Knuth Theorem B upper bound.**
+    After the `hi1` correction, the corrected trial `q1c` is still
+    bounded by `q_true_1 + 2`:
+
+    ```
+    q1c.toNat ≤ (uHi * 2^32 + div_un1) / vTop + 2
+    ```
+
+    Case analysis on `hi1`:
+    - `hi1 = 0` (q1 < 2^32): `q1c = q1`, KB-LB10 closes directly.
+    - `hi1 ≠ 0` (q1 ≥ 2^32): `q1c = q1 - 1`. From KB-LB10
+      `q1 ≤ q_true_1 + 2`, so `q1c = q1 - 1 ≤ q_true_1 + 1 ≤ q_true_1 + 2`.
+
+    Phase 1a-corrected upper bound on the way to KB-LB12 (Phase 1b
+    Knuth Theorem C tight bound, which is the missing piece for U3). -/
+theorem div128Quot_q1c_le_q_true_1_plus_two
+    (uHi dHi dLo div_un1 : Word)
+    (hdHi_ne : dHi ≠ 0)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdLo_lt : dLo.toNat < 2^32)
+    (h_div_un1_lt : div_un1.toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat) :
+    let q1 := rv64_divu uHi dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    q1c.toNat ≤
+      (uHi.toNat * 2^32 + div_un1.toNat) /
+        (dHi.toNat * 2^32 + dLo.toNat) + 2 := by
+  intro q1 hi1 q1c
+  have h_q1_le : q1.toNat ≤
+      (uHi.toNat * 2^32 + div_un1.toNat) /
+        (dHi.toNat * 2^32 + dLo.toNat) + 2 :=
+    div128Quot_q1_le_q_true_1_plus_two uHi dHi dLo div_un1
+      hdHi_ne hdHi_ge hdLo_lt h_div_un1_lt huHi_lt_vTop
+  by_cases h_hi1 : hi1 = 0
+  · -- q1c = q1.
+    show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ _
+    rw [if_pos h_hi1]
+    exact h_q1_le
+  · -- q1c = q1 - 1 (mod 2^64). Use q1 ≥ 2^32 from hi1 ≠ 0.
+    have h_q1_ge_pow32 : q1.toNat ≥ 2^32 := by
+      by_contra h
+      push Not at h
+      apply h_hi1
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+      show q1.toNat / 2^32 = (0 : Word).toNat
+      rw [Nat.div_eq_of_lt h]; rfl
+    show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ _
+    rw [if_neg h_hi1]
+    rw [BitVec.toNat_add, signExtend12_4095_toNat]
+    have h_q1_lt : q1.toNat < 2^64 := q1.isLt
+    have h_q1_sub_lt : q1.toNat - 1 < 2^64 := by omega
+    rw [show q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 from by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt h_q1_sub_lt]
+    omega
+
 end EvmAsm.Evm64
