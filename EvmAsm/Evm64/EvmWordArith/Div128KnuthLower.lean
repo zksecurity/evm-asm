@@ -893,6 +893,21 @@ theorem div128Quot_phase1_no_wrap (uHi dHi dLo uLo : Word)
     exact EvmWord.halfword_combine rhatc div_un1 h_rhatc_lt h_div_un1_lt
   by_cases h_check : BitVec.ult rhatUn1 qDlo
   · -- Check fires: q1' = q1c - 1, rhat' = rhatc + dHi.
+    -- The no-wrap reduces (after Phase 1b Euclidean substitution) to:
+    --   q1' * vTop ≤ uHi * 2^32 + div_un1
+    -- i.e., `q1' ≤ q_true_1` (Knuth Theorem C tight upper bound).
+    --
+    -- Knuth Theorem C gives q1' ∈ {q_true_1, q_true_1 + 1} after Phase 1b
+    -- correction. The lower bound `q1' ≥ q_true_1` is closed (KB-LB7,
+    -- `div128Quot_q1_prime_ge_q_true_1_of_uHi_lt_pow63`). The remaining gap
+    -- is RULING OUT `q1' = q_true_1 + 1`, which is the degenerate
+    -- "borderline" case where the multiplication check correction fired
+    -- but didn't tighten enough.
+    --
+    -- This is exactly the same gap that blocks `un21 < vTop` (see
+    -- project_un21_lt_vTop_plan.md) and is a hard math gap requiring
+    -- either Word-level Knuth-C-tight analysis (~150 LOC) or a different
+    -- composition path (e.g., via Piece A's abstract Knuth-B bound).
     sorry
   · -- Check doesn't fire: q1' = q1c, rhat' = rhatc.
     have h_q1' : q1' = q1c := by
