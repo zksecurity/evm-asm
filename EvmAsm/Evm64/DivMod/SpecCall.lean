@@ -3680,12 +3680,18 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     simp only [hms_def, hqHat_def, huTop_def, hb0_def, hb1_def, hb2_def, hb3_def,
                hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq] at hab
     rw [hab.1, hab.2.1, hab.2.2.1, hab.2.2.2]
-    -- Limb bridges in scope but rw/simp [← hLimb{i}] silently no-ops —
-    -- presumably because hLimb{i}'s RHS uses a let-chain shape that
-    -- simp's rewriter doesn't match against the goal's zeta-reduced form
-    -- without triggering whnf timeout on each candidate position.
-    -- Closure pending: bridges may need their RHS fully zeta-reduced
-    -- in their statement (not just via dsimp at hyp) so simp can match.
+    -- Restructure plan (option 2 from session): reorganize the parent's
+    -- proof to introduce the irreducible Limb bundles via `set` BEFORE
+    -- the if-collapse and hab rewrites. The post1 atoms in the goal
+    -- would then be `set`-replaced to Limb names directly, sidestepping
+    -- the form-mismatch.
+    -- Concrete steps (deferred):
+    --   1. Move the `set` chain (s, b0'..b3', u0..u3, etc.) to define
+    --      `set post1Limb0 := (addbackN4 ms.1 ... 0 b0' ...).1` etc.
+    --   2. Use the existing bridges to relate parent's set names to
+    --      irreducible bundles (algCallAddbackBeqPost1Limb{i} a b).
+    --   3. The if-then-else collapse and hab rewrites rewrite goal in
+    --      terms of `post1Limb{i}` set names, matching h_limbs's form.
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
