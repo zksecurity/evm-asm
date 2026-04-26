@@ -812,51 +812,39 @@ theorem div128Quot_toNat_eq_strict (uHi uLo vTop : Word)
       hdHi_ge hdHi_lt hdLo_lt huHi_lt_vTop
   rw [h_kb6a, Nat.mod_eq_of_lt h_q1'_lt]
 
-/-- **KB-6c-pre: Phase 2 Knuth-C invariant `un21 < vTop ∧ no-wrap` (STUB).**
+/-- **KB-6c-pre: Phase 2 Knuth-C invariant `un21 < vTop ∧ no-wrap`
+    — KNOWN FALSE for some inputs in the stated preconditions.**
 
-    After Phase 1b, the running remainder
-    `un21 = (cu_rhat_un1 - cu_q1_dlo)` is strictly less than `vTop` AND
-    no BitVec subtraction wrap occurred (i.e., `B ≤ A` for KB-3j/m).
-    Both conjuncts follow from the **same Knuth-C tightening** (Knuth
-    TAOCP Vol 2 §4.3.1 Theorem C):
+    Concrete counterexample (memory `project_kb6d_false_counterexample.md`):
+      `dHi = 2^31`, `dLo = 2^32 - 1`, `vTop = 2^63 + 2^32 - 1`,
+      `uHi = 2^62 + 2^32`, `uLo = 0`.
+    Preconditions (`vTop ≥ 2^63` ∧ `uHi*2^64 + uLo < vTop*2^64`) hold.
+    Phase 1b yields `q1' = q_true_1 + 1 = 2^31 + 1` (textbook
+    Knuth-C tight case). Subsequent BitVec subtraction WRAPS,
+    producing `un21.toNat = 2^64 - 2^31 + 1 ≫ vTop`. So the
+    `un21 < vTop` conjunct is FALSE. Downstream KB-6d's claim
+    `div128Quot ≤ q_true + 2` is also FALSE in this case
+    (overshoot = 2^32 - 2).
 
-    1. `un21.toNat < vTop.toNat`  — running remainder bound.
-    2. `q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat`
-       — no-wrap (B ≤ A) form.
+    **Why it's false**: Knuth's textbook Theorem C only gives
+    `q1' ≤ q_true_1 + 1`. The "+2 overshoot" guarantee in Knuth's
+    Theorem B refers to the per-digit final result *after the entire
+    algorithm including addback step D6*, not to the bare
+    trial-quotient computation. `div128Quot` performs only the trial
+    computation, no addback — so the assembled bare trial CAN
+    overshoot by ~2^32 when Phase 1 produces `q_true_1 + 1`.
 
-    **Why both**: KB-6b (`div128Quot_q0_prime_lt_pow32`, CLOSED) takes
-    `un21 < vTop` as its precondition. KB-3m
-    (`div128Quot_un21_additive_identity`, CLOSED) takes no-wrap (`B ≤ A`)
-    as its precondition. Pure-Nat KB-6c
-    (`div128Quot_kb6c_pure_nat`, CLOSED) needs BOTH preconditions
-    discharged. Concentrating both in this stub means closing this
-    single Knuth-C statement immediately closes KB-6c and KB-6d.
+    **Required reformulation** (left for future work):
+    1. Add explicit hypothesis `un21 < vTop` (or no-wrap) to KB-6c/KB-6d,
+       making them CONDITIONAL theorems. Callers discharge the
+       hypothesis from runtime invariants. (Cleanest fix.)
+    2. Weaken KB-6d's conclusion to `≤ q_true + 2^32 + 2` or similar.
+    3. Add semantic addback (Knuth's D6) to `div128Quot` itself; prove
+       `≤ q_true + 2` for the augmented algorithm.
 
-    **Proof outline** (project_un21_lt_vTop_plan.md, ~300-400 lines, hard):
-    - **U1-strict**: `q1' ≤ q_true_1` (STRICT — stronger than Knuth-C's
-      `≤ q_true_1 + 1`). Excludes the wrap case directly; gives
-      `un21_abstract ≥ 0` (no-wrap) AND `un21_abstract < vTop` (running
-      remainder bound).
-    - **U2**: `q1' ≥ q_true_1` (Knuth Theorem B lower under `dHi ≥ 2^31`).
-
-    **Note on Knuth-C tightness**: Textbook Knuth Theorem C only gives
-    `q1' ≤ q_true_1 + 1`. The case `q1' = q_true_1 + 1` produces
-    `un21_abstract ∈ [-vTop, 0)`, i.e., the BitVec-level wrap CAN occur.
-    Whether our specific algorithm achieves the STRICT bound
-    `q1' ≤ q_true_1` (excluding the wrap case) under
-    `vTop ≥ 2^63` + hcall is the genuine open math question.
-
-    **Alternative paths if U1-strict turns out false**:
-    1. Reformulate KB-6d to allow Phase 1 wrap (case-split on wrap
-       indicator, prove the +2 overshoot bound holds in BOTH cases).
-    2. Use Piece A's `knuth_theorem_b_from_clz` (val256-level) and
-       accept the +4 looseness (`div128Quot ≤ q_true + 4`), revising
-       downstream addback-count expectations.
-    3. Add Knuth's algorithm step D6 (final addback after mulsub)
-       semantically and prove correctness inclusive of D6, which
-       restores the running-remainder invariant.
-
-    Tracked in issue #1337. -/
+    Until reformulated, this `sorry` is a HONEST acknowledgment of
+    the false claim — anyone attempting to close it will find it
+    impossible. Tracked in issue #1337. -/
 theorem div128Quot_un21_lt_vTop (uHi uLo vTop : Word)
     (_hvTop_norm : vTop.toNat ≥ 2^63)
     (_hcall : uHi.toNat * 2^64 + uLo.toNat < vTop.toNat * 2^64) :
