@@ -3200,16 +3200,16 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     evmWordIs (sp + 32) (EvmWord.mod a b) := by
   -- Abbreviations to keep the proof readable.
   set s : Nat := (clzResult (b.getLimbN 3)).1.toNat % 64 with hs_def
-  set b0' : Word := (b.getLimbN 0) <<< s
-  set b1' : Word := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s))
-  set b2' : Word := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s))
-  set b3' : Word := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s))
-  set u0 : Word := (a.getLimbN 0) <<< s
-  set u1 : Word := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s))
-  set u2 : Word := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s))
-  set u3 : Word := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s))
-  set uTop : Word := (a.getLimbN 3) >>> (64 - s)
-  set qHat : Word := div128Quot uTop u3 b3'
+  set b0' : Word := (b.getLimbN 0) <<< s with hb0_def
+  set b1' : Word := ((b.getLimbN 1) <<< s) ||| ((b.getLimbN 0) >>> (64 - s)) with hb1_def
+  set b2' : Word := ((b.getLimbN 2) <<< s) ||| ((b.getLimbN 1) >>> (64 - s)) with hb2_def
+  set b3' : Word := ((b.getLimbN 3) <<< s) ||| ((b.getLimbN 2) >>> (64 - s)) with hb3_def
+  set u0 : Word := (a.getLimbN 0) <<< s with hu0_def
+  set u1 : Word := ((a.getLimbN 1) <<< s) ||| ((a.getLimbN 0) >>> (64 - s)) with hu1_def
+  set u2 : Word := ((a.getLimbN 2) <<< s) ||| ((a.getLimbN 1) >>> (64 - s)) with hu2_def
+  set u3 : Word := ((a.getLimbN 3) <<< s) ||| ((a.getLimbN 2) >>> (64 - s)) with hu3_def
+  set uTop : Word := (a.getLimbN 3) >>> (64 - s) with huTop_def
+  set qHat : Word := div128Quot uTop u3 b3' with hqHat_def
   -- Setup: shift bounds + CLZ top-limb bound.
   have hshift_pos : 0 < (clzResult (b.getLimbN 3)).1.toNat := by
     by_contra h
@@ -3352,20 +3352,14 @@ theorem output_slot_to_evmWordIs_mod_n4_call_addback_beq_denorm
     have h_s_lt_64 : s < 64 := by rw [hs_def]; omega
     have h_denorm := denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
       (a := a) (b := b) (s := s) h_s_pos h_s_lt_64 hb3nz h_post1_eq
-    -- Concrete iteration progress (commit bea6db9a + this): the goal can be
-    -- normalized via `dsimp only []` + `simp only [hanti_toNat_mod]` which
-    -- zeta-reduces all signature lets and aligns antiShift form.
-    -- However, the if-condition then references the FULLY INLINE form
-    -- `addbackN4_carry (mulsubN4 ...) (b.getLimbN 0 <<< s) ...`, while
-    -- `hcarry` references parent's `set`-bound names `ms`, `b0'..b3'`.
-    -- These are zeta-equal but not syntactically equal, so `if_neg hcarry`
-    -- still fails to match.
-    -- Closure: also unfold the `set`-bindings in `hcarry` before applying
-    -- if_neg. `simp only [hms_def, hb0_def, hb1_def, hb2_def, hb3_def]` at
-    -- `hcarry` is the path — but most `set`s lack the `with hX_def` clause,
-    -- requiring a parent-side refactor to add them all.
+    -- Normalize the goal to fully inline form, then unfold parent's set
+    -- bindings in `hcarry` so its form matches the goal's inline if-condition.
     dsimp only []
-    simp only [hanti_toNat_mod]
+    simp only [hanti_toNat_mod, hs_def, hmod_eq]
+    simp only [hms_def, hqHat_def, huTop_def,
+               hb0_def, hb1_def, hb2_def, hb3_def,
+               hu0_def, hu1_def, hu2_def, hu3_def, hs_def, hmod_eq, hanti_toNat_mod] at hcarry
+    rw [if_neg hcarry]
     sorry
 
 /-- **EVM-stack-level MOD spec on the n=4 call+addback BEQ sub-path (SORRY).**
