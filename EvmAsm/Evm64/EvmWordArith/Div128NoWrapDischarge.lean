@@ -419,6 +419,17 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
     `isSkipBorrowN4Call`, the claim `rhat' < 2^32` is FALSE in some
     cases where the algorithm is otherwise correct.
 
+    **Literature confirms (Knuth TAOCP 4.3.1, ridiculousfish.com blog)**:
+    classical Knuth Algorithm D step D3 correction loop runs up to **2**
+    iterations. After D3, `qhat ≤ q_true + 1`, with the leftover `+1`
+    case handled by D6 addback. **Our algorithm performs only 1 Phase 1b
+    correction** (not a loop). This is a known performance optimization —
+    the 1-correction variant maintains correctness because D6 addback
+    catches all overshoots, but it does NOT preserve Knuth's classical
+    Phase 1 remainder invariant `rhat' < B`. See
+    `memory/project_knuth_d_one_correction_design.md` for the literature
+    study.
+
     **Counterexample** (verified via lean_run_code, see
     `memory/project_d2d3_a_counterexample.md`): with
     `a3 = 2^64 - 2, a2 = 0, b3 = 1, b2 = 2^64 - 2`,
@@ -428,19 +439,21 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
     - **but `rhat' = 2^32 + 2^31 - 2 ≥ 2^32`**.
 
     **Architectural implication**: `Div128PhaseNoWrapInv`'s conjunct 2
-    (Phase 1 no-wrap form `q1' * dLo ≤ (rhat'%2^32)*2^32 + div_un1`)
-    FAILS in this counterexample, so D5 "skip-borrow ⟹
-    Div128PhaseNoWrapInv" is FALSE. The whole approach (a) via
-    Div128PhaseNoWrapInv needs reformulation. Our algorithm's hybrid
-    "Knuth Phase 1 + non-classical Phase 1b correction with dLo" can
-    leave `rhat' ≥ 2^32` even when the algorithm is correct, because
-    the Phase 1b correction step uses dLo (not classical Knuth).
+    is OVER-STRONG for our 1-correction algorithm. D5 "skip-borrow ⟹
+    Div128PhaseNoWrapInv" is FALSE.
 
-    **This stub is left UNPROVABLE as-is**. See the action plan in
-    `project_d2d3_a_counterexample.md` for candidate reformulations.
-    The user-facing chain that `evm_div_n4_call_skip_stack_spec` /
-    `evm_div_n4_call_addback_beq_stack_spec` need will require a
-    different invariant. -/
+    **Path forward**: The user-facing chain
+    (`evm_div_n4_call_skip_stack_spec`) actually only needs
+    `div128Quot.toNat = val256(a)/val256(b)`, which is ALREADY
+    proven in `div128Quot_call_skip_eq_val256_div` (CallSkipLowerBoundV2).
+    The Div128PhaseNoWrapInv chain is unnecessary for the call-skip
+    spec. **Bypass D5 entirely** — use the tight equality directly.
+
+    For the **call-addback** path, the situation differs (qHat = q_true + 1)
+    and may need different reasoning still.
+
+    **This stub is left UNPROVABLE as-is** — its goal is genuinely
+    false. -/
 theorem n4RhatPrime_lt_pow32_of_skip_borrow
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (_hb3nz : b3 ≠ 0)
