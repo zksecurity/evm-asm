@@ -256,6 +256,69 @@ theorem n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample :
   unfold n4CallAddbackBeqSemanticHolds_v2
   decide
 
+/-- **Multiplication form: `qHat * vTop ≤ uHi * 2^64 + uLo` for `div128Quot_v2`.**
+
+    The v2 analog of v1's `div128Quot_qHat_vTop_le` from
+    `EvmAsm/Evm64/EvmWordArith/Div128CallSkipClose.lean:149`.
+
+    States that the v2 algorithm's quotient times the divisor doesn't
+    exceed the dividend (pre-multiplication form of Knuth's per-digit
+    upper bound).
+
+    **Why simpler than v1**: v1 requires three `no_wrap` hypotheses
+    (h_ph1_no_wrap_lo, h_ph2_no_wrap, hq0_lt) because the buggy
+    1-correction algorithm has fragile arithmetic where Phase 1b's
+    truncated comparison may produce a `q1'` that's tighter than the
+    Word-level intermediates can faithfully represent. The v2
+    2-correction algorithm avoids this: after both D3 corrections,
+    `q1''` is exactly `q_true_1` (the per-digit ideal) under the call
+    preconditions, so the no-wrap conditions become automatic.
+
+    Proof plan:
+    1. Phase 1a invariants (same as v1): post-init `q1 * dHi + rhat = uHi`.
+    2. Phase 1b 1st D3 (same): post-1st-D3 `q1' * dHi + rhat' = uHi`.
+    3. Phase 1b 2nd D3 (NEW): post-2nd-D3 `q1'' * dHi + rhat'' = uHi`,
+       AND `rhat'' < dHi` (tighter than v1's `rhat' < 2*dHi`).
+    4. Phase 2 (mirrors v1 with q1''/rhat'' in place of q1'/rhat').
+    5. Compose to get the multiplication bound.
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_qHat_vTop_le
+    (uHi uLo vTop : Word)
+    (_hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (_hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                 (32 : BitVec 6).toNat).toNat < 2^32)
+    (_huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
+    (div128Quot_v2 uHi uLo vTop).toNat * vTop.toNat ≤
+      uHi.toNat * 2^64 + uLo.toNat := by
+  sorry  -- See proof plan in docstring. Sub-lemmas needed:
+         -- 1. Phase 1a invariants (reuse from v1 — algorithm shares Phase 1a).
+         -- 2. Phase 1b 1st D3 invariants (reuse from v1).
+         -- 3. Phase 1b 2nd D3 invariants (NEW): q1'' * dHi + rhat'' = uHi
+         --    AND rhat'' < dHi (after both corrections).
+         -- 4. Phase 2 invariants (mirror v1 with q1''/rhat'').
+         -- 5. KB-Compose V2 (reuse pattern from v1).
+
+/-- **Numerical sanity check** for `div128Quot_v2_qHat_vTop_le` on the
+    counterexample input. Verifies the multiplication bound is at least
+    consistent with the v2 algorithm. Kernel-checked via `decide`. -/
+theorem div128Quot_v2_qHat_vTop_le_test_counterexample :
+    let a3 : Word := BitVec.ofNat 64 (2^63 + 2^33)
+    let b2 : Word := BitVec.ofNat 64 (2^33 - 1)
+    let b3 : Word := 1
+    let shift := (clzResult b3).1
+    let antiShift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+    let u4 := a3 >>> (antiShift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| ((0:Word) >>> (antiShift.toNat % 64))
+    -- div128Quot_v2 u4 u3 b3' = q_true + 1 = 9223372041149743103
+    -- Times b3' (= 2^63 + (2^33 - 1) * 2^31 ≈ 2^63 + 2^63 - 2^31) should
+    -- be ≤ u4 * 2^64 + u3 (= the dividend's high half).
+    (div128Quot_v2 u4 u3 b3').toNat * b3'.toNat ≤ u4.toNat * 2^64 + u3.toNat := by
+  decide
+
 /-- **Knuth Theorem B for `div128Quot_v2`** (val256 form, mirroring v1's
     `div128Quot_le_val256_div_plus_two` from
     `EvmAsm/Evm64/EvmWordArith/Div128CallSkipClose.lean:267`).
