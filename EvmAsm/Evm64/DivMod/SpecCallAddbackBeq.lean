@@ -345,6 +345,77 @@ theorem n4CallAddbackBeqSemanticHolds_v2_of_call_addback_beq (a b : EvmWord)
          -- 1. div128Quot_v2_knuth_B (qHat ≤ q_true + 2 under hshift_nz).
          -- 2. q_out arithmetic (carry partition + addback correctness).
 
+-- ============================================================================
+-- Numerical sanity checks on the v2 stubs (counterexample + variants).
+-- These do NOT prove the stubs but verify the statements are at least
+-- consistent on concrete witnesses, including the input that breaks v1.
+-- ============================================================================
+
+/-- **Sanity check 1**: `div128Quot_v2_le_val256_div_plus_two`'s bound holds
+    on the counterexample input (the same (a, b) where v1's `div128Quot`
+    overshoots by 2^32-2). Kernel-checked via `decide`. -/
+theorem div128Quot_v2_le_val256_div_plus_two_test_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    (div128Quot_v2 u4 un3 b3').toNat ≤
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
+  decide
+
+/-- **Sanity check 2**: by contrast, the buggy v1 `div128Quot` VIOLATES
+    the same bound on the same input (overshoots by 2^32-2 ≫ 2). This
+    is the underlying motivation for the v2 fix. Kernel-checked via `decide`. -/
+theorem div128Quot_v1_violates_knuth_B_on_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    ¬ ((div128Quot u4 un3 b3').toNat ≤
+        val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+          val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2) := by
+  decide
+
+/-- **Sanity check 3**: `div128Quot_v2_le_val256_div_plus_two` bound holds
+    on a "small" test input where both v1 and v2 should agree. Verifies
+    the bound isn't trivially false on common cases. Kernel-checked via `decide`. -/
+theorem div128Quot_v2_le_val256_div_plus_two_test_small :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 5 | 3 => BitVec.ofNat 64 (2^60))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^32 + 7))
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    (div128Quot_v2 u4 un3 b3').toNat ≤
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
+  decide
+
+/-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
+    the input to actually be in the call+addback BEQ runtime regime (i.e.
+    the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
+    `hborrow`). On arbitrary inputs the predicate doesn't hold — the closure
+    only asserts conditional correctness. The counterexample
+    (`...holds_on_counterexample` above) was specifically constructed to be
+    in the BEQ regime, which is why it's the right witness. -/
+
 theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
     n4CallAddbackBeqSemanticHolds a b =
     (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
