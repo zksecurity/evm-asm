@@ -325,35 +325,101 @@ theorem div128_spec (sp retAddr d uLo uHi : Word) (base : Word)
 -- is needed only for the corner-case inputs.
 -- ============================================================================
 
+/-- Bundled postcondition for `div128_v2_spec`.
+
+    Mirrors `div128SpecPost` but uses the fixed `q1''/rhat''` values
+    (post-2nd-D3-correction) for the high half of `q`, matching
+    `div128Quot_v2`'s output. `@[irreducible]` to keep the let-chain
+    out of the theorem signature.
+
+    The Phase 2 / end-combine intermediates are unchanged from
+    `div128SpecPost` — only Phase 1's `q1' / rhat'` are replaced by
+    `q1'' / rhat''`. -/
+@[irreducible]
+def div128V2SpecPost (sp retAddr d uLo uHi : Word) : Assertion :=
+  -- Phase 1 split intermediates (unchanged).
+  let dHi := d >>> (32 : BitVec 6).toNat
+  let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let un1 := uLo >>> (32 : BitVec 6).toNat
+  let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  -- Step 1 1st D3 (unchanged).
+  let q1 := rv64_divu uHi dHi
+  let rhat := uHi - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  -- Step 1 2nd D3 (NEW in v2 — gated by `rhatHi2 = 0`).
+  let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+  let qDlo2 := q1' * dLo
+  let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| un1
+  let q1'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+              then q1' + signExtend12 4095 else q1'
+  let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                then rhat' + dHi else rhat'
+  -- compute_un21: now uses q1''/rhat'' instead of q1'/rhat'.
+  let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| un1
+  let cu_q1_dlo := q1'' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  -- Step 2 (unchanged from div128_spec, but starts with v2's un21).
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let q0Dlo := q0c * dLo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0
+  let x7Exit := if rhat2cHi = 0 then q0Dlo else un21
+  let x1Exit := if rhat2cHi = 0 then rhat2Un0 else rhat2cHi
+  let q := (q1'' <<< (32 : BitVec 6).toNat) ||| q0'
+  (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ q1'') **
+  (.x5 ↦ᵣ q0') ** (.x7 ↦ᵣ x7Exit) **
+  (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ q) **
+  (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3968 ↦ₘ retAddr) **
+  (sp + signExtend12 3960 ↦ₘ d) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ un0)
+
 /-- **STUB**: equivalence between `divK_div128_v2` (fixed RISC-V) and
     `div128Quot_v2` (fixed Lean abstraction).
 
     Mirrors `div128_spec` but for the v2 algorithm. The proof structure
     parallels `div128_spec` with two changes:
-    - 5 additional block specs for the inserted `[25..34]` instructions
-      (Phase 1b 2nd D3 correction). These mirror Phase 2b's existing
-      `[37..46]` blocks: load dLo, MUL, SLLI, OR, BLTU, JAL, ADDI, ADD.
-    - Offsets in the shifted `[35..60]` blocks bump by +10 from the
-      original `[25..50]`.
+    - The Phase 1 block uses `divK_div128_step1_v2_spec` (covering instrs
+      [10..34]) instead of `divK_div128_step1_spec` ([10..24]).
+    - Offsets in the shifted `[35..60]` blocks bump by +40 bytes from
+      the original `[25..50]`.
 
-    Estimated: ~600 LOC for the full proof (proof structure parallel
-    to `div128_spec` at ~500 LOC plus ~100 LOC for the new block).
+    Total instruction count: 61 (vs original 51). Total byte span: 244
+    (vs original 204).
+
+    Estimated: ~600 LOC for the full proof.
 
     Tracked in issue #1337's algorithm-fix migration. -/
 theorem div128_v2_spec (sp retAddr d uLo uHi : Word) (base : Word)
     (v1Old v6Old v11Old : Word)
     (retMem dMem dloMem un0Mem : Word)
     (_halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
-    -- Same precondition shape as `div128_spec`.
-    -- Postcondition: q in x11 = `div128Quot_v2 uHi uLo d` (instead of
-    -- `div128Quot uHi uLo d`).
-    -- Proof: mirror `div128_spec`'s 5-block composition with a 6th block
-    -- inserted for the 2nd D3 correction.
-    True := by  -- placeholder; full statement deferred to follow-up PR
-  -- Suppress unused-variable warnings for params that the full theorem will use.
-  let _ := sp; let _ := retAddr; let _ := d; let _ := uLo; let _ := uHi
-  let _ := base; let _ := v1Old; let _ := v6Old; let _ := v11Old
-  let _ := retMem; let _ := dMem; let _ := dloMem; let _ := un0Mem
-  trivial
+    cpsTriple (base + div128Off) retAddr
+      (CodeReq.ofProg (base + div128Off) divK_div128_v2)
+      (-- Precondition: same as div128_spec.
+       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
+       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      (div128V2SpecPost sp retAddr d uLo uHi) := by
+  sorry  -- ~600 LOC composition mirroring div128_spec; uses
+         -- divK_div128_step1_v2_spec for instrs [10..34] (Phase 1 + both D3),
+         -- then existing step2/end specs at offsets shifted by +40 bytes.
 
 end EvmAsm.Evm64
