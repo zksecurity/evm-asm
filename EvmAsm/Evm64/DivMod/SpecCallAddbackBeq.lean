@@ -1883,6 +1883,11 @@ theorem qHat_gt_q_true_shifted_under_runtime_v2 (a b : EvmWord)
     3. `addback_carry_eq_zero_iff_qHat_overshoot_two_v2` (stub) +
        carry ≠ 0 → qHat ∈ {q_true, q_true + 1}.
     4. Runtime forces qHat ≥ q_true + 1 (BEQ branch reached).
+       **Today's progress (2026-04-28):** the SHIFTED-DOMAIN version of
+       this lower bound (`qHat_gt_q_true_shifted_under_runtime_v2`) is
+       now PROVEN. The original-domain version
+       (`qHat_gt_q_true_under_runtime_v2`) needs val256-algebra bridging
+       (v1 pattern in `qHat_eq_div_plus_one_of_single_addback`).
     5. Combine 3+4: qHat = q_true + 1.
 
     Issue #1337 algorithm fix migration. -/
