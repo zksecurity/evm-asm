@@ -123,7 +123,9 @@ theorem divK_div128_prodcheck1b_body_spec
       ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x11 ↦ᵣ un1) **
        (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1') ** (.x6 ↦ᵣ dHi) **
        (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry  -- Identical to divK_div128_prodcheck1_merged_spec's proof (~120 LOC).
+  -- Direct delegation: this body is structurally identical to the 1st D3 block's
+  -- merged spec — same 8 instructions at the same relative offsets.
+  exact divK_div128_prodcheck1_merged_spec sp q1c rhatc dHi un1 v1Old v5Old dlo base
 
 /-- div128 product check 1b (Knuth classical 2nd D3 correction).
     Instrs [25]-[34] of `divK_div128_v2`. Both guard branches and both
