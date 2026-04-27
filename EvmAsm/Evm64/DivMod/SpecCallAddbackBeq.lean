@@ -806,6 +806,125 @@ theorem div128Quot_v2_un21_toNat_case
     show (A + 2^64 - B) % 2^64 = A + 2^64 - B
     exact Nat.mod_eq_of_lt (by omega : A + 2^64 - B < 2^64)
 
+/-- Pure-Nat helper for the untruncated bridge: under the two-bound
+    invariant `B ≤ A_trunc + k * 2^64` and `A_trunc + k * 2^64 - B < 2^64`,
+    plus `A_trunc < 2^64` and `B < 2^64`, `(A_trunc + 2^64 - B) % 2^64 =
+    A_trunc + k * 2^64 - B`. The bound forces `k ∈ {0, 1}`. -/
+private theorem un21_toNat_untruncated_arith (A_trunc B k : ℕ)
+    (h_A_trunc_lt : A_trunc < 2^64)
+    (hB_lt : B < 2^64)
+    (hBA' : B ≤ A_trunc + k * 2^64)
+    (hAB' : A_trunc + k * 2^64 - B < 2^64) :
+    (A_trunc + 2^64 - B) % 2^64 = A_trunc + k * 2^64 - B := by
+  have hk_lt_2 : k < 2 := by
+    by_contra hk_ge_2
+    push_neg at hk_ge_2
+    have h1 : k * 2^64 ≥ 2 * 2^64 := Nat.mul_le_mul_right _ hk_ge_2
+    omega
+  obtain hk0 | hk1 : k = 0 ∨ k = 1 := by omega
+  · rw [hk0]
+    have h_split : A_trunc + 2^64 - B = (A_trunc - B) + 2^64 := by omega
+    rw [h_split, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega : A_trunc - B < 2^64)]
+    omega
+  · rw [hk1]
+    rw [Nat.mod_eq_of_lt (by omega : A_trunc + 2^64 - B < 2^64)]
+    omega
+
+/-- **Untruncated bridge for `un21.toNat`** — the alternative-path-3 helper.
+
+    Under the two-bound untruncated invariant
+    `B ≤ A_un` and `A_un - B < 2^64`
+    (where `A_un = rhat''.toNat * 2^32 + div_un1.toNat`,
+    `B = q1''.toNat * dLo.toNat`),
+    `un21.toNat = A_un - B` directly — the truncation of `rhat''` and the
+    Word subtraction wrap cancel out exactly.
+
+    **Why this is the right bridge for the call+addback BEQ closure:**
+    - The truncated form `un21.toNat = A_trunc - B` (from
+      `div128Quot_v2_un21_toNat_case.1`) requires `B ≤ A_trunc`, which is
+      provably FALSE under runtime preconditions (see
+      `div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample`).
+    - The untruncated form requires `B ≤ A_un` (HOLDS — see
+      `div128Quot_v2_phase1_no_wrap_lo_untruncated_HOLDS_on_counterexample`)
+      and the additional bound `A_un - B < 2^64`.
+    - On the counterexample: `A_un = 2^64`, `B = 2^63 - 2^31`,
+      `A_un - B = 2^63 + 2^31 < 2^64`. ✓
+
+    **Proof sketch (stub for now):** `div128Quot_v2_un21_toNat` gives
+    `un21.toNat = (A_trunc + 2^64 - B) % 2^64`. Note `A_un = A_trunc +
+    k * 2^64` where `k = rhat''.toNat / 2^32`. So `A_trunc + 2^64 - B =
+    A_un - (k - 1) * 2^64 - B` (in Int). Since `(k - 1) * 2^64 ≡ 0
+    (mod 2^64)` for any integer k, `un21.toNat = (A_un - B) mod 2^64 =
+    A_un - B` under the two-bound invariant.
+
+    Issue #1337 algorithm fix migration. Alternative path 3. -/
+theorem div128Quot_v2_un21_toNat_untruncated
+    (uHi uLo vTop : Word)
+    (hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                 (32 : BitVec 6).toNat).toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let A_un := rhat''.toNat * 2^32 + div_un1.toNat
+    let B := q1''.toNat * dLo.toNat
+    B ≤ A_un → A_un - B < 2^64 → un21.toNat = A_un - B := by
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21 A_un B hBA hAB
+  have h_formula : un21.toNat = ((rhat''.toNat % 2^32) * 2^32 + div_un1.toNat + 2^64 -
+                                 q1''.toNat * dLo.toNat) % 2^64 :=
+    div128Quot_v2_un21_toNat uHi uLo vTop hdHi_ge hdLo_lt huHi_lt_vTop
+  have hB_lt : q1''.toNat * dLo.toNat < 2^64 := by
+    have h_cu : (q1'' * dLo).toNat = q1''.toNat * dLo.toNat :=
+      div128Quot_v2_q1_prime_prime_dLo_no_wrap uHi dHi dLo rhatUn1 div_un1
+        hdHi_ge hdLo_lt huHi_lt_vTop
+    have := (q1'' * dLo).isLt
+    omega
+  have h_rhat_decomp : rhat''.toNat = rhat''.toNat % 2^32 + (rhat''.toNat / 2^32) * 2^32 := by
+    omega
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_mod_lt : rhat''.toNat % 2^32 < 2^32 := Nat.mod_lt _ (by decide)
+  have h_A_trunc_lt : (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat < 2^64 := by nlinarith
+  -- Unfold A_un and B in the goal so we can manipulate with omega.
+  show un21.toNat = rhat''.toNat * 2^32 + div_un1.toNat - q1''.toNat * dLo.toNat
+  rw [h_formula]
+  -- Decompose rhat''.toNat = (rhat''.toNat % 2^32) + (rhat''.toNat / 2^32) * 2^32.
+  -- So A_un = A_trunc + (rhat''.toNat / 2^32) * 2^64.
+  set k := rhat''.toNat / 2^32 with hk_def
+  set A_trunc := (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat with hA_trunc_def
+  set B := q1''.toNat * dLo.toNat with hB_def
+  -- A_un (as expression) = A_trunc + k * 2^64.
+  have hA_un_expr : rhat''.toNat * 2^32 + div_un1.toNat = A_trunc + k * 2^64 := by
+    rw [h_rhat_decomp]; ring
+  rw [hA_un_expr]
+  -- Goal: (A_trunc + 2^64 - B) % 2^64 = A_trunc + k * 2^64 - B.
+  -- Need: k ∈ {0, 1}. From hBA + hAB: A_trunc + k * 2^64 < 2^64 + B ≤ 2 * 2^64.
+  have hBA' : B ≤ A_trunc + k * 2^64 := by rw [← hA_un_expr]; exact hBA
+  have hAB' : A_trunc + k * 2^64 - B < 2^64 := by rw [← hA_un_expr]; exact hAB
+  exact un21_toNat_untruncated_arith A_trunc B k h_A_trunc_lt hB_lt hBA' hAB'
+
 /-- **Numerical sanity check** for `div128Quot_v2_qHat_vTop_le` on the
     counterexample input. Verifies the multiplication bound is at least
     consistent with the v2 algorithm. Kernel-checked via `decide`. -/
