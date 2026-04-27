@@ -123,6 +123,15 @@ theorem decodeAux_six_byte_string
       some (.bytes [b1, b2, b3, b4, b5, b6], rest) := by
   simp [decodeAux, takeBytes]
 
+/-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
+    with `b.toNat < 0x80` is non-canonical (the byte should have
+    been encoded as itself, not under prefix `0x81`), so `decodeAux`
+    returns `none`. -/
+theorem decodeAux_canonical_rejection_single
+    (fuel : Nat) (b : Byte) (rest : List Byte) (h : b.toNat < 0x80) :
+    decodeAux (fuel + 1) ((0x81 : Byte) :: b :: rest) = none := by
+  simp [decodeAux, takeBytes, h]
+
 /-! ## decode (top-level wrapper) trivial cases -/
 
 /-- `decode []` returns `none` because `decodeAux 0 []` returns `none`. -/
