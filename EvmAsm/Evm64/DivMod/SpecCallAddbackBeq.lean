@@ -256,48 +256,56 @@ theorem n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample :
   unfold n4CallAddbackBeqSemanticHolds_v2
   decide
 
-/-- **Knuth Theorem B for `div128Quot_v2`** (val256 form).
+/-- **Knuth Theorem B for `div128Quot_v2`** (val256 form, mirroring v1's
+    `div128Quot_le_val256_div_plus_two` from
+    `EvmAsm/Evm64/EvmWordArith/Div128CallSkipClose.lean:267`).
 
-    Under normalized divisor (`b3' ≥ 2^63`, equiv to `hshift_nz`) and
-    call-trial range (`u4 < b3'`), the v2 algorithm's quotient is
-    bounded by the abstract Knuth-B bound:
+    Under CLZ-normalized divisor + call-trial range, the v2 algorithm's
+    quotient is bounded by:
     ```
     (div128Quot_v2 u4 un3 b3').toNat ≤ val256(a) / val256(b) + 2
     ```
 
-    This is the **upper-bound counterpart** to the existing call-skip
-    lower bound `div128Quot_call_skip_ge_val256_div_v2`. It is the
-    new fact unlocked by the v2 algorithm fix (`div128_v2_spec`,
-    PR #1392): the buggy `div128Quot` violates this bound on the
-    counterexample (overshoots by 2^32-2).
+    This is the **new fact unlocked by the v2 algorithm fix**
+    (`div128_v2_spec`, PR #1392): the buggy `div128Quot` violates this
+    bound on the counterexample (overshoots by 2^32-2). The v2 fix
+    closes this by adding the 2nd D3 correction iteration.
 
-    Proof sketch:
-    1. `div128Quot_v2 u4 un3 b3' ≤ (u4*2^64 + un3) / b3'` — algorithm
-       output is bounded by the per-digit ideal quotient (post-2-D3-correction
-       loop invariant from Knuth TAOCP §4.3.1, Theorem A & B).
-    2. `(u4*2^64 + un3) / b3' ≤ val256(a) / val256(b) + 2` — the
-       abstract Knuth-B bound (`knuth_theorem_b_val256` in
-       `EvmAsm/Evm64/EvmWordArith/KnuthTheoremB.lean:383`).
+    **Why this should be EASIER for v2 than v1**: the v1 version
+    (`div128Quot_le_val256_div_plus_two`) requires 3 `no_wrap`
+    hypotheses (Tasks 4/5 in the migration plan). For v2, the
+    2-correction loop ensures the no-wrap conditions are automatically
+    satisfied OR strictly weaker, so the Step 1 lemma
+    (`div128Quot_v2_qHat_vTop_le`) can be proven without the
+    same level of fragility.
 
-    Step 1 is the new content; Step 2 is already proven.
+    Proof structure (when filled):
+    1. Step 1 (NEW): `div128Quot_v2_qHat_vTop_le` — multiplication form
+       `qHat * vTop ≤ uHi * 2^64 + uLo` after 2 D3 corrections.
+    2. Step 2 (EXISTING): `knuth_theorem_b_from_clz` from KnuthTheoremB.lean
+       composes via `Nat.le_div_iff_mul_le` to give the +2 bound.
 
-    Issue #1337 algorithm fix migration. Tracked alongside
-    `div128_v2_spec` (PR #1392). -/
-theorem div128Quot_v2_knuth_B
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_le_val256_div_plus_two
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (u4 un0 un1 un2 un3 : Word)
-    (b0' b1' b2' b3' : Word)
-    (shift : Nat)
-    (_hnorm_u : u4.toNat * 2^256 + val256 un0 un1 un2 un3 =
-                val256 a0 a1 a2 a3 * 2^shift)
-    (_hnorm_v : val256 b0' b1' b2' b3' = val256 b0 b1 b2 b3 * 2^shift)
-    (_hb3prime_ge_pow63 : b3'.toNat ≥ 2^63)
-    (_hu4_lt_b3prime : u4.toNat < b3'.toNat) :
+    (_hb3nz : b3 ≠ 0)
+    (_hshift_nz : (clzResult b3).1 ≠ 0)
+    (_hcall : isCallTrialN4 a3 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let u4 := a3 >>> antiShift
+    let un3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
     (div128Quot_v2 u4 un3 b3').toNat ≤
       val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := by
-  sorry  -- Step 1: div128Quot_v2 ≤ (u4*2^64 + un3)/b3' (post-2-D3 correction).
-         -- Step 2: combine with knuth_theorem_b_val256 (already proven).
-         -- The new content is Step 1 — the v2 algorithm's loop invariant.
+  intro shift antiShift u4 un3 b3'
+  sorry  -- Sub-stub structure:
+         -- Step 1 (NEW): div128Quot_v2_qHat_vTop_le — multiplication form
+         --   qHat * vTop ≤ uHi * 2^64 + uLo (post-2-D3 correction).
+         --   Provable WITHOUT the no_wrap hypotheses required by v1.
+         -- Step 2 (EXISTING): compose with knuth_theorem_b_from_clz via
+         --   Nat.le_div_iff_mul_le. Pattern from v1's
+         --   div128Quot_le_val256_div_plus_two (Div128CallSkipClose.lean:267).
 
 /-- **Closure of `n4CallAddbackBeqSemanticHolds_v2` from runtime conditions.**
 
