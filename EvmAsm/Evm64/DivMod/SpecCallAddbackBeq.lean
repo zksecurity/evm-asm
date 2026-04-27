@@ -256,57 +256,16 @@ theorem n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample :
   unfold n4CallAddbackBeqSemanticHolds_v2
   decide
 
-/-- **Multiplication form: `qHat * vTop ≤ uHi * 2^64 + uLo` for `div128Quot_v2`.**
-
-    The v2 analog of v1's `div128Quot_qHat_vTop_le` from
-    `EvmAsm/Evm64/EvmWordArith/Div128CallSkipClose.lean:149`.
-
-    States that the v2 algorithm's quotient times the divisor doesn't
-    exceed the dividend (pre-multiplication form of Knuth's per-digit
-    upper bound).
-
-    **Why simpler than v1**: v1 requires three `no_wrap` hypotheses
-    (h_ph1_no_wrap_lo, h_ph2_no_wrap, hq0_lt) because the buggy
-    1-correction algorithm has fragile arithmetic where Phase 1b's
-    truncated comparison may produce a `q1'` that's tighter than the
-    Word-level intermediates can faithfully represent. The v2
-    2-correction algorithm avoids this: after both D3 corrections,
-    `q1''` is exactly `q_true_1` (the per-digit ideal) under the call
-    preconditions, so the no-wrap conditions become automatic.
-
-    Proof plan:
-    1. Phase 1a invariants (same as v1): post-init `q1 * dHi + rhat = uHi`.
-    2. Phase 1b 1st D3 (same): post-1st-D3 `q1' * dHi + rhat' = uHi`.
-    3. Phase 1b 2nd D3 (NEW): post-2nd-D3 `q1'' * dHi + rhat'' = uHi`,
-       AND `rhat'' < dHi` (tighter than v1's `rhat' < 2*dHi`).
-    4. Phase 2 (mirrors v1 with q1''/rhat'' in place of q1'/rhat').
-    5. Compose to get the multiplication bound.
-
-    Issue #1337 algorithm fix migration. -/
-theorem div128Quot_v2_qHat_vTop_le
-    (uHi uLo vTop : Word)
-    (_hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
-    (_hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
-                 (32 : BitVec 6).toNat).toNat < 2^32)
-    (_huHi_lt_vTop : uHi.toNat <
-      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
-      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
-    (div128Quot_v2 uHi uLo vTop).toNat * vTop.toNat ≤
-      uHi.toNat * 2^64 + uLo.toNat := by
-  sorry  -- Body needs:
-         -- 1. v1-style no_wrap hypotheses (3 of them) — needed for the
-         --    composition; can't be derived for free (per
-         --    div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample).
-         -- 2. Theorem ordering: 6 sub-lemmas defined BELOW this one.
-         --    Reorder, OR add a `_full` variant with 3 hypotheses after
-         --    the sub-lemmas.
-         -- 3. h_rhat'_lt (`rhat' < 2*dHi`) sub-lemma — loose-bound
-         --    post-1st-D3 counterpart to div128Quot_rhatc_lt_2dHi.
-         --
-         -- All 6 sub-lemmas (phase1b_2nd_post, q1''_le_q1', q1''_dLo_no_wrap,
-         -- un21_toNat, un21_toNat_case, toNat_eq_strict) are PROVEN
-         -- (see below). Once 1-3 above are addressed, qHat_vTop_le falls
-         -- out by direct composition with knuth_compose_qHat_vTop_le_nat_v2.
+-- NOTE: `div128Quot_v2_qHat_vTop_le` (the simple form, without no_wrap
+-- implications) was previously a sorry stub here. It was provably FALSE
+-- in general (the no_wrap conditions don't hold automatically, per
+-- `div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample`), so the simple
+-- form was unprovable.
+--
+-- Use `div128Quot_v2_qHat_vTop_le_full` (defined below, after the 7
+-- proven sub-lemmas) instead — it takes the 3 v1-style no_wrap
+-- implications as preconditions and is FULLY PROVEN by direct
+-- composition.
 
 /-- **Phase 1b 2nd D3 Euclidean invariant** for `div128Quot_v2`.
 
