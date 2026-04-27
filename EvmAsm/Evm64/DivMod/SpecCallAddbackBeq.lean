@@ -1603,6 +1603,13 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
       meaning qHat overshoots by at least 1). Uses `hborrow` (mulsub
       borrow ≠ 0 ⟺ qHat * b > a as Nat).
 
+    **Today's progress (2026-04-28):** the SHIFTED-DOMAIN versions of
+    both bounds are now in scope:
+    - Lower (shifted): `qHat_gt_q_true_shifted_under_runtime_v2` (PROVEN).
+    - Upper (shifted, modulo no_wrap stub): via path 3 chain.
+    Bridging shifted → original requires v1's val256 algebra (e.g.
+    `mulsubN4_val256_eq` + `EvmWord.val256_eq_toNat`).
+
     Issue #1337 algorithm fix migration. Path 3 sub-lemma. -/
 theorem qHat_in_range_under_runtime_v2 (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
