@@ -1773,6 +1773,19 @@ theorem qHat_eq_div_plus_two_of_double_addback_v2 (a b : EvmWord)
     - Double-addback (carry = 0): qHat overshoots by exactly 2.
     - In both cases, q_out = q_true after the addback correction.
 
+    **Path 3 chain assembly (commits 61b41296, 20f2fe01, 3ab6cc57, 594ab2a1):**
+    The closure now reduces (modulo 2 stubs) to:
+    1. `addback_carry_partition_v2` (stub) — biconditional linking carry
+       signal to qHat overshoot value.
+    2. The `qHat_eq_div_plus_*_v2` lemmas, which directly invoke
+       partition.{1,2}.
+
+    The Knuth-B v2 chain `qHat ≤ q_true + 2` is fully assembled via
+    `div128Quot_v2_le_val256_div_plus_two_untruncated` (PROVEN), but it
+    requires the runtime discharge stub
+    `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
+    (provably TRUE per untruncated counterexample test).
+
     Issue #1337 algorithm fix migration. -/
 theorem n4CallAddbackBeq_q_out_eq_q_true_v2 (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
