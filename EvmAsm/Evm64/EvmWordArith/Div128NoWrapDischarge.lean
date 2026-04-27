@@ -95,6 +95,76 @@ theorem n4B3Prime_unfold (b2 b3 : Word) :
     n4B3Prime b2 b3 = (b3 <<< n4ClzShift b3) ||| (b2 >>> n4ClzAntiShift b3) := by
   delta n4B3Prime; rfl
 
+/-- Top half of the CLZ-normalized divisor (32-bit divisor for Phase 1). -/
+@[irreducible]
+def n4DHi (b2 b3 : Word) : Word :=
+  n4B3Prime b2 b3 >>> (32 : BitVec 6).toNat
+
+/-- Bottom half of the CLZ-normalized divisor (low 32 bits). -/
+@[irreducible]
+def n4DLo (b2 b3 : Word) : Word :=
+  (n4B3Prime b2 b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+
+/-- Top 32 bits of `un3` (used as `div_un1` in the algorithm). -/
+@[irreducible]
+def n4DivUn1 (a2 a3 b3 : Word) : Word :=
+  n4Un3 a2 a3 b3 >>> (32 : BitVec 6).toNat
+
+/-- Bottom 32 bits of `un3` (used as `div_un0`). -/
+@[irreducible]
+def n4DivUn0 (a2 a3 b3 : Word) : Word :=
+  (n4Un3 a2 a3 b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+
+theorem n4DHi_unfold (b2 b3 : Word) :
+    n4DHi b2 b3 = n4B3Prime b2 b3 >>> (32 : BitVec 6).toNat := by
+  delta n4DHi; rfl
+
+theorem n4DLo_unfold (b2 b3 : Word) :
+    n4DLo b2 b3 = (n4B3Prime b2 b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat := by
+  delta n4DLo; rfl
+
+theorem n4DivUn1_unfold (a2 a3 b3 : Word) :
+    n4DivUn1 a2 a3 b3 = n4Un3 a2 a3 b3 >>> (32 : BitVec 6).toNat := by
+  delta n4DivUn1; rfl
+
+theorem n4DivUn0_unfold (a2 a3 b3 : Word) :
+    n4DivUn0 a2 a3 b3 = (n4Un3 a2 a3 b3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat := by
+  delta n4DivUn0; rfl
+
+/-- **Bundled n=4 algorithm Q1' output** at the (a, b)-limb level.
+    Composes the CLZ-normalized inputs with `algorithmQ1Prime`. -/
+@[irreducible]
+def n4Q1Prime (a2 a3 b2 b3 : Word) : Word :=
+  algorithmQ1Prime (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3)
+
+theorem n4Q1Prime_unfold (a2 a3 b2 b3 : Word) :
+    n4Q1Prime a2 a3 b2 b3 =
+      algorithmQ1Prime (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3) := by
+  delta n4Q1Prime; rfl
+
+/-- **Bundled n=4 algorithm un21 output** at the (a, b)-limb level. -/
+@[irreducible]
+def n4Un21 (a2 a3 b2 b3 : Word) : Word :=
+  algorithmUn21 (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3)
+
+theorem n4Un21_unfold (a2 a3 b2 b3 : Word) :
+    n4Un21 a2 a3 b2 b3 =
+      algorithmUn21 (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3) := by
+  delta n4Un21; rfl
+
+/-- **Phase 1 abstract first digit** at the (a, b)-limb level (Nat).
+    `q_top_phase1 := (u4 * 2^32 + div_un1) / dHi`. This is the Nat-level
+    target that `n4Q1Prime` should equal under skip-borrow (D1c). -/
+@[irreducible]
+def n4QTopPhase1 (a2 a3 b2 b3 : Word) : Nat :=
+  ((n4U4 a3 b3).toNat * 2^32 + (n4DivUn1 a2 a3 b3).toNat) / (n4DHi b2 b3).toNat
+
+theorem n4QTopPhase1_unfold (a2 a3 b2 b3 : Word) :
+    n4QTopPhase1 a2 a3 b2 b3 =
+      ((n4U4 a3 b3).toNat * 2^32 + (n4DivUn1 a2 a3 b3).toNat) /
+        (n4DHi b2 b3).toNat := by
+  delta n4QTopPhase1; rfl
+
 /-- Phase 1b corrected remainder `rhat'` (paired with `algorithmQ1Prime`). -/
 @[irreducible]
 def algorithmRhatPrime (u4 u3 b3' : Word) : Word :=
@@ -125,6 +195,16 @@ theorem algorithmRhatPrime_unfold (u4 u3 b3' : Word) :
        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc) := by
   delta algorithmRhatPrime; rfl
 
+/-- **Bundled n=4 Phase 1b corrected rhat'** at the (a, b)-limb level. -/
+@[irreducible]
+def n4RhatPrime (a2 a3 b2 b3 : Word) : Word :=
+  algorithmRhatPrime (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3)
+
+theorem n4RhatPrime_unfold (a2 a3 b2 b3 : Word) :
+    n4RhatPrime a2 a3 b2 b3 =
+      algorithmRhatPrime (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3) := by
+  delta n4RhatPrime; rfl
+
 -- ============================================================================
 -- D1c: Phase 1 tight under skip-borrow (the key structural lemma)
 -- ============================================================================
@@ -147,13 +227,7 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
     (_hshift_nz : (clzResult b3).1 ≠ 0)
     (_hcall : isCallTrialN4 a3 b2 b3)
     (_hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
-    let u4 := n4U4 a3 b3
-    let un3 := n4Un3 a2 a3 b3
-    let b3' := n4B3Prime b2 b3
-    let dHi := b3' >>> (32 : BitVec 6).toNat
-    let div_un1 := un3 >>> (32 : BitVec 6).toNat
-    (algorithmQ1Prime u4 un3 b3').toNat =
-      (u4.toNat * 2^32 + div_un1.toNat) / dHi.toNat := by
+    (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3 := by
   sorry
 
 -- ============================================================================
@@ -170,26 +244,14 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
 
     Estimated: ~50 LOC. -/
 theorem div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (a2 a3 b2 b3 : Word)
     (_hb3nz : b3 ≠ 0)
     (_hshift_nz : (clzResult b3).1 ≠ 0)
     (_hcall : isCallTrialN4 a3 b2 b3)
-    (_h_q1_eq :
-      let u4 := n4U4 a3 b3
-      let un3 := n4Un3 a2 a3 b3
-      let b3' := n4B3Prime b2 b3
-      let dHi := b3' >>> (32 : BitVec 6).toNat
-      let div_un1 := un3 >>> (32 : BitVec 6).toNat
-      (algorithmQ1Prime u4 un3 b3').toNat =
-        (u4.toNat * 2^32 + div_un1.toNat) / dHi.toNat) :
-    let u4 := n4U4 a3 b3
-    let un3 := n4Un3 a2 a3 b3
-    let b3' := n4B3Prime b2 b3
-    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := un3 >>> (32 : BitVec 6).toNat
-    (algorithmQ1Prime u4 un3 b3').toNat * dLo.toNat ≤
-      ((algorithmRhatPrime u4 un3 b3').toNat % 2^32) * 2^32 +
-        div_un1.toNat := by
+    (_h_q1_eq : (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3) :
+    (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat ≤
+      ((n4RhatPrime a2 a3 b2 b3).toNat % 2^32) * 2^32 +
+        (n4DivUn1 a2 a3 b3).toNat := by
   sorry
 
 -- ============================================================================
@@ -210,33 +272,17 @@ theorem div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
 
     Estimated: ~40 LOC. -/
 theorem div128Quot_un21_lt_vTop_from_phase1_tight
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (a2 a3 b2 b3 : Word)
     (_hb3nz : b3 ≠ 0)
     (_hshift_nz : (clzResult b3).1 ≠ 0)
     (_hcall : isCallTrialN4 a3 b2 b3)
-    (_h_q1_eq :
-      let u4 := n4U4 a3 b3
-      let un3 := n4Un3 a2 a3 b3
-      let b3' := n4B3Prime b2 b3
-      let dHi := b3' >>> (32 : BitVec 6).toNat
-      let div_un1 := un3 >>> (32 : BitVec 6).toNat
-      (algorithmQ1Prime u4 un3 b3').toNat =
-        (u4.toNat * 2^32 + div_un1.toNat) / dHi.toNat)
+    (_h_q1_eq : (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3)
     (_h_no_wrap_phase1 :
-      let u4 := n4U4 a3 b3
-      let un3 := n4Un3 a2 a3 b3
-      let b3' := n4B3Prime b2 b3
-      let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-      let div_un1 := un3 >>> (32 : BitVec 6).toNat
-      (algorithmQ1Prime u4 un3 b3').toNat * dLo.toNat ≤
-        ((algorithmRhatPrime u4 un3 b3').toNat % 2^32) * 2^32 +
-          div_un1.toNat) :
-    let u4 := n4U4 a3 b3
-    let un3 := n4Un3 a2 a3 b3
-    let b3' := n4B3Prime b2 b3
-    let dHi := b3' >>> (32 : BitVec 6).toNat
-    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    (algorithmUn21 u4 un3 b3').toNat < dHi.toNat * 2^32 + dLo.toNat := by
+      (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat ≤
+        ((n4RhatPrime a2 a3 b2 b3).toNat % 2^32) * 2^32 +
+          (n4DivUn1 a2 a3 b3).toNat) :
+    (n4Un21 a2 a3 b2 b3).toNat <
+      (n4DHi b2 b3).toNat * 2^32 + (n4DLo b2 b3).toNat := by
   sorry
 
 -- ============================================================================
