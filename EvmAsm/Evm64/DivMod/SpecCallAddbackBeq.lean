@@ -2166,6 +2166,33 @@ theorem addback_carry_partition_v2_test_counterexample :
     addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 := by
   decide
 
+/-- **Sanity check 10**: on the v1 counterexample, the shifted-domain
+    divisor inequality `qHat > val256(a_shifted) / val256(b_shifted)`
+    (the conclusion of `qHat_gt_q_true_shifted_under_runtime_v2`)
+    holds. Kernel-checked via `decide`.
+
+    This complements check 8 (the multiplicative form). -/
+theorem qHat_gt_q_true_shifted_v2_on_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    qHat.toNat > val256 u0 u1 u2 u3 / val256 b0' b1' b2' b3' := by
+  decide
+
 /-- **Sanity check 8**: on the v1 counterexample, the shifted-domain
     inequality `qHat * val256(b_shifted) > val256(a_shifted)` (the
     conclusion of `qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2`)
