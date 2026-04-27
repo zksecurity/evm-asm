@@ -415,24 +415,32 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
 -- (composition wrapping `div128Quot_phase1_no_wrap_skip`).
 -- ============================================================================
 
-/-- **D2/D3-A (STUB, REFORMULATED 2026-04-27)**: Under `isSkipBorrowN4Call`,
-    the algorithm's Phase 1b output `rhat'` satisfies `rhat'.toNat < 2^32`.
+/-- **D2/D3-A (PROVABLY FALSE, 2026-04-27 follow-up)**: even under
+    `isSkipBorrowN4Call`, the claim `rhat' < 2^32` is FALSE in some
+    cases where the algorithm is otherwise correct.
 
-    **Counterexample to earlier formulation** (which used only hcall +
-    `q1' = q_top_phase1` as preconditions): see
-    `memory/project_d2d3_a_counterexample.md`. With
-    `a3 = 2^64 - 2, a2 = 0, b3 = 1, b2 = 2^64 - 2`, Phase 1 is tight
-    (q1' = q_top_phase1 = 2^31 - 1) but rhat' = 2^32 + 2^31 - 2 ≥ 2^32.
-    The same input violates skip-borrow (the BitVec un21 wraps,
-    yielding qHat * val256(b) > val256(a)). So skip-borrow is genuinely
-    needed.
+    **Counterexample** (verified via lean_run_code, see
+    `memory/project_d2d3_a_counterexample.md`): with
+    `a3 = 2^64 - 2, a2 = 0, b3 = 1, b2 = 2^64 - 2`,
+    - skip-borrow HOLDS (mulsub_c3 = u4 = 2^63 - 1, no borrow),
+    - qHat = q_true = 2^63 - 1 (algorithm correct),
+    - q1' = q_true_1 = 2^31 - 1, q0' = q_true_0 = 2^32 - 1 (digits correct),
+    - **but `rhat' = 2^32 + 2^31 - 2 ≥ 2^32`**.
 
-    **Proof sketch (under skip-borrow)**: skip-borrow ⟹ no-addback
-    invariant on the outer mulsub ⟹ Knuth's Phase 1 remainder
-    invariant `rhat' < 2^32` (this is the
-    "Phase 1 remainder fits in a limb" invariant from Knuth TAOCP 4.3.1).
+    **Architectural implication**: `Div128PhaseNoWrapInv`'s conjunct 2
+    (Phase 1 no-wrap form `q1' * dLo ≤ (rhat'%2^32)*2^32 + div_un1`)
+    FAILS in this counterexample, so D5 "skip-borrow ⟹
+    Div128PhaseNoWrapInv" is FALSE. The whole approach (a) via
+    Div128PhaseNoWrapInv needs reformulation. Our algorithm's hybrid
+    "Knuth Phase 1 + non-classical Phase 1b correction with dLo" can
+    leave `rhat' ≥ 2^32` even when the algorithm is correct, because
+    the Phase 1b correction step uses dLo (not classical Knuth).
 
-    Estimated: ~80-150 LOC. -/
+    **This stub is left UNPROVABLE as-is**. See the action plan in
+    `project_d2d3_a_counterexample.md` for candidate reformulations.
+    The user-facing chain that `evm_div_n4_call_skip_stack_spec` /
+    `evm_div_n4_call_addback_beq_stack_spec` need will require a
+    different invariant. -/
 theorem n4RhatPrime_lt_pow32_of_skip_borrow
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (_hb3nz : b3 ≠ 0)
