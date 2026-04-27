@@ -995,31 +995,85 @@ theorem div128Quot_v2_le_val256_div_plus_two
       ≤ (u4.toNat * 2^64 + un3.toNat) / b3'.toNat := h_div_le
     _ ≤ val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := h_step2
 
+/-- **No-wrap discharge for `qHat_vTop_le_full` under runtime preconditions.**
+
+    The closure proof needs to invoke `qHat_vTop_le_full` (which takes 3
+    no_wrap implications). For the call+addback BEQ runtime regime
+    (`hbltu, hcarry2_nz, hborrow`), the no_wrap conditions are
+    dischargeable — the algorithm's BLTU check + addback machinery
+    enforce them.
+
+    This stub captures the discharge as a separate sub-task. Closing it
+    + the carry partition lemma will unlock the closure.
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_no_wrap_under_call_addback_beq (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let div_un0 := (un3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' := if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+                    (if BitVec.ult ((rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0)
+                                    (q0c * dLo) then rhat2c + dHi else rhat2c)
+                  else rhat2c
+    q1''.toNat * dLo.toNat ≤ (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat ∧
+    q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat ∧
+    q0'.toNat < 2^32 := by
+  sorry  -- Discharge from runtime preconditions: hbltu (BLTU check at
+         -- the algorithm level enforces ph1_no_wrap_lo), hcarry2_nz +
+         -- hborrow (algorithm's addback machinery enforces ph2_no_wrap
+         -- and q0' < 2^32). Mirror v1's discharge pattern (where it
+         -- exists in Div128NoWrapDischarge.lean) but for v2's q1''/rhat''.
+
 /-- **Closure of `n4CallAddbackBeqSemanticHolds_v2` from runtime conditions.**
 
     Mirrors `n4CallSkipSemanticHolds_of_call_trial` for the call+addback
-    BEQ branch. The proof structure is:
+    BEQ branch. The proof composes:
 
-    1. **Knuth Theorem B for `div128Quot_v2`**: with normalized divisor
-       (`b3' ≥ 2^63` from `hshift_nz`), the v2 algorithm satisfies
-       `qHat ≤ q_true + 2` (where `q_true` is the per-digit ideal
-       quotient `(u4 * 2^64 + u3) / b3'`). This is the new fact unlocked
-       by `div128_v2_spec` (PR #1392).
+    1. **`div128Quot_v2_no_wrap_under_call_addback_beq`** (above): discharge
+       the 3 v1-style no_wrap conditions from runtime preconditions.
 
-    2. **Carry-2 / borrow conditions partition the overshoot**:
-       - `hcarry2_nz` (carry from outer addback ≠ 0) ⟹ `qHat = q_true + 1`
-         (single addback corrects).
-       - `hcarry2_nz` AND `hborrow` (BEQ branch fires) ⟹ `qHat = q_true + 2`
-         (double addback would correct, but with v2 the BEQ branch's
-         post-addback `q_out` matches `q_true`).
+    2. **`div128Quot_v2_le_val256_div_plus_two`** (proven): qHat ≤ q_true + 2
+       under the no_wrap conditions.
 
-    3. **Combine with `hbltu` (call-trial range)** to derive `q_out =
-       q_true = a/b`.
-
-    Sub-lemmas needed (provable with v2):
-    - `div128Quot_v2_knuth_B`: qHat ≤ q_true + 2 (the Knuth-B bound).
-    - `n4CallAddbackBeq_q_out_eq_q_true_v2`: under the runtime
-      preconditions and Knuth-B bound, q_out = q_true.
+    3. **Carry-2 / borrow partition**: `hcarry2_nz ∧ hborrow` ⟹
+       `qHat = q_true + 2` (so q_out = qHat - 2 = q_true).
 
     Issue #1337 algorithm fix migration. -/
 theorem n4CallAddbackBeqSemanticHolds_v2_of_call_addback_beq (a b : EvmWord)
