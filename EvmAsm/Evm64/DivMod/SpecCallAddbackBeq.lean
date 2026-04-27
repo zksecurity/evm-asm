@@ -112,6 +112,41 @@ def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
     val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
       val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
+/-- **Formal counterexample to `n4CallAddbackBeqSemanticHolds`** (2026-04-27).
+
+    Concrete (a, b) satisfying all runtime preconditions of
+    `evm_div_n4_full_call_addback_beq_stack_pre_spec` but for which the
+    predicate is FALSE — algorithm overshoots true quotient by 2^32-2.
+
+    Witness:
+    - `a = (2^63 + 2^33) * 2^192` (a3 = 2^63 + 2^33, lower limbs zero)
+    - `b = 2^192 + (2^33 - 1) * 2^128` (b3 = 1, b2 = 2^33 - 1, lower zero)
+    - q_true = `val256(a) / val256(b) = 2^63 + 2^32 - 2`
+    - qHat = `div128Quot(...) = 2^63 + 2^33 - 3`
+    - Algorithm's q_out = qHat - 1 = 2^63 + 2^33 - 4 ≠ q_true.
+
+    See `memory/project_n4callbeq_addback_overshoot_2pow32.md` for the
+    full analysis. The proof is by `decide` after unfolding the
+    predicate — Lean evaluates the Prop directly on the concrete
+    Word inputs.
+
+    **Implication**: this theorem proves that
+    `n4CallAddbackBeqSemanticHolds_of_*` (any closure from runtime
+    conditions) cannot exist — the predicate is genuinely false on
+    runtime-reachable inputs. The user-facing
+    `evm_div_n4_full_call_addback_beq_stack_pre_spec` and its
+    relatives have a vacuous semantic correctness bridge for this
+    input class, until the algorithm is fixed (see
+    `memory/project_knuth_d_one_correction_design.md`). -/
+theorem n4CallAddbackBeqSemanticHolds_counterexample :
+    ¬ (n4CallAddbackBeqSemanticHolds
+        (EvmWord.fromLimbs (fun i => match i with
+          | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33)))
+        (EvmWord.fromLimbs (fun i => match i with
+          | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1))) := by
+  unfold n4CallAddbackBeqSemanticHolds
+  decide
+
 theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
     n4CallAddbackBeqSemanticHolds a b =
     (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
