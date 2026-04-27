@@ -256,6 +256,49 @@ theorem n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample :
   unfold n4CallAddbackBeqSemanticHolds_v2
   decide
 
+/-- **Knuth Theorem B for `div128Quot_v2`** (val256 form).
+
+    Under normalized divisor (`b3' ≥ 2^63`, equiv to `hshift_nz`) and
+    call-trial range (`u4 < b3'`), the v2 algorithm's quotient is
+    bounded by the abstract Knuth-B bound:
+    ```
+    (div128Quot_v2 u4 un3 b3').toNat ≤ val256(a) / val256(b) + 2
+    ```
+
+    This is the **upper-bound counterpart** to the existing call-skip
+    lower bound `div128Quot_call_skip_ge_val256_div_v2`. It is the
+    new fact unlocked by the v2 algorithm fix (`div128_v2_spec`,
+    PR #1392): the buggy `div128Quot` violates this bound on the
+    counterexample (overshoots by 2^32-2).
+
+    Proof sketch:
+    1. `div128Quot_v2 u4 un3 b3' ≤ (u4*2^64 + un3) / b3'` — algorithm
+       output is bounded by the per-digit ideal quotient (post-2-D3-correction
+       loop invariant from Knuth TAOCP §4.3.1, Theorem A & B).
+    2. `(u4*2^64 + un3) / b3' ≤ val256(a) / val256(b) + 2` — the
+       abstract Knuth-B bound (`knuth_theorem_b_val256` in
+       `EvmAsm/Evm64/EvmWordArith/KnuthTheoremB.lean:383`).
+
+    Step 1 is the new content; Step 2 is already proven.
+
+    Issue #1337 algorithm fix migration. Tracked alongside
+    `div128_v2_spec` (PR #1392). -/
+theorem div128Quot_v2_knuth_B
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (u4 un0 un1 un2 un3 : Word)
+    (b0' b1' b2' b3' : Word)
+    (shift : Nat)
+    (_hnorm_u : u4.toNat * 2^256 + val256 un0 un1 un2 un3 =
+                val256 a0 a1 a2 a3 * 2^shift)
+    (_hnorm_v : val256 b0' b1' b2' b3' = val256 b0 b1 b2 b3 * 2^shift)
+    (_hb3prime_ge_pow63 : b3'.toNat ≥ 2^63)
+    (_hu4_lt_b3prime : u4.toNat < b3'.toNat) :
+    (div128Quot_v2 u4 un3 b3').toNat ≤
+      val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := by
+  sorry  -- Step 1: div128Quot_v2 ≤ (u4*2^64 + un3)/b3' (post-2-D3 correction).
+         -- Step 2: combine with knuth_theorem_b_val256 (already proven).
+         -- The new content is Step 1 — the v2 algorithm's loop invariant.
+
 /-- **Closure of `n4CallAddbackBeqSemanticHolds_v2` from runtime conditions.**
 
     Mirrors `n4CallSkipSemanticHolds_of_call_trial` for the call+addback
