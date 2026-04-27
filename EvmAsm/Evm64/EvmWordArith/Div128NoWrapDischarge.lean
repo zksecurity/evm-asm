@@ -53,25 +53,25 @@ open EvmWord (val256)
 
 /-- CLZ shift (mod 64) for a divisor's top limb. -/
 @[irreducible]
-noncomputable def n4ClzShift (b3 : Word) : Nat := (clzResult b3).1.toNat % 64
+def n4ClzShift (b3 : Word) : Nat := (clzResult b3).1.toNat % 64
 
 /-- CLZ anti-shift (mod 64). -/
 @[irreducible]
-noncomputable def n4ClzAntiShift (b3 : Word) : Nat :=
+def n4ClzAntiShift (b3 : Word) : Nat :=
   (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
 
 /-- CLZ-normalized top limb of `a` (top 64 bits of `a` after shift). -/
 @[irreducible]
-noncomputable def n4U4 (a3 b3 : Word) : Word := a3 >>> n4ClzAntiShift b3
+def n4U4 (a3 b3 : Word) : Word := a3 >>> n4ClzAntiShift b3
 
 /-- CLZ-normalized second-from-top limb of `a` (combines a3 and a2). -/
 @[irreducible]
-noncomputable def n4Un3 (a2 a3 b3 : Word) : Word :=
+def n4Un3 (a2 a3 b3 : Word) : Word :=
   (a3 <<< n4ClzShift b3) ||| (a2 >>> n4ClzAntiShift b3)
 
 /-- CLZ-normalized top limb of `b` (combines b3 and b2). -/
 @[irreducible]
-noncomputable def n4B3Prime (b2 b3 : Word) : Word :=
+def n4B3Prime (b2 b3 : Word) : Word :=
   (b3 <<< n4ClzShift b3) ||| (b2 >>> n4ClzAntiShift b3)
 
 theorem n4ClzShift_unfold (b3 : Word) :
