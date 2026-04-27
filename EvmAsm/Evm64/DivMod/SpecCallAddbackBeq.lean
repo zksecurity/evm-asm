@@ -1624,8 +1624,19 @@ theorem qHat_in_range_under_runtime_v2 (a b : EvmWord)
          --   - Upper: invoke `div128Quot_v2_le_val256_div_plus_two_untruncated`
          --     after discharging the no_wrap_untruncated stub.
          --   - Lower: from `hborrow` (uTop borrows from u4-c3 means qHat*b > a),
-         --     combined with `qHat * b ≤ a + b - 1` (Knuth lower bound at
-         --     val256 level), derive qHat ≥ a/b + 1 = q_true + 1.
+         --     use contrapositive of `c3_un_zero_of_qHat_mul_le` — c3 ≠ 0 ⟹
+         --     qHat * val256(b) > val256(a) ⟹ qHat > a/b = q_true.
+         --     Combined with `EvmWord.u_top_lt_c3_of_addback_borrow_call`
+         --     (which extracts c3 ≠ 0 from hborrow for V1's qHat), this would
+         --     give qHat ≥ q_true + 1 — BUT v1's lemma uses `div128Quot`, not
+         --     `div128Quot_v2`. **MIGRATION CAVEAT:** the v2 closure proof's
+         --     `hborrow` is v1-style (`isAddbackBorrowN4CallEvm`), but inside
+         --     the predicate v2 uses `div128Quot_v2`. We need either:
+         --     (a) prove `isAddbackBorrowN4CallEvm a b ↔ isAddbackBorrowN4CallEvm_v2 a b`
+         --         on runtime-reachable inputs, OR
+         --     (b) define and use v2-specific borrow predicates throughout.
+         --     This precondition mismatch is a deeper architectural concern
+         --     for the full v2 migration.
 
 /-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
     Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
