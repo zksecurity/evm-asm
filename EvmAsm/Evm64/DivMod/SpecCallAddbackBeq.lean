@@ -455,6 +455,36 @@ theorem div128Quot_v2_q1_prime_prime_dLo_no_wrap
     omega
   rw [BitVec.toNat_mul, Nat.mod_eq_of_lt h_mul_lt]
 
+/-- **Helper: under v2's 2nd D3 guard fall-through, `rhat' < 2 * dHi`.**
+
+    When the 2nd D3 correction is reachable (guard `rhat' >> 32 = 0`
+    fires, meaning `rhat' < 2^32`), combined with the call-trial
+    precondition `dHi ≥ 2^31`, we get `rhat' < 2 * dHi` automatically.
+
+    Proof: rhat' < 2^32 (from h_guard) and dHi ≥ 2^31 ⟹ 2 * dHi ≥ 2^32
+    > rhat'.
+
+    This is the concrete form of the `h_rhat'_lt` precondition used by
+    `div128Quot_v2_phase1b_2nd_post` — automatically dischargeable when
+    the 2nd D3 actually fires.
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_rhat_prime_lt_2dHi_under_guard
+    (dHi rhat' : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (h_guard : rhat' >>> (32 : BitVec 6).toNat = 0) :
+    rhat'.toNat < 2 * dHi.toNat := by
+  -- h_guard says (rhat' >> 32).toNat = 0, which means rhat'.toNat < 2^32.
+  have h_rhat'_lt_pow32 : rhat'.toNat < 2^32 := by
+    have h := congrArg BitVec.toNat h_guard
+    simp [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+          Nat.shiftRight_eq_div_pow] at h
+    -- h : rhat'.toNat / 2^32 = 0.
+    have h_word : rhat'.toNat < 2^64 := rhat'.isLt
+    omega
+  -- 2 * dHi ≥ 2 * 2^31 = 2^32 > rhat'.
+  omega
+
 /-- **Output formula for `div128Quot_v2` via halfword combine** — v2 analog
     of v1's `div128Quot_toNat_eq_strict` from `Div128FinalAssembly.lean:778`.
 
