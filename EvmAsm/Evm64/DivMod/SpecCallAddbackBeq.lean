@@ -291,25 +291,22 @@ theorem div128Quot_v2_qHat_vTop_le
     (_huHi_lt_vTop : uHi.toNat <
       (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
-    -- NOTE: like v1's `div128Quot_qHat_vTop_le`, this likely needs
-    -- additional no_wrap hypotheses (see
-    -- `div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample`). The v2
-    -- algorithm fix improves qHat-overshoot but doesn't eliminate the
-    -- no-wrap conditions for the val256-level interpretation. The
-    -- detailed signature with implications mirrors v1; future iterations
-    -- will refine.
     (div128Quot_v2 uHi uLo vTop).toNat * vTop.toNat ≤
       uHi.toNat * 2^64 + uLo.toNat := by
-  sorry  -- Body needs the v1-style no_wrap hypotheses. The compose
-         -- structure is laid out via 5 proven sub-lemmas
-         -- (div128Quot_v2_phase1b_2nd_post,
-         --  div128Quot_v2_q1_prime_prime_le_q1_prime,
-         --  div128Quot_v2_q1_prime_prime_dLo_no_wrap,
-         --  div128Quot_v2_un21_toNat,
-         --  div128Quot_v2_un21_toNat_case)
-         -- + reusable v1 infrastructure. The remaining substantive piece
-         -- is `div128Quot_v2_toNat_eq_strict` (output formula via halfword
-         -- combine). See proof plan in docstring.
+  sorry  -- Body needs:
+         -- 1. v1-style no_wrap hypotheses (3 of them) — needed for the
+         --    composition; can't be derived for free (per
+         --    div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample).
+         -- 2. Theorem ordering: 6 sub-lemmas defined BELOW this one.
+         --    Reorder, OR add a `_full` variant with 3 hypotheses after
+         --    the sub-lemmas.
+         -- 3. h_rhat'_lt (`rhat' < 2*dHi`) sub-lemma — loose-bound
+         --    post-1st-D3 counterpart to div128Quot_rhatc_lt_2dHi.
+         --
+         -- All 6 sub-lemmas (phase1b_2nd_post, q1''_le_q1', q1''_dLo_no_wrap,
+         -- un21_toNat, un21_toNat_case, toNat_eq_strict) are PROVEN
+         -- (see below). Once 1-3 above are addressed, qHat_vTop_le falls
+         -- out by direct composition with knuth_compose_qHat_vTop_le_nat_v2.
 
 /-- **Phase 1b 2nd D3 Euclidean invariant** for `div128Quot_v2`.
 
