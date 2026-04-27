@@ -1188,53 +1188,48 @@ theorem n4CallAddbackBeq_q_out_eq_q_true_v2 (a b : EvmWord)
     (hborrow : isAddbackBorrowN4CallEvm a b) :
     n4CallAddbackBeqSemanticHolds_v2 a b := by
   unfold n4CallAddbackBeqSemanticHolds_v2
-  -- Introduce all let-bindings.
-  set shift := (clzResult (b.getLimbN 3)).1.toNat % 64 with hshift_def
-  set antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
-    with hantiShift_def
-  set b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift) with hb3'_def
-  set u4 := (a.getLimbN 3) >>> antiShift with hu4_def
-  set u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift) with hu3_def
-  set qHat := div128Quot_v2 u4 u3 b3' with hqHat_def
-  -- Let q_true denote val256(a) / val256(b).
-  set q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
-                val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    with hq_true_def
-  -- Case-split on carry = 0.
-  by_cases h_carry :
-      addbackN4_carry
-        (mulsubN4 qHat ((b.getLimbN 0) <<< shift)
-          (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-          (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-          b3' ((a.getLimbN 0) <<< shift)
-          (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-          (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)) u3).1
-        (mulsubN4 qHat ((b.getLimbN 0) <<< shift)
-          (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-          (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-          b3' ((a.getLimbN 0) <<< shift)
-          (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-          (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)) u3).2.1
-        (mulsubN4 qHat ((b.getLimbN 0) <<< shift)
-          (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-          (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-          b3' ((a.getLimbN 0) <<< shift)
-          (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-          (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)) u3).2.2.1
-        (mulsubN4 qHat ((b.getLimbN 0) <<< shift)
-          (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-          (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-          b3' ((a.getLimbN 0) <<< shift)
-          (((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift))
-          (((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)) u3).2.2.2.1
-        ((b.getLimbN 0) <<< shift)
-        (((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift))
-        (((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift))
-        b3' = 0
-  · -- carry = 0: double-addback case.
-    sorry  -- Apply qHat_eq_div_plus_two_of_double_addback_v2; arithmetic.
-  · -- carry ≠ 0: single-addback case.
-    sorry  -- Apply qHat_eq_div_plus_one_of_single_addback_v2; arithmetic.
+  -- Peel the let-chain into local context (matching v1's intro pattern,
+  -- e.g. `qHat_eq_div_plus_one_of_single_addback`).
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry
+  -- Goal: let q_out := if carry = 0 then ... else ...; q_out.toNat = q_true_expr.
+  -- Case-split on the locally-named `carry`.
+  by_cases h_carry : carry = 0
+  · -- carry = 0: double-addback case. q_out = qHat - 2.
+    simp only [if_pos h_carry]
+    have h_qHat' := qHat_eq_div_plus_two_of_double_addback_v2 a b
+      hb3nz hshift_nz hbltu hcarry2_nz hborrow h_carry
+    -- Abstract the division as q_true so omega sees a clean constant offset.
+    set q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+                  with hq_true_def
+    have h_qHat : qHat.toNat = q_true + 2 := h_qHat'
+    have hqHat_ge_2 : qHat.toNat ≥ 2 := by linarith [h_qHat]
+    rw [BitVec.toNat_add, BitVec.toNat_add, signExtend12_4095_toNat]
+    have hq_lt : qHat.toNat < 2^64 := qHat.isLt
+    have h_inner : (qHat.toNat + (2^64 - 1)) % 2^64 = qHat.toNat - 1 := by
+      have : qHat.toNat + (2^64 - 1) = (qHat.toNat - 1) + 2^64 := by omega
+      rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega : qHat.toNat - 1 < 2^64)]
+    rw [h_inner]
+    have h_outer : (qHat.toNat - 1 + (2^64 - 1)) % 2^64 = qHat.toNat - 2 := by
+      have : qHat.toNat - 1 + (2^64 - 1) = (qHat.toNat - 2) + 2^64 := by omega
+      rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega : qHat.toNat - 2 < 2^64)]
+    rw [h_outer]
+    omega
+  · -- carry ≠ 0: single-addback case. q_out = qHat - 1.
+    simp only [if_neg h_carry]
+    have h_qHat' := qHat_eq_div_plus_one_of_single_addback_v2 a b
+      hb3nz hshift_nz hbltu hcarry2_nz hborrow h_carry
+    set q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+                  with hq_true_def
+    have h_qHat : qHat.toNat = q_true + 1 := h_qHat'
+    have hqHat_ge_1 : qHat.toNat ≥ 1 := by linarith [h_qHat]
+    rw [BitVec.toNat_add, signExtend12_4095_toNat]
+    have h_eq : qHat.toNat + (2^64 - 1) = (qHat.toNat - 1) + 2^64 := by omega
+    rw [h_eq, Nat.add_mod_right]
+    have hq_lt : qHat.toNat - 1 < 2^64 := by have := qHat.isLt; omega
+    rw [Nat.mod_eq_of_lt hq_lt]
+    omega
 
 /-- **Closure of `n4CallAddbackBeqSemanticHolds_v2` from runtime conditions.**
 
