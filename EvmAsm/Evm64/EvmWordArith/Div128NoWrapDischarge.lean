@@ -459,8 +459,6 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
 theorem div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
     (a2 a3 b2 b3 : Word)
     (hb3nz : b3 ≠ 0)
-    (_hshift_nz : (clzResult b3).1 ≠ 0)
-    (_hcall : isCallTrialN4 a3 b2 b3)
     (h_q1_eq : (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3)
     (h_rhat'_lt : (n4RhatPrime a2 a3 b2 b3).toNat < 2^32) :
     (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat ≤
@@ -582,9 +580,7 @@ theorem div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
     over our irreducible bundles. -/
 theorem n4_phase1b_eucl
     (a2 a3 b2 b3 : Word)
-    (hb3nz : b3 ≠ 0)
-    (_hshift_nz : (clzResult b3).1 ≠ 0)
-    (_hcall : isCallTrialN4 a3 b2 b3) :
+    (hb3nz : b3 ≠ 0) :
     (n4Q1Prime a2 a3 b2 b3).toNat * (n4DHi b2 b3).toNat +
       (n4RhatPrime a2 a3 b2 b3).toNat = (n4U4 a3 b3).toNat := by
   -- dHi bounds.
@@ -671,7 +667,6 @@ theorem n4Un21_eq_bv_sub
 theorem n4Un21_toNat_of_no_wrap
     (a2 a3 b2 b3 : Word)
     (hb3nz : b3 ≠ 0)
-    (_hshift_nz : (clzResult b3).1 ≠ 0)
     (hcall : isCallTrialN4 a3 b2 b3)
     (h_no_wrap_phase1 :
       (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat ≤
@@ -767,7 +762,6 @@ theorem n4Un21_toNat_of_no_wrap
 theorem div128Quot_un21_lt_vTop_from_phase1_tight
     (a2 a3 b2 b3 : Word)
     (hb3nz : b3 ≠ 0)
-    (hshift_nz : (clzResult b3).1 ≠ 0)
     (hcall : isCallTrialN4 a3 b2 b3)
     (h_q1_eq : (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3)
     (h_no_wrap_phase1 :
@@ -784,10 +778,10 @@ theorem div128Quot_un21_lt_vTop_from_phase1_tight
       (n4DHi b2 b3).toNat * 2^32 + (n4DLo b2 b3).toNat := by
     rw [n4DHi_unfold, n4DLo_unfold]; exact div128Quot_vTop_decomp _
   -- D2b-A: Phase 1b Euclidean.
-  have h_eucl := n4_phase1b_eucl a2 a3 b2 b3 hb3nz hshift_nz hcall
+  have h_eucl := n4_phase1b_eucl a2 a3 b2 b3 hb3nz
   -- D2b-B: un21.toNat formula.
   have h_un21_eq := n4Un21_toNat_of_no_wrap a2 a3 b2 b3
-    hb3nz hshift_nz hcall h_no_wrap_phase1
+    hb3nz hcall h_no_wrap_phase1
   -- q_top_phase1 strict upper: u4*2^32+div_un1 < (q1'+1)*vTop.
   have h_b3'_pos : 0 < (n4B3Prime b2 b3).toNat := by
     have : (n4B3Prime b2 b3).toNat ≥ 2^63 := h_b3'_ge; omega
