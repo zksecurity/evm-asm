@@ -1061,6 +1061,59 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq (a b : EvmWord)
          -- and q0' < 2^32). Mirror v1's discharge pattern (where it
          -- exists in Div128NoWrapDischarge.lean) but for v2's q1''/rhat''.
 
+/-- **Double-addback case for v2**: under v2's Knuth-B + runtime BEQ
+    preconditions + carry = 0 (= double-addback), `qHat = q_true + 2`.
+
+    Combined with the v2 Knuth-B bound `qHat ≤ q_true + 2`:
+    - carry = 0 implies qHat ≥ q_true + 2 (otherwise single-addback would
+      have produced carry ≠ 0).
+    - Combined with Knuth-B upper bound, qHat = q_true + 2.
+
+    This is the v2 mirror of `qHat_eq_div_plus_one_of_single_addback`
+    but for the double-addback (carry = 0) branch. v1's analog couldn't
+    exist because v1's qHat could overshoot by 2^32-2 (per
+    `n4CallAddbackBeqSemanticHolds_counterexample`).
+
+    Issue #1337 algorithm fix migration. -/
+theorem qHat_eq_div_plus_two_of_double_addback_v2 (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b)
+    (_hcarry_zero :
+      let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+      let antiShift :=
+        (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+      let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+      let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+      let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+      let b0' := (b.getLimbN 0) <<< shift
+      let u4 := (a.getLimbN 3) >>> antiShift
+      let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+      let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+      let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+      let u0 := (a.getLimbN 0) <<< shift
+      let qHat := div128Quot_v2 u4 u3 b3'
+      let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+      addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' = 0) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    (div128Quot_v2 u4 u3 b3').toNat =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
+  sorry  -- Combine:
+         -- 1. Knuth-B v2: qHat ≤ q_true + 2 (via div128Quot_v2_le_val256_div_plus_two,
+         --    after discharging no_wrap from runtime preconditions).
+         -- 2. carry = 0 ⟹ qHat ≥ q_true + 2 (the addback's correctness:
+         --    if qHat were q_true or q_true + 1, the post-addback partial
+         --    remainder would not have triggered double-addback).
+         -- 3. Combine to get qHat = q_true + 2.
+
 /-- **Carry partition for the BEQ branch**: under runtime preconditions
     `hcarry2_nz ∧ hborrow` (the double-addback indicators), and given the
     Knuth-B bound `qHat ≤ q_true + 2`, the algorithm's carry from the outer
