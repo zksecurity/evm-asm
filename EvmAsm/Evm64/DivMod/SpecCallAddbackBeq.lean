@@ -998,13 +998,40 @@ theorem div128Quot_v2_le_val256_div_plus_two
 /-- **No-wrap discharge for `qHat_vTop_le_full` under runtime preconditions.**
 
     The closure proof needs to invoke `qHat_vTop_le_full` (which takes 3
-    no_wrap implications). For the call+addback BEQ runtime regime
-    (`hbltu, hcarry2_nz, hborrow`), the no_wrap conditions are
-    dischargeable — the algorithm's BLTU check + addback machinery
-    enforce them.
+    no_wrap implications). The original plan was to discharge them from
+    the call+addback BEQ runtime regime (`hbltu, hcarry2_nz, hborrow`).
 
-    This stub captures the discharge as a separate sub-task. Closing it
-    + the carry partition lemma will unlock the closure.
+    **ARCHITECTURAL BLOCKER (2026-04-27):** the first conjunct
+    `q1''.toNat * dLo.toNat ≤ (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat`
+    is provably FALSE on input (a3=2^63+2^33, a2=a1=a0=0, b3=1,
+    b2=2^33-1, b1=b0=0) — see
+    `div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample` (kernel-checked
+    via `decide`). On THIS input:
+    - All three runtime preconditions hold (per memory
+      `project_n4callbeq_addback_overshoot_2pow32`).
+    - The v2 algorithm STILL produces correct `q_out` (per
+      `n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample`).
+    - But `rhat''.toNat = 2^32` exactly, so `rhat''.toNat % 2^32 = 0`,
+      making the no-wrap RHS small while LHS = `q1''.toNat * dLo.toNat`
+      remains large.
+
+    **Therefore this entire stub statement is FALSE — cannot be proven
+    as stated.** The closure of `n4CallAddbackBeqSemanticHolds_v2` cannot
+    flow through the Knuth-B `qHat ≤ q_true + 2` route via this
+    discharge.
+
+    **Alternative paths to consider:**
+    1. **Direct algorithm correctness**: prove `q_out = q_true` directly
+       via case-analysis on the truncation behavior, without going
+       through Knuth-B. Hard but theoretically possible.
+    2. **Stronger Knuth-B variant**: replace `qHat_vTop_le_full` with a
+       variant that handles the `rhat'' ≥ 2^32` case directly. Requires
+       reformulating the multiplication-form bound.
+    3. **Untruncated invariant**: use
+       `q1''.toNat * dLo.toNat ≤ rhat''.toNat * 2^32 + div_un1.toNat`
+       (without `% 2^32`). This may be provable from runtime conditions,
+       and may be enough for downstream Knuth-B if the un21 computation
+       is done in extended precision.
 
     Issue #1337 algorithm fix migration. -/
 theorem div128Quot_v2_no_wrap_under_call_addback_beq (a b : EvmWord)
