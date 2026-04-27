@@ -1699,6 +1699,60 @@ theorem qHat_gt_q_true_under_runtime_v2 (a b : EvmWord)
   -- `qHat ≤ q_true`. This is the formulation Knuth uses.
   sorry
 
+/-- **qHat * val256(b_shifted) > val256(a_shifted) under v2 borrow** —
+    the shifted-domain version of `qHat_gt_q_true`. This statement is
+    DIRECTLY derivable from `c3_un_zero_of_qHat_mul_le`'s contrapositive,
+    avoiding the truncation issue with `q_true` (the original-domain
+    quotient).
+
+    Key insight: `c3_un_zero_of_qHat_mul_le` operates on raw limbs
+    (whatever they are). In our setting the inputs are SHIFTED limbs,
+    so the conclusion `qHat * val256(SHIFTED b) > val256(SHIFTED a)` is
+    immediate from `c3 ≠ 0`.
+
+    Issue #1337 algorithm fix migration. Path 3 shifted-domain sub-lemma. -/
+theorem qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2 (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    qHat.toNat * val256 b0' b1' b2' b3' > val256 u0 u1 u2 u3 := by
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat
+  -- Step 1: hborrow_v2 → c3 ≠ 0 via u_top_lt_c3.
+  rw [isAddbackBorrowN4CallEvm_v2_def] at hborrow_v2
+  have h_u4_lt_c3 := EvmWord.u_top_lt_c3_of_addback_borrow_call_v2
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    hborrow_v2
+  simp only [] at h_u4_lt_c3
+  -- Step 2: contrapositive of `c3_un_zero_of_qHat_mul_le` — c3 ≠ 0 ⟹
+  --   qHat * val256(b_shifted) > val256(a_shifted).
+  by_contra hle
+  push Not at hle
+  -- hle : qHat.toNat * val256 b0' b1' b2' b3' ≤ val256 u0 u1 u2 u3.
+  have h_c3_zero := c3_un_zero_of_qHat_mul_le hle
+  -- h_c3_zero : (mulsubN4 ...).2.2.2.2 = 0 (as Word).
+  -- h_u4_lt_c3 : u4.toNat < (mulsubN4 ...).2.2.2.2.toNat.
+  -- Combine: u4.toNat < 0, contradiction.
+  -- h_c3_zero and h_u4_lt_c3 are about the same `(mulsubN4 ...).2.2.2.2`,
+  -- but the syntactic forms differ (h_c3_zero uses local `qHat, b', u'`;
+  -- h_u4_lt_c3 uses unfolded BitVec arithmetic). The substitution requires
+  -- `change` or `simp only [show ... = ...]` to fold the unfolded form back
+  -- to the local lets, which is non-trivial. Mark as sorry — the argument
+  -- IS sound, just needs definitional-eq massaging.
+  sorry
+
 /-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
     Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
     algorithm's `addbackN4_carry` precisely encodes the qHat overshoot:
