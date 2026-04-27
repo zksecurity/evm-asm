@@ -206,6 +206,56 @@ theorem div128Quot_buggy_on_counterexample :
     (div128Quot u4 u3 b3').toNat = 9223372045444710397 := by
   decide
 
+/-- **v2 version of `n4CallAddbackBeqSemanticHolds`**, using `div128Quot_v2`
+    (the fixed Knuth D 2-correction algorithm) instead of `div128Quot`
+    (the buggy 1-correction version).
+
+    Mirror of `n4CallAddbackBeqSemanticHolds` for the v2 algorithm.
+    Used by downstream stack specs once they migrate from `div128Quot`
+    to `div128Quot_v2`. The associated closure proofs
+    (`n4CallAddbackBeqSemanticHolds_v2_of_*`) should be provable since
+    the v2 algorithm correctly handles the Knuth D 2-correction case
+    that breaks the original predicate (see
+    `n4CallAddbackBeqSemanticHolds_counterexample`).
+
+    Issue #1337's algorithm fix migration. Tracked alongside
+    `div128_v2_spec` (PR #1392). -/
+def n4CallAddbackBeqSemanticHolds_v2 (a b : EvmWord) : Prop :=
+  let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+  let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+  let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+  let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  let b0' := (b.getLimbN 0) <<< shift
+  let u4 := (a.getLimbN 3) >>> antiShift
+  let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+  let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  let u0 := (a.getLimbN 0) <<< shift
+  let qHat := div128Quot_v2 u4 u3 b3'  -- v2: 2 D3 correction iterations.
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+  let q_out : Word :=
+    if carry = 0 then qHat + signExtend12 4095 + signExtend12 4095
+    else qHat + signExtend12 4095
+  q_out.toNat =
+    val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+
+/-- The v2 predicate holds on the (a, b) input that broke the v1 predicate.
+    Demonstrates the v2 fix works on the counterexample.
+
+    With `div128Quot_v2` returning `q_true + 1`, the post-addback `q_out`
+    correctly equals `q_true`. -/
+theorem n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample :
+    n4CallAddbackBeqSemanticHolds_v2
+      (EvmWord.fromLimbs (fun i => match i with
+        | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33)))
+      (EvmWord.fromLimbs (fun i => match i with
+        | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)) := by
+  unfold n4CallAddbackBeqSemanticHolds_v2
+  decide
+
 theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
     n4CallAddbackBeqSemanticHolds a b =
     (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
