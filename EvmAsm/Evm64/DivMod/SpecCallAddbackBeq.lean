@@ -1787,6 +1787,13 @@ theorem addback_carry_partition_v2 (a b : EvmWord)
      qHat.toNat = q_true + 1) := by
   sorry  -- Conjunctive partition via Knuth-D's classical addback correctness.
          --
+         -- **STATUS UPDATE (2026-04-28):** the v2 closure now has a proven
+         -- shifted-domain qHat lower bound — `qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2`
+         -- (commit 1423349d). This gives qHat * val256(b_shifted) > val256(a_shifted)
+         -- directly from hborrow_v2. To use this in the partition, we need
+         -- to either (a) bridge to original-domain via val256 algebra, OR
+         -- (b) reformulate the partition statement in shifted-domain.
+         --
          -- **PROOF PLAN — concrete dependencies:**
          -- For carry = 0 case (qHat = q_true + 2):
          --   Use `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds`
