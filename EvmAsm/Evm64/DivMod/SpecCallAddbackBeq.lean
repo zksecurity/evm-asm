@@ -1540,12 +1540,29 @@ theorem addback_carry_partition_v2 (a b : EvmWord)
     (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 →
      qHat.toNat = q_true + 1) := by
   sorry  -- Conjunctive partition via Knuth-D's classical addback correctness.
-         -- Forward (carry = 0 → qHat = q_true + 2):
-         --   carry = 0 means addback fires twice. Algorithm's design says
-         --   2 addbacks correct an overshoot of exactly 2.
-         -- Backward (qHat = q_true + 2 → carry = 0):
-         --   q_out = qHat - 2 = q_true; algorithm computes this via
-         --   double-addback (carry = 0 path).
+         --
+         -- **PROOF PLAN — concrete dependencies:**
+         -- For carry = 0 case (qHat = q_true + 2):
+         --   Use `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds`
+         --   (line ~2240) which gives c3 = u4 + 1 from the double-addback
+         --   identity `ab' + 2^256 = ms + 2 * (b * 2^s)`.
+         --   Combined with `qHat = a/b + 2` (from `_le_val256_div_plus_two_untruncated`)
+         --   and the carry semantics, derive qHat = q_true + 2.
+         --
+         -- For carry ≠ 0 case (qHat = q_true + 1):
+         --   Use `c3_eq_u4_plus_one_from_mulsub_addback_bounds` (line ~2172)
+         --   which gives c3 = u4 + 1 from the single-addback identity
+         --   `post1_val + 2^256 = ms + b * 2^s`.
+         --   Combined with `qHat ≤ a/b + 2` (Knuth-B v2 untruncated) and
+         --   `qHat > q_true` (BEQ branch reached) → qHat ∈ {q_true + 1, q_true + 2};
+         --   exclude qHat = q_true + 2 via the carry ≠ 0 hypothesis (which
+         --   would require double-addback).
+         --
+         -- Both branches need:
+         --   - Knuth-A (lower): qHat ≥ a/b. Trivially true.
+         --   - Knuth-B v2 (upper): via `_le_val256_div_plus_two_untruncated`.
+         --   - Mulsub ↔ qHat * b - a relation: existing helpers.
+         --   - addbackN4 ↔ +b * 2^s relation: existing helpers.
          -- Closing this requires:
          --   - Knuth-A (lower bound): qHat ≥ q_true.
          --   - Knuth-B v2 untruncated chain: qHat ≤ q_true + 2.
