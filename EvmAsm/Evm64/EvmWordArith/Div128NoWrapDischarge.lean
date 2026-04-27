@@ -153,16 +153,19 @@ theorem n4Un21_unfold (a2 a3 b2 b3 : Word) :
   delta n4Un21; rfl
 
 /-- **Phase 1 abstract first digit** at the (a, b)-limb level (Nat).
-    `q_top_phase1 := (u4 * 2^32 + div_un1) / dHi`. This is the Nat-level
-    target that `n4Q1Prime` should equal under skip-borrow (D1c). -/
+    `q_top_phase1 := (u4 * 2^32 + div_un1) / b3'`. Matches the
+    denominator in `algorithmQ1Prime_ge_q_true_1`'s lower bound.
+    This is the Nat-level target that `n4Q1Prime` should equal
+    under skip-borrow (D1c). -/
 @[irreducible]
 def n4QTopPhase1 (a2 a3 b2 b3 : Word) : Nat :=
-  ((n4U4 a3 b3).toNat * 2^32 + (n4DivUn1 a2 a3 b3).toNat) / (n4DHi b2 b3).toNat
+  ((n4U4 a3 b3).toNat * 2^32 + (n4DivUn1 a2 a3 b3).toNat) /
+    (n4B3Prime b2 b3).toNat
 
 theorem n4QTopPhase1_unfold (a2 a3 b2 b3 : Word) :
     n4QTopPhase1 a2 a3 b2 b3 =
       ((n4U4 a3 b3).toNat * 2^32 + (n4DivUn1 a2 a3 b3).toNat) /
-        (n4DHi b2 b3).toNat := by
+        (n4B3Prime b2 b3).toNat := by
   delta n4QTopPhase1; rfl
 
 /-- Phase 1b corrected remainder `rhat'` (paired with `algorithmQ1Prime`). -/
