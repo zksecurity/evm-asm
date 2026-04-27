@@ -814,6 +814,120 @@ theorem div128Quot_v2_qHat_vTop_le_test_counterexample :
     (div128Quot_v2 u4 u3 b3').toNat * b3'.toNat ≤ u4.toNat * 2^64 + u3.toNat := by
   decide
 
+/-- **Full v2 qHat_vTop_le with no_wrap hypotheses** (`_full` variant).
+
+    Mirrors v1's `div128Quot_qHat_vTop_le` from `Div128CallSkipClose.lean:149`
+    exactly, but uses `div128Quot_v2` instead of `div128Quot`. Composes the
+    7 already-proven v2 sub-lemmas + reusable v1 infrastructure.
+
+    The "_full" suffix distinguishes it from `div128Quot_v2_qHat_vTop_le`
+    above (which has the simpler signature without no_wrap implications).
+    The simple form is downstream of this — use the `_full` variant when
+    you can supply the no_wrap hypotheses; otherwise use the simple form
+    (which currently still has a sorry).
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_qHat_vTop_le_full
+    (uHi uLo vTop : Word)
+    (hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                 (32 : BitVec 6).toNat).toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' := if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+                    (if BitVec.ult ((rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0)
+                                    (q0c * dLo) then rhat2c + dHi else rhat2c)
+                  else rhat2c
+    q1''.toNat * dLo.toNat ≤ (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat →
+    q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat →
+    q0'.toNat < 2^32 →
+    (div128Quot_v2 uHi uLo vTop).toNat * vTop.toNat ≤
+      uHi.toNat * 2^64 + uLo.toNat := by
+  intro dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat'
+        q1'' rhat'' cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' rhat2'
+        h_ph1_no_wrap_lo h_ph2_no_wrap hq0_lt
+  -- Algorithm-level setup.
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [show dHi = vTop >>> (32 : BitVec 6).toNat from rfl] at heq
+    rw [heq] at hdHi_ge; simp at hdHi_ge
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  -- Phase 1a invariants.
+  have h_post1a := div128Quot_first_round_post uHi dHi hdHi_ne hdHi_lt
+  -- Phase 1b 1st D3 Euclidean: q1' * dHi + rhat' = uHi.
+  have h_ph1_eucl_1st : q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat :=
+    div128Quot_phase1b_post uHi dHi q1c rhatc dLo rhatUn1 hdHi_lt h_post1a
+      (div128Quot_rhatc_lt_2dHi uHi dHi hdHi_ne hdHi_lt)
+  -- Phase 1b 2nd D3 Euclidean (using new v2 lemma): q1'' * dHi + rhat'' = uHi.
+  have h_ph1_eucl_2nd : q1''.toNat * dHi.toNat + rhat''.toNat = uHi.toNat :=
+    div128Quot_v2_phase1b_2nd_post uHi dHi q1' rhat' dLo div_un1
+      hdHi_ge hdHi_lt h_ph1_eucl_1st
+  -- un21 case (no-wrap): un21.toNat = A - B.
+  have h_un21_case := div128Quot_v2_un21_toNat_case uHi uLo vTop
+    hdHi_ge hdLo_lt huHi_lt_vTop
+  have h_un21 : un21.toNat =
+      (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat - q1''.toNat * dLo.toNat :=
+    h_un21_case.1 h_ph1_no_wrap_lo
+  -- Phase 2a invariants (instantiate Phase 1a on un21).
+  have h_post2a := div128Quot_first_round_post un21 dHi hdHi_ne hdHi_lt
+  have h_rhat2c_lt := div128Quot_rhatc_lt_2dHi un21 dHi hdHi_ne hdHi_lt
+  -- Phase 2b Euclidean against un21.
+  have h_ph2b : q0'.toNat * dHi.toNat + rhat2'.toNat = un21.toNat :=
+    div128Quot_phase2b_post un21 dHi hdHi_lt q0c rhat2c dLo h_post2a h_rhat2c_lt
+  -- Combine h_ph2b + h_un21.
+  have h_un21_ph2 : q0'.toNat * dHi.toNat + rhat2'.toNat =
+      (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat - q1''.toNat * dLo.toNat := by
+    rw [h_ph2b, h_un21]
+  -- Pure-Nat KB-Compose V2 (with q1''/rhat'' substituted for q1'/rhat').
+  have h_compose := knuth_compose_qHat_vTop_le_nat_v2
+    q1''.toNat q0'.toNat rhat''.toNat rhat2'.toNat dHi.toNat dLo.toNat
+    div_un1.toNat div_un0.toNat uHi.toNat
+    h_ph1_eucl_2nd h_ph1_no_wrap_lo h_un21_ph2 h_ph2_no_wrap
+  -- Output formula via div128Quot_v2_toNat_eq_strict.
+  have h_div_eq :
+      (div128Quot_v2 uHi uLo vTop).toNat = q1''.toNat * 2^32 + q0'.toNat :=
+    div128Quot_v2_toNat_eq_strict uHi uLo vTop hdHi_ge hdHi_lt hdLo_lt
+      huHi_lt_vTop hq0_lt
+  -- vTop and uLo decompositions.
+  have h_vtop : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_uLo : uLo.toNat = div_un1.toNat * 2^32 + div_un0.toNat :=
+    div128Quot_vTop_decomp uLo
+  calc (div128Quot_v2 uHi uLo vTop).toNat * vTop.toNat
+      = (q1''.toNat * 2^32 + q0'.toNat) * (dHi.toNat * 2^32 + dLo.toNat) := by
+          rw [h_div_eq, h_vtop]
+    _ ≤ uHi.toNat * 2^64 + div_un1.toNat * 2^32 + div_un0.toNat := h_compose
+    _ = uHi.toNat * 2^64 + uLo.toNat := by rw [h_uLo]; ring
+
 /-- **Knuth Theorem B for `div128Quot_v2`** (val256 form, mirroring v1's
     `div128Quot_le_val256_div_plus_two` from
     `EvmAsm/Evm64/EvmWordArith/Div128CallSkipClose.lean:267`).
