@@ -607,21 +607,106 @@ theorem div128Quot_un21_lt_vTop_from_phase1_tight
 -- D5: Compose into Div128PhaseNoWrapInv
 -- ============================================================================
 
-/-- **D5 (STUB)**: Skip-borrow implies `Div128PhaseNoWrapInv`.
+/-- **D5 (CLOSED via composition)**: Skip-borrow implies
+    `Div128PhaseNoWrapInv` (modulo D2b sub-stub).
 
     Composes D1c (Phase 1 tight) → D2/D3 (Phase 1 no-wrap) → D2b
-    (un21 < vTop). This is the core bridge for the call+skip path.
-
-    For the call+addback path, similar reasoning via
-    `isAddbackBorrowN4Call` instead of skip-borrow — the analogous
-    Phase 1 tight lemma needs to be developed (D1c-addback variant). -/
+    (un21 < vTop). The result is the conjunction in
+    `Div128PhaseNoWrapInv` after bundle/let-form bridging. -/
 theorem div128_phase_no_wrap_of_skip_borrow
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (_hb3nz : b3 ≠ 0)
-    (_hshift_nz : (clzResult b3).1 ≠ 0)
-    (_hcall : isCallTrialN4 a3 b2 b3)
-    (_hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (hborrow : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
     Div128PhaseNoWrapInv (n4U4 a3 b3) (n4Un3 a2 a3 b3) (n4B3Prime b2 b3) := by
-  sorry
+  -- Phase 1 tight from D1c.
+  have h_q1_eq := div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
+    a0 a1 a2 a3 b0 b1 b2 b3 hb3nz hshift_nz hcall hborrow
+  -- Phase 1 no-wrap from D2/D3.
+  have h_no_wrap := div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
+    a2 a3 b2 b3 hb3nz hshift_nz hcall h_q1_eq
+  -- un21 < vTop from D2b.
+  have h_un21_lt := div128Quot_un21_lt_vTop_from_phase1_tight
+    a2 a3 b2 b3 hb3nz hshift_nz hcall h_q1_eq h_no_wrap
+  -- Unfold Div128PhaseNoWrapInv to expose the let-form conjuncts.
+  unfold Div128PhaseNoWrapInv
+  simp only []
+  -- Establish bundle/let-form correspondences.
+  have h_q1_letform :
+      (let dHi := (n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat
+       let dLo := ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+                    (32 : BitVec 6).toNat
+       let div_un1 := (n4Un3 a2 a3 b3) >>> (32 : BitVec 6).toNat
+       let q1 := rv64_divu (n4U4 a3 b3) dHi
+       let rhat := (n4U4 a3 b3) - q1 * dHi
+       let hi1 := q1 >>> (32 : BitVec 6).toNat
+       let q1c : Word := if hi1 = 0 then q1 else q1 + signExtend12 4095
+       let rhatc : Word := if hi1 = 0 then rhat else rhat + dHi
+       let qDlo := q1c * dLo
+       let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+       if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c) =
+      n4Q1Prime a2 a3 b2 b3 := by
+    rw [n4Q1Prime_unfold, algorithmQ1Prime_unfold]
+  have h_rhat_letform :
+      (let dHi := (n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat
+       let dLo := ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+                    (32 : BitVec 6).toNat
+       let div_un1 := (n4Un3 a2 a3 b3) >>> (32 : BitVec 6).toNat
+       let q1 := rv64_divu (n4U4 a3 b3) dHi
+       let rhat := (n4U4 a3 b3) - q1 * dHi
+       let hi1 := q1 >>> (32 : BitVec 6).toNat
+       let q1c : Word := if hi1 = 0 then q1 else q1 + signExtend12 4095
+       let rhatc : Word := if hi1 = 0 then rhat else rhat + dHi
+       let qDlo := q1c * dLo
+       let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+       if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc) =
+      n4RhatPrime a2 a3 b2 b3 := by
+    rw [n4RhatPrime_unfold, algorithmRhatPrime_unfold]
+  have h_un21_letform :
+      (let dHi := (n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat
+       let dLo := ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+                    (32 : BitVec 6).toNat
+       let div_un1 := (n4Un3 a2 a3 b3) >>> (32 : BitVec 6).toNat
+       let q1 := rv64_divu (n4U4 a3 b3) dHi
+       let rhat := (n4U4 a3 b3) - q1 * dHi
+       let hi1 := q1 >>> (32 : BitVec 6).toNat
+       let q1c : Word := if hi1 = 0 then q1 else q1 + signExtend12 4095
+       let rhatc : Word := if hi1 = 0 then rhat else rhat + dHi
+       let qDlo := q1c * dLo
+       let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+       let q1' : Word := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095
+                        else q1c
+       let rhat' : Word := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+       let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+       let cu_q1_dlo := q1' * dLo
+       cu_rhat_un1 - cu_q1_dlo) =
+      n4Un21 a2 a3 b2 b3 := by
+    rw [n4Un21_unfold, algorithmUn21_unfold]
+  refine ⟨?_, ?_⟩
+  · -- un21 < dHi*2^32 + dLo conjunct (D2b).
+    rw [h_un21_letform]
+    -- Need to bridge dHi*2^32 + dLo on RHS to n4DHi*2^32 + n4DLo.
+    show (n4Un21 a2 a3 b2 b3).toNat <
+         ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+         (((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+           (32 : BitVec 6).toNat).toNat
+    rw [show ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat) = n4DHi b2 b3 from
+      (n4DHi_unfold b2 b3).symm,
+        show (((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+              (32 : BitVec 6).toNat) = n4DLo b2 b3 from (n4DLo_unfold b2 b3).symm]
+    exact h_un21_lt
+  · -- q1' * dLo ≤ (rhat' % 2^32) * 2^32 + div_un1 conjunct (D2/D3).
+    rw [h_q1_letform, h_rhat_letform]
+    show (n4Q1Prime a2 a3 b2 b3).toNat *
+         (((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+           (32 : BitVec 6).toNat).toNat ≤
+         (n4RhatPrime a2 a3 b2 b3).toNat % 2^32 * 2^32 +
+         ((n4Un3 a2 a3 b3) >>> (32 : BitVec 6).toNat).toNat
+    rw [show (((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat) >>>
+              (32 : BitVec 6).toNat) = n4DLo b2 b3 from (n4DLo_unfold b2 b3).symm,
+        show ((n4Un3 a2 a3 b3) >>> (32 : BitVec 6).toNat) = n4DivUn1 a2 a3 b3
+              from (n4DivUn1_unfold a2 a3 b3).symm]
+    exact h_no_wrap
 
 end EvmAsm.Evm64
