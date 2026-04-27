@@ -3444,5 +3444,49 @@ theorem evm_mod_n4_call_addback_beq_stack_spec (sp base : Word)
   simp only [hmod_eq, hanti_toNat_mod] at hq ⊢
   xperm_hyp hq
 
+/-- **n=4 shift_nz DIV top-level dispatcher** — routes between
+    call+skip (unconditional, hsem auto-discharged) and call+addback
+    BEQ paths via the borrow-check disjunction.
+
+    Mirror of `evm_div_n4_shift0_stack_spec` (Shift0Dispatcher.lean) but
+    for the shift_nz path. Uses
+    `isSkipBorrowN4CallEvm_or_isAddbackBorrowN4CallEvm` as the case-split
+    and `evm_div_n4_call_skip_stack_spec_unconditional` (which
+    auto-discharges `n4CallSkipSemanticHolds`) for the skip path.
+
+    The addback-BEQ path still requires its own `hsem`
+    (`n4CallAddbackBeqSemanticHolds`) and `hcarry2_nz` — these encode
+    Knuth-B + addback correctness which haven't been closed yet
+    (parked behind PR #1339's bridge stub). -/
+theorem evm_div_n4_call_stack_spec (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hvalid : ValidMemRange sp 8)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz_addback :
+      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
+    (hsem_addback :
+      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
+    cpsTriple base (base + nopOff) (divCode base)
+      (divN4StackPreCall sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divN4CallSkipStackPost sp a b) := by
+  rcases isSkipBorrowN4CallEvm_or_isAddbackBorrowN4CallEvm a b with hskip | haddback
+  · exact evm_div_n4_call_skip_stack_spec_unconditional sp base a b
+      v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0
+      hbnz hb3nz hshift_nz halign hbltu hskip
+  · exact evm_div_n4_call_addback_beq_stack_spec sp base a b
+      v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0
+      hbnz hb3nz hshift_nz hvalid halign hbltu
+      (hcarry2_nz_addback haddback) haddback (hsem_addback haddback)
+
 
 end EvmAsm.Evm64
