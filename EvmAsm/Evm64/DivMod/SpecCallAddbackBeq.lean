@@ -447,6 +447,63 @@ theorem div128Quot_v2_q1_prime_prime_dLo_no_wrap
     omega
   rw [BitVec.toNat_mul, Nat.mod_eq_of_lt h_mul_lt]
 
+/-- **Modular form of un21 for `div128Quot_v2`** — v2 analog of v1's
+    `div128Quot_un21_toNat` from `Div128FinalAssembly.lean:167`.
+
+    States `un21.toNat = (A + 2^64 - B) % 2^64` where:
+    - `A = (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat`
+    - `B = q1''.toNat * dLo.toNat`
+
+    Proof composes:
+    - `div128Quot_cu_rhat_un1_toNat` (existing v1, generic on rhat).
+    - `div128Quot_v2_q1_prime_prime_dLo_no_wrap` (just proven for v2).
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_un21_toNat
+    (uHi uLo vTop : Word)
+    (hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                 (32 : BitVec 6).toNat).toNat < 2^32)
+    (huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    un21.toNat = ((rhat''.toNat % 2^32) * 2^32 + div_un1.toNat + 2^64 -
+                   q1''.toNat * dLo.toNat) % 2^64 := by
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat' q1'' rhat''
+    cu_rhat_un1 cu_q1_dlo un21
+  have h_cu_rhat : cu_rhat_un1.toNat =
+      (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat :=
+    div128Quot_cu_rhat_un1_toNat rhat'' uLo
+  have h_cu_q1 : cu_q1_dlo.toNat = q1''.toNat * dLo.toNat :=
+    div128Quot_v2_q1_prime_prime_dLo_no_wrap uHi dHi dLo rhatUn1 div_un1
+      hdHi_ge hdLo_lt huHi_lt_vTop
+  show (cu_rhat_un1 - cu_q1_dlo).toNat = _
+  rw [BitVec.toNat_sub, h_cu_rhat, h_cu_q1]
+  congr 1
+  omega
+
 /-- **`un21` computation case-analysis for `div128Quot_v2`** (v2 analog
     of `div128Quot_un21_toNat_case` from `Div128FinalAssembly.lean:213`).
 
@@ -466,10 +523,10 @@ theorem div128Quot_v2_q1_prime_prime_dLo_no_wrap
     Issue #1337 algorithm fix migration. -/
 theorem div128Quot_v2_un21_toNat_case
     (uHi uLo vTop : Word)
-    (_hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
-    (_hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+    (hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
                  (32 : BitVec 6).toNat).toNat < 2^32)
-    (_huHi_lt_vTop : uHi.toNat <
+    (huHi_lt_vTop : uHi.toNat <
       (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
       ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
@@ -499,8 +556,32 @@ theorem div128Quot_v2_un21_toNat_case
     let B := q1''.toNat * dLo.toNat
     (B ≤ A → un21.toNat = A - B) ∧
     (A < B → un21.toNat = A + 2^64 - B) := by
-  sorry  -- Mirrors v1's div128Quot_un21_toNat_case proof; just with
-         -- q1''/rhat'' substituted for q1'/rhat'.
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo rhatUn1 q1' rhat' q1'' rhat''
+    cu_rhat_un1 cu_q1_dlo un21 A B
+  have h_formula : un21.toNat = (A + 2^64 - B) % 2^64 :=
+    div128Quot_v2_un21_toNat uHi uLo vTop hdHi_ge hdLo_lt huHi_lt_vTop
+  have hA_lt : A < 2^64 := by
+    show (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat < 2^64
+    have : rhat''.toNat % 2^32 < 2^32 := Nat.mod_lt _ (by decide)
+    have : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+    nlinarith
+  have hB_lt : B < 2^64 := by
+    show q1''.toNat * dLo.toNat < 2^64
+    have : cu_q1_dlo.toNat = q1''.toNat * dLo.toNat :=
+      div128Quot_v2_q1_prime_prime_dLo_no_wrap uHi dHi dLo rhatUn1 div_un1
+        hdHi_ge hdLo_lt huHi_lt_vTop
+    have := cu_q1_dlo.isLt
+    omega
+  refine ⟨?_, ?_⟩
+  · intro hBA
+    rw [h_formula]
+    show (A + 2^64 - B) % 2^64 = A - B
+    rw [show A + 2^64 - B = (A - B) + 2^64 from by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega : A - B < 2^64)]
+  · intro hAB
+    rw [h_formula]
+    show (A + 2^64 - B) % 2^64 = A + 2^64 - B
+    exact Nat.mod_eq_of_lt (by omega : A + 2^64 - B < 2^64)
 
 /-- **Numerical sanity check** for `div128Quot_v2_qHat_vTop_le` on the
     counterexample input. Verifies the multiplication bound is at least
