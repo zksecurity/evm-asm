@@ -1904,6 +1904,35 @@ theorem div128Quot_v2_le_val256_div_plus_two_test_small :
         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
   decide
 
+/-- **Sanity check 5**: `addback_carry_partition_v2`'s claim on the
+    counterexample input. v2 returns `qHat = q_true + 1` on this input
+    (per `n4CallAddbackBeqSemanticHolds_v2_holds_on_counterexample`), so
+    the partition's claim is: `carry ≠ 0` (single-addback case).
+
+    Kernel-checked validation that the partition's stated form is at
+    least correct on the canonical counterexample. -/
+theorem addback_carry_partition_v2_test_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 := by
+  decide
+
 /-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
     the input to actually be in the call+addback BEQ runtime regime (i.e.
     the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
