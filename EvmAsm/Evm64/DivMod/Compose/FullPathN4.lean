@@ -532,6 +532,27 @@ def isAddbackBorrowN4Call (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   (if BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
    then (1 : Word) else 0) ≠ (0 : Word)
 
+/-- v2 mirror of `isAddbackBorrowN4Call` — same shape but uses
+    `div128Quot_v2` for the trial quotient. Required by the v2 closure
+    proof to match the predicate's internal use of `div128Quot_v2`.
+
+    Issue #1337 algorithm fix migration. -/
+def isAddbackBorrowN4Call_v2 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+  let shift := (clzResult b3).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (antiShift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let qHat := div128Quot_v2 u4 u3 b3'
+  (if BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
+   then (1 : Word) else 0) ≠ (0 : Word)
+
 /-- Loop body n=4, call+skip, j=0 with sp-relative addresses. -/
 theorem divK_loop_body_n4_call_skip_j0_norm (sp base : Word)
     (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
