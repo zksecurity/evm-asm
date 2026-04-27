@@ -1584,22 +1584,22 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
          --  (b) bound q1''.toNat * dLo from the algorithm's structure.
          --  (c) the upper bound A_un - B < 2^64 follows from (a) + (b).
 
-/-- **Carry partition for the BEQ branch (sub-lemma).** Under runtime
-    preconditions (`hbltu, hcarry2_nz, hborrow`), the algorithm's
-    `addbackN4_carry` from the outer addback is `0` iff `qHat ≥ q_true + 2`.
+/-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
+    Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
+    algorithm's `addbackN4_carry` precisely encodes the qHat overshoot:
+    - carry = 0 ⟺ qHat = q_true + 2 (double-addback).
+    - carry ≠ 0 ⟺ qHat = q_true + 1 (single-addback).
 
-    Combined with Knuth-B (`qHat ≤ q_true + 2`) and the runtime
-    constraint `qHat ≥ q_true + 1` (since BEQ branch is reached, see
-    `qHat_ge_q_true_plus_one_under_call_addback_beq` planned sub-lemma):
-    - carry = 0 ⟺ qHat = q_true + 2 (double-addback fires both).
-    - carry ≠ 0 ⟺ qHat = q_true + 1 (single-addback only).
+    Both directions are needed: for `qHat_eq_*_of_*_addback_v2`, we
+    use the forward implication of each iff (carry condition → qHat
+    overshoot value).
 
-    This is the missing piece linking the carry signal to qHat's
-    overshoot value. Once closed (via Knuth-D's classical addback
-    correctness analysis), the qHat_eq_*_v2 lemmas follow.
+    Closing this requires Knuth-D's classical addback correctness:
+    each addback adds `b` back to the partial remainder, so the number
+    of addbacks fired equals `qHat - q_true` (precise overshoot).
 
     Issue #1337 algorithm fix migration. Alternative path 3 sub-lemma. -/
-theorem addback_carry_eq_zero_iff_qHat_overshoot_two_v2 (a b : EvmWord)
+theorem addback_carry_partition_v2 (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hbltu : isCallTrialN4Evm a b)
@@ -1621,10 +1621,12 @@ theorem addback_carry_eq_zero_iff_qHat_overshoot_two_v2 (a b : EvmWord)
     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                   val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    -- The carry signal precisely encodes the qHat overshoot:
-    (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' = 0 ↔
-     qHat.toNat = q_true + 2) := by
-  sorry  -- The biconditional via Knuth-D's classical addback correctness.
+    -- Both directions of the partition:
+    (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' = 0 →
+     qHat.toNat = q_true + 2) ∧
+    (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 →
+     qHat.toNat = q_true + 1) := by
+  sorry  -- Conjunctive partition via Knuth-D's classical addback correctness.
          -- Forward (carry = 0 → qHat = q_true + 2):
          --   carry = 0 means addback fires twice. Algorithm's design says
          --   2 addbacks correct an overshoot of exactly 2.
@@ -1654,12 +1656,12 @@ theorem addback_carry_eq_zero_iff_qHat_overshoot_two_v2 (a b : EvmWord)
 
     Issue #1337 algorithm fix migration. -/
 theorem qHat_eq_div_plus_one_of_single_addback_v2 (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hbltu : isCallTrialN4Evm a b)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow : isAddbackBorrowN4CallEvm a b)
-    (_hcarry_nz :
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
+    (hcarry_nz :
       let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
       let antiShift :=
         (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
@@ -1684,17 +1686,10 @@ theorem qHat_eq_div_plus_one_of_single_addback_v2 (a b : EvmWord)
     (div128Quot_v2 u4 u3 b3').toNat =
       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 1 := by
-  sorry  -- Path 3 closure (see docstring above for chain).
-         -- Sketch:
-         -- 1. From `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
-         --    (stub), derive the 3 untruncated invariants from runtime.
-         -- 2. From `div128Quot_v2_le_val256_div_plus_two_untruncated` (proven),
-         --    qHat.toNat ≤ q_true + 2.
-         -- 3. From `addback_carry_eq_zero_iff_qHat_overshoot_two_v2` (stub),
-         --    carry ≠ 0 → qHat.toNat ≠ q_true + 2 → qHat.toNat ≤ q_true + 1.
-         -- 4. Runtime preconditions force qHat ≥ q_true + 1 (BEQ branch
-         --    reached means at least one addback). [planned helper]
-         -- 5. Combine: qHat.toNat = q_true + 1.
+  -- Direct via the carry partition (conjunctive form, carry ≠ 0 case).
+  have h_part := addback_carry_partition_v2 a b
+    hb3nz hshift_nz hbltu hcarry2_nz hborrow
+  exact h_part.2 hcarry_nz
 
 /-- **Double-addback case for v2**: under v2's Knuth-B + runtime BEQ
     preconditions + carry = 0 (= double-addback), `qHat = q_true + 2`.
@@ -1711,12 +1706,12 @@ theorem qHat_eq_div_plus_one_of_single_addback_v2 (a b : EvmWord)
 
     Issue #1337 algorithm fix migration. -/
 theorem qHat_eq_div_plus_two_of_double_addback_v2 (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hbltu : isCallTrialN4Evm a b)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow : isAddbackBorrowN4CallEvm a b)
-    (_hcarry_zero :
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow : isAddbackBorrowN4CallEvm a b)
+    (hcarry_zero :
       let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
       let antiShift :=
         (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
@@ -1741,17 +1736,10 @@ theorem qHat_eq_div_plus_two_of_double_addback_v2 (a b : EvmWord)
     (div128Quot_v2 u4 u3 b3').toNat =
       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
-  sorry  -- Path 3 closure (parallel to single-addback but for carry = 0):
-         -- 1. From `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
-         --    (stub), derive the 3 untruncated invariants from runtime.
-         -- 2. From `div128Quot_v2_le_val256_div_plus_two_untruncated` (proven),
-         --    qHat.toNat ≤ q_true + 2.
-         -- 3. From `addback_carry_eq_zero_iff_qHat_overshoot_two_v2` (stub),
-         --    carry = 0 → qHat.toNat = q_true + 2.
-         -- 4. Combine 2+3: qHat.toNat = q_true + 2.
-         -- Original sketch (truncated chain — kept as fallback comments):
-         -- 1. Knuth-B v2: qHat ≤ q_true + 2 (via div128Quot_v2_le_val256_div_plus_two,
-         --    after discharging no_wrap from runtime preconditions).
+  -- Direct via the carry partition (conjunctive form, carry = 0 case).
+  have h_part := addback_carry_partition_v2 a b
+    hb3nz hshift_nz hbltu hcarry2_nz hborrow
+  exact h_part.1 hcarry_zero
          -- 2. carry = 0 ⟹ qHat ≥ q_true + 2 (the addback's correctness:
          --    if qHat were q_true or q_true + 1, the post-addback partial
          --    remainder would not have triggered double-addback).
