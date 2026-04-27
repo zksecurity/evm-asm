@@ -40,6 +40,7 @@
 
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2
 import EvmAsm.Evm64.EvmWordArith.Div128CallSkipClose
+import EvmAsm.Evm64.EvmWordArith.Div128PhaseNoWrap
 
 namespace EvmAsm.Evm64
 
@@ -409,17 +410,50 @@ theorem div128Quot_q1_prime_eq_q_top_phase1_of_skip_borrow
 
 -- ============================================================================
 -- D2/D3: Phase 1 no-wrap from tight Phase 1
+--
+-- Decomposed into D2/D3-A (rhat' < 2^32 sub-stub) and D2/D3 main
+-- (composition wrapping `div128Quot_phase1_no_wrap_skip`).
 -- ============================================================================
 
-/-- **D2/D3 (STUB)**: From `q1' = q_top_phase1`, derive Phase 1 no-wrap
-    `q1' * dLo ≤ (rhat'%2^32)*2^32 + div_un1`.
+/-- **D2/D3-A (STUB)**: Under `q1' = q_top_phase1`, the algorithm's Phase 1b
+    output `rhat'` satisfies `rhat'.toNat < 2^32` — i.e., the Phase 1b
+    correction stays within a single limb.
 
-    **Proof sketch**: From `q1' = (u4*2^32 + div_un1)/dHi`, get
-    `q1' * dHi ≤ u4*2^32 + div_un1 < (q1'+1)*dHi`, hence
-    `q1' * dHi*2^32 ≤ u4*2^64 + div_un1*2^32`. Multiply Phase 1
-    Euclidean by 2^32 and rearrange to get the no-wrap inequality.
+    **Proof sketch (algorithmic)**: rhat' is either rhatc or rhatc + dHi
+    after Phase 1b correction. Under tight q1' = q_top_phase1, Phase 1b
+    correction either doesn't fire (rhatc < dHi < 2^32 from Knuth Phase 1)
+    or fires and rhat' = rhatc + dHi but our specific case excludes the
+    rhatc + dHi ≥ 2^32 sub-case via the q1' = q_top_phase1 invariant.
 
-    Estimated: ~50 LOC. -/
+    This is the genuinely hard sub-piece: the relationship between the
+    algorithm's BitVec arithmetic and the abstract Knuth invariant.
+
+    Estimated: ~60-80 LOC (case-split on hi1 = 0 / hi1 ≠ 0 and Phase 1b
+    fired / not fired, with arithmetic in each branch). -/
+theorem n4RhatPrime_lt_pow32_of_q1_prime_eq_q_top_phase1
+    (a2 a3 b2 b3 : Word)
+    (_hb3nz : b3 ≠ 0)
+    (_hshift_nz : (clzResult b3).1 ≠ 0)
+    (_hcall : isCallTrialN4 a3 b2 b3)
+    (_h_q1_eq : (n4Q1Prime a2 a3 b2 b3).toNat = n4QTopPhase1 a2 a3 b2 b3) :
+    (n4RhatPrime a2 a3 b2 b3).toNat < 2^32 := by
+  sorry
+
+/-- **D2/D3 (STUB, with sub-stub D2/D3-A used)**: From `q1' = q_top_phase1`,
+    derive Phase 1 no-wrap `q1' * dLo ≤ (rhat'%2^32)*2^32 + div_un1`.
+
+    **Plan**: Compose
+    - `div128Quot_phase1_no_wrap_skip` (existing, in `Div128PhaseNoWrap`,
+      takes `hq1_prime_le_q_true_1` and `hrhat'_lt` as hypotheses)
+    - `n4RhatPrime_lt_pow32_of_q1_prime_eq_q_top_phase1` (D2/D3-A sub-stub)
+    - The ≤ side of h_q1_eq (an equality trivially gives ≤)
+    - Bundle ↔ let-form bridging via the unfold lemmas.
+
+    The unwrapping/bridging is mechanical (~30 LOC) once the `Div128PhaseNoWrap`
+    import is added (current file imports `Div128CallSkipClose`; need to also
+    import `Div128PhaseNoWrap`). Deferred to next iteration.
+
+    Estimated: ~30-50 LOC for the bridging once D2/D3-A is closed. -/
 theorem div128Quot_phase1_no_wrap_of_q1_prime_eq_q_top_phase1
     (a2 a3 b2 b3 : Word)
     (_hb3nz : b3 ≠ 0)
