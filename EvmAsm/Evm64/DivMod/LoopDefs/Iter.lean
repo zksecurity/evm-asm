@@ -426,6 +426,13 @@ def isAddbackCarry2NzN3Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
 def isAddbackCarry2NzN4Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
+/-- v2 mirror of `isAddbackCarry2NzN4Call`: same as v1 but uses
+    `div128Quot_v2` for the trial quotient.
+
+    Issue #1337 algorithm fix migration. -/
+def isAddbackCarry2NzN4Call_v2 (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
+  isAddbackCarry2Nz (div128Quot_v2 uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
 /-- Specialization of `isAddbackCarry2Nz` for n=4 max path. -/
 def isAddbackCarry2NzN4Max (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   isAddbackCarry2Nz (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop
