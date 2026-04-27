@@ -65,6 +65,7 @@ theorem lb_sub_v2 {base : Word} (k : Nat) (addr : Word) (instr : Instr)
     (CodeReq.singleton_mono
       (CodeReq.ofProg_lookup (base + loopBodyOff) (divK_loopBody 560 7736) k hk (by decide)) a i h)
 
+
 /-- Helper: combine two subsumption proofs over a union. -/
 -- `CodeReq.union_sub` — use `CodeReq.union_sub` from `Rv64/SepLogic.lean` (shared).
 
