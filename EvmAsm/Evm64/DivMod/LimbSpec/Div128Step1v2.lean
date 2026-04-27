@@ -177,14 +177,103 @@ theorem divK_div128_step1_v2_spec
   -- Delegate the structural composition to branch_merged_spec, then flatten
   -- the resulting cpsBranch via cpsBranch_merge_same_cr with two refl bridges.
   -- Mirrors divK_div128_step2_spec from Div128Step2.lean.
-  --
-  -- Sub-stubs needed (not yet proved):
-  --   - h_t bridge: rhatHi2 ≠ 0 ⟹ tgtPost (strip pure fact, simp away `rhatHi2 = 0 ∧ _`)
-  --   - h_f bridge: rhatHi2 = 0 ⟹ tgtPost (strip pure fact, simp `0 = 0 ∧ x ↔ x`)
-  --   - The conjunction simplification needs `simp only [h_hi_*, ...]` not `rw` — `rw` fails
-  --     on motive type-correctness because of the `Decidable` instance on `_ ∧ _`.
-  --   - sepConj index for pure-fact extraction: 8 register atoms before ⌜⌝ ⟹ 8 obtains then extract.
-  --     (Step2 has 7 register atoms ⟹ 7 obtains then extract.)
-  sorry  -- Use divK_div128_step1_v2_branch_merged_spec + cpsBranch_merge_same_cr
+  intro q1 rhat hi q1c rhatc qDlo1 rhatUn1 q1' rhat' rhatHi2 qDlo2 rhatUn1'
+        q1'' rhat'' x5Exit x1Exit cr
+  have hbr := divK_div128_step1_v2_branch_merged_spec sp uHi dHi un1 v1Old v5Old
+    v10Old dlo base
+  let tgtPost : Assertion :=
+    (.x7 ↦ᵣ rhat'') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1'') **
+    (.x5 ↦ᵣ x5Exit) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ x1Exit) **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)
+  have refl_of {P : Assertion} (h : ∀ hp, P hp → tgtPost hp) :
+      cpsTriple (base + 100) (base + 100) cr P tgtPost :=
+    cpsTriple_extend_code (fun _ _ h => by simp [CodeReq.empty] at h)
+      (cpsTriple_refl h)
+  -- Taken bridge: rhatHi2 ≠ 0 ⟹ q1'' = q1', rhat'' = rhat', x5Exit = qDlo1, x1Exit = rhatHi2
+  have h_t : cpsTriple (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
+    (.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1') **
+    (.x5 ↦ᵣ qDlo1) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatHi2) **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 ≠ 0⌝ **
+    (sp + signExtend12 3952 ↦ₘ dlo)) (by
+    intro hp hP
+    have h_hi_ne : rhatHi2 ≠ 0 := by
+      obtain ⟨_, _, _, _, _, hrest⟩ := hP
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, ⟨_, hpure⟩, _⟩ := hrest
+      exact hpure
+    have h_and_false : ¬ (rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2 = true) :=
+      fun ⟨h_eq, _⟩ => h_hi_ne h_eq
+    have hq1'' : q1'' = q1' := if_neg h_and_false
+    have hrhat'' : rhat'' = rhat' := if_neg h_and_false
+    have hx5 : x5Exit = qDlo1 := if_neg h_hi_ne
+    have hx1 : x1Exit = rhatHi2 := if_neg h_hi_ne
+    show tgtPost hp
+    show ((.x7 ↦ᵣ rhat'') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1'') **
+         (.x5 ↦ᵣ x5Exit) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ x1Exit) **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)) hp
+    rw [hq1'', hrhat'', hx5, hx1]
+    have hP' : ((.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1') **
+                (.x5 ↦ᵣ qDlo1) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatHi2) **
+                (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+                (sp + signExtend12 3952 ↦ₘ dlo)) hp :=
+      sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+        (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+        (sepConj_mono_right (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_left h').1 hp').2)))))))) hp hP
+    xperm_hyp hP')
+  -- Fall-through bridge: rhatHi2 = 0 ⟹ q1'' = q1'FT, rhat'' = rhat'FT, x5Exit = qDlo2, x1Exit = rhatUn1'
+  have h_f : cpsTriple (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
+    (.x7 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat')) **
+    (.x6 ↦ᵣ dHi) **
+    (.x10 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then q1' + signExtend12 4095 else q1')) **
+    (.x5 ↦ᵣ qDlo2) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatUn1') **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 = 0⌝ **
+    (sp + signExtend12 3952 ↦ₘ dlo)) (by
+    intro hp hP
+    have h_hi_eq : rhatHi2 = 0 := by
+      obtain ⟨_, _, _, _, _, hrest⟩ := hP
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, _, hrest⟩ := hrest
+      obtain ⟨_, _, _, _, ⟨_, hpure⟩, _⟩ := hrest
+      exact hpure
+    have hq1'' : q1'' = (if BitVec.ult rhatUn1' qDlo2 then q1' + signExtend12 4095 else q1') := by
+      show (if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2 = true then q1' + signExtend12 4095 else q1') = _
+      by_cases hult : BitVec.ult rhatUn1' qDlo2 = true
+      · rw [if_pos ⟨h_hi_eq, hult⟩, if_pos hult]
+      · rw [if_neg (fun ⟨_, h⟩ => hult h), if_neg hult]
+    have hrhat'' : rhat'' = (if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat') := by
+      show (if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2 = true then rhat' + dHi else rhat') = _
+      by_cases hult : BitVec.ult rhatUn1' qDlo2 = true
+      · rw [if_pos ⟨h_hi_eq, hult⟩, if_pos hult]
+      · rw [if_neg (fun ⟨_, h⟩ => hult h), if_neg hult]
+    have hx5 : x5Exit = qDlo2 := if_pos h_hi_eq
+    have hx1 : x1Exit = rhatUn1' := if_pos h_hi_eq
+    show ((.x7 ↦ᵣ rhat'') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1'') **
+         (.x5 ↦ᵣ x5Exit) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ x1Exit) **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)) hp
+    rw [hq1'', hrhat'', hx5, hx1]
+    have hP' : ((.x7 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat')) **
+                (.x6 ↦ᵣ dHi) **
+                (.x10 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then q1' + signExtend12 4095 else q1')) **
+                (.x5 ↦ᵣ qDlo2) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatUn1') **
+                (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+                (sp + signExtend12 3952 ↦ₘ dlo)) hp :=
+      sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+        (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+        (sepConj_mono_right (sepConj_mono_right
+          (fun h' hp' => ((sepConj_pure_left h').1 hp').2)))))))) hp hP
+    xperm_hyp hP')
+  exact cpsBranch_merge_same_cr hbr h_t h_f
 
 end EvmAsm.Evm64
