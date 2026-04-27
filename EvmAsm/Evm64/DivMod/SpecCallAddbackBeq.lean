@@ -2003,6 +2003,23 @@ theorem addback_carry_partition_v2_test_counterexample :
     addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 := by
   decide
 
+/-- **Sanity check 6**: on the v1 counterexample input, both v1 and v2
+    borrow predicates fire (kernel-checked via `decide`).
+
+    This is preliminary evidence that on this specific input, the v1
+    and v2 borrow predicates agree. A full equivalence theorem would be
+    needed to use v1's `hborrow` lemmas in the v2 closure proof — this
+    test just suggests it's not refuted on the worst-known case. -/
+theorem isAddbackBorrowN4Call_v1_v2_agree_on_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    isAddbackBorrowN4CallEvm a b ↔ isAddbackBorrowN4CallEvm_v2 a b := by
+  unfold isAddbackBorrowN4CallEvm isAddbackBorrowN4CallEvm_v2
+         isAddbackBorrowN4Call isAddbackBorrowN4Call_v2
+  decide
+
 /-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
     the input to actually be in the call+addback BEQ runtime regime (i.e.
     the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
