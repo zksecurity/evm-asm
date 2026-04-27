@@ -152,23 +152,25 @@ def div128Quot (uHi uLo vTop : Word) : Word :=
   let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
   (q1' <<< (32 : BitVec 6).toNat) ||| q0'
 
-/-- **FIXED** trial quotient: `div128Quot` with the bug fix
-    (2 D3 correction iterations matching Knuth TAOCP 4.3.1 D3 loop).
+/-- **FIXED** trial quotient: `div128Quot` with Knuth's classical 2-iteration
+    D3 correction loop (TAOCP 4.3.1).
 
-    Differs from `div128Quot` (the current/buggy abstraction) by adding
-    a 2nd D3 correction iteration. The 2nd fires only when `rhat' < 2^32`
-    (Knuth's loop exit condition) AND the product test still holds.
+    Differs from `div128Quot` only in Phase 1b: the 2nd D3 correction is
+    delegated to the existing `div128Quot_phase2b_q0'` helper, which already
+    encodes Knuth's classical D3 single iteration (with the `rhat' < B`
+    guard). Calling it for Phase 1b reuses the well-tested classical
+    construction.
 
-    With both iterations, q1' overshoots q_true_1 by ≤ 0 (Knuth-classical
-    invariant); combined with at-most-2 outer addbacks, qHat overshoot ≤ 2
-    and the addback path correctly recovers q_true.
+    With 2 D3 iterations, q1' satisfies Knuth's per-digit overshoot ≤ 0
+    invariant; combined with the at-most-2 outer addbacks, qHat overshoot
+    stays ≤ 2 and the BEQ branch recovers q_true correctly.
 
     **Migration plan**: this is the target abstraction post-fix. The
     actual RISC-V program at `Program.lean:divK_div128` needs the
     corresponding 2nd D3 correction inserted (~6 instructions after
-    the existing one at lines 80-87 of Program.lean). Once the program
-    is updated, all references to `div128Quot` should migrate to
-    `div128Quot_v2`, and the buggy `div128Quot` removed. See
+    the existing one at lines 80-87). Once the program is updated, all
+    references to `div128Quot` should migrate to `div128Quot_v2`, and
+    the buggy `div128Quot` removed. See
     `memory/project_n4callbeq_addback_overshoot_2pow32.md` for the
     counterexample that motivates this fix. -/
 def div128Quot_v2 (uHi uLo vTop : Word) : Word :=
@@ -181,20 +183,22 @@ def div128Quot_v2 (uHi uLo vTop : Word) : Word :=
   let hi1 := q1 >>> (32 : BitVec 6).toNat
   let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
   let rhatc := if hi1 = 0 then rhat else rhat + dHi
-  -- Phase 1b: 1st D3 correction
+  -- Phase 1b: 1st D3 correction (unchanged).
   let qDlo := q1c * dLo
   let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
   let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
   let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-  -- Phase 1b: 2nd D3 correction (Knuth classical full loop) — THE FIX
-  -- Fire only if rhat' < 2^32 (Knuth's loop exit condition) AND test still holds.
-  let rhat'_lt_pow32 : Bool := (rhat' >>> (32 : BitVec 6).toNat) = (0 : Word)
-  let qDlo2 := q1' * dLo
-  let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-  let fire2 : Bool := rhat'_lt_pow32 && BitVec.ult rhatUn1' qDlo2
-  let q1'' := if fire2 then q1' + signExtend12 4095 else q1'
-  let rhat'' := if fire2 then rhat' + dHi else rhat'
-  -- Phase 2 setup with q1''/rhat''
+  -- Phase 1b: 2nd D3 correction — reuse Knuth's classical step from
+  -- `div128Quot_phase2b_q0'` (which has the `rhat' < B` guard built-in).
+  let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+  -- rhat'' tracking: only changes if the 2nd D3 correction fires.
+  let rhat'' :=
+    if rhat' >>> (32 : BitVec 6).toNat = 0 then
+      let qDlo2 := q1' * dLo
+      let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+      if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+    else rhat'
+  -- Phase 2 setup with q1''/rhat''.
   let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
   let cu_q1_dlo := q1'' * dLo
   let un21 := cu_rhat_un1 - cu_q1_dlo
