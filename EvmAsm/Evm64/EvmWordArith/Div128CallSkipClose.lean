@@ -662,28 +662,41 @@ theorem div128Quot_q1_prime_lt_pow32_call
 /-- **Discharge bridge (STUB)**: `isSkipBorrowN4Call` implies
     `Div128AllPhasesNoWrapInv` for the call-trial CLZ-normalized case.
 
-    **Math sketch** (provable via existing infrastructure):
+    **Math sketch** with closed building blocks (in
+    `EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2`):
 
-    1. From `div128Quot_call_skip_le_val256_div` (CLOSED, line 462):
-       `qHat ≤ val256(a)/val256(b)`. Call this q_true_top.
-    2. From KB-LB7 chain (in `CallSkipLowerBoundV2/`):
-       `qHat ≥ q_true_top` under hcall + hshift_nz + hborrow.
-    3. Combined: `qHat = q_true_top` exactly.
-    4. Since q_true_top < 2^64, `(q1' << 32) | q0' = q_true_top`
-       implies q1' = q_true_top / 2^32 and q0' = q_true_top % 2^32.
-    5. q0' < 2^32 ⟹ no OR-overlap ⟹ KB-6b's precondition holds:
-       un21 < vTop (first conjunct).
-    6. q1' = q_true_1 exactly ⟹ no Phase 1 wrap (second conjunct).
-    7. q0' = q_true_0 = un21 / vTop's image at second digit ⟹
-       no Phase 2 wrap (third conjunct).
+    Closed scaffolding (via /loop iterations):
+    - **Tight equality** `div128Quot_call_skip_eq_val256_div`:
+      `qHat.toNat = val256(a)/val256(b)` under hcall + hshift_nz + hborrow.
+    - **q_true bounds** `val256_div_val256_lt_pow64` and
+      `val256_div_q_true_digits_lt_pow32`: q_true_full < 2^64; both
+      digits < 2^32.
+    - **Phase 1 q1' < 2^32** `div128Quot_q1_prime_lt_pow32_call`:
+      KB-3e''' in CLZ-normalized form (no skip-borrow needed).
+    - **OR-left bound** `div128Quot_or_left_ge_q1_prime_shift` and
+      `..._existential`: `q1' * 2^32 ≤ ((q1' << 32) ||| q0').toNat`.
+    - **Phase 1 upper at val256 level**
+      `div128Quot_q1_prime_le_q_true_top_call_skip`:
+      `q1' ≤ val256/val256 / 2^32`. Composition of all the above.
 
-    Each step is mechanical Nat algebra given the closed components
-    in (1) and (2). Estimated proof length: ~80-150 LOC.
+    Remaining to close the discharge:
+    - **Phase 1 lower at val256 level**: bridge from
+      `algorithmQ1Prime_ge_q_true_1` (Phase 1 abstract first digit)
+      to val256-level `q1' ≥ val256/val256 / 2^32`. Combined with the
+      upper bound: `q1' = val256/val256 / 2^32` (Phase 1 tight).
+    - **Phase 2 mirrors**: similar upper/lower for q0' giving
+      `q0' = val256/val256 % 2^32 < 2^32`.
+    - **Wrap conjunct derivations**: from per-digit tightness, derive
+      Phase 1 no-wrap (`q1' * dLo ≤ ...`) and Phase 2 no-wrap and
+      `un21 < vTop` via algebraic manipulation.
 
-    **Why a stub now**: closes the gap structurally so call-trial
-    stack specs can use `div128Quot_le_val256_div_plus_two_with_inv`
-    by composing skip-borrow + this bridge. Future iterations close
-    the actual proof. -/
+    Estimated remaining proof: ~100-200 LOC across multiple sub-steps.
+
+    **Why a stub still**: the Phase 1 lower bound bridge requires
+    careful relation between Phase-1-level `q_true_1 = (u4*2^32 +
+    un3>>32)/b3'` and val256-level `val256/val256/2^32`. These
+    quantities differ at the multi-precision level (val256 vs
+    CLZ-normalized 2-digit), so additional bridging math is needed. -/
 theorem div128_all_phases_no_wrap_of_skip_borrow
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (hb3nz : b3 ≠ 0)
