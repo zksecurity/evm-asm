@@ -458,6 +458,112 @@ theorem div128Quot_v2_q1_prime_prime_dLo_no_wrap
     omega
   rw [BitVec.toNat_mul, Nat.mod_eq_of_lt h_mul_lt]
 
+/-- **Output formula for `div128Quot_v2` via halfword combine** — v2 analog
+    of v1's `div128Quot_toNat_eq_strict` from `Div128FinalAssembly.lean:778`.
+
+    States `(div128Quot_v2 uHi uLo vTop).toNat = q1''.toNat * 2^32 + q0'.toNat`,
+    i.e., the v2 algorithm's output decomposes into the two halfwords
+    via the OR-shift combine at the end.
+
+    Same algebraic structure as v1, but using `q1''` (post-2nd-D3) instead
+    of `q1'` (post-1st-D3). The OR-shift combine `(q1'' << 32) ||| q0'`
+    requires `q0' < 2^32` (otherwise OR overlap).
+
+    **Why needed**: this is the only substantive piece remaining for
+    `div128Quot_v2_qHat_vTop_le`. Once closed, qHat_vTop_le falls out by
+    direct composition with the 5 already-proven v2 sub-lemmas + reusable
+    v1 infrastructure (knuth_compose_qHat_vTop_le_nat_v2).
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_toNat_eq_strict (uHi uLo vTop : Word)
+    (_hdHi_ge : (vTop >>> (32 : BitVec 6).toNat).toNat ≥ 2^31)
+    (_hdHi_lt : (vTop >>> (32 : BitVec 6).toNat).toNat < 2^32)
+    (_hdLo_lt : ((vTop <<< (32 : BitVec 6).toNat) >>>
+                 (32 : BitVec 6).toNat).toNat < 2^32)
+    (_huHi_lt_vTop : uHi.toNat <
+      (vTop >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    q0'.toNat < 2^32 →
+    (div128Quot_v2 uHi uLo vTop).toNat = q1''.toNat * 2^32 + q0'.toNat := by
+  sorry  -- Mirror v1's div128Quot_toNat_eq_strict proof. The output is
+         -- (q1'' << 32) ||| q0' under q0' < 2^32. Word arithmetic on the
+         -- OR-shift combine. Most of v1's proof structure works; just
+         -- substitute q1'' for q1'.
+
+/-- **Numerical sanity check** for `div128Quot_v2_toNat_eq_strict` on the
+    counterexample input. Verifies the halfword combine formula holds.
+    Kernel-checked via `decide`. -/
+theorem div128Quot_v2_toNat_eq_strict_test_counterexample :
+    let a3 : Word := BitVec.ofNat 64 (2^63 + 2^33)
+    let b2 : Word := BitVec.ofNat 64 (2^33 - 1)
+    let b3 : Word := 1
+    let shift := (clzResult b3).1
+    let antiShift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+    let u4 := a3 >>> (antiShift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| ((0:Word) >>> (antiShift.toNat % 64))
+    -- Recompute q1'', q0' to verify the halfword combine.
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    (div128Quot_v2 u4 u3 b3').toNat = q1''.toNat * 2^32 + q0'.toNat := by
+  decide
+
 /-- **DISCOVERY (numerical, kernel-checked)**: the conjectured v2
     no-wrap bound `q1''.toNat * dLo.toNat ≤ (rhat''.toNat % 2^32) * 2^32
     + div_un1.toNat` is **FALSE** in general — fails on the counterexample
