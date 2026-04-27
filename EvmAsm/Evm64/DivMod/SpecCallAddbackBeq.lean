@@ -1638,6 +1638,44 @@ theorem qHat_in_range_under_runtime_v2 (a b : EvmWord)
          --     This precondition mismatch is a deeper architectural concern
          --     for the full v2 migration.
 
+/-- **qHat lower bound under v2 borrow.** Under v2's borrow precondition
+    (`hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b`), `qHat ≥ q_true + 1`
+    (where qHat = div128Quot_v2 ..., q_true = val256(a)/val256(b)).
+
+    Proof chain:
+    1. `u_top_lt_c3_of_addback_borrow_call_v2` (PROVEN, cdcc8a95):
+       hborrow_v2 ⟹ u4 < c3 ⟹ c3 ≠ 0.
+    2. Contrapositive of `c3_un_zero_of_qHat_mul_le`: c3 ≠ 0 ⟹
+       `¬(qHat * val256(b) ≤ val256(a))` ⟹ qHat * val256(b) > val256(a).
+    3. From qHat * val256(b) > val256(a) and val256(b) ≠ 0, derive
+       qHat > val256(a)/val256(b) = q_true.
+
+    Issue #1337 algorithm fix migration. v2-hypothesis-based sub-lemma. -/
+theorem qHat_gt_q_true_under_runtime_v2 (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hbnz : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0)
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    qHat.toNat > q_true := by
+  sorry  -- Step 1: Apply `EvmWord.u_top_lt_c3_of_addback_borrow_call_v2 ... hborrow_v2`
+         --         to get u4.toNat < (mulsubN4 qHat b' u').2.2.2.2.toNat.
+         -- Step 2: Apply contrapositive of `c3_un_zero_of_qHat_mul_le` (line 1111
+         --         in `SpecCall.lean`): if c3 ≠ 0, then qHat * val256(b) > val256(a).
+         -- Step 3: From qHat * val256(b) > val256(a) and val256(b) > 0 (from hbnz),
+         --         omega (or Nat.lt_div_iff_mul_lt) gives qHat > val256(a)/val256(b).
+         -- Concrete artifact for next iterations: the proof structure is here,
+         -- mainly mechanical instantiation + Nat arithmetic. The bridge from
+         -- (mulsubN4 v1 form) to (qHat * val256(b)) is via existing lemmas like
+         -- `mulsubN4_val256_eq` (used in `c3_un_zero_of_qHat_mul_le`).
+
 /-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
     Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
     algorithm's `addbackN4_carry` precisely encodes the qHat overshoot:
