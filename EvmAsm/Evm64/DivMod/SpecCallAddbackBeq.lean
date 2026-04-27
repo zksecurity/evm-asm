@@ -1061,6 +1061,57 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq (a b : EvmWord)
          -- and q0' < 2^32). Mirror v1's discharge pattern (where it
          -- exists in Div128NoWrapDischarge.lean) but for v2's q1''/rhat''.
 
+/-- **Single-addback case for v2**: under v2's Knuth-B + runtime BEQ
+    preconditions + carry ≠ 0 (= single-addback), `qHat = q_true + 1`.
+
+    This is the v2 mirror of v1's `qHat_eq_div_plus_one_of_single_addback`
+    (line 1335 below) but uses the v2 predicate
+    (`n4CallAddbackBeqSemanticHolds_v2`) and v2's algorithm.
+
+    Combined with the v2 Knuth-B bound `qHat ≤ q_true + 2`:
+    - carry ≠ 0 implies the algorithm chose single-addback (qHat - 1).
+    - Predicate v2 says `q_out = qHat - 1 = q_true`, so `qHat = q_true + 1`.
+
+    Issue #1337 algorithm fix migration. -/
+theorem qHat_eq_div_plus_one_of_single_addback_v2 (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b)
+    (_hcarry_nz :
+      let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+      let antiShift :=
+        (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+      let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+      let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+      let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+      let b0' := (b.getLimbN 0) <<< shift
+      let u4 := (a.getLimbN 3) >>> antiShift
+      let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+      let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+      let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+      let u0 := (a.getLimbN 0) <<< shift
+      let qHat := div128Quot_v2 u4 u3 b3'
+      let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+      addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    (div128Quot_v2 u4 u3 b3').toNat =
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 1 := by
+  sorry  -- Mirror v1's qHat_eq_div_plus_one_of_single_addback proof, but
+         -- using v2 predicate (n4CallAddbackBeqSemanticHolds_v2) and
+         -- div128Quot_v2. The proof structure:
+         -- 1. Knuth-B v2: qHat ≤ q_true + 2.
+         -- 2. carry ≠ 0 ⟹ algorithm output q_out = qHat - 1.
+         -- 3. Predicate says q_out = q_true, so qHat - 1 = q_true.
+         -- 4. Combine for qHat = q_true + 1.
+
 /-- **Double-addback case for v2**: under v2's Knuth-B + runtime BEQ
     preconditions + carry = 0 (= double-addback), `qHat = q_true + 2`.
 
