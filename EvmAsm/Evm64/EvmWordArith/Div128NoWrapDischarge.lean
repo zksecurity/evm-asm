@@ -646,29 +646,33 @@ theorem n4_phase1b_eucl
     (div128Quot_rhatc_lt_2dHi u4 (b3' >>> (32 : BitVec 6).toNat)
       h_dHi_ne' h_dHi_lt')
 
-/-- **D2b-B (STUB)**: BitVec un21 to Nat decomposition under no-wrap.
-    `un21.toNat = (rhat'%2^32)*2^32 + div_un1 - q1'*dLo` when no-wrap.
+/-- **D2b-B-i (CLOSED)**: structural identity expressing `n4Un21` as the
+    BitVec subtraction of the halfword-combined `cu_rhat_un1` and the
+    `q1' * dLo` Word.
 
-    **Proof sketch**: `n4Un21 = ((rhat' << 32) ||| div_un1) - (q1' * dLo)`
-    (BitVec). Under no-wrap (h_no_wrap_phase1), the BitVec subtraction is
-    no-wrap, so `un21.toNat = cu_rhat_un1.toNat - cu_q1_dlo.toNat`.
-    `cu_rhat_un1.toNat = (rhat'%2^32)*2^32 + div_un1` via
-    `halfword_combine_mod`. `cu_q1_dlo.toNat = q1'*dLo` (no Word overflow,
-    since q1' < 2^32 and dLo < 2^32 so product < 2^64).
+    Note: must use `simp only` rather than `rw` for the unfolds — `rw`
+    triggers `whnf` heartbeat blow-up on the full chain of bundle and
+    algorithm-body unfolds (the if-then-else expressions in
+    algorithmQ1Prime / algorithmRhatPrime / algorithmUn21 share the
+    same shape and `rw` re-reduces). -/
+theorem n4Un21_eq_bv_sub
+    (a2 a3 b2 b3 : Word) :
+    n4Un21 a2 a3 b2 b3 =
+      (((n4RhatPrime a2 a3 b2 b3) <<< (32 : BitVec 6).toNat) |||
+        (n4DivUn1 a2 a3 b3)) -
+      ((n4Q1Prime a2 a3 b2 b3) * (n4DLo b2 b3)) := by
+  simp only [n4Un21_unfold, n4Q1Prime_unfold, n4RhatPrime_unfold, n4DLo_unfold,
+      n4DivUn1_unfold, algorithmUn21_unfold, algorithmQ1Prime_unfold,
+      algorithmRhatPrime_unfold]
 
-    **Blocker (2026-04-27 iteration)**: the structural identity
-    `n4Un21 = (n4RhatPrime << 32 ||| n4DivUn1) - (n4Q1Prime * n4DLo)`
-    triggers `whnf` heartbeat blow-up when proven via combined `_unfold`
-    rewrites, due to algorithm let-bindings duplicating large
-    if-then-else terms across bundle boundaries. Likely needs a more
-    delicate proof structure or restatement of `algorithmUn21` in
-    terms of `algorithmQ1Prime` / `algorithmRhatPrime` explicitly. -/
+/-- **D2b-B (CLOSED)**: BitVec un21 to Nat decomposition under no-wrap.
+    `un21.toNat = (rhat'%2^32)*2^32 + div_un1 - q1'*dLo` when no-wrap. -/
 theorem n4Un21_toNat_of_no_wrap
     (a2 a3 b2 b3 : Word)
-    (_hb3nz : b3 ≠ 0)
+    (hb3nz : b3 ≠ 0)
     (_hshift_nz : (clzResult b3).1 ≠ 0)
-    (_hcall : isCallTrialN4 a3 b2 b3)
-    (_h_no_wrap_phase1 :
+    (hcall : isCallTrialN4 a3 b2 b3)
+    (h_no_wrap_phase1 :
       (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat ≤
         ((n4RhatPrime a2 a3 b2 b3).toNat % 2^32) * 2^32 +
           (n4DivUn1 a2 a3 b3).toNat) :
@@ -676,7 +680,80 @@ theorem n4Un21_toNat_of_no_wrap
       ((n4RhatPrime a2 a3 b2 b3).toNat % 2^32) * 2^32 +
         (n4DivUn1 a2 a3 b3).toNat -
       (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat := by
-  sorry
+  -- Bounds.
+  have h_dLo_lt : (n4DLo b2 b3).toNat < 2^32 := by
+    rw [n4DLo_unfold, BitVec.toNat_ushiftRight,
+        EvmAsm.Rv64.AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat : Word).toNat < 2^64 :=
+      ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat : Word).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_div_un1_lt : (n4DivUn1 a2 a3 b3).toNat < 2^32 := by
+    rw [n4DivUn1_unfold, BitVec.toNat_ushiftRight,
+        EvmAsm.Rv64.AddrNorm.bv6_toNat_32, Nat.shiftRight_eq_div_pow]
+    have : (n4Un3 a2 a3 b3).toNat < 2^64 := (n4Un3 a2 a3 b3).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  -- q1' < 2^32 from div128Quot_q1_prime_lt_pow32 (direct form).
+  have h_b3'_ge : (n4B3Prime b2 b3).toNat ≥ 2^63 := by
+    rw [n4B3Prime_unfold, n4ClzShift_unfold, n4ClzAntiShift_unfold]
+    exact b3_prime_ge_pow63 b3 b2 hb3nz _
+  have h_dHi_ge : ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat).toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 _ h_b3'_ge
+  have h_dHi_lt : ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+        Nat.shiftRight_eq_div_pow]
+    have : (n4B3Prime b2 b3).toNat < 2^64 := (n4B3Prime b2 b3).isLt
+    exact Nat.div_lt_of_lt_mul (by omega)
+  have h_dLo_lt' :
+      ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat >>>
+        (32 : BitVec 6).toNat).toNat < 2^32 := by
+    rw [n4DLo_unfold] at h_dLo_lt; exact h_dLo_lt
+  have h_v_eq : (n4B3Prime b2 b3).toNat =
+      ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat >>>
+        (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp _
+  have h_u4_lt_b3' : (n4U4 a3 b3).toNat < (n4B3Prime b2 b3).toNat := by
+    rw [n4U4_unfold, n4B3Prime_unfold, n4ClzShift_unfold, n4ClzAntiShift_unfold]
+    exact isCallTrialN4_toNat_lt a3 b2 b3 hcall
+  have h_u4_lt_vTop : (n4U4 a3 b3).toNat <
+      ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+      ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat >>>
+        (32 : BitVec 6).toNat).toNat := by
+    rw [← h_v_eq]; exact h_u4_lt_b3'
+  have h_q1_lt : (n4Q1Prime a2 a3 b2 b3).toNat < 2^32 := by
+    simp only [n4Q1Prime_unfold, algorithmQ1Prime_unfold]
+    exact div128Quot_q1_prime_lt_pow32 (n4U4 a3 b3)
+      ((n4B3Prime b2 b3) >>> (32 : BitVec 6).toNat)
+      ((n4B3Prime b2 b3) <<< (32 : BitVec 6).toNat >>> (32 : BitVec 6).toNat)
+      (n4Un3 a2 a3 b3) h_dHi_ge h_dHi_lt h_dLo_lt' h_u4_lt_vTop
+  -- q1' * dLo < 2^64.
+  have h_q1_dLo_lt :
+      (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat < 2^64 := by
+    have h1 : (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat <
+              2^32 * 2^32 :=
+      Nat.mul_lt_mul_of_lt_of_le h_q1_lt h_dLo_lt.le (by omega)
+    have : (2^32 : Nat) * 2^32 = 2^64 := by decide
+    omega
+  -- cu_rhat_un1.toNat formula via halfword_combine_mod.
+  have h_cu_rhat_un1 :
+      (((n4RhatPrime a2 a3 b2 b3) <<< (32 : BitVec 6).toNat) |||
+        (n4DivUn1 a2 a3 b3)).toNat =
+      ((n4RhatPrime a2 a3 b2 b3).toNat % 2^32) * 2^32 +
+        (n4DivUn1 a2 a3 b3).toNat := by
+    rw [show ((32 : BitVec 6).toNat : Nat) = 32 from rfl]
+    exact halfword_combine_mod _ _ h_div_un1_lt
+  -- cu_q1_dlo.toNat = q1' * dLo (no Word overflow).
+  have h_cu_q1_dlo :
+      ((n4Q1Prime a2 a3 b2 b3) * (n4DLo b2 b3)).toNat =
+      (n4Q1Prime a2 a3 b2 b3).toNat * (n4DLo b2 b3).toNat := by
+    rw [BitVec.toNat_mul, Nat.mod_eq_of_lt h_q1_dLo_lt]
+  -- cu_q1_dlo ≤ cu_rhat_un1 (Nat).
+  have h_le : ((n4Q1Prime a2 a3 b2 b3) * (n4DLo b2 b3)).toNat ≤
+      (((n4RhatPrime a2 a3 b2 b3) <<< (32 : BitVec 6).toNat) |||
+        (n4DivUn1 a2 a3 b3)).toNat := by
+    rw [h_cu_q1_dlo, h_cu_rhat_un1]; exact h_no_wrap_phase1
+  rw [n4Un21_eq_bv_sub, EvmWord.word_sub_toNat_of_le _ _ h_le,
+      h_cu_rhat_un1, h_cu_q1_dlo]
 
 /-- **D2b (CLOSED via composition mod sub-stubs)**: Under
     `q1' = q_top_phase1` AND Phase 1 no-wrap, derive `un21 < vTop`.
