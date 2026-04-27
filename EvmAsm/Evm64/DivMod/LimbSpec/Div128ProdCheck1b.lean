@@ -57,7 +57,44 @@ theorem divK_div128_prodcheck1b_guard_spec
       (base + 8)
         ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ rhat) ** (.x1 ↦ᵣ rhatHi) **
          (.x0 ↦ᵣ 0) ** ⌜rhatHi = 0⌝) := by
-  sorry  -- Mirror of divK_div128_phase2b_guard_spec proof (~50 LOC).
+  intro rhatHi cr
+  -- Step 1: SRLI .x1 .x7 32  (cpsTriple base → base+4)
+  have hsrli_raw := srli_spec_gen .x1 .x7 v1Old rhat 32 base (by nofun)
+  have hcr_srli : ∀ a i,
+      CodeReq.singleton base (.SRLI .x1 .x7 32) a = some i → cr a = some i := by
+    intro a i h
+    simp only [cr, CodeReq.union, CodeReq.singleton] at h ⊢
+    split at h
+    · rename_i hab; simp_all
+    · simp at h
+  have hsrli := cpsTriple_extend_code hcr_srli hsrli_raw
+  have hsrli_framed := cpsTriple_frameR
+    ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0))
+    (by pcFree) hsrli
+  -- Step 2: BNE .x1 .x0 guard_off  (cpsBranch base+4 → ...)
+  have hbne_raw := bne_spec_gen .x1 .x0 guard_off rhatHi (0 : Word) (base + 4)
+  have hcr_bne : ∀ a i,
+      CodeReq.singleton (base + 4) (.BNE .x1 .x0 guard_off) a = some i → cr a = some i := by
+    intro a i h
+    simp only [cr, CodeReq.union, CodeReq.singleton] at h ⊢
+    split at h
+    · rename_i hab; rw [beq_iff_eq] at hab; subst hab
+      have : (base + 4 : Word) ≠ base := by bv_omega
+      simp_all
+    · simp at h
+  have hbne := cpsBranch_extend_code hcr_bne hbne_raw
+  have hbne_framed := cpsBranch_frameR
+    ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ rhat))
+    (by pcFree) hbne
+  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hsrli_framed hbne_framed
+  have h_addr_eq : (base + 4 : Word) + 4 = base + 8 := by bv_addr
+  rw [h_addr_eq] at composed
+  exact cpsBranch_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    composed
 
 /-- **Sub-stub B — body portion**: `[27..34]` LD/MUL/SLLI/OR/BLTU/JAL/ADDI/ADD.
     Identical structure to `divK_div128_prodcheck1_merged_spec` (the 1st
