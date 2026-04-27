@@ -453,6 +453,62 @@ theorem div128Quot_v2_rhat_prime_lt_2dHi_under_guard
   -- 2 * dHi ≥ 2 * 2^31 = 2^32 > rhat'.
   omega
 
+/-- **Phase 1b 2nd D3 weak tightness** — bound `rhat'' < 2^33`.
+
+    Weaker than `rhat'' < 2 * dHi` (which is provably FALSE in Case 2
+    when dHi is small): when 2nd D3 fires with rhat' < 2^32 ≤ 2 * dHi,
+    we have rhat'' = rhat' + dHi < 2^32 + 2^32 = 2^33.
+
+    The weaker bound `< 2^33` is enough for Phase 1's `rhat'' * 2^32 <
+    2^65`, which combined with `div_un1 < 2^32` and `q1'' * dLo` close
+    to `rhat'' * 2^32 + div_un1` (Knuth-D correctness) gives the
+    no_wrap_untruncated upper-bound conjunct.
+
+    Issue #1337 algorithm fix migration. Path 3 sub-lemma. -/
+theorem div128Quot_v2_rhat_prime_prime_lt_pow33
+    (uHi dHi q1' rhat' dLo div_un1 : Word)
+    (hdHi_ge : dHi.toNat ≥ 2^31)
+    (hdHi_lt : dHi.toNat < 2^32)
+    (_h_post_1st : q1'.toNat * dHi.toNat + rhat'.toNat = uHi.toNat)
+    (h_rhat'_lt : rhat'.toNat < 2 * dHi.toNat) :
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    rhat''.toNat < 2^33 := by
+  intro rhat''
+  by_cases h_guard : rhat' >>> (32 : BitVec 6).toNat = 0
+  · -- Guard taken: rhat' < 2^32 from the guard.
+    have h_rhat'_lt_pow32 : rhat'.toNat < 2^32 := by
+      have h := congrArg BitVec.toNat h_guard
+      simp [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+            Nat.shiftRight_eq_div_pow] at h
+      have h_word : rhat'.toNat < 2^64 := rhat'.isLt
+      omega
+    by_cases h_check : BitVec.ult ((rhat' <<< (32 : BitVec 6).toNat) ||| div_un1)
+                                    (q1' * dLo)
+    · -- Check fires: rhat'' = rhat' + dHi.
+      have h_rhat'' : rhat'' = rhat' + dHi := by
+        show (if rhat' >>> (32 : BitVec 6).toNat = 0 then _ else rhat') = _
+        rw [if_pos h_guard, if_pos h_check]
+      rw [h_rhat'']
+      -- (rhat' + dHi).toNat ≤ rhat'.toNat + dHi.toNat < 2^32 + 2^32 = 2^33.
+      have h_sum : (rhat' + dHi).toNat ≤ rhat'.toNat + dHi.toNat := by
+        rw [BitVec.toNat_add]; exact Nat.mod_le _ _
+      omega
+    · -- Check doesn't fire: rhat'' = rhat'. So rhat'' < 2^32 < 2^33.
+      have h_rhat'' : rhat'' = rhat' := by
+        show (if rhat' >>> (32 : BitVec 6).toNat = 0 then _ else rhat') = _
+        rw [if_pos h_guard, if_neg h_check]
+      rw [h_rhat'']; omega
+  · -- Guard not taken: rhat'' = rhat'. From h_rhat'_lt: rhat' < 2 * dHi < 2^33.
+    have h_rhat'' : rhat'' = rhat' := by
+      show (if rhat' >>> (32 : BitVec 6).toNat = 0 then _ else rhat') = _
+      rw [if_neg h_guard]
+    rw [h_rhat'']; omega
+
 /-- **Output formula for `div128Quot_v2` via halfword combine** — v2 analog
     of v1's `div128Quot_toNat_eq_strict` from `Div128FinalAssembly.lean:778`.
 
