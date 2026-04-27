@@ -1640,9 +1640,17 @@ theorem qHat_in_range_under_runtime_v2 (a b : EvmWord)
          --      q_true, making the proof immediate from (ae46f526) +
          --      `_le_val256_div_plus_two_untruncated` (modulo no_wrap stub).
 
-/-- **qHat lower bound under v2 borrow.** Under v2's borrow precondition
-    (`hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b`), `qHat ≥ q_true + 1`
-    (where qHat = div128Quot_v2 ..., q_true = val256(a)/val256(b)).
+/-- **qHat lower bound (ORIGINAL DOMAIN) under v2 borrow.** Under v2's
+    borrow precondition (`hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b`),
+    `qHat > q_true` (where qHat = div128Quot_v2 ..., q_true =
+    val256(a)/val256(b) — ORIGINAL val256s).
+
+    **Status:** the SHIFTED-DOMAIN counterpart is PROVEN
+    (`qHat_gt_q_true_shifted_under_runtime_v2`, commit ae46f526). To
+    bridge to original-domain requires val256 algebra similar to v1's
+    `qHat_eq_div_plus_one_of_single_addback` (line ~2336). The v1
+    pattern uses `mulsubN4_val256_eq` to relate shifted and original
+    val256s through the multiplicative form.
 
     Proof chain:
     1. `u_top_lt_c3_of_addback_borrow_call_v2` (PROVEN, cdcc8a95):
