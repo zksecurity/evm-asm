@@ -372,6 +372,43 @@ theorem div128Quot_v2_phase1b_2nd_post
       rw [if_neg h_guard]
     rw [h_q1'', h_rhat'']; exact h_post_1st
 
+/-- **`q1'' ≤ q1'`**: the 2nd D3 correction only decreases the trial
+    quotient (or leaves it unchanged), never increases it.
+
+    Combined with v1's `div128Quot_q1_prime_le_pow32_plus_one` (which
+    gives `q1'.toNat ≤ 2^32 + 1`), this directly yields
+    `q1''.toNat ≤ 2^32 + 1`, the no-wrap precondition needed by
+    `div128Quot_v2_un21_toNat_case`.
+
+    Proof structure (3-way case split on the guard + check):
+    - Guard taken (rhat' >> 32 ≠ 0): q1'' = q1' (refl).
+    - Guard fall-through:
+      * Check fires: q1'' = q1' - 1, so q1''.toNat ≤ q1'.toNat.
+      * Check doesn't fire: q1'' = q1' (refl).
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128Quot_v2_q1_prime_prime_le_q1_prime
+    (q1' rhat' dLo div_un1 : Word) :
+    (div128Quot_phase2b_q0' q1' rhat' dLo div_un1).toNat ≤ q1'.toNat := by
+  unfold div128Quot_phase2b_q0'
+  by_cases h_guard : rhat' >>> (32 : BitVec 6).toNat = 0
+  · rw [if_pos h_guard]
+    by_cases h_check :
+        BitVec.ult ((rhat' <<< (32 : BitVec 6).toNat) ||| div_un1) (q1' * dLo)
+    · -- q1'' = q1' + signExtend12 4095 = q1' - 1.
+      rw [if_pos h_check]
+      have h_q1'_pos : q1'.toNat ≥ 1 :=
+        div128Quot_phase1b_check_implies_q1c_pos q1' dLo _ h_check
+      -- (q1' + signExtend12 4095).toNat = q1'.toNat - 1 ≤ q1'.toNat.
+      rw [BitVec.toNat_add, signExtend12_4095_toNat]
+      have h_eq : q1'.toNat + (2^64 - 1) = (q1'.toNat - 1) + 2^64 := by omega
+      rw [h_eq, Nat.add_mod_right]
+      have hq1'_lt_word : q1'.toNat - 1 < 2^64 := by have := q1'.isLt; omega
+      rw [Nat.mod_eq_of_lt hq1'_lt_word]
+      omega
+    · rw [if_neg h_check]
+  · rw [if_neg h_guard]
+
 /-- **`un21` computation case-analysis for `div128Quot_v2`** (v2 analog
     of `div128Quot_un21_toNat_case` from `Div128FinalAssembly.lean:213`).
 
