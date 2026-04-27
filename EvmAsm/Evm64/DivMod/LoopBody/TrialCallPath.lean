@@ -13,6 +13,17 @@
 
   Uses public helpers from `LoopBody.lean`:
   - `lb_sub`
+
+  **v2 migration plan (issue #1337):** This spec uses the buggy v1
+  `div128_spec` (with `divK_div128`). Once `n4CallAddbackBeqSemanticHolds_v2_of_call_addback_beq`
+  is closed (path 3 chain — see `EvmAsm/Evm64/DivMod/SpecCallAddbackBeq.lean`),
+  a parallel `divK_trial_call_path_v2_spec` needs to be added that:
+    1. Uses `div128_v2_spec` (PR #1392, merged) instead of `div128_spec`.
+    2. Uses `sharedDivModCode_v2 base` (referencing `divK_div128_v2`) as
+       the CodeReq instead of `sharedDivModCode base`.
+    3. Adjusts JAL target offset for v2's ~+40 byte size increase.
+  The v1 spec stays in place until v2 is fully wired through to
+  `evm_div`/`evm_mod`, at which point v1 can be deleted.
 -/
 
 import EvmAsm.Evm64.DivMod.LoopBody
