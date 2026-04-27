@@ -2059,6 +2059,31 @@ theorem addback_carry_partition_v2_test_counterexample :
     addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 := by
   decide
 
+/-- **Sanity check 7**: on the v1 counterexample input, qHat (v2) > q_true
+    holds — i.e., the conclusion of `qHat_gt_q_true_under_runtime_v2`
+    is verified on this concrete witness (kernel-checked via `decide`).
+
+    Concretely: q_true = 9223372041149743102, v2 qHat = q_true + 1 =
+    9223372041149743103. So qHat > q_true. ✓
+
+    This bounds the lemma claim: it's at least correct on the worst-known
+    case (the v1 counterexample). -/
+theorem qHat_gt_q_true_v2_on_counterexample :
+    let a : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => 0 | 3 => BitVec.ofNat 64 (2^63 + 2^33))
+    let b : EvmWord := EvmWord.fromLimbs (fun i => match i with
+      | 0 => 0 | 1 => 0 | 2 => BitVec.ofNat 64 (2^33 - 1) | 3 => 1)
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    (div128Quot_v2 u4 u3 b3').toNat >
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := by
+  decide
+
 /-- **Sanity check 6**: on the v1 counterexample input, both v1 and v2
     borrow predicates fire (kernel-checked via `decide`).
 
