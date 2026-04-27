@@ -43,10 +43,23 @@ open EvmAsm.Rv64.Tactics
     Unlike `n4CallSkipSemanticHolds` which states a lower-bound on the raw
     `div128Quot`, this predicate directly states that the post-addback
     corrected quotient is the true quotient. Proving it from first
-    principles requires the Knuth TAOCP Theorem A overestimate bound
+    principles requires the Knuth TAOCP Theorem B overestimate bound
     (`q̂ ≤ q_true + 2`) plus the algorithm's addback-correction semantics,
     which combine to ensure q_out is exactly correct. Deferred to a future
     task; the stack spec delegates the proof to callers.
+
+    **Status (2026-04-27, post PR #1384)**: the original closure approach
+    via `Div128PhaseNoWrapInv` is broken — the predicate's conjunct 2
+    (Phase 1 no-wrap) is provably FALSE under skip-borrow because our
+    `div128Quot` does only 1 Phase 1b correction (vs Knuth classical 2),
+    so `rhat' < B` is not preserved by design. See
+    `memory/project_d2d3_a_counterexample.md` and
+    `memory/project_knuth_d_one_correction_design.md`. The revised
+    closure plan is in `memory/project_addback_beq_closure_plan_v2.md`:
+    direct val256-level Knuth-B + carry-driven case-split. KB-6d
+    (Knuth-B at Word level) has its own Word-level counterexample
+    (`memory/project_kb6d_false_counterexample.md`); needs
+    re-investigation at val256 level under hshift_nz constraints.
 
     Mirror of `n4CallSkipSemanticHolds` for the call+addback branch. -/
 def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
