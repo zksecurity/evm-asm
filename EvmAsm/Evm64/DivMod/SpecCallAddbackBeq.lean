@@ -552,7 +552,7 @@ theorem addbackN4_carry_le_one (un0 un1 un2 un3 v0 v1 v2 v3 : Word) :
     so consumers get a consistent shape. Use `algCallAddbackBeqCarry_unfold`
     to expose the let-chain when needed in proofs. -/
 @[irreducible]
-noncomputable def algCallAddbackBeqCarry (a b : EvmWord) : Word :=
+def algCallAddbackBeqCarry (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -574,7 +574,7 @@ noncomputable def algCallAddbackBeqCarry (a b : EvmWord) : Word :=
     needed to talk about the c3 = mulsub borrow at normalized limbs as a
     single opaque Word value, sidestepping let-chain elaboration cost. -/
 @[irreducible]
-noncomputable def algCallAddbackBeqMsC3 (a b : EvmWord) : Word :=
+def algCallAddbackBeqMsC3 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -592,7 +592,7 @@ noncomputable def algCallAddbackBeqMsC3 (a b : EvmWord) : Word :=
 
 /-- **Irreducible bundle: the call+addback BEQ algorithm's u4 (overflow limb).** -/
 @[irreducible]
-noncomputable def algCallAddbackBeqU4 (a b : EvmWord) : Word :=
+def algCallAddbackBeqU4 (a b : EvmWord) : Word :=
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   (a.getLimbN 3) >>> antiShift
 
@@ -629,7 +629,7 @@ theorem algCallAddbackBeqCarry_unfold {a b : EvmWord} :
     addback post1 val256 as a single opaque Nat, sidestepping the
     elaboration-cost penalty observed in the parent adapter. -/
 @[irreducible]
-noncomputable def algCallAddbackBeqPost1Val (a b : EvmWord) : Nat :=
+def algCallAddbackBeqPost1Val (a b : EvmWord) : Nat :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -676,7 +676,7 @@ theorem algCallAddbackBeqPost1Val_unfold {a b : EvmWord} :
     to keep the goal manageable when reasoning per-limb (avoids huge
     inline `mulsubN4 ...` expressions). -/
 @[irreducible]
-noncomputable def algCallAddbackBeqPost1Limb0 (a b : EvmWord) : Word :=
+def algCallAddbackBeqPost1Limb0 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -693,7 +693,7 @@ noncomputable def algCallAddbackBeqPost1Limb0 (a b : EvmWord) : Word :=
   (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqPost1Limb1 (a b : EvmWord) : Word :=
+def algCallAddbackBeqPost1Limb1 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -710,7 +710,7 @@ noncomputable def algCallAddbackBeqPost1Limb1 (a b : EvmWord) : Word :=
   (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqPost1Limb2 (a b : EvmWord) : Word :=
+def algCallAddbackBeqPost1Limb2 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -727,7 +727,7 @@ noncomputable def algCallAddbackBeqPost1Limb2 (a b : EvmWord) : Word :=
   (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqPost1Limb3 (a b : EvmWord) : Word :=
+def algCallAddbackBeqPost1Limb3 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -767,7 +767,7 @@ theorem algCallAddbackBeqPost1Val_eq_val256_limbs (a b : EvmWord) :
     if carry = 0 then ab'.{i_low} else ab.{i_low}`. Wrapping them as
     irreducible defs keeps the parent's goal manageable. -/
 @[irreducible]
-noncomputable def algCallAddbackBeqUn0Out (a b : EvmWord) : Word :=
+def algCallAddbackBeqUn0Out (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -789,7 +789,7 @@ noncomputable def algCallAddbackBeqUn0Out (a b : EvmWord) : Word :=
   if carry = 0 then ab'.1 else ab.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqUn1Out (a b : EvmWord) : Word :=
+def algCallAddbackBeqUn1Out (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -811,7 +811,7 @@ noncomputable def algCallAddbackBeqUn1Out (a b : EvmWord) : Word :=
   if carry = 0 then ab'.2.1 else ab.2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqUn2Out (a b : EvmWord) : Word :=
+def algCallAddbackBeqUn2Out (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -833,7 +833,7 @@ noncomputable def algCallAddbackBeqUn2Out (a b : EvmWord) : Word :=
   if carry = 0 then ab'.2.2.1 else ab.2.2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqUn3Out (a b : EvmWord) : Word :=
+def algCallAddbackBeqUn3Out (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -998,7 +998,7 @@ theorem algCallAddbackBeqUn3Out_eq_post1Limb3_of_single_addback
 
     Issue #1338 (Phase B.4 mechanical infrastructure).  -/
 @[irreducible]
-noncomputable def algCallAddbackBeqAbPrimeLimb0 (a b : EvmWord) : Word :=
+def algCallAddbackBeqAbPrimeLimb0 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1018,7 +1018,7 @@ noncomputable def algCallAddbackBeqAbPrimeLimb0 (a b : EvmWord) : Word :=
   (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqAbPrimeLimb1 (a b : EvmWord) : Word :=
+def algCallAddbackBeqAbPrimeLimb1 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1038,7 +1038,7 @@ noncomputable def algCallAddbackBeqAbPrimeLimb1 (a b : EvmWord) : Word :=
   (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqAbPrimeLimb2 (a b : EvmWord) : Word :=
+def algCallAddbackBeqAbPrimeLimb2 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1058,7 +1058,7 @@ noncomputable def algCallAddbackBeqAbPrimeLimb2 (a b : EvmWord) : Word :=
   (addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 b0' b1' b2' b3').2.2.1
 
 @[irreducible]
-noncomputable def algCallAddbackBeqAbPrimeLimb3 (a b : EvmWord) : Word :=
+def algCallAddbackBeqAbPrimeLimb3 (a b : EvmWord) : Word :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1131,7 +1131,7 @@ theorem algCallAddbackBeqUn3Out_eq_abPrimeLimb3_of_double_addback
 
     Issue #1338 (Phase B.4 mechanical infrastructure). -/
 @[irreducible]
-noncomputable def algCallAddbackBeqAbPrimeVal (a b : EvmWord) : Nat :=
+def algCallAddbackBeqAbPrimeVal (a b : EvmWord) : Nat :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1570,7 +1570,7 @@ theorem algCallAddbackBeqCarry_eq_parent_64ms_form
     Used as `ms_val` in `post1_val_eq_amod_pow_s_pure_nat` and the addback
     Euclidean (h_addback) and mulsub Euclidean (h_mulsub) preconditions. -/
 @[irreducible]
-noncomputable def algCallAddbackBeqMsLowVal (a b : EvmWord) : Nat :=
+def algCallAddbackBeqMsLowVal (a b : EvmWord) : Nat :=
   let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
   let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
   let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)

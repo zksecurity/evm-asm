@@ -74,7 +74,7 @@ private theorem clz_init_sub {base : Word} :
 -- Stage 5 (last): K=63, M_a=1,   index 21
 
 /-- CLZ result function: compute (count, shifted_val) from a 6-stage binary search. -/
-noncomputable def clzResult (val : Word) : Word × Word :=
+def clzResult (val : Word) : Word × Word :=
   -- Stage 0: check top 32 bits
   let v0 := if val >>> (32 : BitVec 6).toNat ≠ 0 then val else val <<< (32 : BitVec 6).toNat
   let c0 := if val >>> (32 : BitVec 6).toNat ≠ 0 then signExtend12 (0 : BitVec 12)
