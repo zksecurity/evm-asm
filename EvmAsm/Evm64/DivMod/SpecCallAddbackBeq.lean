@@ -1586,6 +1586,47 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
          -- Closing it for v2 (where 2 corrections give better bounds)
          -- may be tractable via the 2nd D3 correction's trigger condition.
 
+/-- **qHat range under runtime preconditions (sub-lemma).** Under
+    runtime preconds (`hbltu, hcarry2_nz, hborrow`), the v2 algorithm's
+    qHat is in `{q_true + 1, q_true + 2}` (equivalently, `q_true + 1 ≤
+    qHat ≤ q_true + 2`).
+
+    This decomposes the carry partition: combined with the partition's
+    "carry encodes overshoot" claim, it pins qHat to a specific value.
+
+    Proof sketch:
+    - Upper bound `qHat ≤ q_true + 2`: from path 3's
+      `div128Quot_v2_le_val256_div_plus_two_untruncated` (PROVEN), once
+      the `_no_wrap_under_call_addback_beq_untruncated` stub is closed.
+    - Lower bound `qHat ≥ q_true + 1`: from runtime forcing
+      qHat * b > a (BEQ branch reached, so at least one addback fired,
+      meaning qHat overshoots by at least 1). Uses `hborrow` (mulsub
+      borrow ≠ 0 ⟺ qHat * b > a as Nat).
+
+    Issue #1337 algorithm fix migration. Path 3 sub-lemma. -/
+theorem qHat_in_range_under_runtime_v2 (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    q_true + 1 ≤ qHat.toNat ∧ qHat.toNat ≤ q_true + 2 := by
+  sorry  -- Decomposition target:
+         --   - Upper: invoke `div128Quot_v2_le_val256_div_plus_two_untruncated`
+         --     after discharging the no_wrap_untruncated stub.
+         --   - Lower: from `hborrow` (uTop borrows from u4-c3 means qHat*b > a),
+         --     combined with `qHat * b ≤ a + b - 1` (Knuth lower bound at
+         --     val256 level), derive qHat ≥ a/b + 1 = q_true + 1.
+
 /-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
     Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
     algorithm's `addbackN4_carry` precisely encodes the qHat overshoot:
