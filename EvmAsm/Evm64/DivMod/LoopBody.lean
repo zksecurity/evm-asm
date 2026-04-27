@@ -44,6 +44,27 @@ theorem lb_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
     (CodeReq.singleton_mono
       (CodeReq.ofProg_lookup (base + loopBodyOff) (divK_loopBody 560 7736) k hk (by decide)) a i h)
 
+/-- v2 mirror: loopBody (block 8) ⊆ sharedDivModCode_v2. -/
+private theorem divK_loopBody_ofProg_sub_sharedCode_v2 {base : Word} :
+    ∀ a i, (CodeReq.ofProg (base + loopBodyOff) (divK_loopBody 560 7736)) a = some i →
+      (sharedDivModCode_v2 base) a = some i := by
+  unfold sharedDivModCode_v2; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- v2 mirror of `lb_sub`: singleton at index k of divK_loopBody ⊆ sharedDivModCode_v2 base. -/
+theorem lb_sub_v2 {base : Word} (k : Nat) (addr : Word) (instr : Instr)
+    (hk : k < (divK_loopBody 560 7736).length)
+    (h_addr : addr = (base + loopBodyOff) + BitVec.ofNat 64 (4 * k))
+    (h_instr : (divK_loopBody 560 7736).get ⟨k, hk⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i →
+      (sharedDivModCode_v2 base) a = some i := by
+  subst h_addr; subst h_instr
+  exact fun a i h => divK_loopBody_ofProg_sub_sharedCode_v2 a i
+    (CodeReq.singleton_mono
+      (CodeReq.ofProg_lookup (base + loopBodyOff) (divK_loopBody 560 7736) k hk (by decide)) a i h)
+
 /-- Helper: combine two subsumption proofs over a union. -/
 -- `CodeReq.union_sub` — use `CodeReq.union_sub` from `Rv64/SepLogic.lean` (shared).
 
