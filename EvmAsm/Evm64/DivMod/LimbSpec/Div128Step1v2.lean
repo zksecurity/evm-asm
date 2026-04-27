@@ -32,6 +32,75 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+/-- div128 step 1 v2 branch-merged: composes step1_spec + prodcheck1b_merged_spec
+    into a cpsBranch where BOTH legs end at base+100. Instrs [10]-[34].
+    The cpsBranch shape arises because the 2nd D3 guard at [25..26] either
+    skips the body [27..34] (taken leg, rhatHi2 ≠ 0) or executes it (fall-through
+    leg, rhatHi2 = 0).
+
+    Mirrors `divK_div128_step2_branch_merged_spec` from Div128Step2.lean.
+
+    Issue #1337 algorithm fix migration. -/
+theorem divK_div128_step1_v2_branch_merged_spec
+    (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi = 0 then rhat else rhat + dHi
+    let qDlo1 := q1c * dlo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+    let q1' := if BitVec.ult rhatUn1 qDlo1 then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo1 then rhatc + dHi else rhatc
+    let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+    let qDlo2 := q1' * dlo
+    let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| un1
+    let q1'FT := if BitVec.ult rhatUn1' qDlo2 then q1' + signExtend12 4095 else q1'
+    let rhat'FT := if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+    let cr :=
+      CodeReq.union (CodeReq.singleton base (.DIVU .x10 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x5 .x10 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.SRLI .x5 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.BEQ .x5 .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 20) (.ADDI .x10 .x10 4095))
+      (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x7 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x1 .x12 3952))
+      (CodeReq.union (CodeReq.singleton (base + 32) (.MUL .x5 .x10 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 36) (.SLLI .x1 .x7 32))
+      (CodeReq.union (CodeReq.singleton (base + 40) (.OR .x1 .x1 .x11))
+      (CodeReq.union (CodeReq.singleton (base + 44) (.BLTU .x1 .x5 8))
+      (CodeReq.union (CodeReq.singleton (base + 48) (.JAL .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 52) (.ADDI .x10 .x10 4095))
+      (CodeReq.union (CodeReq.singleton (base + 56) (.ADD .x7 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 60) (.SRLI .x1 .x7 32))
+      (CodeReq.union (CodeReq.singleton (base + 64) (.BNE .x1 .x0 36))
+      (CodeReq.union (CodeReq.singleton (base + 68) (.LD .x1 .x12 3952))
+      (CodeReq.union (CodeReq.singleton (base + 72) (.MUL .x5 .x10 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 76) (.SLLI .x1 .x7 32))
+      (CodeReq.union (CodeReq.singleton (base + 80) (.OR .x1 .x1 .x11))
+      (CodeReq.union (CodeReq.singleton (base + 84) (.BLTU .x1 .x5 8))
+      (CodeReq.union (CodeReq.singleton (base + 88) (.JAL .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 92) (.ADDI .x10 .x10 4095))
+       (CodeReq.singleton (base + 96) (.ADD .x7 .x7 .x6)))))))))))))))))))))))))
+    cpsBranch base cr
+      ((.x7 ↦ᵣ uHi) ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ v10Old) **
+       (.x5 ↦ᵣ v5Old) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1Old) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo))
+      (base + 100)  -- guard-fires path (rhatHi2 ≠ 0): body skipped, q1 / rhat keep 1st-D3 values
+        ((.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1') **
+         (.x5 ↦ᵣ qDlo1) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatHi2) **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 ≠ 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo))
+      (base + 100)  -- guard-falls-through (rhatHi2 = 0): body runs, 2nd-D3 applied
+        ((.x7 ↦ᵣ rhat'FT) ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1'FT) **
+         (.x5 ↦ᵣ qDlo2) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatUn1') **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 = 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo)) := by
+  sorry  -- Compose step1_spec (cpsTriple) ⨾ prodcheck1b_merged_spec (cpsBranch)
+         -- via cpsTriple_seq_cpsBranch_perm_same_cr. ~80 LOC mirror of
+         -- divK_div128_step2_branch_merged_spec.
+
 /-- div128 step 1 v2: trial division q1, clamp, FIRST product check + correction,
     SECOND product check + correction (gated by `rhatc < 2^32` guard).
     Instrs [10]-[34] of `divK_div128_v2` (25 instructions, span = base+100).
@@ -105,7 +174,17 @@ theorem divK_div128_step1_v2_spec
       ((.x7 ↦ᵣ rhat'') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1'') **
        (.x5 ↦ᵣ x5Exit) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ x1Exit) **
        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry  -- Composition: existing step1_spec [10..24] ⨾ prodcheck1b_merged_spec [25..34]
-         -- via case analysis on rhatHi2 to flatten the cpsBranch into a cpsTriple.
+  -- Delegate the structural composition to branch_merged_spec, then flatten
+  -- the resulting cpsBranch via cpsBranch_merge_same_cr with two refl bridges.
+  -- Mirrors divK_div128_step2_spec from Div128Step2.lean.
+  --
+  -- Sub-stubs needed (not yet proved):
+  --   - h_t bridge: rhatHi2 ≠ 0 ⟹ tgtPost (strip pure fact, simp away `rhatHi2 = 0 ∧ _`)
+  --   - h_f bridge: rhatHi2 = 0 ⟹ tgtPost (strip pure fact, simp `0 = 0 ∧ x ↔ x`)
+  --   - The conjunction simplification needs `simp only [h_hi_*, ...]` not `rw` — `rw` fails
+  --     on motive type-correctness because of the `Decidable` instance on `_ ∧ _`.
+  --   - sepConj index for pure-fact extraction: 8 register atoms before ⌜⌝ ⟹ 8 obtains then extract.
+  --     (Step2 has 7 register atoms ⟹ 7 obtains then extract.)
+  sorry  -- Use divK_div128_step1_v2_branch_merged_spec + cpsBranch_merge_same_cr
 
 end EvmAsm.Evm64
