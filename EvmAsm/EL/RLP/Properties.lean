@@ -176,6 +176,15 @@ theorem decode_pair_list_empty_lists :
       some (.list [.list [], .list []], []) := by
   simp [decode, decodeAux, takeBytes, decodeItems]
 
+/-- Mixed-content two-element list: a small byte followed by an empty
+    string. `decode [0xC2, b, 0x80] = some (.list [.bytes [b], .bytes []], [])`
+    when `b < 0x80`. -/
+theorem decode_pair_list_byte_then_empty_string
+    (b : Byte) (h : b.toNat < 0x80) :
+    decode [(0xC2 : Byte), b, (0x80 : Byte)] =
+      some (.list [.bytes [b], .bytes []], []) := by
+  simp [decode, decodeAux, takeBytes, decodeItems, h]
+
 /-! ## decode (top-level wrapper) trivial cases -/
 
 /-- `decode []` returns `none` because `decodeAux 0 []` returns `none`. -/
