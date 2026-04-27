@@ -36,39 +36,75 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+/-- **Sub-stub A — guard portion**: `[25..26]` SRLI + BNE (cpsBranch).
+    Mirrors `divK_div128_phase2b_guard_spec` but with `.x7` as the rhat
+    register (Phase 2b uses `.x11`).
+
+    Branches:
+    - **Taken** (rhatHi ≠ 0): branches to `(base + 4) + signExtend13 guard_off`.
+    - **Fall-through** (rhatHi = 0): continues to `base + 8`. -/
+theorem divK_div128_prodcheck1b_guard_spec
+    (sp rhat v1Old : Word) (base : Word) (guard_off : BitVec 13) :
+    let rhatHi := rhat >>> (32 : BitVec 6).toNat
+    let cr :=
+      CodeReq.union (CodeReq.singleton base (.SRLI .x1 .x7 32))
+        (CodeReq.singleton (base + 4) (.BNE .x1 .x0 guard_off))
+    cpsBranch base cr
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ rhat) ** (.x1 ↦ᵣ v1Old) ** (.x0 ↦ᵣ 0))
+      ((base + 4) + signExtend13 guard_off)
+        ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ rhat) ** (.x1 ↦ᵣ rhatHi) **
+         (.x0 ↦ᵣ 0) ** ⌜rhatHi ≠ 0⌝)
+      (base + 8)
+        ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ rhat) ** (.x1 ↦ᵣ rhatHi) **
+         (.x0 ↦ᵣ 0) ** ⌜rhatHi = 0⌝) := by
+  sorry  -- Mirror of divK_div128_phase2b_guard_spec proof (~50 LOC).
+
+/-- **Sub-stub B — body portion**: `[27..34]` LD/MUL/SLLI/OR/BLTU/JAL/ADDI/ADD.
+    Identical structure to `divK_div128_prodcheck1_merged_spec` (the 1st
+    D3 block); just at a different offset within `divK_div128_v2`.
+
+    Reachable only when the guard at [25..26] falls through (rhatc < 2^32). -/
+theorem divK_div128_prodcheck1b_body_spec
+    (sp q1c rhatc dHi un1 v1Old v5Old dlo : Word) (base : Word) :
+    let qDlo := q1c * dlo
+    let rhatUn1' := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+    let q1' := if BitVec.ult rhatUn1' qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1' qDlo then rhatc + dHi else rhatc
+    let cr :=
+      CodeReq.union (CodeReq.singleton base (.LD .x1 .x12 3952))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x5 .x10 .x1))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SLLI .x1 .x7 32))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.OR .x1 .x1 .x11))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.BLTU .x1 .x5 8))
+      (CodeReq.union (CodeReq.singleton (base + 20) (.JAL .x0 12))
+      (CodeReq.union (CodeReq.singleton (base + 24) (.ADDI .x10 .x10 4095))
+       (CodeReq.singleton (base + 28) (.ADD .x7 .x7 .x6))))))))
+    cpsTriple base (base + 32) cr
+      ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1c) ** (.x7 ↦ᵣ rhatc) ** (.x11 ↦ᵣ un1) **
+       (.x5 ↦ᵣ v5Old) ** (.x1 ↦ᵣ v1Old) ** (.x6 ↦ᵣ dHi) **
+       (sp + signExtend12 3952 ↦ₘ dlo))
+      ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x11 ↦ᵣ un1) **
+       (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1') ** (.x6 ↦ᵣ dHi) **
+       (sp + signExtend12 3952 ↦ₘ dlo)) := by
+  sorry  -- Identical to divK_div128_prodcheck1_merged_spec's proof (~120 LOC).
+
 /-- div128 product check 1b (Knuth classical 2nd D3 correction).
     Instrs [25]-[34] of `divK_div128_v2`. Both guard branches and both
     BLTU paths merge at `base + 40`.
 
-    Layout:
-    - [25] SRLI x1 x7 32       — rhat >> 32 (guard)
-    - [26] BNE  x1 x0 36       — if rhat ≥ 2^32, skip → [35]
-    - [27] LD   x1 x12 3952    — dLo (only if rhat < 2^32)
-    - [28] MUL  x5 x10 x1      — q1 * dLo
-    - [29] SLLI x1 x7 32       — rhat << 32
-    - [30] OR   x1 x1 x11      — rhat*2^32 + un1
-    - [31] BLTU x1 x5 8        — if rhs < lhs → correct [33]
-    - [32] JAL  x0 12          — skip → [35]
-    - [33] ADDI x10 x10 4095   — q1--
-    - [34] ADD  x7 x7 x6       — rhat += dHi
+    Composes:
+    - Sub-stub A (`divK_div128_prodcheck1b_guard_spec`): [25..26] guard.
+    - Sub-stub B (`divK_div128_prodcheck1b_body_spec`): [27..34] body.
+    - Identity for the guard-taken path (rhatHi ≠ 0 ⟹ skip body, q1 / rhat unchanged).
 
-    The guard at [25..26] mirrors Phase 2b's guard at
-    `divK_div128.[37..38]`; the body at [27..34] mirrors the 1st D3
-    block at `divK_div128.[17..24]` (= `divK_div128_prodcheck1_merged_spec`).
-
-    **Output spec**: matches the Lean abstraction
-    `div128Quot_v2`'s 2nd D3 step:
+    **Output spec**: matches the Lean abstraction `div128Quot_v2`'s
+    2nd D3 step:
     ```
     let q1' := if rhatc < 2^32 ∧ rhatUn1' < q1c * dLo
                then q1c - 1 else q1c
     let rhat' := if rhatc < 2^32 ∧ rhatUn1' < q1c * dLo
                  then rhatc + dHi else rhatc
     ```
-
-    **Status**: `sorry`. Proof is parallel to
-    `divK_div128_prodcheck1_merged_spec` plus a guard-handling case
-    split (~50 LOC additional, ~250 LOC total mirroring
-    `Div128ProdCheck1.lean`).
 
     Issue #1337 algorithm fix migration. -/
 theorem divK_div128_prodcheck1b_merged_spec
@@ -101,6 +137,6 @@ theorem divK_div128_prodcheck1b_merged_spec
       ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x11 ↦ᵣ un1) **
        (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1') ** (.x6 ↦ᵣ dHi) **
        (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry
+  sorry  -- Composition of guard + body via cpsBranch dispatching, ~80 LOC.
 
 end EvmAsm.Evm64
