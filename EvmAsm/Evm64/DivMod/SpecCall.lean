@@ -19,6 +19,7 @@ import EvmAsm.Evm64.DivMod.Spec
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4Shift0
 import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 import EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract
+import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2
 
 open EvmAsm.Rv64.Tactics
 
@@ -922,6 +923,30 @@ theorem n4CallSkipSemanticHolds_def {a b : EvmWord} :
          val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) ≤
        (div128Quot u4 u3 b3').toNat) :=
   rfl
+
+/-- **`n4CallSkipSemanticHolds` holds unconditionally** under the standard
+    call-trial preconditions (CLOSED).
+
+    The semantic-correctness predicate `val256(a)/val256(b) ≤ qHat`
+    is exactly Knuth Theorem A (lower bound) at the val256 level —
+    formerly issue #65, deferred to "future task". Now closed via
+    the existing `div128Quot_call_skip_ge_val256_div_v2` (PR #1154 / V2)
+    in `EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2`.
+
+    Removes the need for callers of `evm_div_n4_call_skip_stack_spec`
+    and `evm_mod_n4_call_skip_stack_spec` to construct the
+    `n4CallSkipSemanticHolds` hypothesis externally. -/
+theorem n4CallSkipSemanticHolds_of_call_trial (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcall : isCallTrialN4Evm a b) :
+    n4CallSkipSemanticHolds a b := by
+  rw [n4CallSkipSemanticHolds_def]
+  rw [isCallTrialN4Evm_def] at hcall
+  exact div128Quot_call_skip_ge_val256_div_v2
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    hb3nz hshift_nz hcall
 
 /-- **Call+skip n=4 div/mod getLimbN bridge.** Under the runtime call-path
     conditions + skip-borrow + the semantic-correctness hypothesis
