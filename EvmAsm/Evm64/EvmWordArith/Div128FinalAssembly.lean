@@ -890,6 +890,22 @@ def Div128AllPhasesNoWrapInv (uHi uLo vTop : Word) : Prop :=
   q1'.toNat * dLo.toNat ≤ (rhat'.toNat % 2^32) * 2^32 + div_un1.toNat ∧
   q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat
 
+/-- **All-phases invariant implies the (weaker) Phase-1-only invariant** (CLOSED).
+
+    `Div128AllPhasesNoWrapInv` is strictly stronger than
+    `Div128PhaseNoWrapInv` — it includes the Phase 2 no-wrap conjunct
+    in addition to Phase 1's two conjuncts. This trivial projection
+    extracts the Phase 1 invariant, letting callers who have the
+    stronger all-phases form discharge the weaker Phase 1 form
+    (e.g., to apply the `+2` KB-6c parent without needing the strict
+    `+0` form). -/
+theorem Div128AllPhasesNoWrapInv.toPhaseNoWrapInv
+    {uHi uLo vTop : Word} (h : Div128AllPhasesNoWrapInv uHi uLo vTop) :
+    Div128PhaseNoWrapInv uHi uLo vTop := by
+  simp only [Div128AllPhasesNoWrapInv] at h
+  simp only [Div128PhaseNoWrapInv]
+  exact ⟨h.1, h.2.1⟩
+
 /-- **KB-6c-aux1: pure-Nat assembly identity for Phase 2b + KB-3m.**
 
     Pure Nat algebra. Composes Phase 2b post
