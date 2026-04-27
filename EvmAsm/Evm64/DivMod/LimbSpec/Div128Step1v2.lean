@@ -97,9 +97,23 @@ theorem divK_div128_step1_v2_branch_merged_spec
          (.x5 ↦ᵣ qDlo2) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatUn1') **
          (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 = 0⌝ **
          (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  sorry  -- Compose step1_spec (cpsTriple) ⨾ prodcheck1b_merged_spec (cpsBranch)
-         -- via cpsTriple_seq_cpsBranch_perm_same_cr. ~80 LOC mirror of
-         -- divK_div128_step2_branch_merged_spec.
+  -- ATTEMPTED full proof — h1 (step1_spec ⊆ merged) closes via 14×union_mono_tail
+  -- + 1×union_mono_left, but the h2 inclusion (prodcheck1b ⊆ merged via 10-deep
+  -- split+simp_all pattern) hits 200k heartbeats due to:
+  --   1. prodcheck1b spec instantiates 5 internal lets (qDlo, rhatUn1', rhatHi,
+  --      q1'FT, rhat'FT), making whnf in cpsBranch_extend_code expensive.
+  --   2. simp_all walking 25 if-branches × 10 levels = ~250 evaluations per
+  --      simp call, hitting limits.
+  --
+  -- Approaches to try next iteration:
+  --   - Bundle the merged cr as @[irreducible] def (avoids whnf through 25-cr).
+  --     See divKDiv128Step2Code as template (Div128Step2.lean line 360).
+  --   - Use rw [hb4, ..., hb40] instead of simp only (faster, more controlled).
+  --   - Replace simp_all with explicit `decide` for the residual address eq's
+  --     (needs concrete base; might not work with symbolic base).
+  --   - Decompose prodcheck1b inclusion into halves: use union_mono_tail to peel
+  --     15 outer singletons, then the inner 10 ≡ pc1b_cr by rfl.
+  sorry  -- See ATTEMPTED notes above. Branch_merged composition.
 
 /-- div128 step 1 v2: trial division q1, clamp, FIRST product check + correction,
     SECOND product check + correction (gated by `rhatc < 2^32` guard).
