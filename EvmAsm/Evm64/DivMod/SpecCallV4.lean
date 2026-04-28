@@ -63,8 +63,8 @@ theorem n4CallSkipSemanticHolds_v4_def {a b : EvmWord} :
     Knuth-B bound `q*_phase1 < 2^32` (which holds when uHi < vTop). -/
 theorem div128Quot_v4_phase1_quot_lt_pow32
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -82,7 +82,20 @@ theorem div128Quot_v4_phase1_quot_lt_pow32
       else rhatc
     let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
     q1''.toNat < 2^32 := by
-  sorry  -- Phase-1 perfect + Knuth-B (q*_phase1 < 2^32 when uHi < vTop).
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1''
+  -- Phase-1 perfect: q1''.toNat = q*_phase1 = (uHi*2^32 + div_un1) / vTop.
+  have h_perfect := div128Quot_v4_phase1_perfect uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  -- Standard Word-level facts.
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_uHi_lt_decomp : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_uHi_lt_vTop
+  -- Knuth-B at q*_phase1: q*_phase1 < 2^32.
+  have h_q_true_lt : (uHi.toNat * 2^32 + div_un1.toNat) /
+                     (dHi.toNat * 2^32 + dLo.toNat) < 2^32 :=
+    div128Quot_q_true_1_lt_pow32 uHi dHi dLo div_un1 h_div_un1_lt h_uHi_lt_decomp
+  linarith [h_perfect]
 
 /-- **Sub-stub 2**: under preconditions, q0'' (Phase-2 trial digit) is < 2^32.
     Follows from Phase-2 perfect (q0'' = q*_phase2) plus the standard
@@ -90,8 +103,8 @@ theorem div128Quot_v4_phase1_quot_lt_pow32
     proven `_un21_lt_vTop`). -/
 theorem div128Quot_v4_phase2_quot_lt_pow32
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
@@ -132,7 +145,23 @@ theorem div128Quot_v4_phase2_quot_lt_pow32
       else rhat2c
     let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
     q0''.toNat < 2^32 := by
-  sorry  -- Phase-2 perfect + Knuth-B (q*_phase2 < 2^32 when un21 < vTop, via _un21_lt_vTop).
+  intro dHi dLo div_un0 div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' rhat2' q0''
+  -- Phase-2 perfect: q0''.toNat = q*_phase2 = (un21*2^32 + div_un0) / vTop.
+  have h_perfect := div128Quot_v4_phase2_perfect uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_div_un0_lt : div_un0.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  -- un21 < vTop (proven Phase-2 invariant).
+  have h_un21_lt_vTop : un21.toNat < vTop.toNat :=
+    div128Quot_v4_un21_lt_vTop uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_un21_lt_decomp : un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_un21_lt_vTop
+  -- Knuth-B at q*_phase2: q*_phase2 < 2^32.
+  have h_q_true_lt : (un21.toNat * 2^32 + div_un0.toNat) /
+                     (dHi.toNat * 2^32 + dLo.toNat) < 2^32 :=
+    div128Quot_q_true_1_lt_pow32 un21 dHi dLo div_un0 h_div_un0_lt h_un21_lt_decomp
+  linarith [h_perfect]
 
 /-- **Pure-Nat combined-quotient identity**: given Phase-1 + Phase-2
     perfect (with un21 = phase1 remainder), the combined output is
