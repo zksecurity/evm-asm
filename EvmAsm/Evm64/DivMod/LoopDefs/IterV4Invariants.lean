@@ -122,8 +122,8 @@ theorem div128Quot_v4_phase2_no_wrap_lo (uHi uLo vTop : Word)
     differs only in the hypothesis style (Word-level here, EvmWord-level
     there). -/
 theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -133,8 +133,51 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
     let q_true := (uHi.toNat * 2^32 + div_un1.toNat) /
                   (dHi.toNat * 2^32 + dLo.toNat)
     q_true ≤ q1c.toNat ∧ q1c.toNat ≤ q_true + 2 := by
-  sorry  -- Composes existing Knuth-A (`div128Quot_q1c_ge_q_true_1`)
-         -- + Knuth-B (`div128Quot_q1_le_q_true_1_plus_two`) + hi1 fix.
+  intro dHi dLo div_un1 q1 hi1 q1c q_true
+  -- Standard Word-level facts.
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_uHi_lt_decomp : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_uHi_lt_vTop
+  refine ⟨?lower, ?upper⟩
+  case lower =>
+    -- Knuth-A: q_true ≤ q1c via the existing Word-level lemma.
+    exact div128Quot_q1c_ge_q_true_1 uHi dHi dLo div_un1
+      hdHi_ne h_div_un1_lt h_uHi_lt_decomp
+  case upper =>
+    -- Knuth-B gives q1.toNat ≤ q_true + 2. Need q1c ≤ q1 (hi1-fix only
+    -- decreases): if hi1 = 0, q1c = q1; if hi1 ≠ 0, q1c = q1 - 1 ≤ q1.
+    have h_q1_le : q1.toNat ≤ q_true + 2 :=
+      div128Quot_q1_le_q_true_1_plus_two uHi dHi dLo div_un1
+        hdHi_ne hdHi_ge hdLo_lt h_div_un1_lt h_uHi_lt_decomp
+    have h_q1c_le_q1 : q1c.toNat ≤ q1.toNat := by
+      by_cases h_hi1 : hi1 = 0
+      · show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ q1.toNat
+        rw [if_pos h_hi1]
+      · -- hi1 ≠ 0 ⟹ q1.toNat ≥ 2^32 ⟹ q1c.toNat = q1.toNat - 1 ≤ q1.toNat.
+        have h_q1_ge : q1.toNat ≥ 2^32 := by
+          by_contra h
+          push Not at h
+          apply h_hi1
+          apply BitVec.eq_of_toNat_eq
+          rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+              Nat.shiftRight_eq_div_pow]
+          show q1.toNat / 2^32 = (0 : Word).toNat
+          rw [Nat.div_eq_of_lt h]; rfl
+        show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat ≤ q1.toNat
+        rw [if_neg h_hi1, BitVec.toNat_add, signExtend12_4095_toNat]
+        have hq1_lt_word : q1.toNat - 1 < 2^64 := by have := q1.isLt; omega
+        rw [show q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 from by omega,
+            Nat.add_mod_right, Nat.mod_eq_of_lt hq1_lt_word]
+        omega
+    linarith
 
 /-- **Phase-1 overshoot 0 case (v4).** Under `q1c.toNat = q_true`,
     Phase-1b's 1st and 2nd D3 corrections are both no-ops, so
