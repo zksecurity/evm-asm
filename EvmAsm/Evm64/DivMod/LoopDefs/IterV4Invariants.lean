@@ -165,6 +165,37 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
         omega
     linarith
 
+/-- **Pure-Nat post-correction Phase-1a Euclidean preservation**.
+
+    Given `q ≥ 1` and the Phase-1a Euclidean `q * dHi ≤ uHi` plus
+    `rhat = uHi - q * dHi`, derives the analogous identities for
+    `q' = q - 1` and `rhat' = rhat + dHi`:
+
+    - `(q - 1) * dHi ≤ uHi`.
+    - `rhat + dHi = uHi - (q - 1) * dHi` (the new Phase-1a Eucl).
+
+    Plain Nat subtraction algebra: `(q - 1) * dHi = q * dHi - dHi` (since
+    q ≥ 1), so `uHi - (q - 1) * dHi = uHi - q*dHi + dHi = rhat + dHi`.
+
+    Used by `_phase1_overshoot_{1,2}_rhatc_lt_pow32_sub` to chain through
+    one BLTU-fire correction. -/
+private theorem div128Quot_v4_phase1_post_correction_eucl_arith
+    (uHi q dHi rhat : Nat)
+    (h_q_ge : q ≥ 1)
+    (h_q_dHi_le : q * dHi ≤ uHi)
+    (h_rhat_eq : rhat = uHi - q * dHi) :
+    (q - 1) * dHi ≤ uHi ∧
+    rhat + dHi = uHi - (q - 1) * dHi := by
+  refine ⟨?_, ?_⟩
+  · calc (q - 1) * dHi
+        ≤ q * dHi := Nat.mul_le_mul_right _ (Nat.sub_le _ _)
+      _ ≤ uHi := h_q_dHi_le
+  · rw [h_rhat_eq, Nat.sub_mul, Nat.one_mul]
+    have h_dHi_le : dHi ≤ q * dHi := by
+      calc dHi = 1 * dHi := (Nat.one_mul _).symm
+        _ ≤ q * dHi := Nat.mul_le_mul_right _ h_q_ge
+    omega
+
 /-- **Word-level guard bridge**: a Word `x` with `x.toNat < 2^32`
     satisfies `x >>> 32 = 0`. Used to convert the boundary-case
     hypothesis (`rhatc.toNat < 2^32`) into the Word-level guard
@@ -715,9 +746,9 @@ theorem div128Quot_v4_phase1_overshoot_0_sub (uHi uLo vTop : Word)
     exact). Result: q1''.toNat = q_true. -/
 private theorem div128Quot_v4_phase1_overshoot_1_rhatc_lt_pow32_sub
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
-    (_h_q1c_eq_q_true_plus_1 :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q1c_eq_q_true_plus_1 :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
       let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -726,7 +757,7 @@ private theorem div128Quot_v4_phase1_overshoot_1_rhatc_lt_pow32_sub
       let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
       q1c.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
                   (dHi.toNat * 2^32 + dLo.toNat) + 1)
-    (_h_rhatc_lt :
+    (h_rhatc_lt :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let q1 := rv64_divu uHi dHi
       let rhat := uHi - q1 * dHi
@@ -751,12 +782,19 @@ private theorem div128Quot_v4_phase1_overshoot_1_rhatc_lt_pow32_sub
     let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
     q1''.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
                  (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- Boundary case proof: BLTU fires (`_phase1_bltu_fires_arith` +
-         -- standard Word↔Nat bridges), q1' = q1c - 1 = q_true. Then
-         -- generic 2nd-correction "no fire under q ≤ q_true" template
-         -- (mirrors `_phase1_inner_bltu_fails_when_q1c_le_q_true` but
-         -- for q1'/rhat'). Closes with `_eq_self_of_no_bltu` on the
-         -- 2nd phase2b_q0' call.
+  -- DEFERRED: full proof attempted in previous iteration but omega struggled
+  -- with let-bindings + Nat subtraction at multiple sites. Need to refactor:
+  -- - extract pure-Nat sub-helpers for the algebraic chain post-1st-correction
+  --   (q1'.toNat = q1c.toNat - 1, rhat'.toNat = rhatc + dHi, q1'*dHi + rhat' = uHi).
+  -- - use `set` aliases to linearize products before the omega calls.
+  --
+  -- All of the Word-level building blocks are proven and ready:
+  --   `_phase1_inner_bltu_fires_when_q1c_overshoots` (1st BLTU fires).
+  --   `_word_ushiftRight_32_zero_of_lt_pow32` (guard passes from rhatc < 2^32).
+  --   `_phase1_no_bltu_arith` (pure-Nat 2nd BLTU fails under q1' ≤ q_true).
+  --   `_eq_self_of_no_bltu` (in IterV4.lean, gives q1'' = q1' under no-fire).
+  -- Remaining gap is just the algebraic glue with let-aware arithmetic.
+  sorry
 
 /-- **Phase-1 overshoot 1 case (v4).** Under `q1c.toNat = q_true + 1`,
     the 1st D3 correction decrements to q_true, the 2nd is a no-op.
