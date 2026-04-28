@@ -1809,6 +1809,56 @@ theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
     "2nd correction" needed in Phase 2 because the q0' trial only
     consumes 32 bits of remainder.
 
+    **Closure plan (deferrable to a future iteration):**
+
+    The claim `q0' * dLo ≤ rhat2' * 2^32 + div_un0` is algebraically
+    equivalent (via the Phase 2b Euclidean
+    `q0' * dHi + rhat2' = un21`, proven in
+    `div128Quot_phase2b_post`) to:
+        `q0' * vTop ≤ un21 * 2^32 + div_un0`
+    where `vTop = dHi * 2^32 + dLo`. So the goal reduces to a Phase-2
+    Knuth-A claim: q0' is at most floor((un21 * 2^32 + div_un0) / vTop).
+
+    Composes the following helpers (decreasing order of dependence):
+
+    1. **`div128Quot_phase2b_post`** (PROVEN, Div128FinalAssembly.lean:611):
+       gives `q0' * dHi + rhat2' = un21` after the Phase 2b correction.
+
+    2. **`div128Quot_q0_prime_lt_pow32`** (PROVEN,
+       Div128QuotientBounds.lean:540): gives `q0' < 2^32` under
+       `un21 < vTop`. Used as a sub-fact to bound q0' * dLo.
+
+    3. **`div128Quot_v2_un21_lt_vTop_under_runtime`** (STUB but already
+       extracted; itself depends on Knuth-A v2 + conj1 of no_wrap):
+       gives `un21 < vTop` from runtime preconditions.
+
+    4. **Phase 2b check semantics** (case analysis on the rhat2c guard
+       and BLTU check inside `div128Quot_phase2b_q0'`): three cases —
+         a. Guard doesn't fire (rhat2c ≥ 2^32): q0' = q0c, rhat2' = rhat2c.
+            Goal reduces to q0c * dLo ≤ rhat2c * 2^32 + div_un0; since
+            rhat2c ≥ 2^32, RHS ≥ 2^64 ≥ q0c * dLo. TRIVIAL.
+         b. Guard fires, check fires: q0' = q0c - 1, rhat2' = rhat2c + dHi.
+            From check: rhat2c * 2^32 + div_un0 < q0c * dLo (under
+            rhat2c < 2^32). Goal: (q0c - 1) * dLo ≤ (rhat2c + dHi) * 2^32 +
+            div_un0. Algebra: dHi * 2^32 ≥ 2^63 absorbs the dLo term.
+         c. Guard fires, check doesn't fire: q0' = q0c, rhat2' = rhat2c.
+            From ¬check: rhat2c * 2^32 + div_un0 ≥ q0c * dLo. Goal
+            follows directly.
+
+    Closing this requires:
+    - Step 1: invoke `div128Quot_phase2b_post` to get the Euclidean
+      and rewrite the goal as `q0' * vTop ≤ un21 * 2^32 + div_un0`.
+    - Step 2: case-split on the Phase 2b guard / BLTU check (mirror
+      of `div128Quot_q0_prime_lt_pow32`'s proof structure).
+    - Step 3: in each case, use the Phase 2a invariants (rhat2c < 2*dHi,
+      div_un0 < 2^32, dHi ≥ 2^31) plus the check semantics to conclude.
+
+    Total expected proof length: ~80-100 lines, mostly mirroring the
+    existing `div128Quot_q0_prime_lt_pow32` proof structure.
+
+    The `_un21_lt_vTop_under_runtime` dependency is the only remaining
+    sorry chain; closing it propagates Knuth-A v2 + conj1 to Phase-2.
+
     Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
 theorem div128Quot_v2_phase2_no_wrap_lo_under_runtime (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
