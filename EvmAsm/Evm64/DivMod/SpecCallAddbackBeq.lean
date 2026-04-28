@@ -2192,10 +2192,22 @@ theorem qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2 (a b : EvmWord)
 
 /-- **Carry partition: double-addback case (carry = 0).**
     Under runtime preconditions, when `addbackN4_carry = 0` (the
-    second addback fires), `qHat = q_true + 2`. Closes via the
-    double-addback identity:
-    `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds` +
-    `_le_val256_div_plus_two_untruncated` (Knuth-B upper).
+    second addback fires), `qHat = q_true + 2`.
+
+    **Closure dependencies:**
+    1. **Knuth-B v2 upper** (modulo no_wrap stub):
+       `div128Quot_v2_le_val256_div_plus_two_untruncated` (PROVEN, line ~1393).
+       Gives `qHat ≤ q_true + 2`.
+    2. **Knuth-A v2 lower** (substantive blocker):
+       `qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2` (PROVEN, line ~2160).
+       Gives shifted-domain `qHat * val256(b') > val256(un)`. Bridging to
+       `qHat ≥ q_true + 1` (original-domain) requires shift algebra (open).
+    3. **Knuth-D double-addback identity** (substantive blocker):
+       `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds` (existing helper)
+       + carry = 0 implies the second addback fired, i.e., `qHat - q_true = 2`.
+
+    Combined: from (1) qHat ≤ q_true + 2 and (3) qHat = q_true + 2 (excluding
+    qHat = q_true + 1 via carry semantics).
 
     Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
 theorem addback_carry_partition_v2_zero_case (a b : EvmWord)
@@ -2226,11 +2238,24 @@ theorem addback_carry_partition_v2_zero_case (a b : EvmWord)
 
 /-- **Carry partition: single-addback case (carry ≠ 0).**
     Under runtime preconditions, when `addbackN4_carry ≠ 0` (only the
-    first addback fires), `qHat = q_true + 1`. Closes via the
-    single-addback identity:
-    `c3_eq_u4_plus_one_from_mulsub_addback_bounds` +
-    `_le_val256_div_plus_two_untruncated` (Knuth-B upper) +
-    case-exclusion of qHat = q_true + 2 via the carry ≠ 0 hypothesis.
+    first addback fires), `qHat = q_true + 1`.
+
+    **Closure dependencies:**
+    1. **Knuth-B v2 upper** (modulo no_wrap stub):
+       `div128Quot_v2_le_val256_div_plus_two_untruncated` (PROVEN, line ~1393).
+       Gives `qHat ≤ q_true + 2`.
+    2. **Knuth-A v2 lower** (substantive blocker):
+       `qHat_gt_q_true_shifted_under_runtime_v2` (PROVEN, shifted-domain).
+       Gives shifted-domain `qHat > q_true_shifted`. Bridging to original
+       domain requires shift algebra (open).
+    3. **Knuth-D single-addback identity** (substantive blocker):
+       `c3_eq_u4_plus_one_from_mulsub_addback_bounds` (existing helper)
+       + carry ≠ 0 implies only the first addback fired, i.e.,
+       `qHat - q_true = 1` (excludes qHat = q_true + 2 which would
+       require both addbacks).
+
+    Combined: from (1) qHat ≤ q_true + 2, (2) qHat > q_true (so qHat ∈
+    {q_true + 1, q_true + 2}), and (3) carry ≠ 0 excludes qHat = q_true + 2.
 
     Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
 theorem addback_carry_partition_v2_nonzero_case (a b : EvmWord)
