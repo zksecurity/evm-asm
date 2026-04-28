@@ -1326,64 +1326,6 @@ theorem div128Quot_v4_phase1_perfect (uHi uLo vTop : Word)
       exact div128Quot_v4_phase1_overshoot_2_sub uHi uLo vTop
         h_vTop_ge_pow63 h_uHi_lt_vTop h_eq
 
-/-- **Phase-2 2-correction perfection (v4).** After v4's symmetric
-    Phase-2 2-correction loop, `q0''` equals the abstract Phase-2
-    quotient `q*_phase2 = ⌊(un21 * 2^32 + div_un0) / (dHi * 2^32 + dLo)⌋`
-    exactly.
-
-    This is the KEY new property v4 provides over v2/v3 — it eliminates
-    the Phase-2 overshoot that broke `phase2_no_wrap_lo` sub-case b.
-
-    Combined with `div128Quot_v4_phase1_perfect`, gives
-    `qHat = q*_full = ⌊(uHi*2^64 + uLo) / vTop⌋` (the full classical
-    Knuth bound). -/
-theorem div128Quot_v4_phase2_perfect (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
-    let dHi := vTop >>> (32 : BitVec 6).toNat
-    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := uLo >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu uHi dHi
-    let rhat := uHi - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
-    let rhat' :=
-      if rhatc >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo := q1c * dLo
-        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-      else rhatc
-    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
-    let rhat'' :=
-      if rhat' >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q1' * dLo
-        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
-      else rhat'
-    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
-    let cu_q1_dlo := q1'' * dLo
-    let un21 := cu_rhat_un1 - cu_q1_dlo
-    let q0 := rv64_divu un21 dHi
-    let rhat2 := un21 - q0 * dHi
-    let hi2 := q0 >>> (32 : BitVec 6).toNat
-    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
-    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
-    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
-    let rhat2' :=
-      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q0c * dLo
-        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
-      else rhat2c
-    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
-    q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
-                 (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- Mirrors `_phase1_perfect`'s case-split-on-overshoot proof,
-         -- with q0c replacing q1c as the post-1st-correction trial digit.
-
 /-- **Pure-Nat algebraic core for un21 < vTop.**
 
     Given Phase-1 perfect (`(q1'' + 1) * vTop > uHi*2^32 + div_un1`)
@@ -2144,6 +2086,425 @@ theorem div128Quot_v4_un21_lt_vTop (uHi uLo vTop : Word)
     dHi.toNat dLo.toNat div_un1.toNat q1''.toNat rhat''.toNat
     h_decomp hdLo_lt h_vTop_le_pow64 h_q1''_succ_gt h_q1''_dHi_le h_rhat''_eq
     h_no_wrap h_q1''_lt
+
+/-- **Phase-2c Knuth range (v4).** Mirror of `_phase1c_in_knuth_range`
+    for Phase-2: the post-hi2-fix trial digit `q0c` sits in the
+    Knuth range `[q*_phase2, q*_phase2 + 2]`.
+
+    Proof: directly invoke the generic Word-level Knuth lemmas with
+    `un21` as the dividend and `div_un0` as the lower limb. The
+    runtime precondition `un21 < vTop` comes from the just-proven
+    `_un21_lt_vTop`. -/
+theorem div128Quot_v4_phase2c_in_knuth_range (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let q_true_phase2 := (un21.toNat * 2^32 + div_un0.toNat) /
+                         (dHi.toNat * 2^32 + dLo.toNat)
+    q_true_phase2 ≤ q0c.toNat ∧ q0c.toNat ≤ q_true_phase2 + 2 := by
+  intro dHi dLo div_un0 div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21 q0 hi2 q0c q_true_phase2
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un0_lt : div_un0.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_un21_lt_vTop : un21.toNat < vTop.toNat :=
+    div128Quot_v4_un21_lt_vTop uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_un21_lt_decomp : un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_un21_lt_vTop
+  refine ⟨?lower, ?upper⟩
+  case lower =>
+    exact div128Quot_q1c_ge_q_true_1 un21 dHi dLo div_un0
+      hdHi_ne h_div_un0_lt h_un21_lt_decomp
+  case upper =>
+    have h_q0_le : q0.toNat ≤ q_true_phase2 + 2 :=
+      div128Quot_q1_le_q_true_1_plus_two un21 dHi dLo div_un0
+        hdHi_ne hdHi_ge hdLo_lt h_div_un0_lt h_un21_lt_decomp
+    have h_q0c_le_q0 : q0c.toNat ≤ q0.toNat := by
+      by_cases h_hi2 : hi2 = 0
+      · show (if hi2 = 0 then q0 else q0 + signExtend12 4095).toNat ≤ q0.toNat
+        rw [if_pos h_hi2]
+      · have h_q0_ge : q0.toNat ≥ 2^32 := by
+          by_contra h
+          push Not at h
+          apply h_hi2
+          apply BitVec.eq_of_toNat_eq
+          rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+              Nat.shiftRight_eq_div_pow]
+          show q0.toNat / 2^32 = (0 : Word).toNat
+          rw [Nat.div_eq_of_lt h]; rfl
+        show (if hi2 = 0 then q0 else q0 + signExtend12 4095).toNat ≤ q0.toNat
+        rw [if_neg h_hi2, BitVec.toNat_add, signExtend12_4095_toNat]
+        have hq0_lt_word : q0.toNat - 1 < 2^64 := by have := q0.isLt; omega
+        rw [show q0.toNat + (2^64 - 1) = (q0.toNat - 1) + 2^64 from by omega,
+            Nat.add_mod_right, Nat.mod_eq_of_lt hq0_lt_word]
+        omega
+    linarith
+
+/-- **Phase-2 overshoot 0 case (v4).** Mirror of
+    `_phase1_overshoot_0_sub`: under `q0c.toNat = q*_phase2`, the 2
+    Phase-2 corrections are no-ops, so `q0''.toNat = q*_phase2`.
+
+    Proof: directly mirror `_phase1_overshoot_0_sub` but with
+    `un21`/`div_un0` in place of `uHi`/`div_un1`. -/
+private theorem div128Quot_v4_phase2_overshoot_0_sub (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q0c_eq_q_true_phase2 :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+      let rhat' :=
+        if rhatc >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo := q1c * dLo
+          let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+        else rhatc
+      let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+      let rhat'' :=
+        if rhat' >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo2 := q1' * dLo
+          let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+        else rhat'
+      let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+      let cu_q1_dlo := q1'' * dLo
+      let un21 := cu_rhat_un1 - cu_q1_dlo
+      let q0 := rv64_divu un21 dHi
+      let hi2 := q0 >>> (32 : BitVec 6).toNat
+      let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+      q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                  (dHi.toNat * 2^32 + dLo.toNat)) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- Mirror of `_phase1_overshoot_0_sub`. Both phase2b_q0' calls
+         -- are no-ops because q0c = q*_phase2 saturates Knuth-A.
+
+/-- **Phase-2 overshoot 1 case (v4).** Mirror of
+    `_phase1_overshoot_1_sub`: under `q0c.toNat = q*_phase2 + 1`,
+    the 1st correction decrements to q*_phase2; 2nd is no-op. -/
+private theorem div128Quot_v4_phase2_overshoot_1_sub (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q0c_eq_q_true_plus_1 :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+      let rhat' :=
+        if rhatc >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo := q1c * dLo
+          let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+        else rhatc
+      let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+      let rhat'' :=
+        if rhat' >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo2 := q1' * dLo
+          let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+        else rhat'
+      let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+      let cu_q1_dlo := q1'' * dLo
+      let un21 := cu_rhat_un1 - cu_q1_dlo
+      let q0 := rv64_divu un21 dHi
+      let hi2 := q0 >>> (32 : BitVec 6).toNat
+      let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+      q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                  (dHi.toNat * 2^32 + dLo.toNat) + 1) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- Mirror of `_phase1_overshoot_1_sub`. Case-split on rhat2c
+         -- guard; canonical case (rhat2c < 2^32 + BLTU fires) reduces
+         -- via `_phase1_inner_bltu_fires_when_q1c_overshoots`-style
+         -- argument with un21 as dividend.
+
+/-- **Phase-2 overshoot 2 case (v4).** Mirror of
+    `_phase1_overshoot_2_sub`: under `q0c.toNat = q*_phase2 + 2`,
+    both Phase-2 corrections fire, decrementing q0'' to q*_phase2. -/
+private theorem div128Quot_v4_phase2_overshoot_2_sub (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q0c_eq_q_true_plus_2 :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+      let rhat' :=
+        if rhatc >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo := q1c * dLo
+          let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+        else rhatc
+      let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+      let rhat'' :=
+        if rhat' >>> (32 : BitVec 6).toNat = 0 then
+          let qDlo2 := q1' * dLo
+          let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+          if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+        else rhat'
+      let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+      let cu_q1_dlo := q1'' * dLo
+      let un21 := cu_rhat_un1 - cu_q1_dlo
+      let q0 := rv64_divu un21 dHi
+      let hi2 := q0 >>> (32 : BitVec 6).toNat
+      let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+      q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                  (dHi.toNat * 2^32 + dLo.toNat) + 2) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- Mirror of `_phase1_overshoot_2_sub`. Both Phase-2 corrections
+         -- fire, decrementing q0'' twice from q*_phase2 + 2 to q*_phase2.
+
+/-- **Phase-2 2-correction perfection (v4).** After v4's symmetric
+    Phase-2 2-correction loop, `q0''` equals the abstract Phase-2
+    quotient `q*_phase2 = ⌊(un21 * 2^32 + div_un0) / (dHi * 2^32 + dLo)⌋`
+    exactly.
+
+    This is the KEY new property v4 provides over v2/v3 — it eliminates
+    the Phase-2 overshoot that broke `phase2_no_wrap_lo` sub-case b.
+
+    Combined with `div128Quot_v4_phase1_perfect`, gives
+    `qHat = q*_full = ⌊(uHi*2^64 + uLo) / vTop⌋` (the full classical
+    Knuth bound). -/
+theorem div128Quot_v4_phase2_perfect (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) := by
+  intro dHi dLo div_un0 div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' rhat2' q0''
+  have h_range := div128Quot_v4_phase2c_in_knuth_range uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  obtain ⟨h_lower, h_upper⟩ := h_range
+  rcases Nat.lt_or_ge q0c.toNat
+      ((un21.toNat * 2^32 + div_un0.toNat) /
+       (dHi.toNat * 2^32 + dLo.toNat) + 1) with h1 | h1
+  · -- q0c.toNat = q*_phase2 (overshoot 0).
+    have h_eq : q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                            (dHi.toNat * 2^32 + dLo.toNat) := by linarith
+    exact div128Quot_v4_phase2_overshoot_0_sub uHi uLo vTop
+      h_vTop_ge_pow63 h_uHi_lt_vTop h_eq
+  · rcases Nat.lt_or_ge q0c.toNat
+        ((un21.toNat * 2^32 + div_un0.toNat) /
+         (dHi.toNat * 2^32 + dLo.toNat) + 2) with h2 | h2
+    · -- q0c.toNat = q*_phase2 + 1 (overshoot 1).
+      have h_eq : q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                              (dHi.toNat * 2^32 + dLo.toNat) + 1 := by linarith
+      exact div128Quot_v4_phase2_overshoot_1_sub uHi uLo vTop
+        h_vTop_ge_pow63 h_uHi_lt_vTop h_eq
+    · -- q0c.toNat = q*_phase2 + 2 (overshoot 2).
+      have h_eq : q0c.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
+                              (dHi.toNat * 2^32 + dLo.toNat) + 2 := by linarith
+      exact div128Quot_v4_phase2_overshoot_2_sub uHi uLo vTop
+        h_vTop_ge_pow63 h_uHi_lt_vTop h_eq
 
 /-- **Phase-2 Euclidean for q0'' (v4).** Combines Phase-2 perfection with
     the classical Euclidean to give the closure step for
