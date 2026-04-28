@@ -220,8 +220,8 @@ private theorem div128Quot_v4_phase1_no_bltu_arith
     - `hi1 ≠ 0`: `q1c = q1 - 1`, `rhatc = rhat + dHi` (Word). Same
       identity holds via `(q1 - 1) * dHi = q1 * dHi - dHi` (algebraic). -/
 private theorem div128Quot_v4_phase1_rhatc_bridge
-    (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (uHi vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
     (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let q1 := rv64_divu uHi dHi
@@ -231,8 +231,82 @@ private theorem div128Quot_v4_phase1_rhatc_bridge
     let rhatc := if hi1 = 0 then rhat else rhat + dHi
     q1c.toNat * dHi.toNat ≤ uHi.toNat ∧
     rhatc.toNat = uHi.toNat - q1c.toNat * dHi.toNat := by
-  sorry  -- Pure Word↔Nat bridge: case-split on hi1, use rv64_divu Euclidean
-         -- + standard `BitVec.toNat_sub_of_le`/`toNat_add_no_overflow` facts.
+  intro dHi q1 rhat hi1 q1c rhatc
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  -- Phase-1a Euclidean from `rv64_divu_mul_le`.
+  have h_q1_dHi_le : q1.toNat * dHi.toNat ≤ uHi.toNat :=
+    EvmWord.rv64_divu_mul_le uHi dHi hdHi_ne
+  -- q1 * dHi at Word ↔ Nat (no overflow since ≤ uHi < 2^64).
+  have h_q1_dHi_toNat : (q1 * dHi).toNat = q1.toNat * dHi.toNat := by
+    rw [BitVec.toNat_mul]
+    exact Nat.mod_eq_of_lt (lt_of_le_of_lt h_q1_dHi_le uHi.isLt)
+  -- rhat at Word ↔ Nat (no underflow since q1 * dHi ≤ uHi).
+  have h_rhat_toNat : rhat.toNat = uHi.toNat - q1.toNat * dHi.toNat := by
+    show (uHi - q1 * dHi).toNat = uHi.toNat - q1.toNat * dHi.toNat
+    rw [BitVec.toNat_sub, h_q1_dHi_toNat]
+    have h_pos : 0 < 2^64 := by decide
+    omega
+  by_cases h_hi1 : hi1 = 0
+  · -- hi1 = 0: q1c = q1, rhatc = rhat. Direct.
+    refine ⟨?_, ?_⟩
+    · show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat * dHi.toNat ≤ uHi.toNat
+      rw [if_pos h_hi1]; exact h_q1_dHi_le
+    · show (if hi1 = 0 then rhat else rhat + dHi).toNat =
+            uHi.toNat -
+              (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat * dHi.toNat
+      rw [if_pos h_hi1, if_pos h_hi1]; exact h_rhat_toNat
+  · -- hi1 ≠ 0: q1.toNat ≥ 2^32; q1c = q1 - 1 (mod 2^64), rhatc = rhat + dHi.
+    have h_q1_ge : q1.toNat ≥ 2^32 := by
+      by_contra h
+      push Not at h
+      apply h_hi1
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+          Nat.shiftRight_eq_div_pow]
+      show q1.toNat / 2^32 = (0 : Word).toNat
+      rw [Nat.div_eq_of_lt h]; rfl
+    have h_q1c_toNat : q1c.toNat = q1.toNat - 1 := by
+      show (if hi1 = 0 then q1 else q1 + signExtend12 4095).toNat = q1.toNat - 1
+      rw [if_neg h_hi1, BitVec.toNat_add, signExtend12_4095_toNat]
+      have hq1_lt_word : q1.toNat - 1 < 2^64 := by have := q1.isLt; omega
+      rw [show q1.toNat + (2^64 - 1) = (q1.toNat - 1) + 2^64 from by omega,
+          Nat.add_mod_right, Nat.mod_eq_of_lt hq1_lt_word]
+    -- q1c.toNat * dHi.toNat = (q1.toNat - 1) * dHi.toNat = q1.toNat * dHi.toNat - dHi.toNat.
+    have h_q1c_dHi : q1c.toNat * dHi.toNat = q1.toNat * dHi.toNat - dHi.toNat := by
+      rw [h_q1c_toNat, Nat.sub_mul, Nat.one_mul]
+    have h_q1c_dHi_le : q1c.toNat * dHi.toNat ≤ uHi.toNat := by
+      rw [h_q1c_dHi]; omega
+    -- rhatc = rhat + dHi (Word), no overflow because rhat < dHi (Phase-1 Euclidean
+    -- guarantees rhat < dHi when hi1 ≠ 0... actually rhat = uHi % dHi < dHi).
+    have h_rhat_lt_dHi : rhat.toNat < dHi.toNat := by
+      have h_eucl : uHi.toNat = q1.toNat * dHi.toNat + uHi.toNat % dHi.toNat :=
+        EvmWord.rv64_divu_euclidean uHi dHi hdHi_ne
+      have h_rhat_eq : rhat.toNat = uHi.toNat % dHi.toNat := by
+        rw [h_rhat_toNat]; omega
+      rw [h_rhat_eq]
+      exact Nat.mod_lt _ (Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h)))
+    have h_rhatc_toNat : rhatc.toNat = rhat.toNat + dHi.toNat := by
+      show (if hi1 = 0 then rhat else rhat + dHi).toNat = rhat.toNat + dHi.toNat
+      rw [if_neg h_hi1, BitVec.toNat_add]
+      apply Nat.mod_eq_of_lt
+      calc rhat.toNat + dHi.toNat
+          < dHi.toNat + dHi.toNat := by omega
+        _ ≤ 2^32 + 2^32 := by omega
+        _ < 2^64 := by decide
+    refine ⟨h_q1c_dHi_le, ?_⟩
+    rw [h_rhatc_toNat, h_rhat_toNat, h_q1c_dHi]
+    -- Goal: (uHi - q1*dHi) + dHi = uHi - (q1*dHi - dHi)
+    -- Using q1*dHi ≥ dHi (since q1 ≥ 2^32 > 1 and dHi > 0).
+    have h_q1_mul_ge : q1.toNat * dHi.toNat ≥ dHi.toNat := by
+      have : q1.toNat ≥ 1 := by omega
+      calc q1.toNat * dHi.toNat
+          ≥ 1 * dHi.toNat := Nat.mul_le_mul_right _ this
+        _ = dHi.toNat := Nat.one_mul _
+    omega
 
 /-- **Phase-1 inner-BLTU fails when `q1c.toNat ≤ q_true` (v4).**
 
@@ -293,7 +367,7 @@ theorem div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
     · simp at h
     · exact h
   -- Word↔Nat bridge for rhatc (via the helper).
-  have h_bridge := div128Quot_v4_phase1_rhatc_bridge uHi uLo vTop
+  have h_bridge := div128Quot_v4_phase1_rhatc_bridge uHi vTop
     h_vTop_ge_pow63 h_uHi_lt_vTop
   obtain ⟨h_q1c_dHi_le, h_rhatc_eq⟩ := h_bridge
   -- q1c.toNat * dLo.toNat < 2^64 (no overflow on q1c*dLo).
