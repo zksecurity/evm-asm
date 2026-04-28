@@ -3949,6 +3949,23 @@ theorem addback_carry_partition_v2_nonzero_case (a b : EvmWord)
     correctness: each addback adds `b` back to the partial remainder, so
     the number of addbacks fired equals `qHat - q_true` (precise overshoot).
 
+    **STATUS NOTE (2026-04-28)**: NEITHER constituent case is provably FALSE
+    under v2 — both are TRUE in principle. The closure depends on:
+    1. Knuth-B v2 upper bound `qHat ≤ q_true + 2` (PROVEN in shifted-domain
+       via `_le_val256_div_plus_two_untruncated` modulo no_wrap chain).
+    2. Knuth-A lower `qHat > q_true` under hborrow (PROVEN in shifted-domain
+       via `qHat_gt_q_true_shifted_under_runtime_v2`).
+    3. Shift→original bridge for both bounds: requires
+       `u_val256_eq_scaled_with_overflow` (existing helper at
+       `CallSkipLowerBoundV2.lean`) to relate val256(normalized)
+       to val256(original) * 2^s via the u4 overflow term.
+    4. Carry semantics (single vs double addback) via
+       `c3_eq_u4_plus_one_from_(double_)mulsub_addback_bounds` (existing).
+
+    Both partition cases are accessible but require ~100-200 lines of
+    val256-algebra bridging through the shift normalization. The chain
+    is standard but not a single-iteration close.
+
     Issue #1337 algorithm fix migration. Alternative path 3 sub-lemma. -/
 theorem addback_carry_partition_v2 (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
