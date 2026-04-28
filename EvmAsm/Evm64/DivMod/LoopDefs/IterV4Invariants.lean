@@ -179,6 +179,61 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
         omega
     linarith
 
+/-- **Pure-Nat algebraic core for the inner-BLTU-fails claim.**
+
+    Given the Knuth-A bound `q1c ≤ q_true` and the Phase-1a Euclidean
+    `rhatc = uHi - q1c * dHi`, derives the no-overshoot inequality
+    `q1c * dLo ≤ rhatc * 2^32 + div_un1` (the negation of BLTU's check).
+
+    Linear arithmetic only — `omega` closes the final step after
+    expanding `vTop = dHi*2^32 + dLo`. Extracted to keep the Word-level
+    proof free of `Nat.sub_mul` and the floor inequality juggling. -/
+private theorem div128Quot_v4_phase1_no_bltu_arith
+    (uHi vTop dHi dLo div_un1 q1c rhatc : Nat)
+    (h_vTop : vTop = dHi * 2^32 + dLo)
+    (h_q1c_dHi_le : q1c * dHi ≤ uHi)
+    (h_rhatc_eq : rhatc = uHi - q1c * dHi)
+    (h_q1c_le_q_true : q1c ≤ (uHi * 2^32 + div_un1) / vTop) :
+    q1c * dLo ≤ rhatc * 2^32 + div_un1 := by
+  -- Floor inequality: q1c * vTop ≤ uHi * 2^32 + div_un1.
+  have h_floor : q1c * vTop ≤ uHi * 2^32 + div_un1 :=
+    le_trans (Nat.mul_le_mul_right vTop h_q1c_le_q_true)
+             (Nat.div_mul_le_self _ _)
+  -- Substitute vTop = dHi * 2^32 + dLo and unfold rhatc.
+  rw [h_vTop, Nat.mul_add, ← Nat.mul_assoc] at h_floor
+  rw [h_rhatc_eq, Nat.sub_mul]
+  -- q1c * dHi * 2^32 ≤ uHi * 2^32 (under h_q1c_dHi_le).
+  have h_mul_le : q1c * dHi * 2^32 ≤ uHi * 2^32 :=
+    Nat.mul_le_mul_right _ h_q1c_dHi_le
+  omega
+
+/-- **Word↔Nat bridge for rhatc (v4).**
+
+    Under shift-norm, the Phase-1a output `rhatc` (after the hi1-fix
+    correction) has the natural identity `rhatc.toNat = uHi.toNat - q1c.toNat *
+    dHi.toNat`, and the subtraction doesn't underflow (`q1c * dHi ≤ uHi`).
+
+    Decomposes into two cases on `hi1`:
+    - `hi1 = 0`: `q1c = q1`, `rhatc = rhat = uHi - q1 * dHi` (Word).
+      `q1 * dHi ≤ uHi` by `rv64_divu_mul_le`. Word subtraction doesn't
+      underflow at the toNat level.
+    - `hi1 ≠ 0`: `q1c = q1 - 1`, `rhatc = rhat + dHi` (Word). Same
+      identity holds via `(q1 - 1) * dHi = q1 * dHi - dHi` (algebraic). -/
+private theorem div128Quot_v4_phase1_rhatc_bridge
+    (uHi uLo vTop : Word)
+    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    q1c.toNat * dHi.toNat ≤ uHi.toNat ∧
+    rhatc.toNat = uHi.toNat - q1c.toNat * dHi.toNat := by
+  sorry  -- Pure Word↔Nat bridge: case-split on hi1, use rv64_divu Euclidean
+         -- + standard `BitVec.toNat_sub_of_le`/`toNat_add_no_overflow` facts.
+
 /-- **Phase-1 inner-BLTU fails when `q1c.toNat ≤ q_true` (v4).**
 
     The Word-level BLTU check inside `div128Quot_phase2b_q0' q1c rhatc dLo div_un1`
@@ -192,15 +247,12 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
     when rhatc < 2^32 and div_un1 < 2^32 (no truncation, `|||` reduces to `+`).
 
     Then ¬ BLTU follows from `q1c * vTop ≤ uHi * 2^32 + div_un1`
-    (Knuth-A, since q1c ≤ q_true).
-
-    Pure-Word stub for now; depends on standard arithmetic facts that
-    are routine but voluminous. -/
+    (Knuth-A, since q1c ≤ q_true). -/
 theorem div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
-    (_h_q1c_le_q_true :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q1c_le_q_true :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
       let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -219,13 +271,66 @@ theorem div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
     let rhatc := if hi1 = 0 then rhat else rhat + dHi
     ¬ (rhatc >>> (32 : BitVec 6).toNat = 0 ∧
        BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1) (q1c * dLo)) := by
-  sorry  -- Pure Word arithmetic. Decomposes into:
-         -- (1) rhatc.toNat = uHi.toNat - q1c.toNat * dHi.toNat
-         --     (under shift-norm + q1c.toNat ≤ q_true ⟹ q1c * dHi ≤ uHi).
-         -- (2) ((rhatc << 32) | div_un1).toNat =
-         --       rhatc.toNat * 2^32 + div_un1.toNat under rhatc < 2^32.
-         -- (3) q1c * dLo ≤ rhatc * 2^32 + div_un1 from q1c * vTop ≤
-         --     uHi * 2^32 + div_un1 (Knuth-A, since q1c ≤ q_true).
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc
+  rintro ⟨h_guard, h_bltu⟩
+  -- Standard Word-level facts.
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  -- rhatc < 2^32 from h_guard.
+  have h_rhatc_lt : rhatc.toNat < 2^32 := by
+    have h_eq : (rhatc >>> (32 : BitVec 6).toNat).toNat = (0 : Word).toNat := by
+      rw [h_guard]
+    rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+        Nat.shiftRight_eq_div_pow] at h_eq
+    rw [show (0 : Word).toNat = 0 from rfl] at h_eq
+    have h_div_zero : rhatc.toNat / 2^32 = 0 := h_eq
+    rcases (Nat.div_eq_zero_iff).mp h_div_zero with h | h
+    · simp at h
+    · exact h
+  -- Word↔Nat bridge for rhatc (via the helper).
+  have h_bridge := div128Quot_v4_phase1_rhatc_bridge uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  obtain ⟨h_q1c_dHi_le, h_rhatc_eq⟩ := h_bridge
+  -- q1c.toNat * dLo.toNat < 2^64 (no overflow on q1c*dLo).
+  have h_q1c_lt_pow32 : q1c.toNat ≤ 2^32 := by
+    -- q_true_1 < 2^32 by `div128Quot_q_true_1_lt_pow32`; q1c ≤ q_true gives q1c < 2^32.
+    have h_uHi_lt_decomp : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+      rw [← h_vTop_decomp]; exact h_uHi_lt_vTop
+    have : (uHi.toNat * 2^32 + div_un1.toNat) /
+            (dHi.toNat * 2^32 + dLo.toNat) < 2^32 :=
+      div128Quot_q_true_1_lt_pow32 uHi dHi dLo div_un1 h_div_un1_lt h_uHi_lt_decomp
+    linarith [h_q1c_le_q_true]
+  -- Bridge BLTU to Nat <.
+  have h_qDlo_eq : (q1c * dLo).toNat = q1c.toNat * dLo.toNat := by
+    rw [BitVec.toNat_mul]
+    apply Nat.mod_eq_of_lt
+    calc q1c.toNat * dLo.toNat
+        ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1c_lt_pow32
+      _ < 2^32 * 2^32 :=
+          (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+      _ = 2^64 := by decide
+  have h_rhatUn1_eq : ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1).toNat =
+                       rhatc.toNat * 2^32 + div_un1.toNat := by
+    rw [EvmAsm.Rv64.AddrNorm.bv6_toNat_32]
+    exact EvmWord.halfword_combine rhatc div_un1 h_rhatc_lt h_div_un1_lt
+  have h_bltu_nat : rhatc.toNat * 2^32 + div_un1.toNat < q1c.toNat * dLo.toNat := by
+    have h_ult_nat := BitVec.ult_iff_toNat_lt.mp h_bltu
+    rw [h_rhatUn1_eq, h_qDlo_eq] at h_ult_nat
+    exact h_ult_nat
+  -- Convert h_q1c_le_q_true's vTop form via the decomposition.
+  have h_q1c_le_q_true' : q1c.toNat ≤ (uHi.toNat * 2^32 + div_un1.toNat) / vTop.toNat := by
+    rw [h_vTop_decomp]; exact h_q1c_le_q_true
+  -- Pure-Nat algebra: q1c ≤ q_true gives the contrary inequality.
+  have h_no_bltu_nat : q1c.toNat * dLo.toNat ≤ rhatc.toNat * 2^32 + div_un1.toNat :=
+    div128Quot_v4_phase1_no_bltu_arith uHi.toNat vTop.toNat dHi.toNat dLo.toNat
+      div_un1.toNat q1c.toNat rhatc.toNat
+      h_vTop_decomp h_q1c_dHi_le h_rhatc_eq h_q1c_le_q_true'
+  omega
 
 /-- **Phase-1 overshoot 0 case (v4).** Under `q1c.toNat = q_true`,
     Phase-1b's 1st and 2nd D3 corrections are both no-ops, so
