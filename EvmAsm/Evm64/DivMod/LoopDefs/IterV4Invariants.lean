@@ -1935,46 +1935,48 @@ theorem div128Quot_v4_un21_lt_vTop (uHi uLo vTop : Word)
     let cu_q1_dlo := q1'' * dLo
     let un21 := cu_rhat_un1 - cu_q1_dlo
     un21.toNat < vTop.toNat := by
-  -- DEFERRED: full closure needs Word↔Nat truncation absorption.
-  --
-  -- Mathematical argument (∀ inputs, including rhat'' ≥ 2^32):
-  --
-  -- Step 1 (proven via `_phase1_perfect`): q1''.toNat = q_true_phase1
-  --   = (uHi*2^32 + div_un1) / vTop.
-  --
-  -- Step 2 (proven via `_phase1_final_eucl_bridge`): Phase-1a Eucl
-  --   q1''.toNat * dHi.toNat ≤ uHi.toNat AND
-  --   rhat''.toNat = uHi.toNat - q1''.toNat * dHi.toNat.
-  --
-  -- Step 3 (proven via `_phase1_no_wrap_lo`):
-  --   q1''.toNat * dLo.toNat ≤ rhat''.toNat * 2^32 + div_un1.toNat.
-  --
-  -- Step 4 (Word↔Nat with truncation absorption):
-  --   cu_rhat_un1.toNat = (rhat''.toNat * 2^32 + div_un1.toNat) mod 2^64
-  --     (via `halfword_combine_mod` — works for ANY rhat'', not just rhat'' < 2^32).
-  --   cu_q1_dlo.toNat = q1''.toNat * dLo.toNat (no overflow since q1'' ≤ 2^32, dLo < 2^32).
-  --   un21.toNat = (cu_rhat_un1.toNat + 2^64 - cu_q1_dlo.toNat) mod 2^64
-  --     (Word subtraction at toNat).
-  --
-  -- Step 5 (algebra): un21.toNat = (rhat''.toNat * 2^32 + div_un1.toNat
-  --   - q1''.toNat * dLo.toNat) mod 2^64.
-  --
-  -- Step 6 (un21 = Phase-1 remainder): substituting Phase-1a Eucl:
-  --   rhat''*2^32 + div_un1 - q1''*dLo
-  --   = (uHi - q1''*dHi)*2^32 + div_un1 - q1''*dLo
-  --   = uHi*2^32 + div_un1 - q1''*(dHi*2^32 + dLo)
-  --   = uHi*2^32 + div_un1 - q1''*vTop
-  --   = (uHi*2^32 + div_un1) mod vTop  (since q1'' = q_true).
-  --
-  -- Step 7 (mod 2^64 absorption): Phase-1 remainder < vTop ≤ 2^64 - 1.
-  --   So mod 2^64 is identity. un21.toNat = Phase-1 remainder < vTop.
-  --
-  -- The truncation in step 4 is ABSORBED by the modular arithmetic in
-  -- step 5 — even when (rhat'' << 32 | div_un1) truncates, the Word
-  -- subtraction with the underflow gives the correct abstract value.
-  --
-  -- See `project_phase1_rhat_can_exceed_pow32.md` in memory.
-  sorry
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21
+  -- Standard Word-level facts.
+  have hdHi_lt : dHi.toNat < 2 ^ 32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2 ^ 32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2 ^ 32 := Word_ushiftRight_32_lt_pow32
+  have h_decomp : vTop.toNat = dHi.toNat * 2 ^ 32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  -- `_phase1_perfect`: q1''.toNat = q_true.
+  have h_perfect := div128Quot_v4_phase1_perfect uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  -- Phase-1 final Eucl: q1''*dHi + rhat'' = uHi.
+  have h_eucl := div128Quot_v4_phase1_final_eucl_bridge uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  obtain ⟨h_q1''_dHi_le, h_rhat''_eq⟩ := h_eucl
+  -- Phase-1 no-wrap.
+  have h_no_wrap := div128Quot_v4_phase1_no_wrap_lo uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  -- q1''.toNat ≤ 2^32 (Knuth bound).
+  have h_q1''_lt : q1''.toNat ≤ 2 ^ 32 := by
+    have h_q_true_lt : (uHi.toNat * 2^32 + div_un1.toNat) /
+                       (dHi.toNat * 2^32 + dLo.toNat) < 2^32 :=
+      div128Quot_q_true_1_lt_pow32 uHi dHi dLo div_un1 h_div_un1_lt
+        (h_decomp ▸ h_uHi_lt_vTop)
+    linarith [h_perfect]
+  -- Word↔Nat bridges.
+  -- cu_q1_dlo.toNat = q1''*dLo (no overflow).
+  have h_q_dLo_eq : (q1'' * dLo).toNat = q1''.toNat * dLo.toNat := by
+    rw [BitVec.toNat_mul]
+    apply Nat.mod_eq_of_lt
+    calc q1''.toNat * dLo.toNat
+        ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1''_lt
+      _ < 2^32 * 2^32 := (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+      _ = 2^64 := by decide
+  -- cu_rhat_un1.toNat = (rhat'' % 2^32) * 2^32 + div_un1 via halfword_combine_mod.
+  have h_rhatUn1_mod : ((rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1).toNat =
+                       (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat := by
+    rw [EvmAsm.Rv64.AddrNorm.bv6_toNat_32]
+    exact halfword_combine_mod rhat'' div_un1 h_div_un1_lt
+  sorry  -- DEFERRED: remaining is Word↔Nat subtraction algebra
+         -- + Phase-1 Eucl substitution + mod-2^64-absorption argument.
+         -- See the 7-step outline in the previous version of this comment.
 
 /-- **Phase-2 Euclidean for q0'' (v4).** Combines Phase-2 perfection with
     the classical Euclidean to give the closure step for
