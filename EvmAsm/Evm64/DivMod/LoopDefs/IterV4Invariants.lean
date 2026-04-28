@@ -433,9 +433,9 @@ theorem div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
     vacuously. -/
 private theorem div128Quot_v4_phase1_no_overshoot_when_rhatc_ge_pow32
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
-    (_h_rhatc_ge :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_rhatc_ge :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let q1 := rv64_divu uHi dHi
       let rhat := uHi - q1 * dHi
@@ -450,9 +450,77 @@ private theorem div128Quot_v4_phase1_no_overshoot_when_rhatc_ge_pow32
     let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
     q1c.toNat ≤ (uHi.toNat * 2^32 + div_un1.toNat) /
                 (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- Linear arithmetic on (dHi, dLo, r, q1) under the
-         -- shift-norm + Knuth-A range constraints. Empirically
-         -- verified; formal proof to land in subsequent iteration.
+  intro dHi dLo div_un1 q1 hi1 q1c
+  set rhat := uHi - q1 * dHi with h_rhat_def
+  set rhatc := if hi1 = 0 then rhat else rhat + dHi with h_rhatc_def
+  -- The hypothesis is rhatc.toNat ≥ 2^32; rename the underlying Nat for clarity.
+  have h_rhatc_ge_unfold : rhatc.toNat ≥ 2^32 := h_rhatc_ge
+  -- Standard Word-level facts.
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_uHi_lt_decomp : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_decomp]; exact h_uHi_lt_vTop
+  -- Phase-1a Euclidean for q1c/rhatc.
+  have h_bridge := div128Quot_v4_phase1_rhatc_bridge uHi vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  obtain ⟨h_q1c_dHi_le, h_rhatc_eq⟩ := h_bridge
+  -- q1c ≤ 2^32 (Knuth-B bound on q1c).
+  have h_q1c_lt : q1c.toNat ≤ 2^32 :=
+    div128Quot_q1c_le_pow32 uHi dHi dLo hdHi_ge hdLo_lt h_uHi_lt_decomp
+  -- vTop > 0.
+  have h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat := by
+    have h_dHi_pos : 0 < dHi.toNat :=
+      lt_of_lt_of_le (by decide : (0:Nat) < 2^31) hdHi_ge
+    exact Nat.add_pos_left (Nat.mul_pos h_dHi_pos (by decide)) _
+  -- Bound: q1c * dLo < 2^64.
+  have h_q1c_dLo : q1c.toNat * dLo.toNat < 2^64 := by
+    calc q1c.toNat * dLo.toNat
+        ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1c_lt
+      _ < 2^32 * 2^32 :=
+          (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+      _ = 2^64 := by decide
+  -- Bound: rhatc * 2^32 ≥ 2^64 (from h_rhatc_ge).
+  have h_rhatc_mul : rhatc.toNat * 2^32 ≥ 2^64 := by
+    have h_rge : rhatc.toNat ≥ 2^32 := h_rhatc_ge
+    calc rhatc.toNat * 2^32
+        ≥ 2^32 * 2^32 := Nat.mul_le_mul_right _ h_rge
+      _ = 2^64 := by decide
+  -- Combine: q1c * dLo ≤ rhatc * 2^32 + div_un1.
+  have h_le : q1c.toNat * dLo.toNat ≤ rhatc.toNat * 2^32 + div_un1.toNat := by
+    omega
+  -- Apply pure-Nat helper: q1c * vTop ≤ uHi*2^32 + div_un1.
+  -- Equivalent to q1c ≤ q_true_phase1 (the goal).
+  have h_q1c_vTop_le : q1c.toNat * (dHi.toNat * 2^32 + dLo.toNat) ≤
+                        uHi.toNat * 2^32 + div_un1.toNat := by
+    have h_mul_dHi : q1c.toNat * (dHi.toNat * 2^32) ≤ uHi.toNat * 2^32 := by
+      rw [← Nat.mul_assoc]
+      exact Nat.mul_le_mul_right _ h_q1c_dHi_le
+    -- q1c * vTop = q1c*dHi*2^32 + q1c*dLo.
+    -- Linearize products via `set` so `omega` sees aliases instead of products.
+    set A := q1c.toNat * dHi.toNat with hA
+    set B := q1c.toNat * dLo.toNat with hB
+    have h_A_le_uHi : A ≤ uHi.toNat := h_q1c_dHi_le
+    have h_rhatc_eq' : rhatc.toNat = uHi.toNat - A := h_rhatc_eq
+    rw [Nat.mul_add, ← Nat.mul_assoc]
+    -- Goal: A * 2^32 + B ≤ uHi.toNat * 2^32 + div_un1.toNat.
+    -- We have A * 2^32 ≤ uHi.toNat * 2^32, plus B = q1c*dLo ≤ rhatc*2^32 + div_un1
+    -- (from h_le), and rhatc.toNat = uHi.toNat - A.
+    have h_A_2_32_le : A * 2^32 ≤ uHi.toNat * 2^32 :=
+      Nat.mul_le_mul_right _ h_A_le_uHi
+    have h_rhatc_2_32 : rhatc.toNat * 2^32 = uHi.toNat * 2^32 - A * 2^32 := by
+      rw [h_rhatc_eq', Nat.sub_mul]
+    -- Goal: A * 2^32 + B ≤ uHi.toNat * 2^32 + div_un1.toNat.
+    -- B ≤ rhatc.toNat * 2^32 + div_un1.toNat (h_le).
+    -- rhatc.toNat * 2^32 + A * 2^32 = uHi.toNat * 2^32 (rearrangement of h_rhatc_2_32).
+    have h_sum_eq : rhatc.toNat * 2^32 + A * 2^32 = uHi.toNat * 2^32 := by
+      rw [h_rhatc_2_32]; omega
+    linarith
+  exact Nat.le_div_iff_mul_le h_vTop_pos |>.mpr h_q1c_vTop_le
 
 /-- **Phase-1 overshoot 0 case (v4).** Under `q1c.toNat = q_true`,
     Phase-1b's 1st and 2nd D3 corrections are both no-ops, so
