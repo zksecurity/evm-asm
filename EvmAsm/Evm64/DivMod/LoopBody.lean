@@ -524,15 +524,88 @@ theorem divK_mulsub_full_spec
     (fun h hq => by xperm_hyp hq)
     SfMSCe
 
+set_option maxRecDepth 4096 in
+/-- v2 mirror of `divK_mulsub_4limbs_spec` — same body but targets
+    `sharedDivModCode_v2 base`.
+
+    **STUB:** ~150-line mechanical copy of `divK_mulsub_4limbs_spec`'s
+    body with `lb_sub → lb_sub_v2` substitutions throughout. Block 8
+    (`divK_loopBody`) is identical between v1 and v2; only the cr's
+    block 12 (`divK_div128` vs `divK_div128_v2`) differs, and this
+    spec doesn't touch block 12. So the proof body is mechanical.
+
+    Future iteration: either copy-paste the body or refactor v1's
+    `divK_mulsub_4limbs_spec` to be cr-polymorphic so both versions
+    can share a single closed proof.
+
+    Issue #1337 algorithm fix migration. -/
+theorem divK_mulsub_4limbs_v2_spec
+    (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word)
+    (v5_init v7_init v2_init : Word)
+    (base : Word) :
+    let p0_lo := qHat * v0
+    let p0_hi := rv64_mulhu qHat v0
+    let fs0 := p0_lo + (signExtend12 0 : Word)
+    let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+    let pc0 := ba0 + p0_hi
+    let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+    let un0 := u0 - fs0
+    let c0 := pc0 + bs0
+    let p1_lo := qHat * v1
+    let p1_hi := rv64_mulhu qHat v1
+    let fs1 := p1_lo + c0
+    let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+    let pc1 := ba1 + p1_hi
+    let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+    let un1 := u1 - fs1
+    let c1 := pc1 + bs1
+    let p2_lo := qHat * v2
+    let p2_hi := rv64_mulhu qHat v2
+    let fs2 := p2_lo + c1
+    let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+    let pc2 := ba2 + p2_hi
+    let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+    let un2 := u2 - fs2
+    let c2 := pc2 + bs2
+    let p3_lo := qHat * v3
+    let p3_hi := rv64_mulhu qHat v3
+    let fs3 := p3_lo + c2
+    let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+    let pc3 := ba3 + p3_hi
+    let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+    let un3 := u3 - fs3
+    let c3 := pc3 + bs3
+    cpsTriple (base + 536) (base + 712) (sharedDivModCode_v2 base)
+      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
+       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
+       (.x2 ↦ᵣ v2_init) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3))
+      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
+       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
+       (.x2 ↦ᵣ un3) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)) := by
+  sorry  -- Mechanical copy of `divK_mulsub_4limbs_spec` body (~150 lines)
+         -- with `lb_sub → lb_sub_v2`. Block 8 (`divK_loopBody`) is identical
+         -- between v1 and v2; only block 12 differs.
+
+set_option maxRecDepth 4096 in
 /-- v2 mirror of `divK_mulsub_full_spec` — same body but targets
     `sharedDivModCode_v2 base`.
 
-    **STUB:** the proof would copy `divK_mulsub_full_spec`'s ~50-line
-    body with `sharedDivModCode → sharedDivModCode_v2` and `lb_sub →
-    lb_sub_v2` substitutions throughout, plus a v2 mirror of
-    `divK_mulsub_4limbs_spec` (also targeting v2 cr — currently a
-    deeper missing link). The instructions [17]-[69] are identical
-    between v1 and v2 (only block 12 / div128 differs).
+    Closed by composition of:
+    - `divK_mulsub_setup_spec` (cr-poly, lifted via `lb_sub_v2`).
+    - `divK_mulsub_4limbs_v2_spec` (NEW STUB, sorry-driven).
+    - `divK_sub_carry_spec` (cr-poly, lifted via `lb_sub_v2`).
+
+    The proof body is a structural copy of `divK_mulsub_full_spec`'s,
+    with `lb_sub → lb_sub_v2` and `divK_mulsub_4limbs_spec →
+    divK_mulsub_4limbs_v2_spec` substitutions.
 
     Issue #1337 algorithm fix migration. -/
 theorem divK_mulsub_full_v2_spec
@@ -587,11 +660,51 @@ theorem divK_mulsub_full_v2_spec
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
        ((uBase + signExtend12 4064) ↦ₘ u4_new)) := by
-  sorry  -- Mechanical copy of `divK_mulsub_full_spec` body with
-         -- `sharedDivModCode → sharedDivModCode_v2` and `lb_sub → lb_sub_v2`.
-         -- Also requires a v2 mirror of `divK_mulsub_4limbs_spec` (line 93).
-         -- Future iteration: either copy-paste the proof or refactor v1 to be
-         -- cr-polymorphic.
+  intro uBase
+        p0_lo p0_hi fs0 ba0 pc0 bs0 un0 c0
+        p1_lo p1_hi fs1 ba1 pc1 bs1 un1 c1
+        p2_lo p2_hi fs2 ba2 pc2 bs2 un2 c2
+        p3_lo p3_hi fs3 ba3 pc3 bs3 un3 c3
+        borrow u4_new
+  -- 1. Mulsub setup: instrs [17]-[21] at base+516
+  have S := divK_mulsub_setup_spec sp qHat j v1Old v5Old v6Old v10Old (base + 516)
+  rw [lb_ms_setup] at S
+  have Se := cpsTriple_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_v2 17 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v2 18 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v2 19 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v2 20 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_v2 21 _ _ (by decide) (by bv_addr) (by decide)))))) S
+  -- Frame setup with all memory + x7/x2 for mulsub
+  have Sf := cpsTriple_frameR
+    ((.x7 ↦ᵣ v7Old) ** (.x2 ↦ᵣ v2Old) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((uBase + signExtend12 4064) ↦ₘ uTop))
+    (by pcFree) Se
+  -- 2. Mulsub 4 limbs: instrs [22]-[65] at base+536 (v2 stub)
+  have M := divK_mulsub_4limbs_v2_spec sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
+    (j <<< (3 : BitVec 6).toNat) v7Old v2Old base
+  intro_lets at M
+  -- Compose setup + mulsub
+  seqFrame Sf M
+  -- 3. Sub-carry: instrs [66]-[69] at base+712
+  have SC := divK_sub_carry_spec uBase c3 bs3 fs3 uTop 4064 (base + 712)
+  rw [lb_sc] at SC
+  have SCe := cpsTriple_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_v2 66 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v2 67 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v2 68 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_v2 69 _ _ (by decide) (by bv_addr) (by decide))))) SC
+  -- Compose (setup+mulsub) + sub_carry
+  seqFrame SfM SCe
+  -- Final permutation
+  exact cpsTriple_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    SfMSCe
 
 -- ============================================================================
 -- Section 6: Correction branch address normalization
