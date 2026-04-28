@@ -1043,6 +1043,37 @@ private theorem un21_lt_vTop_arith
       Nat.mul_comm _ _
     omega
 
+/-- Pure-Nat helper for `div128Quot_v2_phase1b_2nd_guard_under_runtime`.
+
+    Captures the algebraic core: from
+    - `u4 * 2^32 + div_un1 < A * 2^32 + B` (Knuth-A boundary on q*),
+    - `A ≤ u4` (q*+1 ≤ q1c so (q*+1)*dHi ≤ u4),
+    - `B + 2^32 ≤ 2^64` (B = (q*+1)*dLo bound),
+    conclude `u4 - A < 2^32`.
+
+    Factored out to avoid maxRecDepth issues during elaboration of the
+    main theorem (which has many let-zeta bindings). -/
+private theorem phase1b_2nd_guard_arith
+    (u4 A B div_un1 : Nat)
+    (h_x_lt : u4 * 2^32 + div_un1 < A * 2^32 + B)
+    (h_A_le_u4 : A ≤ u4)
+    (h_B_bound : B + 2^32 ≤ 2^64) :
+    u4 - A < 2^32 := by
+  set X := u4 * 2^32 with hX
+  set Y := A * 2^32 with hY
+  have h_sub_mul : (u4 - A) * 2^32 = X - Y := by
+    rw [hX, hY, Nat.sub_mul]
+  have h_Y_le_X : Y ≤ X := Nat.mul_le_mul_right _ h_A_le_u4
+  have h_step : (u4 - A) * 2^32 < B + 2^32 := by
+    rw [h_sub_mul]; omega
+  set Z := (u4 - A) * 2^32 with hZ
+  by_contra h_ge
+  push Not at h_ge
+  have h_mul : 2^32 * 2^32 ≤ Z := by
+    rw [hZ]; exact Nat.mul_le_mul_right _ h_ge
+  have h_pow_eq : (2^32 * 2^32 : Nat) = 2^64 := by decide
+  omega
+
 /-- **Untruncated bridge for `un21.toNat`** — the alternative-path-3 helper.
 
     Under the two-bound untruncated invariant
@@ -1860,7 +1891,130 @@ theorem div128Quot_v2_phase1b_2nd_guard_under_runtime (a b : EvmWord)
       q1c.toNat = (u4.toNat * 2^32 + div_un1.toNat) /
                   (dHi.toNat * 2^32 + dLo.toNat) + 2
     q1c_overshoot_2 → rhat'.toNat < 2^32 := by
-  sorry  -- Knuth Theorem A's rhat' bound when overshoot path is taken.
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo
+        rhatUn1 rhat' q1c_overshoot_2 h_overshoot
+  -- Standard arithmetic facts.
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_b3'_ge_pow63 : b3'.toNat ≥ 2^63 :=
+    b3_prime_ge_pow63 (b.getLimbN 3) (b.getLimbN 2) _hb3nz _
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 b3' h_b3'_ge_pow63
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have hu4_lt_b3prime : u4.toNat < b3'.toNat :=
+    isCallTrialN4_toNat_lt (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
+      (isCallTrialN4Evm_def ▸ _hbltu)
+  have h_b3'_decomp : b3'.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp b3'
+  have hu4_lt_vTop : u4.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_b3'_decomp]; exact hu4_lt_b3prime
+  have h_post1a : q1c.toNat * dHi.toNat + rhatc.toNat = u4.toNat :=
+    div128Quot_first_round_post u4 dHi hdHi_ne hdHi_lt
+  have h_q1c_le_pow32 : q1c.toNat ≤ 2^32 :=
+    div128Quot_q1c_le_pow32 u4 dHi dLo hdHi_ge hdLo_lt hu4_lt_vTop
+  -- Abbreviate q_true.
+  set q_true := (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat)
+    with h_q_true_def
+  -- From overshoot: q1c = q_true + 2.
+  have h_q1c_eq : q1c.toNat = q_true + 2 := h_overshoot
+  -- Set explicit Nat names for non-linear products to help omega.
+  set A : Nat := (q_true + 1) * dHi.toNat with h_A_def
+  set B : Nat := (q_true + 1) * dLo.toNat with h_B_def
+  set C : Nat := (q_true + 2) * dHi.toNat with h_C_def
+  -- C = A + dHi.
+  have h_C_eq : C = A + dHi.toNat := by
+    show (q_true + 2) * dHi.toNat = (q_true + 1) * dHi.toNat + dHi.toNat
+    ring
+  -- vTop > 0.
+  have h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat := by
+    have h1 : dHi.toNat * 2^32 ≥ 2^31 * 2^32 := Nat.mul_le_mul_right _ hdHi_ge
+    have h2 : (2^31 * 2^32 : Nat) = 2^63 := by decide
+    omega
+  -- x < (q_true + 1) * vTop = A * 2^32 + B.
+  have h_x_lt_qtp1_vTop :
+      u4.toNat * 2^32 + div_un1.toNat < A * 2^32 + B := by
+    have h_div_mod := Nat.div_add_mod (u4.toNat * 2^32 + div_un1.toNat)
+      (dHi.toNat * 2^32 + dLo.toNat)
+    have h_mod_lt :
+        (u4.toNat * 2^32 + div_un1.toNat) % (dHi.toNat * 2^32 + dLo.toNat) <
+        dHi.toNat * 2^32 + dLo.toNat := Nat.mod_lt _ h_vTop_pos
+    -- Goal: u4*2^32 + div_un1 < A * 2^32 + B = (q_true + 1) * (dHi*2^32 + dLo).
+    -- Rewrite RHS via ring.
+    have h_eq : A * 2^32 + B = (q_true + 1) * (dHi.toNat * 2^32 + dLo.toNat) := by
+      show (q_true + 1) * dHi.toNat * 2^32 + (q_true + 1) * dLo.toNat = _
+      ring
+    rw [h_eq]
+    have h_div_mod' :
+        (dHi.toNat * 2^32 + dLo.toNat) * q_true +
+        (u4.toNat * 2^32 + div_un1.toNat) % (dHi.toNat * 2^32 + dLo.toNat) =
+        u4.toNat * 2^32 + div_un1.toNat := h_div_mod
+    -- (q_true + 1) * vTop = q_true * vTop + vTop > x via div_mod.
+    have h_qt_vTop : q_true * (dHi.toNat * 2^32 + dLo.toNat) =
+        (dHi.toNat * 2^32 + dLo.toNat) * q_true := Nat.mul_comm _ _
+    have h_step :
+        (q_true + 1) * (dHi.toNat * 2^32 + dLo.toNat) =
+        q_true * (dHi.toNat * 2^32 + dLo.toNat) + (dHi.toNat * 2^32 + dLo.toNat) := by
+      ring
+    rw [h_step, h_qt_vTop]
+    omega
+  -- A ≤ u4 (from h_q1c_dHi_le and h_q1c_eq).
+  have h_q1c_dHi_le : q1c.toNat * dHi.toNat ≤ u4.toNat := by linarith [h_post1a]
+  have h_q1c_dHi_eq_C_pre : q1c.toNat * dHi.toNat = C := by
+    show q1c.toNat * dHi.toNat = (q_true + 2) * dHi.toNat
+    rw [h_q1c_eq]
+  have h_C_le : C ≤ u4.toNat := by rw [← h_q1c_dHi_eq_C_pre]; exact h_q1c_dHi_le
+  have h_A_le : A ≤ u4.toNat := by
+    have h_AC : A ≤ C := by
+      show (q_true + 1) * dHi.toNat ≤ (q_true + 2) * dHi.toNat
+      exact Nat.mul_le_mul_right _ (by omega)
+    omega
+  -- B + 2^32 ≤ 2^64 (using B ≤ (2^32 - 1)^2).
+  have h_B_tight : B ≤ (2^32 - 1) * (2^32 - 1) := by
+    have h_qtp1_le : q_true + 1 ≤ 2^32 - 1 := by omega
+    have h_dLo_le : dLo.toNat ≤ 2^32 - 1 := by omega
+    show (q_true + 1) * dLo.toNat ≤ (2^32 - 1) * (2^32 - 1)
+    exact Nat.mul_le_mul h_qtp1_le h_dLo_le
+  have h_arith : (2^32 - 1) * (2^32 - 1) + 2^32 ≤ 2^64 := by decide
+  have h_B_plus_pow32_le : B + 2^32 ≤ 2^64 :=
+    le_trans (Nat.add_le_add_right h_B_tight _) h_arith
+  -- u4 - A < 2^32, via the pure-Nat helper.
+  have h_u4_minus_A_lt : u4.toNat - A < 2^32 :=
+    phase1b_2nd_guard_arith u4.toNat A B div_un1.toNat
+      h_x_lt_qtp1_vTop h_A_le h_B_plus_pow32_le
+  -- rhatc + dHi = u4 - A (using Phase-1a Euclidean and h_C_eq).
+  have h_q1c_dHi_eq_C : q1c.toNat * dHi.toNat = C := by
+    show q1c.toNat * dHi.toNat = (q_true + 2) * dHi.toNat
+    rw [h_q1c_eq]
+  have h_rhatc_plus_q1c_dHi : rhatc.toNat + q1c.toNat * dHi.toNat = u4.toNat := by
+    linarith [h_post1a]
+  have h_rhatc_eq : rhatc.toNat = u4.toNat - C := by
+    have : rhatc.toNat + C = u4.toNat := by rw [← h_q1c_dHi_eq_C]; exact h_rhatc_plus_q1c_dHi
+    omega
+  have h_rhatc_plus_dHi : rhatc.toNat + dHi.toNat = u4.toNat - A := by
+    rw [h_rhatc_eq, h_C_eq]; omega
+  have h_rhatc_le_u4_minus_A : rhatc.toNat ≤ u4.toNat - A := by
+    rw [h_rhatc_eq, h_C_eq]; omega
+  -- No-wrap.
+  have h_no_wrap : rhatc.toNat + dHi.toNat < 2^64 := by
+    have h_pow : (2^32 : Nat) ≤ 2^64 := by decide
+    have h_lt : rhatc.toNat + dHi.toNat < 2^32 + 2^32 := by
+      rw [h_rhatc_plus_dHi]; omega
+    omega
+  -- Case-split on BLTU check.
+  by_cases h_check : BitVec.ult rhatUn1 qDlo
+  · -- BLTU fires: rhat' = rhatc + dHi.
+    have h_rhat'_unfold : rhat'.toNat =
+        (if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc).toNat := rfl
+    rw [h_rhat'_unfold, if_pos h_check, BitVec.toNat_add]
+    rw [Nat.mod_eq_of_lt h_no_wrap]
+    rw [h_rhatc_plus_dHi]
+    exact h_u4_minus_A_lt
+  · -- BLTU doesn't fire: rhat' = rhatc ≤ rhatc + dHi.
+    have h_rhat'_unfold : rhat'.toNat =
+        (if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc).toNat := rfl
+    rw [h_rhat'_unfold, if_neg h_check]
+    omega
 
 /-- The Phase-1 division invariant — derived from the 3 Knuth-D
     decomposition stubs. The invariant body composes the trio:
