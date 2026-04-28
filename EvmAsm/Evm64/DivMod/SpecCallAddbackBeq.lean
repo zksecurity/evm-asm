@@ -1655,43 +1655,44 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
     -- Phase-2 invariant (already untruncated in original, unchanged):
     q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat ∧
     q0'.toNat < 2^32 := by
-  sorry  -- Discharge from runtime preconditions. The UNTRUNCATED phase-1
-         -- invariants are TRUE (in contrast to the truncated FALSE one).
-         --
-         -- **KEY ALGEBRAIC INSIGHT (commit a8c6aee1+):** un21_math is
-         -- exactly the remainder of `(uHi * 2^32 + div_un1) / vTop`.
-         -- Let x := uHi * 2^32 + div_un1. From Phase 1b Euclidean
-         -- (q1'' * dHi + rhat'' = uHi), we have:
-         --    rhat'' * 2^32 + div_un1 - q1'' * dLo
-         --  = uHi * 2^32 + div_un1 - q1'' * vTop  (where vTop = dHi * 2^32 + dLo)
-         --  = x - q1'' * vTop
-         -- Conjunct 1 (q1'' * vTop ≤ x) is equivalent to q1'' ≤ x / vTop.
-         -- Knuth-A (post-2-correction) gives q1'' ≥ x / vTop.
-         -- Combine: q1'' = x / vTop, hence un21_math = x mod vTop < vTop < 2^64.
-         -- So conjunct 2 follows from conjunct 1 + Knuth-A.
-         --
-         -- **CONCRETE proof plan:**
-         --  1. Conjunct 1 (untruncated lower): the substantive Knuth-D
-         --     2-correction invariant. After 2 corrections in v2, q1''
-         --     should satisfy q1'' * vTop ≤ uHi * 2^32 + div_un1 (the
-         --     rationale for the 2nd correction). Discharge from the
-         --     algorithm's structure + Phase 1b 2nd D3 trigger condition.
-         --  2. Conjunct 2 (untruncated upper): follows from 1 + Knuth-A
-         --     (q1'' ≥ floor(x/vTop)).
-         --  3. Conjunct 3 (phase-2 untruncated): mirror argument for
-         --     Phase 2 (q0' computation on un21). Symmetric to 1.
-         --  4. Conjunct 4 (q0' < 2^32): standard halfword bound.
-         --
-         -- **CONNECTION TO v1'S OPEN PROBLEM (Div128KnuthLower.lean:615):**
-         -- `knuth_compose_weak_lower_nat` requires a "Phase 1 tight"
-         -- hypothesis `q1' * vTop + un21 = uHi * 2^32 + uLo_hi` with
-         -- `un21 < vTop`. That hypothesis is exactly conjunct 1 + 2 of
-         -- this stub (per the algebraic identity un21_math = x - q1'' * vTop).
-         -- v1's comment: "tight Phase 1 hypothesis is currently unproven
-         -- (requires Knuth Theorem C Word-level)". So conjunct 2 = the
-         -- tight Phase 1 statement, equivalent to the v1 open problem.
-         -- Closing it for v2 (where 2 corrections give better bounds)
-         -- may be tractable via the 2nd D3 correction's trigger condition.
+  -- 4-way decomposition. Each conjunct surfaced as a separate sub-goal so
+  -- future iterations can attack them independently. See per-conjunct
+  -- comments below for the proof plan and v1 cross-references.
+  refine ⟨?conj1, ?conj2, ?conj3, ?conj4⟩
+  case conj1 =>
+    -- **Conjunct 1 (untruncated phase-1 lower):**
+    -- `q1'' * dLo ≤ rhat'' * 2^32 + div_un1`. Equivalent (via the algebraic
+    -- identity `rhat'' * 2^32 + div_un1 - q1'' * dLo = x - q1'' * vTop`,
+    -- where `x = uHi * 2^32 + div_un1`) to `q1'' * vTop ≤ x`, i.e.
+    -- `q1'' ≤ x / vTop`. This is the Knuth-D 2-correction invariant: after
+    -- the second Phase 1b correction (the v2 fix), the trial quotient
+    -- doesn't overshoot. Discharge needs the 2nd D3 trigger condition.
+    -- THE substantive Path-3 blocker.
+    sorry
+  case conj2 =>
+    -- **Conjunct 2 (untruncated phase-1 upper):**
+    -- `rhat'' * 2^32 + div_un1 - q1'' * dLo < 2^64`. Follows from Conj 1
+    -- + Knuth-A v2: if `q1'' = x / vTop` (combine Conj 1 with Knuth-A's
+    -- lower bound `q1'' ≥ x / vTop`), then `un21_math = x mod vTop < vTop
+    -- ≤ 2^64`. Equivalent to v1's "tight Phase 1" hypothesis (open in
+    -- v1 — see `knuth_compose_weak_lower_nat` in Div128KnuthLower.lean).
+    -- Tractable for v2 once we have Knuth-A.
+    sorry
+  case conj3 =>
+    -- **Conjunct 3 (phase-2 lower):**
+    -- `q0' * dLo ≤ rhat2' * 2^32 + div_un0`. Mirror of Conj 1 for Phase 2:
+    -- after the Phase 2b correction on q0c, the resulting q0' doesn't
+    -- overshoot. Same structure as Conj 1, applied to (un21, dHi, dLo,
+    -- div_un0) instead of (uHi, dHi, dLo, div_un1).
+    sorry
+  case conj4 =>
+    -- **Conjunct 4 (q0' bound):**
+    -- `q0' < 2^32`. NOT trivial — `div128Quot_q0_prime_lt_pow32` (proven
+    -- in Div128QuotientBounds.lean:540) gives this conclusion, but
+    -- requires `un21 < vTop` as a hypothesis. The `un21 < vTop` precondition
+    -- is precisely Conj 2 (the tight Phase 1 upper bound), so this conjunct
+    -- chains: Conj 2 → un21 < vTop → div128Quot_q0_prime_lt_pow32 → q0' < 2^32.
+    sorry
 
 /-- **qHat range under runtime preconditions (sub-lemma).** Under
     runtime preconds (`hbltu, hcarry2_nz, hborrow`), the v2 algorithm's
