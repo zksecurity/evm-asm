@@ -341,38 +341,33 @@ theorem decode_canonical_rejection_single (b : Byte) (h : b.toNat < 0x80) :
   simp [decode, decodeAux, takeBytes, h]
 
 /-- `decode [0x82, b1, b2] = some (.bytes [b1, b2], [])` — the canonical
-    two-byte short-string encoding. Specializes `decodeAux_two_byte_string`
-    at the top-level fuel. -/
+    two-byte short-string encoding. -/
 theorem decode_two_byte_string (b1 b2 : Byte) :
     decode [(0x82 : Byte), b1, b2] = some (.bytes [b1, b2], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x83, b1, b2, b3] = some (.bytes [b1, b2, b3], [])` — the
-    canonical three-byte short-string encoding. Specializes
-    `decodeAux_three_byte_string` at the top-level fuel. -/
+    canonical three-byte short-string encoding. -/
 theorem decode_three_byte_string (b1 b2 b3 : Byte) :
     decode [(0x83 : Byte), b1, b2, b3] = some (.bytes [b1, b2, b3], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x84, b1, b2, b3, b4] = some (.bytes [b1, b2, b3, b4], [])`
-    — the canonical four-byte short-string encoding. Specializes
-    `decodeAux_four_byte_string` at the top-level fuel. -/
+    — the canonical four-byte short-string encoding. -/
 theorem decode_four_byte_string (b1 b2 b3 b4 : Byte) :
     decode [(0x84 : Byte), b1, b2, b3, b4] =
       some (.bytes [b1, b2, b3, b4], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x85, b1, b2, b3, b4, b5] = some (.bytes [b1..b5], [])`
-    — the canonical five-byte short-string encoding. Specializes
-    `decodeAux_five_byte_string` at the top-level fuel. -/
+    — the canonical five-byte short-string encoding. -/
 theorem decode_five_byte_string (b1 b2 b3 b4 b5 : Byte) :
     decode [(0x85 : Byte), b1, b2, b3, b4, b5] =
       some (.bytes [b1, b2, b3, b4, b5], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x86, b1..b6] = some (.bytes [b1..b6], [])` — the
-    canonical six-byte short-string encoding. Specializes
-    `decodeAux_six_byte_string` at the top-level fuel. -/
+    canonical six-byte short-string encoding. -/
 theorem decode_six_byte_string (b1 b2 b3 b4 b5 b6 : Byte) :
     decode [(0x86 : Byte), b1, b2, b3, b4, b5, b6] =
       some (.bytes [b1, b2, b3, b4, b5, b6], []) := by
