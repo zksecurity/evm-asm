@@ -206,6 +206,15 @@ theorem decode_triple_list_empty_lists :
       some (.list [.list [], .list [], .list []], []) := by
   simp [decode, decodeAux, takeBytes, decodeItems]
 
+/-- Three-element list of empty byte strings:
+    `decode [0xC3, 0x80, 0x80, 0x80] = some (.list [.bytes [], .bytes [], .bytes []], [])`.
+    The outer short-list branch fires with payload length 3, three empty
+    inner byte strings are decoded in sequence, then the outer closes. -/
+theorem decode_triple_list_empty_strings :
+    decode [(0xC3 : Byte), (0x80 : Byte), (0x80 : Byte), (0x80 : Byte)] =
+      some (.list [.bytes [], .bytes [], .bytes []], []) := by
+  simp [decode, decodeAux, takeBytes, decodeItems]
+
 /-- Mixed-content two-element list: a small byte followed by an empty
     string. `decode [0xC2, b, 0x80] = some (.list [.bytes [b], .bytes []], [])`
     when `b < 0x80`. -/
