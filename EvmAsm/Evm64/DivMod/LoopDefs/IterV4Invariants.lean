@@ -1672,6 +1672,56 @@ private theorem div128Quot_v4_phase1_rhatc_lt_2_dHi
       linarith [show (2:Nat)^32 + 2^32 < 2^64 from by decide]
     rw [Nat.mod_eq_of_lt h_no_ov]; linarith
 
+/-- **Generic `phase2b_q0'` is bounded above by its q input**:
+    `phase2b_q0'` returns either `q` (BLTU doesn't fire) or `q - 1`
+    (BLTU fires, requires q ≥ 1). Either way, `q'.toNat ≤ q.toNat`.
+
+    Phase-agnostic: works for any (q, rhat, dLo, div_un). -/
+private theorem div128Quot_v4_phase1b_q_prime_le_q_generic
+    (q rhat dLo div_un : Word) :
+    (div128Quot_phase2b_q0' q rhat dLo div_un).toNat ≤ q.toNat := by
+  unfold div128Quot_phase2b_q0'
+  by_cases h_g : rhat >>> (32 : BitVec 6).toNat = 0
+  · simp only [h_g, if_true]
+    by_cases h_b : BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
+    · rw [if_pos h_b, BitVec.toNat_add, signExtend12_4095_toNat]
+      by_cases h_q_zero : q.toNat = 0
+      · -- BLTU fires but q*dLo = 0 — contradiction.
+        exfalso
+        have h_q_dLo_zero : (q * dLo).toNat = 0 := by
+          rw [BitVec.toNat_mul, h_q_zero, Nat.zero_mul, Nat.zero_mod]
+        have := BitVec.ult_iff_toNat_lt.mp h_b
+        rw [h_q_dLo_zero] at this
+        exact Nat.not_lt_zero _ this
+      · have h_q_pos : q.toNat ≥ 1 := by omega
+        have hq_lt_word : q.toNat - 1 < 2^64 := by have := q.isLt; omega
+        rw [show q.toNat + (2^64 - 1) = (q.toNat - 1) + 2^64 from by omega,
+            Nat.add_mod_right, Nat.mod_eq_of_lt hq_lt_word]
+        omega
+    · rw [if_neg h_b]
+  · simp only [h_g, if_false]; rfl
+
+/-- **Generic `rhat`-update step is bounded by `rhat + dHi`**:
+    after the BLTU update, the new `rhat'` is either `rhat` or
+    `rhat + dHi`. So `rhat'.toNat ≤ rhat.toNat + dHi.toNat`,
+    provided `rhat + dHi` doesn't overflow.
+
+    Phase-agnostic. -/
+private theorem div128Quot_v4_phase1b_rhat_prime_le_step_generic
+    (q rhat dLo div_un dHi : Word)
+    (h_no_overflow : rhat.toNat + dHi.toNat < 2 ^ 64) :
+    (if rhat >>> (32 : BitVec 6).toNat = 0 then
+       (if BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
+        then rhat + dHi else rhat)
+     else rhat).toNat ≤ rhat.toNat + dHi.toNat := by
+  by_cases h_g : rhat >>> (32 : BitVec 6).toNat = 0
+  · simp only [h_g, if_true]
+    by_cases h_b : BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
+    · rw [if_pos h_b, BitVec.toNat_add]
+      exact le_of_eq (Nat.mod_eq_of_lt h_no_overflow)
+    · rw [if_neg h_b]; linarith
+  · simp only [h_g, if_false]; linarith
+
 /-- **Phase-1b 1-correction Eucl preservation (v4 Word↔Nat)**: each
     `phase2b_q0'` correction preserves the Phase-1a Euclidean identity
     at the toNat level: q.toNat * dHi.toNat + rhat.toNat = uHi.toNat
@@ -2164,8 +2214,8 @@ theorem div128Quot_v4_phase2_euclidean (uHi uLo vTop : Word)
     proven generic helpers applied with D = un21. -/
 private theorem div128Quot_v4_phase2_final_eucl_bridge
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
@@ -2213,13 +2263,56 @@ private theorem div128Quot_v4_phase2_final_eucl_bridge
       else rhat2'
     q0''.toNat * dHi.toNat ≤ un21.toNat ∧
     rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat := by
-  -- Closure pattern (deferred — mirrors `_phase1_final_eucl_bridge`):
-  -- Chain `_hi_fix_eucl_generic` (D = un21) + `_hi_fix_rc_lt_2_dHi_generic`
-  -- + 2 calls of `_phase1_one_correction_eucl` (also generic, D = un21).
-  -- Now unblocked: `_un21_lt_vTop` is proven (truncation absorption via
-  -- `_un21_lt_vTop_truncation_arith`), giving `un21 < vTop` which makes
-  -- `q0c.toNat ≤ 2^32` discharge cleanly. Mechanical re-derivation pending.
-  sorry
+  intro dHi dLo div_un0 div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' rhat2'
+        q0'' rhat2''
+  -- Standard Word-level facts.
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  -- un21 < vTop (Phase-2 Knuth invariant).
+  have h_un21_lt_vTop : un21.toNat < vTop.toNat :=
+    div128Quot_v4_un21_lt_vTop uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_un21_lt_decomp : un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_un21_lt_vTop
+  -- Phase-2a Eucl on (q0c, rhat2c).
+  obtain ⟨h_q0c_dHi_le, h_rhat2c_eq⟩ :=
+    div128Quot_v4_hi_fix_eucl_generic un21 dHi hdHi_ge hdHi_lt
+  have h_q0c_lt_pow32 : q0c.toNat ≤ 2^32 :=
+    div128Quot_q1c_le_pow32 un21 dHi dLo hdHi_ge hdLo_lt h_un21_lt_decomp
+  -- rhat2c < 2*dHi, so rhat2c + dHi < 3*dHi < 2^64.
+  have h_rhat2c_lt_2_dHi : rhat2c.toNat < 2 * dHi.toNat :=
+    div128Quot_v4_hi_fix_rc_lt_2_dHi_generic un21 dHi hdHi_ge hdHi_lt
+  have h_rhat2c_dHi_no_overflow : rhat2c.toNat + dHi.toNat < 2^64 := by
+    have h1 : rhat2c.toNat + dHi.toNat < 3 * dHi.toNat := by linarith
+    have h2 : 3 * dHi.toNat < 3 * 2^32 := by linarith
+    linarith [show (3 : Nat) * 2^32 < 2^64 from by decide]
+  -- 1st correction: Eucl on (q0', rhat2').
+  obtain ⟨h_q0'_dHi_le, h_rhat2'_eq⟩ :=
+    div128Quot_v4_phase1_one_correction_eucl
+      un21 q0c rhat2c dHi dLo div_un0
+      hdHi_lt h_q0c_dHi_le h_rhat2c_eq h_q0c_lt_pow32 h_rhat2c_dHi_no_overflow
+  -- q0'.toNat ≤ q0c.toNat ≤ 2^32 via the generic phase2b bound.
+  have h_q0'_le_q0c : q0'.toNat ≤ q0c.toNat :=
+    div128Quot_v4_phase1b_q_prime_le_q_generic q0c rhat2c dLo div_un0
+  have h_q0'_lt_pow32 : q0'.toNat ≤ 2^32 := le_trans h_q0'_le_q0c h_q0c_lt_pow32
+  -- rhat2'.toNat ≤ rhat2c.toNat + dHi.toNat via the generic step bound.
+  have h_rhat2'_le : rhat2'.toNat ≤ rhat2c.toNat + dHi.toNat :=
+    div128Quot_v4_phase1b_rhat_prime_le_step_generic q0c rhat2c dLo div_un0 dHi
+      h_rhat2c_dHi_no_overflow
+  -- rhat2'.toNat + dHi.toNat < 2^64.
+  have h_rhat2'_dHi_no_overflow : rhat2'.toNat + dHi.toNat < 2^64 := by
+    have : rhat2'.toNat + dHi.toNat ≤ rhat2c.toNat + 2 * dHi.toNat := by linarith
+    have : rhat2c.toNat + 2 * dHi.toNat < 4 * dHi.toNat := by linarith
+    have : 4 * dHi.toNat < 4 * 2^32 := by linarith
+    linarith [show (4 : Nat) * 2^32 < 2^64 from by decide]
+  -- 2nd correction: Eucl on (q0'', rhat2'').
+  exact div128Quot_v4_phase1_one_correction_eucl
+    un21 q0' rhat2' dHi dLo div_un0
+    hdHi_lt h_q0'_dHi_le h_rhat2'_eq h_q0'_lt_pow32 h_rhat2'_dHi_no_overflow
 
 theorem div128Quot_v4_phase2_no_wrap_lo (uHi uLo vTop : Word)
     (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
