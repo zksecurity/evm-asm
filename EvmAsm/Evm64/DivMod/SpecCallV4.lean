@@ -58,16 +58,161 @@ theorem n4CallSkipSemanticHolds_v4_def {a b : EvmWord} :
        (div128Quot_v4 u4 u3 b3').toNat) :=
   rfl
 
+/-- **Sub-stub 1**: under preconditions, q1'' (Phase-1 trial digit) is < 2^32.
+    Follows from Phase-1 perfect (q1'' = q*_phase1) plus the standard
+    Knuth-B bound `q*_phase1 < 2^32` (which holds when uHi < vTop). -/
+theorem div128Quot_v4_phase1_quot_lt_pow32
+    (uHi uLo vTop : Word)
+    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    q1''.toNat < 2^32 := by
+  sorry  -- Phase-1 perfect + Knuth-B (q*_phase1 < 2^32 when uHi < vTop).
+
+/-- **Sub-stub 2**: under preconditions, q0'' (Phase-2 trial digit) is < 2^32.
+    Follows from Phase-2 perfect (q0'' = q*_phase2) plus the standard
+    Knuth-B bound `q*_phase2 < 2^32` (which holds when un21 < vTop, the
+    proven `_un21_lt_vTop`). -/
+theorem div128Quot_v4_phase2_quot_lt_pow32
+    (uHi uLo vTop : Word)
+    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    q0''.toNat < 2^32 := by
+  sorry  -- Phase-2 perfect + Knuth-B (q*_phase2 < 2^32 when un21 < vTop, via _un21_lt_vTop).
+
+/-- **Pure-Nat combined-quotient identity**: given Phase-1 + Phase-2
+    perfect (with un21 = phase1 remainder), the combined output is
+    the exact 128/64 quotient.
+
+    Standard Euclidean division composition: if
+    - `uHi*2^32 + div_un1 = q1''*vTop + r1` with `r1 < vTop`
+    - `r1*2^32 + div_un0 = q0''*vTop + r2` with `r2 < vTop`
+    - `uLo = div_un1*2^32 + div_un0`
+    then `(uHi*2^64 + uLo) = (q1''*2^32 + q0'')*vTop + r2`, so the
+    combined `q1''*2^32 + q0''` is the 128/64 quotient. -/
+private theorem div128Quot_v4_combined_arith
+    (uHi uLo vTop div_un1 div_un0 q1'' un21 q0'' : Nat)
+    (h_uLo : uLo = div_un1 * 2^32 + div_un0)
+    (h_vTop_pos : 0 < vTop)
+    (h_q1''_eq : q1'' = (uHi * 2^32 + div_un1) / vTop)
+    (h_un21_eq : un21 = (uHi * 2^32 + div_un1) - q1'' * vTop)
+    (h_q0''_eq : q0'' = (un21 * 2^32 + div_un0) / vTop) :
+    q1'' * 2^32 + q0'' = (uHi * 2^64 + uLo) / vTop := by
+  -- Phase-1 Eucl: q1''*vTop ≤ uHi*2^32+div_un1, with mod < vTop.
+  have h_dam1 : q1'' * vTop + (uHi * 2^32 + div_un1) % vTop = uHi * 2^32 + div_un1 := by
+    rw [h_q1''_eq]; exact Nat.div_add_mod' _ _
+  have h_mod1_lt : (uHi * 2^32 + div_un1) % vTop < vTop := Nat.mod_lt _ h_vTop_pos
+  have h_un21_eq' : un21 = (uHi * 2^32 + div_un1) % vTop := by
+    rw [h_un21_eq, h_q1''_eq]
+    have := Nat.div_add_mod' (uHi * 2^32 + div_un1) vTop
+    omega
+  -- Phase-2 Eucl: q0''*vTop ≤ un21*2^32+div_un0, with mod < vTop.
+  have h_dam2 : q0'' * vTop + (un21 * 2^32 + div_un0) % vTop = un21 * 2^32 + div_un0 := by
+    rw [h_q0''_eq]; exact Nat.div_add_mod' _ _
+  have h_mod2_lt : (un21 * 2^32 + div_un0) % vTop < vTop := Nat.mod_lt _ h_vTop_pos
+  -- Combined Eucl: (q1''*2^32 + q0'')*vTop + r2 = uHi*2^64 + uLo, with r2 < vTop.
+  set r2 := (un21 * 2^32 + div_un0) % vTop with h_r2_def
+  have h_combined : (q1'' * 2^32 + q0'') * vTop + r2 = uHi * 2^64 + uLo := by
+    rw [h_uLo]
+    -- Multiplication distributes: (q1''*2^32 + q0'')*vTop = q1''*2^32*vTop + q0''*vTop.
+    -- Plus r2 = un21*2^32 + div_un0 - q0''*vTop.
+    -- So lhs = q1''*2^32*vTop + (un21*2^32 + div_un0)
+    --       = (q1''*vTop + un21)*2^32 + div_un0   (use h_dam1's substitution)
+    --       = (uHi*2^32 + div_un1)*2^32 + div_un0
+    --       = uHi*2^64 + div_un1*2^32 + div_un0.
+    have h1 : (q1'' * 2^32 + q0'') * vTop = q1'' * 2^32 * vTop + q0'' * vTop := by ring
+    have h2 : q1'' * 2^32 * vTop = q1'' * vTop * 2^32 := by ring
+    have h3 : q1'' * vTop = (uHi * 2^32 + div_un1) - un21 := by
+      rw [h_un21_eq']; omega
+    -- Goal in terms: q1''*vTop*2^32 + q0''*vTop + r2 = uHi*2^64 + (div_un1*2^32 + div_un0).
+    -- Substitute q1''*vTop = uHi*2^32 + div_un1 - un21, then expand.
+    rw [h1, h2]
+    -- Now: q1''*vTop*2^32 + q0''*vTop + r2 = uHi*2^64 + div_un1*2^32 + div_un0.
+    -- Use h_dam2: q0''*vTop + r2 = un21*2^32 + div_un0.
+    -- So lhs = q1''*vTop*2^32 + un21*2^32 + div_un0 = (q1''*vTop + un21)*2^32 + div_un0
+    --       = (uHi*2^32 + div_un1)*2^32 + div_un0 = uHi*2^64 + div_un1*2^32 + div_un0.
+    have h4 : q1'' * vTop * 2^32 + (q0'' * vTop + r2) =
+              q1'' * vTop * 2^32 + un21 * 2^32 + div_un0 := by
+      rw [h_dam2]; ring
+    have h5 : q1'' * vTop * 2^32 + un21 * 2^32 = (q1'' * vTop + un21) * 2^32 := by ring
+    have h_eucl1_eq : q1'' * vTop + un21 = uHi * 2^32 + div_un1 := by
+      rw [h_un21_eq']; omega
+    have h6 : (uHi * 2^32 + div_un1) * 2^32 = uHi * 2^64 + div_un1 * 2^32 := by ring
+    -- Combine.
+    have : q1'' * vTop * 2^32 + q0'' * vTop + r2 = uHi * 2^64 + div_un1 * 2^32 + div_un0 := by
+      have : q1'' * vTop * 2^32 + q0'' * vTop + r2 =
+             q1'' * vTop * 2^32 + (q0'' * vTop + r2) := by ring
+      rw [this, h4, h5, h_eucl1_eq, h6]
+    linarith
+  -- (q*vTop + r)/vTop = q when r < vTop.
+  rw [show uHi * 2^64 + uLo = (q1'' * 2^32 + q0'') * vTop + r2 from h_combined.symm]
+  rw [show (q1'' * 2^32 + q0'') * vTop = vTop * (q1'' * 2^32 + q0'') from by ring]
+  rw [Nat.mul_add_div h_vTop_pos]
+  have : r2 / vTop = 0 := Nat.div_eq_of_lt h_mod2_lt
+  omega
+
 /-- **v4's exact-quotient property**: under standard Knuth-A
     preconditions (shift-norm + `u4 < b3'` + `u4 < 2^63`), the v4
     algorithm produces the exact 128/64 quotient.
 
-    Proof strategy (sub-stub — not yet closed):
-    - Phase-1 perfect: `q1''.toNat = (u4 * 2^32 + (u3 >> 32)) / b3'.toNat`.
-    - Phase-2 perfect: `q0''.toNat = (un21 * 2^32 + div_un0) / b3'.toNat`.
-    - Combine: `(q1'' << 32) | q0''` decomposes as `q1'' * 2^32 + q0''`
-      (no truncation since q1'' < 2^32 by Knuth-B at q*_phase1 = q_true).
-    - Standard 128/64 long-division identity gives the result.
+    Proof composes three pieces:
+    - `_phase1_perfect` + `_phase2_perfect` (proven in IterV4Invariants*).
+    - Sub-stubs `_phase{1,2}_quot_lt_pow32` (no-truncation in OR-shift).
+    - The pure-Nat `_combined_arith` helper above.
 
     Bridges between the per-phase invariants in `IterV4Invariants*` and
     the val256-level closure for the call-trial chain. -/
@@ -78,7 +223,8 @@ theorem div128Quot_v4_eq_q_true_normalized
     (_hu4_lt_pow63 : u4.toNat < 2^63) :
     (div128Quot_v4 u4 u3 b3').toNat =
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
-  sorry  -- See docstring; combines Phase-1 + Phase-2 perfect.
+  sorry  -- Final composition: see docstring. Wire-up pending; depends
+         -- on the two _quot_lt_pow32 sub-stubs above.
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
