@@ -1759,8 +1759,14 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
     **Estimated proof length**: ~120-150 lines (Word-Nat bridging +
     case-splits on each correction's BLTU trigger).
 
-    Issue #1337 algorithm fix migration. Path-3 Knuth-A substantive blocker. -/
-theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
+    Issue #1337 algorithm fix migration. Path-3 Knuth-A substantive blocker.
+
+    **NOTE (refactor 2026-04-29):** Both this and `phase1_no_wrap_lo`
+    are now derived from a SINGLE substantive sorry
+    `div128Quot_v2_phase1_div_invariant_under_runtime` (defined just below).
+    The invariant captures `q1'' = floor(x/vTop)` exactly; both bounds
+    follow mechanically. -/
+theorem div128Quot_v2_phase1_div_invariant_under_runtime (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hbltu : isCallTrialN4Evm a b)
@@ -1785,14 +1791,44 @@ theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
     let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
     let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
     let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    q1''.toNat = (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- THE substantive Phase-1 Knuth-D 2-correction invariant.
+
+theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
     -- Knuth-A v2: q1'' is at least the true Phase-1 quotient.
     q1''.toNat ≥ (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- The substantive Phase-1 blocker. Closes via the v2 algorithm's
-         -- 2-correction guarantee: after 2 Phase-1b corrections, q1'' has
-         -- accumulated enough downward adjustments that no further
-         -- decrement is needed (i.e., q1'' = floor(x/vTop), not q1'' >
-         -- floor(x/vTop)). The 2nd correction's trigger condition is the
-         -- new information not present in v1's 1-correction algorithm.
+  -- From the invariant `q1'' = floor(x/vTop)`, Knuth-A v2 (q1'' ≥ floor(x/vTop))
+  -- follows trivially by `Nat.le_of_eq` (in fact, equality holds).
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo
+        rhatUn1 q1' rhat' q1''
+  have h_inv := div128Quot_v2_phase1_div_invariant_under_runtime a b hb3nz hshift_nz
+    hbltu hcarry2_nz hborrow_v2
+  simp only [] at h_inv
+  exact Nat.le_of_eq h_inv.symm
 
 /-- **Phase-1 no-wrap lower (untruncated) under runtime preconditions** —
     the standalone version of Conj 1 of
@@ -1871,11 +1907,11 @@ theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
 
     Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
 theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hbltu : isCallTrialN4Evm a b)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift :=
       (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
@@ -1902,9 +1938,61 @@ theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
         if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
       else rhat'
     q1''.toNat * dLo.toNat ≤ rhat''.toNat * 2^32 + div_un1.toNat := by
-  sorry  -- The substantive Phase-1 blocker. Closes via the v2 algorithm's
-         -- 2-correction guarantee + the 2nd D3 trigger condition. Mirrors
-         -- v1's open Knuth Theorem C tight Phase-1 problem.
+  -- Closure via the Phase-1 division invariant + Phase-1 Euclidean.
+  --
+  -- From invariant: q1''.toNat = floor(x / vTop) where x = u4*2^32 + div_un1,
+  -- vTop = dHi*2^32 + dLo. Hence q1'' * vTop ≤ x (Nat.div_mul_le_self).
+  --
+  -- From Phase-1 Euclidean (proven via div128Quot_v2_phase1b_2nd_post):
+  -- q1'' * dHi + rhat'' = u4. Substituting into the goal converts
+  -- (q1'' * dLo ≤ rhat'' * 2^32 + div_un1) ⟺ (q1'' * vTop ≤ x).
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo
+        rhatUn1 q1' rhat' q1'' rhat''
+  -- Standard arithmetic facts.
+  have h_b3'_ge_pow63 : b3'.toNat ≥ 2^63 :=
+    b3_prime_ge_pow63 (b.getLimbN 3) (b.getLimbN 2) hb3nz _
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 b3' h_b3'_ge_pow63
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  -- Phase-1 Euclidean: q1'' * dHi + rhat'' = u4.
+  have h_post1a := div128Quot_first_round_post u4 dHi hdHi_ne hdHi_lt
+  have h_eucl_1st : q1'.toNat * dHi.toNat + rhat'.toNat = u4.toNat :=
+    div128Quot_phase1b_post u4 dHi q1c rhatc dLo rhatUn1 hdHi_lt h_post1a
+      (div128Quot_rhatc_lt_2dHi u4 dHi hdHi_ne hdHi_lt)
+  have h_eucl_2nd : q1''.toNat * dHi.toNat + rhat''.toNat = u4.toNat :=
+    div128Quot_v2_phase1b_2nd_post u4 dHi q1' rhat' dLo div_un1
+      hdHi_ge hdHi_lt h_eucl_1st
+  -- Phase-1 division invariant: q1'' = floor(x/vTop).
+  have h_inv := div128Quot_v2_phase1_div_invariant_under_runtime a b
+    hb3nz hshift_nz hbltu hcarry2_nz hborrow_v2
+  simp only [] at h_inv
+  -- vTop > 0 (= dHi*2^32 + dLo > 0).
+  have h_vTop_pos : 0 < dHi.toNat * 2^32 + dLo.toNat := by
+    have h1 : dHi.toNat * 2^32 ≥ 2^31 * 2^32 := Nat.mul_le_mul_right _ hdHi_ge
+    have h_pow : (2 ^ 31 * 2 ^ 32 : ℕ) = 2 ^ 63 := by decide
+    omega
+  -- From invariant: q1'' * vTop ≤ x.
+  have h_q1pp_vTop_le_x :
+      q1''.toNat * (dHi.toNat * 2^32 + dLo.toNat) ≤ u4.toNat * 2^32 + div_un1.toNat := by
+    rw [h_inv]
+    -- (x/vTop) * vTop ≤ x via Nat.div_mul_le_self.
+    have h := Nat.div_mul_le_self (u4.toNat * 2^32 + div_un1.toNat)
+      (dHi.toNat * 2^32 + dLo.toNat)
+    exact h
+  -- Algebra: q1'' * vTop ≤ x ⟺ q1'' * dLo ≤ rhat'' * 2^32 + div_un1.
+  -- Both directions use the Euclidean h_eucl_2nd: rhat'' = u4 - q1'' * dHi.
+  have h_q1pp_dHi_le : q1''.toNat * dHi.toNat ≤ u4.toNat := by linarith [h_eucl_2nd]
+  have h_q1pp_dHi_2pow32_le : q1''.toNat * dHi.toNat * 2^32 ≤ u4.toNat * 2^32 :=
+    Nat.mul_le_mul_right _ h_q1pp_dHi_le
+  have h_rhat_eq : rhat''.toNat = u4.toNat - q1''.toNat * dHi.toNat := by omega
+  have h_rhat_2pow32 : rhat''.toNat * 2^32 = u4.toNat * 2^32 - q1''.toNat * dHi.toNat * 2^32 := by
+    rw [h_rhat_eq, Nat.sub_mul]
+  have h_q1pp_vTop : q1''.toNat * (dHi.toNat * 2^32 + dLo.toNat) =
+      q1''.toNat * dHi.toNat * 2^32 + q1''.toNat * dLo.toNat := by ring
+  omega
 
 /-- **Phase-2 no-wrap lower under runtime preconditions** — the
     standalone version of Conj 3 of
