@@ -1489,6 +1489,89 @@ private theorem div128Quot_v4_un21_lt_vTop_arith
   rw [h_rhat_mul, h_vTop]
   omega
 
+/-- **Generic hi-fix Eucl bridge**: parameterized version of
+    `_phase1_rhatc_bridge`. Given a dividend D and divisor dHi with
+    dHi ≥ 2^31, the post-hi-fix (qc, rc) satisfy the rv64_divu Eucl:
+
+    ```
+    qc.toNat * dHi.toNat ≤ D.toNat
+    rc.toNat = D.toNat - qc.toNat * dHi.toNat
+    ```
+
+    Reusable for both Phase-1 (D = uHi) and Phase-2 (D = un21). -/
+private theorem div128Quot_v4_hi_fix_eucl_generic
+    (D dHi : Word)
+    (hdHi_ge : dHi.toNat ≥ 2 ^ 31)
+    (hdHi_lt : dHi.toNat < 2 ^ 32) :
+    let q := rv64_divu D dHi
+    let r := D - q * dHi
+    let hi := q >>> (32 : BitVec 6).toNat
+    let qc := if hi = 0 then q else q + signExtend12 4095
+    let rc := if hi = 0 then r else r + dHi
+    qc.toNat * dHi.toNat ≤ D.toNat ∧
+    rc.toNat = D.toNat - qc.toNat * dHi.toNat := by
+  intro q r hi qc rc
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_q_dHi_le : q.toNat * dHi.toNat ≤ D.toNat :=
+    EvmWord.rv64_divu_mul_le D dHi hdHi_ne
+  have h_q_dHi_toNat : (q * dHi).toNat = q.toNat * dHi.toNat := by
+    rw [BitVec.toNat_mul]
+    exact Nat.mod_eq_of_lt (lt_of_le_of_lt h_q_dHi_le D.isLt)
+  have h_r_toNat : r.toNat = D.toNat - q.toNat * dHi.toNat := by
+    show (D - q * dHi).toNat = _
+    rw [BitVec.toNat_sub, h_q_dHi_toNat]
+    have h_pos : 0 < 2^64 := by decide
+    omega
+  by_cases h_hi : hi = 0
+  · refine ⟨?_, ?_⟩
+    · show (if hi = 0 then q else q + signExtend12 4095).toNat * dHi.toNat ≤ D.toNat
+      rw [if_pos h_hi]; exact h_q_dHi_le
+    · show (if hi = 0 then r else r + dHi).toNat =
+            D.toNat - (if hi = 0 then q else q + signExtend12 4095).toNat * dHi.toNat
+      rw [if_pos h_hi, if_pos h_hi]; exact h_r_toNat
+  · have h_q_ge : q.toNat ≥ 2 ^ 32 := by
+      by_contra h
+      push Not at h
+      apply h_hi
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+          Nat.shiftRight_eq_div_pow]
+      show q.toNat / 2^32 = (0 : Word).toNat
+      rw [Nat.div_eq_of_lt h]; rfl
+    have h_qc_toNat : qc.toNat = q.toNat - 1 := by
+      show (if hi = 0 then q else q + signExtend12 4095).toNat = q.toNat - 1
+      rw [if_neg h_hi, BitVec.toNat_add, signExtend12_4095_toNat]
+      have hq_lt_word : q.toNat - 1 < 2^64 := by have := q.isLt; omega
+      rw [show q.toNat + (2^64 - 1) = (q.toNat - 1) + 2^64 from by omega,
+          Nat.add_mod_right, Nat.mod_eq_of_lt hq_lt_word]
+    have h_qc_dHi : qc.toNat * dHi.toNat = q.toNat * dHi.toNat - dHi.toNat := by
+      rw [h_qc_toNat, Nat.sub_mul, Nat.one_mul]
+    have h_qc_dHi_le : qc.toNat * dHi.toNat ≤ D.toNat := by
+      rw [h_qc_dHi]; omega
+    have h_r_lt_dHi : r.toNat < dHi.toNat := by
+      have h_eucl : D.toNat = q.toNat * dHi.toNat + D.toNat % dHi.toNat :=
+        EvmWord.rv64_divu_euclidean D dHi hdHi_ne
+      have h_r_eq : r.toNat = D.toNat % dHi.toNat := by rw [h_r_toNat]; omega
+      rw [h_r_eq]
+      exact Nat.mod_lt _ (Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h)))
+    have h_rc_toNat : rc.toNat = r.toNat + dHi.toNat := by
+      show (if hi = 0 then r else r + dHi).toNat = r.toNat + dHi.toNat
+      rw [if_neg h_hi, BitVec.toNat_add]
+      apply Nat.mod_eq_of_lt
+      calc r.toNat + dHi.toNat
+          < dHi.toNat + dHi.toNat := by omega
+        _ ≤ 2^32 + 2^32 := by omega
+        _ < 2^64 := by decide
+    refine ⟨h_qc_dHi_le, ?_⟩
+    rw [h_rc_toNat, h_r_toNat, h_qc_dHi]
+    have h_q_mul_ge : q.toNat * dHi.toNat ≥ dHi.toNat := by
+      have : q.toNat ≥ 1 := by omega
+      calc q.toNat * dHi.toNat
+          ≥ 1 * dHi.toNat := Nat.mul_le_mul_right _ this
+        _ = dHi.toNat := Nat.one_mul _
+    omega
+
 /-- **Phase-1a rhatc bound**: under shift-norm, `rhatc.toNat < 2 * dHi.toNat`.
 
     Case analysis on `hi1`:
