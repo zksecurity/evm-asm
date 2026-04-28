@@ -1708,6 +1708,57 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
     is encapsulated here.** Once this Knuth-A claim is closed, the un21
     bound follows mechanically (Phase 1 Euclidean + arithmetic).
 
+    **Closure plan.** Together with `div128Quot_v2_phase1_no_wrap_lo_under_runtime`
+    (the dual upper bound q1'' ≤ floor(x/vTop)), these pin q1'' to be
+    EXACTLY floor(x/vTop). The proof structure follows Knuth's classical
+    D3 analysis (TAOCP 4.3.1, Theorems A and B):
+
+    1. **Initial trial bound (Knuth-A baseline)**: by `rv64_divu`, the
+       Phase 1a output `q1 = uHi / dHi` (truncated to 32 bits if hi1 ≠ 0).
+       After the hi1-based correction (q1 → q1c), q1c ≤ 2^32. Combined
+       with `div128Quot_first_round_post` (PROVEN: q1c * dHi + rhatc =
+       uHi) and `div128Quot_rhatc_lt_2dHi` (PROVEN), we have a Phase-1a
+       Euclidean.
+
+    2. **Knuth-A baseline lower bound at q1c**: `(q1c+1) * dHi > uHi`
+       (since q1c is the 32-bit-clamped div). This implies
+       `q1c * (dHi*2^32 + dLo) ≥ uHi * 2^32 - dHi * 2^32 + ... `
+       (algebra). Specifically Knuth-A at the trial level gives
+       `q1c * vTop ≥ x - 2 * vTop` (initial overshoot bound from Knuth-B
+       direction; reversed it's a weak lower).
+
+    3. **Phase 1b 1st correction effect on lower bound**: q1' ∈ {q1c,
+       q1c - 1}. Each decrement preserves Knuth-A LOWER bound up to a
+       constant 1 (q1' ≥ q1c - 1, so q1' ≥ floor(x/vTop) - 1 if Knuth-A
+       held for q1c). KEY: the BLTU check fires only when q1c overshoots
+       by ≥ 1 (i.e., q1c * dLo > rhatc * 2^32 + div_un1). When the
+       check fires AND the decrement happens, q1c was overshooting,
+       so q1' is closer to (or equal to) floor(x/vTop).
+
+    4. **Phase 1b 2nd correction effect (v2-specific)**: q1'' ∈ {q1',
+       q1' - 1}. By the same logic as (3), the 2nd correction further
+       tightens the bound.
+
+    5. **Knuth-D 2-correction invariant**: after 2 corrections that
+       each preserve Knuth-A's lower bound (don't undershoot), q1''
+       maintains `q1'' ≥ floor(x/vTop)`.
+
+    **Concrete dependencies (all PROVEN):**
+    - `div128Quot_first_round_post` (Phase 1a Euclidean).
+    - `div128Quot_phase1b_post` (Phase 1b 1st post Euclidean).
+    - `div128Quot_v2_phase1b_2nd_post` (Phase 1b 2nd post Euclidean).
+    - `div128Quot_q1c_le_pow32` (q1c ≤ 2^32).
+    - `div128Quot_rhatc_lt_2dHi` (rhatc < 2*dHi).
+    - `div128Quot_phase1b_check_implies_q1c_pos` (BLTU check → q1c ≥ 1).
+
+    **Pure-Nat algebraic core**: introduce a private helper
+    `knuth_A_v2_pure_nat` taking the Phase-1 Euclidean facts and
+    BLTU check semantics, returning q1'' ≥ floor(x/vTop). This factors
+    out the Word/Nat noise.
+
+    **Estimated proof length**: ~120-150 lines (Word-Nat bridging +
+    case-splits on each correction's BLTU trigger).
+
     Issue #1337 algorithm fix migration. Path-3 Knuth-A substantive blocker. -/
 theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
@@ -1757,6 +1808,66 @@ theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
     to `q1'' * vTop ≤ x`, i.e. `q1'' ≤ x / vTop`. This is the Knuth-D
     2-correction invariant: after the second Phase 1b correction (the
     v2 fix), the trial quotient doesn't overshoot.
+
+    **Closure plan (DUAL of `div128Quot_v2_knuth_A_under_runtime`).**
+
+    This is the UPPER bound (q1'' ≤ floor(x/vTop)); the dual is the
+    LOWER bound (q1'' ≥ floor(x/vTop)). Together they pin q1'' = floor(x/vTop).
+
+    The proof follows Knuth's classical D3 analysis from the OPPOSITE
+    direction (Knuth-B):
+
+    1. **Initial trial overshoot bound (Knuth-B baseline)**: by
+       `rv64_divu`, q1c ≥ floor(uHi/dHi) - 1 (with hi1-clamping),
+       which gives q1c * vTop ≥ x - vTop - dHi*2^32 - dLo (initial
+       overshoot can be up to 2 by Knuth's analysis).
+
+    2. **Phase 1b 1st correction effect**: q1' = q1c if check doesn't
+       fire (q1c not overshooting), or q1' = q1c - 1 if check fires
+       (q1c overshooting by ≥ 1, so q1c - 1 ≤ floor(x/vTop) + 1).
+       After 1 correction, q1' ≤ floor(x/vTop) + 1 (i.e., overshoot
+       ≤ 1).
+
+    3. **Phase 1b 2nd correction effect (v2-specific KEY)**: when
+       q1' overshoots by 1 (i.e., q1' * dLo > rhat' * 2^32 + div_un1),
+       the BLTU check fires and decrements q1' → q1'' = q1' - 1.
+       After 2 corrections: q1'' ≤ floor(x/vTop) (i.e., overshoot 0).
+
+    4. **CRITICAL trigger condition (the v2 fix)**: the 2nd D3 correction
+       fires only when guard `rhat' < 2^32` AND check
+       `(rhat' << 32) | div_un1 < q1' * dLo`. The contrapositive:
+       if either guard fails (rhat' ≥ 2^32) or check fails
+       (rhat' * 2^32 + div_un1 ≥ q1' * dLo), then q1'' = q1' and
+       Phase-1 no_wrap_lo holds directly (the latter case is
+       definitional; the former requires showing q1' * vTop ≤ x even
+       when guard fails).
+
+    **Concrete dependencies (all PROVEN, same as Knuth-A v2):**
+    - `div128Quot_first_round_post` (Phase 1a Euclidean).
+    - `div128Quot_phase1b_post` (Phase 1b 1st post Euclidean).
+    - `div128Quot_v2_phase1b_2nd_post` (Phase 1b 2nd post Euclidean).
+    - `div128Quot_phase1b_check_implies_q1c_pos` (BLTU → q1c ≥ 1).
+
+    **Pure-Nat algebraic core**: introduce a private helper
+    `phase1_no_wrap_lo_v2_pure_nat` taking the Phase-1 Euclidean facts
+    and BLTU check semantics, returning the no_wrap upper bound. This
+    factors out the Word/Nat noise.
+
+    **Strategy: prove DUALLY with Knuth-A v2.** Since the same
+    algebraic Euclidean facts and BLTU semantics drive both proofs,
+    one strategy is:
+    a. Define a single private "Phase-1 invariant" `phase1_eucl_inv`
+       capturing the post-Phase-1b-2nd state (Euclidean + correction
+       relations as a record).
+    b. Prove the invariant from runtime preconds (1 stub).
+    c. Derive both Knuth-A v2 (lower) and phase1_no_wrap_lo (upper)
+       from the invariant by pure-Nat algebra (2 helpers).
+
+    This factoring would close BOTH sorries with one substantive
+    proof (the invariant) plus two mechanical algebra helpers.
+
+    **Estimated proof length**: ~120-150 lines for the invariant +
+    ~30 lines per Word-Nat bridge × 2.
 
     Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
 theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
