@@ -1743,14 +1743,67 @@ theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
          -- floor(x/vTop)). The 2nd correction's trigger condition is the
          -- new information not present in v1's 1-correction algorithm.
 
+/-- **Phase-1 no-wrap lower (untruncated) under runtime preconditions** —
+    the standalone version of Conj 1 of
+    `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`.
+
+    Extracted as a standalone stub so consumers (`un21_lt_vTop_under_runtime`,
+    no_wrap's conj1) can both invoke it without a circular forward
+    reference (no_wrap is defined AFTER `un21_lt_vTop`, so un21_lt_vTop
+    can't invoke no_wrap to extract conj1).
+
+    Equivalent (via the algebraic identity `rhat'' * 2^32 + div_un1 -
+    q1'' * dLo = x - q1'' * vTop`, where `x = uHi * 2^32 + div_un1`)
+    to `q1'' * vTop ≤ x`, i.e. `q1'' ≤ x / vTop`. This is the Knuth-D
+    2-correction invariant: after the second Phase 1b correction (the
+    v2 fix), the trial quotient doesn't overshoot.
+
+    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    q1''.toNat * dLo.toNat ≤ rhat''.toNat * 2^32 + div_un1.toNat := by
+  sorry  -- The substantive Phase-1 blocker. Closes via the v2 algorithm's
+         -- 2-correction guarantee + the 2nd D3 trigger condition. Mirrors
+         -- v1's open Knuth Theorem C tight Phase-1 problem.
+
 /-- **un21 < vTop under runtime preconditions** — the strong Phase-1
     upper bound that Conj 2 of `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
     only weakly captures (`< 2^64` instead of `< vTop`).
 
     Decomposes into:
-    - `div128Quot_v2_knuth_A_under_runtime` (NEW substantive stub) —
+    - `div128Quot_v2_knuth_A_under_runtime` (substantive stub) —
       the algorithm-level Knuth-A claim `q1'' ≥ floor(x/vTop)`.
-    - Conj 1 of the no_wrap stub (also a sorry) — q1'' * vTop ≤ x.
+    - `div128Quot_v2_phase1_no_wrap_lo_under_runtime` (substantive stub) —
+      the q1'' upper bound (extracted from no_wrap's conj1).
     - Algorithm Phase-1 Euclidean (existing helpers, mechanical).
 
     The 2-correction structure of v2 makes Knuth-A tractable in principle,
@@ -1763,7 +1816,7 @@ theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
       `un21 < vTop ≤ 2^64` directly implies the < 2^64 conjunct.
 
     Issue #1337 algorithm fix migration. Path-3 derived blocker (composes
-    Knuth-A + conj1 + algebra). -/
+    Knuth-A + phase1_no_wrap_lo + algebra). -/
 theorem div128Quot_v2_un21_lt_vTop_under_runtime (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
@@ -1799,10 +1852,57 @@ theorem div128Quot_v2_un21_lt_vTop_under_runtime (a b : EvmWord)
     let cu_q1_dlo := q1'' * dLo
     let un21 := cu_rhat_un1 - cu_q1_dlo
     un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
-  sorry  -- Knuth-A v2 discharge: q1'' = floor(x/vTop) after 2 D3
-         -- corrections, hence un21 = x mod vTop < vTop. Mirrors v1's
-         -- open Knuth Theorem C; tractable for v2 via the 2nd D3
-         -- correction's trigger condition.
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo
+        rhatUn1 q1' rhat' q1'' rhat'' cu_rhat_un1 cu_q1_dlo un21
+  -- Setup standard arithmetic facts.
+  have h_b3'_ge_pow63 : b3'.toNat ≥ 2^63 :=
+    b3_prime_ge_pow63 (b.getLimbN 3) (b.getLimbN 2) _hb3nz _
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 b3' h_b3'_ge_pow63
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  -- Phase 1 Euclidean (1st + 2nd D3).
+  have h_post1a := div128Quot_first_round_post u4 dHi hdHi_ne hdHi_lt
+  have h_eucl_1st : q1'.toNat * dHi.toNat + rhat'.toNat = u4.toNat :=
+    div128Quot_phase1b_post u4 dHi q1c rhatc dLo rhatUn1 hdHi_lt h_post1a
+      (div128Quot_rhatc_lt_2dHi u4 dHi hdHi_ne hdHi_lt)
+  have h_eucl_2nd : q1''.toNat * dHi.toNat + rhat''.toNat = u4.toNat :=
+    div128Quot_v2_phase1b_2nd_post u4 dHi q1' rhat' dLo div_un1
+      hdHi_ge hdHi_lt h_eucl_1st
+  -- Knuth-A v2 (sorry'd).
+  have h_knuthA := div128Quot_v2_knuth_A_under_runtime a b _hb3nz _hshift_nz
+    _hbltu _hcarry2_nz _hborrow_v2
+  simp only [] at h_knuthA
+  -- conj1 (sorry'd, via standalone helper).
+  have h_conj1 := div128Quot_v2_phase1_no_wrap_lo_under_runtime a b _hb3nz _hshift_nz
+    _hbltu _hcarry2_nz _hborrow_v2
+  simp only [] at h_conj1
+  -- conj2 (PROVEN via algebraic combiner).
+  have h_conj2 : rhat''.toNat * 2^32 + div_un1.toNat - q1''.toNat * dLo.toNat < 2^64 :=
+    conj2_arith u4.toNat div_un1.toNat q1''.toNat rhat''.toNat
+      dHi.toNat dLo.toNat h_eucl_2nd hdHi_lt hdLo_lt hdHi_ge h_div_un1_lt h_knuthA
+  -- Apply un21<vTop algebraic combiner (PROVEN, returns A_un - B < vTop).
+  have h_alg : rhat''.toNat * 2^32 + div_un1.toNat - q1''.toNat * dLo.toNat <
+      dHi.toNat * 2^32 + dLo.toNat :=
+    un21_lt_vTop_arith u4.toNat div_un1.toNat q1''.toNat rhat''.toNat
+      dHi.toNat dLo.toNat h_eucl_2nd hdHi_lt hdLo_lt hdHi_ge h_div_un1_lt h_knuthA
+  -- Bridge: un21.toNat = (A_un - B) via _un21_toNat_untruncated, under conj1+conj2.
+  have huHi_lt_vTop : u4.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    have h_b3'_decomp : b3'.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+      div128Quot_vTop_decomp b3'
+    have hu4_lt_b3' : u4.toNat < b3'.toNat :=
+      isCallTrialN4_toNat_lt (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
+        (isCallTrialN4Evm_def ▸ _hbltu)
+    omega
+  have h_un21_eq :=
+    div128Quot_v2_un21_toNat_untruncated u4 un3 b3' hdHi_ge hdLo_lt huHi_lt_vTop
+      h_conj1 h_conj2
+  simp only [] at h_un21_eq
+  rw [h_un21_eq]
+  exact h_alg
 
 /-- **Untruncated runtime discharge** — alternative path 3 stub.
 
@@ -1893,15 +1993,14 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
         q0 rhat2 hi2 q0c rhat2c q0' rhat2'
   refine ⟨?conj1, ?conj2, ?conj3, ?conj4⟩
   case conj1 =>
-    -- **Conjunct 1 (untruncated phase-1 lower):**
-    -- `q1'' * dLo ≤ rhat'' * 2^32 + div_un1`. Equivalent (via the algebraic
-    -- identity `rhat'' * 2^32 + div_un1 - q1'' * dLo = x - q1'' * vTop`,
-    -- where `x = uHi * 2^32 + div_un1`) to `q1'' * vTop ≤ x`, i.e.
-    -- `q1'' ≤ x / vTop`. This is the Knuth-D 2-correction invariant: after
-    -- the second Phase 1b correction (the v2 fix), the trial quotient
-    -- doesn't overshoot. Discharge needs the 2nd D3 trigger condition.
-    -- THE substantive Path-3 blocker.
-    sorry
+    -- **Conjunct 1 (untruncated phase-1 lower):** delegates to
+    -- `div128Quot_v2_phase1_no_wrap_lo_under_runtime` (extracted standalone
+    -- stub, defined earlier in the file to avoid forward-reference issues
+    -- with `un21_lt_vTop_under_runtime`).
+    have h := div128Quot_v2_phase1_no_wrap_lo_under_runtime a b hb3nz _hshift_nz
+      hbltu hcarry2_nz hborrow_v2
+    simp only [] at h
+    exact h
   case conj2 =>
     -- **Conjunct 2 (untruncated phase-1 upper):**
     -- `rhat'' * 2^32 + div_un1 - q1'' * dLo < 2^64`.
