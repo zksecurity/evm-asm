@@ -165,6 +165,20 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
         omega
     linarith
 
+/-- **Word-level guard bridge**: a Word `x` with `x.toNat < 2^32`
+    satisfies `x >>> 32 = 0`. Used to convert the boundary-case
+    hypothesis (`rhatc.toNat < 2^32`) into the Word-level guard
+    expression that v4's `phase2b_q0'` and the rhat-update conditional
+    branch on. -/
+private theorem div128Quot_v4_word_ushiftRight_32_zero_of_lt_pow32
+    (x : Word) (h : x.toNat < 2^32) :
+    x >>> (32 : BitVec 6).toNat = 0 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+      Nat.shiftRight_eq_div_pow]
+  show x.toNat / 2^32 = (0 : Word).toNat
+  rw [Nat.div_eq_of_lt h]; rfl
+
 /-- **Phase-1 strict upper from overshoot (v4)**: under `q1c.toNat ≥
     q_true_phase1 + 1`, we have `q1c.toNat * vTop > uHi*2^32 + div_un1`.
 
