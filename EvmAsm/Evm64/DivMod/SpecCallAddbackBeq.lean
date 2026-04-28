@@ -2190,22 +2190,15 @@ theorem qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2 (a b : EvmWord)
     at h_u4_lt_c3
   omega
 
-/-- **Carry partition for the BEQ branch (sub-lemma, conjunctive form).**
-    Under runtime preconditions (`hbltu, hcarry2_nz, hborrow`), the
-    algorithm's `addbackN4_carry` precisely encodes the qHat overshoot:
-    - carry = 0 ⟺ qHat = q_true + 2 (double-addback).
-    - carry ≠ 0 ⟺ qHat = q_true + 1 (single-addback).
+/-- **Carry partition: double-addback case (carry = 0).**
+    Under runtime preconditions, when `addbackN4_carry = 0` (the
+    second addback fires), `qHat = q_true + 2`. Closes via the
+    double-addback identity:
+    `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds` +
+    `_le_val256_div_plus_two_untruncated` (Knuth-B upper).
 
-    Both directions are needed: for `qHat_eq_*_of_*_addback_v2`, we
-    use the forward implication of each iff (carry condition → qHat
-    overshoot value).
-
-    Closing this requires Knuth-D's classical addback correctness:
-    each addback adds `b` back to the partial remainder, so the number
-    of addbacks fired equals `qHat - q_true` (precise overshoot).
-
-    Issue #1337 algorithm fix migration. Alternative path 3 sub-lemma. -/
-theorem addback_carry_partition_v2 (a b : EvmWord)
+    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+theorem addback_carry_partition_v2_zero_case (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hbltu : isCallTrialN4Evm a b)
@@ -2227,12 +2220,88 @@ theorem addback_carry_partition_v2 (a b : EvmWord)
     let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                   val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' = 0 →
+    qHat.toNat = q_true + 2 := by
+  sorry  -- Knuth-D double-addback correctness for v2.
+
+/-- **Carry partition: single-addback case (carry ≠ 0).**
+    Under runtime preconditions, when `addbackN4_carry ≠ 0` (only the
+    first addback fires), `qHat = q_true + 1`. Closes via the
+    single-addback identity:
+    `c3_eq_u4_plus_one_from_mulsub_addback_bounds` +
+    `_le_val256_div_plus_two_untruncated` (Knuth-B upper) +
+    case-exclusion of qHat = q_true + 2 via the carry ≠ 0 hypothesis.
+
+    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+theorem addback_carry_partition_v2_nonzero_case (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow : isAddbackBorrowN4CallEvm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 →
+    qHat.toNat = q_true + 1 := by
+  sorry  -- Knuth-D single-addback correctness for v2.
+
+/-- **Carry partition for the BEQ branch (conjunctive form).** Composes
+    the two case lemmas (`_zero_case`, `_nonzero_case`) — each captures
+    one direction of the carry/overshoot biconditional.
+
+    - carry = 0 ⟺ qHat = q_true + 2 (double-addback).
+    - carry ≠ 0 ⟺ qHat = q_true + 1 (single-addback).
+
+    Closing the constituent cases requires Knuth-D's classical addback
+    correctness: each addback adds `b` back to the partial remainder, so
+    the number of addbacks fired equals `qHat - q_true` (precise overshoot).
+
+    Issue #1337 algorithm fix migration. Alternative path 3 sub-lemma. -/
+theorem addback_carry_partition_v2 (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow : isAddbackBorrowN4CallEvm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                  val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     -- Both directions of the partition:
     (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' = 0 →
      qHat.toNat = q_true + 2) ∧
     (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3' ≠ 0 →
      qHat.toNat = q_true + 1) := by
-  sorry  -- Conjunctive partition via Knuth-D's classical addback correctness.
+  exact ⟨addback_carry_partition_v2_zero_case a b hb3nz hshift_nz hbltu hcarry2_nz hborrow,
+         addback_carry_partition_v2_nonzero_case a b hb3nz hshift_nz hbltu hcarry2_nz hborrow⟩
+  -- Decomposition into the two case lemmas. Original sorry preserved
+  -- in the un-pre-2026-04-29 version of this file (decomposition only).
          --
          -- **STATUS UPDATE (2026-04-28):** the v2 closure now has multiple
          -- proven shifted-domain qHat lower bounds:
