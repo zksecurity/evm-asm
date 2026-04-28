@@ -36,6 +36,7 @@ theorem divK_divEpilogue_len : (divK_div_epilogue 24).length = 10 := by decide
 theorem divK_zeroPath_len : divK_zeroPath.length = 5 := by decide
 theorem divK_nop_len : (ADDI .x0 .x0 0 : Program).length = 1 := by decide
 theorem divK_div128_len : divK_div128.length = 51 := by decide
+theorem divK_div128_v2_len : divK_div128_v2.length = 61 := by decide
 theorem divK_modEpilogue_len : (divK_mod_epilogue 24).length = 10 := by decide
 
 /-- Skip one ofProg block in a right-nested union via range disjointness.
@@ -46,7 +47,7 @@ macro "skipBlock" : tactic =>
         simp only [divK_phaseA_len, divK_phaseB_len, divK_clz_len, divK_phaseC2_len,
           divK_normB_len, divK_normA_len, divK_copyAU_len, divK_loopSetup_len,
           divK_loopBody_len, divK_denorm_len, divK_divEpilogue_len,
-          divK_zeroPath_len, divK_nop_len, divK_div128_len,
+          divK_zeroPath_len, divK_nop_len, divK_div128_len, divK_div128_v2_len,
           divK_modEpilogue_len] at hk1 hk2
         bv_omega)))
 
@@ -119,6 +120,34 @@ abbrev sharedDivModCode (base : Word) : CodeReq :=
     CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,          -- block 10 (was 11)
     CodeReq.ofProg (base + nopOff)        (ADDI .x0 .x0 0),       -- block 11 (was 12)
     CodeReq.ofProg (base + div128Off)     divK_div128             -- block 12 (was 13)
+  ]
+
+/-- v2 mirror of `sharedDivModCode` — same blocks 0-11 but block 12 (the
+    div128 subroutine) uses `divK_div128_v2` (Knuth's classical 2nd D3
+    correction iteration) instead of the buggy `divK_div128`.
+
+    Used as the code requirement for loop-body and div128 specs in the
+    v2 migration path (issue #1337). The block 8 `divK_loopBody` retains
+    the v1 offset constants for now; once the LoopBody migration is
+    complete, this `divK_loopBody` will need updating too (since v2's
+    larger div128 changes the JAL target offset).
+
+    Issue #1337 algorithm fix migration. -/
+abbrev sharedDivModCode_v2 (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),     -- block 0
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,            -- block 1
+    CodeReq.ofProg (base + clzOff)        divK_clz,               -- block 2
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),     -- block 3
+    CodeReq.ofProg (base + normBOff)      divK_normB,             -- block 4
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),        -- block 5
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,            -- block 6
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),   -- block 7
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),-- block 8
+    CodeReq.ofProg (base + denormOff)     divK_denorm,            -- block 9
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,          -- block 10
+    CodeReq.ofProg (base + nopOff)        (ADDI .x0 .x0 0),       -- block 11
+    CodeReq.ofProg (base + div128Off)     divK_div128_v2          -- block 12 (v2)
   ]
 
 -- Per-block subsumption: each shared block ⊆ divCode.
@@ -217,6 +246,17 @@ theorem sharedDivModCode_sub_modCode {base : Word} :
     (CodeReq.union_split_mono (shared_b11_mod)
     (CodeReq.union_split_mono (shared_b12_mod)
     (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
+
+/-- v2 per-block subsumption: block 12 (`divK_div128_v2`) is included
+    in `sharedDivModCode_v2 base`. Mirrors the v1 pattern (`shared_b12_div`)
+    but targets the v2 shared cr. -/
+theorem shared_b12_div128_v2_sub {b : Word} :
+    ∀ a i, (CodeReq.ofProg (b + div128Off) divK_div128_v2) a = some i →
+           (sharedDivModCode_v2 b) a = some i := by
+  unfold sharedDivModCode_v2; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
 
 -- ============================================================================
 -- Postcondition bundle for loopSetup (shift ≠ 0) path

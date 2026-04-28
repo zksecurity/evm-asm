@@ -72,4 +72,57 @@ theorem divK_correction_skip_spec
     (fun h hp => by xperm_hyp hp)
     skip_framed
 
+/-- v2 mirror of `divK_correction_skip_spec` — same body but targets
+    `sharedDivModCode_v2 base` (the v2 cr) and uses `lb_sub_v2`. The
+    underlying instruction (BEQ at offset 70 within `divK_loopBody`) is
+    identical in v1 and v2; only the target cr changes.
+
+    Issue #1337 algorithm fix migration. -/
+theorem divK_correction_skip_v2_spec
+    (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4 : Word)
+    (v5Old v2Old : Word) (base : Word) :
+    cpsTriple (base + 728) (base + 884) (sharedDivModCode_v2 base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u4))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ u4)) := by
+  have hbeq := beq_spec_gen .x7 .x0 (156 : BitVec 13) (0 : Word) 0 (base + 728)
+  rw [lb_beq_taken, lb_beq_ntaken] at hbeq
+  have hbeq_ext := cpsBranch_extend_code (hmono :=
+    lb_sub_v2 70 _ _ (by decide) (by bv_addr) (by decide)) hbeq
+  have skip := cpsBranch_takenPath hbeq_ext (fun hp hQf => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
+    exact hpure rfl)
+  have skip_clean : cpsTriple (base + 728) (base + 884) (sharedDivModCode_v2 base)
+      ((.x7 ↦ᵣ (0 : Word)) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x7 ↦ᵣ (0 : Word)) ** (.x0 ↦ᵣ (0 : Word))) :=
+    cpsTriple_weaken
+      (fun h hp => hp)
+      (fun h hp => sepConj_mono_right
+        (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
+      skip
+  have skip_framed := cpsTriple_frameR
+    ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
+     (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5Old) ** (.x2 ↦ᵣ v2Old) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((uBase + signExtend12 4064) ↦ₘ u4))
+    (by pcFree) skip_clean
+  exact cpsTriple_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    skip_framed
+
 end EvmAsm.Evm64

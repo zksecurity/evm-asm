@@ -52,6 +52,7 @@ import EvmAsm.Evm64.EvmWordArith.SkipBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.MaxTrialVacuity
+import EvmAsm.Evm64.DivMod.SpecPredicates
 
 open EvmAsm.Rv64.Tactics
 
@@ -91,111 +92,6 @@ theorem evmWordIs_mod_zero_right_atoms {addr : Word} {a : EvmWord} :
   rw [evmWordIs_mod_zero_right, evmWordIs_zero]
 
 -- ============================================================================
--- EvmWord-level runtime condition predicates for the n=4 max path
--- ============================================================================
-
--- The full-path DIV spec `evm_div_n4_full_max_skip_spec` takes runtime
--- conditions (`isMaxTrialN4`, `isSkipBorrowN4Max`) keyed off eight Word
--- limbs. For the EvmWord-level stack spec, it's more natural to express
--- these on `a b : EvmWord` directly — the wrappers below defer to the
--- Word-level predicates via `a.getLimbN k` / `b.getLimbN k`.
-
-/-- Max trial quotient condition at n=4 in EvmWord form: `u4 ≥ b3'` after
-    normalization, i.e., the algorithm uses the maximum trial quotient
-    (`signExtend12 4095 = 2^64 - 1`). -/
-def isMaxTrialN4Evm (a b : EvmWord) : Prop :=
-  isMaxTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
-
-/-- Skip-addback condition at n=4 max in EvmWord form: the runtime borrow
-    check `u4 < mulsubN4_c3` does not fire, so the algorithm skips the
-    addback step and uses `qHat` as the quotient digit. -/
-def isSkipBorrowN4MaxEvm (a b : EvmWord) : Prop :=
-  isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isMaxTrialN4Evm_def {a b : EvmWord} :
-    isMaxTrialN4Evm a b =
-    isMaxTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-theorem isSkipBorrowN4MaxEvm_def {a b : EvmWord} :
-    isSkipBorrowN4MaxEvm a b =
-    isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-/-- Call trial condition at n=4 in EvmWord form: `u4 < b3'` after
-    normalization, i.e., the max trial is too large so the algorithm falls
-    through to `div128` for a tighter quotient. -/
-def isCallTrialN4Evm (a b : EvmWord) : Prop :=
-  isCallTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
-
-/-- Skip-addback condition at n=4 call path in EvmWord form: the runtime
-    borrow check does not fire, so the algorithm skips addback after the
-    `div128`-computed trial quotient. -/
-def isSkipBorrowN4CallEvm (a b : EvmWord) : Prop :=
-  isSkipBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-/-- Addback-needed condition at n=4 call path in EvmWord form: the runtime
-    borrow check fires, so the algorithm decrements the trial quotient and
-    adds back `v` to the partial remainder. -/
-def isAddbackBorrowN4CallEvm (a b : EvmWord) : Prop :=
-  isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isCallTrialN4Evm_def {a b : EvmWord} :
-    isCallTrialN4Evm a b =
-    isCallTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-theorem isSkipBorrowN4CallEvm_def {a b : EvmWord} :
-    isSkipBorrowN4CallEvm a b =
-    isSkipBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-theorem isAddbackBorrowN4CallEvm_def {a b : EvmWord} :
-    isAddbackBorrowN4CallEvm a b =
-    isAddbackBorrowN4Call (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                          (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-/-- Carry-2-non-zero condition at n=4 call path in EvmWord form: the
-    double-addback branch indicator used by the BEQ variant. Wraps the
-    raw-limb form `isAddbackCarry2NzN4CallAb`. -/
-def isAddbackCarry2NzN4CallEvm (a b : EvmWord) : Prop :=
-  isAddbackCarry2NzN4CallAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackCarry2NzN4CallEvm_def {a b : EvmWord} :
-    isAddbackCarry2NzN4CallEvm a b =
-    isAddbackCarry2NzN4CallAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-/-- Addback-needed condition at n=4 max path in EvmWord form: the runtime
-    borrow check fires (mulsub underflowed), so the algorithm decrements
-    the max trial quotient and adds back `b'` to the partial remainder
-    (possibly twice — see `isAddbackCarry2NzN4MaxAbEvm`). -/
-def isAddbackBorrowN4MaxEvm (a b : EvmWord) : Prop :=
-  isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackBorrowN4MaxEvm_def {a b : EvmWord} :
-    isAddbackBorrowN4MaxEvm a b =
-    isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-/-- Double-addback carry2≠0 condition at n=4 max path in EvmWord form: after
-    mulsub underflow + first-addback (carry1 = 0), the second addback fires
-    (carry2 ≠ 0). Together with `isAddbackBorrowN4MaxEvm` this pins the
-    algorithm to the double-addback branch. -/
-def isAddbackCarry2NzN4MaxAbEvm (a b : EvmWord) : Prop :=
-  isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                           (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackCarry2NzN4MaxAbEvm_def {a b : EvmWord} :
-    isAddbackCarry2NzN4MaxAbEvm a b =
-    isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                             (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-
--- ============================================================================
 -- Stack-level post state for n=4 max-skip DIV
 -- ============================================================================
 
@@ -220,6 +116,25 @@ theorem n4MaxSkipSemanticHolds_def {a b : EvmWord} :
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0) :=
   rfl
+
+/-- **EvmWord-form bridge to `isCallTrialN4_of_shift_nz`.**
+
+    Under shift ≠ 0 + b ≠ 0 (top limb), the runtime BLTU check ALWAYS picks
+    the call path. This is the EvmWord-form of
+    `EvmAsm.Evm64.isCallTrialN4_of_shift_nz` (in `MaxTrialVacuity.lean`).
+
+    Useful as the hbltu discharger when assembling
+    `evm_{div,mod}_n4_shift_nz_stack_spec` per
+    `memory/project_n4_shift_nz_dispatcher_plan.md` — the dispatcher
+    doesn't need to handle the max branch under shift ≠ 0 since
+    call-trial holds algebraically. -/
+theorem isCallTrialN4Evm_of_shift_nz (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0) :
+    isCallTrialN4Evm a b := by
+  rw [isCallTrialN4Evm_def]
+  exact isCallTrialN4_of_shift_nz (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3)
+    hb3nz hshift_nz
 
 /-- Semantic-correctness precondition for the n=4 max+addback sub-path: on
     **un-normalized** `a`, `b` limbs with the maximum trial quotient, the

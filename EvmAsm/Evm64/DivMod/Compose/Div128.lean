@@ -628,4 +628,31 @@ theorem div128_v2_spec (sp retAddr d uLo uHi : Word) (base : Word)
     (fun h hq => by xperm_hyp hq)
     h12345
 
+/-- Lifted `div128_v2_spec` over `sharedDivModCode_v2 base` — a thin
+    wrapper that lifts the cr from the singleton `ofProg`-form to the
+    shared cr via `cpsTriple_extend_code` + `shared_b12_div128_v2_sub`.
+
+    This is the v2 counterpart to `div128_spec` which already uses
+    `sharedDivModCode base` directly. Future v2-migrated specs (loop
+    body, full path) will use this lifted form.
+
+    Issue #1337 algorithm fix migration. -/
+theorem div128_v2_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
+    (v1Old v6Old v11Old : Word)
+    (retMem dMem dloMem un0Mem : Word)
+    (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
+    cpsTriple (base + div128Off) retAddr (sharedDivModCode_v2 base)
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
+       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      (div128V2SpecPost sp retAddr d uLo uHi) :=
+  cpsTriple_extend_code (hmono := shared_b12_div128_v2_sub)
+    (div128_v2_spec sp retAddr d uLo uHi base v1Old v6Old v11Old
+                     retMem dMem dloMem un0Mem halign)
+
 end EvmAsm.Evm64
