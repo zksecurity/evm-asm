@@ -1492,7 +1492,7 @@ private theorem div128Quot_v4_un21_lt_vTop_arith
     ```
     q1''.toNat * dHi.toNat ≤ uHi.toNat
     rhat''.toNat = uHi.toNat - q1''.toNat * dHi.toNat
-    rhat''.toNat < 2 ^ 32   -- Knuth Phase-1 invariant under shift-norm
+    rhat''.toNat < 2 ^ 32   -- ⚠ FALSE in some cases — see below
     ```
 
     Each Phase-1b correction maintains the Word-level invariant
@@ -1500,10 +1500,25 @@ private theorem div128Quot_v4_un21_lt_vTop_arith
     `_phase1_rhatc_bridge` already proven for q1c/rhatc, plus reasoning
     about the `phase2b_q0'` decrement + corresponding rhat increment.
 
-    The `rhat'' < 2^32` bound is the Knuth Phase-1 invariant (each
-    correction is bounded by the Phase-1a remainder; the 2-correction
-    loop terminates in the Knuth band). Stub for now; will close via
-    case-analysis on the BLTU branches at each correction. -/
+    **⚠ KNOWN ISSUE (2026-04-28)**: Empirical search found counterexamples
+    where `rhat''.toNat ≥ 2^32` after Phase-1b 2-correction (concrete:
+    dHi=2^31, dLo=2^32-1, uHi=9223371822106411008 gives rhat''=2^32).
+    The third claim is therefore FALSE under some shift-normalized
+    inputs. v4's algorithm STILL produces the correct full quotient
+    (verified empirically) — the Phase-2 setup `(rhat'' << 32) | div_un1`
+    truncates rhat'' to its low 32 bits, but the downstream Phase-2
+    div arithmetic still yields the right answer via different
+    mechanism than `_un21_lt_vTop`'s current proof.
+
+    **CONSEQUENCE**: my proof of `_un21_lt_vTop` (which uses this bridge)
+    has a soundness gap in the rhat'' ≥ 2^32 cases. The proof is
+    structurally correct GIVEN the bridge, but the bridge's third claim
+    is wrong. Need to either:
+    - Drop the third claim and re-prove `_un21_lt_vTop` differently
+      (handle rhat'' ≥ 2^32 case via the truncation mechanism).
+    - Find a tighter algorithmic invariant that holds universally.
+
+    Stub kept for now to expose the gap. Sorry intentional. -/
 private theorem div128Quot_v4_phase1_final_eucl_bridge
     (uHi uLo vTop : Word)
     (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
