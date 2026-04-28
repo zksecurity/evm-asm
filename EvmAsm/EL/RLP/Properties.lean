@@ -363,14 +363,16 @@ theorem decode_four_byte_string (b1 b2 b3 b4 : Byte) :
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x85, b1, b2, b3, b4, b5] = some (.bytes [b1..b5], [])`
-    — the canonical five-byte short-string encoding. -/
+    — the canonical five-byte short-string encoding. Specializes
+    `decodeAux_five_byte_string` at the top-level fuel. -/
 theorem decode_five_byte_string (b1 b2 b3 b4 b5 : Byte) :
     decode [(0x85 : Byte), b1, b2, b3, b4, b5] =
       some (.bytes [b1, b2, b3, b4, b5], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0x86, b1..b6] = some (.bytes [b1..b6], [])` — the
-    canonical six-byte short-string encoding. -/
+    canonical six-byte short-string encoding. Specializes
+    `decodeAux_six_byte_string` at the top-level fuel. -/
 theorem decode_six_byte_string (b1 b2 b3 b4 b5 b6 : Byte) :
     decode [(0x86 : Byte), b1, b2, b3, b4, b5, b6] =
       some (.bytes [b1, b2, b3, b4, b5, b6], []) := by
