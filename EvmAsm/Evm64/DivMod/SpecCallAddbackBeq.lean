@@ -3520,9 +3520,40 @@ theorem div128Quot_v2_phase2_no_wrap_lo_under_runtime (a b : EvmWord)
              -- Algebra: dHi * 2^32 ≥ 2^63 absorbs the dLo term.
     · -- Sub-case c: guard fires, check doesn't. q0' = q0c, rhat2' = rhat2c.
       rw [if_neg h_check, if_neg h_check]
-      sorry  -- TODO: From ¬check (rhat2c*2^32 + div_un0 ≥ q0c*dLo), goal
-             -- q0c * dLo ≤ rhat2c * 2^32 + div_un0 follows directly via
-             -- BLTU semantics (with rhat2c < 2^32 from h_guard for no truncation).
+      -- ¬check: ¬(rhat2c*2^32 + div_un0 < q0c*dLo) → rhat2c*2^32 + div_un0 ≥ q0c*dLo.
+      -- Goal: q0c * dLo ≤ rhat2c * 2^32 + div_un0 follows directly.
+      -- Need to lift via BLTU semantics + halfword_combine bridges.
+      have h_rhat2c_lt : rhat2c.toNat < 2^32 := by
+        have h_eq : rhat2c.toNat / 2^32 = 0 := by
+          have h : (rhat2c >>> (32 : BitVec 6).toNat).toNat = (0 : Word).toNat := by
+            rw [h_guard]
+          rw [BitVec.toNat_ushiftRight, EvmAsm.Rv64.AddrNorm.bv6_toNat_32,
+              Nat.shiftRight_eq_div_pow,
+              EvmAsm.Rv64.AddrNorm.word_toNat_0] at h
+          exact h
+        exact (Nat.div_eq_zero_iff_lt (by decide : (0:Nat) < 2^32)).mp h_eq
+      have h_un21_lt_vTop : un21.toNat < dHi.toNat * 2^32 + dLo.toNat :=
+        div128Quot_v2_un21_lt_vTop_under_runtime a b _hb3nz _hshift_nz _hbltu
+          _hcarry2_nz _hborrow_v2
+      have h_q0c_le : q0c.toNat ≤ 2^32 :=
+        div128Quot_q1c_le_pow32 un21 dHi dLo hdHi_ge hdLo_lt h_un21_lt_vTop
+      have h_q0c_dLo_lt_pow64 : q0c.toNat * dLo.toNat < 2^64 := by
+        have h1 : dLo.toNat ≤ 2^32 - 1 := by omega
+        have h2 : q0c.toNat * dLo.toNat ≤ 2^32 * (2^32 - 1) :=
+          Nat.mul_le_mul h_q0c_le h1
+        have h_pow_eq : (2^32 * (2^32 - 1) : Nat) = 2^64 - 2^32 := by decide
+        omega
+      have h_q0c_dLo_word : (q0c * dLo).toNat = q0c.toNat * dLo.toNat := by
+        rw [BitVec.toNat_mul]; exact Nat.mod_eq_of_lt h_q0c_dLo_lt_pow64
+      have h_rhatUn0_eq : ((rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0).toNat
+          = rhat2c.toNat * 2^32 + div_un0.toNat := by
+        rw [EvmAsm.Rv64.AddrNorm.bv6_toNat_32]
+        exact EvmWord.halfword_combine rhat2c div_un0 h_rhat2c_lt h_div_un0_lt
+      -- ¬BLTU: ¬(rhatUn0 < qDlo) → rhatUn0 ≥ qDlo.
+      rw [EvmWord.ult_iff] at h_check
+      push Not at h_check
+      rw [h_rhatUn0_eq, h_q0c_dLo_word] at h_check
+      omega
   · -- Sub-case a: guard doesn't fire (rhat2c ≥ 2^32).
     rw [if_neg h_guard, if_neg h_guard]
     -- Goal: q0c * dLo ≤ rhat2c * 2^32 + div_un0.
