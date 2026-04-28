@@ -23,84 +23,6 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
-/-- **Phase-2 final Euclidean bridge (v4)**: after Phase-2's 2-correction
-    loop, the post-correction `q0''` and `rhat2''` satisfy the Phase-2
-    Euclidean at the Nat level:
-
-    ```
-    q0''.toNat * dHi.toNat ≤ un21.toNat
-    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat
-    rhat2''.toNat < 2 ^ 32   -- Knuth Phase-2 invariant
-    ```
-
-    Mirror of `div128Quot_v4_phase1_final_eucl_bridge` for Phase-2.
-    Same template; closures use the analogous Phase-2a Euclidean
-    (q0c*dHi + rhat2c = un21) extended through 2 corrections. -/
-private theorem div128Quot_v4_phase2_final_eucl_bridge
-    (uHi uLo vTop : Word)
-    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
-    let dHi := vTop >>> (32 : BitVec 6).toNat
-    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := uLo >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu uHi dHi
-    let rhat := uHi - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
-    let rhat' :=
-      if rhatc >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo := q1c * dLo
-        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-      else rhatc
-    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
-    let rhat'' :=
-      if rhat' >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q1' * dLo
-        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
-      else rhat'
-    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
-    let cu_q1_dlo := q1'' * dLo
-    let un21 := cu_rhat_un1 - cu_q1_dlo
-    let q0 := rv64_divu un21 dHi
-    let rhat2 := un21 - q0 * dHi
-    let hi2 := q0 >>> (32 : BitVec 6).toNat
-    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
-    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
-    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
-    let rhat2' :=
-      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q0c * dLo
-        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
-      else rhat2c
-    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
-    let rhat2'' :=
-      if rhat2' >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo3 := q0' * dLo
-        let rhatUn0' := (rhat2' <<< (32 : BitVec 6).toNat) ||| div_un0
-        if BitVec.ult rhatUn0' qDlo3 then rhat2' + dHi else rhat2'
-      else rhat2'
-    q0''.toNat * dHi.toNat ≤ un21.toNat ∧
-    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat := by
-  -- Mirror of `_phase1_final_eucl_bridge`. To close cleanly, would need
-  -- the generic helpers (`_hi_fix_eucl_generic`, `_hi_fix_rc_lt_2_dHi_generic`,
-  -- `_phase1_one_correction_eucl`) which are all proven below in the file.
-  -- File-position prevents direct reference here without restructuring.
-  --
-  -- Additional blocker: q0c.toNat ≤ 2^32 bound. For Phase-1 this came
-  -- from `div128Quot_q1c_le_pow32` (input < vTop). For Phase-2 the
-  -- analogous bound needs un21.toNat < vTop.toNat, which is the sorry'd
-  -- `_un21_lt_vTop` (currently incomplete due to the truncation issue).
-  --
-  -- Once both are addressed (move helpers above this declaration OR
-  -- close `_un21_lt_vTop`), this bridge closes mechanically.
-  sorry
-
 /-- **Phase-1c Knuth range (v4).** The post-hi1-fix trial digit `q1c`
     sits in the classical Knuth range `[q*_phase1, q*_phase1 + 2]`.
 
@@ -2088,32 +2010,74 @@ theorem div128Quot_v4_phase2_euclidean (uHi uLo vTop : Word)
   -- Standard `q * vTop ≤ un21*2^32 + div_un0` floor inequality.
   exact Nat.div_mul_le_self _ _
 
-/-- **div128Quot_v4 Phase-2 no-wrap (lower bound).**
-
-    Phase-2 conjunct: after the 2nd D3 correction, the (un-truncated)
-    quotient digit `q0''` doesn't overshoot the corresponding remainder
-    word, i.e.
+/-- **Phase-2 final Euclidean bridge (v4)**: after Phase-2's 2-correction
+    loop, `q0''` and `rhat2''` satisfy the Phase-2 Euclidean at toNat:
 
     ```
-    q0'' * dLo ≤ rhat2'' * 2^32 + div_un0
+    q0''.toNat * dHi.toNat ≤ un21.toNat
+    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat
     ```
 
-    Where `rhat2''` is the post-2nd-correction remainder mirror.
+    Mirror of `_phase1_final_eucl_bridge` for Phase-2. Closes via the
+    proven generic helpers applied with D = un21. -/
+private theorem div128Quot_v4_phase2_final_eucl_bridge
+    (uHi uLo vTop : Word)
+    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' :=
+      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q0c * dLo
+        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
+      else rhat2c
+    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
+    let rhat2'' :=
+      if rhat2' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo3 := q0' * dLo
+        let rhatUn0' := (rhat2' <<< (32 : BitVec 6).toNat) ||| div_un0
+        if BitVec.ult rhatUn0' qDlo3 then rhat2' + dHi else rhat2'
+      else rhat2'
+    q0''.toNat * dHi.toNat ≤ un21.toNat ∧
+    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat := by
+  -- Closure pattern (deferred — mirrors `_phase1_final_eucl_bridge`):
+  -- Chain `_hi_fix_eucl_generic` (D = un21) + `_hi_fix_rc_lt_2_dHi_generic`
+  -- + 2 calls of `_phase1_one_correction_eucl` (also generic, D = un21).
+  -- Blocker: `q0c.toNat ≤ 2^32` requires `un21.toNat < vTop.toNat`,
+  -- which is the sorry'd `_un21_lt_vTop` (truncation issue).
+  sorry
 
-    **Why this is unconditional under v4** (unlike v2/v3): with 2 D3
-    corrections in Phase-2, q0'' = q*_phase2 exactly. The Phase-2
-    Euclidean delivers `q*_phase2 * vTop ≤ un21*2^32 + div_un0`.
-    Splitting `vTop = dHi*2^32 + dLo` and using the post-correction
-    remainder bookkeeping recovers `q0'' * dLo ≤ rhat2'' * 2^32 +
-    div_un0`. Sub-case b of v2's analog was provably FALSE under
-    1-correction Phase-2 (q0' could exceed q*_phase2 by 1); v4's
-    2-correction eliminates this.
-
-    Closure composes:
-    - `_phase2_perfect` (q0'' = q*_phase2, sorry'd dispatcher).
-    - `_phase2_final_eucl_bridge` (Phase-2 Euclidean at toNat, sorry'd).
-    - `_phase1_no_bltu_arith` (PROVEN pure-Nat algebraic core, generic
-      over uHi/q1c). Reused here with un21/q0''. -/
 theorem div128Quot_v4_phase2_no_wrap_lo (uHi uLo vTop : Word)
     (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
     (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
