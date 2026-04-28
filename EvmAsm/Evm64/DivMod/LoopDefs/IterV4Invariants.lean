@@ -1485,6 +1485,40 @@ private theorem div128Quot_v4_un21_lt_vTop_arith
   rw [h_rhat_mul, h_vTop]
   omega
 
+/-- **Phase-1b 1-correction Eucl preservation (v4 Word↔Nat)**: each
+    `phase2b_q0'` correction preserves the Phase-1a Euclidean identity
+    at the toNat level: q.toNat * dHi.toNat + rhat.toNat = uHi.toNat
+    (for any q, rhat, dHi from the algorithm state).
+
+    The post-correction (q', rhat') still satisfy this identity because:
+    - If BLTU doesn't fire (or guard fails): q' = q, rhat' = rhat.
+    - If BLTU fires: q' = q - 1, rhat' = rhat + dHi (and the rhat-update
+      branch matches: `if guard then if bltu then rhat+dHi else rhat`).
+      Algebraically, `(q-1)*dHi + (rhat+dHi) = q*dHi + rhat`.
+
+    This is the Word-level "1-correction step" lemma. Used by
+    `_phase1_final_eucl_bridge` to chain through 2 corrections. -/
+private theorem div128Quot_v4_phase1_one_correction_eucl
+    (uHi q rhat dHi dLo div_un1 : Word)
+    (_h_dHi_lt : dHi.toNat < 2 ^ 32)
+    (_h_q_dHi_le : q.toNat * dHi.toNat ≤ uHi.toNat)
+    (_h_rhat_eq : rhat.toNat = uHi.toNat - q.toNat * dHi.toNat)
+    (_h_q_le_pow32 : q.toNat ≤ 2 ^ 32)
+    (_h_q_ge_1 : q.toNat ≥ 1)
+    (_h_rhat_dHi_no_overflow : rhat.toNat + dHi.toNat < 2 ^ 64) :
+    let q' := div128Quot_phase2b_q0' q rhat dLo div_un1
+    let rhat' :=
+      if rhat >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q * dLo
+        let rhatUn := (rhat <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn qDlo then rhat + dHi else rhat
+      else rhat
+    q'.toNat * dHi.toNat ≤ uHi.toNat ∧
+    rhat'.toNat = uHi.toNat - q'.toNat * dHi.toNat := by
+  sorry  -- Case analysis on (guard, BLTU). Each case follows from
+         -- `_post_correction_eucl_arith` (proven) for the BLTU-fires
+         -- case, or trivially for the BLTU-fails / guard-fails cases.
+
 /-- **Phase-1 final Euclidean bridge (v4)**: after v4's 2-correction
     Phase-1b, the post-correction `q1''` and `rhat''` satisfy the
     Phase-1a Euclidean at the Nat level:
