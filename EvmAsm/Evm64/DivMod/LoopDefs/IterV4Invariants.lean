@@ -38,7 +38,7 @@ open EvmAsm.Rv64
     (q0c*dHi + rhat2c = un21) extended through 2 corrections. -/
 private theorem div128Quot_v4_phase2_final_eucl_bridge
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
     (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
@@ -87,14 +87,19 @@ private theorem div128Quot_v4_phase2_final_eucl_bridge
       else rhat2'
     q0''.toNat * dHi.toNat ≤ un21.toNat ∧
     rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat := by
-  sorry  -- Mirror of `_phase1_final_eucl_bridge` for Phase-2.
-         -- The previously-claimed `rhat2''.toNat < 2^32` was DROPPED
-         -- (parallel to the Phase-1 bridge fix; same false-claim issue
-         -- in some inputs where rhat2'' can exceed 2^32).
-         -- Same proof template as Phase-1 final Eucl bridge: chain 2
-         -- calls of a Phase-2 1-correction Eucl helper, with
-         -- analogous Phase-2a Eucl `q0c*dHi + rhat2c = un21` extracted
-         -- as a sub-helper.
+  -- Mirror of `_phase1_final_eucl_bridge`. To close cleanly, would need
+  -- the generic helpers (`_hi_fix_eucl_generic`, `_hi_fix_rc_lt_2_dHi_generic`,
+  -- `_phase1_one_correction_eucl`) which are all proven below in the file.
+  -- File-position prevents direct reference here without restructuring.
+  --
+  -- Additional blocker: q0c.toNat ≤ 2^32 bound. For Phase-1 this came
+  -- from `div128Quot_q1c_le_pow32` (input < vTop). For Phase-2 the
+  -- analogous bound needs un21.toNat < vTop.toNat, which is the sorry'd
+  -- `_un21_lt_vTop` (currently incomplete due to the truncation issue).
+  --
+  -- Once both are addressed (move helpers above this declaration OR
+  -- close `_un21_lt_vTop`), this bridge closes mechanically.
+  sorry
 
 /-- **Phase-1c Knuth range (v4).** The post-hi1-fix trial digit `q1c`
     sits in the classical Knuth range `[q*_phase1, q*_phase1 + 2]`.
@@ -1571,6 +1576,44 @@ private theorem div128Quot_v4_hi_fix_eucl_generic
           ≥ 1 * dHi.toNat := Nat.mul_le_mul_right _ this
         _ = dHi.toNat := Nat.one_mul _
     omega
+
+/-- **Generic hi-fix rc bound**: parameterized version of
+    `_phase1_rhatc_lt_2_dHi`. Under shift-norm (`dHi ≥ 2^31`,
+    `dHi < 2^32`), the post-hi-fix `rc.toNat < 2 * dHi.toNat`. -/
+private theorem div128Quot_v4_hi_fix_rc_lt_2_dHi_generic
+    (D dHi : Word)
+    (hdHi_ge : dHi.toNat ≥ 2 ^ 31)
+    (hdHi_lt : dHi.toNat < 2 ^ 32) :
+    let q := rv64_divu D dHi
+    let r := D - q * dHi
+    let hi := q >>> (32 : BitVec 6).toNat
+    let rc := if hi = 0 then r else r + dHi
+    rc.toNat < 2 * dHi.toNat := by
+  intro q r hi rc
+  have hdHi_ne : dHi ≠ 0 := by
+    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
+  have h_q_eucl : D.toNat = q.toNat * dHi.toNat + D.toNat % dHi.toNat :=
+    EvmWord.rv64_divu_euclidean D dHi hdHi_ne
+  have h_q_dHi_le : q.toNat * dHi.toNat ≤ D.toNat :=
+    EvmWord.rv64_divu_mul_le D dHi hdHi_ne
+  have h_q_dHi_toNat : (q * dHi).toNat = q.toNat * dHi.toNat := by
+    rw [BitVec.toNat_mul]
+    exact Nat.mod_eq_of_lt (lt_of_le_of_lt h_q_dHi_le D.isLt)
+  have h_r_toNat : r.toNat = D.toNat % dHi.toNat := by
+    show (D - q * dHi).toNat = _
+    rw [BitVec.toNat_sub, h_q_dHi_toNat]; omega
+  have h_r_lt : r.toNat < dHi.toNat :=
+    h_r_toNat ▸ Nat.mod_lt _
+      (Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h)))
+  by_cases h_hi : hi = 0
+  · show (if hi = 0 then r else r + dHi).toNat < 2 * dHi.toNat
+    rw [if_pos h_hi]; linarith
+  · show (if hi = 0 then r else r + dHi).toNat < 2 * dHi.toNat
+    rw [if_neg h_hi, BitVec.toNat_add]
+    have h_no_ov : r.toNat + dHi.toNat < 2 ^ 64 := by
+      have : r.toNat + dHi.toNat < 2^32 + 2^32 := by linarith
+      linarith [show (2:Nat)^32 + 2^32 < 2^64 from by decide]
+    rw [Nat.mod_eq_of_lt h_no_ov]; linarith
 
 /-- **Phase-1a rhatc bound**: under shift-norm, `rhatc.toNat < 2 * dHi.toNat`.
 
