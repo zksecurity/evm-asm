@@ -86,11 +86,15 @@ private theorem div128Quot_v4_phase2_final_eucl_bridge
         if BitVec.ult rhatUn0' qDlo3 then rhat2' + dHi else rhat2'
       else rhat2'
     q0''.toNat * dHi.toNat ≤ un21.toNat ∧
-    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat ∧
-    rhat2''.toNat < 2 ^ 32 := by
+    rhat2''.toNat = un21.toNat - q0''.toNat * dHi.toNat := by
   sorry  -- Mirror of `_phase1_final_eucl_bridge` for Phase-2.
-         -- Same proof template; closures via Phase-2a Euclidean
-         -- (rv64_divu_mul_le on un21/dHi) extended through 2 corrections.
+         -- The previously-claimed `rhat2''.toNat < 2^32` was DROPPED
+         -- (parallel to the Phase-1 bridge fix; same false-claim issue
+         -- in some inputs where rhat2'' can exceed 2^32).
+         -- Same proof template as Phase-1 final Eucl bridge: chain 2
+         -- calls of a Phase-2 1-correction Eucl helper, with
+         -- analogous Phase-2a Eucl `q0c*dHi + rhat2c = un21` extracted
+         -- as a sub-helper.
 
 /-- **Phase-1c Knuth range (v4).** The post-hi1-fix trial digit `q1c`
     sits in the classical Knuth range `[q*_phase1, q*_phase1 + 2]`.
@@ -2041,7 +2045,7 @@ theorem div128Quot_v4_phase2_no_wrap_lo (uHi uLo vTop : Word)
   -- Phase-2 final Euclidean bridge: q0''*dHi + rhat2'' = un21 at toNat.
   have h_eucl := div128Quot_v4_phase2_final_eucl_bridge uHi uLo vTop
     h_vTop_ge_pow63 h_uHi_lt_vTop
-  obtain ⟨h_q0''_dHi_le, h_rhat2''_eq, _h_rhat2''_lt⟩ := h_eucl
+  obtain ⟨h_q0''_dHi_le, h_rhat2''_eq⟩ := h_eucl
   have h_decomp : vTop.toNat = dHi.toNat * 2 ^ 32 + dLo.toNat :=
     div128Quot_vTop_decomp vTop
   -- Apply pure-Nat helper (Phase-1's, generic; here with un21/div_un0/q0''/rhat2'').
