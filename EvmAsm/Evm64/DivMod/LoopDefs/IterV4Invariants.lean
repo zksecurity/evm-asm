@@ -179,13 +179,61 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
         omega
     linarith
 
+/-- **Phase-1 inner-BLTU fails when `q1c.toNat ≤ q_true` (v4).**
+
+    The Word-level BLTU check inside `div128Quot_phase2b_q0' q1c rhatc dLo div_un1`
+    fires only when `(rhatc << 32) | div_un1 < q1c * dLo`. Under shift-norm
+    + `q1c.toNat ≤ q_true`, the math is:
+
+    rhatc.toNat = uHi.toNat - q1c.toNat * dHi.toNat (Word subtraction
+    doesn't wrap because q1c * dHi ≤ uHi by Knuth-A).
+
+    `((rhatc << 32) | div_un1).toNat = rhatc.toNat * 2^32 + div_un1.toNat`
+    when rhatc < 2^32 and div_un1 < 2^32 (no truncation, `|||` reduces to `+`).
+
+    Then ¬ BLTU follows from `q1c * vTop ≤ uHi * 2^32 + div_un1`
+    (Knuth-A, since q1c ≤ q_true).
+
+    Pure-Word stub for now; depends on standard arithmetic facts that
+    are routine but voluminous. -/
+theorem div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
+    (uHi uLo vTop : Word)
+    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (_h_q1c_le_q_true :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      q1c.toNat ≤ (uHi.toNat * 2^32 + div_un1.toNat) /
+                  (dHi.toNat * 2^32 + dLo.toNat)) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    ¬ (rhatc >>> (32 : BitVec 6).toNat = 0 ∧
+       BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1) (q1c * dLo)) := by
+  sorry  -- Pure Word arithmetic. Decomposes into:
+         -- (1) rhatc.toNat = uHi.toNat - q1c.toNat * dHi.toNat
+         --     (under shift-norm + q1c.toNat ≤ q_true ⟹ q1c * dHi ≤ uHi).
+         -- (2) ((rhatc << 32) | div_un1).toNat =
+         --       rhatc.toNat * 2^32 + div_un1.toNat under rhatc < 2^32.
+         -- (3) q1c * dLo ≤ rhatc * 2^32 + div_un1 from q1c * vTop ≤
+         --     uHi * 2^32 + div_un1 (Knuth-A, since q1c ≤ q_true).
+
 /-- **Phase-1 overshoot 0 case (v4).** Under `q1c.toNat = q_true`,
     Phase-1b's 1st and 2nd D3 corrections are both no-ops, so
     `q1'' = q1c = q_true`. -/
 theorem div128Quot_v4_phase1_overshoot_0_sub (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
-    (_h_q1c_eq_q_true :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q1c_eq_q_true :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
       let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -212,8 +260,39 @@ theorem div128Quot_v4_phase1_overshoot_0_sub (uHi uLo vTop : Word)
     let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
     q1''.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
                  (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- Both BLTU checks fail (q1c is exact); both `phase2b_q0'`
-         -- calls return their input via `_eq_self_of_no_bltu`.
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1''
+  -- Both `phase2b_q0'` calls are no-ops: the BLTU on (rhatc, q1c*dLo)
+  -- doesn't fire because q1c = q_true (Knuth-A bound saturates). Apply
+  -- the inner-BLTU-fails helper to discharge both.
+  have h_q1c_le : q1c.toNat ≤ (uHi.toNat * 2^32 + div_un1.toNat) /
+                              (dHi.toNat * 2^32 + dLo.toNat) := by
+    rw [h_q1c_eq_q_true]
+  have h_no_bltu := div128Quot_v4_phase1_inner_bltu_fails_when_q1c_le_q_true
+    uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop h_q1c_le
+  -- 1st correction: q1' = q1c.
+  have h_q1'_eq : q1' = q1c :=
+    div128Quot_phase2b_q0'_eq_self_of_no_bltu q1c rhatc dLo div_un1 h_no_bltu
+  -- rhat' = rhatc: the outer rhatc-update's inner if has the same
+  -- ¬ BLTU as h_no_bltu, so the if-then else branch returns rhatc.
+  have h_rhat'_eq : rhat' = rhatc := by
+    show (if rhatc >>> (32 : BitVec 6).toNat = 0 then
+            (if BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1)
+                            (q1c * dLo)
+             then rhatc + dHi else rhatc)
+          else rhatc) = rhatc
+    by_cases h_guard : rhatc >>> (32 : BitVec 6).toNat = 0
+    · rw [if_pos h_guard]
+      have h_inner : ¬ BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1)
+                                   (q1c * dLo) :=
+        fun hb => h_no_bltu ⟨h_guard, hb⟩
+      rw [if_neg h_inner]
+    · rw [if_neg h_guard]
+  -- 2nd correction: q1'' = phase2b_q0' q1' rhat' dLo div_un1
+  --   = phase2b_q0' q1c rhatc dLo div_un1 = q1c (no-op via the same helper).
+  show (div128Quot_phase2b_q0' q1' rhat' dLo div_un1).toNat = _
+  rw [h_q1'_eq, h_rhat'_eq,
+      div128Quot_phase2b_q0'_eq_self_of_no_bltu q1c rhatc dLo div_un1 h_no_bltu]
+  exact h_q1c_eq_q_true
 
 /-- **Phase-1 overshoot 1 case (v4).** Under `q1c.toNat = q_true + 1`,
     the 1st D3 correction decrements to q_true, the 2nd is a no-op. -/
