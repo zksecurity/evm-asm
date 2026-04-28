@@ -453,7 +453,10 @@ theorem div128Quot_v2_phase1b_2nd_guard_on_counterexample :
     so `u4 < 2^shift ≤ 2^63`.
 
     True quotient: `((2^64-2^32+1) * 2^64) / (2^64-1) = 2^64-2^32+1`.
-    Algorithm output: `2^64-2^33+1` (undershoot = 2^33 - 2^32 = 2^32). -/
+    Algorithm output: `2^64-2^33+1` (undershoot = 2^33 - 2^32 = 2^32).
+
+    See `div128Quot_v3` (in `LoopDefs/IterV3.lean`) for the FIXED algorithm
+    that adds the `rhatc >> 32 = 0` guard to the 1st correction. -/
 theorem div128Quot_v2_buggy_at_unreachable_uHi :
     let uHi : Word := BitVec.ofNat 64 (2^64 - 2^32 + 1)
     let uLo : Word := 0
@@ -479,12 +482,12 @@ theorem u4_lt_pow63_on_counterexample :
     u4.toNat < 2^63 := by
   decide
 
-/-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
-    the input to actually be in the call+addback BEQ runtime regime (i.e.
-    the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
-    `hborrow`). On arbitrary inputs the predicate doesn't hold — the closure
-    only asserts conditional correctness. The counterexample
-    (`...holds_on_counterexample` above) was specifically constructed to be
-    in the BEQ regime, which is why it's the right witness. -/
+-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
+-- the input to actually be in the call+addback BEQ runtime regime (i.e.
+-- the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
+-- `hborrow`). On arbitrary inputs the predicate doesn't hold — the closure
+-- only asserts conditional correctness. The counterexample
+-- (`...holds_on_counterexample` above) was specifically constructed to be
+-- in the BEQ regime, which is why it's the right witness.
 
 end EvmAsm.Evm64
