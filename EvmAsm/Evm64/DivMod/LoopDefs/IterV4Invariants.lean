@@ -1416,6 +1416,88 @@ private theorem div128Quot_v4_un21_lt_vTop_arith
   rw [h_rhat_mul, h_vTop]
   omega
 
+/-- **Pure-Nat truncation-absorbing un21 < vTop.**
+
+    Strengthens `_un21_lt_vTop_arith` to handle the Word-level
+    truncation in `(rhat'' << 32) | div_un1`: when `rhat'' ≥ 2^32`,
+    the OR-shift truncates to `rhat'' mod 2^32`, but the modular
+    Word subtraction `cu_rhat_un1 - cu_q1_dlo` absorbs the truncation
+    correctly. Result: `un21.toNat = Phase-1 remainder < vTop`.
+
+    Proof outline: case-split on `k = rhat'' / 2^32 ∈ {0, 1}`.
+    The bound `rhat'' < 2^33` follows from `q1'' * dLo < 2^64` plus
+    `Phase-1 remainder < vTop ≤ 2^64`. Both branches reduce to the
+    Phase-1 remainder bound from `_un21_lt_vTop_arith`. -/
+private theorem div128Quot_v4_un21_lt_vTop_truncation_arith
+    (uHi vTop dHi dLo div_un1 q1'' rhat'' : Nat)
+    (h_vTop_eq : vTop = dHi * 2^32 + dLo)
+    (h_dLo_lt : dLo < 2^32)
+    (h_vTop_le : vTop ≤ 2^64)
+    (h_q1''_succ_gt : (q1'' + 1) * vTop > uHi * 2^32 + div_un1)
+    (h_q1''_dHi_le : q1'' * dHi ≤ uHi)
+    (h_rhat''_eq : rhat'' = uHi - q1'' * dHi)
+    (h_no_wrap : q1'' * dLo ≤ rhat'' * 2^32 + div_un1)
+    (h_q1''_le : q1'' ≤ 2^32) :
+    ((rhat'' % 2^32) * 2^32 + div_un1 + 2^64 - q1'' * dLo) % 2^64 < vTop := by
+  -- The Phase-1 remainder bound (without truncation).
+  have h_rem_lt : rhat'' * 2^32 + div_un1 - q1'' * dLo < vTop :=
+    div128Quot_v4_un21_lt_vTop_arith uHi vTop dHi dLo div_un1 q1'' rhat''
+      h_vTop_eq h_q1''_succ_gt h_rhat''_eq h_q1''_dHi_le h_no_wrap
+  -- Phase-1 remainder also < 2^64.
+  have h_rem_lt_pow64 : rhat'' * 2^32 + div_un1 - q1'' * dLo < 2^64 :=
+    lt_of_lt_of_le h_rem_lt h_vTop_le
+  -- Q*dLo < 2^64.
+  have h_QdLo_lt : q1'' * dLo < 2^64 := by
+    calc q1'' * dLo
+        ≤ 2^32 * dLo := Nat.mul_le_mul_right _ h_q1''_le
+      _ < 2^32 * 2^32 := (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr h_dLo_lt
+      _ = 2^64 := by decide
+  -- rhat'' < 2^33: rhat''*2^32 + div_un1 = q1''*dLo + r_phase1 < 2^64 + 2^64 = 2^65.
+  have h_rhat_lt : rhat'' < 2^33 := by
+    by_contra h_not
+    have h_ge : 2^33 ≤ rhat'' := Nat.le_of_not_lt h_not
+    have h1 : 2^65 ≤ rhat'' * 2^32 := by
+      calc (2^65 : Nat) = 2^33 * 2^32 := by decide
+        _ ≤ rhat'' * 2^32 := Nat.mul_le_mul_right _ h_ge
+    omega
+  -- Decompose rhat'' = (rhat'' / 2^32) * 2^32 + rhat'' % 2^32.
+  have h_div_mod : (rhat'' / 2^32) * 2^32 + (rhat'' % 2^32) = rhat'' := by
+    have := Nat.div_add_mod rhat'' (2^32)
+    linarith
+  have h_mod_lt : rhat'' % 2^32 < 2^32 := Nat.mod_lt _ (by decide)
+  -- k = rhat'' / 2^32 ≤ 1.
+  have h_k_le : rhat'' / 2^32 ≤ 1 := by
+    have h1 : rhat'' < 2 * 2^32 := by
+      have : (2 * 2^32 : Nat) = 2^33 := by decide
+      omega
+    omega
+  -- Case split: k = 0 or k = 1.
+  interval_cases (rhat'' / 2^32)
+  · -- k = 0: rhat'' = rhat'' % 2^32, so rhat'' < 2^32.
+    have h_rhat_eq : rhat'' = rhat'' % 2^32 := by omega
+    have h_rhat_lt32 : rhat'' < 2^32 := by omega
+    -- Goal becomes: (rhat''*2^32 + div_un1 + 2^64 - q1''*dLo) % 2^64 < vTop.
+    have h_eq1 : rhat'' % 2^32 = rhat'' := h_rhat_eq.symm
+    rw [h_eq1]
+    -- Rewrite (rhat''*2^32 + div_un1 + 2^64 - q1''*dLo) = r_phase1 + 2^64.
+    have h_eq2 : rhat'' * 2^32 + div_un1 + 2^64 - q1'' * dLo
+              = (rhat'' * 2^32 + div_un1 - q1'' * dLo) + 2^64 := by omega
+    rw [h_eq2]
+    rw [Nat.add_mod, Nat.mod_self, Nat.add_zero, Nat.mod_mod,
+        Nat.mod_eq_of_lt h_rem_lt_pow64]
+    exact h_rem_lt
+  · -- k = 1: rhat'' = 2^32 + rhat'' % 2^32, so 2^32 ≤ rhat'' < 2^33.
+    have h_rhat_eq : rhat'' = 2^32 + rhat'' % 2^32 := by omega
+    -- (rhat'' % 2^32)*2^32 + 2^64 = rhat''*2^32.
+    have h_mul_eq : (rhat'' % 2^32) * 2^32 + 2^64 = rhat'' * 2^32 := by
+      conv_rhs => rw [h_rhat_eq]
+      ring
+    -- Substitute.
+    have h_eq : (rhat'' % 2^32) * 2^32 + div_un1 + 2^64 - q1'' * dLo
+              = rhat'' * 2^32 + div_un1 - q1'' * dLo := by omega
+    rw [h_eq, Nat.mod_eq_of_lt h_rem_lt_pow64]
+    exact h_rem_lt
+
 /-- **Generic hi-fix Eucl bridge**: parameterized version of
     `_phase1_rhatc_bridge`. Given a dividend D and divisor dHi with
     dHi ≥ 2^31, the post-hi-fix (qc, rc) satisfy the rv64_divu Eucl:
@@ -1974,9 +2056,44 @@ theorem div128Quot_v4_un21_lt_vTop (uHi uLo vTop : Word)
                        (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat := by
     rw [EvmAsm.Rv64.AddrNorm.bv6_toNat_32]
     exact halfword_combine_mod rhat'' div_un1 h_div_un1_lt
-  sorry  -- DEFERRED: remaining is Word↔Nat subtraction algebra
-         -- + Phase-1 Eucl substitution + mod-2^64-absorption argument.
-         -- See the 7-step outline in the previous version of this comment.
+  -- (q1'' + 1) * vTop > uHi*2^32 + div_un1 (no-overshoot, from Phase-1 perfect).
+  have h_vTop_pos : 0 < vTop.toNat :=
+    lt_of_lt_of_le (by decide : (0 : Nat) < 2 ^ 63) h_vTop_ge_pow63
+  have h_q1''_succ_gt : (q1''.toNat + 1) * vTop.toNat >
+                        uHi.toNat * 2 ^ 32 + div_un1.toNat := by
+    have h_pos' : 0 < dHi.toNat * 2 ^ 32 + dLo.toNat := by
+      have := h_decomp ▸ h_vTop_pos; omega
+    have h := Nat.lt_div_mul_add (a := uHi.toNat * 2 ^ 32 + div_un1.toNat) h_pos'
+    rw [show (q1''.toNat + 1) * vTop.toNat
+          = q1''.toNat * vTop.toNat + vTop.toNat from by ring]
+    rw [h_perfect, h_decomp]
+    exact h
+  -- vTop ≤ 2^64 (Word).
+  have h_vTop_le_pow64 : vTop.toNat ≤ 2 ^ 64 := by
+    have := vTop.isLt
+    omega
+  -- un21.toNat = (cu_rhat_un1.toNat + (2^64 - cu_q1_dlo.toNat)) % 2^64.
+  have h_un21_eq : un21.toNat =
+      ((rhat''.toNat % 2 ^ 32) * 2 ^ 32 + div_un1.toNat + 2 ^ 64 -
+        q1''.toNat * dLo.toNat) % 2 ^ 64 := by
+    show (cu_rhat_un1 - cu_q1_dlo).toNat = _
+    rw [BitVec.toNat_sub']
+    rw [show cu_rhat_un1 = (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1 from rfl]
+    rw [show cu_q1_dlo = q1'' * dLo from rfl]
+    rw [h_rhatUn1_mod, h_q_dLo_eq]
+    -- Goal: (X + (2^64 - Y)) % 2^64 = (X + 2^64 - Y) % 2^64.
+    have h_Y_lt : q1''.toNat * dLo.toNat < 2 ^ 64 := by
+      calc q1''.toNat * dLo.toNat
+          ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1''_lt
+        _ < 2^32 * 2^32 := (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+        _ = 2^64 := by decide
+    congr 1
+    omega
+  rw [h_un21_eq]
+  exact div128Quot_v4_un21_lt_vTop_truncation_arith uHi.toNat vTop.toNat
+    dHi.toNat dLo.toNat div_un1.toNat q1''.toNat rhat''.toNat
+    h_decomp hdLo_lt h_vTop_le_pow64 h_q1''_succ_gt h_q1''_dHi_le h_rhat''_eq
+    h_no_wrap h_q1''_lt
 
 /-- **Phase-2 Euclidean for q0'' (v4).** Combines Phase-2 perfection with
     the classical Euclidean to give the closure step for
@@ -2099,8 +2216,9 @@ private theorem div128Quot_v4_phase2_final_eucl_bridge
   -- Closure pattern (deferred — mirrors `_phase1_final_eucl_bridge`):
   -- Chain `_hi_fix_eucl_generic` (D = un21) + `_hi_fix_rc_lt_2_dHi_generic`
   -- + 2 calls of `_phase1_one_correction_eucl` (also generic, D = un21).
-  -- Blocker: `q0c.toNat ≤ 2^32` requires `un21.toNat < vTop.toNat`,
-  -- which is the sorry'd `_un21_lt_vTop` (truncation issue).
+  -- Now unblocked: `_un21_lt_vTop` is proven (truncation absorption via
+  -- `_un21_lt_vTop_truncation_arith`), giving `un21 < vTop` which makes
+  -- `q0c.toNat ≤ 2^32` discharge cleanly. Mechanical re-derivation pending.
   sorry
 
 theorem div128Quot_v4_phase2_no_wrap_lo (uHi uLo vTop : Word)
