@@ -719,12 +719,62 @@ theorem div128Quot_v4_phase1_overshoot_1_sub (uHi uLo vTop : Word)
     -- h_q1c_eq_q_true_plus_1: q1c.toNat = q_true_phase1 + 1.
     omega
 
-/-- **Phase-1 overshoot 2 case (v4).** Under `q1c.toNat = q_true + 2`,
-    the 1st D3 correction decrements to q_true + 1, the 2nd to q_true. -/
-theorem div128Quot_v4_phase1_overshoot_2_sub (uHi uLo vTop : Word)
+/-- **Phase-1 overshoot 2 case (v4) — rhatc < 2^32 sub-case.** Under
+    `q1c.toNat = q_true + 2` AND `rhatc < 2^32` (guard passes), the 1st
+    BLTU fires (q1' = q_true + 1), then the 2nd BLTU ALSO fires
+    (q1'' = q_true). The crucial v4 case where Knuth's full
+    2-correction loop is required. -/
+private theorem div128Quot_v4_phase1_overshoot_2_rhatc_lt_pow32_sub
+    (uHi uLo vTop : Word)
     (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
     (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
     (_h_q1c_eq_q_true_plus_2 :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      q1c.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
+                  (dHi.toNat * 2^32 + dLo.toNat) + 2)
+    (_h_rhatc_lt :
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      rhatc.toNat < 2^32) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu uHi dHi
+    let rhat := uHi - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
+    let rhat' :=
+      if rhatc >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo := q1c * dLo
+        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    q1''.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
+                 (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- Boundary case proof: 1st BLTU fires (q1c overshoots by 2),
+         -- q1' = q1c - 1 = q_true + 1. rhat' = rhatc + dHi.
+         -- 2nd BLTU also fires (q1' STILL overshoots by 1).
+         -- q1'' = q1' - 1 = q_true. The crucial v4 case where v2's
+         -- pre-fix 2nd correction mishandled the truncation; v4's
+         -- symmetric guard correctly enables both corrections.
+
+/-- **Phase-1 overshoot 2 case (v4).** Under `q1c.toNat = q_true + 2`,
+    the 1st D3 correction decrements to q_true + 1, the 2nd to q_true. -/
+theorem div128Quot_v4_phase1_overshoot_2_sub (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat)
+    (h_q1c_eq_q_true_plus_2 :
       let dHi := vTop >>> (32 : BitVec 6).toNat
       let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
       let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -751,9 +801,24 @@ theorem div128Quot_v4_phase1_overshoot_2_sub (uHi uLo vTop : Word)
     let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
     q1''.toNat = (uHi.toNat * 2^32 + div_un1.toNat) /
                  (dHi.toNat * 2^32 + dLo.toNat) := by
-  sorry  -- The crucial new case in v4: 1st BLTU fires (q1' = q_true + 1),
-         -- 2nd BLTU also fires (q1'' = q_true). v2's pre-fix 2nd correction
-         -- mishandled the truncation here; v4's symmetric guard fixes it.
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1''
+  -- Same dispatcher as `_phase1_overshoot_1_sub`: case-split on rhatc guard.
+  by_cases h_rhatc_lt : rhatc.toNat < 2^32
+  · -- rhatc < 2^32: 1st BLTU fires, q1' = q_true + 1; 2nd BLTU also fires,
+    -- q1'' = q_true. Delegated to focused helper below.
+    exact div128Quot_v4_phase1_overshoot_2_rhatc_lt_pow32_sub
+      uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop h_q1c_eq_q_true_plus_2 h_rhatc_lt
+  · -- rhatc ≥ 2^32: vacuous via `_no_overshoot_when_rhatc_ge_pow32`
+    --   (contradicts the overshoot-2 hypothesis even more strongly).
+    --   Actually under hi1 ≠ 0 (which forces rhatc ≥ 2^32 to be possible),
+    --   q1c ≤ q_true + 1 (Knuth-B with hi1 ≠ 0), so overshoot-2 is
+    --   already impossible at the Knuth-range level. The dispatcher
+    --   bound suffices.
+    push Not at h_rhatc_lt
+    exfalso
+    have h_no_overshoot := div128Quot_v4_phase1_no_overshoot_when_rhatc_ge_pow32
+      uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop h_rhatc_lt
+    omega
 
 /-- **Phase-1b 2-correction perfection (v4).** After v4's symmetric
     Phase-1b 2-correction loop, `q1''` equals the abstract Phase-1
