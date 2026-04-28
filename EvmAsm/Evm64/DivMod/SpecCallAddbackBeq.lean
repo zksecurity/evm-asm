@@ -1574,20 +1574,74 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
     _ ≤ (u4.toNat * 2^256 + val256 un0 un1 un2 un3) /
         val256 b0' b1' b2' b3' + 2 := h_step2
 
+/-- **Knuth-A v2 at the algorithm level** — the trial quotient `q1''`
+    after the v2 algorithm's 2 Phase-1b corrections is at LEAST
+    `floor(x / vTop)`, where `x = uHi * 2^32 + div_un1` (the 96-bit
+    intermediate) and `vTop = dHi * 2^32 + dLo` (the divisor's top 64).
+
+    Combined with the upper bound from `div128Quot_v2_qHat_vTop_le_full_untruncated`
+    (giving `q1'' ≤ x / vTop` modulo conj1 of the no_wrap stub), this
+    pins `q1'' = floor(x / vTop)` exactly, so the Phase-1 residue
+    `un21 = x mod vTop < vTop`.
+
+    This is the v2 mirror of v1's open problem on tight Phase 1 — see
+    `knuth_compose_weak_lower_nat` in Div128KnuthLower.lean: v1's "tight
+    Phase 1 hypothesis is currently unproven; requires Knuth Theorem C
+    Word-level". The 2-correction structure of v2 makes this tractable
+    in principle (the 2nd Phase-1b correction's trigger condition gives
+    extra information), but it remains the substantive Phase-1 blocker.
+
+    **The substantive content of `div128Quot_v2_un21_lt_vTop_under_runtime`
+    is encapsulated here.** Once this Knuth-A claim is closed, the un21
+    bound follows mechanically (Phase 1 Euclidean + arithmetic).
+
+    Issue #1337 algorithm fix migration. Path-3 Knuth-A substantive blocker. -/
+theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    -- Knuth-A v2: q1'' is at least the true Phase-1 quotient.
+    q1''.toNat ≥ (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat) := by
+  sorry  -- The substantive Phase-1 blocker. Closes via the v2 algorithm's
+         -- 2-correction guarantee: after 2 Phase-1b corrections, q1'' has
+         -- accumulated enough downward adjustments that no further
+         -- decrement is needed (i.e., q1'' = floor(x/vTop), not q1'' >
+         -- floor(x/vTop)). The 2nd correction's trigger condition is the
+         -- new information not present in v1's 1-correction algorithm.
+
 /-- **un21 < vTop under runtime preconditions** — the strong Phase-1
     upper bound that Conj 2 of `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
     only weakly captures (`< 2^64` instead of `< vTop`).
 
-    Equivalent to **Knuth-A v2** at the algorithm level: after the v2
-    fix's 2 D3 corrections, the trial quotient `q1''` satisfies
-    `q1'' = floor(x / vTop)` exactly (where `x = uHi * 2^32 + div_un1`),
-    so `un21 = x mod vTop < vTop`.
+    Decomposes into:
+    - `div128Quot_v2_knuth_A_under_runtime` (NEW substantive stub) —
+      the algorithm-level Knuth-A claim `q1'' ≥ floor(x/vTop)`.
+    - Conj 1 of the no_wrap stub (also a sorry) — q1'' * vTop ≤ x.
+    - Algorithm Phase-1 Euclidean (existing helpers, mechanical).
 
-    This is the v2 mirror of v1's open problem on tight Phase 1 (see
-    `knuth_compose_weak_lower_nat` in Div128KnuthLower.lean — v1's
-    "tight Phase 1 hypothesis is currently unproven; requires Knuth
-    Theorem C Word-level"). The 2-correction structure of v2 makes this
-    tractable in principle, but it's the substantive Phase-1 blocker.
+    The 2-correction structure of v2 makes Knuth-A tractable in principle,
+    but it remains the substantive Phase-1 blocker.
 
     **Consumers:**
     - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 4:
@@ -1595,7 +1649,8 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
     - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 2:
       `un21 < vTop ≤ 2^64` directly implies the < 2^64 conjunct.
 
-    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+    Issue #1337 algorithm fix migration. Path-3 derived blocker (composes
+    Knuth-A + conj1 + algebra). -/
 theorem div128Quot_v2_un21_lt_vTop_under_runtime (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
