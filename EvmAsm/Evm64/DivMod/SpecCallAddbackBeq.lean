@@ -3532,45 +3532,49 @@ theorem div128Quot_v2_phase2_no_wrap_lo_under_runtime (a b : EvmWord)
                                   (q0c * dLo)
     · -- Sub-case b: guard fires, check fires. q0' = q0c - 1, rhat2' = rhat2c + dHi.
       rw [if_pos h_check, if_pos h_check]
-      sorry  -- HARDEST sub-case. Goal: (q0c - 1).toNat * dLo ≤
-             -- (rhat2c + dHi).toNat * 2^32 + div_un0.
+      sorry  -- **STATUS: PROVABLY FALSE in some inputs (2026-04-28).**
              --
-             -- ALGEBRAIC ANALYSIS (2026-04-28):
+             -- Goal (after if-rewrites): (q0c + signExtend12 4095).toNat * dLo
+             -- ≤ (rhat2c + dHi).toNat * 2^32 + div_un0.
              --
-             -- Via Phase-2 Euclidean (q0' * dHi + rhat2' = un21, proven by
-             -- div128Quot_phase2b_post), the goal reduces to
-             --     q0' * vTop ≤ un21 * 2^32 + div_un0
-             -- where q0' = q0c - 1 and vTop = dHi*2^32 + dLo. This is
-             -- equivalent to "q0' doesn't overshoot the true Phase-2 quotient
-             -- floor((un21*2^32 + div_un0)/vTop)".
+             -- TIGHT ALGEBRAIC EQUIVALENCE (verified):
+             -- After substitution via Phase-1a Euclidean (q0c * dHi + rhat2c
+             -- = un21, with no overflow since q0c ≤ 2^32 and dHi < 2^32),
+             -- the goal becomes (q0c - 1) * vTop ≤ z, where z = un21 * 2^32
+             -- + div_un0 and vTop = dHi * 2^32 + dLo. Equivalent to
+             -- "q0' = q0c - 1 ≤ floor(z / vTop)".
              --
-             -- Knuth's classical Algorithm D Phase-2 with 1 D3 correction
-             -- gives q0' ≤ q*_phase2 + 1 (Theorem B with +1, not +2 since
-             -- only 1 correction is applied). When q0' = q*_phase2 + 1
-             -- (overshoot 1), the goal fails: q0' * vTop > z.
+             -- BUT: under h_check (BLTU true), Knuth's analysis says q0c
+             -- overshoots q*_phase2 = floor(z/vTop) by 1 OR 2 (Theorem B
+             -- max). The 1-correction reduces by 1: q0' = q0c - 1 ∈
+             -- {q*_phase2, q*_phase2 + 1}.
              --
-             -- Whether overshoot 1 is reachable under runtime preconditions
-             -- depends on the specific properties of un21 produced by
-             -- Phase-1's 2-correction algorithm. Phase-1 produces q1'' = q*
-             -- exactly (per phase1_div_invariant), so un21 has the structural
-             -- form `un21 = (un_full - q*_phase1 * vTop) / 2^32`.
+             -- For q0' = q*_phase2 + 1: (q0c - 1) * vTop = (q*_phase2 + 1)
+             -- * vTop > z. **GOAL FAILS.**
              --
-             -- CLOSURE PLAN (deferred to future iteration):
-             -- 1. Add sub-lemma `_phase2_q0c_le_q_star_plus_1_under_runtime`:
-             --    q0c.toNat ≤ floor(z/vTop) + 2 under runtime preconditions
-             --    (matches Knuth-B for Phase-2 with 0 corrections so far).
-             -- 2. Add sub-lemma `_phase2_BLTU_iff_overshoot`: similar to
-             --    Stub 2 but for Phase-2 (BLTU fires ⟺ q0c overshoots).
-             -- 3. Sub-case b: BLTU fires + Knuth-B → q0c ∈ {q*+1, q*+2}.
-             --    With q0' = q0c - 1: q0' ∈ {q*, q*+1}.
-             --    For q0' = q*: goal holds via q* * vTop ≤ z.
-             --    For q0' = q*+1: goal FAILS — algorithm produces wrong q0'.
+             -- This case (q0c = q*_phase2 + 2 from start) is reachable when:
+             -- - q1'' = q*_phase1 exactly (Phase-1 perfect, PROVEN).
+             -- - hborrow fires (qHat overshoots q_true by ≥ 1): forces q0'
+             --   overshoots q*_phase2.
+             -- - In the DOUBLE-ADDBACK regime (carry = 0), qHat = q_true + 2
+             --   per Knuth, so q0' overshoots by 2, q0c = q*_phase2 + 2,
+             --   and after 1-correction q0' = q*_phase2 + 1.
              --
-             -- STATUS: requires either (a) proving Phase-2's 1-correction
-             -- never produces q0' = q*+1 under runtime preconditions
-             -- (specific to call-trial path), OR (b) noting that the call
-             -- chain's outer addback correction handles q0' overshoot
-             -- (so phase2_no_wrap_lo isn't strictly needed for the chain).
+             -- **This sub-case b is PROVABLY FALSE in the double-addback
+             -- regime under runtime preconditions.** The chain
+             -- `_no_wrap_under_call_addback_beq_untruncated` (which uses this)
+             -- and `_le_val256_div_plus_two_untruncated` are therefore
+             -- UNSOUND in that regime.
+             --
+             -- IMPLICATIONS:
+             -- - The chain has zero non-sorry consumers TODAY (verified prior).
+             -- - Any future consumer needing Knuth-B v2 (`qHat ≤ q_true + 2`)
+             --   must either: (a) assume single-addback only, (b) tighten
+             --   Phase-2 to 2-correction (v3-style), or (c) prove a different
+             --   bound that allows q0' overshoot of 1.
+             --
+             -- The right fix is (b): mirror the v3 fix to Phase-2. See
+             -- `memory/project_div128_v3_migration_simplification.md`.
     · -- Sub-case c: guard fires, check doesn't. q0' = q0c, rhat2' = rhat2c.
       rw [if_neg h_check, if_neg h_check]
       -- ¬check: ¬(rhat2c*2^32 + div_un0 < q0c*dLo) → rhat2c*2^32 + div_un0 ≥ q0c*dLo.
