@@ -1609,7 +1609,7 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hbltu : isCallTrialN4Evm a b)
     (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow : isAddbackBorrowN4CallEvm a b) :
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift :=
       (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
@@ -2139,10 +2139,20 @@ theorem qHat_upper_5limb_shifted_under_runtime_v2 (_a _b : EvmWord)
     let qHat := div128Quot_v2 u4 u3 b3'
     qHat.toNat ≤
       (u4.toNat * 2^256 + val256 u0 u1 u2 u3) / val256 b0' b1' b2' b3' + 2 := by
-  sorry  -- Composes `_no_wrap_under_call_addback_beq_untruncated` (stub)
-         -- with `_le_5limb_shifted_div_plus_two_untruncated` (PROVEN). The
-         -- only sorry hidden here is the no_wrap discharge; once that's
-         -- closed, this stub becomes mechanical destructure + apply.
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat
+  -- Step 1: discharge the four untruncated invariants from runtime preconditions.
+  have h_inv := div128Quot_v2_no_wrap_under_call_addback_beq_untruncated _a _b
+    _hb3nz _hshift_nz _hbltu _hcarry2_nz _hborrow_v2
+  simp only [] at h_inv
+  obtain ⟨h_ph1_lo, h_ph1_un21_lt, h_ph2_no_wrap, hq0_lt⟩ := h_inv
+  -- Step 2: bridge call-trial Evm form to Word-tuple form.
+  have hcall : isCallTrialN4 (_a.getLimbN 3) (_b.getLimbN 2) (_b.getLimbN 3) :=
+    isCallTrialN4Evm_def ▸ _hbltu
+  -- Step 3: apply the proven 5-limb shifted Knuth-B.
+  exact div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
+    (_a.getLimbN 0) (_a.getLimbN 1) (_a.getLimbN 2) (_a.getLimbN 3)
+    (_b.getLimbN 0) (_b.getLimbN 1) (_b.getLimbN 2) (_b.getLimbN 3)
+    _hb3nz _hshift_nz hcall h_ph1_lo h_ph1_un21_lt h_ph2_no_wrap hq0_lt
 
 /-- **qHat range in shifted-domain** — hybrid 4-limb lower + 5-limb upper.
 
