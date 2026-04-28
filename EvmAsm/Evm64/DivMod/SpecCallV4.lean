@@ -355,8 +355,8 @@ private theorem div128Quot_v4_un21_eq_phase1_remainder_arith
       = uHi*2^32 + div_un1 - q1''*vTop. -/
 theorem div128Quot_v4_un21_eq_phase1_remainder
     (uHi uLo vTop : Word)
-    (_h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (_h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
     let dHi := vTop >>> (32 : BitVec 6).toNat
     let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     let div_un1 := uLo >>> (32 : BitVec 6).toNat
@@ -383,8 +383,72 @@ theorem div128Quot_v4_un21_eq_phase1_remainder
     let cu_q1_dlo := q1'' * dLo
     let un21 := cu_rhat_un1 - cu_q1_dlo
     un21.toNat = uHi.toNat * 2^32 + div_un1.toNat - q1''.toNat * vTop.toNat := by
-  sorry  -- Word↔Nat truncation reasoning. Mirrors the proof of
-         -- `_un21_lt_vTop` but extracts the explicit value (not just <).
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+        cu_rhat_un1 cu_q1_dlo un21
+  -- Standard Word-level facts (mirroring `_un21_lt_vTop`).
+  have hdLo_lt : dLo.toNat < 2 ^ 32 := Word_ushiftRight_32_lt_pow32
+  have h_div_un1_lt : div_un1.toNat < 2 ^ 32 := Word_ushiftRight_32_lt_pow32
+  have h_decomp : vTop.toNat = dHi.toNat * 2 ^ 32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_perfect := div128Quot_v4_phase1_perfect uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_eucl := div128Quot_v4_phase1_final_eucl_bridge uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  obtain ⟨h_q1''_dHi_le, h_rhat''_eq⟩ := h_eucl
+  have h_no_wrap := div128Quot_v4_phase1_no_wrap_lo uHi uLo vTop
+    h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_q1''_lt : q1''.toNat ≤ 2 ^ 32 := by
+    have h_q_true_lt : (uHi.toNat * 2^32 + div_un1.toNat) /
+                       (dHi.toNat * 2^32 + dLo.toNat) < 2^32 :=
+      div128Quot_q_true_1_lt_pow32 uHi dHi dLo div_un1 h_div_un1_lt
+        (h_decomp ▸ h_uHi_lt_vTop)
+    linarith [h_perfect]
+  have h_q_dLo_eq : (q1'' * dLo).toNat = q1''.toNat * dLo.toNat := by
+    rw [BitVec.toNat_mul]
+    apply Nat.mod_eq_of_lt
+    calc q1''.toNat * dLo.toNat
+        ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1''_lt
+      _ < 2^32 * 2^32 := (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+      _ = 2^64 := by decide
+  have h_rhatUn1_mod : ((rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1).toNat =
+                       (rhat''.toNat % 2^32) * 2^32 + div_un1.toNat := by
+    rw [EvmAsm.Rv64.AddrNorm.bv6_toNat_32]
+    exact halfword_combine_mod rhat'' div_un1 h_div_un1_lt
+  have h_vTop_pos : 0 < vTop.toNat :=
+    lt_of_lt_of_le (by decide : (0 : Nat) < 2 ^ 63) h_vTop_ge_pow63
+  have h_q1''_succ_gt : (q1''.toNat + 1) * vTop.toNat >
+                        uHi.toNat * 2 ^ 32 + div_un1.toNat := by
+    have h_pos' : 0 < dHi.toNat * 2 ^ 32 + dLo.toNat := by
+      have := h_decomp ▸ h_vTop_pos; omega
+    have h := Nat.lt_div_mul_add (a := uHi.toNat * 2 ^ 32 + div_un1.toNat) h_pos'
+    rw [show (q1''.toNat + 1) * vTop.toNat
+          = q1''.toNat * vTop.toNat + vTop.toNat from by ring]
+    rw [h_perfect, h_decomp]
+    exact h
+  have h_vTop_le_pow64 : vTop.toNat ≤ 2 ^ 64 := by
+    have := vTop.isLt
+    omega
+  -- un21.toNat = ((rhat'' % 2^32)*2^32 + div_un1 + 2^64 - q1''*dLo) % 2^64.
+  have h_un21_eq : un21.toNat =
+      ((rhat''.toNat % 2 ^ 32) * 2 ^ 32 + div_un1.toNat + 2 ^ 64 -
+        q1''.toNat * dLo.toNat) % 2 ^ 64 := by
+    show (cu_rhat_un1 - cu_q1_dlo).toNat = _
+    rw [BitVec.toNat_sub']
+    rw [show cu_rhat_un1 = (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1 from rfl]
+    rw [show cu_q1_dlo = q1'' * dLo from rfl]
+    rw [h_rhatUn1_mod, h_q_dLo_eq]
+    have h_Y_lt : q1''.toNat * dLo.toNat < 2 ^ 64 := by
+      calc q1''.toNat * dLo.toNat
+          ≤ 2^32 * dLo.toNat := Nat.mul_le_mul_right _ h_q1''_lt
+        _ < 2^32 * 2^32 := (Nat.mul_lt_mul_left (by decide : 0 < 2^32)).mpr hdLo_lt
+        _ = 2^64 := by decide
+    congr 1
+    omega
+  rw [h_un21_eq]
+  exact div128Quot_v4_un21_eq_phase1_remainder_arith uHi.toNat vTop.toNat
+    dHi.toNat dLo.toNat div_un1.toNat q1''.toNat rhat''.toNat
+    h_decomp hdLo_lt h_div_un1_lt h_vTop_le_pow64 h_q1''_succ_gt
+    h_q1''_dHi_le h_rhat''_eq h_no_wrap h_q1''_lt
 
 /-- **v4's exact-quotient property**: under standard Knuth-A
     preconditions (shift-norm + `u4 < b3'` + `u4 < 2^63`), the v4
