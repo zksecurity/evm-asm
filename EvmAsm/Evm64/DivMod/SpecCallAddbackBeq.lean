@@ -990,6 +990,59 @@ private theorem conj2_arith
       Nat.mul_comm _ _
     omega
 
+/-- **Strengthened version of `conj2_arith`** — same hypotheses, but
+    bounds the untruncated subtraction by `vTop` instead of `2^64`.
+    Same algebraic argument, just keeps the tighter bound.
+
+    The conclusion `(rhat'' * 2^32 + div_un1) - q1'' * dLo < vTop` is
+    what the un21 < vTop bridge needs (combined with `_un21_toNat_untruncated`
+    to convert from the untruncated form to the Word un21.toNat). -/
+private theorem un21_lt_vTop_arith
+    (uHi div_un1 q1pp rhat_pp dHi dLo : ℕ)
+    (h_eucl : q1pp * dHi + rhat_pp = uHi)
+    (h_dHi_lt : dHi < 2^32)
+    (h_dLo_lt : dLo < 2^32)
+    (h_dHi_ge : dHi ≥ 2^31)
+    (h_div_un1_lt : div_un1 < 2^32)
+    (h_knuthA : q1pp ≥ (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo)) :
+    rhat_pp * 2^32 + div_un1 - q1pp * dLo < dHi * 2^32 + dLo := by
+  have h_vTop_pos : 0 < dHi * 2^32 + dLo := by
+    have h1 : dHi * 2^32 ≥ 2^31 * 2^32 := Nat.mul_le_mul_right _ h_dHi_ge
+    have h_pow : (2 ^ 31 * 2 ^ 32 : ℕ) = 2 ^ 63 := by decide
+    omega
+  rcases Nat.lt_or_ge (rhat_pp * 2^32 + div_un1) (q1pp * dLo) with h_neg | h_nonneg
+  · have h_zero : rhat_pp * 2^32 + div_un1 - q1pp * dLo = 0 := by omega
+    rw [h_zero]; exact h_vTop_pos
+  · have h_q1pp_dHi_le : q1pp * dHi ≤ uHi := by linarith [h_eucl]
+    have h_q1pp_dHi_2pow32_le : q1pp * dHi * 2^32 ≤ uHi * 2^32 :=
+      Nat.mul_le_mul_right _ h_q1pp_dHi_le
+    have h_rhat_2pow32 : rhat_pp * 2^32 = uHi * 2^32 - q1pp * dHi * 2^32 := by
+      have h_rhat_eq : rhat_pp = uHi - q1pp * dHi := by omega
+      rw [h_rhat_eq, Nat.sub_mul]
+    have h_q1pp_vTop : q1pp * (dHi * 2^32 + dLo) = q1pp * dHi * 2^32 + q1pp * dLo := by
+      ring
+    have h_lhs_eq :
+        rhat_pp * 2^32 + div_un1 - q1pp * dLo =
+        uHi * 2^32 + div_un1 - q1pp * (dHi * 2^32 + dLo) := by omega
+    rw [h_lhs_eq]
+    have h_div_mul :
+        (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo) * (dHi * 2^32 + dLo) ≤
+        q1pp * (dHi * 2^32 + dLo) :=
+      Nat.mul_le_mul_right _ h_knuthA
+    have h_div_add_mod :
+        uHi * 2^32 + div_un1 =
+        (dHi * 2^32 + dLo) * ((uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo)) +
+        (uHi * 2^32 + div_un1) % (dHi * 2^32 + dLo) :=
+      (Nat.div_add_mod _ _).symm
+    have h_mod_lt :
+        (uHi * 2^32 + div_un1) % (dHi * 2^32 + dLo) < dHi * 2^32 + dLo :=
+      Nat.mod_lt _ h_vTop_pos
+    have h_div_mul' :
+        (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo) * (dHi * 2^32 + dLo) =
+        (dHi * 2^32 + dLo) * ((uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo)) :=
+      Nat.mul_comm _ _
+    omega
+
 /-- **Untruncated bridge for `un21.toNat`** — the alternative-path-3 helper.
 
     Under the two-bound untruncated invariant
