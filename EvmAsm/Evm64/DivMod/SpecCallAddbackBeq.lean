@@ -1574,6 +1574,68 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
     _ ≤ (u4.toNat * 2^256 + val256 un0 un1 un2 un3) /
         val256 b0' b1' b2' b3' + 2 := h_step2
 
+/-- **un21 < vTop under runtime preconditions** — the strong Phase-1
+    upper bound that Conj 2 of `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
+    only weakly captures (`< 2^64` instead of `< vTop`).
+
+    Equivalent to **Knuth-A v2** at the algorithm level: after the v2
+    fix's 2 D3 corrections, the trial quotient `q1''` satisfies
+    `q1'' = floor(x / vTop)` exactly (where `x = uHi * 2^32 + div_un1`),
+    so `un21 = x mod vTop < vTop`.
+
+    This is the v2 mirror of v1's open problem on tight Phase 1 (see
+    `knuth_compose_weak_lower_nat` in Div128KnuthLower.lean — v1's
+    "tight Phase 1 hypothesis is currently unproven; requires Knuth
+    Theorem C Word-level"). The 2-correction structure of v2 makes this
+    tractable in principle, but it's the substantive Phase-1 blocker.
+
+    **Consumers:**
+    - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 4:
+      chains via `div128Quot_q0_prime_lt_pow32` to `q0' < 2^32`.
+    - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 2:
+      `un21 < vTop ≤ 2^64` directly implies the < 2^64 conjunct.
+
+    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+theorem div128Quot_v2_un21_lt_vTop_under_runtime (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+  sorry  -- Knuth-A v2 discharge: q1'' = floor(x/vTop) after 2 D3
+         -- corrections, hence un21 = x mod vTop < vTop. Mirrors v1's
+         -- open Knuth Theorem C; tractable for v2 via the 2nd D3
+         -- correction's trigger condition.
+
 /-- **Untruncated runtime discharge** — alternative path 3 stub.
 
     **Note (2026-04-27):** the truncated counterpart of this discharge
@@ -1605,11 +1667,11 @@ theorem div128Quot_v2_le_5limb_shifted_div_plus_two_untruncated
 
     Issue #1337 algorithm fix migration. Alternative path 3. -/
 theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hbltu : isCallTrialN4Evm a b)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift :=
       (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
@@ -1658,6 +1720,9 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
   -- 4-way decomposition. Each conjunct surfaced as a separate sub-goal so
   -- future iterations can attack them independently. See per-conjunct
   -- comments below for the proof plan and v1 cross-references.
+  intro shift antiShift u4 un3 b3' dHi dLo div_un1 div_un0 q1 rhat hi1 q1c rhatc
+        qDlo rhatUn1 q1' rhat' q1'' rhat'' cu_rhat_un1 cu_q1_dlo un21
+        q0 rhat2 hi2 q0c rhat2c q0' rhat2'
   refine ⟨?conj1, ?conj2, ?conj3, ?conj4⟩
   case conj1 =>
     -- **Conjunct 1 (untruncated phase-1 lower):**
@@ -1690,86 +1755,21 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
     sorry
   case conj4 =>
     -- **Conjunct 4 (q0' bound):**
-    -- `q0' < 2^32`. NOT trivial — `div128Quot_q0_prime_lt_pow32` (proven
-    -- in Div128QuotientBounds.lean:540) gives this conclusion, but
-    -- requires `un21 < vTop` as a hypothesis.
-    --
-    -- **CORRECTION (2026-04-28):** earlier comment claimed Conj 2 directly
-    -- gives `un21 < vTop`. That's WRONG — Conj 2 only gives `un21_math <
-    -- 2^64` (the un21 fits in a Word), which is strictly weaker than
-    -- `un21 < vTop` (since vTop ≤ 2^64).
-    --
-    -- The actual chain: Conj 1 (q1'' * vTop ≤ x) gives q1'' ≤ x/vTop.
-    -- Knuth-A v2 (NEW, separate from Conj 1 and Conj 2) gives q1'' ≥
-    -- x/vTop. Combined: q1'' = floor(x/vTop), hence un21 = x mod vTop <
-    -- vTop. Then `div128Quot_q0_prime_lt_pow32` gives q0' < 2^32.
-    --
-    -- See `div128Quot_v2_un21_lt_vTop_under_runtime` (separate stub) for
-    -- the un21 < vTop discharge — it's the v2 mirror of v1's open
-    -- problem on tight Phase 1 (a.k.a. Knuth Theorem C Word-level).
-    sorry
-
-/-- **un21 < vTop under runtime preconditions** — the strong Phase-1
-    upper bound that Conj 2 of `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
-    only weakly captures (`< 2^64` instead of `< vTop`).
-
-    Equivalent to **Knuth-A v2** at the algorithm level: after the v2
-    fix's 2 D3 corrections, the trial quotient `q1''` satisfies
-    `q1'' = floor(x / vTop)` exactly (where `x = uHi * 2^32 + div_un1`),
-    so `un21 = x mod vTop < vTop`.
-
-    This is the v2 mirror of v1's open problem on tight Phase 1 (see
-    `knuth_compose_weak_lower_nat` in Div128KnuthLower.lean — v1's
-    "tight Phase 1 hypothesis is currently unproven; requires Knuth
-    Theorem C Word-level"). The 2-correction structure of v2 makes this
-    tractable in principle, but it's the substantive Phase-1 blocker.
-
-    **Consumers:**
-    - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 4:
-      chains via `div128Quot_q0_prime_lt_pow32` to `q0' < 2^32`.
-    - `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated` Conj 2:
-      `un21 < vTop ≤ 2^64` directly implies the < 2^64 conjunct.
-
-    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
-theorem div128Quot_v2_un21_lt_vTop_under_runtime (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hbltu : isCallTrialN4Evm a b)
-    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (_hborrow : isAddbackBorrowN4CallEvm a b) :
-    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
-    let antiShift :=
-      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
-    let u4 := (a.getLimbN 3) >>> antiShift
-    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
-    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
-    let dHi := b3' >>> (32 : BitVec 6).toNat
-    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := un3 >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu u4 dHi
-    let rhat := u4 - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let qDlo := q1c * dLo
-    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
-    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
-    let rhat'' :=
-      if rhat' >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q1' * dLo
-        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
-      else rhat'
-    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
-    let cu_q1_dlo := q1'' * dLo
-    let un21 := cu_rhat_un1 - cu_q1_dlo
-    un21.toNat < dHi.toNat * 2^32 + dLo.toNat := by
-  sorry  -- Knuth-A v2 discharge: q1'' = floor(x/vTop) after 2 D3
-         -- corrections, hence un21 = x mod vTop < vTop. Mirrors v1's
-         -- open Knuth Theorem C; tractable for v2 via the 2nd D3
-         -- correction's trigger condition.
+    -- `q0' < 2^32`. Closed via composition: the un21<vTop discharge
+    -- (`div128Quot_v2_un21_lt_vTop_under_runtime`, a focused stub) feeds
+    -- `div128Quot_q0_prime_lt_pow32` (PROVEN in Div128QuotientBounds.lean).
+    have h_b3'_ge_pow63 : b3'.toNat ≥ 2^63 :=
+      b3_prime_ge_pow63 (b.getLimbN 3) (b.getLimbN 2) hb3nz _
+    have hdHi_ge : dHi.toNat ≥ 2^31 :=
+      div128Quot_dHi_ge_pow31 b3' h_b3'_ge_pow63
+    have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+    have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+    have h_un21_lt :=
+      div128Quot_v2_un21_lt_vTop_under_runtime a b hb3nz _hshift_nz
+        hbltu hcarry2_nz hborrow_v2
+    simp only [] at h_un21_lt
+    exact div128Quot_q0_prime_lt_pow32 un21 dHi dLo un3
+      hdHi_ge hdHi_lt hdLo_lt h_un21_lt
 
 /-- **qHat range under runtime preconditions (sub-lemma).** Under
     runtime preconds (`hbltu, hcarry2_nz, hborrow`), the v2 algorithm's
