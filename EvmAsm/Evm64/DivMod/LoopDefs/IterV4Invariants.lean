@@ -1712,19 +1712,84 @@ private theorem div128Quot_v4_phase1_final_eucl_bridge
       else rhat'
     q1''.toNat * dHi.toNat ≤ uHi.toNat ∧
     rhat''.toNat = uHi.toNat - q1''.toNat * dHi.toNat := by
-  -- Proof outline (deferred — chains 2 calls of `_phase1_one_correction_eucl`):
-  -- 1. Get Eucl on (q1c, rhatc) from `_phase1_rhatc_bridge` (proven).
-  -- 2. Discharge 1st call's hypotheses:
-  --    - q1c.toNat ≤ 2^32: from `div128Quot_q1c_le_pow32` (existing).
-  --    - rhatc.toNat + dHi.toNat < 2^64: from rhatc < 2*dHi (case analysis on
-  --      hi1 — needs separate sub-lemma) and dHi < 2^32 ⟹ 3*dHi < 2^64.
-  -- 3. Apply 1-step helper → Eucl on (q1', rhat').
-  -- 4. Discharge 2nd call's hypotheses:
-  --    - q1'.toNat ≤ 2^32: q1' is q1c or q1c - 1, both ≤ q1c ≤ 2^32.
-  --    - rhat'.toNat + dHi.toNat < 2^64: rhat' is rhatc or rhatc + dHi,
-  --      so + dHi gives 2*dHi or 3*dHi < 2^64 when paired with the above.
-  -- 5. Apply 1-step helper → Eucl on (q1'', rhat''). Conclusion.
-  sorry
+  intro dHi dLo div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
+  -- Standard Word-level facts.
+  have hdHi_lt : dHi.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdLo_lt : dLo.toNat < 2^32 := Word_ushiftRight_32_lt_pow32
+  have hdHi_ge : dHi.toNat ≥ 2^31 :=
+    div128Quot_dHi_ge_pow31 vTop h_vTop_ge_pow63
+  have h_vTop_decomp : vTop.toNat = dHi.toNat * 2^32 + dLo.toNat :=
+    div128Quot_vTop_decomp vTop
+  have h_uHi_lt_decomp : uHi.toNat < dHi.toNat * 2^32 + dLo.toNat := by
+    rw [← h_vTop_decomp]; exact h_uHi_lt_vTop
+  -- Phase-1a Eucl on (q1c, rhatc).
+  obtain ⟨h_q1c_dHi_le, h_rhatc_eq⟩ :=
+    div128Quot_v4_phase1_rhatc_bridge uHi vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_q1c_lt_pow32 : q1c.toNat ≤ 2^32 :=
+    div128Quot_q1c_le_pow32 uHi dHi dLo hdHi_ge hdLo_lt h_uHi_lt_decomp
+  -- rhatc < 2*dHi, so rhatc + dHi < 3*dHi < 2^64.
+  have h_rhatc_lt_2_dHi : rhatc.toNat < 2 * dHi.toNat :=
+    div128Quot_v4_phase1_rhatc_lt_2_dHi uHi vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+  have h_rhatc_dHi_no_overflow : rhatc.toNat + dHi.toNat < 2^64 := by
+    have h1 : rhatc.toNat + dHi.toNat < 3 * dHi.toNat := by linarith
+    have h2 : 3 * dHi.toNat < 3 * 2^32 := by linarith
+    linarith [show (3 : Nat) * 2^32 < 2^64 from by decide]
+  -- 1st correction: Eucl on (q1', rhat').
+  obtain ⟨h_q1'_dHi_le, h_rhat'_eq⟩ :=
+    div128Quot_v4_phase1_one_correction_eucl
+      uHi q1c rhatc dHi dLo div_un1
+      hdHi_lt h_q1c_dHi_le h_rhatc_eq h_q1c_lt_pow32 h_rhatc_dHi_no_overflow
+  -- q1'.toNat ≤ q1c.toNat ≤ 2^32 (phase2b_q0' returns q1c or q1c - 1).
+  have h_q1'_le_q1c : q1'.toNat ≤ q1c.toNat := by
+    show (div128Quot_phase2b_q0' q1c rhatc dLo div_un1).toNat ≤ q1c.toNat
+    unfold div128Quot_phase2b_q0'
+    by_cases h_g : rhatc >>> (32 : BitVec 6).toNat = 0
+    · simp only [h_g, if_true]
+      by_cases h_b : BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1) (q1c * dLo)
+      · rw [if_pos h_b, BitVec.toNat_add, signExtend12_4095_toNat]
+        -- (q1c + 2^64 - 1) mod 2^64. If q1c.toNat = 0, this is 2^64 - 1.
+        -- If q1c.toNat ≥ 1, this is q1c.toNat - 1 ≤ q1c.toNat.
+        -- BLTU firing implies q1c ≥ 1 (since q1c * dLo > 0).
+        by_cases h_q1c_zero : q1c.toNat = 0
+        · -- Contradiction: BLTU fires but q1c * dLo = 0.
+          exfalso
+          have h_q1c_dLo_zero : (q1c * dLo).toNat = 0 := by
+            rw [BitVec.toNat_mul, h_q1c_zero, Nat.zero_mul, Nat.zero_mod]
+          have := BitVec.ult_iff_toNat_lt.mp h_b
+          rw [h_q1c_dLo_zero] at this
+          exact Nat.not_lt_zero _ this
+        · have h_q1c_pos : q1c.toNat ≥ 1 := by omega
+          have hq1c_lt_word : q1c.toNat - 1 < 2^64 := by have := q1c.isLt; omega
+          rw [show q1c.toNat + (2^64 - 1) = (q1c.toNat - 1) + 2^64 from by omega,
+              Nat.add_mod_right, Nat.mod_eq_of_lt hq1c_lt_word]
+          omega
+      · rw [if_neg h_b]
+    · simp only [h_g, if_false]; rfl
+  have h_q1'_lt_pow32 : q1'.toNat ≤ 2^32 := le_trans h_q1'_le_q1c h_q1c_lt_pow32
+  -- rhat'.toNat ≤ rhatc.toNat + dHi.toNat (rhat' = rhatc or rhatc + dHi).
+  have h_rhat'_le : rhat'.toNat ≤ rhatc.toNat + dHi.toNat := by
+    show (if rhatc >>> (32 : BitVec 6).toNat = 0 then
+            (if BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1)
+                            (q1c * dLo)
+             then rhatc + dHi else rhatc)
+          else rhatc).toNat ≤ rhatc.toNat + dHi.toNat
+    by_cases h_g : rhatc >>> (32 : BitVec 6).toNat = 0
+    · simp only [h_g, if_true]
+      by_cases h_b : BitVec.ult ((rhatc <<< (32 : BitVec 6).toNat) ||| div_un1) (q1c * dLo)
+      · rw [if_pos h_b, BitVec.toNat_add]
+        exact le_of_eq (Nat.mod_eq_of_lt h_rhatc_dHi_no_overflow)
+      · rw [if_neg h_b]; linarith
+    · simp only [h_g, if_false]; linarith
+  -- rhat'.toNat + dHi.toNat < 2^64.
+  have h_rhat'_dHi_no_overflow : rhat'.toNat + dHi.toNat < 2^64 := by
+    have : rhat'.toNat + dHi.toNat ≤ rhatc.toNat + 2 * dHi.toNat := by linarith
+    have : rhatc.toNat + 2 * dHi.toNat < 4 * dHi.toNat := by linarith
+    have : 4 * dHi.toNat < 4 * 2^32 := by linarith
+    linarith [show (4 : Nat) * 2^32 < 2^64 from by decide]
+  -- 2nd correction: Eucl on (q1'', rhat'').
+  exact div128Quot_v4_phase1_one_correction_eucl
+    uHi q1' rhat' dHi dLo div_un1
+    hdHi_lt h_q1'_dHi_le h_rhat'_eq h_q1'_lt_pow32 h_rhat'_dHi_no_overflow
 
 /-- **Phase-1 no-wrap (v4)**: after v4's 2-correction Phase-1b, the
     quotient `q1''` doesn't overshoot the Phase-1 sub-divisor's remainder
