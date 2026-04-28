@@ -1911,6 +1911,47 @@ theorem qHat_lower_shifted_under_runtime_v2 (a b : EvmWord)
   change qHat.toNat > val256 u0 u1 u2 u3 / val256 b0' b1' b2' b3' at h
   omega
 
+/-- **qHat range in shifted-domain** — combines lower bound (PROVEN
+    via `qHat_lower_shifted_under_runtime_v2`) with an upper bound stub.
+    Once the upper bound is proven, this gives the full carry-partition
+    range bound in shifted-domain — a candidate for replacing the
+    original-domain `qHat_in_range_under_runtime_v2`.
+
+    Issue #1337 algorithm fix migration. -/
+theorem qHat_in_range_shifted_under_runtime_v2 (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v2 u4 u3 b3'
+    let q_true_shifted := val256 u0 u1 u2 u3 / val256 b0' b1' b2' b3'
+    q_true_shifted + 1 ≤ qHat.toNat ∧ qHat.toNat ≤ q_true_shifted + 2 := by
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat q_true_shifted
+  refine ⟨?lower, ?upper⟩
+  case lower =>
+    have h := qHat_lower_shifted_under_runtime_v2 a b hb3nz hborrow_v2
+    simp only [] at h
+    change val256 u0 u1 u2 u3 / val256 b0' b1' b2' b3' + 1 ≤ qHat.toNat at h
+    exact h
+  case upper =>
+    -- Upper bound: qHat ≤ q_true_shifted + 2.
+    -- Needs `_le_val256_div_plus_two_untruncated` (proven, shift-bridging) +
+    -- `_no_wrap_under_call_addback_beq_untruncated` (stub).
+    sorry
+
 /-- **Single-addback case for v2**: under v2's Knuth-B + runtime BEQ
     preconditions + carry ≠ 0 (= single-addback), `qHat = q_true + 1`.
 
