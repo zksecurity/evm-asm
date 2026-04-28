@@ -3498,6 +3498,59 @@ theorem div128Quot_v2_phase2_no_wrap_lo_on_counterexample :
     q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat := by
   decide
 
+/-- **Numerical validation of `div128Quot_v2_phase1c_in_knuth_range_under_runtime`** (Stub 1):
+    on the v1 counterexample, q* ≤ q1c ≤ q* + 2 (Knuth's TAOCP A+B at the
+    initial trial level). Kernel-checked via `decide`. -/
+theorem div128Quot_v2_phase1c_in_knuth_range_on_counterexample :
+    let a3 : Word := BitVec.ofNat 64 (2^63 + 2^33)
+    let b2 : Word := BitVec.ofNat 64 (2^33 - 1)
+    let b3 : Word := 1
+    let shift := (clzResult b3).1
+    let antiShift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+    let u4 := a3 >>> (antiShift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| ((0:Word) >>> (antiShift.toNat % 64))
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let q_true := (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat)
+    q_true ≤ q1c.toNat ∧ q1c.toNat ≤ q_true + 2 := by
+  decide
+
+/-- **Numerical validation of `div128Quot_v2_phase1b_2nd_guard_under_runtime`** (Stub 3):
+    on the v1 counterexample, the conditional implication
+    `q1c_overshoot_2 → rhat' < 2^32` holds. Kernel-checked via `decide`.
+
+    NOTE: this validation may be vacuous if q1c doesn't overshoot by 2 on
+    this specific input. The decide-check still exercises the conditional
+    structure and catches errors in the statement form. -/
+theorem div128Quot_v2_phase1b_2nd_guard_on_counterexample :
+    let a3 : Word := BitVec.ofNat 64 (2^63 + 2^33)
+    let b2 : Word := BitVec.ofNat 64 (2^33 - 1)
+    let b3 : Word := 1
+    let shift := (clzResult b3).1
+    let antiShift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+    let u4 := a3 >>> (antiShift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| ((0:Word) >>> (antiShift.toNat % 64))
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := u3 >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q_true := (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat)
+    q1c.toNat = q_true + 2 → rhat'.toNat < 2^32 := by
+  decide
+
 /-- **Sanity check 4**: NOTE — `n4CallAddbackBeqSemanticHolds_v2` requires
     the input to actually be in the call+addback BEQ runtime regime (i.e.
     the runtime preconditions of the closure stub: `hbltu`, `hcarry2_nz`,
