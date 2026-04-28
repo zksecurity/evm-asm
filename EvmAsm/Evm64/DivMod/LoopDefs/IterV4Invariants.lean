@@ -165,6 +165,29 @@ theorem div128Quot_v4_phase1c_in_knuth_range (uHi uLo vTop : Word)
         omega
     linarith
 
+/-- **Phase-1 strict upper from overshoot (v4)**: under `q1c.toNat ≥
+    q_true_phase1 + 1`, we have `q1c.toNat * vTop > uHi*2^32 + div_un1`.
+
+    Direct corollary of `Nat.div_lt_iff_lt_mul`. Used by the overshoot
+    cases (1 and 2) to feed `_phase1_bltu_fires_arith` with the
+    required strict inequality. -/
+private theorem div128Quot_v4_phase1_q1c_strict_upper
+    (uHi vTop dHi dLo div_un1 q1c : Nat)
+    (h_vTop : vTop = dHi * 2^32 + dLo)
+    (h_dHi_ge : dHi ≥ 2^31)
+    (h_q1c_overshoot : q1c ≥ (uHi * 2^32 + div_un1) /
+                              (dHi * 2^32 + dLo) + 1) :
+    q1c * vTop > uHi * 2^32 + div_un1 := by
+  have h_vTop_pos : 0 < vTop := by
+    rw [h_vTop]
+    have h_dHi_pos : 0 < dHi := lt_of_lt_of_le (by decide : (0:Nat) < 2^31) h_dHi_ge
+    exact Nat.add_pos_left (Nat.mul_pos h_dHi_pos (by decide)) _
+  -- Goal: q1c * vTop > uHi*2^32 + div_un1.
+  -- From `Nat.div_lt_iff_lt_mul`: x/k < y ↔ x < y*k. So a/vTop < q1c ↔ a < q1c*vTop.
+  rw [h_vTop] at *
+  have h_div_lt_q1c : (uHi * 2^32 + div_un1) / (dHi * 2^32 + dLo) < q1c := by omega
+  exact (Nat.div_lt_iff_lt_mul h_vTop_pos).mp h_div_lt_q1c
+
 /-- **Pure-Nat algebraic core for the inner-BLTU-fires claim.**
 
     Symmetric to `_phase1_no_bltu_arith` but for the case where `q1c`
