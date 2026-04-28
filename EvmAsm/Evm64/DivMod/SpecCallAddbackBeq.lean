@@ -1795,6 +1795,73 @@ theorem div128Quot_v2_phase1_no_wrap_lo_under_runtime (a b : EvmWord)
          -- 2-correction guarantee + the 2nd D3 trigger condition. Mirrors
          -- v1's open Knuth Theorem C tight Phase-1 problem.
 
+/-- **Phase-2 no-wrap lower under runtime preconditions** — the
+    standalone version of Conj 3 of
+    `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`.
+
+    Mirror of `div128Quot_v2_phase1_no_wrap_lo_under_runtime` but for
+    Phase 2: applied to (un21, dHi, dLo, div_un0) instead of (uHi, dHi,
+    dLo, div_un1). After the Phase 2b correction on q0c, the resulting
+    q0' doesn't overshoot the trial quotient bound.
+
+    Same structure as Phase-1 but for the second halfword pair, and
+    uses the standard (1-correction) Phase 2b — there's no equivalent
+    "2nd correction" needed in Phase 2 because the q0' trial only
+    consumes 32 bits of remainder.
+
+    Issue #1337 algorithm fix migration. Path-3 substantive blocker. -/
+theorem div128Quot_v2_phase2_no_wrap_lo_under_runtime (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hbltu : isCallTrialN4Evm a b)
+    (_hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
+    (_hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift :=
+      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let dHi := b3' >>> (32 : BitVec 6).toNat
+    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := un3 >>> (32 : BitVec 6).toNat
+    let div_un0 := (un3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let q1 := rv64_divu u4 dHi
+    let rhat := u4 - q1 * dHi
+    let hi1 := q1 >>> (32 : BitVec 6).toNat
+    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+    let rhatc := if hi1 = 0 then rhat else rhat + dHi
+    let qDlo := q1c * dLo
+    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
+    let rhat'' :=
+      if rhat' >>> (32 : BitVec 6).toNat = 0 then
+        let qDlo2 := q1' * dLo
+        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
+      else rhat'
+    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+    let cu_q1_dlo := q1'' * dLo
+    let un21 := cu_rhat_un1 - cu_q1_dlo
+    let q0 := rv64_divu un21 dHi
+    let rhat2 := un21 - q0 * dHi
+    let hi2 := q0 >>> (32 : BitVec 6).toNat
+    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
+    let rhat2' := if rhat2c >>> (32 : BitVec 6).toNat = 0 then
+                    (if BitVec.ult ((rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0)
+                                    (q0c * dLo) then rhat2c + dHi else rhat2c)
+                  else rhat2c
+    q0'.toNat * dLo.toNat ≤ rhat2'.toNat * 2^32 + div_un0.toNat := by
+  sorry  -- Phase-2 mirror of phase1_no_wrap_lo. Closes via Phase-2b's
+         -- 1-correction guarantee. The Phase-2 trial consumes only 32
+         -- bits of remainder so the simpler 1-correction suffices.
+         -- 2-correction guarantee + the 2nd D3 trigger condition. Mirrors
+         -- v1's open Knuth Theorem C tight Phase-1 problem.
+
 /-- **un21 < vTop under runtime preconditions** — the strong Phase-1
     upper bound that Conj 2 of `div128Quot_v2_no_wrap_under_call_addback_beq_untruncated`
     only weakly captures (`< 2^64` instead of `< vTop`).
@@ -2043,12 +2110,13 @@ theorem div128Quot_v2_no_wrap_under_call_addback_beq_untruncated (a b : EvmWord)
     exact conj2_arith u4.toNat div_un1.toNat q1''.toNat rhat''.toNat
       dHi.toNat dLo.toNat h_eucl_2nd hdHi_lt hdLo_lt hdHi_ge h_div_un1_lt h_knuthA
   case conj3 =>
-    -- **Conjunct 3 (phase-2 lower):**
-    -- `q0' * dLo ≤ rhat2' * 2^32 + div_un0`. Mirror of Conj 1 for Phase 2:
-    -- after the Phase 2b correction on q0c, the resulting q0' doesn't
-    -- overshoot. Same structure as Conj 1, applied to (un21, dHi, dLo,
-    -- div_un0) instead of (uHi, dHi, dLo, div_un1).
-    sorry
+    -- **Conjunct 3 (phase-2 lower):** delegates to
+    -- `div128Quot_v2_phase2_no_wrap_lo_under_runtime` (extracted standalone
+    -- stub, Phase-2 mirror of phase1_no_wrap_lo).
+    have h := div128Quot_v2_phase2_no_wrap_lo_under_runtime a b hb3nz _hshift_nz
+      hbltu hcarry2_nz hborrow_v2
+    simp only [] at h
+    exact h
   case conj4 =>
     -- **Conjunct 4 (q0' bound):**
     -- `q0' < 2^32`. Closed via composition: the un21<vTop discharge
