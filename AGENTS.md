@@ -598,6 +598,34 @@ hits any of the symptoms listed above. Spending the iteration on
 irreducible bundles + sub-lemmas pays for itself by avoiding the
 "refactoring tax" of multiple failed `simp`/`rw`/`exact` attempts.
 
+## linarith vs omega for Let-Bound Terms
+
+When a goal mixes locally-introduced `let` bindings (e.g. via `intro`) with
+hypotheses obtained by applying a separately-stated theorem whose conclusion
+unfolds its own lets, `omega` may fail even when the algebra is trivial. The
+two sides see syntactically distinct copies of the same definitionally-equal
+expression (`(uLo >>> 32).toNat` vs `div_un1.toNat` where
+`div_un1 := uLo >>> 32`), and `omega` treats them as opaque, unrelated atoms.
+
+**Try `linarith` first** in this regime. It does a looser syntactic match and
+often closes the goal without any extra rewrites:
+
+```lean
+intro dHi dLo div_un1 q1 ... q1c
+have h_range := some_range_lemma uHi uLo vTop ...
+obtain ⟨h_lower, h_upper⟩ := h_range
+-- h_lower has the unfolded `(uLo >>> 32).toNat` form;
+-- the goal's `div_un1.toNat` is the local-let form. omega chokes; linarith doesn't.
+have h_eq : q1c.toNat = ... + 1 := by linarith
+```
+
+Reach for `omega` when the reasoning is genuinely Presburger (modular
+arithmetic, divisibility); reach for `linarith` when the reasoning is plain
+linear inequality and the only friction is term-shape mismatch on
+let-bindings. If both fail, fall through to **Pure-Nat Sub-Lemmas** (next
+section) — extracting a focused helper sidesteps the let-binding issue
+entirely by passing concrete `Nat` values across the call boundary.
+
 ## Pure-Nat Sub-Lemmas for omega/maxRecDepth Avoidance
 
 When a proof in a theorem with **deep let-chains and many opaque
