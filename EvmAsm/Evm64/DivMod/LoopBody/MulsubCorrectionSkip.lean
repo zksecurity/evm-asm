@@ -166,13 +166,27 @@ theorem divK_mulsub_correction_skip_v2_spec
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
        ((uBase + signExtend12 4064) ↦ₘ u4_new)) := by
-  sorry  -- Migration target: needs `divK_mulsub_full_v2_spec` (v2 mirror of
-         -- `divK_mulsub_full_spec` from LoopBody.lean) which itself depends on
-         -- v2 versions of `divK_mulsub_setup_spec`, `divK_mulsub_4limbs_spec`,
-         -- `divK_sub_carry_spec`. Each of these is a thin wrapper around an
-         -- ofProg-level cpsTriple, lifting via `lb_sub`/`lb_sub_v2`. Either
-         -- copy-paste the 100+ line proof bodies with `sharedDivModCode →
-         -- sharedDivModCode_v2` substitution, or refactor v1 sub-specs to be
-         -- cr-polymorphic. Either way is a multi-iteration effort.
+  intro uBase
+        p0_lo p0_hi fs0 ba0 pc0 bs0 un0 c0
+        p1_lo p1_hi fs1 ba1 pc1 bs1 un1 c1
+        p2_lo p2_hi fs2 ba2 pc2 bs2 un2 c2
+        p3_lo p3_hi fs3 ba3 pc3 bs3 un3 c3 u4_new
+        hborrow
+  -- 1. Mulsub full v2 (base+516 → base+728)
+  have MS := divK_mulsub_full_v2_spec sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    v1Old v5Old v6Old v7Old v10Old v2Old base
+
+  dsimp only [] at MS hborrow
+  -- 2. Rewrite borrow to 0 in mulsub postcondition
+  rw [hborrow] at MS
+  -- 3. Correction skip v2 (base+728 → base+884)
+  have CS := divK_correction_skip_v2_spec sp uBase qHat v0 v1 v2 v3 un0 un1 un2 un3 u4_new
+    u4_new un3 base
+  -- 4. Compose mulsub(borrow=0) + correction_skip
+  seqFrame MS CS
+  exact cpsTriple_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    MSCS
 
 end EvmAsm.Evm64
