@@ -334,20 +334,23 @@ theorem divK_div128_step2_v4_spec
   -- Not-taken leg (rhat2cHi = 0): run [36..120] → base+124.
   have h_notTaken : cpsTriple (base + 36) (base + 124) (divKDiv128Step2V4Code base)
       notTakenPost finalPost := by
-    sorry  -- [36..120] proof via step2v4_sub 9..30:
-           -- (C) [9..15] = LD+MUL+SLLI+SD+LD+OR: runBlock with step2v4_sub 9..14.
-           -- (D) BLTU cpsBranch at [15] via step2v4_sub 15:
-           --       taken [18..20] = ADDI+LD+ADD: step2v4_sub 18+19+20.
-           --       not-taken [16..17] = LD+JAL: step2v4_sub 16+17.
-           --       cpsBranch_merge_same_cr → cpsTriple (base+36) (base+84).
-           -- (E) [21..22] SRLI+BNE guard via step2v4_sub 21+22, guard_off=36 → base+124:
-           --       taken → base+124 (identity).
-           --       not-taken [23..30] prodcheck2-style:
-           --         [23..27] LD+MUL+SLLI+LD+OR: step2v4_sub 23..27.
-           --         BLTU [28]: taken [30]=ADDI: step2v4_sub 28+30.
-           --                    not-taken [29]=JAL: step2v4_sub 29.
-           --       cpsBranch_merge_same_cr → cpsTriple (base+84) (base+124).
-           --     cpsTriple_seq → cpsTriple (base+36) (base+124).
+    -- Proof: cpsBranch structure on [36..120] = step2_v4 indices [9..30].
+    -- (C) Pre-BLTU [9..14]: LD+MUL+SLLI+SD+LD+OR → cpsTriple (base+36..60).
+    --     Each instruction extended via step2v4_sub 9..14.
+    --     Produces: x7=q0Dlo1, x1=rhat2Un0, x11=un0, mem3936=rhat2c.
+    -- (D) BLTU cpsBranch at [15] (step2v4_sub 15, offset 12 → base+72):
+    --     Taken [18..20] ADDI+LD+ADD (step2v4_sub 18..20) → [21] = base+84.
+    --     Not-taken [16..17] LD+JAL(16) (step2v4_sub 16..17) → base+84.
+    --     cpsBranch_merge_same_cr → cpsTriple (base+36..84).
+    -- (E) 2nd D3 guard SRLI+BNE at [21..22] (step2v4_sub 21..22, offset 36):
+    --     Taken → base+124 (rhat2c_upd_hi ≠ 0, identity triple).
+    --     Not-taken → run [23..30]:
+    --       [23..27] LD+MUL+SLLI+LD+OR: reuse divK_div128_prodcheck2_merged_spec
+    --           extended via step2v4_sub 23..30.
+    --       cpsBranch_merge_same_cr with BLTU [28]+JAL [29]+ADDI [30] → base+124.
+    --     cpsBranch_merge_same_cr → cpsTriple (base+84..124).
+    -- cpsTriple_seq (C+D) + E = cpsTriple (base+36..124).
+    sorry
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
