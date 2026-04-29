@@ -842,12 +842,28 @@ theorem div128Quot_v4_qHat_le_q_true_plus_two (a b : EvmWord)
 
 /-- **Layer 2a-fwd: carry = 0 → qHat overshoots by ≥ 2.**
 
-    Forward direction of the carry partition. Uses the contrapositive of
-    `addbackN4_first_carry_one`: if `q ≤ q*_norm + 1` and `c3 = 1` then
-    `carry = 1`. Negating: if `carry = 0` (and c3 = 1, derived from
-    `isAddbackBorrowN4CallEvm_v4`), then `q > q*_norm + 1`, hence
-    `q ≥ q*_norm + 2`. Bridge to val256(a)/val256(b) via the standard
-    norm/val256 relationship under shift normalization. -/
+    Forward direction of the carry partition.
+
+    Proof outline (concrete):
+    1. From `_haddback`: borrow check fires, so c3 = mulsubN4 top borrow ≥ 1.
+       Combined with `mulsubN4_c3_le_one` (preconditioned on qHat ≤ q*_norm + 1):
+       c3 = 1.
+    2. By contrapositive of `addbackN4_first_carry_one`: if c3 = 1 and
+       carry = 0, then ¬(qHat ≤ q*_norm + 1), i.e., qHat ≥ q*_norm + 2.
+    3. Bridge q*_norm → q_true (val256(a)/val256(b)).
+
+    **Bridge gap (3) note**: q*_norm = val256(u_norm) / val256(v_norm). For
+    the call-trial branch with u4 > 0, q*_norm < q_true is possible
+    (val256(u_norm) only sees the low 256 bits of u_norm; the u4 carry is
+    elsewhere). The proper bridge uses the FULL 8-limb u_norm_total =
+    val256(u_norm) + u4 * 2^256 = val256(a) * 2^shift. The relationship
+    qHat ≥ q*_norm + 2 alone may NOT directly give qHat ≥ q_true + 2.
+
+    Cleanest path forward (next iteration): use a different intermediate —
+    `qHat * val256(v_norm) > val256(u_norm) + 2 * val256(v_norm)` from c3 = 1
+    + carry = 0 (mulsub-then-no-addback wraparound), then divide by 2^shift
+    via `b3_prime_val256_eq_scaled` to get qHat * val256(b) > val256(a) +
+    val256(b) (modulo carry adjustments), hence qHat ≥ q_true + 2. -/
 theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
@@ -875,10 +891,37 @@ theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
 
 /-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
 
-    Backward direction. Standard val256-level reasoning: if qHat ≥
-    q_true + 2 then val256(ms_un) + val256(b_norm) < 2^256 (the
-    first addback doesn't carry past the top limb). Combined with
-    `addbackN4_val256_eq` to derive carry = 0. -/
+    Backward direction.
+
+    Proof outline (concrete):
+    1. From qHat ≥ q_true + 2 and Knuth-B (Layer 1: qHat ≤ q_true + 2):
+       qHat = q_true + 2 exactly.
+    2. Bridge to normalized form: val256(u_norm) + u4*2^256 = val256(a)*2^shift,
+       val256(v_norm) = val256(b)*2^shift.
+    3. `mulsubN4_val256_eq`: val256(u_norm) + c3*2^256 =
+       val256(ms_un) + qHat * val256(v_norm).
+    4. With qHat = q_true + 2: qHat * val256(v_norm) = (q_true + 2) *
+       val256(b) * 2^shift = val256(a)*2^shift + val256(b)*2^shift -
+       (val256(a) - q_true*val256(b))*2^shift = val256(a)*2^shift +
+       (2*val256(b) - r)*2^shift, where r = val256(a) mod val256(b).
+    5. So val256(ms_un) = val256(u_norm) + c3*2^256 -
+       (val256(a)*2^shift + (2*val256(b) - r)*2^shift)
+       = -u4*2^256 + c3*2^256 - (2*val256(b) - r)*2^shift
+       = (c3 - u4)*2^256 - (2*val256(b) - r)*2^shift.
+    6. For carry = 0 (val256(ms_un) + val256(v_norm) < 2^256):
+       (c3 - u4)*2^256 - (2*val256(b) - r)*2^shift + val256(b)*2^shift < 2^256.
+       (c3 - u4)*2^256 - (val256(b) - r)*2^shift < 2^256.
+       This requires c3 - u4 ≤ 0 (i.e., c3 = u4, the borrow doesn't
+       propagate further), OR the val256(b) - r term cancels out enough.
+
+    **Bridge gap**: similar to forward direction, the val256(u_norm) /
+    val256(a) gap due to u4 needs careful handling. The c3 vs u4
+    relationship (from `_haddback`: u4 < c3) interacts here too.
+
+    Cleanest path forward (next iteration): direct val256 calculation
+    with all val256-norm bridges in scope. Concrete numerical check
+    on the v1 counterexample (a3=2^63+2^33, b3=1, b2=2^33-1) where
+    qHat = q_true + 2 to confirm carry = 0 holds. -/
 theorem n4CallAddback_v4_overshoot_ge_two_imp_carry_zero (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
