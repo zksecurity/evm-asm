@@ -34,6 +34,22 @@ abbrev sar_last_limb_code (base : Word) (dst_off : BitVec 12) : CodeReq :=
 
     Computes: result = BitVec.sshiftRight value[3] bit_shift
     Mirror of shr_last_limb_spec with SRA (arithmetic shift right). -/
+theorem sar_last_limb_spec_within (dst_off : BitVec 12)
+    (sp src dstOld v5 bit_shift : Word) (base : Word) :
+    let memSrc := sp + signExtend12 (24 : BitVec 12)
+    let memDst := sp + signExtend12 dst_off
+    let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
+    let cr := sar_last_limb_code base dst_off
+    cpsTripleWithin 3 base (base + 12) cr
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) := by
+  have L := ld_spec_gen_within .x5 .x12 sp v5 src 24 base (by nofun)
+  have SA := sra_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
+  runBlock L SA SD_
+
 theorem sar_last_limb_spec (dst_off : BitVec 12)
     (sp src dstOld v5 bit_shift : Word) (base : Word) :
     let memSrc := sp + signExtend12 (24 : BitVec 12)
@@ -44,11 +60,8 @@ theorem sar_last_limb_spec (dst_off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
        (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 24 base (by nofun)
-  have SA := sra_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
-  runBlock L SA SD_
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) :=
+  (sar_last_limb_spec_within dst_off sp src dstOld v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SAR Last Limb In-place (3 instructions, dst_off = 24)
@@ -62,6 +75,19 @@ abbrev sar_last_limb_inplace_code (base : Word) : CodeReq :=
 /-- SAR last limb in-place spec (3 instructions):
     LD x5, 24(x12); SRA x5,x5,x6; SD x12,x5,24
     Reads and writes the same memory cell at sp+24. -/
+theorem sar_last_limb_inplace_spec_within
+    (sp src v5 bit_shift : Word) (base : Word) :
+    let mem := sp + signExtend12 (24 : BitVec 12)
+    let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
+    let cr := sar_last_limb_inplace_code base
+    cpsTripleWithin 3 base (base + 12) cr
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) := by
+  have L := ld_spec_gen_within .x5 .x12 sp v5 src 24 base (by nofun)
+  have SA := sra_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) src 24 (base + 8)
+  runBlock L SA SD_
+
 theorem sar_last_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Word) :
     let mem := sp + signExtend12 (24 : BitVec 12)
@@ -69,11 +95,8 @@ theorem sar_last_limb_inplace_spec
     let cr := sar_last_limb_inplace_code base
     cpsTriple base (base + 12) cr
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 24 base (by nofun)
-  have SA := sra_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) src 24 (base + 8)
-  runBlock L SA SD_
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) :=
+  (sar_last_limb_inplace_spec_within sp src v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Shift Body Specs
@@ -251,6 +274,28 @@ abbrev sar_sign_fill_path_code (base : Word) : CodeReq :=
 
     Entered when shift >= 256. Computes sign extension of value[3] (at sp+56),
     pops shift word (ADDI x12, 32), fills all 4 result limbs with sign extension. -/
+theorem sar_sign_fill_path_spec_within (sp : Word)
+    (v5 v10 : Word)
+    (v0 v1 v2 v3 : Word)
+    (base : Word) :
+    let signExt := BitVec.sshiftRight v3 63
+    let cr := sar_sign_fill_path_code base
+    cpsTripleWithin 7 base (base + 28) cr
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
+       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ signExt) ** (.x10 ↦ᵣ v10) **
+       ((sp + 32) ↦ₘ signExt) ** ((sp + 40) ↦ₘ signExt) ** ((sp + 48) ↦ₘ signExt) ** ((sp + 56) ↦ₘ signExt)) := by
+  have LD0 := ld_spec_gen_within .x5 .x12 sp v5 v3 56 base (by nofun)
+  have SR := srai_spec_gen_same_within .x5 v3 63 (base + 4) (by nofun)
+  simp only [bv6_toNat_63] at SR
+  have AD := addi_spec_gen_same_within .x12 sp 32 (base + 8) (by nofun)
+  simp only [signExtend12_32] at AD
+  have S0 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v0 0 (base + 12)
+  have S1 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v1 8 (base + 16)
+  have S2 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v2 16 (base + 20)
+  have S3 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v3 24 (base + 24)
+  runBlock LD0 SR AD S0 S1 S2 S3
+
 theorem sar_sign_fill_path_spec (sp : Word)
     (v5 v10 : Word)
     (v0 v1 v2 v3 : Word)
@@ -261,16 +306,7 @@ theorem sar_sign_fill_path_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
        ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
       ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ signExt) ** (.x10 ↦ᵣ v10) **
-       ((sp + 32) ↦ₘ signExt) ** ((sp + 40) ↦ₘ signExt) ** ((sp + 48) ↦ₘ signExt) ** ((sp + 56) ↦ₘ signExt)) := by
-  have LD0 := ld_spec_gen .x5 .x12 sp v5 v3 56 base (by nofun)
-  have SR := srai_spec_gen_same .x5 v3 63 (base + 4) (by nofun)
-  simp only [bv6_toNat_63] at SR
-  have AD := addi_spec_gen_same .x12 sp 32 (base + 8) (by nofun)
-  simp only [signExtend12_32] at AD
-  have S0 := sd_spec_gen .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v0 0 (base + 12)
-  have S1 := sd_spec_gen .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v1 8 (base + 16)
-  have S2 := sd_spec_gen .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v2 16 (base + 20)
-  have S3 := sd_spec_gen .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v3 24 (base + 24)
-  runBlock LD0 SR AD S0 S1 S2 S3
+       ((sp + 32) ↦ₘ signExt) ** ((sp + 40) ↦ₘ signExt) ** ((sp + 48) ↦ₘ signExt) ** ((sp + 56) ↦ₘ signExt)) :=
+  (sar_sign_fill_path_spec_within sp v5 v10 v0 v1 v2 v3 base).to_cpsTriple
 
 end EvmAsm.Evm64

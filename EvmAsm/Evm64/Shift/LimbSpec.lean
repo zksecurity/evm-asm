@@ -38,6 +38,31 @@ open EvmAsm.Rv64
 abbrev shr_merge_limb_code (src_off next_off dst_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.ofProg base (shr_merge_limb_prog src_off next_off dst_off)
 
+theorem shr_merge_limb_spec_within (src_off next_off dst_off : BitVec 12)
+    (sp src next dstOld v5 v10 bit_shift antiShift mask : Word) (base : Word) :
+    let memSrc := sp + signExtend12 src_off
+    let memNext := sp + signExtend12 next_off
+    let memDst := sp + signExtend12 dst_off
+    let shiftedSrc := src >>> (bit_shift.toNat % 64)
+    let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
+    let result := shiftedSrc ||| shiftedNext
+    let code := shr_merge_limb_code src_off next_off dst_off base
+    cpsTripleWithin 7 base (base + 28) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
+       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ dstOld))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
+       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ result)) := by
+  have L1 := ld_spec_gen_within .x5 .x12 sp v5 src src_off base (by nofun)
+  have SR := srl_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have L2 := ld_spec_gen_within .x10 .x12 sp v10 next next_off (base + 8) (by nofun)
+  have SL := sll_spec_gen_rd_eq_rs1_within .x10 .x7 next antiShift (base + 12) (by nofun)
+  have AN := and_spec_gen_rd_eq_rs1_within .x10 .x11 (next <<< (antiShift.toNat % 64)) mask (base + 16) (by nofun)
+  have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 (src >>> (bit_shift.toNat % 64)) ((next <<< (antiShift.toNat % 64)) &&& mask) (base + 20) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) dstOld dst_off (base + 24)
+  runBlock L1 SR L2 SL AN OR_ SD_
+
 theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
     (sp src next dstOld v5 v10 bit_shift antiShift mask : Word) (base : Word) :
     let memSrc := sp + signExtend12 src_off
@@ -53,20 +78,29 @@ theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
        (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ dstOld))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ result)) := by
-  have L1 := ld_spec_gen .x5 .x12 sp v5 src src_off base (by nofun)
-  have SR := srl_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have L2 := ld_spec_gen .x10 .x12 sp v10 next next_off (base + 8) (by nofun)
-  have SL := sll_spec_gen_rd_eq_rs1 .x10 .x7 next antiShift (base + 12) (by nofun)
-  have AN := and_spec_gen_rd_eq_rs1 .x10 .x11 (next <<< (antiShift.toNat % 64)) mask (base + 16) (by nofun)
-  have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 (src >>> (bit_shift.toNat % 64)) ((next <<< (antiShift.toNat % 64)) &&& mask) (base + 20) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) dstOld dst_off (base + 24)
-  runBlock L1 SR L2 SL AN OR_ SD_
+       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ result)) :=
+  (shr_merge_limb_spec_within src_off next_off dst_off sp src next dstOld v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- SHR Last Limb (3 instructions)
 
 abbrev shr_last_limb_code (dst_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.ofProg base (shr_last_limb_prog dst_off)
+
+theorem shr_last_limb_spec_within (dst_off : BitVec 12)
+    (sp src dstOld v5 bit_shift : Word) (base : Word) :
+    let memSrc := sp + signExtend12 (24 : BitVec 12)
+    let memDst := sp + signExtend12 dst_off
+    let result := src >>> (bit_shift.toNat % 64)
+    let code := shr_last_limb_code dst_off base
+    cpsTripleWithin 3 base (base + 12) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) := by
+  have L := ld_spec_gen_within .x5 .x12 sp v5 src 24 base (by nofun)
+  have SR := srl_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
+  runBlock L SR SD_
 
 theorem shr_last_limb_spec (dst_off : BitVec 12)
     (sp src dstOld v5 bit_shift : Word) (base : Word) :
@@ -78,16 +112,37 @@ theorem shr_last_limb_spec (dst_off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
        (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 24 base (by nofun)
-  have SR := srl_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
-  runBlock L SR SD_
+       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) :=
+  (shr_last_limb_spec_within dst_off sp src dstOld v5 bit_shift base).to_cpsTriple
 
 -- SHR Merge Limb In-place (7 instructions, src_off = dst_off)
 
 abbrev shr_merge_limb_inplace_code (off next_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.ofProg base (shr_merge_limb_inplace_prog off next_off)
+
+theorem shr_merge_limb_inplace_spec_within (off next_off : BitVec 12)
+    (sp src next v5 v10 bit_shift antiShift mask : Word) (base : Word) :
+    let memLoc := sp + signExtend12 off
+    let memNext := sp + signExtend12 next_off
+    let shiftedSrc := src >>> (bit_shift.toNat % 64)
+    let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
+    let result := shiftedSrc ||| shiftedNext
+    let code := shr_merge_limb_inplace_code off next_off base
+    cpsTripleWithin 7 base (base + 28) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
+       (memLoc ↦ₘ src) ** (memNext ↦ₘ next))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
+       (memLoc ↦ₘ result) ** (memNext ↦ₘ next)) := by
+  have L1 := ld_spec_gen_within .x5 .x12 sp v5 src off base (by nofun)
+  have SR := srl_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have L2 := ld_spec_gen_within .x10 .x12 sp v10 next next_off (base + 8) (by nofun)
+  have SL := sll_spec_gen_rd_eq_rs1_within .x10 .x7 next antiShift (base + 12) (by nofun)
+  have AN := and_spec_gen_rd_eq_rs1_within .x10 .x11 (next <<< (antiShift.toNat % 64)) mask (base + 16) (by nofun)
+  have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 (src >>> (bit_shift.toNat % 64)) ((next <<< (antiShift.toNat % 64)) &&& mask) (base + 20) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) src off (base + 24)
+  runBlock L1 SR L2 SL AN OR_ SD_
 
 theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
     (sp src next v5 v10 bit_shift antiShift mask : Word) (base : Word) :
@@ -103,20 +158,26 @@ theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
        (memLoc ↦ₘ src) ** (memNext ↦ₘ next))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
        (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       (memLoc ↦ₘ result) ** (memNext ↦ₘ next)) := by
-  have L1 := ld_spec_gen .x5 .x12 sp v5 src off base (by nofun)
-  have SR := srl_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have L2 := ld_spec_gen .x10 .x12 sp v10 next next_off (base + 8) (by nofun)
-  have SL := sll_spec_gen_rd_eq_rs1 .x10 .x7 next antiShift (base + 12) (by nofun)
-  have AN := and_spec_gen_rd_eq_rs1 .x10 .x11 (next <<< (antiShift.toNat % 64)) mask (base + 16) (by nofun)
-  have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 (src >>> (bit_shift.toNat % 64)) ((next <<< (antiShift.toNat % 64)) &&& mask) (base + 20) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) src off (base + 24)
-  runBlock L1 SR L2 SL AN OR_ SD_
+       (memLoc ↦ₘ result) ** (memNext ↦ₘ next)) :=
+  (shr_merge_limb_inplace_spec_within off next_off sp src next v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- SHR Last Limb In-place (3 instructions, dst_off = 24)
 
 abbrev shr_last_limb_inplace_code (base : Word) : CodeReq :=
   CodeReq.ofProg base shr_last_limb_inplace_prog
+
+theorem shr_last_limb_inplace_spec_within
+    (sp src v5 bit_shift : Word) (base : Word) :
+    let mem := sp + signExtend12 (24 : BitVec 12)
+    let result := src >>> (bit_shift.toNat % 64)
+    let code := shr_last_limb_inplace_code base
+    cpsTripleWithin 3 base (base + 12) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) := by
+  have L := ld_spec_gen_within .x5 .x12 sp v5 src 24 base (by nofun)
+  have SR := srl_spec_gen_rd_eq_rs1_within .x5 .x6 src bit_shift (base + 4) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) src 24 (base + 8)
+  runBlock L SR SD_
 
 theorem shr_last_limb_inplace_spec
     (sp src v5 bit_shift : Word) (base : Word) :
@@ -125,11 +186,8 @@ theorem shr_last_limb_inplace_spec
     let code := shr_last_limb_inplace_code base
     cpsTriple base (base + 12) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 src 24 base (by nofun)
-  have SR := srl_spec_gen_rd_eq_rs1 .x5 .x6 src bit_shift (base + 4) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) src 24 (base + 8)
-  runBlock L SR SD_
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) :=
+  (shr_last_limb_inplace_spec_within sp src v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Section 2: Zero Path (5 instructions)
@@ -137,6 +195,25 @@ theorem shr_last_limb_inplace_spec
 
 abbrev shr_zero_path_code (base : Word) : CodeReq :=
   CodeReq.ofProg base shr_zero_path
+
+theorem shr_zero_path_spec_within (sp : Word)
+    (d0 d1 d2 d3 : Word)
+    (base : Word) :
+    let nsp := sp + 32
+    let code := shr_zero_path_code base
+    cpsTripleWithin 5 base (base + 20) code
+      ((.x12 ↦ᵣ sp) **
+       (nsp ↦ₘ d0) ** ((nsp + 8) ↦ₘ d1) ** ((nsp + 16) ↦ₘ d2) ** ((nsp + 24) ↦ₘ d3))
+      ((.x12 ↦ᵣ nsp) **
+       (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) := by
+  intro nsp
+  have A := addi_spec_gen_same_within .x12 sp 32 base (by nofun)
+  rw [show sp + signExtend12 (32 : BitVec 12) = nsp from by simp only [signExtend12_32]; rfl] at A
+  have S0 := sd_x0_spec_gen_within .x12 nsp d0 0 (base + 4)
+  have S1 := sd_x0_spec_gen_within .x12 nsp d1 8 (base + 8)
+  have S2 := sd_x0_spec_gen_within .x12 nsp d2 16 (base + 12)
+  have S3 := sd_x0_spec_gen_within .x12 nsp d3 24 (base + 16)
+  runBlock A S0 S1 S2 S3
 
 theorem shr_zero_path_spec (sp : Word)
     (d0 d1 d2 d3 : Word)
@@ -147,15 +224,8 @@ theorem shr_zero_path_spec (sp : Word)
       ((.x12 ↦ᵣ sp) **
        (nsp ↦ₘ d0) ** ((nsp + 8) ↦ₘ d1) ** ((nsp + 16) ↦ₘ d2) ** ((nsp + 24) ↦ₘ d3))
       ((.x12 ↦ᵣ nsp) **
-       (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) := by
-  intro nsp
-  have A := addi_spec_gen_same .x12 sp 32 base (by nofun)
-  rw [show sp + signExtend12 (32 : BitVec 12) = nsp from by simp only [signExtend12_32]; rfl] at A
-  have S0 := sd_x0_spec_gen .x12 nsp d0 0 (base + 4)
-  have S1 := sd_x0_spec_gen .x12 nsp d1 8 (base + 8)
-  have S2 := sd_x0_spec_gen .x12 nsp d2 16 (base + 12)
-  have S3 := sd_x0_spec_gen .x12 nsp d3 24 (base + 16)
-  runBlock A S0 S1 S2 S3
+       (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) :=
+  (shr_zero_path_spec_within sp d0 d1 d2 d3 base).to_cpsTriple
 
 -- ============================================================================
 -- Section 3: Phase B (7 instructions)
@@ -163,6 +233,27 @@ theorem shr_zero_path_spec (sp : Word)
 
 abbrev shr_phase_b_code (base : Word) : CodeReq :=
   CodeReq.ofProg base shr_phase_b
+
+theorem shr_phase_b_spec_within (shift0 sp r6 r7 r11 : Word) (base : Word) :
+    let bit_shift := shift0 &&& signExtend12 63
+    let limb_shift := shift0 >>> (6 : BitVec 6).toNat
+    let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
+    let mask := (0 : Word) - cond
+    let antiShift := (64 : Word) - bit_shift
+    let code := shr_phase_b_code base
+    cpsTripleWithin 7 base (base + 28) code
+      ((.x5 ↦ᵣ shift0) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+      ((.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) := by
+  have A1 := andi_spec_gen_within .x6 .x5 r6 shift0 63 base (by nofun)
+  have SR := srli_spec_gen_same_within .x5 shift0 6 (base + 4) (by nofun)
+  have SL := sltu_spec_gen_within .x11 .x0 .x6 r11 (0 : Word) (shift0 &&& signExtend12 63) (base + 8) (by nofun)
+  have SU := sub_spec_gen_rd_eq_rs2_within .x11 .x0 (0 : Word) (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 63) then (1 : Word) else 0) (base + 12) (by nofun)
+  have LI_ := li_spec_gen_within .x7 r7 64 (base + 16) (by nofun)
+  have SU2 := sub_spec_gen_rd_eq_rs1_within .x7 .x6 (64 : Word) (shift0 &&& signExtend12 63) (base + 20) (by nofun)
+  have AD := addi_spec_gen_same_within .x12 sp 32 (base + 24) (by nofun)
+  runBlock A1 SR SL SU LI_ SU2 AD
 
 theorem shr_phase_b_spec (shift0 sp r6 r7 r11 : Word) (base : Word) :
     let bit_shift := shift0 &&& signExtend12 63
@@ -175,15 +266,8 @@ theorem shr_phase_b_spec (shift0 sp r6 r7 r11 : Word) (base : Word) :
       ((.x5 ↦ᵣ shift0) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
       ((.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) := by
-  have A1 := andi_spec_gen .x6 .x5 r6 shift0 63 base (by nofun)
-  have SR := srli_spec_gen_same .x5 shift0 6 (base + 4) (by nofun)
-  have SL := sltu_spec_gen .x11 .x0 .x6 r11 (0 : Word) (shift0 &&& signExtend12 63) (base + 8) (by nofun)
-  have SU := sub_spec_gen_rd_eq_rs2 .x11 .x0 (0 : Word) (if BitVec.ult (0 : Word) (shift0 &&& signExtend12 63) then (1 : Word) else 0) (base + 12) (by nofun)
-  have LI_ := li_spec_gen .x7 r7 64 (base + 16) (by nofun)
-  have SU2 := sub_spec_gen_rd_eq_rs1 .x7 .x6 (64 : Word) (shift0 &&& signExtend12 63) (base + 20) (by nofun)
-  have AD := addi_spec_gen_same .x12 sp 32 (base + 24) (by nofun)
-  runBlock A1 SR SL SU LI_ SU2 AD
+       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) :=
+  (shr_phase_b_spec_within shift0 sp r6 r7 r11 base).to_cpsTriple
 
 -- ============================================================================
 -- Section 4: LD/OR Accumulator Helper (2 instructions)
@@ -192,15 +276,23 @@ theorem shr_phase_b_spec (shift0 sp r6 r7 r11 : Word) (base : Word) :
 abbrev shr_ld_or_acc_code (off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.ofProg base (shr_ld_or_acc_prog off)
 
+theorem shr_ld_or_acc_spec_within (sp acc prev_x10 val : Word) (off : BitVec 12)
+    (base : Word) :
+    let code := shr_ld_or_acc_code off base
+    cpsTripleWithin 2 base (base + 8) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
+  have L := ld_spec_gen_within .x10 .x12 sp prev_x10 val off base (by nofun)
+  have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 acc val (base + 4) (by nofun)
+  runBlock L OR_
+
 theorem shr_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     (base : Word) :
     let code := shr_ld_or_acc_code off base
     cpsTriple base (base + 8) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
-  have L := ld_spec_gen .x10 .x12 sp prev_x10 val off base (by nofun)
-  have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 acc val (base + 4) (by nofun)
-  runBlock L OR_
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) :=
+  (shr_ld_or_acc_spec_within sp acc prev_x10 val off base).to_cpsTriple
 
 -- ============================================================================
 -- Section 5: Body Specs

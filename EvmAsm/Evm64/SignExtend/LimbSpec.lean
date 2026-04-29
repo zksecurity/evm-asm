@@ -38,6 +38,21 @@ abbrev signext_inplace_code (off : BitVec 12) (base : Word) : CodeReq :=
 
     Loads a 64-bit limb, sign-extends using shiftAmount, stores back.
     Result = BitVec.sshiftRight (limb <<< (sa % 64)) (sa % 64) -/
+theorem signext_inplace_spec_within (off : BitVec 12)
+    (sp limb v5 shiftAmount : Word) (base : Word) :
+    let result := BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
+    let code := signext_inplace_code off base
+    cpsTripleWithin 4 base (base + 16) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
+       ((sp + signExtend12 off) ↦ₘ limb))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
+       ((sp + signExtend12 off) ↦ₘ result)) := by
+  have L := ld_spec_gen_within .x5 .x12 sp v5 limb off base (by nofun)
+  have SL := sll_spec_gen_rd_eq_rs1_within .x5 .x6 limb shiftAmount (base + 4) (by nofun)
+  have SR := sra_spec_gen_rd_eq_rs1_within .x5 .x6 (limb <<< (shiftAmount.toNat % 64)) shiftAmount (base + 8) (by nofun)
+  have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) limb off (base + 12)
+  runBlock L SL SR SD_
+
 theorem signext_inplace_spec (off : BitVec 12)
     (sp limb v5 shiftAmount : Word) (base : Word) :
     let result := BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
@@ -46,12 +61,8 @@ theorem signext_inplace_spec (off : BitVec 12)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
        ((sp + signExtend12 off) ↦ₘ limb))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 off) ↦ₘ result)) := by
-  have L := ld_spec_gen .x5 .x12 sp v5 limb off base (by nofun)
-  have SL := sll_spec_gen_rd_eq_rs1 .x5 .x6 limb shiftAmount (base + 4) (by nofun)
-  have SR := sra_spec_gen_rd_eq_rs1 .x5 .x6 (limb <<< (shiftAmount.toNat % 64)) shiftAmount (base + 8) (by nofun)
-  have SD_ := sd_spec_gen .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) limb off (base + 12)
-  runBlock L SL SR SD_
+       ((sp + signExtend12 off) ↦ₘ result)) :=
+  (signext_inplace_spec_within off sp limb v5 shiftAmount base).to_cpsTriple
 
 -- ============================================================================
 -- Body Specs
@@ -185,13 +196,21 @@ theorem signext_body_0_spec (sp : Word)
 -- ============================================================================
 
 /-- Done spec: ADDI x12, x12, 32 (pop b word). -/
+theorem signext_done_spec_within (sp : Word) (base : Word) :
+    let nsp := sp + signExtend12 (32 : BitVec 12)
+    let code := CodeReq.singleton base (.ADDI .x12 .x12 32)
+    cpsTripleWithin 1 base (base + 4) code
+      (.x12 ↦ᵣ sp)
+      (.x12 ↦ᵣ nsp) := by
+  exact addi_spec_gen_same_within .x12 sp 32 base (by nofun)
+
 theorem signext_done_spec (sp : Word) (base : Word) :
     let nsp := sp + signExtend12 (32 : BitVec 12)
     let code := CodeReq.singleton base (.ADDI .x12 .x12 32)
     cpsTriple base (base + 4) code
       (.x12 ↦ᵣ sp)
-      (.x12 ↦ᵣ nsp) := by
-  exact addi_spec_gen_same .x12 sp 32 base (by nofun)
+      (.x12 ↦ᵣ nsp) :=
+  (signext_done_spec_within sp base).to_cpsTriple
 
 -- ============================================================================
 -- Phase B Spec: Compute shiftAmount and limbIdx (5 instructions)
@@ -207,6 +226,23 @@ abbrev signext_phase_b_code (base : Word) : CodeReq :=
     SUB x6,x6,x10; SRLI x5,x5,3.
     Outputs: x6 = 56 - (b%8)*8 (shiftAmount), x5 = b/8 (limbIdx).
     Same computation as byte_phase_b_spec. -/
+theorem signext_phase_b_spec_within (b r6 r10 : Word) (base : Word) :
+    let byteInLimb := b &&& signExtend12 (7 : BitVec 12)
+    let byteShift := byteInLimb <<< (3 : BitVec 6).toNat
+    let shiftAmount := (56 : Word) - byteShift
+    let limbIdx := b >>> (3 : BitVec 6).toNat
+    let code := signext_phase_b_code base
+    cpsTripleWithin 5 base (base + 20) code
+      ((.x5 ↦ᵣ b) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
+      ((.x5 ↦ᵣ limbIdx) ** (.x6 ↦ᵣ shiftAmount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byteShift)) := by
+  have A := andi_spec_gen_within .x10 .x5 r10 b 7 base (by nofun)
+  have SL := slli_spec_gen_same_within .x10 (b &&& signExtend12 7) 3 (base + 4) (by nofun)
+  have AD := addi_x0_spec_gen_within .x6 r6 56 (base + 8) (by nofun)
+  have SU := sub_spec_gen_rd_eq_rs1_within .x6 .x10 (signExtend12 56)
+    ((b &&& signExtend12 7) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun)
+  have SR := srli_spec_gen_same_within .x5 b 3 (base + 16) (by nofun)
+  runBlock A SL AD SU SR
+
 theorem signext_phase_b_spec (b r6 r10 : Word) (base : Word) :
     let byteInLimb := b &&& signExtend12 (7 : BitVec 12)
     let byteShift := byteInLimb <<< (3 : BitVec 6).toNat
@@ -215,14 +251,8 @@ theorem signext_phase_b_spec (b r6 r10 : Word) (base : Word) :
     let code := signext_phase_b_code base
     cpsTriple base (base + 20) code
       ((.x5 ↦ᵣ b) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
-      ((.x5 ↦ᵣ limbIdx) ** (.x6 ↦ᵣ shiftAmount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byteShift)) := by
-  have A := andi_spec_gen .x10 .x5 r10 b 7 base (by nofun)
-  have SL := slli_spec_gen_same .x10 (b &&& signExtend12 7) 3 (base + 4) (by nofun)
-  have AD := addi_x0_spec_gen .x6 r6 56 (base + 8) (by nofun)
-  have SU := sub_spec_gen_rd_eq_rs1 .x6 .x10 (signExtend12 56)
-    ((b &&& signExtend12 7) <<< (3 : BitVec 6).toNat) (base + 12) (by nofun)
-  have SR := srli_spec_gen_same .x5 b 3 (base + 16) (by nofun)
-  runBlock A SL AD SU SR
+      ((.x5 ↦ᵣ limbIdx) ** (.x6 ↦ᵣ shiftAmount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byteShift)) :=
+  (signext_phase_b_spec_within b r6 r10 base).to_cpsTriple
 
 -- ============================================================================
 -- LD/OR Accumulator Helper (2 instructions)
@@ -231,15 +261,23 @@ theorem signext_phase_b_spec (b r6 r10 : Word) (base : Word) :
 abbrev signext_ld_or_acc_code (off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.ofProg base (signext_ld_or_acc_prog off)
 
+theorem signext_ld_or_acc_spec_within (sp acc prev_x10 val : Word) (off : BitVec 12)
+    (base : Word) :
+    let code := signext_ld_or_acc_code off base
+    cpsTripleWithin 2 base (base + 8) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
+  have L := ld_spec_gen_within .x10 .x12 sp prev_x10 val off base (by nofun)
+  have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 acc val (base + 4) (by nofun)
+  runBlock L OR_
+
 theorem signext_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
     (base : Word) :
     let code := signext_ld_or_acc_code off base
     cpsTriple base (base + 8) code
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) := by
-  have L := ld_spec_gen .x10 .x12 sp prev_x10 val off base (by nofun)
-  have OR_ := or_spec_gen_rd_eq_rs1 .x5 .x10 acc val (base + 4) (by nofun)
-  runBlock L OR_
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) :=
+  (signext_ld_or_acc_spec_within sp acc prev_x10 val off base).to_cpsTriple
 
 -- ============================================================================
 -- Cascade Step Helper (2 instructions)
