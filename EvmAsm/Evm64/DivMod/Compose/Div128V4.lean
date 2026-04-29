@@ -50,7 +50,7 @@ private theorem d128_v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr
 
     `@[irreducible]` to keep the let-chain out of the theorem signature. -/
 @[irreducible]
-def div128V4SpecPost (sp retAddr d uLo uHi : Word) : Assertion :=
+def div128V4SpecPost (sp retAddr d uLo uHi scratchMem : Word) : Assertion :=
   -- Phase 1 split intermediates (unchanged from v2).
   let dHi := d >>> (32 : BitVec 6).toNat
   let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
@@ -95,20 +95,34 @@ def div128V4SpecPost (sp retAddr d uLo uHi : Word) : Assertion :=
     else rhat2c
   let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo un0
   let q := (q1'' <<< (32 : BitVec 6).toNat) ||| q0''
-  -- Memory: scratch slot 3936 holds the saved rhat2c (un-incremented;
-  -- the SD at instr [52] saves rhat2c BEFORE the optional `+= dHi` at [60]).
-  -- Register and memory state (final). Exit register layout matches v2's
-  -- `div128V2SpecPost` for x10 (q1'') and x11 (combined q), with the
-  -- transient x1/x5/x6/x7 values folded into TODO once the full proof is
-  -- wired (they depend on the BLTU paths taken).
-  -- TODO: pin x1/x5/x6/x7 exit values once the proof body is filled in.
+  -- Register and memory state (final). x1/x7 from step2_v4 post (transient
+  -- values depending on which BLTU/BNE branches fired); end_spec overwrites
+  -- x11 with q (combined result) from x10 and x5.
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0Dlo1 := q0c * dLo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  let rhat2' :=
+    if rhat2cHi = 0 then
+      if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+    else rhat2c
+  let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+  let q0Dlo2 := q0' * dLo
+  let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+  let x7Exit_step2 := if rhat2cHi ≠ 0 then un21
+                      else if rhat2'Hi ≠ 0 then q0Dlo1
+                      else q0Dlo2
+  let x1Exit_step2 := if rhat2cHi ≠ 0 then rhat2cHi
+                      else if rhat2'Hi ≠ 0 then rhat2'Hi
+                      else rhat2'Un0
   (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ q1'') **
-  (.x11 ↦ᵣ q) ** (.x0 ↦ᵣ (0 : Word)) **
+  (.x5 ↦ᵣ q0'') ** (.x7 ↦ᵣ x7Exit_step2) **
+  (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ x1Exit_step2) ** (.x11 ↦ᵣ q) **
+  (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3968 ↦ₘ retAddr) **
   (sp + signExtend12 3960 ↦ₘ d) **
   (sp + signExtend12 3952 ↦ₘ dLo) **
   (sp + signExtend12 3944 ↦ₘ un0) **
-  (sp + signExtend12 3936 ↦ₘ rhat2c)
+  (sp + signExtend12 3936 ↦ₘ (if rhat2cHi ≠ 0 then scratchMem else rhat2c))
 
 /-- **STUB**: equivalence between `divK_div128_v4` (full Knuth D RISC-V)
     and `div128Quot_v4` (Lean abstraction).
@@ -149,7 +163,7 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ un0Mem) **
        (sp + signExtend12 3936 ↦ₘ scratchMem))
-      (div128V4SpecPost sp retAddr d uLo uHi) := by
+      (div128V4SpecPost sp retAddr d uLo uHi scratchMem) := by
   sorry  -- PR-A2 stub. Proof composes 5 blocks via cpsTriple_seq_perm_same_cr,
          -- mirroring `div128_v2_spec` (in `Compose/Div128.lean` line 419-629).
          -- Translation table from v2 → v4:
@@ -206,7 +220,7 @@ theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ un0Mem) **
        (sp + signExtend12 3936 ↦ₘ scratchMem))
-      (div128V4SpecPost sp retAddr d uLo uHi) :=
+      (div128V4SpecPost sp retAddr d uLo uHi scratchMem) :=
   cpsTriple_extend_code (hmono := shared_b12_div128_v4_sub)
     (div128_v4_spec sp retAddr d uLo uHi base v1Old v6Old v11Old
       retMem dMem dloMem un0Mem scratchMem halign)

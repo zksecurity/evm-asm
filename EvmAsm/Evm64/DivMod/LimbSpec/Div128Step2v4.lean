@@ -83,33 +83,49 @@ def divKDiv128Step2V4Code (base : Word) : CodeReq :=
     the postcondition encodes them via if-then-else on the relevant
     BLTU/BNE conditions. -/
 @[irreducible]
-def divKDiv128Step2V4Post (sp un21 dHi dlo un0 : Word) : Assertion :=
+def divKDiv128Step2V4Post (sp un21 dHi dlo un0 vScratchOld : Word) : Assertion :=
   let q0 := rv64_divu un21 dHi
   let rhat2 := un21 - q0 * dHi
   let hi := q0 >>> (32 : BitVec 6).toNat
   let q0c := if hi = 0 then q0 else q0 + signExtend12 4095
   let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
-  -- Phase 2b 1st D3.
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0Dlo1 := q0c * dlo            -- product for 1st D3 check
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  -- Phase 2b 1st D3 result (if outer guard doesn't fire).
   let q0' := div128Quot_phase2b_q0' q0c rhat2c dlo un0
-  -- Phase 2b 2nd D3 — uses q0' and the post-1st-correction rhat2.
+  -- Post-1st-D3 rhat2: equals rhat2c + dHi if 1st BLTU fired, else rhat2c.
   let rhat2' :=
-    if rhat2c >>> (32 : BitVec 6).toNat = 0 then
-      let qDlo2c := q0c * dlo
-      let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
-      if BitVec.ult rhatUn0 qDlo2c then rhat2c + dHi else rhat2c
+    if rhat2cHi = 0 then
+      if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
     else rhat2c
+  let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+  let q0Dlo2 := q0' * dlo            -- product for 2nd D3 check
+  let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+  -- Phase 2b 2nd D3 result.
   let q0'' := div128Quot_phase2b_q0' q0' rhat2' dlo un0
-  -- Memory state: rhat2c is saved to slot 3936 (could be either rhat2c
-  -- or rhat2c+dHi depending on BLTU; abstracted here as the actual
-  -- saved value).
-  let savedRhat2c := rhat2c  -- the SD at [52] saves the un-incremented rhat2c
-  -- Exit register state: x5 holds q0'' (the final corrected q0).
-  -- x11, x7, x1 hold transient values from the last instructions.
-  -- TODO: pin x1/x7/x11 exit values once the proof body is filled in.
-  (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+  -- Exit register state at [71]:
+  -- x7: un21 (outer BNE) | q0c*dlo (2nd BNE) | q0'*dlo (2nd D3 ran).
+  let x7Exit := if rhat2cHi ≠ 0 then un21
+                else if rhat2'Hi ≠ 0 then q0Dlo1
+                else q0Dlo2
+  -- x1: rhat2cHi (outer BNE) | rhat2'Hi (2nd BNE) | rhat2'*2^32|un0 (2nd D3 ran).
+  let x1Exit := if rhat2cHi ≠ 0 then rhat2cHi
+                else if rhat2'Hi ≠ 0 then rhat2'Hi
+                else rhat2'Un0
+  -- x11: rhat2c (outer BNE) | rhat2' (2nd BNE) | un0 (2nd D3 ran).
+  let x11Exit := if rhat2cHi ≠ 0 then rhat2c
+                 else if rhat2'Hi ≠ 0 then rhat2'
+                 else un0
+  -- mem3936: vScratchOld if outer BNE fired (SD at [52] not reached),
+  --          else rhat2c (saved at [52]).
+  let mem3936Exit := if rhat2cHi ≠ 0 then vScratchOld else rhat2c
+  (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+  (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
   (sp + signExtend12 3952 ↦ₘ dlo) **
   (sp + signExtend12 3944 ↦ₘ un0) **
-  (sp + signExtend12 3936 ↦ₘ savedRhat2c)
+  (sp + signExtend12 3936 ↦ₘ mem3936Exit)
 
 /-- Bundled postcondition for Phase 2b 1st D3 with save/restore.
     Covers instructions [47..60] of divK_div128_v4 (14 instructions). -/
@@ -171,10 +187,15 @@ theorem divK_div128_step2_v4_spec
        (sp + signExtend12 3952 ↦ₘ dlo) **
        (sp + signExtend12 3944 ↦ₘ un0) **
        (sp + signExtend12 3936 ↦ₘ vScratchOld))
-      (divKDiv128Step2V4Post sp un21 dHi dlo un0) := by
-  sorry  -- PR-A2 finish stub. Body composes step2_init + clamp_q0 +
-         -- phase2b_guard + (1st D3 with save/restore) + (2nd D3),
-         -- mirroring the v2 step2_spec proof structure but with
-         -- 14 additional instructions.
+      (divKDiv128Step2V4Post sp un21 dHi dlo un0 vScratchOld) := by
+  sorry  -- PR-A2 finish stub. Proof uses cpsBranch_merge_same_cr:
+         -- 1. Build cpsBranch for the outer BNE guard at [48] (offset 92):
+         --    taken=base+124 (combines with if-rhat2cHi-ne-0 post),
+         --    not-taken runs through [49..70] then base+124.
+         -- 2. h_t = cpsTriple_refl for taken leg.
+         -- 3. h_f = proof of [49..70] → (not-taken post at base+124).
+         -- 4. cpsBranch_merge_same_cr → cpsTriple base (base+124).
+         -- The merged post is divKDiv128Step2V4Post with if-rhat2cHi
+         -- selectors for x7, x1, x11, mem3936.
 
 end EvmAsm.Evm64
