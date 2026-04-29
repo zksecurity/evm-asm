@@ -173,17 +173,80 @@ theorem divK_div128_phase2b_1st_d3_v4_spec
          -- that BNE branches forward past [71] — which is handled by step2_v4
          -- itself via the outer branch structure). Keep as sorry for now.
 
+/-- Phase D sub-lemma: BLTU+paths [15..20] of step2_v4, merged post.
+    Input = midC (= output of Phase C at base+60).
+    Output = midD (post-BLTU merged state at base+84).
+    by_cases on ult for taken/not-taken paths; by_cases on rhat2cHi for vacuity.
+    Proof outline:
+    - if rhat2cHi ≠ 0: pre (⌜rhat2cHi=0⌝) is False → vacuous.
+    - if rhat2cHi = 0, ult = true (taken path [18..20]):
+        strip ⌜ult⌝ from pre, run ADDI+LD+ADD via runBlock.
+    - if rhat2cHi = 0, ult = false (not-taken path [16..17]):
+        strip ⌜¬ult⌝ from pre, run LD+JAL via runBlock. -/
+theorem divK_div128_step2_v4_phase_D_merged_spec
+    (sp dHi q0c rhat2c dlo un0 : Word) (base : Word) :
+    let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+    let q0Dlo1   := q0c * dlo
+    let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+    let q0'      := div128Quot_phase2b_q0' q0c rhat2c dlo un0
+    let rhat2'   := if rhat2cHi = 0 then
+                      if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+                    else rhat2c
+    cpsTriple (base + 60) (base + 84) (divKDiv128Step2V4Code base)
+      ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+       (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c))
+      ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+       (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  sorry
+
+/-- Phase E sub-lemma: 2nd D3 guard+prodcheck [21..30] of step2_v4, merged post.
+    Input = midD (at base+84). Output = finalPost_rhat2cHi0 (at base+124).
+    by_cases on rhat2'Hi for guard taken/not-taken.
+    Proof outline:
+    - if rhat2cHi ≠ 0: midD pre (⌜rhat2cHi=0⌝) is False → vacuous.
+    - if rhat2cHi = 0 and rhat2'Hi ≠ 0 (guard fires): identity, q0''=q0'.
+    - if rhat2cHi = 0 and rhat2'Hi = 0:
+        prodcheck2_merged_spec at base+92, extended via step2v4_sub 23..30. -/
+theorem divK_div128_step2_v4_phase_E_merged_spec
+    (sp dHi q0' rhat2' rhat2Un0 q0Dlo1 dlo un0 rhat2c : Word) (base : Word) :
+    let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+    let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+    let q0Dlo2   := q0' * dlo
+    let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+    let q0''     := div128Quot_phase2b_q0' q0' rhat2' dlo un0
+    let x7Exit   := if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2
+    let x1Exit   := if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0
+    let x11Exit  := if rhat2'Hi ≠ 0 then rhat2' else un0
+    cpsTriple (base + 84) (base + 124) (divKDiv128Step2V4Code base)
+      ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+       (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c))
+      ((.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+       (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  sorry
+
 /-- **STUB**: full v4 Phase 2 spec — instructions [40..70] of `divK_div128_v4`.
 
-    Mirrors `divK_div128_step2_spec` for the v4 algorithm. Proof structure:
-    - [40..42]: step-2-init (same as v2).
-    - [43..46]: clamp-q0 (same as v2).
-    - [47..48]: Phase 2b guard (same as v2).
-    - [49..60]: Phase 2b 1st D3 with save/restore (NEW).
-    - [61..70]: Phase 2b 2nd D3 (NEW — mirror of Phase 1b 2nd D3).
-
-    Estimated body: ~700 LOC, mirrors the v2 step2 spec but with the
-    added 2nd D3 + save/restore handling. -/
+    Proof structure (5 blocks in `divK_div128_step2_v4_spec`):
+    - Block 1 [0..28]  (hA): init+clamp  → `cpsTriple base (base+28)`.
+    - Block 2 [28..36] (hB): outer SRLI+BNE guard → `cpsBranch (base+28)`.
+    - Compose hA+hB → `cpsBranch base (base+124) | (base+36)`.
+    - Taken (rhat2cHi≠0): `h_taken` identity at base+124.
+    - Not-taken (rhat2cHi=0): `h_notTaken` = Block3(hC) + Block4(hD) + Block5(hE).
+      Block 3 [36..60] (hC): pre-BLTU setup via runBlock.
+      Block 4 [60..84] (hD): BLTU+paths via `phase_D_merged_spec`.
+      Block 5 [84..124](hE): 2nd D3 guard+prodcheck via `phase_E_merged_spec`. -/
 theorem divK_div128_step2_v4_spec
     (sp un21 dHi v1Old v5Old v11Old dlo un0 vScratchOld : Word) (base : Word) :
     cpsTriple base (base + 124) (divKDiv128Step2V4Code base)
@@ -334,14 +397,13 @@ theorem divK_div128_step2_v4_spec
   -- Not-taken leg (rhat2cHi = 0): run [36..120] → base+124.
   have h_notTaken : cpsTriple (base + 36) (base + 124) (divKDiv128Step2V4Code base)
       notTakenPost finalPost := by
-    -- Intermediate state after Phase C (pre-BLTU [9..14]).
+    -- Phase C: pre-BLTU setup [9..14] = LD+MUL+SLLI+SD+LD+OR.
     let midC : Assertion :=
       (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
       (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
       (sp + signExtend12 3936 ↦ₘ rhat2c)
-    -- Phase C: pre-BLTU [9..14] = LD+MUL+SLLI+SD+LD+OR.
     have hC : cpsTriple (base+36) (base+60) (divKDiv128Step2V4Code base)
         notTakenPost midC := by
       apply cpsTriple_extend_code (hmono := by
@@ -365,22 +427,24 @@ theorem divK_div128_step2_v4_spec
                  show (base+52:Word)+4 = base+56 from by bv_omega,
                  show (base+56:Word)+4 = base+60 from by bv_omega] at *
       runBlock I0 I1 I2 I3 I4 I5
-    -- Intermediate state after Phase D (post-BLTU [15..20]).
+    -- Phase D: BLTU+paths [15..20] via `divK_div128_step2_v4_phase_D_merged_spec`.
     let midD : Assertion :=
       (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
       (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
-      (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+      (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
       (sp + signExtend12 3936 ↦ₘ rhat2c)
-    -- Phase D: BLTU + correction/no-correction paths.
-    have hD : cpsTriple (base+36) (base+84) (divKDiv128Step2V4Code base)
-        notTakenPost midD := by
-      sorry -- cpsBranch at [15], merge taken [18..20] + not-taken [16..17]
-    -- Phase E: 2nd D3 guard [21..22] + prodcheck [23..30].
+    have hD_raw := divK_div128_step2_v4_phase_D_merged_spec sp dHi q0c rhat2c dlo un0 base
+    have hD : cpsTriple (base+36) (base+84) (divKDiv128Step2V4Code base) notTakenPost midD :=
+      cpsTriple_seq_perm_same_cr (fun h hp => by exact hp) hC hD_raw
+    -- Phase E: 2nd D3 guard+prodcheck [21..30] via `divK_div128_step2_v4_phase_E_merged_spec`.
+    -- Bridge hE_raw post → finalPost: by_cases on rhat2cHi (midD has ⌜rhat2cHi=0⌝
+    -- so ≠0 is vacuous); then reduce outer if-then-else by h_z + xperm.
     have hE : cpsTriple (base+84) (base+124) (divKDiv128Step2V4Code base)
         midD finalPost := by
-      sorry -- 2nd D3: SRLI+BNE guard + prodcheck2_merged_spec for [23..30]
-    -- Compose D + E.
+      have _hE_raw := divK_div128_step2_v4_phase_E_merged_spec
+                       sp dHi q0' rhat2' rhat2Un0 q0Dlo1 dlo un0 rhat2c base
+      sorry
     exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hq => by xperm_hyp hq)
