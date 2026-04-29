@@ -886,8 +886,17 @@ theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     carry = 0 → qHat.toNat ≥ q_true + 2 := by
-  sorry  -- Forward direction: contrapositive of addbackN4_first_carry_one
-         -- + val256-norm bridge. Algorithmic.
+  sorry  -- Forward direction. Key insight (per project_layer2a_bridge_gap):
+         -- under haddback (`u4 < c3`) + `mulsubN4_c3_le_one` (c3 ≤ 1):
+         -- c3 = 1 ∧ u4 = 0. Then mulsubN4_val256_eq + h_norm_u + h_norm_v +
+         -- carry = 0 give:
+         --   val256(ms_un) + val256(v_norm)
+         --     = (val256(a) - qHat * val256(b))*2^shift + val256(b)*2^shift + 2^256
+         --     < 2^256
+         -- ⟹ qHat * val256(b) > val256(a) + val256(b) ⟹ qHat ≥ q_true + 2.
+         -- Requires reordering: u_top_lt_c3_of_addback_borrow_call_v4 is defined
+         -- later in this file; move it earlier or restructure proof. Estimated
+         -- ~50 lines once the helper is accessible.
 
 /-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
 
