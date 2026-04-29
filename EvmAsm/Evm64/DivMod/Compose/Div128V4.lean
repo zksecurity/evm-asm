@@ -16,6 +16,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Compose.Div128
+import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2v4
 import EvmAsm.Evm64.DivMod.LoopDefs.IterV4
 
 open EvmAsm.Rv64.Tactics
@@ -82,19 +83,20 @@ def div128V4SpecPost (sp retAddr d uLo uHi : Word) : Assertion :=
     else rhat2c
   let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo un0
   let q := (q1'' <<< (32 : BitVec 6).toNat) ||| q0''
-  -- Register and memory state (final). Note exit register layout will be
-  -- determined by the actual proof; for now we expose just the canonical
-  -- shape, with x10 = q1'' and x11 = q (combined result). Other registers
-  -- (x1, x5, x6, x7) hold transient values from the last instructions
-  -- and are left abstract via existential placeholders to match the
-  -- runtime end-of-subroutine state.
-  -- TODO: pin x1/x5/x6/x7 exit values once the full proof is wired.
+  -- Memory: scratch slot 3936 holds the saved rhat2c (un-incremented;
+  -- the SD at instr [52] saves rhat2c BEFORE the optional `+= dHi` at [60]).
+  -- Register and memory state (final). Exit register layout matches v2's
+  -- `div128V2SpecPost` for x10 (q1'') and x11 (combined q), with the
+  -- transient x1/x5/x6/x7 values folded into TODO once the full proof is
+  -- wired (they depend on the BLTU paths taken).
+  -- TODO: pin x1/x5/x6/x7 exit values once the proof body is filled in.
   (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ q1'') **
   (.x11 ↦ᵣ q) ** (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3968 ↦ₘ retAddr) **
   (sp + signExtend12 3960 ↦ₘ d) **
   (sp + signExtend12 3952 ↦ₘ dLo) **
-  (sp + signExtend12 3944 ↦ₘ un0)
+  (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
 
 /-- **STUB**: equivalence between `divK_div128_v4` (full Knuth D RISC-V)
     and `div128Quot_v4` (Lean abstraction).
@@ -120,11 +122,12 @@ def div128V4SpecPost (sp retAddr d uLo uHi : Word) : Assertion :=
     Estimated: ~700 LOC for the full proof (vs ~600 for v2). -/
 theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
     (v1Old v6Old v11Old : Word)
-    (retMem dMem dloMem un0Mem : Word)
+    (retMem dMem dloMem un0Mem scratchMem : Word)
     (_halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
     cpsTriple (base + div128Off) retAddr
       (CodeReq.ofProg (base + div128Off) divK_div128_v4)
-      (-- Precondition: same as div128_spec / div128_v2_spec.
+      (-- Precondition: same as div128_v2_spec, plus the new scratch slot
+       -- 3936 (used to save rhat2c across the un0 LD clobber).
        (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
        (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
        (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) **
@@ -132,11 +135,22 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ dMem) **
        (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ un0Mem))
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem))
       (div128V4SpecPost sp retAddr d uLo uHi) := by
   sorry  -- PR-A2 stub. Proof composes phase1 + step1_v2 + compute_un21 +
-         -- step2_v4 (NEW) + end, similar to div128_v2_spec but with the
-         -- v4 step2 block covering 31 instructions instead of 17.
+         -- step2_v4 + end, similar to div128_v2_spec but with the v4
+         -- step2 block covering 31 instructions instead of 17, and with
+         -- the new scratch memory slot 3936 threaded through.
+         -- Block sequence:
+         --   [0..9]   phase1     (existing divK_div128_phase1_spec)
+         --   [10..34] step1_v2   (existing divK_div128_step1_v2_spec)
+         --   [35..39] compute_un21 (existing divK_div128_compute_un21_spec)
+         --   [40..70] step2_v4   (NEW divK_div128_step2_v4_spec — sorry'd)
+         --   [71..74] end        (existing divK_div128_end_spec)
+         -- Step2_v4 spans byte offsets [base+1232 .. base+1356], where
+         -- the v4 step2 covers 124 bytes vs v2's 68 bytes.
+         -- End spans [base+1356 .. base+1372]; v4 returns at base+1372.
 
 /-- Lifted `div128_v4_spec` over `sharedDivModCode_v4 base` — a thin
     wrapper that lifts the cr from singleton `ofProg`-form to the
@@ -146,7 +160,7 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
     lifted form. -/
 theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
     (v1Old v6Old v11Old : Word)
-    (retMem dMem dloMem un0Mem : Word)
+    (retMem dMem dloMem un0Mem scratchMem : Word)
     (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
     cpsTriple (base + div128Off) retAddr (sharedDivModCode_v4 base)
       ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
@@ -156,10 +170,11 @@ theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3968 ↦ₘ retMem) **
        (sp + signExtend12 3960 ↦ₘ dMem) **
        (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ un0Mem))
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem))
       (div128V4SpecPost sp retAddr d uLo uHi) :=
   cpsTriple_extend_code (hmono := shared_b12_div128_v4_sub)
     (div128_v4_spec sp retAddr d uLo uHi base v1Old v6Old v11Old
-      retMem dMem dloMem un0Mem halign)
+      retMem dMem dloMem un0Mem scratchMem halign)
 
 end EvmAsm.Evm64
