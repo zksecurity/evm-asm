@@ -317,6 +317,30 @@ theorem cpsTriple_strip_pure_and_convert
     obtain ⟨hp', hcompat', hpq'⟩ := hQR
     exact ⟨hp', hcompat', sepConj_mono_left (hpost hfact) hp' hpq'⟩⟩
 
+/-- Bounded version of `cpsTriple_strip_pure_and_convert`: strip a pure
+    hypothesis from the precondition and use it to weaken the postcondition
+    without changing the step bound. -/
+theorem cpsTripleWithin_strip_pure_and_convert
+    {nSteps : Nat} {entry exit_ : Word} {cr : CodeReq}
+    {P Q : Assertion} {fact : Prop} (Q' : Assertion)
+    (hbody : cpsTripleWithin nSteps entry exit_ cr P Q)
+    (hpost : fact → ∀ h, Q h → Q' h) :
+    cpsTripleWithin nSteps entry exit_ cr (P ** ⌜fact⌝) Q' := by
+  intro R hR s hcr hPFR hpc
+  have hfact : fact := by
+    obtain ⟨hp, _, hpq⟩ := hPFR
+    obtain ⟨h1, _, _, _, hPF, _⟩ := hpq
+    exact ((sepConj_pure_right h1).1 hPF).2
+  have hPR : (P ** R).holdsFor s := by
+    obtain ⟨hp, hcompat, hpq⟩ := hPFR
+    exact ⟨hp, hcompat, by
+      obtain ⟨h1, h2, hd, hunion, hPF, hR_⟩ := hpq
+      exact ⟨h1, h2, hd, hunion, ((sepConj_pure_right h1).1 hPF).1, hR_⟩⟩
+  obtain ⟨k, hk, s', hstep, hpc', hQR⟩ := hbody R hR s hcr hPR hpc
+  exact ⟨k, hk, s', hstep, hpc', by
+    obtain ⟨hp', hcompat', hpq'⟩ := hQR
+    exact ⟨hp', hcompat', sepConj_mono_left (hpost hfact) hp' hpq'⟩⟩
+
 /-- Rule of consequence for cpsBranch: strengthen pre, weaken both posts.
 
     All pre/post-condition arguments are implicit: `P`/`Q_t`/`Q_f` unify from
@@ -678,6 +702,48 @@ theorem cpsNBranchWithin_mono_nSteps {nSteps nSteps' : Nat} {entry : Word} {cr :
   intro R hR s hcr hPR hpc
   obtain ⟨k, hk, s', hstep, ex, hmem, hpc', hQR⟩ := h R hR s hcr hPR hpc
   exact ⟨k, Nat.le_trans hk hle, s', hstep, ex, hmem, hpc', hQR⟩
+
+/-- Monotonicity for bounded N-branches: extend to a larger CodeReq. -/
+theorem cpsNBranchWithin_extend_code {nSteps : Nat} {entry : Word} {cr cr' : CodeReq}
+    {P : Assertion} {exits : List (Word × Assertion)}
+    (hmono : ∀ a i, cr a = some i → cr' a = some i)
+    (h : cpsNBranchWithin nSteps entry cr P exits) :
+    cpsNBranchWithin nSteps entry cr' P exits := by
+  intro R hR s hcr' hPR hpc
+  exact h R hR s (CodeReq.SatisfiedBy_mono hmono hcr') hPR hpc
+
+/-- Frame a bounded `cpsNBranch` by a PC-free assertion. The step bound is
+    unchanged and the frame is attached to every exit assertion. -/
+theorem cpsNBranchWithin_frameR {nSteps : Nat} {entry : Word} {cr : CodeReq}
+    {P : Assertion} {exits : List (Word × Assertion)} {F : Assertion}
+    (hF : F.pcFree) (h : cpsNBranchWithin nSteps entry cr P exits) :
+    cpsNBranchWithin nSteps entry cr (P ** F) (exits.map (fun ex => (ex.1, ex.2 ** F))) := by
+  intro R hR s hcr hPFR hpc
+  have hFR : (F ** R).pcFree := pcFree_sepConj hF hR
+  have hPFR' : (P ** (F ** R)).holdsFor s :=
+    holdsFor_sepConj_assoc.mp hPFR
+  obtain ⟨k, hk, s', hstep, ex, hmem, hpc', hQFR⟩ :=
+    h (F ** R) hFR s hcr hPFR' hpc
+  refine ⟨k, hk, s', hstep, (ex.1, ex.2 ** F), ?_, hpc',
+    holdsFor_sepConj_assoc.mpr hQFR⟩
+  exact List.mem_map.mpr ⟨ex, hmem, rfl⟩
+
+/-- Bounded N-branch merge: if every exit has a continuation with a uniform
+    step bound, compose into a single bounded triple. Bounds add. -/
+theorem cpsNBranchWithin_merge {nSteps1 nSteps2 : Nat}
+    {entry exit_ : Word} {cr : CodeReq}
+    {P R : Assertion}
+    {exits : List (Word × Assertion)}
+    (hbr : cpsNBranchWithin nSteps1 entry cr P exits)
+    (hall : ∀ exit ∈ exits, cpsTripleWithin nSteps2 exit.1 exit_ cr exit.2 R) :
+    cpsTripleWithin (nSteps1 + nSteps2) entry exit_ cr P R := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, hk1, s1, hstep1, ex, hmem, hpc1, hQF⟩ :=
+    hbr F hF s hcr hPF hpc
+  have hcr1 := CodeReq.SatisfiedBy_preserved hstep1 hcr
+  obtain ⟨k2, hk2, s2, hstep2, hpc2, hRF⟩ :=
+    hall ex hmem F hF s1 hcr1 hQF hpc1
+  exact ⟨k1 + k2, Nat.add_le_add hk1 hk2, s2, stepN_add_eq hstep1 hstep2, hpc2, hRF⟩
 
 /-- Bounded sequence: a triple followed by an N-branch. Bounds add under
     sequential composition. -/
@@ -1394,6 +1460,54 @@ theorem cpsBranchWithin_ntakenPath {nSteps : Nat} {entry l_t l_f : Word} {cr : C
   · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQt, hR'⟩ := hQ_tR
     exact absurd hQt (h_absurd h1)
   · exact ⟨k, hk, s', hstep, hpc_f, hQ_fR⟩
+
+/-- Bounded version of `cpsBranch_takenStripPure2`. -/
+theorem cpsBranchWithin_takenStripPure2
+    {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P A B : Assertion} {Prop_t : Prop} {Q_f : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t (A ** B ** ⌜Prop_t⌝) l_f Q_f)
+    (h_absurd : ∀ hp, Q_f hp → False) :
+    cpsTripleWithin nSteps entry l_t cr P (A ** B) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end2
+    (cpsBranchWithin_takenPath hbr h_absurd)
+
+/-- Bounded version of `cpsBranch_takenStripPure3`. -/
+theorem cpsBranchWithin_takenStripPure3
+    {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P A B C : Assertion} {Prop_t : Prop} {Q_f : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t (A ** B ** C ** ⌜Prop_t⌝) l_f Q_f)
+    (h_absurd : ∀ hp, Q_f hp → False) :
+    cpsTripleWithin nSteps entry l_t cr P (A ** B ** C) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end3
+    (cpsBranchWithin_takenPath hbr h_absurd)
+
+/-- Bounded version of `cpsBranch_ntakenStripPure2`. -/
+theorem cpsBranchWithin_ntakenStripPure2
+    {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P A B : Assertion} {Prop_f : Prop} {Q_t : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t Q_t l_f (A ** B ** ⌜Prop_f⌝))
+    (h_absurd : ∀ hp, Q_t hp → False) :
+    cpsTripleWithin nSteps entry l_f cr P (A ** B) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end2
+    (cpsBranchWithin_ntakenPath hbr h_absurd)
+
+/-- Bounded version of `cpsBranch_ntakenStripPure3`. -/
+theorem cpsBranchWithin_ntakenStripPure3
+    {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P A B C : Assertion} {Prop_f : Prop} {Q_t : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t Q_t l_f (A ** B ** C ** ⌜Prop_f⌝))
+    (h_absurd : ∀ hp, Q_t hp → False) :
+    cpsTripleWithin nSteps entry l_f cr P (A ** B ** C) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end3
+    (cpsBranchWithin_ntakenPath hbr h_absurd)
 
 /-- Frame a pcFree assertion `F` on the right of a cpsTriple: pre becomes
     `P ** F` and post becomes `Q ** F`. Position/code/pre/post args are all
