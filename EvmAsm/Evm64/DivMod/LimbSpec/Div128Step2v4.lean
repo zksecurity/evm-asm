@@ -334,23 +334,57 @@ theorem divK_div128_step2_v4_spec
   -- Not-taken leg (rhat2cHi = 0): run [36..120] → base+124.
   have h_notTaken : cpsTriple (base + 36) (base + 124) (divKDiv128Step2V4Code base)
       notTakenPost finalPost := by
-    -- Proof: cpsBranch structure on [36..120] = step2_v4 indices [9..30].
-    -- (C) Pre-BLTU [9..14]: LD+MUL+SLLI+SD+LD+OR → cpsTriple (base+36..60).
-    --     Each instruction extended via step2v4_sub 9..14.
-    --     Produces: x7=q0Dlo1, x1=rhat2Un0, x11=un0, mem3936=rhat2c.
-    -- (D) BLTU cpsBranch at [15] (step2v4_sub 15, offset 12 → base+72):
-    --     Taken [18..20] ADDI+LD+ADD (step2v4_sub 18..20) → [21] = base+84.
-    --     Not-taken [16..17] LD+JAL(16) (step2v4_sub 16..17) → base+84.
-    --     cpsBranch_merge_same_cr → cpsTriple (base+36..84).
-    -- (E) 2nd D3 guard SRLI+BNE at [21..22] (step2v4_sub 21..22, offset 36):
-    --     Taken → base+124 (rhat2c_upd_hi ≠ 0, identity triple).
-    --     Not-taken → run [23..30]:
-    --       [23..27] LD+MUL+SLLI+LD+OR: reuse divK_div128_prodcheck2_merged_spec
-    --           extended via step2v4_sub 23..30.
-    --       cpsBranch_merge_same_cr with BLTU [28]+JAL [29]+ADDI [30] → base+124.
-    --     cpsBranch_merge_same_cr → cpsTriple (base+84..124).
-    -- cpsTriple_seq (C+D) + E = cpsTriple (base+36..124).
-    sorry
+    -- Intermediate state after Phase C (pre-BLTU [9..14]).
+    let midC : Assertion :=
+      (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+      (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+      (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+      (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+      (sp + signExtend12 3936 ↦ₘ rhat2c)
+    -- Phase C: pre-BLTU [9..14] = LD+MUL+SLLI+SD+LD+OR.
+    have hC : cpsTriple (base+36) (base+60) (divKDiv128Step2V4Code base)
+        notTakenPost midC := by
+      apply cpsTriple_extend_code (hmono := by
+        exact CodeReq.union_sub (step2v4_sub 9 (base+36) (.LD .x1 .x12 3952) (by omega) (by bv_omega) (by decide))
+         (CodeReq.union_sub (step2v4_sub 10 (base+40) (.MUL .x7 .x5 .x1) (by omega) (by bv_omega) (by decide))
+         (CodeReq.union_sub (step2v4_sub 11 (base+44) (.SLLI .x1 .x11 32) (by omega) (by bv_omega) (by decide))
+         (CodeReq.union_sub (step2v4_sub 12 (base+48) (.SD .x12 .x11 3936) (by omega) (by bv_omega) (by decide))
+         (CodeReq.union_sub (step2v4_sub 13 (base+52) (.LD .x11 .x12 3944) (by omega) (by bv_omega) (by decide))
+          (step2v4_sub 14 (base+56) (.OR .x1 .x1 .x11) (by omega) (by bv_omega) (by decide)))))))
+      have I0 := ld_spec_gen .x1 .x12 sp rhat2cHi dlo 3952 (base+36) (by nofun)
+      have I1 := mul_spec_gen .x7 .x5 .x1 un21 q0c dlo (base+40) (by nofun)
+      have I2 := slli_spec_gen .x1 .x11 dlo rhat2c 32 (base+44) (by nofun)
+      have I3 := sd_spec_gen .x12 .x11 sp rhat2c vScratchOld 3936 (base+48)
+      have I4 := ld_spec_gen .x11 .x12 sp rhat2c un0 3944 (base+52) (by nofun)
+      have I5 := or_spec_gen_rd_eq_rs1 .x1 .x11
+            (rhat2c <<< (32 : BitVec 6).toNat) un0 (base+56) (by nofun)
+      simp only [show (base+36:Word)+4 = base+40 from by bv_omega,
+                 show (base+40:Word)+4 = base+44 from by bv_omega,
+                 show (base+44:Word)+4 = base+48 from by bv_omega,
+                 show (base+48:Word)+4 = base+52 from by bv_omega,
+                 show (base+52:Word)+4 = base+56 from by bv_omega,
+                 show (base+56:Word)+4 = base+60 from by bv_omega] at *
+      runBlock I0 I1 I2 I3 I4 I5
+    -- Intermediate state after Phase D (post-BLTU [15..20]).
+    let midD : Assertion :=
+      (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+      (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+      (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+      (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+      (sp + signExtend12 3936 ↦ₘ rhat2c)
+    -- Phase D: BLTU + correction/no-correction paths.
+    have hD : cpsTriple (base+36) (base+84) (divKDiv128Step2V4Code base)
+        notTakenPost midD := by
+      sorry -- cpsBranch at [15], merge taken [18..20] + not-taken [16..17]
+    -- Phase E: 2nd D3 guard [21..22] + prodcheck [23..30].
+    have hE : cpsTriple (base+84) (base+124) (divKDiv128Step2V4Code base)
+        midD finalPost := by
+      sorry -- 2nd D3: SRLI+BNE guard + prodcheck2_merged_spec for [23..30]
+    -- Compose D + E.
+    exact cpsTriple_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hq => by xperm_hyp hq)
+      (cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) hD hE)
   exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
