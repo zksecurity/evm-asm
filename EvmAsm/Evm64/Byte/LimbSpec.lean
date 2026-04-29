@@ -383,6 +383,148 @@ private theorem byte_pc_sub_4 {base : Word} :
 
 /-- Phase C cascade dispatch spec: branches on x5 (limbFromMsb) to 4 body entry points.
     Each exit postcondition includes pure constraints identifying which branch was taken. -/
+theorem byte_phase_c_spec_within (v5 v10 : Word) (base : Word)
+    (e0 e1 e2 e3 : Word)
+    (he0 : base + signExtend13 68 = e0)
+    (he1 : (base + 8) + signExtend13 44 = e1)
+    (he2 : (base + 16) + signExtend13 20 = e2)
+    (he3 : base + 20 = e3) :
+    let code := byte_phase_c_code base
+    cpsNBranchWithin 5 base code
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝),
+       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝),
+       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
+       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
+  intro code
+  let cr := byte_phase_c_code base
+  -- Step 0: BEQ x5 x0 68 at base — extend to cr, frame with x10
+  have beq0_raw := beq_spec_gen_within .x5 .x0 68 v5 (0 : Word) base
+  rw [he0] at beq0_raw
+  have beq0_cr := cpsBranchWithin_extend_code byte_pc_sub_0 beq0_raw
+  have beq0f : cpsBranchWithin 1 base cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      e0 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝)
+      (base + 4) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 ≠ 0⌝) :=
+    cpsBranchWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (cpsBranchWithin_frameR (.x10 ↦ᵣ v10) (by pcFree) beq0_cr)
+  -- Step 1: ADDI x10 x0 1 at base+4 (extend to cr, frame with x5)
+  have addi1_raw := addi_spec_gen_within .x10 .x0 v10 (0 : Word) 1 (base + 4) (by nofun)
+  have addi1_cr := cpsTripleWithin_extend_code byte_pc_sub_1 addi1_raw
+  have addi1f := cpsTripleWithin_frameR
+    (.x5 ↦ᵣ v5) (by pcFree) addi1_cr
+  -- Normalize ADDI1 exit PC
+  have haddi1_exit : (base + 4 : Word) + 4 = base + 8 := by bv_omega
+  rw [haddi1_exit] at addi1f
+  -- Step 2: BEQ x5 x10 44 at base+8 (extend to cr, frame with x0)
+  have beq1_raw := beq_spec_gen_within .x5 .x10 44 v5 ((0 : Word) + signExtend12 1) (base + 8)
+  rw [he1] at beq1_raw
+  have beq1_cr := cpsBranchWithin_extend_code byte_pc_sub_2 beq1_raw
+  -- Normalize BEQ1 ntaken exit
+  have hbeq1_nf : (base + 8 : Word) + 4 = base + 12 := by bv_omega
+  rw [hbeq1_nf] at beq1_raw beq1_cr
+  have beq1f := cpsBranchWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) beq1_cr
+  -- Compose addi1 + beq1 (let Lean infer intermediate shapes)
+  have cs1_composed := cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
+    (fun h hp => by xperm_hyp hp) addi1f beq1f
+  -- Clean up cs1 to canonical form via cpsBranch_weaken
+  have cs1_clean : cpsBranchWithin 2 (base + 4) cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      e1 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝)
+      (base + 12) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ (0 : Word) + signExtend12 1⌝) :=
+    cpsBranchWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      cs1_composed
+  -- Frame cs1 with ⌜v5 ≠ 0⌝, clean up postconditions
+  have cs1_framed := cpsBranchWithin_frameR
+    (⌜v5 ≠ (0 : Word)⌝) pcFree_pure cs1_clean
+  have cs1_final : cpsBranchWithin 2 (base + 4) cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 ≠ (0 : Word)⌝)
+      e1 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝)
+      (base + 12) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝) :=
+    cpsBranchWithin_weaken
+      (fun h hp => (congrFun (show _ = _ from by xperm) h).mp hp)
+      -- taken: strip ⌜v5 ≠ 0⌝ frame
+      (fun h hp => (sepConj_pure_right h).1 hp |>.1)
+      -- ntaken: combine ⌜v5 ≠ 0⌝ ∧ ⌜v5 ≠ 1⌝
+      (fun h hp => by
+        have ⟨hinner, hne0⟩ := (sepConj_pure_right h).1 hp
+        have hne1 := sepConj_extract_pure_end3 h hinner
+        have hregs := sepConj_strip_pure_end3 h hinner
+        exact (congrFun (show _ = _ from by xperm) h).mp
+          ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 hne1))))
+      cs1_framed
+  -- Step 3: ADDI x10 x0 2 at base+12 (extend to cr, frame with x5)
+  have addi2_raw := addi_spec_gen_within .x10 .x0 ((0 : Word) + signExtend12 1) (0 : Word) 2 (base + 12) (by nofun)
+  have addi2_cr := cpsTripleWithin_extend_code byte_pc_sub_3 addi2_raw
+  have addi2f := cpsTripleWithin_frameR
+    (.x5 ↦ᵣ v5) (by pcFree) addi2_cr
+  -- Normalize ADDI2 exit PC
+  have haddi2_exit : (base + 12 : Word) + 4 = base + 16 := by bv_omega
+  rw [haddi2_exit] at addi2f
+  -- Step 4: BEQ x5 x10 20 at base+16 (extend to cr, frame with x0)
+  have beq2_raw := beq_spec_gen_within .x5 .x10 20 v5 ((0 : Word) + signExtend12 2) (base + 16)
+  rw [he2] at beq2_raw
+  have beq2_cr := cpsBranchWithin_extend_code byte_pc_sub_4 beq2_raw
+  -- Normalize BEQ2 ntaken exit
+  have hbeq2_nf : (base + 16 : Word) + 4 = base + 20 := by bv_omega
+  rw [hbeq2_nf] at beq2_raw beq2_cr
+  have beq2f := cpsBranchWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) beq2_cr
+  -- Compose addi2 + beq2 (let Lean infer intermediate shapes)
+  have cs2_composed := cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
+    (fun h hp => by xperm_hyp hp) addi2f beq2f
+  -- Clean up cs2 to canonical form
+  have cs2_clean : cpsBranchWithin 2 (base + 12) cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)))
+      e2 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝)
+      (base + 20) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ (0 : Word) + signExtend12 2⌝) :=
+    cpsBranchWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      cs2_composed
+  -- Frame cs2 with ⌜v5 ≠ 0 ∧ v5 ≠ 1⌝, clean up postconditions
+  have cs2_framed := cpsBranchWithin_frameR
+    (⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝) pcFree_pure cs2_clean
+  have cs2_final : cpsBranchWithin 2 (base + 12) cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝)
+      e2 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝)
+      (base + 20) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝) :=
+    cpsBranchWithin_weaken
+      (fun h hp => (congrFun (show _ = _ from by xperm) h).mp hp)
+      -- taken: strip ⌜conj⌝ frame
+      (fun h hp => (sepConj_pure_right h).1 hp |>.1)
+      -- ntaken: combine ⌜v5≠0 ∧ v5≠1⌝ ∧ ⌜v5≠2⌝
+      (fun h hp => by
+        have ⟨hinner, ⟨hne0, hne1⟩⟩ := (sepConj_pure_right h).1 hp
+        have hne2 := sepConj_extract_pure_end3 h hinner
+        have hregs := sepConj_strip_pure_end3 h hinner
+        exact (congrFun (show _ = _ from by xperm) h).mp
+          ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 (And.intro hne1 hne2)))))
+      cs2_framed
+  -- Build cpsNBranch from inside out
+  -- Fallthrough at base+20: trivial single-exit (0 steps)
+  have ft : cpsNBranchWithin 0 (base + 20) cr
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)
+      [(e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
+    intro R hR s _hcr hPR hpc
+    exact ⟨0, Nat.le_refl 0, s, rfl, (e3, _), List.Mem.head _, he3 ▸ hpc, hPR⟩
+  -- Chain cs2_final + ft → exits [e2, e3]
+  have n3 := cpsBranchWithin_cons_cpsNBranchWithin_same_cr cs2_final ft
+  -- Chain cs1_final + n3 → exits [e1, e2, e3]
+  have n2 := cpsBranchWithin_cons_cpsNBranchWithin_with_perm_same_cr
+    (fun h hp => by xperm_hyp hp) cs1_final n3
+  -- Chain beq0f + n2 → exits [e0, e1, e2, e3]
+  have n1 := cpsBranchWithin_cons_cpsNBranchWithin_with_perm_same_cr
+    (fun h hp => by xperm_hyp hp) beq0f n2
+  exact cpsNBranchWithin_mono_nSteps (by omega) n1
+
+/-- Unbounded wrapper for the Phase C cascade dispatch spec. -/
 theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
     (e0 e1 e2 e3 : Word)
     (he0 : base + signExtend13 68 = e0)
@@ -397,131 +539,6 @@ theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
        (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
        (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
   intro code
-  let cr := byte_phase_c_code base
-  -- Step 0: BEQ x5 x0 68 at base — extend to cr, frame with x10
-  have beq0_raw := beq_spec_gen .x5 .x0 68 v5 (0 : Word) base
-  rw [he0] at beq0_raw
-  have beq0_cr := cpsBranch_extend_code byte_pc_sub_0 beq0_raw
-  have beq0f : cpsBranch base cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      e0 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝)
-      (base + 4) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 ≠ 0⌝) :=
-    cpsBranch_weaken
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (cpsBranch_frameR (.x10 ↦ᵣ v10) (by pcFree) beq0_cr)
-  -- Step 1: ADDI x10 x0 1 at base+4 (extend to cr, frame with x5)
-  have addi1_raw := addi_spec_gen .x10 .x0 v10 (0 : Word) 1 (base + 4) (by nofun)
-  have addi1_cr := cpsTriple_extend_code byte_pc_sub_1 addi1_raw
-  have addi1f := cpsTriple_frameR
-    (.x5 ↦ᵣ v5) (by pcFree) addi1_cr
-  -- Normalize ADDI1 exit PC
-  have haddi1_exit : (base + 4 : Word) + 4 = base + 8 := by bv_omega
-  rw [haddi1_exit] at addi1f
-  -- Step 2: BEQ x5 x10 44 at base+8 (extend to cr, frame with x0)
-  have beq1_raw := beq_spec_gen .x5 .x10 44 v5 ((0 : Word) + signExtend12 1) (base + 8)
-  rw [he1] at beq1_raw
-  have beq1_cr := cpsBranch_extend_code byte_pc_sub_2 beq1_raw
-  -- Normalize BEQ1 ntaken exit
-  have hbeq1_nf : (base + 8 : Word) + 4 = base + 12 := by bv_omega
-  rw [hbeq1_nf] at beq1_raw beq1_cr
-  have beq1f := cpsBranch_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) beq1_cr
-  -- Compose addi1 + beq1 (let Lean infer intermediate shapes)
-  have cs1_composed := cpsTriple_seq_cpsBranch_perm_same_cr
-    (fun h hp => by xperm_hyp hp) addi1f beq1f
-  -- Clean up cs1 to canonical form via cpsBranch_weaken
-  have cs1_clean : cpsBranch (base + 4) cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      e1 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝)
-      (base + 12) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ (0 : Word) + signExtend12 1⌝) :=
-    cpsBranch_weaken
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      cs1_composed
-  -- Frame cs1 with ⌜v5 ≠ 0⌝, clean up postconditions
-  have cs1_framed := cpsBranch_frameR
-    (⌜v5 ≠ (0 : Word)⌝) pcFree_pure cs1_clean
-  have cs1_final : cpsBranch (base + 4) cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 ≠ (0 : Word)⌝)
-      e1 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝)
-      (base + 12) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝) :=
-    cpsBranch_weaken
-      (fun h hp => (congrFun (show _ = _ from by xperm) h).mp hp)
-      -- taken: strip ⌜v5 ≠ 0⌝ frame
-      (fun h hp => (sepConj_pure_right h).1 hp |>.1)
-      -- ntaken: combine ⌜v5 ≠ 0⌝ ∧ ⌜v5 ≠ 1⌝
-      (fun h hp => by
-        have ⟨hinner, hne0⟩ := (sepConj_pure_right h).1 hp
-        have hne1 := sepConj_extract_pure_end3 h hinner
-        have hregs := sepConj_strip_pure_end3 h hinner
-        exact (congrFun (show _ = _ from by xperm) h).mp
-          ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 hne1))))
-      cs1_framed
-  -- Step 3: ADDI x10 x0 2 at base+12 (extend to cr, frame with x5)
-  have addi2_raw := addi_spec_gen .x10 .x0 ((0 : Word) + signExtend12 1) (0 : Word) 2 (base + 12) (by nofun)
-  have addi2_cr := cpsTriple_extend_code byte_pc_sub_3 addi2_raw
-  have addi2f := cpsTriple_frameR
-    (.x5 ↦ᵣ v5) (by pcFree) addi2_cr
-  -- Normalize ADDI2 exit PC
-  have haddi2_exit : (base + 12 : Word) + 4 = base + 16 := by bv_omega
-  rw [haddi2_exit] at addi2f
-  -- Step 4: BEQ x5 x10 20 at base+16 (extend to cr, frame with x0)
-  have beq2_raw := beq_spec_gen .x5 .x10 20 v5 ((0 : Word) + signExtend12 2) (base + 16)
-  rw [he2] at beq2_raw
-  have beq2_cr := cpsBranch_extend_code byte_pc_sub_4 beq2_raw
-  -- Normalize BEQ2 ntaken exit
-  have hbeq2_nf : (base + 16 : Word) + 4 = base + 20 := by bv_omega
-  rw [hbeq2_nf] at beq2_raw beq2_cr
-  have beq2f := cpsBranch_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) beq2_cr
-  -- Compose addi2 + beq2 (let Lean infer intermediate shapes)
-  have cs2_composed := cpsTriple_seq_cpsBranch_perm_same_cr
-    (fun h hp => by xperm_hyp hp) addi2f beq2f
-  -- Clean up cs2 to canonical form
-  have cs2_clean : cpsBranch (base + 12) cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)))
-      e2 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝)
-      (base + 20) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ (0 : Word) + signExtend12 2⌝) :=
-    cpsBranch_weaken
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      cs2_composed
-  -- Frame cs2 with ⌜v5 ≠ 0 ∧ v5 ≠ 1⌝, clean up postconditions
-  have cs2_framed := cpsBranch_frameR
-    (⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝) pcFree_pure cs2_clean
-  have cs2_final : cpsBranch (base + 12) cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1⌝)
-      e2 ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝)
-      (base + 20) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝) :=
-    cpsBranch_weaken
-      (fun h hp => (congrFun (show _ = _ from by xperm) h).mp hp)
-      -- taken: strip ⌜conj⌝ frame
-      (fun h hp => (sepConj_pure_right h).1 hp |>.1)
-      -- ntaken: combine ⌜v5≠0 ∧ v5≠1⌝ ∧ ⌜v5≠2⌝
-      (fun h hp => by
-        have ⟨hinner, ⟨hne0, hne1⟩⟩ := (sepConj_pure_right h).1 hp
-        have hne2 := sepConj_extract_pure_end3 h hinner
-        have hregs := sepConj_strip_pure_end3 h hinner
-        exact (congrFun (show _ = _ from by xperm) h).mp
-          ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 (And.intro hne1 hne2)))))
-      cs2_framed
-  -- Build cpsNBranch from inside out
-  -- Fallthrough at base+20: trivial single-exit (0 steps)
-  have ft : cpsNBranch (base + 20) cr
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)
-      [(e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
-    intro R hR s _hcr hPR hpc
-    exact ⟨0, s, rfl, (e3, _), List.Mem.head _, he3 ▸ hpc, hPR⟩
-  -- Chain cs2_final + ft → exits [e2, e3]
-  have n3 := cpsBranch_cons_cpsNBranch_same_cr cs2_final ft
-  -- Chain cs1_final + n3 → exits [e1, e2, e3]
-  have n2 := cpsBranch_cons_cpsNBranch_with_perm_same_cr
-    (fun h hp => by xperm_hyp hp) cs1_final n3
-  -- Chain beq0f + n2 → exits [e0, e1, e2, e3]
-  have n1 := cpsBranch_cons_cpsNBranch_with_perm_same_cr
-    (fun h hp => by xperm_hyp hp) beq0f n2
-  exact n1
+  exact (byte_phase_c_spec_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
 
 end EvmAsm.Evm64

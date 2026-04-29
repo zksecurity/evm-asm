@@ -75,6 +75,22 @@ abbrev signext_body_3_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
 
 /-- Body 3: limbIdx=3, sign-extend limb 3 at sp+56 (5 instrs).
     4 instructions: LD + SLL + SRA + SD + JAL. No higher limbs to fill. -/
+theorem signext_body_3_spec_within (sp : Word)
+    (v5 shiftAmount : Word) (v3 : Word)
+    (base exit : Word) (jal_off : BitVec 21)
+    (hexit : (base + 16) + signExtend21 jal_off = exit) :
+    let result := BitVec.sshiftRight (v3 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
+    let code := signext_body_3_code base jal_off
+    cpsTripleWithin 5 base exit code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
+       ((sp + 56) ↦ₘ v3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
+       ((sp + 56) ↦ₘ result)) := by
+  have IP := signext_inplace_spec_within 56 sp v3 v5 shiftAmount base
+  have JL := jal_x0_spec_gen_within jal_off (base + 16)
+  rw [hexit] at JL
+  runBlock IP JL
+
 theorem signext_body_3_spec (sp : Word)
     (v5 shiftAmount : Word) (v3 : Word)
     (base exit : Word) (jal_off : BitVec 21)
@@ -85,11 +101,8 @@ theorem signext_body_3_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
        ((sp + 56) ↦ₘ v3))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + 56) ↦ₘ result)) := by
-  have IP := signext_inplace_spec 56 sp v3 v5 shiftAmount base
-  have JL := jal_x0_spec_gen jal_off (base + 16)
-  rw [hexit] at JL
-  runBlock IP JL
+       ((sp + 56) ↦ₘ result)) :=
+  (signext_body_3_spec_within sp v5 shiftAmount v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 2 (7 instructions):
     LD + SLL + SRA + SD at sp+48 + SRAI + SD at sp+56 + JAL. -/
@@ -98,6 +111,30 @@ abbrev signext_body_2_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
 
 /-- Body 2: limbIdx=2, sign-extend limb 2 at sp+48, fill limb 3 (7 instrs).
     LD + SLL + SRA + SD + SRAI + SD + JAL. -/
+theorem signext_body_2_spec_within (sp : Word)
+    (v5 v10 shiftAmount : Word) (v2 v3 : Word)
+    (base exit : Word) (jal_off : BitVec 21)
+    (hexit : (base + 24) + signExtend21 jal_off = exit) :
+    let result := BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
+    let signFill := BitVec.sshiftRight result 63
+    let code := signext_body_2_code base jal_off
+    cpsTripleWithin 7 base exit code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
+       ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
+       ((sp + 48) ↦ₘ result) ** ((sp + 56) ↦ₘ signFill)) := by
+  have IP := signext_inplace_spec_within 48 sp v2 v5 shiftAmount base
+  have SR := srai_spec_gen_within .x10 .x5 v10
+    (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
+    63 (base + 16) (by nofun)
+  simp only [bv6_toNat_63] at SR
+  have S0 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v3 56 (base + 20)
+  have JL := jal_x0_spec_gen_within jal_off (base + 24)
+  rw [hexit] at JL
+  runBlock IP SR S0 JL
+
 theorem signext_body_2_spec (sp : Word)
     (v5 v10 shiftAmount : Word) (v2 v3 : Word)
     (base exit : Word) (jal_off : BitVec 21)
@@ -109,18 +146,8 @@ theorem signext_body_2_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
        ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 48) ↦ₘ result) ** ((sp + 56) ↦ₘ signFill)) := by
-  have IP := signext_inplace_spec 48 sp v2 v5 shiftAmount base
-  have SR := srai_spec_gen .x10 .x5 v10
-    (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
-    63 (base + 16) (by nofun)
-  simp only [bv6_toNat_63] at SR
-  have S0 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v3 56 (base + 20)
-  have JL := jal_x0_spec_gen jal_off (base + 24)
-  rw [hexit] at JL
-  runBlock IP SR S0 JL
+       ((sp + 48) ↦ₘ result) ** ((sp + 56) ↦ₘ signFill)) :=
+  (signext_body_2_spec_within sp v5 v10 shiftAmount v2 v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 1 (8 instructions):
     LD + SLL + SRA + SD at sp+40 + SRAI + SD at sp+48 + SD at sp+56 + JAL. -/
@@ -129,6 +156,33 @@ abbrev signext_body_1_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
 
 /-- Body 1: limbIdx=1, sign-extend limb 1 at sp+40, fill limbs 2-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + JAL. -/
+theorem signext_body_1_spec_within (sp : Word)
+    (v5 v10 shiftAmount : Word) (v1 v2 v3 : Word)
+    (base exit : Word) (jal_off : BitVec 21)
+    (hexit : (base + 28) + signExtend21 jal_off = exit) :
+    let result := BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
+    let signFill := BitVec.sshiftRight result 63
+    let code := signext_body_1_code base jal_off
+    cpsTripleWithin 8 base exit code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
+       ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
+       ((sp + 40) ↦ₘ result) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) := by
+  have IP := signext_inplace_spec_within 40 sp v1 v5 shiftAmount base
+  have SR := srai_spec_gen_within .x10 .x5 v10
+    (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
+    63 (base + 16) (by nofun)
+  simp only [bv6_toNat_63] at SR
+  have S0 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v2 48 (base + 20)
+  have S1 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v3 56 (base + 24)
+  have JL := jal_x0_spec_gen_within jal_off (base + 28)
+  rw [hexit] at JL
+  runBlock IP SR S0 S1 JL
+
 theorem signext_body_1_spec (sp : Word)
     (v5 v10 shiftAmount : Word) (v1 v2 v3 : Word)
     (base exit : Word) (jal_off : BitVec 21)
@@ -140,21 +194,8 @@ theorem signext_body_1_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
        ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 40) ↦ₘ result) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) := by
-  have IP := signext_inplace_spec 40 sp v1 v5 shiftAmount base
-  have SR := srai_spec_gen .x10 .x5 v10
-    (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
-    63 (base + 16) (by nofun)
-  simp only [bv6_toNat_63] at SR
-  have S0 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v2 48 (base + 20)
-  have S1 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v3 56 (base + 24)
-  have JL := jal_x0_spec_gen jal_off (base + 28)
-  rw [hexit] at JL
-  runBlock IP SR S0 S1 JL
+       ((sp + 40) ↦ₘ result) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) :=
+  (signext_body_1_spec_within sp v5 v10 shiftAmount v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 0 (8 instructions):
     LD + SLL + SRA + SD at sp+32 + SRAI + SD at sp+40 + SD at sp+48 + SD at sp+56.
@@ -164,6 +205,33 @@ abbrev signext_body_0_code (base : Word) : CodeReq :=
 
 /-- Body 0: limbIdx=0, sign-extend limb 0 at sp+32, fill limbs 1-3 (8 instrs).
     LD + SLL + SRA + SD + SRAI + SD + SD + SD. Falls through to done. -/
+theorem signext_body_0_spec_within (sp : Word)
+    (v5 v10 shiftAmount : Word) (v0 v1 v2 v3 : Word)
+    (base : Word) :
+    let result := BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
+    let signFill := BitVec.sshiftRight result 63
+    let code := signext_body_0_code base
+    cpsTripleWithin 8 base (base + 32) code
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
+       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
+       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ signFill) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) := by
+  have IP := signext_inplace_spec_within 32 sp v0 v5 shiftAmount base
+  have SR := srai_spec_gen_within .x10 .x5 v10
+    (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
+    63 (base + 16) (by nofun)
+  simp only [bv6_toNat_63] at SR
+  have S0 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v1 40 (base + 20)
+  have S1 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v2 48 (base + 24)
+  have S2 := sd_spec_gen_within .x12 .x10 sp
+    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
+    v3 56 (base + 28)
+  runBlock IP SR S0 S1 S2
+
 theorem signext_body_0_spec (sp : Word)
     (v5 v10 shiftAmount : Word) (v0 v1 v2 v3 : Word)
     (base : Word) :
@@ -174,22 +242,8 @@ theorem signext_body_0_spec (sp : Word)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
        ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ signFill) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) := by
-  have IP := signext_inplace_spec 32 sp v0 v5 shiftAmount base
-  have SR := srai_spec_gen .x10 .x5 v10
-    (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64))
-    63 (base + 16) (by nofun)
-  simp only [bv6_toNat_63] at SR
-  have S0 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v1 40 (base + 20)
-  have S1 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v2 48 (base + 24)
-  have S2 := sd_spec_gen .x12 .x10 sp
-    (BitVec.sshiftRight (BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) 63)
-    v3 56 (base + 28)
-  runBlock IP SR S0 S1 S2
+       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ signFill) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) :=
+  (signext_body_0_spec_within sp v5 v10 shiftAmount v0 v1 v2 v3 base).to_cpsTriple
 
 -- ============================================================================
 -- Done Spec: pop b word (1 instruction)
