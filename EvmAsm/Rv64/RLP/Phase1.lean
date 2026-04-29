@@ -85,12 +85,12 @@ abbrev rlp_phase1_step_code
     the result of `ADDI x10, x0, k` starting from `x0 = 0`. For the RLP
     thresholds (0x80, 0xB8, 0xC0, 0xF8), `kVal.toNat = k.toNat` since all
     four fit in 11 bits (no sign extension). -/
-theorem rlp_phase1_step_spec (v5 v10 : Word)
+theorem rlp_phase1_step_spec_within (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
     (htarget : (base + 4) + signExtend13 offset = target) :
     let kVal := (0 : Word) + signExtend12 k
     let code := rlp_phase1_step_code k offset base
-    cpsBranch base code
+    cpsBranchWithin 2 base code
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       target
         ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) **
@@ -104,21 +104,21 @@ theorem rlp_phase1_step_spec (v5 v10 : Word)
       (CodeReq.singleton (base + 4) (.BLTU .x5 .x10 offset)) :=
     CodeReq.Disjoint.singleton (by bv_omega)
   -- Step 1: ADDI x10, x0, k at base
-  have s1 := addi_spec_gen .x10 .x0 v10 0 k base (by nofun)
-  have s1' : cpsTriple base (base + 4) (CodeReq.singleton base (.ADDI .x10 .x0 k))
+  have s1 := addi_spec_gen_within .x10 .x0 v10 0 k base (by nofun)
+  have s1' : cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADDI .x10 .x0 k))
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x10 ↦ᵣ ((0 : Word) + signExtend12 k))) :=
-    cpsTriple_weaken
+    cpsTripleWithin_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsTriple_frameR (.x5 ↦ᵣ v5) (by pcFree) s1)
+      (cpsTripleWithin_frameR (.x5 ↦ᵣ v5) (by pcFree) s1)
   -- Step 2: BLTU x5, x10, offset at base+4
-  have s2_raw := bltu_spec_gen .x5 .x10 offset v5
+  have s2_raw := bltu_spec_gen_within .x5 .x10 offset v5
     ((0 : Word) + signExtend12 k) (base + 4)
   rw [htarget, ha1] at s2_raw
   -- Frame with x0, rearrange pre/post
-  have s2' : cpsBranch (base + 4)
+  have s2' : cpsBranchWithin 1 (base + 4)
       (CodeReq.singleton (base + 4) (.BLTU .x5 .x10 offset))
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)))
@@ -130,17 +130,47 @@ theorem rlp_phase1_step_spec (v5 v10 : Word)
         ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) **
          (.x10 ↦ᵣ ((0 : Word) + signExtend12 k)) **
          ⌜¬ BitVec.ult v5 ((0 : Word) + signExtend12 k)⌝) :=
-    cpsBranch_weaken
+    cpsBranchWithin_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
       (fun h hp => by xperm_hyp hp)
-      (cpsBranch_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) s2_raw)
-  exact cpsTriple_seq_cpsBranch_with_perm hd
-    (fun _ hp => hp) s1' s2'
+      (cpsBranchWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) s2_raw)
+  exact cpsTripleWithin_seq_cpsBranchWithin hd
+    (cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => hp) s1') s2'
+
+theorem rlp_phase1_step_spec (v5 v10 : Word)
+    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
+    (htarget : (base + 4) + signExtend13 offset = target) :
+    let kVal := (0 : Word) + signExtend12 k
+    let code := rlp_phase1_step_code k offset base
+    cpsBranch base code
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      target
+        ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) **
+         ⌜BitVec.ult v5 kVal⌝)
+      (base + 8)
+        ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) **
+         ⌜¬ BitVec.ult v5 kVal⌝) :=
+  (rlp_phase1_step_spec_within v5 v10 k offset base target htarget).to_cpsBranch
 
 /-- Plain variant of `rlp_phase1_step_spec`: drops the `⌜…⌝` dispatch facts,
     leaving just the register ownership. Simpler to chain when downstream
     consumers don't need the ult-based discrimination. -/
+theorem rlp_phase1_step_spec_plain_within (v5 v10 : Word)
+    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
+    (htarget : (base + 4) + signExtend13 offset = target) :
+    let kVal := (0 : Word) + signExtend12 k
+    let code := rlp_phase1_step_code k offset base
+    cpsBranchWithin 2 base code
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal))
+      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
+  cpsBranchWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end3
+    sepConj_strip_pure_end3
+    (rlp_phase1_step_spec_within v5 v10 k offset base target htarget)
+
 theorem rlp_phase1_step_spec_plain (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
     (htarget : (base + 4) + signExtend13 offset = target) :
@@ -150,11 +180,7 @@ theorem rlp_phase1_step_spec_plain (v5 v10 : Word)
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal))
       (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
-  cpsBranch_weaken
-    (fun _ hp => hp)
-    sepConj_strip_pure_end3
-    sepConj_strip_pure_end3
-    (rlp_phase1_step_spec v5 v10 k offset base target htarget)
+  (rlp_phase1_step_spec_plain_within v5 v10 k offset base target htarget).to_cpsBranch
 
 /-- Taken-path-only variant of `rlp_phase1_step_spec`: assumes the BLTU
     will take its branch (`v5 <u kVal`) and produces a plain `cpsTriple`
@@ -165,6 +191,28 @@ theorem rlp_phase1_step_spec_plain (v5 v10 : Word)
     they are heading toward — typically because they are composing the
     cascade with a specific Phase 3 entry program — and just need the
     "from base to e_i" cpsTriple to chain. -/
+theorem rlp_phase1_step_taken_spec_within (v5 v10 : Word)
+    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
+    (htarget : (base + 4) + signExtend13 offset = target)
+    (hv5 : BitVec.ult v5 ((0 : Word) + signExtend12 k)) :
+    let kVal := (0 : Word) + signExtend12 k
+    let code := rlp_phase1_step_code k offset base
+    cpsTripleWithin 2 base target code
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end3
+    (cpsBranchWithin_takenPath
+      (rlp_phase1_step_spec_within v5 v10 k offset base target htarget)
+      (fun _ hpost => by
+        -- The not-taken post carries `⌜¬ BitVec.ult v5 kVal⌝`; the
+        -- assumption `hv5` contradicts it.
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
+        exact hpost.2 hv5))
+
 theorem rlp_phase1_step_taken_spec (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
     (htarget : (base + 4) + signExtend13 offset = target)
@@ -174,15 +222,7 @@ theorem rlp_phase1_step_taken_spec (v5 v10 : Word)
     cpsTriple base target code
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
-  cpsBranch_takenStripPure3
-    (rlp_phase1_step_spec v5 v10 k offset base target htarget)
-    (fun _ hpost => by
-      -- The not-taken post carries `⌜¬ BitVec.ult v5 kVal⌝`; the
-      -- assumption `hv5` contradicts it.
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
-      exact hpost.2 hv5)
+  (rlp_phase1_step_taken_spec_within v5 v10 k offset base target htarget hv5).to_cpsTriple
 
 /-- Not-taken-path-only variant of `rlp_phase1_step_spec`: assumes the
     BLTU does *not* take its branch (`¬ v5 <u kVal`) and produces a
@@ -193,6 +233,28 @@ theorem rlp_phase1_step_taken_spec (v5 v10 : Word)
     consumers stitching together multiple cascade steps along the
     e2 / e3 / e4 / e5 paths, where each non-final step is a fall-through
     leading into the next cascade step. -/
+theorem rlp_phase1_step_ntaken_spec_within (v5 v10 : Word)
+    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
+    (htarget : (base + 4) + signExtend13 offset = target)
+    (hv5 : ¬ BitVec.ult v5 ((0 : Word) + signExtend12 k)) :
+    let kVal := (0 : Word) + signExtend12 k
+    let code := rlp_phase1_step_code k offset base
+    cpsTripleWithin 2 base (base + 8) code
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    sepConj_strip_pure_end3
+    (cpsBranchWithin_ntakenPath
+      (rlp_phase1_step_spec_within v5 v10 k offset base target htarget)
+      (fun _ hpost => by
+        -- The taken post carries `⌜BitVec.ult v5 kVal⌝`; the assumption
+        -- `hv5` (its negation) contradicts it.
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
+        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
+        exact hv5 hpost.2))
+
 theorem rlp_phase1_step_ntaken_spec (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
     (htarget : (base + 4) + signExtend13 offset = target)
@@ -202,15 +264,7 @@ theorem rlp_phase1_step_ntaken_spec (v5 v10 : Word)
     cpsTriple base (base + 8) code
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
-  cpsBranch_ntakenStripPure3
-    (rlp_phase1_step_spec v5 v10 k offset base target htarget)
-    (fun _ hpost => by
-      -- The taken post carries `⌜BitVec.ult v5 kVal⌝`; the assumption
-      -- `hv5` (its negation) contradicts it.
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
-      obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
-      exact hv5 hpost.2)
+  (rlp_phase1_step_ntaken_spec_within v5 v10 k offset base target htarget hv5).to_cpsTriple
 
 -- ============================================================================
 -- Full classifier code: union of four cascade-step CodeReqs
