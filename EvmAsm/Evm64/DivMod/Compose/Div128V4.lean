@@ -29,6 +29,18 @@ open EvmAsm.Rv64
 -- Section 15-v4: div128 subroutine composition (v4 algorithm).
 -- ============================================================================
 
+-- v4 helper: singleton at index k of divK_div128_v4 ⊆ ofProg-based v4 cr.
+-- Mirrors `d128_v2_sub` but uses `divK_div128_v4`.
+private theorem d128_v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
+    (hk : k < divK_div128_v4.length)
+    (h_addr : addr = (base + div128Off) + BitVec.ofNat 64 (4 * k))
+    (h_instr : divK_div128_v4.get ⟨k, hk⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i →
+      (CodeReq.ofProg (base + div128Off) divK_div128_v4) a = some i := by
+  subst h_addr; subst h_instr
+  exact fun a i h => CodeReq.singleton_mono
+    (CodeReq.ofProg_lookup (base + div128Off) divK_div128_v4 k hk (by decide)) a i h
+
 /-- Bundled postcondition for `div128_v4_spec`.
 
     Mirrors `div128V2SpecPost` but uses `q0''` (post-Phase-2b-2nd-D3)
