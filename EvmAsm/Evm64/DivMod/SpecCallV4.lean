@@ -468,19 +468,21 @@ theorem div128Quot_v4_eq_q_true_normalized
     (_hu4_lt_pow63 : u4.toNat < 2^63) :
     (div128Quot_v4 u4 u3 b3').toNat =
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
-  sorry  -- Wire-up: combine `_phase{1,2}_perfect`, `_phase{1,2}_quot_lt_pow32`,
-         -- `_un21_eq_phase1_remainder`, `_combined_arith`, and `halfword_combine`.
-         -- All sub-pieces are PROVEN. Multiple wire-up attempts blocked on
-         -- let-binding alignment. Tried: direct rw, simp only, change, show,
-         -- calc-with-Eq.trans, intermediate `have h_phase1'`. All fail because
-         -- Lean's higher-order pattern matching can't unify the placeholder
-         -- `?q1''` (in combined_arith's expected type) against the let-chained
-         -- `q1''.toNat` from h_phase1, while simultaneously rewriting the
-         -- denominator from `dHi*2^32 + dLo` to `b3'.toNat`. The sub-stubs
-         -- give the right MATH but the let-chain wrapping prevents direct
-         -- composition. Path forward: extract a "div128Quot_v4_unfold" helper
-         -- that exposes the q1'' and q0'' as explicit Word arguments via a
-         -- restating theorem.
+  sorry  -- BLOCKED on let-binding alignment. The math is fully proven via
+         -- `_phase{1,2}_perfect`, `_un21_eq_phase1_remainder`, the proven
+         -- `_combined_arith` pure-Nat helper, and the proven
+         -- `_phase{1,2}_quot_lt_pow32` no-truncation bounds. The
+         -- composition via `Eq.trans` of `halfword_combine` and
+         -- `combined_arith` SHOULD work, but the sub-stub results are
+         -- wrapped in `have ...` chains that Lean's `rw` cannot unify
+         -- against the explicit `dHi.toNat * 2^32 + dLo.toNat` denominators.
+         --
+         -- Path forward (planned for next iteration): recast the sub-stubs
+         -- to take explicit Word arguments rather than embedding the
+         -- algorithm internals via `let`. This requires either a
+         -- "div128Quot_v4_components" helper that exposes q1''/q0''/un21
+         -- as Word values, or restating each sub-stub with explicit
+         -- Word arguments instead of let-binding chains.
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
