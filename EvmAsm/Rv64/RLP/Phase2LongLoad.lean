@@ -105,8 +105,8 @@ theorem rlp_phase2_long_load_acc_spec (len ptr v12Old wordVal dwordAddr : Word)
     rw [hptr_eq]; exact halign
   have hvalid' : isValidByteAccess (ptr + signExtend12 (0 : BitVec 12)) = true := by
     rw [hptr_eq]; exact hvalid
-  have lbu := generic_lbu_spec .x12 .x13 ptr v12Old 0 base dwordAddr wordVal
-    (by nofun) halign' hvalid'
+  have lbu := (generic_lbu_spec_within .x12 .x13 ptr v12Old 0 base dwordAddr wordVal
+    (by nofun) halign' hvalid').to_cpsTriple
   rw [hptr_eq] at lbu
   -- Frame LBU with `x11 ↦ᵣ len` and permute to match the sequence shape.
   let byteZext := (extractByte wordVal (byteOffset ptr)).zeroExtend 64
