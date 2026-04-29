@@ -135,6 +135,93 @@ private theorem divK_div128_step2_v4_phase_D_fallthrough_body_spec
   simp only [show (base+64:Word)+4 = base+68 from by bv_addr, h_jal] at I0 I1
   runBlock I0 I1
 
+private def phaseDTakenBranchPost
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word) : Assertion :=
+  (((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** ⌜BitVec.ult rhat2Un0 q0Dlo1⌝) **
+    (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+    (sp + signExtend12 3936 ↦ₘ rhat2c))
+
+private def phaseDTakenBodyPre
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word) : Assertion :=
+  (((.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) ** (.x12 ↦ᵣ sp) **
+    (sp + signExtend12 3936 ↦ₘ rhat2c) ** (.x6 ↦ᵣ dHi)) **
+    (.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** (.x0 ↦ᵣ 0) **
+    ⌜rhat2cHi = 0⌝ ** (sp + signExtend12 3952 ↦ₘ dlo) **
+    (sp + signExtend12 3944 ↦ₘ un0))
+
+private theorem divK_div128_step2_v4_phase_D_taken_body_pre
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word)
+    (h : PartialState)
+    (hp : phaseDTakenBranchPost sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h) :
+      phaseDTakenBodyPre sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h := by
+  dsimp only [phaseDTakenBranchPost, phaseDTakenBodyPre] at hp ⊢
+  have hp' :
+      ((((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1)) **
+        (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) **
+        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+        (sp + signExtend12 3936 ↦ₘ rhat2c)) h) :=
+    sepConj_mono_left
+      (fun h0 hp0 => sepConj_strip_pure_end2 h0 hp0) h hp
+  xperm_hyp hp'
+
+private def phaseDFallthroughBranchPost
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word) : Assertion :=
+  (((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** ⌜¬BitVec.ult rhat2Un0 q0Dlo1⌝) **
+    (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+    (sp + signExtend12 3936 ↦ₘ rhat2c))
+
+private def phaseDFallthroughBodyPre
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word) : Assertion :=
+  (((.x11 ↦ᵣ un0) ** (.x12 ↦ᵣ sp) ** (sp + signExtend12 3936 ↦ₘ rhat2c)) **
+    (.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) **
+    (.x5 ↦ᵣ q0c) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+
+private theorem divK_div128_step2_v4_phase_D_fallthrough_body_pre
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word)
+    (h : PartialState)
+    (hp : phaseDFallthroughBranchPost sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h) :
+      phaseDFallthroughBodyPre sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h := by
+  dsimp only [phaseDFallthroughBranchPost, phaseDFallthroughBodyPre] at hp ⊢
+  have hp' :
+      ((((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1)) **
+        (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) **
+        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+        (sp + signExtend12 3936 ↦ₘ rhat2c)) h) :=
+    sepConj_mono_left
+      (fun h0 hp0 => sepConj_strip_pure_end2 h0 hp0) h hp
+  xperm_hyp hp'
+
+private def phaseDMergedPre
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word) : Assertion :=
+  (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+  (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
+
+private theorem divK_div128_step2_v4_phase_D_pre_zero
+    (sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 : Word)
+    (h : PartialState)
+    (hp : phaseDMergedPre sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h) :
+    rhat2cHi = 0 := by
+  dsimp only [phaseDMergedPre] at hp
+  have hp' :
+      (((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+        (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0)) ** ⌜rhat2cHi = 0⌝ **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+        (sp + signExtend12 3936 ↦ₘ rhat2c)) h := by
+    xperm_hyp hp
+  obtain ⟨_, _, _, _, _, hright⟩ := hp'
+  exact ((sepConj_pure_left _).1 hright).1
+
 /-- The SRLI+BNE dispatch at the start of Phase E, extended into the step2-v4
     code requirement and framed with the registers/memory live across it. -/
 private theorem divK_div128_step2_v4_phase_E_guard_spec
@@ -178,6 +265,60 @@ private theorem divK_div128_step2_v4_phase_E_guard_spec
     (by pcFree) hguard
   exact cpsBranch_weaken
     (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    hframed
+
+/-- Phase E guard fallthrough body: the second Phase-2b product check [23..30]. -/
+private theorem divK_div128_step2_v4_phase_E_fallthrough_body_spec
+    (sp dHi q0' rhat2' rhat2'Hi q0Dlo1 dlo un0 rhat2c : Word) (base : Word) :
+    let q0Dlo2 := q0' * dlo
+    let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+    let q0'Unguarded := if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0'
+    let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+    cpsTriple (base + 92) (base + 124) (divKDiv128Step2V4Code base)
+      ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+       (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ ** ⌜rhat2'Hi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c))
+      ((.x5 ↦ᵣ q0'Unguarded) ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ q0Dlo2) **
+       (.x1 ↦ᵣ rhat2'Un0) ** (.x11 ↦ᵣ un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ ** ⌜rhat2'Hi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  intro q0Dlo2 rhat2'Un0 q0'Unguarded rhat2cHi
+  have hraw := divK_div128_prodcheck2_merged_spec sp q0' rhat2' rhat2'Hi q0Dlo1 dlo un0 (base + 92)
+  simp only [show (base+92:Word)+4 = base+96 from by bv_addr,
+             show (base+92:Word)+8 = base+100 from by bv_addr,
+             show (base+92:Word)+12 = base+104 from by bv_addr,
+             show (base+92:Word)+16 = base+108 from by bv_addr,
+             show (base+92:Word)+20 = base+112 from by bv_addr,
+             show (base+92:Word)+24 = base+116 from by bv_addr,
+             show (base+92:Word)+28 = base+120 from by bv_addr,
+             show (base+92:Word)+32 = base+124 from by bv_addr] at hraw
+  have hext : cpsTriple (base + 92) (base + 124) (divKDiv128Step2V4Code base) _ _ :=
+    cpsTriple_extend_code (h := hraw) (hmono := by
+      exact CodeReq.union_sub
+        (step2v4_sub 23 (base+92) (.LD .x1 .x12 3952) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 24 (base+96) (.MUL .x7 .x5 .x1) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 25 (base+100) (.SLLI .x1 .x11 32) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 26 (base+104) (.LD .x11 .x12 3944) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 27 (base+108) (.OR .x1 .x1 .x11) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 28 (base+112) (.BLTU .x1 .x7 8) (by omega) (by bv_omega) (by decide))
+        (CodeReq.union_sub
+        (step2v4_sub 29 (base+116) (.JAL .x0 8) (by omega) (by bv_omega) (by decide))
+        (step2v4_sub 30 (base+120) (.ADDI .x5 .x5 4095) (by omega) (by bv_omega) (by decide)))))))))
+  have hframed := cpsTriple_frameR
+    ((.x6 ↦ᵣ dHi) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ ** ⌜rhat2'Hi = 0⌝ **
+     (sp + signExtend12 3936 ↦ₘ rhat2c))
+    (by pcFree) hext
+  exact cpsTriple_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     hframed
@@ -273,7 +414,94 @@ theorem divK_div128_step2_v4_phase_D_merged_spec
   -- * fallthrough path: [16..17] LD; JAL
   -- Both paths then rewrite `div128Quot_phase2b_q0'` under the carried
   -- `rhat2cHi = 0` fact and strip the BLTU pure fact.
-  sorry
+  have hbltu_f := cpsBranch_frameR
+    ((.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) **
+     (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+     (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+     (sp + signExtend12 3936 ↦ₘ rhat2c))
+    (by pcFree) hbltu
+  by_cases hz : rhat2cHi = 0
+  · by_cases hcond : BitVec.ult rhat2Un0 q0Dlo1
+    · have taken := cpsBranch_takenPath hbltu_f (fun hp hQf => by
+        obtain ⟨_, _, _, _, ⟨_, _, _, _, _, hpure⟩, _⟩ := hQf
+        exact ((sepConj_pure_right _).1 hpure).2 hcond)
+      have taken' : cpsTriple (base + 60) (base + 72) (divKDiv128Step2V4Code base)
+          ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+           (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+           (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+           (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+           (sp + signExtend12 3936 ↦ₘ rhat2c))
+          (phaseDTakenBranchPost sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0) :=
+        cpsTriple_weaken
+          (fun h hp => by xperm_hyp hp)
+          (fun h hp => by dsimp only [phaseDTakenBranchPost]; exact hp)
+          taken
+      have hq0' : q0' = q0c + signExtend12 4095 := by
+        unfold q0'
+        change (if rhat2cHi = 0 then
+            if BitVec.ult rhat2Un0 q0Dlo1 then q0c + signExtend12 4095 else q0c
+          else q0c) = q0c + signExtend12 4095
+        rw [if_pos hz, if_pos hcond]
+      have hrhat2' : rhat2' = rhat2c + dHi := by
+        unfold rhat2'
+        rw [if_pos hz, if_pos hcond]
+      rw [hq0', hrhat2']
+      have hpath := divK_div128_step2_v4_phase_D_taken_body_spec sp q0c rhat2c dHi un0 base
+      have hpath_f := cpsTriple_frameR
+        ((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+        (by pcFree) hpath
+      exact cpsTriple_weaken
+        (fun h hp => hp)
+        (fun h hp => by xperm_hyp hp)
+        (cpsTriple_seq_perm_same_cr
+          (fun h hp => divK_div128_step2_v4_phase_D_taken_body_pre
+            sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h hp)
+          taken' hpath_f)
+    · have ntaken := cpsBranch_ntakenPath hbltu_f (fun hp hQt => by
+        obtain ⟨_, _, _, _, ⟨_, _, _, _, _, hpure⟩, _⟩ := hQt
+        exact absurd ((sepConj_pure_right _).1 hpure).2 hcond)
+      have ntaken' : cpsTriple (base + 60) (base + 64) (divKDiv128Step2V4Code base)
+          ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+           (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ rhat2Un0) **
+           (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+           (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+           (sp + signExtend12 3936 ↦ₘ rhat2c))
+          (phaseDFallthroughBranchPost sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0) :=
+        cpsTriple_weaken
+          (fun h hp => by xperm_hyp hp)
+          (fun h hp => by dsimp only [phaseDFallthroughBranchPost]; exact hp)
+          ntaken
+      have hq0' : q0' = q0c := by
+        unfold q0'
+        change (if rhat2cHi = 0 then
+            if BitVec.ult rhat2Un0 q0Dlo1 then q0c + signExtend12 4095 else q0c
+          else q0c) = q0c
+        rw [if_pos hz, if_neg hcond]
+      have hrhat2' : rhat2' = rhat2c := by
+        unfold rhat2'
+        rw [if_pos hz, if_neg hcond]
+      rw [hq0', hrhat2']
+      have hpath := divK_div128_step2_v4_phase_D_fallthrough_body_spec sp rhat2c un0 base
+      have hpath_f := cpsTriple_frameR
+        ((.x1 ↦ᵣ rhat2Un0) ** (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+         (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
+        (by pcFree) hpath
+      exact cpsTriple_weaken
+        (fun h hp => hp)
+        (fun h hp => by xperm_hyp hp)
+        (cpsTriple_seq_perm_same_cr
+          (fun h hp => divK_div128_step2_v4_phase_D_fallthrough_body_pre
+            sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 h hp)
+          ntaken' hpath_f)
+  · intro F hF s hcr hPFR hpc
+    obtain ⟨hp, hcompat, hsep⟩ := hPFR
+    obtain ⟨hpreSt, hframeSt, hd, hu, hpre, hframe⟩ := hsep
+    have hz' : rhat2cHi = 0 :=
+      divK_div128_step2_v4_phase_D_pre_zero
+        sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0 hpreSt hpre
+    exact absurd hz' hz
 
 /-- Phase E sub-lemma: 2nd D3 guard+prodcheck [21..30] of step2_v4, merged post.
     Input = midD (at base+84). Output = finalPost_rhat2cHi0 (at base+124).
