@@ -36,42 +36,48 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
-/-- Bundled CodeReq for `divK_div128_step2_v4_spec` (31 singletons,
-    instrs [40..70] of `divK_div128_v4`). `@[irreducible]` to keep
-    let-bindings out of theorem signatures. -/
+/-- The 31 instructions of the step-2-v4 block (instrs [40..70] of
+    `divK_div128_v4`), as a plain `List Instr` so `step2v4_sub` can use
+    `CodeReq.ofProg_lookup` — the same mechanism as `d128_v4_sub`. -/
+def divKDiv128Step2V4Instrs : List Instr :=
+  [.DIVU .x5 .x7 .x6,   .MUL .x1 .x5 .x6,   .SUB .x11 .x7 .x1,   -- [0..2]
+   .SRLI .x1 .x5 32,     .BEQ .x1 .x0 12,     .ADDI .x5 .x5 4095,   -- [3..5]
+   .ADD .x11 .x11 .x6,   .SRLI .x1 .x11 32,   .BNE .x1 .x0 92,      -- [6..8]
+   .LD .x1 .x12 3952,    .MUL .x7 .x5 .x1,    .SLLI .x1 .x11 32,    -- [9..11]
+   .SD .x12 .x11 3936,   .LD .x11 .x12 3944,  .OR .x1 .x1 .x11,     -- [12..14]
+   .BLTU .x1 .x7 12,     .LD .x11 .x12 3936,  .JAL .x0 16,           -- [15..17]
+   .ADDI .x5 .x5 4095,   .LD .x11 .x12 3936,  .ADD .x11 .x11 .x6,   -- [18..20]
+   .SRLI .x1 .x11 32,    .BNE .x1 .x0 36,     .LD .x1 .x12 3952,    -- [21..23]
+   .MUL .x7 .x5 .x1,    .SLLI .x1 .x11 32,   .LD .x11 .x12 3944,   -- [24..26]
+   .OR .x1 .x1 .x11,    .BLTU .x1 .x7 8,     .JAL .x0 8,            -- [27..29]
+   .ADDI .x5 .x5 4095]                                                  -- [30]
+
+/-- Bundled CodeReq for `divK_div128_step2_v4_spec`. Expressed as
+    `CodeReq.ofProg` (not union-of-singletons) so `step2v4_sub` can
+    use `ofProg_lookup` — same pattern as `d128_v4_sub` for the full
+    `divK_div128_v4` program. `@[irreducible]` to keep let-bindings
+    out of theorem signatures. -/
 @[irreducible]
 def divKDiv128Step2V4Code (base : Word) : CodeReq :=
-  CodeReq.union (CodeReq.singleton base                (.DIVU .x5 .x7 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 4)         (.MUL .x1 .x5 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 8)         (.SUB .x11 .x7 .x1))
-  (CodeReq.union (CodeReq.singleton (base + 12)        (.SRLI .x1 .x5 32))
-  (CodeReq.union (CodeReq.singleton (base + 16)        (.BEQ .x1 .x0 12))
-  (CodeReq.union (CodeReq.singleton (base + 20)        (.ADDI .x5 .x5 4095))
-  (CodeReq.union (CodeReq.singleton (base + 24)        (.ADD .x11 .x11 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 28)        (.SRLI .x1 .x11 32))
-  (CodeReq.union (CodeReq.singleton (base + 32)        (.BNE .x1 .x0 92))
-  (CodeReq.union (CodeReq.singleton (base + 36)        (.LD .x1 .x12 3952))
-  (CodeReq.union (CodeReq.singleton (base + 40)        (.MUL .x7 .x5 .x1))
-  (CodeReq.union (CodeReq.singleton (base + 44)        (.SLLI .x1 .x11 32))
-  (CodeReq.union (CodeReq.singleton (base + 48)        (.SD .x12 .x11 3936))
-  (CodeReq.union (CodeReq.singleton (base + 52)        (.LD .x11 .x12 3944))
-  (CodeReq.union (CodeReq.singleton (base + 56)        (.OR .x1 .x1 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 60)        (.BLTU .x1 .x7 12))
-  (CodeReq.union (CodeReq.singleton (base + 64)        (.LD .x11 .x12 3936))
-  (CodeReq.union (CodeReq.singleton (base + 68)        (.JAL .x0 16))
-  (CodeReq.union (CodeReq.singleton (base + 72)        (.ADDI .x5 .x5 4095))
-  (CodeReq.union (CodeReq.singleton (base + 76)        (.LD .x11 .x12 3936))
-  (CodeReq.union (CodeReq.singleton (base + 80)        (.ADD .x11 .x11 .x6))
-  (CodeReq.union (CodeReq.singleton (base + 84)        (.SRLI .x1 .x11 32))
-  (CodeReq.union (CodeReq.singleton (base + 88)        (.BNE .x1 .x0 36))
-  (CodeReq.union (CodeReq.singleton (base + 92)        (.LD .x1 .x12 3952))
-  (CodeReq.union (CodeReq.singleton (base + 96)        (.MUL .x7 .x5 .x1))
-  (CodeReq.union (CodeReq.singleton (base + 100)       (.SLLI .x1 .x11 32))
-  (CodeReq.union (CodeReq.singleton (base + 104)       (.LD .x11 .x12 3944))
-  (CodeReq.union (CodeReq.singleton (base + 108)       (.OR .x1 .x1 .x11))
-  (CodeReq.union (CodeReq.singleton (base + 112)       (.BLTU .x1 .x7 8))
-  (CodeReq.union (CodeReq.singleton (base + 116)       (.JAL .x0 8))
-   (CodeReq.singleton (base + 120)       (.ADDI .x5 .x5 4095)))))))))))))))))))))))))))))))
+  CodeReq.ofProg base divKDiv128Step2V4Instrs
+
+private theorem divKDiv128Step2V4Instrs_len : divKDiv128Step2V4Instrs.length = 31 := by decide
+
+/-- Per-instruction subsumption: singleton at byte-offset `4*k` of
+    `divKDiv128Step2V4Code base` is included in the CodeReq.
+    Exactly analogous to `d128_v4_sub` for the full `divK_div128_v4`
+    program — avoids repeating the union-of-singletons form. -/
+private theorem step2v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
+    (hk : k < 31)
+    (h_addr : addr = base + BitVec.ofNat 64 (4 * k))
+    (h_instr : divKDiv128Step2V4Instrs.get ⟨k, by
+        have := divKDiv128Step2V4Instrs_len; omega⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i →
+      (divKDiv128Step2V4Code base) a = some i := by
+  subst h_addr; subst h_instr; unfold divKDiv128Step2V4Code
+  exact fun a i h => CodeReq.singleton_mono
+    (CodeReq.ofProg_lookup base divKDiv128Step2V4Instrs k (by
+        have := divKDiv128Step2V4Instrs_len; omega) (by decide)) a i h
 
 /-- Bundled postcondition for `divK_div128_step2_v4_spec`. Hides the
     let-chain for Step 2 v4 trial-division intermediates + Phase 2b
@@ -188,30 +194,121 @@ theorem divK_div128_step2_v4_spec
        (sp + signExtend12 3944 ↦ₘ un0) **
        (sp + signExtend12 3936 ↦ₘ vScratchOld))
       (divKDiv128Step2V4Post sp un21 dHi dlo un0 vScratchOld) := by
-  -- Proof strategy: cpsBranch_merge_same_cr on the outer BNE at [28..36].
-  --
-  -- Key structural insight:
-  --   Phase A ([0..28]): init+clamp cpsTriple (reuse divK_div128_step2_upto_guard_spec).
-  --   Phase B ([28..36]): SRLI+BNE cpsBranch (reuse divK_div128_phase2b_guard_spec
-  --                        with guard_off = 92 → target base+124).
-  --   A+B: cpsTriple_seq_cpsBranch_perm_same_cr.
-  --   Taken (rhat2cHi ≠ 0): identity cpsTriple at base+124, weaken to finalPost.
-  --   Not-taken (rhat2cHi = 0): cpsTriple (base+36) (base+124) for [36..120]:
-  --     (C) pre-BLTU setup [36..60] via runBlock (LD+MUL+SLLI+SD+LD+OR).
-  --     (D) 1st BLTU cpsBranch at [60] (offset 12 → [72]):
-  --           taken [72..80] = ADDI+LD+ADD → [84].
-  --           not-taken [64..68] = LD+JAL(16) → [84].
-  --         cpsBranch_merge_same_cr → cpsTriple (base+36) (base+84).
-  --     (E) 2nd D3: SRLI+BNE guard [84..88] (offset 36 → base+124 = end of step2_v4).
-  --           taken → base+124 (identity).
-  --           not-taken [92..120]: prodcheck2-style [92..112] + BLTU [112] + correction [120].
-  --         cpsBranch_merge_same_cr → cpsTriple (base+84) (base+124).
-  --     cpsTriple_seq (C+D) + E → cpsTriple (base+36) (base+124).
-  --
-  -- The extension from sub-specs' small CodeReqs to divKDiv128Step2V4Code is the
-  -- mechanical part (31 singleton-union positions). Each step2v4_sub helper would
-  -- look up the singleton by position in the unfolded cr (similar to d128_v4_sub
-  -- but within step2_v4's code).
-  sorry
+  unfold divKDiv128Step2V4Post
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi := q0 >>> (32 : BitVec 6).toNat
+  let q0c := if hi = 0 then q0 else q0 + signExtend12 4095
+  let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0Dlo1 := q0c * dlo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dlo un0
+  let rhat2' :=
+    if rhat2cHi = 0 then
+      if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+    else rhat2c
+  let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+  let q0Dlo2 := q0' * dlo
+  let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+  let q0'' := div128Quot_phase2b_q0' q0' rhat2' dlo un0
+  let x7Exit := if rhat2cHi ≠ 0 then un21
+                else if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2
+  let x1Exit := if rhat2cHi ≠ 0 then rhat2cHi
+                else if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0
+  let x11Exit := if rhat2cHi ≠ 0 then rhat2c
+                 else if rhat2'Hi ≠ 0 then rhat2' else un0
+  let mem3936Exit := if rhat2cHi ≠ 0 then vScratchOld else rhat2c
+  -- Phase A: init+clamp [0..28] — cpsTriple base (base+28).
+  -- Reuse divK_div128_step2_upto_guard_spec, extend via step2v4_sub 0..6.
+  have hA_raw := divK_div128_step2_upto_guard_spec sp un21 dHi v1Old v5Old v11Old dlo un0 base
+  have hA : cpsTriple base (base + 28) (divKDiv128Step2V4Code base) _ _ :=
+    cpsTriple_extend_code (hmono := by
+      exact CodeReq.union_sub
+        (step2v4_sub 0 base (.DIVU .x5 .x7 .x6) (by omega) (by bv_omega) (by decide))
+       (CodeReq.union_sub
+        (step2v4_sub 1 (base+4) (.MUL .x1 .x5 .x6) (by omega) (by bv_omega) (by decide))
+       (CodeReq.union_sub
+        (step2v4_sub 2 (base+8) (.SUB .x11 .x7 .x1) (by omega) (by bv_omega) (by decide))
+       (CodeReq.union_sub
+        (step2v4_sub 3 (base+12) (.SRLI .x1 .x5 32) (by omega) (by bv_omega) (by decide))
+       (CodeReq.union_sub
+        (step2v4_sub 4 (base+16) (.BEQ .x1 .x0 12) (by omega) (by bv_omega) (by decide))
+       (CodeReq.union_sub
+        (step2v4_sub 5 (base+20) (.ADDI .x5 .x5 4095) (by omega) (by bv_omega) (by decide))
+        (step2v4_sub 6 (base+24) (.ADD .x11 .x11 .x6) (by omega) (by bv_omega) (by decide))))))))
+    hA_raw
+  have hAf := cpsTriple_frameR
+    (sp + signExtend12 3936 ↦ₘ vScratchOld)
+    (by pcFree) hA
+  -- Phase B: outer SRLI+BNE guard [28..36] — cpsBranch via step2v4_sub 7+8.
+  have hB_raw := divK_div128_phase2b_guard_spec sp rhat2c hi (base + 28) (92 : BitVec 13)
+  simp only [show (base + 28 : Word) + 4 = base + 32 from by bv_addr,
+             show (base + 28 : Word) + 8 = base + 36 from by bv_addr,
+             show (base + 32 : Word) + signExtend13 (92 : BitVec 13) = base + 124 from by
+               rv64_addr] at hB_raw
+  have hB : cpsBranch (base + 28) (divKDiv128Step2V4Code base) _ _ _ _ _ :=
+    cpsBranch_extend_code (hmono := by
+      exact CodeReq.union_sub
+        (step2v4_sub 7 (base+28) (.SRLI .x1 .x11 32) (by omega) (by bv_omega) (by decide))
+        (step2v4_sub 8 (base+32) (.BNE .x1 .x0 92) (by omega) (by bv_omega) (by decide))) hB_raw
+  have hBf := cpsBranch_frameR
+    ((.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+     (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+     (sp + signExtend12 3936 ↦ₘ vScratchOld))
+    (by pcFree) hB
+  have composed_AB := cpsTriple_seq_cpsBranch_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hAf hBf
+  -- finalPost (merged post at base+124 for both legs).
+  let finalPost : Assertion :=
+    (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+    (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+    (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+    (sp + signExtend12 3936 ↦ₘ mem3936Exit)
+  -- Taken leg (rhat2cHi ≠ 0): BNE fires, already at base+124.
+  -- q0'' = q0c (both D3 guards fire), x7=un21, x1=rhat2cHi, x11=rhat2c, mem3936=vScratchOld.
+  -- The taken postcondition of composed_AB:
+  let takenPost : Assertion :=
+    ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ rhat2c) ** (.x1 ↦ᵣ rhat2cHi) **
+     (.x0 ↦ᵣ 0) ** ⌜rhat2cHi ≠ 0⌝) **
+    (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+    (sp + signExtend12 3936 ↦ₘ vScratchOld)
+  have h_taken : cpsTriple (base + 124) (base + 124) (divKDiv128Step2V4Code base)
+      takenPost finalPost := by
+    sorry  -- Identity triple: takenPost → finalPost.
+           -- When rhat2cHi ≠ 0: q0'' = q0c (both D3 guards skip, each
+           -- div128Quot_phase2b_q0' q0c rhat2c = q0c since rhat2cHi ≠ 0).
+           -- x7Exit = un21, x1Exit = rhat2cHi, x11Exit = rhat2c, mem3936Exit = vScratchOld.
+           -- Proof: extend from empty CodeReq via cpsTriple_refl + weaken.
+  -- The not-taken postcondition of composed_AB:
+  let notTakenPost : Assertion :=
+    ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ rhat2c) ** (.x1 ↦ᵣ rhat2cHi) **
+     (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝) **
+    (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+    (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+    (sp + signExtend12 3936 ↦ₘ vScratchOld)
+  -- Not-taken leg (rhat2cHi = 0): run [36..120] → base+124.
+  have h_notTaken : cpsTriple (base + 36) (base + 124) (divKDiv128Step2V4Code base)
+      notTakenPost finalPost := by
+    sorry  -- [36..120] proof via step2v4_sub 9..30:
+           -- (C) [9..15] = LD+MUL+SLLI+SD+LD+OR: runBlock with step2v4_sub 9..14.
+           -- (D) BLTU cpsBranch at [15] via step2v4_sub 15:
+           --       taken [18..20] = ADDI+LD+ADD: step2v4_sub 18+19+20.
+           --       not-taken [16..17] = LD+JAL: step2v4_sub 16+17.
+           --       cpsBranch_merge_same_cr → cpsTriple (base+36) (base+84).
+           -- (E) [21..22] SRLI+BNE guard via step2v4_sub 21+22, guard_off=36 → base+124:
+           --       taken → base+124 (identity).
+           --       not-taken [23..30] prodcheck2-style:
+           --         [23..27] LD+MUL+SLLI+LD+OR: step2v4_sub 23..27.
+           --         BLTU [28]: taken [30]=ADDI: step2v4_sub 28+30.
+           --                    not-taken [29]=JAL: step2v4_sub 29.
+           --       cpsBranch_merge_same_cr → cpsTriple (base+84) (base+124).
+           --     cpsTriple_seq → cpsTriple (base+36) (base+124).
+  exact cpsTriple_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    (cpsBranch_merge_same_cr composed_AB h_taken h_notTaken)
 
 end EvmAsm.Evm64
