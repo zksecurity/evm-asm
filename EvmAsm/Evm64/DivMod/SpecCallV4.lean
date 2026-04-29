@@ -470,7 +470,14 @@ theorem div128Quot_v4_eq_q_true_normalized
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
   sorry  -- Wire-up: combine `_phase{1,2}_perfect`, `_phase{1,2}_quot_lt_pow32`,
          -- `_un21_eq_phase1_remainder`, `_combined_arith`, and `halfword_combine`.
-         -- All sub-pieces in place; just needs let-binding alignment.
+         -- All sub-pieces are now PROVEN. Bottleneck is let-binding alignment:
+         -- the `_phase{1,2}_perfect` and `_un21_eq_phase1_remainder` results
+         -- have `have ...` chains internally, so direct `rw` against the
+         -- unfolded `div128Quot_v4` fails on syntactic match. Cleanest path
+         -- forward: state a single intermediate "div128Quot_v4 unfold + identity"
+         -- helper that mediates the wire-up cleanly. Or, prove
+         -- `div128Quot_v4_correctness` (no shift-norm preconditions) via
+         -- a direct val256-level argument bypassing the per-phase invariants.
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
@@ -573,27 +580,81 @@ theorem n4CallAddbackBeqSemanticHolds_v4_def {a b : EvmWord} :
          val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) :=
   rfl
 
-/-- **`n4CallAddbackBeqSemanticHolds_v4` closure stub**: under the runtime
-    call-addback-BEQ preconditions, the v4 predicate holds. To be proven
-    via the val256-level Knuth chain plus the now-closed Phase-2 invariants
-    (esp. `div128Quot_v4_phase2_no_wrap_lo` and `div128Quot_v4_phase2_perfect`).
+/-- **Layer 1 stub: v4 Knuth-B at val256 level.** Under the runtime
+    preconditions, the v4 trial digit `qHat` (equal to the exact 128/64
+    quotient by `div128Quot_v4_eq_q_true_normalized`) is at most 2 above
+    the true val256-level quotient.
+
+    Mirror of the v1 statement (which is FALSE for v1 due to overshoots).
+    For v4, this is the val256-level lift of the per-phase Knuth-B
+    bounds: since v4's qHat = (u4*2^64 + u3) / b3' exactly, and Knuth-B
+    at the val256 level says `(u4*2^64+u3)/b3' ≤ val256(a)/val256(b) + 2`,
+    we get `qHat ≤ val256(a)/val256(b) + 2` directly.
+
+    Sub-stub for the addback closure's Layer 1. -/
+theorem div128Quot_v4_qHat_le_q_true_plus_two (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcall : isCallTrialN4Evm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    (div128Quot_v4 u4 u3 b3').toNat ≤
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
+  sorry  -- Use `div128Quot_v4_eq_q_true_normalized` + val256-level
+         -- Knuth-B (existing lemmas in Div128KnuthLower).
+
+/-- **Layer 2 stub: carry partition for v4.** The post-mulsub addback carry
+    is 0 iff the trial digit overshoots q_true by exactly 2.
+
+    Refines the Knuth-B bound: under v4's exactness, qHat is one of
+    {q_true, q_true+1, q_true+2}, and the carry distinguishes carry=0
+    (overshoot 2) from carry≠0 (overshoots 0 or 1). This is the
+    structural piece needed for q_out to recover q_true.
+
+    Sub-stub for the addback closure's Layer 2. -/
+theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcall : isCallTrialN4Evm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v4 u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                    val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    (carry = 0 ↔ qHat.toNat = q_true + 2) := by
+  sorry  -- Carry partition: carry=0 means mulsub underflowed (qHat overshoots
+         -- q_true by 2), carry≠0 means qHat ∈ {q_true, q_true+1}.
+
+/-- **`n4CallAddbackBeqSemanticHolds_v4` closure**: under the runtime
+    call-addback-BEQ preconditions, the v4 predicate holds.
+
+    Composes:
+    - Layer 1 (`_qHat_le_q_true_plus_two`): qHat ≤ q_true + 2.
+    - Layer 2 (`_carry_partition`): carry=0 ⟺ qHat = q_true + 2.
+    - Layer 3 (q_out arithmetic): both branches yield q_out = q_true.
 
     Stub for the next critical-path iteration. The proof structure
-    (per `project_addback_beq_closure_plan_v2.md`):
-    - Layer 1: Knuth-B (`qHat ≤ q_true + 2`) — likely closeable now via
-      Phase-1 perfect (`div128Quot_v4_phase1_perfect`).
-    - Layer 2: carry partition (carry=0 ⟺ qHat=q_true+2) — closeable via
-      Phase-2 perfect.
-    - Layer 3: q_out arithmetic (carry=0: q_out = qHat-2 = q_true;
-      carry≠0: q_out = qHat-1 = q_true).
-
-    This stub exposes the proof obligation so downstream stack specs
-    can wire through. -/
+    (per `project_addback_beq_closure_plan_v2.md`). -/
 theorem n4CallAddbackBeqSemanticHolds_v4_of_call_addback_beq (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hcall : isCallTrialN4Evm a b) :
     n4CallAddbackBeqSemanticHolds_v4 a b := by
-  sorry  -- Closure of the v4 predicate. See docstring for proof plan.
+  sorry  -- Wire-up of Layer 1 + Layer 2 + Layer 3 (q_out arithmetic).
 
 end EvmAsm.Evm64
