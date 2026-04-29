@@ -918,16 +918,23 @@ theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     carry = 0 → qHat.toNat ≥ q_true + 2 := by
   sorry  -- Forward direction. Key insight (per project_layer2a_bridge_gap):
-         -- under haddback (`u4 < c3`) + `mulsubN4_c3_le_one` (c3 ≤ 1):
-         -- c3 = 1 ∧ u4 = 0. Then mulsubN4_val256_eq + h_norm_u + h_norm_v +
-         -- carry = 0 give:
-         --   val256(ms_un) + val256(v_norm)
-         --     = (val256(a) - qHat * val256(b))*2^shift + val256(b)*2^shift + 2^256
-         --     < 2^256
-         -- ⟹ qHat * val256(b) > val256(a) + val256(b) ⟹ qHat ≥ q_true + 2.
-         -- Requires reordering: u_top_lt_c3_of_addback_borrow_call_v4 is defined
-         -- later in this file; move it earlier or restructure proof. Estimated
-         -- ~50 lines once the helper is accessible.
+         -- under haddback (`u4 < c3`), need to derive c3 ≤ 1 to collapse
+         -- to u4 = 0 ∧ c3 = 1. BUT mulsubN4_c3_le_one needs `qHat ≤ q*_norm + 1`,
+         -- which is NOT directly available since qHat ≤ q_true + 2 and
+         -- q*_norm ≤ q_true (so qHat ≤ q*_norm + 2 at best).
+         --
+         -- More careful analysis (post-2026-04-29): c3 ∈ {1, 2} is possible
+         -- under our bounds. The case c3 = 2 occurs when val256(b)*2^shift is
+         -- large compared to 2^256 — concretely, when shift ≥ 64 - log₂(val256(b)).
+         -- For c3 = 2 ∧ u4 = 1: carry = 0 may yield qHat = q_true + 1 only,
+         -- breaking the simple chain.
+         --
+         -- Path forward: NUMERICAL VALIDATION needed first. Use `decide` on
+         -- representative inputs (esp. v1 counterexample) to confirm the
+         -- partition holds for v4. If yes, the proof needs careful c3 case
+         -- analysis. If no, the closure precondition needs further strengthening.
+         --
+         -- Estimated next iteration: numerical validation, ~5 cases via decide.
 
 /-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
 
