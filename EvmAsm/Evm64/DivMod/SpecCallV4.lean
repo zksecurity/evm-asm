@@ -103,6 +103,38 @@ is the canonical fix. -/
     else rhat2c
   div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
 
+/-- **v4 mirror of `isAddbackBorrowN4Call`**: the addback BEQ runtime
+    gating, using `div128Quot_v4` for the trial quotient. The branch
+    fires when the borrow check on `mulsubN4_c3 qHat ...` is true,
+    indicating qHat overshoots q_true. -/
+def isAddbackBorrowN4Call_v4 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
+  let shift := (clzResult b3).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u4 := a3 >>> (antiShift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let qHat := div128Quot_v4 u4 u3 b3'
+  (if BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
+   then (1 : Word) else 0) ≠ (0 : Word)
+
+/-- **EvmWord wrapper for `isAddbackBorrowN4Call_v4`**. -/
+def isAddbackBorrowN4CallEvm_v4 (a b : EvmWord) : Prop :=
+  isAddbackBorrowN4Call_v4
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+
+theorem isAddbackBorrowN4CallEvm_v4_def {a b : EvmWord} :
+    isAddbackBorrowN4CallEvm_v4 a b =
+    isAddbackBorrowN4Call_v4
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
+
 /-- **div128Quot_v4 unfolds via the component accessors**: structural
     bridge to compose the proven sub-stubs. -/
 theorem div128Quot_v4_eq_components (uHi uLo vTop : Word) :
@@ -860,7 +892,8 @@ theorem n4CallAddback_v4_carry_zero_iff_overshoot_ge_two (a b : EvmWord)
 theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hcall : isCallTrialN4Evm a b) :
+    (_hcall : isCallTrialN4Evm a b)
+    (_haddback : isAddbackBorrowN4CallEvm_v4 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -870,8 +903,10 @@ theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     qHat.toNat ≥ q_true + 1 := by
-  sorry  -- Runtime gating: call+addback+BEQ branch fires when overshoot
-         -- detected; combine with `isCallTrialN4Evm` to derive qHat > q_true.
+  sorry  -- Runtime gating: `isAddbackBorrowN4CallEvm_v4` says the borrow
+         -- check fires (`mulsubN4_c3 > u4`), which means qHat * b > a (at
+         -- val256 level), i.e., qHat > q_true. Composes via the existing
+         -- mulsubN4_val256_eq + the borrow-check Word↔Nat bridge.
 
 /-- **Layer 2 stub: carry partition for v4.** The post-mulsub addback carry
     is 0 iff the trial digit overshoots q_true by exactly 2.
@@ -894,7 +929,8 @@ theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
 theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hcall : isCallTrialN4Evm a b) :
+    (_hcall : isCallTrialN4Evm a b)
+    (_haddback : isAddbackBorrowN4CallEvm_v4 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -925,7 +961,7 @@ theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
     n4CallAddback_v4_carry_zero_iff_overshoot_ge_two a b _hb3nz _hshift_nz _hcall
   -- Layer 2c: qHat ≥ q_true + 1 (runtime gating from call+addback+BEQ).
   have h_ge_one : qHat.toNat ≥ q_true + 1 :=
-    n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one a b _hb3nz _hshift_nz _hcall
+    n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one a b _hb3nz _hshift_nz _hcall _haddback
   refine ⟨?_, ?_⟩
   · -- carry = 0 ↔ qHat = q_true + 2.
     constructor
@@ -952,14 +988,15 @@ theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
 theorem n4CallAddbackBeqSemanticHolds_v4_of_call_addback_beq (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
     (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hcall : isCallTrialN4Evm a b) :
+    (hcall : isCallTrialN4Evm a b)
+    (haddback : isAddbackBorrowN4CallEvm_v4 a b) :
     n4CallAddbackBeqSemanticHolds_v4 a b := by
   rw [n4CallAddbackBeqSemanticHolds_v4_def]
   intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry q_out
   -- Layer 1: qHat ≤ q_true + 2.
   have h_le := div128Quot_v4_qHat_le_q_true_plus_two a b hb3nz hshift_nz hcall
   -- Layer 2: carry partition (refined: covers both branches).
-  have h_partition := n4CallAddback_v4_carry_partition a b hb3nz hshift_nz hcall
+  have h_partition := n4CallAddback_v4_carry_partition a b hb3nz hshift_nz hcall haddback
   obtain ⟨h_carry_zero_iff, h_carry_nz_imp⟩ := h_partition
   -- Notation aliases (q_true at val256 level).
   set q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
