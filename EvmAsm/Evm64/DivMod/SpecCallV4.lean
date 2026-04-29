@@ -470,16 +470,17 @@ theorem div128Quot_v4_eq_q_true_normalized
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
   sorry  -- Wire-up: combine `_phase{1,2}_perfect`, `_phase{1,2}_quot_lt_pow32`,
          -- `_un21_eq_phase1_remainder`, `_combined_arith`, and `halfword_combine`.
-         -- All sub-pieces are PROVEN. The wire-up requires bridging the goal's
-         -- (q1'' << 32 ||| q0'').toNat (where q1'', q0'' come from `unfold
-         -- div128Quot_v4`) against `EvmWord.halfword_combine`'s LHS pattern.
-         -- Higher-order pattern matching for `rw` fails because q1'' / q0''
-         -- inside the unfolded goal are wrapped in `have ...` lets and don't
-         -- syntactically match the explicit forms in the sub-stubs' results.
-         -- Tried: direct rw, simp only, change, show. All fail on similar
-         -- pattern-matching issues. Path forward: extract a more abstract
-         -- "div128Quot_v4 unfolds to (hi << 32) ||| lo for some hi, lo"
-         -- accessor lemma, then chain via that.
+         -- All sub-pieces are PROVEN. Multiple wire-up attempts blocked on
+         -- let-binding alignment. Tried: direct rw, simp only, change, show,
+         -- calc-with-Eq.trans, intermediate `have h_phase1'`. All fail because
+         -- Lean's higher-order pattern matching can't unify the placeholder
+         -- `?q1''` (in combined_arith's expected type) against the let-chained
+         -- `q1''.toNat` from h_phase1, while simultaneously rewriting the
+         -- denominator from `dHi*2^32 + dLo` to `b3'.toNat`. The sub-stubs
+         -- give the right MATH but the let-chain wrapping prevents direct
+         -- composition. Path forward: extract a "div128Quot_v4_unfold" helper
+         -- that exposes the q1'' and q0'' as explicit Word arguments via a
+         -- restating theorem.
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
@@ -660,9 +661,16 @@ theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
     let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    (carry = 0 ↔ qHat.toNat = q_true + 2) := by
-  sorry  -- Carry partition: carry=0 means mulsub underflowed (qHat overshoots
-         -- q_true by 2), carry≠0 means qHat ∈ {q_true, q_true+1}.
+    -- Strong partition: carry=0 ⟺ qHat=q_true+2, AND carry≠0 ⟹ qHat=q_true+1
+    -- (the call+addback+BEQ branch only fires when qHat overshoots, so
+    -- qHat=q_true is excluded).
+    (carry = 0 ↔ qHat.toNat = q_true + 2) ∧
+      (carry ≠ 0 → qHat.toNat = q_true + 1) := by
+  sorry  -- Carry partition refined to handle both branches of the closure.
+         -- carry=0: mulsub underflowed (qHat overshoots q_true by 2).
+         -- carry≠0: qHat=q_true+1 (single overshoot — qHat=q_true case excluded
+         -- by the call+addback+BEQ branch's runtime gating: that branch fires
+         -- only when the trial division detected overshoot).
 
 /-- **`n4CallAddbackBeqSemanticHolds_v4` closure**: under the runtime
     call-addback-BEQ preconditions, the v4 predicate holds.
