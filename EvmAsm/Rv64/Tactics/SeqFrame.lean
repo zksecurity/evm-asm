@@ -64,6 +64,19 @@ def parseCpsTriple? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr × 
     return some (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   return none
 
+/-- Parse `cpsTripleWithin nSteps entry exit_ cr P Q`, returning the six
+    arguments. Does NOT whnf (which would unfold the def). -/
+def parseCpsTripleWithin? (e : Expr) : MetaM (Option (Expr × Expr × Expr × Expr × Expr × Expr)) := do
+  let e ← instantiateMVars e
+  if e.isAppOfArity ``EvmAsm.Rv64.cpsTripleWithin 6 then
+    let args := e.getAppArgs
+    return some (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!, args[5]!)
+  let e' ← Lean.Meta.zetaReduce e
+  if e'.isAppOfArity ``EvmAsm.Rv64.cpsTripleWithin 6 then
+    let args := e'.getAppArgs
+    return some (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!, args[5]!)
+  return none
+
 /-- Peel outermost let-bindings from hypothesis `h`'s type, introducing them as
     local let-definitions in the proof context. This exposes the underlying type
     (e.g., `cpsTriple`) without expanding lets inside the pre/postconditions.
@@ -973,6 +986,102 @@ def seqFrameCore (h1Expr h2Expr : Expr) : MetaM Expr :=
   return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_seq_with_perm)
     #[entry, mid1, exit_, cr1, cr2, hdProof, preP, postQ1, p2StarFrame, q2StarFrame,
       hperm, h1Expr, h2Framed]
+
+/-- Bounded variant of `seqFrameCore` for `cpsTripleWithin` proofs. This mirrors
+    the straight-line triple composition path used by `runBlock`; bounds add
+    through sequential composition. -/
+def seqFrameWithinCore (h1Expr h2Expr : Expr) : MetaM Expr :=
+  withTraceNode `runBlock.perf.seq (fun _ => return m!"seqFrameWithinCore") do
+  let h1Type ← inferType h1Expr
+  let h2Type ← inferType h2Expr
+
+  let some (nSteps1, entry, mid1, cr1, preP, postQ1) ← parseCpsTripleWithin? h1Type
+    | throwError "seqFrame: first argument is not a cpsTripleWithin"
+  let some (nSteps2, mid2, exit_, cr2, preP2, postQ2) ← parseCpsTripleWithin? h2Type
+    | throwError "seqFrame: second argument is not a cpsTripleWithin"
+
+  unless ← isDefEq mid1 mid2 do
+    throwError "seqFrame: midpoints don't match:\n  h1 exit: {mid1}\n  h2 entry: {mid2}"
+
+  let preP2N ← normForSepConj preP2
+  let p2IsEmp := preP2N == mkConst ``EvmAsm.Rv64.empAssertion
+  let frameAtoms ← computeFrame postQ1 preP2
+
+  if frameAtoms.isEmpty then
+    let hperm ← mkPermLambda postQ1 preP2
+    if ← withoutModifyingState (isDefEq cr1 cr2) then
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr)
+        #[nSteps1, nSteps2, entry, mid1, exit_, cr1, preP, postQ1, preP2, postQ2,
+          hperm, h1Expr, h2Expr]
+    let hdProof ← buildDisjointProof cr1 cr2
+    let h1Perm := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+      #[nSteps1, entry, mid1, cr1, preP, preP, postQ1, preP2,
+        (← mkIdLambda preP), hperm, h1Expr]
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq)
+      #[nSteps1, nSteps2, entry, mid1, exit_, cr1, cr2, hdProof, preP, preP2, postQ2,
+        h1Perm, h2Expr]
+
+  let frameExpr ← buildSepConjChain frameAtoms
+  let pcFreeProof ← try buildPcFreeProof frameExpr
+    catch _ => throwError "seqFrame: could not prove pcFree for frame:\n  {frameExpr}"
+  let h2Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_frameR)
+    #[nSteps2, mid2, exit_, cr2, preP2, postQ2, frameExpr, pcFreeProof, h2Expr]
+
+  if p2IsEmp then
+    let empStarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP2 frameExpr
+    let preRw := mkApp (mkConst ``EvmAsm.Rv64.sepConj_emp_left') frameExpr
+    let psType := mkConst ``EvmAsm.Rv64.PartialState
+    let hpre ← withLocalDeclD `h psType fun h => do
+      withLocalDeclD `hp (mkApp frameExpr h) fun hp => do
+        let congrPf ← mkCongrFun (← mkEqSymm preRw) h
+        let result ← mkEqMP congrPf hp
+        mkLambdaFVars #[h, hp] result
+    let postQ2N ← normForSepConj postQ2
+    let q2IsEmp := postQ2N == mkConst ``EvmAsm.Rv64.empAssertion
+    let q2StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ2 frameExpr
+    let (actualPost, hpost) ← if q2IsEmp then do
+      let postRw := mkApp (mkConst ``EvmAsm.Rv64.sepConj_emp_left') frameExpr
+      let hpost ← withLocalDeclD `h psType fun h => do
+        withLocalDeclD `hq (mkApp q2StarFrame h) fun hq => do
+          let congrPf ← mkCongrFun postRw h
+          let result ← mkEqMP congrPf hq
+          mkLambdaFVars #[h, hq] result
+      Pure.pure (frameExpr, hpost)
+    else do
+      let hpost ← mkIdLambda q2StarFrame
+      Pure.pure (q2StarFrame, hpost)
+    let h2Simplified := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+      #[nSteps2, mid2, exit_, cr2, empStarFrame, frameExpr, q2StarFrame, actualPost,
+        hpre, hpost, h2Framed]
+    let hperm ← mkPermLambda postQ1 frameExpr
+    if ← withoutModifyingState (isDefEq cr1 cr2) then
+      return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr)
+        #[nSteps1, nSteps2, entry, mid1, exit_, cr1, preP, postQ1, frameExpr, actualPost,
+          hperm, h1Expr, h2Simplified]
+    let hdProof ← buildDisjointProof cr1 cr2
+    let h1Perm := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+      #[nSteps1, entry, mid1, cr1, preP, preP, postQ1, frameExpr,
+        (← mkIdLambda preP), hperm, h1Expr]
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq)
+      #[nSteps1, nSteps2, entry, mid1, exit_, cr1, cr2, hdProof, preP, frameExpr, actualPost,
+        h1Perm, h2Simplified]
+
+  let p2StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP2 frameExpr
+  let hperm ← mkPermLambda postQ1 p2StarFrame
+  let q2StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ2 frameExpr
+
+  if ← withoutModifyingState (isDefEq cr1 cr2) then
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr)
+      #[nSteps1, nSteps2, entry, mid1, exit_, cr1, preP, postQ1, p2StarFrame, q2StarFrame,
+        hperm, h1Expr, h2Framed]
+
+  let hdProof ← buildDisjointProof cr1 cr2
+  let h1Perm := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+    #[nSteps1, entry, mid1, cr1, preP, preP, postQ1, p2StarFrame,
+      (← mkIdLambda preP), hperm, h1Expr]
+  return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_seq)
+    #[nSteps1, nSteps2, entry, mid1, exit_, cr1, cr2, hdProof, preP, p2StarFrame, q2StarFrame,
+      h1Perm, h2Framed]
 
 /-- Try to assign `result` directly to `goal`, or with a postcondition permutation. -/
 def assignOrPermute (goal : MVarId) (result : Expr) : MetaM Unit := do

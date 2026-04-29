@@ -344,6 +344,23 @@ private def expandAbbrevsInCpsTriple (proof : Expr) : MetaM Expr := do
   let eqProof := mkApp2 (mkConst ``id [Level.zero]) eqTy (← mkEqRefl ty)
   mkEqMP eqProof proof
 
+private def expandAbbrevsInCpsTripleWithin (proof : Expr) : MetaM Expr := do
+  let ty ← instantiateMVars (← inferType proof)
+  let cleanTy := inlineLets ty
+  let some (nSteps, entry, exit_, cr, pre, post) ← parseCpsTripleWithin? cleanTy | return proof
+  let crNew ← expandAbbrevsInCodeReq cr
+  let preNew ← expandAbbrevsInAssertion pre
+  let postNew ← expandAbbrevsInAssertion post
+  if crNew == cr && preNew == pre && postNew == post then
+    return proof
+  let newTy := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin)
+    #[nSteps, entry, exit_, crNew, preNew, postNew]
+  if ¬(← withoutModifyingState (isDefEq ty newTy)) then
+    return proof
+  let eqTy ← mkEq ty newTy
+  let eqProof := mkApp2 (mkConst ``id [Level.zero]) eqTy (← mkEqRefl ty)
+  mkEqMP eqProof proof
+
 /-- Normalize addresses in a cpsTriple proof.
     First inlines `let` bindings (which are definitionally equal),
     expands reducible abbreviations (abbrevs) in the assertion parts so that
@@ -367,6 +384,20 @@ private def normalizeSpecAddresses (proof : Expr) : MetaM Expr :=
   | none =>
     -- If let-inlining changed the type shape, wrap with @id to force the clean type
     -- (let-inlined type is definitionally equal, so the kernel accepts it)
+    if workType == expandedType then Pure.pure expandedProof
+    else Pure.pure (mkApp2 (mkConst ``id [Level.zero]) workType expandedProof)
+
+private def normalizeSpecWithinAddresses (proof : Expr) : MetaM Expr :=
+  withTraceNode `runBlock.perf.normalize (fun _ => return m!"normalizeSpecWithinAddresses") do
+  let expandedProof ← do
+    try expandAbbrevsInCpsTripleWithin proof
+    catch _ => Pure.pure proof
+  let expandedType ← instantiateMVars (← inferType expandedProof)
+  let workType := inlineLets expandedType
+  let (_, normPf?) ← normalizeTypeAddrs workType
+  match normPf? with
+  | some pf => mkEqMP pf expandedProof
+  | none =>
     if workType == expandedType then Pure.pure expandedProof
     else Pure.pure (mkApp2 (mkConst ``id [Level.zero]) workType expandedProof)
 
@@ -395,6 +426,31 @@ private def normalizeAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := d
   let addrType ← inferType exit₁
   withLocalDeclD `x addrType fun x => do
     let body := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple) #[entry, x, cr, P, Q]
+    let motive ← mkLambdaFVars #[x] body
+    let congrProof ← mkCongrArg motive eqProof
+    mkEqMP congrProof accExpr
+
+private def normalizeWithinAddr (accExpr : Expr) (targetExit : Expr) : MetaM Expr := do
+  let accType ← inferType accExpr
+  let some (nSteps, entry, exit₁, cr, P, Q) ← parseCpsTripleWithin? accType
+    | throwError "runBlock: not a cpsTripleWithin"
+  if ← withoutModifyingState (isDefEq exit₁ targetExit) then
+    return accExpr
+  let eqProof ← do
+    if let some pf ← proveAddrEqFast exit₁ targetExit then
+      Pure.pure pf
+    else
+      let eqType ← mkEq exit₁ targetExit
+      let eqMVar ← mkFreshExprMVar eqType
+      try
+        let stx ← `(tactic| bv_omega)
+        runTacticSilent eqMVar.mvarId! stx
+      catch _ =>
+        throwError "runBlock: cannot prove address equality:\n  {exit₁} = {targetExit}"
+      instantiateMVars eqMVar
+  let addrType ← inferType exit₁
+  withLocalDeclD `x addrType fun x => do
+    let body := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin) #[nSteps, entry, x, cr, P, Q]
     let motive ← mkLambdaFVars #[x] body
     let congrProof ← mkCongrArg motive eqProof
     mkEqMP congrProof accExpr
@@ -434,6 +490,31 @@ private def frameFirstSpec (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
   let postIdProof ← mkIdLambda q1StarFrame
   return mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
     #[entry, exit_, cr1, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
+      prePermProof, postIdProof, s1Framed]
+
+private def frameFirstSpecWithin (s1Expr : Expr) (goalPre : Expr) : MetaM Expr :=
+  withTraceNode `runBlock.perf.frame (fun _ => return m!"frameFirstSpecWithin") do
+  let s1Type ← inferType s1Expr
+  let some (nSteps, entry, exit_, cr1, preP1, postQ1) ← parseCpsTripleWithin? s1Type
+    | throwError "runBlock: first spec is not a cpsTripleWithin"
+  let frameAtoms ← computeFrame goalPre preP1
+  if frameAtoms.isEmpty then
+    let prePermProof ← mkPermLambda goalPre preP1
+    let postIdProof ← mkIdLambda postQ1
+    return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+      #[nSteps, entry, exit_, cr1, preP1, goalPre, postQ1, postQ1,
+        prePermProof, postIdProof, s1Expr]
+  let frameExpr ← buildSepConjChain frameAtoms
+  let pcFreeProof ← try buildPcFreeProof frameExpr
+    catch _ => throwError "runBlock: could not prove pcFree for initial frame:\n  {frameExpr}"
+  let s1Framed := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_frameR)
+    #[nSteps, entry, exit_, cr1, preP1, postQ1, frameExpr, pcFreeProof, s1Expr]
+  let p1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) preP1 frameExpr
+  let prePermProof ← mkPermLambda goalPre p1StarFrame
+  let q1StarFrame := mkApp2 (mkConst ``EvmAsm.Rv64.sepConj) postQ1 frameExpr
+  let postIdProof ← mkIdLambda q1StarFrame
+  return mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+    #[nSteps, entry, exit_, cr1, p1StarFrame, goalPre, q1StarFrame, q1StarFrame,
       prePermProof, postIdProof, s1Framed]
 
 /-- Core: compose an array of cpsTriple proofs with initial framing,
@@ -493,6 +574,55 @@ private def runBlockCore (specs : Array Expr) (goalPre : Expr)
 private def normalizeToGoal (composed : Expr) (goalType : Expr) : MetaM Expr := do
   if let some (_, goalExit, _, _, _) ← parseCpsTriple? goalType then
     try return ← normalizeAddr composed goalExit catch _ => return composed
+  return composed
+
+private def runBlockWithinCore (specs : Array Expr) (goalPre : Expr)
+    (goalCr : Option Expr := none) : MetaM Expr :=
+  withTraceNode `runBlock.perf (fun _ => return m!"runBlockWithinCore ({specs.size} specs)") do
+  if specs.size == 0 then
+    throwError "runBlock: no specs provided.\n\
+        Usage: `runBlock s1 s2 ...` with cpsTripleWithin proofs."
+  let processedSpecs ← withTraceNode `runBlock.perf.normalize
+    (fun _ => return m!"normalize {specs.size} bounded specs") do
+    specs.mapM fun spec => do
+      try normalizeSpecWithinAddresses spec
+      catch _ => Pure.pure spec
+  let extendedSpecs ← withTraceNode `runBlock.perf.extend
+    (fun _ => return m!"extend {processedSpecs.size} bounded specs to goalCr") do
+    match goalCr with
+    | some gcr => do
+        let goalChain ← extractUnionChain gcr
+        processedSpecs.mapM fun spec => do
+          let specType ← inferType spec
+          let some (nSteps, entry, exit_, specCr, P, Q) ← parseCpsTripleWithin? specType
+            | Pure.pure spec
+          if specCr == gcr then Pure.pure spec
+          else if ← withoutModifyingState (withReducible (isDefEq specCr gcr)) then Pure.pure spec
+          else try
+            if let some monoProof ← buildMonoProofDirect specCr goalChain gcr then
+              Pure.pure (mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_extend_code)
+                #[nSteps, entry, exit_, specCr, gcr, P, Q, monoProof, spec])
+            else
+              let monoProof ← buildMonoProof specCr gcr
+              Pure.pure (mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_extend_code)
+                #[nSteps, entry, exit_, specCr, gcr, P, Q, monoProof, spec])
+          catch _ => Pure.pure spec
+    | none => Pure.pure processedSpecs
+  let mut acc ← frameFirstSpecWithin extendedSpecs[0]! goalPre
+  for i in [1:extendedSpecs.size] do
+    acc ← withTraceNode `runBlock.perf.seq
+      (fun _ => return m!"seqFrameWithin step {i}/{extendedSpecs.size - 1}") do
+        let nextSpec := extendedSpecs[i]!
+        let nextType ← inferType nextSpec
+        let some (_, nextEntry, _, _, _, _) ← parseCpsTripleWithin? nextType
+          | throwError "runBlock: argument {i + 1} is not a cpsTripleWithin"
+        let acc' ← normalizeWithinAddr acc nextEntry
+        seqFrameWithinCore acc' nextSpec
+  return acc
+
+private def normalizeWithinToGoal (composed : Expr) (goalType : Expr) : MetaM Expr := do
+  if let some (_, _, goalExit, _, _, _) ← parseCpsTripleWithin? goalType then
+    try return ← normalizeWithinAddr composed goalExit catch _ => return composed
   return composed
 
 -- ============================================================================
@@ -945,9 +1075,16 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
     let mvarGoal ← getMainGoal
     -- Strip leading let bindings and metadata from goal type
     let goalType := inlineLets (← instantiateMVars (← mvarGoal.getType))
-    let some (_, _, goalCr, _, _) ← parseCpsTriple? goalType
-      | throwError "runBlock: goal is not a `cpsTriple`.\n\
-          Expected goal of the form: `cpsTriple entry exit cr pre post`."
+    let goalCr ←
+      match ← parseCpsTriple? goalType with
+      | some (_, _, goalCr, _, _) => Pure.pure goalCr
+      | none =>
+        match ← parseCpsTripleWithin? goalType with
+        | some (_, _, _, goalCr, _, _) => Pure.pure goalCr
+        | none =>
+          throwError "runBlock: goal is not a `cpsTriple` or `cpsTripleWithin`.\n\
+            Expected goal of the form: `cpsTriple entry exit cr pre post` or \
+            `cpsTripleWithin nSteps entry exit cr pre post`."
     -- If the CodeReq is an abbrev application (not CodeReq.singleton/union/empty), delta-unfold it
     -- in the actual goal so all proof terms share the same expression.
     let mvarGoal ← do
@@ -974,28 +1111,49 @@ elab "runBlock" specs:ident* : tactic => withMainContext do
         mvarGoal.assign proof
         Pure.pure (newGoalMVar.mvarId!, normGoalType)
       else Pure.pure (mvarGoal, goalType)
-    let some (_, _, goalCr, goalPre, _) ← parseCpsTriple? workingGoalType
-      | throwError "runBlock: goal is not a `cpsTriple` after normalization."
-    let composed ←
+    match ← parseCpsTriple? workingGoalType with
+    | some (gEntry, gExit, gCr, gPre, goalPost) =>
+      let composed ←
+        if specs.isEmpty then
+          autoResolveAndCompose gPre gCr
+        else
+          let specExprs ← specs.mapM fun s => elabTerm s none
+          runBlockCore specExprs gPre (goalCr := some gCr)
+      let finalResult ← normalizeToGoal composed workingGoalType
+      let resultType ← inferType finalResult
+      let some (_, _, _, _, resultPost) ← parseCpsTriple? resultType
+        | throwError "runBlock: internal error — composed result is not a cpsTriple"
+      let postPerm ← mkPermLambda resultPost goalPost
+      let idPre ← mkIdLambda gPre
+      let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
+        #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
+      workingGoal.assign permuted
+    | none =>
+      let some (gSteps, gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTripleWithin? workingGoalType
+        | throwError "runBlock: goal is not a `cpsTriple` or `cpsTripleWithin` after normalization."
       if specs.isEmpty then
-        -- Auto mode: resolve specs from CodeReq/precondition
-        autoResolveAndCompose goalPre goalCr
-      else
-        -- Manual mode: use provided specs
-        let specExprs ← specs.mapM fun s => elabTerm s none
-        runBlockCore specExprs goalPre (goalCr := some goalCr)
-    let finalResult ← normalizeToGoal composed workingGoalType
-    -- Always permute postcondition to match goal
-    let some (gEntry, gExit, gCr, gPre, goalPost) ← parseCpsTriple? workingGoalType
-      | throwError "runBlock: internal error — goal lost cpsTriple structure during permutation"
-    let resultType ← inferType finalResult
-    let some (_, _, _, _, resultPost) ← parseCpsTriple? resultType
-      | throwError "runBlock: internal error — composed result is not a cpsTriple"
-    let postPerm ← mkPermLambda resultPost goalPost
-    let idPre ← mkIdLambda gPre
-    let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTriple_weaken)
-      #[gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
-    workingGoal.assign permuted
+        throwError "runBlock: auto mode for cpsTripleWithin goals is not implemented; pass bounded specs explicitly."
+      let specExprs ← specs.mapM fun s => elabTerm s none
+      let composed ← runBlockWithinCore specExprs gPre (goalCr := some gCr)
+      let finalResult ← normalizeWithinToGoal composed workingGoalType
+      let resultType ← inferType finalResult
+      let some (rSteps, _, _, _, _, resultPost) ← parseCpsTripleWithin? resultType
+        | throwError "runBlock: internal error — composed result is not a cpsTripleWithin"
+      let finalResult ←
+        if ← withoutModifyingState (isDefEq rSteps gSteps) then
+          Pure.pure finalResult
+        else
+          let hleType ← mkAppM ``LE.le #[rSteps, gSteps]
+          let hle ← mkFreshExprMVar hleType
+          let stx ← `(tactic| omega)
+          runTacticSilent hle.mvarId! stx
+          Pure.pure (mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_mono_nSteps)
+            #[rSteps, gSteps, gEntry, gExit, gCr, gPre, resultPost, (← instantiateMVars hle), finalResult])
+      let postPerm ← mkPermLambda resultPost goalPost
+      let idPre ← mkIdLambda gPre
+      let permuted := mkAppN (mkConst ``EvmAsm.Rv64.cpsTripleWithin_weaken)
+        #[gSteps, gEntry, gExit, gCr, gPre, gPre, resultPost, goalPost, idPre, postPerm, finalResult]
+      workingGoal.assign permuted
     replaceMainGoal []
 
 end EvmAsm.Rv64.Tactics
