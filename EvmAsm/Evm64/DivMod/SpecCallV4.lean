@@ -875,6 +875,37 @@ theorem n4CallAddback_v4_carry_zero_iff_overshoot_ge_two (a b : EvmWord)
          -- val256 level. References AlgEuclideans.lean for the existing
          -- v1/v2 carry-classification chain (which v4 should mirror).
 
+/-- **v4 mirror of `u_top_lt_c3_of_addback_borrow_call`**: from
+    `isAddbackBorrowN4Call_v4`, extract the Nat-level inequality
+    `u4.toNat < c3.toNat`. Used by Layer 2c to derive the qHat
+    overshoot via the val256-level Euclidean equation. -/
+theorem u_top_lt_c3_of_addback_borrow_call_v4
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (h : isAddbackBorrowN4Call_v4 a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1
+    let antiShift := signExtend12 (0 : BitVec 12) - shift
+    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+    let b0' := b0 <<< (shift.toNat % 64)
+    let u4 := a3 >>> (antiShift.toNat % 64)
+    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+    let u0 := a0 <<< (shift.toNat % 64)
+    let qHat := div128Quot_v4 u4 u3 b3'
+    u4.toNat <
+    (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2.toNat := by
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat
+  unfold isAddbackBorrowN4Call_v4 at h
+  simp only [] at h
+  by_cases hlt : BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
+  · rw [EvmWord.ult_iff] at hlt
+    unfold mulsubN4_c3 at hlt
+    exact hlt
+  · rw [if_neg hlt] at h
+    exact absurd rfl h
+
 /-- **Layer 2c sub-stub: qHat ≥ q_true + 1 from call+addback+BEQ gating.**
 
     The call+addback+BEQ branch fires only when the trial subtraction
