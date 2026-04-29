@@ -276,12 +276,54 @@ theorem divK_div128_step2_v4_spec
     (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
     (sp + signExtend12 3936 ↦ₘ vScratchOld)
   have h_taken : cpsTriple (base + 124) (base + 124) (divKDiv128Step2V4Code base)
-      takenPost finalPost := by
-    sorry  -- Identity triple: takenPost → finalPost.
-           -- When rhat2cHi ≠ 0: q0'' = q0c (both D3 guards skip, each
-           -- div128Quot_phase2b_q0' q0c rhat2c = q0c since rhat2cHi ≠ 0).
-           -- x7Exit = un21, x1Exit = rhat2cHi, x11Exit = rhat2c, mem3936Exit = vScratchOld.
-           -- Proof: extend from empty CodeReq via cpsTriple_refl + weaken.
+      takenPost finalPost :=
+    cpsTriple_extend_code (hmono := fun _ _ h => by simp [CodeReq.empty] at h)
+    (cpsTriple_refl (by
+      intro hp htp
+      -- Extract ⌜rhat2cHi ≠ 0⌝ from takenPost (inside a have so htp survives).
+      -- takenPost = (.x12 ** .x11 ** .x1 ** .x0 ** ⌜rhat2cHi ≠ 0⌝) ** rest.
+      have h_ne : rhat2cHi ≠ 0 := by
+        obtain ⟨_, _, _, _, hleft, _⟩ := htp
+        obtain ⟨_, _, _, _, _, h1⟩ := hleft  -- peel .x12
+        obtain ⟨_, _, _, _, _, h2⟩ := h1     -- peel .x11
+        obtain ⟨_, _, _, _, _, h3⟩ := h2     -- peel .x1
+        obtain ⟨_, _, _, _, _, h4⟩ := h3     -- peel .x0
+        obtain ⟨_, hpure⟩ := h4             -- ⌜rhat2cHi ≠ 0⌝
+        exact hpure
+      -- When rhat2cHi ≠ 0: both D3 guards skip → q0'' = q0c.
+      have hq0' : q0' = q0c := by
+        show div128Quot_phase2b_q0' q0c rhat2c dlo un0 = q0c
+        simp only [div128Quot_phase2b_q0']; exact if_neg h_ne
+      have hrhat2' : rhat2' = rhat2c := by
+        show (if rhat2cHi = 0 then _ else rhat2c) = rhat2c
+        exact if_neg h_ne
+      have hq0'' : q0'' = q0c := by
+        show div128Quot_phase2b_q0' q0' rhat2' dlo un0 = q0c
+        rw [hq0', hrhat2']
+        simp only [div128Quot_phase2b_q0']; exact if_neg h_ne
+      have hx7 : x7Exit = un21   := by show (if rhat2cHi ≠ 0 then un21 else _) = un21; exact if_pos h_ne
+      have hx1 : x1Exit = rhat2cHi := by show (if rhat2cHi ≠ 0 then rhat2cHi else _) = rhat2cHi; exact if_pos h_ne
+      have hx11 : x11Exit = rhat2c  := by show (if rhat2cHi ≠ 0 then rhat2c else _) = rhat2c; exact if_pos h_ne
+      have hmem : mem3936Exit = vScratchOld := by show (if rhat2cHi ≠ 0 then vScratchOld else _) = vScratchOld; exact if_pos h_ne
+      -- Strip ⌜rhat2cHi ≠ 0⌝ from htp for xperm_hyp.
+      -- takenPost = (.x12 ** .x11 ** .x1 ** .x0 ** ⌜...⌝) ** rest.
+      -- Strip: 3x sepConj_mono_right to reach .x0 ** ⌜...⌝, then strip.
+      have htp' : (((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ rhat2c) ** (.x1 ↦ᵣ rhat2cHi) ** (.x0 ↦ᵣ 0)) **
+          (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+          (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+          (sp + signExtend12 3936 ↦ₘ vScratchOld)) hp :=
+        sepConj_mono_left (sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
+          (fun h'' hp'' => ((sepConj_pure_right h'').1 hp'').1)))) hp htp
+      -- Rewrite finalPost to explicit form, then xperm_hyp htp'.
+      show finalPost hp
+      rw [show finalPost = ((.x5 ↦ᵣ q0c) ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ un21) **
+          (.x1 ↦ᵣ rhat2cHi) ** (.x11 ↦ᵣ rhat2c) **
+          (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+          (sp + signExtend12 3952 ↦ₘ dlo) **
+          (sp + signExtend12 3944 ↦ₘ un0) **
+          (sp + signExtend12 3936 ↦ₘ vScratchOld)) from by
+        simp only [finalPost, hq0'', hx7, hx1, hx11, hmem]]
+      xperm_hyp htp'))
   -- The not-taken postcondition of composed_AB:
   let notTakenPost : Assertion :=
     ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ rhat2c) ** (.x1 ↦ᵣ rhat2cHi) **
