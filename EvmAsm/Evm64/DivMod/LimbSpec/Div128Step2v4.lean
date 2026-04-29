@@ -188,14 +188,30 @@ theorem divK_div128_step2_v4_spec
        (sp + signExtend12 3944 ↦ₘ un0) **
        (sp + signExtend12 3936 ↦ₘ vScratchOld))
       (divKDiv128Step2V4Post sp un21 dHi dlo un0 vScratchOld) := by
-  sorry  -- PR-A2 finish stub. Proof uses cpsBranch_merge_same_cr:
-         -- 1. Build cpsBranch for the outer BNE guard at [48] (offset 92):
-         --    taken=base+124 (combines with if-rhat2cHi-ne-0 post),
-         --    not-taken runs through [49..70] then base+124.
-         -- 2. h_t = cpsTriple_refl for taken leg.
-         -- 3. h_f = proof of [49..70] → (not-taken post at base+124).
-         -- 4. cpsBranch_merge_same_cr → cpsTriple base (base+124).
-         -- The merged post is divKDiv128Step2V4Post with if-rhat2cHi
-         -- selectors for x7, x1, x11, mem3936.
+  -- Proof strategy: cpsBranch_merge_same_cr on the outer BNE at [28..36].
+  --
+  -- Key structural insight:
+  --   Phase A ([0..28]): init+clamp cpsTriple (reuse divK_div128_step2_upto_guard_spec).
+  --   Phase B ([28..36]): SRLI+BNE cpsBranch (reuse divK_div128_phase2b_guard_spec
+  --                        with guard_off = 92 → target base+124).
+  --   A+B: cpsTriple_seq_cpsBranch_perm_same_cr.
+  --   Taken (rhat2cHi ≠ 0): identity cpsTriple at base+124, weaken to finalPost.
+  --   Not-taken (rhat2cHi = 0): cpsTriple (base+36) (base+124) for [36..120]:
+  --     (C) pre-BLTU setup [36..60] via runBlock (LD+MUL+SLLI+SD+LD+OR).
+  --     (D) 1st BLTU cpsBranch at [60] (offset 12 → [72]):
+  --           taken [72..80] = ADDI+LD+ADD → [84].
+  --           not-taken [64..68] = LD+JAL(16) → [84].
+  --         cpsBranch_merge_same_cr → cpsTriple (base+36) (base+84).
+  --     (E) 2nd D3: SRLI+BNE guard [84..88] (offset 36 → base+124 = end of step2_v4).
+  --           taken → base+124 (identity).
+  --           not-taken [92..120]: prodcheck2-style [92..112] + BLTU [112] + correction [120].
+  --         cpsBranch_merge_same_cr → cpsTriple (base+84) (base+124).
+  --     cpsTriple_seq (C+D) + E → cpsTriple (base+36) (base+124).
+  --
+  -- The extension from sub-specs' small CodeReqs to divKDiv128Step2V4Code is the
+  -- mechanical part (31 singleton-union positions). Each step2v4_sub helper would
+  -- look up the singleton by position in the unfolded cr (similar to d128_v4_sub
+  -- but within step2_v4's code).
+  sorry
 
 end EvmAsm.Evm64
