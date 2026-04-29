@@ -906,21 +906,19 @@ theorem u_top_lt_c3_of_addback_borrow_call_v4
   · rw [if_neg hlt] at h
     exact absurd rfl h
 
-/-- **Layer 2c sub-stub: qHat ≥ q_true + 1 from call+addback+BEQ gating.**
+/-- **Layer 2c-arith sub-stub (intermediate)**: under shift-norm + the
+    borrow gating, `qHat * val256(b) > val256(a)`. This is the val256-level
+    statement that the qHat overshoots q_true.
 
-    The call+addback+BEQ branch fires only when the trial subtraction
-    detected an overshoot — i.e., qHat > q_true. This excludes the
-    qHat = q_true case from the addback closure's reasoning.
-
-    **NOTE on preconditions**: `isCallTrialN4Evm` alone says only
-    `u4 < b3'`, which does NOT exclude qHat = q_true. The actual
-    runtime gating that fires the addback BEQ branch is encoded by
-    `isAddbackBorrowN4CallEvm` (the borrow-flag-fires condition). The
-    closure proof of `n4CallAddbackBeqSemanticHolds_v4_of_call_addback_beq`
-    may need a STRONGER precondition (likely `isAddbackBorrowN4CallEvm`)
-    to make this sub-stub closeable. To be confirmed when wiring the
-    full closure into the downstream stack-spec dispatcher. -/
-theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
+    Proof outline (sketch):
+    1. From `u_top_lt_c3_of_addback_borrow_call_v4`: u4.toNat < c3.toNat.
+    2. mulsubN4_val256_eq: val256(u_norm) + c3 * 2^256 = val256(un) + qHat * val256(v_norm).
+    3. So qHat * val256(v_norm) ≥ val256(u_norm) + (u4 + 1) * 2^256 - val256(un).
+    4. val256(un) < 2^256, so qHat * val256(v_norm) > val256(u_norm) + u4 * 2^256.
+    5. u_val256_eq_scaled_with_overflow: val256(u_norm) + u4 * 2^256 = val256(a) * 2^shift.
+    6. b3_prime_val256_eq_scaled: val256(v_norm) = val256(b) * 2^shift.
+    7. Cancel 2^shift: qHat * val256(b) > val256(a). -/
+theorem n4CallAddbackBeq_v4_qHat_mul_b_gt_a (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hcall : isCallTrialN4Evm a b)
@@ -930,14 +928,48 @@ theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
     let u4 := (a.getLimbN 3) >>> antiShift
     let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    (div128Quot_v4 u4 u3 b3').toNat *
+      val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) >
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) := by
+  sorry  -- See sketch above; chains 7 steps of val256 reasoning.
+
+theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcall : isCallTrialN4Evm a b)
+    (haddback : isAddbackBorrowN4CallEvm_v4 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
     let qHat := div128Quot_v4 u4 u3 b3'
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     qHat.toNat ≥ q_true + 1 := by
-  sorry  -- Runtime gating: `isAddbackBorrowN4CallEvm_v4` says the borrow
-         -- check fires (`mulsubN4_c3 > u4`), which means qHat * b > a (at
-         -- val256 level), i.e., qHat > q_true. Composes via the existing
-         -- mulsubN4_val256_eq + the borrow-check Word↔Nat bridge.
+  intro shift antiShift b3' u4 u3 qHat q_true
+  -- val256-level overshoot: qHat * val256(b) > val256(a).
+  have h_overshoot := n4CallAddbackBeq_v4_qHat_mul_b_gt_a a b
+    hb3nz hshift_nz hcall haddback
+  -- val256(b) > 0 (from b3 ≠ 0).
+  have h_b_pos : 0 < val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := by
+    -- val256(b) ≥ b3.toNat * 2^192. Since b3 ≠ 0, b3.toNat ≥ 1.
+    have h_b3_pos : 0 < (b.getLimbN 3).toNat := by
+      rcases Nat.eq_zero_or_pos (b.getLimbN 3).toNat with h | h
+      · exfalso; apply hb3nz; exact BitVec.eq_of_toNat_eq h
+      · exact h
+    show 0 < val256 _ _ _ _
+    unfold val256
+    have h_pow : 0 < (b.getLimbN 3).toNat * 2^192 :=
+      Nat.mul_pos h_b3_pos (by decide)
+    omega
+  -- qHat > val256(a) / val256(b) ⟺ qHat * val256(b) > val256(a) (given val256(b) > 0).
+  -- Equivalently: q_true < qHat.toNat, so qHat.toNat ≥ q_true + 1.
+  have h_lt : q_true < qHat.toNat := by
+    rw [show q_true = val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                       val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) from rfl]
+    exact (Nat.div_lt_iff_lt_mul h_b_pos).mpr h_overshoot
+  omega
 
 /-- **Layer 2 stub: carry partition for v4.** The post-mulsub addback carry
     is 0 iff the trial digit overshoots q_true by exactly 2.
