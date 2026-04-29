@@ -983,35 +983,80 @@ theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     carry = 0 → qHat.toNat ≥ q_true + 2 := by
-  sorry  -- Forward direction.
-         --
-         -- **PROVEN MATH CHAIN** (in ℕ, deferred to Lean — kernel deep recursion
-         -- when attempted inline; needs extracted pure-Nat helper):
-         --
-         -- 1. From haddback (`u4 < c3`): c3 ≥ u4 + 1.
-         -- 2. mulsubN4_val256_eq:
-         --      val256(u_norm) + c3*2^256 = val256(ms_un) + qHat * val256(v_norm).
-         -- 3. addbackN4_val256_eq + carry = 0:
-         --      val256(ms_un) + val256(v_norm) = val256(ab).
-         -- 4. val256(ab) < 2^256 (val256_bound).
-         -- 5. Combine: Q*Vb*p_shift + Vab = Vu + c3*p256 + Vv.
-         -- 6. h_norm_u, h_norm_v: Vu + U4*p256 = Va*p_shift, Vv = Vb*p_shift.
-         -- 7. (Va+Vb)*p_shift = Vu + U4*p256 + Vv.
-         -- 8. So Q*Vb*p_shift + Vab = (Va+Vb)*p_shift + (c3 - U4)*p256.
-         -- 9. With c3 - U4 ≥ 1: Q*Vb*p_shift + Vab ≥ (Va+Vb)*p_shift + p256.
-         -- 10. Vab < p256: Q*Vb*p_shift > (Va+Vb)*p_shift. Cancel p_shift:
-         --     Q*Vb > Va + Vb.
-         -- 11. Va < Q*Vb - Vb = (Q-1)*Vb. So Va/Vb ≤ Q - 2, i.e., Q ≥ q_true + 2.
-         --
-         -- **Numerical validation**: PASSED on v1 counterexample (see
-         -- `layer_2a_partition_holds_on_v1_counterexample` in NumericalTestsV4).
-         --
-         -- **Implementation blocker**: kernel deep recursion on direct inline
-         -- proof (long val256 expressions + many `set` aliases). Path: extract
-         -- a pure-Nat helper `_carry_zero_imp_overshoot_arith` taking the
-         -- 6 input quantities (Vu, Vv, Va, Vb, c3, U4, Q) plus 5 hypotheses
-         -- (h_dam combined eq, h_norm_u, h_norm_v, h_u4_lt_c3, h_Vab_lt) as
-         -- pure-Nat propositions, then bridge from the Word level.
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry q_true h_carry
+  -- Step 1: u4.toNat < c3.toNat from haddback
+  rw [isAddbackBorrowN4CallEvm_v4_def] at haddback
+  have h_u4_lt_c3 := u_top_lt_c3_of_addback_borrow_call_v4
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    haddback
+  simp only [] at h_u4_lt_c3
+  change u4.toNat < (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2.toNat
+    at h_u4_lt_c3
+  -- Step 2: mulsub val256 eq
+  have h_mulsub := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
+  simp only [] at h_mulsub
+  -- Step 3: addback val256 eq (u4_new = 0; carry independent of u4_new)
+  have h_addback :=
+    addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+  simp only [] at h_addback
+  -- Step 4: carry.toNat = 0 from carry = 0 hypothesis
+  have h_carry_zero :
+      (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3').toNat = 0 := by
+    show carry.toNat = 0
+    rw [h_carry]; rfl
+  -- Step 5/6: norm-u, norm-v from CLZ-based shift lemmas.
+  have h_norm_u := u_val256_eq_scaled_with_overflow
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) (b.getLimbN 3) hshift_nz
+  have h_norm_v := b3_prime_val256_eq_scaled
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hshift_nz
+  -- Step 7: val256_bound for the addback low-4 result.
+  have h_Vab_lt :
+      val256
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.2.1
+        < 2^256 :=
+    EvmWord.val256_bound _ _ _ _
+  -- Step 8: 0 < val256(b) (from b3 ≠ 0 → val256 ≥ 2^192).
+  have h_Vb_pos : 0 < val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+        (b.getLimbN 3) := by
+    have := EvmWord.val256_ge_pow192_of_limb3
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3nz
+    have hpow : (2:Nat)^192 > 0 := Nat.two_pow_pos 192
+    omega
+  -- Step 9: alias the val256 expressions and apply the pure-Nat helper.
+  set Va := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+  set Vb := val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+  set Vu := val256 u0 u1 u2 u3
+  set Vv := val256 b0' b1' b2' b3'
+  set Vab := val256
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.2.1
+  set Q := qHat.toNat
+  set U4 := u4.toNat
+  set c3 := (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2.toNat
+  set p_shift := (2 : ℕ) ^ (clzResult (b.getLimbN 3)).1.toNat
+  show Q ≥ Va / Vb + 2
+  apply n4CallAddback_v4_carry_zero_imp_overshoot_arith
+    Va Vb Vu Vv Vab Q U4 c3 p_shift (2^256)
+  · exact h_Vb_pos
+  · show Vu + U4 * 2^256 = Va * p_shift
+    exact h_norm_u
+  · show Vv = Vb * p_shift
+    exact h_norm_v
+  · -- h_combined: Q * Vv + Vab = Vu + c3 * 2^256 + Vv
+    show Q * Vv + Vab = Vu + c3 * 2^256 + Vv
+    rw [h_carry_zero] at h_addback
+    simp at h_addback
+    linarith [h_mulsub, h_addback]
+  · show U4 < c3
+    exact h_u4_lt_c3
+  · show Vab < 2^256
+    exact h_Vab_lt
 
 /-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
 
