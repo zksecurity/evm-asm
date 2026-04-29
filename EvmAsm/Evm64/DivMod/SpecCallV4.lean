@@ -1125,44 +1125,60 @@ theorem n4CallAddback_v4_carry_zero_imp_overshoot_ge_two (a b : EvmWord)
   · show Vab < 2^256
     exact h_Vab_lt
 
-/-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
+/-- **Sub-stub: c3 = u4 + 1 under haddback + qHat = q_true + 2.**
 
-    Backward direction.
+    Algorithmic invariant for v4's call+addback BEQ branch: when the
+    runtime addback-borrow check fires (`u4 < c3`) AND qHat overshoots
+    `q_true` by ≥ 2 (so by Layer 1 = q_true + 2 exactly), the mulsub
+    top borrow `c3` equals `u4 + 1` (single-addback closure).
 
-    Proof outline (concrete):
-    1. From qHat ≥ q_true + 2 and Knuth-B (Layer 1: qHat ≤ q_true + 2):
-       qHat = q_true + 2 exactly.
-    2. Bridge to normalized form: val256(u_norm) + u4*2^256 = val256(a)*2^shift,
-       val256(v_norm) = val256(b)*2^shift.
-    3. `mulsubN4_val256_eq`: val256(u_norm) + c3*2^256 =
-       val256(ms_un) + qHat * val256(v_norm).
-    4. With qHat = q_true + 2: qHat * val256(v_norm) = (q_true + 2) *
-       val256(b) * 2^shift = val256(a)*2^shift + val256(b)*2^shift -
-       (val256(a) - q_true*val256(b))*2^shift = val256(a)*2^shift +
-       (2*val256(b) - r)*2^shift, where r = val256(a) mod val256(b).
-    5. So val256(ms_un) = val256(u_norm) + c3*2^256 -
-       (val256(a)*2^shift + (2*val256(b) - r)*2^shift)
-       = -u4*2^256 + c3*2^256 - (2*val256(b) - r)*2^shift
-       = (c3 - u4)*2^256 - (2*val256(b) - r)*2^shift.
-    6. For carry = 0 (val256(ms_un) + val256(v_norm) < 2^256):
-       (c3 - u4)*2^256 - (2*val256(b) - r)*2^shift + val256(b)*2^shift < 2^256.
-       (c3 - u4)*2^256 - (val256(b) - r)*2^shift < 2^256.
-       This requires c3 - u4 ≤ 0 (i.e., c3 = u4, the borrow doesn't
-       propagate further), OR the val256(b) - r term cancels out enough.
+    Per project memory `project_double_addback_closure_plan`: this
+    invariant holds in BOTH single-and double-addback branches; only
+    `qHat` differs (a/b + 1 in single, a/b + 2 in double).
 
-    **Bridge gap**: similar to forward direction, the val256(u_norm) /
-    val256(a) gap due to u4 needs careful handling. The c3 vs u4
-    relationship (from `_haddback`: u4 < c3) interacts here too.
-
-    Cleanest path forward (next iteration): direct val256 calculation
-    with all val256-norm bridges in scope. Concrete numerical check
-    on the v1 counterexample (a3=2^63+2^33, b3=1, b2=2^33-1) where
-    qHat = q_true + 2 to confirm carry = 0 holds. -/
-theorem n4CallAddback_v4_overshoot_ge_two_imp_carry_zero (a b : EvmWord)
+    This is the key algorithmic content of Layer 2a-back. The proof
+    requires careful analysis of the v4 algorithm's 128/64 trial
+    digit structure (qHat = (u4*2^64 + u3) / b3') and the resulting
+    mulsub borrow bound. -/
+theorem n4CallAddback_v4_c3_eq_u4_plus_one_under_overshoot (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hcall : isCallTrialN4Evm a b)
     (_haddback : isAddbackBorrowN4CallEvm_v4 a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v4 u4 u3 b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                    val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    qHat.toNat ≥ q_true + 2 →
+    (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2.toNat = u4.toNat + 1 := by
+  sorry  -- Genuine algorithmic content. Algebraically: under the val256
+         -- frame, both c3 - u4 = 1 and c3 - u4 = 2 are consistent with
+         -- haddback + qHat = q_true + 2 alone; the v4-specific 128/64
+         -- trial digit structure is needed to rule out c3 - u4 = 2.
+
+/-- **Layer 2a-back: qHat overshoots by ≥ 2 → carry = 0.**
+
+    Backward direction. Wired through:
+    - `n4CallAddback_v4_c3_eq_u4_plus_one_under_overshoot` (sub-stub):
+      `c3 = u4 + 1` under the runtime preconditions.
+    - `div128Quot_v4_qHat_le_q_true_plus_two` (Layer 1): `qHat ≤ q_true + 2`.
+    - `n4CallAddback_v4_overshoot_ge_two_imp_carry_zero_arith`: pure-Nat
+      algebraic helper that closes from `c3 = u4 + 1`. -/
+theorem n4CallAddback_v4_overshoot_ge_two_imp_carry_zero (a b : EvmWord)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcall : isCallTrialN4Evm a b)
+    (haddback : isAddbackBorrowN4CallEvm_v4 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -1180,9 +1196,78 @@ theorem n4CallAddback_v4_overshoot_ge_two_imp_carry_zero (a b : EvmWord)
     let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
                     val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     qHat.toNat ≥ q_true + 2 → carry = 0 := by
-  sorry  -- Backward direction: val256-level computation. qHat overshoots
-         -- by ≥ 2 means mulsub yields a value such that adding b once
-         -- (first addback) doesn't reach 2^256, so carry = 0.
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry q_true h_overshoot
+  -- 1. h_u4_lt_c3 from haddback (used implicitly via h_c3_eq).
+  rw [isAddbackBorrowN4CallEvm_v4_def] at haddback
+  -- 2. mulsub eq.
+  have h_mulsub := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
+  simp only [] at h_mulsub
+  -- 3. addback eq.
+  have h_addback :=
+    addbackN4_val256_eq ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3'
+  simp only [] at h_addback
+  -- 4. carry ≤ 1.
+  have h_carry_le_word :=
+    addbackN4_carry_le_one ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+  -- 5. norm-u, norm-v.
+  have h_norm_u := u_val256_eq_scaled_with_overflow
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) (b.getLimbN 3) hshift_nz
+  have h_norm_v := b3_prime_val256_eq_scaled
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hshift_nz
+  -- 6. Vb pos.
+  have h_Vb_pos : 0 < val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+        (b.getLimbN 3) := by
+    have := EvmWord.val256_ge_pow192_of_limb3
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hb3nz
+    have hpow : (2:Nat)^192 > 0 := Nat.two_pow_pos 192
+    omega
+  -- 7. p_shift > 0.
+  have h_p_shift_pos : 0 < (2 : ℕ) ^ (clzResult (b.getLimbN 3)).1.toNat :=
+    Nat.two_pow_pos _
+  -- 8. Layer 1: qHat ≤ q_true + 2.
+  have h_Q_le := div128Quot_v4_qHat_le_q_true_plus_two a b hb3nz hshift_nz hcall
+  simp only [] at h_Q_le
+  change qHat.toNat ≤
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2
+    at h_Q_le
+  -- 9. SUB-STUB: c3 = u4 + 1 under haddback + overshoot.
+  rw [← isAddbackBorrowN4CallEvm_v4_def] at haddback
+  have h_c3_eq :=
+    n4CallAddback_v4_c3_eq_u4_plus_one_under_overshoot a b hb3nz hshift_nz hcall haddback
+  simp only [] at h_c3_eq
+  specialize h_c3_eq h_overshoot
+  -- 10. Set aliases and apply the pure-Nat helper.
+  set Va := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+  set Vb := val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+  set Vu := val256 u0 u1 u2 u3
+  set Vv := val256 b0' b1' b2' b3'
+  set Vab := val256
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.1
+        (addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 0 b0' b1' b2' b3').2.2.2.1
+  set Vms := val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
+  set Q := qHat.toNat
+  set U4 := u4.toNat
+  set c3 := (mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3).2.2.2.2.toNat
+  set carryNat :=
+    (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3').toNat
+  set p_shift := (2 : ℕ) ^ (clzResult (b.getLimbN 3)).1.toNat
+  have h_carryNat_zero :=
+    n4CallAddback_v4_overshoot_ge_two_imp_carry_zero_arith
+      Va Vb Vu Vv Vab Vms Q U4 c3 carryNat p_shift (2^256)
+      h_p_shift_pos h_Vb_pos
+      (by show Vu + U4 * 2^256 = Va * p_shift; exact h_norm_u)
+      (by show Vv = Vb * p_shift; exact h_norm_v)
+      (by show Vu + c3 * 2^256 = Vms + Q * Vv; exact h_mulsub)
+      (by show Vms + Vv = Vab + carryNat * 2^256; exact h_addback)
+      h_carry_le_word
+      h_Q_le h_overshoot h_c3_eq
+  -- 11. Convert carryNat = 0 to carry = 0 (Word).
+  show (addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3') = 0
+  apply BitVec.eq_of_toNat_eq
+  exact h_carryNat_zero
 
 /-- **Layer 2a sub-stub: addback carry detects ≥-2 overshoot.**
 
