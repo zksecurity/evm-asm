@@ -536,6 +536,67 @@ theorem div128Quot_v4_un21_eq_phase1_remainder
     h_decomp hdLo_lt h_div_un1_lt h_vTop_le_pow64 h_q1''_succ_gt
     h_q1''_dHi_le h_rhat''_eq h_no_wrap h_q1''_lt
 
+/-! ### Bridge theorems for the irreducible component accessors
+
+These restate the let-chained sub-stubs above in terms of the
+`@[irreducible]` defs (`div128Quot_v4_q1''`, `_un21`, `_q0''`)
+declared near the top of the file. They unblock the wire-up
+of `_eq_q_true_normalized` by removing the let-chain alignment
+issue. -/
+
+/-- **q1'' satisfies Phase-1 perfect** (no let-chain in the type). -/
+theorem div128Quot_v4_q1''_eq_phase1_perfect (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    (div128Quot_v4_q1'' uHi uLo vTop).toNat =
+      (uHi.toNat * 2^32 + div_un1.toNat) /
+       (dHi.toNat * 2^32 + dLo.toNat) := by
+  unfold div128Quot_v4_q1''
+  exact div128Quot_v4_phase1_perfect uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+
+/-- **q0'' satisfies Phase-2 perfect** (no let-chain in the type). -/
+theorem div128Quot_v4_q0''_eq_phase2_perfect (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let dHi := vTop >>> (32 : BitVec 6).toNat
+    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+    (div128Quot_v4_q0'' uHi uLo vTop).toNat =
+      ((div128Quot_v4_un21 uHi uLo vTop).toNat * 2^32 + div_un0.toNat) /
+       (dHi.toNat * 2^32 + dLo.toNat) := by
+  unfold div128Quot_v4_q0'' div128Quot_v4_un21
+  exact div128Quot_v4_phase2_perfect uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+
+/-- **un21 = Phase-1 remainder** (no let-chain in the type). -/
+theorem div128Quot_v4_un21_eq_remainder (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    let div_un1 := uLo >>> (32 : BitVec 6).toNat
+    (div128Quot_v4_un21 uHi uLo vTop).toNat =
+      uHi.toNat * 2^32 + div_un1.toNat -
+        (div128Quot_v4_q1'' uHi uLo vTop).toNat * vTop.toNat := by
+  unfold div128Quot_v4_un21 div128Quot_v4_q1''
+  exact div128Quot_v4_un21_eq_phase1_remainder uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+
+/-- **q1''.toNat < 2^32** (no let-chain in the type). -/
+theorem div128Quot_v4_q1''_lt_pow32 (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (div128Quot_v4_q1'' uHi uLo vTop).toNat < 2^32 := by
+  unfold div128Quot_v4_q1''
+  exact div128Quot_v4_phase1_quot_lt_pow32 uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+
+/-- **q0''.toNat < 2^32** (no let-chain in the type). -/
+theorem div128Quot_v4_q0''_lt_pow32 (uHi uLo vTop : Word)
+    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
+    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
+    (div128Quot_v4_q0'' uHi uLo vTop).toNat < 2^32 := by
+  unfold div128Quot_v4_q0'' div128Quot_v4_un21
+  exact div128Quot_v4_phase2_quot_lt_pow32 uHi uLo vTop h_vTop_ge_pow63 h_uHi_lt_vTop
+
 /-- **v4's exact-quotient property**: under standard Knuth-A
     preconditions (shift-norm + `u4 < b3'` + `u4 < 2^63`), the v4
     algorithm produces the exact 128/64 quotient.
@@ -549,26 +610,53 @@ theorem div128Quot_v4_un21_eq_phase1_remainder
     - `halfword_combine` (existing lemma; OR-shift to add at toNat). -/
 theorem div128Quot_v4_eq_q_true_normalized
     (u4 u3 b3' : Word)
-    (_hb3'_ge : b3'.toNat ≥ 2^63)
-    (_hu4_lt_b3' : u4.toNat < b3'.toNat)
-    (_hu4_lt_pow63 : u4.toNat < 2^63) :
+    (h_b3'_ge : b3'.toNat ≥ 2^63)
+    (h_u4_lt_b3' : u4.toNat < b3'.toNat)
+    (_h_u4_lt_pow63 : u4.toNat < 2^63) :
     (div128Quot_v4 u4 u3 b3').toNat =
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
-  sorry  -- BLOCKED on let-binding alignment. The math is fully proven via
-         -- `_phase{1,2}_perfect`, `_un21_eq_phase1_remainder`, the proven
-         -- `_combined_arith` pure-Nat helper, and the proven
-         -- `_phase{1,2}_quot_lt_pow32` no-truncation bounds. The
-         -- composition via `Eq.trans` of `halfword_combine` and
-         -- `combined_arith` SHOULD work, but the sub-stub results are
-         -- wrapped in `have ...` chains that Lean's `rw` cannot unify
-         -- against the explicit `dHi.toNat * 2^32 + dLo.toNat` denominators.
-         --
-         -- Path forward (planned for next iteration): recast the sub-stubs
-         -- to take explicit Word arguments rather than embedding the
-         -- algorithm internals via `let`. This requires either a
-         -- "div128Quot_v4_components" helper that exposes q1''/q0''/un21
-         -- as Word values, or restating each sub-stub with explicit
-         -- Word arguments instead of let-binding chains.
+  have h_phase1 := div128Quot_v4_q1''_eq_phase1_perfect u4 u3 b3' h_b3'_ge h_u4_lt_b3'
+  have h_phase2 := div128Quot_v4_q0''_eq_phase2_perfect u4 u3 b3' h_b3'_ge h_u4_lt_b3'
+  have h_un21 := div128Quot_v4_un21_eq_remainder u4 u3 b3' h_b3'_ge h_u4_lt_b3'
+  have h_q1_lt := div128Quot_v4_q1''_lt_pow32 u4 u3 b3' h_b3'_ge h_u4_lt_b3'
+  have h_q0_lt := div128Quot_v4_q0''_lt_pow32 u4 u3 b3' h_b3'_ge h_u4_lt_b3'
+  have h_b3'_decomp : b3'.toNat = (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+                                  ((b3' <<< (32 : BitVec 6).toNat) >>>
+                                   (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp b3'
+  have h_u3_decomp : u3.toNat = (u3 >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+                                ((u3 <<< (32 : BitVec 6).toNat) >>>
+                                 (32 : BitVec 6).toNat).toNat :=
+    div128Quot_vTop_decomp u3
+  have h_b3'_pos : 0 < b3'.toNat :=
+    lt_of_lt_of_le (by decide : (0 : Nat) < 2^63) h_b3'_ge
+  -- Convert denominators in h_phase1 / h_phase2 to b3'.toNat. The dHi /
+  -- dLo lets in their RHSs unfold to b3'-decomp form definitionally, so
+  -- we can rewrite via `show` + `← h_b3'_decomp`.
+  have h_phase1' : (div128Quot_v4_q1'' u4 u3 b3').toNat =
+                   (u4.toNat * 2^32 + (u3 >>> (32 : BitVec 6).toNat).toNat) /
+                     b3'.toNat := by
+    rw [show b3'.toNat = (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+          ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat from
+        h_b3'_decomp]
+    exact h_phase1
+  have h_phase2' : (div128Quot_v4_q0'' u4 u3 b3').toNat =
+                   ((div128Quot_v4_un21 u4 u3 b3').toNat * 2^32 +
+                    ((u3 <<< (32 : BitVec 6).toNat) >>>
+                     (32 : BitVec 6).toNat).toNat) / b3'.toNat := by
+    rw [show b3'.toNat = (b3' >>> (32 : BitVec 6).toNat).toNat * 2^32 +
+          ((b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat from
+        h_b3'_decomp]
+    exact h_phase2
+  -- div128Quot_v4 = q1'' << 32 ||| q0'' via the structural bridge.
+  rw [div128Quot_v4_eq_components]
+  rw [show ((32 : BitVec 6).toNat : Nat) = 32 from rfl]
+  rw [EvmWord.halfword_combine _ _ h_q1_lt h_q0_lt]
+  exact div128Quot_v4_combined_arith u4.toNat u3.toNat b3'.toNat
+    (u3 >>> (32 : BitVec 6).toNat).toNat
+    ((u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat).toNat
+    _ _ _
+    h_u3_decomp h_b3'_pos h_phase1' h_un21 h_phase2'
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
