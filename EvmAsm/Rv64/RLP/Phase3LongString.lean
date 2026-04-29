@@ -201,6 +201,22 @@ family (one-byte, two-byte, ..., eight-byte). -/
     `lenLen = 1`). The post replaces the abstract
     `v5 + signExtend12 (-0xB7)` form in `x14` with the concrete
     `(1 : Word)`. -/
+theorem rlp_phase3_long_string_spec_at_0xB8_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB8 : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB8 : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (1 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xB8 : Word) v11Old v13 v14Old base
+  have hsig : (0xB8 : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (1 : Word) := by
+    decide
+  rw [hsig] at h
+  exact h
+
 theorem rlp_phase3_long_string_spec_at_0xB8
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -210,14 +226,26 @@ theorem rlp_phase3_long_string_spec_at_0xB8
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB8 : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (1 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xB8 : Word) v11Old v13 v14Old base
-  have hsig : (0xB8 : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (1 : Word) := by
+       (.x14 ↦ᵣ (1 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xB8_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xB9` (`lenLen = 2`). -/
+theorem rlp_phase3_long_string_spec_at_0xB9_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB9 : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB9 : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (2 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xB9 : Word) v11Old v13 v14Old base
+  have hsig : (0xB9 : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (2 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xB9` (`lenLen = 2`). -/
 theorem rlp_phase3_long_string_spec_at_0xB9
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -227,14 +255,26 @@ theorem rlp_phase3_long_string_spec_at_0xB9
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xB9 : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (2 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xB9 : Word) v11Old v13 v14Old base
-  have hsig : (0xB9 : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (2 : Word) := by
+       (.x14 ↦ᵣ (2 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xB9_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBA` (`lenLen = 3`). -/
+theorem rlp_phase3_long_string_spec_at_0xBA_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBA : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBA : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (3 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBA : Word) v11Old v13 v14Old base
+  have hsig : (0xBA : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (3 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBA` (`lenLen = 3`). -/
 theorem rlp_phase3_long_string_spec_at_0xBA
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -244,14 +284,26 @@ theorem rlp_phase3_long_string_spec_at_0xBA
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBA : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (3 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBA : Word) v11Old v13 v14Old base
-  have hsig : (0xBA : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (3 : Word) := by
+       (.x14 ↦ᵣ (3 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBA_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBB` (`lenLen = 4`). -/
+theorem rlp_phase3_long_string_spec_at_0xBB_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBB : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBB : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (4 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBB : Word) v11Old v13 v14Old base
+  have hsig : (0xBB : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (4 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBB` (`lenLen = 4`). -/
 theorem rlp_phase3_long_string_spec_at_0xBB
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -261,14 +313,26 @@ theorem rlp_phase3_long_string_spec_at_0xBB
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBB : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (4 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBB : Word) v11Old v13 v14Old base
-  have hsig : (0xBB : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (4 : Word) := by
+       (.x14 ↦ᵣ (4 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBB_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBC` (`lenLen = 5`). -/
+theorem rlp_phase3_long_string_spec_at_0xBC_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBC : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBC : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (5 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBC : Word) v11Old v13 v14Old base
+  have hsig : (0xBC : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (5 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBC` (`lenLen = 5`). -/
 theorem rlp_phase3_long_string_spec_at_0xBC
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -278,14 +342,26 @@ theorem rlp_phase3_long_string_spec_at_0xBC
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBC : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (5 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBC : Word) v11Old v13 v14Old base
-  have hsig : (0xBC : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (5 : Word) := by
+       (.x14 ↦ᵣ (5 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBC_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBD` (`lenLen = 6`). -/
+theorem rlp_phase3_long_string_spec_at_0xBD_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBD : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBD : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (6 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBD : Word) v11Old v13 v14Old base
+  have hsig : (0xBD : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (6 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBD` (`lenLen = 6`). -/
 theorem rlp_phase3_long_string_spec_at_0xBD
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -295,14 +371,26 @@ theorem rlp_phase3_long_string_spec_at_0xBD
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBD : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (6 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBD : Word) v11Old v13 v14Old base
-  have hsig : (0xBD : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (6 : Word) := by
+       (.x14 ↦ᵣ (6 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBD_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBE` (`lenLen = 7`). -/
+theorem rlp_phase3_long_string_spec_at_0xBE_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBE : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBE : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (7 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBE : Word) v11Old v13 v14Old base
+  have hsig : (0xBE : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (7 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBE` (`lenLen = 7`). -/
 theorem rlp_phase3_long_string_spec_at_0xBE
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -312,14 +400,26 @@ theorem rlp_phase3_long_string_spec_at_0xBE
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBE : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (7 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBE : Word) v11Old v13 v14Old base
-  have hsig : (0xBE : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (7 : Word) := by
+       (.x14 ↦ᵣ (7 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBE_within v11Old v13 v14Old base).to_cpsTriple
+
+/-- Specialization at `v5 = 0xBF` (`lenLen = 8`, the maximum). -/
+theorem rlp_phase3_long_string_spec_at_0xBF_within
+    (v11Old v13 v14Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.ofProg base rlp_phase3_long_string_prog)
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBF : Word)) **
+       (.x11 ↦ᵣ v11Old) ** (.x13 ↦ᵣ v13) ** (.x14 ↦ᵣ v14Old))
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBF : Word)) **
+       (.x11 ↦ᵣ (0 : Word)) **
+       (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
+       (.x14 ↦ᵣ (8 : Word))) := by
+  have h := rlp_phase3_long_string_spec_within (0xBF : Word) v11Old v13 v14Old base
+  have hsig : (0xBF : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (8 : Word) := by
     decide
   rw [hsig] at h
   exact h
 
-/-- Specialization at `v5 = 0xBF` (`lenLen = 8`, the maximum). -/
 theorem rlp_phase3_long_string_spec_at_0xBF
     (v11Old v13 v14Old : Word) (base : Word) :
     cpsTriple base (base + 12)
@@ -329,11 +429,7 @@ theorem rlp_phase3_long_string_spec_at_0xBF
       ((.x0 ↦ᵣ (0 : Word)) ** (.x5 ↦ᵣ (0xBF : Word)) **
        (.x11 ↦ᵣ (0 : Word)) **
        (.x13 ↦ᵣ (v13 + signExtend12 (1 : BitVec 12))) **
-       (.x14 ↦ᵣ (8 : Word))) := by
-  have h := rlp_phase3_long_string_spec (0xBF : Word) v11Old v13 v14Old base
-  have hsig : (0xBF : Word) + signExtend12 (-(0xB7 : BitVec 12)) = (8 : Word) := by
-    decide
-  rw [hsig] at h
-  exact h
+       (.x14 ↦ᵣ (8 : Word))) :=
+  (rlp_phase3_long_string_spec_at_0xBF_within v11Old v13 v14Old base).to_cpsTriple
 
 end EvmAsm.Rv64.RLP

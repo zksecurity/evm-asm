@@ -168,6 +168,30 @@ theorem cpsTripleWithin_seq_cpsBranchWithin {nSteps1 nSteps2 : Nat}
   refine ⟨k1 + k2, Nat.add_le_add hk1 hk2, s2, stepN_add_eq hstep1 hstep2, ?_⟩
   exact hcase
 
+/-- Bounded sequence with the same CodeReq on both sides. Bounds add under
+    sequential composition. -/
+theorem cpsTripleWithin_seq_same_cr {nSteps1 nSteps2 : Nat}
+    {l1 l2 l3 : Word} {cr : CodeReq} {P Q R : Assertion}
+    (h1 : cpsTripleWithin nSteps1 l1 l2 cr P Q)
+    (h2 : cpsTripleWithin nSteps2 l2 l3 cr Q R) :
+    cpsTripleWithin (nSteps1 + nSteps2) l1 l3 cr P R := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, hk1, s1, hstep1, hpc1, hQF⟩ := h1 F hF s hcr hPF hpc
+  have hcr' := CodeReq.SatisfiedBy_preserved hstep1 hcr
+  obtain ⟨k2, hk2, s2, hstep2, hpc2, hRF⟩ := h2 F hF s1 hcr' hQF hpc1
+  exact ⟨k1 + k2, Nat.add_le_add hk1 hk2, s2, stepN_add_eq hstep1 hstep2, hpc2, hRF⟩
+
+/-- Bounded sequential composition with midpoint permutation and the same
+    CodeReq on both sides. -/
+theorem cpsTripleWithin_seq_perm_same_cr {nSteps1 nSteps2 : Nat}
+    {s m e : Word} {cr : CodeReq} {P Q1 Q2 R : Assertion}
+    (hperm : ∀ h, Q1 h → Q2 h)
+    (h1 : cpsTripleWithin nSteps1 s m cr P Q1)
+    (h2 : cpsTripleWithin nSteps2 m e cr Q2 R) :
+    cpsTripleWithin (nSteps1 + nSteps2) s e cr P R :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_weaken (fun _ hp => hp) hperm h1) h2
+
 /-- Zero-step bounded triple. The bound is `0` because the post is reached in
     `0 ≤ 0` steps. -/
 theorem cpsTripleWithin_refl {addr : Word} {P Q : Assertion}
@@ -1188,6 +1212,34 @@ theorem cpsBranchWithin_frameR {nSteps : Nat} {entry : Word} {cr : CodeReq}
   exact ⟨k, hk, s', hstep, hcase.elim
     (fun ⟨hpc', hpost⟩ => Or.inl ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)
     (fun ⟨hpc', hpost⟩ => Or.inr ⟨hpc', holdsFor_sepConj_assoc.mpr hpost⟩)⟩
+
+/-- Extract the taken path from a bounded cpsBranch when the not-taken
+    postcondition is unsatisfiable. -/
+theorem cpsBranchWithin_takenPath {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P Q_t Q_f : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t Q_t l_f Q_f)
+    (h_absurd : ∀ hp, Q_f hp → False) :
+    cpsTripleWithin nSteps entry l_t cr P Q_t := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨k, hk, s', hstep, hbranch⟩ := hbr R hR s hcr hPR hpc
+  rcases hbranch with ⟨hpc_t, hQ_tR⟩ | ⟨hpc_f, hQ_fR⟩
+  · exact ⟨k, hk, s', hstep, hpc_t, hQ_tR⟩
+  · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQf, hR'⟩ := hQ_fR
+    exact absurd hQf (h_absurd h1)
+
+/-- Extract the not-taken path from a bounded cpsBranch when the taken
+    postcondition is unsatisfiable. -/
+theorem cpsBranchWithin_ntakenPath {nSteps : Nat} {entry l_t l_f : Word} {cr : CodeReq}
+    {P Q_t Q_f : Assertion}
+    (hbr : cpsBranchWithin nSteps entry cr P l_t Q_t l_f Q_f)
+    (h_absurd : ∀ hp, Q_t hp → False) :
+    cpsTripleWithin nSteps entry l_f cr P Q_f := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨k, hk, s', hstep, hbranch⟩ := hbr R hR s hcr hPR hpc
+  rcases hbranch with ⟨hpc_t, hQ_tR⟩ | ⟨hpc_f, hQ_fR⟩
+  · obtain ⟨hp, hcompat, h1, h2, hd, hu, hQt, hR'⟩ := hQ_tR
+    exact absurd hQt (h_absurd h1)
+  · exact ⟨k, hk, s', hstep, hpc_f, hQ_fR⟩
 
 /-- Frame a pcFree assertion `F` on the right of a cpsTriple: pre becomes
     `P ** F` and post becomes `Q ** F`. Position/code/pre/post args are all
