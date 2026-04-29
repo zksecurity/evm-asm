@@ -919,10 +919,10 @@ theorem u_top_lt_c3_of_addback_borrow_call_v4
     6. b3_prime_val256_eq_scaled: val256(v_norm) = val256(b) * 2^shift.
     7. Cancel 2^shift: qHat * val256(b) > val256(a). -/
 theorem n4CallAddbackBeq_v4_qHat_mul_b_gt_a (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
     (_hcall : isCallTrialN4Evm a b)
-    (_haddback : isAddbackBorrowN4CallEvm_v4 a b) :
+    (haddback : isAddbackBorrowN4CallEvm_v4 a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -931,7 +931,75 @@ theorem n4CallAddbackBeq_v4_qHat_mul_b_gt_a (a b : EvmWord)
     (div128Quot_v4 u4 u3 b3').toNat *
       val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) >
       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) := by
-  sorry  -- See sketch above; chains 7 steps of val256 reasoning.
+  intro shift antiShift b3' u4 u3
+  -- Step 1: u4 < c3 from haddback.
+  rw [isAddbackBorrowN4CallEvm_v4_def] at haddback
+  have h_c3_gt := u_top_lt_c3_of_addback_borrow_call_v4
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) haddback
+  simp only [] at h_c3_gt
+  -- Set up local Word aliases for the val256 reasoning.
+  set b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+  set b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+  set b0' := (b.getLimbN 0) <<< shift
+  set u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+  set u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+  set u0 := (a.getLimbN 0) <<< shift
+  set qHat := div128Quot_v4 u4 u3 b3' with hqHat
+  -- Step 2: mulsubN4_val256_eq.
+  have h_mulsub := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
+  simp only [] at h_mulsub
+  set ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3 with hms
+  -- Step 3+4: c3 ≥ u4 + 1, val256(un) < 2^256.
+  have h_c3_ge : ms.2.2.2.2.toNat ≥ u4.toNat + 1 := h_c3_gt
+  have h_un_lt : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 < 2^256 :=
+    EvmWord.val256_bound _ _ _ _
+  -- Step 5: u_val256_eq_scaled_with_overflow.
+  have h_norm_u := u_val256_eq_scaled_with_overflow
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) (b.getLimbN 3) hshift_nz
+  simp only [] at h_norm_u
+  -- Step 6: b3_prime_val256_eq_scaled.
+  have h_norm_v := b3_prime_val256_eq_scaled
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) hshift_nz
+  simp only [] at h_norm_v
+  -- val256-level inequality: qHat * val256(v_norm) > val256(a) * 2^shift.
+  have h_qHat_v_norm : qHat.toNat * val256 b0' b1' b2' b3' >
+      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) *
+        2^(clzResult (b.getLimbN 3)).1.toNat := by
+    -- From h_mulsub: val256 u + c3*2^256 = val256 un + qHat*val256 v_norm.
+    -- So qHat * val256 v_norm = val256 u + c3*2^256 - val256 un.
+    -- ≥ val256 u + (u4 + 1)*2^256 - (2^256 - 1)
+    -- = val256 u + u4*2^256 + 1
+    -- > val256 u + u4*2^256
+    -- = val256 a * 2^shift  (h_norm_u)
+    have h1 : val256 u0 u1 u2 u3 + ms.2.2.2.2.toNat * 2^256 =
+              val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
+              qHat.toNat * val256 b0' b1' b2' b3' := h_mulsub
+    have h2 : (u4.toNat + 1) * 2^256 ≤ ms.2.2.2.2.toNat * 2^256 :=
+      Nat.mul_le_mul_right _ h_c3_ge
+    have h3 : val256 u0 u1 u2 u3 + (u4.toNat + 1) * 2^256 ≤
+              val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 +
+              qHat.toNat * val256 b0' b1' b2' b3' := by linarith
+    -- Use h_un_lt to get strict inequality.
+    -- Simplify: with set aliases for 2^256 to help omega.
+    set p256 := (2 : Nat)^256 with hp256
+    have h_un_lt' : val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 < p256 := h_un_lt
+    have h_eq_step : val256 u0 u1 u2 u3 + (u4.toNat + 1) * p256 =
+                     val256 u0 u1 u2 u3 + u4.toNat * p256 + p256 := by ring
+    have h5 : val256 u0 u1 u2 u3 + u4.toNat * p256 <
+              qHat.toNat * val256 b0' b1' b2' b3' := by linarith
+    rw [h_norm_u] at h5
+    exact h5
+  -- Step 7: cancel 2^shift from both sides.
+  rw [h_norm_v] at h_qHat_v_norm
+  have hpow_pos : 0 < (2 : Nat)^(clzResult (b.getLimbN 3)).1.toNat := by positivity
+  have h_mul_rearr : qHat.toNat *
+      (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2^(clzResult (b.getLimbN 3)).1.toNat) =
+      qHat.toNat * val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) *
+        2^(clzResult (b.getLimbN 3)).1.toNat := by ring
+  rw [h_mul_rearr] at h_qHat_v_norm
+  exact Nat.lt_of_mul_lt_mul_right h_qHat_v_norm
 
 theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)
