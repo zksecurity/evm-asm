@@ -470,14 +470,16 @@ theorem div128Quot_v4_eq_q_true_normalized
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat := by
   sorry  -- Wire-up: combine `_phase{1,2}_perfect`, `_phase{1,2}_quot_lt_pow32`,
          -- `_un21_eq_phase1_remainder`, `_combined_arith`, and `halfword_combine`.
-         -- All sub-pieces are now PROVEN. Bottleneck is let-binding alignment:
-         -- the `_phase{1,2}_perfect` and `_un21_eq_phase1_remainder` results
-         -- have `have ...` chains internally, so direct `rw` against the
-         -- unfolded `div128Quot_v4` fails on syntactic match. Cleanest path
-         -- forward: state a single intermediate "div128Quot_v4 unfold + identity"
-         -- helper that mediates the wire-up cleanly. Or, prove
-         -- `div128Quot_v4_correctness` (no shift-norm preconditions) via
-         -- a direct val256-level argument bypassing the per-phase invariants.
+         -- All sub-pieces are PROVEN. The wire-up requires bridging the goal's
+         -- (q1'' << 32 ||| q0'').toNat (where q1'', q0'' come from `unfold
+         -- div128Quot_v4`) against `EvmWord.halfword_combine`'s LHS pattern.
+         -- Higher-order pattern matching for `rw` fails because q1'' / q0''
+         -- inside the unfolded goal are wrapped in `have ...` lets and don't
+         -- syntactically match the explicit forms in the sub-stubs' results.
+         -- Tried: direct rw, simp only, change, show. All fail on similar
+         -- pattern-matching issues. Path forward: extract a more abstract
+         -- "div128Quot_v4 unfolds to (hi << 32) ||| lo for some hi, lo"
+         -- accessor lemma, then chain via that.
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
@@ -593,9 +595,9 @@ theorem n4CallAddbackBeqSemanticHolds_v4_def {a b : EvmWord} :
 
     Sub-stub for the addback closure's Layer 1. -/
 theorem div128Quot_v4_qHat_le_q_true_plus_two (a b : EvmWord)
-    (_hb3nz : b.getLimbN 3 ≠ 0)
-    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (_hcall : isCallTrialN4Evm a b) :
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hcall : isCallTrialN4Evm a b) :
     let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
     let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
     let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
@@ -604,8 +606,30 @@ theorem div128Quot_v4_qHat_le_q_true_plus_two (a b : EvmWord)
     (div128Quot_v4 u4 u3 b3').toNat ≤
       val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
         val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) + 2 := by
-  sorry  -- Use `div128Quot_v4_eq_q_true_normalized` + val256-level
-         -- Knuth-B (existing lemmas in Div128KnuthLower).
+  rw [isCallTrialN4Evm_def] at hcall
+  intro shift antiShift b3' u4 u3
+  -- Standard Knuth preconditions.
+  have h_b3'_ge : b3'.toNat ≥ 2^63 :=
+    b3_prime_ge_pow63 (b.getLimbN 3) (b.getLimbN 2) hb3nz _
+  have h_u4_lt_b3' : u4.toNat < b3'.toNat :=
+    isCallTrialN4_toNat_lt (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) hcall
+  have h_shift_pos : 1 ≤ (clzResult (b.getLimbN 3)).1.toNat := by
+    rcases Nat.eq_zero_or_pos (clzResult (b.getLimbN 3)).1.toNat with h | h
+    · exfalso; apply hshift_nz
+      exact BitVec.eq_of_toNat_eq (by simp [h])
+    · exact h
+  have h_u4_lt_pow63 : u4.toNat < 2^63 :=
+    u_top_lt_pow63_of_shift_nz (a.getLimbN 3) (clzResult (b.getLimbN 3)).1
+      h_shift_pos (clzResult_fst_toNat_le (b.getLimbN 3))
+  -- Convert v4 quotient to the (u4*2^64 + u3)/b3' form.
+  have h_eq := div128Quot_v4_eq_q_true_normalized u4 u3 b3'
+    h_b3'_ge h_u4_lt_b3' h_u4_lt_pow63
+  rw [h_eq]
+  -- Apply the existing val256-level Knuth-B (Piece A).
+  exact knuth_theorem_b_from_clz
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    hb3nz hshift_nz hcall
 
 /-- **Layer 2 stub: carry partition for v4.** The post-mulsub addback carry
     is 0 iff the trial digit overshoots q_true by exactly 2.
