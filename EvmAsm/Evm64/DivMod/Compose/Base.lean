@@ -151,6 +151,33 @@ abbrev sharedDivModCode_v2 (base : Word) : CodeReq :=
     CodeReq.ofProg (base + div128Off)     divK_div128_v2          -- block 12 (v2)
   ]
 
+/-- v4 mirror of `sharedDivModCode` — uses `divK_div128_v4` (full
+    Knuth Algorithm D with 2-correction in BOTH Phase 1b and Phase 2b)
+    at block 12.
+
+    Used as the code requirement for v4-migrated specs. NOTE: block 8
+    (`divK_loopBody 560 7736`) retains the v1/v2 offset constants for
+    now; once LoopBody migrates to v4 the JAL target offset will need
+    re-tuning since v4's div128 is 14 instructions longer than v2.
+
+    Issue #1337 algorithm fix migration / PR-B1 of v4 migration plan. -/
+abbrev sharedDivModCode_v4 (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),     -- block 0
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,            -- block 1
+    CodeReq.ofProg (base + clzOff)        divK_clz,               -- block 2
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),     -- block 3
+    CodeReq.ofProg (base + normBOff)      divK_normB,             -- block 4
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),        -- block 5
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,            -- block 6
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),   -- block 7
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),-- block 8
+    CodeReq.ofProg (base + denormOff)     divK_denorm,            -- block 9
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,          -- block 10
+    CodeReq.ofProg (base + nopOff)        (ADDI .x0 .x0 0),       -- block 11
+    CodeReq.ofProg (base + div128Off)     divK_div128_v4          -- block 12 (v4)
+  ]
+
 -- Per-block subsumption: each shared block ⊆ divCode.
 -- Blocks 0-9 are at the same union positions; blocks 10-12 (shared) = blocks 11-13 (divCode).
 private theorem shared_b0_div {b : Word} : ∀ a i, (CodeReq.ofProg b (divK_phaseA 1020)) a = some i → (divCode b) a = some i := by
@@ -255,6 +282,17 @@ theorem shared_b12_div128_v2_sub {b : Word} :
     ∀ a i, (CodeReq.ofProg (b + div128Off) divK_div128_v2) a = some i →
            (sharedDivModCode_v2 b) a = some i := by
   unfold sharedDivModCode_v2; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left _ _
+
+/-- v4 mirror of `shared_b12_div128_v2_sub`: block 12 (`divK_div128_v4`)
+    is included in `sharedDivModCode_v4 base`. Used by `div128_v4_spec_shared`
+    to lift `div128_v4_spec` from singleton-`ofProg` cr to shared cr. -/
+theorem shared_b12_div128_v4_sub {b : Word} :
+    ∀ a i, (CodeReq.ofProg (b + div128Off) divK_div128_v4) a = some i →
+           (sharedDivModCode_v4 b) a = some i := by
+  unfold sharedDivModCode_v4; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left _ _
