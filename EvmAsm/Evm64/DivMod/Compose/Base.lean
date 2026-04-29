@@ -37,6 +37,7 @@ theorem divK_zeroPath_len : divK_zeroPath.length = 5 := by decide
 theorem divK_nop_len : (ADDI .x0 .x0 0 : Program).length = 1 := by decide
 theorem divK_div128_len : divK_div128.length = 51 := by decide
 theorem divK_div128_v2_len : divK_div128_v2.length = 61 := by decide
+theorem divK_div128_v4_len : divK_div128_v4.length = 75 := by decide
 theorem divK_modEpilogue_len : (divK_mod_epilogue 24).length = 10 := by decide
 
 /-- Skip one ofProg block in a right-nested union via range disjointness.
@@ -48,7 +49,7 @@ macro "skipBlock" : tactic =>
           divK_normB_len, divK_normA_len, divK_copyAU_len, divK_loopSetup_len,
           divK_loopBody_len, divK_denorm_len, divK_divEpilogue_len,
           divK_zeroPath_len, divK_nop_len, divK_div128_len, divK_div128_v2_len,
-          divK_modEpilogue_len] at hk1 hk2
+          divK_div128_v4_len, divK_modEpilogue_len] at hk1 hk2
         bv_omega)))
 
 -- ============================================================================
