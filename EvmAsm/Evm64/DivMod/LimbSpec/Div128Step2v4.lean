@@ -323,6 +323,58 @@ private theorem divK_div128_step2_v4_phase_E_fallthrough_body_spec
     (fun h hp => by xperm_hyp hp)
     hframed
 
+private def phaseETakenBranchPost
+    (sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c : Word) :
+    Assertion :=
+  (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+  (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ ** ⌜rhat2'Hi ≠ 0⌝ **
+  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
+
+private def phaseEFallthroughBranchPost
+    (sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c : Word) :
+    Assertion :=
+  (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+  (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ ** ⌜rhat2'Hi = 0⌝ **
+  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
+
+private theorem phaseE_taken_post_ne
+    (sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c : Word)
+    (h : PartialState)
+    (hp : phaseETakenBranchPost sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c h) :
+    rhat2'Hi ≠ 0 := by
+  dsimp only [phaseETakenBranchPost] at hp
+  have hp' :
+      (((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+        (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝) **
+        ⌜rhat2'Hi ≠ 0⌝ **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+        (sp + signExtend12 3936 ↦ₘ rhat2c)) h := by
+    xperm_hyp hp
+  obtain ⟨_, _, _, _, _, hright⟩ := hp'
+  exact ((sepConj_pure_left _).1 hright).1
+
+private theorem phaseE_fallthrough_post_zero
+    (sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c : Word)
+    (h : PartialState)
+    (hp : phaseEFallthroughBranchPost sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c h) :
+    rhat2'Hi = 0 := by
+  dsimp only [phaseEFallthroughBranchPost] at hp
+  have hp' :
+      (((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+        (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝) **
+        ⌜rhat2'Hi = 0⌝ **
+        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+        (sp + signExtend12 3936 ↦ₘ rhat2c)) h := by
+    xperm_hyp hp
+  obtain ⟨_, _, _, _, _, hright⟩ := hp'
+  exact ((sepConj_pure_left _).1 hright).1
+
 /-- Bundled postcondition for `divK_div128_step2_v4_spec`. Hides the
     let-chain for Step 2 v4 trial-division intermediates + Phase 2b
     1st+2nd D3 outcomes.
@@ -432,8 +484,8 @@ theorem divK_div128_step2_v4_phase_D_merged_spec
            (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
            (sp + signExtend12 3936 ↦ₘ rhat2c))
           (phaseDTakenBranchPost sp dHi q0c rhat2c dlo un0 rhat2cHi q0Dlo1 rhat2Un0) :=
-        cpsTriple_weaken
-          (fun h hp => by xperm_hyp hp)
+          cpsTriple_weaken
+            (fun h hp => by xperm_hyp hp)
           (fun h hp => by dsimp only [phaseDTakenBranchPost]; exact hp)
           taken
       have hq0' : q0' = q0c + signExtend12 4095 := by
@@ -527,20 +579,117 @@ theorem divK_div128_step2_v4_phase_E_merged_spec
        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
        (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
        (sp + signExtend12 3936 ↦ₘ rhat2c))
-      ((.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
-       (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
-       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
-       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
-       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
-  intro rhat2cHi rhat2'Hi q0Dlo2 rhat2'Un0 q0'' x7Exit x1Exit x11Exit
-  have hguard := divK_div128_step2_v4_phase_E_guard_spec
-    sp dHi q0' rhat2' rhat2Un0 q0Dlo1 dlo un0 rhat2c base
-  -- Remaining proof split:
-  -- * guard-taken path: zero-step bridge at base+124, using `rhat2'Hi ≠ 0`
-  -- * guard-fallthrough path: reuse `divK_div128_prodcheck2_merged_spec`
-  --   over [23..30], then bridge its unguarded quotient to `q0''` using
-  --   `rhat2'Hi = 0`.
-  sorry
+        ((.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+         (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+         (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+    intro rhat2cHi rhat2'Hi q0Dlo2 rhat2'Un0 q0'' x7Exit x1Exit x11Exit
+    have hguard := divK_div128_step2_v4_phase_E_guard_spec
+      sp dHi q0' rhat2' rhat2Un0 q0Dlo1 dlo un0 rhat2c base
+    have hguard' : cpsBranch (base + 84) (divKDiv128Step2V4Code base)
+        ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+         (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+         (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+         (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+         (sp + signExtend12 3936 ↦ₘ rhat2c))
+        (base + 124)
+        (phaseETakenBranchPost sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c)
+        (base + 92)
+        (phaseEFallthroughBranchPost sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c) :=
+      cpsBranch_weaken
+        (fun h hp => by xperm_hyp hp)
+        (fun h hp => by dsimp only [phaseETakenBranchPost]; xperm_hyp hp)
+        (fun h hp => by dsimp only [phaseEFallthroughBranchPost]; xperm_hyp hp)
+        hguard
+    have refl_of {P Q : Assertion} (h : ∀ hp, P hp → Q hp) :
+        cpsTriple (base + 124) (base + 124) (divKDiv128Step2V4Code base) P Q :=
+      cpsTriple_extend_code (fun _ _ h => by simp [CodeReq.empty] at h)
+        (cpsTriple_refl h)
+    by_cases hhi : rhat2'Hi ≠ 0
+    · have htaken := cpsBranch_takenPath hguard' (fun hp hfall => by
+        exact hhi (phaseE_fallthrough_post_zero
+          sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c hp hfall))
+      have hq0'' : q0'' = q0' := by
+        unfold q0''
+        change (if rhat2'Hi = 0 then
+            if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0'
+          else q0') = q0'
+        exact if_neg hhi
+      have hx7 : x7Exit = q0Dlo1 := by
+        unfold x7Exit
+        exact if_pos hhi
+      have hx1 : x1Exit = rhat2'Hi := by
+        unfold x1Exit
+        exact if_pos hhi
+      have hx11 : x11Exit = rhat2' := by
+        unfold x11Exit
+        exact if_pos hhi
+      have hzero : cpsTriple (base + 124) (base + 124) (divKDiv128Step2V4Code base)
+          (phaseETakenBranchPost sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c)
+          ((.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+           (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+           (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+           (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+           (sp + signExtend12 3936 ↦ₘ rhat2c)) := refl_of (by
+        intro h hp
+        dsimp only [phaseETakenBranchPost] at hp
+        rw [hq0'', hx7, hx1, hx11]
+        have hp' :
+            ((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+             (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+             (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+             (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+             (sp + signExtend12 3936 ↦ₘ rhat2c)) h := by
+          have hp0 :
+              (((.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+                (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2'Hi) **
+                (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+                (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+                (sp + signExtend12 3936 ↦ₘ rhat2c)) ** ⌜rhat2'Hi ≠ 0⌝) h := by
+            xperm_hyp hp
+          exact ((sepConj_pure_right h).1 hp0).1
+        xperm_hyp hp')
+      exact cpsTriple_seq_perm_same_cr (fun h hp => by xperm_hyp hp) htaken hzero
+    · have hzhi : rhat2'Hi = 0 := Decidable.not_not.mp hhi
+      have hfall := cpsBranch_ntakenPath hguard' (fun hp htaken => by
+        exact hhi (phaseE_taken_post_ne
+          sp dHi q0' rhat2' rhat2cHi rhat2'Hi q0Dlo1 dlo un0 rhat2c hp htaken))
+      have hbody := divK_div128_step2_v4_phase_E_fallthrough_body_spec
+        sp dHi q0' rhat2' rhat2'Hi q0Dlo1 dlo un0 rhat2c base
+      have hq0'' : q0'' =
+          (if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0') := by
+        unfold q0''
+        change (if rhat2'Hi = 0 then
+            if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0'
+          else q0') =
+          (if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0')
+        exact if_pos hzhi
+      have hx7 : x7Exit = q0Dlo2 := by
+        unfold x7Exit
+        exact if_neg hhi
+      have hx1 : x1Exit = rhat2'Un0 := by
+        unfold x1Exit
+        exact if_neg hhi
+      have hx11 : x11Exit = un0 := by
+        unfold x11Exit
+        exact if_neg hhi
+      exact cpsTriple_weaken
+        (fun h hp => by xperm_hyp hp)
+        (fun h hp => by
+          rw [hq0'', hx7, hx1, hx11]
+          have hp0 :
+              (((.x5 ↦ᵣ (if BitVec.ult rhat2'Un0 q0Dlo2 then q0' + signExtend12 4095 else q0')) **
+                (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ q0Dlo2) **
+                (.x1 ↦ᵣ rhat2'Un0) ** (.x11 ↦ᵣ un0) **
+                (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+                (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+                (sp + signExtend12 3936 ↦ₘ rhat2c)) ** ⌜rhat2'Hi = 0⌝) h := by
+            xperm_hyp hp
+          exact ((sepConj_pure_right h).1 hp0).1)
+        (cpsTriple_seq_perm_same_cr (fun h hp => by
+          dsimp only [phaseEFallthroughBranchPost] at hp
+          xperm_hyp hp) hfall hbody)
 
 /-- **STUB**: full v4 Phase 2 spec — instructions [40..70] of `divK_div128_v4`.
 
@@ -748,9 +897,59 @@ theorem divK_div128_step2_v4_spec
     -- so ≠0 is vacuous); then reduce outer if-then-else by h_z + xperm.
     have hE : cpsTriple (base+84) (base+124) (divKDiv128Step2V4Code base)
         midD finalPost := by
-      have _hE_raw := divK_div128_step2_v4_phase_E_merged_spec
+      have hE_raw := divK_div128_step2_v4_phase_E_merged_spec
                        sp dHi q0' rhat2' rhat2Un0 q0Dlo1 dlo un0 rhat2c base
-      sorry
+      exact cpsTriple_weaken
+          (fun h hp => by xperm_hyp hp)
+        (fun h hp => by
+            have hz : rhat2cHi = 0 := by
+              have hp0 :
+                  ((.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) **
+                   (.x7 ↦ᵣ (if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2)) **
+                   (.x1 ↦ᵣ (if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0)) **
+                   (.x11 ↦ᵣ (if rhat2'Hi ≠ 0 then rhat2' else un0)) **
+                   (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+                   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+                   (sp + signExtend12 3936 ↦ₘ rhat2c)) h := by
+                xperm_hyp hp
+              obtain ⟨_, _, _, _, _, h1⟩ := hp0
+              obtain ⟨_, _, _, _, _, h2⟩ := h1
+              obtain ⟨_, _, _, _, _, h3⟩ := h2
+              obtain ⟨_, _, _, _, _, h4⟩ := h3
+              obtain ⟨_, _, _, _, _, h5⟩ := h4
+              obtain ⟨_, _, _, _, _, h6⟩ := h5
+              obtain ⟨_, _, _, _, _, h7⟩ := h6
+              exact ((sepConj_pure_left _).1 h7).1
+            have hne : ¬ rhat2cHi ≠ 0 := fun hne => hne hz
+            have hx7 : x7Exit = (if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2) := by
+              unfold x7Exit
+              exact if_neg hne
+            have hx1 : x1Exit = (if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0) := by
+              unfold x1Exit
+              exact if_neg hne
+            have hx11 : x11Exit = (if rhat2'Hi ≠ 0 then rhat2' else un0) := by
+              unfold x11Exit
+              exact if_neg hne
+            have hmem : mem3936Exit = rhat2c := by
+              unfold mem3936Exit
+              exact if_neg hne
+            let noPure : Assertion :=
+              (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) **
+              (.x7 ↦ᵣ (if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2)) **
+              (.x1 ↦ᵣ (if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0)) **
+              (.x11 ↦ᵣ (if rhat2'Hi ≠ 0 then rhat2' else un0)) **
+              (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
+              (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+              (sp + signExtend12 3936 ↦ₘ rhat2c)
+            show finalPost h
+            rw [show finalPost = noPure from by
+              dsimp only [noPure]
+              simp only [finalPost, hx7, hx1, hx11, hmem]]
+            have hp0 : (noPure ** ⌜rhat2cHi = 0⌝) h := by
+              dsimp only [noPure]
+              xperm_hyp hp
+            exact ((sepConj_pure_right h).1 hp0).1)
+          hE_raw
     exact cpsTriple_weaken
       (fun h hp => by xperm_hyp hp)
       (fun h hq => by xperm_hyp hq)
