@@ -479,6 +479,16 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
 -- Branch/Jump specs
 -- ============================================================================
 
+theorem bne_spec_gen_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Word) :
+    cpsBranchWithin 1 addr (CodeReq.singleton addr (.BNE rs1 rs2 offset))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
+      (addr + 4)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) :=
+  generic_bne_spec_within rs1 rs2 offset v1 v2 addr
+
 @[spec_gen_rv64] theorem bne_spec_gen (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
     (addr : Word) :
     cpsBranch addr (CodeReq.singleton addr (.BNE rs1 rs2 offset))
@@ -487,7 +497,17 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
       (addr + 4)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) :=
-  generic_bne_spec rs1 rs2 offset v1 v2 addr
+  (bne_spec_gen_within rs1 rs2 offset v1 v2 addr).to_cpsBranch
+
+theorem beq_spec_gen_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Word) :
+    cpsBranchWithin 1 addr (CodeReq.singleton addr (.BEQ rs1 rs2 offset))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
+      (addr + 4)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) :=
+  generic_beq_spec_within rs1 rs2 offset v1 v2 addr
 
 @[spec_gen_rv64] theorem beq_spec_gen (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
     (addr : Word) :
@@ -497,7 +517,17 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
       (addr + 4)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) :=
-  generic_beq_spec rs1 rs2 offset v1 v2 addr
+  (beq_spec_gen_within rs1 rs2 offset v1 v2 addr).to_cpsBranch
+
+theorem bltu_spec_gen_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Word) :
+    cpsBranchWithin 1 addr (CodeReq.singleton addr (.BLTU rs1 rs2 offset))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝)
+      (addr + 4)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝) :=
+  generic_bltu_spec_within rs1 rs2 offset v1 v2 addr
 
 @[spec_gen_rv64] theorem bltu_spec_gen (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
     (addr : Word) :
@@ -507,7 +537,17 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝)
       (addr + 4)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝) :=
-  generic_bltu_spec rs1 rs2 offset v1 v2 addr
+  (bltu_spec_gen_within rs1 rs2 offset v1 v2 addr).to_cpsBranch
+
+theorem bge_spec_gen_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Word) :
+    cpsBranchWithin 1 addr (CodeReq.singleton addr (.BGE rs1 rs2 offset))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝)
+      (addr + 4)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝) :=
+  generic_bge_spec_within rs1 rs2 offset v1 v2 addr
 
 @[spec_gen_rv64] theorem bge_spec_gen (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
     (addr : Word) :
@@ -517,7 +557,17 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝)
       (addr + 4)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝) :=
-  generic_bge_spec rs1 rs2 offset v1 v2 addr
+  (bge_spec_gen_within rs1 rs2 offset v1 v2 addr).to_cpsBranch
+
+theorem blt_spec_gen_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
+    (addr : Word) :
+    cpsBranchWithin 1 addr (CodeReq.singleton addr (.BLT rs1 rs2 offset))
+      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
+      (addr + signExtend13 offset)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝)
+      (addr + 4)
+        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝) :=
+  generic_blt_spec_within rs1 rs2 offset v1 v2 addr
 
 @[spec_gen_rv64] theorem blt_spec_gen (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word)
     (addr : Word) :
@@ -527,14 +577,14 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝)
       (addr + 4)
         ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝) :=
-  generic_blt_spec rs1 rs2 offset v1 v2 addr
+  (blt_spec_gen_within rs1 rs2 offset v1 v2 addr).to_cpsBranch
 
 -- ============================================================================
 -- ECALL halt spec
 -- ============================================================================
 
-@[spec_gen_rv64] theorem ecall_halt_spec_gen (exitCode : Word) (addr : Word) :
-    cpsHaltTriple addr (CodeReq.singleton addr .ECALL)
+theorem ecall_halt_spec_gen_within (exitCode : Word) (addr : Word) :
+    cpsHaltTripleWithin 0 addr (CodeReq.singleton addr .ECALL)
       ((addr ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode))
       ((addr ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) := by
   intro R hR s hcr hPR hpc; subst hpc
@@ -543,8 +593,14 @@ theorem mv_spec_gen_within (rd rs : Reg) (v vOld : Word) (addr : Word)
   have hx5 : s.getReg .x5 = (0 : Word) :=
     holdsFor_regIs.mp (holdsFor_sepConj_elim_left
       (holdsFor_sepConj_elim_right (holdsFor_sepConj_elim_left hPR)))
-  refine ⟨0, s, rfl, ?_, hPR⟩
+  refine ⟨0, Nat.le_refl 0, s, rfl, ?_, hPR⟩
   simp only [isHalted, step_ecall_halt hfetch hx5, Option.isNone]
+
+@[spec_gen_rv64] theorem ecall_halt_spec_gen (exitCode : Word) (addr : Word) :
+    cpsHaltTriple addr (CodeReq.singleton addr .ECALL)
+      ((addr ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode))
+      ((addr ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ exitCode)) :=
+  (ecall_halt_spec_gen_within exitCode addr).to_cpsHaltTriple
 
 -- ============================================================================
 -- 3-register ALU specs (all distinct)
