@@ -97,6 +97,44 @@ private theorem divK_div128_step2_v4_phase_D_bltu_spec
     exact step2v4_sub 15 (base+60) (.BLTU .x1 .x7 12)
       (by omega) (by bv_omega) (by decide))
 
+/-- Phase D BLTU taken body: correction path [18..20]. -/
+private theorem divK_div128_step2_v4_phase_D_taken_body_spec
+    (sp q0c rhat2c dHi un0 : Word) (base : Word) :
+    cpsTriple (base + 72) (base + 84) (divKDiv128Step2V4Code base)
+      ((.x5 ↦ᵣ q0c) ** (.x11 ↦ᵣ un0) ** (.x12 ↦ᵣ sp) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c) ** (.x6 ↦ᵣ dHi))
+      ((.x5 ↦ᵣ (q0c + signExtend12 4095)) ** (.x11 ↦ᵣ (rhat2c + dHi)) **
+       (.x12 ↦ᵣ sp) ** (sp + signExtend12 3936 ↦ₘ rhat2c) ** (.x6 ↦ᵣ dHi)) := by
+  apply cpsTriple_extend_code (hmono := by
+    exact CodeReq.union_sub
+      (step2v4_sub 18 (base+72) (.ADDI .x5 .x5 4095) (by omega) (by bv_omega) (by decide))
+      (CodeReq.union_sub
+        (step2v4_sub 19 (base+76) (.LD .x11 .x12 3936) (by omega) (by bv_omega) (by decide))
+        (step2v4_sub 20 (base+80) (.ADD .x11 .x11 .x6) (by omega) (by bv_omega) (by decide))))
+  have I0 := addi_spec_gen_same .x5 q0c 4095 (base + 72) (by nofun)
+  have I1 := ld_spec_gen .x11 .x12 sp un0 rhat2c 3936 (base + 76) (by nofun)
+  have I2 := add_spec_gen_rd_eq_rs1 .x11 .x6 rhat2c dHi (base + 80) (by nofun)
+  simp only [show (base+72:Word)+4 = base+76 from by bv_addr,
+             show (base+76:Word)+4 = base+80 from by bv_addr,
+             show (base+80:Word)+4 = base+84 from by bv_addr] at I0 I1 I2
+  runBlock I0 I1 I2
+
+/-- Phase D BLTU fallthrough body: restore saved rhat2c and jump to merge [16..17]. -/
+private theorem divK_div128_step2_v4_phase_D_fallthrough_body_spec
+    (sp rhat2c un0 : Word) (base : Word) :
+    cpsTriple (base + 64) (base + 84) (divKDiv128Step2V4Code base)
+      ((.x11 ↦ᵣ un0) ** (.x12 ↦ᵣ sp) ** (sp + signExtend12 3936 ↦ₘ rhat2c))
+      ((.x11 ↦ᵣ rhat2c) ** (.x12 ↦ᵣ sp) ** (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  apply cpsTriple_extend_code (hmono := by
+    exact CodeReq.union_sub
+      (step2v4_sub 16 (base+64) (.LD .x11 .x12 3936) (by omega) (by bv_omega) (by decide))
+      (step2v4_sub 17 (base+68) (.JAL .x0 16) (by omega) (by bv_omega) (by decide)))
+  have I0 := ld_spec_gen .x11 .x12 sp un0 rhat2c 3936 (base + 64) (by nofun)
+  have I1 := jal_x0_spec_gen 16 (base + 68)
+  have h_jal : (base + 68 : Word) + signExtend21 (16 : BitVec 21) = base + 84 := by rv64_addr
+  simp only [show (base+64:Word)+4 = base+68 from by bv_addr, h_jal] at I0 I1
+  runBlock I0 I1
+
 /-- The SRLI+BNE dispatch at the start of Phase E, extended into the step2-v4
     code requirement and framed with the registers/memory live across it. -/
 private theorem divK_div128_step2_v4_phase_E_guard_spec
