@@ -144,7 +144,17 @@ def divK_div128 : Program :=
     **Migration**: callers of `divK_div128` should be updated to call
     `divK_div128_v2` (this requires updating offsets in the main loop
     at `divK_loopBody`, since the subroutine moved). Once all use-sites
-    migrate, the buggy `divK_div128` should be removed. -/
+    migrate, the buggy `divK_div128` should be removed.
+
+    **NOTE (2026-04-29)**: v2 has only Phase 1b 2-correction; Phase 2b
+    is still 1-correction. PR #1418 closed `n4CallAddbackBeqSemanticHolds_v4`
+    for the FULL 2-correction algorithm `div128Quot_v4`, but to apply
+    that closure to the deployed program we need a `divK_div128_v4`
+    variant (~10 new instructions for Phase 2b 2nd D3 correction +
+    ~2 for register save/restore of rhat2c, since x11 is clobbered
+    by `LD un0` in the existing layout). See
+    `~/.claude/projects/-home-zksecurity-evm-asm/memory/project_v2_to_v4_migration_plan.md`
+    for the staged migration plan. -/
 def divK_div128_v2 : Program :=
   -- Save return addr and d
   SD .x12 .x2 3968 ;;                         -- [0]  save return addr
