@@ -210,6 +210,17 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
     execInstrBr s (Instr.JAL .x0 off) = s.setPC (s.pc + signExtend21 off) := by
   simp [execInstrBr, MachineState.setReg, MachineState.setPC]
 
+/-- Bounded JAL x0 spec for any code memory: pure PC jump, no register/memory changes.
+    Since x0 writes are dropped, JAL x0 just updates PC. -/
+theorem jal_x0_spec_gen_within (offset : BitVec 21) (addr : Word) :
+    cpsTripleWithin 1 addr (addr + signExtend21 offset)
+      (CodeReq.singleton addr (.JAL .x0 offset))
+      empAssertion
+      empAssertion :=
+  generic_nop_spec_within (.JAL .x0 offset)
+    (by intro s hpc; simp [execInstrBr, MachineState.setReg, hpc])
+    (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
+
 /-- JAL x0 spec for any code memory: pure PC jump, no register/memory changes.
     Since x0 writes are dropped, JAL x0 just updates PC. -/
 @[spec_gen_rv64] theorem jal_x0_spec_gen (offset : BitVec 21) (addr : Word) :
@@ -217,19 +228,17 @@ theorem execInstrBr_jal_x0 (s : MachineState) (off : BitVec 21) :
       (CodeReq.singleton addr (.JAL .x0 offset))
       empAssertion
       empAssertion :=
-  generic_nop_spec (.JAL .x0 offset)
-    (by intro s hpc; simp [execInstrBr, MachineState.setReg, hpc])
-    (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
+  (jal_x0_spec_gen_within offset addr).to_cpsTriple
 
 /-- JALR x0 executes as a pure PC update (x0 write is dropped). -/
 theorem execInstrBr_jalr_x0 (s : MachineState) (rs1 : Reg) (off : BitVec 12) :
     execInstrBr s (Instr.JALR .x0 rs1 off) = s.setPC ((s.getReg rs1 + signExtend12 off) &&& ~~~1) := by
   simp [execInstrBr, MachineState.setReg, MachineState.setPC]
 
-/-- JALR x0 spec: pure PC jump to (rs1 + sext(offset)) & ~1, no register changes. -/
-@[spec_gen_rv64] theorem jalr_x0_spec_gen (rs1 : Reg) (v : Word)
+/-- Bounded JALR x0 spec: pure PC jump to (rs1 + sext(offset)) & ~1, no register changes. -/
+theorem jalr_x0_spec_gen_within (rs1 : Reg) (v : Word)
     (offset : BitVec 12) (addr : Word) :
-    cpsTriple addr ((v + signExtend12 offset) &&& ~~~1)
+    cpsTripleWithin 1 addr ((v + signExtend12 offset) &&& ~~~1)
       (CodeReq.singleton addr (.JALR .x0 rs1 offset))
       (rs1 ↦ᵣ v)
       (rs1 ↦ᵣ v) := by
@@ -242,10 +251,19 @@ theorem execInstrBr_jalr_x0 (s : MachineState) (rs1 : Reg) (off : BitVec 12) :
     rw [execInstrBr_jalr_x0, hrs1]
   have hstep : step s = some (execInstrBr s (.JALR .x0 rs1 offset)) :=
     step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl)
-  refine ⟨1, s.setPC ((v + signExtend12 offset) &&& ~~~1), ?_, rfl, ?_⟩
+  refine ⟨1, Nat.le_refl 1, s.setPC ((v + signExtend12 offset) &&& ~~~1), ?_, rfl, ?_⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep, hexec]; rfl
   · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
+
+/-- JALR x0 spec: pure PC jump to (rs1 + sext(offset)) & ~1, no register changes. -/
+@[spec_gen_rv64] theorem jalr_x0_spec_gen (rs1 : Reg) (v : Word)
+    (offset : BitVec 12) (addr : Word) :
+    cpsTriple addr ((v + signExtend12 offset) &&& ~~~1)
+      (CodeReq.singleton addr (.JALR .x0 rs1 offset))
+      (rs1 ↦ᵣ v)
+      (rs1 ↦ᵣ v) :=
+  (jalr_x0_spec_gen_within rs1 v offset addr).to_cpsTriple
 
 -- ============================================================================
 -- CPS specification for if_eq
@@ -273,7 +291,7 @@ private theorem aAnd_pure_right_of_true {P : Assertion} {prop : Prop}
     The branch condition is encoded as a pure assertion on v1, v2.
 
     Requires instrAt for the BNE instruction at base. -/
-theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
+theorem if_eq_branch_step_within (rs1 rs2 : Reg) (v1 v2 : Word)
     (then_body : Program)
     (base : Word) (P : Assertion)
     (hP : P.pcFree)
@@ -283,7 +301,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     let thenEntry := base + 4
     let elseEntry := base + 4 + BitVec.ofNat 64 (4 * then_body.length) + 4
     let pre := (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
-    cpsBranch base CodeReq.empty pre
+    cpsBranchWithin 1 base CodeReq.empty pre
       thenEntry ((base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝))
       elseEntry ((base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)) := by
   simp only
@@ -309,7 +327,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
   · -- Not taken: v1 = v2 → PC = s.pc + 4 = thenEntry (exit_t)
     have hexec' : execInstrBr s (Instr.BNE rs1 rs2 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))) = s.setPC (s.pc + 4) := by
       simp only [execInstrBr, hrs1, hrs2, heq, bne_iff_ne, ne_eq, not_true_eq_false, ite_false]
-    refine ⟨1, s.setPC (s.pc + 4), ?_, Or.inl ⟨by simp [MachineState.setPC], ?_⟩⟩
+    refine ⟨1, Nat.le_refl 1, s.setPC (s.pc + 4), ?_, Or.inl ⟨by simp [MachineState.setPC], ?_⟩⟩
     · show (step s).bind (stepN 0) = some _
       rw [hstep', hexec']; rfl
     · -- Preserve assertions through setPC and add ⌜v1 = v2⌝
@@ -330,7 +348,7 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
     have haddr : s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)) =
         s.pc + 4 + BitVec.ofNat 64 (4 * then_body.length) + 4 := by
       rw [hse]; bv_omega
-    refine ⟨1, s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))), ?_,
+    refine ⟨1, Nat.le_refl 1, s.setPC (s.pc + signExtend13 (BitVec.ofNat 13 (4 * (then_body.length + 1) + 4))), ?_,
       Or.inr ⟨by simp [MachineState.setPC]; exact haddr, ?_⟩⟩
     · show (step s).bind (stepN 0) = some _
       rw [hstep', hexec']; rfl
@@ -340,6 +358,24 @@ theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
       obtain ⟨hp, hcompat, h1, h2, hd, hu, ⟨ha, hb, hda, hua, hinstr, haand⟩, hR2⟩ := hPR'
       exact ⟨hp, hcompat, h1, h2, hd, hu,
         ⟨ha, hb, hda, hua, hinstr, aAnd_mono_right (aAnd_mono_right (aAnd_pure_right_of_true heq)) hb haand⟩, hR2⟩
+
+/-- The if_eq macro satisfies a cpsBranch spec: it either goes to
+    the then-body entry with equality, or to the else-body entry with
+    inequality. -/
+theorem if_eq_branch_step (rs1 rs2 : Reg) (v1 v2 : Word)
+    (then_body : Program)
+    (base : Word) (P : Assertion)
+    (hP : P.pcFree)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
+    let else_off : BitVec 13 := BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)
+    let bneInstr := Instr.BNE rs1 rs2 else_off
+    let thenEntry := base + 4
+    let elseEntry := base + 4 + BitVec.ofNat 64 (4 * then_body.length) + 4
+    let pre := (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
+    cpsBranch base CodeReq.empty pre
+      thenEntry ((base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝))
+      elseEntry ((base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)) := by
+  exact (if_eq_branch_step_within rs1 rs2 v1 v2 then_body base P hP ht_small).to_cpsBranch
 
 /-- Full CPS specification for if_eq: given that the then-body is correct
     under equality and the else-body is correct under inequality,
@@ -523,6 +559,27 @@ theorem if_eq_spec (rs1 rs2 : Reg) (v1 v2 : Word)
 -- N-exit CPS specifications for if_eq
 -- ============================================================================
 
+/-- The if_eq macro satisfies a bounded cpsNBranch spec with two exits,
+    derived from the bounded cpsBranch spec.
+
+    Uses additive conjunction (⋒) so rs1 and rs2 may be the same register. -/
+theorem if_eq_branch_step_n_within (rs1 rs2 : Reg) (v1 v2 : Word)
+    (then_body : Program)
+    (base : Word) (P : Assertion)
+    (hP : P.pcFree)
+    (ht_small : 4 * (then_body.length + 1) + 4 < 2^12) :
+    let else_off : BitVec 13 := BitVec.ofNat 13 (4 * (then_body.length + 1) + 4)
+    let bneInstr := Instr.BNE rs1 rs2 else_off
+    let thenEntry := base + 4
+    let elseEntry := base + 4 + BitVec.ofNat 64 (4 * then_body.length) + 4
+    let pre := (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2))
+    cpsNBranchWithin 1 base CodeReq.empty pre
+      [ (thenEntry, (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝)),
+        (elseEntry, (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)) ] := by
+  simp only
+  exact cpsBranchWithin_to_cpsNBranchWithin
+    (if_eq_branch_step_within rs1 rs2 v1 v2 then_body base P hP ht_small)
+
 /-- The if_eq macro satisfies a cpsNBranch spec with two exits,
     derived from the existing cpsBranch spec.
 
@@ -540,9 +597,7 @@ theorem if_eq_branch_step_n (rs1 rs2 : Reg) (v1 v2 : Word)
     cpsNBranch base CodeReq.empty pre
       [ (thenEntry, (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 = v2⌝)),
         (elseEntry, (base ↦ᵢ bneInstr) ** (P ⋒ (rs1 ↦ᵣ v1) ⋒ (rs2 ↦ᵣ v2) ⋒ ⌜v1 ≠ v2⌝)) ] := by
-  simp only
-  exact cpsBranch_to_cpsNBranch
-    (if_eq_branch_step rs1 rs2 v1 v2 then_body base P hP ht_small)
+  exact (if_eq_branch_step_n_within rs1 rs2 v1 v2 then_body base P hP ht_small).to_cpsNBranch
 
 /-- Full N-exit CPS specification for if_eq, using cpsNBranch_merge.
 
