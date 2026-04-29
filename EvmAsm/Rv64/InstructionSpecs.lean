@@ -229,9 +229,9 @@ theorem ld_spec (rd rs1 : Reg) (v_addr vOld memVal : Word) (offset : BitVec 12) 
   generic_ld_spec rd rs1 v_addr vOld memVal offset base hrd_ne_x0
 
 /-- LD rd, offset(rd): rd := mem[rd + sext(offset)] (same register) -/
-theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (base : Word)
+theorem ld_spec_same_within (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rd offset))
+    cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.LD rd rd offset))
       ((rd ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
       ((rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) := by
   intro R hR s hcr hPR hpc; subst hpc
@@ -248,7 +248,7 @@ theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (bas
     step_ld hfetch (hrd ▸ hvalid)
   have hexec' : execInstrBr s (.LD rd rd offset) = (s.setReg rd memVal).setPC (s.pc + 4) := by
     simp only [execInstrBr, hrd, hmem]
-  refine ⟨1, (s.setReg rd memVal).setPC (s.pc + 4), ?_, rfl, ?_⟩
+  refine ⟨1, Nat.le_refl 1, (s.setReg rd memVal).setPC (s.pc + 4), ?_, rfl, ?_⟩
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
   · -- Pre: (rd ** mem) ** R → assoc → rd ** (mem ** R)
@@ -258,6 +258,13 @@ theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (bas
     -- Reassociate: rd' ** (mem ** R) → (rd' ** mem) ** R
     have h3 := holdsFor_sepConj_assoc.mpr h2
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
+
+theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (base : Word)
+    (hrd_ne_x0 : rd ≠ .x0) :
+    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rd offset))
+      ((rd ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
+      ((rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) :=
+  (ld_spec_same_within rd v_addr memVal offset base hrd_ne_x0).to_cpsTriple
 
 /-- SD rs2, offset(rs1): mem[rs1 + sext(offset)] := rs2 (registers distinct) -/
 theorem sd_spec (rs1 rs2 : Reg) (v_addr v_data memOld : Word) (offset : BitVec 12) (base : Word) :
