@@ -849,8 +849,14 @@ theorem n4CallAddback_v4_carry_zero_iff_overshoot_ge_two (a b : EvmWord)
     detected an overshoot — i.e., qHat > q_true. This excludes the
     qHat = q_true case from the addback closure's reasoning.
 
-    The `isCallTrialN4Evm` precondition encodes the runtime gating
-    needed to derive this bound. -/
+    **NOTE on preconditions**: `isCallTrialN4Evm` alone says only
+    `u4 < b3'`, which does NOT exclude qHat = q_true. The actual
+    runtime gating that fires the addback BEQ branch is encoded by
+    `isAddbackBorrowN4CallEvm` (the borrow-flag-fires condition). The
+    closure proof of `n4CallAddbackBeqSemanticHolds_v4_of_call_addback_beq`
+    may need a STRONGER precondition (likely `isAddbackBorrowN4CallEvm`)
+    to make this sub-stub closeable. To be confirmed when wiring the
+    full closure into the downstream stack-spec dispatcher. -/
 theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
     (_hb3nz : b.getLimbN 3 ≠ 0)
     (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
