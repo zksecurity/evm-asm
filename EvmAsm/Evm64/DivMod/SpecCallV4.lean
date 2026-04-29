@@ -808,13 +808,81 @@ theorem div128Quot_v4_qHat_le_q_true_plus_two (a b : EvmWord)
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
     hb3nz hshift_nz hcall
 
+/-- **Layer 2a sub-stub: addback carry detects ≥-2 overshoot.**
+
+    Pure algorithmic content: under shift-norm preconditions, the
+    addback carry is 0 ⟺ qHat overshoots val256(a)/val256(b) by at
+    least 2. (Equivalently: mulsub_b + b stays below 2^256, i.e., the
+    addback didn't propagate past the top limb.)
+
+    This is the val256-level reading of `addbackN4_carry`. Distinct from
+    Layer 2 in that it doesn't yet combine with Knuth-B's qHat ≤ q_true+2
+    to derive qHat = q_true + 2 exactly. -/
+theorem n4CallAddback_v4_carry_zero_iff_overshoot_ge_two (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcall : isCallTrialN4Evm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let b2' := ((b.getLimbN 2) <<< shift) ||| ((b.getLimbN 1) >>> antiShift)
+    let b1' := ((b.getLimbN 1) <<< shift) ||| ((b.getLimbN 0) >>> antiShift)
+    let b0' := (b.getLimbN 0) <<< shift
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let u2 := ((a.getLimbN 2) <<< shift) ||| ((a.getLimbN 1) >>> antiShift)
+    let u1 := ((a.getLimbN 1) <<< shift) ||| ((a.getLimbN 0) >>> antiShift)
+    let u0 := (a.getLimbN 0) <<< shift
+    let qHat := div128Quot_v4 u4 u3 b3'
+    let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 b0' b1' b2' b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                    val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    (carry = 0 ↔ qHat.toNat ≥ q_true + 2) := by
+  sorry  -- Algorithmic content: mulsubN4 + addbackN4_carry analysis at
+         -- val256 level. References AlgEuclideans.lean for the existing
+         -- v1/v2 carry-classification chain (which v4 should mirror).
+
+/-- **Layer 2c sub-stub: qHat ≥ q_true + 1 from call+addback+BEQ gating.**
+
+    The call+addback+BEQ branch fires only when the trial subtraction
+    detected an overshoot — i.e., qHat > q_true. This excludes the
+    qHat = q_true case from the addback closure's reasoning.
+
+    The `isCallTrialN4Evm` precondition encodes the runtime gating
+    needed to derive this bound. -/
+theorem n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one (a b : EvmWord)
+    (_hb3nz : b.getLimbN 3 ≠ 0)
+    (_hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (_hcall : isCallTrialN4Evm a b) :
+    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
+    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
+    let u4 := (a.getLimbN 3) >>> antiShift
+    let u3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
+    let qHat := div128Quot_v4 u4 u3 b3'
+    let q_true := val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) /
+                    val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    qHat.toNat ≥ q_true + 1 := by
+  sorry  -- Runtime gating: call+addback+BEQ branch fires when overshoot
+         -- detected; combine with `isCallTrialN4Evm` to derive qHat > q_true.
+
 /-- **Layer 2 stub: carry partition for v4.** The post-mulsub addback carry
     is 0 iff the trial digit overshoots q_true by exactly 2.
 
-    Refines the Knuth-B bound: under v4's exactness, qHat is one of
-    {q_true, q_true+1, q_true+2}, and the carry distinguishes carry=0
-    (overshoot 2) from carry≠0 (overshoots 0 or 1). This is the
-    structural piece needed for q_out to recover q_true.
+    Mathematical content (val256 reasoning):
+    - mulsub computes `a - qHat*b mod 2^256`.
+    - addbackN4_carry returns 0 ⟺ the mulsub result + b STILL doesn't
+      reach 2^256 (i.e., still wrapped around) ⟺ qHat overshoots q_true
+      by ≥ 2 ⟺ (combined with Knuth-B from Layer 1) qHat = q_true + 2.
+    - Conversely carry ≠ 0 ⟺ mulsub + b reaches 2^256 ⟺ overshoot ≤ 1
+      ⟺ qHat ∈ {q_true, q_true+1}.
+
+    The strengthening "carry ≠ 0 ⟹ qHat = q_true + 1" requires
+    excluding qHat = q_true. This follows from the runtime call+addback+BEQ
+    branch's gating: that branch only fires when the trial division
+    detected an overshoot at all (i.e., qHat > q_true). The
+    `isCallTrialN4Evm` precondition encodes this gating implicitly.
 
     Sub-stub for the addback closure's Layer 2. -/
 theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
@@ -842,11 +910,28 @@ theorem n4CallAddback_v4_carry_partition (a b : EvmWord)
     -- qHat=q_true is excluded).
     (carry = 0 ↔ qHat.toNat = q_true + 2) ∧
       (carry ≠ 0 → qHat.toNat = q_true + 1) := by
-  sorry  -- Carry partition refined to handle both branches of the closure.
-         -- carry=0: mulsub underflowed (qHat overshoots q_true by 2).
-         -- carry≠0: qHat=q_true+1 (single overshoot — qHat=q_true case excluded
-         -- by the call+addback+BEQ branch's runtime gating: that branch fires
-         -- only when the trial division detected overshoot).
+  intro shift antiShift b3' b2' b1' b0' u4 u3 u2 u1 u0 qHat ms carry q_true
+  -- Layer 1: qHat ≤ q_true + 2.
+  have h_le : qHat.toNat ≤ q_true + 2 :=
+    div128Quot_v4_qHat_le_q_true_plus_two a b _hb3nz _hshift_nz _hcall
+  -- Layer 2a: carry = 0 ↔ qHat ≥ q_true + 2.
+  have h_2a : (carry = 0 ↔ qHat.toNat ≥ q_true + 2) :=
+    n4CallAddback_v4_carry_zero_iff_overshoot_ge_two a b _hb3nz _hshift_nz _hcall
+  -- Layer 2c: qHat ≥ q_true + 1 (runtime gating from call+addback+BEQ).
+  have h_ge_one : qHat.toNat ≥ q_true + 1 :=
+    n4CallAddbackBeq_v4_qHat_ge_q_true_plus_one a b _hb3nz _hshift_nz _hcall
+  refine ⟨?_, ?_⟩
+  · -- carry = 0 ↔ qHat = q_true + 2.
+    constructor
+    · intro h_carry
+      have h_ge_2 := h_2a.mp h_carry
+      omega
+    · intro h_eq
+      exact h_2a.mpr (by omega)
+  · -- carry ≠ 0 → qHat = q_true + 1.
+    intro h_carry
+    have h_lt_2 : ¬ qHat.toNat ≥ q_true + 2 := fun h => h_carry (h_2a.mpr h)
+    omega
 
 /-- **`n4CallAddbackBeqSemanticHolds_v4` closure**: under the runtime
     call-addback-BEQ preconditions, the v4 predicate holds.
