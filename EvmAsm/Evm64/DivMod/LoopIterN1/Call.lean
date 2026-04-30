@@ -20,7 +20,7 @@ open EvmAsm.Rv64
 set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, call+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTriple to base+904. -/
-theorem divK_loop_body_n1_call_skip_j0_spec
+theorem divK_loop_body_n1_call_skip_j0_spec_within
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
@@ -30,7 +30,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
     let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
     let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
-    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
+    cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
        (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
@@ -76,7 +76,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isSkipBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  have TF := divK_trial_call_full_spec sp (0 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old v2Old
+  have TF := divK_trial_call_full_spec_within sp (0 : Word) (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old v2Old
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   unfold divKTrialCallFullPost at TF
@@ -84,7 +84,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
   rw [u_addr_eq_n1] at TF
   rw [u_addr8_eq_n1] at TF
   rw [vtop_eq_v0_n1] at TF
-  have MCS := divK_mulsub_correction_skip_spec sp qHat (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  have MCS := divK_mulsub_correction_skip_spec_within sp qHat (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop
     x1Exit q0' dHi x7Exit q1' (base + 516) base
 
   intro_lets at MCS
@@ -107,16 +107,16 @@ theorem divK_loop_body_n1_call_skip_j0_spec
   let pc3 := ba3 + p3_hi; let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
   let un3 := u3 - fs3; let c3 := pc3 + bs3
   let u4_new := uTop - c3
-  have SL := divK_store_loop_j0_spec sp qHat u4_new (0 : Word) qOld base
+  have SL := divK_store_loop_j0_spec_within sp qHat u4_new (0 : Word) qOld base
   intro_lets at SL
-  have TFf := cpsTriple_frameR
+  have TFf := cpsTripleWithin_frameR
     (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ uTop) **
      (qAddr ↦ₘ qOld))
     (by pcFree) TF
   seqFrame TFf MCS0
-  have SLf := cpsTriple_frameR
+  have SLf := cpsTripleWithin_frameR
     ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
@@ -130,15 +130,49 @@ theorem divK_loop_body_n1_call_skip_j0_spec
      (sp + signExtend12 3952 ↦ₘ dLo) **
      (sp + signExtend12 3944 ↦ₘ div_un0))
     (by pcFree) SL
-  have full := cpsTriple_seq_perm_same_cr
+  have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
-  exact cpsTriple_weaken
+  exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
       delta loopBodyN1CallSkipPostJ div128Quot div128DLo div128Un0
             loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
+
+/-- Compatibility wrapper for the unbounded n=1 call+skip j=0 surface. -/
+theorem divK_loop_body_n1_call_skip_j0_spec
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu : BitVec.ult u1 v0)
+    (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+    cpsTriple (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop) **
+       (qAddr ↦ₘ qOld) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ scratch_un0))
+      (loopBodyN1CallSkipPostJ sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase qAddr
+  exact (divK_loop_body_n1_call_skip_j0_spec_within
+    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+    retMem dMem dloMem scratch_un0 base halign hbltu hborrow).to_cpsTriple
 
 -- ============================================================================
 -- n=1, BLTU taken (call path) + BEQ skip, j > 0 → cpsTriple to base+448
@@ -149,7 +183,7 @@ theorem divK_loop_body_n1_call_skip_j0_spec
 set_option maxRecDepth 4096 in
 /-- Loop body cpsTriple for n=1, call+skip, j > 0 (parametric on `j : Word`).
     `hpos` discharges BGE loop-back via caller's `slt_jpos_k` for k ∈ {1,2,3}. -/
-theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
+theorem divK_loop_body_n1_call_skip_jgt0_spec_within (j : Word)
     (hpos : BitVec.slt (j + signExtend12 4095) 0 = false)
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
@@ -160,7 +194,7 @@ theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
     (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
     let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
     let qAddr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
-    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
+    cpsTripleWithin 126 (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
        (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
@@ -206,7 +240,7 @@ theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
   let qHat := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   unfold isSkipBorrowN1Call div128Quot at hborrow
   let vtopBase := sp + ((1 : Word) + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  have TF := divK_trial_call_full_spec sp j (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old v2Old
+  have TF := divK_trial_call_full_spec_within sp j (1 : Word) jOld v5Old v6Old v7Old v10Old v11Old v2Old
     u1 u0 v0 retMem dMem dloMem scratch_un0 base
     halign hbltu
   unfold divKTrialCallFullPost at TF
@@ -214,7 +248,7 @@ theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
   rw [u_addr_eq_n1] at TF
   rw [u_addr8_eq_n1] at TF
   rw [vtop_eq_v0_n1] at TF
-  have MCS := divK_mulsub_correction_skip_spec sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  have MCS := divK_mulsub_correction_skip_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     x1Exit q0' dHi x7Exit q1' (base + 516) base
 
   intro_lets at MCS
@@ -237,16 +271,16 @@ theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
   let pc3 := ba3 + p3_hi; let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
   let un3 := u3 - fs3; let c3 := pc3 + bs3
   let u4_new := uTop - c3
-  have SL := divK_store_loop_jgt0_spec sp j qHat u4_new (0 : Word) qOld base hpos
+  have SL := divK_store_loop_jgt0_spec_within sp j qHat u4_new (0 : Word) qOld base hpos
   intro_lets at SL
-  have TFf := cpsTriple_frameR
+  have TFf := cpsTripleWithin_frameR
     (((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
      ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
      ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4064) ↦ₘ uTop) **
      (qAddr ↦ₘ qOld))
     (by pcFree) TF
   seqFrame TFf MCS0
-  have SLf := cpsTriple_frameR
+  have SLf := cpsTripleWithin_frameR
     ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ un3) **
      (sp + signExtend12 3976 ↦ₘ j) **
      ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
@@ -260,14 +294,49 @@ theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
      (sp + signExtend12 3952 ↦ₘ dLo) **
      (sp + signExtend12 3944 ↦ₘ div_un0))
     (by pcFree) SL
-  have full := cpsTriple_seq_perm_same_cr
+  have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCS0 SLf
-  exact cpsTriple_weaken
+  exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by
       delta loopBodyN1CallSkipPostJ div128Quot div128DLo div128Un0
             loopBodyN1SkipPost loopBodySkipPost mulsubN4 loopExitPostN1 loopExitPost
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
+
+/-- Compatibility wrapper for the unbounded n=1 call+skip j>0 surface. -/
+theorem divK_loop_body_n1_call_skip_jgt0_spec (j : Word)
+    (hpos : BitVec.slt (j + signExtend12 4095) 0 = false)
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + 516) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + 516)
+    (hbltu : BitVec.ult u1 v0)
+    (hborrow : isSkipBorrowN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
+    cpsTriple (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCode base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop) **
+       (qAddr ↦ₘ qOld) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ scratch_un0))
+      (loopBodyN1CallSkipPostJ sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase qAddr
+  exact (divK_loop_body_n1_call_skip_jgt0_spec_within j hpos
+    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+    retMem dMem dloMem scratch_un0 base halign hbltu hborrow).to_cpsTriple
 
 end EvmAsm.Evm64

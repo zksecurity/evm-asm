@@ -195,9 +195,9 @@ private theorem step1_v2_pc1b_cr_subsumed (base : Word) :
     Mirrors `divK_div128_step2_branch_merged_spec` from Div128Step2.lean.
 
     Issue #1337 algorithm fix migration. -/
-theorem divK_div128_step1_v2_branch_merged_spec
+theorem divK_div128_step1_v2_branch_merged_spec_within
     (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
-    cpsBranch base (divKDiv128Step1V2Code base)
+    cpsBranchWithin 25 base (divKDiv128Step1V2Code base)
       (divKDiv128Step1V2Pre sp uHi dHi un1 v1Old v5Old v10Old dlo)
       (base + 100)
         (divKDiv128Step1V2BranchMergedTakenPost sp uHi dHi un1 dlo)
@@ -268,9 +268,9 @@ theorem divK_div128_step1_v2_branch_merged_spec
       (CodeReq.union (CodeReq.singleton (base + 92) (.ADDI .x10 .x10 4095))
        (CodeReq.singleton (base + 96) (.ADD .x7 .x7 .x6))))))))))))))))))))))))) := rfl
   -- h1: step1_spec's cr is the 15-prefix of merged_cr.
-  have h1_raw := divK_div128_step1_spec sp uHi dHi un1 v1Old v5Old v10Old dlo base
-  have h1 : cpsTriple base (base + 60) cr _ _ :=
-    cpsTriple_extend_code (h := h1_raw) (hmono := by
+  have h1_raw := divK_div128_step1_spec_within sp uHi dHi un1 v1Old v5Old v10Old dlo base
+  have h1 : cpsTripleWithin 15 base (base + 60) cr _ _ :=
+    cpsTripleWithin_extend_code (h := h1_raw) (hmono := by
       rw [hcr_eq]
       exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
@@ -279,7 +279,7 @@ theorem divK_div128_step1_v2_branch_merged_spec
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_left _ _)))))))))))))))
   -- h2: prodcheck1b_merged_spec's cr is the 10-suffix of merged_cr.
-  have h2_raw := divK_div128_prodcheck1b_merged_spec sp q1' rhat' dHi un1
+  have h2_raw := divK_div128_prodcheck1b_merged_spec_within sp q1' rhat' dHi un1
     rhatUn1 qDlo1 dlo (base + 60)
   -- Unfold prodcheck1b's bundled defs so we can frame/permute against the
   -- explicit pre/post structure.
@@ -296,19 +296,32 @@ theorem divK_div128_step1_v2_branch_merged_spec
   have hb36 : (base + 60 : Word) + 36 = base + 96 := by bv_addr
   have hb40 : (base + 60 : Word) + 40 = base + 100 := by bv_addr
   simp only [hb4, hb8, hb12, hb16, hb20, hb24, hb28, hb32, hb36, hb40] at h2_raw
-  have h2 : cpsBranch (base + 60) cr _ _ _ _ _ :=
-    cpsBranch_extend_code (h := h2_raw) (hmono := by
+  have h2 : cpsBranchWithin 10 (base + 60) cr _ _ _ _ _ :=
+    cpsBranchWithin_extend_code (h := h2_raw) (hmono := by
       have hsubs := step1_v2_pc1b_cr_subsumed base
       unfold divKDiv128Prodcheck1bMergedCode divKDiv128Step1V2Code at hsubs
       simp only [hb4, hb8, hb12, hb16, hb20, hb24, hb28, hb32, hb36] at hsubs
       rw [hcr_eq]; exact hsubs)
-  have composed := cpsTriple_seq_cpsBranch_perm_same_cr
+  have composed := cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
     (fun h hp => by xperm_hyp hp) h1 h2
-  exact cpsBranch_weaken
+  exact cpsBranchWithin_weaken
     (fun h hp => hp)
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     composed
+
+/-- div128 step 1 v2 branch-merged: composes step1_spec + prodcheck1b_merged_spec
+    into a cpsBranch where BOTH legs end at base+100. Instrs [10]-[34]. -/
+theorem divK_div128_step1_v2_branch_merged_spec
+    (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
+    cpsBranch base (divKDiv128Step1V2Code base)
+      (divKDiv128Step1V2Pre sp uHi dHi un1 v1Old v5Old v10Old dlo)
+      (base + 100)
+        (divKDiv128Step1V2BranchMergedTakenPost sp uHi dHi un1 dlo)
+      (base + 100)
+        (divKDiv128Step1V2BranchMergedFTPost sp uHi dHi un1 dlo) :=
+  (divK_div128_step1_v2_branch_merged_spec_within sp uHi dHi un1 v1Old v5Old
+    v10Old dlo base).to_cpsBranch
 
 /-- div128 step 1 v2: trial division q1, clamp, FIRST product check + correction,
     SECOND product check + correction (gated by `rhatc < 2^32` guard).
@@ -323,9 +336,9 @@ theorem divK_div128_step1_v2_branch_merged_spec
     `rhatHi2 := rhat' >> 32` (the 2nd guard's input).
 
     Issue #1337 algorithm fix migration. -/
-theorem divK_div128_step1_v2_spec
+theorem divK_div128_step1_v2_spec_within
     (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
-    cpsTriple base (base + 100) (divKDiv128Step1V2Code base)
+    cpsTripleWithin 25 base (base + 100) (divKDiv128Step1V2Code base)
       (divKDiv128Step1V2Pre sp uHi dHi un1 v1Old v5Old v10Old dlo)
       (divKDiv128Step1V2Post sp uHi dHi un1 dlo) := by
   unfold divKDiv128Step1V2Code divKDiv128Step1V2Pre divKDiv128Step1V2Post
@@ -374,7 +387,7 @@ theorem divK_div128_step1_v2_spec
     (CodeReq.union (CodeReq.singleton (base + 88) (.JAL .x0 12))
     (CodeReq.union (CodeReq.singleton (base + 92) (.ADDI .x10 .x10 4095))
      (CodeReq.singleton (base + 96) (.ADD .x7 .x7 .x6)))))))))))))))))))))))))
-  have hbr := divK_div128_step1_v2_branch_merged_spec sp uHi dHi un1 v1Old v5Old
+  have hbr := divK_div128_step1_v2_branch_merged_spec_within sp uHi dHi un1 v1Old v5Old
     v10Old dlo base
   -- Unfold the bundled defs in hbr so the merge bridges below see the
   -- explicit pre/post structure.
@@ -385,11 +398,11 @@ theorem divK_div128_step1_v2_spec
     (.x5 ↦ᵣ x5Exit) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ x1Exit) **
     (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)
   have refl_of {P : Assertion} (h : ∀ hp, P hp → tgtPost hp) :
-      cpsTriple (base + 100) (base + 100) cr P tgtPost :=
-    cpsTriple_extend_code (fun _ _ h => by simp [CodeReq.empty] at h)
-      (cpsTriple_refl h)
+      cpsTripleWithin 0 (base + 100) (base + 100) cr P tgtPost :=
+    cpsTripleWithin_extend_code (fun _ _ h => by simp [CodeReq.empty] at h)
+      (cpsTripleWithin_refl h)
   -- Taken bridge: rhatHi2 ≠ 0 ⟹ q1'' = q1', rhat'' = rhat', x5Exit = qDlo1, x1Exit = rhatHi2
-  have h_t : cpsTriple (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
+  have h_t : cpsTripleWithin 0 (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
     (.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1') **
     (.x5 ↦ᵣ qDlo1) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatHi2) **
     (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhatHi2 ≠ 0⌝ **
@@ -427,7 +440,7 @@ theorem divK_div128_step1_v2_spec
           (fun h' hp' => ((sepConj_pure_left h').1 hp').2)))))))) hp hP
     xperm_hyp hP')
   -- Fall-through bridge: rhatHi2 = 0 ⟹ q1'' = q1'FT, rhat'' = rhat'FT, x5Exit = qDlo2, x1Exit = rhatUn1'
-  have h_f : cpsTriple (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
+  have h_f : cpsTripleWithin 0 (base + 100) (base + 100) cr _ tgtPost := refl_of (P :=
     (.x7 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat')) **
     (.x6 ↦ᵣ dHi) **
     (.x10 ↦ᵣ (if BitVec.ult rhatUn1' qDlo2 then q1' + signExtend12 4095 else q1')) **
@@ -473,6 +486,15 @@ theorem divK_div128_step1_v2_spec
         (sepConj_mono_right (sepConj_mono_right
           (fun h' hp' => ((sepConj_pure_left h').1 hp').2)))))))) hp hP
     xperm_hyp hP')
-  exact cpsBranch_merge_same_cr hbr h_t h_f
+  exact cpsBranchWithin_merge_same_cr hbr h_t h_f
+
+/-- div128 step 1 v2: trial division q1, clamp, FIRST product check + correction,
+    SECOND product check + correction (gated by `rhatc < 2^32` guard). -/
+theorem divK_div128_step1_v2_spec
+    (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
+    cpsTriple base (base + 100) (divKDiv128Step1V2Code base)
+      (divKDiv128Step1V2Pre sp uHi dHi un1 v1Old v5Old v10Old dlo)
+      (divKDiv128Step1V2Post sp uHi dHi un1 dlo) :=
+  (divK_div128_step1_v2_spec_within sp uHi dHi un1 v1Old v5Old v10Old dlo base).to_cpsTriple
 
 end EvmAsm.Evm64
