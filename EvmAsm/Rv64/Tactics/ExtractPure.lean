@@ -72,9 +72,9 @@ theorem sepConj_pure_mid_right {P R : Assertion} {Q : Prop} :
 macro "extract_pure" h:ident : tactic =>
   `(tactic|
       simp only
-        [ EvmAsm.Rv64.sepConj_assoc'
-        , EvmAsm.Rv64.sepConj_pure_left
+        [ ← EvmAsm.Rv64.sepConj_assoc'
         , EvmAsm.Rv64.sepConj_pure_right
+        , EvmAsm.Rv64.sepConj_pure_left
         , EvmAsm.Rv64.Tactics.sepConj_pure_mid_left
         , EvmAsm.Rv64.Tactics.sepConj_pure_mid_right
         , EvmAsm.Rv64.sepConj_emp_left'

@@ -134,6 +134,26 @@ example : (A ** B ** C) = (C ** A ** B) := by xperm
 Used internally by all other tactics. Also available as `xperm_hyp` (in
 `XSimp.lean`) for rewriting hypotheses.
 
+## extract_pure
+
+Drains pure (`⌜P⌝`) atoms out of a separation-logic hypothesis so they
+can be obtained directly. Replaces the long `obtain ⟨_, _, _, _, _, h⟩ := h`
+chain that was previously needed to walk past every resource atom to reach
+a buried pure assertion.
+
+```lean
+example (s : PartialState) (R : Assertion) (P Q : Prop)
+    (h : (R ** ⌜P⌝ ** ⌜Q⌝) s) : P ∧ Q := by
+  extract_pure h
+  exact ⟨h.1, h.2.1⟩
+```
+
+After `extract_pure h`, `h` has type `P₁ ∧ … ∧ Pₖ ∧ (resourceTail s)` —
+the pure atoms are exposed as the leading conjuncts. Defined in
+`EvmAsm/Rv64/Tactics/ExtractPure.lean`. Implemented as a `simp only`
+macro using left-associativity normalisation plus the
+`sepConj_pure_left/right/mid_*` iff lemmas.
+
 ## @[spec_gen] and #spec_db
 
 ### Registering specs
