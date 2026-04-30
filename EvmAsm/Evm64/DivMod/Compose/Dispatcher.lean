@@ -48,6 +48,29 @@ theorem sharedDivModCode_sub_modDispatcherCode {base : Word} :
     ∀ a i, (sharedDivModCode base) a = some i → (modDispatcherCode base) a = some i :=
   sharedDivModCode_sub_modCode
 
+abbrev evm_div_spec_within_bzero := evm_div_bzero_spec_within
+abbrev evm_div_spec_within_n1Full := evm_div_n1_full_unified_spec
+abbrev evm_div_spec_within_n2Full := evm_div_n2_full_bundled_spec
+abbrev evm_div_spec_within_n3Full := evm_div_n3_full_unified_spec
+abbrev evm_div_spec_within_n4MaxSkip := evm_div_n4_full_max_skip_spec
+abbrev evm_div_spec_within_n4CallSkip := evm_div_n4_full_call_skip_spec
+abbrev evm_div_spec_within_n4MaxAddbackBeq := evm_div_n4_full_max_addback_beq_spec
+abbrev evm_div_spec_within_n4CallAddbackBeq := evm_div_n4_full_call_addback_beq_spec
+abbrev evm_div_spec_within_n4Shift0CallSkip := evm_div_n4_full_shift0_call_skip_spec
+abbrev evm_div_spec_within_n4Shift0CallAddbackBeq :=
+  evm_div_n4_full_shift0_call_addback_beq_spec
+
+abbrev evm_mod_spec_within_bzero := evm_mod_bzero_spec_within
+abbrev evm_mod_spec_within_n1Full := evm_mod_n1_full_unified_spec
+abbrev evm_mod_spec_within_n2Full := evm_mod_n2_full_unified_spec
+abbrev evm_mod_spec_within_n3Full := evm_mod_n3_full_unified_spec
+abbrev evm_mod_spec_within_n4MaxSkip := evm_mod_n4_full_max_skip_spec_within
+abbrev evm_mod_spec_within_n4CallSkip := evm_mod_n4_full_call_skip_spec_within
+abbrev evm_mod_spec_within_n4CallAddbackBeq := evm_mod_n4_full_call_addback_beq_spec_within
+abbrev evm_mod_spec_within_n4Shift0CallSkip := evm_mod_n4_full_shift0_call_skip_spec
+abbrev evm_mod_spec_within_n4Shift0CallAddbackBeq :=
+  evm_mod_n4_full_shift0_call_addback_beq_spec
+
 inductive DivDispatchBranch where
   | bzero
   | n1Full
@@ -95,5 +118,33 @@ def ModDispatchBranch.bound : ModDispatchBranch → Nat
   | .n4CallAddbackBeq => 340
   | .n4Shift0CallSkip => 208
   | .n4Shift0CallAddbackBeq => 284
+
+/-- Dispatcher registry for bounded limb-level DIV paths. The proof surface is
+    the corresponding path theorem named in each branch comment below. -/
+def evm_div_spec_within : List (DivDispatchBranch × Nat) :=
+  [(.bzero, DivDispatchBranch.bound .bzero),                         -- evm_div_bzero_spec_within
+   (.n1Full, DivDispatchBranch.bound .n1Full),                       -- evm_div_n1_full_unified_spec
+   (.n2Full, DivDispatchBranch.bound .n2Full),                       -- evm_div_n2_full_bundled_spec
+   (.n3Full, DivDispatchBranch.bound .n3Full),                       -- evm_div_n3_full_unified_spec
+   (.n4MaxSkip, DivDispatchBranch.bound .n4MaxSkip),                 -- evm_div_n4_full_max_skip_spec
+   (.n4CallSkip, DivDispatchBranch.bound .n4CallSkip),               -- evm_div_n4_full_call_skip_spec
+   (.n4MaxAddbackBeq, DivDispatchBranch.bound .n4MaxAddbackBeq),     -- evm_div_n4_full_max_addback_beq_spec
+   (.n4CallAddbackBeq, DivDispatchBranch.bound .n4CallAddbackBeq),   -- evm_div_n4_full_call_addback_beq_spec
+   (.n4Shift0CallSkip, DivDispatchBranch.bound .n4Shift0CallSkip),   -- evm_div_n4_full_shift0_call_skip_spec
+   (.n4Shift0CallAddbackBeq, DivDispatchBranch.bound .n4Shift0CallAddbackBeq)]
+                                                                        -- evm_div_n4_full_shift0_call_addback_beq_spec
+
+/-- Dispatcher registry for bounded limb-level MOD paths. -/
+def evm_mod_spec_within : List (ModDispatchBranch × Nat) :=
+  [(.bzero, ModDispatchBranch.bound .bzero),                         -- evm_mod_bzero_spec_within
+   (.n1Full, ModDispatchBranch.bound .n1Full),                       -- evm_mod_n1_full_unified_spec
+   (.n2Full, ModDispatchBranch.bound .n2Full),                       -- evm_mod_n2_full_unified_spec
+   (.n3Full, ModDispatchBranch.bound .n3Full),                       -- evm_mod_n3_full_unified_spec
+   (.n4MaxSkip, ModDispatchBranch.bound .n4MaxSkip),                 -- evm_mod_n4_full_max_skip_spec_within
+   (.n4CallSkip, ModDispatchBranch.bound .n4CallSkip),               -- evm_mod_n4_full_call_skip_spec_within
+   (.n4CallAddbackBeq, ModDispatchBranch.bound .n4CallAddbackBeq),   -- evm_mod_n4_full_call_addback_beq_spec_within
+   (.n4Shift0CallSkip, ModDispatchBranch.bound .n4Shift0CallSkip),   -- evm_mod_n4_full_shift0_call_skip_spec
+   (.n4Shift0CallAddbackBeq, ModDispatchBranch.bound .n4Shift0CallAddbackBeq)]
+                                                                        -- evm_mod_n4_full_shift0_call_addback_beq_spec
 
 end EvmAsm.Evm64
