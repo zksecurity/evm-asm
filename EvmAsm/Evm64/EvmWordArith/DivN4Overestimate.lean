@@ -242,6 +242,29 @@ theorem iterSingleAddbackBranch_low_val256_eq
   rw [add_signExtend12_4095_toNat q hq_pos]
   exact hcombined
 
+theorem iterSingleAddbackBranch_val256_conservation
+    (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hbranch : iterSingleAddbackBranch q v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
+    EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 =
+      (q + signExtend12 (4095 : BitVec 12)).toNat * EvmWord.val256 v0 v1 v2 v3 +
+        EvmWord.val256 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 +
+        ab.2.2.2.2.toNat * 2^256 := by
+  intro ms ab
+  exact val256_conservation_of_low_eq_and_zero_tops
+    (iterSingleAddbackBranch_uTop_toNat_eq_zero q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch)
+    (by
+      have htop := iterSingleAddbackBranch_ab_top_toNat_eq_zero
+        q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch
+      simp only [] at htop
+      exact htop)
+    (by
+      have hlow := iterSingleAddbackBranch_low_val256_eq
+        q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch
+      simp only [] at hlow
+      exact hlow)
+
 -- ============================================================================
 -- Addback path correctness for max trial at n=4
 -- ============================================================================
@@ -703,6 +726,31 @@ theorem iterDoubleAddbackBranch_low_val256_eq
   subst ab
   simp only [addbackN4] at hcombined ⊢
   exact hcombined
+
+theorem iterDoubleAddbackBranch_val256_conservation
+    (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hbranch : iterDoubleAddbackBranch q v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
+    let ab' := addbackN4 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
+    EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 =
+      (q + signExtend12 (4095 : BitVec 12) + signExtend12 (4095 : BitVec 12)).toNat *
+          EvmWord.val256 v0 v1 v2 v3 +
+        EvmWord.val256 ab'.1 ab'.2.1 ab'.2.2.1 ab'.2.2.2.1 +
+        ab'.2.2.2.2.toNat * 2^256 := by
+  intro ms ab ab'
+  exact val256_conservation_of_low_eq_and_zero_tops
+    (iterDoubleAddbackBranch_uTop_toNat_eq_zero q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch)
+    (by
+      have htop := iterDoubleAddbackBranch_ab'_top_toNat_eq_zero
+        q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch
+      simp only [] at htop
+      exact htop)
+    (by
+      have hlow := iterDoubleAddbackBranch_low_val256_eq
+        q v0 v1 v2 v3 u0 u1 u2 u3 uTop hbranch
+      simp only [] at hlow
+      exact hlow)
 
 -- ============================================================================
 -- First addback carry is 1 when overestimate ≤ 1
