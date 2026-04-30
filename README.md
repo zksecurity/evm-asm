@@ -202,6 +202,22 @@ lake exec cache get
 lake build
 ```
 
+### Weekly build benchmark
+
+A scheduled GitHub Actions workflow,
+[`.github/workflows/benchmark.yml`](.github/workflows/benchmark.yml),
+runs `lake build` every Monday at 06:00 UTC and records the wall-clock
+time and peak resident set size in the run's job summary. Raw
+`/usr/bin/time -v` outputs are uploaded as build artifacts
+(`benchmark-<run-id>`) with a 90-day retention so regressions can be
+diff'd against earlier runs.
+
+The workflow is independent of PR CI and does not gate any pull
+request. To trigger an off-schedule run manually, go to **Actions →
+Benchmark → Run workflow** (or `gh workflow run benchmark.yml`).
+History persistence (a long-lived JSON log of timings) is tracked as a
+follow-up under issue #949.
+
 ## Status
 
 This is a **prototype** demonstrating the approach. Current state:
