@@ -72,6 +72,13 @@ abbrev addbackBeqOff : Word :=  880
     branch into the next iteration or `divK_denorm`). Sub-offset relative
     to the loopBody block (= loopBodyOff + 436). -/
 abbrev storeLoopOff : Word :=  884
+/-- Offset of the loop-back BGE sub-block inside `divK_loopBody`.
+    Entry PC of the `BGE x1, x0, -...` instruction at the very end of
+    `divK_loopBody` that branches back to `loopBodyOff` for the next
+    iteration when `j ≥ 0`, falling through to `denormOff` otherwise.
+    Sub-offset relative to the loopBody block (= denormOff - 4 =
+    loopBodyOff + 456). -/
+abbrev loopBackBgeOff : Word :=  904
 /-- Offset of `divK_denorm` (denormalize result back to original shift). -/
 abbrev denormOff    : Word :=  908
 /-- Offset of the epilogue (`divK_div_epilogue` for DIV, `divK_mod_epilogue`
@@ -132,6 +139,11 @@ example : addbackBeqOff = loopBodyOff + 432 := by decide
 /-- storeLoopOff = loopBodyOff + 436 (sub-block offset within `divK_loopBody`).
     The `divK_store_qj` snippet starts 109 instructions into the loop body. -/
 example : storeLoopOff = loopBodyOff + 436 := by decide
+/-- loopBackBgeOff = denormOff - 4 (= loopBodyOff + 456, sub-block offset
+    within `divK_loopBody`). The loop-back BGE sits one instruction before
+    `divK_denorm` (it is the very last instruction of the loop body). -/
+example : loopBackBgeOff = denormOff - 4 := by decide
+example : loopBackBgeOff = loopBodyOff + 456 := by decide
 /-- epilogueOff = denormOff + 4 · |divK_denorm|. -/
 example : epilogueOff = denormOff + 4 * divK_denorm.length := by decide
 /-- zeroPathOff = epilogueOff + 4 · |divK_div_epilogue 24|

@@ -55,13 +55,13 @@ theorem divK_store_loop_j0_spec_within
       (lb_sub 112 _ _ (by decide) (by bv_addr) (by decide))))) SQ
   -- 2. ADDI x1 x1 4095 at base+900 (instr [113])
   have haddi := addi_spec_gen_same_within .x1 (0 : Word) 4095 (base + 900) (by nofun)
-  rw [show (base + 900 : Word) + 4 = base + 904 from by bv_addr] at haddi
+  rw [show (base + 900 : Word) + 4 = base + loopBackBgeOff from by bv_addr] at haddi
   have haddi_e := cpsTripleWithin_extend_code (hmono := by
     exact lb_sub 113 _ _ (by decide) (by bv_addr) (by decide)) haddi
-  -- 3. BGE x1 x0 7736 at base+904 (instr [114])
-  have hbge_raw := bge_spec_gen_within .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + 904)
-  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
-      show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
+  -- 3. BGE x1 x0 7736 at base+loopBackBgeOff (instr [114])
+  have hbge_raw := bge_spec_gen_within .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + loopBackBgeOff)
+  rw [show (base + loopBackBgeOff : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
+      show (base + loopBackBgeOff : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranchWithin_extend_code (hmono := by
     exact lb_sub 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
   -- 4. Eliminate taken branch: j' = -1 < 0, so BGE is not taken
@@ -135,13 +135,13 @@ theorem divK_store_loop_jgt0_spec_within
       (lb_sub 112 _ _ (by decide) (by bv_addr) (by decide))))) SQ
   -- 2. ADDI x1 x1 4095 at base+900 (instr [113])
   have haddi := addi_spec_gen_same_within .x1 j 4095 (base + 900) (by nofun)
-  rw [show (base + 900 : Word) + 4 = base + 904 from by bv_addr] at haddi
+  rw [show (base + 900 : Word) + 4 = base + loopBackBgeOff from by bv_addr] at haddi
   have haddi_e := cpsTripleWithin_extend_code (hmono := by
     exact lb_sub 113 _ _ (by decide) (by bv_addr) (by decide)) haddi
-  -- 3. BGE x1 x0 7736 at base+904 (instr [114])
-  have hbge_raw := bge_spec_gen_within .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + 904)
-  rw [show (base + 904 : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
-      show (base + 904 : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
+  -- 3. BGE x1 x0 7736 at base+loopBackBgeOff (instr [114])
+  have hbge_raw := bge_spec_gen_within .x1 .x0 (7736 : BitVec 13) j' (0 : Word) (base + loopBackBgeOff)
+  rw [show (base + loopBackBgeOff : Word) + signExtend13 (7736 : BitVec 13) = base + loopBodyOff from by rv64_addr,
+      show (base + loopBackBgeOff : Word) + 4 = base + denormOff from by bv_addr] at hbge_raw
   have hbge_ext := cpsBranchWithin_extend_code (hmono := by
     exact lb_sub 114 _ _ (by decide) (by bv_addr) (by decide)) hbge_raw
   -- 4. Eliminate not-taken branch: j' = j-1 ≥ 0, so BGE is taken
