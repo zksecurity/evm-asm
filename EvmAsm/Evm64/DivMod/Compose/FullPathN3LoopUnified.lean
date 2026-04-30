@@ -313,7 +313,7 @@ def fullDivN3Scratch (bltu_1 bltu_0 : Bool)
   (sp + signExtend12 3968 ↦ₘ (if bltu_0 then (base + 516) else scratch_ret1)) **
   (sp + signExtend12 3960 ↦ₘ (if bltu_0 then v.2.2.1 else scratch_d1)) **
   (sp + signExtend12 3952 ↦ₘ (if bltu_0 then div128DLo v.2.2.1 else scratch_dlo1)) **
-  (sp + signExtend12 3944 ↦ₘ (if bltu_0 then div128Un0 r1.2.2.2.1 else scratch_un01))
+  (sp + signExtend12 3944 ↦ₘ (if bltu_0 then div128Un0 r1.2.2.1 else scratch_un01))
 
 @[irreducible]
 def fullDivN3DenormPre (bltu_1 bltu_0 : Bool)
@@ -536,7 +536,7 @@ theorem fullDivN3Scratch_false_true (sp base a0 a1 a2 a3 b0 b1 b2 b3
     ((sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v.2.2.1) **
      (sp + signExtend12 3952 ↦ₘ div128DLo v.2.2.1) **
-     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.2.1)) := by
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1)) := by
   delta fullDivN3Scratch
   rfl
 
@@ -562,7 +562,7 @@ theorem fullDivN3Scratch_true_true (sp base a0 a1 a2 a3 b0 b1 b2 b3
     ((sp + signExtend12 3968 ↦ₘ (base + 516)) **
      (sp + signExtend12 3960 ↦ₘ v.2.2.1) **
      (sp + signExtend12 3952 ↦ₘ div128DLo v.2.2.1) **
-     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.2.1)) := by
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.1)) := by
   delta fullDivN3Scratch
   rfl
 
@@ -610,6 +610,126 @@ theorem preloopN3UnifiedPost_to_fullDivN3DenormPre_frame_FF
   rw [loopExitPostN3_j0_eq] at hp
   simp (config := { decide := true }) only
     [n3_ub1_off4064, n3_qa1, se12_32, se12_40, se12_48, se12_56] at hp ⊢
+  sep_perm hp
+
+theorem preloopN3UnifiedPost_to_fullDivN3DenormPre_frame_FT
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (h : PartialState)
+    (hp :
+      preloopN3UnifiedPost false true sp base a0 a1 a2 a3 b0 b1 b2 b3
+        retMem dMem dloMem scratch_un0 h) :
+    (fullDivN3DenormPre false true sp a0 a1 a2 a3 b0 b1 b2 b3 **
+     fullDivN3Frame false true sp base a0 a1 a2 a3 b0 b1 b2 b3
+       retMem dMem dloMem scratch_un0) h := by
+  delta preloopN3UnifiedPost loopN3UnifiedPost at hp
+  simp (config := { decide := true }) only [] at hp
+  delta loopN3MaxCallPost loopIterPostN3Call at hp
+  simp (config := { decide := true }) only
+    [loopExitPostN3_j0_eq, n3_ub1_off4064, n3_qa1,
+      se12_32, se12_40, se12_48, se12_56] at hp
+  rw [fullDivN3DenormPre_unfold, fullDivN3Frame_unfold, fullDivN3Scratch_false_true]
+  simp (config := { decide := true }) only
+    [fullDivN3Shift_unfold, fullDivN3AntiShift_unfold,
+     fullDivN3NormV_unfold, fullDivN3NormU_unfold,
+     fullDivN3R1_unfold, fullDivN3R0_unfold,
+     fullDivN3C3_true, iterN3_false, iterN3_true,
+     se12_32, se12_40, se12_48, se12_56]
+  set shift := (clzResult b2).1 with hshift
+  set antiShift := (signExtend12 (0 : BitVec 12) - shift) with hantiShift
+  set v0 := b0 <<< (shift.toNat % 64) with hv0
+  set v1 := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64)) with hv1
+  set v2 := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64)) with hv2
+  set v3 := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64)) with hv3
+  set u0 := a0 <<< (shift.toNat % 64) with hu0
+  set u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64)) with hu1
+  set u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64)) with hu2
+  set u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64)) with hu3
+  set u4 := a3 >>> (antiShift.toNat % 64) with hu4
+  set r1 := iterN3Max v0 v1 v2 v3 u1 u2 u3 u4 (0 : Word) with hr1
+  set r0 := (iterN3Call v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1
+    r1.2.2.2.2.1) with hr0
+  set c3 := (mulsubN4 (div128Quot r1.2.2.2.1 r1.2.2.1 v2)
+    v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 with hc3
+  xperm_hyp hp
+
+theorem preloopN3UnifiedPost_to_fullDivN3DenormPre_frame_TF
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (h : PartialState)
+    (hp :
+      preloopN3UnifiedPost true false sp base a0 a1 a2 a3 b0 b1 b2 b3
+        retMem dMem dloMem scratch_un0 h) :
+    (fullDivN3DenormPre true false sp a0 a1 a2 a3 b0 b1 b2 b3 **
+     fullDivN3Frame true false sp base a0 a1 a2 a3 b0 b1 b2 b3
+       retMem dMem dloMem scratch_un0) h := by
+  delta preloopN3UnifiedPost loopN3UnifiedPost at hp
+  simp (config := { decide := true }) only [] at hp
+  delta loopN3CallMaxPost loopIterPostN3Max at hp
+  simp (config := { decide := true }) only
+    [loopExitPostN3_j0_eq, n3_ub1_off4064, n3_qa1,
+      se12_32, se12_40, se12_48, se12_56] at hp
+  rw [fullDivN3DenormPre_unfold, fullDivN3Frame_unfold, fullDivN3Scratch_true_false]
+  simp (config := { decide := true }) only
+    [fullDivN3Shift_unfold, fullDivN3AntiShift_unfold,
+     fullDivN3NormV_unfold, fullDivN3NormU_unfold,
+     fullDivN3R1_unfold, fullDivN3R0_unfold,
+     fullDivN3C3_false, iterN3_false, iterN3_true,
+     se12_32, se12_40, se12_48, se12_56]
+  set shift := (clzResult b2).1 with hshift
+  set antiShift := (signExtend12 (0 : BitVec 12) - shift) with hantiShift
+  set v0 := b0 <<< (shift.toNat % 64) with hv0
+  set v1 := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64)) with hv1
+  set v2 := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64)) with hv2
+  set v3 := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64)) with hv3
+  set u0 := a0 <<< (shift.toNat % 64) with hu0
+  set u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64)) with hu1
+  set u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64)) with hu2
+  set u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64)) with hu3
+  set u4 := a3 >>> (antiShift.toNat % 64) with hu4
+  set r1 := iterN3Call v0 v1 v2 v3 u1 u2 u3 u4 (0 : Word) with hr1
+  set r0 := (iterN3Max v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1
+    r1.2.2.2.2.1) with hr0
+  set c3 := (mulsubN4 (signExtend12 4095 : Word)
+    v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 with hc3
+  xperm_hyp hp
+
+theorem preloopN3UnifiedPost_to_fullDivN3DenormPre_frame_TT
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (h : PartialState)
+    (hp :
+      preloopN3UnifiedPost true true sp base a0 a1 a2 a3 b0 b1 b2 b3
+        retMem dMem dloMem scratch_un0 h) :
+    (fullDivN3DenormPre true true sp a0 a1 a2 a3 b0 b1 b2 b3 **
+     fullDivN3Frame true true sp base a0 a1 a2 a3 b0 b1 b2 b3
+       retMem dMem dloMem scratch_un0) h := by
+  delta preloopN3UnifiedPost loopN3UnifiedPost at hp
+  simp (config := { decide := true }) only [] at hp
+  delta loopN3CallCallPost loopIterPostN3Call at hp
+  simp (config := { decide := true }) only
+    [loopExitPostN3_j0_eq, n3_ub1_off4064, n3_qa1,
+      se12_32, se12_40, se12_48, se12_56] at hp
+  rw [fullDivN3DenormPre_unfold, fullDivN3Frame_unfold, fullDivN3Scratch_true_true]
+  simp (config := { decide := true }) only
+    [fullDivN3Shift_unfold, fullDivN3AntiShift_unfold,
+     fullDivN3NormV_unfold, fullDivN3NormU_unfold,
+     fullDivN3R1_unfold, fullDivN3R0_unfold,
+     fullDivN3C3_true, iterN3_true,
+     se12_32, se12_40, se12_48, se12_56]
+  set shift := (clzResult b2).1 with hshift
+  set antiShift := (signExtend12 (0 : BitVec 12) - shift) with hantiShift
+  set v0 := b0 <<< (shift.toNat % 64) with hv0
+  set v1 := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64)) with hv1
+  set v2 := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64)) with hv2
+  set v3 := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64)) with hv3
+  set u0 := a0 <<< (shift.toNat % 64) with hu0
+  set u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64)) with hu1
+  set u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64)) with hu2
+  set u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64)) with hu3
+  set u4 := a3 >>> (antiShift.toNat % 64) with hu4
+  set r1 := iterN3Call v0 v1 v2 v3 u1 u2 u3 u4 (0 : Word) with hr1
+  set r0 := (iterN3Call v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1
+    r1.2.2.2.2.1) with hr0
+  set c3 := (mulsubN4 (div128Quot r1.2.2.2.1 r1.2.2.1 v2)
+    v0 v1 v2 v3 u0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 with hc3
   xperm_hyp hp
 
 theorem fullDivN3UnifiedPost_weaken (bltu_1 bltu_0 : Bool)
