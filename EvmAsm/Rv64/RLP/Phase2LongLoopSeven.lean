@@ -106,12 +106,9 @@ theorem rlp_phase2_long_loop_seven_byte_spec_within
        (.x0 ↦ᵣ (0 : Word)) ** (dwordAddr ↦ₘ wordVal)) :=
     cpsTripleWithin_weaken
       (fun _ hp => hp)
-      (fun h hp => by
+      (fun _ hp => by
         simp only [rlp_phase2_long_loop_body_post_unfold] at hp
-        refine sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
-          (sepConj_mono_right (sepConj_mono_right ?_)))) h hp
-        intro h' hp'
-        exact ((sepConj_pure_right _).1 hp').1)
+        open EvmAsm.Rv64.Tactics in xperm_pure hp)
       tri1
   -- Iters 2-7: six-byte closure at base with (ptr+1, cnt=6).
   have six_byte := rlp_phase2_long_loop_six_byte_spec_within ((len <<< 8) + byte1)
