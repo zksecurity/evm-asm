@@ -91,7 +91,7 @@ theorem fullDivN2C3_true (bltu_2 bltu_1 : Bool)
     let v := fullDivN2NormV b0 b1 b2 b3
     let u := fullDivN2NormU a0 a1 a2 a3 b1
     let r1 := fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-    (mulsubN4 (div128Quot r1.2.1 u.1 v.2.1)
+    (mulsubN4 (div128Quot r1.2.2.1 r1.2.1 v.2.1)
       v.1 v.2.1 v.2.2.1 v.2.2.2 u.1 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 := by
   delta fullDivN2C3
   rfl
