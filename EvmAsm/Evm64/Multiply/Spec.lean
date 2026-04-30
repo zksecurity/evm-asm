@@ -74,8 +74,8 @@ private theorem mul_stack_weaken (sp : Word) (a b : EvmWord)
   delta evmMulStackPost
   refine sepConj_mono_right ?_ h hp
   iterate 5 apply sepConj_mono (regIs_implies_regOwn _)
-  iterate 3 apply sepConj_mono (memIs_implies_memOwn)
-  exact sepConj_mono_left (memIs_implies_memOwn)
+  iterate 3 apply sepConj_mono memIs_implies_memOwn
+  exact sepConj_mono_left memIs_implies_memOwn
 
 -- ============================================================================
 -- Stack-level MUL spec
