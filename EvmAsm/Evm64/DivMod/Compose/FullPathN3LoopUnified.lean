@@ -237,4 +237,235 @@ theorem loopExitPostN3_j0_eq (sp q_f c3 un0F un1F un2F un3F u4F
   simp only [bv6_toNat_3, word_shl3_0]
   rw [show (0 : Word) + signExtend12 4095 = signExtend12 4095 from BitVec.zero_add _]
 
+-- ============================================================================
+-- Irreducible full-path intermediates for n=3
+-- ============================================================================
+
+@[irreducible]
+def fullDivN3Shift (b2 : Word) : Word :=
+  (clzResult b2).1
+
+@[irreducible]
+def fullDivN3AntiShift (b2 : Word) : Word :=
+  signExtend12 (0 : BitVec 12) - fullDivN3Shift b2
+
+@[irreducible]
+def fullDivN3NormV (b0 b1 b2 b3 : Word) : Word × Word × Word × Word :=
+  let shift := fullDivN3Shift b2
+  let antiShift := fullDivN3AntiShift b2
+  (b0 <<< (shift.toNat % 64),
+   (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64)),
+   (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64)),
+   (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64)))
+
+@[irreducible]
+def fullDivN3NormU (a0 a1 a2 a3 b2 : Word) :
+    Word × Word × Word × Word × Word :=
+  let shift := fullDivN3Shift b2
+  let antiShift := fullDivN3AntiShift b2
+  (a0 <<< (shift.toNat % 64),
+   (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64)),
+   (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64)),
+   (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64)),
+   a3 >>> (antiShift.toNat % 64))
+
+@[irreducible]
+def fullDivN3R1 (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  iterN3 bltu_1 v.1 v.2.1 v.2.2.1 v.2.2.2
+    u.2.1 u.2.2.1 u.2.2.2.1 u.2.2.2.2 (0 : Word)
+
+@[irreducible]
+def fullDivN3R0 (bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  iterN3 bltu_0 v.1 v.2.1 v.2.2.1 v.2.2.2 u.1
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+
+@[irreducible]
+def fullDivN3C3 (bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    Word :=
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  if bltu_0 then
+    (mulsubN4 (div128Quot r1.2.2.2.1 r1.2.2.1 v.2.2.1)
+      v.1 v.2.1 v.2.2.1 v.2.2.2 u.1 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+  else
+    (mulsubN4 (signExtend12 4095 : Word)
+      v.1 v.2.1 v.2.2.1 v.2.2.2 u.1 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+
+@[irreducible]
+def fullDivN3Scratch (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    Assertion :=
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let scratch_ret1 := if bltu_1 then (base + 516) else retMem
+  let scratch_d1 := if bltu_1 then v.2.2.1 else dMem
+  let scratch_dlo1 := if bltu_1 then div128DLo v.2.2.1 else dloMem
+  let scratch_un01 := if bltu_1 then div128Un0 u.2.2.2.1 else scratch_un0
+  (sp + signExtend12 3968 ↦ₘ (if bltu_0 then (base + 516) else scratch_ret1)) **
+  (sp + signExtend12 3960 ↦ₘ (if bltu_0 then v.2.2.1 else scratch_d1)) **
+  (sp + signExtend12 3952 ↦ₘ (if bltu_0 then div128DLo v.2.2.1 else scratch_dlo1)) **
+  (sp + signExtend12 3944 ↦ₘ (if bltu_0 then div128Un0 r1.2.2.2.1 else scratch_un01))
+
+/-- Bundled n=3 full-path postcondition. The long computation chain is hidden
+    behind irreducible intermediate definitions so later wrapper proofs can
+    unfold only the pieces they need. -/
+@[irreducible]
+def fullDivN3UnifiedPost (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  let shift := fullDivN3Shift b2
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1
+    r0.1 r1.1 (0 : Word) (0 : Word) **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  fullDivN3Scratch bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0 **
+  ((sp + signExtend12 32) ↦ₘ v.1) **
+  ((sp + signExtend12 40) ↦ₘ v.2.1) **
+  ((sp + signExtend12 48) ↦ₘ v.2.2.1) **
+  ((sp + signExtend12 56) ↦ₘ v.2.2.2)
+
+theorem fullDivN3Shift_unfold (b2 : Word) :
+    fullDivN3Shift b2 = (clzResult b2).1 := by
+  delta fullDivN3Shift
+  rfl
+
+theorem fullDivN3AntiShift_unfold (b2 : Word) :
+    fullDivN3AntiShift b2 = signExtend12 (0 : BitVec 12) - fullDivN3Shift b2 := by
+  delta fullDivN3AntiShift
+  rfl
+
+theorem fullDivN3NormV_unfold (b0 b1 b2 b3 : Word) :
+    fullDivN3NormV b0 b1 b2 b3 =
+    let shift := fullDivN3Shift b2
+    let antiShift := fullDivN3AntiShift b2
+    (b0 <<< (shift.toNat % 64),
+     (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64)),
+     (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64)),
+     (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))) := by
+  delta fullDivN3NormV
+  rfl
+
+theorem fullDivN3NormU_unfold (a0 a1 a2 a3 b2 : Word) :
+    fullDivN3NormU a0 a1 a2 a3 b2 =
+    let shift := fullDivN3Shift b2
+    let antiShift := fullDivN3AntiShift b2
+    (a0 <<< (shift.toNat % 64),
+     (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64)),
+     (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64)),
+     (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64)),
+     a3 >>> (antiShift.toNat % 64)) := by
+  delta fullDivN3NormU
+  rfl
+
+theorem fullDivN3R1_unfold (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let u := fullDivN3NormU a0 a1 a2 a3 b2
+    iterN3 bltu_1 v.1 v.2.1 v.2.2.1 v.2.2.2
+      u.2.1 u.2.2.1 u.2.2.2.1 u.2.2.2.2 (0 : Word) := by
+  delta fullDivN3R1
+  rfl
+
+theorem fullDivN3R0_unfold (bltu_1 bltu_0 : Bool)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let u := fullDivN3NormU a0 a1 a2 a3 b2
+    let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    iterN3 bltu_0 v.1 v.2.1 v.2.2.1 v.2.2.2 u.1
+      r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1 := by
+  delta fullDivN3R0
+  rfl
+
+theorem fullDivN3C3_false (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    fullDivN3C3 bltu_1 false a0 a1 a2 a3 b0 b1 b2 b3 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let u := fullDivN3NormU a0 a1 a2 a3 b2
+    let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    (mulsubN4 (signExtend12 4095 : Word)
+      v.1 v.2.1 v.2.2.1 v.2.2.2 u.1 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 := by
+  delta fullDivN3C3
+  rfl
+
+theorem fullDivN3C3_true (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    fullDivN3C3 bltu_1 true a0 a1 a2 a3 b0 b1 b2 b3 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let u := fullDivN3NormU a0 a1 a2 a3 b2
+    let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    (mulsubN4 (div128Quot r1.2.2.2.1 r1.2.2.1 v.2.2.1)
+      v.1 v.2.1 v.2.2.1 v.2.2.2 u.1 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2 := by
+  delta fullDivN3C3
+  rfl
+
+theorem fullDivN3Scratch_false_false (sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0 : Word) :
+    fullDivN3Scratch false false sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0 =
+    ((sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ scratch_un0)) := by
+  delta fullDivN3Scratch
+  rfl
+
+theorem fullDivN3Scratch_false_true (sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0 : Word) :
+    fullDivN3Scratch false true sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let r1 := fullDivN3R1 false a0 a1 a2 a3 b0 b1 b2 b3
+    ((sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ v.2.2.1) **
+     (sp + signExtend12 3952 ↦ₘ div128DLo v.2.2.1) **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.2.1)) := by
+  delta fullDivN3Scratch
+  rfl
+
+theorem fullDivN3Scratch_true_false (sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0 : Word) :
+    fullDivN3Scratch true false sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let u := fullDivN3NormU a0 a1 a2 a3 b2
+    ((sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ v.2.2.1) **
+     (sp + signExtend12 3952 ↦ₘ div128DLo v.2.2.1) **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 u.2.2.2.1)) := by
+  delta fullDivN3Scratch
+  rfl
+
+theorem fullDivN3Scratch_true_true (sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0 : Word) :
+    fullDivN3Scratch true true sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0 =
+    let v := fullDivN3NormV b0 b1 b2 b3
+    let r1 := fullDivN3R1 true a0 a1 a2 a3 b0 b1 b2 b3
+    ((sp + signExtend12 3968 ↦ₘ (base + 516)) **
+     (sp + signExtend12 3960 ↦ₘ v.2.2.1) **
+     (sp + signExtend12 3952 ↦ₘ div128DLo v.2.2.1) **
+     (sp + signExtend12 3944 ↦ₘ div128Un0 r1.2.2.2.1)) := by
+  delta fullDivN3Scratch
+  rfl
+
 end EvmAsm.Evm64
