@@ -28,6 +28,7 @@
 
 import EvmAsm.Rv64.RLP.Phase2LongIter
 import EvmAsm.Rv64.Tactics.ExtractPure
+import EvmAsm.Rv64.Tactics.XPermPure
 
 namespace EvmAsm.Rv64.RLP
 

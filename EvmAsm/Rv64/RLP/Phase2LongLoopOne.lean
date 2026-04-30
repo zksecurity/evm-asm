@@ -92,12 +92,9 @@ theorem rlp_phase2_long_loop_one_byte_spec_within
   -- reaching the innermost `F ** ⌜P⌝`).
   exact cpsTripleWithin_weaken
     (fun _ hp => hp)
-    (fun h hp => by
+    (fun _ hp => by
       simp only [rlp_phase2_long_loop_body_post_unfold] at hp
-      refine sepConj_mono_right (sepConj_mono_right (sepConj_mono_right
-        (sepConj_mono_right (sepConj_mono_right ?_)))) h hp
-      intro h' hp'
-      exact ((sepConj_pure_right _).1 hp').1)
+      open EvmAsm.Rv64.Tactics in xperm_pure hp)
     tri
 
 end EvmAsm.Rv64.RLP
