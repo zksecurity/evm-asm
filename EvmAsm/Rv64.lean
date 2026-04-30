@@ -13,6 +13,8 @@ import EvmAsm.Rv64.ControlFlow
 -- LiftSpec → XSimp → XPerm.
 import EvmAsm.Rv64.Tactics.RunBlock
 import EvmAsm.Rv64.Tactics.LiftSpec
+-- ExtractPure: design stub for #1432 (slice 1, beads evm-asm-bx7).
+import EvmAsm.Rv64.Tactics.ExtractPure
 import EvmAsm.Rv64.RLP
 -- The `*Attr` files are imported by their non-Attr counterparts.
 import EvmAsm.Rv64.RegOps
