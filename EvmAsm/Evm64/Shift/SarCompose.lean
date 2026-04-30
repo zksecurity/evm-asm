@@ -73,7 +73,7 @@ private theorem ld_s1_sub_sarCode {base : Word} :
   have h1 := singleton_sub_ofProg base base sar_phase_a (.LD .x5 .x12 8) 0
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_or_16_sub_sarCode {base : Word} :
     ∀ a i, shr_ld_or_acc_code 16 (base + 4) a = some i → sarCode base a = some i := by
@@ -81,7 +81,7 @@ private theorem ld_or_16_sub_sarCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 4) sar_phase_a (shr_ld_or_acc_prog 16) 1
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_or_24_sub_sarCode {base : Word} :
     ∀ a i, shr_ld_or_acc_code 24 (base + 12) a = some i → sarCode base a = some i := by
@@ -89,7 +89,7 @@ private theorem ld_or_24_sub_sarCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 12) sar_phase_a (shr_ld_or_acc_prog 24) 3
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem bne_sub_sarCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 20) (.BNE .x5 .x0 332) a = some i → sarCode base a = some i := by
@@ -97,7 +97,7 @@ private theorem bne_sub_sarCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 20) sar_phase_a (.BNE .x5 .x0 332) 5
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_s0_sub_sarCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 24) (.LD .x5 .x12 0) a = some i → sarCode base a = some i := by
@@ -105,7 +105,7 @@ private theorem ld_s0_sub_sarCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 24) sar_phase_a (.LD .x5 .x12 0) 6
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem sltiu_sub_sarCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 28) (.SLTIU .x10 .x5 256) a = some i → sarCode base a = some i := by
@@ -113,7 +113,7 @@ private theorem sltiu_sub_sarCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 28) sar_phase_a (.SLTIU .x10 .x5 256) 7
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem beq_sub_sarCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 32) (.BEQ .x10 .x0 320) a = some i → sarCode base a = some i := by
@@ -121,14 +121,14 @@ private theorem beq_sub_sarCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 32) sar_phase_a (.BEQ .x10 .x0 320) 8
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold sarCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- Phase B code (ofProg, 7 instrs at +36) is subsumed by sarCode (block 1). -/
 private theorem phase_b_sub_sarCode {base : Word} :
     ∀ a i, shr_phase_b_code (base + 36) a = some i → sarCode base a = some i := by
   unfold shr_phase_b_code sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Phase C subsumption (SAR-specific offsets)
 
@@ -156,7 +156,7 @@ private theorem ofProg_phase_c_sub_sarCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + 64) sar_phase_c) a = some i → sarCode base a = some i := by
   unfold sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SAR Phase C code is subsumed by sarCode (block 2). -/
 private theorem sar_phase_c_sub_sarCode {base : Word} :
@@ -171,28 +171,28 @@ private theorem sar_body_3_sub_sarCode {base : Word} :
     ∀ a i, sar_body_3_code (base + 84) 268 a = some i → sarCode base a = some i := by
   unfold sar_body_3_code sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SAR Body 2 code (14 instrs at +116) is subsumed by sarCode (block 4). -/
 private theorem sar_body_2_sub_sarCode {base : Word} :
     ∀ a i, sar_body_2_code (base + 116) 212 a = some i → sarCode base a = some i := by
   unfold sar_body_2_code sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SAR Body 1 code (20 instrs at +172) is subsumed by sarCode (block 5). -/
 private theorem sar_body_1_sub_sarCode {base : Word} :
     ∀ a i, sar_body_1_code (base + 172) 132 a = some i → sarCode base a = some i := by
   unfold sar_body_1_code sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SAR Body 0 code (25 instrs at +252) is subsumed by sarCode (block 6). -/
 private theorem sar_body_0_sub_sarCode {base : Word} :
     ∀ a i, sar_body_0_code (base + 252) 32 a = some i → sarCode base a = some i := by
   unfold sar_body_0_code sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Bridge: sar_sign_fill_path_code (union chain) ⊆ ofProg sar_sign_fill_path (7-element list)
 private theorem sign_fill_code_sub_ofProg {base : Word} :
@@ -224,7 +224,7 @@ private theorem ofProg_sign_fill_sub_sarCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + 352) sar_sign_fill_path) a = some i → sarCode base a = some i := by
   unfold sarCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Sign-fill path code (7 instrs at +352) is subsumed by sarCode (block 7). -/
 private theorem sign_fill_sub_sarCode {base : Word} :

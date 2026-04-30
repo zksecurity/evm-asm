@@ -277,7 +277,7 @@ theorem divK_div128_step1_v2_branch_merged_spec_within
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail
-        (CodeReq.union_mono_left _ _)))))))))))))))
+        (CodeReq.union_mono_left)))))))))))))))
   -- h2: prodcheck1b_merged_spec's cr is the 10-suffix of merged_cr.
   have h2_raw := divK_div128_prodcheck1b_merged_spec_within sp q1' rhat' dHi un1
     rhatUn1 qDlo1 dlo (base + 60)

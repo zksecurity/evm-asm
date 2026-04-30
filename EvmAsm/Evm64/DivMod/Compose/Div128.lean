@@ -27,7 +27,7 @@ private theorem divK_div128_ofProg_sub_sharedCode {base : Word} :
   unfold sharedDivModCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Helper: combine two subsumption proofs over a union.
 -- `CodeReq.union_sub` — use `CodeReq.union_sub` from `Rv64/SepLogic.lean` (shared).

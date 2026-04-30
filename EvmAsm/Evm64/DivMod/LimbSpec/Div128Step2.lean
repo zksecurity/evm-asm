@@ -71,7 +71,7 @@ theorem divK_div128_step2_upto_guard_spec_within
   have h1 : cpsTripleWithin 3 base (base + 12) cr _ _ :=
     cpsTripleWithin_extend_code (h := h1_raw) (hmono := by
       rw [hcr_eq]; exact CodeReq.union_mono_tail (CodeReq.union_mono_tail
-        (CodeReq.union_mono_left _ _)))
+        (CodeReq.union_mono_left)))
   have h1f := cpsTripleWithin_frameR
     ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
      (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0))
@@ -166,7 +166,7 @@ theorem divK_div128_step2_thru_guard_spec_within
       rw [hcr_eq]
       exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
-        (CodeReq.union_mono_left _ _)))))))
+        (CodeReq.union_mono_left)))))))
   -- h2 = phase2b_guard_spec at base+28 (2-singleton cr).
   have h2_raw := divK_div128_phase2b_guard_spec_within sp rhat2c hi (base + 28) (36 : BitVec 13)
   have ha_bne : (base + 28 : Word) + 4 = base + 32 := by bv_addr
@@ -273,7 +273,7 @@ theorem divK_div128_step2_branch_merged_spec_within
       rw [hcr_eq]
       exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
         (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_tail
-        (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_left _ _)))))))))
+        (CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_left)))))))))
   -- h2 = prodcheck2_merged_spec at base+36 (8-singleton cr, positions 9-16
   -- of the 17-cr). Use split+simp pattern (8 levels deep but each level is
   -- cheap — heads don't match the prodcheck2 cr's head).

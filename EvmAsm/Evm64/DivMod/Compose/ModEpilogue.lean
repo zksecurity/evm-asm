@@ -25,7 +25,7 @@ private theorem divK_denorm_code_sub_modCode {base : Word} :
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Full Denorm (shift body only) for modCode: denormalize u[0..3] by right-shifting.
     base+904+16 → base+904+100 (21 instructions: ADDI+SUB + 3×merge + last).

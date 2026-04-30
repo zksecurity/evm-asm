@@ -23,7 +23,7 @@ private theorem divK_normA_code_sub_divCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + normAOff) (divK_normA 40)) a = some i → (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- signExtend12 rewrites pulled from the divmod_addr global set (AddrNorm.lean).
 open EvmAsm.Evm64.DivMod.AddrNorm (se12_0 se12_8 se12_16 se12_24)
@@ -212,7 +212,7 @@ private theorem divK_copyAU_code_sub_divCode {base : Word} :
     ∀ a i, (divK_copyAU_code (base + copyAUOff)) a = some i → (divCode base) a = some i := by
   unfold divCode divK_copyAU_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Full CopyAU: copy a[0..3] to u[0..3], set u[4]=0.
     base+396 → base+432 (9 instructions). -/
@@ -262,7 +262,7 @@ private theorem divK_loopSetup_code_sub_divCode {base : Word} :
     ∀ a i, (divK_loopSetup_code 464 (base + loopSetupOff)) a = some i → (divCode base) a = some i := by
   unfold divCode divK_loopSetup_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- BLT singleton at base+444 (index 3 of loopSetup) is subsumed by divCode. -/
 private theorem blt_loopSetup_sub_divCode {base : Word} :

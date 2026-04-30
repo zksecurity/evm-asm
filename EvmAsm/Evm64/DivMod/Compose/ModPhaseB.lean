@@ -37,7 +37,7 @@ private theorem sub_modCode_of_phaseB_left {base : Word} {rest : CodeReq} :
     (CodeReq.ofProg_disjoint_range
       (fun k1 k2 hk1 hk2 => by
         simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
-    (CodeReq.union_mono_left _ _)
+    (CodeReq.union_mono_left)
 
 theorem divK_phaseB_init1_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseB_init1_code (base + phaseBOff)) a = some i → (modCode base) a = some i := by

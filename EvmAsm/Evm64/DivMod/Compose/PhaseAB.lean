@@ -36,13 +36,13 @@ private theorem sub_divCode_of_phaseB_left {base : Word} {rest : CodeReq} :
     (CodeReq.ofProg_disjoint_range
       (fun k1 k2 hk1 hk2 => by
         simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
-    (CodeReq.union_mono_left _ _)
+    (CodeReq.union_mono_left)
 
 /-- Phase A code (8 instructions, block 0) is subsumed by divCode. -/
 private theorem divK_phaseA_code_sub_divCode {base : Word} :
     ∀ a i, (divK_phaseA_code base) a = some i → (divCode base) a = some i := by
   unfold divCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Zero path code (5 instructions, block 11) is subsumed by divCode. -/
 private theorem divK_zeroPath_code_sub_divCode {base : Word} :
@@ -51,7 +51,7 @@ private theorem divK_zeroPath_code_sub_divCode {base : Word} :
   -- Skip blocks 0-10, then match block 11
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- BEQ singleton at base+28 is subsumed by divCode (part of block 0: phaseA). -/
 private theorem beq_singleton_sub_divCode {base : Word} :
@@ -59,7 +59,7 @@ private theorem beq_singleton_sub_divCode {base : Word} :
       (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  exact CodeReq.union_mono_left _ _ a i
+  exact CodeReq.union_mono_left a i
     (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1020) 7
       (by decide) (by decide)) a i h)
 

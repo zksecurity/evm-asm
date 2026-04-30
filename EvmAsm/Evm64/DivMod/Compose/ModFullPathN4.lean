@@ -28,7 +28,7 @@ private theorem divK_denorm_code_sub_modCode_n4 (base : Word) :
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Bounded denorm preamble for shift≠0 with `modCode`: LD shift from memory
     followed by a not-taken BEQ. -/

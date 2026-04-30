@@ -71,7 +71,7 @@ private theorem phase_b_sub_shrCode {base : Word} :
     ∀ a i, shr_phase_b_code (base + 36) a = some i → shrCode base a = some i := by
   unfold shr_phase_b_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Phase C union-chain ⊆ ofProg bridge (`shr_phase_c_code_sub_ofProg`) is shared
 -- and lives in `ComposeBase`.
@@ -81,7 +81,7 @@ private theorem ofProg_phase_c_sub_shrCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + 64) shr_phase_c) a = some i → shrCode base a = some i := by
   unfold shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Phase C code (union chain, 5 instrs at +64) is subsumed by shrCode (block 2). -/
 private theorem phase_c_sub_shrCode {base : Word} :
@@ -94,35 +94,35 @@ private theorem body_3_sub_shrCode {base : Word} :
     ∀ a i, shr_body_3_code 252 (base + 84) a = some i → shrCode base a = some i := by
   unfold shr_body_3_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Body 2 code (ofProg, 13 instrs at +112) is subsumed by shrCode (block 4). -/
 private theorem body_2_sub_shrCode {base : Word} :
     ∀ a i, shr_body_2_code 200 (base + 112) a = some i → shrCode base a = some i := by
   unfold shr_body_2_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Body 1 code (ofProg, 19 instrs at +164) is subsumed by shrCode (block 5). -/
 private theorem body_1_sub_shrCode {base : Word} :
     ∀ a i, shr_body_1_code 124 (base + 164) a = some i → shrCode base a = some i := by
   unfold shr_body_1_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Body 0 code (ofProg, 25 instrs at +240) is subsumed by shrCode (block 6). -/
 private theorem body_0_sub_shrCode {base : Word} :
     ∀ a i, shr_body_0_code 24 (base + 240) a = some i → shrCode base a = some i := by
   unfold shr_body_0_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Zero path code (ofProg, 5 instrs at +340) is subsumed by shrCode (block 7). -/
 private theorem zero_path_sub_shrCode {base : Word} :
     ∀ a i, shr_zero_path_code (base + 340) a = some i → shrCode base a = some i := by
   unfold shr_zero_path_code shrCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Individual instruction subsumption helpers (for phase A raw composition)
 -- Each bridges singleton → ofProg shr_phase_a (9-element) → shrCode block 0
@@ -134,7 +134,7 @@ private theorem ld_s1_sub_shrCode {base : Word} :
   have h1 := singleton_sub_ofProg base base shr_phase_a (.LD .x5 .x12 8) 0
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- LD/OR acc at base+4 (2 instrs) is subsumed by shrCode. -/
 private theorem ld_or_16_sub_shrCode {base : Word} :
@@ -143,7 +143,7 @@ private theorem ld_or_16_sub_shrCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 4) shr_phase_a (shr_ld_or_acc_prog 16) 1
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- LD/OR acc at base+12 (2 instrs) is subsumed by shrCode. -/
 private theorem ld_or_24_sub_shrCode {base : Word} :
@@ -152,7 +152,7 @@ private theorem ld_or_24_sub_shrCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 12) shr_phase_a (shr_ld_or_acc_prog 24) 3
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- BNE singleton at base+20 is subsumed by shrCode. -/
 private theorem bne_sub_shrCode {base : Word} :
@@ -161,7 +161,7 @@ private theorem bne_sub_shrCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 20) shr_phase_a (.BNE .x5 .x0 320) 5
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- LD x5 x12 0 singleton at base+24 is subsumed by shrCode. -/
 private theorem ld_s0_sub_shrCode {base : Word} :
@@ -170,7 +170,7 @@ private theorem ld_s0_sub_shrCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 24) shr_phase_a (.LD .x5 .x12 0) 6
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- SLTIU singleton at base+28 is subsumed by shrCode. -/
 private theorem sltiu_sub_shrCode {base : Word} :
@@ -179,7 +179,7 @@ private theorem sltiu_sub_shrCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 28) shr_phase_a (.SLTIU .x10 .x5 256) 7
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 /-- BEQ singleton at base+32 is subsumed by shrCode. -/
 private theorem beq_sub_shrCode {base : Word} :
@@ -188,7 +188,7 @@ private theorem beq_sub_shrCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 32) shr_phase_a (.BEQ .x10 .x0 308) 8
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shrCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 -- ============================================================================
 -- Section 3: Address normalization lemmas

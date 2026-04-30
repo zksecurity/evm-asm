@@ -2229,7 +2229,7 @@ theorem CodeReq.union_none_left {head tail : CodeReq} {a : Word}
   simp [CodeReq.union, h]
 
 /-- Left child of a union is subsumed (unconditionally true, union is left-biased). -/
-theorem CodeReq.union_mono_left (cr1 cr2 : CodeReq) :
+theorem CodeReq.union_mono_left {cr1 cr2 : CodeReq} :
     ∀ a i, cr1 a = some i → (cr1.union cr2) a = some i := by
   intro a i h; simp [CodeReq.union, h]
 
@@ -2452,7 +2452,7 @@ theorem CodeReq.ofProg_disjoint_range_len (base1 : Word) (prog1 : List Instr) (n
 theorem CodeReq.ofProg_mono_append_left (base : Word) (p1 p2 : List Instr) :
     ∀ a i, (CodeReq.ofProg base p1) a = some i →
            (CodeReq.ofProg base (p1 ++ p2)) a = some i := by
-  rw [CodeReq.ofProg_append]; exact CodeReq.union_mono_left _ _
+  rw [CodeReq.ofProg_append]; exact CodeReq.union_mono_left
 
 /-- Right (suffix) of a program append is subsumed by the full program.
     Requires bound to ensure non-overlapping address ranges. -/
@@ -2541,7 +2541,7 @@ theorem CodeReq.mono_unionAll (crs : List CodeReq) (k : Nat) (hk : k < crs.lengt
     cases k with
     | zero =>
       simp only [List.get, CodeReq.unionAll_cons]
-      exact CodeReq.union_mono_left _ _
+      exact CodeReq.union_mono_left
     | succ k' =>
       simp only [List.get, CodeReq.unionAll_cons]
       exact CodeReq.mono_union_right
@@ -2563,7 +2563,7 @@ theorem CodeReq.mono_sub_unionAll (sub_cr : CodeReq) (crs : List CodeReq)
     cases k with
     | zero =>
       simp only [CodeReq.unionAll_cons]
-      intro a i h; exact CodeReq.union_mono_left _ _ a i (h_sub a i h)
+      intro a i h; exact CodeReq.union_mono_left a i (h_sub a i h)
     | succ k' =>
       simp only [CodeReq.unionAll_cons]
       exact CodeReq.mono_union_right

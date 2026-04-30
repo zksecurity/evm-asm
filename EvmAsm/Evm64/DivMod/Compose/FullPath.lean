@@ -555,7 +555,7 @@ private theorem divK_denorm_code_sub_modCode' (base : Word) :
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Denorm preamble for shift≠0 with modCode: LD shift from memory + BEQ not taken.
     base+908 → base+916. -/
@@ -668,7 +668,7 @@ private theorem divK_denorm_code_sub_divCode' (base : Word) :
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- ============================================================================
 -- DIV shift=0 post-loop: Preamble (LD+BEQ taken) → DIV Epilogue (base+908 → base+1068)

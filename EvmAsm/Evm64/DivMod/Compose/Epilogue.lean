@@ -25,7 +25,7 @@ private theorem divK_denorm_code_sub_divCode {base : Word} :
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Denorm preamble for shift≠0: LD shift from memory + BEQ not taken.
     base+908 → base+916. Bridges the gap between loop body exit and denorm body. -/
@@ -224,7 +224,7 @@ private theorem divK_divEpilogue_code_sub_divCode {base : Word} :
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Full DIV epilogue: load q[0..3] from scratch, advance sp, store to output, JAL to NOP.
     base+1008 → base+1068 (10 instructions). -/
@@ -302,21 +302,21 @@ theorem divK_div_epilogue_spec (sp : Word) (base : Word)
 private theorem divK_phaseA_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseA_code base) a = some i → (modCode base) a = some i := by
   unfold modCode divK_phaseA_code; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 private theorem divK_zeroPath_code_sub_modCode {base : Word} :
     ∀ a i, (divK_zeroPath_code (base + zeroPathOff)) a = some i → (modCode base) a = some i := by
   unfold modCode divK_zeroPath_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 private theorem beq_singleton_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.singleton (base + 28) (.BEQ .x5 .x0 1020)) a = some i →
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   intro a i h
-  exact CodeReq.union_mono_left _ _ a i
+  exact CodeReq.union_mono_left a i
     (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1020) 7
       (by decide) (by decide)) a i h)
 
@@ -437,7 +437,7 @@ private theorem divK_modEpilogue_code_sub_modCode {base : Word} :
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Full MOD epilogue: load u[0..3] (denormalized remainder), advance sp, store to output, JAL to NOP.
     base+1008 → base+1068 (10 instructions). -/

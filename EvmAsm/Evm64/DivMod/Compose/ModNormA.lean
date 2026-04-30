@@ -25,7 +25,7 @@ private theorem divK_normA_code_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + normAOff) (divK_normA 40)) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- signExtend12 for src/dst offsets used by normA specs
 -- `mod_se12_{0,8,16,24}` removed: use `signExtend12_{0,8,16,24}` from Rv64/Instructions.lean.
@@ -210,7 +210,7 @@ private theorem divK_copyAU_code_sub_modCode {base : Word} :
     ∀ a i, (divK_copyAU_code (base + copyAUOff)) a = some i → (modCode base) a = some i := by
   unfold modCode divK_copyAU_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Full CopyAU for modCode: copy a[0..3] to u[0..3], set u[4]=0.
     base+396 -> base+432 (9 instructions).
@@ -261,7 +261,7 @@ private theorem divK_loopSetup_code_sub_modCode {base : Word} :
     ∀ a i, (divK_loopSetup_code 464 (base + loopSetupOff)) a = some i → (modCode base) a = some i := by
   unfold modCode divK_loopSetup_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- BLT singleton at base+444 (index 3 of loopSetup) is subsumed by modCode. -/
 private theorem blt_loopSetup_sub_modCode {base : Word} :
