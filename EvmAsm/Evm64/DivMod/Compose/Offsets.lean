@@ -67,6 +67,12 @@ abbrev loopBodyOff  : Word :=  448
     Sub-offset relative to the loopBody block (= loopBodyOff + 280, i.e. 70
     instructions into the loop body). -/
 abbrev correctionSkipBeqOff : Word :=  728
+/-- Offset of the addback-skip BEQ sub-block inside `divK_loopBody`.
+    Entry PC of the `BEQ x7, x0, +4` instruction that branches over the
+    addback fixup (executed when the trial-quotient `q̂` did NOT overshoot,
+    so no addback is needed). Sub-offset relative to the loopBody block
+    (= storeLoopOff - 4 = loopBodyOff + 432). -/
+abbrev addbackBeqOff : Word :=  880
 /-- Offset of the store-quotient sub-block inside `divK_loopBody`.
     Entry PC of the `divK_store_qj` snippet that writes the trial-quotient
     digit `q[j]` to the output buffer (followed by the loop-back / loop-exit
@@ -125,6 +131,11 @@ example : loopSetupOff = copyAUOff + 4 * divK_copyAU.length := by decide
 example : loopBodyOff = loopSetupOff + 4 * (divK_loopSetup 464).length := by decide
 /-- denormOff = loopBodyOff + 4 · |divK_loopBody 560 7736|. -/
 example : denormOff = loopBodyOff + 4 * (divK_loopBody 560 7736).length := by decide
+/-- addbackBeqOff = storeLoopOff - 4 (= loopBodyOff + 432, sub-block offset
+    within `divK_loopBody`). The addback-skip BEQ sits one instruction before
+    the `divK_store_qj` entry. -/
+example : addbackBeqOff = storeLoopOff - 4 := by decide
+example : addbackBeqOff = loopBodyOff + 432 := by decide
 /-- storeLoopOff = loopBodyOff + 436 (sub-block offset within `divK_loopBody`).
     The `divK_store_qj` snippet starts 109 instructions into the loop body. -/
 example : storeLoopOff = loopBodyOff + 436 := by decide
