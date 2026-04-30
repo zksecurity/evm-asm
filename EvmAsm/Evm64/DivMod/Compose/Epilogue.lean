@@ -244,19 +244,18 @@ theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
   -- Load phase (base+1008 → base+1024)
   have hload := divK_epilogue_load_spec_within 4088 4080 4072 4064 sp q0 q1 q2 q3 v5 v6 v7 v10
     (base + epilogueOff)
-  rw [show (base + epilogueOff : Word) + 16 = base + 1024 from by bv_addr] at hload
   have hloade := cpsTripleWithin_extend_code (hmono := fun a i h =>
     divK_divEpilogue_code_sub_divCode a i
       (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff) (divK_div_epilogue 24)
         (divK_epilogue_load_prog 4088 4080 4072 4064) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hload
   -- Store phase (base+1024 → base+1068 via JAL)
-  have hstore := divK_epilogue_store_spec_within sp (base + 1024) q0 q1 q2 q3 m0 m8 m16 m24 24
-  rw [show (base + 1024 : Word) + 20 + signExtend21 24 = base + nopOff from by rv64_addr]
+  have hstore := divK_epilogue_store_spec_within sp (base + epilogueOff + 16) q0 q1 q2 q3 m0 m8 m16 m24 24
+  rw [show (base + epilogueOff + 16 : Word) + 20 + signExtend21 24 = base + nopOff from by rv64_addr]
     at hstore
   have hstoree := cpsTripleWithin_extend_code (hmono := fun a i h =>
     divK_divEpilogue_code_sub_divCode a i
-      (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + 1024) (divK_div_epilogue 24)
+      (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff + 16) (divK_div_epilogue 24)
         (divK_epilogue_store_prog 24) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hstore
   -- Frame load with output memory
@@ -458,19 +457,18 @@ theorem divK_mod_epilogue_spec_within (sp : Word) (base : Word)
   -- Load phase (base+1008 → base+1024): load u[0..3] from scratch memory
   have hload := divK_epilogue_load_spec_within 4056 4048 4040 4032 sp u0 u1 u2 u3 v5 v6 v7 v10
     (base + epilogueOff)
-  rw [show (base + epilogueOff : Word) + 16 = base + 1024 from by bv_addr] at hload
   have hloade := cpsTripleWithin_extend_code (hmono := fun a i h =>
     divK_modEpilogue_code_sub_modCode a i
       (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff) (divK_mod_epilogue 24)
         (divK_epilogue_load_prog 4056 4048 4040 4032) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hload
   -- Store phase (base+1024 → base+1068 via JAL): advance sp, store u[0..3] to output
-  have hstore := divK_epilogue_store_spec_within sp (base + 1024) u0 u1 u2 u3 m0 m8 m16 m24 24
-  rw [show (base + 1024 : Word) + 20 + signExtend21 24 = base + nopOff from by rv64_addr]
+  have hstore := divK_epilogue_store_spec_within sp (base + epilogueOff + 16) u0 u1 u2 u3 m0 m8 m16 m24 24
+  rw [show (base + epilogueOff + 16 : Word) + 20 + signExtend21 24 = base + nopOff from by rv64_addr]
     at hstore
   have hstoree := cpsTripleWithin_extend_code (hmono := fun a i h =>
     divK_modEpilogue_code_sub_modCode a i
-      (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + 1024) (divK_mod_epilogue 24)
+      (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff + 16) (divK_mod_epilogue 24)
         (divK_epilogue_store_prog 24) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hstore
   -- Frame load with output memory
