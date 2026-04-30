@@ -23,13 +23,12 @@ private theorem divK_phaseC2_code_sub_divCode {base : Word} :
 
 /-- BEQ x6 x0 172 singleton at base+224 (index 3 of phaseC2) is subsumed by divCode. -/
 private theorem beq_shift_sub_divCode {base : Word} :
-    ∀ a i, (CodeReq.singleton (base + 224) (.BEQ .x6 .x0 172)) a = some i →
+    ∀ a i, (CodeReq.singleton (base + phaseC2Off + 12) (.BEQ .x6 .x0 172)) a = some i →
       (divCode base) a = some i := by
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseC2Off) (divK_phaseC2 172) 3
     (by decide) (by decide)
-  rw [bv64_4mul_3,
-      show (base + phaseC2Off : Word) + 12 = base + 224 from by bv_addr] at hlookup
+  rw [bv64_4mul_3] at hlookup
   exact divK_phaseC2_code_sub_divCode a i
     (CodeReq.singleton_mono hlookup a i h)
 
@@ -38,13 +37,12 @@ private theorem beq_shift_sub_divCode {base : Word} :
 /-- Phase C2 body (base+212 → base+224): store shift, compute antiShift.
     Extends to divCode. Uses first 3 instructions of phaseC2. -/
 private theorem divK_phaseC2_body_divCode_within (sp shift v2 shiftMem : Word) (base : Word) :
-    cpsTripleWithin 3 (base + phaseC2Off) (base + 224) (divCode base)
+    cpsTripleWithin 3 (base + phaseC2Off) (base + phaseC2Off + 12) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + signExtend12 3992) ↦ₘ shiftMem))
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
   have hbody := divK_phaseC2_body_spec_within sp shift v2 shiftMem 172 (base + phaseC2Off)
-  rw [show (base + phaseC2Off : Word) + 12 = base + 224 from by bv_addr] at hbody
   exact cpsTripleWithin_extend_code divK_phaseC2_code_sub_divCode hbody
 
 theorem divK_phaseC2_ntaken_spec_within (sp shift v2 shiftMem : Word) (base : Word)
@@ -55,9 +53,9 @@ theorem divK_phaseC2_ntaken_spec_within (sp shift v2 shiftMem : Word) (base : Wo
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
   have hbody := divK_phaseC2_body_divCode_within sp shift v2 shiftMem base
-  have hbeq_raw := beq_spec_gen_within .x6 .x0 172 shift (0 : Word) (base + 224)
-  rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by rv64_addr,
-      show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
+  have hbeq_raw := beq_spec_gen_within .x6 .x0 172 shift (0 : Word) (base + phaseC2Off + 12)
+  rw [show (base + phaseC2Off + 12 : Word) + signExtend13 172 = base + copyAUOff from by rv64_addr,
+      show (base + phaseC2Off + 12 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranchWithin_ntakenStripPure2 hbeq_raw
     (fun hp hQt => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
@@ -82,9 +80,9 @@ theorem divK_phaseC2_taken_spec_within (sp shift v2 shiftMem : Word) (base : Wor
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
        (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
   have hbody := divK_phaseC2_body_divCode_within sp shift v2 shiftMem base
-  have hbeq_raw := beq_spec_gen_within .x6 .x0 172 shift (0 : Word) (base + 224)
-  rw [show (base + 224 : Word) + signExtend13 172 = base + copyAUOff from by rv64_addr,
-      show (base + 224 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
+  have hbeq_raw := beq_spec_gen_within .x6 .x0 172 shift (0 : Word) (base + phaseC2Off + 12)
+  rw [show (base + phaseC2Off + 12 : Word) + signExtend13 172 = base + copyAUOff from by rv64_addr,
+      show (base + phaseC2Off + 12 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
   have hbeq_clean := cpsBranchWithin_takenStripPure2 hbeq_raw
     (fun hp hQf => by
       obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
