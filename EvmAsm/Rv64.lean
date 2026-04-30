@@ -13,6 +13,8 @@ import EvmAsm.Rv64.ControlFlow
 -- LiftSpec → XSimp → XPerm.
 import EvmAsm.Rv64.Tactics.RunBlock
 import EvmAsm.Rv64.Tactics.LiftSpec
+-- Stub for the upcoming `extract_pure` tactic (GH #1432).
+import EvmAsm.Rv64.Tactics.ExtractPure
 import EvmAsm.Rv64.RLP
 -- The `*Attr` files are imported by their non-Attr counterparts.
 import EvmAsm.Rv64.RegOps
