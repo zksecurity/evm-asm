@@ -41,6 +41,23 @@ for the guest program.
 
 More specifically, evm.asm aims at building the guest part of the **zkEVM**. Reducing trusted computing base matters for this usage.
 
+A second motivation is that our Hoare triples are *bounded* in steps
+(`cpsTripleWithin N base ...`): every spec carries an explicit upper bound `N`
+on the number of RISC-V steps the program executes. This is more than a
+proof-engineering convenience — it gives two things "for free" once the spec is
+proved:
+
+1. **Fitting within zkVM cycle limits.** zkVMs charge per executed instruction
+   and are typically capped per proof. A bounded triple is a worst-case cycle
+   budget that the prover can rely on at composition time, so a guest program
+   built from verified macros has a known, summable upper bound on its trace
+   length without needing to run it.
+2. **Assessing gas costs.** The same step bounds give a verified instruction
+   count for each EVM opcode implementation, which is the main input to a
+   gas-pricing model. Sound gas costs require a sound upper bound on the work
+   each opcode does; bounded triples produce that bound as a byproduct of
+   correctness.
+
 ## Key Idea
 
 Lean 4 serves simultaneously as:
