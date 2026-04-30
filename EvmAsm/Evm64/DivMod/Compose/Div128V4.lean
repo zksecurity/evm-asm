@@ -150,7 +150,7 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
     (v1Old v6Old v11Old : Word)
     (retMem dMem dloMem un0Mem scratchMem : Word)
     (_halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
-    cpsTriple (base + div128Off) retAddr
+    cpsTripleWithin 73 (base + div128Off) retAddr
       (CodeReq.ofProg (base + div128Off) divK_div128_v4)
       (-- Precondition: same as div128_v2_spec, plus the new scratch slot
        -- 3936 (used to save rhat2c across the un0 LD clobber).
@@ -187,10 +187,10 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
   let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
                 then rhat' + dHi else rhat'
   -- Block 1: Phase 1 (base+1072 → base+1112).
-  have hph1 := divK_div128_phase1_spec sp retAddr d uLo uHi v1Old v6Old v11Old
+  have hph1 := divK_div128_phase1_spec_within sp retAddr d uLo uHi v1Old v6Old v11Old
     retMem dMem dloMem un0Mem (base + div128Off)
   rw [show (base + div128Off : Word) + 40 = base + 1112 from by bv_addr] at hph1
-  have hph1e := cpsTriple_extend_code (hmono := by
+  have hph1e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (d128_v4_sub 0 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 1 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 2 _ _ (by decide) (by bv_addr) (by decide))
@@ -202,14 +202,14 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
      (CodeReq.union_sub (d128_v4_sub 8 _ _ (by decide) (by bv_addr) (by decide))
       (d128_v4_sub 9 _ _ (by decide) (by bv_addr) (by decide)))))))))))
     hph1
-  have hph1f := cpsTriple_frameR
+  have hph1f := cpsTripleWithin_frameR
     ((.x0 ↦ᵣ (0 : Word)) ** (sp + signExtend12 3936 ↦ₘ scratchMem))
     (by pcFree) hph1e
   -- Block 2: Step1_v2 (base+1112 → base+1212).
-  have hst1 := divK_div128_step1_v2_spec sp uHi dHi un1 dLo un0 d dLo (base + 1112)
+  have hst1 := divK_div128_step1_v2_spec_within sp uHi dHi un1 dLo un0 d dLo (base + 1112)
   unfold divKDiv128Step1V2Code divKDiv128Step1V2Pre divKDiv128Step1V2Post at hst1
   rw [show (base + 1112 : Word) + 100 = base + 1212 from by bv_addr] at hst1
-  have hst1e := cpsTriple_extend_code (hmono := by
+  have hst1e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (d128_v4_sub 10 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 11 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 12 _ _ (by decide) (by bv_addr) (by decide))
@@ -236,33 +236,33 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
      (CodeReq.union_sub (d128_v4_sub 33 _ _ (by decide) (by bv_addr) (by decide))
       (d128_v4_sub 34 _ _ (by decide) (by bv_addr) (by decide))))))))))))))))))))))))))
     hst1
-  have hst1f := cpsTriple_frameR
+  have hst1f := cpsTripleWithin_frameR
     ((.x2 ↦ᵣ retAddr) ** (sp + signExtend12 3968 ↦ₘ retAddr) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3944 ↦ₘ un0) **
      (sp + signExtend12 3936 ↦ₘ scratchMem))
     (by pcFree) hst1e
-  have h12 := cpsTriple_seq_perm_same_cr
+  have h12 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) hph1f hst1f
   -- Block 3: compute_un21 (base+1212 → base+1232).
   let x5Exit_st1 := if rhatHi2 = 0 then qDlo2 else qDlo1
   let x1Exit_st1 := if rhatHi2 = 0 then rhatUn1' else rhatHi2
-  have hcu := divK_div128_compute_un21_spec sp q1'' rhat'' un1 x1Exit_st1 x5Exit_st1 dLo
+  have hcu := divK_div128_compute_un21_spec_within sp q1'' rhat'' un1 x1Exit_st1 x5Exit_st1 dLo
     (base + 1212)
   rw [show (base + 1212 : Word) + 20 = base + 1232 from by bv_addr] at hcu
-  have hcue := cpsTriple_extend_code (hmono := by
+  have hcue := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (d128_v4_sub 35 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 36 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 37 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 38 _ _ (by decide) (by bv_addr) (by decide))
       (d128_v4_sub 39 _ _ (by decide) (by bv_addr) (by decide))))))
     hcu
-  have hcuf := cpsTriple_frameR
+  have hcuf := cpsTripleWithin_frameR
     ((.x6 ↦ᵣ dHi) ** (.x0 ↦ᵣ (0 : Word)) **
      (.x2 ↦ᵣ retAddr) ** (sp + signExtend12 3968 ↦ₘ retAddr) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3944 ↦ₘ un0) **
      (sp + signExtend12 3936 ↦ₘ scratchMem))
     (by pcFree) hcue
-  have h123 := cpsTriple_seq_perm_same_cr
+  have h123 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) h12 hcuf
   -- Block 4: step2_v4 (base+1232 → base+1356).
   let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| un1
@@ -272,44 +272,16 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
     scratchMem (base + 1232)
   unfold divKDiv128Step2V4Code divKDiv128Step2V4Post at hst2
   rw [show (base + 1232 : Word) + 124 = base + 1356 from by bv_addr] at hst2
-  have hst2e := cpsTriple_extend_code (hmono := by
-    exact CodeReq.union_sub (d128_v4_sub 40 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 41 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 42 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 43 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 44 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 45 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 46 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 47 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 48 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 49 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 50 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 51 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 52 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 53 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 54 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 55 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 56 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 57 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 58 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 59 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 60 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 61 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 62 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 63 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 64 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 65 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 66 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 67 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 68 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (d128_v4_sub 69 _ _ (by decide) (by bv_addr) (by decide))
-      (d128_v4_sub 70 _ _ (by decide) (by bv_addr) (by decide))))))))))))))))))))))))))))))))
+  have hst2e := cpsTripleWithin_extend_code (hmono := by
+    exact CodeReq.ofProg_mono_sub (base + div128Off) (base + 1232)
+      divK_div128_v4 divKDiv128Step2V4Instrs 40
+      (by bv_addr) (by decide) (by decide) (by decide))
     hst2
-  have hst2f := cpsTriple_frameR
+  have hst2f := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ q1'') ** (.x2 ↦ᵣ retAddr) **
      (sp + signExtend12 3968 ↦ₘ retAddr) ** (sp + signExtend12 3960 ↦ₘ d))
     (by pcFree) hst2e
-  have h1234 := cpsTriple_seq_perm_same_cr
+  have h1234 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) h123 hst2f
   -- Block 5: end (base+1356 → retAddr via JALR).
   -- step2_v4's q0'' is x5 from divKDiv128Step2V4Post.
@@ -340,30 +312,30 @@ theorem div128_v4_spec (sp retAddr d uLo uHi : Word) (base : Word)
                        else if rhat2'Hi ≠ 0 then rhat2'
                        else un0
   let mem3936Exit := if rhat2cHi ≠ 0 then scratchMem else rhat2c
-  have hend := divK_div128_end_spec sp q1'' q0'' retAddr x11Exit_step2 retAddr
+  have hend := divK_div128_end_spec_within sp q1'' q0'' retAddr x11Exit_step2 retAddr
     (base + 1356) _halign
-  have hende := cpsTriple_extend_code (hmono := by
+  have hende := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (d128_v4_sub 71 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 72 _ _ (by decide) (by bv_addr) (by decide))
      (CodeReq.union_sub (d128_v4_sub 73 _ _ (by decide) (by bv_addr) (by decide))
       (d128_v4_sub 74 _ _ (by decide) (by bv_addr) (by decide)))))
     hend
-  have hendf := cpsTriple_frameR
+  have hendf := cpsTripleWithin_frameR
     ((.x7 ↦ᵣ x7Exit_step2) ** (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ x1Exit_step2) **
      (.x0 ↦ᵣ (0 : Word)) **
      (sp + signExtend12 3960 ↦ₘ d) ** (sp + signExtend12 3952 ↦ₘ dLo) **
      (sp + signExtend12 3944 ↦ₘ un0) ** (sp + signExtend12 3936 ↦ₘ mem3936Exit))
     (by pcFree) hende
-  have h12345 := cpsTriple_seq_perm_same_cr
+  have h12345 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) h1234 hendf
-  exact cpsTriple_weaken
+  exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12345
 
 /-- Lifted `div128_v4_spec` over `sharedDivModCode_v4 base` — a thin
     wrapper that lifts the cr from singleton `ofProg`-form to the
-    shared cr via `cpsTriple_extend_code` + `shared_b12_div128_v4_sub`.
+    shared cr via `cpsTripleWithin_extend_code` + `shared_b12_div128_v4_sub`.
 
     Future v4-migrated specs (loop body, full path) will use this
     lifted form. -/
@@ -371,7 +343,7 @@ theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
     (v1Old v6Old v11Old : Word)
     (retMem dMem dloMem un0Mem scratchMem : Word)
     (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
-    cpsTriple (base + div128Off) retAddr (sharedDivModCode_v4 base)
+    cpsTripleWithin 73 (base + div128Off) retAddr (sharedDivModCode_v4 base)
       ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
        (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
        (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) **
@@ -382,7 +354,7 @@ theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3944 ↦ₘ un0Mem) **
        (sp + signExtend12 3936 ↦ₘ scratchMem))
       (div128V4SpecPost sp retAddr d uLo uHi scratchMem) :=
-  cpsTriple_extend_code (hmono := shared_b12_div128_v4_sub)
+  cpsTripleWithin_extend_code (hmono := shared_b12_div128_v4_sub)
     (div128_v4_spec sp retAddr d uLo uHi base v1Old v6Old v11Old
       retMem dMem dloMem un0Mem scratchMem halign)
 
