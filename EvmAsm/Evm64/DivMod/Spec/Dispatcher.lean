@@ -395,6 +395,16 @@ theorem fullDivN1_hdivs_of_word_eq
     delta fullDivN1QuotientWord
     exact EvmWord.getLimbN_fromLimbs_3
 
+theorem fullDivN1QuotientWord_eq_div_of_toNat_eq
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hdiv_toNat :
+      (fullDivN1QuotientWord bltu_3 bltu_2 bltu_1 bltu_0
+        a0 a1 a2 a3 b0 b1 b2 b3).toNat = (EvmWord.div a b).toNat) :
+    fullDivN1QuotientWord bltu_3 bltu_2 bltu_1 bltu_0
+      a0 a1 a2 a3 b0 b1 b2 b3 = EvmWord.div a b :=
+  BitVec.eq_of_toNat_eq hdiv_toNat
+
 theorem evm_div_n1_stack_spec_within_word
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a b : EvmWord)
@@ -501,6 +511,16 @@ theorem fullModN1_hmods_of_word_eq
   · rw [← hmod]
     delta fullModN1RemainderWord
     exact EvmWord.getLimbN_fromLimbs_3
+
+theorem fullModN1RemainderWord_eq_mod_of_toNat_eq
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hmod_toNat :
+      (fullModN1RemainderWord bltu_3 bltu_2 bltu_1 bltu_0
+        a0 a1 a2 a3 b0 b1 b2 b3).toNat = (EvmWord.mod a b).toNat) :
+    fullModN1RemainderWord bltu_3 bltu_2 bltu_1 bltu_0
+      a0 a1 a2 a3 b0 b1 b2 b3 = EvmWord.mod a b :=
+  BitVec.eq_of_toNat_eq hmod_toNat
 
 theorem evm_mod_n1_stack_spec_within
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
