@@ -7,9 +7,13 @@
   "EvmAsm.Rv64.WordOps":
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
   "EvmAsm.Rv64.RLP.Phase1":
-  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.ExtractPure"],
+  "EvmAsm.Rv64.RLP.Phase2LongLoad":
+  ["EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.Tactics.XPerm":
+  ["EvmAsm.Rv64.SepLogic"],
   "EvmAsm.Rv64.Tactics.SeqFrame":
-  ["EvmAsm.Rv64.Tactics.PerfTrace"],
+  ["EvmAsm.Rv64.Tactics.PerfTrace", "EvmAsm.Rv64.InstructionSpecs"],
   "EvmAsm.Rv64.Tactics.LiftSpec":
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
   "EvmAsm.Evm64.Pop.Spec":
