@@ -29,6 +29,7 @@ import EvmAsm.Evm64.EvmWordArith.MulCorrect
 -- DivBridge → Normalization → MulSubChain → Div128Lemmas → MultiLimb →
 -- Div → Common.
 import EvmAsm.Evm64.EvmWordArith.Div128Shift0
+import EvmAsm.Evm64.EvmWordArith.DivCorrect
 
 -- ModBridgeAssemble covers ModBridgeUtop → Val256ModBridge.
 import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
