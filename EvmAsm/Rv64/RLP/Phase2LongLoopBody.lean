@@ -27,6 +27,7 @@
 -/
 
 import EvmAsm.Rv64.RLP.Phase2LongIter
+import EvmAsm.Rv64.Tactics.ExtractPure
 
 namespace EvmAsm.Rv64.RLP
 
@@ -106,13 +107,8 @@ theorem rlp_phase2_long_loop_body_post_pure
         dwordAddr P hp → P := by
   intro hp hpost
   simp only [rlp_phase2_long_loop_body_post_unfold] at hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  obtain ⟨_, _, _, _, _, hpost⟩ := hpost
-  exact hpost.2
+  open EvmAsm.Rv64.Tactics in extract_pure hpost
+  exact hpost.1
 
 /-- Step-bounded spec for one pass through the long-form length-loop body.
 

@@ -32,6 +32,7 @@
 -/
 
 import EvmAsm.Rv64.SyscallSpecs
+import EvmAsm.Rv64.Tactics.ExtractPure
 import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Rv64.RLP
@@ -170,10 +171,8 @@ theorem rlp_phase1_step_taken_spec_within (v5 v10 : Word)
       (fun _ hpost => by
         -- The not-taken post carries `⌜¬ BitVec.ult v5 kVal⌝`; the
         -- assumption `hv5` contradicts it.
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
-        exact hpost.2 hv5))
+        open EvmAsm.Rv64.Tactics in extract_pure hpost
+        exact hpost.1 hv5))
 
 theorem rlp_phase1_step_ntaken_spec_within (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
@@ -192,10 +191,8 @@ theorem rlp_phase1_step_ntaken_spec_within (v5 v10 : Word)
       (fun _ hpost => by
         -- The taken post carries `⌜BitVec.ult v5 kVal⌝`; the assumption
         -- `hv5` (its negation) contradicts it.
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x5
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x0
-        obtain ⟨_, _, _, _, _, hpost⟩ := hpost  -- peel x10
-        exact hv5 hpost.2))
+        open EvmAsm.Rv64.Tactics in extract_pure hpost
+        exact hv5 hpost.1))
 
 abbrev rlp_phase1_classifier_code
     (off_single off_short_str off_long_str off_short_list : BitVec 13)
