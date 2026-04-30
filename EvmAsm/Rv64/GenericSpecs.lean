@@ -203,7 +203,7 @@ theorem generic_nop_spec_within (instr : Instr) {base exit_ : Word}
 -- EVM64 operations use LD/SD exclusively (Groups 11-12 below).
 
 -- ============================================================================
--- Group 9: Branch (BNE/BEQ) — cpsBranch
+-- Group 9: Branch (BNE/BEQ) — bounded two-exit CPS specs
 -- ============================================================================
 
 /-- Generic spec for BNE: branch if not equal.
@@ -310,7 +310,7 @@ theorem generic_beq_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Wo
          (sepConj_pure_right h1b).mpr ⟨hRs2, heq⟩⟩, hR2⟩
 
 -- ============================================================================
--- Group 9b: Branch (BLTU) — cpsBranch (unsigned less than)
+-- Group 9b: Branch (BLTU) — bounded two-exit CPS specs (unsigned less than)
 -- ============================================================================
 
 /-- Generic spec for BLTU: branch if unsigned less than.
@@ -365,7 +365,7 @@ theorem generic_bltu_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : W
          (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
--- Group 9c: Branch (BGE) — cpsBranch (signed greater or equal)
+-- Group 9c: Branch (BGE) — bounded two-exit CPS specs (signed greater or equal)
 -- ============================================================================
 
 /-- Generic spec for BGE: branch if signed greater or equal.
@@ -420,7 +420,7 @@ theorem generic_bge_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Wo
          (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
--- Group 9d: Branch (BLT) — cpsBranch (signed less than)
+-- Group 9d: Branch (BLT) — bounded two-exit CPS specs (signed less than)
 -- ============================================================================
 
 /-- Generic spec for BLT: branch if signed less than.
@@ -475,7 +475,7 @@ theorem generic_blt_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Wo
          (sepConj_pure_right h1b).mpr ⟨hRs2, hlt⟩⟩, hR2⟩
 
 -- ============================================================================
--- Group 9e: Branch (BGEU) — cpsBranch (unsigned greater or equal)
+-- Group 9e: Branch (BGEU) — bounded two-exit CPS specs (unsigned greater or equal)
 -- ============================================================================
 
 /-- Generic spec for BGEU: branch if unsigned greater or equal.
@@ -709,146 +709,4 @@ theorem generic_sd_x0_spec_within (rs1 : Reg) (v_addr memOld : Word)
 -- ============================================================================
 -- Compatibility wrappers: forget the explicit step bound.
 -- ============================================================================
-
-theorem generic_1reg_spec (instr : Instr) (rd : Reg) (v result : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (hexec : ∀ s, s.pc = base → s.getReg rd = v →
-      execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
-    (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4) (CodeReq.singleton base instr)
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ result) := by
-  exact (generic_1reg_spec_within instr rd v result base hrd_ne_x0 hexec hstep).to_cpsTriple
-
-theorem generic_2reg_spec (instr : Instr) (rs rd : Reg)
-    (v_src vOld result : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (hexec : ∀ s, s.pc = base → s.getReg rs = v_src → s.getReg rd = vOld →
-      execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
-    (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4) (CodeReq.singleton base instr)
-      ((rs ↦ᵣ v_src) ** (rd ↦ᵣ vOld))
-      ((rs ↦ᵣ v_src) ** (rd ↦ᵣ result)) := by
-  exact (generic_2reg_spec_within instr rs rd v_src vOld result base hrd_ne_x0 hexec hstep).to_cpsTriple
-
-theorem generic_2reg_rd_eq_rs1_spec (instr : Instr) (rd rs2 : Reg)
-    (v1 v2 result : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (hexec : ∀ s, s.pc = base → s.getReg rd = v1 → s.getReg rs2 = v2 →
-      execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
-    (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4) (CodeReq.singleton base instr)
-      ((rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      ((rd ↦ᵣ result) ** (rs2 ↦ᵣ v2)) := by
-  exact (generic_2reg_rd_eq_rs1_spec_within instr rd rs2 v1 v2 result base hrd_ne_x0 hexec hstep).to_cpsTriple
-
-theorem generic_3reg_spec (instr : Instr) (rs1 rs2 rd : Reg)
-    (v1 v2 vOld result : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (hexec : ∀ s, s.pc = base → s.getReg rs1 = v1 → s.getReg rs2 = v2 →
-      execInstrBr s instr = (s.setReg rd result).setPC (s.pc + 4))
-    (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base (base + 4) (CodeReq.singleton base instr)
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ result)) := by
-  exact (generic_3reg_spec_within instr rs1 rs2 rd v1 v2 vOld result base hrd_ne_x0 hexec hstep).to_cpsTriple
-
-theorem generic_nop_spec (instr : Instr) {base exit_ : Word}
-    (hexec : ∀ s, s.pc = base → execInstrBr s instr = s.setPC exit_)
-    (hstep : ∀ s, s.code s.pc = some instr → step s = some (execInstrBr s instr)) :
-    cpsTriple base exit_ (CodeReq.singleton base instr)
-      empAssertion
-      empAssertion := by
-  exact (generic_nop_spec_within instr (base := base) (exit_ := exit_) hexec hstep).to_cpsTriple
-
-theorem generic_bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BNE rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) := by
-  exact (generic_bne_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BEQ rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) := by
-  exact (generic_beq_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_bltu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BLTU rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝) := by
-  exact (generic_bltu_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_bge_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BGE rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝) := by
-  exact (generic_bge_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_blt_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BLT rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.slt v1 v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.slt v1 v2⌝) := by
-  exact (generic_blt_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BGEU rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝)
-      (base + 4)
-        ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝) := by
-  exact (generic_bgeu_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-theorem generic_jal_spec (rd : Reg) (vOld : Word) (offset : BitVec 21) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + signExtend21 offset) (CodeReq.singleton base (.JAL rd offset))
-      (rd ↦ᵣ vOld)
-      (rd ↦ᵣ (base + 4)) := by
-  exact (generic_jal_spec_within rd vOld offset base hrd_ne_x0).to_cpsTriple
-
-theorem generic_jalr_spec (rd rs1 : Reg) (v1 vOld : Word) (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base ((v1 + signExtend12 offset) &&& ~~~1) (CodeReq.singleton base (.JALR rd rs1 offset))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))) := by
-  exact (generic_jalr_spec_within rd rs1 v1 vOld offset base hrd_ne_x0).to_cpsTriple
-
-theorem generic_ld_spec (rd rs1 : Reg) (v_addr vOld memVal : Word)
-    (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) := by
-  exact (generic_ld_spec_within rd rs1 v_addr vOld memVal offset base hrd_ne_x0).to_cpsTriple
-
-theorem generic_sd_spec (rs1 rs2 : Reg) (v_addr v_data memOld : Word)
-    (offset : BitVec 12) (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs1 rs2 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ memOld))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) := by
-  exact (generic_sd_spec_within rs1 rs2 v_addr v_data memOld offset base).to_cpsTriple
-
-theorem generic_sd_x0_spec (rs1 : Reg) (v_addr memOld : Word)
-    (offset : BitVec 12) (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs1 .x0 offset))
-      ((rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ memOld))
-      ((rs1 ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ (0 : Word))) := by
-  exact (generic_sd_x0_spec_within rs1 v_addr memOld offset base).to_cpsTriple
-
 end EvmAsm.Rv64

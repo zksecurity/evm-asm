@@ -61,23 +61,6 @@ theorem shl_merge_limb_spec_within (src_off prev_off dst_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (antiShift.toNat % 64)) &&& mask)) dstOld dst_off (base + 24)
   runBlock L1 SL L2 SR AN OR_ SD_
 
-theorem shl_merge_limb_spec (src_off prev_off dst_off : BitVec 12)
-    (sp src prev dstOld v5 v10 bit_shift antiShift mask : Word) (base : Word) :
-    let memSrc := sp + signExtend12 src_off
-    let memPrev := sp + signExtend12 prev_off
-    let memDst := sp + signExtend12 dst_off
-    let shiftedSrc := src <<< (bit_shift.toNat % 64)
-    let shiftedPrev := (prev >>> (antiShift.toNat % 64)) &&& mask
-    let result := shiftedSrc ||| shiftedPrev
-    let cr := shl_merge_limb_code base src_off prev_off dst_off
-    cpsTriple base (base + 28) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (memSrc ↦ₘ src) ** (memPrev ↦ₘ prev) ** (memDst ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedPrev) ** (.x11 ↦ᵣ mask) **
-       (memSrc ↦ₘ src) ** (memPrev ↦ₘ prev) ** (memDst ↦ₘ result)) :=
-  (shl_merge_limb_spec_within src_off prev_off dst_off sp src prev dstOld v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SHL First Limb (3 instructions)
@@ -109,18 +92,6 @@ theorem shl_first_limb_spec_within (dst_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
   runBlock L SL SD_
 
-theorem shl_first_limb_spec (dst_off : BitVec 12)
-    (sp src dstOld v5 bit_shift : Word) (base : Word) :
-    let memSrc := sp + signExtend12 (0 : BitVec 12)
-    let memDst := sp + signExtend12 dst_off
-    let result := src <<< (bit_shift.toNat % 64)
-    let cr := shl_first_limb_code base dst_off
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) :=
-  (shl_first_limb_spec_within dst_off sp src dstOld v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SHL Merge Limb In-place (7 instructions, src_off = dst_off)
@@ -161,22 +132,6 @@ theorem shl_merge_limb_inplace_spec_within (off prev_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp ((src <<< (bit_shift.toNat % 64)) ||| ((prev >>> (antiShift.toNat % 64)) &&& mask)) src off (base + 24)
   runBlock L1 SL L2 SR AN OR_ SD_
 
-theorem shl_merge_limb_inplace_spec (off prev_off : BitVec 12)
-    (sp src prev v5 v10 bit_shift antiShift mask : Word) (base : Word) :
-    let memLoc := sp + signExtend12 off
-    let memPrev := sp + signExtend12 prev_off
-    let shiftedSrc := src <<< (bit_shift.toNat % 64)
-    let shiftedPrev := (prev >>> (antiShift.toNat % 64)) &&& mask
-    let result := shiftedSrc ||| shiftedPrev
-    let cr := shl_merge_limb_inplace_code base off prev_off
-    cpsTriple base (base + 28) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (memLoc ↦ₘ src) ** (memPrev ↦ₘ prev))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedPrev) ** (.x11 ↦ᵣ mask) **
-       (memLoc ↦ₘ result) ** (memPrev ↦ₘ prev)) :=
-  (shl_merge_limb_inplace_spec_within off prev_off sp src prev v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SHL First Limb In-place (3 instructions, dst_off = 0)
@@ -203,15 +158,6 @@ theorem shl_first_limb_inplace_spec_within
   have SD_ := sd_spec_gen_within .x12 .x5 sp (src <<< (bit_shift.toNat % 64)) src 0 (base + 8)
   runBlock L SL SD_
 
-theorem shl_first_limb_inplace_spec
-    (sp src v5 bit_shift : Word) (base : Word) :
-    let mem := sp + signExtend12 (0 : BitVec 12)
-    let result := src <<< (bit_shift.toNat % 64)
-    let cr := shl_first_limb_inplace_code base
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) :=
-  (shl_first_limb_inplace_spec_within sp src v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Shift Body Specs
@@ -246,22 +192,6 @@ theorem shl_body_3_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock FL S0 S1 S2 JL
 
-theorem shl_body_3_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 24) + signExtend21 jal_off = exit) :
-    let result3 := v0 <<< (bit_shift.toNat % 64)
-    let cr := shl_body_3_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result3) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ 0) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ result3)) :=
-  (shl_body_3_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3
-    base exit jal_off hexit).to_cpsTriple
 
 abbrev shl_body_2_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (shl_body_2_prog jal_off)
@@ -296,23 +226,6 @@ theorem shl_body_2_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM FL S0 S1 JL
 
-theorem shl_body_2_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 48) + signExtend21 jal_off = exit) :
-    let result3 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (antiShift.toNat % 64)) &&& mask)
-    let result2 := v0 <<< (bit_shift.toNat % 64)
-    let cr := shl_body_2_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v0 >>> (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ 0) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) :=
-  (shl_body_2_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3
-    base exit jal_off hexit).to_cpsTriple
 
 abbrev shl_body_1_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (shl_body_1_prog jal_off)
@@ -353,24 +266,6 @@ theorem shl_body_1_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM1 MM2 FL S0 JL
 
-theorem shl_body_1_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 72) + signExtend21 jal_off = exit) :
-    let result3 := (v2 <<< (bit_shift.toNat % 64)) ||| ((v1 >>> (antiShift.toNat % 64)) &&& mask)
-    let result2 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (antiShift.toNat % 64)) &&& mask)
-    let result1 := v0 <<< (bit_shift.toNat % 64)
-    let cr := shl_body_1_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v0 >>> (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ 0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) :=
-  (shl_body_1_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3
-    base exit jal_off hexit).to_cpsTriple
 
 abbrev shl_body_0_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (shl_body_0_prog jal_off)
@@ -413,24 +308,5 @@ theorem shl_body_0_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM1 MM2 MM3 FL JL
 
-theorem shl_body_0_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 96) + signExtend21 jal_off = exit) :
-    let result3 := (v3 <<< (bit_shift.toNat % 64)) ||| ((v2 >>> (antiShift.toNat % 64)) &&& mask)
-    let result2 := (v2 <<< (bit_shift.toNat % 64)) ||| ((v1 >>> (antiShift.toNat % 64)) &&& mask)
-    let result1 := (v1 <<< (bit_shift.toNat % 64)) ||| ((v0 >>> (antiShift.toNat % 64)) &&& mask)
-    let result0 := v0 <<< (bit_shift.toNat % 64)
-    let cr := shl_body_0_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result0) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v0 >>> (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) :=
-  (shl_body_0_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3
-    base exit jal_off hexit).to_cpsTriple
 
 end EvmAsm.Evm64

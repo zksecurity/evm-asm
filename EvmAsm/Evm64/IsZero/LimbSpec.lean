@@ -31,17 +31,5 @@ theorem iszero_or_limb_spec_within (off : BitVec 12)
   have O := or_spec_gen_rd_eq_rs1_within .x7 .x6 acc aLimb (base + 4) (by nofun)
   runBlock L O
 
-theorem iszero_or_limb_spec (off : BitVec 12)
-    (sp aLimb v6 acc : Word) (base : Word) :
-    let mem := sp + signExtend12 off
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x6 .x12 off))
-       (CodeReq.singleton (base + 4) (.OR .x7 .x7 .x6))
-    cpsTriple base (base + 8) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ v6) **
-       (mem ↦ₘ aLimb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| aLimb)) ** (.x6 ↦ᵣ aLimb) **
-       (mem ↦ₘ aLimb)) :=
-  (iszero_or_limb_spec_within off sp aLimb v6 acc base).to_cpsTriple
 
 end EvmAsm.Evm64

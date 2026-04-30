@@ -24,11 +24,6 @@ theorem evm_pop_spec_within (sp base : Word) :
   simp only [signExtend12_32] at h
   runBlock h
 
-theorem evm_pop_spec (sp base : Word) :
-    cpsTriple base (base + 4) (evm_pop_code base)
-      (.x12 ↦ᵣ sp)
-      (.x12 ↦ᵣ (sp + 32)) :=
-  (evm_pop_spec_within sp base).to_cpsTriple
 
 /-- POP stack spec: discards top element, rest untouched. -/
 theorem evm_pop_stack_spec_within (sp base : Word)
@@ -40,13 +35,5 @@ theorem evm_pop_stack_spec_within (sp base : Word)
     (evmWordIs sp a ** evmStackIs (sp + 32) rest)
     (pcFree_sepConj pcFree_evmWordIs pcFree_evmStackIs)
     (evm_pop_spec_within sp base)
-
-/-- POP stack spec: discards top element, rest untouched. -/
-theorem evm_pop_stack_spec (sp base : Word)
-    (a : EvmWord) (rest : List EvmWord) :
-    cpsTriple base (base + 4) (evm_pop_code base)
-      ((.x12 ↦ᵣ sp) ** evmWordIs sp a ** evmStackIs (sp + 32) rest)
-      ((.x12 ↦ᵣ (sp + 32)) ** evmWordIs sp a ** evmStackIs (sp + 32) rest) :=
-  (evm_pop_stack_spec_within sp base a rest).to_cpsTriple
 
 end EvmAsm.Evm64

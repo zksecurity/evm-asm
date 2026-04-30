@@ -31,16 +31,5 @@ theorem not_limb_spec_within (off : BitVec 12)
   have S := sd_spec_gen_within .x12 .x7 sp (limb ^^^ signExtend12 (-1)) limb off (base + 8)
   runBlock L X S
 
-theorem not_limb_spec (off : BitVec 12)
-    (sp limb v7 : Word) (base : Word) :
-    let mem := sp + signExtend12 off
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 off))
-      (CodeReq.union (CodeReq.singleton (base + 4) (.XORI .x7 .x7 (-1)))
-       (CodeReq.singleton (base + 8) (.SD .x12 .x7 off)))
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (mem ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (limb ^^^ signExtend12 (-1))) ** (mem ↦ₘ (limb ^^^ signExtend12 (-1)))) :=
-  (not_limb_spec_within off sp limb v7 base).to_cpsTriple
 
 end EvmAsm.Evm64

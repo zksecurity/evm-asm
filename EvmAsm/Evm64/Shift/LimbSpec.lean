@@ -63,23 +63,6 @@ theorem shr_merge_limb_spec_within (src_off next_off dst_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) dstOld dst_off (base + 24)
   runBlock L1 SR L2 SL AN OR_ SD_
 
-theorem shr_merge_limb_spec (src_off next_off dst_off : BitVec 12)
-    (sp src next dstOld v5 v10 bit_shift antiShift mask : Word) (base : Word) :
-    let memSrc := sp + signExtend12 src_off
-    let memNext := sp + signExtend12 next_off
-    let memDst := sp + signExtend12 dst_off
-    let shiftedSrc := src >>> (bit_shift.toNat % 64)
-    let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
-    let result := shiftedSrc ||| shiftedNext
-    let code := shr_merge_limb_code src_off next_off dst_off base
-    cpsTriple base (base + 28) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       (memSrc ↦ₘ src) ** (memNext ↦ₘ next) ** (memDst ↦ₘ result)) :=
-  (shr_merge_limb_spec_within src_off next_off dst_off sp src next dstOld v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- SHR Last Limb (3 instructions)
 
@@ -102,18 +85,6 @@ theorem shr_last_limb_spec_within (dst_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
   runBlock L SR SD_
 
-theorem shr_last_limb_spec (dst_off : BitVec 12)
-    (sp src dstOld v5 bit_shift : Word) (base : Word) :
-    let memSrc := sp + signExtend12 (24 : BitVec 12)
-    let memDst := sp + signExtend12 dst_off
-    let result := src >>> (bit_shift.toNat % 64)
-    let code := shr_last_limb_code dst_off base
-    cpsTriple base (base + 12) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) :=
-  (shr_last_limb_spec_within dst_off sp src dstOld v5 bit_shift base).to_cpsTriple
 
 -- SHR Merge Limb In-place (7 instructions, src_off = dst_off)
 
@@ -144,22 +115,6 @@ theorem shr_merge_limb_inplace_spec_within (off next_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp ((src >>> (bit_shift.toNat % 64)) ||| ((next <<< (antiShift.toNat % 64)) &&& mask)) src off (base + 24)
   runBlock L1 SR L2 SL AN OR_ SD_
 
-theorem shr_merge_limb_inplace_spec (off next_off : BitVec 12)
-    (sp src next v5 v10 bit_shift antiShift mask : Word) (base : Word) :
-    let memLoc := sp + signExtend12 off
-    let memNext := sp + signExtend12 next_off
-    let shiftedSrc := src >>> (bit_shift.toNat % 64)
-    let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
-    let result := shiftedSrc ||| shiftedNext
-    let code := shr_merge_limb_inplace_code off next_off base
-    cpsTriple base (base + 28) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (memLoc ↦ₘ src) ** (memNext ↦ₘ next))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       (memLoc ↦ₘ result) ** (memNext ↦ₘ next)) :=
-  (shr_merge_limb_inplace_spec_within off next_off sp src next v5 v10 bit_shift antiShift mask base).to_cpsTriple
 
 -- SHR Last Limb In-place (3 instructions, dst_off = 24)
 
@@ -179,15 +134,6 @@ theorem shr_last_limb_inplace_spec_within
   have SD_ := sd_spec_gen_within .x12 .x5 sp (src >>> (bit_shift.toNat % 64)) src 24 (base + 8)
   runBlock L SR SD_
 
-theorem shr_last_limb_inplace_spec
-    (sp src v5 bit_shift : Word) (base : Word) :
-    let mem := sp + signExtend12 (24 : BitVec 12)
-    let result := src >>> (bit_shift.toNat % 64)
-    let code := shr_last_limb_inplace_code base
-    cpsTriple base (base + 12) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) :=
-  (shr_last_limb_inplace_spec_within sp src v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Section 2: Zero Path (5 instructions)
@@ -215,17 +161,6 @@ theorem shr_zero_path_spec_within (sp : Word)
   have S3 := sd_x0_spec_gen_within .x12 nsp d3 24 (base + 16)
   runBlock A S0 S1 S2 S3
 
-theorem shr_zero_path_spec (sp : Word)
-    (d0 d1 d2 d3 : Word)
-    (base : Word) :
-    let nsp := sp + 32
-    let code := shr_zero_path_code base
-    cpsTriple base (base + 20) code
-      ((.x12 ↦ᵣ sp) **
-       (nsp ↦ₘ d0) ** ((nsp + 8) ↦ₘ d1) ** ((nsp + 16) ↦ₘ d2) ** ((nsp + 24) ↦ₘ d3))
-      ((.x12 ↦ᵣ nsp) **
-       (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) :=
-  (shr_zero_path_spec_within sp d0 d1 d2 d3 base).to_cpsTriple
 
 -- ============================================================================
 -- Section 3: Phase B (7 instructions)
@@ -255,19 +190,6 @@ theorem shr_phase_b_spec_within (shift0 sp r6 r7 r11 : Word) (base : Word) :
   have AD := addi_spec_gen_same_within .x12 sp 32 (base + 24) (by nofun)
   runBlock A1 SR SL SU LI_ SU2 AD
 
-theorem shr_phase_b_spec (shift0 sp r6 r7 r11 : Word) (base : Word) :
-    let bit_shift := shift0 &&& signExtend12 63
-    let limb_shift := shift0 >>> (6 : BitVec 6).toNat
-    let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
-    let mask := (0 : Word) - cond
-    let antiShift := (64 : Word) - bit_shift
-    let code := shr_phase_b_code base
-    cpsTriple base (base + 28) code
-      ((.x5 ↦ᵣ shift0) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
-      ((.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) :=
-  (shr_phase_b_spec_within shift0 sp r6 r7 r11 base).to_cpsTriple
 
 -- ============================================================================
 -- Section 4: LD/OR Accumulator Helper (2 instructions)
@@ -286,13 +208,6 @@ theorem shr_ld_or_acc_spec_within (sp acc prev_x10 val : Word) (off : BitVec 12)
   have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 acc val (base + 4) (by nofun)
   runBlock L OR_
 
-theorem shr_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
-    (base : Word) :
-    let code := shr_ld_or_acc_code off base
-    cpsTriple base (base + 8) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) :=
-  (shr_ld_or_acc_spec_within sp acc prev_x10 val off base).to_cpsTriple
 
 -- ============================================================================
 -- Section 5: Body Specs
@@ -325,22 +240,6 @@ theorem shr_body_3_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock LL S0 S1 S2 JL
 
-theorem shr_body_3_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 24) + signExtend21 jal_off = exit) :
-    let result0 := v3 >>> (bit_shift.toNat % 64)
-    let code := shr_body_3_code jal_off base
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result0) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) :=
-  (shr_body_3_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit
-    jal_off hexit).to_cpsTriple
 
 -- Body 2: limb_shift=2, 13 instructions
 
@@ -372,23 +271,6 @@ theorem shr_body_2_spec_within (sp : Word)
   have JL := jal_x0_spec_gen_within jal_off (base + 48)
   runBlock MM LL S0 S1 JL
 
-theorem shr_body_2_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 48) + signExtend21 jal_off = exit) :
-    let result0 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := v3 >>> (bit_shift.toNat % 64)
-    let code := shr_body_2_code jal_off base
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) :=
-  (shr_body_2_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit
-    jal_off hexit).to_cpsTriple
 
 -- Body 1: limb_shift=1, 19 instructions
 
@@ -424,24 +306,6 @@ theorem shr_body_1_spec_within (sp : Word)
   have JL := jal_x0_spec_gen_within jal_off (base + 72)
   runBlock MM1 MM2 LL S0 JL
 
-theorem shr_body_1_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 72) + signExtend21 jal_off = exit) :
-    let result0 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result2 := v3 >>> (bit_shift.toNat % 64)
-    let code := shr_body_1_code jal_off base
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ 0)) :=
-  (shr_body_1_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit
-    jal_off hexit).to_cpsTriple
 
 -- Body 0: limb_shift=0, 25 instructions
 
@@ -481,25 +345,6 @@ theorem shr_body_0_spec_within (sp : Word)
   have JL := jal_x0_spec_gen_within jal_off (base + 96)
   runBlock MM1 MM2 MM3 LL JL
 
-theorem shr_body_0_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 96) + signExtend21 jal_off = exit) :
-    let result0 := (v0 >>> (bit_shift.toNat % 64)) ||| ((v1 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-    let result2 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result3 := v3 >>> (bit_shift.toNat % 64)
-    let code := shr_body_0_code jal_off base
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result3) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) :=
-  (shr_body_0_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit
-    jal_off hexit).to_cpsTriple
 
 -- ============================================================================
 -- Section 6: Cascade Step Helper (2 instructions)
@@ -509,7 +354,7 @@ abbrev shr_cascade_step_code (k : BitVec 12) (offset : BitVec 13) (base : Word) 
   CodeReq.ofProg base (shr_cascade_step_prog k offset)
 
 /-- Cascade step: ADDI x10,x0,k followed by BEQ x5,x10,off.
-    Produces a cpsBranch with clean postconditions (no pure facts).
+    Produces a cpsBranchWithin with clean postconditions (no pure facts).
     Uses disjoint composition of the two singleton CRs. -/
 theorem shr_cascade_step_spec_within (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
@@ -560,16 +405,6 @@ theorem shr_cascade_step_spec_within (v5 v10 : Word)
   exact cpsTripleWithin_seq_cpsBranchWithin_with_perm hd
     (fun _ hp => hp) s1' s2'
 
-theorem shr_cascade_step_spec (v5 v10 : Word)
-    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
-    (htarget : (base + 4) + signExtend13 offset = target) :
-    let kVal := (0 : Word) + signExtend12 k
-    let code := shr_cascade_step_code k offset base
-    cpsBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal))
-      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
-  (shr_cascade_step_spec_within v5 v10 k offset base target htarget).to_cpsBranch
 
 /-- Cascade step variant that preserves pure dispatch facts.
     Taken postcondition includes `⌜v5 = kVal⌝`, not-taken includes `⌜v5 ≠ kVal⌝`. -/
@@ -609,19 +444,9 @@ theorem shr_cascade_step_spec_pure_within (v5 v10 : Word)
       (cpsBranchWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) s2_raw)
   exact cpsTripleWithin_seq_cpsBranchWithin hd s1' s2'
 
-theorem shr_cascade_step_spec_pure (v5 v10 : Word)
-    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
-    (htarget : (base + 4) + signExtend13 offset = target) :
-    let kVal := (0 : Word) + signExtend12 k
-    let code := shr_cascade_step_code k offset base
-    cpsBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) ** ⌜v5 = kVal⌝)
-      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) ** ⌜v5 ≠ kVal⌝) :=
-  (shr_cascade_step_spec_pure_within v5 v10 k offset base target htarget).to_cpsBranch
 
 -- ============================================================================
--- Section 7: Phase C Cascade (5 instructions, cpsNBranch with 4 exits)
+-- Section 7: Phase C Cascade (5 instructions, cpsNBranchWithin with 4 exits)
 -- ============================================================================
 
 /-- Phase C code as explicit union of sub-CRs (matching disjoint composition structure). -/
@@ -731,20 +556,6 @@ theorem shr_phase_c_spec_within (v5 v10 : Word) (base : Word)
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)), rfl, fun h hp => by xperm_hyp hp⟩
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))), he3.symm, fun h hp => by xperm_hyp hp⟩)
 
-theorem shr_phase_c_spec (v5 v10 : Word) (base : Word)
-    (e0 e1 e2 e3 : Word)
-    (he0 : base + signExtend13 176 = e0)
-    (he1 : (base + 8) + signExtend13 92 = e1)
-    (he2 : (base + 16) + signExtend13 32 = e2)
-    (he3 : base + 20 = e3) :
-    let code := shr_phase_c_code base
-    cpsNBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10)),
-       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1))),
-       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2))),
-       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)))] :=
-  (shr_phase_c_spec_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
 
 /-- Phase C spec with pure dispatch facts: each exit postcondition includes
     the constraint that identifies which branch was taken.
@@ -850,7 +661,7 @@ theorem shr_phase_c_spec_pure_within (v5 v10 : Word) (base : Word)
         exact (congrFun (show _ = _ from by xperm) h).mp
           ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 (And.intro hne1 hne2)))))
       cs2f
-  -- Fallthrough at base+20: trivial cpsNBranch
+  -- Fallthrough at base+20: trivial cpsNBranchWithin
   have ft := cpsNBranchWithin_refl (base + 20)
     ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)
     _ (fun _ hp => hp)
@@ -876,23 +687,9 @@ theorem shr_phase_c_spec_pure_within (v5 v10 : Word) (base : Word)
   rw [he3] at n1_rw
   exact n1_rw
 
-theorem shr_phase_c_spec_pure (v5 v10 : Word) (base : Word)
-    (e0 e1 e2 e3 : Word)
-    (he0 : base + signExtend13 176 = e0)
-    (he1 : (base + 8) + signExtend13 92 = e1)
-    (he2 : (base + 16) + signExtend13 32 = e2)
-    (he3 : base + 20 = e3) :
-    let code := shr_phase_c_code base
-    cpsNBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝),
-       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝),
-       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
-       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] :=
-  (shr_phase_c_spec_pure_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
 
 -- ============================================================================
--- Section 8: Phase A (9 instructions, cpsBranch)
+-- Section 8: Phase A (9 instructions, cpsBranchWithin)
 -- ============================================================================
 
 -- `regIs_to_regOwn` lives in `Rv64/SepLogic.lean` (shared).
@@ -916,7 +713,7 @@ abbrev shr_phase_a_code (base : Word) : CodeReq :=
   (CodeReq.singleton (base + 32) (.BEQ .x10 .x0 308)))))))
 
 /-- Phase A spec: Check shift >= 256.
-    9 instructions, cpsBranch with 2 exits:
+    9 instructions, cpsBranchWithin with 2 exits:
     - Taken (zero_path): shift >= 256, x5/x10 are regOwn (existential)
     - Not-taken (base+36): shift < 256, x5=s0, x10 is regOwn
     Uses disjoint composition throughout (no extend_code). -/
@@ -1173,21 +970,5 @@ theorem shr_phase_a_spec_within (sp r5 r10 : Word)
       combined
   exact result
 
-theorem shr_phase_a_spec (sp r5 r10 : Word)
-    (s0 s1 s2 s3 : Word)
-    (base zero_path : Word)
-    (hzero : (base + 20) + signExtend13 320 = zero_path)
-    (hzero2 : (base + 32) + signExtend13 308 = zero_path) :
-    let code := shr_phase_a_code base
-    cpsBranch base code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
-      zero_path
-      ((.x12 ↦ᵣ sp) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3))
-      (base + 36)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ s0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3)) :=
-  (shr_phase_a_spec_within sp r5 r10 s0 s1 s2 s3 base zero_path hzero hzero2).to_cpsBranch
 
 end EvmAsm.Evm64

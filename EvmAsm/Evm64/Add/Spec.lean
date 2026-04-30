@@ -63,37 +63,6 @@ theorem evm_add_spec_within (sp : Word) (base : Word)
   have Laddi := addi_spec_gen_same_within .x12 sp 32 (base + 116) (by nofun)
   runBlock L0 L1 L2 L3 Laddi
 
-theorem evm_add_spec (sp : Word) (base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v7 v6 v5 v11 : Word) :
-    let sum0 := a0 + b0
-    let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
-    let psum1 := a1 + b1
-    let carry1a := if BitVec.ult psum1 b1 then (1 : Word) else 0
-    let result1 := psum1 + carry0
-    let carry1b := if BitVec.ult result1 carry0 then (1 : Word) else 0
-    let carry1 := carry1a ||| carry1b
-    let psum2 := a2 + b2
-    let carry2a := if BitVec.ult psum2 b2 then (1 : Word) else 0
-    let result2 := psum2 + carry1
-    let carry2b := if BitVec.ult result2 carry1 then (1 : Word) else 0
-    let carry2 := carry2a ||| carry2b
-    let psum3 := a3 + b3
-    let carry3a := if BitVec.ult psum3 b3 then (1 : Word) else 0
-    let result3 := psum3 + carry2
-    let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
-    let carry3 := carry3a ||| carry3b
-    let code := evm_add_code base
-    cpsTriple base (base + 120) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) ** (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) ** ((sp + 56) ↦ₘ result3)) :=
-  (evm_add_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level ADD spec
@@ -153,38 +122,5 @@ theorem evm_add_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_add_stack_spec (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
-    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
-    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
-    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
-    let sum0 := a0 + b0
-    let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
-    let psum1 := a1 + b1
-    let carry1a := if BitVec.ult psum1 b1 then (1 : Word) else 0
-    let result1 := psum1 + carry0
-    let carry1b := if BitVec.ult result1 carry0 then (1 : Word) else 0
-    let carry1 := carry1a ||| carry1b
-    let psum2 := a2 + b2
-    let carry2a := if BitVec.ult psum2 b2 then (1 : Word) else 0
-    let result2 := psum2 + carry1
-    let carry2b := if BitVec.ult result2 carry1 then (1 : Word) else 0
-    let carry2 := carry2a ||| carry2b
-    let psum3 := a3 + b3
-    let carry3a := if BitVec.ult psum3 b3 then (1 : Word) else 0
-    let result3 := psum3 + carry2
-    let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
-    let carry3 := carry3a ||| carry3b
-    let code := evm_add_code base
-    cpsTriple base (base + 120) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
-       (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) :=
-  (evm_add_stack_spec_within sp base a b v7 v6 v5 v11).to_cpsTriple
 
 end EvmAsm.Evm64

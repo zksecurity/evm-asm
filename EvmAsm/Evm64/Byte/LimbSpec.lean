@@ -53,19 +53,6 @@ theorem byte_phase_a_or_reduce_spec_within (sp v5 v10 idx1 idx2 idx3 : Word) (ba
   have I4 := or_spec_gen_rd_eq_rs1_within .x5 .x10 (idx1 ||| idx2) idx3 (base + 16) (by nofun)
   runBlock I0 I1 I2 I3 I4
 
-theorem byte_phase_a_or_reduce_spec (sp v5 v10 idx1 idx2 idx3 : Word) (base : Word) :
-    let orHigh := idx1 ||| idx2 ||| idx3
-    let cr := byte_phase_a_code base
-    cpsTriple base (base + 20) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
-       ((sp + signExtend12 8) ↦ₘ idx1) **
-       ((sp + signExtend12 16) ↦ₘ idx2) **
-       ((sp + signExtend12 24) ↦ₘ idx3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ orHigh) ** (.x10 ↦ᵣ idx3) **
-       ((sp + signExtend12 8) ↦ₘ idx1) **
-       ((sp + signExtend12 16) ↦ₘ idx2) **
-       ((sp + signExtend12 24) ↦ₘ idx3)) :=
-  (byte_phase_a_or_reduce_spec_within sp v5 v10 idx1 idx2 idx3 base).to_cpsTriple
 
 -- ============================================================================
 -- Phase A: Load idx[0] and check < 32 (2 instructions, offset 24-28)
@@ -85,15 +72,6 @@ theorem byte_phase_a_low_check_spec_within (sp v5 idx0 v10 : Word) (base : Word)
   have I1 := sltiu_spec_gen_within .x10 .x5 v10 idx0 32 (base + 28) (by nofun)
   runBlock I0 I1
 
-theorem byte_phase_a_low_check_spec (sp v5 idx0 v10 : Word) (base : Word) :
-    let cr := byte_phase_a_code base
-    cpsTriple (base + 24) (base + 32) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
-       ((sp + signExtend12 0) ↦ₘ idx0))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ idx0) **
-       (.x10 ↦ᵣ (if BitVec.ult idx0 (signExtend12 32) then (1 : Word) else 0)) **
-       ((sp + signExtend12 0) ↦ₘ idx0)) :=
-  (byte_phase_a_low_check_spec_within sp v5 idx0 v10 base).to_cpsTriple
 
 -- ============================================================================
 -- Phase B: Compute bit_shift and limbFromMsb (5 instructions)
@@ -124,16 +102,6 @@ theorem byte_phase_b_spec_within (idx r6 r10 : Word) (base : Word) :
   have SR := srli_spec_gen_same_within .x5 idx 3 (base + 16) (by nofun)
   runBlock A SL AD SU SR
 
-theorem byte_phase_b_spec (idx r6 r10 : Word) (base : Word) :
-    let byteInLimb := idx &&& signExtend12 (7 : BitVec 12)
-    let byteShift := byteInLimb <<< (3 : BitVec 6).toNat
-    let shiftAmount := (56 : Word) - byteShift
-    let limbFromMsb := idx >>> (3 : BitVec 6).toNat
-    let code := byte_phase_b_code base
-    cpsTriple base (base + 20) code
-      ((.x5 ↦ᵣ idx) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
-      ((.x5 ↦ᵣ limbFromMsb) ** (.x6 ↦ᵣ shiftAmount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byteShift)) :=
-  (byte_phase_b_spec_within idx r6 r10 base).to_cpsTriple
 
 -- ============================================================================
 -- Body specs: extract byte from limb (LD + SRL + ANDI 0xFF + optional JAL)
@@ -160,15 +128,6 @@ theorem byte_body_3_spec_within (sp v5 shiftAmount limb : Word) (base : Word) :
   have I3 := jal_x0_spec_gen_within (48 : BitVec 21) (base + 12)
   runBlock I0 I1 I2 I3
 
-theorem byte_body_3_spec (sp v5 shiftAmount limb : Word) (base : Word) :
-    let result := (limb >>> (shiftAmount.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code := byte_body_3_code base
-    cpsTriple base ((base + 12) + signExtend21 (48 : BitVec 21)) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 32) ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 32) ↦ₘ limb)) :=
-  (byte_body_3_spec_within sp v5 shiftAmount limb base).to_cpsTriple
 
 -- body_2: LD sp+40, SRL, ANDI 0xFF, JAL 32 (4 instrs)
 -- limbFromMsb = 2 → extract from limb 1 at sp+40
@@ -191,15 +150,6 @@ theorem byte_body_2_spec_within (sp v5 shiftAmount limb : Word) (base : Word) :
   have I3 := jal_x0_spec_gen_within (32 : BitVec 21) (base + 12)
   runBlock I0 I1 I2 I3
 
-theorem byte_body_2_spec (sp v5 shiftAmount limb : Word) (base : Word) :
-    let result := (limb >>> (shiftAmount.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code := byte_body_2_code base
-    cpsTriple base ((base + 12) + signExtend21 (32 : BitVec 21)) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 40) ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 40) ↦ₘ limb)) :=
-  (byte_body_2_spec_within sp v5 shiftAmount limb base).to_cpsTriple
 
 -- body_1: LD sp+48, SRL, ANDI 0xFF, JAL 16 (4 instrs)
 -- limbFromMsb = 1 → extract from limb 2 at sp+48
@@ -222,15 +172,6 @@ theorem byte_body_1_spec_within (sp v5 shiftAmount limb : Word) (base : Word) :
   have I3 := jal_x0_spec_gen_within (16 : BitVec 21) (base + 12)
   runBlock I0 I1 I2 I3
 
-theorem byte_body_1_spec (sp v5 shiftAmount limb : Word) (base : Word) :
-    let result := (limb >>> (shiftAmount.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code := byte_body_1_code base
-    cpsTriple base ((base + 12) + signExtend21 (16 : BitVec 21)) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 48) ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 48) ↦ₘ limb)) :=
-  (byte_body_1_spec_within sp v5 shiftAmount limb base).to_cpsTriple
 
 -- body_0: LD sp+56, SRL, ANDI 0xFF (3 instrs, falls through to store)
 -- limbFromMsb = 0 → extract from limb 3 (MSB) at sp+56
@@ -252,15 +193,6 @@ theorem byte_body_0_spec_within (sp v5 shiftAmount limb : Word) (base : Word) :
   have I2 := andi_spec_gen_same_within .x5 (limb >>> (shiftAmount.toNat % 64)) 255 (base + 8) (by nofun)
   runBlock I0 I1 I2
 
-theorem byte_body_0_spec (sp v5 shiftAmount limb : Word) (base : Word) :
-    let result := (limb >>> (shiftAmount.toNat % 64)) &&& signExtend12 (255 : BitVec 12)
-    let code := byte_body_0_code base
-    cpsTriple base (base + 12) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 56) ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 56) ↦ₘ limb)) :=
-  (byte_body_0_spec_within sp v5 shiftAmount limb base).to_cpsTriple
 
 -- ============================================================================
 -- Store: pop index word, write byte result + 3 zero limbs (6 instrs)
@@ -289,17 +221,6 @@ theorem byte_store_spec_within (sp result m0 m8 m16 m24 : Word) (base : Word) :
   have I5 := jal_x0_spec_gen_within (24 : BitVec 21) (base + 20)
   runBlock I0 I1 I2 I3 I4 I5
 
-theorem byte_store_spec (sp result m0 m8 m16 m24 : Word) (base : Word) :
-    let nsp := sp + signExtend12 (32 : BitVec 12)
-    let code := byte_store_code base
-    cpsTriple base ((base + 20) + signExtend21 (24 : BitVec 21)) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) **
-       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
-       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ nsp) ** (.x5 ↦ᵣ result) **
-       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ (0 : Word)) **
-       ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (byte_store_spec_within sp result m0 m8 m16 m24 base).to_cpsTriple
 
 -- ============================================================================
 -- Zero path: pop index word, write all zeros (5 instrs)
@@ -327,17 +248,6 @@ theorem byte_zero_path_spec_within (sp m0 m8 m16 m24 : Word) (base : Word) :
   have I4 := sd_x0_spec_gen_within .x12 (sp + signExtend12 32) m24 24 (base + 16)
   runBlock I0 I1 I2 I3 I4
 
-theorem byte_zero_path_spec (sp m0 m8 m16 m24 : Word) (base : Word) :
-    let nsp := sp + signExtend12 (32 : BitVec 12)
-    let code := byte_zero_path_code base
-    cpsTriple base (base + 20) code
-      ((.x12 ↦ᵣ sp) **
-       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
-       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-      ((.x12 ↦ᵣ nsp) **
-       ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) **
-       ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (byte_zero_path_spec_within sp m0 m8 m16 m24 base).to_cpsTriple
 
 -- ============================================================================
 -- Phase C: Cascade dispatch on limbFromMsb (5 instructions)
@@ -507,7 +417,7 @@ theorem byte_phase_c_spec_within (v5 v10 : Word) (base : Word)
         exact (congrFun (show _ = _ from by xperm) h).mp
           ((sepConj_pure_right h).2 (And.intro hregs (And.intro hne0 (And.intro hne1 hne2)))))
       cs2_framed
-  -- Build cpsNBranch from inside out
+  -- Build cpsNBranchWithin from inside out
   -- Fallthrough at base+20: trivial single-exit (0 steps)
   have ft : cpsNBranchWithin 0 (base + 20) cr
       ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)
@@ -524,21 +434,6 @@ theorem byte_phase_c_spec_within (v5 v10 : Word) (base : Word)
     (fun h hp => by xperm_hyp hp) beq0f n2
   exact cpsNBranchWithin_mono_nSteps (by omega) n1
 
-/-- Unbounded wrapper for the Phase C cascade dispatch spec. -/
-theorem byte_phase_c_spec (v5 v10 : Word) (base : Word)
-    (e0 e1 e2 e3 : Word)
-    (he0 : base + signExtend13 68 = e0)
-    (he1 : (base + 8) + signExtend13 44 = e1)
-    (he2 : (base + 16) + signExtend13 20 = e2)
-    (he3 : base + 20 = e3) :
-    let code := byte_phase_c_code base
-    cpsNBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝),
-       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝),
-       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
-       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] := by
-  intro code
-  exact (byte_phase_c_spec_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
+
 
 end EvmAsm.Evm64

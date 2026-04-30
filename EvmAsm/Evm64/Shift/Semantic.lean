@@ -187,20 +187,4 @@ theorem evm_shr_stack_spec_within (sp base : Word)
     exact evm_shr_body_evmWord_spec_within sp base shift value r5 r6 r7 r10 r11
       hhigh_zero hlt_s0 hlt
 
-/-- **Main SHR theorem**: `evm_shr` computes the 256-bit logical right shift.
-    Given shift and value as EvmWords on the stack, produces
-    `if shift.toNat ≥ 256 then 0 else value >>> shift.toNat`. -/
-theorem evm_shr_stack_spec (sp base : Word)
-    (shift value : EvmWord) (r5 r6 r7 r10 r11 : Word) :
-    let result := if shift.toNat ≥ 256 then 0 else value >>> shift.toNat
-    cpsTriple base (base + 360) (shrCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
-       evmWordIs sp shift ** evmWordIs (sp + 32) value)
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (regOwn .x6) ** (regOwn .x7) ** (regOwn .x11) **
-       evmWordIs sp shift ** evmWordIs (sp + 32) result) := by
-  intro result
-  exact (evm_shr_stack_spec_within sp base shift value r5 r6 r7 r10 r11).to_cpsTriple
-
 end EvmAsm.Evm64

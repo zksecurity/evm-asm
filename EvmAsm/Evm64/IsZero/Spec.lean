@@ -55,20 +55,6 @@ theorem evm_iszero_spec_within (sp : Word) (base : Word)
   have S3 := sd_x0_spec_gen_within .x12 sp a3 24 (base + 44)
   runBlock L0 O1 O2 O3 T S0 S1 S2 S3
 
-theorem evm_iszero_spec (sp : Word) (base : Word)
-    (a0 a1 a2 a3 : Word)
-    (v7 v6 : Word) :
-    let orAll := a0 ||| a1 ||| a2 ||| a3
-    let result := if BitVec.ult orAll (1 : Word) then (1 : Word) else 0
-    let code := evm_iszero_code base
-    cpsTriple base (base + 48) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
-       (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) :=
-  (evm_iszero_spec_within sp base a0 a1 a2 a3 v7 v6).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level ISZERO spec
@@ -107,18 +93,5 @@ theorem evm_iszero_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_iszero_stack_spec (sp base : Word)
-    (a : EvmWord) (v7 v6 : Word) :
-    let orAll := a.getLimbN 0 ||| a.getLimbN 1 ||| a.getLimbN 2 ||| a.getLimbN 3
-    let result := if BitVec.ult orAll 1 then (1 : Word) else 0
-    let code := evm_iszero_code base
-    cpsTriple base (base + 48) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       evmWordIs sp a)
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
-       evmWordIs sp (if a = 0 then 1 else 0)) :=
-  (evm_iszero_stack_spec_within sp base a v7 v6).to_cpsTriple
 
 end EvmAsm.Evm64

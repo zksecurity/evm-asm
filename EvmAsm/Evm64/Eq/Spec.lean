@@ -68,27 +68,6 @@ theorem evm_eq_spec_within (sp : Word) (base : Word)
   have S3 := sd_x0_spec_gen_within .x12 (sp + 32) b3 24 (base + 80)
   runBlock L0 L1 L2 L3 T A S0 S1 S2 S3
 
-theorem evm_eq_spec (sp : Word) (base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v7 v6 v5 v11 : Word) :
-    -- XOR-OR accumulation chain
-    let acc0 := a0 ^^^ b0
-    let acc1 := acc0 ||| (a1 ^^^ b1)
-    let acc2 := acc1 ||| (a2 ^^^ b2)
-    let acc3 := acc2 ||| (a3 ^^^ b3)
-    let eqResult := if BitVec.ult acc3 (1 : Word) then (1 : Word) else 0
-    let code := evm_eq_code base
-    cpsTriple base (base + 84) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ eqResult) ** (.x6 ↦ᵣ (a3 ^^^ b3)) ** (.x5 ↦ᵣ b3) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ eqResult) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) :=
-  (evm_eq_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level EQ spec
@@ -136,24 +115,5 @@ theorem evm_eq_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_eq_stack_spec (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    -- XOR-OR accumulation chain
-    let acc0 := a.getLimbN 0 ^^^ b.getLimbN 0
-    let acc1 := acc0 ||| (a.getLimbN 1 ^^^ b.getLimbN 1)
-    let acc2 := acc1 ||| (a.getLimbN 2 ^^^ b.getLimbN 2)
-    let acc3 := acc2 ||| (a.getLimbN 3 ^^^ b.getLimbN 3)
-    let eqResult := if BitVec.ult acc3 (1 : Word) then (1 : Word) else 0
-    let code := evm_eq_code base
-    cpsTriple base (base + 84) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ eqResult) ** (.x6 ↦ᵣ (a.getLimbN 3 ^^^ b.getLimbN 3)) **
-       (.x5 ↦ᵣ b.getLimbN 3) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (if a = b then 1 else 0)) :=
-  (evm_eq_stack_spec_within sp base a b v7 v6 v5 v11).to_cpsTriple
 
 end EvmAsm.Evm64

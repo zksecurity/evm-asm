@@ -173,48 +173,4 @@ theorem generic_sw_spec_within (rs1 rs2 : Reg) (v_addr v_data : Word)
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h5
 
 /-! ## Compatibility wrappers -/
-
-theorem generic_lwu_spec (rd rs1 : Reg) (v_addr vOld : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordVal : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.LWU rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** (dwordAddr ↦ₘ wordVal))
-      ((rs1 ↦ᵣ v_addr) **
-       (rd ↦ᵣ (extractWord32 wordVal ((byteOffset (v_addr + signExtend12 offset)) / 4)).zeroExtend 64) **
-       (dwordAddr ↦ₘ wordVal)) := by
-  exact (generic_lwu_spec_within rd rs1 v_addr vOld offset base dwordAddr wordVal
-    hrd_ne_x0 halign hvalid).to_cpsTriple
-
-theorem generic_lw_spec (rd rs1 : Reg) (v_addr vOld : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordVal : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.LW rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** (dwordAddr ↦ₘ wordVal))
-      ((rs1 ↦ᵣ v_addr) **
-       (rd ↦ᵣ (extractWord32 wordVal ((byteOffset (v_addr + signExtend12 offset)) / 4)).signExtend 64) **
-       (dwordAddr ↦ₘ wordVal)) := by
-  exact (generic_lw_spec_within rd rs1 v_addr vOld offset base dwordAddr wordVal
-    hrd_ne_x0 halign hvalid).to_cpsTriple
-
-theorem generic_sw_spec (rs1 rs2 : Reg) (v_addr v_data : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordOld : Word)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidMemAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.SW rs1 rs2 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (dwordAddr ↦ₘ wordOld))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) **
-       (dwordAddr ↦ₘ replaceWord32 wordOld ((byteOffset (v_addr + signExtend12 offset)) / 4) (v_data.truncate 32))) := by
-  exact (generic_sw_spec_within rs1 rs2 v_addr v_data offset base dwordAddr wordOld
-    halign hvalid).to_cpsTriple
-
 end EvmAsm.Rv64

@@ -188,48 +188,4 @@ theorem generic_sh_spec_within (rs1 rs2 : Reg) (v_addr v_data : Word)
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h5
 
 /-! ## Compatibility wrappers -/
-
-theorem generic_lhu_spec (rd rs1 : Reg) (v_addr vOld : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordVal : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidHalfwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.LHU rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** (dwordAddr ↦ₘ wordVal))
-      ((rs1 ↦ᵣ v_addr) **
-       (rd ↦ᵣ (extractHalfword wordVal ((byteOffset (v_addr + signExtend12 offset)) / 2)).zeroExtend 64) **
-       (dwordAddr ↦ₘ wordVal)) := by
-  exact (generic_lhu_spec_within rd rs1 v_addr vOld offset base dwordAddr wordVal
-    hrd_ne_x0 halign hvalid).to_cpsTriple
-
-theorem generic_lh_spec (rd rs1 : Reg) (v_addr vOld : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordVal : Word)
-    (hrd_ne_x0 : rd ≠ .x0)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidHalfwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.LH rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** (dwordAddr ↦ₘ wordVal))
-      ((rs1 ↦ᵣ v_addr) **
-       (rd ↦ᵣ (extractHalfword wordVal ((byteOffset (v_addr + signExtend12 offset)) / 2)).signExtend 64) **
-       (dwordAddr ↦ₘ wordVal)) := by
-  exact (generic_lh_spec_within rd rs1 v_addr vOld offset base dwordAddr wordVal
-    hrd_ne_x0 halign hvalid).to_cpsTriple
-
-theorem generic_sh_spec (rs1 rs2 : Reg) (v_addr v_data : Word)
-    (offset : BitVec 12) (base : Word)
-    (dwordAddr : Word) (wordOld : Word)
-    (halign : alignToDword (v_addr + signExtend12 offset) = dwordAddr)
-    (hvalid : isValidHalfwordAccess (v_addr + signExtend12 offset) = true) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.SH rs1 rs2 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** (dwordAddr ↦ₘ wordOld))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) **
-       (dwordAddr ↦ₘ replaceHalfword wordOld ((byteOffset (v_addr + signExtend12 offset)) / 2) (v_data.truncate 16))) := by
-  exact (generic_sh_spec_within rs1 rs2 v_addr v_data offset base dwordAddr wordOld
-    halign hvalid).to_cpsTriple
-
 end EvmAsm.Rv64

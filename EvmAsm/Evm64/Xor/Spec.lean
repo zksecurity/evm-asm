@@ -35,17 +35,6 @@ theorem evm_xor_spec_within (sp base : Word)
   have LADDI := addi_spec_gen_same_within .x12 sp 32 (base + 64) (by nofun)
   runBlock L0 L1 L2 L3 LADDI
 
-theorem evm_xor_spec (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 : Word) :
-    let code := evm_xor_code base
-    cpsTriple base (base + 68) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a3 ^^^ b3)) ** (.x6 ↦ᵣ b3) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ (a0 ^^^ b0)) ** ((sp + 40) ↦ₘ (a1 ^^^ b1)) ** ((sp + 48) ↦ₘ (a2 ^^^ b2)) ** ((sp + 56) ↦ₘ (a3 ^^^ b3))) :=
-  (evm_xor_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6).to_cpsTriple
 
 /-- Stack-level 256-bit EVM XOR. -/
 theorem evm_xor_stack_spec_within (sp base : Word)
@@ -71,14 +60,5 @@ theorem evm_xor_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_xor_stack_spec (sp base : Word)
-    (a b : EvmWord) (v7 v6 : Word) :
-    let code := evm_xor_code base
-    cpsTriple base (base + 68) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ (a.getLimbN 3 ^^^ b.getLimbN 3)) ** (.x6 ↦ᵣ b.getLimbN 3) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (a ^^^ b)) :=
-  (evm_xor_stack_spec_within sp base a b v7 v6).to_cpsTriple
 
 end EvmAsm.Evm64

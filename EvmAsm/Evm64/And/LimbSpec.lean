@@ -36,20 +36,5 @@ theorem and_limb_spec_within (offA offB : BitVec 12)
   have S := sd_spec_gen_within .x12 .x7 sp (aLimb &&& bLimb) bLimb offB (base + 12)
   runBlock L0 L1 A S
 
-theorem and_limb_spec (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 : Word) (base : Word) :
-    let memA := sp + signExtend12 offA
-    let memB := sp + signExtend12 offB
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
-      (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
-      (CodeReq.union (CodeReq.singleton (base + 8) (.AND .x7 .x7 .x6))
-       (CodeReq.singleton (base + 12) (.SD .x12 .x7 offB))))
-    cpsTriple base (base + 16) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (aLimb &&& bLimb)) ** (.x6 ↦ᵣ bLimb) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ (aLimb &&& bLimb))) :=
-  (and_limb_spec_within offA offB sp aLimb bLimb v7 v6 base).to_cpsTriple
 
 end EvmAsm.Evm64

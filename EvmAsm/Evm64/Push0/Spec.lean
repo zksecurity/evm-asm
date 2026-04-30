@@ -34,15 +34,6 @@ theorem evm_push0_spec_within (nsp base : Word)
   have L3 := sd_x0_spec_gen_within .x12 nsp d3 24 (base + 16)
   runBlock LADDI L0 L1 L2 L3
 
-theorem evm_push0_spec (nsp base : Word)
-    (d0 d1 d2 d3 : Word) :
-    let code := evm_push0_code base
-    cpsTriple base (base + 20) code
-      ((.x12 ↦ᵣ (nsp + 32)) **
-       (nsp ↦ₘ d0) ** ((nsp + 8) ↦ₘ d1) ** ((nsp + 16) ↦ₘ d2) ** ((nsp + 24) ↦ₘ d3))
-      ((.x12 ↦ᵣ nsp) **
-       (nsp ↦ₘ 0) ** ((nsp + 8) ↦ₘ 0) ** ((nsp + 16) ↦ₘ 0) ** ((nsp + 24) ↦ₘ 0)) :=
-  (evm_push0_spec_within nsp base d0 d1 d2 d3).to_cpsTriple
 
 /-- PUSH0 stack spec: pushes EvmWord 0 onto stack. -/
 theorem evm_push0_stack_spec_within (nsp base : Word)
@@ -61,14 +52,5 @@ theorem evm_push0_stack_spec_within (nsp base : Word)
       pcFree_evmStackIs
       (evm_push0_spec_within nsp base d0 d1 d2 d3))
 
-theorem evm_push0_stack_spec (nsp base : Word)
-    (d0 d1 d2 d3 : Word) (rest : List EvmWord) :
-    let code := evm_push0_code base
-    cpsTriple base (base + 20) code
-      ((.x12 ↦ᵣ (nsp + 32)) **
-       (nsp ↦ₘ d0) ** ((nsp + 8) ↦ₘ d1) ** ((nsp + 16) ↦ₘ d2) ** ((nsp + 24) ↦ₘ d3) **
-       evmStackIs (nsp + 32) rest)
-      ((.x12 ↦ᵣ nsp) ** evmWordIs nsp 0 ** evmStackIs (nsp + 32) rest) :=
-  (evm_push0_stack_spec_within nsp base d0 d1 d2 d3 rest).to_cpsTriple
 
 end EvmAsm.Evm64

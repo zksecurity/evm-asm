@@ -307,17 +307,6 @@ theorem signext_nochange_high_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     hfull
 
-theorem signext_nochange_high_spec (sp base : Word)
-    {b0 b1 b2 b3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
-    (hhigh : b1 ||| b2 ||| b3 ≠ 0) :
-    cpsTriple base (base + 192) (signextCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) :=
-  (signext_nochange_high_spec_within sp base r5 r10 hhigh).to_cpsTriple
 
 /-- No-change path via BEQ taken: b1=b2=b3=0 but b[0] >= 31 → x unchanged.
     Execution: LD b1 → LD/OR b2 → LD/OR b3 → BNE(ntaken) → LD b0 → SLTIU → BEQ(taken) → done. -/
@@ -440,18 +429,6 @@ theorem signext_nochange_geq31_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     hfull
 
-theorem signext_nochange_geq31_spec (sp base : Word)
-    {b0 b1 b2 b3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
-    (hlow : b1 ||| b2 ||| b3 = 0)
-    (hlarge : BitVec.ult b0 (signExtend12 (31 : BitVec 12)) = false) :
-    cpsTriple base (base + 192) (signextCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3)) :=
-  (signext_nochange_geq31_spec_within sp base r5 r10 hlow hlarge).to_cpsTriple
 
 -- ============================================================================
 -- Section 5: Body path helpers
@@ -573,7 +550,7 @@ private theorem signext_phase_c_spec_pure_within_full (v5 v10 : Word) (base : Wo
 -- Section 6: Body path composition (b < 31)
 -- ============================================================================
 
-/-- Body path: b < 31 → raw-limb cpsTriple producing `signextend b x` limbs.
+/-- Body path: b < 31 → raw-limb cpsTripleWithin producing `signextend b x` limbs.
     Composes Phase A ntaken → B → C → body_L → done. -/
 theorem signext_body_spec_within (sp base : Word)
     (b x : EvmWord) (r5 r6 r10 : Word)
@@ -772,7 +749,7 @@ theorem signext_body_spec_within (sp base : Word)
   -- After hbd3_w (via cpsTripleWithin_weaken), we just need to weaken x5, x6, and keep everything else.
   -- Then x10 from the Phase C frame gets weakened to regOwn .x10 separately in the merge step.
   -- Actually, the simpler approach: frame hbd3 with (.x10 ↦ᵣ _) from Phase C exit, then weaken.
-  -- But the way cpsNBranchWithin_merge works is: for each exit (addr, Q), prove cpsTriple addr exit_ cr Q R.
+  -- But the way cpsNBranchWithin_merge works is: for each exit (addr, Q), prove cpsTripleWithin addr exit_ cr Q R.
   -- Q is (phase_c_exit_post ** F). So Q already contains (.x10 ↦ᵣ ...).
   -- The body specs don't touch x10 (for body_3) so x10 persists in the frame.
   -- So hbd3 postcondition doesn't mention x10, but after framing for merge, x10 will be in the frame.
@@ -997,23 +974,5 @@ theorem signext_body_spec_within (sp base : Word)
     (fun h hq => by xperm_hyp hq)
     hfull
 
-theorem signext_body_spec (sp base : Word)
-    (b x : EvmWord) (r5 r6 r10 : Word)
-    (hhigh : b.getLimb 1 ||| b.getLimb 2 ||| b.getLimb 3 = 0)
-    (hsmall : BitVec.ult (b.getLimb 0) (signExtend12 (31 : BitVec 12)) = true) :
-    cpsTriple base (base + 192) (signextCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ b.getLimb 0) ** ((sp + 8) ↦ₘ b.getLimb 1) **
-       ((sp + 16) ↦ₘ b.getLimb 2) ** ((sp + 24) ↦ₘ b.getLimb 3) **
-       ((sp + 32) ↦ₘ x.getLimb 0) ** ((sp + 40) ↦ₘ x.getLimb 1) **
-       ((sp + 48) ↦ₘ x.getLimb 2) ** ((sp + 56) ↦ₘ x.getLimb 3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b.getLimb 0) ** ((sp + 8) ↦ₘ b.getLimb 1) **
-       ((sp + 16) ↦ₘ b.getLimb 2) ** ((sp + 24) ↦ₘ b.getLimb 3) **
-       ((sp + 32) ↦ₘ (EvmWord.signextend b x).getLimb 0) **
-       ((sp + 40) ↦ₘ (EvmWord.signextend b x).getLimb 1) **
-       ((sp + 48) ↦ₘ (EvmWord.signextend b x).getLimb 2) **
-       ((sp + 56) ↦ₘ (EvmWord.signextend b x).getLimb 3)) :=
-  (signext_body_spec_within sp base b x r5 r6 r10 hhigh hsmall).to_cpsTriple
 
 end EvmAsm.Evm64

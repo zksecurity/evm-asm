@@ -109,36 +109,6 @@ theorem evm_sgt_spec_within (sp : Word) (base : Word)
     have S3 := sd_x0_spec_gen_within .x12 (sp + 32) b3 24 (base + 96)
     runBlock M B S J A S0 S1 S2 S3
 
-theorem evm_sgt_spec (sp : Word) (base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v7 v6 v5 v11 : Word) :
-    -- Lower 3 limbs borrow chain: b - a direction (used when MSB limbs equal)
-    let borrow0 := if BitVec.ult b0 a0 then (1 : Word) else 0
-    let borrow1a := if BitVec.ult b1 a1 then (1 : Word) else 0
-    let temp1 := b1 - a1
-    let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-    let borrow1 := borrow1a ||| borrow1b
-    let borrow2a := if BitVec.ult b2 a2 then (1 : Word) else 0
-    let temp2 := b2 - a2
-    let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-    let borrow2 := borrow2a ||| borrow2b
-    -- Signed comparison of MSB limbs (swapped: b3 vs a3)
-    let sgtMsb := if BitVec.slt b3 a3 then (1 : Word) else 0
-    -- Result: signed GT
-    let result := if b3 = a3 then borrow2 else sgtMsb
-    let code := evm_sgt_code base
-    cpsTriple base (base + 100) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      ((.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ (if b3 = a3 then temp2 else b3)) **
-       (.x6 ↦ᵣ (if b3 = a3 then borrow2b else a3)) **
-       (.x5 ↦ᵣ result) **
-       (.x11 ↦ᵣ (if b3 = a3 then borrow2a else v11)) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) :=
-  (evm_sgt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level SGT spec
@@ -196,31 +166,5 @@ theorem evm_sgt_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_sgt_stack_spec (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    -- Lower 3 limbs borrow chain: b - a direction (used when MSB limbs equal)
-    let borrow0 := if BitVec.ult (b.getLimbN 0) (a.getLimbN 0) then (1 : Word) else 0
-    let borrow1a := if BitVec.ult (b.getLimbN 1) (a.getLimbN 1) then (1 : Word) else 0
-    let temp1 := b.getLimbN 1 - a.getLimbN 1
-    let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-    let borrow1 := borrow1a ||| borrow1b
-    let borrow2a := if BitVec.ult (b.getLimbN 2) (a.getLimbN 2) then (1 : Word) else 0
-    let temp2 := b.getLimbN 2 - a.getLimbN 2
-    let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-    let borrow2 := borrow2a ||| borrow2b
-    -- Signed comparison of MSB limbs (swapped: b3 vs a3)
-    let sgtMsb := if BitVec.slt (b.getLimbN 3) (a.getLimbN 3) then (1 : Word) else 0
-    let result := if b.getLimbN 3 = a.getLimbN 3 then borrow2 else sgtMsb
-    let code := evm_sgt_code base
-    cpsTriple base (base + 100) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      ((.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then temp2 else b.getLimbN 3)) **
-       (.x6 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2b else a.getLimbN 3)) **
-       (.x5 ↦ᵣ result) **
-       (.x11 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2a else v11)) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt b a then 1 else 0)) :=
-  (evm_sgt_stack_spec_within sp base a b v7 v6 v5 v11).to_cpsTriple
 
 end EvmAsm.Evm64

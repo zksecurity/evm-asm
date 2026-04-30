@@ -69,32 +69,6 @@ theorem evm_lt_spec_within (sp : Word) (base : Word)
   have S3 := sd_x0_spec_gen_within .x12 (sp + 32) b3 24 (base + 100)
   runBlock L0 L1 L2 L3 A S0 S1 S2 S3
 
-theorem evm_lt_spec (sp : Word) (base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v7 v6 v5 v11 : Word) :
-    let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
-    let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
-    let temp1 := a1 - b1
-    let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-    let borrow1 := borrow1a ||| borrow1b
-    let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
-    let temp2 := a2 - b2
-    let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-    let borrow2 := borrow2a ||| borrow2b
-    let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
-    let temp3 := a3 - b3
-    let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
-    let borrow3 := borrow3a ||| borrow3b
-    let code := evm_lt_code base
-    cpsTriple base (base + 104) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ temp3) ** (.x6 ↦ᵣ borrow3b) **
-       (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ borrow3) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) :=
-  (evm_lt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level LT spec
@@ -152,32 +126,5 @@ theorem evm_lt_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_lt_stack_spec (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
-    let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
-    let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
-    let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
-    let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
-    let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
-    let temp1 := a1 - b1
-    let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-    let borrow1 := borrow1a ||| borrow1b
-    let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
-    let temp2 := a2 - b2
-    let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-    let borrow2 := borrow2a ||| borrow2b
-    let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
-    let temp3 := a3 - b3
-    let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
-    let borrow3 := borrow3a ||| borrow3b
-    let code := evm_lt_code base
-    cpsTriple base (base + 104) code
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ temp3) ** (.x6 ↦ᵣ borrow3b) **
-       (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.ult a b then 1 else 0)) :=
-  (evm_lt_stack_spec_within sp base a b v7 v6 v5 v11).to_cpsTriple
 
 end EvmAsm.Evm64

@@ -299,20 +299,6 @@ theorem evm_byte_zero_high_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     hABZ
 
-/-- Zero path via BNE taken: high index limbs are nonzero → result is zero.
-    Execution: LD idx[1] → LD/OR idx[2] → LD/OR idx[3] → BNE(taken) → zero_path. -/
-theorem evm_byte_zero_high_spec (sp base : Word)
-    (i0 i1 i2 i3 v0 v1 v2 v3 r5 r10 : Word)
-    (hhigh : i1 ||| i2 ||| i3 ≠ 0) :
-    cpsTriple base (base + 180) (evm_byte_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
-       ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (evm_byte_zero_high_spec_within sp base i0 i1 i2 i3 v0 v1 v2 v3 r5 r10 hhigh).to_cpsTriple
-
 -- ============================================================================
 -- Zero path composition: idx >= 32, high limbs zero
 -- ============================================================================
@@ -430,21 +416,6 @@ theorem evm_byte_zero_geq32_spec_within (sp base : Word)
          ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)))
         from by xperm) h).mp w1)
     hfull
-
-/-- Zero path via BEQ taken: i1=i2=i3=0 but i0 >= 32 → result is zero.
-    Execution: OR-reduce → BNE(ntaken) → LD idx[0] → SLTIU → BEQ(taken) → zero_path. -/
-theorem evm_byte_zero_geq32_spec (sp base : Word)
-    (i0 i1 i2 i3 v0 v1 v2 v3 r5 r10 : Word)
-    (hlow : i1 ||| i2 ||| i3 = 0)
-    (hlarge : BitVec.ult i0 (signExtend12 (32 : BitVec 12)) = false) :
-    cpsTriple base (base + 180) (evm_byte_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ i0) ** ((sp + 8) ↦ₘ i1) ** ((sp + 16) ↦ₘ i2) ** ((sp + 24) ↦ₘ i3) **
-       ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (evm_byte_zero_geq32_spec_within sp base i0 i1 i2 i3 v0 v1 v2 v3 r5 r10 hlow hlarge).to_cpsTriple
 
 -- ============================================================================
 -- Body path composition with evmWordIs postcondition
@@ -869,24 +840,6 @@ theorem evm_byte_body_evmWord_spec_within (sp base : Word)
   exact cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) hphaseAB' hphaseCD
 
-open EvmWord in
-/-- Body path: idx < 32 → result is `EvmWord.byte idx value`.
-    Unbounded wrapper for `evm_byte_body_evmWord_spec_within`. -/
-theorem evm_byte_body_evmWord_spec (sp base : Word)
-    (idx value : EvmWord) (r5 r6 r10 : Word)
-    (hhigh_zero : idx.getLimbN 1 ||| idx.getLimbN 2 ||| idx.getLimbN 3 = 0)
-    (hlt_i0 : BitVec.ult (idx.getLimbN 0) (signExtend12 (32 : BitVec 12)) = true)
-    (hlt : idx.toNat < 32) :
-    cpsTriple base (base + 180) (evm_byte_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) **
-       (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       evmWordIs sp idx ** evmWordIs (sp + 32) value)
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) **
-       (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       evmWordIs sp idx ** evmWordIs (sp + 32) (byte idx value)) :=
-  (evm_byte_body_evmWord_spec_within sp base idx value r5 r6 r10
-    hhigh_zero hlt_i0 hlt).to_cpsTriple
-
 -- ============================================================================
 -- Stack-level spec: EvmWord.byte with evmWordIs
 -- ============================================================================
@@ -990,17 +943,5 @@ theorem evm_byte_stack_spec_within (sp base : Word)
             have w := sepConj_mono_right (regIs_to_regOwn .x6 _) h hq
             xperm_hyp w)
           h_framed)
-
-/-- Stack-level BYTE spec using evmWordIs and EvmWord.byte. -/
-theorem evm_byte_stack_spec (sp base : Word)
-    (idx val : EvmWord) (v5 v6 v10 : Word) :
-    cpsTriple base (base + 180) (evm_byte_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
-       (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
-       evmWordIs sp idx ** evmWordIs (sp + 32) val)
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) **
-       (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       evmWordIs sp idx ** evmWordIs (sp + 32) (EvmWord.byte idx val)) :=
-  (evm_byte_stack_spec_within sp base idx val v5 v6 v10).to_cpsTriple
 
 end EvmAsm.Evm64

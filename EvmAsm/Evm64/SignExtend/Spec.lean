@@ -120,15 +120,5 @@ theorem evm_signextend_stack_spec_within (sp base : Word)
         xperm_hyp hq)
       h_raw
 
-theorem evm_signextend_stack_spec (sp base : Word)
-    (b x : EvmWord) (r5 r6 r10 : Word) :
-    let result := EvmWord.signextend b x
-    cpsTriple base (base + 192) (signextCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       evmWordIs sp b ** evmWordIs (sp + 32) x)
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x6) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       evmWordIs sp b ** evmWordIs (sp + 32) result) := by
-  intro result
-  exact (evm_signextend_stack_spec_within sp base b x r5 r6 r10).to_cpsTriple
 
 end EvmAsm.Evm64

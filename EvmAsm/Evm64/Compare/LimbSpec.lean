@@ -43,21 +43,6 @@ theorem lt_limb0_spec_within (offA offB : BitVec 12)
   have S := sltu_spec_gen_within .x5 .x7 .x6 v5 aLimb bLimb (base + 8) (by nofun)
   runBlock L0 L1 S
 
-theorem lt_limb0_spec (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 v5 : Word) (base : Word) :
-    let memA := sp + signExtend12 offA
-    let memB := sp + signExtend12 offB
-    let borrow := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
-      (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
-       (CodeReq.singleton (base + 8) (.SLTU .x5 .x7 .x6)))
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ aLimb) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb)) :=
-  (lt_limb0_spec_within offA offB sp aLimb bLimb v7 v6 v5 base).to_cpsTriple
 
 /-- LT carry limb spec (6 instructions): LD, LD, SLTU, SUB, SLTU, OR.
     Propagates borrow without storing result. Memory is NOT modified. -/
@@ -90,27 +75,6 @@ theorem lt_limb_carry_spec_within (offA offB : BitVec 12)
   have O := or_spec_gen_within .x5 .x11 .x6 borrowIn borrow1 borrow2 (base + 20) (by nofun)
   runBlock L0 L1 S0 Sub S1 O
 
-theorem lt_limb_carry_spec (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 borrowIn v11 : Word) (base : Word) :
-    let memA := sp + signExtend12 offA
-    let memB := sp + signExtend12 offB
-    let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-    let temp := aLimb - bLimb
-    let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
-    let borrowOut := borrow1 ||| borrow2
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
-      (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
-      (CodeReq.union (CodeReq.singleton (base + 8) (.SLTU .x11 .x7 .x6))
-      (CodeReq.union (CodeReq.singleton (base + 12) (.SUB .x7 .x7 .x6))
-      (CodeReq.union (CodeReq.singleton (base + 16) (.SLTU .x6 .x7 .x5))
-       (CodeReq.singleton (base + 20) (.OR .x5 .x11 .x6))))))
-    cpsTriple base (base + 24) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ borrowIn) ** (.x11 ↦ᵣ v11) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
-       (memA ↦ₘ aLimb) ** (memB ↦ₘ bLimb)) :=
-  (lt_limb_carry_spec_within offA offB sp aLimb bLimb v7 v6 borrowIn v11 base).to_cpsTriple
 
 -- ============================================================================
 -- BEQ helper specs (single-path, for SLT/SGT composition)
@@ -141,13 +105,6 @@ theorem beq_eq_spec_within (rs1 rs2 : Reg) (offset : BitVec 13)
   · exact holdsFor_pcFree_setPC
       (pcFree_sepConj (pcFree_sepConj pcFree_regIs pcFree_regIs) hR) hPR
 
-theorem beq_eq_spec (rs1 rs2 : Reg) (offset : BitVec 13)
-    (v : Word) (base : Word) :
-    cpsTriple base (base + signExtend13 offset)
-      (CodeReq.singleton base (.BEQ rs1 rs2 offset))
-      ((rs1 ↦ᵣ v) ** (rs2 ↦ᵣ v))
-      ((rs1 ↦ᵣ v) ** (rs2 ↦ᵣ v)) :=
-  (beq_eq_spec_within rs1 rs2 offset v base).to_cpsTriple
 
 /-- BEQ when values are not equal: never taken (fall through to PC + 4).
     BEQ only modifies PC; all pcFree assertions are preserved. -/
@@ -174,13 +131,6 @@ theorem beq_ne_spec_within (rs1 rs2 : Reg) (offset : BitVec 13)
   · exact holdsFor_pcFree_setPC
       (pcFree_sepConj (pcFree_sepConj pcFree_regIs pcFree_regIs) hR) hPR
 
-theorem beq_ne_spec (rs1 rs2 : Reg) (offset : BitVec 13)
-    (v1 v2 : Word) (hne : v1 ≠ v2) (base : Word) :
-    cpsTriple base (base + 4)
-      (CodeReq.singleton base (.BEQ rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2)) :=
-  (beq_ne_spec_within rs1 rs2 offset v1 v2 hne base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SLT (MSB load + signed comparison)
@@ -205,18 +155,5 @@ theorem slt_msb_load_spec_within (offA offB : BitVec 12)
   have L1 := ld_spec_gen_within .x6 .x12 sp v6 b3 offB (base + 4) (by nofun)
   runBlock L0 L1
 
-theorem slt_msb_load_spec (offA offB : BitVec 12)
-    (sp a3 b3 v7 v6 : Word) (base : Word) :
-    let memA := sp + signExtend12 offA
-    let memB := sp + signExtend12 offB
-    let cr :=
-      CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
-       (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
-    cpsTriple base (base + 8) cr
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       (memA ↦ₘ a3) ** (memB ↦ₘ b3))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ a3) ** (.x6 ↦ᵣ b3) **
-       (memA ↦ₘ a3) ** (memB ↦ₘ b3)) :=
-  (slt_msb_load_spec_within offA offB sp a3 b3 v7 v6 base).to_cpsTriple
 
 end EvmAsm.Evm64

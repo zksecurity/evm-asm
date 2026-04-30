@@ -333,18 +333,7 @@ theorem evm_shr_zero_high_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     hABZ
 
-/-- Unbounded wrapper for `evm_shr_zero_high_spec_within`. -/
-theorem evm_shr_zero_high_spec (sp base : Word)
-    {s0 s1 s2 s3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
-    (hhigh : s1 ||| s2 ||| s3 ≠ 0) :
-    cpsTriple base (base + 360) (shrCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
-       ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (evm_shr_zero_high_spec_within sp base r5 r10 hhigh).to_cpsTriple
+
 
 /-- Zero path via BEQ taken: s1=s2=s3=0 but s0 ≥ 256 → result is zero.
     Execution: LD s1 → LD/OR s2 → LD/OR s3 → BNE(ntaken) → LD s0 → SLTIU → BEQ(taken) → zero_path. -/
@@ -486,19 +475,7 @@ theorem evm_shr_zero_large_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     hfull
 
-/-- Unbounded wrapper for `evm_shr_zero_large_spec_within`. -/
-theorem evm_shr_zero_large_spec (sp base : Word)
-    {s0 s1 s2 s3 v0 v1 v2 v3 : Word} (r5 r10 : Word)
-    (hlow : s1 ||| s2 ||| s3 = 0)
-    (hlarge : BitVec.ult s0 (signExtend12 (256 : BitVec 12)) = false) :
-    cpsTriple base (base + 360) (shrCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ s0) ** ((sp + 8) ↦ₘ s1) ** ((sp + 16) ↦ₘ s2) ** ((sp + 24) ↦ₘ s3) **
-       ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) ** ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word))) :=
-  (evm_shr_zero_large_spec_within sp base r5 r10 hlow hlarge).to_cpsTriple
+
 
 -- ============================================================================
 -- Section 5: Body path composition
@@ -511,7 +488,7 @@ theorem evm_shr_zero_large_spec (sp base : Word)
 -- Section 5a: Phase A ntaken → Phase B composition
 -- ============================================================================
 
--- Phase A is already provided as a cpsBranch (shr_phase_a_spec) with:
+-- Phase A is already provided as a cpsBranchWithin (shr_phase_a_spec) with:
 --   taken: zero_path (base+340), x5/x10 existential
 --   ntaken: base+36, x5 = s0, x10 existential
 -- Phase B takes x5 = s0 at base+36 and produces parameters at base+64.
@@ -964,20 +941,6 @@ theorem evm_shr_body_evmWord_spec_within (sp base : Word)
   exact cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) hphaseAB' hphaseCD
 
-/-- Unbounded wrapper for `evm_shr_body_evmWord_spec_within`. -/
-theorem evm_shr_body_evmWord_spec (sp base : Word)
-    (shift value : EvmWord) (r5 r6 r7 r10 r11 : Word)
-    (hhigh_zero : shift.getLimb 1 ||| shift.getLimb 2 ||| shift.getLimb 3 = 0)
-    (hlt_s0 : BitVec.ult (shift.getLimb 0) (signExtend12 (256 : BitVec 12)) = true)
-    (hlt : shift.toNat < 256) :
-    cpsTriple base (base + 360) (shrCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (.x6 ↦ᵣ r6) ** (.x7 ↦ᵣ r7) ** (.x11 ↦ᵣ r11) **
-       evmWordIs sp shift ** evmWordIs (sp + 32) value)
-      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (regOwn .x6) ** (regOwn .x7) ** (regOwn .x11) **
-       evmWordIs sp shift ** evmWordIs (sp + 32) (value >>> shift.toNat)) :=
-  (evm_shr_body_evmWord_spec_within sp base shift value r5 r6 r7 r10 r11
-    hhigh_zero hlt_s0 hlt).to_cpsTriple
+
 
 end EvmAsm.Evm64

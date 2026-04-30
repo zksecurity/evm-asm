@@ -38,18 +38,6 @@ theorem swap_limb_spec_within (sp : Word)
   have S1 := sd_spec_gen_within .x12 .x7 sp aVal bVal off_b (base + 12)
   runBlock L0 L1 S0 S1
 
-theorem swap_limb_spec (sp : Word)
-    (off_a off_b : BitVec 12) (aVal bVal v7 v6 : Word) (base : Word) :
-    cpsTriple base (base + 16)
-      (CodeReq.singleton base (.LD .x7 .x12 off_a) |>.union
-        (CodeReq.singleton (base + 4) (.LD .x6 .x12 off_b) |>.union
-        (CodeReq.singleton (base + 8) (.SD .x12 .x6 off_a) |>.union
-         (CodeReq.singleton (base + 12) (.SD .x12 .x7 off_b)))))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       ((sp + signExtend12 off_a) ↦ₘ aVal) ** ((sp + signExtend12 off_b) ↦ₘ bVal))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ aVal) ** (.x6 ↦ᵣ bVal) **
-       ((sp + signExtend12 off_a) ↦ₘ bVal) ** ((sp + signExtend12 off_b) ↦ₘ aVal)) :=
-  (swap_limb_spec_within sp off_a off_b aVal bVal v7 v6 base).to_cpsTriple
 
 -- ============================================================================
 -- Low-level generic SWAP spec
@@ -116,25 +104,6 @@ theorem evm_swap_spec_within (sp base : Word)
   rw [hm24, hse_s3] at L3
   runBlock L0 L1 L2 L3
 
-theorem evm_swap_spec (sp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (a0 a1 a2 a3 : Word)
-    (b0 b1 b2 b3 : Word)
-    (v7 v6 : Word) :
-    cpsTriple base (base + 64) (evm_swap_code base n)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       (sp ↦ₘ a0) ** ((sp+8) ↦ₘ a1) ** ((sp+16) ↦ₘ a2) ** ((sp+24) ↦ₘ a3) **
-       ((sp + BitVec.ofNat 64 (n*32))    ↦ₘ b0) **
-       ((sp + BitVec.ofNat 64 (n*32+8))  ↦ₘ b1) **
-       ((sp + BitVec.ofNat 64 (n*32+16)) ↦ₘ b2) **
-       ((sp + BitVec.ofNat 64 (n*32+24)) ↦ₘ b3))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ a3) ** (.x6 ↦ᵣ b3) **
-       (sp ↦ₘ b0) ** ((sp+8) ↦ₘ b1) ** ((sp+16) ↦ₘ b2) ** ((sp+24) ↦ₘ b3) **
-       ((sp + BitVec.ofNat 64 (n*32))    ↦ₘ a0) **
-       ((sp + BitVec.ofNat 64 (n*32+8))  ↦ₘ a1) **
-       ((sp + BitVec.ofNat 64 (n*32+16)) ↦ₘ a2) **
-       ((sp + BitVec.ofNat 64 (n*32+24)) ↦ₘ a3)) :=
-  (evm_swap_spec_within sp base n hn1 hn16 a0 a1 a2 a3 b0 b1 b2 b3 v7 v6).to_cpsTriple
 
 -- ============================================================================
 -- EvmWord-level SWAP spec
@@ -170,17 +139,6 @@ theorem evm_swap_evmword_spec_within (sp base : Word)
       (nth.getLimbN 0) (nth.getLimbN 1) (nth.getLimbN 2) (nth.getLimbN 3)
       v7 v6)
 
-theorem evm_swap_evmword_spec (sp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (top nth : EvmWord) (v7 v6 : Word) :
-    cpsTriple base (base + 64) (evm_swap_code base n)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       evmWordIs sp top **
-       evmWordIs (sp + BitVec.ofNat 64 (n * 32)) nth)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimbN 3) ** (.x6 ↦ᵣ nth.getLimbN 3) **
-       evmWordIs sp nth **
-       evmWordIs (sp + BitVec.ofNat 64 (n * 32)) top) :=
-  (evm_swap_evmword_spec_within sp base n hn1 hn16 top nth v7 v6).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level SWAP spec
@@ -236,20 +194,5 @@ theorem evm_swap_stack_spec_within (sp base : Word)
     (fun h hq => by xperm_hyp hq)
     h_main
 
-theorem evm_swap_stack_spec (sp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (stack : List EvmWord) (hlen : n + 1 ≤ stack.length)
-    (v7 v6 : Word) :
-    let top := stack[0]'(by omega)
-    let nth := stack[n]'(by omega)
-    cpsTriple base (base + 64) (evm_swap_code base n)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       evmStackIs sp stack)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ top.getLimbN 3) ** (.x6 ↦ᵣ nth.getLimbN 3) **
-       evmWordIs sp nth **
-       evmStackIs (sp + 32) ((stack.drop 1).take (n - 1)) **
-       evmWordIs (sp + BitVec.ofNat 64 (n * 32)) top **
-       evmStackIs (sp + BitVec.ofNat 64 ((n + 1) * 32)) ((stack.drop 1).drop n)) :=
-  (evm_swap_stack_spec_within sp base n hn1 hn16 stack hlen v7 v6).to_cpsTriple
 
 end EvmAsm.Evm64

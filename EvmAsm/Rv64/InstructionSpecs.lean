@@ -1,8 +1,8 @@
 /-
   EvmAsm.Rv64.InstructionSpecs
 
-  Separation logic specifications for each RISC-V (RV64) instruction using cpsTriple
-  (or cpsBranch for conditional branches).
+  Separation logic specifications for each RISC-V (RV64) instruction using
+  bounded CPS specs.
 
   Code is accessed via CodeReq.singleton side-condition (not instrAt in P/Q).
 
@@ -33,15 +33,6 @@ theorem add_spec_within (rd rs1 rs2 : Reg) (v1 v2 vOld : Word) (base : Word)
   generic_3reg_spec_within (.ADD rd rs1 rs2) rs1 rs2 rd v1 v2 vOld _ base hrd_ne_x0
     (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem add_spec (rd rs1 rs2 : Reg) (v1 v2 vOld : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rs1 rs2))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 + v2))) :=
-  (add_spec_within rd rs1 rs2 v1 v2 vOld base hrd_ne_x0).to_cpsTriple
-
-/-- ADD rd, rd, rs2: rd := rd + rs2 (rd = rs1, rs2 distinct) -/
 theorem add_spec_rd_eq_rs1_within (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADD rd rd rs2))
@@ -50,15 +41,6 @@ theorem add_spec_rd_eq_rs1_within (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
   generic_2reg_rd_eq_rs1_spec_within (.ADD rd rd rs2) rd rs2 v1 v2 _ base hrd_ne_x0
     (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem add_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rd rs2))
-      ((rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      ((rd ↦ᵣ (v1 + v2)) ** (rs2 ↦ᵣ v2)) :=
-  (add_spec_rd_eq_rs1_within rd rs2 v1 v2 base hrd_ne_x0).to_cpsTriple
-
-/-- ADD rd, rs1, rd: rd := rs1 + rd (rd = rs2, rs1 distinct) -/
 theorem add_spec_rd_eq_rs2_within (rd rs1 : Reg) (v1 v2 : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADD rd rs1 rd))
@@ -67,15 +49,6 @@ theorem add_spec_rd_eq_rs2_within (rd rs1 : Reg) (v1 v2 : Word) (base : Word)
   generic_2reg_spec_within (.ADD rd rs1 rd) rs1 rd v1 v2 (v1 + v2) base hrd_ne_x0
     (by intro s _ hrs1 hrd; simp [execInstrBr, hrs1, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem add_spec_rd_eq_rs2 (rd rs1 : Reg) (v1 v2 : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rs1 rd))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ v2))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + v2))) :=
-  (add_spec_rd_eq_rs2_within rd rs1 v1 v2 base hrd_ne_x0).to_cpsTriple
-
-/-- ADD rd, rd, rd: rd := rd + rd = 2 * rd (all same) -/
 theorem add_spec_all_same_within (rd : Reg) (v : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADD rd rd rd))
@@ -84,15 +57,6 @@ theorem add_spec_all_same_within (rd : Reg) (v : Word) (base : Word)
   generic_1reg_spec_within (.ADD rd rd rd) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem add_spec_all_same (rd : Reg) (v : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADD rd rd rd))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (v + v)) :=
-  (add_spec_all_same_within rd v base hrd_ne_x0).to_cpsTriple
-
-/-- SUB rd, rs1, rs2: rd := rs1 - rs2 (all registers distinct) -/
 theorem sub_spec_within (rd rs1 rs2 : Reg) (v1 v2 vOld : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SUB rd rs1 rs2))
@@ -101,15 +65,6 @@ theorem sub_spec_within (rd rs1 rs2 : Reg) (v1 v2 vOld : Word) (base : Word)
   generic_3reg_spec_within (.SUB rd rs1 rs2) rs1 rs2 rd v1 v2 vOld _ base hrd_ne_x0
     (by intro s _ hrs1 hrs2; simp [execInstrBr, hrs1, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem sub_spec (rd rs1 rs2 : Reg) (v1 v2 vOld : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SUB rd rs1 rs2))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** (rd ↦ᵣ (v1 - v2))) :=
-  (sub_spec_within rd rs1 rs2 v1 v2 vOld base hrd_ne_x0).to_cpsTriple
-
-/-- SUB rd, rd, rs2: rd := rd - rs2 -/
 theorem sub_spec_rd_eq_rs1_within (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SUB rd rd rs2))
@@ -118,15 +73,6 @@ theorem sub_spec_rd_eq_rs1_within (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
   generic_2reg_rd_eq_rs1_spec_within (.SUB rd rd rs2) rd rs2 v1 v2 _ base hrd_ne_x0
     (by intro s _ hrd hrs2; simp [execInstrBr, hrd, hrs2])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem sub_spec_rd_eq_rs1 (rd rs2 : Reg) (v1 v2 : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SUB rd rd rs2))
-      ((rd ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      ((rd ↦ᵣ (v1 - v2)) ** (rs2 ↦ᵣ v2)) :=
-  (sub_spec_rd_eq_rs1_within rd rs2 v1 v2 base hrd_ne_x0).to_cpsTriple
-
-/-- SUB rd, rd, rd: rd := rd - rd = 0 -/
 theorem sub_spec_all_same_within (rd : Reg) (v : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SUB rd rd rd))
@@ -135,19 +81,6 @@ theorem sub_spec_all_same_within (rd : Reg) (v : Word) (base : Word)
   generic_1reg_spec_within (.SUB rd rd rd) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem sub_spec_all_same (rd : Reg) (v : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SUB rd rd rd))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (v - v)) :=
-  (sub_spec_all_same_within rd v base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- ALU Instructions (Immediate)
--- ============================================================================
-
-/-- ADDI rd, rs1, imm: rd := rs1 + sext(imm) (registers distinct) -/
 theorem addi_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADDI rd rs1 imm))
@@ -156,15 +89,6 @@ theorem addi_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base
   generic_2reg_spec_within (.ADDI rd rs1 imm) rs1 rd v1 vOld (v1 + signExtend12 imm) base hrd_ne_x0
     (by intro s _ hrs1 _; simp [execInstrBr, hrs1])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem addi_spec (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADDI rd rs1 imm))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 + signExtend12 imm))) :=
-  (addi_spec_within rd rs1 v1 vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- ADDI rd, rd, imm: rd := rd + sext(imm) (same register) -/
 theorem addi_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADDI rd rd imm))
@@ -173,19 +97,6 @@ theorem addi_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Wo
   generic_1reg_spec_within (.ADDI rd rd imm) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem addi_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADDI rd rd imm))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (v + signExtend12 imm)) :=
-  (addi_spec_same_within rd v imm base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- ALU Instructions (Immediate): ORI
--- ============================================================================
-
-/-- ORI rd, rs1, imm: rd := rs1 | sext(imm) (registers distinct) -/
 theorem ori_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ORI rd rs1 imm))
@@ -194,15 +105,6 @@ theorem ori_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base 
   generic_2reg_spec_within (.ORI rd rs1 imm) rs1 rd v1 vOld (v1 ||| signExtend12 imm) base hrd_ne_x0
     (by intro s _ hrs1 _; simp [execInstrBr, hrs1])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem ori_spec (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ORI rd rs1 imm))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (v1 ||| signExtend12 imm))) :=
-  (ori_spec_within rd rs1 v1 vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- ORI rd, rd, imm: rd := rd | sext(imm) (same register) -/
 theorem ori_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ORI rd rd imm))
@@ -211,19 +113,6 @@ theorem ori_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Wor
   generic_1reg_spec_within (.ORI rd rd imm) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem ori_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ORI rd rd imm))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (v ||| signExtend12 imm)) :=
-  (ori_spec_same_within rd v imm base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- ALU Instructions (Immediate): SLTI
--- ============================================================================
-
-/-- SLTI rd, rs1, imm: rd := (rs1 <s sext(imm)) ? 1 : 0 (registers distinct) -/
 theorem slti_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SLTI rd rs1 imm))
@@ -232,15 +121,6 @@ theorem slti_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base
   generic_2reg_spec_within (.SLTI rd rs1 imm) rs1 rd v1 vOld _ base hrd_ne_x0
     (by intro s _ hrs1 _; simp [execInstrBr, hrs1])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem slti_spec (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SLTI rd rs1 imm))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (if BitVec.slt v1 (signExtend12 imm) then 1 else 0))) :=
-  (slti_spec_within rd rs1 v1 vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- SLTI rd, rd, imm: rd := (rd <s sext(imm)) ? 1 : 0 (same register) -/
 theorem slti_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SLTI rd rd imm))
@@ -249,19 +129,6 @@ theorem slti_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Wo
   generic_1reg_spec_within (.SLTI rd rd imm) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem slti_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SLTI rd rd imm))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (if BitVec.slt v (signExtend12 imm) then 1 else 0)) :=
-  (slti_spec_same_within rd v imm base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- RV64I Word Instructions: ADDIW
--- ============================================================================
-
-/-- ADDIW rd, rs1, imm: rd := signExtend64(truncate32(rs1) + truncate32(sext(imm))) (registers distinct) -/
 theorem addiw_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADDIW rd rs1 imm))
@@ -270,15 +137,6 @@ theorem addiw_spec_within (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (bas
   generic_2reg_spec_within (.ADDIW rd rs1 imm) rs1 rd v1 vOld _ base hrd_ne_x0
     (by intro s _ hrs1 _; simp [execInstrBr, hrs1])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem addiw_spec (rd rs1 : Reg) (v1 vOld : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADDIW rd rs1 imm))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ ((v1.truncate 32 + (signExtend12 imm).truncate 32 : BitVec 32).signExtend 64))) :=
-  (addiw_spec_within rd rs1 v1 vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- ADDIW rd, rd, imm: rd := signExtend64(truncate32(rd) + truncate32(sext(imm))) (same register) -/
 theorem addiw_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.ADDIW rd rd imm))
@@ -287,20 +145,6 @@ theorem addiw_spec_same_within (rd : Reg) (v : Word) (imm : BitVec 12) (base : W
   generic_1reg_spec_within (.ADDIW rd rd imm) rd v _ base hrd_ne_x0
     (by intro s _ hrd; simp [execInstrBr, hrd])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem addiw_spec_same (rd : Reg) (v : Word) (imm : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.ADDIW rd rd imm))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ ((v.truncate 32 + (signExtend12 imm).truncate 32 : BitVec 32).signExtend 64)) :=
-  (addiw_spec_same_within rd v imm base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- Upper Immediate Instructions
--- ============================================================================
-
-/-- LUI rd, imm: rd := signExtend64(imm << 12)
-    In RV64, LUI sign-extends the 32-bit result to 64 bits. -/
 theorem lui_spec_within (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.LUI rd imm))
@@ -309,16 +153,6 @@ theorem lui_spec_within (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Word)
   generic_1reg_spec_within (.LUI rd imm) rd vOld _ base hrd_ne_x0
     (by intro s _ _; simp [execInstrBr])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem lui_spec (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LUI rd imm))
-      (rd ↦ᵣ vOld)
-      (rd ↦ᵣ ((imm.zeroExtend 32 : BitVec 32) <<< 12).signExtend 64) :=
-  (lui_spec_within rd vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- AUIPC rd, imm: rd := PC + signExtend64(imm << 12)
-    In RV64, AUIPC sign-extends the 32-bit shifted value before adding to PC. -/
 theorem auipc_spec_within (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.AUIPC rd imm))
@@ -327,34 +161,12 @@ theorem auipc_spec_within (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Wor
   generic_1reg_spec_within (.AUIPC rd imm) rd vOld _ base hrd_ne_x0
     (by intro s hpc _; simp [execInstrBr, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem auipc_spec (rd : Reg) (vOld : Word) (imm : BitVec 20) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.AUIPC rd imm))
-      (rd ↦ᵣ vOld)
-      (rd ↦ᵣ (base + ((imm.zeroExtend 32 : BitVec 32) <<< 12).signExtend 64)) :=
-  (auipc_spec_within rd vOld imm base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- Memory Instructions (LD/SD for 64-bit doubleword access)
--- ============================================================================
-
-/-- LD rd, offset(rs1): rd := mem[rs1 + sext(offset)] (registers distinct) -/
 theorem ld_spec_within (rd rs1 : Reg) (v_addr vOld memVal : Word) (offset : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.LD rd rs1 offset))
       ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
       ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) :=
   generic_ld_spec_within rd rs1 v_addr vOld memVal offset base hrd_ne_x0
-
-theorem ld_spec (rd rs1 : Reg) (v_addr vOld memVal : Word) (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rs1 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ vOld) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
-      ((rs1 ↦ᵣ v_addr) ** (rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) :=
-  (ld_spec_within rd rs1 v_addr vOld memVal offset base hrd_ne_x0).to_cpsTriple
-
-/-- LD rd, offset(rd): rd := mem[rd + sext(offset)] (same register) -/
 theorem ld_spec_same_within (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.LD rd rd offset))
@@ -384,28 +196,11 @@ theorem ld_spec_same_within (rd : Reg) (v_addr memVal : Word) (offset : BitVec 1
     -- Reassociate: rd' ** (mem ** R) → (rd' ** mem) ** R
     have h3 := holdsFor_sepConj_assoc.mpr h2
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
-
-theorem ld_spec_same (rd : Reg) (v_addr memVal : Word) (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LD rd rd offset))
-      ((rd ↦ᵣ v_addr) ** ((v_addr + signExtend12 offset) ↦ₘ memVal))
-      ((rd ↦ᵣ memVal) ** ((v_addr + signExtend12 offset) ↦ₘ memVal)) :=
-  (ld_spec_same_within rd v_addr memVal offset base hrd_ne_x0).to_cpsTriple
-
-/-- SD rs2, offset(rs1): mem[rs1 + sext(offset)] := rs2 (registers distinct) -/
 theorem sd_spec_within (rs1 rs2 : Reg) (v_addr v_data memOld : Word) (offset : BitVec 12) (base : Word) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SD rs1 rs2 offset))
       ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ memOld))
       ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) :=
   generic_sd_spec_within rs1 rs2 v_addr v_data memOld offset base
-
-theorem sd_spec (rs1 rs2 : Reg) (v_addr v_data memOld : Word) (offset : BitVec 12) (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs1 rs2 offset))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ memOld))
-      ((rs1 ↦ᵣ v_addr) ** (rs2 ↦ᵣ v_data) ** ((v_addr + signExtend12 offset) ↦ₘ v_data)) :=
-  (sd_spec_within rs1 rs2 v_addr v_data memOld offset base).to_cpsTriple
-
-/-- SD rs, offset(rs): mem[rs + sext(offset)] := rs (same register) -/
 theorem sd_spec_same_within (rs : Reg) (v : Word) (memOld : Word) (offset : BitVec 12) (base : Word) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.SD rs rs offset))
       ((rs ↦ᵣ v) ** ((v + signExtend12 offset) ↦ₘ memOld))
@@ -430,33 +225,12 @@ theorem sd_spec_same_within (rs : Reg) (v : Word) (memOld : Word) (offset : BitV
     have h2 := holdsFor_sepConj_memIs_setMem (v' := v) h1
     have h3 := holdsFor_sepConj_pull_second.mpr h2
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h3
-
-theorem sd_spec_same (rs : Reg) (v : Word) (memOld : Word) (offset : BitVec 12) (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.SD rs rs offset))
-      ((rs ↦ᵣ v) ** ((v + signExtend12 offset) ↦ₘ memOld))
-      ((rs ↦ᵣ v) ** ((v + signExtend12 offset) ↦ₘ v)) :=
-  (sd_spec_same_within rs v memOld offset base).to_cpsTriple
-
--- ============================================================================
--- Branch Instructions (use cpsBranch for two exits)
--- ============================================================================
-
-/-- BEQ rs1, rs2, offset: branch if rs1 = rs2 (registers distinct) -/
 theorem beq_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
     cpsBranchWithin 1 base (CodeReq.singleton base (.BEQ rs1 rs2 offset))
       ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
       (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) :=
   generic_beq_spec_within rs1 rs2 offset v1 v2 base
-
-theorem beq_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BEQ rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝)
-      (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝) :=
-  (beq_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-/-- BEQ rs, rs, offset: branch if rs = rs (always taken, same register) -/
 theorem beq_spec_same_within (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
     cpsBranchWithin 1 base (CodeReq.singleton base (.BEQ rs rs offset))
       (rs ↦ᵣ v)
@@ -475,30 +249,12 @@ theorem beq_spec_same_within (rs : Reg) (offset : BitVec 13) (v : Word) (base : 
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
   · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
-
-theorem beq_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BEQ rs rs offset))
-      (rs ↦ᵣ v)
-      (base + signExtend13 offset) (rs ↦ᵣ v)
-      (base + 4) (rs ↦ᵣ v) :=
-  (beq_spec_same_within rs offset v base).to_cpsBranch
-
-/-- BNE rs1, rs2, offset: branch if rs1 ≠ rs2 (registers distinct) -/
 theorem bne_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
     cpsBranchWithin 1 base (CodeReq.singleton base (.BNE rs1 rs2 offset))
       ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
       (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) :=
   generic_bne_spec_within rs1 rs2 offset v1 v2 base
-
-theorem bne_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BNE rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 ≠ v2⌝)
-      (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜v1 = v2⌝) :=
-  (bne_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
-/-- BNE rs, rs, offset: branch if rs ≠ rs (never taken, same register) -/
 theorem bne_spec_same_within (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
     cpsBranchWithin 1 base (CodeReq.singleton base (.BNE rs rs offset))
       (rs ↦ᵣ v)
@@ -517,68 +273,24 @@ theorem bne_spec_same_within (rs : Reg) (offset : BitVec 13) (v : Word) (base : 
   · show (step s).bind (stepN 0) = some _
     rw [hstep', hexec']; rfl
   · exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) hPR
-
-theorem bne_spec_same (rs : Reg) (offset : BitVec 13) (v : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BNE rs rs offset))
-      (rs ↦ᵣ v)
-      (base + signExtend13 offset) (rs ↦ᵣ v)
-      (base + 4) (rs ↦ᵣ v) :=
-  (bne_spec_same_within rs offset v base).to_cpsBranch
-
--- ============================================================================
--- Branch Instructions: BGEU
--- ============================================================================
-
-/-- BGEU rs1, rs2, offset: branch if rs1 >=u rs2 (registers distinct) -/
 theorem bgeu_spec_within (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
     cpsBranchWithin 1 base (CodeReq.singleton base (.BGEU rs1 rs2 offset))
       ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
       (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝)
       (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝) :=
   generic_bgeu_spec_within rs1 rs2 offset v1 v2 base
-
-theorem bgeu_spec (rs1 rs2 : Reg) (offset : BitVec 13) (v1 v2 : Word) (base : Word) :
-    cpsBranch base (CodeReq.singleton base (.BGEU rs1 rs2 offset))
-      ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2))
-      (base + signExtend13 offset) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜¬BitVec.ult v1 v2⌝)
-      (base + 4) ((rs1 ↦ᵣ v1) ** (rs2 ↦ᵣ v2) ** ⌜BitVec.ult v1 v2⌝) :=
-  (bgeu_spec_within rs1 rs2 offset v1 v2 base).to_cpsBranch
-
--- ============================================================================
--- Jump Instructions
--- ============================================================================
-
-/-- JAL rd, offset: rd := PC + 4; PC := PC + sext(offset) -/
 theorem jal_spec_within (rd : Reg) (vOld : Word) (offset : BitVec 21) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + signExtend21 offset) (CodeReq.singleton base (.JAL rd offset))
       (rd ↦ᵣ vOld)
       (rd ↦ᵣ (base + 4)) :=
   generic_jal_spec_within rd vOld offset base hrd_ne_x0
-
-theorem jal_spec (rd : Reg) (vOld : Word) (offset : BitVec 21) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + signExtend21 offset) (CodeReq.singleton base (.JAL rd offset))
-      (rd ↦ᵣ vOld)
-      (rd ↦ᵣ (base + 4)) :=
-  (jal_spec_within rd vOld offset base hrd_ne_x0).to_cpsTriple
-
-/-- JALR rd, rs1, offset: rd := PC + 4; PC := (rs1 + sext(offset)) & ~1 (distinct) -/
 theorem jalr_spec_within (rd rs1 : Reg) (v1 vOld : Word) (offset : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base ((v1 + signExtend12 offset) &&& (~~~1)) (CodeReq.singleton base (.JALR rd rs1 offset))
       ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
       ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))) :=
   generic_jalr_spec_within rd rs1 v1 vOld offset base hrd_ne_x0
-
-theorem jalr_spec (rd rs1 : Reg) (v1 vOld : Word) (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base ((v1 + signExtend12 offset) &&& (~~~1)) (CodeReq.singleton base (.JALR rd rs1 offset))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ vOld))
-      ((rs1 ↦ᵣ v1) ** (rd ↦ᵣ (base + 4))) :=
-  (jalr_spec_within rd rs1 v1 vOld offset base hrd_ne_x0).to_cpsTriple
-
-/-- JALR rd, rd, offset: rd := PC + 4; PC := (rd + sext(offset)) & ~1 (same) -/
 theorem jalr_spec_same_within (rd : Reg) (v : Word) (offset : BitVec 12) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base ((v + signExtend12 offset) &&& (~~~1)) (CodeReq.singleton base (.JALR rd rd offset))
@@ -599,19 +311,6 @@ theorem jalr_spec_same_within (rd : Reg) (v : Word) (offset : BitVec 12) (base :
     rw [hstep', hexec']; rfl
   · have h1 := holdsFor_sepConj_regIs_setReg (v' := s.pc + 4) hrd_ne_x0 hPR
     exact holdsFor_pcFree_setPC (pcFree_sepConj (by pcFree) hR) h1
-
-theorem jalr_spec_same (rd : Reg) (v : Word) (offset : BitVec 12) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base ((v + signExtend12 offset) &&& (~~~1)) (CodeReq.singleton base (.JALR rd rd offset))
-      (rd ↦ᵣ v)
-      (rd ↦ᵣ (base + 4)) :=
-  (jalr_spec_same_within rd v offset base hrd_ne_x0).to_cpsTriple
-
--- ============================================================================
--- Pseudo Instructions
--- ============================================================================
-
-/-- MV rd, rs: rd := rs (pseudo for ADDI rd, rs, 0) -/
 theorem mv_spec_within (rd rs : Reg) (v vOld : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.MV rd rs))
@@ -620,15 +319,6 @@ theorem mv_spec_within (rd rs : Reg) (v vOld : Word) (base : Word)
   generic_2reg_spec_within (.MV rd rs) rs rd v vOld v base hrd_ne_x0
     (by intro s _ hrs _; simp [execInstrBr, hrs])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem mv_spec (rd rs : Reg) (v vOld : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.MV rd rs))
-      ((rs ↦ᵣ v) ** (rd ↦ᵣ vOld))
-      ((rs ↦ᵣ v) ** (rd ↦ᵣ v)) :=
-  (mv_spec_within rd rs v vOld base hrd_ne_x0).to_cpsTriple
-
-/-- LI rd, imm: rd := imm (pseudo for loading immediate) -/
 theorem li_spec_within (rd : Reg) (vOld imm : Word) (base : Word)
     (hrd_ne_x0 : rd ≠ .x0) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base (.LI rd imm))
@@ -637,15 +327,6 @@ theorem li_spec_within (rd : Reg) (vOld imm : Word) (base : Word)
   generic_1reg_spec_within (.LI rd imm) rd vOld _ base hrd_ne_x0
     (by intro s _ _; simp [execInstrBr])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem li_spec (rd : Reg) (vOld imm : Word) (base : Word)
-    (hrd_ne_x0 : rd ≠ .x0) :
-    cpsTriple base (base + 4) (CodeReq.singleton base (.LI rd imm))
-      (rd ↦ᵣ vOld)
-      (rd ↦ᵣ imm) :=
-  (li_spec_within rd vOld imm base hrd_ne_x0).to_cpsTriple
-
-/-- NOP: no operation (pseudo for ADDI x0, x0, 0) -/
 theorem nop_spec_within (base : Word) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base .NOP)
       empAssertion
@@ -653,18 +334,6 @@ theorem nop_spec_within (base : Word) :
   generic_nop_spec_within .NOP
     (by intro s hpc; simp [execInstrBr, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem nop_spec (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base .NOP)
-      empAssertion
-      empAssertion :=
-  (nop_spec_within base).to_cpsTriple
-
--- ============================================================================
--- System Instructions
--- ============================================================================
-
-/-- FENCE: memory fence (NOP in single-hart zkVM) -/
 theorem fence_spec_within (base : Word) :
     cpsTripleWithin 1 base (base + 4) (CodeReq.singleton base .FENCE)
       empAssertion
@@ -672,29 +341,4 @@ theorem fence_spec_within (base : Word) :
   generic_nop_spec_within .FENCE
     (by intro s hpc; simp [execInstrBr, hpc])
     (by intro s hfetch; exact step_non_ecall_non_mem hfetch (by nofun) (by nofun) (by rfl))
-
-theorem fence_spec (base : Word) :
-    cpsTriple base (base + 4) (CodeReq.singleton base .FENCE)
-      empAssertion
-      empAssertion :=
-  (fence_spec_within base).to_cpsTriple
-
--- ============================================================================
--- Summary
--- ============================================================================
-
-/-!
-  ## Instruction Specifications Summary
-
-  This module provides separation logic specifications for RV64 instructions
-  using CPS-style specifications with built-in frame rule.
-
-  Code is accessed via CodeReq.singleton side-condition (not instrAt in P/Q).
-
-  Differences from the RV32 version (EvmAsm.InstructionSpecs):
-  - LUI/AUIPC: result is sign-extended from 32 bits to 64 bits
-  - LW/SW specs removed (RV64 LW uses getWord32 + signExtend, not getMem/setMem)
-  - LD/SD specs added for 64-bit doubleword memory access using isValidDwordAccess
--/
-
 end EvmAsm.Rv64

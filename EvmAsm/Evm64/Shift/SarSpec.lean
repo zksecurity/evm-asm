@@ -50,18 +50,6 @@ theorem sar_last_limb_spec_within (dst_off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) dstOld dst_off (base + 8)
   runBlock L SA SD_
 
-theorem sar_last_limb_spec (dst_off : BitVec 12)
-    (sp src dstOld v5 bit_shift : Word) (base : Word) :
-    let memSrc := sp + signExtend12 (24 : BitVec 12)
-    let memDst := sp + signExtend12 dst_off
-    let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
-    let cr := sar_last_limb_code base dst_off
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (memSrc ↦ₘ src) ** (memDst ↦ₘ result)) :=
-  (sar_last_limb_spec_within dst_off sp src dstOld v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Per-limb Specs: SAR Last Limb In-place (3 instructions, dst_off = 24)
@@ -88,15 +76,6 @@ theorem sar_last_limb_inplace_spec_within
   have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight src (bit_shift.toNat % 64)) src 24 (base + 8)
   runBlock L SA SD_
 
-theorem sar_last_limb_inplace_spec
-    (sp src v5 bit_shift : Word) (base : Word) :
-    let mem := sp + signExtend12 (24 : BitVec 12)
-    let result := BitVec.sshiftRight src (bit_shift.toNat % 64)
-    let cr := sar_last_limb_inplace_code base
-    cpsTriple base (base + 12) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) ** (mem ↦ₘ result)) :=
-  (sar_last_limb_inplace_spec_within sp src v5 bit_shift base).to_cpsTriple
 
 -- ============================================================================
 -- Shift Body Specs
@@ -133,22 +112,6 @@ theorem sar_body_3_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock LL SR S0 S1 S2 JL
 
-theorem sar_body_3_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 28) + signExtend21 jal_off = exit) :
-    let result0 := BitVec.sshiftRight v3 (bit_shift.toNat % 64)
-    let signExt := BitVec.sshiftRight result0 63
-    let cr := sar_body_3_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result0) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ signExt) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ signExt) ** ((sp + 16) ↦ₘ signExt) ** ((sp + 24) ↦ₘ signExt)) :=
-  (sar_body_3_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 abbrev sar_body_2_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (sar_body_2_prog jal_off)
@@ -189,23 +152,6 @@ theorem sar_body_2_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM LL SR S0 S1 JL
 
-theorem sar_body_2_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 52) + signExtend21 jal_off = exit) :
-    let result0 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := BitVec.sshiftRight v3 (bit_shift.toNat % 64)
-    let signExt := BitVec.sshiftRight result1 63
-    let cr := sar_body_2_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ signExt) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ signExt) ** ((sp + 24) ↦ₘ signExt)) :=
-  (sar_body_2_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 abbrev sar_body_1_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (sar_body_1_prog jal_off)
@@ -249,24 +195,6 @@ theorem sar_body_1_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM1 MM2 LL SR S0 JL
 
-theorem sar_body_1_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 76) + signExtend21 jal_off = exit) :
-    let result0 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result2 := BitVec.sshiftRight v3 (bit_shift.toNat % 64)
-    let signExt := BitVec.sshiftRight result2 63
-    let cr := sar_body_1_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ signExt) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ signExt)) :=
-  (sar_body_1_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 abbrev sar_body_0_code (base : Word) (jal_off : BitVec 21) : CodeReq :=
   CodeReq.ofProg base (sar_body_0_prog jal_off)
@@ -309,24 +237,6 @@ theorem sar_body_0_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock MM1 MM2 MM3 LL JL
 
-theorem sar_body_0_spec (sp : Word)
-    (v5 v10 bit_shift antiShift mask : Word)
-    (v0 v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 96) + signExtend21 jal_off = exit) :
-    let result0 := (v0 >>> (bit_shift.toNat % 64)) ||| ((v1 <<< (antiShift.toNat % 64)) &&& mask)
-    let result1 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-    let result2 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-    let result3 := BitVec.sshiftRight v3 (bit_shift.toNat % 64)
-    let cr := sar_body_0_code base jal_off
-    cpsTriple base exit cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ v0) ** ((sp + 8) ↦ₘ v1) ** ((sp + 16) ↦ₘ v2) ** ((sp + 24) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result3) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) :=
-  (sar_body_0_spec_within sp v5 v10 bit_shift antiShift mask v0 v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 -- ============================================================================
 -- Sign-fill path spec (7 instructions)
@@ -369,17 +279,5 @@ theorem sar_sign_fill_path_spec_within (sp : Word)
   have S3 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v3 24 (base + 24)
   runBlock LD0 SR AD S0 S1 S2 S3
 
-theorem sar_sign_fill_path_spec (sp : Word)
-    (v5 v10 : Word)
-    (v0 v1 v2 v3 : Word)
-    (base : Word) :
-    let signExt := BitVec.sshiftRight v3 63
-    let cr := sar_sign_fill_path_code base
-    cpsTriple base (base + 28) cr
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ signExt) ** (.x10 ↦ᵣ v10) **
-       ((sp + 32) ↦ₘ signExt) ** ((sp + 40) ↦ₘ signExt) ** ((sp + 48) ↦ₘ signExt) ** ((sp + 56) ↦ₘ signExt)) :=
-  (sar_sign_fill_path_spec_within sp v5 v10 v0 v1 v2 v3 base).to_cpsTriple
 
 end EvmAsm.Evm64

@@ -122,13 +122,5 @@ theorem evm_mul_stack_spec_within (sp base : Word)
       exact mul_stack_weaken sp a b h (by xperm_hyp hq))
     h_main
 
-theorem evm_mul_stack_spec (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word) :
-    cpsTriple base (base + 252) (evm_mul_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (evmMulStackPost sp a b) :=
-  (evm_mul_stack_spec_within sp base a b v5 v6 v7 v10 v11).to_cpsTriple
 
 end EvmAsm.Evm64

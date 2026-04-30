@@ -43,65 +43,10 @@ theorem evm_not_spec_within (sp base : Word)
   have L3 := not_limb_spec_within 24 sp a3 (a2 ^^^ signExtend12 (-1 : BitVec 12)) (base + 36)
   runBlock L0 L1 L2 L3
 
-theorem evm_not_spec (sp base : Word)
-    (a0 a1 a2 a3 : Word)
-    (v7 : Word) :
-    let c := signExtend12 (-1 : BitVec 12)
-    let code := evm_not_code base
-    cpsTriple base (base + 48) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a3 ^^^ c)) **
-       (sp ↦ₘ (a0 ^^^ c)) ** ((sp + 8) ↦ₘ (a1 ^^^ c)) ** ((sp + 16) ↦ₘ (a2 ^^^ c)) ** ((sp + 24) ↦ₘ (a3 ^^^ c))) :=
-  (evm_not_spec_within sp base a0 a1 a2 a3 v7).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level NOT spec
 -- ============================================================================
 
-theorem signExtend12_neg1_eq_allOnes : signExtend12 (-1 : BitVec 12) = BitVec.allOnes 64 := by
-  decide
-
-/-- Stack-level 256-bit EVM NOT: complements an EvmWord in-place. -/
-theorem evm_not_stack_spec_within (sp base : Word)
-    (a : EvmWord) (v7 : Word) :
-    let c := signExtend12 (-1 : BitVec 12)
-    let code := evm_not_code base
-    cpsTripleWithin 12 base (base + 48) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** evmWordIs sp a)
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a.getLimbN 3 ^^^ c)) ** evmWordIs sp (~~~a)) := by
-  -- Helper: (~~~a).getLimbN k = a.getLimbN k ^^^ signExtend12 (-1)
-  have not_limb_eq : ∀ (k : Nat), k < 4 →
-      (~~~a).getLimbN k = a.getLimbN k ^^^ signExtend12 (-1 : BitVec 12) := by
-    intro k hk
-    rw [EvmWord.getLimbN_not hk, BitVec.not_def, BitVec.xor_comm, ← signExtend12_neg1_eq_allOnes]
-  -- Apply evm_not_spec with individual limbs
-  have h_main := evm_not_spec_within sp base
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-    v7
-  exact cpsTripleWithin_weaken
-    (fun h hp => by
-      simp only [evmWordIs] at hp
-      xperm_hyp hp)
-    (fun h hq => by
-      simp only [evmWordIs, not_limb_eq 0 (by omega), not_limb_eq 1 (by omega),
-                 not_limb_eq 2 (by omega), not_limb_eq 3 (by omega)]
-      xperm_hyp hq)
-    h_main
-
-theorem evm_not_stack_spec (sp base : Word)
-    (a : EvmWord) (v7 : Word) :
-    let c := signExtend12 (-1 : BitVec 12)
-    let code := evm_not_code base
-    cpsTriple base (base + 48) code
-      (-- Registers + memory
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** evmWordIs sp a)
-      (-- Registers + memory (updated)
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (a.getLimbN 3 ^^^ c)) ** evmWordIs sp (~~~a)) :=
-  (evm_not_stack_spec_within sp base a v7).to_cpsTriple
 
 end EvmAsm.Evm64

@@ -34,16 +34,6 @@ theorem dup_pair_spec_within (sp : Word)
   have S := sd_spec_gen_within .x12 .x7 sp src_val dstOld off_dst (base + 4)
   runBlock L S
 
-theorem dup_pair_spec (sp : Word)
-    (off_src off_dst : BitVec 12) (src_val dstOld v7 : Word) (base : Word) :
-    cpsTriple base (base + 8)
-      (CodeReq.singleton base (.LD .x7 .x12 off_src) |>.union
-        (CodeReq.singleton (base + 4) (.SD .x12 .x7 off_dst)))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) **
-       ((sp + signExtend12 off_src) ↦ₘ src_val) ** ((sp + signExtend12 off_dst) ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ src_val) **
-       ((sp + signExtend12 off_src) ↦ₘ src_val) ** ((sp + signExtend12 off_dst) ↦ₘ src_val)) :=
-  (dup_pair_spec_within sp off_src off_dst src_val dstOld v7 base).to_cpsTriple
 
 -- ============================================================================
 -- Low-level generic DUP spec
@@ -106,25 +96,6 @@ theorem evm_dup_spec_within (nsp base : Word)
   rw [hse_s3, hm24] at P3
   runBlock sA P0 P1 P2 P3
 
-theorem evm_dup_spec (nsp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (s0 s1 s2 s3 : Word)
-    (d0 d1 d2 d3 : Word)
-    (v7 : Word) :
-    cpsTriple base (base + 36) (evm_dup_code base n)
-      ((.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
-       (nsp ↦ₘ d0) ** ((nsp+8) ↦ₘ d1) ** ((nsp+16) ↦ₘ d2) ** ((nsp+24) ↦ₘ d3) **
-       ((nsp + BitVec.ofNat 64 (n*32))    ↦ₘ s0) **
-       ((nsp + BitVec.ofNat 64 (n*32+8))  ↦ₘ s1) **
-       ((nsp + BitVec.ofNat 64 (n*32+16)) ↦ₘ s2) **
-       ((nsp + BitVec.ofNat 64 (n*32+24)) ↦ₘ s3))
-      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ s3) **
-       (nsp ↦ₘ s0) ** ((nsp+8) ↦ₘ s1) ** ((nsp+16) ↦ₘ s2) ** ((nsp+24) ↦ₘ s3) **
-       ((nsp + BitVec.ofNat 64 (n*32))    ↦ₘ s0) **
-       ((nsp + BitVec.ofNat 64 (n*32+8))  ↦ₘ s1) **
-       ((nsp + BitVec.ofNat 64 (n*32+16)) ↦ₘ s2) **
-       ((nsp + BitVec.ofNat 64 (n*32+24)) ↦ₘ s3)) :=
-  (evm_dup_spec_within nsp base n hn1 hn16 s0 s1 s2 s3 d0 d1 d2 d3 v7).to_cpsTriple
 
 -- ============================================================================
 -- EvmWord-level DUP spec
@@ -161,17 +132,6 @@ theorem evm_dup_evmword_spec_within (nsp base : Word)
       xperm_hyp hq)
     h_main
 
-theorem evm_dup_evmword_spec (nsp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (src dst : EvmWord) (v7 : Word) :
-    cpsTriple base (base + 36) (evm_dup_code base n)
-      ((.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
-       evmWordIs nsp dst **
-       evmWordIs (nsp + BitVec.ofNat 64 (n * 32)) src)
-      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ src.getLimbN 3) **
-       evmWordIs nsp src **
-       evmWordIs (nsp + BitVec.ofNat 64 (n * 32)) src) :=
-  (evm_dup_evmword_spec_within nsp base n hn1 hn16 src dst v7).to_cpsTriple
 
 -- ============================================================================
 -- Stack-level DUP spec
@@ -214,18 +174,5 @@ theorem evm_dup_stack_spec_within (nsp base : Word)
     (fun _ hq => by rw [hsplit]; xperm_hyp hq)
     h_main
 
-theorem evm_dup_stack_spec (nsp base : Word)
-    (n : Nat) (hn1 : 1 ≤ n) (hn16 : n ≤ 16)
-    (stack : List EvmWord) (hlen : n ≤ stack.length)
-    (d : EvmWord) (v7 : Word) :
-    let vn := stack[n - 1]'(by omega)
-    cpsTriple base (base + 36) (evm_dup_code base n)
-      ((.x12 ↦ᵣ (nsp + 32)) ** (.x7 ↦ᵣ v7) **
-       evmWordIs nsp d **
-       evmStackIs (nsp + 32) stack)
-      ((.x12 ↦ᵣ nsp) ** (.x7 ↦ᵣ vn.getLimbN 3) **
-       evmWordIs nsp vn **
-       evmStackIs (nsp + 32) stack) :=
-  (evm_dup_stack_spec_within nsp base n hn1 hn16 stack hlen d v7).to_cpsTriple
 
 end EvmAsm.Evm64

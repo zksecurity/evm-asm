@@ -53,16 +53,6 @@ theorem signext_inplace_spec_within (off : BitVec 12)
   have SD_ := sd_spec_gen_within .x12 .x5 sp (BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)) limb off (base + 12)
   runBlock L SL SR SD_
 
-theorem signext_inplace_spec (off : BitVec 12)
-    (sp limb v5 shiftAmount : Word) (base : Word) :
-    let result := BitVec.sshiftRight (limb <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
-    let code := signext_inplace_code off base
-    cpsTriple base (base + 16) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 off) ↦ₘ limb))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + signExtend12 off) ↦ₘ result)) :=
-  (signext_inplace_spec_within off sp limb v5 shiftAmount base).to_cpsTriple
 
 -- ============================================================================
 -- Body Specs
@@ -91,18 +81,6 @@ theorem signext_body_3_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock IP JL
 
-theorem signext_body_3_spec (sp : Word)
-    (v5 shiftAmount : Word) (v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 16) + signExtend21 jal_off = exit) :
-    let result := BitVec.sshiftRight (v3 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
-    let code := signext_body_3_code base jal_off
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) **
-       ((sp + 56) ↦ₘ result)) :=
-  (signext_body_3_spec_within sp v5 shiftAmount v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 2 (7 instructions):
     LD + SLL + SRA + SD at sp+48 + SRAI + SD at sp+56 + JAL. -/
@@ -135,19 +113,6 @@ theorem signext_body_2_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock IP SR S0 JL
 
-theorem signext_body_2_spec (sp : Word)
-    (v5 v10 shiftAmount : Word) (v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 24) + signExtend21 jal_off = exit) :
-    let result := BitVec.sshiftRight (v2 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
-    let signFill := BitVec.sshiftRight result 63
-    let code := signext_body_2_code base jal_off
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
-       ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 48) ↦ₘ result) ** ((sp + 56) ↦ₘ signFill)) :=
-  (signext_body_2_spec_within sp v5 v10 shiftAmount v2 v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 1 (8 instructions):
     LD + SLL + SRA + SD at sp+40 + SRAI + SD at sp+48 + SD at sp+56 + JAL. -/
@@ -183,19 +148,6 @@ theorem signext_body_1_spec_within (sp : Word)
   rw [hexit] at JL
   runBlock IP SR S0 S1 JL
 
-theorem signext_body_1_spec (sp : Word)
-    (v5 v10 shiftAmount : Word) (v1 v2 v3 : Word)
-    (base exit : Word) (jal_off : BitVec 21)
-    (hexit : (base + 28) + signExtend21 jal_off = exit) :
-    let result := BitVec.sshiftRight (v1 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
-    let signFill := BitVec.sshiftRight result 63
-    let code := signext_body_1_code base jal_off
-    cpsTriple base exit code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
-       ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 40) ↦ₘ result) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) :=
-  (signext_body_1_spec_within sp v5 v10 shiftAmount v1 v2 v3 base exit jal_off hexit).to_cpsTriple
 
 /-- CodeReq for sign-extend body 0 (8 instructions):
     LD + SLL + SRA + SD at sp+32 + SRAI + SD at sp+40 + SD at sp+48 + SD at sp+56.
@@ -232,18 +184,6 @@ theorem signext_body_0_spec_within (sp : Word)
     v3 56 (base + 28)
   runBlock IP SR S0 S1 S2
 
-theorem signext_body_0_spec (sp : Word)
-    (v5 v10 shiftAmount : Word) (v0 v1 v2 v3 : Word)
-    (base : Word) :
-    let result := BitVec.sshiftRight (v0 <<< (shiftAmount.toNat % 64)) (shiftAmount.toNat % 64)
-    let signFill := BitVec.sshiftRight result 63
-    let code := signext_body_0_code base
-    cpsTriple base (base + 32) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ v10) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + 40) ↦ₘ v1) ** ((sp + 48) ↦ₘ v2) ** ((sp + 56) ↦ₘ v3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ shiftAmount) ** (.x10 ↦ᵣ signFill) **
-       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ signFill) ** ((sp + 48) ↦ₘ signFill) ** ((sp + 56) ↦ₘ signFill)) :=
-  (signext_body_0_spec_within sp v5 v10 shiftAmount v0 v1 v2 v3 base).to_cpsTriple
 
 -- ============================================================================
 -- Done Spec: pop b word (1 instruction)
@@ -258,13 +198,6 @@ theorem signext_done_spec_within (sp : Word) (base : Word) :
       (.x12 ↦ᵣ nsp) := by
   exact addi_spec_gen_same_within .x12 sp 32 base (by nofun)
 
-theorem signext_done_spec (sp : Word) (base : Word) :
-    let nsp := sp + signExtend12 (32 : BitVec 12)
-    let code := CodeReq.singleton base (.ADDI .x12 .x12 32)
-    cpsTriple base (base + 4) code
-      (.x12 ↦ᵣ sp)
-      (.x12 ↦ᵣ nsp) :=
-  (signext_done_spec_within sp base).to_cpsTriple
 
 -- ============================================================================
 -- Phase B Spec: Compute shiftAmount and limbIdx (5 instructions)
@@ -297,16 +230,6 @@ theorem signext_phase_b_spec_within (b r6 r10 : Word) (base : Word) :
   have SR := srli_spec_gen_same_within .x5 b 3 (base + 16) (by nofun)
   runBlock A SL AD SU SR
 
-theorem signext_phase_b_spec (b r6 r10 : Word) (base : Word) :
-    let byteInLimb := b &&& signExtend12 (7 : BitVec 12)
-    let byteShift := byteInLimb <<< (3 : BitVec 6).toNat
-    let shiftAmount := (56 : Word) - byteShift
-    let limbIdx := b >>> (3 : BitVec 6).toNat
-    let code := signext_phase_b_code base
-    cpsTriple base (base + 20) code
-      ((.x5 ↦ᵣ b) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10))
-      ((.x5 ↦ᵣ limbIdx) ** (.x6 ↦ᵣ shiftAmount) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ byteShift)) :=
-  (signext_phase_b_spec_within b r6 r10 base).to_cpsTriple
 
 -- ============================================================================
 -- LD/OR Accumulator Helper (2 instructions)
@@ -325,13 +248,6 @@ theorem signext_ld_or_acc_spec_within (sp acc prev_x10 val : Word) (off : BitVec
   have OR_ := or_spec_gen_rd_eq_rs1_within .x5 .x10 acc val (base + 4) (by nofun)
   runBlock L OR_
 
-theorem signext_ld_or_acc_spec (sp acc prev_x10 val : Word) (off : BitVec 12)
-    (base : Word) :
-    let code := signext_ld_or_acc_code off base
-    cpsTriple base (base + 8) code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ acc) ** (.x10 ↦ᵣ prev_x10) ** ((sp + signExtend12 off) ↦ₘ val))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (acc ||| val)) ** (.x10 ↦ᵣ val) ** ((sp + signExtend12 off) ↦ₘ val)) :=
-  (signext_ld_or_acc_spec_within sp acc prev_x10 val off base).to_cpsTriple
 
 -- ============================================================================
 -- Cascade Step Helper (2 instructions)
@@ -341,7 +257,7 @@ abbrev signext_cascade_step_code (k : BitVec 12) (offset : BitVec 13) (base : Wo
   CodeReq.ofProg base (signext_cascade_step_prog k offset)
 
 /-- Cascade step: ADDI x10,x0,k followed by BEQ x5,x10,off.
-    Produces a cpsBranch with clean postconditions (no pure facts). -/
+    Produces a cpsBranchWithin with clean postconditions (no pure facts). -/
 theorem signext_cascade_step_spec_within (v5 v10 : Word)
     (k : BitVec 12) (offset : BitVec 13) (base target : Word)
     (htarget : (base + 4) + signExtend13 offset = target) :
@@ -385,19 +301,9 @@ theorem signext_cascade_step_spec_within (v5 v10 : Word)
   exact cpsTripleWithin_seq_cpsBranchWithin_with_perm hd
     (fun _ hp => hp) s1' s2'
 
-theorem signext_cascade_step_spec (v5 v10 : Word)
-    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
-    (htarget : (base + 4) + signExtend13 offset = target) :
-    let kVal := (0 : Word) + signExtend12 k
-    let code := signext_cascade_step_code k offset base
-    cpsBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal))
-      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal)) :=
-  (signext_cascade_step_spec_within v5 v10 k offset base target htarget).to_cpsBranch
 
 -- ============================================================================
--- Phase A: Check b >= 31 (9 instructions, cpsBranch)
+-- Phase A: Check b >= 31 (9 instructions, cpsBranchWithin)
 -- ============================================================================
 
 -- `regIs_to_regOwn` lives in `Rv64/SepLogic.lean` (shared).
@@ -421,7 +327,7 @@ abbrev signext_phase_a_code (base : Word) : CodeReq :=
   (CodeReq.singleton (base + 32) (.BEQ .x10 .x0 156)))))))
 
 /-- Phase A spec: Check b >= 31.
-    9 instructions, cpsBranch with 2 exits:
+    9 instructions, cpsBranchWithin with 2 exits:
     - Taken (done_path): b >= 31 (high limbs nonzero or b[0] >= 31)
     - Not-taken (base+36): b < 31, x5 = b0
     Uses disjoint composition throughout (no extend_code). -/
@@ -648,25 +554,9 @@ theorem signext_phase_a_spec_within (sp r5 r10 : Word)
       combined
   exact result
 
-theorem signext_phase_a_spec (sp r5 r10 : Word)
-    (b0 b1 b2 b3 : Word)
-    (base done_path : Word)
-    (hdone1 : (base + 20) + signExtend13 168 = done_path)
-    (hdone2 : (base + 32) + signExtend13 156 = done_path) :
-    let code := signext_phase_a_code base
-    cpsBranch base code
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ r5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ r10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3))
-      done_path
-      ((.x12 ↦ᵣ sp) ** (regOwn .x5) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3))
-      (base + 36)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x0 ↦ᵣ (0 : Word)) ** (regOwn .x10) **
-       (sp ↦ₘ b0) ** ((sp + 8) ↦ₘ b1) ** ((sp + 16) ↦ₘ b2) ** ((sp + 24) ↦ₘ b3)) :=
-  (signext_phase_a_spec_within sp r5 r10 b0 b1 b2 b3 base done_path hdone1 hdone2).to_cpsBranch
 
 -- ============================================================================
--- Phase C: Cascade dispatch on limbIdx (5 instructions, cpsNBranch)
+-- Phase C: Cascade dispatch on limbIdx (5 instructions, cpsNBranchWithin)
 -- ============================================================================
 
 /-- Phase C code as explicit union of sub-CRs (matching disjoint composition structure). -/
@@ -770,20 +660,6 @@ theorem signext_phase_c_spec_within (v5 v10 : Word) (base : Word)
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)), rfl, fun h hp => by xperm_hyp hp⟩
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))), he3.symm, fun h hp => by xperm_hyp hp⟩)
 
-theorem signext_phase_c_spec (v5 v10 : Word) (base : Word)
-    (e0 e1 e2 e3 : Word)
-    (he0 : base + signExtend13 100 = e0)
-    (he1 : (base + 8) + signExtend13 60 = e1)
-    (he2 : (base + 16) + signExtend13 24 = e2)
-    (he3 : base + 20 = e3) :
-    let code := signext_phase_c_code base
-    cpsNBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10)),
-       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1))),
-       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2))),
-       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)))] :=
-  (signext_phase_c_spec_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
 
 -- ============================================================================
 -- Cascade step with pure dispatch facts
@@ -826,16 +702,6 @@ theorem signext_cascade_step_spec_pure_within (v5 v10 : Word)
   exact cpsTripleWithin_seq_cpsBranchWithin_with_perm hd
     (fun _ hp => hp) s1' s2'
 
-theorem signext_cascade_step_spec_pure (v5 v10 : Word)
-    (k : BitVec 12) (offset : BitVec 13) (base target : Word)
-    (htarget : (base + 4) + signExtend13 offset = target) :
-    let kVal := (0 : Word) + signExtend12 k
-    let code := signext_cascade_step_code k offset base
-    cpsBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      target ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) ** ⌜v5 = kVal⌝)
-      (base + 8) ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ kVal) ** ⌜v5 ≠ kVal⌝) :=
-  (signext_cascade_step_spec_pure_within v5 v10 k offset base target htarget).to_cpsBranch
 
 -- ============================================================================
 -- Phase C with pure dispatch facts
@@ -956,19 +822,5 @@ theorem signext_phase_c_spec_pure_within (v5 v10 : Word) (base : Word)
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)), rfl, fun h hp => by xperm_hyp hp⟩
       · exact ⟨_, List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))), he3.symm, fun h hp => by xperm_hyp hp⟩)
 
-theorem signext_phase_c_spec_pure (v5 v10 : Word) (base : Word)
-    (e0 e1 e2 e3 : Word)
-    (he0 : base + signExtend13 100 = e0)
-    (he1 : (base + 8) + signExtend13 60 = e1)
-    (he2 : (base + 16) + signExtend13 24 = e2)
-    (he3 : base + 20 = e3) :
-    let code := signext_phase_c_code base
-    cpsNBranch base code
-      ((.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
-      [(e0, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) ** ⌜v5 = 0⌝),
-       (e1, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 1)) ** ⌜v5 = (0 : Word) + signExtend12 1⌝),
-       (e2, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 = (0 : Word) + signExtend12 2⌝),
-       (e3, (.x5 ↦ᵣ v5) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ ((0 : Word) + signExtend12 2)) ** ⌜v5 ≠ 0 ∧ v5 ≠ (0 : Word) + signExtend12 1 ∧ v5 ≠ (0 : Word) + signExtend12 2⌝)] :=
-  (signext_phase_c_spec_pure_within v5 v10 base e0 e1 e2 e3 he0 he1 he2 he3).to_cpsNBranch
 
 end EvmAsm.Evm64
