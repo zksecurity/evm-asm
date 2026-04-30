@@ -328,7 +328,10 @@ def isAddbackCarry2NzN4CallAb_v2 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
 
     After #720 dropped the unused \`hv_*\` params from the inner
     \`divK_loop_body_n4_call_addback_j0_beq_norm\`, the 22 corresponding
-    validity hypotheses here also became unused and are removed. -/
+    validity hypotheses here also became unused and are removed.
+
+    GH #338: the outer \`hvalid : ValidMemRange sp 8\` and the four
+    derived \`have hv_v0..hv_v3\` are also dead — removed. -/
 theorem evm_div_n4_preloop_call_addback_beq_spec (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old : Word)
     (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7 nMem shiftMem jMem : Word)
