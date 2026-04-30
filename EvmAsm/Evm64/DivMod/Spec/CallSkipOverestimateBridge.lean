@@ -49,12 +49,12 @@ theorem c3_un_zero_of_qHat_mul_le
     (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 := by
   have heuc := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
   simp only [] at heuc
-  have hms_lt : val256 (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).1
+  have hmsLt : val256 (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).1
                        (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.1
                        (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.1
                        (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.1 < 2^256 :=
     EvmWord.val256_bound ..
-  have hc3_lt : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2.toNat < 2^64 :=
+  have hc3Lt : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2.toNat < 2^64 :=
     (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2.isLt
   apply BitVec.eq_of_toNat_eq
   rw [show (0 : Word).toNat = 0 from rfl]
@@ -83,11 +83,11 @@ theorem val256_ms_un_eq_val256_mod_of_overestimate
     val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 =
     val256 a0 a1 a2 a3 % val256 b0 b1 b2 b3 := by
   intro ms
-  have hmulsub_raw := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
-  simp only [] at hmulsub_raw
-  rw [show ms.2.2.2.2 = (0 : Word) from hc3_zero] at hmulsub_raw
+  have hmulsubRaw := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
+  simp only [] at hmulsubRaw
+  rw [show ms.2.2.2.2 = (0 : Word) from hc3_zero] at hmulsubRaw
   rw [show (0 : Word).toNat = 0 from rfl, Nat.zero_mul, Nat.add_zero]
-    at hmulsub_raw
+    at hmulsubRaw
   have hmulsub : val256 a0 a1 a2 a3 =
       qHat.toNat * val256 b0 b1 b2 b3 +
       val256 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 := by linarith
@@ -140,11 +140,11 @@ theorem u_top_eq_c3_n_of_overestimate
       ((a1 <<< s) ||| (a0 >>> (64 - s)))
       ((a2 <<< s) ||| (a1 >>> (64 - s)))
       ((a3 <<< s) ||| (a2 >>> (64 - s)))).2.2.2.2.toNat := by
-  have hc3_un_zero : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 :=
+  have hc3UnZero : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 :=
     c3_un_zero_of_qHat_mul_le hqHat_mul_le
   have h_un_raw := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
   simp only [] at h_un_raw
-  rw [hc3_un_zero, show (0 : Word).toNat = 0 from rfl,
+  rw [hc3UnZero, show (0 : Word).toNat = 0 from rfl,
       Nat.zero_mul, Nat.add_zero] at h_un_raw
   have h_n_raw := mulsubN4_val256_eq qHat
     (b0 <<< s)
@@ -159,7 +159,7 @@ theorem u_top_eq_c3_n_of_overestimate
   have h_norm_u := EvmWord.val256_normalize_general hs0 hs a0 a1 a2 a3
   have h_norm_b := EvmWord.val256_normalize hs0 hs b0 b1 b2 b3 hb3_bound
   have h_ms_un_eq_mod :=
-    val256_ms_un_eq_val256_mod_of_overestimate hbnz hqHat_ge hc3_un_zero
+    val256_ms_un_eq_val256_mod_of_overestimate hbnz hqHat_ge hc3UnZero
   simp only [] at h_ms_un_eq_mod
   have h_ms_un_lt_b : val256 (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).1
                              (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.1
@@ -169,9 +169,9 @@ theorem u_top_eq_c3_n_of_overestimate
     rw [h_ms_un_eq_mod]
     exact Nat.mod_lt _ (EvmWord.val256_pos_of_or_ne_zero hbnz)
   have h_b_lt_pow := EvmWord.val256_lt_of_b3_bound b0 b1 b2 b3 (by omega) hb3_bound
-  have hs_pos : 0 < 2 ^ s := by positivity
+  have hsPos : 0 < 2 ^ s := by positivity
   exact EvmWord.u_top_eq_c3_nat_form (Q := qHat.toNat) s
-    h_un_raw h_norm_u h_norm_b h_n_raw h_ms_un_lt_b h_b_lt_pow (by omega) hs_pos
+    h_un_raw h_norm_u h_norm_b h_n_raw h_ms_un_lt_b h_b_lt_pow (by omega) hsPos
     hc3_n_le_u_top
 
 /-- **Generic: `val256(denormalized) = val256(a) % val256(b)` under the
@@ -215,14 +215,14 @@ theorem val256_denorm_eq_val256_mod_of_overestimate
            (msN.2.2.2.1 >>> s) =
     val256 a0 a1 a2 a3 % val256 b0 b1 b2 b3 := by
   intro b0' b1' b2' b3' u0 u1 u2 u3 msN
-  have hc3_un_zero : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 :=
+  have hc3UnZero : (mulsubN4 qHat b0 b1 b2 b3 a0 a1 a2 a3).2.2.2.2 = 0 :=
     c3_un_zero_of_qHat_mul_le hqHat_mul_le
   have h_denorm := EvmWord.val256_denormalize hs0 hs msN.1 msN.2.1 msN.2.2.1 msN.2.2.2.1
   have h_utop_eq := u_top_eq_c3_n_of_overestimate hbnz hs0 hs hb3_bound
     hqHat_mul_le hqHat_ge hc3_n_le_u_top
   have h_un_raw := mulsubN4_val256_eq qHat b0 b1 b2 b3 a0 a1 a2 a3
   simp only [] at h_un_raw
-  rw [hc3_un_zero, show (0 : Word).toNat = 0 from rfl,
+  rw [hc3UnZero, show (0 : Word).toNat = 0 from rfl,
       Nat.zero_mul, Nat.add_zero] at h_un_raw
   have h_n_raw := mulsubN4_val256_eq qHat b0' b1' b2' b3' u0 u1 u2 u3
   simp only [] at h_n_raw
@@ -252,7 +252,7 @@ theorem val256_denorm_eq_val256_mod_of_overestimate
     linarith [h_scaled, h_un_scaled,
       (show (Vms_un + Q * Vb) * 2 ^ s = Vms_un * 2^s + Q * Vb * 2^s from by ring)]
   have h_ms_un_eq_mod :=
-    val256_ms_un_eq_val256_mod_of_overestimate hbnz hqHat_ge hc3_un_zero
+    val256_ms_un_eq_val256_mod_of_overestimate hbnz hqHat_ge hc3UnZero
   simp only [] at h_ms_un_eq_mod
   rw [h_denorm, h_ms_n_scaled, Nat.mul_div_cancel _ (by positivity : 0 < 2^s)]
   exact h_ms_un_eq_mod
@@ -360,15 +360,15 @@ theorem denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
           | 2 => b.getLimbN 2 | 3 => b.getLimbN 3)) :=
     EvmWord.mod_of_val256_eq_mod hbnz' h_denorm
   -- Fold fromLimbs(... a.getLimbN ...) = a (and similarly for b) inside hr.
-  have ha_fold : (EvmWord.fromLimbs (fun i : Fin 4 => match i with
+  have haFold : (EvmWord.fromLimbs (fun i : Fin 4 => match i with
         | 0 => a.getLimbN 0 | 1 => a.getLimbN 1
         | 2 => a.getLimbN 2 | 3 => a.getLimbN 3)) = a :=
     EvmWord.fromLimbs_match_getLimbN_id a
-  have hb_fold : (EvmWord.fromLimbs (fun i : Fin 4 => match i with
+  have hbFold : (EvmWord.fromLimbs (fun i : Fin 4 => match i with
         | 0 => b.getLimbN 0 | 1 => b.getLimbN 1
         | 2 => b.getLimbN 2 | 3 => b.getLimbN 3)) = b :=
     EvmWord.fromLimbs_match_getLimbN_id b
-  rw [ha_fold, hb_fold] at hr
+  rw [haFold, hbFold] at hr
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_0
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_1
