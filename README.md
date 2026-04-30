@@ -41,6 +41,16 @@ for the guest program.
 
 More specifically, evm.asm aims at building the guest part of the **zkEVM**. Reducing trusted computing base matters for this usage.
 
+A second motivation is that our Hoare triples are *bounded* in steps
+(`cpsTripleWithin N base ...`): every spec carries an explicit upper bound `N`
+on the number of RISC-V steps the program executes. Two consequences:
+
+1. **zkVM cycle limits.** `N` is a worst-case cycle budget, summable across
+   composed macros, that fits a guest program inside a zkVM's per-proof cap
+   without running it.
+2. **Gas costs.** `N` is a verified per-opcode instruction count, the main
+   input to a sound gas-pricing model.
+
 ## Key Idea
 
 Lean 4 serves simultaneously as:
