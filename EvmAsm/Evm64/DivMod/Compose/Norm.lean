@@ -19,7 +19,7 @@ private theorem divK_phaseC2_code_sub_divCode {base : Word} :
     ∀ a i, (divK_phaseC2_code 172 (base + phaseC2Off)) a = some i → (divCode base) a = some i := by
   unfold divCode divK_phaseC2_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- BEQ x6 x0 172 singleton at base+224 (index 3 of phaseC2) is subsumed by divCode. -/
 private theorem beq_shift_sub_divCode {base : Word} :
@@ -120,7 +120,7 @@ private theorem divK_normB_code_sub_divCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + normBOff) divK_normB) a = some i → (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- se12_32, se12_40, se12_48, se12_56 are in Base.lean
 

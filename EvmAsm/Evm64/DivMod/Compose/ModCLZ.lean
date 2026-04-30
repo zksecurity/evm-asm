@@ -24,7 +24,7 @@ private theorem divK_clz_code_sub_modCode {base : Word} :
       (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Helper: CLZ stage at instruction index k is subsumed by modCode. -/
 private theorem clz_stage_sub_mod {base : Word}

@@ -819,14 +819,14 @@ partial def buildMonoProof (oldCr newCr : Expr) : MetaM Expr :=
     let tail := newCrW.getAppArgs[1]!
     -- Left match: oldCr ≡ head (pre-whnfR, preserving abbrev identity)
     if oldCr == head then
-      return ← mkAppM ``EvmAsm.Rv64.CodeReq.union_mono_left #[head, tail]
+      return ← mkAppOptM ``EvmAsm.Rv64.CodeReq.union_mono_left #[some head, some tail]
     if ← withoutModifyingState (withReducible (isDefEq oldCr head)) then
-      return ← mkAppM ``EvmAsm.Rv64.CodeReq.union_mono_left #[head, tail]
+      return ← mkAppOptM ``EvmAsm.Rv64.CodeReq.union_mono_left #[some head, some tail]
     -- Also check whnfR'd form (handles case where oldCr was already expanded)
     if oldCrW == head then
-      return ← mkAppM ``EvmAsm.Rv64.CodeReq.union_mono_left #[head, tail]
+      return ← mkAppOptM ``EvmAsm.Rv64.CodeReq.union_mono_left #[some head, some tail]
     if ← withoutModifyingState (withReducible (isDefEq oldCrW head)) then
-      return ← mkAppM ``EvmAsm.Rv64.CodeReq.union_mono_left #[head, tail]
+      return ← mkAppOptM ``EvmAsm.Rv64.CodeReq.union_mono_left #[some head, some tail]
     -- No head match. Try skip (prove head.Disjoint oldCr, recurse on tail) first,
     -- then fall back to splitting oldCr. The skip-first order is essential when oldCr
     -- is an opaque abbrev that will match a LATER head in newCr's chain — splitting

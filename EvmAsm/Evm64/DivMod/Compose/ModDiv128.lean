@@ -29,7 +29,7 @@ private theorem divK_div128_ofProg_sub_modCode {base : Word} :
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Helper: combine two subsumption proofs over a union.
 -- `CodeReq.union_sub` — use `CodeReq.union_sub` from `Rv64/SepLogic.lean` (shared).

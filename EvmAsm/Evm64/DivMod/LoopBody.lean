@@ -30,7 +30,7 @@ private theorem divK_loopBody_ofProg_sub_sharedCode {base : Word} :
   unfold sharedDivModCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Helper: singleton at index k of divK_loopBody ⊆ sharedDivModCode base. -/
 theorem lb_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
@@ -51,7 +51,7 @@ private theorem divK_loopBody_ofProg_sub_sharedCode_v2 {base : Word} :
   unfold sharedDivModCode_v2; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- v2 mirror of `lb_sub`: singleton at index k of divK_loopBody ⊆ sharedDivModCode_v2 base. -/
 theorem lb_sub_v2 {base : Word} (k : Nat) (addr : Word) (instr : Instr)

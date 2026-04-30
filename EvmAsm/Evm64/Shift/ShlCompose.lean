@@ -70,7 +70,7 @@ private theorem phase_b_sub_shlCode {base : Word} :
     ∀ a i, shr_phase_b_code (base + 36) a = some i → shlCode base a = some i := by
   unfold shr_phase_b_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Phase C union-chain ⊆ ofProg bridge (`shr_phase_c_code_sub_ofProg`) is shared
 -- and lives in `ComposeBase`.
@@ -79,7 +79,7 @@ private theorem ofProg_phase_c_sub_shlCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + 64) shr_phase_c) a = some i → shlCode base a = some i := by
   unfold shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Phase C code (union chain, 5 instrs at +64) is subsumed by shlCode (block 2). -/
 private theorem phase_c_sub_shlCode {base : Word} :
@@ -92,35 +92,35 @@ private theorem shl_body_3_sub_shlCode {base : Word} :
     ∀ a i, shl_body_3_code (base + 84) 252 a = some i → shlCode base a = some i := by
   unfold shl_body_3_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SHL Body 2 code (13 instrs at +112) is subsumed by shlCode (block 4). -/
 private theorem shl_body_2_sub_shlCode {base : Word} :
     ∀ a i, shl_body_2_code (base + 112) 200 a = some i → shlCode base a = some i := by
   unfold shl_body_2_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SHL Body 1 code (19 instrs at +164) is subsumed by shlCode (block 5). -/
 private theorem shl_body_1_sub_shlCode {base : Word} :
     ∀ a i, shl_body_1_code (base + 164) 124 a = some i → shlCode base a = some i := by
   unfold shl_body_1_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- SHL Body 0 code (25 instrs at +240) is subsumed by shlCode (block 6). -/
 private theorem shl_body_0_sub_shlCode {base : Word} :
     ∀ a i, shl_body_0_code (base + 240) 24 a = some i → shlCode base a = some i := by
   unfold shl_body_0_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- Zero path code (ofProg, 5 instrs at +340) is subsumed by shlCode (block 7). -/
 private theorem zero_path_sub_shlCode {base : Word} :
     ∀ a i, shr_zero_path_code (base + 340) a = some i → shlCode base a = some i := by
   unfold shr_zero_path_code shlCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Individual instruction subsumption helpers (for phase A raw composition)
 
@@ -130,7 +130,7 @@ private theorem ld_s1_sub_shlCode {base : Word} :
   have h1 := singleton_sub_ofProg base base shr_phase_a (.LD .x5 .x12 8) 0
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_or_16_sub_shlCode {base : Word} :
     ∀ a i, shr_ld_or_acc_code 16 (base + 4) a = some i → shlCode base a = some i := by
@@ -138,7 +138,7 @@ private theorem ld_or_16_sub_shlCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 4) shr_phase_a (shr_ld_or_acc_prog 16) 1
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_or_24_sub_shlCode {base : Word} :
     ∀ a i, shr_ld_or_acc_code 24 (base + 12) a = some i → shlCode base a = some i := by
@@ -146,7 +146,7 @@ private theorem ld_or_24_sub_shlCode {base : Word} :
   have h1 := CodeReq.ofProg_mono_sub base (base + 12) shr_phase_a (shr_ld_or_acc_prog 24) 3
     (by bv_omega) (by decide) (by decide) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem bne_sub_shlCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 20) (.BNE .x5 .x0 320) a = some i → shlCode base a = some i := by
@@ -154,7 +154,7 @@ private theorem bne_sub_shlCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 20) shr_phase_a (.BNE .x5 .x0 320) 5
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem ld_s0_sub_shlCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 24) (.LD .x5 .x12 0) a = some i → shlCode base a = some i := by
@@ -162,7 +162,7 @@ private theorem ld_s0_sub_shlCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 24) shr_phase_a (.LD .x5 .x12 0) 6
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem sltiu_sub_shlCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 28) (.SLTIU .x10 .x5 256) a = some i → shlCode base a = some i := by
@@ -170,7 +170,7 @@ private theorem sltiu_sub_shlCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 28) shr_phase_a (.SLTIU .x10 .x5 256) 7
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 private theorem beq_sub_shlCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 32) (.BEQ .x10 .x0 308) a = some i → shlCode base a = some i := by
@@ -178,7 +178,7 @@ private theorem beq_sub_shlCode {base : Word} :
   have h1 := singleton_sub_ofProg base (base + 32) shr_phase_a (.BEQ .x10 .x0 308) 8
     (by decide) (by decide) (by bv_omega) (by decide) a i h
   unfold shlCode; simp only [CodeReq.unionAll_cons]
-  exact CodeReq.union_mono_left _ _ a i h1
+  exact CodeReq.union_mono_left a i h1
 
 -- ============================================================================
 -- Section 3: Address normalization lemmas

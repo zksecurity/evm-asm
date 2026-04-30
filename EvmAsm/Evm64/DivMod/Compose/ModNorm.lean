@@ -25,7 +25,7 @@ private theorem divK_phaseC2_code_sub_modCode {base : Word} :
     ∀ a i, (divK_phaseC2_code 172 (base + phaseC2Off)) a = some i → (modCode base) a = some i := by
   unfold modCode divK_phaseC2_code; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 /-- BEQ x6 x0 172 singleton at base+224 (index 3 of phaseC2) is subsumed by modCode. -/
 private theorem beq_shift_sub_modCode {base : Word} :
@@ -128,7 +128,7 @@ private theorem divK_normB_code_sub_modCode {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + normBOff) divK_normB) a = some i → (modCode base) a = some i := by
   unfold modCode; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock
-  exact CodeReq.union_mono_left _ _
+  exact CodeReq.union_mono_left
 
 -- Reuse se12_32/40/48/56 from Compose.Base (no private shadows needed).
 

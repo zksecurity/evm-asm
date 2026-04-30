@@ -93,7 +93,7 @@ theorem divK_div128_step1_spec_within
     runBlock I0 I1 I2
   have h1 : cpsTripleWithin 3 base (base + 12) cr _ _ :=
     cpsTripleWithin_extend_code (h := h1_raw) (hmono := by
-      rw [hcr_eq]; exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_left _ _)))
+      rw [hcr_eq]; exact CodeReq.union_mono_tail (CodeReq.union_mono_tail (CodeReq.union_mono_left)))
   have h1f := cpsTripleWithin_frameR
     ((.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1Old) ** (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) **
      (sp + signExtend12 3952 ↦ₘ dlo))
