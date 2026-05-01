@@ -101,6 +101,13 @@ abbrev correctionSkipBeqOff : Word :=  728
     66 instructions into the loop body). Sub-offset relative to the loopBody
     block (= loopBodyOff + 264). -/
 abbrev correctionAddbackOff : Word :=  712
+/-- Offset of the add-back carry-init sub-block inside `divK_loopBody`.
+    Entry PC of the `divK_addback_init` ADDI snippet that zeros the add-back
+    carry register before the per-limb addback corrections (the start of the
+    addback-correction body, fall-through from the correction-skip BEQ, 71
+    instructions into the loop body). Sub-offset relative to the loopBody
+    block (= correctionSkipBeqOff + 4 = loopBodyOff + 284). -/
+abbrev addbackInitOff : Word :=  732
 /-- Offset of the addback-skip BEQ sub-block inside `divK_loopBody`.
     Entry PC of the `BEQ x7, x0, +4` instruction that branches over the
     addback fixup (executed when the trial-quotient `q̂` did NOT overshoot,
@@ -199,6 +206,12 @@ example : loopBackBgeOff = loopBodyOff + 456 := by decide
     `divK_loopBody`). The mulsub correction-skip BEQ sits 70 instructions
     into the loop body. -/
 example : correctionSkipBeqOff = loopBodyOff + 280 := by decide
+/-- addbackInitOff = correctionSkipBeqOff + 4 (= loopBodyOff + 284, sub-block
+    offset within `divK_loopBody`). The add-back carry-init ADDI sits one
+    instruction past the correction-skip BEQ (the BEQ's not-taken / fall-through
+    target, 71 instructions into the loop body). -/
+example : addbackInitOff = correctionSkipBeqOff + 4 := by decide
+example : addbackInitOff = loopBodyOff + 284 := by decide
 /-- correctionAddbackOff = loopBodyOff + 264 (sub-block offset within
     `divK_loopBody`). The correction-addback path (sub-carry snippet entry)
     sits 66 instructions into the loop body. -/
