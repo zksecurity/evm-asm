@@ -6,6 +6,7 @@
 
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
+import EvmAsm.Evm64.EvmWordArith.ModBridgeUtop
 
 namespace EvmAsm.Evm64
 
@@ -566,5 +567,45 @@ theorem fullDivN1StepsTelescoped_of_runtime
     (fullDivN1StepsConservation_of_runtime
       bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
       hb1z hb2z hb3z hbnz hcarry2)
+
+theorem fullDivN1RemainderVal_eq_mod_mul_pow_of_runtime
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hshift_nz : fullDivN1Shift b0 ≠ 0)
+    (hcarry2 : Carry2NzAll
+      (fullDivN1NormV b0 b1 b2 b3).1
+      (fullDivN1NormV b0 b1 b2 b3).2.1
+      (fullDivN1NormV b0 b1 b2 b3).2.2.1
+      (fullDivN1NormV b0 b1 b2 b3).2.2.2)
+    (hlt : n1StepRemainderVal
+        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) +
+        n1StepsCarryVal
+          (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) <
+      EvmWord.val256 b0 b1 b2 b3 * 2 ^ ((fullDivN1Shift b0).toNat % 64)) :
+    n1StepRemainderVal
+        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) =
+      EvmWord.val256 a0 a1 a2 a3 % EvmWord.val256 b0 b1 b2 b3 *
+        2 ^ ((fullDivN1Shift b0).toNat % 64) := by
+  have htel := fullDivN1StepsTelescoped_of_runtime
+    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+    hb1z hb2z hb3z hbnz hcarry2
+  have hbound : EvmWord.val256 a0 a1 a2 a3 % EvmWord.val256 b0 b1 b2 b3 *
+        2 ^ ((fullDivN1Shift b0).toNat % 64) < 2^256 := by
+    have hs : (fullDivN1Shift b0).toNat % 64 ≤ 64 := by omega
+    have hb_pos : EvmWord.val256 b0 b1 b2 b3 > 0 :=
+      EvmWord.val256_pos_of_or_ne_zero hbnz
+    have hb3_bound : b3.toNat < 2 ^ (64 - (fullDivN1Shift b0).toNat % 64) := by
+      rw [hb3z]
+      positivity
+    exact EvmWord.val256_mod_mul_pow_lt_pow256_of_b3_bound
+      a0 a1 a2 a3 b0 b1 b2 b3 hs hb_pos hb3_bound
+  exact fullDivN1RemainderVal_eq_mod_mul_pow_of_telescoped
+    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+    hb2z hb3z hshift_nz htel hlt hbound
 
 end EvmAsm.Evm64
