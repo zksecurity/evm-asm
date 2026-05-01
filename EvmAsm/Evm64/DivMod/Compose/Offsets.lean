@@ -107,6 +107,11 @@ abbrev addbackBeqOff : Word :=  880
     branch into the next iteration or `divK_denorm`). Sub-offset relative
     to the loopBody block (= loopBodyOff + 436). -/
 abbrev storeLoopOff : Word :=  884
+/-- Offset of the `divK_loop_control` sub-block inside `divK_loopBody`.
+    Entry PC of the loop-control snippet that decrements `j` and prepares the
+    next iteration. Sub-offset relative to the loopBody block
+    (= storeLoopOff + 16 = loopBackBgeOff - 4 = loopBodyOff + 452). -/
+abbrev loopControlOff : Word :=  900
 /-- Offset of the loop-back BGE sub-block inside `divK_loopBody`.
     Entry PC of the `BGE x1, x0, -...` instruction at the end of the loop
     body that branches back to `loopBodyOff` for the next iteration when
@@ -173,6 +178,12 @@ example : addbackBeqOff = loopBodyOff + 432 := by decide
 /-- storeLoopOff = loopBodyOff + 436 (sub-block offset within `divK_loopBody`).
     The `divK_store_qj` snippet starts 109 instructions into the loop body. -/
 example : storeLoopOff = loopBodyOff + 436 := by decide
+/-- loopControlOff = storeLoopOff + 16 (= loopBodyOff + 452, sub-block offset
+    within `divK_loopBody`). The `divK_loop_control` snippet sits 4 instructions
+    after the `divK_store_qj` entry. -/
+example : loopControlOff = storeLoopOff + 16 := by decide
+example : loopControlOff = loopBodyOff + 452 := by decide
+example : loopControlOff = loopBackBgeOff - 4 := by decide
 /-- loopBackBgeOff = denormOff - 4 (= loopBodyOff + 456, sub-block offset
     within `divK_loopBody`). The loop-back BGE sits one instruction before
     the `divK_denorm` block. -/
