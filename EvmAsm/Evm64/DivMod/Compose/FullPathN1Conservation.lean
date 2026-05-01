@@ -296,6 +296,40 @@ def fullDivN1StepsTelescoped
   let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
   n1StepsTelescoped v u r3 r2 r1 r0
 
+theorem fullDivN1TrialBranches_of_isTrial
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
+    (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
+    (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
+    let v := fullDivN1NormV b0 b1 b2 b3
+    let u := fullDivN1NormU a0 a1 a2 a3 b0
+    let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
+    let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+    let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    bltu_3 = BitVec.ult u.2.2.2.2 v.1 ∧
+      bltu_2 = BitVec.ult r3.2.1 v.1 ∧
+      bltu_1 = BitVec.ult r2.2.1 v.1 ∧
+      bltu_0 = BitVec.ult r1.2.1 v.1 := by
+  intro v u r3 r2 r1
+  subst v; subst u; subst r3; subst r2; subst r1
+  constructor
+  · delta isTrialN1_j3 fullDivN1NormU fullDivN1NormV
+      fullDivN1Shift fullDivN1AntiShift at hbltu_3 ⊢
+    simpa using hbltu_3
+  constructor
+  · delta isTrialN1_j2 fullDivN1R3 fullDivN1NormU fullDivN1NormV
+      fullDivN1Shift fullDivN1AntiShift at hbltu_2 ⊢
+    simpa using hbltu_2
+  constructor
+  · delta isTrialN1_j1 fullDivN1R2 fullDivN1R3 fullDivN1NormU fullDivN1NormV
+      fullDivN1Shift fullDivN1AntiShift at hbltu_1 ⊢
+    simpa using hbltu_1
+  · delta isTrialN1_j0 fullDivN1R1 fullDivN1R2 fullDivN1R3 fullDivN1NormU
+      fullDivN1NormV fullDivN1Shift fullDivN1AntiShift at hbltu_0 ⊢
+    simpa using hbltu_0
+
 theorem fullDivN1RemainderVal_eq_mod_mul_pow_of_telescoped
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
