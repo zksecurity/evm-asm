@@ -17,6 +17,7 @@ import EvmAsm.Evm64.DivMod.Spec.V4Addback
 import EvmAsm.Evm64.DivMod.Spec.N2RemainderWord
 import EvmAsm.Evm64.DivMod.Spec.Dispatcher
 import EvmAsm.Evm64.DivMod.Spec.N2QuotientWord
+import EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N2ModBridge
 import EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3ModBridge
