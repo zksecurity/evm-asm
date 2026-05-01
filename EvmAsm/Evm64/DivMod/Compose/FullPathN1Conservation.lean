@@ -427,6 +427,25 @@ theorem fullDivN1NormV_val256_eq_v0_of_high_zero
   unfold EvmWord.val256
   simp
 
+theorem iterN1_rawTrial_ge_local_floor_of_top_lt_pow63
+    (bltu : Bool) (v0 u0 uTop : Word)
+    (hv0_ge : v0.toNat ≥ 2^63)
+    (huTop_lt_pow63 : uTop.toNat < 2^63)
+    (hbranch : bltu = BitVec.ult uTop v0) :
+    let qHat : Word := if bltu then div128Quot uTop u0 v0 else signExtend12 4095
+    (uTop.toNat * 2^64 + u0.toNat) / v0.toNat ≤ qHat.toNat := by
+  intro qHat
+  subst qHat
+  have huTop_lt_v0 : uTop.toNat < v0.toNat := by omega
+  have hult : BitVec.ult uTop v0 = true := (EvmWord.ult_iff).mpr huTop_lt_v0
+  cases hbltu : bltu
+  · have hfalse : BitVec.ult uTop v0 = false := by
+      simpa [hbltu] using hbranch
+    rw [hult] at hfalse
+    cases hfalse
+  · simp only [if_true]
+    exact div128Quot_ge_q_true_normalized uTop u0 v0 hv0_ge huTop_lt_v0 huTop_lt_pow63
+
 theorem fullDivN1R3_rawTrial_ge_local_floor
     (bltu_3 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
@@ -456,30 +475,14 @@ theorem fullDivN1R3_rawTrial_ge_local_floor
     rw [fullDivN1AntiShift_unfold]
     exact u_top_lt_pow63_of_shift_nz a3 (fullDivN1Shift b0) h_shift_pos
       h_shift_le
-  cases hbltu : bltu_3
-  · have htrial_false : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
-        (fullDivN1NormV b0 b1 b2 b3).1 = false := by
+  exact iterN1_rawTrial_ge_local_floor_of_top_lt_pow63 bltu_3
+    (fullDivN1NormV b0 b1 b2 b3).1
+    (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+    (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+    hv0_ge huTop_lt_pow63 (by
       delta isTrialN1_j3 at hbltu_3
-      simpa [hbltu, fullDivN1NormU_unfold, fullDivN1NormV_unfold,
-        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3.symm
-    have hlt : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
-        ((fullDivN1NormV b0 b1 b2 b3).1).toNat := by omega
-    have hult : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
-        (fullDivN1NormV b0 b1 b2 b3).1 = true := (EvmWord.ult_iff).mpr hlt
-    rw [hult] at htrial_false
-    cases htrial_false
-  · simp only [if_true]
-    have hcall : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
-        (fullDivN1NormV b0 b1 b2 b3).1 = true := by
-      delta isTrialN1_j3 at hbltu_3
-      simpa [hbltu, fullDivN1NormU_unfold, fullDivN1NormV_unfold,
-        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3.symm
-    have huTop_lt_v0 : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
-        ((fullDivN1NormV b0 b1 b2 b3).1).toNat := (EvmWord.ult_iff).mp hcall
-    exact div128Quot_ge_q_true_normalized
-      (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
-      (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
-      (fullDivN1NormV b0 b1 b2 b3).1 hv0_ge huTop_lt_v0 huTop_lt_pow63
+      simpa [fullDivN1NormU_unfold, fullDivN1NormV_unfold,
+        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3)
 
 theorem iterWithDoubleAddback_qout_ge_sub_two
     (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) (hq2 : 2 ≤ q.toNat) :
