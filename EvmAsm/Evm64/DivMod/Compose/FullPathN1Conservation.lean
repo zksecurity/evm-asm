@@ -434,6 +434,108 @@ theorem fullDivN1R3_qout_ge_trial_sub_two
     0 0 0
     hqCall
 
+theorem fullDivN1R2_qout_ge_trial_sub_two
+    (bltu_3 bltu_2 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hqCall : bltu_2 = true →
+      2 ≤ (div128Quot
+        (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.1
+        (fullDivN1NormV b0 b1 b2 b3).1).toNat) :
+    let v := fullDivN1NormV b0 b1 b2 b3
+    let u := fullDivN1NormU a0 a1 a2 a3 b0
+    let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
+    let qHat : Word := if bltu_2 then div128Quot r3.2.1 u.2.2.1 v.1
+      else signExtend12 4095
+    qHat.toNat - 2 ≤
+      (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat := by
+  intro v u r3 qHat
+  subst v
+  subst u
+  subst r3
+  subst qHat
+  rw [fullDivN1R2_eq_iterN1_v3_zero
+    bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3 hb2z hb3z]
+  exact iterN1_qout_ge_trial_sub_two bltu_2
+    (fullDivN1NormV b0 b1 b2 b3).1
+    (fullDivN1NormV b0 b1 b2 b3).2.1
+    (fullDivN1NormV b0 b1 b2 b3).2.2.1
+    0
+    (fullDivN1NormU a0 a1 a2 a3 b0).2.2.1
+    (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+    (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1
+    (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1
+    (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1
+    hqCall
+
+theorem fullDivN1R1_qout_ge_trial_sub_two
+    (bltu_3 bltu_2 bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hqCall : bltu_1 = true →
+      2 ≤ (div128Quot
+        (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.1
+        (fullDivN1NormV b0 b1 b2 b3).1).toNat) :
+    let v := fullDivN1NormV b0 b1 b2 b3
+    let u := fullDivN1NormU a0 a1 a2 a3 b0
+    let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+    let qHat : Word := if bltu_1 then div128Quot r2.2.1 u.2.1 v.1
+      else signExtend12 4095
+    qHat.toNat - 2 ≤
+      (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat := by
+  intro v u r2 qHat
+  subst v
+  subst u
+  subst r2
+  subst qHat
+  rw [fullDivN1R1_eq_iterN1_v3_zero
+    bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3 hb2z hb3z]
+  exact iterN1_qout_ge_trial_sub_two bltu_1
+    (fullDivN1NormV b0 b1 b2 b3).1
+    (fullDivN1NormV b0 b1 b2 b3).2.1
+    (fullDivN1NormV b0 b1 b2 b3).2.2.1
+    0
+    (fullDivN1NormU a0 a1 a2 a3 b0).2.1
+    (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+    (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1
+    (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1
+    (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1
+    hqCall
+
+theorem fullDivN1R0_qout_ge_trial_sub_two
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hqCall : bltu_0 = true →
+      2 ≤ (div128Quot
+        (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).1
+        (fullDivN1NormV b0 b1 b2 b3).1).toNat) :
+    let v := fullDivN1NormV b0 b1 b2 b3
+    let u := fullDivN1NormU a0 a1 a2 a3 b0
+    let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    let qHat : Word := if bltu_0 then div128Quot r1.2.1 u.1 v.1
+      else signExtend12 4095
+    qHat.toNat - 2 ≤
+      (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat := by
+  intro v u r1 qHat
+  subst v
+  subst u
+  subst r1
+  subst qHat
+  rw [fullDivN1R0_eq_iterN1_v3_zero
+    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3 hb2z hb3z]
+  exact iterN1_qout_ge_trial_sub_two bltu_0
+    (fullDivN1NormV b0 b1 b2 b3).1
+    (fullDivN1NormV b0 b1 b2 b3).2.1
+    (fullDivN1NormV b0 b1 b2 b3).2.2.1
+    0
+    (fullDivN1NormU a0 a1 a2 a3 b0).1
+    (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.1
+    (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1
+    (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1
+    (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1
+    hqCall
+
 theorem fullDivN1RemainderVal_eq_mod_mul_pow_of_telescoped
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
