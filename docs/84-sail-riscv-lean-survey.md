@@ -11,6 +11,17 @@ Survey performed against upstream `main` HEAD (shallow clone, default branch) on
 2026-05-01. Re-run `git ls-remote https://github.com/opencompl/sail-riscv-lean
 HEAD` before pinning a `rev` in slice 2.
 
+> **Already using a fork.** evm-asm's `lakefile.toml` already pins
+> `Lean_RV64D` to a fork at
+> [`dhsorens/sail-riscv-lean`](https://github.com/dhsorens/sail-riscv-lean)
+> (`rev = "main"`, manifest pin
+> `6009afb10039129aabcfd03ddac1c58670fe5d96`). Treat the
+> "opencompl/sail-riscv-lean" sections below as the *canonical upstream*
+> reference; slice 2's actual decision is whether to (a) keep tracking the
+> dhsorens fork, (b) re-point at upstream once it ships a `v4.30.x`-compatible
+> ref, or (c) move our own divergent patches into a Verified-zkEVM-owned fork.
+> Diff the current fork tip against opencompl `HEAD` before slice 2 lands.
+
 ## (a) Toolchain alignment
 
 `sail-riscv-lean/lean-toolchain`:
@@ -155,7 +166,9 @@ For evm-asm, the cost per `lake build` after the initial fetch is:
 
 ## References
 
-- Upstream repo: <https://github.com/opencompl/sail-riscv-lean>
+- Upstream repo (canonical): <https://github.com/opencompl/sail-riscv-lean>
+- **Fork currently pinned by evm-asm**: <https://github.com/dhsorens/sail-riscv-lean>
+  (`Lean_RV64D` require, `rev = "main"`, manifest sha `6009afb1`).
 - Sail-Lean backend: <https://github.com/rems-project/lean-sail> (`v4` ref)
 - Original SAIL RISC-V spec: <https://github.com/riscv/sail-riscv>
 - Tracking issue: <https://github.com/Verified-zkEVM/evm-asm/issues/84>
