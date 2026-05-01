@@ -103,6 +103,65 @@ theorem mloadPackedLimb_eq_fold
   bv_decide
 
 /--
+  Select the `i`th byte of an 8-byte MLOAD limb window from two adjacent
+  source dwords.  `start` is the byte offset of the first byte within `lo`.
+  When `start + i ≥ 8`, the byte comes from `hi` at wrapped position
+  `(start + i) % 8`.
+-/
+def mloadByteFromDwordPair (lo hi : Word) (start i : Nat) : BitVec 8 :=
+  let pos := start + i
+  extractByte (if pos < 8 then lo else hi) (pos % 8)
+
+/--
+  Pack eight consecutive bytes starting at byte offset `start` in `lo`,
+  crossing into adjacent dword `hi` when needed.
+-/
+def mloadPackedLimbFromDwordPair (lo hi : Word) (start : Nat) : Word :=
+  mloadPackedLimb
+    (mloadByteFromDwordPair lo hi start 0)
+    (mloadByteFromDwordPair lo hi start 1)
+    (mloadByteFromDwordPair lo hi start 2)
+    (mloadByteFromDwordPair lo hi start 3)
+    (mloadByteFromDwordPair lo hi start 4)
+    (mloadByteFromDwordPair lo hi start 5)
+    (mloadByteFromDwordPair lo hi start 6)
+    (mloadByteFromDwordPair lo hi start 7)
+
+/--
+  Runtime shift/or byte packing for an unaligned 8-byte window computes the
+  same big-endian limb as `mloadPackedLimbFromDwordPair`.
+-/
+theorem mloadPackedLimbFromDwordPair_eq_fold
+    (lo hi : Word) (start : Nat) :
+    let b0 := mloadByteFromDwordPair lo hi start 0
+    let b1 := mloadByteFromDwordPair lo hi start 1
+    let b2 := mloadByteFromDwordPair lo hi start 2
+    let b3 := mloadByteFromDwordPair lo hi start 3
+    let b4 := mloadByteFromDwordPair lo hi start 4
+    let b5 := mloadByteFromDwordPair lo hi start 5
+    let b6 := mloadByteFromDwordPair lo hi start 6
+    let b7 := mloadByteFromDwordPair lo hi start 7
+    ((((((((((((((b0.zeroExtend 64
+        <<< (8 : Nat)) ||| b1.zeroExtend 64)
+        <<< (8 : Nat)) ||| b2.zeroExtend 64)
+        <<< (8 : Nat)) ||| b3.zeroExtend 64)
+        <<< (8 : Nat)) ||| b4.zeroExtend 64)
+        <<< (8 : Nat)) ||| b5.zeroExtend 64)
+        <<< (8 : Nat)) ||| b6.zeroExtend 64)
+        <<< (8 : Nat)) ||| b7.zeroExtend 64)
+      = mloadPackedLimbFromDwordPair lo hi start := by
+  dsimp only []
+  exact mloadPackedLimb_eq_fold
+    (mloadByteFromDwordPair lo hi start 0)
+    (mloadByteFromDwordPair lo hi start 1)
+    (mloadByteFromDwordPair lo hi start 2)
+    (mloadByteFromDwordPair lo hi start 3)
+    (mloadByteFromDwordPair lo hi start 4)
+    (mloadByteFromDwordPair lo hi start 5)
+    (mloadByteFromDwordPair lo hi start 6)
+    (mloadByteFromDwordPair lo hi start 7)
+
+/--
   The 256-bit value loaded by MLOAD from 32 consecutive EVM-memory bytes.
 
   `b00` is the most-significant byte at the requested offset and `b31` is
