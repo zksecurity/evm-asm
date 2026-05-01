@@ -108,6 +108,30 @@ abbrev correctionAddbackOff : Word :=  712
     instructions into the loop body). Sub-offset relative to the loopBody
     block (= correctionSkipBeqOff + 4 = loopBodyOff + 284). -/
 abbrev addbackInitOff : Word :=  732
+/-- Offset of the limb-0 addback step inside `divK_loopBody`.
+    Entry PC of the `divK_addback_step` snippet for `q[j] · b[0]` (the first
+    per-limb addback fixup, run only when the trial quotient overshoots).
+    Sub-offset relative to the loopBody block
+    (= addbackInitOff + 4 = loopBodyOff + 288). -/
+abbrev addbackLimb0Off : Word :=  736
+/-- Offset of the limb-1 addback step inside `divK_loopBody`.
+    Sub-offset relative to the loopBody block
+    (= addbackLimb0Off + 32 = loopBodyOff + 320). -/
+abbrev addbackLimb1Off : Word :=  768
+/-- Offset of the limb-2 addback step inside `divK_loopBody`.
+    Sub-offset relative to the loopBody block
+    (= addbackLimb1Off + 32 = loopBodyOff + 352). -/
+abbrev addbackLimb2Off : Word :=  800
+/-- Offset of the limb-3 addback step inside `divK_loopBody`.
+    Sub-offset relative to the loopBody block
+    (= addbackLimb2Off + 32 = loopBodyOff + 384). -/
+abbrev addbackLimb3Off : Word :=  832
+/-- Offset of the final addback fixup (`divK_addback_final`) inside
+    `divK_loopBody`. The 4-instruction snippet that propagates the final
+    addback carry into the high limb, immediately before the addback-skip
+    BEQ. Sub-offset relative to the loopBody block
+    (= addbackLimb3Off + 32 = addbackBeqOff - 16 = loopBodyOff + 416). -/
+abbrev addbackFinalOff : Word :=  864
 /-- Offset of the addback-skip BEQ sub-block inside `divK_loopBody`.
     Entry PC of the `BEQ x7, x0, +4` instruction that branches over the
     addback fixup (executed when the trial-quotient `q̂` did NOT overshoot,
@@ -223,6 +247,18 @@ example : addbackInitOff = loopBodyOff + 284 := by decide
     `divK_loopBody`). The correction-addback path (sub-carry snippet entry)
     sits 66 instructions into the loop body. -/
 example : correctionAddbackOff = loopBodyOff + 264 := by decide
+/-- addbackLimb{0..3}Off and addbackFinalOff are evenly spaced 32 bytes (8
+    instructions) apart starting at `addbackInitOff + 4`, ending at
+    `addbackBeqOff - 16` (the 4-instruction `divK_addback_final` fixup before
+    the addback-skip BEQ). -/
+example : addbackLimb0Off = addbackInitOff + 4 := by decide
+example : addbackLimb1Off = addbackLimb0Off + 32 := by decide
+example : addbackLimb2Off = addbackLimb1Off + 32 := by decide
+example : addbackLimb3Off = addbackLimb2Off + 32 := by decide
+example : addbackFinalOff = addbackLimb3Off + 32 := by decide
+example : addbackFinalOff + 16 = addbackBeqOff := by decide
+example : addbackLimb0Off = loopBodyOff + 288 := by decide
+example : addbackFinalOff = loopBodyOff + 416 := by decide
 /-- trialCallOff = loopBodyOff + 52 (sub-block offset within `divK_loopBody`).
     The trial-divide call-site sits 13 instructions into the loop body. -/
 example : trialCallOff = loopBodyOff + 52 := by decide
