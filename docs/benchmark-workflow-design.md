@@ -1,9 +1,11 @@
 # Benchmark workflow design for evm-asm
 
 Slice 2 of #949 (parent beads `evm-asm-d8t5`, slice beads `evm-asm-7a4p`).
-Builds on `docs/benchmark-workflow-notes.md` (slice 1, `evm-asm-5pbn`),
-which surveyed `Beneficial-AI-Foundation/curve25519-dalek-lean-verify`'s
-benchmark workflows.
+Informed by a slice-1 survey of
+`Beneficial-AI-Foundation/curve25519-dalek-lean-verify`'s benchmark
+workflows (`evm-asm-5pbn`); that survey was a fact-finding exercise and
+its standalone notes file has been dropped — relevant decisions are
+captured below and credited inline.
 
 This note records the design decisions for evm-asm's own benchmark CI.
 Slice 3 (`evm-asm-uv6q`) implements the workflow following these
