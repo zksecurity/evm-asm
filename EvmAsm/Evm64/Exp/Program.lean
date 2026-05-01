@@ -129,6 +129,53 @@ theorem exp_iter_body_length (mulOff : BitVec 21) (skipOff : BitVec 13) :
   simp only [seq, Program.length_append, exp_bit_test_block_length,
     exp_square_block_length, exp_cond_mul_block_length]
 
+-- ----------------------------------------------------------------------------
+-- Loop-back tail: counter decrement + backward BNE (#92 slice 3c, beads
+-- evm-asm-46ue)
+-- ----------------------------------------------------------------------------
+--
+-- The square-and-multiply loop runs for exactly 256 iterations (one per bit
+-- of the 256-bit exponent). Per `docs/92-exp-survey.md` §4 ("Iteration
+-- counter via decrement-and-branch"), the master iteration counter lives in
+-- a dedicated register (`x9`), initialized to 256 by the prologue, and the
+-- bottom of every iteration decrements it and branches back to the top of
+-- the loop body while it is still nonzero.
+--
+-- `exp_loop_back` packages those two trailing instructions as a standalone
+-- `Program` block so the surrounding scaffold (`evm_exp`, slice
+-- evm-asm-ahaz) and the loop-composition spec (slice evm-asm-w5mk) can
+-- compose it independently of `exp_iter_body` and pin the concrete
+-- backward `backOff` once `evm_exp` is laid out.
+--
+-- Register usage:
+--   x9 — master iteration counter (decremented by 1 each iteration; loop
+--        exits when it reaches 0). Distinct from `x6` in `exp_bit_test_block`,
+--        which counts remaining bits in the current 64-bit limb of the
+--        exponent and is refilled at limb boundaries by separate
+--        scaffolding.
+--
+-- The `backOff : BitVec 13` parameter is the *signed* 13-bit BNE offset from
+-- the BNE site back to the top of the iteration body. The offset is
+-- byte-counted (4 bytes per RV64 instruction) and negative for a backward
+-- branch. The actual numeric value is pinned in slice evm-asm-ahaz when
+-- `evm_exp` is assembled and the loop body length is final.
+
+/-- Tail of the EXP square-and-multiply loop: decrement the master 256-bit
+    iteration counter `x9` by 1, then branch back to the top of the loop
+    body if `x9` is still nonzero. 2 instructions.
+
+    `backOff` is the signed 13-bit BNE byte offset from the BNE site back
+    to the top of the iteration body (negative). The concrete value is
+    pinned by the surrounding `evm_exp` layout in slice evm-asm-ahaz. -/
+def exp_loop_back (backOff : BitVec 13) : Program :=
+  ADDI .x9 .x9 (-1) ;;
+  single (.BNE .x9 .x0 backOff)
+
+theorem exp_loop_back_length (backOff : BitVec 13) :
+    (exp_loop_back backOff).length = 2 := by
+  show (ADDI .x9 .x9 (-1) ;; single (.BNE .x9 .x0 backOff)).length = 2
+  rfl
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
