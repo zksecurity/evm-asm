@@ -77,37 +77,40 @@ theorem envIs_unfold (base : Word) (env : EvmEnv) :
        ((base + BitVec.ofNat 64 returnDataPtrOff)  ↦ₘ env.returnDataPtr) **
        ((base + BitVec.ofNat 64 returnDataSizeOff) ↦ₘ env.returnDataSize)) := rfl
 
-/-- The `caller` field of the env splits off the head: `envIs base env`
-    is `evmWordIs (base + addressOff) env.address ** evmWordIs (base +
-    callerOff) env.caller ** rest`-shape after a single sep_perm. This
-    decomposition lemma is the canonical pattern opcode handlers will
-    use; it is provided here as the smallest non-trivial example. -/
+/-- The remaining 16 env-field cells after the `caller` cell is rotated
+    to the head of the sepConj chain. Spelled out as a top-level `def`
+    so callers can frame on it explicitly and keep track of the
+    resources still owned by the env block. -/
+def envIsCallerRest (base : Word) (env : EvmEnv) : Assertion :=
+  evmWordIs (base + BitVec.ofNat 64 addressOff)         (addrAsWord env.address) **
+  evmWordIs (base + BitVec.ofNat 64 selfBalanceOff)     env.selfBalance **
+  evmWordIs (base + BitVec.ofNat 64 callValueOff)       env.callValue **
+  evmWordIs (base + BitVec.ofNat 64 txOriginOff)        (addrAsWord env.txOrigin) **
+  evmWordIs (base + BitVec.ofNat 64 gasPriceOff)        env.gasPrice **
+  evmWordIs (base + BitVec.ofNat 64 blockCoinbaseOff)   (addrAsWord env.blockCoinbase) **
+  evmWordIs (base + BitVec.ofNat 64 blockTimestampOff)  env.blockTimestamp **
+  evmWordIs (base + BitVec.ofNat 64 blockNumberOff)     env.blockNumber **
+  evmWordIs (base + BitVec.ofNat 64 blockPrevrandaoOff) env.blockPrevrandao **
+  evmWordIs (base + BitVec.ofNat 64 blockGasLimitOff)   env.blockGasLimit **
+  evmWordIs (base + BitVec.ofNat 64 blockBaseFeeOff)    env.blockBaseFee **
+  evmWordIs (base + BitVec.ofNat 64 chainIdOff)         env.chainId **
+  ((base + BitVec.ofNat 64 callDataPtrOff)    ↦ₘ env.callDataPtr) **
+  ((base + BitVec.ofNat 64 callDataLenOff)    ↦ₘ env.callDataLen) **
+  ((base + BitVec.ofNat 64 returnDataPtrOff)  ↦ₘ env.returnDataPtr) **
+  ((base + BitVec.ofNat 64 returnDataSizeOff) ↦ₘ env.returnDataSize)
+
+/-- Rotate the `caller` cell to the head of `envIs base env`. The
+    leftover assertion is spelled out as `envIsCallerRest base env`
+    rather than hidden behind an existential, so a `CALLER` opcode
+    handler that frames on the head still sees — and owns — every
+    other field of the env block. -/
 theorem envIs_caller_split (base : Word) (env : EvmEnv) :
-    ∃ rest : Assertion,
-      envIs base env =
-        (evmWordIs (base + BitVec.ofNat 64 callerOff) (addrAsWord env.caller) ** rest) := by
-  refine ⟨?rest, ?eq⟩
-  case rest =>
-    exact
-      evmWordIs (base + BitVec.ofNat 64 addressOff) (addrAsWord env.address) **
-      evmWordIs (base + BitVec.ofNat 64 selfBalanceOff) env.selfBalance **
-      evmWordIs (base + BitVec.ofNat 64 callValueOff) env.callValue **
-      evmWordIs (base + BitVec.ofNat 64 txOriginOff) (addrAsWord env.txOrigin) **
-      evmWordIs (base + BitVec.ofNat 64 gasPriceOff) env.gasPrice **
-      evmWordIs (base + BitVec.ofNat 64 blockCoinbaseOff) (addrAsWord env.blockCoinbase) **
-      evmWordIs (base + BitVec.ofNat 64 blockTimestampOff) env.blockTimestamp **
-      evmWordIs (base + BitVec.ofNat 64 blockNumberOff) env.blockNumber **
-      evmWordIs (base + BitVec.ofNat 64 blockPrevrandaoOff) env.blockPrevrandao **
-      evmWordIs (base + BitVec.ofNat 64 blockGasLimitOff) env.blockGasLimit **
-      evmWordIs (base + BitVec.ofNat 64 blockBaseFeeOff) env.blockBaseFee **
-      evmWordIs (base + BitVec.ofNat 64 chainIdOff) env.chainId **
-      ((base + BitVec.ofNat 64 callDataPtrOff)    ↦ₘ env.callDataPtr) **
-      ((base + BitVec.ofNat 64 callDataLenOff)    ↦ₘ env.callDataLen) **
-      ((base + BitVec.ofNat 64 returnDataPtrOff)  ↦ₘ env.returnDataPtr) **
-      ((base + BitVec.ofNat 64 returnDataSizeOff) ↦ₘ env.returnDataSize)
-  case eq =>
-    rw [envIs_unfold]
-    ac_rfl
+    envIs base env =
+      (evmWordIs (base + BitVec.ofNat 64 callerOff) (addrAsWord env.caller) **
+        envIsCallerRest base env) := by
+  rw [envIs_unfold]
+  unfold envIsCallerRest
+  ac_rfl
 
 /-- `envIs` is PC-free: it is a finite `sepConj` of `evmWordIs` /
     `memIs` cells, all of which are individually PC-free. -/
