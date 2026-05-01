@@ -66,6 +66,12 @@ abbrev phaseBOff    : Word :=   32
     cascade step otherwise). Sub-offset relative to `divK_phaseB`
     (= phaseBOff + 40 = phaseBTailOff − 24). -/
 abbrev phaseBBneOff : Word :=   72
+/-- Offset of `divK_phaseB_step1` inside `divK_phaseB`.
+    Entry PC of the `ADDI x5, x0, 3 ;; BNE x7, x0, 16` pair that selects
+    the n=3 path during leading-limb analysis (the third per-limb step
+    of the cascade following `divK_phaseB_init2`). Sub-offset relative
+    to `divK_phaseB` (= phaseBOff + 44 = phaseBBneOff + 4). -/
+abbrev phaseBStep1Off : Word :=   76
 /-- Offset of the `divK_phaseB_tail` sub-block inside `divK_phaseB`.
     Entry PC of the leading-limb-analysis tail (16 instructions / 64 bytes
     into `divK_phaseB`); the per-limb cascade in `divK_phaseB_cascade` falls
