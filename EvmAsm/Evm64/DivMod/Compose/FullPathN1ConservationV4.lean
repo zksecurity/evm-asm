@@ -4,6 +4,7 @@
   v4 trial-quotient helpers for the n=1 full path.
 -/
 
+import EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation
 import EvmAsm.Evm64.DivMod.Spec.V4
 import EvmAsm.Evm64.EvmWordArith.DivN4Overestimate
 
@@ -46,5 +47,49 @@ theorem iterN1_v4_rawTrial_ge_local_digit
     simp only [if_true]
     have huTop_lt_v0 : uTop.toNat < v0.toNat := (EvmWord.ult_iff).mp hult
     exact div128Quot_v4_ge_q_true_normalized_of_lt uTop u0 v0 hv0_ge huTop_lt_v0
+
+@[irreducible]
+def iterN1Call_v4 (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  iterWithDoubleAddback (div128Quot_v4 u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
+/-- v4 per-iteration computation for n=1. The max path is unchanged; the call
+    path uses the fully corrected `div128Quot_v4`. -/
+def iterN1_v4 (bltu : Bool) (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  if bltu then iterN1Call_v4 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  else iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
+@[simp]
+theorem iterN1_v4_true {v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word} :
+    iterN1_v4 true v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    iterN1Call_v4 v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  simp [iterN1_v4]
+
+@[simp]
+theorem iterN1_v4_false {v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word} :
+    iterN1_v4 false v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    iterN1Max v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  simp [iterN1_v4]
+
+theorem iterN1_v4_qout_ge_trial_sub_two
+    (bltu : Bool) (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    let qHat : Word := if bltu then div128Quot_v4 u1 u0 v0 else signExtend12 4095
+    let out := iterN1_v4 bltu v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    qHat.toNat - 2 ≤ out.1.toNat := by
+  intro qHat out
+  subst qHat
+  subst out
+  cases bltu
+  · simp only [iterN1_v4_false]
+    unfold iterN1Max
+    exact iterWithDoubleAddback_qout_ge_sub_two
+      (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop (by
+        rw [signExtend12_4095_toNat]
+        norm_num)
+  · simp only [ite_true, iterN1_v4_true]
+    unfold iterN1Call_v4
+    exact iterWithDoubleAddback_qout_ge_tsub_two
+      (div128Quot_v4 u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
 end EvmAsm.Evm64
