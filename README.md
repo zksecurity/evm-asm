@@ -212,31 +212,13 @@ time and peak resident set size in the run's job summary. Raw
 (`benchmark-<run-id>`) with a 90-day retention so regressions can be
 diff'd against earlier runs.
 
-Each successful run also appends one JSON record to `history.jsonl` on
-the long-lived `benchmark-history` orphan branch (created on first push
-by the workflow itself; one object per line: `commit`, `timestamp`,
-`wall_seconds`, `peak_rss_kb`, `runner_os`, `runner_cores`, …). To
-inspect the historical series locally:
-
-```bash
-git fetch origin benchmark-history
-git show origin/benchmark-history:history.jsonl | tail -n 20
-# or, to track a specific metric over time:
-git show origin/benchmark-history:history.jsonl \
-  | jq -r '[.timestamp, .commit[:12], .wall_seconds] | @tsv'
-```
-
-When chasing a build-time regression, correlate `wall_seconds` jumps with
-`git log --oneline <prev-sha>..<curr-sha>` between the two adjacent
-records — the recorded `commit` field points at the SHA each row
-benchmarked. Files that have historically driven the largest deltas live
-under `EvmAsm/Evm64/DivMod/` (compose chains; see `TACTICS.md` § "xperm")
-and `EvmAsm/Evm64/Shift/` (composition files allow `set_option
-maxHeartbeats` per `AGENTS.md`).
-
 The workflow is independent of PR CI and does not gate any pull
 request. To trigger an off-schedule run manually, go to **Actions →
 Benchmark → Run workflow** (or `gh workflow run benchmark.yml`).
+Long-lived history (`benchmark-history` orphan branch) and
+regression-hunting workflow are documented for contributors in
+[`AGENTS.md`](AGENTS.md) and
+[`docs/benchmark-workflow-design.md`](docs/benchmark-workflow-design.md).
 
 The shape of this workflow was informed by a survey of
 [`Beneficial-AI-Foundation/curve25519-dalek-lean-verify`](https://github.com/Beneficial-AI-Foundation/curve25519-dalek-lean-verify)'s
