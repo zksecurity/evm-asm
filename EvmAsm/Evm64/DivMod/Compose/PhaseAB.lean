@@ -211,7 +211,7 @@ theorem evm_div_bzero_spec_within (sp base : Word)
 theorem evm_div_phaseA_ntaken_spec_within (sp base : Word)
     (b0 b1 b2 b3 v5 v10 : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
-    cpsTripleWithin (8) base (base + phaseBOff) (divCode base)
+    cpsTripleWithin 8 base (base + phaseBOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
        ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
@@ -250,7 +250,7 @@ theorem evm_div_phaseB_n4_spec_within (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
     (hb3nz : b3 ≠ 0) :
-    cpsTripleWithin (21) (base + phaseBOff) (base + clzOff) (divCode base)
+    cpsTripleWithin 21 (base + phaseBOff) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -488,7 +488,7 @@ theorem evm_div_phaseB_n3_spec_within (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
     (hb3z : b3 = 0) (hb2nz : b2 ≠ 0) :
-    cpsTripleWithin (21) (base + phaseBOff) (base + clzOff) (divCode base)
+    cpsTripleWithin 21 (base + phaseBOff) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -623,7 +623,7 @@ theorem evm_div_phaseB_n2_spec_within (sp base : Word)
     (b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0) :
-    cpsTripleWithin (21) (base + phaseBOff) (base + clzOff) (divCode base)
+    cpsTripleWithin 21 (base + phaseBOff) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
@@ -793,7 +793,7 @@ theorem evm_div_phaseB_n1_spec_within (sp base : Word)
     (b0 b1 b2 b3 : Word) (v5 v6 v7 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0) :
-    cpsTripleWithin (21) (base + phaseBOff) (base + clzOff) (divCode base)
+    cpsTripleWithin 21 (base + phaseBOff) (base + clzOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
