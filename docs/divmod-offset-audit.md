@@ -45,27 +45,51 @@ so anything in phaseA is just `phaseAOff`.
 |   1068 | nopOff        |     4  |
 |   1072 | div128Off     |   196  |
 
-### phaseB block (1 literal, 10 uses)
+### phaseB block (0 literals — reclassified)
 
-| literal   | meaning                      | recommendation |
-|-----------|------------------------------|----------------|
-| base + 100 | phaseBOff + 68              | within-phaseB sub-step inside `LimbSpec/Div128Step1v2.lean`; not a new top-level boundary, leave as `phaseBOff + 68` |
+The 7 occurrences of `base + 100` originally listed here live in
+`LimbSpec/Div128Step1v2.lean`. **They are NOT phaseB offsets.** That file
+is the `divK_div128_step1_v2` subroutine, whose `base` argument is the
+locally-rebased subroutine base — callers in `Compose/Div128.lean` and
+`Compose/ModDiv128.lean` invoke it with `(base + 1112)` (= `div128Off + 40`).
+So `base + 100` inside Div128Step1v2.lean is the 25-instruction
+SUBROUTINE block-exit PC (block length = 100), not a global `phaseBOff + 68`.
 
-### clz block (7 literals, 51 uses)
+Migrating it to `base + phaseBOff + 68` breaks the caller bridge — e.g.
+`Compose/Div128.lean:455` does `rw [show (base+1112)+100 = base+1212 from by
+bv_addr]`, which fails when the callee post-PC is `phaseBOff + 68` instead
+of a literal `100`.
 
-| literal   | meaning           |
-|-----------|-------------------|
-| base + 120 | clzOff + 4       |
-| base + 124 | clzOff + 8       |
-| base + 136 | clzOff + 20      |
-| base + 152 | clzOff + 36      |
-| base + 168 | clzOff + 52      |
-| base + 184 | clzOff + 68      |
-| base + 200 | clzOff + 84      |
+**Recommendation:** leave `base + 100` as-is in Div128Step1v2.lean — it is
+a subroutine-local block length, not a DivMod-global offset. (See beads
+`evm-asm-v9q6` for the failed migration attempt and `evm-asm-by3m` for this
+audit fix.)
 
-These are CLZ inner-step PCs (one constant per CLZ unrolled stage). They
-are already enumerated by `clzOff + k`; not worth dedicated names.
-**Recommendation:** rewrite as `clzOff + k` constants (mechanical; slice 3).
+### clz block (1 literal remaining — reclassified; 6 migrated by #1625)
+
+The literals `base + {120, 136, 152, 168, 184, 200}` were migrated to
+`clzOff + k` form in PR #1625. The remaining occurrences of `base + 124`
+all live in `LimbSpec/Div128Step2v4.lean`, which is a rebased subroutine
+(its `base` argument is `divK_div128_step2_v4`'s local base, not the global
+DivMod base). `base + 124` there is a 31-instruction block-exit PC (block
+length = 124), **not** `clzOff + 8`.
+
+**Recommendation:** leave `base + 124` as-is in Div128Step2v4.lean — same
+reasoning as the phaseB block above. The original clz table is preserved
+below as a historical reference but only rows 1–7 minus 124 were valid
+migrations.
+
+| literal   | meaning           | status |
+|-----------|-------------------|--------|
+| base + 120 | clzOff + 4       | migrated #1625 |
+| base + 124 | (subroutine-local in Div128Step2v4.lean) | leave as-is |
+| base + 136 | clzOff + 20      | migrated #1625 |
+| base + 152 | clzOff + 36      | migrated #1625 |
+| base + 168 | clzOff + 52      | migrated #1625 |
+| base + 184 | clzOff + 68      | migrated #1625 |
+| base + 200 | clzOff + 84      | migrated #1625 |
+
+These were CLZ inner-step PCs (one constant per CLZ unrolled stage).
 
 ### phaseC2 block (1 literal, 20 uses)
 
