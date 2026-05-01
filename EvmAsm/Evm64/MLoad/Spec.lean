@@ -126,9 +126,29 @@ theorem mloadByteFromDwordPair_high
 def mloadDwordPairAddr (loAddr hiAddr : Word) (start i : Nat) : Word :=
   if start + i < 8 then loAddr else hiAddr
 
+theorem mloadDwordPairAddr_low
+    (loAddr hiAddr : Word) {start i : Nat} (h_pos : start + i < 8) :
+    mloadDwordPairAddr loAddr hiAddr start i = loAddr := by
+  simp [mloadDwordPairAddr, h_pos]
+
+theorem mloadDwordPairAddr_high
+    (loAddr hiAddr : Word) {start i : Nat} (h_pos : 8 ≤ start + i) :
+    mloadDwordPairAddr loAddr hiAddr start i = hiAddr := by
+  simp [mloadDwordPairAddr, show ¬ start + i < 8 from by omega]
+
 /-- Select the source dword value for byte `i` in an unaligned limb window. -/
 def mloadDwordPairVal (loVal hiVal : Word) (start i : Nat) : Word :=
   if start + i < 8 then loVal else hiVal
+
+theorem mloadDwordPairVal_low
+    (loVal hiVal : Word) {start i : Nat} (h_pos : start + i < 8) :
+    mloadDwordPairVal loVal hiVal start i = loVal := by
+  simp [mloadDwordPairVal, h_pos]
+
+theorem mloadDwordPairVal_high
+    (loVal hiVal : Word) {start i : Nat} (h_pos : 8 ≤ start + i) :
+    mloadDwordPairVal loVal hiVal start i = hiVal := by
+  simp [mloadDwordPairVal, show ¬ start + i < 8 from by omega]
 
 theorem mloadByteFromDwordPair_eq_extractByte_pair
     (loVal hiVal : Word) (start i : Nat) :
