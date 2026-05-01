@@ -112,6 +112,16 @@ def mloadByteFromDwordPair (lo hi : Word) (start i : Nat) : BitVec 8 :=
   let pos := start + i
   extractByte (if pos < 8 then lo else hi) (pos % 8)
 
+theorem mloadByteFromDwordPair_low
+    (lo hi : Word) {start i : Nat} (h_pos : start + i < 8) :
+    mloadByteFromDwordPair lo hi start i = extractByte lo ((start + i) % 8) := by
+  simp [mloadByteFromDwordPair, h_pos]
+
+theorem mloadByteFromDwordPair_high
+    (lo hi : Word) {start i : Nat} (h_pos : 8 ≤ start + i) :
+    mloadByteFromDwordPair lo hi start i = extractByte hi ((start + i) % 8) := by
+  simp [mloadByteFromDwordPair, show ¬ start + i < 8 from by omega]
+
 /--
   Pack eight consecutive bytes starting at byte offset `start` in `lo`,
   crossing into adjacent dword `hi` when needed.
