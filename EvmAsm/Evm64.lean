@@ -11,6 +11,7 @@ import EvmAsm.Evm64.CodeRegion
 -- Stack operations
 import EvmAsm.Evm64.Pop
 import EvmAsm.Evm64.Push0
+import EvmAsm.Evm64.Push
 import EvmAsm.Evm64.Dup
 import EvmAsm.Evm64.Swap
 
