@@ -27,6 +27,7 @@
       [trialCallOff       = 500]  divK_loopBody BLTU/JAL trial-quotient call entry (loopBodyOff + 52)
       [correctionSkipBeqOff = 728]  divK_loopBody mulsub-correction-skip BEQ entry (loopBodyOff + 280)
       [storeLoopOff = 884]  divK_store_qj sub-block (loopBodyOff + 436)
+      [loopBackBgeOff = 904]  loop-back BGE entry (denormOff - 4 = loopBodyOff + 456)
     [denormOff    = 908] divK_denorm       (100 bytes)
     [epilogueOff  =1008] divK_{div,mod}_epilogue (40 bytes)
     [zeroPathOff  =1048] divK_zeroPath      (20 bytes)
@@ -94,6 +95,12 @@ abbrev addbackBeqOff : Word :=  880
     branch into the next iteration or `divK_denorm`). Sub-offset relative
     to the loopBody block (= loopBodyOff + 436). -/
 abbrev storeLoopOff : Word :=  884
+/-- Offset of the loop-back BGE sub-block inside `divK_loopBody`.
+    Entry PC of the `BGE x1, x0, -...` instruction at the end of the loop
+    body that branches back to `loopBodyOff` for the next iteration when
+    `j ≥ 0`, falling through to `denormOff` otherwise. Sub-offset relative
+    to the loopBody block (= loopBodyOff + 456 = denormOff - 4). -/
+abbrev loopBackBgeOff : Word :=  904
 /-- Offset of `divK_denorm` (denormalize result back to original shift). -/
 abbrev denormOff    : Word :=  908
 /-- Offset of the epilogue (`divK_div_epilogue` for DIV, `divK_mod_epilogue`
@@ -154,6 +161,11 @@ example : addbackBeqOff = loopBodyOff + 432 := by decide
 /-- storeLoopOff = loopBodyOff + 436 (sub-block offset within `divK_loopBody`).
     The `divK_store_qj` snippet starts 109 instructions into the loop body. -/
 example : storeLoopOff = loopBodyOff + 436 := by decide
+/-- loopBackBgeOff = denormOff - 4 (= loopBodyOff + 456, sub-block offset
+    within `divK_loopBody`). The loop-back BGE sits one instruction before
+    the `divK_denorm` block. -/
+example : loopBackBgeOff = denormOff - 4 := by decide
+example : loopBackBgeOff = loopBodyOff + 456 := by decide
 /-- correctionSkipBeqOff = loopBodyOff + 280 (sub-block offset within
     `divK_loopBody`). The mulsub correction-skip BEQ sits 70 instructions
     into the loop body. -/
