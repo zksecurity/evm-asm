@@ -176,6 +176,162 @@ theorem exp_loop_back_length (backOff : BitVec 13) :
   show (ADDI .x9 .x9 (-1) ;; single (.BNE .x9 .x0 backOff)).length = 2
   rfl
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration loop block: exp_loop (#92 slice 3d, beads evm-asm-j2h5)
+-- ----------------------------------------------------------------------------
+--
+-- Structural composition of one full square-and-multiply iteration with its
+-- trailing counter-decrement + backward branch. This is the unit that the
+-- 256-iteration loop scaffold (`evm_exp`, slice evm-asm-ahaz) repeats and that
+-- the loop-composition spec (slice evm-asm-w5mk) reasons about.
+--
+-- Layout (8 instructions = 32 bytes per iteration):
+--
+--     exp_loop mulOff skipOff backOff :=
+--       exp_iter_body  mulOff skipOff ;;   -- 6 instr (bit test + sq + cond mul)
+--       exp_loop_back  backOff             -- 2 instr (ADDI x9 -1 ;; BNE)
+--
+-- The three offsets stay parameters — they are only pinned once `evm_exp` is
+-- assembled in slice evm-asm-ahaz and the absolute layout is final. No new
+-- specs in this slice; per-block specs (4a/4b/4c/4d) are already merged and
+-- the composed cpsTriple lands in slice 5 (evm-asm-w5mk).
+
+/-- One full iteration of the EXP square-and-multiply loop, including the
+    iteration-counter decrement and backward branch back to the top. 8
+    instructions.
+
+    `mulOff` is the signed JAL offset to `mul_callable` (shared between the
+    two JAL sites inside the iteration body). `skipOff` is the BEQ branch
+    offset that skips past the conditional-multiply JAL when the current
+    exponent bit is zero. `backOff` is the signed 13-bit BNE byte offset from
+    the BNE site back to the top of the iteration body (negative). All three
+    are pinned by the surrounding `evm_exp` layout in slice evm-asm-ahaz. -/
+def exp_loop (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : Program :=
+  exp_iter_body mulOff skipOff ;;
+  exp_loop_back backOff
+
+theorem exp_loop_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (exp_loop mulOff skipOff backOff).length = 8 := by
+  show (exp_iter_body mulOff skipOff ;; exp_loop_back backOff).length = 8
+  simp only [seq, Program.length_append,
+    exp_iter_body_length, exp_loop_back_length]
+
+-- ----------------------------------------------------------------------------
+-- Loop prologue: initialize accumulator + counter (#92 slice 3d, beads
+-- evm-asm-yvfr)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-survey.md` §2(b) and §4, the EXP body needs two pieces of
+-- state initialized before the 256-iteration square-and-multiply loop runs:
+--
+--   1. The running accumulator `result` (a 256-bit value held as 4 LE 64-bit
+--      limbs in the local RISC-V scratch frame at `sp+0 .. sp+24`) must be
+--      initialized to 1, i.e. (limb0, limb1, limb2, limb3) = (1, 0, 0, 0).
+--   2. The master iteration counter `x9` must be initialized to 256.
+--
+-- This block does NOT include the LP64 `cc_prologue` (which is emitted by the
+-- surrounding non-leaf `evm_exp` wrapper) and does NOT marshal the EVM stack
+-- operands `a` / `b` into LP64 a0/a1 slots (handled per-iteration by the
+-- scaffold introduced in slice evm-asm-w5mk). It is the EXP-specific tail of
+-- the prologue: counter init + accumulator init.
+--
+-- Convention assumed by this block: the `evm_exp` wrapper has already moved
+-- `sp` (x2) down by enough bytes to give us a 32-byte 8-byte-aligned region
+-- at offsets `[0, 24]` for the four `result` limbs (low limb at +0, high
+-- limb at +24). The wrapper will lay out the rest of its scratch frame —
+-- saved ra, alignment, any spilled values — at offsets ≥ 32, so the four
+-- SDs here only touch the result slots.
+--
+-- Register usage:
+--   x9  — master iteration counter (output: 256)
+--   x5  — t0, used as a temporary to hold the literal `1` before the SD;
+--          caller-saved per LP64, not live across calls so safe to clobber
+--          before the loop body ever runs.
+--   x2  — sp; read-only here.
+--   x0  — zero register, used directly in the three high-limb SDs to avoid
+--          a second ADDI for an additional zero temp.
+--
+-- 6 instructions, 24 bytes:
+--   ADDI x9, x0, 256   — counter := 256
+--   ADDI x5, x0, 1     — t0      := 1
+--   SD   sp, t0, 0     — result.limb0 := 1
+--   SD   sp, x0, 8     — result.limb1 := 0
+--   SD   sp, x0, 16    — result.limb2 := 0
+--   SD   sp, x0, 24    — result.limb3 := 0
+
+/-- EXP-specific prologue: initialize the master iteration counter
+    `x9 := 256` and the four limbs of the running accumulator `result`
+    in the local scratch frame at `sp+0 .. sp+24` to `(1, 0, 0, 0)`.
+    Excludes the LP64 `cc_prologue` (which the surrounding `evm_exp`
+    wrapper emits separately) and operand marshalling. 6 instructions. -/
+def exp_prologue : Program :=
+  ADDI .x9 .x0 256 ;;
+  ADDI .x5 .x0 1 ;;
+  SD .x2 .x5 0 ;;
+  SD .x2 .x0 8 ;;
+  SD .x2 .x0 16 ;;
+  SD .x2 .x0 24
+
+theorem exp_prologue_length : exp_prologue.length = 6 := by decide
+
+-- ----------------------------------------------------------------------------
+-- Loop epilogue: result writeback + EVM stack advance (#92 slice 3e, beads
+-- evm-asm-tesj)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-survey.md` §"Result write-back" (line 178), once the
+-- 256-iteration square-and-multiply loop has finished, the four limbs of the
+-- running accumulator `result` (held in the local scratch frame at
+-- `sp + 0 .. sp + 24`) must be copied out to the EVM stack at
+-- `x12 + 32 .. x12 + 56` (the slot that originally held operand `a` on
+-- entry, since both `a` and `b` are popped and a single 256-bit result is
+-- pushed). Then `x12` advances by +32 (one EVM-word pop, since EXP pops
+-- two 256-bit operands and pushes one result).
+--
+-- This block does NOT include the LP64 `cc_epilogue` (which the surrounding
+-- `evm_exp` non-leaf wrapper emits separately, restoring `ra`/`sp` and
+-- returning to the caller). It is the EXP-specific tail of the body:
+-- writeback + EVM stack-pointer fixup, mirroring the role of `mul_epilogue`
+-- in `Evm64/Multiply/Program.lean` but with an additional 4-limb LD/SD
+-- copy because EXP holds its accumulator in the local scratch frame
+-- rather than directly on the EVM stack.
+--
+-- Register usage:
+--   x2  — sp; read-only (local scratch frame base for `result`).
+--   x12 — EVM stack pointer (a2); advanced by +32 at the very end.
+--   x5  — t0, used as a single-limb load/store temporary; caller-saved per
+--          LP64 and not live across the surrounding loop, so safe to clobber.
+--
+-- 9 instructions, 36 bytes:
+--   LD   t0, sp, 0     — t0          := result.limb0
+--   SD   x12, t0, 32   — evm_stack[0] := t0
+--   LD   t0, sp, 8     — t0          := result.limb1
+--   SD   x12, t0, 40   — evm_stack[1] := t0
+--   LD   t0, sp, 16    — t0          := result.limb2
+--   SD   x12, t0, 48   — evm_stack[2] := t0
+--   LD   t0, sp, 24    — t0          := result.limb3
+--   SD   x12, t0, 56   — evm_stack[3] := t0
+--   ADDI x12, x12, 32  — pop one EVM word
+
+/-- EXP-specific epilogue: copy the four limbs of the running accumulator
+    `result` from the local scratch frame at `sp + 0 .. sp + 24` to the
+    EVM stack at `x12 + 32 .. x12 + 56`, then advance the EVM stack
+    pointer `x12` by +32 (one EVM-word pop). Excludes the LP64
+    `cc_epilogue` (which the surrounding `evm_exp` wrapper emits
+    separately). 9 instructions. -/
+def exp_epilogue : Program :=
+  LD .x5 .x2 0 ;;
+  SD .x12 .x5 32 ;;
+  LD .x5 .x2 8 ;;
+  SD .x12 .x5 40 ;;
+  LD .x5 .x2 16 ;;
+  SD .x12 .x5 48 ;;
+  LD .x5 .x2 24 ;;
+  SD .x12 .x5 56 ;;
+  ADDI .x12 .x12 32
+
+theorem exp_epilogue_length : exp_epilogue.length = 9 := by decide
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
