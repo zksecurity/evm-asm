@@ -77,9 +77,9 @@ theorem lb_sub_v2 {base : Word} (k : Nat) (addr : Word) (instr : Instr)
 
 -- Mulsub limb base addresses (instrs [22]-[65])
 private theorem lb_ms1 {base : Word} : (base + mulsubOff : Word) + 44 = base + 580 := by bv_addr
-private theorem lb_ms2 {base : Word} : (base + 580 : Word) + 44 = base + 624 := by bv_addr
-private theorem lb_ms3 {base : Word} : (base + 624 : Word) + 44 = base + 668 := by bv_addr
-private theorem lb_ms_end {base : Word} : (base + 668 : Word) + 44 = base + 712 := by bv_addr
+private theorem lb_ms2 {base : Word} : (base + 580 : Word) + 44 = base + correctionSkipOff := by bv_addr
+private theorem lb_ms3 {base : Word} : (base + correctionSkipOff : Word) + 44 = base + 668 := by bv_addr
+private theorem lb_ms_end {base : Word} : (base + 668 : Word) + 44 = base + correctionAddbackOff := by bv_addr
 
 -- ============================================================================
 -- Section 3: Mulsub 4-limbs composition
@@ -130,7 +130,7 @@ theorem divK_mulsub_4limbs_spec_within
     let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
     let un3 := u3 - fs3
     let c3 := pc3 + bs3
-    cpsTripleWithin 44 (base + mulsubOff) (base + 712) (sharedDivModCode base)
+    cpsTripleWithin 44 (base + mulsubOff) (base + correctionAddbackOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
        (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
        (.x2 ↦ᵣ v2_init) **
@@ -195,7 +195,7 @@ theorem divK_mulsub_4limbs_spec_within
   seqFrame L0f L1e
   -- Limb 2: instrs [44]-[54] at base+624
   have L2 := divK_mulsub_limb_spec_within sp uBase qHat c1
-    bs1 fs1 un1 v2 u2 48 4080 (base + 624)
+    bs1 fs1 un1 v2 u2 48 4080 (base + correctionSkipOff)
 
   rw [lb_ms3] at L2
   have L2e := cpsTripleWithin_extend_code (hmono := by
@@ -396,7 +396,7 @@ theorem divK_addback_full_spec_within
 private theorem lb_ms_setup {base : Word} : (base + div128CallRetOff : Word) + 20 = base + mulsubOff := by bv_addr
 
 -- Address normalization for sub_carry
-private theorem lb_sc {base : Word} : (base + 712 : Word) + 16 = base + correctionSkipBeqOff := by bv_addr
+private theorem lb_sc {base : Word} : (base + correctionAddbackOff : Word) + 16 = base + correctionSkipBeqOff := by bv_addr
 
 set_option maxRecDepth 4096 in
 /-- Mulsub full: setup + 4-limb multiply-subtract + carry subtraction from u[j+4].
@@ -495,7 +495,7 @@ theorem divK_mulsub_full_spec_within
   -- Compose setup + mulsub
   seqFrame Sf M
   -- 3. Sub-carry: instrs [66]-[69] at base+712
-  have SC := divK_sub_carry_spec_within uBase c3 bs3 fs3 uTop 4064 (base + 712)
+  have SC := divK_sub_carry_spec_within uBase c3 bs3 fs3 uTop 4064 (base + correctionAddbackOff)
   rw [lb_sc] at SC
   have SCe := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 66 _ _ (by decide) (by bv_addr) (by decide))
@@ -546,7 +546,7 @@ theorem divK_mulsub_4limbs_v2_spec_within
     let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
     let un3 := u3 - fs3
     let c3 := pc3 + bs3
-    cpsTripleWithin 44 (base + mulsubOff) (base + 712) (sharedDivModCode_v2 base)
+    cpsTripleWithin 44 (base + mulsubOff) (base + correctionAddbackOff) (sharedDivModCode_v2 base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
        (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
        (.x2 ↦ᵣ v2_init) **
@@ -611,7 +611,7 @@ theorem divK_mulsub_4limbs_v2_spec_within
   seqFrame L0f L1e
   -- Limb 2: instrs [44]-[54] at base+624
   have L2 := divK_mulsub_limb_spec_within sp uBase qHat c1
-    bs1 fs1 un1 v2 u2 48 4080 (base + 624)
+    bs1 fs1 un1 v2 u2 48 4080 (base + correctionSkipOff)
 
   rw [lb_ms3] at L2
   have L2e := cpsTripleWithin_extend_code (hmono := by
@@ -738,7 +738,7 @@ theorem divK_mulsub_full_v2_spec_within
   -- Compose setup + mulsub
   seqFrame Sf M
   -- 3. Sub-carry: instrs [66]-[69] at base+712
-  have SC := divK_sub_carry_spec_within uBase c3 bs3 fs3 uTop 4064 (base + 712)
+  have SC := divK_sub_carry_spec_within uBase c3 bs3 fs3 uTop 4064 (base + correctionAddbackOff)
   rw [lb_sc] at SC
   have SCe := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 66 _ _ (by decide) (by bv_addr) (by decide))
@@ -1147,7 +1147,7 @@ theorem divK_save_trial_load_spec_within
 
 theorem lb_bltu_taken {base : Word} : (base + trialCallOff : Word) + signExtend13 (12 : BitVec 13) = base + 512 := by
   rv64_addr
-theorem lb_bltu_ntaken {base : Word} : (base + trialCallOff : Word) + 4 = base + 504 := by bv_addr
+theorem lb_bltu_ntaken {base : Word} : (base + trialCallOff : Word) + 4 = base + trialMaxOff := by bv_addr
 
 -- ============================================================================
 -- Section 9: Store q[j] + loop control
