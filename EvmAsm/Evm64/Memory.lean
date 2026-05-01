@@ -89,6 +89,70 @@ instance (base : Word) (n : Nat) (contents : Nat → Word) :
 instance (base : Word) (n : Nat) : Assertion.PCFree (evmMemZero base n) :=
   ⟨pcFree_evmMemZero⟩
 
+/-! ## Byte-addressing adapters -/
+
+/-- The RV64 dword cell address that owns the EVM memory byte
+    `memBase + byteAddr`. -/
+def evmMemDwordAddr (memBase byteAddr : Word) : Word :=
+  alignToDword (memBase + byteAddr)
+
+/-- The byte position, inside its owning RV64 dword, of EVM memory byte
+    `memBase + byteAddr`. -/
+def evmMemByteOffset (memBase byteAddr : Word) : Nat :=
+  byteOffset (memBase + byteAddr)
+
+/-- Read the EVM memory byte at `byteAddr` from its owning RV64 dword value. -/
+def evmMemByteRead (memBase byteAddr dwordVal : Word) : BitVec 8 :=
+  extractByte dwordVal (evmMemByteOffset memBase byteAddr)
+
+/-- Own the RV64 dword cell that contains EVM memory byte `byteAddr`. -/
+def evmMemDwordIs (memBase byteAddr dwordVal : Word) : Assertion :=
+  evmMemDwordAddr memBase byteAddr ↦ₘ dwordVal
+
+/-- Own the post-state dword after writing byte `b` to EVM memory byte
+    `byteAddr`, starting from old owning dword `oldDword`. -/
+def evmMemByteWriteIs
+    (memBase byteAddr oldDword : Word) (b : BitVec 8) : Assertion :=
+  evmMemDwordIs memBase byteAddr
+    (replaceByte oldDword (evmMemByteOffset memBase byteAddr) b)
+
+theorem evmMemDwordAddr_unfold {memBase byteAddr : Word} :
+    evmMemDwordAddr memBase byteAddr = alignToDword (memBase + byteAddr) := rfl
+
+theorem evmMemByteOffset_unfold {memBase byteAddr : Word} :
+    evmMemByteOffset memBase byteAddr = byteOffset (memBase + byteAddr) := rfl
+
+theorem evmMemByteRead_unfold {memBase byteAddr dwordVal : Word} :
+    evmMemByteRead memBase byteAddr dwordVal =
+      extractByte dwordVal (evmMemByteOffset memBase byteAddr) := rfl
+
+theorem evmMemDwordIs_unfold {memBase byteAddr dwordVal : Word} :
+    evmMemDwordIs memBase byteAddr dwordVal =
+      (evmMemDwordAddr memBase byteAddr ↦ₘ dwordVal) := rfl
+
+theorem evmMemByteWriteIs_unfold
+    {memBase byteAddr oldDword : Word} {b : BitVec 8} :
+    evmMemByteWriteIs memBase byteAddr oldDword b =
+      evmMemDwordIs memBase byteAddr
+        (replaceByte oldDword (evmMemByteOffset memBase byteAddr) b) := rfl
+
+theorem pcFree_evmMemDwordIs {memBase byteAddr dwordVal : Word} :
+    (evmMemDwordIs memBase byteAddr dwordVal).pcFree := by
+  unfold evmMemDwordIs; exact pcFree_memIs
+
+theorem pcFree_evmMemByteWriteIs
+    {memBase byteAddr oldDword : Word} {b : BitVec 8} :
+    (evmMemByteWriteIs memBase byteAddr oldDword b).pcFree := by
+  unfold evmMemByteWriteIs; exact pcFree_evmMemDwordIs
+
+instance (memBase byteAddr dwordVal : Word) :
+    Assertion.PCFree (evmMemDwordIs memBase byteAddr dwordVal) :=
+  ⟨pcFree_evmMemDwordIs⟩
+
+instance (memBase byteAddr oldDword : Word) (b : BitVec 8) :
+    Assertion.PCFree (evmMemByteWriteIs memBase byteAddr oldDword b) :=
+  ⟨pcFree_evmMemByteWriteIs⟩
+
 /-! ## High-water mark / EVM memory expansion (slice 2)
 
   The EVM tracks a single dynamic byte-size for memory (MSIZE), which only
