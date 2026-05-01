@@ -216,6 +216,64 @@ theorem exp_loop_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
   simp only [seq, Program.length_append,
     exp_iter_body_length, exp_loop_back_length]
 
+-- ----------------------------------------------------------------------------
+-- Loop prologue: initialize accumulator + counter (#92 slice 3d, beads
+-- evm-asm-yvfr)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-survey.md` §2(b) and §4, the EXP body needs two pieces of
+-- state initialized before the 256-iteration square-and-multiply loop runs:
+--
+--   1. The running accumulator `result` (a 256-bit value held as 4 LE 64-bit
+--      limbs in the local RISC-V scratch frame at `sp+0 .. sp+24`) must be
+--      initialized to 1, i.e. (limb0, limb1, limb2, limb3) = (1, 0, 0, 0).
+--   2. The master iteration counter `x9` must be initialized to 256.
+--
+-- This block does NOT include the LP64 `cc_prologue` (which is emitted by the
+-- surrounding non-leaf `evm_exp` wrapper) and does NOT marshal the EVM stack
+-- operands `a` / `b` into LP64 a0/a1 slots (handled per-iteration by the
+-- scaffold introduced in slice evm-asm-w5mk). It is the EXP-specific tail of
+-- the prologue: counter init + accumulator init.
+--
+-- Convention assumed by this block: the `evm_exp` wrapper has already moved
+-- `sp` (x2) down by enough bytes to give us a 32-byte 8-byte-aligned region
+-- at offsets `[0, 24]` for the four `result` limbs (low limb at +0, high
+-- limb at +24). The wrapper will lay out the rest of its scratch frame —
+-- saved ra, alignment, any spilled values — at offsets ≥ 32, so the four
+-- SDs here only touch the result slots.
+--
+-- Register usage:
+--   x9  — master iteration counter (output: 256)
+--   x5  — t0, used as a temporary to hold the literal `1` before the SD;
+--          caller-saved per LP64, not live across calls so safe to clobber
+--          before the loop body ever runs.
+--   x2  — sp; read-only here.
+--   x0  — zero register, used directly in the three high-limb SDs to avoid
+--          a second ADDI for an additional zero temp.
+--
+-- 6 instructions, 24 bytes:
+--   ADDI x9, x0, 256   — counter := 256
+--   ADDI x5, x0, 1     — t0      := 1
+--   SD   sp, t0, 0     — result.limb0 := 1
+--   SD   sp, x0, 8     — result.limb1 := 0
+--   SD   sp, x0, 16    — result.limb2 := 0
+--   SD   sp, x0, 24    — result.limb3 := 0
+
+/-- EXP-specific prologue: initialize the master iteration counter
+    `x9 := 256` and the four limbs of the running accumulator `result`
+    in the local scratch frame at `sp+0 .. sp+24` to `(1, 0, 0, 0)`.
+    Excludes the LP64 `cc_prologue` (which the surrounding `evm_exp`
+    wrapper emits separately) and operand marshalling. 6 instructions. -/
+def exp_prologue : Program :=
+  ADDI .x9 .x0 256 ;;
+  ADDI .x5 .x0 1 ;;
+  SD .x2 .x5 0 ;;
+  SD .x2 .x0 8 ;;
+  SD .x2 .x0 16 ;;
+  SD .x2 .x0 24
+
+theorem exp_prologue_length : exp_prologue.length = 6 := by decide
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
