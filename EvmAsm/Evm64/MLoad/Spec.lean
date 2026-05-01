@@ -259,6 +259,37 @@ theorem mload_byte_pack_init_pair_high_spec_within
     (fun h hp => by sep_perm hp)
     initF
 
+/-- Initial byte-pack load for an unaligned limb, selecting low/high dword by byte index. -/
+theorem mload_byte_pack_init_pair_spec_within
+    (addrReg accReg : Reg)
+    (addrPtr accOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_align :
+      alignToDword (addrPtr + signExtend12 offset) =
+        mloadDwordPairAddr loAddr hiAddr start i)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    cpsTripleWithin 1 base (base + 4)
+      (CodeReq.singleton base (.LBU accReg addrReg offset))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ byteZext) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  by_cases h_pos : start + i < 8
+  · have h_addr := mloadDwordPairAddr_low loAddr hiAddr h_pos
+    rw [h_addr] at h_align
+    exact mload_byte_pack_init_pair_low_spec_within addrReg accReg
+      addrPtr accOld loVal hiVal loAddr hiAddr offset start i base
+      h_acc_ne_x0 h_pos h_align h_byte h_valid
+  · have h_ge : 8 ≤ start + i := by omega
+    have h_addr := mloadDwordPairAddr_high loAddr hiAddr h_ge
+    rw [h_addr] at h_align
+    exact mload_byte_pack_init_pair_high_spec_within addrReg accReg
+      addrPtr accOld loVal hiVal loAddr hiAddr offset start i base
+      h_acc_ne_x0 h_ge h_align h_byte h_valid
+
 /-- One byte-pack step for an unaligned limb when the byte is in the low dword. -/
 theorem mload_byte_pack_step_pair_low_spec_within
     (addrReg byteReg accReg : Reg)
@@ -338,6 +369,42 @@ theorem mload_byte_pack_step_pair_high_spec_within
       dsimp only [accNew] at hp ⊢
       sep_perm hp)
     stepF
+
+/-- One byte-pack step for an unaligned limb, selecting low/high dword by byte index. -/
+theorem mload_byte_pack_step_pair_spec_within
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0  : accReg  ≠ .x0)
+    (h_align :
+      alignToDword (addrPtr + signExtend12 offset) =
+        mloadDwordPairAddr loAddr hiAddr start i)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    let accNew := (accOld <<< (8 : Nat)) ||| byteZext
+    let cr :=
+      (CodeReq.singleton base (.LBU byteReg addrReg offset)).union
+        ((CodeReq.singleton (base + 4) (.SLLI accReg accReg (BitVec.ofNat 6 8))).union
+         (CodeReq.singleton (base + 8) (.OR accReg accReg byteReg)))
+    cpsTripleWithin 3 base (base + 12) cr
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteZext) ** (accReg ↦ᵣ accNew) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  by_cases h_pos : start + i < 8
+  · have h_addr := mloadDwordPairAddr_low loAddr hiAddr h_pos
+    rw [h_addr] at h_align
+    exact mload_byte_pack_step_pair_low_spec_within addrReg byteReg accReg
+      addrPtr accOld byteOld loVal hiVal loAddr hiAddr offset start i base
+      h_byte_ne_x0 h_acc_ne_x0 h_pos h_align h_byte h_valid
+  · have h_ge : 8 ≤ start + i := by omega
+    have h_addr := mloadDwordPairAddr_high loAddr hiAddr h_ge
+    rw [h_addr] at h_align
+    exact mload_byte_pack_step_pair_high_spec_within addrReg byteReg accReg
+      addrPtr accOld byteOld loVal hiVal loAddr hiAddr offset start i base
+      h_byte_ne_x0 h_acc_ne_x0 h_ge h_align h_byte h_valid
 
 /--
   Pack eight consecutive bytes starting at byte offset `start` in `lo`,
