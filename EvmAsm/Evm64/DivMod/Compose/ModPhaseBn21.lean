@@ -341,7 +341,7 @@ theorem evm_mod_phaseB_n1_spec_within (sp base : Word)
   have h12345678 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) h1234567 hbne2f
   -- ---- Fallthrough: ADDI x5=1 (base+92 → base+96)
-  have haddi3_raw := addi_x0_spec_gen_within .x5 (2 : Word) 1 (base + 92) (by nofun)
+  have haddi3_raw := addi_x0_spec_gen_within .x5 (2 : Word) 1 (base + phaseBStep3Off) (by nofun)
   simp only [mod_phB_fall_4, se12_1] at haddi3_raw
   have haddi3 := cpsTripleWithin_extend_code addi_x5_1_sub_modCode haddi3_raw
   have haddi3f := cpsTripleWithin_frameR

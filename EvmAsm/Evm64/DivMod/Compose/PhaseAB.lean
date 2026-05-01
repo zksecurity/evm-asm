@@ -434,14 +434,14 @@ private theorem bne_x6_8_sub_divCode {base : Word} :
 
 -- ADDI x5 x0 1 at base+92 (index 15 of phaseB)
 private theorem addi_x5_1_sub_divCode {base : Word} :
-    ∀ a i, (CodeReq.singleton (base + 92) (.ADDI .x5 .x0 1)) a = some i →
+    ∀ a i, (CodeReq.singleton (base + phaseBStep3Off) (.ADDI .x5 .x0 1)) a = some i →
       (divCode base) a = some i := by
   unfold divCode; simp only [CodeReq.unionAll_cons]
   intro a i h
   have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 15
     (by decide) (by decide)
   rw [bv64_4mul_15,
-      show (base + phaseBOff : Word) + 60 = base + 92 from by bv_addr] at hlookup
+      show (base + phaseBOff : Word) + 60 = base + phaseBStep3Off from by bv_addr] at hlookup
   have h1 := CodeReq.singleton_mono hlookup a i h
   exact sub_divCode_of_phaseB_left a i h1
 
@@ -468,8 +468,8 @@ private theorem divK_phaseB_n1_nm1_x8 :
 private theorem phB_step1_4 {base : Word} : (base + 76 : Word) + 4 = base + 80 := by bv_addr
 private theorem phB_step1_8 {base : Word} : (base + 80 : Word) + 4 = base + 84 := by bv_addr
 private theorem phB_step2_4 {base : Word} : (base + 84 : Word) + 4 = base + 88 := by bv_addr
-private theorem phB_step2_8 {base : Word} : (base + 88 : Word) + 4 = base + 92 := by bv_addr
-private theorem phB_fall_4 {base : Word} : (base + 92 : Word) + 4 = base + phaseBTailOff := by bv_addr
+private theorem phB_step2_8 {base : Word} : (base + 88 : Word) + 4 = base + phaseBStep3Off := by bv_addr
+private theorem phB_fall_4 {base : Word} : (base + phaseBStep3Off : Word) + 4 = base + phaseBTailOff := by bv_addr
 
 -- Tail memory address normalization
 private theorem phB_sp16_32 {sp : Word} : (sp + (16 : Word) + (32 : Word)) = sp + 48 := by bv_addr
@@ -940,7 +940,7 @@ theorem evm_div_phaseB_n1_spec_within (sp base : Word)
   have h12345678 := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) h1234567 hbne2f
   -- ---- Fallthrough: ADDI x5=1 (base+92 → base+96)
-  have haddi3_raw := addi_x0_spec_gen_within .x5 (2 : Word) 1 (base + 92) (by nofun)
+  have haddi3_raw := addi_x0_spec_gen_within .x5 (2 : Word) 1 (base + phaseBStep3Off) (by nofun)
   simp only [phB_fall_4, signExtend12_1] at haddi3_raw
   have haddi3 := cpsTripleWithin_extend_code addi_x5_1_sub_divCode haddi3_raw
   have haddi3f := cpsTripleWithin_frameR
