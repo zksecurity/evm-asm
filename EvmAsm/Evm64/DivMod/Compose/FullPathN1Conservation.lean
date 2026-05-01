@@ -4,7 +4,10 @@
   Compact per-iteration conservation wrappers for the n=1 full path.
 -/
 
+-- file-size-exception: issue #61 N1 conservation proof is being split incrementally; avoid blocking stacked PR #1654 while the arithmetic bridge stabilizes.
+
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
+import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.ModBridgeUtop
 
@@ -423,6 +426,60 @@ theorem fullDivN1NormV_val256_eq_v0_of_high_zero
   rw [hv1, hv2, hv3]
   unfold EvmWord.val256
   simp
+
+theorem fullDivN1R3_rawTrial_ge_local_floor
+    (bltu_3 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hshift_nz : fullDivN1Shift b0 ≠ 0)
+    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0) :
+    let v := fullDivN1NormV b0 b1 b2 b3
+    let u := fullDivN1NormU a0 a1 a2 a3 b0
+    let qHat : Word := if bltu_3 then div128Quot u.2.2.2.2 u.2.2.2.1 v.1
+      else signExtend12 4095
+    (u.2.2.2.2.toNat * 2^64 + u.2.2.2.1.toNat) / v.1.toNat ≤ qHat.toNat := by
+  intro v u qHat
+  subst v
+  subst u
+  subst qHat
+  have hv0_ge : ((fullDivN1NormV b0 b1 b2 b3).1).toNat ≥ 2^63 :=
+    fullDivN1NormV_v0_ge_pow63_of_high_zero b0 b1 b2 b3 hb1z hb2z hb3z hbnz
+  have h_shift_pos : 1 ≤ (fullDivN1Shift b0).toNat :=
+    fullDivN1Shift_toNat_pos_of_ne_zero hshift_nz
+  have h_shift_le : (fullDivN1Shift b0).toNat ≤ 63 := by
+    have hlt := fullDivN1Shift_toNat_lt_64 b0
+    omega
+  have huTop_lt_pow63 : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
+      2^63 := by
+    rw [fullDivN1NormU_unfold]
+    simp only []
+    rw [fullDivN1AntiShift_unfold]
+    exact u_top_lt_pow63_of_shift_nz a3 (fullDivN1Shift b0) h_shift_pos
+      h_shift_le
+  cases hbltu : bltu_3
+  · have htrial_false : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        (fullDivN1NormV b0 b1 b2 b3).1 = false := by
+      delta isTrialN1_j3 at hbltu_3
+      simpa [hbltu, fullDivN1NormU_unfold, fullDivN1NormV_unfold,
+        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3.symm
+    have hlt : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
+        ((fullDivN1NormV b0 b1 b2 b3).1).toNat := by omega
+    have hult : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        (fullDivN1NormV b0 b1 b2 b3).1 = true := (EvmWord.ult_iff).mpr hlt
+    rw [hult] at htrial_false
+    cases htrial_false
+  · simp only [if_true]
+    have hcall : BitVec.ult (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        (fullDivN1NormV b0 b1 b2 b3).1 = true := by
+      delta isTrialN1_j3 at hbltu_3
+      simpa [hbltu, fullDivN1NormU_unfold, fullDivN1NormV_unfold,
+        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3.symm
+    have huTop_lt_v0 : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
+        ((fullDivN1NormV b0 b1 b2 b3).1).toNat := (EvmWord.ult_iff).mp hcall
+    exact div128Quot_ge_q_true_normalized
+      (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+      (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+      (fullDivN1NormV b0 b1 b2 b3).1 hv0_ge huTop_lt_v0 huTop_lt_pow63
 
 theorem iterWithDoubleAddback_qout_ge_sub_two
     (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) (hq2 : 2 ≤ q.toNat) :
