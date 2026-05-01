@@ -242,6 +242,16 @@ def exp_prologue_code (base : Word) : CodeReq :=
           ((CodeReq.singleton (base + 16) (.SD .x2 .x0 16)).union
             (CodeReq.singleton (base + 20) (.SD .x2 .x0 24))))))
 
+theorem exp_prologue_code_eq_ofProg (base : Word) :
+    exp_prologue_code base = CodeReq.ofProg base exp_prologue := by
+  unfold exp_prologue_code exp_prologue ADDI SD single seq
+  change _ = CodeReq.ofProg base
+    [.ADDI .x9 .x0 256, .ADDI .x5 .x0 1, .SD .x2 .x5 0,
+     .SD .x2 .x0 8, .SD .x2 .x0 16, .SD .x2 .x0 24]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_singleton]
+  bv_addr
+
 theorem exp_prologue_spec_within
     (sp cOld tOld m0 m1 m2 m3 : Word) (base : Word) :
     cpsTripleWithin 6 base (base + 24) (exp_prologue_code base)
@@ -288,6 +298,18 @@ def exp_epilogue_code (base : Word) : CodeReq :=
               ((CodeReq.singleton (base + 24) (.LD .x5 .x2 24)).union
                 ((CodeReq.singleton (base + 28) (.SD .x12 .x5 56)).union
                   (CodeReq.singleton (base + 32) (.ADDI .x12 .x12 32)))))))))
+
+theorem exp_epilogue_code_eq_ofProg (base : Word) :
+    exp_epilogue_code base = CodeReq.ofProg base exp_epilogue := by
+  unfold exp_epilogue_code exp_epilogue LD SD ADDI single seq
+  change _ = CodeReq.ofProg base
+    [.LD .x5 .x2 0, .SD .x12 .x5 32, .LD .x5 .x2 8,
+     .SD .x12 .x5 40, .LD .x5 .x2 16, .SD .x12 .x5 48,
+     .LD .x5 .x2 24, .SD .x12 .x5 56, .ADDI .x12 .x12 32]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_singleton]
+  bv_addr
 
 theorem exp_epilogue_spec_within
     (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word) (base : Word) :
