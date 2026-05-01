@@ -248,6 +248,18 @@ theorem n1StepsTelescoped_of_conservation
   n1StepsTelescoped_of_nat_conservation v u r3 r2 r1 r0
     (n1StepsConservationNat_of_conservation v u r3 r2 r1 r0 hsteps)
 
+theorem n1StepsRemainderVal_eq_of_extended_eq_lt_pow256
+    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word) {target : Nat}
+    (h : n1StepRemainderVal r0 + n1StepsCarryVal r3 r2 r1 r0 = target)
+    (ht : target < 2^256) :
+    n1StepRemainderVal r0 = target := by
+  delta n1StepsCarryVal n1StepTopVal at h
+  norm_num at h ht ⊢
+  have hr : n1StepRemainderVal r0 < 2^256 := by
+    delta n1StepRemainderVal
+    exact EvmWord.val256_bound _ _ _ _
+  omega
+
 @[irreducible]
 def fullDivN1StepsConservation
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)

@@ -273,6 +273,17 @@ theorem mod_remainder_of_normalized {aVal bVal q_val r_norm : Nat} {s : Nat}
     r_norm / 2^s = aVal % bVal :=
   (norm_euclidean_correct s hmulsub hlt).2
 
+theorem normalized_remainder_eq_mod_mul_pow {aVal bVal q_val r_norm : Nat} (s : Nat)
+    (hmulsub : aVal * 2^s = q_val * (bVal * 2^s) + r_norm)
+    (hlt : r_norm < bVal * 2^s) :
+    r_norm = aVal % bVal * 2^s := by
+  have hcorr := norm_euclidean_correct s hmulsub hlt
+  have hq : q_val = aVal / bVal := hcorr.1
+  rw [hq] at hmulsub
+  have hdivmod := Nat.div_add_mod aVal bVal
+  nlinarith [show (bVal * (aVal / bVal) + aVal % bVal) * 2^s =
+      aVal * 2^s by rw [hdivmod]]
+
 /-- Bridge from val256-level quotient correctness to EvmWord.div.
     If val256(q_limbs) = val256(a_limbs) / val256(b_limbs), then
     fromLimbs(q_limbs) = EvmWord.div(fromLimbs(a_limbs), fromLimbs(b_limbs)). -/
