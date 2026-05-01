@@ -176,6 +176,46 @@ theorem exp_loop_back_length (backOff : BitVec 13) :
   show (ADDI .x9 .x9 (-1) ;; single (.BNE .x9 .x0 backOff)).length = 2
   rfl
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration loop block: exp_loop (#92 slice 3d, beads evm-asm-j2h5)
+-- ----------------------------------------------------------------------------
+--
+-- Structural composition of one full square-and-multiply iteration with its
+-- trailing counter-decrement + backward branch. This is the unit that the
+-- 256-iteration loop scaffold (`evm_exp`, slice evm-asm-ahaz) repeats and that
+-- the loop-composition spec (slice evm-asm-w5mk) reasons about.
+--
+-- Layout (8 instructions = 32 bytes per iteration):
+--
+--     exp_loop mulOff skipOff backOff :=
+--       exp_iter_body  mulOff skipOff ;;   -- 6 instr (bit test + sq + cond mul)
+--       exp_loop_back  backOff             -- 2 instr (ADDI x9 -1 ;; BNE)
+--
+-- The three offsets stay parameters — they are only pinned once `evm_exp` is
+-- assembled in slice evm-asm-ahaz and the absolute layout is final. No new
+-- specs in this slice; per-block specs (4a/4b/4c/4d) are already merged and
+-- the composed cpsTriple lands in slice 5 (evm-asm-w5mk).
+
+/-- One full iteration of the EXP square-and-multiply loop, including the
+    iteration-counter decrement and backward branch back to the top. 8
+    instructions.
+
+    `mulOff` is the signed JAL offset to `mul_callable` (shared between the
+    two JAL sites inside the iteration body). `skipOff` is the BEQ branch
+    offset that skips past the conditional-multiply JAL when the current
+    exponent bit is zero. `backOff` is the signed 13-bit BNE byte offset from
+    the BNE site back to the top of the iteration body (negative). All three
+    are pinned by the surrounding `evm_exp` layout in slice evm-asm-ahaz. -/
+def exp_loop (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : Program :=
+  exp_iter_body mulOff skipOff ;;
+  exp_loop_back backOff
+
+theorem exp_loop_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (exp_loop mulOff skipOff backOff).length = 8 := by
+  show (exp_iter_body mulOff skipOff ;; exp_loop_back backOff).length = 8
+  simp only [seq, Program.length_append,
+    exp_iter_body_length, exp_loop_back_length]
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
