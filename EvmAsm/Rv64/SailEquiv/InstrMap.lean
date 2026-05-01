@@ -77,6 +77,14 @@ def toSailInstr? : Instr → Option SailInstr
   | .SLLI rd rs1 sh   => some <| instruction.SHIFTIOP (sh, regToRegidx rs1, regToRegidx rd, sop.SLLI)
   | .SRLI rd rs1 sh   => some <| instruction.SHIFTIOP (sh, regToRegidx rs1, regToRegidx rd, sop.SRLI)
   | .SRAI rd rs1 sh   => some <| instruction.SHIFTIOP (sh, regToRegidx rs1, regToRegidx rd, sop.SRAI)
+  | .BEQ rs1 rs2 off  => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BEQ)
+  | .BNE rs1 rs2 off  => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BNE)
+  | .BLT rs1 rs2 off  => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BLT)
+  | .BGE rs1 rs2 off  => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BGE)
+  | .BLTU rs1 rs2 off => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BLTU)
+  | .BGEU rs1 rs2 off => some <| instruction.BTYPE (off, regToRegidx rs2, regToRegidx rs1, bop.BGEU)
+  | .JAL rd off       => some <| instruction.JAL (off, regToRegidx rd)
+  | .JALR rd rs1 off  => some <| instruction.JALR (off, regToRegidx rs1, regToRegidx rd)
   | _                 => none
 
 def rtypeToInstr? (rs2 rs1 rd : regidx) : rop → Option Instr
@@ -104,8 +112,19 @@ def shiftIToInstr? (shamt : BitVec 6) (rs1 rd : regidx) : sop → Option Instr
   | sop.SRLI => return .SRLI (← regidxToReg? rd) (← regidxToReg? rs1) shamt
   | sop.SRAI => return .SRAI (← regidxToReg? rd) (← regidxToReg? rs1) shamt
 
+def btypeToInstr? (off : BitVec 13) (rs2 rs1 : regidx) : bop → Option Instr
+  | bop.BEQ  => return .BEQ  (← regidxToReg? rs1) (← regidxToReg? rs2) off
+  | bop.BNE  => return .BNE  (← regidxToReg? rs1) (← regidxToReg? rs2) off
+  | bop.BLT  => return .BLT  (← regidxToReg? rs1) (← regidxToReg? rs2) off
+  | bop.BGE  => return .BGE  (← regidxToReg? rs1) (← regidxToReg? rs2) off
+  | bop.BLTU => return .BLTU (← regidxToReg? rs1) (← regidxToReg? rs2) off
+  | bop.BGEU => return .BGEU (← regidxToReg? rs1) (← regidxToReg? rs2) off
+
 /-- Map the supported SAIL ALU/immediate constructors back to the hand-written AST. -/
 def fromSailInstr? : SailInstr → Option Instr
+  | instruction.JAL (off, rd) => return .JAL (← regidxToReg? rd) off
+  | instruction.JALR (off, rs1, rd) => return .JALR (← regidxToReg? rd) (← regidxToReg? rs1) off
+  | instruction.BTYPE (off, rs2, rs1, op) => btypeToInstr? off rs2 rs1 op
   | instruction.RTYPE (rs2, rs1, rd, op) => rtypeToInstr? rs2 rs1 rd op
   | instruction.ITYPE (imm, rs1, rd, op) => itypeToInstr? imm rs1 rd op
   | instruction.SHIFTIOP (shamt, rs1, rd, op) => shiftIToInstr? shamt rs1 rd op
@@ -118,7 +137,7 @@ theorem fromSailInstr?_toSailInstr?_of_some
   all_goals
     cases h
     simp [fromSailInstr?, rtypeToInstr?, itypeToInstr?, shiftIToInstr?,
-      regidxToReg?_regToRegidx]
+      btypeToInstr?, regidxToReg?_regToRegidx]
 
 theorem fromSailInstr?_toSailInstr?_ADD (rd rs1 rs2 : Reg) :
     fromSailInstr? (instruction.RTYPE
@@ -139,5 +158,25 @@ theorem fromSailInstr?_toSailInstr?_SLLI
       (shamt, regToRegidx rs1, regToRegidx rd, sop.SLLI)) =
     some (.SLLI rd rs1 shamt) := by
   simp [fromSailInstr?, shiftIToInstr?, regidxToReg?_regToRegidx]
+
+theorem fromSailInstr?_toSailInstr?_BEQ
+    (rs1 rs2 : Reg) (off : BitVec 13) :
+    fromSailInstr? (instruction.BTYPE
+      (off, regToRegidx rs2, regToRegidx rs1, bop.BEQ)) =
+    some (.BEQ rs1 rs2 off) := by
+  simp [fromSailInstr?, btypeToInstr?, regidxToReg?_regToRegidx]
+
+theorem fromSailInstr?_toSailInstr?_JAL
+    (rd : Reg) (off : BitVec 21) :
+    fromSailInstr? (instruction.JAL (off, regToRegidx rd)) =
+    some (.JAL rd off) := by
+  simp [fromSailInstr?, regidxToReg?_regToRegidx]
+
+theorem fromSailInstr?_toSailInstr?_JALR
+    (rd rs1 : Reg) (off : BitVec 12) :
+    fromSailInstr? (instruction.JALR
+      (off, regToRegidx rs1, regToRegidx rd)) =
+    some (.JALR rd rs1 off) := by
+  simp [fromSailInstr?, regidxToReg?_regToRegidx]
 
 end EvmAsm.Rv64.SailEquiv
