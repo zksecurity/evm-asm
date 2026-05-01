@@ -121,6 +121,14 @@ so new concrete offsets are one line and every downstream proof picks them up.
 DivMod had 112 one-off address-equality lemmas before `divmod_addr` was
 introduced (issue #263).
 
+The canonical shape is `EvmAsm/Evm64/Exp/AddrNormAttr.lean` +
+`EvmAsm/Evm64/Exp/AddrNorm.lean` — copy that file pair as the starting
+template (empty atom file, `<opcode>_addr` macro tactic that defers to
+`rv64_addr` until opcode-specific atoms accrue). The full grindset family
+(`rv64_addr`, `divmod_addr`, `exp_addr`, `reg_ops`, `byte_alg`) is
+documented in `AGENTS.md` (Build Performance → Named grind/simp sets) and
+`TACTICS.md`. Use the most specific that matches the proof's domain.
+
 ### 2.6 Validity bundle
 
 If the opcode has any `isValidDwordAccess` side-conditions, bundle them into
