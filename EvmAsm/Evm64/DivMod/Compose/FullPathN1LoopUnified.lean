@@ -531,6 +531,38 @@ theorem fullDivN1NormV_v3_eq_zero_of_high_zero
   rw [fullDivN1NormV_unfold]
   simp [hb3z, hb2z]
 
+theorem fullDivN1NormV_v1_eq_zero_of_high_zero
+    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hshift_nz : fullDivN1Shift b0 ≠ 0) :
+    (fullDivN1NormV b0 b1 b2 b3).2.1 = 0 := by
+  rw [fullDivN1NormV_unfold]
+  simp only [hb1z]
+  rw [fullDivN1AntiShift_unfold]
+  rw [fullDivN1AntiShift_toNat_mod_eq hshift_nz]
+  rw [fullDivN1Shift_unfold]
+  have hz : b0 >>> (64 - (clzResult b0).1.toNat) = 0 :=
+    (ushiftRight_eq_zero_iff (64 - (clzResult b0).1.toNat)).mpr
+      (clzResult_fst_top_bound b0)
+  simp [hz]
+
+theorem fullDivN1NormV_v2_eq_zero_of_high_zero
+    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) :
+    (fullDivN1NormV b0 b1 b2 b3).2.2.1 = 0 := by
+  rw [fullDivN1NormV_unfold]
+  simp [hb1z, hb2z]
+
+theorem fullDivN1NormV_v0_ge_pow63_of_high_zero
+    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
+    ((fullDivN1NormV b0 b1 b2 b3).1).toNat ≥ 2^63 := by
+  have hb0nz : b0 ≠ 0 := by
+    intro hb0z
+    subst b0; subst b1; subst b2; subst b3
+    simp at hbnz
+  rw [fullDivN1NormV_unfold]
+  simp only []
+  rw [fullDivN1Shift_unfold]
+  exact b3_shifted_ge_pow63 hb0nz
+
 theorem fullDivN1NormV_or_ne_zero_of_high_zero
     (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
@@ -538,15 +570,8 @@ theorem fullDivN1NormV_or_ne_zero_of_high_zero
       (fullDivN1NormV b0 b1 b2 b3).2.1 |||
       (fullDivN1NormV b0 b1 b2 b3).2.2.1 |||
       (fullDivN1NormV b0 b1 b2 b3).2.2.2 ≠ 0 := by
-  have hb0nz : b0 ≠ 0 := by
-    intro hb0z
-    subst b0; subst b1; subst b2; subst b3
-    simp at hbnz
-  have hge : ((fullDivN1NormV b0 b1 b2 b3).1).toNat ≥ 2^63 := by
-    rw [fullDivN1NormV_unfold]
-    simp only []
-    rw [fullDivN1Shift_unfold]
-    exact b3_shifted_ge_pow63 hb0nz
+  have hge := fullDivN1NormV_v0_ge_pow63_of_high_zero b0 b1 b2 b3
+    hb1z hb2z hb3z hbnz
   have hfirst_ne : (fullDivN1NormV b0 b1 b2 b3).1 ≠ 0 := by
     intro hzero
     have hto : ((fullDivN1NormV b0 b1 b2 b3).1).toNat = 0 := by
