@@ -193,6 +193,72 @@ def mloadBytePackThreeCode
      ((CodeReq.singleton (base + 20) (.SLLI accReg accReg (BitVec.ofNat 6 8))).union
       (CodeReq.singleton (base + 24) (.OR accReg accReg byteReg))))
 
+/-- Bundled precondition for `mload_byte_pack_three_spec_within`: the
+    three roles `addrReg ↦ᵣ addrPtr`, `byteReg ↦ᵣ byteOld`,
+    `accReg ↦ᵣ accOld`, plus the source dword `dwordAddr ↦ₘ wordVal`.
+
+    Pulled into an `@[irreducible]` definition (per @pirapira review on
+    PR #1674) so the spec statement is not cluttered by a long chain of
+    `let`-bindings; downstream callers see a single named handle and
+    use `mloadBytePackThreePre_unfold` to expand on demand. -/
+@[irreducible]
+def mloadBytePackThreePre
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld wordVal dwordAddr : Word) : Assertion :=
+  (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+  (dwordAddr ↦ₘ wordVal)
+
+theorem mloadBytePackThreePre_unfold
+    {addrReg byteReg accReg : Reg}
+    {addrPtr accOld byteOld wordVal dwordAddr : Word} :
+    mloadBytePackThreePre addrReg byteReg accReg
+        addrPtr accOld byteOld wordVal dwordAddr =
+    ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+     (dwordAddr ↦ₘ wordVal)) := by
+  delta mloadBytePackThreePre; rfl
+
+/-- Bundled postcondition for `mload_byte_pack_three_spec_within`: after
+    the 7-instruction sequence, `byteReg` holds the last byte loaded
+    (`b2`) and `accReg` holds the big-endian fold
+    `((b0 <<< 8) ||| b1) <<< 8 ||| b2`.
+
+    Pulled into an `@[irreducible]` definition (per @pirapira review on
+    PR #1674) so the byte-extraction `let`-chain is hidden inside this
+    handle rather than spelled out in the spec statement. Use
+    `mloadBytePackThreePost_unfold` to expose the underlying atomic
+    `**`-shape when composing further. -/
+@[irreducible]
+def mloadBytePackThreePost
+    (addrReg byteReg accReg : Reg)
+    (addrPtr wordVal dwordAddr : Word)
+    (off0 off1 off2 : BitVec 12) : Assertion :=
+  let b0 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+  let b1 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+  let b2 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+  let accFinal := (((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2
+  (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b2) ** (accReg ↦ᵣ accFinal) **
+  (dwordAddr ↦ₘ wordVal)
+
+theorem mloadBytePackThreePost_unfold
+    {addrReg byteReg accReg : Reg}
+    {addrPtr wordVal dwordAddr : Word}
+    {off0 off1 off2 : BitVec 12} :
+    mloadBytePackThreePost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr off0 off1 off2 =
+    (let b0 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+     let b1 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+     let b2 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+     let accFinal := (((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2
+     (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b2) ** (accReg ↦ᵣ accFinal) **
+     (dwordAddr ↦ₘ wordVal)) := by
+  delta mloadBytePackThreePost; rfl
+
 /-- Three-byte big-endian byte-pack spec (7 instructions): seed `LBU`
     loading `b0`, then two `LBU + SLLI + OR` triples folding `b1` and
     `b2` in big-endian order, yielding
@@ -207,6 +273,12 @@ def mloadBytePackThreeCode
 
     All three bytes live in the same source `dwordAddr`; the caller
     supplies one `(alignToDword, isValidByteAccess)` pair per byte.
+
+    Pre/post are bundled as `@[irreducible]` definitions
+    (`mloadBytePackThreePre`, `mloadBytePackThreePost`) so the spec
+    statement does not carry a `let`-chain over `b0/b1/b2/accFinal`;
+    callers compose against the named handles and unfold via the
+    `_unfold` lemmas only when they need atomic access.
 
     NOTE: the beads task `evm-asm-svpr` titled this slice "5-instr
     3-byte pattern", but the natural composition (reusing the
@@ -225,21 +297,22 @@ theorem mload_byte_pack_three_spec_within
     (h_valid1 : isValidByteAccess (addrPtr + signExtend12 off1) = true)
     (h_align2 : alignToDword (addrPtr + signExtend12 off2) = dwordAddr)
     (h_valid2 : isValidByteAccess (addrPtr + signExtend12 off2) = true) :
-    let b0 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
-    let b1 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
-    let b2 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
-    let accAfter2 := (b0 <<< (8 : Nat)) ||| b1
-    let accFinal := (accAfter2 <<< (8 : Nat)) ||| b2
-    let cr := mloadBytePackThreeCode addrReg byteReg accReg off0 off1 off2 base
-    cpsTripleWithin 7 base (base + 28) cr
-      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
-       (dwordAddr ↦ₘ wordVal))
-      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b2) ** (accReg ↦ᵣ accFinal) **
-       (dwordAddr ↦ₘ wordVal)) := by
-  intro b0 b1 b2 accAfter2 accFinal cr
+    cpsTripleWithin 7 base (base + 28)
+      (mloadBytePackThreeCode addrReg byteReg accReg off0 off1 off2 base)
+      (mloadBytePackThreePre addrReg byteReg accReg
+        addrPtr accOld byteOld wordVal dwordAddr)
+      (mloadBytePackThreePost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr off0 off1 off2) := by
+  rw [mloadBytePackThreePre_unfold, mloadBytePackThreePost_unfold]
+  set b0 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+  set b1 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+  set b2 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+  set accAfter2 := (b0 <<< (8 : Nat)) ||| b1 with h_accAfter2
+  set accFinal := (accAfter2 <<< (8 : Nat)) ||| b2
+  set cr := mloadBytePackThreeCode addrReg byteReg accReg off0 off1 off2 base
   -- Step 1: 4-instruction 2-byte spec at `base`.
   have two := mload_byte_pack_two_spec_within addrReg byteReg accReg
     addrPtr accOld byteOld wordVal dwordAddr off0 off1 base
