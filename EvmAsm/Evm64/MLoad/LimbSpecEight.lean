@@ -307,6 +307,103 @@ def mloadOneLimbCode
       off0 off1 off2 off3 off4 off5 off6 off7 base).union
     (CodeReq.singleton (base + 88) (.SD .x12 accReg dstOff))
 
+/-- Bundled precondition for `mload_one_limb_spec_within`: the four
+    "byte-pack" atoms (`addrReg`, `byteReg`, `accReg`, source
+    `dwordAddr`) plus the SD-side atoms (`.x12 ↦ᵣ sp` and the
+    destination dword cell at `sp + signExtend12 dstOff`).
+
+    Pulled into an `@[irreducible]` definition (mirroring
+    `mloadBytePackEightPre`) so the spec statement is not cluttered by a
+    long chain of `let`-bindings; downstream callers see a single named
+    handle and use `mloadOneLimbPre_unfold` to expand on demand. -/
+@[irreducible]
+def mloadOneLimbPre
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld wordVal dwordAddr sp dstWordOld : Word)
+    (dstOff : BitVec 12) : Assertion :=
+  (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+  (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
+  ((sp + signExtend12 dstOff) ↦ₘ dstWordOld)
+
+theorem mloadOneLimbPre_unfold
+    {addrReg byteReg accReg : Reg}
+    {addrPtr accOld byteOld wordVal dwordAddr sp dstWordOld : Word}
+    {dstOff : BitVec 12} :
+    mloadOneLimbPre addrReg byteReg accReg
+        addrPtr accOld byteOld wordVal dwordAddr sp dstWordOld dstOff =
+    ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+     (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
+     ((sp + signExtend12 dstOff) ↦ₘ dstWordOld)) := by
+  delta mloadOneLimbPre; rfl
+
+/-- Bundled postcondition for `mload_one_limb_spec_within`: after the
+    23-instruction sequence, `byteReg` holds the last loaded byte
+    (`b7`), `accReg` holds the big-endian fold `accFinal`, and the
+    destination dword slot at `sp + signExtend12 dstOff` has been
+    overwritten with `accFinal`. The byte/`accFinal` `let`-bindings
+    mirror `mloadBytePackEightPost` so downstream proofs can `rfl` past
+    the unfold and reuse the same atoms. -/
+@[irreducible]
+def mloadOneLimbPost
+    (addrReg byteReg accReg : Reg)
+    (addrPtr wordVal dwordAddr sp : Word)
+    (off0 off1 off2 off3 off4 off5 off6 off7 dstOff : BitVec 12) : Assertion :=
+  let b0 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+  let b1 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+  let b2 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+  let b3 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off3))).zeroExtend 64
+  let b4 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off4))).zeroExtend 64
+  let b5 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off5))).zeroExtend 64
+  let b6 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off6))).zeroExtend 64
+  let b7 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off7))).zeroExtend 64
+  let accFinal :=
+    ((((((((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2) <<< (8 : Nat) ||| b3)
+        <<< (8 : Nat) ||| b4) <<< (8 : Nat) ||| b5) <<< (8 : Nat) ||| b6)
+        <<< (8 : Nat) ||| b7
+  (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b7) ** (accReg ↦ᵣ accFinal) **
+  (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
+  ((sp + signExtend12 dstOff) ↦ₘ accFinal)
+
+theorem mloadOneLimbPost_unfold
+    {addrReg byteReg accReg : Reg}
+    {addrPtr wordVal dwordAddr sp : Word}
+    {off0 off1 off2 off3 off4 off5 off6 off7 dstOff : BitVec 12} :
+    mloadOneLimbPost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr sp
+        off0 off1 off2 off3 off4 off5 off6 off7 dstOff =
+    (let b0 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+     let b1 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+     let b2 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+     let b3 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off3))).zeroExtend 64
+     let b4 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off4))).zeroExtend 64
+     let b5 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off5))).zeroExtend 64
+     let b6 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off6))).zeroExtend 64
+     let b7 :=
+       (extractByte wordVal (byteOffset (addrPtr + signExtend12 off7))).zeroExtend 64
+     let accFinal :=
+       ((((((((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2) <<< (8 : Nat) ||| b3)
+           <<< (8 : Nat) ||| b4) <<< (8 : Nat) ||| b5) <<< (8 : Nat) ||| b6)
+           <<< (8 : Nat) ||| b7
+     (addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b7) ** (accReg ↦ᵣ accFinal) **
+     (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
+     ((sp + signExtend12 dstOff) ↦ₘ accFinal)) := by
+  delta mloadOneLimbPost; rfl
+
 /-- One-limb MLOAD spec (23 instructions): pack eight big-endian bytes
     from EVM memory at `addrPtr + off0..off7` into `accReg` (via the
     seed-LBU + 7×(LBU+SLLI+OR) eight-byte rung), then `SD` the packed
@@ -349,36 +446,39 @@ theorem mload_one_limb_spec_within
     (h_valid6 : isValidByteAccess (addrPtr + signExtend12 off6) = true)
     (h_align7 : alignToDword (addrPtr + signExtend12 off7) = dwordAddr)
     (h_valid7 : isValidByteAccess (addrPtr + signExtend12 off7) = true) :
-    let b0 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
-    let b1 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
-    let b2 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
-    let b3 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off3))).zeroExtend 64
-    let b4 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off4))).zeroExtend 64
-    let b5 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off5))).zeroExtend 64
-    let b6 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off6))).zeroExtend 64
-    let b7 :=
-      (extractByte wordVal (byteOffset (addrPtr + signExtend12 off7))).zeroExtend 64
-    let accFinal :=
-      ((((((((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2) <<< (8 : Nat) ||| b3)
-          <<< (8 : Nat) ||| b4) <<< (8 : Nat) ||| b5) <<< (8 : Nat) ||| b6)
-          <<< (8 : Nat) ||| b7
     cpsTripleWithin 23 base (base + 92)
       (mloadOneLimbCode addrReg byteReg accReg
         off0 off1 off2 off3 off4 off5 off6 off7 dstOff base)
-      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
-       (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
-       ((sp + signExtend12 dstOff) ↦ₘ dstWordOld))
-      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b7) ** (accReg ↦ᵣ accFinal) **
-       (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
-       ((sp + signExtend12 dstOff) ↦ₘ accFinal)) := by
-  intro b0 b1 b2 b3 b4 b5 b6 b7 accFinal
+      (mloadOneLimbPre addrReg byteReg accReg
+        addrPtr accOld byteOld wordVal dwordAddr sp dstWordOld dstOff)
+      (mloadOneLimbPost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr sp
+        off0 off1 off2 off3 off4 off5 off6 off7 dstOff) := by
+  rw [mloadOneLimbPre_unfold, mloadOneLimbPost_unfold]
+  -- Zeta-reduce the `let`-bindings exposed by `mloadOneLimbPost_unfold`
+  -- so that subsequent `set` tactics can fold occurrences of `b0..b7`
+  -- and `accFinal` uniformly across the goal.
+  dsimp only []
+  set b0 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
+  set b1 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off1))).zeroExtend 64
+  set b2 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off2))).zeroExtend 64
+  set b3 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off3))).zeroExtend 64
+  set b4 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off4))).zeroExtend 64
+  set b5 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off5))).zeroExtend 64
+  set b6 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off6))).zeroExtend 64
+  set b7 :=
+    (extractByte wordVal (byteOffset (addrPtr + signExtend12 off7))).zeroExtend 64
+  set accFinal :=
+    ((((((((b0 <<< (8 : Nat)) ||| b1) <<< (8 : Nat)) ||| b2) <<< (8 : Nat) ||| b3)
+        <<< (8 : Nat) ||| b4) <<< (8 : Nat) ||| b5) <<< (8 : Nat) ||| b6)
+        <<< (8 : Nat) ||| b7
   unfold mloadOneLimbCode
   rw [show (23 : Nat) = 22 + 1 from rfl,
       show (base + 92 : Word) = base + 88 + 4 from by bv_omega]
