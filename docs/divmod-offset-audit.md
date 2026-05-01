@@ -125,7 +125,7 @@ structured as:
 | base + 452 | loopBodyOff + 4     | within trial-divide entry          |
 | base + 500 | loopBodyOff + 52    | `trialCallOff   = loopBodyOff + 52`|
 | base + 504 | loopBodyOff + 56    | within trial-call                  |
-| base + 512 | loopBodyOff + 64    | within trial-call                  |
+| base + 512 | loopBodyOff + 64    | `trialJalOff    = loopBodyOff + 64`|
 | base + 516 | loopBodyOff + 68    | **`divCallRetOff`** (slice 1, PR #1503) |
 | base + 536 | loopBodyOff + 88    | `mulsubOff      = loopBodyOff + 88`|
 | base + 580 | loopBodyOff + 132   | within mulsub                      |

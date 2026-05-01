@@ -1147,7 +1147,7 @@ theorem divK_save_trial_load_spec_within
     (fun h hq => by xperm_hyp hq)
     SJfTLe
 
-theorem lb_bltu_taken {base : Word} : (base + trialCallOff : Word) + signExtend13 (12 : BitVec 13) = base + 512 := by
+theorem lb_bltu_taken {base : Word} : (base + trialCallOff : Word) + signExtend13 (12 : BitVec 13) = base + trialJalOff := by
   rv64_addr
 theorem lb_bltu_ntaken {base : Word} : (base + trialCallOff : Word) + 4 = base + trialMaxOff := by bv_addr
 
