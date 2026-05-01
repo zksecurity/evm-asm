@@ -395,6 +395,38 @@ theorem fullDivN1ExtendedRemainder_lt_of_telescoped_floor_le
   have ⟨_, hr_lt⟩ := EvmWord.remainder_lt_of_ge_floor hb_pos heq hge'
   exact hr_lt
 
+theorem div_mul_pow_mul_pow_eq_div (a b s : Nat) :
+    (a * 2^s) / (b * 2^s) = a / b :=
+  Nat.mul_div_mul_right a b (by positivity : 0 < 2^s)
+
+theorem fullDivN1ExtendedRemainder_lt_of_telescoped_quotient_le
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb2z : b2 = 0) (hb3z : b3 = 0)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hshift_nz : fullDivN1Shift b0 ≠ 0)
+    (htel : fullDivN1StepsTelescoped bltu_3 bltu_2 bltu_1 bltu_0
+      a0 a1 a2 a3 b0 b1 b2 b3)
+    (hge : EvmWord.val256 a0 a1 a2 a3 / EvmWord.val256 b0 b1 b2 b3 ≤
+      (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat * (2^64)^3 +
+        (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat * (2^64)^2 +
+        (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat *
+          (2^64) +
+        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat) :
+    n1StepRemainderVal
+        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) +
+        n1StepsCarryVal
+          (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3)
+          (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) <
+      EvmWord.val256 b0 b1 b2 b3 * 2 ^ ((fullDivN1Shift b0).toNat % 64) := by
+  exact fullDivN1ExtendedRemainder_lt_of_telescoped_floor_le
+    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+    hb2z hb3z hbnz hshift_nz htel (by
+      rw [div_mul_pow_mul_pow_eq_div]
+      exact hge)
+
 theorem fullDivN1R3_step_conservation
     (bltu_3 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
     (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
