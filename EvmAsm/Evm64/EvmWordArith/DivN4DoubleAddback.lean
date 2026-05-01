@@ -195,6 +195,45 @@ theorem iterWithDoubleAddback_val256_conservation_of_carry2
     exact iterWithDoubleAddback_no_borrow_val256_conservation
       q v0 v1 v2 v3 u0 u1 u2 u3 uTop hb
 
+theorem iterWithDoubleAddback_val256_conservation_v3_zero_of_carry2
+    (q v0 v1 v2 u0 u1 u2 u3 uTop : Word)
+    (hbnz : v0 ||| v1 ||| v2 ||| (0 : Word) ≠ 0)
+    (hcarry2 : isAddbackCarry2Nz q v0 v1 v2 0 u0 u1 u2 u3 uTop) :
+    let out := iterWithDoubleAddback q v0 v1 v2 0 u0 u1 u2 u3 uTop
+    EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 =
+      out.1.toNat * EvmWord.val256 v0 v1 v2 0 +
+        EvmWord.val256 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 +
+        out.2.2.2.2.2.toNat * 2^256 := by
+  exact iterWithDoubleAddback_val256_conservation_of_carry2
+    q v0 v1 v2 0 u0 u1 u2 u3 uTop hbnz
+    (fun hb =>
+      mulsubN4_c3_eq_one_v3_zero q v0 v1 v2 u0 u1 u2 u3 (by
+        intro hc3_zero
+        rw [hc3_zero] at hb
+        bv_decide))
+    hcarry2
+
+theorem iterN1_val256_conservation_v3_zero_of_carry2
+    (bltu : Bool) (v0 v1 v2 u0 u1 u2 u3 uTop : Word)
+    (hbnz : v0 ||| v1 ||| v2 ||| (0 : Word) ≠ 0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 0) :
+    let out := iterN1 bltu v0 v1 v2 0 u0 u1 u2 u3 uTop
+    EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 =
+      out.1.toNat * EvmWord.val256 v0 v1 v2 0 +
+        EvmWord.val256 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 +
+        out.2.2.2.2.2.toNat * 2^256 := by
+  cases bltu
+  · simp only [iterN1_false]
+    unfold iterN1Max
+    exact iterWithDoubleAddback_val256_conservation_v3_zero_of_carry2
+      (signExtend12 4095) v0 v1 v2 u0 u1 u2 u3 uTop hbnz
+      (hcarry2 (signExtend12 4095) u0 u1 u2 u3 uTop)
+  · simp only [iterN1_true]
+    unfold iterN1Call
+    exact iterWithDoubleAddback_val256_conservation_v3_zero_of_carry2
+      (div128Quot u1 u0 v0) v0 v1 v2 u0 u1 u2 u3 uTop hbnz
+      (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 uTop)
+
 -- ============================================================================
 -- Double-addback correctness: n=4 max trial, c3=1, carry1=0, carry2=1
 -- ============================================================================
