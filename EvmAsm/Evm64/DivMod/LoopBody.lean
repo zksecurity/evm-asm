@@ -239,12 +239,12 @@ theorem divK_mulsub_4limbs_spec_within
     (fun h hq => by xperm_hyp hq)
     L0fL1eL2eL3e
 
-private theorem lb_ab0 {base : Word} : (base + addbackInitOff : Word) + 4 = base + 736 := by bv_addr
-private theorem lb_ab0_end {base : Word} : (base + 736 : Word) + 32 = base + 768 := by bv_addr
-private theorem lb_ab1_end {base : Word} : (base + 768 : Word) + 32 = base + 800 := by bv_addr
-private theorem lb_ab2_end {base : Word} : (base + 800 : Word) + 32 = base + 832 := by bv_addr
-private theorem lb_ab3_end {base : Word} : (base + 832 : Word) + 32 = base + 864 := by bv_addr
-private theorem lb_abf_end {base : Word} : (base + 864 : Word) + 16 = base + addbackBeqOff := by bv_addr
+private theorem lb_ab0 {base : Word} : (base + addbackInitOff : Word) + 4 = base + addbackLimb0Off := by bv_addr
+private theorem lb_ab0_end {base : Word} : (base + addbackLimb0Off : Word) + 32 = base + addbackLimb1Off := by bv_addr
+private theorem lb_ab1_end {base : Word} : (base + addbackLimb1Off : Word) + 32 = base + addbackLimb2Off := by bv_addr
+private theorem lb_ab2_end {base : Word} : (base + addbackLimb2Off : Word) + 32 = base + addbackLimb3Off := by bv_addr
+private theorem lb_ab3_end {base : Word} : (base + addbackLimb3Off : Word) + 32 = base + addbackFinalOff := by bv_addr
+private theorem lb_abf_end {base : Word} : (base + addbackFinalOff : Word) + 16 = base + addbackBeqOff := by bv_addr
 
 set_option maxRecDepth 4096 in
 /-- Full add-back correction: init carry + 4 limb corrections + final u[j+4] adjust + qHat--.
@@ -316,9 +316,9 @@ theorem divK_addback_full_spec_within
      ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
      ((uBase + signExtend12 4064) ↦ₘ u4))
     (by pcFree) Ie
-  -- Limb 0: instrs [72]-[79] at base+736
+  -- Limb 0: instrs [72]-[79] at base+addbackLimb0Off
   have A0 := divK_addback_limb_spec_within sp uBase (signExtend12 0 : Word)
-    v5_init v2_init v0 u0 32 0 (base + 736)
+    v5_init v2_init v0 u0 32 0 (base + addbackLimb0Off)
   rw [lb_ab0_end] at A0
   have A0e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 72 _ _ (by decide) (by bv_addr) (by decide))
@@ -332,9 +332,9 @@ theorem divK_addback_full_spec_within
     A0
   -- Compose init + limb 0
   seqFrame If A0e
-  -- Limb 1: instrs [80]-[87] at base+768
+  -- Limb 1: instrs [80]-[87] at base+addbackLimb1Off
   have A1 := divK_addback_limb_spec_within sp uBase aco0
-    ac2_0 aun0 v1 u1 40 4088 (base + 768)
+    ac2_0 aun0 v1 u1 40 4088 (base + addbackLimb1Off)
   rw [lb_ab1_end] at A1
   have A1e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 80 _ _ (by decide) (by bv_addr) (by decide))
@@ -347,9 +347,9 @@ theorem divK_addback_full_spec_within
       (lb_sub 87 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A1
   seqFrame IfA0e A1e
-  -- Limb 2: instrs [88]-[95] at base+800
+  -- Limb 2: instrs [88]-[95] at base+addbackLimb2Off
   have A2 := divK_addback_limb_spec_within sp uBase aco1
-    ac2_1 aun1 v2 u2 48 4080 (base + 800)
+    ac2_1 aun1 v2 u2 48 4080 (base + addbackLimb2Off)
   rw [lb_ab2_end] at A2
   have A2e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 88 _ _ (by decide) (by bv_addr) (by decide))
@@ -362,9 +362,9 @@ theorem divK_addback_full_spec_within
       (lb_sub 95 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A2
   seqFrame IfA0eA1e A2e
-  -- Limb 3: instrs [96]-[103] at base+832
+  -- Limb 3: instrs [96]-[103] at base+addbackLimb3Off
   have A3 := divK_addback_limb_spec_within sp uBase aco2
-    ac2_2 aun2 v3 u3 56 4072 (base + 832)
+    ac2_2 aun2 v3 u3 56 4072 (base + addbackLimb3Off)
   rw [lb_ab3_end] at A3
   have A3e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 96 _ _ (by decide) (by bv_addr) (by decide))
@@ -377,8 +377,8 @@ theorem divK_addback_full_spec_within
       (lb_sub 103 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A3
   seqFrame IfA0eA1eA2e A3e
-  -- Final: instrs [104]-[107] at base+864
-  have AF := divK_addback_final_spec_within uBase aco3 qHat ac2_3 u4 4064 (base + 864)
+  -- Final: instrs [104]-[107] at base+addbackFinalOff
+  have AF := divK_addback_final_spec_within uBase aco3 qHat ac2_3 u4 4064 (base + addbackFinalOff)
   rw [lb_abf_end] at AF
   have AFe := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub 104 _ _ (by decide) (by bv_addr) (by decide))
@@ -813,9 +813,9 @@ theorem divK_addback_full_v2_spec_within
      ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
      ((uBase + signExtend12 4064) ↦ₘ u4))
     (by pcFree) Ie
-  -- Limb 0: instrs [72]-[79] at base+736
+  -- Limb 0: instrs [72]-[79] at base+addbackLimb0Off
   have A0 := divK_addback_limb_spec_within sp uBase (signExtend12 0 : Word)
-    v5_init v2_init v0 u0 32 0 (base + 736)
+    v5_init v2_init v0 u0 32 0 (base + addbackLimb0Off)
   rw [lb_ab0_end] at A0
   have A0e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 72 _ _ (by decide) (by bv_addr) (by decide))
@@ -828,9 +828,9 @@ theorem divK_addback_full_v2_spec_within
       (lb_sub_v2 79 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A0
   seqFrame If A0e
-  -- Limb 1: instrs [80]-[87] at base+768
+  -- Limb 1: instrs [80]-[87] at base+addbackLimb1Off
   have A1 := divK_addback_limb_spec_within sp uBase aco0
-    ac2_0 aun0 v1 u1 40 4088 (base + 768)
+    ac2_0 aun0 v1 u1 40 4088 (base + addbackLimb1Off)
   rw [lb_ab1_end] at A1
   have A1e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 80 _ _ (by decide) (by bv_addr) (by decide))
@@ -843,9 +843,9 @@ theorem divK_addback_full_v2_spec_within
       (lb_sub_v2 87 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A1
   seqFrame IfA0e A1e
-  -- Limb 2: instrs [88]-[95] at base+800
+  -- Limb 2: instrs [88]-[95] at base+addbackLimb2Off
   have A2 := divK_addback_limb_spec_within sp uBase aco1
-    ac2_1 aun1 v2 u2 48 4080 (base + 800)
+    ac2_1 aun1 v2 u2 48 4080 (base + addbackLimb2Off)
   rw [lb_ab2_end] at A2
   have A2e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 88 _ _ (by decide) (by bv_addr) (by decide))
@@ -858,9 +858,9 @@ theorem divK_addback_full_v2_spec_within
       (lb_sub_v2 95 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A2
   seqFrame IfA0eA1e A2e
-  -- Limb 3: instrs [96]-[103] at base+832
+  -- Limb 3: instrs [96]-[103] at base+addbackLimb3Off
   have A3 := divK_addback_limb_spec_within sp uBase aco2
-    ac2_2 aun2 v3 u3 56 4072 (base + 832)
+    ac2_2 aun2 v3 u3 56 4072 (base + addbackLimb3Off)
   rw [lb_ab3_end] at A3
   have A3e := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 96 _ _ (by decide) (by bv_addr) (by decide))
@@ -873,8 +873,8 @@ theorem divK_addback_full_v2_spec_within
       (lb_sub_v2 103 _ _ (by decide) (by bv_addr) (by decide)))))))))
     A3
   seqFrame IfA0eA1eA2e A3e
-  -- Final: instrs [104]-[107] at base+864
-  have AF := divK_addback_final_spec_within uBase aco3 qHat ac2_3 u4 4064 (base + 864)
+  -- Final: instrs [104]-[107] at base+addbackFinalOff
+  have AF := divK_addback_final_spec_within uBase aco3 qHat ac2_3 u4 4064 (base + addbackFinalOff)
   rw [lb_abf_end] at AF
   have AFe := cpsTripleWithin_extend_code (hmono := by
     exact CodeReq.union_sub (lb_sub_v2 104 _ _ (by decide) (by bv_addr) (by decide))
