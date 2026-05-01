@@ -76,6 +76,14 @@ abbrev trialCallOff : Word :=  500
     Sub-offset relative to the loopBody block (= trialCallOff + 4
     = loopBodyOff + 56, i.e. 14 instructions into the loop body). -/
 abbrev trialMaxOff : Word :=  504
+/-- Offset of the trial-divide JAL-to-`divK_div128` call site inside `divK_loopBody`.
+    Entry PC of the BLTU-taken target / JAL instruction that calls into the
+    `divK_div128` long-division subroutine to compute the trial quotient.
+    Sub-offset relative to the loopBody block (= trialCallOff + 12
+    = trialMaxOff + 8 = loopBodyOff + 64, i.e. 16 instructions into the loop
+    body — past the trial-divide entry, immediately before the div128
+    call-return PC `divCallRetOff = loopBodyOff + 68`). -/
+abbrev trialJalOff : Word :=  512
 /-- Offset of the `divK_mulsub_correction` sub-block inside `divK_loopBody`.
     Entry PC of the mulsub-correction snippet that computes
     `u[j..j+n] := u[j..j+n] − q̂ · v` (the trial-quotient subtract step in
@@ -267,6 +275,13 @@ example : trialCallOff = loopBodyOff + 52 := by decide
     instruction past `trialCallOff`. -/
 example : trialMaxOff = trialCallOff + 4 := by decide
 example : trialMaxOff = loopBodyOff + 56 := by decide
+/-- trialJalOff = trialCallOff + 12 (= loopBodyOff + 64, sub-block offset within
+    `divK_loopBody`). The JAL-to-`divK_div128` call site sits 16 instructions
+    into the loop body, immediately before the div128 call-return PC
+    `divCallRetOff = loopBodyOff + 68`. -/
+example : trialJalOff = trialCallOff + 12 := by decide
+example : trialJalOff = loopBodyOff + 64 := by decide
+example : trialJalOff + 4 = div128CallRetOff := by decide
 /-- mulsubOff = loopBodyOff + 88 (sub-block offset within `divK_loopBody`).
     The `divK_mulsub_correction` snippet starts 22 instructions into the loop
     body, after the trial-divide entry (~13 instructions) and the div128 call

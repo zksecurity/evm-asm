@@ -34,9 +34,9 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
-private theorem lb_jal_target {base : Word} : (base + 512 : Word) + signExtend21 (560 : BitVec 21) = base + div128Off := by
+private theorem lb_jal_target {base : Word} : (base + trialJalOff : Word) + signExtend21 (560 : BitVec 21) = base + div128Off := by
   rv64_addr
-private theorem lb_jal_ret {base : Word} : (base + 512 : Word) + 4 = base + div128CallRetOff := by bv_addr
+private theorem lb_jal_ret {base : Word} : (base + trialJalOff : Word) + 4 = base + div128CallRetOff := by bv_addr
 
 /-- Trial call path: JAL x2 560 (instr [16]) + div128 subroutine.
     Entry: base+512, Exit: base+516, CodeReq: sharedDivModCode base.
@@ -46,7 +46,7 @@ theorem divK_trial_call_path_spec_within
     (v2Old v11Old : Word)
     (retMem dMem dloMem un0Mem : Word)
     (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff) :
-    cpsTripleWithin 52 (base + 512) (base + div128CallRetOff) (sharedDivModCode base)
+    cpsTripleWithin 52 (base + trialJalOff) (base + div128CallRetOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
        (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
@@ -91,7 +91,7 @@ theorem divK_trial_call_path_spec_within
   let x1Exit := if rhat2cHi = 0 then rhat2Un0 else rhat2cHi
   let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
   -- 1. JAL x2 560 at base+512: x2 ← base+516, PC → base+1072
-  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + 512) (by nofun)
+  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + trialJalOff) (by nofun)
   rw [lb_jal_target, lb_jal_ret] at J
   have Je := cpsTripleWithin_extend_code (hmono :=
     lb_sub 16 _ _ (by decide) (by bv_addr) (by decide)) J
@@ -125,7 +125,7 @@ theorem divK_trial_call_path_v2_spec_within
     (v2Old v11Old : Word)
     (retMem dMem dloMem un0Mem : Word)
     (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff) :
-    cpsTripleWithin 62 (base + 512) (base + div128CallRetOff) (sharedDivModCode_v2 base)
+    cpsTripleWithin 62 (base + trialJalOff) (base + div128CallRetOff) (sharedDivModCode_v2 base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
        (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
        (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
@@ -137,7 +137,7 @@ theorem divK_trial_call_path_v2_spec_within
       (div128V2SpecPost sp (base + div128CallRetOff) vTop uLo uHi) := by
   unfold div128V2SpecPost
   -- 1. JAL x2 560 at base+512.
-  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + 512) (by nofun)
+  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + trialJalOff) (by nofun)
   rw [lb_jal_target, lb_jal_ret] at J
   have Je := cpsTripleWithin_extend_code (hmono :=
     lb_sub_v2 16 _ _ (by decide) (by bv_addr) (by decide)) J
