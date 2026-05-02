@@ -228,6 +228,19 @@ theorem decodeAux_sixteen_byte_string
         rest) := by
   simp [decodeAux, takeBytes]
 
+/-- Seventeen-byte short string (prefix `0x91`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_seventeen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x91 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
 /-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
     with `b.toNat < 0x80` is non-canonical (the byte should have
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
@@ -568,6 +581,17 @@ theorem decode_sixteen_byte_string
         []) := by
   simp [decode, decodeAux, takeBytes]
 
+/-- `decode [0x91, b1..b17] = some (.bytes [b1..b17], [])` — the
+    canonical seventeen-byte short-string encoding. -/
+theorem decode_seventeen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte) :
+    decode [(0x91 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
 /-! ## encodeBytes characterizations -/
 
 /-- Empty byte string encodes to the single prefix `[0x80]`. -/
@@ -688,6 +712,14 @@ theorem encodeBytes_quindecuple (a b c d e f g h i j k l m n o : Byte) :
 theorem encodeBytes_sedecuple (a b c d e f g h i j k l m n o p : Byte) :
     encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] =
       [BitVec.ofNat 8 0x90, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] := by
+  simp [encodeBytes]
+
+/-- Seventeen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] =
+    [0x91, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q]`. -/
+theorem encodeBytes_septendecuple (a b c d e f g h i j k l m n o p q : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] =
+      [BitVec.ofNat 8 0x91, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] := by
   simp [encodeBytes]
 
 /-! ## Encoding produces non-empty output -/
