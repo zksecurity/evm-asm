@@ -618,6 +618,121 @@ theorem mload_select_expanded_size_merged_spec_within
     cpsBranchWithin_merge_same_cr hbr ht hf
 
 /--
+  Compute the rounded MLOAD access end, derive the expansion flag, then select
+  the post-access memory size.
+-/
+def mload_compute_select_expanded_size
+    (flagReg sizeReg roundReg endReg offReg : Reg) : Program :=
+  mload_compute_rounded_access_flag flagReg sizeReg roundReg endReg offReg ;;
+  mload_select_expanded_size sizeReg roundReg flagReg
+
+abbrev mload_compute_select_expanded_size_code
+    (flagReg sizeReg roundReg endReg offReg : Reg) (base : Word) : CodeReq :=
+  (mload_compute_rounded_access_flag_code flagReg sizeReg roundReg endReg offReg base).union
+    (mload_select_expanded_size_code sizeReg roundReg flagReg (base + 16))
+
+/--
+  Composed executable bridge for MLOAD memory expansion arithmetic through the
+  high-water select stage. The selected size is the rounded access end exactly
+  when the current memory size is below it.
+-/
+theorem mload_compute_select_expanded_size_spec_within
+    (flagReg sizeReg roundReg endReg offReg : Reg)
+    (offset endOld roundOld sizeBytesWord flagOld : Word) (base : Word)
+    (h_end_ne_x0 : endReg ≠ .x0)
+    (h_round_ne_x0 : roundReg ≠ .x0)
+    (h_flag_ne_x0 : flagReg ≠ .x0)
+    (h_size_ne_x0 : sizeReg ≠ .x0) :
+    cpsTripleWithin 6 base (base + 24)
+      (mload_compute_select_expanded_size_code flagReg sizeReg roundReg endReg offReg base)
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld) **
+       (roundReg ↦ᵣ roundOld) ** (sizeReg ↦ᵣ sizeBytesWord) **
+       (flagReg ↦ᵣ flagOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12))) **
+       (sizeReg ↦ᵣ
+        (if BitVec.ult sizeBytesWord
+          (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12))
+         then (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12))
+         else sizeBytesWord)) **
+       (flagReg ↦ᵣ
+        (if BitVec.ult sizeBytesWord
+          (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12))
+         then (1 : Word) else 0)) **
+       (.x0 ↦ᵣ (0 : Word))) := by
+  unfold mload_compute_select_expanded_size_code
+  let roundedAccessEnd :=
+    (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12))
+  let flagOut : Word :=
+    if BitVec.ult sizeBytesWord roundedAccessEnd then (1 : Word) else 0
+  have h_flag :=
+    mload_compute_rounded_access_flag_spec_within
+      flagReg sizeReg roundReg endReg offReg offset endOld roundOld
+      sizeBytesWord flagOld base h_end_ne_x0 h_round_ne_x0 h_flag_ne_x0
+  have h_select :=
+    mload_select_expanded_size_merged_spec_within
+      sizeReg roundReg flagReg sizeBytesWord roundedAccessEnd flagOut
+      (base + 16) h_size_ne_x0
+  rw [show (base + 16 : Word) + 8 = base + 24 from by bv_omega] at h_select
+  have hd :
+      (mload_compute_rounded_access_flag_code flagReg sizeReg roundReg endReg offReg base).Disjoint
+        (mload_select_expanded_size_code sizeReg roundReg flagReg (base + 16)) := by
+    unfold mload_compute_rounded_access_flag_code
+      mload_compute_rounded_access_end_code mload_compute_access_end_code
+      mload_round_access_end_code mload_compute_expand_flag_code
+      mload_select_expanded_size_code
+    exact CodeReq.Disjoint.union_left
+      (CodeReq.Disjoint.union_left
+        (CodeReq.Disjoint.union_right
+          (CodeReq.Disjoint.singleton (show base ≠ base + 16 by bv_omega))
+          (CodeReq.Disjoint.singleton (show base ≠ (base + 16) + 4 by bv_omega)))
+        (CodeReq.Disjoint.union_left
+          (CodeReq.Disjoint.union_right
+            (CodeReq.Disjoint.singleton (show base + 4 ≠ base + 16 by bv_omega))
+            (CodeReq.Disjoint.singleton (show base + 4 ≠ (base + 16) + 4 by bv_omega)))
+          (CodeReq.Disjoint.union_right
+            (CodeReq.Disjoint.singleton (show (base + 4) + 4 ≠ base + 16 by bv_omega))
+            (CodeReq.Disjoint.singleton (show (base + 4) + 4 ≠ (base + 16) + 4 by bv_omega)))))
+      (CodeReq.Disjoint.union_right
+        (CodeReq.Disjoint.singleton (show base + 12 ≠ base + 16 by bv_omega))
+        (CodeReq.Disjoint.singleton (show base + 12 ≠ (base + 16) + 4 by bv_omega)))
+  have h_flag_framed : cpsTripleWithin 4 base (base + 16)
+      (mload_compute_rounded_access_flag_code flagReg sizeReg roundReg endReg offReg base)
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld) **
+       (roundReg ↦ᵣ roundOld) ** (sizeReg ↦ᵣ sizeBytesWord) **
+       (flagReg ↦ᵣ flagOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ roundedAccessEnd) ** (sizeReg ↦ᵣ sizeBytesWord) **
+       (flagReg ↦ᵣ flagOut) ** (.x0 ↦ᵣ (0 : Word))) :=
+    cpsTripleWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (cpsTripleWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) h_flag)
+  have h_select_framed : cpsTripleWithin 2 (base + 16) (base + 24)
+      (mload_select_expanded_size_code sizeReg roundReg flagReg (base + 16))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ roundedAccessEnd) ** (sizeReg ↦ᵣ sizeBytesWord) **
+       (flagReg ↦ᵣ flagOut) ** (.x0 ↦ᵣ (0 : Word)))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ roundedAccessEnd) **
+       (sizeReg ↦ᵣ
+        (if BitVec.ult sizeBytesWord roundedAccessEnd then roundedAccessEnd
+         else sizeBytesWord)) **
+       (flagReg ↦ᵣ flagOut) ** (.x0 ↦ᵣ (0 : Word))) :=
+    cpsTripleWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by
+        by_cases h_ult : BitVec.ult sizeBytesWord roundedAccessEnd
+        · simp [flagOut, h_ult] at hp ⊢
+          xperm_hyp hp
+        · simp [flagOut, h_ult] at hp ⊢
+          xperm_hyp hp)
+      (cpsTripleWithin_frameL
+        ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32))) (by pcFree)
+        h_select)
+  exact cpsTripleWithin_seq hd h_flag_framed h_select_framed
+
+/--
   Store a precomputed 32-byte-access expanded high-water mark into the EVM
   memory-size cell. The arithmetic that computes
   `evmMemExpand sizeBytes offset 32` can be supplied by a caller or a later
