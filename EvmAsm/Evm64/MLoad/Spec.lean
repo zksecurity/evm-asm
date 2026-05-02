@@ -197,6 +197,148 @@ theorem mloadByteFromDwordPair_zeroExtend_eq_extractByte_high_of_byteOffset
   rw [mloadByteFromDwordPair_eq_extractByte_high_of_byteOffset
     loVal hiVal addr h_pos h_byte]
 
+/-- Initial byte-pack load for an unaligned limb when the byte is in the low dword. -/
+theorem mload_byte_pack_init_pair_low_spec_within
+    (addrReg accReg : Reg)
+    (addrPtr accOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_pos : start + i < 8)
+    (h_align : alignToDword (addrPtr + signExtend12 offset) = loAddr)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    cpsTripleWithin 1 base (base + 4)
+      (CodeReq.singleton base (.LBU accReg addrReg offset))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ byteZext) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  intro byteZext
+  have init := mload_byte_pack_init_spec_within addrReg accReg
+    addrPtr accOld loVal loAddr offset base h_acc_ne_x0 h_align h_valid
+  rw [show (extractByte loVal (byteOffset (addrPtr + signExtend12 offset))).zeroExtend 64 =
+      byteZext from by
+        rw [← mloadByteFromDwordPair_zeroExtend_eq_extractByte_low_of_byteOffset
+          loVal hiVal (addrPtr + signExtend12 offset) h_pos h_byte]] at init
+  have initF := cpsTripleWithin_frameR
+    (F := hiAddr ↦ₘ hiVal) (by pcFree) init
+  exact cpsTripleWithin_weaken
+    (fun h hp => by sep_perm hp)
+    (fun h hp => by sep_perm hp)
+    initF
+
+/-- Initial byte-pack load for an unaligned limb when the byte is in the high dword. -/
+theorem mload_byte_pack_init_pair_high_spec_within
+    (addrReg accReg : Reg)
+    (addrPtr accOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_pos : 8 ≤ start + i)
+    (h_align : alignToDword (addrPtr + signExtend12 offset) = hiAddr)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    cpsTripleWithin 1 base (base + 4)
+      (CodeReq.singleton base (.LBU accReg addrReg offset))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ byteZext) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  intro byteZext
+  have init := mload_byte_pack_init_spec_within addrReg accReg
+    addrPtr accOld hiVal hiAddr offset base h_acc_ne_x0 h_align h_valid
+  rw [show (extractByte hiVal (byteOffset (addrPtr + signExtend12 offset))).zeroExtend 64 =
+      byteZext from by
+        rw [← mloadByteFromDwordPair_zeroExtend_eq_extractByte_high_of_byteOffset
+          loVal hiVal (addrPtr + signExtend12 offset) h_pos h_byte]] at init
+  have initF := cpsTripleWithin_frameL
+    (F := loAddr ↦ₘ loVal) (by pcFree) init
+  exact cpsTripleWithin_weaken
+    (fun h hp => by sep_perm hp)
+    (fun h hp => by sep_perm hp)
+    initF
+
+/-- One byte-pack step for an unaligned limb when the byte is in the low dword. -/
+theorem mload_byte_pack_step_pair_low_spec_within
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0  : accReg  ≠ .x0)
+    (h_pos : start + i < 8)
+    (h_align : alignToDword (addrPtr + signExtend12 offset) = loAddr)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    let accNew := (accOld <<< (8 : Nat)) ||| byteZext
+    let cr :=
+      (CodeReq.singleton base (.LBU byteReg addrReg offset)).union
+        ((CodeReq.singleton (base + 4) (.SLLI accReg accReg (BitVec.ofNat 6 8))).union
+         (CodeReq.singleton (base + 8) (.OR accReg accReg byteReg)))
+    cpsTripleWithin 3 base (base + 12) cr
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteZext) ** (accReg ↦ᵣ accNew) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  intro byteZext accNew cr
+  have step := mload_byte_pack_step_spec_within addrReg byteReg accReg
+    addrPtr accOld byteOld loVal loAddr offset base
+    h_byte_ne_x0 h_acc_ne_x0 h_align h_valid
+  rw [show (extractByte loVal (byteOffset (addrPtr + signExtend12 offset))).zeroExtend 64 =
+      byteZext from by
+        rw [← mloadByteFromDwordPair_zeroExtend_eq_extractByte_low_of_byteOffset
+          loVal hiVal (addrPtr + signExtend12 offset) h_pos h_byte]] at step
+  have stepF := cpsTripleWithin_frameR
+    (F := hiAddr ↦ₘ hiVal) (by pcFree) step
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      sep_perm hp)
+    (fun h hp => by
+      dsimp only [accNew] at hp ⊢
+      sep_perm hp)
+    stepF
+
+/-- One byte-pack step for an unaligned limb when the byte is in the high dword. -/
+theorem mload_byte_pack_step_pair_high_spec_within
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld loVal hiVal loAddr hiAddr : Word)
+    (offset : BitVec 12) (start i : Nat) (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0  : accReg  ≠ .x0)
+    (h_pos : 8 ≤ start + i)
+    (h_align : alignToDword (addrPtr + signExtend12 offset) = hiAddr)
+    (h_byte : byteOffset (addrPtr + signExtend12 offset) = (start + i) % 8)
+    (h_valid : isValidByteAccess (addrPtr + signExtend12 offset) = true) :
+    let byteZext := (mloadByteFromDwordPair loVal hiVal start i).zeroExtend 64
+    let accNew := (accOld <<< (8 : Nat)) ||| byteZext
+    let cr :=
+      (CodeReq.singleton base (.LBU byteReg addrReg offset)).union
+        ((CodeReq.singleton (base + 4) (.SLLI accReg accReg (BitVec.ofNat 6 8))).union
+         (CodeReq.singleton (base + 8) (.OR accReg accReg byteReg)))
+    cpsTripleWithin 3 base (base + 12) cr
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteZext) ** (accReg ↦ᵣ accNew) **
+       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
+  intro byteZext accNew cr
+  have step := mload_byte_pack_step_spec_within addrReg byteReg accReg
+    addrPtr accOld byteOld hiVal hiAddr offset base
+    h_byte_ne_x0 h_acc_ne_x0 h_align h_valid
+  rw [show (extractByte hiVal (byteOffset (addrPtr + signExtend12 offset))).zeroExtend 64 =
+      byteZext from by
+        rw [← mloadByteFromDwordPair_zeroExtend_eq_extractByte_high_of_byteOffset
+          loVal hiVal (addrPtr + signExtend12 offset) h_pos h_byte]] at step
+  have stepF := cpsTripleWithin_frameL
+    (F := loAddr ↦ₘ loVal) (by pcFree) step
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      sep_perm hp)
+    (fun h hp => by
+      dsimp only [accNew] at hp ⊢
+      sep_perm hp)
+    stepF
+
 /--
   Pack eight consecutive bytes starting at byte offset `start` in `lo`,
   crossing into adjacent dword `hi` when needed.
