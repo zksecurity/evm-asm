@@ -90,4 +90,25 @@ theorem rlp_prefix_classify_byte_length (pfxReg outReg tmpReg : Reg) :
     4 * (rlp_prefix_classify pfxReg outReg tmpReg).length = 72 := by
   rw [rlp_prefix_classify_length]
 
+/--
+  Executable Phase-2 helper for short RLP payload lengths.
+
+  For short byte strings use `baseTag = 0x80`; for short lists use
+  `baseTag = 0xC0`. The result is `pfx - baseTag`, written to `outReg`.
+-/
+def rlp_prefix_short_payload_len (pfxReg outReg tmpReg : Reg) (baseTag : Word) : Program :=
+  LI tmpReg baseTag ;;
+  SUB outReg pfxReg tmpReg
+
+theorem rlp_prefix_short_payload_len_length
+    (pfxReg outReg tmpReg : Reg) (baseTag : Word) :
+    (rlp_prefix_short_payload_len pfxReg outReg tmpReg baseTag).length = 2 := by
+  unfold rlp_prefix_short_payload_len LI SUB seq single
+  rfl
+
+theorem rlp_prefix_short_payload_len_byte_length
+    (pfxReg outReg tmpReg : Reg) (baseTag : Word) :
+    4 * (rlp_prefix_short_payload_len pfxReg outReg tmpReg baseTag).length = 8 := by
+  rw [rlp_prefix_short_payload_len_length]
+
 end EvmAsm.EL.RLP
