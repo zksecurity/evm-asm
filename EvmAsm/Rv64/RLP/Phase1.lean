@@ -766,4 +766,86 @@ theorem rlp_phase1_acc_fact_classifyPrefix_longList
   norm_num at h
   omega
 
+/-- Weaken only the pure fact carried by an accumulated Phase 1 exit post. -/
+theorem rlp_phase1_exit_post_acc_pure_mono
+    {v5 : Word} {k : BitVec 12} {Acc Acc' : Prop}
+    (hAcc : Acc → Acc') :
+    ∀ h, rlp_phase1_exit_post_acc v5 k Acc h →
+      rlp_phase1_exit_post_acc v5 k Acc' h := by
+  intro h hp
+  rw [rlp_phase1_exit_post_acc_unfold] at hp ⊢
+  refine sepConj_mono_right (sepConj_mono_right (sepConj_mono_right ?_)) h hp
+  intro h' hp'
+  rcases hp' with ⟨hempty, h_acc⟩
+  exact ⟨hempty, hAcc h_acc⟩
+
+/-- Phase 1 classifier spec whose exits directly identify the pure RLP prefix
+    class for a zero-extended input prefix byte. This packages the executable
+    classifier's accumulated branch facts into the semantic `classifyPrefix`
+    view used by downstream decoder phases. -/
+theorem rlp_phase1_classifier_spec_class_within
+    (pfx : EvmAsm.EL.RLP.Byte) (v10 : Word) (base : Word)
+    (off1 off2 off3 off4 : BitVec 13)
+    (e1 e2 e3 e4 e5 : Word)
+    (he1 : (base + 4) + signExtend13 off1 = e1)
+    (he2 : (base + 12) + signExtend13 off2 = e2)
+    (he3 : (base + 20) + signExtend13 off3 = e3)
+    (he4 : (base + 28) + signExtend13 off4 = e4)
+    (he5 : base + 32 = e5) :
+    cpsNBranchWithin 8 base (rlp_phase1_classifier_code off1 off2 off3 off4 base)
+      ((.x5 ↦ᵣ BitVec.setWidth 64 pfx) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10))
+      [(e1, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0x80
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.singleByte)),
+       (e2, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xB8
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.shortBytes)),
+       (e3, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xC0
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.longBytes)),
+       (e4, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xF8
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.shortList)),
+       (e5, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xF8
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.longList))] := by
+  have hacc := rlp_phase1_classifier_spec_acc_within (BitVec.setWidth 64 pfx)
+    v10 base off1 off2 off3 off4 e1 e2 e3 e4 e5 he1 he2 he3 he4 he5
+  refine cpsNBranchWithin_weaken_posts hacc ?_
+  intro ex hex
+  simp only [List.mem_cons, List.not_mem_nil] at hex
+  rcases hex with h1 | h2 | h3 | h4 | h5
+  · cases h1
+    refine ⟨(e1, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0x80
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.singleByte)), by simp, rfl, ?_⟩
+    exact rlp_phase1_exit_post_acc_pure_mono
+      (fun h => rlp_phase1_acc_fact_classifyPrefix_singleByte pfx h)
+  · cases h2
+    refine ⟨(e2, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xB8
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.shortBytes)), by simp, rfl, ?_⟩
+    exact rlp_phase1_exit_post_acc_pure_mono
+      (fun h => rlp_phase1_acc_fact_classifyPrefix_shortBytes pfx h)
+  · cases h3
+    refine ⟨(e3, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xC0
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.longBytes)), by simp, rfl, ?_⟩
+    exact rlp_phase1_exit_post_acc_pure_mono
+      (fun h => rlp_phase1_acc_fact_classifyPrefix_longBytes pfx h)
+  · cases h4
+    refine ⟨(e4, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xF8
+              (EvmAsm.EL.RLP.classifyPrefix pfx =
+                EvmAsm.EL.RLP.PrefixClass.shortList)), by simp, rfl, ?_⟩
+    exact rlp_phase1_exit_post_acc_pure_mono
+      (fun h => rlp_phase1_acc_fact_classifyPrefix_shortList pfx h)
+  · rcases h5 with h5 | hfalse
+    · cases h5
+      refine ⟨(e5, rlp_phase1_exit_post_acc (BitVec.setWidth 64 pfx) 0xF8
+                (EvmAsm.EL.RLP.classifyPrefix pfx =
+                  EvmAsm.EL.RLP.PrefixClass.longList)), by simp, rfl, ?_⟩
+      exact rlp_phase1_exit_post_acc_pure_mono
+        (fun h => rlp_phase1_acc_fact_classifyPrefix_longList pfx h)
+    · cases hfalse
+
 end EvmAsm.Rv64.RLP
