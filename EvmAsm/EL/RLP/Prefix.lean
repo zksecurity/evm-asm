@@ -309,4 +309,27 @@ theorem rlpPrefixHeaderBytes_pos_iff_not_singleByte (pfx : Byte) :
   · intro h
     exact rlpPrefixHeaderBytes_pos_of_not_singleByte h
 
+theorem rlpPrefixHeaderBytes_eq_one_iff_shortClass (pfx : Byte) :
+    rlpPrefixHeaderBytes pfx = 1 ↔
+      classifyPrefix pfx = .shortBytes ∨ classifyPrefix pfx = .shortList := by
+  constructor
+  · intro h_one
+    cases h_class : classifyPrefix pfx
+    · rw [rlpPrefixHeaderBytes_eq_zero_of_singleByte h_class] at h_one
+      omega
+    · exact Or.inl rfl
+    · rw [rlpPrefixHeaderBytes_eq_longBytesHeader_of_longBytes h_class] at h_one
+      have h_len := rlpPrefixLongBytesLenOfLen_pos_of_class h_class
+      unfold rlpPrefixLongBytesHeaderBytes at h_one
+      omega
+    · exact Or.inr rfl
+    · rw [rlpPrefixHeaderBytes_eq_longListHeader_of_longList h_class] at h_one
+      have h_len := rlpPrefixLongListLenOfLen_pos_of_class h_class
+      unfold rlpPrefixLongListHeaderBytes at h_one
+      omega
+  · intro h_short
+    rcases h_short with h_shortBytes | h_shortList
+    · exact rlpPrefixHeaderBytes_eq_one_of_shortBytes h_shortBytes
+    · exact rlpPrefixHeaderBytes_eq_one_of_shortList h_shortList
+
 end EvmAsm.EL.RLP
