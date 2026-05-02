@@ -22,6 +22,17 @@ def mloadPrologueCode
   (CodeReq.singleton base (.LD offReg .x12 0)).union
     (CodeReq.singleton (base + 4) (.ADD addrReg memBaseReg offReg))
 
+theorem mloadPrologueCode_eq_ofProg
+    (offReg addrReg memBaseReg : Reg) (base : Word) :
+    mloadPrologueCode offReg addrReg memBaseReg base =
+      CodeReq.ofProg base
+        (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg) := by
+  unfold mloadPrologueCode LD ADD single seq
+  change _ =
+    CodeReq.ofProg base
+      [.LD offReg .x12 0, .ADD addrReg memBaseReg offReg]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_singleton]
+
 /--
   MLOAD prologue spec: load the low 64-bit offset limb from the EVM stack and
   compute the concrete byte address `memBase + offset` used by the four
@@ -48,6 +59,24 @@ theorem mload_prologue_spec_within
     (base + 4) h_addr_ne_x0
   rw [show (base + 4 : Word) + 4 = base + 8 from by bv_omega] at h_add
   runBlock h_ld h_add
+
+theorem mload_prologue_ofProg_spec_within
+    (offReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (CodeReq.ofProg base
+        (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+       (sp ↦ₘ offset)) := by
+  rw [← mloadPrologueCode_eq_ofProg]
+  exact mload_prologue_spec_within offReg addrReg memBaseReg
+    sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
 
 /-- The 256-bit value assembled by MLOAD from four little-endian output limbs. -/
 def mloadLoadedWord (l0 l1 l2 l3 : Word) : EvmWord :=
