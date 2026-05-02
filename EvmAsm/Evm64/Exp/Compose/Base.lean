@@ -254,6 +254,22 @@ theorem expOneIterCode_loop_back_sub {base : Word}
       bv_omega))
   exact CodeReq.union_mono_left
 
+theorem expOneIterCode_block_subs {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block) a = some i →
+      (expOneIterCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 12)
+      (EvmAsm.Evm64.exp_square_block mulOff)) a = some i →
+      (expOneIterCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 16)
+      (EvmAsm.Evm64.exp_cond_mul_block mulOff skipOff)) a = some i →
+      (expOneIterCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 24)
+      (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
+      (expOneIterCode base mulOff skipOff backOff) a = some i) := by
+  exact ⟨expOneIterCode_bit_test_sub, expOneIterCode_square_sub,
+    expOneIterCode_cond_mul_sub, expOneIterCode_loop_back_sub⟩
+
 /-- The concrete `CodeReq` for one full `exp_loop` program. -/
 abbrev expLoopCode (base : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : CodeReq :=
