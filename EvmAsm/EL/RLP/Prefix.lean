@@ -314,6 +314,19 @@ theorem rlpPrefixHeaderBytes_pos_iff_not_singleByte (pfx : Byte) :
   · intro h
     exact rlpPrefixHeaderBytes_pos_of_not_singleByte h
 
+theorem rlpPrefixHeaderBytes_pos_iff_ge_0x80 (pfx : Byte) :
+    0 < rlpPrefixHeaderBytes pfx ↔ 0x80 ≤ pfx.toNat := by
+  rw [rlpPrefixHeaderBytes_pos_iff_not_singleByte]
+  constructor
+  · intro h_not_single
+    have h_not_lt : ¬ pfx.toNat < 0x80 := by
+      intro h_lt
+      exact h_not_single ((classifyPrefix_singleByte_iff pfx).mpr h_lt)
+    omega
+  · intro h_ge h_single
+    have h_lt := (classifyPrefix_singleByte_iff pfx).mp h_single
+    omega
+
 theorem rlpPrefixHeaderBytes_eq_one_iff_shortClass (pfx : Byte) :
     rlpPrefixHeaderBytes pfx = 1 ↔
       classifyPrefix pfx = .shortBytes ∨ classifyPrefix pfx = .shortList := by
@@ -368,6 +381,47 @@ theorem rlpPrefixHeaderBytes_ge_two_iff_longClass (pfx : Byte) :
       have h_len := rlpPrefixLongListLenOfLen_pos_of_class h_longList
       unfold rlpPrefixLongListHeaderBytes
       omega
+
+theorem rlpPrefixHeaderBytes_ge_two_iff_long_ranges (pfx : Byte) :
+    2 ≤ rlpPrefixHeaderBytes pfx ↔
+      (0xB8 ≤ pfx.toNat ∧ pfx.toNat ≤ 0xBF) ∨
+        0xF8 ≤ pfx.toNat := by
+  rw [rlpPrefixHeaderBytes_ge_two_iff_longClass,
+    classifyPrefix_longBytes_iff, classifyPrefix_longList_iff]
+
+theorem rlpPrefixHeaderBytes_lt_two_iff_non_long_ranges (pfx : Byte) :
+    rlpPrefixHeaderBytes pfx < 2 ↔
+      pfx.toNat < 0xB8 ∨
+        (0xC0 ≤ pfx.toNat ∧ pfx.toNat ≤ 0xF7) := by
+  have h_bound : pfx.toNat < 256 := pfx.isLt
+  constructor
+  · intro h_lt
+    have h_not_long_ranges :
+        ¬ ((0xB8 ≤ pfx.toNat ∧ pfx.toNat ≤ 0xBF) ∨
+          0xF8 ≤ pfx.toNat) := by
+      intro h_long_ranges
+      have h_two :=
+        (rlpPrefixHeaderBytes_ge_two_iff_long_ranges pfx).mpr h_long_ranges
+      omega
+    by_cases h_low : pfx.toNat < 0xB8
+    · exact Or.inl h_low
+    · right
+      have h_not_long_bytes : ¬ (0xB8 ≤ pfx.toNat ∧ pfx.toNat ≤ 0xBF) := by
+        intro h_long_bytes
+        exact h_not_long_ranges (Or.inl h_long_bytes)
+      have h_not_long_list : ¬ 0xF8 ≤ pfx.toNat := by
+        intro h_long_list
+        exact h_not_long_ranges (Or.inr h_long_list)
+      omega
+  · intro h_non_long
+    by_cases h_lt : rlpPrefixHeaderBytes pfx < 2
+    · exact h_lt
+    have h_two : 2 ≤ rlpPrefixHeaderBytes pfx := by omega
+    have h_long_ranges :=
+      (rlpPrefixHeaderBytes_ge_two_iff_long_ranges pfx).mp h_two
+    rcases h_non_long with h_low | h_short_list
+    · rcases h_long_ranges with h_long_bytes | h_long_list <;> omega
+    · rcases h_long_ranges with h_long_bytes | h_long_list <;> omega
 
 theorem rlpPrefixHeaderBytes_eq_zero_or_one_or_ge_two (pfx : Byte) :
     rlpPrefixHeaderBytes pfx = 0 ∨
