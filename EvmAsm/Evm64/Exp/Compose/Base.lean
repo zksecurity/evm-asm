@@ -86,6 +86,17 @@ theorem exp_epilogue_byte_len :
     4 * (EvmAsm.Evm64.exp_epilogue).length = 36 := by
   exact EvmAsm.Evm64.exp_epilogue_byte_length
 
+/-- Byte offset of the EXP epilogue within the boundary-code layout. -/
+theorem exp_boundary_epilogue_byte_off :
+    4 * (EvmAsm.Evm64.exp_prologue).length = 24 := by
+  exact exp_prologue_byte_len
+
+/-- Byte offset immediately after the EXP prologue/epilogue boundary blocks. -/
+theorem exp_boundary_end_byte_off :
+    4 * ((EvmAsm.Evm64.exp_prologue).length +
+      (EvmAsm.Evm64.exp_epilogue).length) = 60 := by
+  simp only [exp_prologue_len, exp_epilogue_len]
+
 /-- First EXP composition code skeleton: the verified boundary blocks around
     the loop. The loop body and callable-multiply blocks will extend this
     union as their composed specs land. -/
@@ -112,6 +123,65 @@ theorem expBoundaryCode_epilogue_sub {base : Word} :
       simp only [exp_prologue_len, exp_epilogue_len] at hk1 hk2
       bv_omega))
   exact CodeReq.union_mono_left
+
+/-- Concrete prologue/epilogue boundary mini-program used by early EXP
+    composition slices before the full 256-iteration loop is wired. -/
+abbrev expBoundaryProgram : Program :=
+  EvmAsm.Evm64.exp_prologue ;; EvmAsm.Evm64.exp_epilogue
+
+theorem expBoundaryProgram_len : expBoundaryProgram.length = 15 := by
+  native_decide
+
+theorem expBoundaryProgram_byte_len : 4 * expBoundaryProgram.length = 60 := by
+  rw [expBoundaryProgram_len]
+
+/-- Concrete `CodeReq.ofProg` handle for `expBoundaryProgram`. -/
+abbrev expBoundaryProgramCode (base : Word) : CodeReq :=
+  CodeReq.ofProg base expBoundaryProgram
+
+theorem expBoundaryProgramCode_prologue_sub {base : Word} :
+    ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
+      (expBoundaryProgramCode base) a = some i := by
+  unfold expBoundaryProgramCode
+  exact CodeReq.ofProg_mono_sub base base expBoundaryProgram EvmAsm.Evm64.exp_prologue 0
+    (by bv_omega)
+    (by unfold expBoundaryProgram; simp only [EvmAsm.Rv64.seq]; rfl)
+    (by
+      rw [expBoundaryProgram_len, exp_prologue_len]
+      norm_num)
+    (by
+      rw [expBoundaryProgram_len]
+      norm_num)
+
+theorem expBoundaryProgramCode_epilogue_sub {base : Word} :
+    ∀ a i, (CodeReq.ofProg (base + 24) EvmAsm.Evm64.exp_epilogue) a = some i →
+      (expBoundaryProgramCode base) a = some i := by
+  unfold expBoundaryProgramCode
+  exact CodeReq.ofProg_mono_sub base (base + 24)
+    expBoundaryProgram EvmAsm.Evm64.exp_epilogue 6
+    (by bv_omega)
+    (by unfold expBoundaryProgram; simp only [EvmAsm.Rv64.seq]; rfl)
+    (by
+      rw [expBoundaryProgram_len, exp_epilogue_len])
+    (by
+      rw [expBoundaryProgram_len]
+      norm_num)
+
+theorem expBoundaryProgramCode_program_sub {base : Word} :
+    ∀ a i, (expBoundaryCode base) a = some i →
+      (expBoundaryProgramCode base) a = some i := by
+  unfold expBoundaryCode
+  simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil]
+  intro a i h
+  unfold CodeReq.union at h
+  split at h
+  · cases h
+    exact expBoundaryProgramCode_prologue_sub a _ (by assumption)
+  · rename_i hPrologue
+    split at h
+    · cases h
+      exact expBoundaryProgramCode_epilogue_sub a _ (by assumption)
+    · simp_all [CodeReq.empty]
 
 /-- CodeReq decomposition for one EXP loop iteration. This mirrors
     `exp_loop`: bit-test (3 instructions), square call (1), conditional
