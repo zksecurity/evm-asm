@@ -297,6 +297,93 @@ theorem evmMemExpand_ge_access (sizeBytes offset length : Nat) (hlen : length �
   rw [if_neg hlen]
   exact Nat.le_trans (roundUpTo32_le _) (Nat.le_max_right _ _)
 
+theorem evmMemExpand_access_byte_lt
+    (sizeBytes offset length byteIndex : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length) :
+    offset + byteIndex < evmMemExpand sizeBytes offset length := by
+  have h_end := evmMemExpand_ge_access sizeBytes offset length hlen
+  omega
+
+theorem evmMemExpand_access_byte_dword_end_le
+    (sizeBytes offset length byteIndex : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length) :
+    ((offset + byteIndex) / 8 + 1) * 8 ≤
+      evmMemExpand sizeBytes offset length := by
+  unfold evmMemExpand
+  rw [if_neg hlen]
+  have h_round : ((offset + byteIndex) / 8 + 1) * 8 ≤
+      roundUpTo32 (offset + length) := by
+    unfold roundUpTo32
+    omega
+  exact Nat.le_trans h_round (Nat.le_max_right _ _)
+
+theorem evmMemExpand_access_byte_dword_start_lt
+    (sizeBytes offset length byteIndex : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length) :
+    ((offset + byteIndex) / 8) * 8 <
+      evmMemExpand sizeBytes offset length := by
+  have h_byte_lt :=
+    evmMemExpand_access_byte_lt sizeBytes offset length byteIndex hlen h_byte
+  have h_start_le : ((offset + byteIndex) / 8) * 8 ≤ offset + byteIndex := by
+    exact Nat.div_mul_le_self (offset + byteIndex) 8
+  exact Nat.lt_of_le_of_lt h_start_le h_byte_lt
+
+theorem evmMemExpand_access_byte_dword_interval
+    (sizeBytes offset length byteIndex : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length) :
+    ((offset + byteIndex) / 8) * 8 <
+        evmMemExpand sizeBytes offset length ∧
+      ((offset + byteIndex) / 8 + 1) * 8 ≤
+        evmMemExpand sizeBytes offset length := by
+  exact ⟨
+    evmMemExpand_access_byte_dword_start_lt
+      sizeBytes offset length byteIndex hlen h_byte,
+    evmMemExpand_access_byte_dword_end_le
+      sizeBytes offset length byteIndex hlen h_byte⟩
+
+theorem evmMemExpand_access_byte_dword_byte_lt
+    (sizeBytes offset length byteIndex dwordByte : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length)
+    (h_dwordByte : dwordByte < 8) :
+    ((offset + byteIndex) / 8) * 8 + dwordByte <
+      evmMemExpand sizeBytes offset length := by
+  have h_interval :=
+    evmMemExpand_access_byte_dword_interval
+      sizeBytes offset length byteIndex hlen h_byte
+  have h_lt_end :
+      ((offset + byteIndex) / 8) * 8 + dwordByte <
+        ((offset + byteIndex) / 8 + 1) * 8 := by
+    omega
+  exact Nat.lt_of_lt_of_le h_lt_end h_interval.2
+
+theorem evmMemExpand_access_dword_interval
+    (sizeBytes offset length : Nat) (hlen : length ≠ 0) :
+    (offset / 8) * 8 < evmMemExpand sizeBytes offset length ∧
+      (offset / 8 + 1) * 8 ≤ evmMemExpand sizeBytes offset length := by
+  exact evmMemExpand_access_byte_dword_interval
+    sizeBytes offset length 0 hlen (Nat.pos_of_ne_zero hlen)
+
+theorem evmMemExpand_access_last_dword_interval
+    (sizeBytes offset length : Nat) (hlen : length ≠ 0) :
+    ((offset + (length - 1)) / 8) * 8 <
+        evmMemExpand sizeBytes offset length ∧
+      ((offset + (length - 1)) / 8 + 1) * 8 ≤
+        evmMemExpand sizeBytes offset length := by
+  have h_byte : length - 1 < length := by
+    have h_pos : 0 < length := Nat.pos_of_ne_zero hlen
+    omega
+  exact evmMemExpand_access_byte_dword_interval
+    sizeBytes offset length (length - 1) hlen h_byte
+
+theorem evmMemExpand_access_dword_span
+    (sizeBytes offset length : Nat) (hlen : length ≠ 0) :
+    (offset / 8) * 8 < evmMemExpand sizeBytes offset length ∧
+      ((offset + (length - 1)) / 8 + 1) * 8 ≤
+        evmMemExpand sizeBytes offset length := by
+  exact ⟨
+    (evmMemExpand_access_dword_interval sizeBytes offset length hlen).1,
+    (evmMemExpand_access_last_dword_interval sizeBytes offset length hlen).2⟩
+
 /-- MLOAD and MSTORE access one full 32-byte EVM word. -/
 theorem evmMemExpand_word_eq (sizeBytes offset : Nat) :
     evmMemExpand sizeBytes offset 32 =
