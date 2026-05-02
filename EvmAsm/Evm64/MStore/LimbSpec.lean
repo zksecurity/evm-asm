@@ -269,19 +269,19 @@ theorem mstore_byte_unpack_step_pair_high_spec_within
     (h_align : alignToDword (addrPtr + signExtend12 dstOff) = hiAddr)
     (h_valid : isValidByteAccess (addrPtr + signExtend12 dstOff) = true)
     (h_byte : byteOffset (addrPtr + signExtend12 dstOff) = (start + i) % 8) :
-    let shift := BitVec.ofNat 6 ((7 - k) * 8)
-    let byteVal := accVal >>> shift.toNat
     let storedByte := extractByte accVal (7 - k)
     let stored := MStore.mstoreDwordPairReplaceByte loVal hiVal start i storedByte
+    let shift := BitVec.ofNat 6 ((7 - k) * 8)
     let cr :=
       (CodeReq.singleton base (.SRLI byteReg accReg shift)).union
         (CodeReq.singleton (base + 4) (.SB addrReg byteReg dstOff))
     cpsTripleWithin 2 base (base + 8) cr
-      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ accVal) ** (byteReg ↦ᵣ byteOld) **
-       (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal))
-      ((addrReg ↦ᵣ addrPtr) ** (accReg ↦ᵣ accVal) ** (byteReg ↦ᵣ byteVal) **
-       (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2)) := by
-  intro shift byteVal storedByte stored cr
+      (mstoreBytePairStepPre addrReg byteReg accReg
+        addrPtr accVal byteOld loVal hiVal loAddr hiAddr)
+      (mstoreBytePairStepPost addrReg byteReg accReg
+        addrPtr accVal stored.1 stored.2 loAddr hiAddr k) := by
+  intro storedByte stored shift cr
+  rw [mstoreBytePairStepPre_unfold, mstoreBytePairStepPost_unfold]
   have step := mstore_byte_unpack_step_spec_within
     addrReg byteReg accReg addrPtr accVal byteOld hiVal hiAddr
     k dstOff base h_byte_ne_x0 h_k_lt h_align h_valid
@@ -331,17 +331,21 @@ theorem mstore_byte_unpack_step_pair_spec_within
         alignToDword (addrPtr + signExtend12 dstOff) = loAddr := by
       rw [MStore.mstoreDwordPairAddr_low loAddr hiAddr h_pos] at h_align
       exact h_align
-    exact mstore_byte_unpack_step_pair_low_spec_within
+    have h := mstore_byte_unpack_step_pair_low_spec_within
       addrReg byteReg accReg addrPtr accVal byteOld loVal hiVal loAddr hiAddr
       k start i dstOff base h_byte_ne_x0 h_k_lt h_pos h_align_low h_valid h_byte
+    simp only [mstoreBytePairStepPre_unfold, mstoreBytePairStepPost_unfold] at h
+    exact h
   · have h_high : 8 ≤ start + i := by omega
     have h_align_high :
         alignToDword (addrPtr + signExtend12 dstOff) = hiAddr := by
       rw [MStore.mstoreDwordPairAddr_high loAddr hiAddr h_high] at h_align
       exact h_align
-    exact mstore_byte_unpack_step_pair_high_spec_within
+    have h := mstore_byte_unpack_step_pair_high_spec_within
       addrReg byteReg accReg addrPtr accVal byteOld loVal hiVal loAddr hiAddr
       k start i dstOff base h_byte_ne_x0 h_k_lt h_high h_align_high h_valid h_byte
+    simp only [mstoreBytePairStepPre_unfold, mstoreBytePairStepPost_unfold] at h
+    exact h
 
 /-- Final dword-pair byte-unpack step for one MSTORE limb. At `k = 7`, the
     runtime `SRLI` is a zero shift, so the final value left in `byteReg` is the
