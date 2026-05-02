@@ -34,6 +34,7 @@
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.ExtractPure
 import EvmAsm.Rv64.Tactics.XSimp
+import EvmAsm.EL.RLP.Prefix
 
 namespace EvmAsm.Rv64.RLP
 
@@ -644,5 +645,125 @@ theorem rlp_phase1_classifier_spec_acc_within (v5 v10 : Word) (base : Word)
   -- the `@[irreducible]` exit-post def and rewrite the code requirement.
   simp only [rlp_phase1_exit_post_acc_unfold]
   exact hcr_eq ▸ n1
+
+/-- The RISC-V phase-1 first-exit predicate implies the pure RLP prefix class.
+    This is the bridge from the executable classifier's accumulated branch
+    facts to `EvmAsm.EL.RLP.classifyPrefix`. -/
+theorem rlp_phase1_acc_fact_classifyPrefix_singleByte
+    (pfx : EvmAsm.EL.RLP.Byte)
+    (h : BitVec.ult (BitVec.setWidth 64 pfx)
+      ((0 : Word) + signExtend12 0x80)) :
+    EvmAsm.EL.RLP.classifyPrefix pfx =
+      EvmAsm.EL.RLP.PrefixClass.singleByte := by
+  rw [EvmAsm.EL.RLP.classifyPrefix_singleByte_iff]
+  rw [BitVec.ult_eq_decide] at h
+  simp only [BitVec.toNat_setWidth] at h
+  have hmod : pfx.toNat % 18446744073709551616 = pfx.toNat :=
+    Nat.mod_eq_of_lt (by omega)
+  have hk80 : (((0 : Word) + signExtend12 0x80).toNat = 0x80) := by native_decide
+  rw [hmod, hk80] at h
+  norm_num at h
+  exact h
+
+/-- The RISC-V phase-1 second-exit accumulated predicate implies the pure
+    short-byte-string prefix class. -/
+theorem rlp_phase1_acc_fact_classifyPrefix_shortBytes
+    (pfx : EvmAsm.EL.RLP.Byte)
+    (h : ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0x80) ∧
+         BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xB8)) :
+    EvmAsm.EL.RLP.classifyPrefix pfx =
+      EvmAsm.EL.RLP.PrefixClass.shortBytes := by
+  rw [EvmAsm.EL.RLP.classifyPrefix_shortBytes_iff]
+  rw [BitVec.ult_eq_decide, BitVec.ult_eq_decide] at h
+  simp only [BitVec.toNat_setWidth] at h
+  have hmod : pfx.toNat % 18446744073709551616 = pfx.toNat :=
+    Nat.mod_eq_of_lt (by omega)
+  have hk80 : (((0 : Word) + signExtend12 0x80).toNat = 0x80) := by native_decide
+  have hkB8 : (((0 : Word) + signExtend12 0xB8).toNat = 0xB8) := by native_decide
+  rw [hmod, hk80, hkB8] at h
+  norm_num at h
+  omega
+
+/-- The RISC-V phase-1 third-exit accumulated predicate implies the pure
+    long-byte-string prefix class. -/
+theorem rlp_phase1_acc_fact_classifyPrefix_longBytes
+    (pfx : EvmAsm.EL.RLP.Byte)
+    (h : (¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0x80) ∧
+          ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xB8)) ∧
+         BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xC0)) :
+    EvmAsm.EL.RLP.classifyPrefix pfx =
+      EvmAsm.EL.RLP.PrefixClass.longBytes := by
+  rw [EvmAsm.EL.RLP.classifyPrefix_longBytes_iff]
+  rw [BitVec.ult_eq_decide, BitVec.ult_eq_decide, BitVec.ult_eq_decide] at h
+  simp only [BitVec.toNat_setWidth] at h
+  have hmod : pfx.toNat % 18446744073709551616 = pfx.toNat :=
+    Nat.mod_eq_of_lt (by omega)
+  have hk80 : (((0 : Word) + signExtend12 0x80).toNat = 0x80) := by native_decide
+  have hkB8 : (((0 : Word) + signExtend12 0xB8).toNat = 0xB8) := by native_decide
+  have hkC0 : (((0 : Word) + signExtend12 0xC0).toNat = 0xC0) := by native_decide
+  rw [hmod, hk80, hkB8, hkC0] at h
+  norm_num at h
+  omega
+
+/-- The RISC-V phase-1 fourth-exit accumulated predicate implies the pure
+    short-list prefix class. -/
+theorem rlp_phase1_acc_fact_classifyPrefix_shortList
+    (pfx : EvmAsm.EL.RLP.Byte)
+    (h : ((¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0x80) ∧
+           ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xB8)) ∧
+          ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xC0)) ∧
+         BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xF8)) :
+    EvmAsm.EL.RLP.classifyPrefix pfx =
+      EvmAsm.EL.RLP.PrefixClass.shortList := by
+  rw [EvmAsm.EL.RLP.classifyPrefix_shortList_iff]
+  rw [BitVec.ult_eq_decide, BitVec.ult_eq_decide, BitVec.ult_eq_decide,
+    BitVec.ult_eq_decide] at h
+  simp only [BitVec.toNat_setWidth] at h
+  have hmod : pfx.toNat % 18446744073709551616 = pfx.toNat :=
+    Nat.mod_eq_of_lt (by omega)
+  have hk80 : (((0 : Word) + signExtend12 0x80).toNat = 0x80) := by native_decide
+  have hkB8 : (((0 : Word) + signExtend12 0xB8).toNat = 0xB8) := by native_decide
+  have hkC0 : (((0 : Word) + signExtend12 0xC0).toNat = 0xC0) := by native_decide
+  have hkF8 : (((0 : Word) + signExtend12 0xF8).toNat = 0xF8) := by native_decide
+  rw [hmod, hk80, hkB8, hkC0, hkF8] at h
+  norm_num at h
+  omega
+
+/-- The RISC-V phase-1 fall-through accumulated predicate implies the pure
+    long-list prefix class. -/
+theorem rlp_phase1_acc_fact_classifyPrefix_longList
+    (pfx : EvmAsm.EL.RLP.Byte)
+    (h : ((¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0x80) ∧
+           ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xB8)) ∧
+          ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xC0)) ∧
+         ¬ BitVec.ult (BitVec.setWidth 64 pfx)
+            ((0 : Word) + signExtend12 0xF8)) :
+    EvmAsm.EL.RLP.classifyPrefix pfx =
+      EvmAsm.EL.RLP.PrefixClass.longList := by
+  rw [EvmAsm.EL.RLP.classifyPrefix_longList_iff]
+  rw [BitVec.ult_eq_decide, BitVec.ult_eq_decide, BitVec.ult_eq_decide,
+    BitVec.ult_eq_decide] at h
+  simp only [BitVec.toNat_setWidth] at h
+  have hmod : pfx.toNat % 18446744073709551616 = pfx.toNat :=
+    Nat.mod_eq_of_lt (by omega)
+  have hk80 : (((0 : Word) + signExtend12 0x80).toNat = 0x80) := by native_decide
+  have hkB8 : (((0 : Word) + signExtend12 0xB8).toNat = 0xB8) := by native_decide
+  have hkC0 : (((0 : Word) + signExtend12 0xC0).toNat = 0xC0) := by native_decide
+  have hkF8 : (((0 : Word) + signExtend12 0xF8).toNat = 0xF8) := by native_decide
+  rw [hmod, hk80, hkB8, hkC0, hkF8] at h
+  norm_num at h
+  omega
 
 end EvmAsm.Rv64.RLP
