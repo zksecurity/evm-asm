@@ -3319,4 +3319,45 @@ theorem evm_push32_length : (evm_push 32).length = 69 := by
 abbrev evm_push_code (base : Word) (n : Nat) : CodeReq :=
   CodeReq.ofProg base (evm_push n)
 
+/-- Concrete byte length of `evm_push n` when placed in RV64 code memory. -/
+theorem evm_push_byte_length (n : Nat) :
+    4 * (evm_push n).length = 20 + 8 * n := by
+  rw [evm_push_length]
+  omega
+
+/-- Byte offset of the PUSH stack-slot allocation instruction. -/
+theorem evm_push_alloc_byte_off : 4 * 0 = 0 := by
+  rfl
+
+/-- Byte offset of the first PUSH zero-fill store. -/
+theorem evm_push_zero_limb0_store_byte_off : 4 * 1 = 4 := by
+  rfl
+
+/-- Byte offset of the second PUSH zero-fill store. -/
+theorem evm_push_zero_limb1_store_byte_off : 4 * 2 = 8 := by
+  rfl
+
+/-- Byte offset of the third PUSH zero-fill store. -/
+theorem evm_push_zero_limb2_store_byte_off : 4 * 3 = 12 := by
+  rfl
+
+/-- Byte offset of the fourth PUSH zero-fill store. -/
+theorem evm_push_zero_limb3_store_byte_off : 4 * 4 = 16 := by
+  rfl
+
+/-- Byte offset of the LBU instruction for immediate byte `i`. -/
+theorem evm_push_byte_lbu_byte_off (i : Nat) :
+    4 * (5 + 2 * i) = 20 + 8 * i := by
+  omega
+
+/-- Byte offset of the SB instruction for immediate byte `i`. -/
+theorem evm_push_byte_store_byte_off (i : Nat) :
+    4 * (5 + 2 * i + 1) = 24 + 8 * i := by
+  omega
+
+/-- Byte offset immediately after the full PUSHn program. -/
+theorem evm_push_end_byte_off (n : Nat) :
+    4 * (5 + 2 * n) = 20 + 8 * n := by
+  omega
+
 end EvmAsm.Evm64
