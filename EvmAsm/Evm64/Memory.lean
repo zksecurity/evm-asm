@@ -339,6 +339,18 @@ theorem evmMemExpand_mstore8_byte_lt
   have h_end := evmMemExpand_mstore8_ge_end sizeBytes offset
   omega
 
+theorem evmMemExpand_mstore8_byte_dword_end_le
+    (sizeBytes offset byteIndex : Nat) (h_byte : byteIndex < 1) :
+    ((offset + byteIndex) / 8 + 1) * 8 ≤
+      evmMemExpand sizeBytes offset 1 := by
+  unfold evmMemExpand
+  rw [if_neg (by decide : (1 : Nat) ≠ 0)]
+  have h_round : ((offset + byteIndex) / 8 + 1) * 8 ≤
+      roundUpTo32 (offset + 1) := by
+    unfold roundUpTo32
+    omega
+  exact Nat.le_trans h_round (Nat.le_max_right _ _)
+
 theorem evmMemExpand_le_max_old_access_plus_31
     (sizeBytes offset length : Nat) :
     evmMemExpand sizeBytes offset length ≤ max sizeBytes (offset + length + 31) := by
