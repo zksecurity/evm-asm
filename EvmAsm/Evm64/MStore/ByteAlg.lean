@@ -76,4 +76,13 @@ theorem extractByte_shr_zero_descending (w : Word) (k : Nat) (h : k < 8) :
   have : 7 - k < 8 := by omega
   exact extractByte_shr_zero w (7 - k) this
 
+/--
+  Truncation form of `extractByte_shr_zero_descending`, matching the value
+  consumed by the runtime `SB` after `SRLI`.
+-/
+theorem extractByte_shr_zero_descending_truncate (w : Word) (k : Nat) (h : k < 8) :
+    (w >>> ((7 - k) * 8)).truncate 8 = extractByte w (7 - k) := by
+  rw [← extractByte_shr_zero_descending w k h]
+  rfl
+
 end EvmAsm.Evm64.MStore
