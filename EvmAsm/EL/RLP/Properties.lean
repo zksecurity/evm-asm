@@ -352,6 +352,23 @@ theorem decodeAux_twenty_four_byte_string
         rest) := by
   simp [decodeAux, takeBytes]
 
+/-- Twenty-five-byte short string (prefix `0x99`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twenty_five_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x99 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
+          b22 :: b23 :: b24 :: b25 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
 /-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
     with `b.toNat < 0x80` is non-canonical (the byte should have
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
@@ -790,6 +807,19 @@ theorem decode_twenty_four_byte_string
         []) := by
   simp [decode, decodeAux, takeBytes]
 
+/-- `decode [0x99, b1..b25] = some (.bytes [b1..b25], [])` — the
+    canonical twenty-five-byte short-string encoding. -/
+theorem decode_twenty_five_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 : Byte) :
+    decode [(0x99 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
 /-! ## encodeBytes characterizations -/
 
 /-- Empty byte string encodes to the single prefix `[0x80]`. -/
@@ -978,6 +1008,17 @@ theorem encodeBytes_quattuorviguple
     encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x] =
       [BitVec.ofNat 8 0x98, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
         u, v, w, x] := by
+  simp [encodeBytes]
+
+/-- Twenty-five-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y] =
+    [0x99, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y]`. -/
+theorem encodeBytes_quinviguple
+    (a b c d e f g h i j k l m n o p q r s t u v w x y : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y] =
+      [BitVec.ofNat 8 0x99, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
+        u, v, w, x, y] := by
   simp [encodeBytes]
 
 /-! ## Encoding produces non-empty output -/
