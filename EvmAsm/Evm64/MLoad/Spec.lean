@@ -8,6 +8,7 @@
 
   Authored by @pirapira; implemented by Codex.
 -/
+-- file-size-exception: temporary bridge-file overage; split tracked by evm-asm-qgjp.
 
 import EvmAsm.Evm64.MLoad.LimbSpecEight
 
@@ -1156,6 +1157,70 @@ theorem mloadPackedLimbFromDwordPair_eq_fold
     (mloadByteFromDwordPair lo hi start 5)
     (mloadByteFromDwordPair lo hi start 6)
     (mloadByteFromDwordPair lo hi start 7)
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 0. -/
+theorem mloadPackedLimbFromDwordPair_start0 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 0 =
+      mloadPackedLimb
+        (extractByte lo 0) (extractByte lo 1) (extractByte lo 2) (extractByte lo 3)
+        (extractByte lo 4) (extractByte lo 5) (extractByte lo 6) (extractByte lo 7) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 1. -/
+theorem mloadPackedLimbFromDwordPair_start1 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 1 =
+      mloadPackedLimb
+        (extractByte lo 1) (extractByte lo 2) (extractByte lo 3) (extractByte lo 4)
+        (extractByte lo 5) (extractByte lo 6) (extractByte lo 7) (extractByte hi 0) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 2. -/
+theorem mloadPackedLimbFromDwordPair_start2 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 2 =
+      mloadPackedLimb
+        (extractByte lo 2) (extractByte lo 3) (extractByte lo 4) (extractByte lo 5)
+        (extractByte lo 6) (extractByte lo 7) (extractByte hi 0) (extractByte hi 1) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 3. -/
+theorem mloadPackedLimbFromDwordPair_start3 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 3 =
+      mloadPackedLimb
+        (extractByte lo 3) (extractByte lo 4) (extractByte lo 5) (extractByte lo 6)
+        (extractByte lo 7) (extractByte hi 0) (extractByte hi 1) (extractByte hi 2) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 4. -/
+theorem mloadPackedLimbFromDwordPair_start4 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 4 =
+      mloadPackedLimb
+        (extractByte lo 4) (extractByte lo 5) (extractByte lo 6) (extractByte lo 7)
+        (extractByte hi 0) (extractByte hi 1) (extractByte hi 2) (extractByte hi 3) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 5. -/
+theorem mloadPackedLimbFromDwordPair_start5 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 5 =
+      mloadPackedLimb
+        (extractByte lo 5) (extractByte lo 6) (extractByte lo 7) (extractByte hi 0)
+        (extractByte hi 1) (extractByte hi 2) (extractByte hi 3) (extractByte hi 4) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 6. -/
+theorem mloadPackedLimbFromDwordPair_start6 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 6 =
+      mloadPackedLimb
+        (extractByte lo 6) (extractByte lo 7) (extractByte hi 0) (extractByte hi 1)
+        (extractByte hi 2) (extractByte hi 3) (extractByte hi 4) (extractByte hi 5) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
+
+/-- Concrete byte split for an 8-byte MLOAD window starting at dword byte 7. -/
+theorem mloadPackedLimbFromDwordPair_start7 (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 7 =
+      mloadPackedLimb
+        (extractByte lo 7) (extractByte hi 0) (extractByte hi 1) (extractByte hi 2)
+        (extractByte hi 3) (extractByte hi 4) (extractByte hi 5) (extractByte hi 6) := by
+  simp [mloadPackedLimbFromDwordPair, mloadByteFromDwordPair]
 
 /--
   Precondition shape for an unaligned one-limb MLOAD proof: the 8-byte
