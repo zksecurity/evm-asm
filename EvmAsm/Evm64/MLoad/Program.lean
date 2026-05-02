@@ -130,4 +130,35 @@ abbrev evm_mload_code
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) : CodeReq :=
   CodeReq.ofProg base (evm_mload offReg byteReg accReg addrReg memBaseReg)
 
+/-- Concrete instruction length of `mload_byte_pack`.
+
+    `k = 0` is the seed `LBU`; each successor adds one `LBU; SLLI; OR`
+    step, so the length is `1 + 3*k`. -/
+theorem mload_byte_pack_length
+    (addrReg byteReg accReg : Reg) (limbStart k : Nat) :
+    (mload_byte_pack addrReg byteReg accReg limbStart k).length = 1 + 3 * k := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+      simp [mload_byte_pack, LBU, SLLI, OR', single, seq,
+        Program.length_append, ih, Nat.mul_succ]
+      omega
+
+/-- Concrete instruction length of one MLOAD limb block. -/
+theorem mload_one_limb_length (addrReg byteReg accReg : Reg) (j : Nat) :
+    (mload_one_limb addrReg byteReg accReg j).length = 23 := by
+  simp [mload_one_limb, SD, single, seq, Program.length_append,
+    mload_byte_pack_length]
+
+/-- Concrete instruction length of `evm_mload`. -/
+theorem evm_mload_length (offReg byteReg accReg addrReg memBaseReg : Reg) :
+    (evm_mload offReg byteReg accReg addrReg memBaseReg).length = 94 := by
+  simp [evm_mload, LD, ADD, single, seq, Program.length_append,
+    mload_one_limb_length]
+
+/-- Concrete byte length of `evm_mload` when placed in RV64 code memory. -/
+theorem evm_mload_byte_length (offReg byteReg accReg addrReg memBaseReg : Reg) :
+    4 * (evm_mload offReg byteReg accReg addrReg memBaseReg).length = 376 := by
+  rw [evm_mload_length]
+
 end EvmAsm.Evm64
