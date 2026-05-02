@@ -191,4 +191,86 @@ theorem rlp_prefix_classify_singleByte_of_classifyPrefix_spec_within
   simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
 
+abbrev rlp_prefix_short_payload_len_code (base baseTag : Word) : CodeReq :=
+  CodeReq.ofProg base (rlp_prefix_short_payload_len .x5 .x10 .x6 baseTag)
+
+/--
+  Executable short-payload length helper.
+
+  The helper loads the class base tag (`0x80` for short byte strings or `0xC0`
+  for short lists) and subtracts it from the prefix byte already in `x5`.
+-/
+theorem rlp_prefix_short_payload_len_spec_within
+    (pfx outOld tmpOld baseTag : Word) (base : Word) :
+    cpsTripleWithin 2 base (base + 8) (rlp_prefix_short_payload_len_code base baseTag)
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx) ** (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ pfx - baseTag) ** (.x5 ↦ᵣ pfx) **
+        (.x6 ↦ᵣ baseTag) ** (.x0 ↦ᵣ (0 : Word))) := by
+  have I0 := li_spec_gen_within .x6 tmpOld baseTag base (by nofun)
+  have I0_ext := cpsTripleWithin_extend_code
+    (cr' := rlp_prefix_short_payload_len_code base baseTag) (fun a i h => by
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq =>
+        rw [beq_iff_eq] at heq
+        rw [heq]
+        simp only [Option.some.injEq] at h
+        subst h
+        show rlp_prefix_short_payload_len_code base baseTag base = some (.LI .x6 baseTag)
+        change CodeReq.ofProg base (.LI .x6 baseTag :: _) base = some (.LI .x6 baseTag)
+        rw [CodeReq.ofProg_cons]
+        simp [CodeReq.union, CodeReq.singleton]
+      · simp at h) I0
+  have I0_framed := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ pfx) ** (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+    (by pcFree) I0_ext
+  have I1 := sub_spec_gen_within .x10 .x5 .x6 pfx baseTag outOld (base + 4) (by nofun)
+  have I1_ext := cpsTripleWithin_extend_code
+    (cr' := rlp_prefix_short_payload_len_code base baseTag) (fun a i h => by
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq =>
+        rw [beq_iff_eq] at heq
+        rw [heq]
+        simp only [Option.some.injEq] at h
+        subst h
+        show rlp_prefix_short_payload_len_code base baseTag (base + 4) =
+          some (.SUB .x10 .x5 .x6)
+        exact CodeReq.ofProg_lookup base
+          (rlp_prefix_short_payload_len .x5 .x10 .x6 baseTag) 1
+          (by rw [rlp_prefix_short_payload_len_length]; norm_num)
+          (by rw [rlp_prefix_short_payload_len_length]; norm_num)
+      · simp at h) I1
+  have I1_framed := cpsTripleWithin_frameR
+    ((.x0 ↦ᵣ (0 : Word)))
+    (by pcFree) I1_ext
+  have ha_mid : (base : Word) + 4 = base + 4 := rfl
+  have ha_exit : (base + 4 : Word) + 4 = base + 8 := by bv_addr
+  rw [ha_mid] at I0_framed
+  rw [ha_exit] at I1_framed
+  have Hseq := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) I0_framed I1_framed
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    Hseq
+
+theorem rlp_prefix_short_bytes_payload_len_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word) :
+    cpsTripleWithin 2 base (base + 8) (rlp_prefix_short_payload_len_code base (0x80 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ pfx.zeroExtend 64 - (0x80 : Word)) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x6 ↦ᵣ (0x80 : Word)) ** (.x0 ↦ᵣ (0 : Word))) :=
+  rlp_prefix_short_payload_len_spec_within (pfx.zeroExtend 64) outOld tmpOld (0x80 : Word) base
+
+theorem rlp_prefix_short_list_payload_len_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word) :
+    cpsTripleWithin 2 base (base + 8) (rlp_prefix_short_payload_len_code base (0xC0 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ pfx.zeroExtend 64 - (0xC0 : Word)) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x6 ↦ᵣ (0xC0 : Word)) ** (.x0 ↦ᵣ (0 : Word))) :=
+  rlp_prefix_short_payload_len_spec_within (pfx.zeroExtend 64) outOld tmpOld (0xC0 : Word) base
+
 end EvmAsm.EL.RLP
