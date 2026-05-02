@@ -171,4 +171,24 @@ theorem rlp_prefix_classify_singleByte_spec_within
     exact cpsTripleWithin_seq_same_cr Hli I3_framed
   exact cpsTripleWithin_seq_same_cr Htaken Hsuffix
 
+/--
+  Pure-classifier bridge for the single-byte executable path.
+
+  This version takes the EL/RLP predicate `classifyPrefix pfx = .singleByte`
+  and feeds the zero-extended byte to the executable classifier spec.
+-/
+theorem rlp_prefix_classify_singleByte_of_classifyPrefix_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word)
+    (h_class : classifyPrefix pfx = .singleByte) :
+    cpsTripleWithin 4 base (base + 72) (rlp_prefix_classify_code base)
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ PrefixClass.toWord .singleByte) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x6 ↦ᵣ (0x80 : Word)) ** (.x0 ↦ᵣ (0 : Word))) := by
+  apply rlp_prefix_classify_singleByte_spec_within
+  have h_lt := (classifyPrefix_singleByte_iff pfx).mp h_class
+  rw [BitVec.zeroExtend_eq_setWidth, BitVec.ult]
+  simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
 end EvmAsm.EL.RLP
