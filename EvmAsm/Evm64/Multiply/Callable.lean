@@ -41,7 +41,13 @@ open EvmAsm.Rv64
 def mul_callable : Program := evm_mul ;; cc_ret
 
 /-- 63 (`evm_mul`) + 1 (`cc_ret`) = 64 instructions. -/
-example : mul_callable.length = 64 := by decide
+theorem mul_callable_length : mul_callable.length = 64 := by decide
+
+theorem mul_callable_ret_byte_off : 4 * (evm_mul).length = 252 := by
+  native_decide
+
+theorem mul_callable_byte_length : 4 * mul_callable.length = 256 := by
+  rw [mul_callable_length]
 
 -- ============================================================================
 -- Code-region helper
