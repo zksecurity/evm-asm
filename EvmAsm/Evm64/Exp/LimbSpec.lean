@@ -436,4 +436,81 @@ theorem exp_epilogue_ofProg_spec_within
   rw [← exp_epilogue_code_eq_ofProg]
   exact exp_epilogue_spec_within sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 base
 
+/-- The word assembled from the four accumulator limbs copied out by
+    `exp_epilogue`. Limbs are little-endian, matching `evmWordIs`. -/
+def expResultWord (r0 r1 r2 r3 : Word) : EvmWord :=
+  EvmWord.fromLimbs (fun
+    | ⟨0, _⟩ => r0
+    | ⟨1, _⟩ => r1
+    | ⟨2, _⟩ => r2
+    | ⟨3, _⟩ => r3)
+
+theorem expResultWord_getLimbN_0 (r0 r1 r2 r3 : Word) :
+    (expResultWord r0 r1 r2 r3).getLimbN 0 = r0 := by
+  unfold expResultWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem expResultWord_getLimbN_1 (r0 r1 r2 r3 : Word) :
+    (expResultWord r0 r1 r2 r3).getLimbN 1 = r1 := by
+  unfold expResultWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem expResultWord_getLimbN_2 (r0 r1 r2 r3 : Word) :
+    (expResultWord r0 r1 r2 r3).getLimbN 2 = r2 := by
+  unfold expResultWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem expResultWord_getLimbN_3 (r0 r1 r2 r3 : Word) :
+    (expResultWord r0 r1 r2 r3).getLimbN 3 = r3 := by
+  unfold expResultWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+/-- The four limbs written by `exp_epilogue` fold to the assembled EXP result
+    word in the output stack slot at `evmSp + 32`. -/
+theorem exp_epilogue_result_word
+    (evmSp r0 r1 r2 r3 : Word) :
+    (((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ r0) **
+      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ r1) **
+      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ r2) **
+      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ r3)) =
+    evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3) := by
+  have h32 : (evmSp + signExtend12 (32 : BitVec 12) : Word) = evmSp + 32 := by
+    unfold signExtend12; bv_decide
+  have h40 : (evmSp + signExtend12 (40 : BitVec 12) : Word) = evmSp + 40 := by
+    unfold signExtend12; bv_decide
+  have h48 : (evmSp + signExtend12 (48 : BitVec 12) : Word) = evmSp + 48 := by
+    unfold signExtend12; bv_decide
+  have h56 : (evmSp + signExtend12 (56 : BitVec 12) : Word) = evmSp + 56 := by
+    unfold signExtend12; bv_decide
+  rw [h32, h40, h48, h56]
+  exact (evmWordIs_sp32_limbs_eq evmSp (expResultWord r0 r1 r2 r3) r0 r1 r2 r3
+    (expResultWord_getLimbN_0 r0 r1 r2 r3)
+    (expResultWord_getLimbN_1 r0 r1 r2 r3)
+    (expResultWord_getLimbN_2 r0 r1 r2 r3)
+    (expResultWord_getLimbN_3 r0 r1 r2 r3)).symm
+
+/-- Right-associated variant of `exp_epilogue_result_word` for composition
+    postconditions with a framed remainder. -/
+theorem exp_epilogue_result_word_right
+    (evmSp r0 r1 r2 r3 : Word) (Q : Assertion) :
+    (((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ r0) **
+      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ r1) **
+      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ r2) **
+      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ r3) ** Q) =
+    (evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3) ** Q) := by
+  have h32 : (evmSp + signExtend12 (32 : BitVec 12) : Word) = evmSp + 32 := by
+    unfold signExtend12; bv_decide
+  have h40 : (evmSp + signExtend12 (40 : BitVec 12) : Word) = evmSp + 40 := by
+    unfold signExtend12; bv_decide
+  have h48 : (evmSp + signExtend12 (48 : BitVec 12) : Word) = evmSp + 48 := by
+    unfold signExtend12; bv_decide
+  have h56 : (evmSp + signExtend12 (56 : BitVec 12) : Word) = evmSp + 56 := by
+    unfold signExtend12; bv_decide
+  rw [h32, h40, h48, h56]
+  exact evmWordIs_sp32_limbs_eq_right evmSp (expResultWord r0 r1 r2 r3) r0 r1 r2 r3 Q
+    (expResultWord_getLimbN_0 r0 r1 r2 r3)
+    (expResultWord_getLimbN_1 r0 r1 r2 r3)
+    (expResultWord_getLimbN_2 r0 r1 r2 r3)
+    (expResultWord_getLimbN_3 r0 r1 r2 r3)
+
 end EvmAsm.Evm64
