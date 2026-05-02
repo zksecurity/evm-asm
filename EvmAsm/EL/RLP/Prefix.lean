@@ -43,6 +43,16 @@ def rlpPrefixShortListPayloadLen (pfx : Byte) : Nat :=
 def rlpPrefixLongListLenOfLen (pfx : Byte) : Nat :=
   pfx.toNat - 0xF7
 
+/-- Total header bytes before payload for a long string prefix. This includes
+    the prefix byte plus the encoded length bytes. -/
+def rlpPrefixLongBytesHeaderBytes (pfx : Byte) : Nat :=
+  1 + rlpPrefixLongBytesLenOfLen pfx
+
+/-- Total header bytes before payload for a long list prefix. This includes
+    the prefix byte plus the encoded length bytes. -/
+def rlpPrefixLongListHeaderBytes (pfx : Byte) : Nat :=
+  1 + rlpPrefixLongListLenOfLen pfx
+
 theorem classifyPrefix_singleByte_iff (pfx : Byte) :
     classifyPrefix pfx = .singleByte ↔ pfx.toNat < 0x80 := by
   unfold classifyPrefix
@@ -154,6 +164,42 @@ theorem rlpPrefixLongListLenOfLen_le_8_of_class {pfx : Byte}
   rw [classifyPrefix_longList_iff] at h
   unfold rlpPrefixLongListLenOfLen
   have h_bound : pfx.toNat < 256 := pfx.isLt
+  omega
+
+theorem rlpPrefixLongBytesHeaderBytes_pos (pfx : Byte) :
+    0 < rlpPrefixLongBytesHeaderBytes pfx := by
+  unfold rlpPrefixLongBytesHeaderBytes
+  omega
+
+theorem rlpPrefixLongBytesHeaderBytes_le_9_of_class {pfx : Byte}
+    (h : classifyPrefix pfx = .longBytes) :
+    rlpPrefixLongBytesHeaderBytes pfx ≤ 9 := by
+  unfold rlpPrefixLongBytesHeaderBytes
+  have h_len := rlpPrefixLongBytesLenOfLen_le_8_of_class h
+  omega
+
+theorem rlpPrefixLongBytesHeaderBytes_eq_lenOfLen_add_one (pfx : Byte) :
+    rlpPrefixLongBytesHeaderBytes pfx =
+      rlpPrefixLongBytesLenOfLen pfx + 1 := by
+  unfold rlpPrefixLongBytesHeaderBytes
+  omega
+
+theorem rlpPrefixLongListHeaderBytes_pos (pfx : Byte) :
+    0 < rlpPrefixLongListHeaderBytes pfx := by
+  unfold rlpPrefixLongListHeaderBytes
+  omega
+
+theorem rlpPrefixLongListHeaderBytes_le_9_of_class {pfx : Byte}
+    (h : classifyPrefix pfx = .longList) :
+    rlpPrefixLongListHeaderBytes pfx ≤ 9 := by
+  unfold rlpPrefixLongListHeaderBytes
+  have h_len := rlpPrefixLongListLenOfLen_le_8_of_class h
+  omega
+
+theorem rlpPrefixLongListHeaderBytes_eq_lenOfLen_add_one (pfx : Byte) :
+    rlpPrefixLongListHeaderBytes pfx =
+      rlpPrefixLongListLenOfLen pfx + 1 := by
+  unfold rlpPrefixLongListHeaderBytes
   omega
 
 end EvmAsm.EL.RLP
