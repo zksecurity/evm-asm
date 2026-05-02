@@ -125,4 +125,35 @@ theorem mstoreDwordPairReplaceByte_high
       (lo, replaceByte hi ((start + i) % 8) b) := by
   simp [mstoreDwordPairReplaceByte, show ¬ start + i < 8 from by omega]
 
+/--
+  Apply the eight byte writes performed by one MSTORE limb to an adjacent
+  low/high destination dword pair. Byte `i` of the destination window
+  receives `extractByte limb (7 - i)`, matching the big-endian MSTORE
+  program order.
+-/
+def mstoreDwordPairStoreLimb
+    (lo hi limb : Word) (start : Nat) : Word × Word :=
+  let p0 := mstoreDwordPairReplaceByte lo hi start 0 (extractByte limb 7)
+  let p1 := mstoreDwordPairReplaceByte p0.1 p0.2 start 1 (extractByte limb 6)
+  let p2 := mstoreDwordPairReplaceByte p1.1 p1.2 start 2 (extractByte limb 5)
+  let p3 := mstoreDwordPairReplaceByte p2.1 p2.2 start 3 (extractByte limb 4)
+  let p4 := mstoreDwordPairReplaceByte p3.1 p3.2 start 4 (extractByte limb 3)
+  let p5 := mstoreDwordPairReplaceByte p4.1 p4.2 start 5 (extractByte limb 2)
+  let p6 := mstoreDwordPairReplaceByte p5.1 p5.2 start 6 (extractByte limb 1)
+  mstoreDwordPairReplaceByte p6.1 p6.2 start 7 (extractByte limb 0)
+
+theorem mstoreDwordPairStoreLimb_unfold
+    (lo hi limb : Word) (start : Nat) :
+    mstoreDwordPairStoreLimb lo hi limb start =
+      (let p0 := mstoreDwordPairReplaceByte lo hi start 0 (extractByte limb 7)
+       let p1 := mstoreDwordPairReplaceByte p0.1 p0.2 start 1 (extractByte limb 6)
+       let p2 := mstoreDwordPairReplaceByte p1.1 p1.2 start 2 (extractByte limb 5)
+       let p3 := mstoreDwordPairReplaceByte p2.1 p2.2 start 3 (extractByte limb 4)
+       let p4 := mstoreDwordPairReplaceByte p3.1 p3.2 start 4 (extractByte limb 3)
+       let p5 := mstoreDwordPairReplaceByte p4.1 p4.2 start 5 (extractByte limb 2)
+       let p6 := mstoreDwordPairReplaceByte p5.1 p5.2 start 6 (extractByte limb 1)
+       mstoreDwordPairReplaceByte p6.1 p6.2 start 7 (extractByte limb 0)) := by
+  unfold mstoreDwordPairStoreLimb
+  rfl
+
 end EvmAsm.Evm64.MStore
