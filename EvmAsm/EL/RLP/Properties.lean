@@ -318,6 +318,23 @@ theorem decodeAux_twenty_two_byte_string
         rest) := by
   simp [decodeAux, takeBytes]
 
+/-- Twenty-three-byte short string (prefix `0x97`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twenty_three_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x97 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
+          b22 :: b23 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
 /-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
     with `b.toNat < 0x80` is non-canonical (the byte should have
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
@@ -730,6 +747,19 @@ theorem decode_twenty_two_byte_string
         []) := by
   simp [decode, decodeAux, takeBytes]
 
+/-- `decode [0x97, b1..b23] = some (.bytes [b1..b23], [])` — the
+    canonical twenty-three-byte short-string encoding. -/
+theorem decode_twenty_three_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 : Byte) :
+    decode [(0x97 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19, b20, b21, b22, b23] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
 /-! ## encodeBytes characterizations -/
 
 /-- Empty byte string encodes to the single prefix `[0x80]`. -/
@@ -899,6 +929,15 @@ theorem encodeBytes_duoviguple (a b c d e f g h i j k l m n o p q r s t u v : By
     encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v] =
       [BitVec.ofNat 8 0x96, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
         u, v] := by
+  simp [encodeBytes]
+
+/-- Twenty-three-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] =
+    [0x97, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w]`. -/
+theorem encodeBytes_tresviguple (a b c d e f g h i j k l m n o p q r s t u v w : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] =
+      [BitVec.ofNat 8 0x97, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
+        u, v, w] := by
   simp [encodeBytes]
 
 /-! ## Encoding produces non-empty output -/
