@@ -341,6 +341,21 @@ theorem evmMemExpand_access_byte_dword_interval
     evmMemExpand_access_byte_dword_end_le
       sizeBytes offset length byteIndex hlen h_byte⟩
 
+theorem evmMemExpand_access_byte_dword_byte_lt
+    (sizeBytes offset length byteIndex dwordByte : Nat)
+    (hlen : length ≠ 0) (h_byte : byteIndex < length)
+    (h_dwordByte : dwordByte < 8) :
+    ((offset + byteIndex) / 8) * 8 + dwordByte <
+      evmMemExpand sizeBytes offset length := by
+  have h_interval :=
+    evmMemExpand_access_byte_dword_interval
+      sizeBytes offset length byteIndex hlen h_byte
+  have h_lt_end :
+      ((offset + byteIndex) / 8) * 8 + dwordByte <
+        ((offset + byteIndex) / 8 + 1) * 8 := by
+    omega
+  exact Nat.lt_of_lt_of_le h_lt_end h_interval.2
+
 /-- MLOAD is a 32-byte byte-addressed access: expansion covers the byte just
     past the requested range for any starting byte offset. -/
 theorem evmMemExpand_mload_ge_end (sizeBytes offset : Nat) :
