@@ -300,6 +300,11 @@ theorem rlpPrefixHeaderBytes_eq_zero_iff_singleByte (pfx : Byte) :
   · intro h
     exact rlpPrefixHeaderBytes_eq_zero_of_singleByte h
 
+theorem rlpPrefixHeaderBytes_eq_zero_iff_lt_0x80 (pfx : Byte) :
+    rlpPrefixHeaderBytes pfx = 0 ↔ pfx.toNat < 0x80 := by
+  rw [rlpPrefixHeaderBytes_eq_zero_iff_singleByte,
+    classifyPrefix_singleByte_iff]
+
 theorem rlpPrefixHeaderBytes_pos_iff_not_singleByte (pfx : Byte) :
     0 < rlpPrefixHeaderBytes pfx ↔ classifyPrefix pfx ≠ .singleByte := by
   constructor
