@@ -171,6 +171,13 @@ theorem evmMemExpand_ge_access (sizeBytes offset length : Nat) (hlen : length â‰
   simp [hlen]
   exact Nat.le_trans (roundUpTo32_le _) (Nat.le_max_right _ _)
 
+/-- MLOAD and MSTORE access one full 32-byte EVM word. -/
+theorem evmMemExpand_word_eq (sizeBytes offset : Nat) :
+    evmMemExpand sizeBytes offset 32 =
+      max sizeBytes (roundUpTo32 (offset + 32)) := by
+  unfold evmMemExpand
+  simp
+
 /-- The new high-water mark is always a multiple of 32 (when nonzero) â€” i.e.
     if the old size was 32-aligned, the new one is too. -/
 theorem evmMemExpand_dvd_of_old_dvd (sizeBytes offset length : Nat)
