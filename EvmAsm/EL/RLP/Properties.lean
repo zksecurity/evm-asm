@@ -123,6 +123,201 @@ theorem decodeAux_six_byte_string
       some (.bytes [b1, b2, b3, b4, b5, b6], rest) := by
   simp [decodeAux, takeBytes]
 
+/-- Seven-byte short string (prefix `0x87`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_seven_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 : Byte) (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x87 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Eight-byte short string (prefix `0x88`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_eight_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 : Byte) (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x88 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Nine-byte short string (prefix `0x89`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_nine_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 : Byte) (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x89 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Ten-byte short string (prefix `0x8A`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_ten_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Byte) (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8A : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Eleven-byte short string (prefix `0x8B`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_eleven_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Byte) (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8B : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Twelve-byte short string (prefix `0x8C`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twelve_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8C : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Thirteen-byte short string (prefix `0x8D`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_thirteen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8D : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13], rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Fourteen-byte short string (prefix `0x8E`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_fourteen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8E : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Fifteen-byte short string (prefix `0x8F`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_fifteen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x8F : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: rest) =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Sixteen-byte short string (prefix `0x90`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_sixteen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x90 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Seventeen-byte short string (prefix `0x91`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_seventeen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x91 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Eighteen-byte short string (prefix `0x92`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_eighteen_byte_string
+    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x92 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Nineteen-byte short string (prefix `0x93`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_nineteen_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x93 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Twenty-byte short string (prefix `0x94`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twenty_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x94 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Twenty-one-byte short string (prefix `0x95`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twenty_one_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x95 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
+          rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
+/-- Twenty-two-byte short string (prefix `0x96`). Multi-byte payload
+    bypasses the canonical-form check. -/
+theorem decodeAux_twenty_two_byte_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 :
+      Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0x96 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
+          b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
+          b22 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22],
+        rest) := by
+  simp [decodeAux, takeBytes]
+
 /-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
     with `b.toNat < 0x80` is non-canonical (the byte should have
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
@@ -382,6 +577,159 @@ theorem decode_six_byte_string (b1 b2 b3 b4 b5 b6 : Byte) :
       some (.bytes [b1, b2, b3, b4, b5, b6], []) := by
   simp [decode, decodeAux, takeBytes]
 
+/-- `decode [0x87, b1..b7] = some (.bytes [b1..b7], [])` — the
+    canonical seven-byte short-string encoding. -/
+theorem decode_seven_byte_string (b1 b2 b3 b4 b5 b6 b7 : Byte) :
+    decode [(0x87 : Byte), b1, b2, b3, b4, b5, b6, b7] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x88, b1..b8] = some (.bytes [b1..b8], [])` — the
+    canonical eight-byte short-string encoding. -/
+theorem decode_eight_byte_string (b1 b2 b3 b4 b5 b6 b7 b8 : Byte) :
+    decode [(0x88 : Byte), b1, b2, b3, b4, b5, b6, b7, b8] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x89, b1..b9] = some (.bytes [b1..b9], [])` — the
+    canonical nine-byte short-string encoding. -/
+theorem decode_nine_byte_string (b1 b2 b3 b4 b5 b6 b7 b8 b9 : Byte) :
+    decode [(0x89 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8A, b1..b10] = some (.bytes [b1..b10], [])` — the
+    canonical ten-byte short-string encoding. -/
+theorem decode_ten_byte_string (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Byte) :
+    decode [(0x8A : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8B, b1..b11] = some (.bytes [b1..b11], [])` — the
+    canonical eleven-byte short-string encoding. -/
+theorem decode_eleven_byte_string (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Byte) :
+    decode [(0x8B : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8C, b1..b12] = some (.bytes [b1..b12], [])` — the
+    canonical twelve-byte short-string encoding. -/
+theorem decode_twelve_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 : Byte) :
+    decode [(0x8C : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8D, b1..b13] = some (.bytes [b1..b13], [])` — the
+    canonical thirteen-byte short-string encoding. -/
+theorem decode_thirteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 : Byte) :
+    decode [(0x8D : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13], []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8E, b1..b14] = some (.bytes [b1..b14], [])` — the
+    canonical fourteen-byte short-string encoding. -/
+theorem decode_fourteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 : Byte) :
+    decode [(0x8E : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x8F, b1..b15] = some (.bytes [b1..b15], [])` — the
+    canonical fifteen-byte short-string encoding. -/
+theorem decode_fifteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 : Byte) :
+    decode [(0x8F : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15] =
+      some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x90, b1..b16] = some (.bytes [b1..b16], [])` — the
+    canonical sixteen-byte short-string encoding. -/
+theorem decode_sixteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 : Byte) :
+    decode [(0x90 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x91, b1..b17] = some (.bytes [b1..b17], [])` — the
+    canonical seventeen-byte short-string encoding. -/
+theorem decode_seventeen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte) :
+    decode [(0x91 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x92, b1..b18] = some (.bytes [b1..b18], [])` — the
+    canonical eighteen-byte short-string encoding. -/
+theorem decode_eighteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 : Byte) :
+    decode [(0x92 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x93, b1..b19] = some (.bytes [b1..b19], [])` — the
+    canonical nineteen-byte short-string encoding. -/
+theorem decode_nineteen_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 : Byte) :
+    decode [(0x93 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x94, b1..b20] = some (.bytes [b1..b20], [])` — the
+    canonical twenty-byte short-string encoding. -/
+theorem decode_twenty_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Byte) :
+    decode [(0x94 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19, b20] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x95, b1..b21] = some (.bytes [b1..b21], [])` — the
+    canonical twenty-one-byte short-string encoding. -/
+theorem decode_twenty_one_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Byte) :
+    decode [(0x95 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19, b20, b21] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
+/-- `decode [0x96, b1..b22] = some (.bytes [b1..b22], [])` — the
+    canonical twenty-two-byte short-string encoding. -/
+theorem decode_twenty_two_byte_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 :
+      Byte) :
+    decode [(0x96 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
+      b15, b16, b17, b18, b19, b20, b21, b22] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22],
+        []) := by
+  simp [decode, decodeAux, takeBytes]
+
 /-! ## encodeBytes characterizations -/
 
 /-- Empty byte string encodes to the single prefix `[0x80]`. -/
@@ -426,6 +774,131 @@ theorem encodeBytes_quint (a b c d e : Byte) :
 theorem encodeBytes_sext (a b c d e f : Byte) :
     encodeBytes [a, b, c, d, e, f] =
       [BitVec.ofNat 8 0x86, a, b, c, d, e, f] := by
+  simp [encodeBytes]
+
+/-- Seven-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g] = [0x87, a, b, c, d, e, f, g]`. -/
+theorem encodeBytes_sept (a b c d e f g : Byte) :
+    encodeBytes [a, b, c, d, e, f, g] =
+      [BitVec.ofNat 8 0x87, a, b, c, d, e, f, g] := by
+  simp [encodeBytes]
+
+/-- Eight-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h] = [0x88, a, b, c, d, e, f, g, h]`. -/
+theorem encodeBytes_oct (a b c d e f g h : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h] =
+      [BitVec.ofNat 8 0x88, a, b, c, d, e, f, g, h] := by
+  simp [encodeBytes]
+
+/-- Nine-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i] = [0x89, a, b, c, d, e, f, g, h, i]`. -/
+theorem encodeBytes_nonuple (a b c d e f g h i : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i] =
+      [BitVec.ofNat 8 0x89, a, b, c, d, e, f, g, h, i] := by
+  simp [encodeBytes]
+
+/-- Ten-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j] = [0x8A, a, b, c, d, e, f, g, h, i, j]`. -/
+theorem encodeBytes_decuple (a b c d e f g h i j : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j] =
+      [BitVec.ofNat 8 0x8A, a, b, c, d, e, f, g, h, i, j] := by
+  simp [encodeBytes]
+
+/-- Eleven-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k] =
+    [0x8B, a, b, c, d, e, f, g, h, i, j, k]`. -/
+theorem encodeBytes_undecuple (a b c d e f g h i j k : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k] =
+      [BitVec.ofNat 8 0x8B, a, b, c, d, e, f, g, h, i, j, k] := by
+  simp [encodeBytes]
+
+/-- Twelve-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l] =
+    [0x8C, a, b, c, d, e, f, g, h, i, j, k, l]`. -/
+theorem encodeBytes_duodecuple (a b c d e f g h i j k l : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l] =
+      [BitVec.ofNat 8 0x8C, a, b, c, d, e, f, g, h, i, j, k, l] := by
+  simp [encodeBytes]
+
+/-- Thirteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m] =
+    [0x8D, a, b, c, d, e, f, g, h, i, j, k, l, m]`. -/
+theorem encodeBytes_tredecuple (a b c d e f g h i j k l m : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m] =
+      [BitVec.ofNat 8 0x8D, a, b, c, d, e, f, g, h, i, j, k, l, m] := by
+  simp [encodeBytes]
+
+/-- Fourteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n] =
+    [0x8E, a, b, c, d, e, f, g, h, i, j, k, l, m, n]`. -/
+theorem encodeBytes_quattuordecuple (a b c d e f g h i j k l m n : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n] =
+      [BitVec.ofNat 8 0x8E, a, b, c, d, e, f, g, h, i, j, k, l, m, n] := by
+  simp [encodeBytes]
+
+/-- Fifteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o] =
+    [0x8F, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o]`. -/
+theorem encodeBytes_quindecuple (a b c d e f g h i j k l m n o : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o] =
+      [BitVec.ofNat 8 0x8F, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o] := by
+  simp [encodeBytes]
+
+/-- Sixteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] =
+    [0x90, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]`. -/
+theorem encodeBytes_sedecuple (a b c d e f g h i j k l m n o p : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] =
+      [BitVec.ofNat 8 0x90, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p] := by
+  simp [encodeBytes]
+
+/-- Seventeen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] =
+    [0x91, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q]`. -/
+theorem encodeBytes_septendecuple (a b c d e f g h i j k l m n o p q : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] =
+      [BitVec.ofNat 8 0x91, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q] := by
+  simp [encodeBytes]
+
+/-- Eighteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r] =
+    [0x92, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r]`. -/
+theorem encodeBytes_octodecuple (a b c d e f g h i j k l m n o p q r : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r] =
+      [BitVec.ofNat 8 0x92, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r] := by
+  simp [encodeBytes]
+
+/-- Nineteen-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s] =
+    [0x93, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s]`. -/
+theorem encodeBytes_novemdecuple (a b c d e f g h i j k l m n o p q r s : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s] =
+      [BitVec.ofNat 8 0x93, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s] := by
+  simp [encodeBytes]
+
+/-- Twenty-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t] =
+    [0x94, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t]`. -/
+theorem encodeBytes_viguple (a b c d e f g h i j k l m n o p q r s t : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t] =
+      [BitVec.ofNat 8 0x94, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t] := by
+  simp [encodeBytes]
+
+/-- Twenty-one-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u] =
+    [0x95, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u]`. -/
+theorem encodeBytes_unviguple (a b c d e f g h i j k l m n o p q r s t u : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u] =
+      [BitVec.ofNat 8 0x95, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u] := by
+  simp [encodeBytes]
+
+/-- Twenty-two-byte short string:
+    `encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v] =
+    [0x96, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v]`. -/
+theorem encodeBytes_duoviguple (a b c d e f g h i j k l m n o p q r s t u v : Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v] =
+      [BitVec.ofNat 8 0x96, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t,
+        u, v] := by
   simp [encodeBytes]
 
 /-! ## Encoding produces non-empty output -/

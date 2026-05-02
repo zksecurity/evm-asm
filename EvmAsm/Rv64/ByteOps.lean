@@ -19,12 +19,20 @@ theorem byteOffset_lt_8 {addr : Word} : byteOffset addr < 8 := by
   unfold byteOffset; rw [BitVec.toNat_and]
   exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
 
-theorem byteOffset_alignToDword (addr : Word) :
+/-- Aligning a byte address down to its containing doubleword gives byte
+    offset zero. -/
+theorem alignToDword_byteOffset_zero (addr : Word) :
     byteOffset (alignToDword addr) = 0 := by
   unfold byteOffset alignToDword
-  rw [show (addr &&& ~~~7#64 &&& 7#64) = 0#64 by bv_decide]
-  rfl
+  bv_decide
 
+/-- Aligning an already dword-aligned address is idempotent. -/
+theorem alignToDword_idempotent (addr : Word) :
+    alignToDword (alignToDword addr) = alignToDword addr := by
+  unfold alignToDword
+  bv_decide
+
+/-- The aligned base plus the byte offset reconstructs the original address. -/
 theorem alignToDword_add_byteOffset (addr : Word) :
     alignToDword addr + BitVec.ofNat 64 (byteOffset addr) = addr := by
   unfold alignToDword byteOffset
