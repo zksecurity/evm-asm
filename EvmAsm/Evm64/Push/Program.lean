@@ -62,6 +62,17 @@ theorem pushByteDstOffset_lt_width_of_lt {n i : Nat} (hi : i < n) :
   unfold pushByteDstOffset
   omega
 
+theorem pushByteOffsets_valid_of_lt {n i : Nat}
+    (hn : n ≤ 32) (hi : i < n) :
+    0 < pushByteSrcOffset i ∧
+      pushByteSrcOffset i ≤ 32 ∧
+      pushByteDstOffset n i < 32 ∧
+      pushByteDstOffset n i < n := by
+  exact ⟨pushByteSrcOffset_pos i,
+    pushByteSrcOffset_le_32_of_lt hn hi,
+    pushByteDstOffset_lt_32_of_lt hn hi,
+    pushByteDstOffset_lt_width_of_lt hi⟩
+
 theorem push1Byte0SrcOffset : pushByteSrcOffset 0 = 1 := by
   rfl
 
