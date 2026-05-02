@@ -273,4 +273,62 @@ theorem rlp_prefix_short_list_payload_len_spec_within
         (.x6 ↦ᵣ (0xC0 : Word)) ** (.x0 ↦ᵣ (0 : Word))) :=
   rlp_prefix_short_payload_len_spec_within (pfx.zeroExtend 64) outOld tmpOld (0xC0 : Word) base
 
+theorem rlpPrefixShortBytesPayloadLen_toWord_of_class
+    (pfx : Byte) (h_class : classifyPrefix pfx = .shortBytes) :
+    (BitVec.ofNat 64 (rlpPrefixShortBytesPayloadLen pfx) : Word) =
+      pfx.zeroExtend 64 - (0x80 : Word) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat]
+  rw [BitVec.toNat_sub_of_le]
+  · rw [BitVec.zeroExtend_eq_setWidth]
+    simp [rlpPrefixShortBytesPayloadLen, BitVec.toNat_setWidth]
+    have h_range := (classifyPrefix_shortBytes_iff pfx).mp h_class
+    omega
+  · rw [BitVec.le_def]
+    rw [BitVec.zeroExtend_eq_setWidth]
+    simp [BitVec.toNat_setWidth]
+    have h_range := (classifyPrefix_shortBytes_iff pfx).mp h_class
+    omega
+
+theorem rlpPrefixShortListPayloadLen_toWord_of_class
+    (pfx : Byte) (h_class : classifyPrefix pfx = .shortList) :
+    (BitVec.ofNat 64 (rlpPrefixShortListPayloadLen pfx) : Word) =
+      pfx.zeroExtend 64 - (0xC0 : Word) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat]
+  rw [BitVec.toNat_sub_of_le]
+  · rw [BitVec.zeroExtend_eq_setWidth]
+    simp [rlpPrefixShortListPayloadLen, BitVec.toNat_setWidth]
+    have h_range := (classifyPrefix_shortList_iff pfx).mp h_class
+    omega
+  · rw [BitVec.le_def]
+    rw [BitVec.zeroExtend_eq_setWidth]
+    simp [BitVec.toNat_setWidth]
+    have h_range := (classifyPrefix_shortList_iff pfx).mp h_class
+    omega
+
+theorem rlp_prefix_short_bytes_payload_len_of_class_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word)
+    (h_class : classifyPrefix pfx = .shortBytes) :
+    cpsTripleWithin 2 base (base + 8) (rlp_prefix_short_payload_len_code base (0x80 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ (BitVec.ofNat 64 (rlpPrefixShortBytesPayloadLen pfx) : Word)) **
+        (.x5 ↦ᵣ pfx.zeroExtend 64) ** (.x6 ↦ᵣ (0x80 : Word)) **
+        (.x0 ↦ᵣ (0 : Word))) := by
+  rw [rlpPrefixShortBytesPayloadLen_toWord_of_class pfx h_class]
+  exact rlp_prefix_short_bytes_payload_len_spec_within pfx outOld tmpOld base
+
+theorem rlp_prefix_short_list_payload_len_of_class_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word)
+    (h_class : classifyPrefix pfx = .shortList) :
+    cpsTripleWithin 2 base (base + 8) (rlp_prefix_short_payload_len_code base (0xC0 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ (BitVec.ofNat 64 (rlpPrefixShortListPayloadLen pfx) : Word)) **
+        (.x5 ↦ᵣ pfx.zeroExtend 64) ** (.x6 ↦ᵣ (0xC0 : Word)) **
+        (.x0 ↦ᵣ (0 : Word))) := by
+  rw [rlpPrefixShortListPayloadLen_toWord_of_class pfx h_class]
+  exact rlp_prefix_short_list_payload_len_spec_within pfx outOld tmpOld base
+
 end EvmAsm.EL.RLP
