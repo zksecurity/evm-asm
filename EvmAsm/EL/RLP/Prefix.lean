@@ -369,6 +369,13 @@ theorem rlpPrefixHeaderBytes_ge_two_iff_longClass (pfx : Byte) :
       unfold rlpPrefixLongListHeaderBytes
       omega
 
+theorem rlpPrefixHeaderBytes_ge_two_iff_long_ranges (pfx : Byte) :
+    2 ≤ rlpPrefixHeaderBytes pfx ↔
+      (0xB8 ≤ pfx.toNat ∧ pfx.toNat ≤ 0xBF) ∨
+        0xF8 ≤ pfx.toNat := by
+  rw [rlpPrefixHeaderBytes_ge_two_iff_longClass,
+    classifyPrefix_longBytes_iff, classifyPrefix_longList_iff]
+
 theorem rlpPrefixHeaderBytes_eq_zero_or_one_or_ge_two (pfx : Byte) :
     rlpPrefixHeaderBytes pfx = 0 ∨
       rlpPrefixHeaderBytes pfx = 1 ∨
