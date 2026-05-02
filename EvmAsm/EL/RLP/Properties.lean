@@ -1082,6 +1082,308 @@ theorem decodeAux_sixty_byte_long_string
         rest) := by
   simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
 
+/-- Sixty-one-byte long string (prefix `0xB8`, length byte `0x3D`). -/
+theorem decodeAux_sixty_one_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 :
+      Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x3D : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-two-byte long string (prefix `0xB8`, length byte `0x3E`). -/
+theorem decodeAux_sixty_two_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62 :
+      Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x3E : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-three-byte long string (prefix `0xB8`, length byte `0x3F`). -/
+theorem decodeAux_sixty_three_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x3F : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-four-byte long string (prefix `0xB8`, length byte `0x40`). -/
+theorem decodeAux_sixty_four_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x40 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-five-byte long string (prefix `0xB8`, length byte `0x41`). -/
+theorem decodeAux_sixty_five_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x41 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-six-byte long string (prefix `0xB8`, length byte `0x42`). -/
+theorem decodeAux_sixty_six_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x42 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-seven-byte long string (prefix `0xB8`, length byte `0x43`). -/
+theorem decodeAux_sixty_seven_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x43 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-eight-byte long string (prefix `0xB8`, length byte `0x44`). -/
+theorem decodeAux_sixty_eight_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x44 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: b68 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Sixty-nine-byte long string (prefix `0xB8`, length byte `0x45`). -/
+theorem decodeAux_sixty_nine_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x45 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: b68 :: b69 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Seventy-byte long string (prefix `0xB8`, length byte `0x46`). -/
+theorem decodeAux_seventy_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x46 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: b68 :: b69 :: b70 ::
+          rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Seventy-one-byte long string (prefix `0xB8`, length byte `0x47`). -/
+theorem decodeAux_seventy_one_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 b71 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x47 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: b68 :: b69 :: b70 ::
+          b71 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70, b71],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- Seventy-two-byte long string (prefix `0xB8`, length byte `0x48`). -/
+theorem decodeAux_seventy_two_byte_long_string
+    (fuel : Nat)
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 b71 b72 : Byte)
+    (rest : List Byte) :
+    decodeAux (fuel + 1)
+        ((0xB8 : Byte) :: (0x48 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 ::
+          b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 ::
+          b19 :: b20 :: b21 :: b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 ::
+          b30 :: b31 :: b32 :: b33 :: b34 :: b35 :: b36 :: b37 :: b38 :: b39 :: b40 ::
+          b41 :: b42 :: b43 :: b44 :: b45 :: b46 :: b47 :: b48 :: b49 :: b50 ::
+          b51 :: b52 :: b53 :: b54 :: b55 :: b56 :: b57 :: b58 :: b59 :: b60 ::
+          b61 :: b62 :: b63 :: b64 :: b65 :: b66 :: b67 :: b68 :: b69 :: b70 ::
+          b71 :: b72 :: rest) =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70, b71, b72],
+        rest) := by
+  simp [decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
 /-- Canonical-form rejection: prefix `0x81` followed by a byte `b`
     with `b.toNat < 0x80` is non-canonical (the byte should have
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
@@ -2095,6 +2397,247 @@ theorem decode_sixty_byte_long_string
         []) := by
   simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
 
+/-- `decode [0xB8, 0x3D, b1..b61] = some (.bytes [b1..b61], [])`. -/
+theorem decode_sixty_one_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 :
+      Byte) :
+    decode [(0xB8 : Byte), (0x3D : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x3E, b1..b62] = some (.bytes [b1..b62], [])`. -/
+theorem decode_sixty_two_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62 :
+      Byte) :
+    decode [(0xB8 : Byte), (0x3E : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x3F, b1..b63] = some (.bytes [b1..b63], [])`. -/
+theorem decode_sixty_three_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 : Byte) :
+    decode [(0xB8 : Byte), (0x3F : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x40, b1..b64] = some (.bytes [b1..b64], [])`. -/
+theorem decode_sixty_four_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 : Byte) :
+    decode [(0xB8 : Byte), (0x40 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x41, b1..b65] = some (.bytes [b1..b65], [])`. -/
+theorem decode_sixty_five_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 : Byte) :
+    decode [(0xB8 : Byte), (0x41 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x42, b1..b66] = some (.bytes [b1..b66], [])`. -/
+theorem decode_sixty_six_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 : Byte) :
+    decode [(0xB8 : Byte), (0x42 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x43, b1..b67] = some (.bytes [b1..b67], [])`. -/
+theorem decode_sixty_seven_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 : Byte) :
+    decode [(0xB8 : Byte), (0x43 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x44, b1..b68] = some (.bytes [b1..b68], [])`. -/
+theorem decode_sixty_eight_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 : Byte) :
+    decode [(0xB8 : Byte), (0x44 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x45, b1..b69] = some (.bytes [b1..b69], [])`. -/
+theorem decode_sixty_nine_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 : Byte) :
+    decode [(0xB8 : Byte), (0x45 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x46, b1..b70] = some (.bytes [b1..b70], [])`. -/
+theorem decode_seventy_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 : Byte) :
+    decode [(0xB8 : Byte), (0x46 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69, b70] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x47, b1..b71] = some (.bytes [b1..b71], [])`. -/
+theorem decode_seventy_one_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 b71 : Byte) :
+    decode [(0xB8 : Byte), (0x47 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69, b70,
+      b71] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70, b71],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
+/-- `decode [0xB8, 0x48, b1..b72] = some (.bytes [b1..b72], [])`. -/
+theorem decode_seventy_two_byte_long_string
+    (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
+      b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
+      b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62
+      b63 b64 b65 b66 b67 b68 b69 b70 b71 b72 : Byte) :
+    decode [(0xB8 : Byte), (0x48 : Byte), b1, b2, b3, b4, b5, b6, b7, b8, b9, b10,
+      b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25,
+      b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40,
+      b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55,
+      b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69, b70,
+      b71, b72] =
+      some (.bytes
+        [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+          b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32,
+          b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47,
+          b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61,
+          b62, b63, b64, b65, b66, b67, b68, b69, b70, b71, b72],
+        []) := by
+  simp [decode, decodeAux, readLength, takeBytes, Nat.fromBytesBE]
+
 /-! ## encodeBytes characterizations -/
 
 /-- Empty byte string encodes to the single prefix `[0x80]`. -/
@@ -2739,6 +3282,181 @@ theorem encodeBytes_sixty_long
         n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
         ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
         be, bf, bg, bh, bi] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-one-byte long string:
+    `encodeBytes [a, b, ..., bj] = [0xB8, 0x3D, a, b, ..., bj]`. -/
+theorem encodeBytes_sixty_one_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x3D, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-two-byte long string:
+    `encodeBytes [a, b, ..., bk] = [0xB8, 0x3E, a, b, ..., bk]`. -/
+theorem encodeBytes_sixty_two_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x3E, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-three-byte long string:
+    `encodeBytes [a, b, ..., bl] = [0xB8, 0x3F, a, b, ..., bl]`. -/
+theorem encodeBytes_sixty_three_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x3F, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-four-byte long string:
+    `encodeBytes [a, b, ..., bm] = [0xB8, 0x40, a, b, ..., bm]`. -/
+theorem encodeBytes_sixty_four_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x40, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-five-byte long string:
+    `encodeBytes [a, b, ..., bn] = [0xB8, 0x41, a, b, ..., bn]`. -/
+theorem encodeBytes_sixty_five_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x41, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-six-byte long string:
+    `encodeBytes [a, b, ..., bo] = [0xB8, 0x42, a, b, ..., bo]`. -/
+theorem encodeBytes_sixty_six_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x42, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-seven-byte long string:
+    `encodeBytes [a, b, ..., bp] = [0xB8, 0x43, a, b, ..., bp]`. -/
+theorem encodeBytes_sixty_seven_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x43, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-eight-byte long string:
+    `encodeBytes [a, b, ..., bq] = [0xB8, 0x44, a, b, ..., bq]`. -/
+theorem encodeBytes_sixty_eight_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp, bq] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x44, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp, bq] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Sixty-nine-byte long string:
+    `encodeBytes [a, b, ..., br] = [0xB8, 0x45, a, b, ..., br]`. -/
+theorem encodeBytes_sixty_nine_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq br :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp, bq, br] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x45, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp, bq, br] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Seventy-byte long string:
+    `encodeBytes [a, b, ..., bs] = [0xB8, 0x46, a, b, ..., bs]`. -/
+theorem encodeBytes_seventy_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq br bs :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp, bq, br, bs] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x46, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp, bq, br, bs] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Seventy-one-byte long string:
+    `encodeBytes [a, b, ..., bt] = [0xB8, 0x47, a, b, ..., bt]`. -/
+theorem encodeBytes_seventy_one_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq br bs bt :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp, bq, br, bs, bt] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x47, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp, bq, br, bs, bt] := by
+  simp [encodeBytes, Nat.toBytesBE]
+
+/-- Seventy-two-byte long string:
+    `encodeBytes [a, b, ..., bu] = [0xB8, 0x48, a, b, ..., bu]`. -/
+theorem encodeBytes_seventy_two_long
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z aa ab ac ad ae af ag ah ai aj ak al am an ao ap aq ar as au av aw ax ay az ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp bq br bs bt bu :
+      Byte) :
+    encodeBytes [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+      y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, ar, as,
+      au, av, aw, ax, ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, bm, bn,
+      bo, bp, bq, br, bs, bt, bu] =
+      [BitVec.ofNat 8 0xB8, BitVec.ofNat 8 0x48, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af, ag, ah, ai, aj,
+        ak, al, am, an, ao, ap, aq, ar, as, au, av, aw, ax, ay, az, ba, bb, bc, bd,
+        be, bf, bg, bh, bi, bj, bk, bl, bm, bn, bo, bp, bq, br, bs, bt, bu] := by
   simp [encodeBytes, Nat.toBytesBE]
 
 /-! ## Encoding produces non-empty output -/
