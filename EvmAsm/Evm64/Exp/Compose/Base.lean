@@ -45,6 +45,26 @@ theorem exp_loop_len (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     (EvmAsm.Evm64.exp_loop mulOff skipOff backOff).length = 8 := by
   exact EvmAsm.Evm64.exp_loop_length mulOff skipOff backOff
 
+theorem exp_iter_body_byte_len (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    4 * (EvmAsm.Evm64.exp_iter_body mulOff skipOff).length = 24 := by
+  exact EvmAsm.Evm64.exp_iter_body_byte_length mulOff skipOff
+
+theorem exp_loop_back_byte_len (backOff : BitVec 13) :
+    4 * (EvmAsm.Evm64.exp_loop_back backOff).length = 8 := by
+  exact EvmAsm.Evm64.exp_loop_back_byte_length backOff
+
+theorem exp_loop_byte_len (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    4 * (EvmAsm.Evm64.exp_loop mulOff skipOff backOff).length = 32 := by
+  exact EvmAsm.Evm64.exp_loop_byte_length mulOff skipOff backOff
+
+theorem exp_prologue_byte_len :
+    4 * (EvmAsm.Evm64.exp_prologue).length = 24 := by
+  exact EvmAsm.Evm64.exp_prologue_byte_length
+
+theorem exp_epilogue_byte_len :
+    4 * (EvmAsm.Evm64.exp_epilogue).length = 36 := by
+  exact EvmAsm.Evm64.exp_epilogue_byte_length
+
 /-- First EXP composition code skeleton: the verified boundary blocks around
     the loop. The loop body and callable-multiply blocks will extend this
     union as their composed specs land. -/
