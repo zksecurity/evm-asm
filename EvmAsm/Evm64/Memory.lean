@@ -123,6 +123,20 @@ theorem evmMemDwordAddr_unfold {memBase byteAddr : Word} :
 theorem evmMemByteOffset_unfold {memBase byteAddr : Word} :
     evmMemByteOffset memBase byteAddr = byteOffset (memBase + byteAddr) := rfl
 
+theorem evmMemByteOffset_lt_8 (memBase byteAddr : Word) :
+    evmMemByteOffset memBase byteAddr < 8 := by
+  unfold evmMemByteOffset
+  exact byteOffset_lt_8
+
+/-- The byte position inside the owning RV64 dword, packaged as a `Fin 8`
+    for direct use with byte-algebra lemmas. -/
+def evmMemByteOffsetFin (memBase byteAddr : Word) : Fin 8 :=
+  ⟨evmMemByteOffset memBase byteAddr, evmMemByteOffset_lt_8 memBase byteAddr⟩
+
+@[simp] theorem evmMemByteOffsetFin_val (memBase byteAddr : Word) :
+    (evmMemByteOffsetFin memBase byteAddr).val =
+      evmMemByteOffset memBase byteAddr := rfl
+
 theorem evmMemByteRead_unfold {memBase byteAddr dwordVal : Word} :
     evmMemByteRead memBase byteAddr dwordVal =
       extractByte dwordVal (evmMemByteOffset memBase byteAddr) := rfl
@@ -132,9 +146,8 @@ theorem evmMemByteRead_replace_same
     evmMemByteRead memBase byteAddr
       (replaceByte oldDword (evmMemByteOffset memBase byteAddr) b) = b := by
   unfold evmMemByteRead evmMemByteOffset
-  have h_lt : byteOffset (memBase + byteAddr) < 8 := byteOffset_lt_8
   exact extractByte_replaceByte_same oldDword
-    ⟨byteOffset (memBase + byteAddr), h_lt⟩ b
+    (evmMemByteOffsetFin memBase byteAddr) b
 
 theorem evmMemDwordIs_unfold {memBase byteAddr dwordVal : Word} :
     evmMemDwordIs memBase byteAddr dwordVal =
