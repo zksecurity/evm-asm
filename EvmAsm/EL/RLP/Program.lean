@@ -111,4 +111,27 @@ theorem rlp_prefix_short_payload_len_byte_length
     4 * (rlp_prefix_short_payload_len pfxReg outReg tmpReg baseTag).length = 8 := by
   rw [rlp_prefix_short_payload_len_length]
 
+/--
+  Executable Phase-2 helper for long RLP header sizes.
+
+  For long byte strings use `baseTag = 0xB7`; for long lists use
+  `baseTag = 0xF7`. The result is `(pfx - baseTag) + 1`, the total number
+  of header bytes before payload.
+-/
+def rlp_prefix_long_header_bytes (pfxReg outReg tmpReg : Reg) (baseTag : Word) : Program :=
+  LI tmpReg baseTag ;;
+  SUB outReg pfxReg tmpReg ;;
+  ADDI outReg outReg (1 : BitVec 12)
+
+theorem rlp_prefix_long_header_bytes_length
+    (pfxReg outReg tmpReg : Reg) (baseTag : Word) :
+    (rlp_prefix_long_header_bytes pfxReg outReg tmpReg baseTag).length = 3 := by
+  unfold rlp_prefix_long_header_bytes LI SUB ADDI seq single
+  rfl
+
+theorem rlp_prefix_long_header_bytes_byte_length
+    (pfxReg outReg tmpReg : Reg) (baseTag : Word) :
+    4 * (rlp_prefix_long_header_bytes pfxReg outReg tmpReg baseTag).length = 12 := by
+  rw [rlp_prefix_long_header_bytes_length]
+
 end EvmAsm.EL.RLP
