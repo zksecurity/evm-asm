@@ -207,6 +207,62 @@ theorem mload_compute_rounded_access_end_ofProg_spec_within
     roundReg endReg offReg offset endOld roundOld base h_end_ne_x0 h_round_ne_x0
 
 /--
+  Compare the current memory size against the rounded access end. The result
+  is the executable branch flag for the later high-water max/select stage.
+-/
+def mload_compute_expand_flag
+    (flagReg sizeReg roundReg : Reg) : Program :=
+  single (.SLTU flagReg sizeReg roundReg)
+
+abbrev mload_compute_expand_flag_code
+    (flagReg sizeReg roundReg : Reg) (base : Word) : CodeReq :=
+  CodeReq.singleton base (.SLTU flagReg sizeReg roundReg)
+
+theorem mload_compute_expand_flag_code_eq_ofProg
+    (flagReg sizeReg roundReg : Reg) (base : Word) :
+    mload_compute_expand_flag_code flagReg sizeReg roundReg base =
+      CodeReq.ofProg base (mload_compute_expand_flag flagReg sizeReg roundReg) := by
+  unfold mload_compute_expand_flag_code mload_compute_expand_flag single
+  rfl
+
+/--
+  One-instruction executable bridge for the unsigned comparison
+  `currentSize < roundedAccessEnd`.
+-/
+theorem mload_compute_expand_flag_spec_within
+    (flagReg sizeReg roundReg : Reg)
+    (sizeBytesWord roundedAccessEnd flagOld : Word) (base : Word)
+    (h_flag_ne_x0 : flagReg ≠ .x0) :
+    cpsTripleWithin 1 base (base + 4)
+      (mload_compute_expand_flag_code flagReg sizeReg roundReg base)
+      ((sizeReg ↦ᵣ sizeBytesWord) **
+       (roundReg ↦ᵣ roundedAccessEnd) **
+       (flagReg ↦ᵣ flagOld))
+      ((sizeReg ↦ᵣ sizeBytesWord) **
+       (roundReg ↦ᵣ roundedAccessEnd) **
+       (flagReg ↦ᵣ
+        (if BitVec.ult sizeBytesWord roundedAccessEnd then (1 : Word) else 0))) :=
+  sltu_spec_gen_within flagReg sizeReg roundReg flagOld
+    sizeBytesWord roundedAccessEnd base h_flag_ne_x0
+
+theorem mload_compute_expand_flag_ofProg_spec_within
+    (flagReg sizeReg roundReg : Reg)
+    (sizeBytesWord roundedAccessEnd flagOld : Word) (base : Word)
+    (h_flag_ne_x0 : flagReg ≠ .x0) :
+    cpsTripleWithin 1 base (base + 4)
+      (CodeReq.ofProg base (mload_compute_expand_flag flagReg sizeReg roundReg))
+      ((sizeReg ↦ᵣ sizeBytesWord) **
+       (roundReg ↦ᵣ roundedAccessEnd) **
+       (flagReg ↦ᵣ flagOld))
+      ((sizeReg ↦ᵣ sizeBytesWord) **
+       (roundReg ↦ᵣ roundedAccessEnd) **
+       (flagReg ↦ᵣ
+        (if BitVec.ult sizeBytesWord roundedAccessEnd then (1 : Word) else 0))) := by
+  rw [← mload_compute_expand_flag_code_eq_ofProg]
+  exact mload_compute_expand_flag_spec_within
+    flagReg sizeReg roundReg sizeBytesWord roundedAccessEnd flagOld base h_flag_ne_x0
+
+/--
   Store a precomputed 32-byte-access expanded high-water mark into the EVM
   memory-size cell. The arithmetic that computes
   `evmMemExpand sizeBytes offset 32` can be supplied by a caller or a later
