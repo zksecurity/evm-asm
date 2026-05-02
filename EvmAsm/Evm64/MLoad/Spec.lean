@@ -421,6 +421,20 @@ def mloadPackedLimbFromDwordPair (lo hi : Word) (start : Nat) : Word :=
     (mloadByteFromDwordPair lo hi start 6)
     (mloadByteFromDwordPair lo hi start 7)
 
+theorem mloadByteFromDwordPair_start_zero
+    (lo hi : Word) {i : Nat} (h_i : i < 8) :
+    mloadByteFromDwordPair lo hi 0 i = extractByte lo i := by
+  rw [mloadByteFromDwordPair_low lo hi (by simpa using h_i)]
+  rw [show (0 + i) % 8 = i from by simpa using Nat.mod_eq_of_lt h_i]
+
+theorem mloadPackedLimbFromDwordPair_start_zero (lo hi : Word) :
+    mloadPackedLimbFromDwordPair lo hi 0 =
+      mloadPackedLimb
+        (extractByte lo 0) (extractByte lo 1) (extractByte lo 2) (extractByte lo 3)
+        (extractByte lo 4) (extractByte lo 5) (extractByte lo 6) (extractByte lo 7) := by
+  unfold mloadPackedLimbFromDwordPair
+  simp [mloadByteFromDwordPair]
+
 /--
   Runtime shift/or byte packing for an unaligned 8-byte window computes the
   same big-endian limb as `mloadPackedLimbFromDwordPair`.
