@@ -398,6 +398,99 @@ theorem mload_compute_rounded_access_flag_ofProg_spec_within
     base h_end_ne_x0 h_round_ne_x0 h_flag_ne_x0
 
 /--
+  Select the expanded MLOAD memory size after the comparison flag has been
+  computed. If the flag is zero, keep the current size; otherwise copy the
+  rounded access end into the size register.
+-/
+def mload_select_expanded_size
+    (sizeReg roundReg flagReg : Reg) : Program :=
+  single (.BEQ flagReg .x0 8) ;;
+  ADDI sizeReg roundReg 0
+
+abbrev mload_select_expanded_size_code
+    (sizeReg roundReg flagReg : Reg) (base : Word) : CodeReq :=
+  (CodeReq.singleton base (.BEQ flagReg .x0 8)).union
+    (CodeReq.singleton (base + 4) (.ADDI sizeReg roundReg 0))
+
+theorem mload_select_expanded_size_code_eq_ofProg
+    (sizeReg roundReg flagReg : Reg) (base : Word) :
+    mload_select_expanded_size_code sizeReg roundReg flagReg base =
+      CodeReq.ofProg base (mload_select_expanded_size sizeReg roundReg flagReg) := by
+  unfold mload_select_expanded_size_code mload_select_expanded_size ADDI single seq
+  change (CodeReq.singleton base (Instr.BEQ flagReg .x0 8)).union
+      (CodeReq.singleton (base + 4) (Instr.ADDI sizeReg roundReg 0)) =
+    CodeReq.ofProg base [Instr.BEQ flagReg .x0 8, Instr.ADDI sizeReg roundReg 0]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_nil,
+    CodeReq.union_empty_right]
+
+/--
+  Branching bridge for the MLOAD memory high-water select stage. The taken
+  path skips the copy when the comparison flag is zero; the fall-through path
+  proceeds to the copy instruction when the flag is nonzero.
+-/
+theorem mload_select_expanded_size_spec_within
+    (sizeReg roundReg flagReg : Reg)
+    (sizeOld roundedAccessEnd flagVal : Word) (base : Word) :
+    cpsBranchWithin 1 base
+      (mload_select_expanded_size_code sizeReg roundReg flagReg base)
+      ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd))
+      (base + 8)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal = (0 : Word)⌝)
+      (base + 4)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal ≠ (0 : Word)⌝) := by
+  unfold mload_select_expanded_size_code
+  have hbeq :=
+    beq_spec_gen_within flagReg .x0 (8 : BitVec 13) flagVal (0 : Word) base
+  have hbeq_framed : cpsBranchWithin 1 base
+      (CodeReq.singleton base (Instr.BEQ flagReg .x0 8))
+      ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd))
+      (base + 8)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal = (0 : Word)⌝)
+      (base + 4)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal ≠ (0 : Word)⌝) := by
+    exact cpsBranchWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (cpsBranchWithin_frameR
+        ((sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd)) (by pcFree)
+        hbeq)
+  exact cpsBranchWithin_extend_code
+    (cr' := (CodeReq.singleton base (Instr.BEQ flagReg .x0 8)).union
+      (CodeReq.singleton (base + 4) (Instr.ADDI sizeReg roundReg 0)))
+    (h := hbeq_framed)
+    (hmono := CodeReq.union_mono_left)
+
+theorem mload_select_expanded_size_ofProg_spec_within
+    (sizeReg roundReg flagReg : Reg)
+    (sizeOld roundedAccessEnd flagVal : Word) (base : Word) :
+    cpsBranchWithin 1 base
+      (CodeReq.ofProg base (mload_select_expanded_size sizeReg roundReg flagReg))
+      ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd))
+      (base + 8)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal = (0 : Word)⌝)
+      (base + 4)
+        ((flagReg ↦ᵣ flagVal) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sizeReg ↦ᵣ sizeOld) ** (roundReg ↦ᵣ roundedAccessEnd) **
+         ⌜flagVal ≠ (0 : Word)⌝) := by
+  rw [← mload_select_expanded_size_code_eq_ofProg]
+  exact mload_select_expanded_size_spec_within
+    sizeReg roundReg flagReg sizeOld roundedAccessEnd flagVal base
+
+/--
   Store a precomputed 32-byte-access expanded high-water mark into the EVM
   memory-size cell. The arithmetic that computes
   `evmMemExpand sizeBytes offset 32` can be supplied by a caller or a later
