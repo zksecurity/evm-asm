@@ -392,4 +392,144 @@ theorem rlp_prefix_long_list_len_of_len_of_class_spec_within
   exact rlp_prefix_short_payload_len_spec_within
     (pfx.zeroExtend 64) outOld tmpOld (0xF7 : Word) base
 
+abbrev rlp_prefix_long_header_bytes_code (base baseTag : Word) : CodeReq :=
+  CodeReq.ofProg base (rlp_prefix_long_header_bytes .x5 .x10 .x6 baseTag)
+
+/--
+  Executable long-prefix header-byte helper.
+
+  The helper computes `(pfx - baseTag) + 1`, i.e. the long length-of-length
+  plus the prefix byte itself.
+-/
+theorem rlp_prefix_long_header_bytes_spec_within
+    (pfx outOld tmpOld baseTag : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12) (rlp_prefix_long_header_bytes_code base baseTag)
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx) ** (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ (pfx - baseTag) + signExtend12 (1 : BitVec 12)) ** (.x5 ↦ᵣ pfx) **
+        (.x6 ↦ᵣ baseTag) ** (.x0 ↦ᵣ (0 : Word))) := by
+  have I0 := li_spec_gen_within .x6 tmpOld baseTag base (by nofun)
+  have I0_ext := cpsTripleWithin_extend_code
+    (cr' := rlp_prefix_long_header_bytes_code base baseTag) (fun a i h => by
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq =>
+        rw [beq_iff_eq] at heq
+        rw [heq]
+        simp only [Option.some.injEq] at h
+        subst h
+        show rlp_prefix_long_header_bytes_code base baseTag base = some (.LI .x6 baseTag)
+        change CodeReq.ofProg base (.LI .x6 baseTag :: _) base = some (.LI .x6 baseTag)
+        rw [CodeReq.ofProg_cons]
+        simp [CodeReq.union, CodeReq.singleton]
+      · simp at h) I0
+  have I0_framed := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ pfx) ** (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+    (by pcFree) I0_ext
+  have I1 := sub_spec_gen_within .x10 .x5 .x6 pfx baseTag outOld (base + 4) (by nofun)
+  have I1_ext := cpsTripleWithin_extend_code
+    (cr' := rlp_prefix_long_header_bytes_code base baseTag) (fun a i h => by
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq =>
+        rw [beq_iff_eq] at heq
+        rw [heq]
+        simp only [Option.some.injEq] at h
+        subst h
+        show rlp_prefix_long_header_bytes_code base baseTag (base + 4) =
+          some (.SUB .x10 .x5 .x6)
+        exact CodeReq.ofProg_lookup base
+          (rlp_prefix_long_header_bytes .x5 .x10 .x6 baseTag) 1
+          (by rw [rlp_prefix_long_header_bytes_length]; norm_num)
+          (by rw [rlp_prefix_long_header_bytes_length]; norm_num)
+      · simp at h) I1
+  have I1_framed := cpsTripleWithin_frameR
+    ((.x0 ↦ᵣ (0 : Word)))
+    (by pcFree) I1_ext
+  have I2 := addi_spec_gen_same_within .x10 (pfx - baseTag) (1 : BitVec 12) (base + 8) (by nofun)
+  have I2_ext := cpsTripleWithin_extend_code
+    (cr' := rlp_prefix_long_header_bytes_code base baseTag) (fun a i h => by
+      simp only [CodeReq.singleton] at h
+      split at h
+      · next heq =>
+        rw [beq_iff_eq] at heq
+        rw [heq]
+        simp only [Option.some.injEq] at h
+        subst h
+        show rlp_prefix_long_header_bytes_code base baseTag (base + 8) =
+          some (.ADDI .x10 .x10 (1 : BitVec 12))
+        exact CodeReq.ofProg_lookup base
+          (rlp_prefix_long_header_bytes .x5 .x10 .x6 baseTag) 2
+          (by rw [rlp_prefix_long_header_bytes_length]; norm_num)
+          (by rw [rlp_prefix_long_header_bytes_length]; norm_num)
+      · simp at h) I2
+  have I2_framed := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ pfx) ** (.x6 ↦ᵣ baseTag) ** (.x0 ↦ᵣ (0 : Word)))
+    (by pcFree) I2_ext
+  have ha1 : (base : Word) + 4 = base + 4 := rfl
+  have ha2 : (base + 4 : Word) + 4 = base + 8 := by bv_addr
+  have ha3 : (base + 8 : Word) + 4 = base + 12 := by bv_addr
+  rw [ha1] at I0_framed
+  rw [ha2] at I1_framed
+  rw [ha3] at I2_framed
+  have H01 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) I0_framed I1_framed
+  have H012 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) H01 I2_framed
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by xperm_hyp hp)
+    H012
+
+theorem rlpPrefixLongBytesHeaderBytes_toWord_of_class
+    (pfx : Byte) (h_class : classifyPrefix pfx = .longBytes) :
+    (BitVec.ofNat 64 (rlpPrefixLongBytesHeaderBytes pfx) : Word) =
+      (pfx.zeroExtend 64 - (0xB7 : Word)) + signExtend12 (1 : BitVec 12) := by
+  rw [show signExtend12 (1 : BitVec 12) = (1 : Word) by rfl]
+  rw [← rlpPrefixLongBytesLenOfLen_toWord_of_class pfx h_class]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add]
+  simp [rlpPrefixLongBytesHeaderBytes]
+  have h_len := rlpPrefixLongBytesLenOfLen_le_8_of_class h_class
+  have h_pos := rlpPrefixLongBytesLenOfLen_pos_of_class h_class
+  omega
+
+theorem rlpPrefixLongListHeaderBytes_toWord_of_class
+    (pfx : Byte) (h_class : classifyPrefix pfx = .longList) :
+    (BitVec.ofNat 64 (rlpPrefixLongListHeaderBytes pfx) : Word) =
+      (pfx.zeroExtend 64 - (0xF7 : Word)) + signExtend12 (1 : BitVec 12) := by
+  rw [show signExtend12 (1 : BitVec 12) = (1 : Word) by rfl]
+  rw [← rlpPrefixLongListLenOfLen_toWord_of_class pfx h_class]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add]
+  simp [rlpPrefixLongListHeaderBytes]
+  have h_len := rlpPrefixLongListLenOfLen_le_8_of_class h_class
+  have h_pos := rlpPrefixLongListLenOfLen_pos_of_class h_class
+  omega
+
+theorem rlp_prefix_long_bytes_header_bytes_of_class_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word)
+    (h_class : classifyPrefix pfx = .longBytes) :
+    cpsTripleWithin 3 base (base + 12) (rlp_prefix_long_header_bytes_code base (0xB7 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ (BitVec.ofNat 64 (rlpPrefixLongBytesHeaderBytes pfx) : Word)) **
+        (.x5 ↦ᵣ pfx.zeroExtend 64) ** (.x6 ↦ᵣ (0xB7 : Word)) **
+        (.x0 ↦ᵣ (0 : Word))) := by
+  rw [rlpPrefixLongBytesHeaderBytes_toWord_of_class pfx h_class]
+  exact rlp_prefix_long_header_bytes_spec_within
+    (pfx.zeroExtend 64) outOld tmpOld (0xB7 : Word) base
+
+theorem rlp_prefix_long_list_header_bytes_of_class_spec_within
+    (pfx : Byte) (outOld tmpOld : Word) (base : Word)
+    (h_class : classifyPrefix pfx = .longList) :
+    cpsTripleWithin 3 base (base + 12) (rlp_prefix_long_header_bytes_code base (0xF7 : Word))
+      ((.x6 ↦ᵣ tmpOld) ** (.x5 ↦ᵣ pfx.zeroExtend 64) **
+        (.x10 ↦ᵣ outOld) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x10 ↦ᵣ (BitVec.ofNat 64 (rlpPrefixLongListHeaderBytes pfx) : Word)) **
+        (.x5 ↦ᵣ pfx.zeroExtend 64) ** (.x6 ↦ᵣ (0xF7 : Word)) **
+        (.x0 ↦ᵣ (0 : Word))) := by
+  rw [rlpPrefixLongListHeaderBytes_toWord_of_class pfx h_class]
+  exact rlp_prefix_long_header_bytes_spec_within
+    (pfx.zeroExtend 64) outOld tmpOld (0xF7 : Word) base
+
 end EvmAsm.EL.RLP
