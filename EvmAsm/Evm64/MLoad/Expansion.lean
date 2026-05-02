@@ -7,6 +7,7 @@
 import EvmAsm.Evm64.Memory
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
+import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Evm64
 
@@ -111,6 +112,67 @@ theorem mload_round_access_end_ofProg_spec_within
   rw [← mload_round_access_end_code_eq_ofProg]
   exact mload_round_access_end_spec_within
     roundReg endReg accessEnd roundOld base h_round_ne_x0
+
+/--
+  Compute both the exclusive MLOAD access end (`offset + 32`) and its
+  executable 32-byte rounded form.
+-/
+def mload_compute_rounded_access_end
+    (roundReg endReg offReg : Reg) : Program :=
+  mload_compute_access_end endReg offReg ;;
+  mload_round_access_end roundReg endReg
+
+abbrev mload_compute_rounded_access_end_code
+    (roundReg endReg offReg : Reg) (base : Word) : CodeReq :=
+  (mload_compute_access_end_code endReg offReg base).union
+    (mload_round_access_end_code roundReg endReg (base + 4))
+
+/--
+  Composed executable bridge for the first two arithmetic stages of MLOAD
+  memory expansion.
+-/
+theorem mload_compute_rounded_access_end_spec_within
+    (roundReg endReg offReg : Reg)
+    (offset endOld roundOld : Word) (base : Word)
+    (h_end_ne_x0 : endReg ≠ .x0)
+    (h_round_ne_x0 : roundReg ≠ .x0) :
+    cpsTripleWithin 3 base (base + 12)
+      (mload_compute_rounded_access_end_code roundReg endReg offReg base)
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld) ** (roundReg ↦ᵣ roundOld))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12)))) := by
+  unfold mload_compute_rounded_access_end_code
+  have h_end :=
+    mload_compute_access_end_spec_within endReg offReg offset endOld base h_end_ne_x0
+  have h_round :=
+    mload_round_access_end_spec_within roundReg endReg (offset + 32) roundOld
+      (base + 4) h_round_ne_x0
+  rw [show (base + 4 : Word) + 8 = base + 12 from by bv_omega] at h_round
+  have hd :
+      (mload_compute_access_end_code endReg offReg base).Disjoint
+        (mload_round_access_end_code roundReg endReg (base + 4)) := by
+    unfold mload_compute_access_end_code mload_round_access_end_code
+    exact CodeReq.Disjoint.union_right
+      (CodeReq.Disjoint.singleton (by bv_omega))
+      (CodeReq.Disjoint.singleton (by bv_omega))
+  have h_end_framed : cpsTripleWithin 1 base (base + 4)
+      (mload_compute_access_end_code endReg offReg base)
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld) ** (roundReg ↦ᵣ roundOld))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) ** (roundReg ↦ᵣ roundOld)) :=
+    cpsTripleWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (cpsTripleWithin_frameR (roundReg ↦ᵣ roundOld) (by pcFree) h_end)
+  have h_round_framed : cpsTripleWithin 2 (base + 4) (base + 12)
+      (mload_round_access_end_code roundReg endReg (base + 4))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) ** (roundReg ↦ᵣ roundOld))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32)) **
+       (roundReg ↦ᵣ (((offset + 32) + 31) &&& signExtend12 (-32 : BitVec 12)))) :=
+    cpsTripleWithin_weaken
+      (fun h hp => by xperm_hyp hp)
+      (fun h hp => by xperm_hyp hp)
+      (cpsTripleWithin_frameL (offReg ↦ᵣ offset) (by pcFree) h_round)
+  exact cpsTripleWithin_seq hd h_end_framed h_round_framed
 
 /--
   Store a precomputed 32-byte-access expanded high-water mark into the EVM
