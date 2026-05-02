@@ -12,6 +12,51 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 /--
+  Compute the byte just past a 32-byte MLOAD access. This is the first
+  arithmetic stage of the memory high-water update: later blocks round this
+  value up to a 32-byte boundary and select the max with the current size.
+-/
+def mload_compute_access_end (endReg offReg : Reg) : Program :=
+  ADDI endReg offReg 32
+
+abbrev mload_compute_access_end_code
+    (endReg offReg : Reg) (base : Word) : CodeReq :=
+  CodeReq.singleton base (.ADDI endReg offReg 32)
+
+theorem mload_compute_access_end_code_eq_ofProg
+    (endReg offReg : Reg) (base : Word) :
+    mload_compute_access_end_code endReg offReg base =
+      CodeReq.ofProg base (mload_compute_access_end endReg offReg) := by
+  unfold mload_compute_access_end_code mload_compute_access_end ADDI single
+  rfl
+
+/--
+  One-instruction executable bridge for `offset + 32`, the exclusive end of a
+  32-byte MLOAD access.
+-/
+theorem mload_compute_access_end_spec_within
+    (endReg offReg : Reg) (offset endOld : Word) (base : Word)
+    (h_end_ne_x0 : endReg ≠ .x0) :
+    cpsTripleWithin 1 base (base + 4)
+      (mload_compute_access_end_code endReg offReg base)
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32))) := by
+  have h := addi_spec_gen_within endReg offReg endOld offset 32 base h_end_ne_x0
+  simp only [signExtend12_32] at h
+  exact h
+
+theorem mload_compute_access_end_ofProg_spec_within
+    (endReg offReg : Reg) (offset endOld : Word) (base : Word)
+    (h_end_ne_x0 : endReg ≠ .x0) :
+    cpsTripleWithin 1 base (base + 4)
+      (CodeReq.ofProg base (mload_compute_access_end endReg offReg))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ endOld))
+      ((offReg ↦ᵣ offset) ** (endReg ↦ᵣ (offset + 32))) := by
+  rw [← mload_compute_access_end_code_eq_ofProg]
+  exact mload_compute_access_end_spec_within
+    endReg offReg offset endOld base h_end_ne_x0
+
+/--
   Store a precomputed 32-byte-access expanded high-water mark into the EVM
   memory-size cell. The arithmetic that computes
   `evmMemExpand sizeBytes offset 32` can be supplied by a caller or a later
