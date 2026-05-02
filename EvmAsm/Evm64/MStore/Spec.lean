@@ -69,4 +69,12 @@ theorem mstore_epilogue_spec_within (sp : Word) (base : Word) :
   unfold mstoreEpilogueCode
   exact addi_spec_gen_same_within (.x12 : Reg) sp 64 base (by nofun)
 
+/-- Compact CodeReq for the full MSTORE program, split into prologue, four
+    one-limb byte-unpack blocks, and the final stack-pop epilogue. -/
+def mstoreStackCode
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) : CodeReq :=
+  (mstorePrologueCode offReg addrReg memBaseReg base).union
+    ((mstoreFourLimbsCode addrReg byteReg accReg base).union
+      (mstoreEpilogueCode (base + 280)))
+
 end EvmAsm.Evm64
