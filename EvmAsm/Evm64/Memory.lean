@@ -297,6 +297,13 @@ theorem evmMemExpand_ge_access (sizeBytes offset length : Nat) (hlen : length â‰
   rw [if_neg hlen]
   exact Nat.le_trans (roundUpTo32_le _) (Nat.le_max_right _ _)
 
+/-- MLOAD and MSTORE access one full 32-byte EVM word. -/
+theorem evmMemExpand_word_eq (sizeBytes offset : Nat) :
+    evmMemExpand sizeBytes offset 32 =
+      max sizeBytes (roundUpTo32 (offset + 32)) := by
+  unfold evmMemExpand
+  simp
+
 /-- MLOAD is a 32-byte byte-addressed access: expansion covers the byte just
     past the requested range for any starting byte offset. -/
 theorem evmMemExpand_mload_ge_end (sizeBytes offset : Nat) :
