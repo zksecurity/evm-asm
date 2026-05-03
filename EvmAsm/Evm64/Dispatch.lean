@@ -17,6 +17,7 @@ namespace EvmOpcode
     `EvmAsm.Evm64`. Unsupported bytes return `none`; later feature slices can
     extend this table as new opcode handlers land. -/
 def decodeByte? : Nat → Option EvmOpcode
+  | 0x00 => some STOP
   | 0x01 => some ADD
   | 0x02 => some MUL
   | 0x03 => some SUB
@@ -111,6 +112,9 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x9d => some (SWAP 14)
   | 0x9e => some (SWAP 15)
   | 0x9f => some (SWAP 16)
+  | 0xf3 => some RETURN
+  | 0xfd => some REVERT
+  | 0xfe => some INVALID
   | _ => none
 
 /-- Predicate form for dispatch tables that only need to know whether a byte is
@@ -119,6 +123,7 @@ def modeledByte (b : Nat) : Prop :=
   (decodeByte? b).isSome
 
 theorem decodeByte?_ADD : decodeByte? 0x01 = some ADD := rfl
+theorem decodeByte?_STOP : decodeByte? 0x00 = some STOP := rfl
 theorem decodeByte?_EXP : decodeByte? 0x0a = some EXP := rfl
 theorem decodeByte?_CALLDATALOAD : decodeByte? 0x35 = some CALLDATALOAD := rfl
 theorem decodeByte?_CALLDATASIZE : decodeByte? 0x36 = some CALLDATASIZE := rfl
@@ -131,6 +136,13 @@ theorem decodeByte?_DUP1 : decodeByte? 0x80 = some (DUP 1) := rfl
 theorem decodeByte?_DUP16 : decodeByte? 0x8f = some (DUP 16) := rfl
 theorem decodeByte?_SWAP1 : decodeByte? 0x90 = some (SWAP 1) := rfl
 theorem decodeByte?_SWAP16 : decodeByte? 0x9f = some (SWAP 16) := rfl
+theorem decodeByte?_RETURN : decodeByte? 0xf3 = some RETURN := rfl
+theorem decodeByte?_REVERT : decodeByte? 0xfd = some REVERT := rfl
+theorem decodeByte?_INVALID : decodeByte? 0xfe = some INVALID := rfl
+
+theorem byte?_roundtrip_STOP :
+    byte? STOP = some 0x00 ∧ decodeByte? 0x00 = some STOP := by
+  exact ⟨rfl, rfl⟩
 
 theorem byte?_roundtrip_ADD :
     byte? ADD = some 0x01 ∧ decodeByte? 0x01 = some ADD := by
@@ -158,6 +170,18 @@ theorem byte?_roundtrip_DUP16 :
 
 theorem byte?_roundtrip_SWAP16 :
     byte? (SWAP 16) = some 0x9f ∧ decodeByte? 0x9f = some (SWAP 16) := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_RETURN :
+    byte? RETURN = some 0xf3 ∧ decodeByte? 0xf3 = some RETURN := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_REVERT :
+    byte? REVERT = some 0xfd ∧ decodeByte? 0xfd = some REVERT := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_INVALID :
+    byte? INVALID = some 0xfe ∧ decodeByte? 0xfe = some INVALID := by
   exact ⟨rfl, rfl⟩
 
 end EvmOpcode
