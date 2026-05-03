@@ -55,6 +55,25 @@ theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
   rw [exp_correct]
   simp [Nat.mod_eq_of_lt base.isLt]
 
+/-- Successor recurrence for EXP when the exponent increment does not wrap. -/
+theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
+    (h : exponent.toNat + 1 < 2^256) :
+    exp base (exponent + 1) = base * exp base exponent := by
+  apply BitVec.eq_of_toNat_eq
+  rw [exp_correct]
+  have hSucc : (exponent + 1).toNat = exponent.toNat + 1 := by
+    rw [BitVec.toNat_add]
+    have h1 : (1 : EvmWord).toNat = 1 := by decide
+    rw [h1]
+    exact Nat.mod_eq_of_lt h
+  rw [hSucc]
+  rw [BitVec.toNat_mul]
+  rw [exp_correct]
+  rw [Nat.pow_succ]
+  rw [Nat.mul_comm (base.toNat ^ exponent.toNat) base.toNat]
+  rw [Nat.mul_mod]
+  rw [Nat.mod_eq_of_lt base.isLt]
+
 /-- The GH #92 boundary case `EXP(2, 256)` wraps to zero modulo `2^256`. -/
 theorem exp_two_256 : exp (2 : EvmWord) (256 : EvmWord) = 0 := by
   native_decide
