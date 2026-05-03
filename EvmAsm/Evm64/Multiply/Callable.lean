@@ -59,6 +59,21 @@ theorem mul_callable_byte_length : 4 * mul_callable.length = 256 := by
 abbrev mul_callable_code (base : Word) : CodeReq :=
   CodeReq.union (evm_mul_code base) (cc_ret_code (base + 252))
 
+theorem mul_callable_code_eq_ofProg (base : Word) :
+    mul_callable_code base = CodeReq.ofProg base mul_callable := by
+  unfold mul_callable_code mul_callable cc_ret_code
+  rw [evm_mul_code_eq_ofProg]
+  unfold seq
+  symm
+  have h0 :
+      CodeReq.ofProg base (evm_mul ++ cc_ret) =
+        (CodeReq.ofProg base evm_mul).union
+          (CodeReq.ofProg (base + BitVec.ofNat 64 (4 * evm_mul.length)) cc_ret) := by
+    exact CodeReq.ofProg_append
+  rw [h0]
+  rw [mul_callable_ret_byte_off]
+  rfl
+
 -- ============================================================================
 -- Disjointness — evm_mul_code base ∥ cc_ret_code (base + 252)
 -- ============================================================================
