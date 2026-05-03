@@ -19,6 +19,7 @@
 import EvmAsm.Evm64.Push.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
+import EvmAsm.Rv64.Tactics.XSimp
 
 open EvmAsm.Rv64.Tactics
 
@@ -163,6 +164,34 @@ theorem push_zero_slot_word_zero_right (nsp : Word) (Q : Assertion) :
     unfold signExtend12; bv_decide
   rw [h0, h8, h16, h24]
   rw [evmWordIs_zero_right]
+
+/-- Stack-shaped bridge for the generic PUSH allocation prefix: the first five
+    instructions of `evm_push n` allocate a slot, zero-fill it, and expose the
+    new top as `evmWordIs nsp 0` while framing the previous stack tail. -/
+theorem evm_push_zero_slot_stack_spec_within
+    (n : Nat) (hn : n ≤ 32) (sp d0 d1 d2 d3 : Word) (base : Word)
+    (rest : List EvmWord) :
+    let nsp := sp + signExtend12 ((-32 : BitVec 12))
+    cpsTripleWithin 5 base (base + 20) (evm_push_code base n)
+      ((.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((nsp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((nsp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((nsp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((nsp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       evmStackIs sp rest)
+      ((.x12 ↦ᵣ nsp) ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs nsp (0 : EvmWord) **
+       evmStackIs sp rest) := by
+  intro nsp
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hq => by
+      rw [← push_zero_slot_word_zero nsp]
+      xperm_hyp hq)
+    (cpsTripleWithin_frameR
+      (evmStackIs sp rest)
+      pcFree_evmStackIs
+      (evm_push_zero_slot_code_spec_within n hn sp d0 d1 d2 d3 base))
 
 -- ============================================================================
 -- Semantic immediate word assembled by PUSH byte stores
