@@ -16,6 +16,7 @@ namespace EvmAsm.Evm64
     families keep their EVM width/index as data so handler code can share one
     gas theorem across all concrete opcodes in the family. -/
 inductive EvmOpcode where
+  | STOP
   | ADD
   | MUL
   | SUB
@@ -45,6 +46,9 @@ inductive EvmOpcode where
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
+  | RETURN
+  | REVERT
+  | INVALID
   | PUSH0
   | PUSH (n : Nat)
   | DUP (n : Nat)
@@ -69,6 +73,7 @@ def validSwapIndex (n : Nat) : Bool :=
     parameterized identifiers return `none`, keeping the gas table total while
     making bytecode emission validate widths explicitly. -/
 def byte? : EvmOpcode → Option Nat
+  | STOP => some 0x00
   | ADD => some 0x01
   | MUL => some 0x02
   | SUB => some 0x03
@@ -98,6 +103,9 @@ def byte? : EvmOpcode → Option Nat
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
+  | RETURN => some 0xf3
+  | REVERT => some 0xfd
+  | INVALID => some 0xfe
   | PUSH0 => some 0x5f
   | PUSH n => if validPushWidth n then some (0x5f + n) else none
   | DUP n => if validDupIndex n then some (0x7f + n) else none
@@ -106,6 +114,7 @@ def byte? : EvmOpcode → Option Nat
 /-- Shanghai static/base gas cost. Costs that also have dynamic components
     return only the fixed part charged before the dynamic add-on. -/
 def staticGasCost : EvmOpcode → Nat
+  | STOP => 0
   | ADD => 3
   | MUL => 5
   | SUB => 3
@@ -135,6 +144,9 @@ def staticGasCost : EvmOpcode → Nat
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
+  | RETURN => 0
+  | REVERT => 0
+  | INVALID => 0
   | PUSH0 => 2
   | PUSH _ => 3
   | DUP _ => 3
@@ -163,6 +175,16 @@ theorem byte?_SWAP_of_valid {n : Nat} (h : validSwapIndex n = true) :
 
 theorem byte?_PUSH0 : byte? PUSH0 = some 0x5f := rfl
 
+theorem byte?_STOP : byte? STOP = some 0x00 := rfl
+
+theorem byte?_RETURN : byte? RETURN = some 0xf3 := rfl
+
+theorem byte?_REVERT : byte? REVERT = some 0xfd := rfl
+
+theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
+
+theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
+
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
 
 theorem staticGasCost_msize : staticGasCost MSIZE = 2 := rfl
@@ -172,6 +194,12 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
+
+theorem staticGasCost_revertBase : staticGasCost REVERT = 0 := rfl
+
+theorem staticGasCost_invalidBase : staticGasCost INVALID = 0 := rfl
 
 theorem staticGasCost_expBase : staticGasCost EXP = 10 := rfl
 

@@ -90,5 +90,39 @@ theorem sloadDynamicCostForKey_after_warmKey
       StorageGas.warmStorageReadCost := by
   simp [sloadDynamicCostForKey, accessStatus_after_warmKey]
 
+/-- Dynamic SSTORE gas for a key under the current access list. -/
+def sstoreDynamicCostForKey
+    (accesses : StorageAccessList) (key : StorageAccessKey) (current new : EvmWord) : Nat :=
+  StorageGas.sstoreDynamicCost (accessStatus accesses key) current new
+
+theorem sstoreDynamicCostForKey_of_warm
+    {accesses : StorageAccessList} {key : StorageAccessKey} {current new : EvmWord}
+    (h_warm : isWarm accesses key = true) :
+    sstoreDynamicCostForKey accesses key current new =
+      StorageGas.sstoreWriteCost current new := by
+  simp [sstoreDynamicCostForKey, accessStatus_of_warm h_warm,
+    StorageGas.sstoreDynamicCost_warm]
+
+theorem sstoreDynamicCostForKey_of_cold
+    {accesses : StorageAccessList} {key : StorageAccessKey} {current new : EvmWord}
+    (h_cold : isWarm accesses key = false) :
+    sstoreDynamicCostForKey accesses key current new =
+      StorageGas.coldSloadCost + StorageGas.sstoreWriteCost current new := by
+  simp [sstoreDynamicCostForKey, accessStatus_of_cold h_cold,
+    StorageGas.sstoreDynamicCost_cold]
+
+@[simp] theorem sstoreDynamicCostForKey_nil
+    (key : StorageAccessKey) (current new : EvmWord) :
+    sstoreDynamicCostForKey [] key current new =
+      StorageGas.coldSloadCost + StorageGas.sstoreWriteCost current new := by
+  simp [sstoreDynamicCostForKey, StorageGas.sstoreDynamicCost_cold]
+
+theorem sstoreDynamicCostForKey_after_warmKey
+    (accesses : StorageAccessList) (key : StorageAccessKey) (current new : EvmWord) :
+    sstoreDynamicCostForKey (warmKey accesses key) key current new =
+      StorageGas.sstoreWriteCost current new := by
+  simp [sstoreDynamicCostForKey, accessStatus_after_warmKey,
+    StorageGas.sstoreDynamicCost_warm]
+
 end StorageAccess
 end EvmAsm.Evm64

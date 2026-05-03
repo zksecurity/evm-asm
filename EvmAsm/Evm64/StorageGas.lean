@@ -4,6 +4,8 @@
   Pure cold/warm storage access gas helpers for issue #119.
 -/
 
+import EvmAsm.Evm64.Basic
+
 namespace EvmAsm.Evm64
 namespace StorageGas
 
@@ -28,6 +30,33 @@ def storageAccessCost : StorageAccessStatus → Nat
 def sloadDynamicCost (status : StorageAccessStatus) : Nat :=
   storageAccessCost status
 
+/-- Warm SSTORE no-op cost: writing the same value charges a warm storage read. -/
+def sstoreNoopCost : Nat := warmStorageReadCost
+
+/-- Warm SSTORE cost when a zero slot is set to a nonzero value. -/
+def sstoreSetCost : Nat := 20000
+
+/-- Warm SSTORE cost when a nonzero slot is written to a different value. -/
+def sstoreResetCost : Nat := 5000
+
+/-- EIP-2929 cold-key surcharge for SSTORE. Warm keys have no surcharge. -/
+def sstoreColdSurcharge : StorageAccessStatus → Nat
+  | .cold => coldSloadCost
+  | .warm => 0
+
+/-- Warm-key SSTORE write cost, before any cold-key surcharge or refund logic. -/
+def sstoreWriteCost (current new : EvmWord) : Nat :=
+  if new = current then
+    sstoreNoopCost
+  else if current = 0 then
+    sstoreSetCost
+  else
+    sstoreResetCost
+
+/-- Dynamic SSTORE cost surface: cold-key surcharge plus warm write cost. -/
+def sstoreDynamicCost (status : StorageAccessStatus) (current new : EvmWord) : Nat :=
+  sstoreColdSurcharge status + sstoreWriteCost current new
+
 /-- After any storage-key access, that key is warm for the rest of the transaction. -/
 def warmAfterAccess (_status : StorageAccessStatus) : StorageAccessStatus :=
   .warm
@@ -43,6 +72,39 @@ def warmAfterAccess (_status : StorageAccessStatus) : StorageAccessStatus :=
 
 @[simp] theorem sloadDynamicCost_warm :
     sloadDynamicCost .warm = warmStorageReadCost := rfl
+
+@[simp] theorem sstoreColdSurcharge_cold :
+    sstoreColdSurcharge .cold = coldSloadCost := rfl
+
+@[simp] theorem sstoreColdSurcharge_warm :
+    sstoreColdSurcharge .warm = 0 := rfl
+
+theorem sstoreWriteCost_noop (current : EvmWord) :
+    sstoreWriteCost current current = sstoreNoopCost := by
+  simp [sstoreWriteCost]
+
+theorem sstoreWriteCost_set {new : EvmWord} (h_new : new ≠ 0) :
+    sstoreWriteCost 0 new = sstoreSetCost := by
+  unfold sstoreWriteCost
+  split
+  · contradiction
+  · simp
+
+theorem sstoreWriteCost_reset {current new : EvmWord}
+    (h_current : current ≠ 0) (h_ne : new ≠ current) :
+    sstoreWriteCost current new = sstoreResetCost := by
+  unfold sstoreWriteCost
+  split
+  · contradiction
+  · rfl
+
+theorem sstoreDynamicCost_warm (current new : EvmWord) :
+    sstoreDynamicCost .warm current new = sstoreWriteCost current new := by
+  simp [sstoreDynamicCost]
+
+theorem sstoreDynamicCost_cold (current new : EvmWord) :
+    sstoreDynamicCost .cold current new =
+      coldSloadCost + sstoreWriteCost current new := rfl
 
 @[simp] theorem warmAfterAccess_cold :
     warmAfterAccess .cold = .warm := rfl
@@ -65,6 +127,15 @@ theorem sloadDynamicCost_cold_eq :
 
 theorem sloadDynamicCost_warm_eq :
     sloadDynamicCost .warm = 100 := rfl
+
+theorem sstoreNoopCost_eq :
+    sstoreNoopCost = 100 := rfl
+
+theorem sstoreSetCost_eq :
+    sstoreSetCost = 20000 := rfl
+
+theorem sstoreResetCost_eq :
+    sstoreResetCost = 5000 := rfl
 
 end StorageGas
 end EvmAsm.Evm64
