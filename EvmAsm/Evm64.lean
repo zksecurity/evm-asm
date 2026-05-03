@@ -82,6 +82,7 @@ import EvmAsm.Evm64.Precompile
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
 import EvmAsm.Evm64.EvmState
+import EvmAsm.Evm64.Termination
 import EvmAsm.Evm64.MSize
 import EvmAsm.Evm64.MStore8
 import EvmAsm.Evm64.MStore
