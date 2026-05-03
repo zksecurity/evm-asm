@@ -299,6 +299,26 @@ theorem mstoreStackCode_four_limbs_sub
       rw [mstoreStackProg_length]
       omega)
 
+theorem evm_mstore_code_four_limbs_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i, (mstoreFourLimbsCode addrReg byteReg accReg base) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  rw [← mstoreStackCode_eq_evm_mstore_code
+    offReg valReg byteReg accReg addrReg memBaseReg base]
+  exact mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base
+
+theorem mstore_four_limbs_evm_mstore_spec_within
+    {nSteps : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin nSteps (base + 8) (base + 280)
+        (mstoreFourLimbsCode addrReg byteReg accReg base) P Q) :
+    cpsTripleWithin nSteps (base + 8) (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (evm_mstore_code_four_limbs_sub offReg valReg byteReg accReg addrReg memBaseReg base)
+    h
+
 theorem mstoreStackCode_epilogue_sub
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
     ∀ a i, (mstoreEpilogueCode (base + 280)) a = some i →
