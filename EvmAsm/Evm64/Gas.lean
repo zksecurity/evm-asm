@@ -74,6 +74,7 @@ inductive EvmOpcode where
   | STATICCALL
   | RETURN
   | REVERT
+  | SELFDESTRUCT
   | INVALID
   | PUSH0
   | PUSH (n : Nat)
@@ -154,6 +155,7 @@ def byte? : EvmOpcode → Option Nat
   | STATICCALL => some 0xfa
   | RETURN => some 0xf3
   | REVERT => some 0xfd
+  | SELFDESTRUCT => some 0xff
   | INVALID => some 0xfe
   | PUSH0 => some 0x5f
   | PUSH n => if validPushWidth n then some (0x5f + n) else none
@@ -218,6 +220,7 @@ def staticGasCost : EvmOpcode → Nat
   | STATICCALL => 700
   | RETURN => 0
   | REVERT => 0
+  | SELFDESTRUCT => 5000
   | INVALID => 0
   | PUSH0 => 2
   | PUSH _ => 3
@@ -252,6 +255,8 @@ theorem byte?_STOP : byte? STOP = some 0x00 := rfl
 theorem byte?_RETURN : byte? RETURN = some 0xf3 := rfl
 
 theorem byte?_REVERT : byte? REVERT = some 0xfd := rfl
+
+theorem byte?_SELFDESTRUCT : byte? SELFDESTRUCT = some 0xff := rfl
 
 theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
 
@@ -374,6 +379,8 @@ theorem staticGasCost_ofCreateKind (kind : CreateKind) :
 theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
 
 theorem staticGasCost_revertBase : staticGasCost REVERT = 0 := rfl
+
+theorem staticGasCost_selfdestructBase : staticGasCost SELFDESTRUCT = 5000 := rfl
 
 theorem staticGasCost_invalidBase : staticGasCost INVALID = 0 := rfl
 
