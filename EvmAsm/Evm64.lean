@@ -78,6 +78,7 @@ import EvmAsm.Evm64.Dispatch
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
 import EvmAsm.Evm64.PrecompileResult
+import EvmAsm.Evm64.PrecompileDispatch
 
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
