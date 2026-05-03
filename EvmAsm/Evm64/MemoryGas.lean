@@ -127,6 +127,62 @@ theorem memoryAccessExpansionCost_mstore8_eq_zero_of_access_le
     memoryAccessExpansionCost sizeBytes offset 1 = 0 := by
   exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
 
+/--
+  Dynamic gas for RETURN memory output. RETURN charges memory expansion for
+  the output byte slice, but no per-word copy charge.
+-/
+def returnDynamicCost (sizeBytes offset length : Nat) : Nat :=
+  memoryAccessExpansionCost sizeBytes offset length
+
+/--
+  Dynamic gas for REVERT memory output. REVERT has the same memory-expansion
+  shape as RETURN and no per-word copy charge.
+-/
+def revertDynamicCost (sizeBytes offset length : Nat) : Nat :=
+  memoryAccessExpansionCost sizeBytes offset length
+
+@[simp] theorem returnDynamicCost_zero_length (sizeBytes offset : Nat) :
+    returnDynamicCost sizeBytes offset 0 = 0 := by
+  simp [returnDynamicCost]
+
+@[simp] theorem revertDynamicCost_zero_length (sizeBytes offset : Nat) :
+    revertDynamicCost sizeBytes offset 0 = 0 := by
+  simp [revertDynamicCost]
+
+theorem returnDynamicCost_eq
+    (sizeBytes offset length : Nat) :
+    returnDynamicCost sizeBytes offset length =
+      memoryExpansionCost sizeBytes (evmMemExpand sizeBytes offset length) := rfl
+
+theorem revertDynamicCost_eq
+    (sizeBytes offset length : Nat) :
+    revertDynamicCost sizeBytes offset length =
+      memoryExpansionCost sizeBytes (evmMemExpand sizeBytes offset length) := rfl
+
+theorem returnDynamicCost_eq_zero_of_no_growth
+    {sizeBytes offset length : Nat}
+    (h_no_growth : evmMemExpand sizeBytes offset length = sizeBytes) :
+    returnDynamicCost sizeBytes offset length = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_no_growth h_no_growth
+
+theorem revertDynamicCost_eq_zero_of_no_growth
+    {sizeBytes offset length : Nat}
+    (h_no_growth : evmMemExpand sizeBytes offset length = sizeBytes) :
+    revertDynamicCost sizeBytes offset length = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_no_growth h_no_growth
+
+theorem returnDynamicCost_eq_zero_of_access_le
+    {sizeBytes offset length : Nat}
+    (h_access : roundUpTo32 (offset + length) ≤ sizeBytes) :
+    returnDynamicCost sizeBytes offset length = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
+
+theorem revertDynamicCost_eq_zero_of_access_le
+    {sizeBytes offset length : Nat}
+    (h_access : roundUpTo32 (offset + length) ≤ sizeBytes) :
+    revertDynamicCost sizeBytes offset length = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
+
 /-- Dynamic copy gas charged per 32-byte input chunk for copy-style opcodes. -/
 def copyGasPerWord : Nat := 3
 
