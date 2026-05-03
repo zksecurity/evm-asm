@@ -46,6 +46,22 @@ def setAccount (state : WorldState) (addr : Address) (account : Account) : World
 def deleteAccount (state : WorldState) (addr : Address) : WorldState :=
   { state with accounts := fun addr' => if addr' = addr then none else state.accounts addr' }
 
+/-- Read an account's code bytes when the account exists. -/
+def accountCode? (state : WorldState) (addr : Address) : Option (List Byte) :=
+  (getAccount state addr).map (fun account => account.code)
+
+/-- Read an account's code hash when the account exists. -/
+def accountCodeHash? (state : WorldState) (addr : Address) : Option Hash256 :=
+  (getAccount state addr).map (fun account => account.codeHash)
+
+/-- Update an existing account's code bytes and code hash. Missing accounts are unchanged. -/
+def setAccountCode
+    (state : WorldState) (addr : Address) (codeHash : Hash256) (code : List Byte) :
+    WorldState :=
+  match getAccount state addr with
+  | none => state
+  | some account => setAccount state addr { account with codeHash := codeHash, code := code }
+
 def accountBalance? (state : WorldState) (addr : Address) : Option Word256 :=
   (getAccount state addr).map (fun account => account.balance)
 
@@ -102,6 +118,70 @@ theorem getAccount_deleteAccount_ne
     (state : WorldState) {addr other : Address} (h_ne : other ≠ addr) :
     getAccount (deleteAccount state addr) other = getAccount state other := by
   simp [getAccount, deleteAccount, h_ne]
+
+@[simp] theorem accountCode?_empty (addr : Address) :
+    accountCode? empty addr = none := rfl
+
+@[simp] theorem accountCodeHash?_empty (addr : Address) :
+    accountCodeHash? empty addr = none := rfl
+
+@[simp] theorem accountCode?_setAccount_same
+    (state : WorldState) (addr : Address) (account : Account) :
+    accountCode? (setAccount state addr account) addr = some account.code := by
+  simp [accountCode?]
+
+@[simp] theorem accountCodeHash?_setAccount_same
+    (state : WorldState) (addr : Address) (account : Account) :
+    accountCodeHash? (setAccount state addr account) addr = some account.codeHash := by
+  simp [accountCodeHash?]
+
+theorem accountCode?_setAccount_ne
+    (state : WorldState) {addr other : Address} (account : Account)
+    (h_ne : other ≠ addr) :
+    accountCode? (setAccount state addr account) other = accountCode? state other := by
+  simp [accountCode?, getAccount_setAccount_ne, h_ne]
+
+theorem accountCodeHash?_setAccount_ne
+    (state : WorldState) {addr other : Address} (account : Account)
+    (h_ne : other ≠ addr) :
+    accountCodeHash? (setAccount state addr account) other = accountCodeHash? state other := by
+  simp [accountCodeHash?, getAccount_setAccount_ne, h_ne]
+
+theorem setAccountCode_of_missing
+    {state : WorldState} {addr : Address} (codeHash : Hash256) (code : List Byte)
+    (h_missing : getAccount state addr = none) :
+    setAccountCode state addr codeHash code = state := by
+  simp [setAccountCode, h_missing]
+
+theorem getAccount_setAccountCode_same
+    {state : WorldState} {addr : Address} {account : Account}
+    (codeHash : Hash256) (code : List Byte)
+    (h_account : getAccount state addr = some account) :
+    getAccount (setAccountCode state addr codeHash code) addr =
+      some { account with codeHash := codeHash, code := code } := by
+  simp [setAccountCode, h_account]
+
+theorem accountCode?_setAccountCode_same
+    {state : WorldState} {addr : Address} {account : Account}
+    (codeHash : Hash256) (code : List Byte)
+    (h_account : getAccount state addr = some account) :
+    accountCode? (setAccountCode state addr codeHash code) addr = some code := by
+  simp [accountCode?, getAccount_setAccountCode_same codeHash code h_account]
+
+theorem accountCodeHash?_setAccountCode_same
+    {state : WorldState} {addr : Address} {account : Account}
+    (codeHash : Hash256) (code : List Byte)
+    (h_account : getAccount state addr = some account) :
+    accountCodeHash? (setAccountCode state addr codeHash code) addr = some codeHash := by
+  simp [accountCodeHash?, getAccount_setAccountCode_same codeHash code h_account]
+
+theorem getAccount_setAccountCode_ne
+    (state : WorldState) {addr other : Address} (codeHash : Hash256) (code : List Byte)
+    (h_ne : other ≠ addr) :
+    getAccount (setAccountCode state addr codeHash code) other = getAccount state other := by
+  unfold setAccountCode
+  cases h_account : getAccount state addr <;>
+    simp [getAccount_setAccount_ne, h_ne]
 
 @[simp] theorem accountBalance?_empty (addr : Address) :
     accountBalance? empty addr = none := rfl
