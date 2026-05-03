@@ -4,6 +4,7 @@
   Pure execution hooks for message-call processing (GH #121).
 -/
 
+import EvmAsm.EL.Logs
 import EvmAsm.EL.MessageCall
 
 namespace EvmAsm.EL
@@ -44,6 +45,61 @@ structure CallerVisibleResult where
   state : WorldState
   output : List Byte
   gasRemaining : Nat
+
+/-- Side effects surfaced by the executable-spec `MessageCallOutput`. The
+    output bytes and committed state remain in `CallResult`/`CallerVisibleResult`;
+    this record tracks the auxiliary effects that are cleared on errors. -/
+structure CallSideEffects where
+  refundCounter : Nat
+  logs : LogState
+  accountsToDelete : List Address
+  touchedAccounts : List Address
+
+namespace CallSideEffects
+
+def empty : CallSideEffects :=
+  { refundCounter := 0
+    logs := LogState.empty
+    accountsToDelete := []
+    touchedAccounts := [] }
+
+@[simp] theorem refundCounter_empty : empty.refundCounter = 0 := rfl
+@[simp] theorem logs_empty : empty.logs = LogState.empty := rfl
+@[simp] theorem accountsToDelete_empty : empty.accountsToDelete = [] := rfl
+@[simp] theorem touchedAccounts_empty : empty.touchedAccounts = [] := rfl
+
+end CallSideEffects
+
+/-- Executable-spec-shaped message-call output surface. Mirrors the Python
+    `MessageCallOutput` fields while using `status` as the Lean error summary. -/
+structure MessageCallOutput where
+  gasLeft : Nat
+  refundCounter : Nat
+  logs : LogState
+  accountsToDelete : List Address
+  touchedAccounts : List Address
+  status : CallStatus
+
+/-- Successful calls keep their side effects; reverts and failures clear them,
+    matching the executable spec's `if evm.error` branch. -/
+def visibleSideEffects (result : CallResult) (effects : CallSideEffects) :
+    CallSideEffects :=
+  match result.status with
+  | .success => effects
+  | .revert => CallSideEffects.empty
+  | .failure => CallSideEffects.empty
+
+/-- Build the executable-spec-shaped output from the verified call result plus
+    auxiliary side effects. Distinctive token: messageCallOutput_fromResult. -/
+def messageCallOutput_fromResult (result : CallResult) (effects : CallSideEffects) :
+    MessageCallOutput :=
+  let visible := visibleSideEffects result effects
+  { gasLeft := result.gasRemaining
+    refundCounter := visible.refundCounter
+    logs := visible.logs
+    accountsToDelete := visible.accountsToDelete
+    touchedAccounts := visible.touchedAccounts
+    status := result.status }
 
 def toCallerVisible (input : CallExecutionInput) (result : CallResult) :
     CallerVisibleResult :=
@@ -87,6 +143,69 @@ theorem propagatedOutput_failure
     propagatedOutput
         { status := .failure, state := state, output := output, gasRemaining := gasRemaining } =
       [] := rfl
+
+theorem visibleSideEffects_success
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    visibleSideEffects
+        { status := .success, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      effects := rfl
+
+theorem visibleSideEffects_revert
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    visibleSideEffects
+        { status := .revert, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      CallSideEffects.empty := rfl
+
+theorem visibleSideEffects_failure
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    visibleSideEffects
+        { status := .failure, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      CallSideEffects.empty := rfl
+
+theorem messageCallOutput_fromResult_success
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    messageCallOutput_fromResult
+        { status := .success, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      { gasLeft := gasRemaining
+        refundCounter := effects.refundCounter
+        logs := effects.logs
+        accountsToDelete := effects.accountsToDelete
+        touchedAccounts := effects.touchedAccounts
+        status := .success } := rfl
+
+theorem messageCallOutput_fromResult_revert
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    messageCallOutput_fromResult
+        { status := .revert, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      { gasLeft := gasRemaining
+        refundCounter := 0
+        logs := LogState.empty
+        accountsToDelete := []
+        touchedAccounts := []
+        status := .revert } := rfl
+
+theorem messageCallOutput_fromResult_failure
+    (state : WorldState) (output : List Byte) (gasRemaining : Nat)
+    (effects : CallSideEffects) :
+    messageCallOutput_fromResult
+        { status := .failure, state := state, output := output, gasRemaining := gasRemaining }
+        effects =
+      { gasLeft := gasRemaining
+        refundCounter := 0
+        logs := LogState.empty
+        accountsToDelete := []
+        touchedAccounts := []
+        status := .failure } := rfl
 
 theorem callGasBounded_of_le {input : CallExecutionInput} {result : CallResult}
     (h_le : result.gasRemaining ≤ input.frame.gas) :
