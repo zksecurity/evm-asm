@@ -36,18 +36,35 @@ theorem exp_one_left (exponent : EvmWord) : exp 1 exponent = 1 := by
   rw [exp_correct]
   simp
 
+/-- Zero raised to any nonzero EVM exponent remains zero. -/
+theorem exp_zero_left_of_ne_zero (exponent : EvmWord) (h : exponent ≠ 0) :
+    exp 0 exponent = 0 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [exp_correct]
+  have hpos : 0 < exponent.toNat := by
+    by_contra hnot
+    have hz : exponent.toNat = 0 := by omega
+    apply h
+    apply BitVec.eq_of_toNat_eq
+    simp [hz]
+  simp [Nat.zero_pow hpos]
+
 /-- Any base raised to the EVM word one is itself. -/
 theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
   apply BitVec.eq_of_toNat_eq
   rw [exp_correct]
   simp [Nat.mod_eq_of_lt base.isLt]
 
+/-- The GH #92 boundary case `EXP(2, 256)` wraps to zero modulo `2^256`. -/
+theorem exp_two_256 : exp (2 : EvmWord) (256 : EvmWord) = 0 := by
+  native_decide
+
 -- Edge checks required by GH #92's EXP acceptance notes.
 example : exp (0 : EvmWord) (0 : EvmWord) = 1 := by
   native_decide
 
 example : exp (2 : EvmWord) (256 : EvmWord) = 0 := by
-  native_decide
+  exact exp_two_256
 
 end EvmWord
 
