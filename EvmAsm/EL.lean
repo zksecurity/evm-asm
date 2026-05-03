@@ -12,6 +12,7 @@ import EvmAsm.EL.WorldState
 import EvmAsm.EL.Storage
 import EvmAsm.EL.Transaction
 import EvmAsm.EL.MessageCall
+import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.Block
