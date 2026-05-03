@@ -299,6 +299,26 @@ theorem mstoreStackCode_four_limbs_sub
       rw [mstoreStackProg_length]
       omega)
 
+theorem evm_mstore_code_four_limbs_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i, (mstoreFourLimbsCode addrReg byteReg accReg base) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  rw [← mstoreStackCode_eq_evm_mstore_code
+    offReg valReg byteReg accReg addrReg memBaseReg base]
+  exact mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base
+
+theorem mstore_four_limbs_evm_mstore_spec_within
+    {nSteps : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin nSteps (base + 8) (base + 280)
+        (mstoreFourLimbsCode addrReg byteReg accReg base) P Q) :
+    cpsTripleWithin nSteps (base + 8) (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (evm_mstore_code_four_limbs_sub offReg valReg byteReg accReg addrReg memBaseReg base)
+    h
+
 theorem mstoreStackCode_epilogue_sub
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
     ∀ a i, (mstoreEpilogueCode (base + 280)) a = some i →
@@ -341,6 +361,69 @@ theorem mstore_prologue_stack_spec_within
       sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
     (hmono := mstoreStackCode_prologue_sub offReg byteReg accReg addrReg memBaseReg base)
 
+theorem mstore_prologue_evm_mstore_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+       (sp ↦ₘ offset)) := by
+  rw [← mstoreStackCode_eq_evm_mstore_code
+    offReg valReg byteReg accReg addrReg memBaseReg base]
+  exact mstore_prologue_stack_spec_within offReg byteReg accReg addrReg memBaseReg
+    sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+
+theorem mstore_prologue_evm_mstore_frame_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset)) ** F) := by
+  exact cpsTripleWithin_frameR F hF
+    (mstore_prologue_evm_mstore_spec_within
+      offReg valReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
+
+theorem mstore_prologue_body_evm_mstore_spec_within
+    {nBody : Nat} {R : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (hBody :
+      cpsTripleWithin nBody (base + 8) (base + 280)
+        (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+        ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+          (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+          (sp ↦ₘ offset)) ** F)
+        R) :
+    cpsTripleWithin (2 + nBody) base (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) ** F)
+      R := by
+  exact cpsTripleWithin_seq_same_cr
+    (mstore_prologue_evm_mstore_frame_spec_within
+      offReg valReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base F hF h_off_ne_x0 h_addr_ne_x0)
+    hBody
+
 theorem mstore_epilogue_stack_spec_within
     (offReg byteReg accReg addrReg memBaseReg : Reg)
     (sp : Word) (base : Word) :
@@ -353,5 +436,28 @@ theorem mstore_epilogue_stack_spec_within
     (hmono := mstoreStackCode_epilogue_sub offReg byteReg accReg addrReg memBaseReg base)
   rw [show (base + 280 : Word) + 4 = base + 284 from by bv_addr] at h
   exact h
+
+theorem mstore_epilogue_evm_mstore_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp : Word) (base : Word) :
+    cpsTripleWithin 1 (base + 280) (base + 284)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp))
+      (((.x12 : Reg) ↦ᵣ (sp + 64))) := by
+  rw [← mstoreStackCode_eq_evm_mstore_code
+    offReg valReg byteReg accReg addrReg memBaseReg base]
+  exact mstore_epilogue_stack_spec_within offReg byteReg accReg addrReg memBaseReg
+    sp base
+
+theorem mstore_epilogue_evm_mstore_frame_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp : Word) (base : Word) (F : Assertion) (hF : F.pcFree) :
+    cpsTripleWithin 1 (base + 280) (base + 284)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** F)
+      (((.x12 : Reg) ↦ᵣ (sp + 64)) ** F) := by
+  exact cpsTripleWithin_frameR F hF
+    (mstore_epilogue_evm_mstore_spec_within
+      offReg valReg byteReg accReg addrReg memBaseReg sp base)
 
 end EvmAsm.Evm64
