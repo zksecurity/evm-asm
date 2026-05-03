@@ -75,6 +75,9 @@ import EvmAsm.Evm64.StorageAccess
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
 
+-- Precompile dispatch surface (#116)
+import EvmAsm.Evm64.Precompile
+
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
