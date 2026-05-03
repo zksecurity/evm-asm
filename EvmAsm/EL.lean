@@ -6,6 +6,7 @@
 import EvmAsm.EL.RLP
 import EvmAsm.EL.Create
 import EvmAsm.EL.Logs
+import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.WorldState
 import EvmAsm.EL.Storage
