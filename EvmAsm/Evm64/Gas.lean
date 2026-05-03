@@ -53,7 +53,11 @@ inductive EvmOpcode where
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
+  | CODESIZE
+  | CODECOPY
   | GASPRICE
+  | RETURNDATASIZE
+  | RETURNDATACOPY
   | COINBASE
   | TIMESTAMP
   | NUMBER
@@ -129,7 +133,11 @@ def byte? : EvmOpcode → Option Nat
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
+  | CODESIZE => some 0x38
+  | CODECOPY => some 0x39
   | GASPRICE => some 0x3a
+  | RETURNDATASIZE => some 0x3d
+  | RETURNDATACOPY => some 0x3e
   | COINBASE => some 0x41
   | TIMESTAMP => some 0x42
   | NUMBER => some 0x43
@@ -189,7 +197,11 @@ def staticGasCost : EvmOpcode → Nat
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
+  | CODESIZE => 2
+  | CODECOPY => 3
   | GASPRICE => 2
+  | RETURNDATASIZE => 2
+  | RETURNDATACOPY => 3
   | COINBASE => 2
   | TIMESTAMP => 2
   | NUMBER => 2
@@ -283,6 +295,41 @@ theorem byte?_ofCreateKind (kind : CreateKind) :
       | .create2 => some 0xf5 := by
   cases kind <;> rfl
 
+inductive SizeLikeKind where
+  | code
+  | returndata
+  deriving DecidableEq, Repr
+
+def ofSizeLikeKind : SizeLikeKind → EvmOpcode
+  | .code => CODESIZE
+  | .returndata => RETURNDATASIZE
+
+theorem byte?_ofSizeLikeKind (kind : SizeLikeKind) :
+    byte? (ofSizeLikeKind kind) =
+      match kind with
+      | .code => some 0x38
+      | .returndata => some 0x3d := by
+  cases kind <;> rfl
+
+inductive CopyLikeKind where
+  | code
+  | calldata
+  | returndata
+  deriving DecidableEq, Repr
+
+def ofCopyLikeKind : CopyLikeKind → EvmOpcode
+  | .code => CODECOPY
+  | .calldata => CALLDATACOPY
+  | .returndata => RETURNDATACOPY
+
+theorem byte?_ofCopyLikeKind (kind : CopyLikeKind) :
+    byte? (ofCopyLikeKind kind) =
+      match kind with
+      | .code => some 0x39
+      | .calldata => some 0x37
+      | .returndata => some 0x3e := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -294,6 +341,14 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_ofSizeLikeKind (kind : SizeLikeKind) :
+    staticGasCost (ofSizeLikeKind kind) = 2 := by
+  cases kind <;> rfl
+
+theorem staticGasCost_ofCopyLikeKind (kind : CopyLikeKind) :
+    staticGasCost (ofCopyLikeKind kind) = 3 := by
+  cases kind <;> rfl
 
 theorem staticGasCost_address : staticGasCost ADDRESS = 2 := rfl
 
