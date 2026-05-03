@@ -55,6 +55,52 @@ def ofAddress? (addr : Address) : Option Precompile :=
 def isPrecompileAddress (addr : Address) : Prop :=
   (ofAddress? addr).isSome
 
+/-- Gas-shape classification for precompile dispatch. Some precompiles need
+    richer inputs than a byte length; those are represented as hooks for later
+    syscall/executable-spec bridges. -/
+inductive GasSchedule where
+  | fixed (cost : Nat)
+  | wordLinear (base perWord : Nat)
+  | pairing (base perPair : Nat)
+  | modexp
+  | blake2f
+  deriving DecidableEq, Repr
+
+/-- Number of 32-byte EVM words needed to cover an input byte length. -/
+def inputWords (inputLen : Nat) : Nat :=
+  (inputLen + 31) / 32
+
+/-- Number of 192-byte BN254 pairing tuples in an input payload. -/
+def pairingPairs (inputLen : Nat) : Nat :=
+  inputLen / 192
+
+/-- Gas schedule for canonical precompile entry points. -/
+def gasSchedule : Precompile → GasSchedule
+  | ecrecover => .fixed 3000
+  | sha256 => .wordLinear 60 12
+  | ripemd160 => .wordLinear 600 120
+  | identity => .wordLinear 15 3
+  | modexp => .modexp
+  | bn254Add => .fixed 150
+  | bn254Mul => .fixed 6000
+  | bn254Pairing => .pairing 45000 34000
+  | blake2f => .blake2f
+  | pointEvaluation => .fixed 50000
+
+/-- Byte-length-only gas cost when the precompile schedule can be determined
+    without decoding the input payload. -/
+def precompileGasCost? (p : Precompile) (inputLen : Nat) : Option Nat :=
+  match gasSchedule p with
+  | .fixed cost => some cost
+  | .wordLinear base perWord => some (base + perWord * inputWords inputLen)
+  | .pairing base perPair => some (base + perPair * pairingPairs inputLen)
+  | .modexp => none
+  | .blake2f => none
+
+/-- Blake2f gas is parameterized by the rounds field decoded from the payload. -/
+def blake2fGas (rounds : Nat) : Nat :=
+  rounds
+
 theorem ofAddress?_address (p : Precompile) :
     ofAddress? p.address = some p := by
   cases p <;> native_decide
@@ -72,6 +118,30 @@ theorem isPrecompileAddress_address (p : Precompile) :
   unfold isPrecompileAddress
   rw [ofAddress?_address p]
   simp
+
+theorem inputWords_zero : inputWords 0 = 0 := rfl
+
+theorem inputWords_thirty_three : inputWords 33 = 2 := rfl
+
+theorem pairingPairs_one : pairingPairs 192 = 1 := rfl
+
+theorem gasSchedule_sha256 :
+    gasSchedule sha256 = .wordLinear 60 12 := rfl
+
+theorem precompileGasCost?_identity_64 :
+    precompileGasCost? identity 64 = some 21 := rfl
+
+theorem precompileGasCost?_sha256_33 :
+    precompileGasCost? sha256 33 = some 84 := rfl
+
+theorem precompileGasCost?_modexp_none (inputLen : Nat) :
+    precompileGasCost? modexp inputLen = none := rfl
+
+theorem precompileGasCost?_blake2f_none (inputLen : Nat) :
+    precompileGasCost? blake2f inputLen = none := rfl
+
+theorem blake2fGas_eq_rounds (rounds : Nat) :
+    blake2fGas rounds = rounds := rfl
 
 @[simp] theorem not_isPrecompileAddress_zero :
     ¬ isPrecompileAddress (0 : Address) := by
