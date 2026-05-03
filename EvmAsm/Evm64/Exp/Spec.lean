@@ -76,6 +76,47 @@ theorem exp_boundary_stack_spec_within
       xperm_hyp hp)
     hFramed
 
+/-- The boundary mini-program initializes the EXP accumulator to one, so the
+    four output limbs assembled by the epilogue are exactly the EVM word `1`. -/
+theorem exp_boundary_result_word_one :
+    expResultWord
+      ((0 : Word) + signExtend12 (1 : BitVec 12))
+      (0 : Word) (0 : Word) (0 : Word) = (1 : EvmWord) := by
+  unfold expResultWord EvmWord.fromLimbs
+  rw [signExtend12_1]
+  bv_decide
+
+/-- Stack-shaped boundary bridge with the output slot exposed as the semantic
+    EVM word `1`, rather than the raw four-limb epilogue assembly term. -/
+theorem exp_boundary_result_one_stack_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 : Word) (base : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord) :
+    cpsTripleWithin 15 base (base + 60) (expBoundaryProgramCode base)
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+       (.x5 ↦ᵣ tOld) ** (.x12 ↦ᵣ evmSp) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3) **
+       evmWordIs evmSp baseWord **
+       evmWordIs (evmSp + 32) exponentWord **
+       evmStackIs (evmSp + 64) rest)
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+       (.x12 ↦ᵣ (evmSp + signExtend12 (32 : BitVec 12))) **
+       (.x5 ↦ᵣ (0 : Word)) **
+       evmWordIs sp (1 : EvmWord) **
+       evmWordIs evmSp baseWord **
+       evmWordIs (evmSp + 32) (1 : EvmWord) **
+       evmStackIs (evmSp + 64) rest) := by
+  exact cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by
+      rw [exp_boundary_result_word_one] at hp
+      exact hp)
+    (exp_boundary_stack_spec_within sp evmSp cOld tOld m0 m1 m2 m3 base
+      baseWord exponentWord rest)
+
 -- Placeholder: `evm_exp_stack_spec_within` lands in slice 6 (evm-asm-6snn).
 
 end EvmAsm.Evm64
