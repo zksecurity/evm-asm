@@ -27,6 +27,7 @@ inductive EvmOpcode where
   | MOD
   | EXP
   | SIGNEXTEND
+  | KECCAK256
   | ADDRESS
   | ORIGIN
   | CALLER
@@ -116,6 +117,7 @@ def byte? : EvmOpcode → Option Nat
   | MOD => some 0x06
   | EXP => some 0x0a
   | SIGNEXTEND => some 0x0b
+  | KECCAK256 => some 0x20
   | ADDRESS => some 0x30
   | ORIGIN => some 0x32
   | CALLER => some 0x33
@@ -189,6 +191,7 @@ def staticGasCost : EvmOpcode → Nat
   | MOD => 5
   | EXP => 10
   | SIGNEXTEND => 5
+  | KECCAK256 => 30
   | ADDRESS => 2
   | ORIGIN => 2
   | CALLER => 2
@@ -287,6 +290,8 @@ theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
 theorem byte?_ADDRESS : byte? ADDRESS = some 0x30 := rfl
 
 theorem byte?_BASEFEE : byte? BASEFEE = some 0x48 := rfl
+
+theorem byte?_KECCAK256 : byte? KECCAK256 = some 0x20 := rfl
 
 theorem byte?_LOG (kind : LogArgs.Kind) :
     byte? (LOG kind) = some (0xa0 + LogArgs.topicCount kind) := rfl
@@ -471,6 +476,8 @@ theorem staticGasCost_selfdestructBase : staticGasCost SELFDESTRUCT = 5000 := rf
 theorem staticGasCost_invalidBase : staticGasCost INVALID = 0 := rfl
 
 theorem staticGasCost_expBase : staticGasCost EXP = 10 := rfl
+
+theorem staticGasCost_keccak256Base : staticGasCost KECCAK256 = 30 := rfl
 
 end EvmOpcode
 
