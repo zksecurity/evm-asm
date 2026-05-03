@@ -113,6 +113,18 @@ theorem dispatchAddress?_address (p : Precompile) (caller : Address)
         out := by
   simp [dispatchAddress?, decode?_address p]
 
+theorem dispatchAddress?_preservesGasBound {addr caller : Address}
+    {payload out : List (BitVec 8)} {gas : Nat} {result : PrecompileResult}
+    (h_dispatch : dispatchAddress? addr caller payload out gas = some result) :
+    result.gasRemaining ≤ gas := by
+  unfold dispatchAddress? at h_dispatch
+  cases h_decode : decode? addr with
+  | none =>
+      simp [h_decode] at h_dispatch
+  | some target =>
+      simp [h_decode] at h_dispatch
+      exact dispatch?_preservesGasBound h_dispatch
+
 end PrecompileDispatch
 
 end EvmAsm.Evm64
