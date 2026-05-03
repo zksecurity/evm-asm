@@ -5,23 +5,47 @@
 -/
 
 import EvmAsm.Evm64.Env.Field
+import EvmAsm.Evm64.Gas
 
 namespace EvmAsm.Evm64
 namespace Env
 
 namespace SimpleEnvField
 
-/-- Shanghai static/base gas for the simple environment opcodes. -/
-def simpleEnvStaticGasCost (_field : SimpleEnvField) : Nat := 2
+/-- EVM opcode table entry for a simple environment field. -/
+def opcode : SimpleEnvField → EvmOpcode
+  | address => .ADDRESS
+  | caller => .CALLER
+  | callValue => .CALLVALUE
+  | origin => .ORIGIN
+  | gasPrice => .GASPRICE
+  | coinbase => .COINBASE
+  | timestamp => .TIMESTAMP
+  | number => .NUMBER
+  | prevrandao => .PREVRANDAO
+  | gasLimit => .GASLIMIT
+  | chainId => .CHAINID
+  | baseFee => .BASEFEE
+  | selfBalance => .SELFBALANCE
 
-@[simp] theorem simpleEnvStaticGasCost_eq_two (field : SimpleEnvField) :
-    simpleEnvStaticGasCost field = 2 := rfl
+/-- Shanghai static/base gas for the simple environment opcodes. -/
+def simpleEnvStaticGasCost : SimpleEnvField → Nat
+  | selfBalance => 5
+  | _ => 2
+
+theorem opcode_byte (field : SimpleEnvField) :
+    EvmOpcode.byte? field.opcode = some field.opcodeByte := by
+  cases field <;> rfl
+
+theorem simpleEnvStaticGasCost_eq_staticGasCost (field : SimpleEnvField) :
+    simpleEnvStaticGasCost field = EvmOpcode.staticGasCost field.opcode := by
+  cases field <;> rfl
 
 theorem simpleEnvStaticGasCost_address :
     simpleEnvStaticGasCost address = 2 := rfl
 
 theorem simpleEnvStaticGasCost_selfBalance :
-    simpleEnvStaticGasCost selfBalance = 2 := rfl
+    simpleEnvStaticGasCost selfBalance = 5 := rfl
 
 theorem simpleEnvStaticGasCost_cases (field : SimpleEnvField) :
     match field with
@@ -37,7 +61,7 @@ theorem simpleEnvStaticGasCost_cases (field : SimpleEnvField) :
     | gasLimit => simpleEnvStaticGasCost gasLimit = 2
     | chainId => simpleEnvStaticGasCost chainId = 2
     | baseFee => simpleEnvStaticGasCost baseFee = 2
-    | selfBalance => simpleEnvStaticGasCost selfBalance = 2 := by
+    | selfBalance => simpleEnvStaticGasCost selfBalance = 5 := by
   cases field <;> rfl
 
 end SimpleEnvField

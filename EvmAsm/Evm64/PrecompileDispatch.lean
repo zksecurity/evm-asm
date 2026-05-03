@@ -80,11 +80,33 @@ theorem dispatch?_fail_of_gasCost?_gt {input : PrecompileInput} {out : List (Bit
   have h_not : ¬ cost ≤ input.gas := Nat.not_le.mpr h_gt
   simp [dispatch?, h_cost, h_not]
 
+theorem dispatch?_preservesGasBound {input : PrecompileInput} {out : List (BitVec 8)}
+    {result : PrecompileResult} (h_dispatch : dispatch? input out = some result) :
+    PrecompileResult.preservesGasBound input result := by
+  unfold dispatch? at h_dispatch
+  cases h_cost : gasCost? input with
+  | none =>
+      simp [h_cost] at h_dispatch
+  | some cost =>
+      by_cases h_le : cost ≤ input.gas
+      · simp [h_cost, h_le] at h_dispatch
+        rw [← h_dispatch]
+        simp [PrecompileResult.preservesGasBound, PrecompileResult.ok]
+      · simp [h_cost, h_le] at h_dispatch
+        rw [← h_dispatch]
+        simp [PrecompileResult.preservesGasBound, PrecompileResult.fail]
+
+theorem dispatchAddress?_none_of_decode?_none {addr caller : Address}
+    {payload out : List (BitVec 8)} {gas : Nat}
+    (h_decode : decode? addr = none) :
+    dispatchAddress? addr caller payload out gas = none := by
+  unfold dispatchAddress?
+  rw [h_decode]
+
 theorem dispatchAddress?_none_zero (caller : Address) (payload out : List (BitVec 8))
     (gas : Nat) :
     dispatchAddress? 0 caller payload out gas = none := by
-  unfold dispatchAddress?
-  rw [decode?_zero]
+  exact dispatchAddress?_none_of_decode?_none decode?_zero
 
 theorem dispatchAddress?_address (p : Precompile) (caller : Address)
     (payload out : List (BitVec 8)) (gas : Nat) :
@@ -96,6 +118,18 @@ theorem dispatchAddress?_address (p : Precompile) (caller : Address)
           gas := gas }
         out := by
   simp [dispatchAddress?, decode?_address p]
+
+theorem dispatchAddress?_preservesGasBound {addr caller : Address}
+    {payload out : List (BitVec 8)} {gas : Nat} {result : PrecompileResult}
+    (h_dispatch : dispatchAddress? addr caller payload out gas = some result) :
+    result.gasRemaining ≤ gas := by
+  unfold dispatchAddress? at h_dispatch
+  cases h_decode : decode? addr with
+  | none =>
+      simp [h_decode] at h_dispatch
+  | some target =>
+      simp [h_decode] at h_dispatch
+      exact dispatch?_preservesGasBound h_dispatch
 
 end PrecompileDispatch
 
