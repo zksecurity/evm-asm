@@ -488,6 +488,17 @@ theorem mloadLoadedWordFromFiveDwords_evmWordIs_fold
   rw [mloadLoadedWordFromFiveDwords_eq_mloadLoadedWordFromDwordPairs]
   rw [mloadLoadedWordFromDwordPairs_evmWordIs_fold]
 
+theorem mloadLoadedWordFromFiveDwords_evmStackIs_fold
+    (sp d0 d1 d2 d3 d4 : Word) (start : Nat) (rest : List EvmWord) :
+    (((sp ↦ₘ mloadPackedLimbFromDwordPair d3 d4 start) **
+      ((sp + 8) ↦ₘ mloadPackedLimbFromDwordPair d2 d3 start) **
+      ((sp + 16) ↦ₘ mloadPackedLimbFromDwordPair d1 d2 start) **
+      ((sp + 24) ↦ₘ mloadPackedLimbFromDwordPair d0 d1 start)) **
+      evmStackIs (sp + 32) rest) =
+    evmStackIs sp (mloadLoadedWordFromFiveDwords d0 d1 d2 d3 d4 start :: rest) := by
+  rw [mloadLoadedWordFromFiveDwords_evmWordIs_fold]
+  rfl
+
 /--
   Compact stack postcondition for the five-dword unaligned MLOAD source shape.
 -/
@@ -512,5 +523,13 @@ theorem mloadStackOutputPostFiveDwords_evmWordIs_fold
     mloadStackOutputPostFiveDwords sp d0 d1 d2 d3 d4 start := by
   rw [mloadStackOutputPostFiveDwords_unfold]
   rw [mloadLoadedWordFromFiveDwords_evmWordIs_fold]
+
+theorem mloadStackOutputPostFiveDwords_evmStackIs_fold
+    (sp d0 d1 d2 d3 d4 : Word) (start : Nat) (rest : List EvmWord) :
+    (mloadStackOutputPostFiveDwords sp d0 d1 d2 d3 d4 start **
+      evmStackIs (sp + 32) rest) =
+    evmStackIs sp (mloadLoadedWordFromFiveDwords d0 d1 d2 d3 d4 start :: rest) := by
+  rw [mloadStackOutputPostFiveDwords_unfold]
+  rfl
 
 end EvmAsm.Evm64
