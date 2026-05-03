@@ -53,6 +53,10 @@ def argumentCount : Kind → Nat
   | .staticcall => 6
   | .delegatecall => 6
 
+def resultCount (_kind : Kind) : Nat := 1
+
+def memoryRangeCount (_kind : Kind) : Nat := 2
+
 def hasValueArgument : Kind → Bool
   | .call => true
   | .staticcall => false
@@ -76,6 +80,16 @@ theorem staticcallArgumentCount :
 
 theorem delegatecallArgumentCount :
     argumentCount .delegatecall = 6 := rfl
+
+theorem resultCount_eq_one (kind : Kind) :
+    resultCount kind = 1 := rfl
+
+theorem memoryRangeCount_eq_two (kind : Kind) :
+    memoryRangeCount kind = 2 := rfl
+
+theorem argumentCount_eq_six_plus_value (kind : Kind) :
+    argumentCount kind = 6 + if hasValueArgument kind then 1 else 0 := by
+  cases kind <;> rfl
 
 theorem callHasValue :
     hasValueArgument .call = true := rfl
