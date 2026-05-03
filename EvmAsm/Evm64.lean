@@ -86,6 +86,7 @@ import EvmAsm.Evm64.PrecompileDispatch
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
+import EvmAsm.Evm64.LogGas
 import EvmAsm.Evm64.EvmState
 import EvmAsm.Evm64.Termination
 import EvmAsm.Evm64.MSize
