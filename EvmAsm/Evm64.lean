@@ -64,6 +64,12 @@ import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 
+-- Static gas schedule (#117)
+import EvmAsm.Evm64.Gas
+
+-- Opcode dispatch surface (#106)
+import EvmAsm.Evm64.Dispatch
+
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.EvmState
