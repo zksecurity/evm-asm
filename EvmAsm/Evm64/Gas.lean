@@ -53,7 +53,11 @@ inductive EvmOpcode where
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
+  | CODESIZE
+  | CODECOPY
   | GASPRICE
+  | RETURNDATASIZE
+  | RETURNDATACOPY
   | COINBASE
   | TIMESTAMP
   | NUMBER
@@ -63,6 +67,8 @@ inductive EvmOpcode where
   | SELFBALANCE
   | BASEFEE
   | LOG (kind : LogArgs.Kind)
+  | CREATE
+  | CREATE2
   | CALL
   | DELEGATECALL
   | STATICCALL
@@ -127,7 +133,11 @@ def byte? : EvmOpcode → Option Nat
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
+  | CODESIZE => some 0x38
+  | CODECOPY => some 0x39
   | GASPRICE => some 0x3a
+  | RETURNDATASIZE => some 0x3d
+  | RETURNDATACOPY => some 0x3e
   | COINBASE => some 0x41
   | TIMESTAMP => some 0x42
   | NUMBER => some 0x43
@@ -137,6 +147,8 @@ def byte? : EvmOpcode → Option Nat
   | SELFBALANCE => some 0x47
   | BASEFEE => some 0x48
   | LOG kind => some (0xa0 + LogArgs.topicCount kind)
+  | CREATE => some 0xf0
+  | CREATE2 => some 0xf5
   | CALL => some 0xf1
   | DELEGATECALL => some 0xf4
   | STATICCALL => some 0xfa
@@ -185,7 +197,11 @@ def staticGasCost : EvmOpcode → Nat
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
+  | CODESIZE => 2
+  | CODECOPY => 3
   | GASPRICE => 2
+  | RETURNDATASIZE => 2
+  | RETURNDATACOPY => 3
   | COINBASE => 2
   | TIMESTAMP => 2
   | NUMBER => 2
@@ -195,6 +211,8 @@ def staticGasCost : EvmOpcode → Nat
   | SELFBALANCE => 5
   | BASEFEE => 2
   | LOG _ => 375
+  | CREATE => 32000
+  | CREATE2 => 32000
   | CALL => 700
   | DELEGATECALL => 700
   | STATICCALL => 700
@@ -261,6 +279,57 @@ theorem byte?_ofCallKind (kind : CallArgs.Kind) :
       | .staticcall => some 0xfa := by
   cases kind <;> rfl
 
+inductive CreateKind where
+  | create
+  | create2
+  deriving DecidableEq, Repr
+
+def ofCreateKind : CreateKind → EvmOpcode
+  | .create => CREATE
+  | .create2 => CREATE2
+
+theorem byte?_ofCreateKind (kind : CreateKind) :
+    byte? (ofCreateKind kind) =
+      match kind with
+      | .create => some 0xf0
+      | .create2 => some 0xf5 := by
+  cases kind <;> rfl
+
+inductive SizeLikeKind where
+  | code
+  | returndata
+  deriving DecidableEq, Repr
+
+def ofSizeLikeKind : SizeLikeKind → EvmOpcode
+  | .code => CODESIZE
+  | .returndata => RETURNDATASIZE
+
+theorem byte?_ofSizeLikeKind (kind : SizeLikeKind) :
+    byte? (ofSizeLikeKind kind) =
+      match kind with
+      | .code => some 0x38
+      | .returndata => some 0x3d := by
+  cases kind <;> rfl
+
+inductive CopyLikeKind where
+  | code
+  | calldata
+  | returndata
+  deriving DecidableEq, Repr
+
+def ofCopyLikeKind : CopyLikeKind → EvmOpcode
+  | .code => CODECOPY
+  | .calldata => CALLDATACOPY
+  | .returndata => RETURNDATACOPY
+
+theorem byte?_ofCopyLikeKind (kind : CopyLikeKind) :
+    byte? (ofCopyLikeKind kind) =
+      match kind with
+      | .code => some 0x39
+      | .calldata => some 0x37
+      | .returndata => some 0x3e := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -272,6 +341,14 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_ofSizeLikeKind (kind : SizeLikeKind) :
+    staticGasCost (ofSizeLikeKind kind) = 2 := by
+  cases kind <;> rfl
+
+theorem staticGasCost_ofCopyLikeKind (kind : CopyLikeKind) :
+    staticGasCost (ofCopyLikeKind kind) = 3 := by
+  cases kind <;> rfl
 
 theorem staticGasCost_address : staticGasCost ADDRESS = 2 := rfl
 
@@ -288,6 +365,10 @@ theorem staticGasCost_log4Base : staticGasCost (LOG .log4) = 375 := rfl
 
 theorem staticGasCost_ofCallKind (kind : CallArgs.Kind) :
     staticGasCost (ofCallKind kind) = 700 := by
+  cases kind <;> rfl
+
+theorem staticGasCost_ofCreateKind (kind : CreateKind) :
+    staticGasCost (ofCreateKind kind) = 32000 := by
   cases kind <;> rfl
 
 theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
