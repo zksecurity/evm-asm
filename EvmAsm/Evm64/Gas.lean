@@ -63,6 +63,7 @@ inductive EvmOpcode where
   | GASPRICE
   | RETURNDATASIZE
   | RETURNDATACOPY
+  | BLOCKHASH
   | COINBASE
   | TIMESTAMP
   | NUMBER
@@ -71,6 +72,8 @@ inductive EvmOpcode where
   | CHAINID
   | SELFBALANCE
   | BASEFEE
+  | BLOBHASH
+  | BLOBBASEFEE
   | LOG (kind : LogArgs.Kind)
   | CREATE
   | CREATE2
@@ -149,6 +152,7 @@ def byte? : EvmOpcode → Option Nat
   | GASPRICE => some 0x3a
   | RETURNDATASIZE => some 0x3d
   | RETURNDATACOPY => some 0x3e
+  | BLOCKHASH => some 0x40
   | COINBASE => some 0x41
   | TIMESTAMP => some 0x42
   | NUMBER => some 0x43
@@ -157,6 +161,8 @@ def byte? : EvmOpcode → Option Nat
   | CHAINID => some 0x46
   | SELFBALANCE => some 0x47
   | BASEFEE => some 0x48
+  | BLOBHASH => some 0x49
+  | BLOBBASEFEE => some 0x4a
   | LOG kind => some (0xa0 + LogArgs.topicCount kind)
   | CREATE => some 0xf0
   | CREATE2 => some 0xf5
@@ -219,6 +225,7 @@ def staticGasCost : EvmOpcode → Nat
   | GASPRICE => 2
   | RETURNDATASIZE => 2
   | RETURNDATACOPY => 3
+  | BLOCKHASH => 20
   | COINBASE => 2
   | TIMESTAMP => 2
   | NUMBER => 2
@@ -227,6 +234,8 @@ def staticGasCost : EvmOpcode → Nat
   | CHAINID => 2
   | SELFBALANCE => 5
   | BASEFEE => 2
+  | BLOBHASH => 3
+  | BLOBBASEFEE => 2
   | LOG _ => 375
   | CREATE => 32000
   | CREATE2 => 32000
@@ -375,6 +384,25 @@ theorem byte?_ofControlFlowKind (kind : ControlFlowKind) :
       | .jumpdest => some 0x5b := by
   cases kind <;> rfl
 
+inductive BlockBlobKind where
+  | blockhash
+  | blobhash
+  | blobbasefee
+  deriving DecidableEq, Repr
+
+def ofBlockBlobKind : BlockBlobKind → EvmOpcode
+  | .blockhash => BLOCKHASH
+  | .blobhash => BLOBHASH
+  | .blobbasefee => BLOBBASEFEE
+
+theorem byte?_ofBlockBlobKind (kind : BlockBlobKind) :
+    byte? (ofBlockBlobKind kind) =
+      match kind with
+      | .blockhash => some 0x40
+      | .blobhash => some 0x49
+      | .blobbasefee => some 0x4a := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -395,6 +423,14 @@ theorem staticGasCost_ofControlFlowKind (kind : ControlFlowKind) :
       | .pc => 2
       | .gas => 2
       | .jumpdest => 1 := by
+  cases kind <;> rfl
+
+theorem staticGasCost_ofBlockBlobKind (kind : BlockBlobKind) :
+    staticGasCost (ofBlockBlobKind kind) =
+      match kind with
+      | .blockhash => 20
+      | .blobhash => 3
+      | .blobbasefee => 2 := by
   cases kind <;> rfl
 
 theorem staticGasCost_ofSizeLikeKind (kind : SizeLikeKind) :
