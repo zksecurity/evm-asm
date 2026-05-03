@@ -165,6 +165,78 @@ theorem push_zero_slot_word_zero_right (nsp : Word) (Q : Assertion) :
   rw [evmWordIs_zero_right]
 
 -- ============================================================================
+-- Semantic immediate word assembled by PUSH byte stores
+-- ============================================================================
+
+/-- Fold the immediate bytes copied by `evm_push n` into one stack limb.
+
+    The executable code starts from a zero-filled 32-byte slot. For each
+    immediate byte `i`, `pushByteDstOffset n i` gives the byte position in the
+    new stack word; if that byte lies in `limb`, replay the corresponding
+    `replaceByte`, otherwise leave the limb unchanged. -/
+def pushImmediateLimb (n : Nat) (byteAt : Nat → BitVec 8) (limb : Nat) : Word :=
+  (List.range n).foldl
+    (fun acc i =>
+      let dst := pushByteDstOffset n i
+      if dst / 8 = limb then
+        replaceByte acc (dst % 8) (byteAt i)
+      else
+        acc)
+    (0 : Word)
+
+/-- The semantic EVM word assembled by PUSH immediate bytes, starting from the
+    zero-filled slot and replaying the generic byte-copy layout. -/
+def pushImmediateWord (n : Nat) (byteAt : Nat → BitVec 8) : EvmWord :=
+  EvmWord.fromLimbs fun
+    | ⟨0, _⟩ => pushImmediateLimb n byteAt 0
+    | ⟨1, _⟩ => pushImmediateLimb n byteAt 1
+    | ⟨2, _⟩ => pushImmediateLimb n byteAt 2
+    | ⟨3, _⟩ => pushImmediateLimb n byteAt 3
+
+theorem pushImmediateWord_getLimbN_0 (n : Nat) (byteAt : Nat → BitVec 8) :
+    (pushImmediateWord n byteAt).getLimbN 0 =
+      pushImmediateLimb n byteAt 0 := by
+  unfold pushImmediateWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem pushImmediateWord_getLimbN_1 (n : Nat) (byteAt : Nat → BitVec 8) :
+    (pushImmediateWord n byteAt).getLimbN 1 =
+      pushImmediateLimb n byteAt 1 := by
+  unfold pushImmediateWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem pushImmediateWord_getLimbN_2 (n : Nat) (byteAt : Nat → BitVec 8) :
+    (pushImmediateWord n byteAt).getLimbN 2 =
+      pushImmediateLimb n byteAt 2 := by
+  unfold pushImmediateWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+theorem pushImmediateWord_getLimbN_3 (n : Nat) (byteAt : Nat → BitVec 8) :
+    (pushImmediateWord n byteAt).getLimbN 3 =
+      pushImmediateLimb n byteAt 3 := by
+  unfold pushImmediateWord
+  rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
+
+/-- Fold the four executable PUSH destination limbs into the compact semantic
+    word assembled from the immediate byte stream. -/
+theorem pushImmediateWord_evmWordIs_fold
+    (sp : Word) (n : Nat) (byteAt : Nat → BitVec 8) :
+    ((sp ↦ₘ pushImmediateLimb n byteAt 0) **
+      ((sp + 8) ↦ₘ pushImmediateLimb n byteAt 1) **
+      ((sp + 16) ↦ₘ pushImmediateLimb n byteAt 2) **
+      ((sp + 24) ↦ₘ pushImmediateLimb n byteAt 3)) =
+    evmWordIs sp (pushImmediateWord n byteAt) := by
+  rw [evmWordIs_sp_limbs_eq sp (pushImmediateWord n byteAt)
+    (pushImmediateLimb n byteAt 0)
+    (pushImmediateLimb n byteAt 1)
+    (pushImmediateLimb n byteAt 2)
+    (pushImmediateLimb n byteAt 3)
+    (pushImmediateWord_getLimbN_0 n byteAt)
+    (pushImmediateWord_getLimbN_1 n byteAt)
+    (pushImmediateWord_getLimbN_2 n byteAt)
+    (pushImmediateWord_getLimbN_3 n byteAt)]
+
+-- ============================================================================
 -- Per-byte helper (mirror of `dup_pair_spec_within` for LBU+SB)
 -- ============================================================================
 
