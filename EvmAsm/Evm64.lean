@@ -64,6 +64,9 @@ import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 
+-- Static gas schedule (#117)
+import EvmAsm.Evm64.Gas
+
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MSize
