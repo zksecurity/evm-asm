@@ -37,6 +37,12 @@ def mstoreFourLimbsProg
   mstoreOneLimbProg addrReg byteReg accReg
     56 0 1 2 3 4 5 6 7
 
+theorem mstoreFourLimbsProg_length (addrReg byteReg accReg : Reg) :
+    (mstoreFourLimbsProg addrReg byteReg accReg).length = 68 := by
+  unfold mstoreFourLimbsProg mstoreOneLimbProg mstoreByteUnpackEightProg
+    LD SRLI SB single seq
+  rfl
+
 /-- Public `ofProg` bridge for the four value-limb blocks used by MSTORE. -/
 theorem mstoreFourLimbsCode_eq_ofProg
     (addrReg byteReg accReg : Reg) (base : Word) :
@@ -190,6 +196,54 @@ def mstoreStackCode
   (mstorePrologueCode offReg addrReg memBaseReg base).union
     ((mstoreFourLimbsCode addrReg byteReg accReg base).union
       (mstoreEpilogueCode (base + 280)))
+
+/-- Program form of the full MSTORE stack helper: compute the target memory
+    address, unpack all four value limbs, then pop the two consumed EVM words. -/
+def mstoreStackProg
+    (offReg byteReg accReg addrReg memBaseReg : Reg) : Program :=
+  (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg) ;;
+  mstoreFourLimbsProg addrReg byteReg accReg ;;
+  ADDI .x12 .x12 64
+
+/-- Public `ofProg` bridge for the full MSTORE stack helper code. -/
+theorem mstoreStackCode_eq_ofProg
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    mstoreStackCode offReg byteReg accReg addrReg memBaseReg base =
+      CodeReq.ofProg base
+        (mstoreStackProg offReg byteReg accReg addrReg memBaseReg) := by
+  unfold mstoreStackCode mstoreStackProg seq
+  rw [mstorePrologueCode_eq_ofProg, mstoreFourLimbsCode_eq_ofProg,
+    mstoreEpilogueCode_eq_ofProg]
+  let p0 := LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg
+  let p1 := mstoreFourLimbsProg addrReg byteReg accReg
+  let p2 := ADDI .x12 .x12 64
+  change (CodeReq.ofProg base p0).union
+      ((CodeReq.ofProg (base + 8) p1).union
+        (CodeReq.ofProg (base + 280) p2)) =
+    CodeReq.ofProg base (p0 ++ (p1 ++ p2))
+  have h12 :
+      (CodeReq.ofProg (base + 8) p1).union
+          (CodeReq.ofProg (base + 280) p2) =
+        CodeReq.ofProg (base + 8) (p1 ++ p2) := by
+    rw [show base + 280 =
+        (base + 8) + BitVec.ofNat 64 (4 * p1.length) by
+      rw [show p1.length = 68 by
+        unfold p1
+        exact mstoreFourLimbsProg_length addrReg byteReg accReg]
+      bv_addr]
+    exact (CodeReq.ofProg_append (base := base + 8) (p1 := p1) (p2 := p2)).symm
+  rw [h12]
+  have h012 :
+      (CodeReq.ofProg base p0).union (CodeReq.ofProg (base + 8) (p1 ++ p2)) =
+        CodeReq.ofProg base (p0 ++ (p1 ++ p2)) := by
+    rw [show base + 8 = base + BitVec.ofNat 64 (4 * p0.length) by
+      rw [show p0.length = 2 by
+        unfold p0 LD ADD single seq
+        rfl]
+      change base + 8 = base + 8
+      rfl]
+    exact (CodeReq.ofProg_append (base := base) (p1 := p0) (p2 := p1 ++ p2)).symm
+  exact h012
 
 theorem mstoreStackCode_prologue_sub
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
