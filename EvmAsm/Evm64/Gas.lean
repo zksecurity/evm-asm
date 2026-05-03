@@ -10,6 +10,7 @@
 -/
 
 import EvmAsm.Evm64.LogArgs
+import EvmAsm.Evm64.CallArgs
 
 namespace EvmAsm.Evm64
 
@@ -62,6 +63,9 @@ inductive EvmOpcode where
   | SELFBALANCE
   | BASEFEE
   | LOG (kind : LogArgs.Kind)
+  | CALL
+  | DELEGATECALL
+  | STATICCALL
   | RETURN
   | REVERT
   | INVALID
@@ -133,6 +137,9 @@ def byte? : EvmOpcode → Option Nat
   | SELFBALANCE => some 0x47
   | BASEFEE => some 0x48
   | LOG kind => some (0xa0 + LogArgs.topicCount kind)
+  | CALL => some 0xf1
+  | DELEGATECALL => some 0xf4
+  | STATICCALL => some 0xfa
   | RETURN => some 0xf3
   | REVERT => some 0xfd
   | INVALID => some 0xfe
@@ -188,6 +195,9 @@ def staticGasCost : EvmOpcode → Nat
   | SELFBALANCE => 5
   | BASEFEE => 2
   | LOG _ => 375
+  | CALL => 700
+  | DELEGATECALL => 700
+  | STATICCALL => 700
   | RETURN => 0
   | REVERT => 0
   | INVALID => 0
@@ -238,6 +248,19 @@ theorem byte?_LOG0 : byte? (LOG .log0) = some 0xa0 := rfl
 
 theorem byte?_LOG4 : byte? (LOG .log4) = some 0xa4 := rfl
 
+def ofCallKind : CallArgs.Kind → EvmOpcode
+  | .call => CALL
+  | .delegatecall => DELEGATECALL
+  | .staticcall => STATICCALL
+
+theorem byte?_ofCallKind (kind : CallArgs.Kind) :
+    byte? (ofCallKind kind) =
+      match kind with
+      | .call => some 0xf1
+      | .delegatecall => some 0xf4
+      | .staticcall => some 0xfa := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -262,6 +285,10 @@ theorem staticGasCost_LOG (kind : LogArgs.Kind) :
 theorem staticGasCost_log0Base : staticGasCost (LOG .log0) = 375 := rfl
 
 theorem staticGasCost_log4Base : staticGasCost (LOG .log4) = 375 := rfl
+
+theorem staticGasCost_ofCallKind (kind : CallArgs.Kind) :
+    staticGasCost (ofCallKind kind) = 700 := by
+  cases kind <;> rfl
 
 theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
 
