@@ -26,6 +26,10 @@ inductive EvmOpcode where
   | MOD
   | EXP
   | SIGNEXTEND
+  | ADDRESS
+  | ORIGIN
+  | CALLER
+  | CALLVALUE
   | LT
   | GT
   | SLT
@@ -48,6 +52,15 @@ inductive EvmOpcode where
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
+  | GASPRICE
+  | COINBASE
+  | TIMESTAMP
+  | NUMBER
+  | PREVRANDAO
+  | GASLIMIT
+  | CHAINID
+  | SELFBALANCE
+  | BASEFEE
   | LOG (kind : LogArgs.Kind)
   | RETURN
   | REVERT
@@ -84,6 +97,10 @@ def byte? : EvmOpcode → Option Nat
   | MOD => some 0x06
   | EXP => some 0x0a
   | SIGNEXTEND => some 0x0b
+  | ADDRESS => some 0x30
+  | ORIGIN => some 0x32
+  | CALLER => some 0x33
+  | CALLVALUE => some 0x34
   | LT => some 0x10
   | GT => some 0x11
   | SLT => some 0x12
@@ -106,6 +123,15 @@ def byte? : EvmOpcode → Option Nat
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
+  | GASPRICE => some 0x3a
+  | COINBASE => some 0x41
+  | TIMESTAMP => some 0x42
+  | NUMBER => some 0x43
+  | PREVRANDAO => some 0x44
+  | GASLIMIT => some 0x45
+  | CHAINID => some 0x46
+  | SELFBALANCE => some 0x47
+  | BASEFEE => some 0x48
   | LOG kind => some (0xa0 + LogArgs.topicCount kind)
   | RETURN => some 0xf3
   | REVERT => some 0xfd
@@ -126,6 +152,10 @@ def staticGasCost : EvmOpcode → Nat
   | MOD => 5
   | EXP => 10
   | SIGNEXTEND => 5
+  | ADDRESS => 2
+  | ORIGIN => 2
+  | CALLER => 2
+  | CALLVALUE => 2
   | LT => 3
   | GT => 3
   | SLT => 3
@@ -148,6 +178,15 @@ def staticGasCost : EvmOpcode → Nat
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
+  | GASPRICE => 2
+  | COINBASE => 2
+  | TIMESTAMP => 2
+  | NUMBER => 2
+  | PREVRANDAO => 2
+  | GASLIMIT => 2
+  | CHAINID => 2
+  | SELFBALANCE => 5
+  | BASEFEE => 2
   | LOG _ => 375
   | RETURN => 0
   | REVERT => 0
@@ -188,6 +227,10 @@ theorem byte?_REVERT : byte? REVERT = some 0xfd := rfl
 
 theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
 
+theorem byte?_ADDRESS : byte? ADDRESS = some 0x30 := rfl
+
+theorem byte?_BASEFEE : byte? BASEFEE = some 0x48 := rfl
+
 theorem byte?_LOG (kind : LogArgs.Kind) :
     byte? (LOG kind) = some (0xa0 + LogArgs.topicCount kind) := rfl
 
@@ -206,6 +249,12 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_address : staticGasCost ADDRESS = 2 := rfl
+
+theorem staticGasCost_basefee : staticGasCost BASEFEE = 2 := rfl
+
+theorem staticGasCost_selfbalance : staticGasCost SELFBALANCE = 5 := rfl
 
 theorem staticGasCost_LOG (kind : LogArgs.Kind) :
     staticGasCost (LOG kind) = 375 := rfl
