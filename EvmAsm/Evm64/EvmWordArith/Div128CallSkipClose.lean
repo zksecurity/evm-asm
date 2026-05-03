@@ -480,6 +480,30 @@ theorem div128Quot_call_skip_le_val256_div
   simp only [] at h_mul
   exact (Nat.le_div_iff_mul_le hv_pos).mpr h_mul
 
+/-- **Direct call-skip KB-6 upper bound.**
+
+    Wrapper around the stronger skip-borrow result
+    `div128Quot_call_skip_le_val256_div`. This is the direct #1337 follow-up
+    surface for callers that need the Knuth-B `+2` shape without going through
+    the false `Div128(All)PhasesNoWrapInv` bridge. -/
+theorem div128Quot_call_skip_le_q_true_plus_two_direct
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hb3nz : b3 ≠ 0)
+    (hshift_nz : (clzResult b3).1 ≠ 0)
+    (hskip : isSkipBorrowN4Call a0 a1 a2 a3 b0 b1 b2 b3) :
+    let shift := (clzResult b3).1.toNat % 64
+    let antiShift := (signExtend12 (0 : BitVec 12) - (clzResult b3).1).toNat % 64
+    let b3' := (b3 <<< shift) ||| (b2 >>> antiShift)
+    let u4 := a3 >>> antiShift
+    let u3 := (a3 <<< shift) ||| (a2 >>> antiShift)
+    (div128Quot u4 u3 b3').toNat ≤
+      val256 a0 a1 a2 a3 / val256 b0 b1 b2 b3 + 2 := by
+  intro shift antiShift b3' u4 u3
+  have h := div128Quot_call_skip_le_val256_div
+    a0 a1 a2 a3 b0 b1 b2 b3 hb3nz hshift_nz hskip
+  simp only [] at h
+  exact Nat.le_trans h (Nat.le_add_right _ _)
+
 -- ============================================================================
 -- Pure-Nat digit-tightness utilities (used downstream by Phase 1/2 tight)
 -- ============================================================================
@@ -661,7 +685,7 @@ theorem div128Quot_q1_prime_lt_pow32_call
 
 /- **Discharge bridge** (REMOVED): a `div128_all_phases_no_wrap_of_skip_borrow`
    stub was previously here, claiming `isSkipBorrowN4Call` implies
-   `Div128AllPhasesNoWrapInv`. It was sorry'd because the bridge from
+   `Div128AllPhasesNoWrapInv`. It was removed because the bridge from
    Phase-1-level `q_top_phase1 := (u4*2^32 + un3>>32)/b3'` to
    val256-level `q_true_top := val256(a)/val256(b)/2^32` is genuinely
    hard — these quantities differ at the multi-precision level by up to
