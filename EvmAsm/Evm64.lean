@@ -64,6 +64,7 @@ import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Env.Field
+import EvmAsm.Evm64.Env.Semantics
 
 -- Static gas schedule (#117)
 import EvmAsm.Evm64.Gas
