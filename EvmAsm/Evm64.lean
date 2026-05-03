@@ -63,6 +63,7 @@ import EvmAsm.Evm64.CallingConvention
 import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
+import EvmAsm.Evm64.Env.Field
 
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
