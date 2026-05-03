@@ -65,6 +65,8 @@ import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
+import EvmAsm.Evm64.CallArgs
+import EvmAsm.Evm64.LogArgs
 
 -- Static gas schedule (#117)
 import EvmAsm.Evm64.Gas
@@ -77,6 +79,8 @@ import EvmAsm.Evm64.Dispatch
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
+import EvmAsm.Evm64.PrecompileResult
+import EvmAsm.Evm64.PrecompileDispatch
 
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
