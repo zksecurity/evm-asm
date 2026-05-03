@@ -9,6 +9,8 @@
   costs, etc.) intentionally live outside this first slice.
 -/
 
+import EvmAsm.Evm64.LogArgs
+
 namespace EvmAsm.Evm64
 
 /-- EVM opcode identifiers for opcode families that already have an
@@ -46,6 +48,7 @@ inductive EvmOpcode where
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
+  | LOG (kind : LogArgs.Kind)
   | RETURN
   | REVERT
   | INVALID
@@ -103,6 +106,7 @@ def byte? : EvmOpcode → Option Nat
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
+  | LOG kind => some (0xa0 + LogArgs.topicCount kind)
   | RETURN => some 0xf3
   | REVERT => some 0xfd
   | INVALID => some 0xfe
@@ -144,6 +148,7 @@ def staticGasCost : EvmOpcode → Nat
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
+  | LOG _ => 375
   | RETURN => 0
   | REVERT => 0
   | INVALID => 0
@@ -183,6 +188,13 @@ theorem byte?_REVERT : byte? REVERT = some 0xfd := rfl
 
 theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
 
+theorem byte?_LOG (kind : LogArgs.Kind) :
+    byte? (LOG kind) = some (0xa0 + LogArgs.topicCount kind) := rfl
+
+theorem byte?_LOG0 : byte? (LOG .log0) = some 0xa0 := rfl
+
+theorem byte?_LOG4 : byte? (LOG .log4) = some 0xa4 := rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -194,6 +206,13 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_LOG (kind : LogArgs.Kind) :
+    staticGasCost (LOG kind) = 375 := rfl
+
+theorem staticGasCost_log0Base : staticGasCost (LOG .log0) = 375 := rfl
+
+theorem staticGasCost_log4Base : staticGasCost (LOG .log4) = 375 := rfl
 
 theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
 
