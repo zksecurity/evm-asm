@@ -80,6 +80,22 @@ theorem dispatch?_fail_of_gasCost?_gt {input : PrecompileInput} {out : List (Bit
   have h_not : ¬ cost ≤ input.gas := Nat.not_le.mpr h_gt
   simp [dispatch?, h_cost, h_not]
 
+theorem dispatch?_preservesGasBound {input : PrecompileInput} {out : List (BitVec 8)}
+    {result : PrecompileResult} (h_dispatch : dispatch? input out = some result) :
+    PrecompileResult.preservesGasBound input result := by
+  unfold dispatch? at h_dispatch
+  cases h_cost : gasCost? input with
+  | none =>
+      simp [h_cost] at h_dispatch
+  | some cost =>
+      by_cases h_le : cost ≤ input.gas
+      · simp [h_cost, h_le] at h_dispatch
+        rw [← h_dispatch]
+        simp [PrecompileResult.preservesGasBound, PrecompileResult.ok]
+      · simp [h_cost, h_le] at h_dispatch
+        rw [← h_dispatch]
+        simp [PrecompileResult.preservesGasBound, PrecompileResult.fail]
+
 theorem dispatchAddress?_none_zero (caller : Address) (payload out : List (BitVec 8))
     (gas : Nat) :
     dispatchAddress? 0 caller payload out gas = none := by
