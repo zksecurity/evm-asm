@@ -50,6 +50,11 @@ inductive EvmOpcode where
   | MSTORE
   | MSTORE8
   | MSIZE
+  | JUMP
+  | JUMPI
+  | PC
+  | GAS
+  | JUMPDEST
   | CALLDATALOAD
   | CALLDATASIZE
   | CALLDATACOPY
@@ -131,6 +136,11 @@ def byte? : EvmOpcode → Option Nat
   | MSTORE => some 0x52
   | MSTORE8 => some 0x53
   | MSIZE => some 0x59
+  | JUMP => some 0x56
+  | JUMPI => some 0x57
+  | PC => some 0x58
+  | GAS => some 0x5a
+  | JUMPDEST => some 0x5b
   | CALLDATALOAD => some 0x35
   | CALLDATASIZE => some 0x36
   | CALLDATACOPY => some 0x37
@@ -196,6 +206,11 @@ def staticGasCost : EvmOpcode → Nat
   | MSTORE => 3
   | MSTORE8 => 3
   | MSIZE => 2
+  | JUMP => 8
+  | JUMPI => 10
+  | PC => 2
+  | GAS => 2
+  | JUMPDEST => 1
   | CALLDATALOAD => 3
   | CALLDATASIZE => 2
   | CALLDATACOPY => 3
@@ -335,6 +350,31 @@ theorem byte?_ofCopyLikeKind (kind : CopyLikeKind) :
       | .returndata => some 0x3e := by
   cases kind <;> rfl
 
+inductive ControlFlowKind where
+  | jump
+  | jumpi
+  | pc
+  | gas
+  | jumpdest
+  deriving DecidableEq, Repr
+
+def ofControlFlowKind : ControlFlowKind → EvmOpcode
+  | .jump => JUMP
+  | .jumpi => JUMPI
+  | .pc => PC
+  | .gas => GAS
+  | .jumpdest => JUMPDEST
+
+theorem byte?_ofControlFlowKind (kind : ControlFlowKind) :
+    byte? (ofControlFlowKind kind) =
+      match kind with
+      | .jump => some 0x56
+      | .jumpi => some 0x57
+      | .pc => some 0x58
+      | .gas => some 0x5a
+      | .jumpdest => some 0x5b := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -346,6 +386,16 @@ theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
 theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
 
 theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
+
+theorem staticGasCost_ofControlFlowKind (kind : ControlFlowKind) :
+    staticGasCost (ofControlFlowKind kind) =
+      match kind with
+      | .jump => 8
+      | .jumpi => 10
+      | .pc => 2
+      | .gas => 2
+      | .jumpdest => 1 := by
+  cases kind <;> rfl
 
 theorem staticGasCost_ofSizeLikeKind (kind : SizeLikeKind) :
     staticGasCost (ofSizeLikeKind kind) = 2 := by
