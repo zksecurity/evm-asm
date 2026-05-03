@@ -5,6 +5,7 @@
 -/
 import EvmAsm.EL.RLP
 import EvmAsm.EL.Create
+import EvmAsm.EL.CreateAddress
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.Conformance
