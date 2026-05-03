@@ -55,6 +55,80 @@ def mstoreOneLimbCode
     (mstoreByteUnpackEightCode addrReg byteReg accReg
       off0 off1 off2 off3 off4 off5 off6 off7 (base + 4))
 
+/-- Public program form of the eight SRLI/SB byte-unpack steps in one
+    MSTORE limb. This mirrors `mstoreByteUnpackEightCode` and gives
+    downstream consumers an `ofProg` bridge without depending on the private
+    recursive program helpers in `MStore.Program`. -/
+def mstoreByteUnpackEightProg
+    (addrReg byteReg accReg : Reg)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : Program :=
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 0) * 8)) ;; SB addrReg byteReg off0 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 1) * 8)) ;; SB addrReg byteReg off1 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 2) * 8)) ;; SB addrReg byteReg off2 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 3) * 8)) ;; SB addrReg byteReg off3 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 4) * 8)) ;; SB addrReg byteReg off4 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 5) * 8)) ;; SB addrReg byteReg off5 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 6) * 8)) ;; SB addrReg byteReg off6 ;;
+  SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 7) * 8)) ;; SB addrReg byteReg off7
+
+/-- Public program form of one MSTORE limb: load one source limb from the EVM
+    stack and unpack its eight bytes into memory. -/
+def mstoreOneLimbProg
+    (addrReg byteReg accReg : Reg)
+    (srcOff off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : Program :=
+  LD accReg .x12 srcOff ;;
+  mstoreByteUnpackEightProg addrReg byteReg accReg
+    off0 off1 off2 off3 off4 off5 off6 off7
+
+theorem mstoreByteUnpackEightCode_eq_ofProg
+    (addrReg byteReg accReg : Reg)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12)
+    (base : Word) :
+    mstoreByteUnpackEightCode addrReg byteReg accReg
+      off0 off1 off2 off3 off4 off5 off6 off7 base =
+    CodeReq.ofProg base
+      (mstoreByteUnpackEightProg addrReg byteReg accReg
+        off0 off1 off2 off3 off4 off5 off6 off7) := by
+  unfold mstoreByteUnpackEightCode mstoreByteUnpackEightProg SRLI SB single seq
+  change _ = CodeReq.ofProg base
+    [.SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 0) * 8)), .SB addrReg byteReg off0,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 1) * 8)), .SB addrReg byteReg off1,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 2) * 8)), .SB addrReg byteReg off2,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 3) * 8)), .SB addrReg byteReg off3,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 4) * 8)), .SB addrReg byteReg off4,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 5) * 8)), .SB addrReg byteReg off5,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 6) * 8)), .SB addrReg byteReg off6,
+     .SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 7) * 8)), .SB addrReg byteReg off7]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_singleton]
+  simp only [CodeReq.union_assoc]
+  bv_addr
+
+theorem mstoreOneLimbCode_eq_ofProg
+    (addrReg byteReg accReg : Reg)
+    (srcOff off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12)
+    (base : Word) :
+    mstoreOneLimbCode addrReg byteReg accReg
+      srcOff off0 off1 off2 off3 off4 off5 off6 off7 base =
+    CodeReq.ofProg base
+      (mstoreOneLimbProg addrReg byteReg accReg
+        srcOff off0 off1 off2 off3 off4 off5 off6 off7) := by
+  unfold mstoreOneLimbCode mstoreOneLimbProg LD single seq
+  rw [mstoreByteUnpackEightCode_eq_ofProg]
+  change (CodeReq.singleton base (Instr.LD accReg .x12 srcOff)).union
+      (CodeReq.ofProg (base + 4)
+        (mstoreByteUnpackEightProg addrReg byteReg accReg
+          off0 off1 off2 off3 off4 off5 off6 off7)) =
+    CodeReq.ofProg base
+      (Instr.LD accReg .x12 srcOff ::
+        (mstoreByteUnpackEightProg addrReg byteReg accReg
+          off0 off1 off2 off3 off4 off5 off6 off7 : List Instr))
+  rw [CodeReq.ofProg_cons]
+
 /-- Bundled precondition for the upcoming one-limb MSTORE spec. It contains
     the address/scratch registers, the two destination dwords that may be
     touched by an unaligned 8-byte limb write, and the source EVM-stack limb
