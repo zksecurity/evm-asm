@@ -70,6 +70,27 @@ private theorem mul_callable_codes_disjoint (base : Word) :
   unfold mul_col0 mul_col1 mul_col2 mul_col3
   crDisjoint
 
+theorem mul_callable_code_mul_sub (base : Word) :
+    ∀ a i, (evm_mul_code base) a = some i →
+      (mul_callable_code base) a = some i := by
+  unfold mul_callable_code
+  exact CodeReq.union_mono_left
+
+theorem mul_callable_code_ret_sub (base : Word) :
+    ∀ a i, (cc_ret_code (base + 252)) a = some i →
+      (mul_callable_code base) a = some i := by
+  unfold mul_callable_code
+  apply CodeReq.mono_union_right (mul_callable_codes_disjoint base)
+  intro a i h
+  exact h
+
+theorem mul_callable_code_block_subs (base : Word) :
+    (∀ a i, (evm_mul_code base) a = some i →
+      (mul_callable_code base) a = some i) ∧
+    (∀ a i, (cc_ret_code (base + 252)) a = some i →
+      (mul_callable_code base) a = some i) := by
+  exact ⟨mul_callable_code_mul_sub base, mul_callable_code_ret_sub base⟩
+
 -- ============================================================================
 -- Callable spec
 -- ============================================================================
