@@ -96,11 +96,17 @@ theorem dispatch?_preservesGasBound {input : PrecompileInput} {out : List (BitVe
         rw [← h_dispatch]
         simp [PrecompileResult.preservesGasBound, PrecompileResult.fail]
 
+theorem dispatchAddress?_none_of_decode?_none {addr caller : Address}
+    {payload out : List (BitVec 8)} {gas : Nat}
+    (h_decode : decode? addr = none) :
+    dispatchAddress? addr caller payload out gas = none := by
+  unfold dispatchAddress?
+  rw [h_decode]
+
 theorem dispatchAddress?_none_zero (caller : Address) (payload out : List (BitVec 8))
     (gas : Nat) :
     dispatchAddress? 0 caller payload out gas = none := by
-  unfold dispatchAddress?
-  rw [decode?_zero]
+  exact dispatchAddress?_none_of_decode?_none decode?_zero
 
 theorem dispatchAddress?_address (p : Precompile) (caller : Address)
     (payload out : List (BitVec 8)) (gas : Nat) :
