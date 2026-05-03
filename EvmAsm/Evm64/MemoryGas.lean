@@ -146,6 +146,10 @@ def memoryCopyDynamicCost (sizeBytes dstOffset length : Nat) : Nat :=
 def calldataCopyDynamicCost (sizeBytes dstOffset length : Nat) : Nat :=
   memoryCopyDynamicCost sizeBytes dstOffset length
 
+/-- CODECOPY dynamic gas: copy charge plus destination memory expansion. -/
+def codeCopyDynamicCost (sizeBytes dstOffset length : Nat) : Nat :=
+  memoryCopyDynamicCost sizeBytes dstOffset length
+
 /-- RETURNDATACOPY dynamic gas: copy charge plus destination memory expansion. -/
 def returndataCopyDynamicCost (sizeBytes dstOffset length : Nat) : Nat :=
   memoryCopyDynamicCost sizeBytes dstOffset length
@@ -161,6 +165,10 @@ def returndataCopyDynamicCost (sizeBytes dstOffset length : Nat) : Nat :=
     calldataCopyDynamicCost sizeBytes dstOffset 0 = 0 := by
   simp [calldataCopyDynamicCost]
 
+@[simp] theorem codeCopyDynamicCost_zero_length (sizeBytes dstOffset : Nat) :
+    codeCopyDynamicCost sizeBytes dstOffset 0 = 0 := by
+  simp [codeCopyDynamicCost]
+
 @[simp] theorem returndataCopyDynamicCost_zero_length (sizeBytes dstOffset : Nat) :
     returndataCopyDynamicCost sizeBytes dstOffset 0 = 0 := by
   simp [returndataCopyDynamicCost]
@@ -174,6 +182,12 @@ theorem memoryCopyDynamicCost_eq
 theorem calldataCopyDynamicCost_eq
     (sizeBytes dstOffset length : Nat) :
     calldataCopyDynamicCost sizeBytes dstOffset length =
+      copyGasPerWord * memoryCopyWords length +
+        memoryAccessExpansionCost sizeBytes dstOffset length := rfl
+
+theorem codeCopyDynamicCost_eq
+    (sizeBytes dstOffset length : Nat) :
+    codeCopyDynamicCost sizeBytes dstOffset length =
       copyGasPerWord * memoryCopyWords length +
         memoryAccessExpansionCost sizeBytes dstOffset length := rfl
 
@@ -198,6 +212,13 @@ theorem calldataCopyDynamicCost_eq_copy_charge_of_no_growth
       copyGasPerWord * memoryCopyWords length := by
   exact memoryCopyDynamicCost_eq_copy_charge_of_no_growth h_no_growth
 
+theorem codeCopyDynamicCost_eq_copy_charge_of_no_growth
+    {sizeBytes dstOffset length : Nat}
+    (h_no_growth : evmMemExpand sizeBytes dstOffset length = sizeBytes) :
+    codeCopyDynamicCost sizeBytes dstOffset length =
+      copyGasPerWord * memoryCopyWords length := by
+  exact memoryCopyDynamicCost_eq_copy_charge_of_no_growth h_no_growth
+
 theorem returndataCopyDynamicCost_eq_copy_charge_of_no_growth
     {sizeBytes dstOffset length : Nat}
     (h_no_growth : evmMemExpand sizeBytes dstOffset length = sizeBytes) :
@@ -211,6 +232,14 @@ theorem calldataCopyDynamicCost_eq_copy_charge_of_access_le
     calldataCopyDynamicCost sizeBytes dstOffset length =
       copyGasPerWord * memoryCopyWords length := by
   exact calldataCopyDynamicCost_eq_copy_charge_of_no_growth
+    (evmMemExpand_eq_old_of_access_le sizeBytes dstOffset length h_access)
+
+theorem codeCopyDynamicCost_eq_copy_charge_of_access_le
+    {sizeBytes dstOffset length : Nat}
+    (h_access : roundUpTo32 (dstOffset + length) ≤ sizeBytes) :
+    codeCopyDynamicCost sizeBytes dstOffset length =
+      copyGasPerWord * memoryCopyWords length := by
+  exact codeCopyDynamicCost_eq_copy_charge_of_no_growth
     (evmMemExpand_eq_old_of_access_le sizeBytes dstOffset length h_access)
 
 theorem returndataCopyDynamicCost_eq_copy_charge_of_access_le
