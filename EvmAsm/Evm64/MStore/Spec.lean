@@ -249,6 +249,46 @@ theorem mstore_prologue_ofProg_spec_within
   exact mstore_prologue_spec_within offReg addrReg memBaseReg
     sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
 
+theorem evm_mstore_code_prologue_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (CodeReq.ofProg base (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg)) a =
+        some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a =
+        some i := by
+  unfold evm_mstore_code
+  exact CodeReq.ofProg_mono_sub base base
+    (evm_mstore offReg valReg byteReg accReg addrReg memBaseReg)
+    (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg) 0
+    (by bv_omega)
+    (evm_mstore_prologue_slice offReg valReg byteReg accReg addrReg memBaseReg)
+    (by
+      rw [evm_mstore_length]
+      change 2 ≤ 71
+      norm_num)
+    (by
+      rw [evm_mstore_length]
+      norm_num)
+
+theorem mstore_prologue_evm_mstore_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+       (sp ↦ₘ offset)) := by
+  exact cpsTripleWithin_extend_code
+    (h := mstore_prologue_ofProg_spec_within offReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
+    (hmono := evm_mstore_code_prologue_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
+
 /-- CodeReq for the final MSTORE stack-pop epilogue. -/
 def mstoreEpilogueCode (base : Word) : CodeReq :=
   CodeReq.singleton base (.ADDI .x12 .x12 64)
@@ -275,6 +315,40 @@ theorem mstore_epilogue_ofProg_spec_within (sp : Word) (base : Word) :
       (((.x12 : Reg) ↦ᵣ (sp + 64))) := by
   rw [← mstoreEpilogueCode_eq_ofProg]
   exact mstore_epilogue_spec_within sp base
+
+theorem evm_mstore_code_epilogue_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (CodeReq.ofProg (base + 280) (ADDI .x12 .x12 (BitVec.ofNat 12 64))) a =
+        some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a =
+        some i := by
+  unfold evm_mstore_code
+  exact CodeReq.ofProg_mono_sub base (base + 280)
+    (evm_mstore offReg valReg byteReg accReg addrReg memBaseReg)
+    (ADDI .x12 .x12 (BitVec.ofNat 12 64)) 70
+    (by bv_omega)
+    (evm_mstore_epilogue_slice offReg valReg byteReg accReg addrReg memBaseReg)
+    (by
+      rw [evm_mstore_length]
+      simp [ADDI, single])
+    (by
+      rw [evm_mstore_length]
+      norm_num)
+
+theorem mstore_epilogue_evm_mstore_spec_within
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp : Word) (base : Word) :
+    cpsTripleWithin 1 (base + 280) (base + 284)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp))
+      (((.x12 : Reg) ↦ᵣ (sp + 64))) := by
+  have h := mstore_epilogue_ofProg_spec_within sp (base + 280)
+  rw [show (base + 280 : Word) + 4 = base + 284 from by bv_addr] at h
+  exact cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mstore_code_epilogue_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
 
 /-- Compact CodeReq for the full MSTORE program, split into prologue, four
     one-limb byte-unpack blocks, and the final stack-pop epilogue. -/
