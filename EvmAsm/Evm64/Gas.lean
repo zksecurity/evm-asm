@@ -63,6 +63,8 @@ inductive EvmOpcode where
   | SELFBALANCE
   | BASEFEE
   | LOG (kind : LogArgs.Kind)
+  | CREATE
+  | CREATE2
   | CALL
   | DELEGATECALL
   | STATICCALL
@@ -137,6 +139,8 @@ def byte? : EvmOpcode → Option Nat
   | SELFBALANCE => some 0x47
   | BASEFEE => some 0x48
   | LOG kind => some (0xa0 + LogArgs.topicCount kind)
+  | CREATE => some 0xf0
+  | CREATE2 => some 0xf5
   | CALL => some 0xf1
   | DELEGATECALL => some 0xf4
   | STATICCALL => some 0xfa
@@ -195,6 +199,8 @@ def staticGasCost : EvmOpcode → Nat
   | SELFBALANCE => 5
   | BASEFEE => 2
   | LOG _ => 375
+  | CREATE => 32000
+  | CREATE2 => 32000
   | CALL => 700
   | DELEGATECALL => 700
   | STATICCALL => 700
@@ -261,6 +267,22 @@ theorem byte?_ofCallKind (kind : CallArgs.Kind) :
       | .staticcall => some 0xfa := by
   cases kind <;> rfl
 
+inductive CreateKind where
+  | create
+  | create2
+  deriving DecidableEq, Repr
+
+def ofCreateKind : CreateKind → EvmOpcode
+  | .create => CREATE
+  | .create2 => CREATE2
+
+theorem byte?_ofCreateKind (kind : CreateKind) :
+    byte? (ofCreateKind kind) =
+      match kind with
+      | .create => some 0xf0
+      | .create2 => some 0xf5 := by
+  cases kind <;> rfl
+
 theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
 
 theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
@@ -288,6 +310,10 @@ theorem staticGasCost_log4Base : staticGasCost (LOG .log4) = 375 := rfl
 
 theorem staticGasCost_ofCallKind (kind : CallArgs.Kind) :
     staticGasCost (ofCallKind kind) = 700 := by
+  cases kind <;> rfl
+
+theorem staticGasCost_ofCreateKind (kind : CreateKind) :
+    staticGasCost (ofCreateKind kind) = 32000 := by
   cases kind <;> rfl
 
 theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
