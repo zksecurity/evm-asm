@@ -73,5 +73,59 @@ theorem memoryAccessExpansionCost_eq_zero_of_access_le
   exact memoryAccessExpansionCost_eq_zero_of_no_growth
     (evmMemExpand_eq_old_of_access_le sizeBytes offset length h_access)
 
+theorem memoryAccessExpansionCost_mload_eq (sizeBytes offset : Nat) :
+    memoryAccessExpansionCost sizeBytes offset 32 =
+      memoryExpansionCost sizeBytes
+        (max sizeBytes (roundUpTo32 (offset + 32))) := by
+  simp [memoryAccessExpansionCost, evmMemExpand_word_eq]
+
+theorem memoryAccessExpansionCost_mstore_eq (sizeBytes offset : Nat) :
+    memoryAccessExpansionCost sizeBytes offset 32 =
+      memoryExpansionCost sizeBytes
+        (max sizeBytes (roundUpTo32 (offset + 32))) := by
+  exact memoryAccessExpansionCost_mload_eq sizeBytes offset
+
+theorem memoryAccessExpansionCost_mstore8_eq (sizeBytes offset : Nat) :
+    memoryAccessExpansionCost sizeBytes offset 1 =
+      memoryExpansionCost sizeBytes
+        (max sizeBytes (roundUpTo32 (offset + 1))) := by
+  simp [memoryAccessExpansionCost, evmMemExpand_byte_eq]
+
+theorem memoryAccessExpansionCost_mload_eq_zero_of_no_growth
+    {sizeBytes offset : Nat}
+    (h_no_growth : evmMemExpand sizeBytes offset 32 = sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 32 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_no_growth h_no_growth
+
+theorem memoryAccessExpansionCost_mstore_eq_zero_of_no_growth
+    {sizeBytes offset : Nat}
+    (h_no_growth : evmMemExpand sizeBytes offset 32 = sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 32 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_no_growth h_no_growth
+
+theorem memoryAccessExpansionCost_mstore8_eq_zero_of_no_growth
+    {sizeBytes offset : Nat}
+    (h_no_growth : evmMemExpand sizeBytes offset 1 = sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 1 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_no_growth h_no_growth
+
+theorem memoryAccessExpansionCost_mload_eq_zero_of_access_le
+    {sizeBytes offset : Nat}
+    (h_access : roundUpTo32 (offset + 32) ≤ sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 32 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
+
+theorem memoryAccessExpansionCost_mstore_eq_zero_of_access_le
+    {sizeBytes offset : Nat}
+    (h_access : roundUpTo32 (offset + 32) ≤ sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 32 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
+
+theorem memoryAccessExpansionCost_mstore8_eq_zero_of_access_le
+    {sizeBytes offset : Nat}
+    (h_access : roundUpTo32 (offset + 1) ≤ sizeBytes) :
+    memoryAccessExpansionCost sizeBytes offset 1 = 0 := by
+  exact memoryAccessExpansionCost_eq_zero_of_access_le h_access
+
 end MemoryGas
 end EvmAsm.Evm64
