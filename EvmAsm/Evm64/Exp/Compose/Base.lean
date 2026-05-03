@@ -571,6 +571,43 @@ theorem expOneIterCode_loop_sub {base : Word}
           exact expLoopCode_loop_back_sub a _ (by assumption)
         · simp_all [CodeReq.empty]
 
+theorem expLoopCode_eq_oneIterCode (base : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    expLoopCode base mulOff skipOff backOff =
+      expOneIterCode base mulOff skipOff backOff := by
+  unfold expLoopCode expOneIterCode
+  unfold EvmAsm.Evm64.exp_loop
+  simp only [EvmAsm.Rv64.seq]
+  unfold Program
+  rw [CodeReq.ofProg_append]
+  have h24 :
+      base + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_iter_body mulOff skipOff).length) = base + 24 := by
+    rw [EvmAsm.Evm64.exp_iter_body_length]
+    rfl
+  rw [h24]
+  unfold EvmAsm.Evm64.exp_iter_body
+  simp only [EvmAsm.Rv64.seq]
+  unfold Program
+  rw [CodeReq.ofProg_append]
+  have h12 :
+      base + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_bit_test_block).length) = base + 12 := by
+    rw [EvmAsm.Evm64.exp_bit_test_block_length]
+    rfl
+  rw [h12]
+  rw [CodeReq.ofProg_append]
+  have h16 :
+      (base + 12 : Word) + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_square_block mulOff).length) = base + 16 := by
+    rw [EvmAsm.Evm64.exp_square_block_length]
+    bv_addr
+  rw [h16]
+  simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil]
+  rw [CodeReq.union_empty_right]
+  rw [CodeReq.union_assoc]
+  rw [CodeReq.union_assoc]
+
 theorem exp_loop_back_loop_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base target : Word)
