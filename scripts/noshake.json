@@ -224,6 +224,7 @@
 "EvmAsm.Evm64.EvmWordArith.MultiLimb":
  ["Mathlib.Tactic.Linarith", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
 "EvmAsm.Evm64.EvmWordArith.Arithmetic":
- ["Mathlib.Tactic.NormNum", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
+ ["EvmAsm.Evm64.EvmWordArith.Common",
+  "Mathlib.Tactic.NormNum", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
  ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"]}}
