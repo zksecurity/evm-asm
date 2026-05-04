@@ -20,7 +20,9 @@ namespace EvmAsm.Evm64
 
 namespace TerminatingArgs
 
-/-- Memory slice described by an EVM offset and byte size. -/
+/-- Memory slice described by an EVM offset and byte size.  Mirrors
+    `LogArgs.MemoryRange` and `CallArgs.MemoryRange` so call sites can
+    share helpers in the future without coercing between record types. -/
 structure MemoryRange where
   offset : EvmWord
   size : EvmWord
@@ -88,6 +90,10 @@ def returnArgs (offset size : EvmWord) : Args :=
 def revertArgs (offset size : EvmWord) : Args :=
   { data := { offset := offset, size := size } }
 
+/-- The data memory range projected from a terminating-args record. -/
+def dataRange (args : Args) : MemoryRange :=
+  args.data
+
 theorem stackArgumentCountStop :
     stackArgumentCount .stop = 0 := rfl
 
@@ -145,6 +151,12 @@ theorem revertArgs_size (offset size : EvmWord) :
 theorem stackArgumentCount_eq_two_of_hasMemoryRange (kind : Kind) :
     hasMemoryRange kind = true → stackArgumentCount kind = 2 := by
   cases kind <;> simp [hasMemoryRange, stackArgumentCount]
+
+theorem dataRange_offset (offset size : EvmWord) :
+    (dataRange { data := { offset := offset, size := size } }).offset = offset := rfl
+
+theorem dataRange_size (offset size : EvmWord) :
+    (dataRange { data := { offset := offset, size := size } }).size = size := rfl
 
 end TerminatingArgs
 

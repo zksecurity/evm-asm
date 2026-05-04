@@ -40,6 +40,8 @@
   ["EvmAsm.Rv64.SepLogic"],
  "EvmAsm.Evm64.Basic":
   ["Std.Tactic.BVDecide"],
+ "EvmAsm.Evm64.CodeRegion":
+  ["EvmAsm.Evm64.Basic", "EvmAsm.Rv64.ByteOps", "Mathlib.Tactic.Ring"],
  "EvmAsm.Evm64.Memory":
   ["EvmAsm.Rv64.ByteOps"],
  "EvmAsm.Evm64.MStore.ByteAlg":
@@ -185,4 +187,5 @@
  "EvmAsm.Evm64.Calldata.SizeSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
-  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"]}}
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"]}}
