@@ -16,6 +16,7 @@
   whenever `byteOffset ptr = 0` (i.e., `ptr` is doubleword-aligned).
 -/
 
+import EvmAsm.Rv64.RLP.Phase2ByteWindow
 import EvmAsm.Rv64.RLP.Phase2LongLoopSeven
 
 namespace EvmAsm.Rv64.RLP
@@ -151,5 +152,39 @@ theorem rlp_phase2_long_loop_eight_byte_spec_within
     (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
     composed
+
+/-- Bundled-hypothesis form of `rlp_phase2_long_loop_eight_byte_spec_within`.
+
+    Takes a single `rlpAlignedByteWindowOk ptr dwordAddr` instead of 16
+    separate `halign{1..8}` / `hvalid{1..8}` hypotheses. Cuts the call-site
+    boilerplate that bottlenecks `evm-asm-yrz5` (parent: bundle per-byte memory
+    address validity hypotheses). -/
+theorem rlp_phase2_long_loop_eight_byte_spec_within_bundled
+    (len ptr v12Old wordVal dwordAddr : Word)
+    (base : Word) (back : BitVec 13)
+    (hwindow : rlpAlignedByteWindowOk ptr dwordAddr)
+    (hback : (base + 20) + signExtend13 back = base) :
+    cpsTripleWithin 48 base (base + 24)
+      (CodeReq.ofProg base (rlp_phase2_long_loop_body_prog back))
+      ((.x11 ↦ᵣ len) ** (.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ (8 : Word)) **
+       (.x12 ↦ᵣ v12Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (dwordAddr ↦ₘ wordVal))
+      (rlp_phase2_long_loop_eight_byte_post len ptr
+        ((extractByte wordVal (byteOffset ptr)).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 1))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 2))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 3))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 4))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 5))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 6))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 7))).zeroExtend 64)
+        wordVal dwordAddr) := by
+  obtain ⟨halign1, halign2, halign3, halign4, halign5, halign6, halign7, halign8,
+          hvalid1, hvalid2, hvalid3, hvalid4, hvalid5, hvalid6, hvalid7, hvalid8⟩
+    := hwindow
+  exact rlp_phase2_long_loop_eight_byte_spec_within
+    len ptr v12Old wordVal dwordAddr base back
+    halign1 halign2 halign3 halign4 halign5 halign6 halign7 halign8
+    hvalid1 hvalid2 hvalid3 hvalid4 hvalid5 hvalid6 hvalid7 hvalid8 hback
 
 end EvmAsm.Rv64.RLP
