@@ -11,7 +11,6 @@
 
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Exp.LimbSpec
-import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
