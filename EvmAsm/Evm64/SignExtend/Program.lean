@@ -34,7 +34,8 @@
     Exit point: offset 192
 -/
 
-import EvmAsm.Evm64.Stack
+
+import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64
 
