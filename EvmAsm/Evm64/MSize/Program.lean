@@ -28,7 +28,6 @@
   (evm-hermes).
 -/
 
-
 import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64

@@ -279,6 +279,11 @@ This is a **prototype** demonstrating the approach. Current state:
   sail-riscv-lean for RISC-V spec compliance, connect to EVM specs in Lean,
   testing.
 
+## Documentation
+
+- [Notable proven specifications](docs/notable-specs.md) — index of stack
+  specs and `EvmWord` correctness theorems with commit-pinned permalinks.
+
 ## References
 
 - Kennedy, A., Benton, N., Jensen, J.B., Dagand, P.-E. (2013).

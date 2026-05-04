@@ -36,7 +36,6 @@
     Exit point: offset 180
 -/
 
-
 import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64

@@ -4,7 +4,7 @@
   Pure stack-argument records for LOG0 through LOG4 (GH #112).
 -/
 
-import EvmAsm.Evm64.Environment
+import EvmAsm.Evm64.Basic
 
 namespace EvmAsm.Evm64
 
