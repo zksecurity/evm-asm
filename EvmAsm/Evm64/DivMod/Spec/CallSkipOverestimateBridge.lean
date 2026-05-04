@@ -10,7 +10,7 @@
   (`qHat = div128Quot u4 u3 b3'`).
 
   Originally lived in `Spec.CallSkip`; extracted to keep that file under
-  the 1500-line cap (file-size-exception cleanup, GH #1078).
+  the 1500-line cap (#1078 split).
 
   Theorems exported:
     - c3_un_zero_of_qHat_mul_le

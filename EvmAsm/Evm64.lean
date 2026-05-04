@@ -65,6 +65,7 @@ import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
+import EvmAsm.Evm64.Env.Program
 import EvmAsm.Evm64.CallArgs
 import EvmAsm.Evm64.LogArgs
 
