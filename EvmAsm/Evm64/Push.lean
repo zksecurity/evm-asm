@@ -7,3 +7,4 @@
 
 import EvmAsm.Evm64.Push.Program
 import EvmAsm.Evm64.Push.Spec
+import EvmAsm.Evm64.Push.Immediate

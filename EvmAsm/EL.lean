@@ -12,6 +12,7 @@ import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.LogCallEffects
 import EvmAsm.EL.Conformance
+import EvmAsm.EL.Conformance.Calldata
 import EvmAsm.EL.WorldState
 import EvmAsm.EL.WorldStateAccount
 import EvmAsm.EL.Storage
@@ -22,8 +23,10 @@ import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallOutputBridge
 import EvmAsm.EL.CallValueTransfer
+import EvmAsm.EL.SelfdestructEffects
 import EvmAsm.EL.TerminatingArgsBridge
 import EvmAsm.EL.TerminatingCallOutput
+import EvmAsm.EL.TerminatingCallerVisible
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.Block
