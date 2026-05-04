@@ -32,26 +32,6 @@ def normLimb_lo (lo shift : Word) : Word :=
 def normLimb_top (hi antiShift : Word) : Word :=
   hi >>> (antiShift.toNat % 64)
 
-/-- Bundle: normalize all 4 b-limbs.
-    Returns (b0', b1', b2', b3') where b[] is left-shifted by `shift`. -/
-def normBLimbs (b0 b1 b2 b3 shift antiShift : Word) :
-    Word × Word × Word × Word :=
-  ( normLimb_lo b0 shift,
-    normLimb b0 b1 shift antiShift,
-    normLimb b1 b2 shift antiShift,
-    normLimb b2 b3 shift antiShift )
-
-/-- Bundle: normalize all 4 a-limbs plus carry.
-    Returns (u0, u1, u2, u3, u4) where a[] is left-shifted by `shift`
-    and u4 is the overflow carry. -/
-def normULimbs (a0 a1 a2 a3 shift antiShift : Word) :
-    Word × Word × Word × Word × Word :=
-  ( normLimb_lo a0 shift,
-    normLimb a0 a1 shift antiShift,
-    normLimb a1 a2 shift antiShift,
-    normLimb a2 a3 shift antiShift,
-    normLimb_top a3 antiShift )
-
 -- ============================================================================
 -- Denormalization: shift remainder u[] right by `shift` bits
 -- ============================================================================
@@ -64,14 +44,5 @@ def denormLimb (cur next shift antiShift : Word) : Word :=
 /-- Denormalize the top remainder limb (no higher neighbor). -/
 def denormLimb_top (hi shift : Word) : Word :=
   hi >>> (shift.toNat % 64)
-
-/-- Bundle: denormalize 4 remainder limbs.
-    Returns (r0', r1', r2', r3') where u[] is right-shifted by `shift`. -/
-def denormRLimbs (u0 u1 u2 u3 shift antiShift : Word) :
-    Word × Word × Word × Word :=
-  ( denormLimb u0 u1 shift antiShift,
-    denormLimb u1 u2 shift antiShift,
-    denormLimb u2 u3 shift antiShift,
-    denormLimb_top u3 shift )
 
 end EvmAsm.Evm64
