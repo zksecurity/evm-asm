@@ -684,52 +684,5 @@ theorem divK_loop_n3_call_max_spec_within
       exact hp)
     (cpsTripleWithin_mono_nSteps (by decide) full)
 
--- ============================================================================
--- Single `(j : Fin 2) (bltu : Bool)` iter spec for n=3
--- ============================================================================
-
-/-- Unified iter spec for n=3: one theorem covering all 8 original path combinations.
-    Dispatches directly to per-j `_unified_j{k}_spec` specs via `fin_cases j` after
-    unfolding `loopBodyPre` / `loopBodyPreWithScratch` / `loopIterPostN3`. -/
-theorem divK_loop_body_n3_iter_spec_within (j : Fin 2) (bltu : Bool)
-    (sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-     v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old : Word)
-    (ret_mem d_mem dlo_mem scratch_un0 : Word)
-    (base : Word)
-    (halign : if bltu then ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff
-              else True)
-    (hbltu : if bltu then BitVec.ult u3 v2 else ¬BitVec.ult u3 v2)
-    (hcarry : if bltu then isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 u_top
-              else isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 u_top) :
-    let exit_addr := if j.val = 0 then base + denormOff else base + loopBodyOff
-    cpsTripleWithin (if bltu then 202 else 152) (base + loopBodyOff) exit_addr (sharedDivModCode base)
-      (match bltu with
-       | true => loopBodyPreWithScratch (3 : Word) sp (j.val : Word) j_old
-                   v5_old v6_old v7_old v10_old v11_old v2_old
-                   v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old
-                   ret_mem d_mem dlo_mem scratch_un0
-       | false => loopBodyPre (3 : Word) sp (j.val : Word) j_old
-                    v5_old v6_old v7_old v10_old v11_old v2_old
-                    v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old)
-      (loopIterPostN3 bltu sp base (j.val : Word) v0 v1 v2 v3 u0 u1 u2 u3 u_top) := by
-  cases bltu
-  · -- false (max)
-    rw [if_neg (by decide)] at hbltu hcarry
-    delta loopBodyPre
-    simp only [loopIterPostN3, sepConj_emp_right']
-    fin_cases j
-    · exact divK_loop_body_n3_max_unified_j0_spec_within sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-        v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base hbltu hcarry
-    · exact divK_loop_body_n3_max_unified_j1_spec_within sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-        v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old base hbltu hcarry
-  · -- true (call)
-    rw [if_pos rfl] at halign hbltu hcarry
-    delta loopBodyPreWithScratch loopBodyPre
-    simp only [loopIterPostN3, sepConj_assoc']
-    fin_cases j
-    · exact divK_loop_body_n3_call_unified_j0_spec_within sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-        v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base halign hbltu hcarry
-    · exact divK_loop_body_n3_call_unified_j1_spec_within sp j_old v5_old v6_old v7_old v10_old v11_old v2_old
-        v0 v1 v2 v3 u0 u1 u2 u3 u_top q_old ret_mem d_mem dlo_mem scratch_un0 base halign hbltu hcarry
 
 end EvmAsm.Evm64
