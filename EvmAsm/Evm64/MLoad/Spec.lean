@@ -1038,6 +1038,50 @@ theorem mload_byte_pack_seven_pair_spec_within
       exact leaf (by bv_omega) (by bv_omega) (by bv_omega)
   exact cpsTripleWithin_seq hd_step six step
 
+/-- Side conditions for one eight-byte MLOAD limb window. The source byte
+    offsets may cross from `loAddr` into `hiAddr` depending on `start`.
+
+    Mirrors `MStore.mstoreLimbWindowOk` but talks about `mloadDwordPairAddr`
+    (the source-side dword address) rather than the store-side variant.
+    Bundling the 24 per-byte facts (alignment + validity + byte offset for
+    each of `i = 0..7`) avoids 24-parameter lemma signatures in the
+    byte-pack composition layer. See evm-asm-yrz5 / evm-asm-k5pj. -/
+def mloadLimbWindowOk
+    (addrPtr loAddr hiAddr : Word) (start : Nat)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : Prop :=
+  alignToDword (addrPtr + signExtend12 off0) =
+      mloadDwordPairAddr loAddr hiAddr start 0 ∧
+  isValidByteAccess (addrPtr + signExtend12 off0) = true ∧
+  byteOffset (addrPtr + signExtend12 off0) = (start + 0) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off1) =
+      mloadDwordPairAddr loAddr hiAddr start 1 ∧
+  isValidByteAccess (addrPtr + signExtend12 off1) = true ∧
+  byteOffset (addrPtr + signExtend12 off1) = (start + 1) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off2) =
+      mloadDwordPairAddr loAddr hiAddr start 2 ∧
+  isValidByteAccess (addrPtr + signExtend12 off2) = true ∧
+  byteOffset (addrPtr + signExtend12 off2) = (start + 2) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off3) =
+      mloadDwordPairAddr loAddr hiAddr start 3 ∧
+  isValidByteAccess (addrPtr + signExtend12 off3) = true ∧
+  byteOffset (addrPtr + signExtend12 off3) = (start + 3) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off4) =
+      mloadDwordPairAddr loAddr hiAddr start 4 ∧
+  isValidByteAccess (addrPtr + signExtend12 off4) = true ∧
+  byteOffset (addrPtr + signExtend12 off4) = (start + 4) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off5) =
+      mloadDwordPairAddr loAddr hiAddr start 5 ∧
+  isValidByteAccess (addrPtr + signExtend12 off5) = true ∧
+  byteOffset (addrPtr + signExtend12 off5) = (start + 5) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off6) =
+      mloadDwordPairAddr loAddr hiAddr start 6 ∧
+  isValidByteAccess (addrPtr + signExtend12 off6) = true ∧
+  byteOffset (addrPtr + signExtend12 off6) = (start + 6) % 8 ∧
+  alignToDword (addrPtr + signExtend12 off7) =
+      mloadDwordPairAddr loAddr hiAddr start 7 ∧
+  isValidByteAccess (addrPtr + signExtend12 off7) = true ∧
+  byteOffset (addrPtr + signExtend12 off7) = (start + 7) % 8
+
 /-- Eight-byte big-endian byte-pack composition for an unaligned source window. -/
 theorem mload_byte_pack_eight_pair_spec_within
     (addrReg byteReg accReg : Reg)
@@ -1045,46 +1089,8 @@ theorem mload_byte_pack_eight_pair_spec_within
     (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) (start : Nat) (base : Word)
     (h_byte_ne_x0 : byteReg ≠ .x0)
     (h_acc_ne_x0  : accReg  ≠ .x0)
-    (h_align0 :
-      alignToDword (addrPtr + signExtend12 off0) =
-        mloadDwordPairAddr loAddr hiAddr start 0)
-    (h_byte0 : byteOffset (addrPtr + signExtend12 off0) = (start + 0) % 8)
-    (h_valid0 : isValidByteAccess (addrPtr + signExtend12 off0) = true)
-    (h_align1 :
-      alignToDword (addrPtr + signExtend12 off1) =
-        mloadDwordPairAddr loAddr hiAddr start 1)
-    (h_byte1 : byteOffset (addrPtr + signExtend12 off1) = (start + 1) % 8)
-    (h_valid1 : isValidByteAccess (addrPtr + signExtend12 off1) = true)
-    (h_align2 :
-      alignToDword (addrPtr + signExtend12 off2) =
-        mloadDwordPairAddr loAddr hiAddr start 2)
-    (h_byte2 : byteOffset (addrPtr + signExtend12 off2) = (start + 2) % 8)
-    (h_valid2 : isValidByteAccess (addrPtr + signExtend12 off2) = true)
-    (h_align3 :
-      alignToDword (addrPtr + signExtend12 off3) =
-        mloadDwordPairAddr loAddr hiAddr start 3)
-    (h_byte3 : byteOffset (addrPtr + signExtend12 off3) = (start + 3) % 8)
-    (h_valid3 : isValidByteAccess (addrPtr + signExtend12 off3) = true)
-    (h_align4 :
-      alignToDword (addrPtr + signExtend12 off4) =
-        mloadDwordPairAddr loAddr hiAddr start 4)
-    (h_byte4 : byteOffset (addrPtr + signExtend12 off4) = (start + 4) % 8)
-    (h_valid4 : isValidByteAccess (addrPtr + signExtend12 off4) = true)
-    (h_align5 :
-      alignToDword (addrPtr + signExtend12 off5) =
-        mloadDwordPairAddr loAddr hiAddr start 5)
-    (h_byte5 : byteOffset (addrPtr + signExtend12 off5) = (start + 5) % 8)
-    (h_valid5 : isValidByteAccess (addrPtr + signExtend12 off5) = true)
-    (h_align6 :
-      alignToDword (addrPtr + signExtend12 off6) =
-        mloadDwordPairAddr loAddr hiAddr start 6)
-    (h_byte6 : byteOffset (addrPtr + signExtend12 off6) = (start + 6) % 8)
-    (h_valid6 : isValidByteAccess (addrPtr + signExtend12 off6) = true)
-    (h_align7 :
-      alignToDword (addrPtr + signExtend12 off7) =
-        mloadDwordPairAddr loAddr hiAddr start 7)
-    (h_byte7 : byteOffset (addrPtr + signExtend12 off7) = (start + 7) % 8)
-    (h_valid7 : isValidByteAccess (addrPtr + signExtend12 off7) = true) :
+    (h_window : mloadLimbWindowOk addrPtr loAddr hiAddr start
+      off0 off1 off2 off3 off4 off5 off6 off7) :
     let b0 := (mloadByteFromDwordPair loVal hiVal start 0).zeroExtend 64
     let b1 := (mloadByteFromDwordPair loVal hiVal start 1).zeroExtend 64
     let b2 := (mloadByteFromDwordPair loVal hiVal start 2).zeroExtend 64
@@ -1105,6 +1111,10 @@ theorem mload_byte_pack_eight_pair_spec_within
       ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ b7) ** (accReg ↦ᵣ accFinal) **
        (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal)) := by
   intro b0 b1 b2 b3 b4 b5 b6 b7 accAfter7 accFinal cr
+  obtain ⟨h_align0, h_valid0, h_byte0, h_align1, h_valid1, h_byte1,
+          h_align2, h_valid2, h_byte2, h_align3, h_valid3, h_byte3,
+          h_align4, h_valid4, h_byte4, h_align5, h_valid5, h_byte5,
+          h_align6, h_valid6, h_byte6, h_align7, h_valid7, h_byte7⟩ := h_window
   have seven := mload_byte_pack_seven_pair_spec_within addrReg byteReg accReg
     addrPtr accOld byteOld loVal hiVal loAddr hiAddr
     off0 off1 off2 off3 off4 off5 off6 start base

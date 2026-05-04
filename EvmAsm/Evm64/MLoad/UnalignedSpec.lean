@@ -276,10 +276,14 @@ theorem mload_one_limb_unaligned_spec_within
     addrPtr accOld byteOld loVal hiVal loAddr hiAddr
     off0 off1 off2 off3 off4 off5 off6 off7 start base
     h_byte_ne_x0 h_acc_ne_x0
-    h_align0 h_byte0 h_valid0 h_align1 h_byte1 h_valid1
-    h_align2 h_byte2 h_valid2 h_align3 h_byte3 h_valid3
-    h_align4 h_byte4 h_valid4 h_align5 h_byte5 h_valid5
-    h_align6 h_byte6 h_valid6 h_align7 h_byte7 h_valid7
+    ⟨h_align0, h_valid0, h_byte0,
+     h_align1, h_valid1, h_byte1,
+     h_align2, h_valid2, h_byte2,
+     h_align3, h_valid3, h_byte3,
+     h_align4, h_valid4, h_byte4,
+     h_align5, h_valid5, h_byte5,
+     h_align6, h_valid6, h_byte6,
+     h_align7, h_valid7, h_byte7⟩
   have eightPacked : cpsTripleWithin 22 base (base + 88)
       (mloadBytePackEightCode addrReg byteReg accReg
         off0 off1 off2 off3 off4 off5 off6 off7 base)
