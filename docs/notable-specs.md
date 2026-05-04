@@ -4,8 +4,8 @@ A curated index of notable proven specifications across the EvmAsm codebase, wit
 permalinks to the exact theorem statements at a pinned commit. Use this page to
 find a spec without grepping; refresh the permalinks when files move.
 
-> **Permalinks pinned to commit `05b3babdd085aa629765d38f3d19126ef40007eb` on
-> 2026-05-01.** Refresh whenever a major surface lands (e.g. each closure of a
+> **Permalinks pinned to commit `7c5da808888e612c2d77be99afae07e3a7f90807` on
+> 2026-05-04.** Refresh whenever a major surface lands (e.g. each closure of a
 > #61-class umbrella issue) or quarterly, whichever comes first. To refresh,
 > re-run `git rev-parse origin/main` and `grep -n` for each declaration name,
 > then update the line numbers below.
@@ -24,44 +24,56 @@ downstream verifiers — when proving a higher-level property, prefer the alias
 over the underlying `_word_uni` / `_dispatch_uni` theorem so a future bound
 relaxation propagates automatically.
 
+### Unified case-split specs (single theorem per opcode)
+
+The monolithic stack specs that case-split internally on the dispatcher
+branch certificate (`DivStackSpecCase` / `ModStackSpecCase`). Prefer these
+when proving a higher-level property that does not need to mention the
+specific path — the dispatcher branch is hidden behind the certificate.
+
+| Theorem | Defined at | Pre / Post (plain English) |
+|---|---|---|
+| [`evm_div_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L482) | `Spec/Unified.lean:482` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : DivStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.div a b` under `evmWordIs`, all framed memory and registers preserved per `divStackDispatchPost`. |
+| [`evm_mod_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L813) | `Spec/Unified.lean:813` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : ModStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.mod a b` under `evmWordIs`, all framed memory and registers preserved per `modStackDispatchPost`. |
+
 ### Dispatcher aliases
 
 Defined in
-[`EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean).
+[`EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean).
 
 | Alias | Underlying theorem | Meaning |
 |---|---|---|
-| [`evm_div_stack_spec_within_bzero`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L18) | `evm_div_bzero_stack_spec_within` | DIV with divisor = 0 returns 0 (within bound 13). |
-| [`evm_div_stack_spec_within_n1Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L19) | `evm_div_n1_stack_spec_within_word_uni` | DIV with 1-limb divisor: stack-level result equals `EvmWord.div`. |
-| [`evm_div_stack_spec_within_n2Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L20) | `evm_div_n2_stack_spec_within_word_uni` | DIV with 2-limb divisor: stack-level result equals `EvmWord.div`. |
-| [`evm_div_stack_spec_within_n3Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L21) | `evm_div_n3_stack_spec_within_word_uni` | DIV with 3-limb divisor: stack-level result equals `EvmWord.div`. |
-| [`evm_div_stack_spec_within_n4Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L22) | `evm_div_n4_stack_spec_within_dispatch_uni` | DIV with 4-limb divisor: stack-level result equals `EvmWord.div`. |
-| [`evm_mod_stack_spec_within_bzero`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L24) | `evm_mod_bzero_stack_spec_within` | MOD with divisor = 0 returns 0 (within bound 13). |
-| [`evm_mod_stack_spec_within_n1Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L25) | `evm_mod_n1_stack_spec_within_word_uni` | MOD with 1-limb divisor: stack-level result equals `EvmWord.mod`. |
-| [`evm_mod_stack_spec_within_n2Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L26) | `evm_mod_n2_stack_spec_within_word_uni` | MOD with 2-limb divisor: stack-level result equals `EvmWord.mod`. |
-| [`evm_mod_stack_spec_within_n3Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L27) | `evm_mod_n3_stack_spec_within_word_uni` | MOD with 3-limb divisor: stack-level result equals `EvmWord.mod`. |
-| [`evm_mod_stack_spec_within_n4Full`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L28) | `evm_mod_n4_stack_spec_within_dispatch_uni` | MOD with 4-limb divisor: stack-level result equals `EvmWord.mod`. |
+| [`evm_div_stack_spec_within_bzero`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L18) | `evm_div_bzero_stack_spec_within` | DIV with divisor = 0 returns 0 (within bound 13). |
+| [`evm_div_stack_spec_within_n1Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L19) | `evm_div_n1_stack_spec_within_word_uni` | DIV with 1-limb divisor: stack-level result equals `EvmWord.div`. |
+| [`evm_div_stack_spec_within_n2Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L20) | `evm_div_n2_stack_spec_within_word_uni` | DIV with 2-limb divisor: stack-level result equals `EvmWord.div`. |
+| [`evm_div_stack_spec_within_n3Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L21) | `evm_div_n3_stack_spec_within_word_uni` | DIV with 3-limb divisor: stack-level result equals `EvmWord.div`. |
+| [`evm_div_stack_spec_within_n4Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L22) | `evm_div_n4_stack_spec_within_dispatch_uni` | DIV with 4-limb divisor: stack-level result equals `EvmWord.div`. |
+| [`evm_mod_stack_spec_within_bzero`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L24) | `evm_mod_bzero_stack_spec_within` | MOD with divisor = 0 returns 0 (within bound 13). |
+| [`evm_mod_stack_spec_within_n1Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L25) | `evm_mod_n1_stack_spec_within_word_uni` | MOD with 1-limb divisor: stack-level result equals `EvmWord.mod`. |
+| [`evm_mod_stack_spec_within_n2Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L26) | `evm_mod_n2_stack_spec_within_word_uni` | MOD with 2-limb divisor: stack-level result equals `EvmWord.mod`. |
+| [`evm_mod_stack_spec_within_n3Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L27) | `evm_mod_n3_stack_spec_within_word_uni` | MOD with 3-limb divisor: stack-level result equals `EvmWord.mod`. |
+| [`evm_mod_stack_spec_within_n4Full`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L28) | `evm_mod_n4_stack_spec_within_dispatch_uni` | MOD with 4-limb divisor: stack-level result equals `EvmWord.mod`. |
 
 ### Underlying proof-bearing theorems
 
 | Theorem | Defined at |
 |---|---|
-| `evm_div_bzero_stack_spec_within` | [`Spec/Base.lean:904`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Base.lean#L904) |
-| `evm_div_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:46`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L46) |
-| `evm_div_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:87`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L87) |
-| `evm_div_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:127`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L127) |
-| `evm_div_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:166`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L166) |
-| `evm_mod_bzero_stack_spec_within` | [`Spec/Base.lean:961`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Base.lean#L961) |
-| `evm_mod_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:195`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L195) |
-| `evm_mod_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:236`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L236) |
-| `evm_mod_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:276`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L276) |
-| `evm_mod_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:315`](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L315) |
+| `evm_div_bzero_stack_spec_within` | [`Spec/Base.lean:904`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Base.lean#L904) |
+| `evm_div_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:210`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L210) |
+| `evm_div_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:251`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L251) |
+| `evm_div_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:291`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L291) |
+| `evm_div_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:330`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L330) |
+| `evm_mod_bzero_stack_spec_within` | [`Spec/Base.lean:961`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Base.lean#L961) |
+| `evm_mod_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:541`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L541) |
+| `evm_mod_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:582`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L582) |
+| `evm_mod_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:622`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L622) |
+| `evm_mod_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:661`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L661) |
 
 ### Dispatcher registries
 
 The `evm_div_stack_spec_within` and `evm_mod_stack_spec_within` registries
-([Dispatcher.lean#L65](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L65),
-[#L73](https://github.com/Verified-zkEVM/evm-asm/blob/05b3babdd085aa629765d38f3d19126ef40007eb/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L73))
+([Dispatcher.lean#L65](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L65),
+[#L73](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/StackDispatcher.lean#L73))
 list every branch and the per-branch step bound. All non-`bzero` branches are
 lifted to a single `unifiedDivBound`.
 
