@@ -71,7 +71,98 @@ theorem invalid_status_tag (state : EvmState) :
     (state.revertWith data).stack = state.stack := rfl
 
 @[simp] theorem invalid_stack (state : EvmState) :
-    state.invalid.stack = state.stack := rfl
+    (state.invalid).stack = state.stack := rfl
+
+/-! ### Structural preservation lemmas
+
+The terminating helpers only update the `status` field; gas, memory, code, and
+environment fields are preserved untouched. Frame-side reasoning for the
+upcoming RETURN/REVERT/STOP/INVALID handler specs and the interpreter-loop
+termination proofs needs each preservation fact as a `simp` lemma. -/
+
+@[simp] theorem stop_gas (state : EvmState) :
+    state.stop.gas = state.gas := rfl
+
+@[simp] theorem stop_memoryCells (state : EvmState) :
+    state.stop.memoryCells = state.memoryCells := rfl
+
+@[simp] theorem stop_memory (state : EvmState) :
+    state.stop.memory = state.memory := rfl
+
+@[simp] theorem stop_memSize (state : EvmState) :
+    state.stop.memSize = state.memSize := rfl
+
+@[simp] theorem stop_code (state : EvmState) :
+    state.stop.code = state.code := rfl
+
+@[simp] theorem stop_codeLen (state : EvmState) :
+    state.stop.codeLen = state.codeLen := rfl
+
+@[simp] theorem stop_env (state : EvmState) :
+    state.stop.env = state.env := rfl
+
+@[simp] theorem returnWith_gas (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).gas = state.gas := rfl
+
+@[simp] theorem returnWith_memoryCells (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem returnWith_memory (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).memory = state.memory := rfl
+
+@[simp] theorem returnWith_memSize (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).memSize = state.memSize := rfl
+
+@[simp] theorem returnWith_code (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).code = state.code := rfl
+
+@[simp] theorem returnWith_codeLen (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).codeLen = state.codeLen := rfl
+
+@[simp] theorem returnWith_env (state : EvmState) (data : List (BitVec 8)) :
+    (state.returnWith data).env = state.env := rfl
+
+@[simp] theorem revertWith_gas (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).gas = state.gas := rfl
+
+@[simp] theorem revertWith_memoryCells (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem revertWith_memory (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).memory = state.memory := rfl
+
+@[simp] theorem revertWith_memSize (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).memSize = state.memSize := rfl
+
+@[simp] theorem revertWith_code (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).code = state.code := rfl
+
+@[simp] theorem revertWith_codeLen (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).codeLen = state.codeLen := rfl
+
+@[simp] theorem revertWith_env (state : EvmState) (data : List (BitVec 8)) :
+    (state.revertWith data).env = state.env := rfl
+
+@[simp] theorem invalid_gas (state : EvmState) :
+    state.invalid.gas = state.gas := rfl
+
+@[simp] theorem invalid_memoryCells (state : EvmState) :
+    state.invalid.memoryCells = state.memoryCells := rfl
+
+@[simp] theorem invalid_memory (state : EvmState) :
+    state.invalid.memory = state.memory := rfl
+
+@[simp] theorem invalid_memSize (state : EvmState) :
+    state.invalid.memSize = state.memSize := rfl
+
+@[simp] theorem invalid_code (state : EvmState) :
+    state.invalid.code = state.code := rfl
+
+@[simp] theorem invalid_codeLen (state : EvmState) :
+    state.invalid.codeLen = state.codeLen := rfl
+
+@[simp] theorem invalid_env (state : EvmState) :
+    state.invalid.env = state.env := rfl
 
 end EvmState
 end EvmAsm.Evm64
