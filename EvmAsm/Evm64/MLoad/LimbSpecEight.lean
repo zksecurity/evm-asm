@@ -891,4 +891,62 @@ theorem mload_one_limb_spec_within
     (fun h hp => by sep_perm hp)
     composed
 
+/-- Migration sibling of `mload_one_limb_spec_within` that takes the new
+    `mloadAlignedDwordIs` wrapper assertion (PR #2284) in its precondition
+    instead of an explicit `h_window` hypothesis. The
+    `mloadAlignedLimbWindowOk` bundle is now bundled into the assertion via
+    `⌜·⌝`, and the canonical `dwordAddr ↦ₘ wordVal` cell from the original
+    pre is replaced by the wrapper. Proved by reducing to the original spec
+    via AC-rewrite of the precondition followed by
+    `cpsTripleWithin_of_pure_imp` to peel the bundled fact and feed it as
+    `h_window` to the original spec.
+
+    Second consumer-family migration of slice 3 of `evm-asm-8xc6`
+    (GH #2278). Mirrors `mload_byte_pack_eight_via_assertion_spec_within`
+    (PR #2340). Distinctive token:
+    `mloadAlignedLimbWindowOk-consumer-migration-2278 one_limb via_assertion`. -/
+theorem mload_one_limb_via_assertion_spec_within
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld wordVal sp dstWordOld : Word)
+    (dwordAddr : Word)
+    (off0 off1 off2 off3 off4 off5 off6 off7 dstOff : BitVec 12) (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0  : accReg  ≠ .x0) :
+    cpsTripleWithin 23 base (base + 92)
+      (mloadOneLimbCode addrReg byteReg accReg
+        off0 off1 off2 off3 off4 off5 off6 off7 dstOff base)
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+       (mloadAlignedDwordIs addrPtr dwordAddr wordVal
+          off0 off1 off2 off3 off4 off5 off6 off7) **
+       ((.x12 : Reg) ↦ᵣ sp) **
+       ((sp + signExtend12 dstOff) ↦ₘ dstWordOld))
+      (mloadOneLimbPost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr sp
+        off0 off1 off2 off3 off4 off5 off6 off7 dstOff) := by
+  unfold mloadAlignedDwordIs
+  -- AC-rearrange the precondition into `<original-pre> ** ⌜fact⌝` shape so
+  -- `cpsTripleWithin_of_pure_imp` can peel the bundled `mloadAligned-
+  -- LimbWindowOk` fact.
+  have hpre_eq :
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+        ((dwordAddr ↦ₘ wordVal) **
+          ⌜mloadAlignedLimbWindowOk addrPtr dwordAddr
+              off0 off1 off2 off3 off4 off5 off6 off7⌝) **
+        ((.x12 : Reg) ↦ᵣ sp) **
+        ((sp + signExtend12 dstOff) ↦ₘ dstWordOld)) =
+      (((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (dwordAddr ↦ₘ wordVal) ** ((.x12 : Reg) ↦ᵣ sp) **
+         ((sp + signExtend12 dstOff) ↦ₘ dstWordOld)) **
+        ⌜mloadAlignedLimbWindowOk addrPtr dwordAddr
+            off0 off1 off2 off3 off4 off5 off6 off7⌝) := by
+    ac_rfl
+  rw [hpre_eq]
+  refine cpsTripleWithin_of_pure_imp (fun h_window => ?_)
+  have base_spec := mload_one_limb_spec_within addrReg byteReg accReg
+    addrPtr accOld byteOld wordVal sp dstWordOld dwordAddr
+    off0 off1 off2 off3 off4 off5 off6 off7 dstOff base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  rw [mloadOneLimbPre_unfold] at base_spec
+  exact base_spec
+
 end EvmAsm.Evm64
