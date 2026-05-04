@@ -1,8 +1,36 @@
 /-
   EvmAsm.Rv64.SailEquiv.InstrMap
 
-  First bridge from the hand-written `Instr` AST to the SAIL-generated
-  RISC-V `instruction` AST.
+  Bridge from the hand-written `Instr` AST (`EvmAsm.Rv64.Basic`) to the
+  SAIL-generated RISC-V `instruction` AST.
+
+  ## Coverage (GH #93)
+
+  `toSailInstr?` covers every `Instr` constructor for the supported RV64IM
+  subset:
+
+  - RTYPE / SLT family: ADD, SUB, SLL, SRL, SRA, AND, OR, XOR, SLT, SLTU
+  - ITYPE: ADDI, ANDI, ORI, XORI, SLTI, SLTIU
+  - SHIFTIOP: SLLI, SRLI, SRAI
+  - UTYPE: LUI, AUIPC
+  - ADDIW
+  - LOAD / STORE: LD, LW, LWU, LB, LBU, LH, LHU, SD, SW, SB, SH
+  - BTYPE: BEQ, BNE, BLT, BGE, BLTU, BGEU
+  - JAL, JALR
+  - System: ECALL, EBREAK, FENCE
+  - M-extension: MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU
+
+  The pseudo-instruction constructors `.MV`, `.LI`, and `.NOP` are
+  intentionally **not** mapped: they re-encode pre-existing real
+  instructions (`ADDI rd rs 0`, sequences of `LUI`/`ADDI`/`SLLI`, and
+  `ADDI x0 x0 0` respectively) and a SAIL-side mapping would collide with
+  the real ADDI round-trips. Surface code that needs to bridge through
+  SAIL should desugar pseudo-instructions before calling
+  `toSailInstr?`.
+
+  `fromSailInstr?` is the partial inverse on the supported SAIL
+  constructors and the round-trip lemma `fromSailInstr?_toSailInstr?_*`
+  is proved per concrete-instruction family above.
 
   Authored by @pirapira; implemented by Codex.
 -/
