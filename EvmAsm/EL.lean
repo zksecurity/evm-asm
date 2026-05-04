@@ -7,6 +7,7 @@ import EvmAsm.EL.RLP
 import EvmAsm.EL.Create
 import EvmAsm.EL.CreateAddress
 import EvmAsm.EL.CreateArgsBridge
+import EvmAsm.EL.CreateEffects
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.LogCallEffects
