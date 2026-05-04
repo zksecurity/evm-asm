@@ -94,6 +94,119 @@ theorem mkRevertResult_reverted
     (mkRevertResult state data gasRemaining args).reverted :=
   CallResult.reverted_mk_revert state data gasRemaining
 
+/-- STOP packages an empty data slice as a successful call result. The
+    `_data` argument keeps the signature uniform across the Kind-keyed
+    dispatcher; STOP itself has no return data. -/
+def mkStopResult
+    (state : WorldState) (_data : List Byte) (gasRemaining : Nat)
+    (_args : TerminatingArgs) : CallResult :=
+  { status := .success, state := state, output := [], gasRemaining := gasRemaining }
+
+/-- INVALID (and any other failure-class termination) packages an empty
+    data slice as a failed call result. The frame status is `.failure`,
+    distinct from `.revert`: INVALID consumes all gas and rolls back, but
+    that gas/state accounting belongs to the handler layer. -/
+def mkFailureResult
+    (state : WorldState) (_data : List Byte) (gasRemaining : Nat)
+    (_args : TerminatingArgs) : CallResult :=
+  { status := .failure, state := state, output := [], gasRemaining := gasRemaining }
+
+/-- Kind-driven dispatcher selecting the appropriate result builder per
+    terminating opcode. Mirrors `TerminatingGas.terminatingDynamicCost`'s
+    kind-keyed shape so handler call sites can share a single entry
+    point. -/
+def mkResultFromArgs
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) : CallResult :=
+  match kind with
+  | .stop => mkStopResult state data gasRemaining args
+  | .return_ => mkReturnResult state data gasRemaining args
+  | .revert => mkRevertResult state data gasRemaining args
+  | .invalid => mkFailureResult state data gasRemaining args
+  | .selfdestruct => mkStopResult state data gasRemaining args
+
+theorem mkStopResult_status
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkStopResult state data gasRemaining args).status = .success := rfl
+
+theorem mkStopResult_state
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkStopResult state data gasRemaining args).state = state := rfl
+
+theorem mkStopResult_output
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkStopResult state data gasRemaining args).output = [] := rfl
+
+theorem mkStopResult_gasRemaining
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkStopResult state data gasRemaining args).gasRemaining = gasRemaining := rfl
+
+theorem mkStopResult_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkStopResult state data gasRemaining args).succeeded :=
+  CallResult.succeeded_mk_success state [] gasRemaining
+
+theorem mkFailureResult_status
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkFailureResult state data gasRemaining args).status = .failure := rfl
+
+theorem mkFailureResult_state
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkFailureResult state data gasRemaining args).state = state := rfl
+
+theorem mkFailureResult_output
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkFailureResult state data gasRemaining args).output = [] := rfl
+
+theorem mkFailureResult_gasRemaining
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkFailureResult state data gasRemaining args).gasRemaining = gasRemaining := rfl
+
+theorem mkFailureResult_not_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    ¬ (mkFailureResult state data gasRemaining args).succeeded :=
+  CallResult.not_succeeded_mk_failure state [] gasRemaining
+
+theorem mkResultFromArgs_stop
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    mkResultFromArgs .stop state data gasRemaining args
+      = mkStopResult state data gasRemaining args := rfl
+
+theorem mkResultFromArgs_return
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    mkResultFromArgs .return_ state data gasRemaining args
+      = mkReturnResult state data gasRemaining args := rfl
+
+theorem mkResultFromArgs_revert
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    mkResultFromArgs .revert state data gasRemaining args
+      = mkRevertResult state data gasRemaining args := rfl
+
+theorem mkResultFromArgs_invalid
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    mkResultFromArgs .invalid state data gasRemaining args
+      = mkFailureResult state data gasRemaining args := rfl
+
+theorem mkResultFromArgs_selfdestruct
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    mkResultFromArgs .selfdestruct state data gasRemaining args
+      = mkStopResult state data gasRemaining args := rfl
+
 end TerminatingArgsBridge
 
 end EvmAsm.EL
