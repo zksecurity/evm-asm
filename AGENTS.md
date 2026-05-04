@@ -1007,6 +1007,41 @@ far from the definition).
 The project roadmap is maintained in `PLAN.md`. See `CLAUDE.md` for the
 maintenance protocol (when and how to update it).
 
+## Scratchpad Layout (#334)
+
+Routines that need `sp`-relative internal scratch cells (DivMod today, EXP /
+Multiply with internal scratch later) must take their scratchpad layout as a
+**parameter**, not bake offsets into the spec. Hardcoding offsets like
+`sp + signExtend12 4056` makes the routine impossible to compose from a
+non-trivial caller frame and forces every call site to use the same fixed
+placement.
+
+Convention (per `docs/scratchpad-layout-design.md`):
+
+- One `XxxScratchpadLayout` structure per routine, with named fields for
+  each scratch cell (e.g. `dividendNorm`, `divisorNorm`, `quotientHi`).
+- A companion `XxxScratchpadLayout.Valid (L : XxxScratchpadLayout) : Prop`
+  bundling per-cell validity (`isValidDwordAccess`) plus disjointness from
+  the caller frame and from each other.
+- A `canonicalXxxScratchpadLayout : XxxScratchpadLayout` matching today's
+  hardcoded offsets, and a `canonicalXxxScratchpadLayout_valid` instance.
+- Specs take `(L : XxxScratchpadLayout) (hL : L.Valid)` as parameters and
+  reference `L.fieldName` instead of `sp + signExtend12 N` literals.
+- The routine's existing fixed-offset spec stays as a thin shim that
+  instantiates the canonical layout, so existing call sites keep compiling.
+
+The naming convention is fixed: `EvmAsm/Evm64/<Routine>/Layout.lean`,
+`<Routine>ScratchpadLayout`, `.Valid`, `canonical<Routine>ScratchpadLayout`,
+`canonical<Routine>ScratchpadLayout_valid`. Slice 3 (`EvmAsm/Evm64/Multiply/Layout.lean`)
+is the canonical empty-layout pilot — copy its file shape when adding scratch
+to a new routine.
+
+When introducing a new opcode subtree that will carry internal scratch
+(EXP-class routines, future precompiles), define the layout struct from day
+one — even if it starts empty — to avoid the retrofit tax. See `docs/scratchpad-layout-design.md`
+for the full design and `docs/scratchpad-layout-survey.md` for the
+hardcoded-offset inventory that motivated the change.
+
 ## New opcode conventions (OPCODE_TEMPLATE.md)
 
 Before starting a new opcode subtree (SDIV, SMOD, ADDMOD, MULMOD, EXP, …),
