@@ -20,6 +20,7 @@ import EvmAsm.EL.MessageCall
 import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallOutputBridge
+import EvmAsm.EL.CallValueTransfer
 import EvmAsm.EL.TerminatingArgsBridge
 import EvmAsm.EL.TerminatingCallOutput
 import EvmAsm.EL.TransactionCall
