@@ -5,7 +5,7 @@
   Extracted from Spec/CallAddback.lean per #1078 / beads evm-asm-q62k to
   trim the over-cap CallAddback.lean.
 
-  Contents (12 theorems, leaf-level relative to the Phase-1 div-invariant
+  Contents (11 theorems, leaf-level relative to the Phase-1 div-invariant
   cluster that still lives in CallAddback.lean):
 
   - `div128Quot_v2_q1_prime_prime_le_q1_prime`
