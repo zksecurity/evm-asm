@@ -236,6 +236,8 @@
 "EvmAsm.Evm64.EvmWordArith.Arithmetic":
  ["EvmAsm.Evm64.EvmWordArith.Common",
   "Mathlib.Tactic.NormNum", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
+"EvmAsm.Evm64.EvmWordArith.MulCorrect":
+ ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
  ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"]}}
