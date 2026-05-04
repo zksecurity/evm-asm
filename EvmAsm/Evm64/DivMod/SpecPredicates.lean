@@ -40,15 +40,6 @@ def isSkipBorrowN4MaxEvm (a b : EvmWord) : Prop :=
   isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
-theorem isMaxTrialN4Evm_def {a b : EvmWord} :
-    isMaxTrialN4Evm a b =
-    isMaxTrialN4 (a.getLimbN 3) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-theorem isSkipBorrowN4MaxEvm_def {a b : EvmWord} :
-    isSkipBorrowN4MaxEvm a b =
-    isSkipBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
 /-- Call trial condition at n=4 in EvmWord form: `u4 < b3'` after
     normalization, i.e., the max trial is too large so the algorithm falls
     through to `div128` for a tighter quotient. -/
@@ -100,37 +91,5 @@ theorem isAddbackCarry2NzN4CallEvm_def {a b : EvmWord} :
 def isAddbackBorrowN4CallEvm_v2 (a b : EvmWord) : Prop :=
   isAddbackBorrowN4Call_v2 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-/-- v2 mirror of `isAddbackCarry2NzN4CallEvm` — uses `div128Quot_v2` via
-    `isAddbackCarry2NzN4CallAb_v2`. Issue #1337 algorithm fix migration. -/
-def isAddbackCarry2NzN4CallEvm_v2 (a b : EvmWord) : Prop :=
-  isAddbackCarry2NzN4CallAb_v2 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                               (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-/-- Addback-needed condition at n=4 max path in EvmWord form: the runtime
-    borrow check fires (mulsub underflowed), so the algorithm decrements
-    the max trial quotient and adds back `b'` to the partial remainder
-    (possibly twice — see `isAddbackCarry2NzN4MaxAbEvm`). -/
-def isAddbackBorrowN4MaxEvm (a b : EvmWord) : Prop :=
-  isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackBorrowN4MaxEvm_def {a b : EvmWord} :
-    isAddbackBorrowN4MaxEvm a b =
-    isAddbackBorrowN4Max (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
-/-- Double-addback carry2≠0 condition at n=4 max path in EvmWord form: after
-    mulsub underflow + first-addback (carry1 = 0), the second addback fires
-    (carry2 ≠ 0). Together with `isAddbackBorrowN4MaxEvm` this pins the
-    algorithm to the double-addback branch. -/
-def isAddbackCarry2NzN4MaxAbEvm (a b : EvmWord) : Prop :=
-  isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                           (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackCarry2NzN4MaxAbEvm_def {a b : EvmWord} :
-    isAddbackCarry2NzN4MaxAbEvm a b =
-    isAddbackCarry2NzN4MaxAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                             (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
 end EvmAsm.Evm64
