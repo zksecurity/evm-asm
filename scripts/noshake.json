@@ -1,7 +1,8 @@
 {"ignoreImport": ["Init", "Lean"],
  "ignore":
  {"EvmAsm.Rv64.ByteOps":
-  ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
+  ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic",
+   "Std.Tactic.BVDecide"],
   "EvmAsm.Rv64.HalfwordOps":
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
   "EvmAsm.Rv64.WordOps":
@@ -24,6 +25,12 @@
   "EvmAsm.Rv64.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.RegOpsAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.ByteAlgAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
+  "EvmAsm.Rv64.Tactics.XCancelStruct":
+  ["EvmAsm.Rv64.SepLogic"],
+  "EvmAsm.Evm64.Basic":
+  ["Std.Tactic.BVDecide"],
+  "EvmAsm.Evm64.SpAddr":
+  ["EvmAsm.Rv64.Tactics.SeqFrame"],
   "EvmAsm.Evm64.Pop.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Push0.Spec":
