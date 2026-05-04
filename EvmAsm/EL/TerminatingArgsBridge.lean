@@ -207,6 +207,43 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- For STOP, the dispatcher's result is `succeeded`. -/
+theorem mkResultFromArgs_stop_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkResultFromArgs .stop state data gasRemaining args).succeeded :=
+  mkStopResult_succeeded state data gasRemaining args
+
+/-- For RETURN, the dispatcher's result is `succeeded`. -/
+theorem mkResultFromArgs_return_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkResultFromArgs .return_ state data gasRemaining args).succeeded :=
+  mkReturnResult_succeeded state data gasRemaining args
+
+/-- For REVERT, the dispatcher's result is `reverted`. -/
+theorem mkResultFromArgs_revert_reverted
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkResultFromArgs .revert state data gasRemaining args).reverted :=
+  mkRevertResult_reverted state data gasRemaining args
+
+/-- For INVALID, the dispatcher's result is not `succeeded`. -/
+theorem mkResultFromArgs_invalid_not_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    ¬ (mkResultFromArgs .invalid state data gasRemaining args).succeeded :=
+  mkFailureResult_not_succeeded state data gasRemaining args
+
+/-- For SELFDESTRUCT, the dispatcher's result is `succeeded` (post-Cancun:
+    SELFDESTRUCT no longer self-destructs the account; it succeeds with empty
+    output). -/
+theorem mkResultFromArgs_selfdestruct_succeeded
+    (state : WorldState) (data : List Byte) (gasRemaining : Nat)
+    (args : TerminatingArgs) :
+    (mkResultFromArgs .selfdestruct state data gasRemaining args).succeeded :=
+  mkStopResult_succeeded state data gasRemaining args
+
 end TerminatingArgsBridge
 
 end EvmAsm.EL

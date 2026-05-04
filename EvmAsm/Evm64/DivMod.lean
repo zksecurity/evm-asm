@@ -1,4 +1,3 @@
-import EvmAsm.Evm64.DivMod.NormDefs
 -- AddrNormSmokeTests pins canonical shapes from docs/263-addr-norm-inventory.md
 -- so silent gaps in @[divmod_addr] coverage become CI failures (issue #263).
 import EvmAsm.Evm64.DivMod.AddrNormSmokeTests

@@ -306,32 +306,3 @@ theorem divK_loopSetup_ntaken_spec_within (sp n v1 v5 : Word) (base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12
-
-theorem divK_loopSetup_taken_spec_within (sp n v1 v5 : Word) (base : Word)
-    (hm_lt : BitVec.slt (signExtend12 (4 : BitVec 12) - n) (0 : Word)) :
-    let m := signExtend12 (4 : BitVec 12) - n
-    cpsTripleWithin 4 (base + loopSetupOff) (base + denormOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x1 ↦ᵣ v1) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 3984) ↦ₘ n))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) ** (.x1 ↦ᵣ m) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 3984) ↦ₘ n)) := by
-  intro m
-  have hbody := divK_loopSetup_body_spec_within sp n v1 v5 464 (base + loopSetupOff)
-  have hbodye := cpsTripleWithin_extend_code divK_loopSetup_code_sub_divCode hbody
-  have hblt_raw := blt_spec_gen_within .x1 .x0 464 m (0 : Word) (base + loopSetupOff + 12)
-  rw [show (base + loopSetupOff + 12 : Word) + signExtend13 464 = base + denormOff from by rv64_addr,
-      show (base + loopSetupOff + 12 : Word) + 4 = base + loopBodyOff from by bv_addr] at hblt_raw
-  have hblt_clean := cpsBranchWithin_takenStripPure2 hblt_raw
-    (fun hp hQf => by
-      obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
-      exact absurd hm_lt ((sepConj_pure_right _).mp h_rest).2)
-  have hblte := cpsTripleWithin_extend_code blt_loopSetup_sub_divCode hblt_clean
-  have hbltef := cpsTripleWithin_frameR
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n) ** ((sp + signExtend12 3984) ↦ₘ n))
-    (by pcFree) hblte
-  have h12 := cpsTripleWithin_seq_perm_same_cr
-    (fun h hp => by xperm_hyp hp) hbodye hbltef
-  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-    (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
-    h12
