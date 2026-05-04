@@ -5,7 +5,7 @@
   the executable EXP opcode proof: exponentiation in Nat, reduced modulo 2^256.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Common
+import EvmAsm.Evm64.Basic
 
 namespace EvmAsm.Evm64
 
@@ -42,11 +42,9 @@ theorem exp_zero_left_of_ne_zero (exponent : EvmWord) (h : exponent ≠ 0) :
   apply BitVec.eq_of_toNat_eq
   rw [exp_correct]
   have hpos : 0 < exponent.toNat := by
-    by_contra hnot
-    have hz : exponent.toNat = 0 := by omega
-    apply h
-    apply BitVec.eq_of_toNat_eq
-    simp [hz]
+    rcases Nat.eq_zero_or_pos exponent.toNat with hz | hp
+    · exact absurd (BitVec.eq_of_toNat_eq (by simp [hz])) h
+    · exact hp
   simp [Nat.zero_pow hpos]
 
 /-- Any base raised to the EVM word one is itself. -/
