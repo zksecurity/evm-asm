@@ -15,8 +15,8 @@ import EvmAsm.Evm64.DivMod.Spec
 -- covers FullPathN2LoopUnified + FullPathN2Cases + FullPath.
 -- Spec.V4 transitively covers SpecCallAddbackBeq (+ AlgDefs, AlgEuclideans)
 -- and LoopDefs.IterV4InvariantsPhase2 (→ IterV4Invariants). The leaf
--- NumericalTests / NumericalTestsV4 files are imported explicitly so the
--- unimported-file check (#1209/#1440) sees them reachable from the umbrella.
+-- NumericalTests file is imported explicitly so the
+-- unimported-file check (#1209/#1440) sees it reachable from the umbrella.
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin
@@ -36,4 +36,3 @@ import EvmAsm.Evm64.DivMod.Compose.FullPathN2Full
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
 import EvmAsm.Evm64.DivMod.Spec.V4
 import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.NumericalTests
-import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.NumericalTestsV4
