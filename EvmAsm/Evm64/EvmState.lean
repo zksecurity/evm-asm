@@ -279,6 +279,25 @@ def evmStateCodeRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   evmMemSizeIs layout.memSizeLoc state.memSize **
   EvmEnv.envIs layout.envBase state.env
 
+/-- Everything in `evmStateIs` except the EVM environment assertion
+    `EvmEnv.envIs layout.envBase state.env`. Mirrors the gas/status/x12/stack/code
+    rests — opcode handlers that read the environment but don't modify it
+    (ADDRESS, CALLER, ..., SELFBALANCE) can frame against this rest. -/
+def evmStateEnvRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmStackIs layout.stackPtr state.stack **
+  evmMemIs layout.memBase state.memoryCells state.memory **
+  evmMemSizeIs layout.memSizeLoc state.memSize **
+  evmCodeIs layout.codeBase state.code
+
 /-- Everything in `evmStateIs` except the scalar status register. -/
 def evmStateStatusRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
@@ -343,6 +362,15 @@ theorem evmStateIs_code_split (layout : EvmLayout) (state : EvmState) :
   unfold evmStateIs evmStateCodeRest
   ac_rfl
 
+/-- Split out the EVM environment assertion from the composite state
+    assertion. -/
+theorem evmStateIs_env_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (EvmEnv.envIs layout.envBase state.env **
+       evmStateEnvRest layout state) := by
+  unfold evmStateIs evmStateEnvRest
+  ac_rfl
+
 theorem pcFree_evmStatePcRest {layout : EvmLayout} {state : EvmState} :
     (evmStatePcRest layout state).pcFree := by
   unfold evmStatePcRest
@@ -373,6 +401,11 @@ theorem pcFree_evmStateCodeRest {layout : EvmLayout} {state : EvmState} :
   unfold evmStateCodeRest
   pcFree
 
+theorem pcFree_evmStateEnvRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateEnvRest layout state).pcFree := by
+  unfold evmStateEnvRest
+  pcFree
+
 theorem pcFree_evmStateIs {layout : EvmLayout} {state : EvmState} :
     (evmStateIs layout state).pcFree := by
   unfold evmStateIs
@@ -401,6 +434,10 @@ instance (layout : EvmLayout) (state : EvmState) :
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateCodeRest layout state) :=
   ⟨pcFree_evmStateCodeRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateEnvRest layout state) :=
+  ⟨pcFree_evmStateEnvRest⟩
 
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateIs layout state) :=
