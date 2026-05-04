@@ -74,7 +74,7 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
-import EvmAsm.Evm64.Stack
+import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64
 

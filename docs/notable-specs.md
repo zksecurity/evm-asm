@@ -12,8 +12,8 @@ find a spec without grepping; refresh the permalinks when files move.
 
 This index is split by area. Slice 1 landed the page skeleton plus the DivMod
 stack-spec surface. Slice 2 (this update) adds the non-DivMod Evm64 opcode
-stack specs and the `EvmWord` arithmetic correctness theorems. Subsequent
-slices populate the EL/RLP and Rv64 infrastructure sections.
+stack specs and the `EvmWord` arithmetic correctness theorems, alongside the
+already-populated EL/RLP and Rv64 infrastructure sections.
 
 ---
 
@@ -154,39 +154,45 @@ ultimately reduces to in the post-condition.
 
 ## EL / RLP
 
-The pure RLP encode/decode model lives under `EvmAsm/EL/RLP/`. `Basic.lean`
-defines `encode`, `Decode.lean` defines `decode`, `Properties.lean` collects
-round-trip and per-prefix-class equational lemmas, and `PrefixDecode.lean`
-exposes the `classifyPrefix`-driven view used to bridge to the
-RISC-V-decoder direction. `ProgramSpec.lean` houses the in-Rv64 Hoare
-triples for the prefix-classification routines.
+Pure (no RISC-V dependency) RLP encoder, decoder, and round-trip lemmas.
+These are the executable-spec direction: `encode` is the canonical RLP
+encoder, `decode` enforces canonical decoding, and `Properties.lean`
+discharges round-trip facts via `native_decide` for byte-string lengths
+covered so far.
 
-### Pure model (executable spec)
+### Encoder ([`EvmAsm/EL/RLP/Basic.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean))
 
 | Declaration | Defined at | Meaning |
 |---|---|---|
-| `encode` | [`EL/RLP/Basic.lean#L87`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L87) | RLP encoder for `RLPItem` (byte-string or list). |
-| `encodeBytes` | [`EL/RLP/Basic.lean#L60`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L60) | RLP encoder for raw byte strings (the `.bytes` arm of `encode`). |
-| `decode` | [`EL/RLP/Decode.lean#L97`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L97) | Top-level fuel-bounded decoder; returns `(item, leftover)`. |
-| `decodeAux` | [`EL/RLP/Decode.lean#L36`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L36) | One step of decode; dispatches on prefix byte. |
+| `Nat.toBytesBE` | [`Basic.lean:46`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L46) | Big-endian byte representation of a `Nat`. |
+| `Nat.fromBytesBE` | [`Basic.lean:53`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L53) | Inverse of `toBytesBE` on lists of bytes. |
+| `encodeBytes` | [`Basic.lean:60`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L60) | Canonical RLP encoding of a single byte string. |
+| `encode` | [`Basic.lean:87`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L87) | Canonical RLP encoding of an `RLPItem` (string or list). |
+| `encodeBytes_short_of_length_ne_one` | [`Basic.lean:74`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L74) | Single-byte fast path doesn't apply when length ≠ 1. |
 
-### Round-trip and per-class properties (`Properties.lean`)
+### Decoder ([`EvmAsm/EL/RLP/Decode.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean))
+
+| Declaration | Defined at | Meaning |
+|---|---|---|
+| `takeBytes` | [`Decode.lean:14`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L14) | Splits a byte list at index `n`, returning `none` if too short. |
+| `readLength` | [`Decode.lean:20`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L20) | Reads a big-endian `n`-byte length prefix, enforcing canonical form. |
+| `decodeAux` | [`Decode.lean:36`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L36) | Fuel-driven canonical RLP decoder for a single item. |
+| `decode` | [`Decode.lean:97`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Decode.lean#L97) | Top-level canonical RLP decode (calls `decodeAux` with `bs.length` fuel). |
+
+### Round-trip and length lemmas ([`EvmAsm/EL/RLP/Properties.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean))
 
 | Theorem | Defined at | Meaning |
 |---|---|---|
-| `encode_nonempty` | [`EL/RLP/Properties.lean#L1841`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1841) | `(encode item).length > 0`. |
-| `encodeBytes_nonempty` | [`EL/RLP/Properties.lean#L1834`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1834) | `(encodeBytes data).length > 0`. |
-| `decode_encode_bytes_empty` | [`EL/RLP/Properties.lean#L1865`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1865) | Round-trip on the empty byte string. |
-| `decode_encode_bytes_single_small` | [`EL/RLP/Properties.lean#L1858`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1858) | Round-trip on a single byte `< 0x80` (encoded as itself). |
-| `decode_encode_bytes_single_large` | [`EL/RLP/Properties.lean#L1874`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1874) | Round-trip on a single byte `≥ 0x80` (encoded as `0x81 b`). |
-| `decodeAux_zero_fuel` | [`EL/RLP/Properties.lean#L52`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L52) | `decodeAux 0 _ = none` (fuel exhausted). |
-| `decodeAux_nil` | [`EL/RLP/Properties.lean#L57`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L57) | `decodeAux _ [] = none`. |
-| `encodeBytes_short_of_length_ne_one` | [`EL/RLP/Basic.lean#L74`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Basic.lean#L74) | When `data.length ≠ 1`, `encodeBytes data = 0x80+len :: data` (short-form). |
+| `encode_nonempty` | [`Properties.lean:1841`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1841) | `encode` always produces a non-empty byte list. |
+| `decode_encode_bytes_empty` | [`Properties.lean:1865`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1865) | `decode (encodeBytes [])` returns the empty string. |
+| `decode_encode_bytes_single_small` | [`Properties.lean:1858`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1858) | Round trip for one byte `< 0x80` (single-byte fast path). |
+| `decode_encode_bytes_single_large` | [`Properties.lean:1874`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/EL/RLP/Properties.lean#L1874) | Round trip for one byte `≥ 0x80` (uses 0x81 prefix). |
 
-> The bulk of `Properties.lean` is a long sequence of length-indexed
-> `decodeAux_<n>_byte_string` and `encodeBytes_<n>uple` equational lemmas
-> (n = 0..47). They are used by the Rv64 decoder proofs but are too
-> mechanical to enumerate here; see the file for the full list.
+`Properties.lean` also contains a long ladder of per-length
+`encodeBytes_<n>tuple` and `decodeAux_<n>_byte_string` lemmas
+(`native_decide`-backed) covering byte-string lengths 0..~75 used by
+downstream RLP proofs.
+
 
 ### `classifyPrefix` view (`PrefixDecode.lean`)
 
@@ -211,51 +217,110 @@ triples for the prefix-classification routines.
 
 ## Rv64 infrastructure
 
-### `ByteOps` (byte-level memory operations)
+Generic RISC-V instruction specs and the LP64-aligned calling convention
+that EVM opcode handlers and EL routines call into.
 
-Defined in
-[`EvmAsm/Rv64/ByteOps.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean).
+### Byte / halfword / word memory specs
+
+Memory-access specs at byte (8-bit), halfword (16-bit), and word (32-bit)
+granularity, used by the byte-addressed EVM memory model and the RLP
+byte writers. All triples are CPS-style and step-bounded.
 
 | Theorem | Defined at | Meaning |
 |---|---|---|
-| `generic_lbu_spec_within` | [`Rv64/ByteOps.lean#L96`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L96) | LBU loads the byte at `v_addr` into `rd`, zero-extended. |
-| `generic_lb_spec_within`  | [`Rv64/ByteOps.lean#L141`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L141) | LB loads the byte at `v_addr` into `rd`, sign-extended. |
-| `generic_sb_spec_within`  | [`Rv64/ByteOps.lean#L185`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L185) | SB stores the low byte of `v_data` at `v_addr`, leaving other bytes of the dword intact. |
-| `alignToDword_byteOffset_zero` | [`Rv64/ByteOps.lean#L24`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L24) | If `byteOffset addr = 0` then `alignToDword addr = addr`. |
-| `alignToDword_idempotent` | [`Rv64/ByteOps.lean#L30`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L30) | `alignToDword (alignToDword a) = alignToDword a`. |
-| `alignToDword_add_byteOffset` | [`Rv64/ByteOps.lean#L36`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L36) | `alignToDword addr + byteOffset addr = addr`. |
-| `extractByte_replaceByte_same` | [`Rv64/ByteOps.lean#L76`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L76) | `extractByte (replaceByte w pos b) pos = b`. |
+| `byteOffset_lt_8` | [`ByteOps.lean:18`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L18) | The byte index inside a dword is always `< 8`. |
+| `alignToDword_byteOffset_zero` | [`ByteOps.lean:24`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L24) | `byteOffset (alignToDword addr) = 0`. |
+| `alignToDword_idempotent` | [`ByteOps.lean:30`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L30) | `alignToDword` is idempotent. |
+| `alignToDword_add_byteOffset` | [`ByteOps.lean:36`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L36) | `alignToDword addr + byteOffset addr = addr`. |
+| `generic_lbu_spec_within` | [`ByteOps.lean:96`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L96) | LBU loads one byte zero-extended; the dword at `alignToDword addr` is unchanged. |
+| `generic_lb_spec_within` | [`ByteOps.lean:141`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L141) | LB loads one byte sign-extended. |
+| `generic_sb_spec_within` | [`ByteOps.lean:185`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/ByteOps.lean#L185) | SB stores one byte; only the targeted byte slot of the underlying dword is modified. |
+| `generic_lhu_spec_within` | [`HalfwordOps.lean:62`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/HalfwordOps.lean#L62) | LHU loads a 16-bit halfword zero-extended. |
+| `generic_lh_spec_within` | [`HalfwordOps.lean:106`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/HalfwordOps.lean#L106) | LH loads a 16-bit halfword sign-extended. |
+| `generic_sh_spec_within` | [`HalfwordOps.lean:150`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/HalfwordOps.lean#L150) | SH stores a 16-bit halfword. |
+| `generic_lwu_spec_within` | [`WordOps.lean:47`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/WordOps.lean#L47) | LWU loads a 32-bit word zero-extended. |
+| `generic_lw_spec_within` | [`WordOps.lean:91`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/WordOps.lean#L91) | LW loads a 32-bit word sign-extended. |
+| `generic_sw_spec_within` | [`WordOps.lean:135`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/WordOps.lean#L135) | SW stores a 32-bit word. |
 
-### LP64 calling convention (`Evm64/CallingConvention.lean`)
+### `runBlock` registry highlights ([`EvmAsm/Rv64/SyscallSpecs.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/SyscallSpecs.lean))
 
-The reusable building blocks for non-leaf functions: prologue / epilogue
-snippets and the call/return primitive specs. Use these instead of
-re-deriving call semantics in opcode handlers — see also `AGENTS.md` →
-"Calling Convention (LP64)".
+The `@[spec_gen_rv64]` registry registers per-instruction specs that
+`runBlock` consumes during auto-mode block elaboration. A representative
+sample of the LD/SD entry points (the rest follow the same pattern;
+the file lists ~50 ALU, branch, and memory specs):
 
-| Declaration | Defined at | Meaning |
+| Theorem | Defined at | Meaning |
 |---|---|---|
-| `cc_ret` (program) | [`Evm64/CallingConvention.lean#L42`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L42) | `JALR x0 x1 0` — the leaf-return one-liner. |
-| `cc_prologue` (program) | [`Evm64/CallingConvention.lean#L46`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L46) | Non-leaf prologue: bump sp by −16, save ra at `sp+8`. |
-| `cc_epilogue` (program) | [`Evm64/CallingConvention.lean#L51`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L51) | Non-leaf epilogue: restore ra from `sp+8`, unbump sp, JALR x0 ra. |
-| `callNear_spec_within` | [`Evm64/CallingConvention.lean#L65`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L65) | JAL (near call) saves return address into `x1` and jumps. |
-| `callFar_spec_within`  | [`Evm64/CallingConvention.lean#L75`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L75) | JALR (far call) saves return address into `x1` and jumps via target reg. |
-| `ret_spec_within`  | [`Evm64/CallingConvention.lean#L84`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L84) | `cc_ret` jumps to `x1`. |
-| `ret_spec_within'` | [`Evm64/CallingConvention.lean#L92`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L92) | Variant of `ret_spec_within` with a different framing of `x1`. |
-| `cc_prologue_spec_within` | [`Evm64/CallingConvention.lean#L109`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L109) | Block spec for `cc_prologue`. |
-| `cc_epilogue_spec_within` | [`Evm64/CallingConvention.lean#L129`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L129) | Block spec for `cc_epilogue`. |
+| `ld_spec_gen_within` | [`SyscallSpecs.lean:28`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/SyscallSpecs.lean#L28) | LD loads a 64-bit doubleword from `[rs1+offset]`. |
+| `sd_spec_gen_within` | [`SyscallSpecs.lean:35`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/SyscallSpecs.lean#L35) | SD stores a 64-bit doubleword to `[rs1+offset]`. |
+| `sd_spec_gen_own_within` | [`SyscallSpecs.lean:41`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/SyscallSpecs.lean#L41) | SD-own variant for `rs1 = rs2`. |
 
-> Spec database / `@[spec_gen_rv64]` registry: see
-> [`EvmAsm/Rv64/SyscallSpecs.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Rv64/SyscallSpecs.lean).
-> Each `@[spec_gen_rv64]`-tagged theorem (`ld_spec_gen_within`,
-> `sd_spec_gen_within`, `addi_spec_gen_within`, …) is auto-detected by
-> instruction constructor and used by the `runBlock` automation.
+### Calling convention ([`EvmAsm/Evm64/CallingConvention.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean))
+
+LP64-aligned register roles (`x1` ra, `x2` sp, `x5–x7` t0–t2, `x10–x11`
+a0–a1, `x12` a2/EVM-sp). Reusable program snippets and their proved
+specs.
+
+| Snippet / Theorem | Defined at | Meaning |
+|---|---|---|
+| `cc_ret` | [`CallingConvention.lean:42`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L42) | Return: `JALR x0 x1 0`. |
+| `cc_prologue` | [`CallingConvention.lean:46`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L46) | Non-leaf prologue: allocate 16-byte frame, save `ra`. |
+| `cc_epilogue` | [`CallingConvention.lean:51`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L51) | Non-leaf epilogue: restore `ra`, deallocate, return. |
+| `callNear_spec_within` | [`CallingConvention.lean:65`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L65) | `JAL x1 offset` jumps to `base + offset` and saves the return address in `x1`. |
+| `callFar_spec_within` | [`CallingConvention.lean:75`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L75) | `JALR x1 target 0` indirect call: jumps to `target` and saves the return address. |
+| `ret_spec_within` | [`CallingConvention.lean:84`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L84) | `JALR x0 x1 0` returns to the caller (jumps to `ra`). |
+| `ret_spec_within'` | [`CallingConvention.lean:92`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L92) | Variant of `ret_spec_within` with a different post-shape. |
+| `cc_prologue_spec_within` | [`CallingConvention.lean:109`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L109) | Block spec for the 2-instruction prologue: `sp` decremented by 16, `ra` saved at `sp+8`. |
+| `cc_epilogue_spec_within` | [`CallingConvention.lean:129`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/CallingConvention.lean#L129) | Block spec for the 3-instruction epilogue: `ra` restored, `sp` incremented by 16, jumps to saved `ra`. |
+
 
 ## Maintenance
 
 - See parent backlog: `evm-asm-prwe` / GH issue tracking forthcoming.
-- Refresh procedure: `git rev-parse origin/main` for the new sha, then for each
-  entry re-confirm the line number with `grep -n '<theorem name>'` against the
-  named file. Replace the pinned sha and line numbers and the date in the
-  top-of-page note.
-- Trigger: refresh when a `#61`-class umbrella closes or quarterly.
+- Trigger: refresh when a `#61`-class umbrella closes or quarterly,
+  whichever comes first.
+
+### Refresh procedure (5 steps)
+
+1. **Survey the spec surface.** Grep for the canonical entry-point names so
+   nothing has been added or renamed since the last refresh:
+
+   ```bash
+   rg -n '@\[stack_spec_' EvmAsm/
+   rg -n 'theorem evm_[a-z_]*_stack_spec' EvmAsm/
+   rg -n 'theorem EvmWord\.[a-z_]*_correct' EvmAsm/
+   ```
+
+   Add an entry to the appropriate section for any name not already listed;
+   delete entries whose underlying theorem is gone.
+
+2. **Capture `file:line` for every entry.** For each theorem name, locate
+   its current declaration site:
+
+   ```bash
+   grep -n '<theorem-name>' EvmAsm/<path>.lean
+   ```
+
+   Record the `path:line` pair — both the alias line and (if separate) the
+   underlying proof-bearing theorem line.
+
+3. **Mint commit-pinned permalinks.** Capture the current upstream sha and
+   build URLs against it:
+
+   ```bash
+   SHA=$(git rev-parse origin/main)
+   gh browse <path>:<line> --commit "$SHA" --no-browser
+   # or directly:
+   echo "https://github.com/Verified-zkEVM/evm-asm/blob/$SHA/<path>#L<line>"
+   ```
+
+   Replace each existing permalink in the table cells with the freshly
+   minted one.
+
+4. **Update the top-of-page pin.** Replace the `Permalinks pinned to commit
+   <sha> on <date>` blockquote near the top with the new sha and today's
+   date.
+
+5. **Verify with `lake build`.** Run `lake build` from the repo root to
+   confirm every referenced declaration still elaborates under the pinned
+   sha. Any rename or relocation discovered here loops back to step 1.
