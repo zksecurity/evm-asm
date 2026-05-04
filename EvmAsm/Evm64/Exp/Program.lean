@@ -18,7 +18,7 @@
   it without breaking the umbrella import graph.
 -/
 
-import EvmAsm.Rv64.SepLogic
+import EvmAsm.Rv64.Program
 
 namespace EvmAsm.Evm64
 
