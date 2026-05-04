@@ -83,8 +83,7 @@ theorem fullDivN2QuotientWord_toNat
 /-- `val256`-equality bridge: if the `EvmWord.val256` of the four per-limb
     results equals `a.toNat / b.toNat` (computed via `EvmWord.val256` of the
     inputs), then the `toNat` of the quotient word equals
-    `(EvmWord.div a b).toNat`. Mirrors the structure of the N=1 word-toNat
-    bridge (deleted in cleanup; see git history for prior shape). -/
+    `(EvmWord.div a b).toNat`. -/
 theorem fullDivN2QuotientWord_toNat_eq_div_toNat_of_val256_eq
     (bltu_2 bltu_1 bltu_0 : Bool)
     (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
