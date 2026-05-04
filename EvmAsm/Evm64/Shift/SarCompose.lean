@@ -11,6 +11,7 @@
 
 -- `Shift.ComposeBase → Shift.LimbSpec → Shift.Program → Evm64.Stack → SpAddr`.
 import EvmAsm.Evm64.Shift.SarSpec
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Shift.ComposeBase
 import Mathlib.Tactic.Set
 
