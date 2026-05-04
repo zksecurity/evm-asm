@@ -6,7 +6,7 @@
   rv64_mulhu, and multi-limb value representation.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Common
+import EvmAsm.Evm64.Basic
 import EvmAsm.Rv64.Instructions
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
