@@ -40,6 +40,8 @@
   ["EvmAsm.Rv64.SepLogic"],
  "EvmAsm.Evm64.Basic":
   ["Std.Tactic.BVDecide"],
+ "EvmAsm.Evm64.CodeRegion":
+  ["EvmAsm.Evm64.Basic", "EvmAsm.Rv64.ByteOps", "Mathlib.Tactic.Ring"],
  "EvmAsm.Evm64.MStore.ByteAlg":
   ["Std.Tactic.BVDecide", "Mathlib.Tactic.IntervalCases"],
  "EvmAsm.Evm64.SpAddr":
