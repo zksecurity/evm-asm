@@ -81,13 +81,6 @@ def n4MaxSkipSemanticHolds (a b : EvmWord) : Prop :=
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
       (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0
 
-theorem n4MaxSkipSemanticHolds_def {a b : EvmWord} :
-    n4MaxSkipSemanticHolds a b =
-    ((mulsubN4 (signExtend12 4095)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0) :=
-  rfl
-
 /-- **EvmWord-form bridge to `isCallTrialN4_of_shift_nz`.**
 
     Under shift ≠ 0 + b ≠ 0 (top limb), the runtime BLTU check ALWAYS picks
@@ -120,16 +113,6 @@ def n4MaxAddbackSemanticHolds (a b : EvmWord) : Prop :=
   addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 1
 
-theorem n4MaxAddbackSemanticHolds_def {a b : EvmWord} :
-    n4MaxAddbackSemanticHolds a b =
-    (let ms := mulsubN4 (signExtend12 4095)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-     ms.2.2.2.2 = 1 ∧
-     addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
-       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 1) :=
-  rfl
-
 /-- Semantic-correctness precondition for the n=4 max+double-addback sub-path:
     on **un-normalized** `a`, `b` limbs with the maximum trial quotient, the
     mulsub carry is `1`, the *first* addback carry is `0` (first addback didn't
@@ -152,20 +135,6 @@ def n4MaxDoubleAddbackSemanticHolds (a b : EvmWord) : Prop :=
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 0 ∧
   (addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
     (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).toNat = 1
-
-theorem n4MaxDoubleAddbackSemanticHolds_def {a b : EvmWord} :
-    n4MaxDoubleAddbackSemanticHolds a b =
-    (let ms := mulsubN4 (signExtend12 4095)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-     let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 ((0 : Word) - ms.2.2.2.2)
-       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-     ms.2.2.2.2 = 1 ∧
-     addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
-       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 0 ∧
-     (addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
-       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).toNat = 1) :=
-  rfl
 
 /-- Stack-level postcondition shape for the n=4 DIV max+skip path.
 

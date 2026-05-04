@@ -594,20 +594,6 @@ def fullDivN1QuotientVal_v4
   let r0 := fullDivN1R0_v4 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
   r3.1.toNat * B^3 + r2.1.toNat * B^2 + r1.1.toNat * B + r0.1.toNat
 
-theorem fullDivN1QuotientVal_v4_eq_val256
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    fullDivN1QuotientVal_v4 bltu_3 bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3 =
-      EvmWord.val256
-        (fullDivN1R0_v4 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R1_v4 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R2_v4 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R3_v4 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).1 := by
-  delta fullDivN1QuotientVal_v4
-  unfold EvmWord.val256
-  ring
-
 @[irreducible]
 def fullDivN1CorrectedTrialVal_v4
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
@@ -997,27 +983,6 @@ theorem fullDivN1QuotientVal_v4_le_div_of_telescoped
   simp only [qVal, r0, r1, r2, r3] at hq_le ⊢
   exact hq_le
 
-theorem fullDivN1QuotientVal_v4_le_div_of_runtime
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0)
-    (hcarry2 : Carry2NzAll
-      (fullDivN1NormV b0 b1 b2 b3).1
-      (fullDivN1NormV b0 b1 b2 b3).2.1
-      (fullDivN1NormV b0 b1 b2 b3).2.2.1
-      (fullDivN1NormV b0 b1 b2 b3).2.2.2) :
-    fullDivN1QuotientVal_v4 bltu_3 bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3 ≤
-      EvmWord.val256 a0 a1 a2 a3 / EvmWord.val256 b0 b1 b2 b3 := by
-  exact fullDivN1QuotientVal_v4_le_div_of_telescoped
-    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    hb2z hb3z hbnz hshift_nz
-    (fullDivN1StepsTelescoped_v4_of_runtime
-      bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-      hb1z hb2z hb3z hbnz hcarry2)
-
 theorem fullDivN1ExtendedRemainder_v4_lt_of_runtime_quotientVal_le
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
@@ -1131,39 +1096,5 @@ theorem fullDivN1ExtendedRemainder_v4_lt_of_runtime_correctedTrial_le
   exact fullDivN1ExtendedRemainder_v4_lt_of_runtime_quotientVal_le
     bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
     hb1z hb2z hb3z hbnz hshift_nz hcarry2 (Nat.le_trans hge hcorr)
-
-theorem fullDivN1ExtendedRemainder_v4_lt_of_runtime_localFloor_le
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0)
-    (hcarry2 : Carry2NzAll
-      (fullDivN1NormV b0 b1 b2 b3).1
-      (fullDivN1NormV b0 b1 b2 b3).2.1
-      (fullDivN1NormV b0 b1 b2 b3).2.2.1
-      (fullDivN1NormV b0 b1 b2 b3).2.2.2)
-    (hbltu_3 : isTrialN1_v4_j3 bltu_3 a3 b0)
-    (hbltu_2 : isTrialN1_v4_j2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_1 : isTrialN1_v4_j1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN1_v4_j0 bltu_3 bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3)
-    (hge : EvmWord.val256 a0 a1 a2 a3 / EvmWord.val256 b0 b1 b2 b3 ≤
-      fullDivN1LocalFloorVal_v4 bltu_3 bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3) :
-    n1StepRemainderVal
-        (fullDivN1R0_v4 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) +
-        n1StepsCarryVal
-          (fullDivN1R3_v4 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R2_v4 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R1_v4 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R0_v4 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) <
-      EvmWord.val256 b0 b1 b2 b3 * 2 ^ ((fullDivN1Shift b0).toNat % 64) := by
-  have hlocal := fullDivN1LocalFloorVal_v4_le_correctedTrialVal_v4
-    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    hb1z hb2z hb3z hbnz hbltu_3 hbltu_2 hbltu_1 hbltu_0
-  exact fullDivN1ExtendedRemainder_v4_lt_of_runtime_correctedTrial_le
-    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    hb1z hb2z hb3z hbnz hshift_nz hcarry2 (Nat.le_trans hge hlocal)
 
 end EvmAsm.Evm64

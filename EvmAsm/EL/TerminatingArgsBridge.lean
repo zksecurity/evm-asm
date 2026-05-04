@@ -207,6 +207,37 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- Kind-uniform characterization of `mkResultFromArgs.status`: each
+terminating Kind selects a fixed `CallStatus` regardless of the data /
+state / gas inputs. Mirrors the Kind-dispatch shape of
+`mkResultFromArgs_state` / `mkResultFromArgs_gasRemaining`. -/
+theorem mkResultFromArgs_status
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).status
+      = match kind with
+        | .stop => CallStatus.success
+        | .return_ => CallStatus.success
+        | .revert => CallStatus.revert
+        | .invalid => CallStatus.failure
+        | .selfdestruct => CallStatus.success := by
+  cases kind <;> rfl
+
+/-- Kind-uniform characterization of `mkResultFromArgs.output`: RETURN /
+REVERT thread the loaded data slice through, while STOP / INVALID /
+SELFDESTRUCT produce empty output regardless of `data`. -/
+theorem mkResultFromArgs_output
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).output
+      = match kind with
+        | .stop => []
+        | .return_ => data
+        | .revert => data
+        | .invalid => []
+        | .selfdestruct => [] := by
+  cases kind <;> rfl
+
 /-- For STOP, the dispatcher's result is `succeeded`. -/
 theorem mkResultFromArgs_stop_succeeded
     (state : WorldState) (data : List Byte) (gasRemaining : Nat)
@@ -263,6 +294,30 @@ theorem mkResultFromArgs_succeeded_iff_isSuccess
   cases kind <;> simp [mkResultFromArgs, mkStopResult, mkReturnResult,
     mkRevertResult, mkFailureResult, CallResult.succeeded,
     EvmAsm.Evm64.TerminatingArgs.isSuccess]
+
+/-- Kind-pointwise iff: the dispatcher's result is `reverted` exactly when the
+    Kind is `.revert`. Note: this is sharper than `Kind.reverts`, which is
+    also `true` for `.invalid`. The dispatcher maps `.invalid` to a
+    `.failure`-status result (not `.revert`), so the constructor-precise
+    iff identifies `.revert` uniquely. -/
+theorem mkResultFromArgs_reverted_iff_revert
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).reverted ↔ kind = .revert := by
+  cases kind <;>
+    simp [mkResultFromArgs, mkStopResult, mkReturnResult, mkRevertResult,
+      mkFailureResult, CallResult.reverted]
+
+/-- Kind-pointwise iff: the dispatcher's result is `failed` exactly when the
+    Kind is `.invalid`. Only `.invalid` produces a `.failure`-status result;
+    `.revert` is distinct (`.revert` status, not `.failure`). -/
+theorem mkResultFromArgs_failed_iff_invalid
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).failed ↔ kind = .invalid := by
+  cases kind <;>
+    simp [mkResultFromArgs, mkStopResult, mkReturnResult, mkRevertResult,
+      mkFailureResult, CallResult.failed]
 
 end TerminatingArgsBridge
 
