@@ -27,6 +27,7 @@
   ["EvmAsm.Rv64.Tactics.PerfTrace", "EvmAsm.Rv64.InstructionSpecs"],
   "EvmAsm.Rv64.Tactics.LiftSpec":
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
+  "EvmAsm.Evm64.SignExtend.Compose": ["EvmAsm.Evm64.EvmWordArith.Common"],
   "EvmAsm.Rv64.AddrNorm": ["EvmAsm.Rv64.AddrNormAttr"],
   "EvmAsm.Rv64.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.RegOpsAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
