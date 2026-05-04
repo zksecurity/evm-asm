@@ -31,9 +31,7 @@
   `denormDoneSharedPre`.
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.Base
-
-open EvmAsm.Rv64.Tactics
+import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64
 
