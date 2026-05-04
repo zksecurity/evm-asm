@@ -592,21 +592,3 @@ theorem div128_v2_spec_within (sp retAddr d uLo uHi : Word) (base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12345
-
-theorem div128_v2_spec_shared_within (sp retAddr d uLo uHi : Word) (base : Word)
-    (v1Old v6Old v11Old : Word)
-    (retMem dMem dloMem un0Mem : Word)
-    (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
-    cpsTripleWithin 61 (base + div128Off) retAddr (sharedDivModCode_v2 base)
-      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
-       (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
-       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) **
-       (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3968 ↦ₘ retMem) **
-       (sp + signExtend12 3960 ↦ₘ dMem) **
-       (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ un0Mem))
-      (div128V2SpecPost sp retAddr d uLo uHi) :=
-  cpsTripleWithin_extend_code (hmono := shared_b12_div128_v2_sub)
-    (div128_v2_spec_within sp retAddr d uLo uHi base v1Old v6Old v11Old
-                     retMem dMem dloMem un0Mem halign)
