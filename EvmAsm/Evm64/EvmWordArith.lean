@@ -33,6 +33,7 @@ import EvmAsm.Evm64.EvmWordArith.Exp
 -- Div → Common.
 import EvmAsm.Evm64.EvmWordArith.Div128Shift0
 import EvmAsm.Evm64.EvmWordArith.DivCorrect
+import EvmAsm.Evm64.EvmWordArith.AddMod
 
 -- ModBridgeAssemble covers ModBridgeUtop → Val256ModBridge.
 import EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble
