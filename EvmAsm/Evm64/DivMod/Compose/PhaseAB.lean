@@ -351,31 +351,6 @@ theorem evm_div_phaseAB_n4_spec_within (sp base : Word)
     (fun h hq => by xperm_hyp hq)
     hAB
 
-theorem evm_div_phaseAB_n4_spec (sp base : Word)
-    (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
-    (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hb3nz : b3 ≠ 0) :
-    cpsTripleWithin (8 + 21) base (base + clzOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
-       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
-       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
-       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
-       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
-       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b3) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
-       ((sp + 32) ↦ₘ b0) **
-       ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
-       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
-       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (4 : Word))) :=
-  cpsTripleWithin_mono_nSteps (by decide) (evm_div_phaseAB_n4_spec_within sp base b0 b1 b2 b3 v5 v6 v7 v10 q0 q1 q2 q3 u5 u6 u7 nMem hbnz hb3nz)
-
-
 -- ============================================================================
 -- Section 10b: Phase B cascade step subsumption lemmas
 -- ============================================================================
