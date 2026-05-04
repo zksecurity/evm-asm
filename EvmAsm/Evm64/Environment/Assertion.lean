@@ -552,5 +552,39 @@ theorem envIs_callDataLen_split (base : Word) (env : EvmEnv) :
   unfold envIsCallDataLenRest
   ac_rfl
 
+/-- Remaining 15 env-field cells after the `callDataPtr` and
+    `callDataLen` cells are rotated to the head. CALLDATALOAD and
+    CALLDATACOPY need the pointer/length pair together: the pointer
+    identifies the source byte buffer, and the length drives the
+    out-of-bounds zero-padding checks. -/
+def envIsCallDataPtrLenRest (base : Word) (env : EvmEnv) : Assertion :=
+  evmWordIs (base + BitVec.ofNat 64 addressOff)         (addrAsWord env.address) **
+  evmWordIs (base + BitVec.ofNat 64 selfBalanceOff)     env.selfBalance **
+  evmWordIs (base + BitVec.ofNat 64 callerOff)          (addrAsWord env.caller) **
+  evmWordIs (base + BitVec.ofNat 64 callValueOff)       env.callValue **
+  evmWordIs (base + BitVec.ofNat 64 txOriginOff)        (addrAsWord env.txOrigin) **
+  evmWordIs (base + BitVec.ofNat 64 gasPriceOff)        env.gasPrice **
+  evmWordIs (base + BitVec.ofNat 64 blockCoinbaseOff)   (addrAsWord env.blockCoinbase) **
+  evmWordIs (base + BitVec.ofNat 64 blockTimestampOff)  env.blockTimestamp **
+  evmWordIs (base + BitVec.ofNat 64 blockNumberOff)     env.blockNumber **
+  evmWordIs (base + BitVec.ofNat 64 blockPrevrandaoOff) env.blockPrevrandao **
+  evmWordIs (base + BitVec.ofNat 64 blockGasLimitOff)   env.blockGasLimit **
+  evmWordIs (base + BitVec.ofNat 64 blockBaseFeeOff)    env.blockBaseFee **
+  evmWordIs (base + BitVec.ofNat 64 chainIdOff)         env.chainId **
+  ((base + BitVec.ofNat 64 returnDataPtrOff)  ↦ₘ env.returnDataPtr) **
+  ((base + BitVec.ofNat 64 returnDataSizeOff) ↦ₘ env.returnDataSize)
+
+/-- Rotate the calldata pointer/length pair to the head of `envIs`.
+
+    Distinctive token: `envIs_callDataPtrLen_split`. -/
+theorem envIs_callDataPtrLen_split (base : Word) (env : EvmEnv) :
+    envIs base env =
+      (((base + BitVec.ofNat 64 callDataPtrOff) ↦ₘ env.callDataPtr) **
+       ((base + BitVec.ofNat 64 callDataLenOff) ↦ₘ env.callDataLen) **
+        envIsCallDataPtrLenRest base env) := by
+  rw [envIs_unfold]
+  unfold envIsCallDataPtrLenRest
+  ac_rfl
+
 end EvmEnv
 end EvmAsm.Evm64
