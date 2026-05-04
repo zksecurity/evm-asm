@@ -22,6 +22,7 @@ import EvmAsm.EL.MessageCall
 import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallOutputBridge
+import EvmAsm.EL.CallOutputMemory
 import EvmAsm.EL.CallValueTransfer
 import EvmAsm.EL.SelfdestructEffects
 import EvmAsm.EL.TerminatingArgsBridge
