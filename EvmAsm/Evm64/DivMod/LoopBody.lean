@@ -657,11 +657,6 @@ theorem lb_bltu_ntaken {base : Word} : (base + trialCallOff : Word) + 4 = base +
 
 -- Address normalization for store_qj and loop control
 theorem lb_sqj {base : Word} : (base + storeLoopOff : Word) + 16 = base + loopControlOff := by bv_addr
-private theorem lb_lc_taken {base : Word} :
-    (base + loopControlOff : Word) + 4 + signExtend13 (7736 : BitVec 13) = base + loopBodyOff := by
-  rv64_addr
-private theorem lb_lc_exit {base : Word} : (base + loopControlOff : Word) + 8 = base + denormOff := by bv_addr
-
 private theorem lb_beq_back_ntaken {base : Word} : (base + addbackBeqOff : Word) + 4 = base + storeLoopOff := by bv_addr
 
 /-- BEQ passthrough at [108]: when carry (x7) ≠ 0, BEQ falls through from base+880 to base+884.
@@ -819,73 +814,5 @@ theorem divK_double_addback_beq_named_spec_within
   intro ab' qHat''
   exact divK_double_addback_beq_spec_within sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
     base hcarry2_nz
-
-theorem divK_store_loop_spec_within
-    (sp j qHat v5Old v7Old qOld : Word)
-    (base : Word) :
-    let jX8 := j <<< (3 : BitVec 6).toNat
-    let qAddr := sp + signExtend12 4088 - jX8
-    let j' := j + signExtend12 4095
-    cpsBranchWithin 6 (base + storeLoopOff) (sharedDivModCode base)
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (qAddr ↦ₘ qOld))
-      (base + loopBodyOff)
-      ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) **
-       (qAddr ↦ₘ qHat))
-      (base + denormOff)
-      ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) **
-       (qAddr ↦ₘ qHat)) := by
-  intro jX8 qAddr j'
-  -- 1. Store q[j]: instrs [109]-[112] at base+884
-  have SQ := divK_store_qj_spec_within sp j qHat v5Old v7Old qOld (base + storeLoopOff)
-  dsimp only [] at SQ
-  rw [lb_sqj] at SQ
-  have SQe := cpsTripleWithin_extend_code (hmono := by
-    exact CodeReq.union_sub (lb_sub 109 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (lb_sub 110 _ _ (by decide) (by bv_addr) (by decide))
-     (CodeReq.union_sub (lb_sub 111 _ _ (by decide) (by bv_addr) (by decide))
-      (lb_sub 112 _ _ (by decide) (by bv_addr) (by decide))))) SQ
-  -- 2. Loop control: instrs [113]-[114] at base+900
-  have LC := divK_loop_control_spec_within j (7736 : BitVec 13) (base + loopControlOff)
-  dsimp only [] at LC
-  rw [lb_lc_taken, lb_lc_exit] at LC
-  have LCe := cpsBranchWithin_extend_code (hmono := by
-    exact CodeReq.union_sub (lb_sub 113 _ _ (by decide) (by bv_addr) (by decide))
-      (lb_sub 114 _ _ (by decide) (by bv_addr) (by decide))) LC
-  -- 3. Add x0 to store_qj via frame, then reshape via consequence
-  have SQx0 : cpsTripleWithin 4 (base + storeLoopOff) (base + loopControlOff) (sharedDivModCode base)
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qOld))
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) :=
-    cpsTripleWithin_weaken
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (cpsTripleWithin_frameR (.x0 ↦ᵣ (0 : Word)) (by pcFree) SQe)
-  -- 4. Frame loop_control with store_qj postcondition atoms, then reshape
-  have LCp : cpsBranchWithin 2 (base + loopControlOff) (sharedDivModCode base)
-      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat))
-      (base + loopBodyOff)
-      ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat))
-      (base + denormOff)
-      ((.x1 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) :=
-    cpsBranchWithin_weaken
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (fun h hp => by xperm_hyp hp)
-      (cpsBranchWithin_frameR
-        ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-         (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **
-         (qAddr ↦ₘ qHat))
-        (by pcFree) LCe)
-  -- 5. Compose store_qj(+x0) → loop_control(reshaped)
-  exact cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
-    (fun h hp => hp) SQx0 LCp
 
 end EvmAsm.Evm64
