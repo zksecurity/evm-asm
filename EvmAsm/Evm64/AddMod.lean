@@ -1,0 +1,18 @@
+/-
+  EvmAsm.Evm64.AddMod
+
+  Umbrella for the ADDMOD opcode subtree (GH #91). Re-exports the
+  top-level spec; downstream consumers should `import EvmAsm.Evm64.AddMod`
+  and not reach into sub-modules directly.
+
+  AddrNormAttr is imported first (per `AGENTS.md` `register_simp_attr`
+  ordering rule) so the `addmod_addr` attribute exists when later modules
+  attach lemmas to it.
+-/
+
+import EvmAsm.Evm64.AddMod.AddrNormAttr
+import EvmAsm.Evm64.AddMod.Program
+import EvmAsm.Evm64.AddMod.LimbSpec
+import EvmAsm.Evm64.AddMod.AddrNorm
+import EvmAsm.Evm64.AddMod.Compose.Base
+import EvmAsm.Evm64.AddMod.Spec
