@@ -207,6 +207,25 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- Kind-uniform: every terminating Kind preserves the input `WorldState`
+    through the dispatcher. Useful for handler specs that need to assert
+    state preservation independently of which terminating opcode fired. -/
+theorem mkResultFromArgs_state
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).state = state := by
+  cases kind <;> rfl
+
+/-- Kind-uniform: every terminating Kind threads `gasRemaining` through
+    the dispatcher unchanged. The dynamic-cost subtraction belongs to the
+    handler layer, not this packaging bridge. -/
+theorem mkResultFromArgs_gasRemaining
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).gasRemaining
+      = gasRemaining := by
+  cases kind <;> rfl
+
 end TerminatingArgsBridge
 
 end EvmAsm.EL
