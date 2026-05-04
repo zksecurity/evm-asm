@@ -4,7 +4,7 @@
   One-step irreducible scratch-state transitions for n=2 full-path wrappers.
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Base
+import EvmAsm.Evm64.DivMod.LoopDefs.Iter
 
 namespace EvmAsm.Evm64
 
