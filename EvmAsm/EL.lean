@@ -18,6 +18,7 @@ import EvmAsm.EL.MessageCall
 import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.TerminatingArgsBridge
+import EvmAsm.EL.TerminatingCallOutput
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.Block
