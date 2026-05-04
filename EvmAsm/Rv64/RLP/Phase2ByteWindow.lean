@@ -16,7 +16,6 @@
 -/
 
 import EvmAsm.Rv64.Basic
-import EvmAsm.Rv64.ByteOps
 
 namespace EvmAsm.Rv64.RLP
 
