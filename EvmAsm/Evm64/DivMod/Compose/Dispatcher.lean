@@ -30,24 +30,6 @@ abbrev divDispatcherCode (base : Word) : CodeReq :=
 abbrev modDispatcherCode (base : Word) : CodeReq :=
   modCode base
 
-theorem divDispatcherCode_sub_divCode {base : Word} :
-    ∀ a i, (divDispatcherCode base) a = some i → (divCode base) a = some i := by
-  intro a i h
-  exact h
-
-theorem modDispatcherCode_sub_modCode {base : Word} :
-    ∀ a i, (modDispatcherCode base) a = some i → (modCode base) a = some i := by
-  intro a i h
-  exact h
-
-theorem sharedDivModCode_sub_divDispatcherCode {base : Word} :
-    ∀ a i, (sharedDivModCode base) a = some i → (divDispatcherCode base) a = some i :=
-  sharedDivModCode_sub_divCode
-
-theorem sharedDivModCode_sub_modDispatcherCode {base : Word} :
-    ∀ a i, (sharedDivModCode base) a = some i → (modDispatcherCode base) a = some i :=
-  sharedDivModCode_sub_modCode
-
 abbrev evm_div_spec_within_bzero := evm_div_bzero_spec_within
 abbrev evm_div_spec_within_n1Full := evm_div_n1_full_unified_spec
 abbrev evm_div_spec_within_n2Full := evm_div_n2_full_bundled_spec
