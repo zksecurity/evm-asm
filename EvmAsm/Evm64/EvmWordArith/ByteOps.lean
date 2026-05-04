@@ -4,7 +4,7 @@
   BYTE correctness: limb-level byte extraction = 256-bit byte extraction.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Common
+import EvmAsm.Evm64.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
