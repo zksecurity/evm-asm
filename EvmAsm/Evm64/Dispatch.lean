@@ -46,7 +46,12 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x51 => some MLOAD
   | 0x52 => some MSTORE
   | 0x53 => some MSTORE8
+  | 0x56 => some JUMP
+  | 0x57 => some JUMPI
+  | 0x58 => some PC
   | 0x59 => some MSIZE
+  | 0x5a => some GAS
+  | 0x5b => some JUMPDEST
   | 0x5f => some PUSH0
   | 0x60 => some (PUSH 1)
   | 0x61 => some (PUSH 2)
@@ -139,6 +144,32 @@ theorem decodeByte?_SWAP16 : decodeByte? 0x9f = some (SWAP 16) := rfl
 theorem decodeByte?_RETURN : decodeByte? 0xf3 = some RETURN := rfl
 theorem decodeByte?_REVERT : decodeByte? 0xfd = some REVERT := rfl
 theorem decodeByte?_INVALID : decodeByte? 0xfe = some INVALID := rfl
+
+theorem decodeByte?_JUMP : decodeByte? 0x56 = some JUMP := rfl
+theorem decodeByte?_JUMPI : decodeByte? 0x57 = some JUMPI := rfl
+theorem decodeByte?_PC : decodeByte? 0x58 = some PC := rfl
+theorem decodeByte?_GAS : decodeByte? 0x5a = some GAS := rfl
+theorem decodeByte?_JUMPDEST : decodeByte? 0x5b = some JUMPDEST := rfl
+
+theorem byte?_roundtrip_JUMP :
+    byte? JUMP = some 0x56 ∧ decodeByte? 0x56 = some JUMP := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_JUMPI :
+    byte? JUMPI = some 0x57 ∧ decodeByte? 0x57 = some JUMPI := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_PC :
+    byte? PC = some 0x58 ∧ decodeByte? 0x58 = some PC := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_GAS :
+    byte? GAS = some 0x5a ∧ decodeByte? 0x5a = some GAS := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_JUMPDEST :
+    byte? JUMPDEST = some 0x5b ∧ decodeByte? 0x5b = some JUMPDEST := by
+  exact ⟨rfl, rfl⟩
 
 theorem byte?_roundtrip_STOP :
     byte? STOP = some 0x00 ∧ decodeByte? 0x00 = some STOP := by
