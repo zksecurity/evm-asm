@@ -26,11 +26,22 @@ structure CallDataSizeInput where
   data : List (BitVec 8)
   deriving Repr
 
+/-- Input shape for a CALLDATACOPY executable-helper conformance vector. -/
+structure CallDataCopyInput where
+  data : List (BitVec 8)
+  dataOffset : Nat
+  size : Nat
+  deriving Repr
+
 def runCallDataLoad (input : CallDataLoadInput) : EvmWord :=
   EvmAsm.Evm64.Calldata.callDataLoadWord input.data input.offset
 
 def runCallDataSize (input : CallDataSizeInput) : EvmWord :=
   EvmAsm.Evm64.Calldata.callDataSizeOf input.data
+
+def runCallDataCopy (input : CallDataCopyInput) : List (BitVec 8) :=
+  EvmAsm.Evm64.Calldata.callDataCopyBytes
+    input.data input.dataOffset input.size
 
 /-- CALLDATALOAD reads zero when the requested 32-byte window starts at the
     end of calldata. Distinctive token: callDataLoadOutOfBoundsVector. -/
@@ -45,6 +56,14 @@ def callDataSizeTwoBytesVector : TestVector CallDataSizeInput EvmWord :=
     input := { data := [(0xaa : BitVec 8), (0xbb : BitVec 8)] }
     expected := .value 2 }
 
+/-- CALLDATACOPY zero-pads bytes copied past the end of calldata.
+    Distinctive token: callDataCopyZeroPadVector. -/
+def callDataCopyZeroPadVector :
+    TestVector CallDataCopyInput (List (BitVec 8)) :=
+  { id := "calldatacopy-zero-pad"
+    input := { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 }
+    expected := .value [(0xaa : BitVec 8), 0, 0] }
+
 theorem runCallDataLoad_outOfBounds :
     runCallDataLoad { data := [(0x12 : BitVec 8)], offset := 1 } = 0 := by
   exact EvmAsm.Evm64.Calldata.callDataLoadWord_of_ge_length (by decide)
@@ -52,6 +71,11 @@ theorem runCallDataLoad_outOfBounds :
 theorem runCallDataSize_twoBytes :
     runCallDataSize { data := [(0xaa : BitVec 8), (0xbb : BitVec 8)] } =
       (2 : EvmWord) := rfl
+
+theorem runCallDataCopy_zeroPad :
+    runCallDataCopy
+      { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 } =
+      [(0xaa : BitVec 8), 0, 0] := rfl
 
 theorem callDataLoadOutOfBoundsVector_passed :
     checkVector runCallDataLoad callDataLoadOutOfBoundsVector = .passed :=
@@ -69,17 +93,26 @@ theorem callDataSizeTwoBytesVector_passed :
     (2 : EvmWord)
     runCallDataSize_twoBytes
 
+theorem callDataCopyZeroPadVector_passed :
+    checkVector runCallDataCopy callDataCopyZeroPadVector = .passed :=
+  checkVector_value_passed runCallDataCopy
+    "calldatacopy-zero-pad"
+    { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 }
+    [(0xaa : BitVec 8), 0, 0]
+    runCallDataCopy_zeroPad
+
 /-- Compact initial checked-vector batch for calldata executable helpers.
     Distinctive token: calldataConformanceVectors. -/
 def calldataConformanceVectors : List CheckResult :=
   [ checkVector runCallDataLoad callDataLoadOutOfBoundsVector
   , checkVector runCallDataSize callDataSizeTwoBytesVector
+  , checkVector runCallDataCopy callDataCopyZeroPadVector
   ]
 
 theorem calldataConformanceVectors_passed :
-    calldataConformanceVectors = [.passed, .passed] := by
+    calldataConformanceVectors = [.passed, .passed, .passed] := by
   simp [calldataConformanceVectors, callDataLoadOutOfBoundsVector_passed,
-    callDataSizeTwoBytesVector_passed]
+    callDataSizeTwoBytesVector_passed, callDataCopyZeroPadVector_passed]
 
 end Calldata
 end Conformance
