@@ -54,6 +54,14 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Swap.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.And.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.Or.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.Xor.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.Not.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.And.Spec":     ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Or.Spec":      ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Xor.Spec":     ["EvmAsm.Rv64.Tactics.XSimp"],
