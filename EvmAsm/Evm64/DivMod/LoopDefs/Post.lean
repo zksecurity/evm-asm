@@ -91,15 +91,11 @@ def loopBodyAddbackPost (n : Word) (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Wor
   let ab := addbackN4 un0 un1 un2 un3 u4_new v0 v1 v2 v3
   loopExitPost n sp j (qHat + signExtend12 4095) c3 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
 
-/-- Backward-compatible abbreviations for loopBodySkipPost and loopBodyAddbackPost. -/
+/-- Backward-compatible abbreviations for loopBodySkipPost. -/
 abbrev loopBodyN1SkipPost := loopBodySkipPost (1 : Word)
-abbrev loopBodyN1AddbackPost := loopBodyAddbackPost (1 : Word)
 abbrev loopBodyN2SkipPost := loopBodySkipPost (2 : Word)
-abbrev loopBodyN2AddbackPost := loopBodyAddbackPost (2 : Word)
 abbrev loopBodyN3SkipPost := loopBodySkipPost (3 : Word)
-abbrev loopBodyN3AddbackPost := loopBodyAddbackPost (3 : Word)
 abbrev loopBodyN4SkipPost := loopBodySkipPost (4 : Word)
-abbrev loopBodyN4AddbackPost := loopBodyAddbackPost (4 : Word)
 
 /-- Full mulsub-addback postcondition with BEQ double-addback handling.
     Handles both carry=0 (double addback) and carry≠0 (single addback) cases. -/
@@ -140,11 +136,7 @@ def loopBodyUnifiedPost (borrow_zero : Bool) (n : Word)
   if borrow_zero then loopBodySkipPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
   else loopBodyAddbackBeqPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
-/-- Per-n abbreviations for the unified postcondition. -/
-abbrev loopBodyUnifiedPostN1 (borrow_zero : Bool) := loopBodyUnifiedPost borrow_zero (1 : Word)
-abbrev loopBodyUnifiedPostN2 (borrow_zero : Bool) := loopBodyUnifiedPost borrow_zero (2 : Word)
-abbrev loopBodyUnifiedPostN3 (borrow_zero : Bool) := loopBodyUnifiedPost borrow_zero (3 : Word)
-abbrev loopBodyUnifiedPostN4 (borrow_zero : Bool) := loopBodyUnifiedPost borrow_zero (4 : Word)
+-- (Per-n unified-post abbreviations were removed as dead code.)
 
 -- ============================================================================
 -- Call path postconditions for n=3 (includes div128 scratch cells)
