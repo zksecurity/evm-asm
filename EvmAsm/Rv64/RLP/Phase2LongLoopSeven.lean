@@ -13,6 +13,7 @@
   whenever `byteOffset ptr ≤ 1`.
 -/
 
+import EvmAsm.Rv64.RLP.Phase2ByteWindow
 import EvmAsm.Rv64.RLP.Phase2LongLoopSix
 
 namespace EvmAsm.Rv64.RLP
@@ -141,5 +142,38 @@ theorem rlp_phase2_long_loop_seven_byte_spec_within
     (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
     composed
+
+/-- Bundled-hypothesis form of `rlp_phase2_long_loop_seven_byte_spec_within`.
+
+    Takes a single `rlpAlignedByteWindow7Ok ptr dwordAddr` instead of 14
+    separate `halign{1..7}` / `hvalid{1..7}` hypotheses. Mirror of
+    `rlp_phase2_long_loop_eight_byte_spec_within_bundled`. See parent
+    `evm-asm-yrz5` (sibling slice `evm-asm-wdyg` / PR #2276). -/
+theorem rlp_phase2_long_loop_seven_byte_spec_within_bundled
+    (len ptr v12Old wordVal dwordAddr : Word)
+    (base : Word) (back : BitVec 13)
+    (hwindow : rlpAlignedByteWindow7Ok ptr dwordAddr)
+    (hback : (base + 20) + signExtend13 back = base) :
+    cpsTripleWithin 42 base (base + 24)
+      (CodeReq.ofProg base (rlp_phase2_long_loop_body_prog back))
+      ((.x11 ↦ᵣ len) ** (.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ (7 : Word)) **
+       (.x12 ↦ᵣ v12Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (dwordAddr ↦ₘ wordVal))
+      (rlp_phase2_long_loop_seven_byte_post len ptr
+        ((extractByte wordVal (byteOffset ptr)).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 1))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 2))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 3))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 4))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 5))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 6))).zeroExtend 64)
+        wordVal dwordAddr) := by
+  obtain ⟨halign1, halign2, halign3, halign4, halign5, halign6, halign7,
+          hvalid1, hvalid2, hvalid3, hvalid4, hvalid5, hvalid6, hvalid7⟩
+    := hwindow
+  exact rlp_phase2_long_loop_seven_byte_spec_within
+    len ptr v12Old wordVal dwordAddr base back
+    halign1 halign2 halign3 halign4 halign5 halign6 halign7
+    hvalid1 hvalid2 hvalid3 hvalid4 hvalid5 hvalid6 hvalid7 hback
 
 end EvmAsm.Rv64.RLP
