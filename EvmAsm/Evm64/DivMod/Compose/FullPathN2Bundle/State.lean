@@ -4,6 +4,7 @@
   Bundled n=2 denorm precondition and preserved frame definitions.
 -/
 
+import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Base
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Scratch
 
 namespace EvmAsm.Evm64
