@@ -190,4 +190,13 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
- "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"]}}
+ "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
+"EvmAsm.Evm64.EvmWordArith.Common": ["Mathlib.Tactic.Linarith"],
+"EvmAsm.Evm64.EvmWordArith.ByteOps":
+ ["Mathlib.Tactic.Linarith", "Mathlib.Tactic.NormNum", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
+"EvmAsm.Evm64.EvmWordArith.MultiLimb":
+ ["Mathlib.Tactic.Linarith", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
+"EvmAsm.Evm64.EvmWordArith.Arithmetic":
+ ["Mathlib.Tactic.NormNum", "Mathlib.Tactic.Ring", "Mathlib.Tactic.Positivity"],
+"EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
+ ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"]}}
