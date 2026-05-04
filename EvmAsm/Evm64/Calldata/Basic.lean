@@ -132,6 +132,57 @@ theorem callDataLoadWord_toNat (data : List (BitVec 8)) (offset : Nat) :
   unfold callDataLoadWord
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (callDataLoadNat_lt data offset)]
 
+/-! ### Out-of-bounds CALLDATALOAD collapses to zero
+
+When the EVM offset is at or past the end of calldata, every byte the
+32-byte window would touch lies past `data.length` and reads as zero
+(`callDataByte_of_ge`).  The big-endian fold therefore collapses to `0`,
+and the resulting EvmWord is zero too.  The CALLDATALOAD RISC-V proof
+(`evm-asm-ugei`, GH #104 slice 4) uses these on the bounds-check branch
+where the spec collapses to a constant-zero limbset. -/
+
+/-- Folding `appendByte 0` over any list (every byte is zero) yields `0`.
+    This is the structural ingredient shared between `callDataLoadNat_nil`
+    and `callDataLoadNat_of_ge_length`; we keep it private. -/
+private theorem foldl_appendByte_zero
+    {α : Type _} (xs : List α) :
+    xs.foldl (fun acc (_ : α) => appendByte acc 0) 0 = 0 := by
+  induction xs with
+  | nil => rfl
+  | cons _ xs ih => simpa [List.foldl_cons, appendByte] using ih
+
+/-- `callDataLoadNat` reads zero past the end of the calldata buffer:
+    if the offset is at or beyond `data.length`, every byte in the
+    32-byte big-endian window reads as zero, so the assembly is `0`. -/
+theorem callDataLoadNat_of_ge_length
+    {data : List (BitVec 8)} {offset : Nat}
+    (h : data.length ≤ offset) :
+    callDataLoadNat data offset = 0 := by
+  -- Replace the byte source with the constant-zero generator and reuse
+  -- the generic `foldl_appendByte_zero` lemma.
+  have hfun :
+      (fun (acc : Nat) (i : Nat) =>
+        appendByte acc (callDataByte data (offset + i)))
+        =
+      (fun (acc : Nat) (_ : Nat) => appendByte acc 0) := by
+    funext acc i
+    have : data.length ≤ offset + i := Nat.le_trans h (Nat.le_add_right _ _)
+    rw [callDataByte_of_ge this]
+  unfold callDataLoadNat
+  rw [hfun]
+  exact foldl_appendByte_zero (List.range 32)
+
+/-- `callDataLoadWord` is zero when the offset is past the end of the
+    calldata buffer.  Useful on the BGEU bounds-check branch of the
+    CALLDATALOAD RISC-V program, where the spec collapses to a
+    constant-zero limbset. -/
+theorem callDataLoadWord_of_ge_length
+    {data : List (BitVec 8)} {offset : Nat}
+    (h : data.length ≤ offset) :
+    callDataLoadWord data offset = 0 := by
+  rw [callDataLoadWord, callDataLoadNat_of_ge_length h]
+  rfl
+
 /-! ### CALLDATACOPY pure helper
 
 `callDataCopyBytes data dataOffset size` is the byte sequence that

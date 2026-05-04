@@ -6,7 +6,6 @@
     * loopBody{Skip,Addback,AddbackBeq}Post (+ per-n abbrevs)
     * Per-n call-path postconditions (loopBodyN{1,2,3}Call*PostJ)
     * loopBodyN3Call*PostJ and eq_J bridge
-    * loopN3MaxSkipSkipPost (legacy max+skip × max+skip path)
     * loopIterPostN{1,2,3}{Max,Call} + producer equations + Bool dispatch
     * Two, three, and four iteration unified postconditions (loopN{1,2,3}UnifiedPost)
 
@@ -323,23 +322,6 @@ def loopBodyN2CallAddbackBeqPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word
   (sp + signExtend12 3960 ↦ₘ v1) **
   (sp + signExtend12 3952 ↦ₘ div128DLo v1) **
   (sp + signExtend12 3944 ↦ₘ div128Un0 u1)
-
--- ============================================================================
--- Legacy two-iteration postcondition (n=3 max+skip × max+skip)
--- ============================================================================
-
-/-- Postcondition for the full n=3 two-iteration loop (max+skip at both j=1 and j=0).
-    Includes the j=0 exit postcondition plus j=1's carried frame atoms (u4_new, q[1]). -/
-@[irreducible]
-def loopN3MaxSkipSkipPost (sp v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig : Word) : Assertion :=
-  let qHat : Word := signExtend12 4095
-  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
-  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
-  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
-  loopBodyN3SkipPost sp (0 : Word) qHat v0 v1 v2 v3
-    u0Orig ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 **
-  ((u_base_1 + signExtend12 4064) ↦ₘ (uTop - ms.2.2.2.2)) **
-  (q_addr_1 ↦ₘ qHat)
 
 -- ============================================================================
 -- Double-addback iteration postconditions

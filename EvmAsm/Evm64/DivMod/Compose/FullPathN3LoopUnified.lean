@@ -484,18 +484,6 @@ theorem fullDivN3Frame_unfold (bltu_1 bltu_0 : Bool)
   delta fullDivN3Frame
   rfl
 
-theorem fullDivN3DenormPost_unfold (bltu_1 bltu_0 : Bool)
-    (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    fullDivN3DenormPost bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3 =
-    let shift := fullDivN3Shift b2
-    let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-    let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1
-      r0.1 r1.1 (0 : Word) (0 : Word) **
-    ((sp + signExtend12 3992) ↦ₘ shift) := by
-  delta fullDivN3DenormPost
-  rfl
-
 theorem fullDivN3C3_false (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     fullDivN3C3 bltu_1 false a0 a1 a2 a3 b0 b1 b2 b3 =
     let v := fullDivN3NormV b0 b1 b2 b3

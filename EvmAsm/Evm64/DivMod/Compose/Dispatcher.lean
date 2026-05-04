@@ -4,17 +4,7 @@
   Dispatcher-level scaffold for the bounded DIV/MOD limb specs.
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Full
-import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4Beq
-import EvmAsm.Evm64.DivMod.Compose.FullPathN4Shift0
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN1LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN2LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN3LoopUnified
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4
-import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4Shift0
+import EvmAsm.Evm64.DivMod.Compose.Base
 
 namespace EvmAsm.Evm64
 
