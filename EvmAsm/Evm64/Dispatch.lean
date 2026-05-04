@@ -39,6 +39,7 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x1b => some SHL
   | 0x1c => some SHR
   | 0x1d => some SAR
+  | 0x20 => some KECCAK256
   | 0x30 => some ADDRESS
   | 0x32 => some ORIGIN
   | 0x33 => some CALLER
@@ -46,7 +47,12 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x35 => some CALLDATALOAD
   | 0x36 => some CALLDATASIZE
   | 0x37 => some CALLDATACOPY
+  | 0x38 => some CODESIZE
+  | 0x39 => some CODECOPY
   | 0x3a => some GASPRICE
+  | 0x3d => some RETURNDATASIZE
+  | 0x3e => some RETURNDATACOPY
+  | 0x40 => some BLOCKHASH
   | 0x41 => some COINBASE
   | 0x42 => some TIMESTAMP
   | 0x43 => some NUMBER
@@ -55,6 +61,8 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x46 => some CHAINID
   | 0x47 => some SELFBALANCE
   | 0x48 => some BASEFEE
+  | 0x49 => some BLOBHASH
+  | 0x4a => some BLOBBASEFEE
   | 0x50 => some POP
   | 0x51 => some MLOAD
   | 0x52 => some MSTORE
@@ -130,9 +138,20 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x9d => some (SWAP 14)
   | 0x9e => some (SWAP 15)
   | 0x9f => some (SWAP 16)
+  | 0xa0 => some (LOG LogArgs.Kind.log0)
+  | 0xa1 => some (LOG LogArgs.Kind.log1)
+  | 0xa2 => some (LOG LogArgs.Kind.log2)
+  | 0xa3 => some (LOG LogArgs.Kind.log3)
+  | 0xa4 => some (LOG LogArgs.Kind.log4)
+  | 0xf0 => some CREATE
+  | 0xf1 => some CALL
   | 0xf3 => some RETURN
+  | 0xf4 => some DELEGATECALL
+  | 0xf5 => some CREATE2
+  | 0xfa => some STATICCALL
   | 0xfd => some REVERT
   | 0xfe => some INVALID
+  | 0xff => some SELFDESTRUCT
   | _ => none
 
 /-- Predicate form for dispatch tables that only need to know whether a byte is
@@ -178,6 +197,25 @@ theorem decodeByte?_GASLIMIT : decodeByte? 0x45 = some GASLIMIT := rfl
 theorem decodeByte?_CHAINID : decodeByte? 0x46 = some CHAINID := rfl
 theorem decodeByte?_SELFBALANCE : decodeByte? 0x47 = some SELFBALANCE := rfl
 theorem decodeByte?_BASEFEE : decodeByte? 0x48 = some BASEFEE := rfl
+theorem decodeByte?_KECCAK256 : decodeByte? 0x20 = some KECCAK256 := rfl
+theorem decodeByte?_CODESIZE : decodeByte? 0x38 = some CODESIZE := rfl
+theorem decodeByte?_CODECOPY : decodeByte? 0x39 = some CODECOPY := rfl
+theorem decodeByte?_RETURNDATASIZE : decodeByte? 0x3d = some RETURNDATASIZE := rfl
+theorem decodeByte?_RETURNDATACOPY : decodeByte? 0x3e = some RETURNDATACOPY := rfl
+theorem decodeByte?_BLOCKHASH : decodeByte? 0x40 = some BLOCKHASH := rfl
+theorem decodeByte?_BLOBHASH : decodeByte? 0x49 = some BLOBHASH := rfl
+theorem decodeByte?_BLOBBASEFEE : decodeByte? 0x4a = some BLOBBASEFEE := rfl
+theorem decodeByte?_LOG0 : decodeByte? 0xa0 = some (LOG LogArgs.Kind.log0) := rfl
+theorem decodeByte?_LOG1 : decodeByte? 0xa1 = some (LOG LogArgs.Kind.log1) := rfl
+theorem decodeByte?_LOG2 : decodeByte? 0xa2 = some (LOG LogArgs.Kind.log2) := rfl
+theorem decodeByte?_LOG3 : decodeByte? 0xa3 = some (LOG LogArgs.Kind.log3) := rfl
+theorem decodeByte?_LOG4 : decodeByte? 0xa4 = some (LOG LogArgs.Kind.log4) := rfl
+theorem decodeByte?_CREATE : decodeByte? 0xf0 = some CREATE := rfl
+theorem decodeByte?_CALL : decodeByte? 0xf1 = some CALL := rfl
+theorem decodeByte?_DELEGATECALL : decodeByte? 0xf4 = some DELEGATECALL := rfl
+theorem decodeByte?_CREATE2 : decodeByte? 0xf5 = some CREATE2 := rfl
+theorem decodeByte?_STATICCALL : decodeByte? 0xfa = some STATICCALL := rfl
+theorem decodeByte?_SELFDESTRUCT : decodeByte? 0xff = some SELFDESTRUCT := rfl
 theorem decodeByte?_POP : decodeByte? 0x50 = some POP := rfl
 theorem decodeByte?_MLOAD : decodeByte? 0x51 = some MLOAD := rfl
 theorem decodeByte?_MSTORE : decodeByte? 0x52 = some MSTORE := rfl
@@ -374,6 +412,69 @@ theorem byte?_roundtrip_SELFBALANCE :
 theorem byte?_roundtrip_BASEFEE :
     byte? BASEFEE = some 0x48 ∧ decodeByte? 0x48 = some BASEFEE := by
   exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_KECCAK256 :
+    byte? KECCAK256 = some 0x20 ∧ decodeByte? 0x20 = some KECCAK256 :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_CODESIZE :
+    byte? CODESIZE = some 0x38 ∧ decodeByte? 0x38 = some CODESIZE :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_CODECOPY :
+    byte? CODECOPY = some 0x39 ∧ decodeByte? 0x39 = some CODECOPY :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_RETURNDATASIZE :
+    byte? RETURNDATASIZE = some 0x3d ∧ decodeByte? 0x3d = some RETURNDATASIZE :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_RETURNDATACOPY :
+    byte? RETURNDATACOPY = some 0x3e ∧ decodeByte? 0x3e = some RETURNDATACOPY :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_BLOCKHASH :
+    byte? BLOCKHASH = some 0x40 ∧ decodeByte? 0x40 = some BLOCKHASH :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_BLOBHASH :
+    byte? BLOBHASH = some 0x49 ∧ decodeByte? 0x49 = some BLOBHASH :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_BLOBBASEFEE :
+    byte? BLOBBASEFEE = some 0x4a ∧ decodeByte? 0x4a = some BLOBBASEFEE :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_LOG0 :
+    byte? (LOG LogArgs.Kind.log0) = some 0xa0
+      ∧ decodeByte? 0xa0 = some (LOG LogArgs.Kind.log0) :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_LOG1 :
+    byte? (LOG LogArgs.Kind.log1) = some 0xa1
+      ∧ decodeByte? 0xa1 = some (LOG LogArgs.Kind.log1) :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_LOG2 :
+    byte? (LOG LogArgs.Kind.log2) = some 0xa2
+      ∧ decodeByte? 0xa2 = some (LOG LogArgs.Kind.log2) :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_LOG3 :
+    byte? (LOG LogArgs.Kind.log3) = some 0xa3
+      ∧ decodeByte? 0xa3 = some (LOG LogArgs.Kind.log3) :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_LOG4 :
+    byte? (LOG LogArgs.Kind.log4) = some 0xa4
+      ∧ decodeByte? 0xa4 = some (LOG LogArgs.Kind.log4) :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_CREATE :
+    byte? CREATE = some 0xf0 ∧ decodeByte? 0xf0 = some CREATE :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_CALL :
+    byte? CALL = some 0xf1 ∧ decodeByte? 0xf1 = some CALL :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_DELEGATECALL :
+    byte? DELEGATECALL = some 0xf4 ∧ decodeByte? 0xf4 = some DELEGATECALL :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_CREATE2 :
+    byte? CREATE2 = some 0xf5 ∧ decodeByte? 0xf5 = some CREATE2 :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_STATICCALL :
+    byte? STATICCALL = some 0xfa ∧ decodeByte? 0xfa = some STATICCALL :=
+  ⟨rfl, rfl⟩
+theorem byte?_roundtrip_SELFDESTRUCT :
+    byte? SELFDESTRUCT = some 0xff ∧ decodeByte? 0xff = some SELFDESTRUCT :=
+  ⟨rfl, rfl⟩
 
 end EvmOpcode
 
