@@ -207,6 +207,37 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- Kind-uniform characterization of `mkResultFromArgs.status`: each
+terminating Kind selects a fixed `CallStatus` regardless of the data /
+state / gas inputs. Mirrors the Kind-dispatch shape of
+`mkResultFromArgs_state` / `mkResultFromArgs_gasRemaining`. -/
+theorem mkResultFromArgs_status
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).status
+      = match kind with
+        | .stop => CallStatus.success
+        | .return_ => CallStatus.success
+        | .revert => CallStatus.revert
+        | .invalid => CallStatus.failure
+        | .selfdestruct => CallStatus.success := by
+  cases kind <;> rfl
+
+/-- Kind-uniform characterization of `mkResultFromArgs.output`: RETURN /
+REVERT thread the loaded data slice through, while STOP / INVALID /
+SELFDESTRUCT produce empty output regardless of `data`. -/
+theorem mkResultFromArgs_output
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).output
+      = match kind with
+        | .stop => []
+        | .return_ => data
+        | .revert => data
+        | .invalid => []
+        | .selfdestruct => [] := by
+  cases kind <;> rfl
+
 /-- For STOP, the dispatcher's result is `succeeded`. -/
 theorem mkResultFromArgs_stop_succeeded
     (state : WorldState) (data : List Byte) (gasRemaining : Nat)
