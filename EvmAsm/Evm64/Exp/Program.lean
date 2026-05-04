@@ -497,6 +497,68 @@ theorem exp_loop_marshal_a_to_factor2_byte_length :
   rw [exp_loop_marshal_a_to_factor2_length]
 
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration un-marshalling tail (#92 slice 3-un-marshal, beads
+-- evm-asm-shtuc)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-frame-design.md` §5 (squaring tail), §6 (cond-mul tail),
+-- and §8 action item 4: every per-iteration MUL call (both the unconditional
+-- squaring and the taken branch of the conditional multiply by base `a`)
+-- ends with the same 9-instruction tail. The MUL output sits at
+-- `x12_loop + 32 .. x12_loop + 56`, but `mul_callable` advanced `x12` by
+-- +32, so from the post-call EVM stack pointer the output is at
+-- `x12 + 0 .. x12 + 24`. We copy it back into the local scratch frame at
+-- `sp + 0 .. sp + 24` (so the next iteration sees `result` updated in
+-- place), then `ADDI .x12 .x12 (-32)` to undo MUL's pop and restore
+-- `x12 := x12_loop` for the next iteration's marshalling.
+--
+-- This helper is the same in both call sites (squaring and cond-mul taken
+-- path), so we factor it out as a single `Program` block. Pure Program
+-- definition; spec lands in the marshalling-spec slice (`evm-asm-mtj3` /
+-- `evm-asm-w5mk` follow-up).
+--
+-- Register usage:
+--   x12 — EVM stack pointer (a2); on entry points at `x12_loop + 32`
+--          (MUL advanced it by +32). The four LDs at offsets +0..+24 read
+--          the MUL output from that window. Final `ADDI .x12 .x12 (-32)`
+--          restores `x12 := x12_loop` for the next iteration.
+--   x2  — sp; read-only (local scratch frame base for `result`). The four
+--          SDs at offsets +0..+24 write the new `result` limbs into the
+--          local frame.
+--   x5  — t0, single-limb load/store temporary; caller-saved per LP64 and
+--          not live across the surrounding marshalling.
+
+/-- Un-marshal MUL output and restore the loop EVM stack pointer.
+    Copies the four limbs of MUL output from the post-call EVM-stack
+    window at `x12 + 0 .. x12 + 24` (= `x12_loop + 32 .. x12_loop + 56`,
+    since `mul_callable` advanced `x12` by +32) back into the local
+    scratch frame at `sp + 0 .. sp + 24`, then advances `x12` by -32 to
+    restore `x12 := x12_loop` for the next iteration. 9 instructions,
+    36 bytes.
+
+    Used by both the squaring tail (`evm-asm-mtj3`) and the
+    conditional-multiply taken-branch tail (`evm-asm-w5mk` follow-up).
+    Pure Program definition; spec lands in the marshalling-spec slice. -/
+def exp_loop_un_marshal_and_restore : Program :=
+  LD .x5 .x12 0 ;;
+  SD .x2 .x5 0 ;;
+  LD .x5 .x12 8 ;;
+  SD .x2 .x5 8 ;;
+  LD .x5 .x12 16 ;;
+  SD .x2 .x5 16 ;;
+  LD .x5 .x12 24 ;;
+  SD .x2 .x5 24 ;;
+  ADDI .x12 .x12 (-32)
+
+theorem exp_loop_un_marshal_and_restore_length :
+    exp_loop_un_marshal_and_restore.length = 9 := by decide
+
+theorem exp_loop_un_marshal_and_restore_byte_length :
+    4 * exp_loop_un_marshal_and_restore.length = 36 := by
+  rw [exp_loop_un_marshal_and_restore_length]
+
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
