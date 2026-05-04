@@ -4,7 +4,6 @@
   Per-limb EQ specs (XOR + OR accumulation).
 -/
 
-import EvmAsm.Evm64.Eq.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

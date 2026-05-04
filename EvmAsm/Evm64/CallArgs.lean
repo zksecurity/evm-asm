@@ -106,6 +106,39 @@ theorem staticcallIsStatic :
 theorem delegatecallPreservesCallerContext :
     preservesCallerContext .delegatecall = true := rfl
 
+/-! ### Classifier ↔ Kind iffs and pairwise mutual exclusions
+
+Cross-predicate lemmas for the three Kind classifiers
+(`hasValueArgument`, `isStatic`, `preservesCallerContext`). Each Kind is
+characterised by exactly one of the predicates being `true`; the iffs make
+that explicit and the pairwise exclusion lemmas let downstream proofs avoid
+re-`cases`-ing on `Kind`. Mirrors the cross-predicate slice on
+`TerminatingArgs` (see `EvmAsm.Evm64.TerminatingArgs`). -/
+
+theorem hasValueArgument_iff_call (kind : Kind) :
+    hasValueArgument kind = true ↔ kind = .call := by
+  cases kind <;> decide
+
+theorem isStatic_iff_staticcall (kind : Kind) :
+    isStatic kind = true ↔ kind = .staticcall := by
+  cases kind <;> decide
+
+theorem preservesCallerContext_iff_delegatecall (kind : Kind) :
+    preservesCallerContext kind = true ↔ kind = .delegatecall := by
+  cases kind <;> decide
+
+theorem hasValueArgument_not_isStatic (kind : Kind)
+    (h : hasValueArgument kind = true) : isStatic kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
+theorem hasValueArgument_not_preservesCallerContext (kind : Kind)
+    (h : hasValueArgument kind = true) : preservesCallerContext kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
+theorem isStatic_not_preservesCallerContext (kind : Kind)
+    (h : isStatic kind = true) : preservesCallerContext kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
 end CallArgs
 
 end EvmAsm.Evm64

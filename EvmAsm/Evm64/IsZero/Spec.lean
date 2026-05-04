@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.IsZero.LimbSpec
+import EvmAsm.Evm64.IsZero.Program
 import EvmAsm.Evm64.EvmWordArith.IsZero
 import EvmAsm.Evm64.Stack
 import EvmAsm.Rv64.Tactics.XSimp

@@ -782,31 +782,6 @@ theorem evm_mod_n4_full_max_skip_stack_pre_spec_within (sp base : Word)
     (fun _ hq => hq)
     hraw
 
-/-- Bundled MOD version mirroring `evm_div_n4_full_max_skip_stack_pre_spec_bundled`:
-    takes the precondition as a single `modN4StackPre` atom. -/
-theorem evm_mod_n4_full_max_skip_stack_pre_spec_bundled_within (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     nMem shiftMem jMem : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hbltu : isMaxTrialN4Evm a b)
-    (hborrow : isSkipBorrowN4MaxEvm a b) :
-    cpsTripleWithin 214 base (base + nopOff) (modCode base)
-      (modN4StackPre sp a b v5 v6 v7 v10 v11
-         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem)
-      (fullModN4MaxSkipPost sp
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) := by
-  have h := evm_mod_n4_full_max_skip_stack_pre_spec_within sp base a b
-    v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    nMem shiftMem jMem hbnz hb3nz hshift_nz hbltu hborrow
-  exact cpsTripleWithin_weaken
-    (fun _ hp => by rw [modN4StackPre_unfold] at hp; exact hp)
-    (fun _ hq => hq)
-    h
-
 -- ============================================================================
 -- Sublemmas towards evm_div_n4_max_skip_stack_spec (reshape plan)
 -- ============================================================================

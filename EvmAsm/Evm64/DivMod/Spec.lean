@@ -28,4 +28,3 @@ import EvmAsm.Evm64.DivMod.Spec.N3ModBridge
 import EvmAsm.Evm64.DivMod.Spec.N3QuotientWord
 import EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.Unified
-import EvmAsm.Evm64.DivMod.Spec.StackDispatcher

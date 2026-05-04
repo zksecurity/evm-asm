@@ -4,7 +4,6 @@
   Per-limb ISZERO spec (OR reduction).
 -/
 
-import EvmAsm.Evm64.IsZero.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 
