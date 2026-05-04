@@ -24,6 +24,7 @@ import EvmAsm.EL.CallOutputBridge
 import EvmAsm.EL.CallValueTransfer
 import EvmAsm.EL.TerminatingArgsBridge
 import EvmAsm.EL.TerminatingCallOutput
+import EvmAsm.EL.TerminatingCallerVisible
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.Block
