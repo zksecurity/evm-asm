@@ -867,43 +867,10 @@ theorem mstore_four_limb_body_sequence_spec_within
   exact mstore_four_limb_sequence_spec_within addrReg byteReg accReg base
     h0Body h1Body h2Body h3Body
 
-/-- Side conditions for one eight-byte MSTORE limb window. The destination
-    byte offsets may cross from `loAddr` into `hiAddr` depending on `start`. -/
-def mstoreLimbWindowOk
-    (addrPtr loAddr hiAddr : Word) (start : Nat)
-    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : Prop :=
-  alignToDword (addrPtr + signExtend12 off0) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 0 ∧
-  isValidByteAccess (addrPtr + signExtend12 off0) = true ∧
-  byteOffset (addrPtr + signExtend12 off0) = (start + 0) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off1) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 1 ∧
-  isValidByteAccess (addrPtr + signExtend12 off1) = true ∧
-  byteOffset (addrPtr + signExtend12 off1) = (start + 1) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off2) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 2 ∧
-  isValidByteAccess (addrPtr + signExtend12 off2) = true ∧
-  byteOffset (addrPtr + signExtend12 off2) = (start + 2) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off3) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 3 ∧
-  isValidByteAccess (addrPtr + signExtend12 off3) = true ∧
-  byteOffset (addrPtr + signExtend12 off3) = (start + 3) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off4) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 4 ∧
-  isValidByteAccess (addrPtr + signExtend12 off4) = true ∧
-  byteOffset (addrPtr + signExtend12 off4) = (start + 4) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off5) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 5 ∧
-  isValidByteAccess (addrPtr + signExtend12 off5) = true ∧
-  byteOffset (addrPtr + signExtend12 off5) = (start + 5) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off6) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 6 ∧
-  isValidByteAccess (addrPtr + signExtend12 off6) = true ∧
-  byteOffset (addrPtr + signExtend12 off6) = (start + 6) % 8 ∧
-  alignToDword (addrPtr + signExtend12 off7) =
-      MStore.mstoreDwordPairAddr loAddr hiAddr start 7 ∧
-  isValidByteAccess (addrPtr + signExtend12 off7) = true ∧
-  byteOffset (addrPtr + signExtend12 off7) = (start + 7) % 8
+/-! `mstoreLimbWindowOk` (the bundled per-byte side-condition predicate for
+    one MSTORE limb window) is defined in
+    `EvmAsm.Evm64.MStore.LimbSpec` so that the base building block
+    `mstore_one_limb_spec_within` can take it as a single hypothesis. -/
 
 theorem mstore_limb0_four_code_spec_within
     (addrReg byteReg accReg : Reg)
@@ -919,20 +886,13 @@ theorem mstore_limb0_four_code_spec_within
         addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal (32 : BitVec 12))
       (mstoreOneLimbPost addrReg byteReg accReg
         addrPtr loVal hiVal loAddr hiAddr sp limbVal start (32 : BitVec 12)) := by
-  obtain ⟨h_align0, h_valid0, h_byte0, h_align1, h_valid1, h_byte1,
-    h_align2, h_valid2, h_byte2, h_align3, h_valid3, h_byte3,
-    h_align4, h_valid4, h_byte4, h_align5, h_valid5, h_byte5,
-    h_align6, h_valid6, h_byte6, h_align7, h_valid7, h_byte7⟩ := hWindow
   have h := cpsTripleWithin_extend_code
     (hmono := mstoreFourLimbsCode_limb0_sub addrReg byteReg accReg base)
     (h := mstore_one_limb_spec_within
       addrReg byteReg accReg addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal
       start (32 : BitVec 12) (24 : BitVec 12) (25 : BitVec 12) (26 : BitVec 12)
       (27 : BitVec 12) (28 : BitVec 12) (29 : BitVec 12) (30 : BitVec 12)
-      (31 : BitVec 12) (base + 8) h_byte_ne_x0 h_acc_ne_x0 h_align0 h_valid0 h_byte0
-      h_align1 h_valid1 h_byte1 h_align2 h_valid2 h_byte2 h_align3 h_valid3 h_byte3
-      h_align4 h_valid4 h_byte4 h_align5 h_valid5 h_byte5 h_align6 h_valid6 h_byte6
-      h_align7 h_valid7 h_byte7)
+      (31 : BitVec 12) (base + 8) h_byte_ne_x0 h_acc_ne_x0 hWindow)
   rw [show (base + 8 : Word) + 68 = base + 76 from by bv_addr] at h
   exact h
 
@@ -950,20 +910,13 @@ theorem mstore_limb1_four_code_spec_within
         addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal (40 : BitVec 12))
       (mstoreOneLimbPost addrReg byteReg accReg
         addrPtr loVal hiVal loAddr hiAddr sp limbVal start (40 : BitVec 12)) := by
-  obtain ⟨h_align0, h_valid0, h_byte0, h_align1, h_valid1, h_byte1,
-    h_align2, h_valid2, h_byte2, h_align3, h_valid3, h_byte3,
-    h_align4, h_valid4, h_byte4, h_align5, h_valid5, h_byte5,
-    h_align6, h_valid6, h_byte6, h_align7, h_valid7, h_byte7⟩ := hWindow
   have h := cpsTripleWithin_extend_code
     (hmono := mstoreFourLimbsCode_limb1_sub addrReg byteReg accReg base)
     (h := mstore_one_limb_spec_within
       addrReg byteReg accReg addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal
       start (40 : BitVec 12) (16 : BitVec 12) (17 : BitVec 12) (18 : BitVec 12)
       (19 : BitVec 12) (20 : BitVec 12) (21 : BitVec 12) (22 : BitVec 12)
-      (23 : BitVec 12) (base + 76) h_byte_ne_x0 h_acc_ne_x0 h_align0 h_valid0 h_byte0
-      h_align1 h_valid1 h_byte1 h_align2 h_valid2 h_byte2 h_align3 h_valid3 h_byte3
-      h_align4 h_valid4 h_byte4 h_align5 h_valid5 h_byte5 h_align6 h_valid6 h_byte6
-      h_align7 h_valid7 h_byte7)
+      (23 : BitVec 12) (base + 76) h_byte_ne_x0 h_acc_ne_x0 hWindow)
   rw [show (base + 76 : Word) + 68 = base + 144 from by bv_addr] at h
   exact h
 
@@ -981,20 +934,13 @@ theorem mstore_limb2_four_code_spec_within
         addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal (48 : BitVec 12))
       (mstoreOneLimbPost addrReg byteReg accReg
         addrPtr loVal hiVal loAddr hiAddr sp limbVal start (48 : BitVec 12)) := by
-  obtain ⟨h_align0, h_valid0, h_byte0, h_align1, h_valid1, h_byte1,
-    h_align2, h_valid2, h_byte2, h_align3, h_valid3, h_byte3,
-    h_align4, h_valid4, h_byte4, h_align5, h_valid5, h_byte5,
-    h_align6, h_valid6, h_byte6, h_align7, h_valid7, h_byte7⟩ := hWindow
   have h := cpsTripleWithin_extend_code
     (hmono := mstoreFourLimbsCode_limb2_sub addrReg byteReg accReg base)
     (h := mstore_one_limb_spec_within
       addrReg byteReg accReg addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal
       start (48 : BitVec 12) (8 : BitVec 12) (9 : BitVec 12) (10 : BitVec 12)
       (11 : BitVec 12) (12 : BitVec 12) (13 : BitVec 12) (14 : BitVec 12)
-      (15 : BitVec 12) (base + 144) h_byte_ne_x0 h_acc_ne_x0 h_align0 h_valid0 h_byte0
-      h_align1 h_valid1 h_byte1 h_align2 h_valid2 h_byte2 h_align3 h_valid3 h_byte3
-      h_align4 h_valid4 h_byte4 h_align5 h_valid5 h_byte5 h_align6 h_valid6 h_byte6
-      h_align7 h_valid7 h_byte7)
+      (15 : BitVec 12) (base + 144) h_byte_ne_x0 h_acc_ne_x0 hWindow)
   rw [show (base + 144 : Word) + 68 = base + 212 from by bv_addr] at h
   exact h
 
@@ -1012,20 +958,13 @@ theorem mstore_limb3_four_code_spec_within
         addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal (56 : BitVec 12))
       (mstoreOneLimbPost addrReg byteReg accReg
         addrPtr loVal hiVal loAddr hiAddr sp limbVal start (56 : BitVec 12)) := by
-  obtain ⟨h_align0, h_valid0, h_byte0, h_align1, h_valid1, h_byte1,
-    h_align2, h_valid2, h_byte2, h_align3, h_valid3, h_byte3,
-    h_align4, h_valid4, h_byte4, h_align5, h_valid5, h_byte5,
-    h_align6, h_valid6, h_byte6, h_align7, h_valid7, h_byte7⟩ := hWindow
   have h := cpsTripleWithin_extend_code
     (hmono := mstoreFourLimbsCode_limb3_sub addrReg byteReg accReg base)
     (h := mstore_one_limb_spec_within
       addrReg byteReg accReg addrPtr byteOld accOld loVal hiVal loAddr hiAddr sp limbVal
       start (56 : BitVec 12) (0 : BitVec 12) (1 : BitVec 12) (2 : BitVec 12)
       (3 : BitVec 12) (4 : BitVec 12) (5 : BitVec 12) (6 : BitVec 12)
-      (7 : BitVec 12) (base + 212) h_byte_ne_x0 h_acc_ne_x0 h_align0 h_valid0 h_byte0
-      h_align1 h_valid1 h_byte1 h_align2 h_valid2 h_byte2 h_align3 h_valid3 h_byte3
-      h_align4 h_valid4 h_byte4 h_align5 h_valid5 h_byte5 h_align6 h_valid6 h_byte6
-      h_align7 h_valid7 h_byte7)
+      (7 : BitVec 12) (base + 212) h_byte_ne_x0 h_acc_ne_x0 hWindow)
   rw [show (base + 212 : Word) + 68 = base + 280 from by bv_addr] at h
   exact h
 
