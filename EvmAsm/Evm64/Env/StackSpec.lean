@@ -69,8 +69,17 @@ private theorem field_offset_add_lt_2048
     the 9-instruction program decrements the EVM SP by 32 (`ADDI x12 x12 -32`)
     and writes the four 64-bit limbs of the field at the new top-of-stack
     cells.  Composed from 9 individual singleton instruction specs via
-    `runBlock`. -/
-theorem evm_env_load_spec_within
+    `runBlock`.
+
+    Note: this is the *raw* form of the spec, parameterised by four
+    arbitrary limb values `v0..v3`, with memory cells at literal
+    `field.offset + {0,8,16,24}` offsets.  It is a private internal
+    helper for the stack-form lift below.  The end-user spec
+    `evm_env_load_spec_within` (in `EvmAsm.Evm64.Env.Spec`) is the
+    `EvmEnv`/`SimpleEnvField`-instantiated form, which is also what
+    `evm_env_load_stack_spec_within` ultimately consumes via
+    `cpsTripleWithin_frameR`. -/
+private theorem evm_env_load_raw_spec_within
     (envBaseReg tmpReg : Reg) (htmp_ne_x0 : tmpReg ≠ .x0)
     (nsp base envAddr tempOld : Word) (field : SimpleEnvField)
     (v0 v1 v2 v3 : Word) (d0 d1 d2 d3 : Word) :
@@ -216,7 +225,7 @@ theorem evm_env_load_stack_spec_within
     (cpsTripleWithin_frameR
       (field.rest envAddr env ** evmStackIs (nsp + 32) rest)
       (pcFree_sepConj (pcFree_rest envAddr field env) pcFree_evmStackIs)
-      (evm_env_load_spec_within envBaseReg tmpReg htmp_ne_x0
+      (evm_env_load_raw_spec_within envBaseReg tmpReg htmp_ne_x0
         nsp base envAddr tempOld field
         ((field.value env).getLimbN 0) ((field.value env).getLimbN 1)
         ((field.value env).getLimbN 2) ((field.value env).getLimbN 3)

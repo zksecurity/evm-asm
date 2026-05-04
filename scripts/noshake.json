@@ -27,6 +27,7 @@
   ["EvmAsm.Rv64.Tactics.PerfTrace", "EvmAsm.Rv64.InstructionSpecs"],
   "EvmAsm.Rv64.Tactics.LiftSpec":
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
+  "EvmAsm.Evm64.SignExtend.Compose": ["EvmAsm.Evm64.EvmWordArith.Common"],
   "EvmAsm.Rv64.AddrNorm": ["EvmAsm.Rv64.AddrNormAttr"],
   "EvmAsm.Rv64.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.RegOpsAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
@@ -37,9 +38,11 @@
   "EvmAsm.Evm64.Exp.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.Tactics.XCancelStruct":
   ["EvmAsm.Rv64.SepLogic"],
-  "EvmAsm.Evm64.Basic":
+ "EvmAsm.Evm64.Basic":
   ["Std.Tactic.BVDecide"],
-  "EvmAsm.Evm64.SpAddr":
+ "EvmAsm.Evm64.MStore.ByteAlg":
+  ["Std.Tactic.BVDecide", "Mathlib.Tactic.IntervalCases"],
+ "EvmAsm.Evm64.SpAddr":
   ["EvmAsm.Rv64.Tactics.SeqFrame"],
   "EvmAsm.Evm64.MSize.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
@@ -136,4 +139,6 @@
  "EvmAsm.Rv64.RLP.Phase2LongLoopFive":  ["EvmAsm.Rv64.RLP.Phase2LongLoopFour"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopSix":   ["EvmAsm.Rv64.RLP.Phase2LongLoopFive"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopSeven": ["EvmAsm.Rv64.RLP.Phase2LongLoopSix"],
- "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"]}}
+ "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"],
+ "EvmAsm.Evm64.EvmWordArith.IsZero": ["EvmAsm.Evm64.EvmWordArith.Common"],
+ "EvmAsm.Evm64.EvmWordArith.Eq": ["EvmAsm.Evm64.EvmWordArith.Common"]}}

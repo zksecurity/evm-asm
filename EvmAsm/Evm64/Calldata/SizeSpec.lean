@@ -10,7 +10,6 @@
 -/
 
 import EvmAsm.Evm64.Calldata.SizeProgram
-import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Stack
 import EvmAsm.Rv64.SyscallSpecs

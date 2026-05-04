@@ -62,6 +62,76 @@ theorem callDataLoadWord_nil (offset : Nat) :
   rw [callDataLoadWord, callDataLoadNat_nil]
   rfl
 
+/-! ### Upper bound on `callDataLoadNat`
+
+The big-endian 32-byte CALLDATALOAD assembly fits in 256 bits.  This is
+the structural ingredient that lets the upcoming RISC-V proof
+(`evm-asm-ugei`, GH #104 slice 4) treat the `BitVec.ofNat 256` wrapper
+in `callDataLoadWord` as essentially a no-op for limb-projection
+reasoning. -/
+
+/-- One folding step preserves the `< 256^k` bucket and grows the bucket
+    by one byte. -/
+private theorem appendByte_lt_pow {acc : Nat} {b : BitVec 8} {k : Nat}
+    (h : acc < 256 ^ k) : appendByte acc b < 256 ^ (k + 1) := by
+  have hb : b.toNat < 256 := b.isLt
+  have hsucc : acc + 1 ≤ 256 ^ k := h
+  have hmul : (acc + 1) * 256 ≤ 256 ^ k * 256 :=
+    Nat.mul_le_mul_right 256 hsucc
+  have hpow : 256 ^ (k + 1) = 256 ^ k * 256 := by
+    rw [Nat.pow_succ]
+  have hexp : (acc + 1) * 256 = acc * 256 + 256 := by
+    rw [Nat.succ_mul]
+  rw [hpow]
+  unfold appendByte
+  omega
+
+/-- Generic byte-fold bound: starting from `acc < 256^k` and folding `n`
+    bytes (any `BitVec 8` source) yields a value `< 256^(k+n)`.  We keep
+    this private; the public statement is the specialization to
+    `callDataLoadNat`. -/
+private theorem foldl_appendByte_lt_pow
+    {α : Type _} (g : α → BitVec 8) :
+    ∀ (xs : List α) (acc k : Nat),
+      acc < 256 ^ k →
+      (xs.foldl (fun a x => appendByte a (g x)) acc) < 256 ^ (k + xs.length)
+  | [], acc, k, h => by simpa using h
+  | x :: xs, acc, k, h => by
+      have hstep : appendByte acc (g x) < 256 ^ (k + 1) :=
+        appendByte_lt_pow h
+      have hrec :=
+        foldl_appendByte_lt_pow g xs (appendByte acc (g x)) (k + 1) hstep
+      have hlen : k + 1 + xs.length = k + (x :: xs).length := by
+        simp [List.length_cons]; omega
+      simpa [List.foldl_cons, hlen] using hrec
+
+/-- The mathematical CALLDATALOAD assembly always fits in 256 bits. -/
+theorem callDataLoadNat_lt (data : List (BitVec 8)) (offset : Nat) :
+    callDataLoadNat data offset < 2 ^ 256 := by
+  have h0 : (0 : Nat) < 256 ^ 0 := by decide
+  have hlen : (List.range 32).length = 32 := List.length_range
+  have hpow : (256 : Nat) ^ 32 = 2 ^ 256 := by decide
+  have hbound :=
+    foldl_appendByte_lt_pow
+      (g := fun i => callDataByte data (offset + i))
+      (List.range 32) 0 0 h0
+  -- hbound : (...).foldl ... 0 < 256 ^ (0 + (List.range 32).length)
+  rw [hlen] at hbound
+  -- hbound : (...).foldl ... 0 < 256 ^ (0 + 32)
+  simp only [Nat.zero_add] at hbound
+  -- hbound : ... < 256 ^ 32
+  unfold callDataLoadNat
+  exact hpow ▸ hbound
+
+/-- Round-trip: as a natural number, the CALLDATALOAD word equals
+    `callDataLoadNat`. Composes `callDataLoadNat_lt` with the BitVec
+    `toNat ∘ ofNat` reduction; downstream limb-projection lemmas use
+    this to skip past the `BitVec.ofNat 256` wrapper. -/
+theorem callDataLoadWord_toNat (data : List (BitVec 8)) (offset : Nat) :
+    (callDataLoadWord data offset).toNat = callDataLoadNat data offset := by
+  unfold callDataLoadWord
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (callDataLoadNat_lt data offset)]
+
 /-! ### CALLDATACOPY pure helper
 
 `callDataCopyBytes data dataOffset size` is the byte sequence that
