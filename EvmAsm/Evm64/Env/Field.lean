@@ -148,6 +148,33 @@ theorem value_callValue (env : EvmEnv) :
 theorem value_selfBalance (env : EvmEnv) :
     value selfBalance env = env.selfBalance := rfl
 
+theorem value_origin (env : EvmEnv) :
+    value origin env = EvmEnv.addrAsWord env.txOrigin := rfl
+
+theorem value_gasPrice (env : EvmEnv) :
+    value gasPrice env = env.gasPrice := rfl
+
+theorem value_coinbase (env : EvmEnv) :
+    value coinbase env = EvmEnv.addrAsWord env.blockCoinbase := rfl
+
+theorem value_timestamp (env : EvmEnv) :
+    value timestamp env = env.blockTimestamp := rfl
+
+theorem value_number (env : EvmEnv) :
+    value number env = env.blockNumber := rfl
+
+theorem value_prevrandao (env : EvmEnv) :
+    value prevrandao env = env.blockPrevrandao := rfl
+
+theorem value_gasLimit (env : EvmEnv) :
+    value gasLimit env = env.blockGasLimit := rfl
+
+theorem value_chainId (env : EvmEnv) :
+    value chainId env = env.chainId := rfl
+
+theorem value_baseFee (env : EvmEnv) :
+    value baseFee env = env.blockBaseFee := rfl
+
 end SimpleEnvField
 
 end Env
