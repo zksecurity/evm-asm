@@ -162,4 +162,12 @@
  "EvmAsm.Rv64.RLP.Phase2LongLoopSeven": ["EvmAsm.Rv64.RLP.Phase2LongLoopSix"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"],
  "EvmAsm.Evm64.EvmWordArith.IsZero": ["EvmAsm.Evm64.EvmWordArith.Common"],
- "EvmAsm.Evm64.EvmWordArith.Eq": ["EvmAsm.Evm64.EvmWordArith.Common"]}}
+ "EvmAsm.Evm64.EvmWordArith.Eq": ["EvmAsm.Evm64.EvmWordArith.Common"],
+ "EvmAsm.Evm64.Env.Spec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.MStore8.Spec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.MLoad.Expansion":
+  ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Calldata.SizeSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"]}}
