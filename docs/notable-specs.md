@@ -241,8 +241,50 @@ re-deriving call semantics in opcode handlers — see also `AGENTS.md` →
 ## Maintenance
 
 - See parent backlog: `evm-asm-prwe` / GH issue tracking forthcoming.
-- Refresh procedure: `git rev-parse origin/main` for the new sha, then for each
-  entry re-confirm the line number with `grep -n '<theorem name>'` against the
-  named file. Replace the pinned sha and line numbers and the date in the
-  top-of-page note.
-- Trigger: refresh when a `#61`-class umbrella closes or quarterly.
+- Trigger: refresh when a `#61`-class umbrella closes or quarterly,
+  whichever comes first.
+
+### Refresh procedure (5 steps)
+
+1. **Survey the spec surface.** Grep for the canonical entry-point names so
+   nothing has been added or renamed since the last refresh:
+
+   ```bash
+   rg -n '@\[stack_spec_' EvmAsm/
+   rg -n 'theorem evm_[a-z_]*_stack_spec' EvmAsm/
+   rg -n 'theorem EvmWord\.[a-z_]*_correct' EvmAsm/
+   ```
+
+   Add an entry to the appropriate section for any name not already listed;
+   delete entries whose underlying theorem is gone.
+
+2. **Capture `file:line` for every entry.** For each theorem name, locate
+   its current declaration site:
+
+   ```bash
+   grep -n '<theorem-name>' EvmAsm/<path>.lean
+   ```
+
+   Record the `path:line` pair — both the alias line and (if separate) the
+   underlying proof-bearing theorem line.
+
+3. **Mint commit-pinned permalinks.** Capture the current upstream sha and
+   build URLs against it:
+
+   ```bash
+   SHA=$(git rev-parse origin/main)
+   gh browse <path>:<line> --commit "$SHA" --no-browser
+   # or directly:
+   echo "https://github.com/Verified-zkEVM/evm-asm/blob/$SHA/<path>#L<line>"
+   ```
+
+   Replace each existing permalink in the table cells with the freshly
+   minted one.
+
+4. **Update the top-of-page pin.** Replace the `Permalinks pinned to commit
+   <sha> on <date>` blockquote near the top with the new sha and today's
+   date.
+
+5. **Verify with `lake build`.** Run `lake build` from the repo root to
+   confirm every referenced declaration still elaborates under the pinned
+   sha. Any rename or relocation discovered here loops back to step 1.

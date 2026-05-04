@@ -165,6 +165,12 @@ Pitfalls:
 - **RISC-V ISA**: https://riscv.org/technical/specifications/
 - **sail-riscv-lean**: https://github.com/opencompl/sail-riscv-lean (same toolchain)
 - **Lean 4 docs**: https://lean-lang.org/documentation/
+- **Notable Specs Index**: [`docs/notable-specs.md`](docs/notable-specs.md) —
+  curated index of proven specifications (per-opcode stack specs, EvmWord
+  correctness theorems, RLP/ByteOps/calling-convention helpers) with
+  commit-pinned permalinks. Use it to find a spec without grepping. Refresh
+  procedure is documented at the bottom of that page; trigger is closure of a
+  `#61`-class umbrella issue, or quarterly.
 
 ## Frame-automation Tactics
 
