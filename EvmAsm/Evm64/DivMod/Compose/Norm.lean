@@ -99,15 +99,6 @@ theorem divK_phaseC2_taken_spec_within (sp shift v2 shiftMem : Word) (base : Wor
     (fun h hq => by xperm_hyp hq)
     hC2
 
-theorem divK_phaseC2_taken_spec (sp shift v2 shiftMem : Word) (base : Word)
-    (hshift_z : shift = 0) :
-    cpsTripleWithin 4 (base + phaseC2Off) (base + copyAUOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 3992) ↦ₘ shiftMem))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
-       (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) :=
-  divK_phaseC2_taken_spec_within sp shift v2 shiftMem base hshift_z
-
 -- ============================================================================
 -- Section 10h: NormB composition (normalize divisor, 21 instructions)
 -- base+228: 3 merge blocks (6 instrs each) + 1 last block (3 instrs)
