@@ -12,6 +12,7 @@ import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.LogCallEffects
 import EvmAsm.EL.Conformance
+import EvmAsm.EL.Conformance.Calldata
 import EvmAsm.EL.WorldState
 import EvmAsm.EL.WorldStateAccount
 import EvmAsm.EL.Storage
