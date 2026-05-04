@@ -78,4 +78,60 @@ theorem rlpAlignedByteWindowOk.mk
   ⟨halign1, halign2, halign3, halign4, halign5, halign6, halign7, halign8,
    hvalid1, hvalid2, hvalid3, hvalid4, hvalid5, hvalid6, hvalid7, hvalid8⟩
 
+/--
+Side conditions for one seven-byte aligned RLP byte window: every byte at
+offsets `0..6` from `ptr` lives in the same doubleword `dwordAddr` and is a
+valid byte access.
+
+Used by `rlp_phase2_long_loop_seven_byte_spec_within` (Phase 2 long-form
+loop, lenLen = 7). Sibling of `rlpAlignedByteWindowOk` (eight-byte form).
+-/
+def rlpAlignedByteWindow7Ok (ptr dwordAddr : Word) : Prop :=
+  alignToDword ptr = dwordAddr ∧
+  alignToDword (ptr + 1) = dwordAddr ∧
+  alignToDword (ptr + 2) = dwordAddr ∧
+  alignToDword (ptr + 3) = dwordAddr ∧
+  alignToDword (ptr + 4) = dwordAddr ∧
+  alignToDword (ptr + 5) = dwordAddr ∧
+  alignToDword (ptr + 6) = dwordAddr ∧
+  isValidByteAccess ptr = true ∧
+  isValidByteAccess (ptr + 1) = true ∧
+  isValidByteAccess (ptr + 2) = true ∧
+  isValidByteAccess (ptr + 3) = true ∧
+  isValidByteAccess (ptr + 4) = true ∧
+  isValidByteAccess (ptr + 5) = true ∧
+  isValidByteAccess (ptr + 6) = true
+
+/-- Constructor wrapper for `rlpAlignedByteWindow7Ok` from the legacy
+    14-argument form. -/
+theorem rlpAlignedByteWindow7Ok.mk
+    {ptr dwordAddr : Word}
+    (halign1 : alignToDword ptr = dwordAddr)
+    (halign2 : alignToDword (ptr + 1) = dwordAddr)
+    (halign3 : alignToDword (ptr + 2) = dwordAddr)
+    (halign4 : alignToDword (ptr + 3) = dwordAddr)
+    (halign5 : alignToDword (ptr + 4) = dwordAddr)
+    (halign6 : alignToDword (ptr + 5) = dwordAddr)
+    (halign7 : alignToDword (ptr + 6) = dwordAddr)
+    (hvalid1 : isValidByteAccess ptr = true)
+    (hvalid2 : isValidByteAccess (ptr + 1) = true)
+    (hvalid3 : isValidByteAccess (ptr + 2) = true)
+    (hvalid4 : isValidByteAccess (ptr + 3) = true)
+    (hvalid5 : isValidByteAccess (ptr + 4) = true)
+    (hvalid6 : isValidByteAccess (ptr + 5) = true)
+    (hvalid7 : isValidByteAccess (ptr + 6) = true) :
+    rlpAlignedByteWindow7Ok ptr dwordAddr :=
+  ⟨halign1, halign2, halign3, halign4, halign5, halign6, halign7,
+   hvalid1, hvalid2, hvalid3, hvalid4, hvalid5, hvalid6, hvalid7⟩
+
+/-- The eight-byte bundle implies the seven-byte bundle by dropping the
+    last conjuncts. Useful when a caller already has the eight-byte form
+    on hand. -/
+theorem rlpAlignedByteWindow7Ok.of_eight
+    {ptr dwordAddr : Word}
+    (h : rlpAlignedByteWindowOk ptr dwordAddr) :
+    rlpAlignedByteWindow7Ok ptr dwordAddr := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, _, h9, h10, h11, h12, h13, h14, h15, _⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h9, h10, h11, h12, h13, h14, h15⟩
+
 end EvmAsm.Rv64.RLP
