@@ -16,6 +16,10 @@
   ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.XPerm":
   ["EvmAsm.Rv64.SepLogic"],
+  "EvmAsm.Rv64.Tactics.XPermPure":
+  ["EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.Tactics.DropPure":
+  ["EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.SeqFrame":
   ["EvmAsm.Rv64.Tactics.PerfTrace", "EvmAsm.Rv64.InstructionSpecs"],
   "EvmAsm.Rv64.Tactics.LiftSpec":
