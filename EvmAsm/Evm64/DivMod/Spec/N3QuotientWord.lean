@@ -63,18 +63,6 @@ theorem fullDivN3_hdivs_of_word_eq
     delta fullDivN3QuotientWord
     exact EvmWord.getLimbN_fromLimbs_3
 
-/-- BitVec extensionality bridge: a `toNat` equality lifts to an `EvmWord`
-    equality. -/
-theorem fullDivN3QuotientWord_eq_div_of_toNat_eq
-    (bltu_1 bltu_0 : Bool)
-    (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hdiv_toNat :
-      (fullDivN3QuotientWord bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3).toNat = (EvmWord.div a b).toNat) :
-    fullDivN3QuotientWord bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3 = EvmWord.div a b :=
-  BitVec.eq_of_toNat_eq hdiv_toNat
-
 /-- The `toNat` of the packed quotient word equals the four-limb
     `EvmWord.val256` of the per-limb results (with top two limbs zero). -/
 theorem fullDivN3QuotientWord_toNat

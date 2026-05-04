@@ -98,18 +98,6 @@ theorem fullModN2_hmods_of_word_eq
     delta fullModN2RemainderWord
     exact EvmWord.getLimbN_fromLimbs_3
 
-/-- BitVec extensionality bridge: a `toNat` equality lifts to an `EvmWord`
-    equality. -/
-theorem fullModN2RemainderWord_eq_mod_of_toNat_eq
-    (bltu_2 bltu_1 bltu_0 : Bool)
-    (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hmod_toNat :
-      (fullModN2RemainderWord bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3).toNat = (EvmWord.mod a b).toNat) :
-    fullModN2RemainderWord bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3 = EvmWord.mod a b :=
-  BitVec.eq_of_toNat_eq hmod_toNat
-
 /-- The `toNat` of the packed remainder word equals the four-limb
     `EvmWord.val256` of the denormalized remainder limbs. -/
 theorem fullModN2RemainderWord_toNat
