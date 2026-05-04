@@ -127,8 +127,8 @@ theorem fullModN2RemainderWord_toNat
 /-- `val256`-equality bridge: if the `EvmWord.val256` of the four
     denormalized remainder limbs equals `a.toNat % b.toNat` (computed via
     `EvmWord.val256` of the inputs), then the `toNat` of the remainder word
-    equals `(EvmWord.mod a b).toNat`. Mirrors
-    `fullModN1RemainderWord_toNat_eq_mod_toNat_of_val256_eq`. -/
+    equals `(EvmWord.mod a b).toNat`. Mirrors the structure of the N=1
+    word-toNat bridge (deleted in cleanup; see git history for prior shape). -/
 theorem fullModN2RemainderWord_toNat_eq_mod_toNat_of_val256_eq
     (bltu_2 bltu_1 bltu_0 : Bool)
     (a b : EvmWord) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
