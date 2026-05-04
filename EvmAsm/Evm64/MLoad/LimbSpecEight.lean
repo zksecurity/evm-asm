@@ -55,6 +55,76 @@ def mloadAlignedLimbWindowOk
   alignToDword (addrPtr + signExtend12 off7) = dwordAddr ∧
   isValidByteAccess (addrPtr + signExtend12 off7) = true
 
+/-- Wrapper assertion combining the canonical aligned-dword ownership cell
+    `dwordAddr ↦ₘ wordVal` with the `mloadAlignedLimbWindowOk` per-byte
+    alignment / validity bundle. Migrating MLOAD consumers from the
+    explicit `h_window` hypothesis to this assertion (slice 3 of
+    evm-asm-8xc6 / GH #2278) lets the consumer signature drop the bundle
+    and recover it on demand from the assertion via the bridge lemmas
+    below. Strategy (b) from evm-asm-928x: the wrapper is MLoad-specific
+    and lives next to its consumers; the core sep-logic primitive
+    `↦ₘ` stays untouched.
+
+    Distinctive token: `mloadAlignedDwordIs-2278`. -/
+def mloadAlignedDwordIs
+    (addrPtr dwordAddr wordVal : Word)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : EvmAsm.Rv64.Assertion :=
+  (dwordAddr ↦ₘ wordVal) **
+    ⌜mloadAlignedLimbWindowOk addrPtr dwordAddr
+        off0 off1 off2 off3 off4 off5 off6 off7⌝
+
+/-- Bridge: extract the `mloadAlignedLimbWindowOk` bundle from a
+    `mloadAlignedDwordIs` witness. Lets consumers that still take the
+    bundle as a hypothesis migrate one call-site at a time without
+    touching their proof body — the new assertion implies the old
+    bundle, so the bundle is recoverable by `obtain` after `rw` of the
+    consumer's pre.
+
+    Distinctive token: `mloadAlignedLimbWindowOk_of_mloadAlignedDwordIs-2278`. -/
+theorem mloadAlignedLimbWindowOk_of_mloadAlignedDwordIs
+    {addrPtr dwordAddr wordVal : Word}
+    {off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12}
+    {s : MachineState}
+    (h : (mloadAlignedDwordIs addrPtr dwordAddr wordVal
+            off0 off1 off2 off3 off4 off5 off6 off7).holdsFor s) :
+    mloadAlignedLimbWindowOk addrPtr dwordAddr
+        off0 off1 off2 off3 off4 off5 off6 off7 := by
+  obtain ⟨h, _hcompat, hP⟩ := h
+  rw [mloadAlignedDwordIs] at hP
+  exact ((sepConj_pure_right h).mp hP).2
+
+/-- Bridge: extract the `↦ₘ` ownership cell from a `mloadAlignedDwordIs`
+    witness. Sibling of `mloadAlignedLimbWindowOk_of_mloadAlignedDwordIs`;
+    together they fully decompose the wrapper. -/
+theorem memIs_of_mloadAlignedDwordIs
+    {addrPtr dwordAddr wordVal : Word}
+    {off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12}
+    {s : MachineState}
+    (h : (mloadAlignedDwordIs addrPtr dwordAddr wordVal
+            off0 off1 off2 off3 off4 off5 off6 off7).holdsFor s) :
+    (dwordAddr ↦ₘ wordVal).holdsFor s := by
+  obtain ⟨h, hcompat, hP⟩ := h
+  rw [mloadAlignedDwordIs] at hP
+  exact ⟨h, hcompat, ((sepConj_pure_right h).mp hP).1⟩
+
+/-- Introduction: pair the `↦ₘ` ownership cell with the
+    `mloadAlignedLimbWindowOk` bundle to obtain the wrapper assertion.
+    Used by call sites that still assemble the wrapper from an explicit
+    bundle hypothesis (during the migration window). -/
+theorem mloadAlignedDwordIs_of_memIs
+    {addrPtr dwordAddr wordVal : Word}
+    {off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12}
+    {s : MachineState}
+    (hMem : (dwordAddr ↦ₘ wordVal).holdsFor s)
+    (hWindow : mloadAlignedLimbWindowOk addrPtr dwordAddr
+        off0 off1 off2 off3 off4 off5 off6 off7) :
+    (mloadAlignedDwordIs addrPtr dwordAddr wordVal
+        off0 off1 off2 off3 off4 off5 off6 off7).holdsFor s := by
+  obtain ⟨h, hcompat, hMem⟩ := hMem
+  refine ⟨h, hcompat, ?_⟩
+  rw [mloadAlignedDwordIs]
+  exact (sepConj_pure_right h).mpr ⟨hMem, hWindow⟩
+
 /-- Bundled CodeReq for `mload_byte_pack_eight_spec_within`: a 22-instruction
     union extending `mloadBytePackSevenCode` with one additional
     `LBU/SLLI/OR` triple at `base + 76 / base + 80 / base + 84` for the
