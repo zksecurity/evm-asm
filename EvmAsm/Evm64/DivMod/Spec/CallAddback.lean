@@ -1,4 +1,3 @@
--- file-size-exception: tracked by #66 / #61 (call-addback BEQ Word-level wrappers + closure are still being filled in; further sub-split deferred until the chain stabilizes).
 /-
   EvmAsm.Evm64.DivMod.Spec.CallAddback
 
