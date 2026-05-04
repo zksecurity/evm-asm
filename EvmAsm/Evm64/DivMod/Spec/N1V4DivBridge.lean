@@ -4,7 +4,6 @@
   v4 n=1 DIV quotient bridges.
 -/
 
-import EvmAsm.Evm64.DivMod.Spec.Dispatcher
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4
 
 namespace EvmAsm.Evm64
