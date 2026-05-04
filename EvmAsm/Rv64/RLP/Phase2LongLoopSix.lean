@@ -13,6 +13,7 @@
   whenever `byteOffset ptr ≤ 2`.
 -/
 
+import EvmAsm.Rv64.RLP.Phase2ByteWindow
 import EvmAsm.Rv64.RLP.Phase2LongLoopFive
 
 namespace EvmAsm.Rv64.RLP
@@ -133,5 +134,37 @@ theorem rlp_phase2_long_loop_six_byte_spec_within
     (fun _ hp => hp)
     (fun h hp => by xperm_hyp hp)
     composed
+
+/-- Bundled-hypothesis form of `rlp_phase2_long_loop_six_byte_spec_within`.
+
+    Takes a single `rlpAlignedByteWindow6Ok ptr dwordAddr` instead of 12
+    separate `halign{1..6}` / `hvalid{1..6}` hypotheses. Mirror of
+    `rlp_phase2_long_loop_seven_byte_spec_within_bundled` (PR #2281) and
+    `rlp_phase2_long_loop_eight_byte_spec_within_bundled` (PR #2276). -/
+theorem rlp_phase2_long_loop_six_byte_spec_within_bundled
+    (len ptr v12Old wordVal dwordAddr : Word)
+    (base : Word) (back : BitVec 13)
+    (hwindow : rlpAlignedByteWindow6Ok ptr dwordAddr)
+    (hback : (base + 20) + signExtend13 back = base) :
+    cpsTripleWithin 36 base (base + 24)
+      (CodeReq.ofProg base (rlp_phase2_long_loop_body_prog back))
+      ((.x11 ↦ᵣ len) ** (.x13 ↦ᵣ ptr) ** (.x14 ↦ᵣ (6 : Word)) **
+       (.x12 ↦ᵣ v12Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (dwordAddr ↦ₘ wordVal))
+      (rlp_phase2_long_loop_six_byte_post len ptr
+        ((extractByte wordVal (byteOffset ptr)).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 1))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 2))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 3))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 4))).zeroExtend 64)
+        ((extractByte wordVal (byteOffset (ptr + 5))).zeroExtend 64)
+        wordVal dwordAddr) := by
+  obtain ⟨halign1, halign2, halign3, halign4, halign5, halign6,
+          hvalid1, hvalid2, hvalid3, hvalid4, hvalid5, hvalid6⟩
+    := hwindow
+  exact rlp_phase2_long_loop_six_byte_spec_within
+    len ptr v12Old wordVal dwordAddr base back
+    halign1 halign2 halign3 halign4 halign5 halign6
+    hvalid1 hvalid2 hvalid3 hvalid4 hvalid5 hvalid6 hback
 
 end EvmAsm.Rv64.RLP
