@@ -90,6 +90,58 @@ theorem addmod_correct (a b N : EvmWord) :
       omega
     exact Nat.mod_eq_of_lt hlt
 
+-- ============================================================================
+-- modAdd: pre-reduced ADDMOD helper
+-- ============================================================================
+--
+-- A specialized variant of `addmod` that assumes both operands are already
+-- reduced modulo `N`, i.e. `a.toNat < N.toNat` and `b.toNat < N.toNat`. Under
+-- this precondition `a.toNat + b.toNat < 2 * N.toNat`, so the modular sum
+-- equals either the sum itself or the sum minus `N` (a single conditional
+-- subtraction). This shape models what the RISC-V `ADDMOD` program emits at
+-- the limb level — a 257-bit add followed by a conditional subtract — without
+-- the full division step that `addmod` would otherwise need to model.
+--
+-- The bridge lemma `modAdd_correct` lets downstream Programs (notably
+-- `evm_addmod`, beads `evm-asm-sord`) reason about the post-condition
+-- `(a + b) mod N` without re-deriving the bound from `addmod_correct` plus
+-- the operand-bound side-conditions. Refs GH #91, beads `evm-asm-539jk`.
+
+/-- Pre-reduced ADDMOD: `(a + b) mod N` assuming `a, b < N`. Distinct from
+    `addmod` in that the precondition rules out the `N = 0` branch, so the
+    result coincides with `BitVec.ofNat 256 ((a.toNat + b.toNat) % N.toNat)`
+    unconditionally. -/
+def modAdd (a b N : EvmWord) : EvmWord :=
+  BitVec.ofNat 256 ((a.toNat + b.toNat) % N.toNat)
+
+/-- Algebraic correctness of `EvmWord.modAdd` under the pre-reduced
+    precondition `a, b < N`: the `BitVec` truncation is a no-op because
+    `(a + b) mod N < N ≤ 2^256`. -/
+theorem modAdd_correct (a b N : EvmWord)
+    (ha : a.toNat < N.toNat) (_hb : b.toNat < N.toNat) :
+    (EvmWord.modAdd a b N).toNat = (a.toNat + b.toNat) % N.toNat := by
+  unfold modAdd
+  rw [BitVec.toNat_ofNat]
+  -- The precondition forces `N.toNat > 0` (since `a.toNat < N.toNat` with
+  -- `a.toNat ≥ 0` implies `N.toNat ≥ 1`), so the mod result is `< N.toNat`,
+  -- hence `< 2^256`, hence already in range.
+  have hNpos : 0 < N.toNat := Nat.lt_of_le_of_lt (Nat.zero_le _) ha
+  have hN : N.toNat < 2 ^ 256 := N.isLt
+  have hlt : (a.toNat + b.toNat) % N.toNat < 2 ^ 256 := by
+    have : (a.toNat + b.toNat) % N.toNat < N.toNat := Nat.mod_lt _ hNpos
+    omega
+  exact Nat.mod_eq_of_lt hlt
+
+/-- `modAdd` agrees with the unconstrained `addmod` whenever `N ≠ 0`: both
+    return `BitVec.ofNat 256 ((a.toNat + b.toNat) % N.toNat)`. This makes
+    `modAdd` a drop-in replacement at call sites that already discharge the
+    pre-reduction bounds, while keeping `addmod` available for the unguarded
+    EVM semantics. -/
+theorem modAdd_eq_addmod_of_ne_zero (a b N : EvmWord) (h : N ≠ 0) :
+    EvmWord.modAdd a b N = EvmWord.addmod a b N := by
+  unfold modAdd addmod
+  rw [if_neg h]
+
 end EvmWord
 
 end EvmAsm.Evm64
