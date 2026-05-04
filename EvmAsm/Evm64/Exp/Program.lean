@@ -350,6 +350,54 @@ theorem exp_epilogue_length : exp_epilogue.length = 9 := by decide
 theorem exp_epilogue_byte_length : 4 * exp_epilogue.length = 36 := by
   rw [exp_epilogue_length]
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration marshalling helpers (#92 slice 3-marshal-factor1, beads
+-- evm-asm-6hue)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-frame-design.md` §5 and §8 action item 1, every
+-- per-iteration MUL call (both the unconditional squaring and the
+-- conditional multiply by base `a`) needs to copy the running accumulator
+-- `result` (held in the local scratch frame at `sp + 0 .. sp + 24`) into
+-- the LP64 MUL factor-1 slot at `x12 + 0 .. x12 + 24`. This is the same
+-- 8-instruction LD/SD chain in both call sites; we factor it out here as a
+-- reusable `Program` so the two marshalling Programs (squaring marshal,
+-- conditional-multiply marshal) can share it.
+--
+-- Register usage:
+--   x2  — sp; read-only (local scratch frame base for `result`).
+--   x12 — EVM stack pointer (a2); pointed at `x12_loop = sp_evm0 + 64`
+--          by the prologue, so writes at offsets +0 .. +24 land in the
+--          factor-1 slot disjoint from the operand region (`sp_evm0 + 0
+--          .. + 56`).
+--   x5  — t0, single-limb temporary; caller-saved per LP64 and not live
+--          across the surrounding marshalling.
+
+/-- Copy the four limbs of `result` from the local scratch frame at
+    `sp + 0 .. sp + 24` into the LP64 MUL factor-1 slot at
+    `x12 + 0 .. x12 + 24`. 8 instructions, 32 bytes.
+
+    Used by both the squaring marshal (where factor-1 = factor-2 = result)
+    and the conditional-multiply marshal (where factor-1 = result and
+    factor-2 = a). Pure Program definition; spec lands in the
+    marshalling-spec slice (evm-asm-mtj3 / evm-asm-w5mk follow-up). -/
+def exp_loop_marshal_factor1 : Program :=
+  LD .x5 .x2 0 ;;
+  SD .x12 .x5 0 ;;
+  LD .x5 .x2 8 ;;
+  SD .x12 .x5 8 ;;
+  LD .x5 .x2 16 ;;
+  SD .x12 .x5 16 ;;
+  LD .x5 .x2 24 ;;
+  SD .x12 .x5 24
+
+theorem exp_loop_marshal_factor1_length :
+    exp_loop_marshal_factor1.length = 8 := by decide
+
+theorem exp_loop_marshal_factor1_byte_length :
+    4 * exp_loop_marshal_factor1.length = 32 := by
+  rw [exp_loop_marshal_factor1_length]
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
