@@ -10,6 +10,7 @@
   semantic slice (evm-asm-6snn).
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Exp.Compose.Base
 import EvmAsm.Evm64.EvmWordArith.Exp
 import EvmAsm.Rv64.Tactics.XSimp

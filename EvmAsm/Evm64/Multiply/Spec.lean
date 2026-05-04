@@ -14,6 +14,7 @@
 -/
 
 -- `Multiply.LimbSpec → Multiply.Program → Stack`.
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Multiply.LimbSpec
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.EvmWordArith.MulCorrect

@@ -9,6 +9,7 @@
   Authored by @pirapira; implemented by Codex.
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.MLoad.LimbSpecEight
 import EvmAsm.Evm64.Stack
 

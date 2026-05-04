@@ -9,6 +9,7 @@
 -/
 
 -- `Shift.ShlCompose` transitively imports `Evm64.SpAddr`.
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Shift.ShlCompose
 
 open EvmAsm.Rv64.Tactics

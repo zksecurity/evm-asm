@@ -23,6 +23,7 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Multiply.Spec
 import EvmAsm.Evm64.CallingConvention
 
