@@ -19,7 +19,6 @@
     - val256_denorm_eq_val256_mod_of_overestimate
     - denorm_limbN_eq_mod_of_overestimate
     - denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
-    - denorm_4limb_to_evmWordIs_eq
     - denorm_limbN_eq_mod_of_overestimate_getLimbN
 -/
 
@@ -420,36 +419,6 @@ theorem denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_1
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_2
   · rw [← hr]; exact EvmWord.getLimbN_fromLimbs_3
-
-/-- **Memory-equation form of the val256-denormalize fold** (CLOSED).
-
-    Direct drop-in helper for adapter parents needing to fold the four
-    `↦ₘ` limb writes at `sp+32..sp+56` into `evmWordIs (sp+32) (EvmWord.mod a b)`.
-    Composes `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` with
-    `evmWordIs_sp32_limbs_eq.symm` internally — bypasses the form-
-    mismatch issues that arise when adapter callers try to chain these
-    manually. -/
-theorem denorm_4limb_to_evmWordIs_eq
-    {a b : EvmWord} (sp : Word) {X1 X2 X3 X4 : Word}
-    {s : Nat} (hs0 : 0 < s) (hs : s < 64)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (h_val_eq : val256 X1 X2 X3 X4 =
-      val256 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3) %
-        val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) * 2 ^ s) :
-    (((sp + 32) ↦ₘ ((X1 >>> s) ||| (X2 <<< (64 - s)))) **
-     ((sp + 40) ↦ₘ ((X2 >>> s) ||| (X3 <<< (64 - s)))) **
-     ((sp + 48) ↦ₘ ((X3 >>> s) ||| (X4 <<< (64 - s)))) **
-     ((sp + 56) ↦ₘ (X4 >>> s))) =
-    evmWordIs (sp + 32) (EvmWord.mod a b) := by
-  have h_denorm := denorm_4limb_eq_mod_of_val256_eq_amod_pow_s
-    (a := a) (b := b) (X1 := X1) (X2 := X2) (X3 := X3) (X4 := X4)
-    hs0 hs hb3nz h_val_eq
-  exact (evmWordIs_sp32_limbs_eq sp (EvmWord.mod a b)
-    ((X1 >>> s) ||| (X2 <<< (64 - s)))
-    ((X2 >>> s) ||| (X3 <<< (64 - s)))
-    ((X3 >>> s) ||| (X4 <<< (64 - s)))
-    (X4 >>> s)
-    h_denorm.1 h_denorm.2.1 h_denorm.2.2.1 h_denorm.2.2.2).symm
 
 /-- **Generic per-limb denorm→mod bridge at EvmWord level.**
 
