@@ -100,6 +100,7 @@ import EvmAsm.Evm64.PrecompileDispatch
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
 import EvmAsm.Evm64.LogGas
+import EvmAsm.Evm64.TerminatingGas
 import EvmAsm.Evm64.EvmState
 import EvmAsm.Evm64.Termination
 import EvmAsm.Evm64.MSize
