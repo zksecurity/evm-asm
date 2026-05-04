@@ -437,6 +437,76 @@ theorem mload_byte_pack_eight_spec_within
   -- The final code-req shape is `mloadBytePackEightCode = seven.union triple`.
   exact cpsTripleWithin_seq hd_step sevenRaw step
 
+/-- Local structural rule used by the `…_via_assertion_spec_within` migration
+    (slice 3 of `evm-asm-8xc6` / GH #2278). Lifts a fact-parameterised
+    triple `fact → cpsTripleWithin … P Q` to one whose precondition bundles
+    the fact as a pure conjunct: `cpsTripleWithin … (P ** ⌜fact⌝) Q`.
+    Symmetric counterpart of `cpsTripleWithin_strip_pure_and_convert`
+    (which strips a fact while letting only the postcondition depend on
+    it). Kept private here while only one consumer family uses it. -/
+private theorem cpsTripleWithin_of_pure_imp
+    {nSteps : Nat} {entry exit_ : Word} {cr : CodeReq}
+    {P Q : Assertion} {fact : Prop}
+    (h : fact → cpsTripleWithin nSteps entry exit_ cr P Q) :
+    cpsTripleWithin nSteps entry exit_ cr (P ** ⌜fact⌝) Q := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, hpq⟩ := hPR
+  obtain ⟨h1, h2, hd, hunion, hPF, hR_⟩ := hpq
+  have hpf := (sepConj_pure_right h1).1 hPF
+  exact h hpf.2 R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd, hunion, hpf.1, hR_⟩ hpc
+
+/-- Migration sibling of `mload_byte_pack_eight_spec_within` that takes the
+    new `mloadAlignedDwordIs` wrapper assertion (PR #2284) in its
+    precondition instead of an explicit `h_window` hypothesis. The
+    `mloadAlignedLimbWindowOk` bundle is now bundled into the assertion via
+    `⌜·⌝`, and the canonical `dwordAddr ↦ₘ wordVal` cell from the original
+    pre is replaced by the wrapper. Proved by reducing to the original
+    spec via AC-rewrite of the precondition followed by
+    `cpsTripleWithin_of_pure_imp` to peel the bundled fact and feed it as
+    `h_window` to the original spec.
+
+    First consumer-family migration of slice 3 of `evm-asm-8xc6`
+    (GH #2278). Distinctive token:
+    `mloadAlignedLimbWindowOk-consumer-migration-2278 byte_pack_eight via_assertion`. -/
+theorem mload_byte_pack_eight_via_assertion_spec_within
+    (addrReg byteReg accReg : Reg)
+    (addrPtr accOld byteOld wordVal : Word)
+    (dwordAddr : Word)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0  : accReg  ≠ .x0) :
+    cpsTripleWithin 22 base (base + 88)
+      (mloadBytePackEightCode addrReg byteReg accReg
+        off0 off1 off2 off3 off4 off5 off6 off7 base)
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+       (mloadAlignedDwordIs addrPtr dwordAddr wordVal
+          off0 off1 off2 off3 off4 off5 off6 off7))
+      (mloadBytePackEightPost addrReg byteReg accReg
+        addrPtr wordVal dwordAddr off0 off1 off2 off3 off4 off5 off6 off7) := by
+  unfold mloadAlignedDwordIs
+  -- AC-rearrange the precondition into `<original-pre> ** ⌜fact⌝` shape so
+  -- `cpsTripleWithin_of_pure_imp` can peel the bundled `mloadAligned-
+  -- LimbWindowOk` fact.
+  have hpre_eq :
+      ((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+        ((dwordAddr ↦ₘ wordVal) **
+          ⌜mloadAlignedLimbWindowOk addrPtr dwordAddr
+              off0 off1 off2 off3 off4 off5 off6 off7⌝)) =
+      (((addrReg ↦ᵣ addrPtr) ** (byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (dwordAddr ↦ₘ wordVal)) **
+        ⌜mloadAlignedLimbWindowOk addrPtr dwordAddr
+            off0 off1 off2 off3 off4 off5 off6 off7⌝) := by
+    ac_rfl
+  rw [hpre_eq]
+  refine cpsTripleWithin_of_pure_imp (fun h_window => ?_)
+  have base_spec := mload_byte_pack_eight_spec_within addrReg byteReg accReg
+    addrPtr accOld byteOld wordVal dwordAddr
+    off0 off1 off2 off3 off4 off5 off6 off7 base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  rw [mloadBytePackEightPre_unfold] at base_spec
+  exact base_spec
+
 /-! ## One-limb spec (8-byte byte-pack + final SD)
 
 Composes `mload_byte_pack_eight_spec_within` (22 instructions covering
