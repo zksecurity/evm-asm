@@ -26,6 +26,35 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+/-- Side conditions for one eight-byte aligned MLOAD source window: the eight
+    byte addresses `addrPtr + signExtend12 offᵢ` (i = 0..7) all align to the
+    same `dwordAddr` and are valid byte accesses. Bundling the 16 per-byte
+    facts (alignment + validity for each of `i = 0..7`) avoids 16-parameter
+    lemma signatures in the aligned byte-pack composition layer.
+
+    Aligned analog of `MLoad.Spec.mloadLimbWindowOk` (which threads the
+    unaligned `loAddr/hiAddr/start` shape and additionally tracks
+    `byteOffset`); see evm-asm-yrz5 / evm-asm-jb8a. -/
+def mloadAlignedLimbWindowOk
+    (addrPtr dwordAddr : Word)
+    (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) : Prop :=
+  alignToDword (addrPtr + signExtend12 off0) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off0) = true ∧
+  alignToDword (addrPtr + signExtend12 off1) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off1) = true ∧
+  alignToDword (addrPtr + signExtend12 off2) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off2) = true ∧
+  alignToDword (addrPtr + signExtend12 off3) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off3) = true ∧
+  alignToDword (addrPtr + signExtend12 off4) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off4) = true ∧
+  alignToDword (addrPtr + signExtend12 off5) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off5) = true ∧
+  alignToDword (addrPtr + signExtend12 off6) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off6) = true ∧
+  alignToDword (addrPtr + signExtend12 off7) = dwordAddr ∧
+  isValidByteAccess (addrPtr + signExtend12 off7) = true
+
 /-- Bundled CodeReq for `mload_byte_pack_eight_spec_within`: a 22-instruction
     union extending `mloadBytePackSevenCode` with one additional
     `LBU/SLLI/OR` triple at `base + 76 / base + 80 / base + 84` for the
@@ -211,22 +240,8 @@ theorem mload_byte_pack_eight_spec_within
     (off0 off1 off2 off3 off4 off5 off6 off7 : BitVec 12) (base : Word)
     (h_byte_ne_x0 : byteReg ≠ .x0)
     (h_acc_ne_x0  : accReg  ≠ .x0)
-    (h_align0 : alignToDword (addrPtr + signExtend12 off0) = dwordAddr)
-    (h_valid0 : isValidByteAccess (addrPtr + signExtend12 off0) = true)
-    (h_align1 : alignToDword (addrPtr + signExtend12 off1) = dwordAddr)
-    (h_valid1 : isValidByteAccess (addrPtr + signExtend12 off1) = true)
-    (h_align2 : alignToDword (addrPtr + signExtend12 off2) = dwordAddr)
-    (h_valid2 : isValidByteAccess (addrPtr + signExtend12 off2) = true)
-    (h_align3 : alignToDword (addrPtr + signExtend12 off3) = dwordAddr)
-    (h_valid3 : isValidByteAccess (addrPtr + signExtend12 off3) = true)
-    (h_align4 : alignToDword (addrPtr + signExtend12 off4) = dwordAddr)
-    (h_valid4 : isValidByteAccess (addrPtr + signExtend12 off4) = true)
-    (h_align5 : alignToDword (addrPtr + signExtend12 off5) = dwordAddr)
-    (h_valid5 : isValidByteAccess (addrPtr + signExtend12 off5) = true)
-    (h_align6 : alignToDword (addrPtr + signExtend12 off6) = dwordAddr)
-    (h_valid6 : isValidByteAccess (addrPtr + signExtend12 off6) = true)
-    (h_align7 : alignToDword (addrPtr + signExtend12 off7) = dwordAddr)
-    (h_valid7 : isValidByteAccess (addrPtr + signExtend12 off7) = true) :
+    (h_window : mloadAlignedLimbWindowOk addrPtr dwordAddr
+      off0 off1 off2 off3 off4 off5 off6 off7) :
     cpsTripleWithin 22 base (base + 88)
       (mloadBytePackEightCode addrReg byteReg accReg
         off0 off1 off2 off3 off4 off5 off6 off7 base)
@@ -234,6 +249,9 @@ theorem mload_byte_pack_eight_spec_within
         addrPtr accOld byteOld wordVal dwordAddr)
       (mloadBytePackEightPost addrReg byteReg accReg
         addrPtr wordVal dwordAddr off0 off1 off2 off3 off4 off5 off6 off7) := by
+  obtain ⟨h_align0, h_valid0, h_align1, h_valid1, h_align2, h_valid2,
+          h_align3, h_valid3, h_align4, h_valid4, h_align5, h_valid5,
+          h_align6, h_valid6, h_align7, h_valid7⟩ := h_window
   rw [mloadBytePackEightPre_unfold, mloadBytePackEightPost_unfold]
   set b0 :=
     (extractByte wordVal (byteOffset (addrPtr + signExtend12 off0))).zeroExtend 64
@@ -579,22 +597,8 @@ theorem mload_one_limb_spec_within
     (off0 off1 off2 off3 off4 off5 off6 off7 dstOff : BitVec 12) (base : Word)
     (h_byte_ne_x0 : byteReg ≠ .x0)
     (h_acc_ne_x0  : accReg  ≠ .x0)
-    (h_align0 : alignToDword (addrPtr + signExtend12 off0) = dwordAddr)
-    (h_valid0 : isValidByteAccess (addrPtr + signExtend12 off0) = true)
-    (h_align1 : alignToDword (addrPtr + signExtend12 off1) = dwordAddr)
-    (h_valid1 : isValidByteAccess (addrPtr + signExtend12 off1) = true)
-    (h_align2 : alignToDword (addrPtr + signExtend12 off2) = dwordAddr)
-    (h_valid2 : isValidByteAccess (addrPtr + signExtend12 off2) = true)
-    (h_align3 : alignToDword (addrPtr + signExtend12 off3) = dwordAddr)
-    (h_valid3 : isValidByteAccess (addrPtr + signExtend12 off3) = true)
-    (h_align4 : alignToDword (addrPtr + signExtend12 off4) = dwordAddr)
-    (h_valid4 : isValidByteAccess (addrPtr + signExtend12 off4) = true)
-    (h_align5 : alignToDword (addrPtr + signExtend12 off5) = dwordAddr)
-    (h_valid5 : isValidByteAccess (addrPtr + signExtend12 off5) = true)
-    (h_align6 : alignToDword (addrPtr + signExtend12 off6) = dwordAddr)
-    (h_valid6 : isValidByteAccess (addrPtr + signExtend12 off6) = true)
-    (h_align7 : alignToDword (addrPtr + signExtend12 off7) = dwordAddr)
-    (h_valid7 : isValidByteAccess (addrPtr + signExtend12 off7) = true) :
+    (h_window : mloadAlignedLimbWindowOk addrPtr dwordAddr
+      off0 off1 off2 off3 off4 off5 off6 off7) :
     cpsTripleWithin 23 base (base + 92)
       (mloadOneLimbCode addrReg byteReg accReg
         off0 off1 off2 off3 off4 off5 off6 off7 dstOff base)
@@ -636,9 +640,7 @@ theorem mload_one_limb_spec_within
   have eight := mload_byte_pack_eight_spec_within addrReg byteReg accReg
     addrPtr accOld byteOld wordVal dwordAddr
     off0 off1 off2 off3 off4 off5 off6 off7 base
-    h_byte_ne_x0 h_acc_ne_x0
-    h_align0 h_valid0 h_align1 h_valid1 h_align2 h_valid2 h_align3 h_valid3
-    h_align4 h_valid4 h_align5 h_valid5 h_align6 h_valid6 h_align7 h_valid7
+    h_byte_ne_x0 h_acc_ne_x0 h_window
   rw [mloadBytePackEightPre_unfold, mloadBytePackEightPost_unfold] at eight
   -- Step 2: SD spec at `base + 88` with rs1 = .x12, rs2 = accReg.
   have sd := generic_sd_spec_within (.x12 : Reg) accReg sp accFinal dstWordOld
