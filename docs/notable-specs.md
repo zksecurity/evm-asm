@@ -10,10 +10,10 @@ find a spec without grepping; refresh the permalinks when files move.
 > re-run `git rev-parse origin/main` and `grep -n` for each declaration name,
 > then update the line numbers below.
 
-This index is split by area. The DivMod stack-spec surface, EL/RLP, and
-Rv64 infrastructure sections are populated; the remaining `## Other Evm64
-opcode stack specs` and `## EvmWord arithmetic correctness` sections are
-landed by a separate slice (PR #2242).
+This index is split by area. Slice 1 landed the page skeleton plus the DivMod
+stack-spec surface. Slice 2 (this update) adds the non-DivMod Evm64 opcode
+stack specs and the `EvmWord` arithmetic correctness theorems, alongside the
+already-populated EL/RLP and Rv64 infrastructure sections.
 
 ---
 
@@ -93,6 +93,7 @@ states the stack pre/post over `evmStackIs`, and bounds the step count.
 | `evm_add_stack_spec_within` | [`Add/Spec.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Add/Spec.lean#L73) | ADD: top two stack words → low-256 sum. |
 | `evm_sub_stack_spec_within` | [`Sub/Spec.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Sub/Spec.lean#L73) | SUB: a − b mod 2^256. |
 | `evm_mul_stack_spec_within` | [`Multiply/Spec.lean#L90`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Multiply/Spec.lean#L90) | MUL: low-256 product. |
+| `evm_mul_stack_spec_within_layout` | [`Multiply/Layout.lean#L86`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Multiply/Layout.lean#L86) | MUL with explicit scratch layout exposed to callers. |
 | `evm_and_stack_spec_within` | [`And/Spec.lean#L53`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/And/Spec.lean#L53) | AND: bitwise conjunction. |
 | `evm_or_stack_spec_within`  | [`Or/Spec.lean#L41`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Or/Spec.lean#L41) | OR: bitwise disjunction. |
 | `evm_xor_stack_spec_within` | [`Xor/Spec.lean#L41`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Xor/Spec.lean#L41) | XOR: bitwise xor. |
@@ -126,6 +127,7 @@ states the stack pre/post over `evmStackIs`, and bounds the step count.
 | `evm_push_zero_slot_full_stack_spec_within` | [`Push/Spec.lean#L199`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/Push/Spec.lean#L199) | PUSH1..32 (full word, four-limb composition). |
 | `evm_msize_stack_spec_within` | [`MSize/Spec.lean#L138`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/MSize/Spec.lean#L138) | MSIZE: push current memory size in bytes. |
 | `evm_mstore8_stack_spec_within` | [`MStore8/Spec.lean#L139`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/MStore8/Spec.lean#L139) | MSTORE8: write the low byte at memory[offset]. |
+| `evm_mstore8_stack_spec_clean_sp_within` | [`MStore8/Spec.lean#L219`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/MStore8/Spec.lean#L219) | MSTORE8 variant that exposes the post-stack-pointer cleanup explicitly. |
 
 > MLOAD / MSTORE stack specs are tracked under #102 / #99 and not yet
 > landed; this section will be extended as those PRs merge.
@@ -141,6 +143,7 @@ ultimately reduces to in the post-condition.
 | `add_carry_chain_correct`  | [`EvmWordArith/Arithmetic.lean#L61`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/Arithmetic.lean#L61)  | 4-limb carry-chain adder = `EvmWord` addition mod 2^256. |
 | `sub_borrow_chain_correct` | [`EvmWordArith/Arithmetic.lean#L241`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/Arithmetic.lean#L241) | 4-limb borrow-chain subtractor = `EvmWord` subtraction. |
 | `mul_correct`              | [`EvmWordArith/MulCorrect.lean#L492`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/MulCorrect.lean#L492) | 4×4 limb mul (low 256 bits) = `EvmWord` multiplication. |
+| `mul_correct_limb0` / `_limb1` / `_limb2` / `_limb3` | [`EvmWordArith/MulCorrect.lean#L84`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/MulCorrect.lean#L84) | Per-output-limb correctness lemmas feeding `mul_correct`. |
 | `div_correct`              | [`EvmWordArith/DivCorrect.lean#L15`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivCorrect.lean#L15) | `EvmWord.div a b` matches integer division (with EVM b=0 → 0 convention). |
 | `mod_correct`              | [`EvmWordArith/DivCorrect.lean#L26`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivCorrect.lean#L26) | `EvmWord.mod a b` matches integer remainder (with b=0 → 0). |
 | `exp_correct`              | [`EvmWordArith/Exp.lean#L19`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/Exp.lean#L19) | `EvmWord.exp` matches `base ^ exponent` mod 2^256. |
@@ -149,6 +152,17 @@ ultimately reduces to in the post-condition.
 | `eq_xor_or_reduce_correct` | [`EvmWordArith/Eq.lean#L19`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/Eq.lean#L19) | xor-then-or-reduce equals `BEq` on `EvmWord`. |
 | `iszero_or_reduce_correct` | [`EvmWordArith/IsZero.lean#L19`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/IsZero.lean#L19) | or-reduce of all four limbs equals `iszero`. |
 | `byte_correct`             | [`EvmWordArith/ByteOps.lean#L133`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/ByteOps.lean#L133) | per-byte select matches the EVM `BYTE` opcode semantics. |
+| `byte_extract_correct`     | [`EvmWordArith/ByteOps.lean#L68`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/ByteOps.lean#L68) | Selecting byte index `i < 32` from `x` returns the spec-level byte. |
+
+> _DivMod internal correctness._ The intermediate `div_correct_n{1,2,3,4}_no_shift`,
+> `div_correct_normalized` / `mod_correct_normalized`, and `n4_max_*` /
+> `mulsub_*_correct` lemmas in
+> [`DivAccumulate.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivAccumulate.lean),
+> [`DivN4DoubleAddback.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivN4DoubleAddback.lean),
+> [`DivN4Overestimate.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivN4Overestimate.lean),
+> and [`DivRemainderBound.lean`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/EvmWordArith/DivRemainderBound.lean)
+> are not indexed individually — they are private to the DivMod proof tree
+> and consumers should use `div_correct` / `mod_correct` instead.
 
 ## EL / RLP
 
