@@ -10,7 +10,7 @@
   file-size guardrail.
 -/
 
-import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq
+import EvmAsm.Evm64.DivMod.SpecPredicates
 
 namespace EvmAsm.Evm64
 
