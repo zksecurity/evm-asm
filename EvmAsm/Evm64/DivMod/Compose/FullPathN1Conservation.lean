@@ -49,13 +49,6 @@ theorem n1StepRemainderVal_mul_base
   unfold EvmWord.val256
   ring
 
-theorem n1StepTopVal_mul_base4
-    (out : Word × Word × Word × Word × Word × Word) :
-    let B := 2^64
-    n1StepTopVal out * B^4 = out.2.2.2.2.2.toNat * 2^256 := by
-  intro B
-  delta n1StepTopVal
-  norm_num
 
 @[irreducible]
 def n1StepConservationNat
@@ -86,15 +79,6 @@ theorem n1StepConservation_remainder_le_input
   delta n1StepRemainderVal
   omega
 
-theorem n1StepConservation_remainder_lt_of_input_lt
-    (v0 v1 v2 u0 u1 u2 u3 uTop : Word)
-    (out : Word × Word × Word × Word × Word × Word) {bound : Nat}
-    (h : n1StepConservation v0 v1 v2 u0 u1 u2 u3 uTop out)
-    (hinput : EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 < bound) :
-    n1StepRemainderVal out < bound := by
-  have hle := n1StepConservation_remainder_le_input
-    v0 v1 v2 u0 u1 u2 u3 uTop out h
-  omega
 
 theorem n1StepExtendedRemainder_lt_of_floor_le
     (v0 v1 v2 u0 u1 u2 u3 uTop : Word)
@@ -350,81 +334,9 @@ def fullDivN1CorrectedTrialVal
   (qHat3.toNat - 2) * B^3 + (qHat2.toNat - 2) * B^2 +
     (qHat1.toNat - 2) * B + (qHat0.toNat - 2)
 
-theorem fullDivN1QuotientVal_eq_val256
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    fullDivN1QuotientVal bltu_3 bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3 =
-      EvmWord.val256
-        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1
-        (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).1 := by
-  delta fullDivN1QuotientVal
-  unfold EvmWord.val256
-  ring
 
-theorem fullDivN1TrialBranches_of_isTrial
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
-    (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
-    (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
-    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) :
-    let v := fullDivN1NormV b0 b1 b2 b3
-    let u := fullDivN1NormU a0 a1 a2 a3 b0
-    let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-    let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-    let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-    bltu_3 = BitVec.ult u.2.2.2.2 v.1 ∧
-      bltu_2 = BitVec.ult r3.2.1 v.1 ∧
-      bltu_1 = BitVec.ult r2.2.1 v.1 ∧
-      bltu_0 = BitVec.ult r1.2.1 v.1 := by
-  intro v u r3 r2 r1
-  subst v; subst u; subst r3; subst r2; subst r1
-  constructor
-  · delta isTrialN1_j3 fullDivN1NormU fullDivN1NormV
-      fullDivN1Shift fullDivN1AntiShift at hbltu_3 ⊢
-    simpa using hbltu_3
-  constructor
-  · delta isTrialN1_j2 fullDivN1R3 fullDivN1NormU fullDivN1NormV
-      fullDivN1Shift fullDivN1AntiShift at hbltu_2 ⊢
-    simpa using hbltu_2
-  constructor
-  · delta isTrialN1_j1 fullDivN1R2 fullDivN1R3 fullDivN1NormU fullDivN1NormV
-      fullDivN1Shift fullDivN1AntiShift at hbltu_1 ⊢
-    simpa using hbltu_1
-  · delta isTrialN1_j0 fullDivN1R1 fullDivN1R2 fullDivN1R3 fullDivN1NormU
-      fullDivN1NormV fullDivN1Shift fullDivN1AntiShift at hbltu_0 ⊢
-    simpa using hbltu_0
 
-theorem fullDivN1NormV_shape_of_high_zero
-    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) (hshift_nz : fullDivN1Shift b0 ≠ 0) :
-    let v := fullDivN1NormV b0 b1 b2 b3
-    v.2.1 = 0 ∧ v.2.2.1 = 0 ∧ v.2.2.2 = 0 ∧
-      v.1 ||| v.2.1 ||| v.2.2.1 ||| v.2.2.2 ≠ 0 := by
-  intro v
-  subst v
-  exact ⟨
-    fullDivN1NormV_v1_eq_zero_of_high_zero b0 b1 b2 b3 hb1z hshift_nz,
-    fullDivN1NormV_v2_eq_zero_of_high_zero b0 b1 b2 b3 hb1z hb2z,
-    fullDivN1NormV_v3_eq_zero_of_high_zero b0 b1 b2 b3 hb3z hb2z,
-    fullDivN1NormV_or_ne_zero_of_high_zero b0 b1 b2 b3 hb1z hb2z hb3z hbnz⟩
 
-theorem fullDivN1NormV_val256_eq_v0_of_high_zero
-    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0) :
-    let v := fullDivN1NormV b0 b1 b2 b3
-    EvmWord.val256 v.1 v.2.1 v.2.2.1 v.2.2.2 = v.1.toNat := by
-  intro v
-  have hv1 := fullDivN1NormV_v1_eq_zero_of_high_zero b0 b1 b2 b3 hb1z hshift_nz
-  have hv2 := fullDivN1NormV_v2_eq_zero_of_high_zero b0 b1 b2 b3 hb1z hb2z
-  have hv3 := fullDivN1NormV_v3_eq_zero_of_high_zero b0 b1 b2 b3 hb3z hb2z
-  subst v
-  rw [hv1, hv2, hv3]
-  unfold EvmWord.val256
-  simp
 
 theorem iterN1_rawTrial_ge_local_floor_of_top_lt_pow63
     (bltu : Bool) (v0 u0 uTop : Word)
@@ -445,43 +357,6 @@ theorem iterN1_rawTrial_ge_local_floor_of_top_lt_pow63
   · simp only [if_true]
     exact div128Quot_ge_q_true_normalized uTop u0 v0 hv0_ge huTop_lt_v0 huTop_lt_pow63
 
-theorem fullDivN1R3_rawTrial_ge_local_floor
-    (bltu_3 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0)
-    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0) :
-    let v := fullDivN1NormV b0 b1 b2 b3
-    let u := fullDivN1NormU a0 a1 a2 a3 b0
-    let qHat : Word := if bltu_3 then div128Quot u.2.2.2.2 u.2.2.2.1 v.1
-      else signExtend12 4095
-    (u.2.2.2.2.toNat * 2^64 + u.2.2.2.1.toNat) / v.1.toNat ≤ qHat.toNat := by
-  intro v u qHat
-  subst v
-  subst u
-  subst qHat
-  have hv0_ge : ((fullDivN1NormV b0 b1 b2 b3).1).toNat ≥ 2^63 :=
-    fullDivN1NormV_v0_ge_pow63_of_high_zero b0 b1 b2 b3 hb1z hb2z hb3z hbnz
-  have h_shift_pos : 1 ≤ (fullDivN1Shift b0).toNat :=
-    fullDivN1Shift_toNat_pos_of_ne_zero hshift_nz
-  have h_shift_le : (fullDivN1Shift b0).toNat ≤ 63 := by
-    have hlt := fullDivN1Shift_toNat_lt_64 b0
-    omega
-  have huTop_lt_pow63 : ((fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2).toNat <
-      2^63 := by
-    rw [fullDivN1NormU_unfold]
-    simp only []
-    rw [fullDivN1AntiShift_unfold]
-    exact u_top_lt_pow63_of_shift_nz a3 (fullDivN1Shift b0) h_shift_pos
-      h_shift_le
-  exact iterN1_rawTrial_ge_local_floor_of_top_lt_pow63 bltu_3
-    (fullDivN1NormV b0 b1 b2 b3).1
-    (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
-    (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
-    hv0_ge huTop_lt_pow63 (by
-      delta isTrialN1_j3 at hbltu_3
-      simpa [fullDivN1NormU_unfold, fullDivN1NormV_unfold,
-        fullDivN1Shift_unfold, fullDivN1AntiShift_unfold] using hbltu_3)
 
 theorem iterWithDoubleAddback_qout_ge_sub_two
     (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) (hq2 : 2 ≤ q.toNat) :
@@ -817,47 +692,6 @@ theorem div_mul_pow_mul_pow_eq_div (a b s : Nat) :
     (a * 2^s) / (b * 2^s) = a / b :=
   Nat.mul_div_mul_right a b (by positivity : 0 < 2^s)
 
-theorem fullDivN1QuotientVal_le_div_of_telescoped
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0)
-    (htel : fullDivN1StepsTelescoped bltu_3 bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3) :
-    fullDivN1QuotientVal bltu_3 bltu_2 bltu_1 bltu_0
-        a0 a1 a2 a3 b0 b1 b2 b3 ≤
-      EvmWord.val256 a0 a1 a2 a3 / EvmWord.val256 b0 b1 b2 b3 := by
-  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-  let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-  let qVal := r3.1.toNat * (2^64)^3 + r2.1.toNat * (2^64)^2 +
-    r1.1.toNat * (2^64) + r0.1.toNat
-  have hv3z := fullDivN1NormV_v3_eq_zero_of_high_zero b0 b1 b2 b3 hb3z hb2z
-  have hnormu := fullDivN1NormU_val256_eq_scaled_with_overflow
-    a0 a1 a2 a3 b0 hshift_nz
-  have hnormv := fullDivN1NormV_val256_eq_scaled b0 b1 b2 b3 hb3z hshift_nz
-  have heq : EvmWord.val256 a0 a1 a2 a3 * 2 ^ ((fullDivN1Shift b0).toNat % 64) =
-      qVal * (EvmWord.val256 b0 b1 b2 b3 * 2 ^ ((fullDivN1Shift b0).toNat % 64)) +
-        (n1StepRemainderVal r0 + n1StepsCarryVal r3 r2 r1 r0) := by
-    delta fullDivN1StepsTelescoped n1StepsTelescoped at htel
-    dsimp only at htel
-    rw [← hnormu]
-    rw [← hnormv]
-    rw [hv3z]
-    simp only [qVal, r0, r1, r2, r3]
-    norm_num at htel ⊢
-    omega
-  have hb_pos : 0 < EvmWord.val256 b0 b1 b2 b3 *
-      2 ^ ((fullDivN1Shift b0).toNat % 64) := by
-    have hb : 0 < EvmWord.val256 b0 b1 b2 b3 := EvmWord.val256_pos_of_or_ne_zero hbnz
-    positivity
-  have hq_le := EvmWord.quotient_le_of_euclidean hb_pos heq
-  rw [div_mul_pow_mul_pow_eq_div] at hq_le
-  delta fullDivN1QuotientVal
-  simp only [qVal, r0, r1, r2, r3] at hq_le ⊢
-  exact hq_le
 
 theorem fullDivN1ExtendedRemainder_lt_of_telescoped_quotient_le
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
