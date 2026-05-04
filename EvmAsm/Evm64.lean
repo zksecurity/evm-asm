@@ -71,6 +71,8 @@ import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
 import EvmAsm.Evm64.Env.Program
 import EvmAsm.Evm64.Env.Spec
+import EvmAsm.Evm64.Env.StackSpec
+import EvmAsm.Evm64.Env.Wrappers
 import EvmAsm.Evm64.CallArgs
 import EvmAsm.Evm64.LogArgs
 
