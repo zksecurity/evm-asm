@@ -42,6 +42,8 @@
   ["Std.Tactic.BVDecide"],
  "EvmAsm.Evm64.CodeRegion":
   ["EvmAsm.Evm64.Basic", "EvmAsm.Rv64.ByteOps", "Mathlib.Tactic.Ring"],
+ "EvmAsm.Evm64.Memory":
+  ["EvmAsm.Rv64.ByteOps"],
  "EvmAsm.Evm64.MStore.ByteAlg":
   ["Std.Tactic.BVDecide", "Mathlib.Tactic.IntervalCases"],
  "EvmAsm.Evm64.SpAddr":
@@ -173,4 +175,6 @@
  "EvmAsm.Evm64.MLoad.Expansion":
   ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Calldata.SizeSpec":
-  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"]}}
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+ "EvmAsm.Evm64.Push.Spec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"]}}
