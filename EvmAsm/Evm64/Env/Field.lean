@@ -175,6 +175,58 @@ theorem value_chainId (env : EvmEnv) :
 theorem value_baseFee (env : EvmEnv) :
     value baseFee env = env.blockBaseFee := rfl
 
+/-! ## Parameterized rotate-to-head unifier (slice 5b — `evm-asm-ku3u`)
+
+  The 13 per-field `EvmEnv.envIs_<field>_split` lemmas all share the
+  same shape — they rotate one cell of `envIs base env` to the head and
+  expose the remainder as a named `def`. This block bundles the residual
+  `def`s under `SimpleEnvField.rest` and the rotation lemmas under a
+  single parameterized `envIs_split`, so callers (slice 5
+  `evm_env_load_stack_spec`) can frame on whichever field the program is
+  parameterized over without a 13-way `cases` of their own.
+-/
+
+/-- The residual `envIs` cells after the cell named by `field` is rotated
+    to the head of the sepConj chain. Matches the existing per-field
+    `envIs<Field>Rest` definitions in `Environment/Assertion.lean`. -/
+def rest (base : Word) (env : EvmEnv) : SimpleEnvField → Assertion
+  | address => EvmEnv.envIsAddressRest base env
+  | caller => EvmEnv.envIsCallerRest base env
+  | callValue => EvmEnv.envIsCallValueRest base env
+  | origin => EvmEnv.envIsTxOriginRest base env
+  | gasPrice => EvmEnv.envIsGasPriceRest base env
+  | coinbase => EvmEnv.envIsBlockCoinbaseRest base env
+  | timestamp => EvmEnv.envIsBlockTimestampRest base env
+  | number => EvmEnv.envIsBlockNumberRest base env
+  | prevrandao => EvmEnv.envIsBlockPrevrandaoRest base env
+  | gasLimit => EvmEnv.envIsBlockGasLimitRest base env
+  | chainId => EvmEnv.envIsChainIdRest base env
+  | baseFee => EvmEnv.envIsBlockBaseFeeRest base env
+  | selfBalance => EvmEnv.envIsSelfBalanceRest base env
+
+/-- Parameterized rotate-to-head split for `envIs base env`. Subsumes
+    the 13 individual `EvmEnv.envIs_<field>_split` lemmas: any opcode
+    handler that frames on a single env field can `rw [envIs_split]`
+    once with the field its program is parameterized over and obtain
+    `(cellIs base field env ** field.rest base env)`. -/
+theorem envIs_split (base : Word) (field : SimpleEnvField) (env : EvmEnv) :
+    EvmEnv.envIs base env =
+      (cellIs base field env ** field.rest base env) := by
+  cases field
+  · exact EvmEnv.envIs_address_split base env
+  · exact EvmEnv.envIs_caller_split base env
+  · exact EvmEnv.envIs_callValue_split base env
+  · exact EvmEnv.envIs_origin_split base env
+  · exact EvmEnv.envIs_gasPrice_split base env
+  · exact EvmEnv.envIs_coinbase_split base env
+  · exact EvmEnv.envIs_timestamp_split base env
+  · exact EvmEnv.envIs_number_split base env
+  · exact EvmEnv.envIs_prevrandao_split base env
+  · exact EvmEnv.envIs_gasLimit_split base env
+  · exact EvmEnv.envIs_chainId_split base env
+  · exact EvmEnv.envIs_baseFee_split base env
+  · exact EvmEnv.envIs_selfBalance_split base env
+
 end SimpleEnvField
 
 end Env
