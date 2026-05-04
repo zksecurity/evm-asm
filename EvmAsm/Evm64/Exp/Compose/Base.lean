@@ -9,6 +9,7 @@
   definitions will be added in the loop-composition slice (evm-asm-w5mk).
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.AddrNorm
 

@@ -10,6 +10,7 @@
 -/
 -- file-size-exception: temporary bridge-file overage; split tracked by evm-asm-qgjp.
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.MLoad.LimbSpecEight
 
 namespace EvmAsm.Evm64

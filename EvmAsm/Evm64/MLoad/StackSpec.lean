@@ -4,6 +4,7 @@
   Stack-level bridge helpers for MLOAD.
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.MLoad.Spec
 
 namespace EvmAsm.Evm64

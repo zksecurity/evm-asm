@@ -10,6 +10,7 @@
   gets exactly one cpsTriple lemma.
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Exp.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.XSimp

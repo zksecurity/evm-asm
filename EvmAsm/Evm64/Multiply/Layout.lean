@@ -27,6 +27,7 @@
   abstraction is purely additive. See §7 of the design doc.
 -/
 
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Multiply.Spec
 
 namespace EvmAsm.Evm64
