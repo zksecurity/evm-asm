@@ -445,6 +445,57 @@ theorem exp_loop_marshal_result_to_factor2_byte_length :
     4 * exp_loop_marshal_result_to_factor2.length = 32 := by
   rw [exp_loop_marshal_result_to_factor2_length]
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration marshalling helpers (#92 slice 3-marshal-a-to-factor2,
+-- beads evm-asm-18wt)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-frame-design.md` §8 action item 3, the
+-- conditional-multiply step copies the EVM-stack base operand `a` (held in
+-- the slot `x12 + (-64) .. x12 + (-40)` — i.e. the original `a` window
+-- that survives below the loop's working `x12 = x12_loop = sp_evm0 + 64`)
+-- into the LP64 MUL factor-2 slot at `x12 + 32 .. x12 + 56`. This block
+-- mirrors `exp_loop_marshal_factor1` / `exp_loop_marshal_result_to_factor2`
+-- line for line, only with the LD source offsets shifted to negative
+-- signed 12-bit immediates addressing the saved `a` window.
+--
+-- Register usage:
+--   x12 — EVM stack pointer (a2); pointed at `x12_loop = sp_evm0 + 64`
+--          by the prologue. LDs at offsets -64..-40 read the original
+--          `a` operand; SDs at offsets +32..+56 write the factor-2
+--          window. Both windows are disjoint from the operand region
+--          (`sp_evm0 + 0 .. + 56`) at the time the `cond_mul`
+--          marshalling runs.
+--   x5  — t0, single-limb temporary; caller-saved per LP64 and not live
+--          across the surrounding marshalling.
+
+/-- Copy the four limbs of EVM-stack base operand `a` from
+    `x12 + (-64) .. x12 + (-40)` into the LP64 MUL factor-2 slot at
+    `x12 + 32 .. x12 + 56`. 8 instructions, 32 bytes.
+
+    Used by the conditional-multiply marshalling sequence (where
+    factor-1 = `result` and factor-2 = `a`); runs immediately after
+    `exp_loop_marshal_factor1` to populate the second operand slot
+    before the JAL into `mul_callable`. Pure Program definition; spec
+    lands in the marshalling-spec slice (evm-asm-mtj3 / evm-asm-w5mk
+    follow-up). -/
+def exp_loop_marshal_a_to_factor2 : Program :=
+  LD .x5 .x12 (-64) ;;
+  SD .x12 .x5 32 ;;
+  LD .x5 .x12 (-56) ;;
+  SD .x12 .x5 40 ;;
+  LD .x5 .x12 (-48) ;;
+  SD .x12 .x5 48 ;;
+  LD .x5 .x12 (-40) ;;
+  SD .x12 .x5 56
+
+theorem exp_loop_marshal_a_to_factor2_length :
+    exp_loop_marshal_a_to_factor2.length = 8 := by decide
+
+theorem exp_loop_marshal_a_to_factor2_byte_length :
+    4 * exp_loop_marshal_a_to_factor2.length = 32 := by
+  rw [exp_loop_marshal_a_to_factor2_length]
+
 
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
