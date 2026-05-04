@@ -67,6 +67,53 @@ theorem topicCountOk_log4
   exact topicCountOk_of_logArgs .log4 emitter data
     { data := range, topics := [topic0, topic1, topic2, topic3] } rfl
 
+/--
+Append a log entry built from `LogArgs` to a `LogState`, bundling
+`mkLogEntry` with `LogState.appendLog`. Mirrors how
+`TerminatingArgsBridge.mkReturnResult` / `mkRevertResult` package the
+bridge output for downstream consumers.
+-/
+def appendLogFromArgs
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) : LogState :=
+  logs.appendLog (mkLogEntry emitter data args)
+
+@[simp] theorem appendLogFromArgs_entries
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) :
+    (appendLogFromArgs logs emitter data args).entries =
+      logs.entries ++ [mkLogEntry emitter data args] := rfl
+
+theorem appendLogFromArgs_length
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) :
+    (appendLogFromArgs logs emitter data args).entries.length =
+      logs.entries.length + 1 := by
+  simp [appendLogFromArgs]
+
+theorem appendLogFromArgs_emitter
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) :
+    ((appendLogFromArgs logs emitter data args).entries.getLast
+        (by simp [appendLogFromArgs, LogState.appendLog])).emitter = emitter := by
+  simp [appendLogFromArgs, LogState.appendLog, mkLogEntry, LogEntry.mkChecked]
+
+theorem appendLogFromArgs_data
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) :
+    ((appendLogFromArgs logs emitter data args).entries.getLast
+        (by simp [appendLogFromArgs, LogState.appendLog])).data = data := by
+  simp [appendLogFromArgs, LogState.appendLog, mkLogEntry, LogEntry.mkChecked]
+
+theorem appendLogFromArgs_topics
+    (logs : LogState) (emitter : Address) (data : List Byte) (args : LogArgs) :
+    ((appendLogFromArgs logs emitter data args).entries.getLast
+        (by simp [appendLogFromArgs, LogState.appendLog])).topics = topics args := by
+  simp [appendLogFromArgs, LogState.appendLog, mkLogEntry, LogEntry.mkChecked]
+
+theorem topicCountOk_appended
+    (logs : LogState) (kind : LogKind) (emitter : Address) (data : List Byte)
+    (args : LogArgs) (h_topics : EvmAsm.Evm64.LogArgs.topicCountOk kind args) :
+    ((appendLogFromArgs logs emitter data args).entries.getLast
+        (by simp [appendLogFromArgs, LogState.appendLog])).topicCountOk := by
+  simpa [appendLogFromArgs, LogState.appendLog] using
+    topicCountOk_of_logArgs kind emitter data args h_topics
+
 end LogArgsBridge
 
 end EvmAsm.EL
