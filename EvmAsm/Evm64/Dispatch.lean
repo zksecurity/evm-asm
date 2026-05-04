@@ -39,9 +39,22 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x1b => some SHL
   | 0x1c => some SHR
   | 0x1d => some SAR
+  | 0x30 => some ADDRESS
+  | 0x32 => some ORIGIN
+  | 0x33 => some CALLER
+  | 0x34 => some CALLVALUE
   | 0x35 => some CALLDATALOAD
   | 0x36 => some CALLDATASIZE
   | 0x37 => some CALLDATACOPY
+  | 0x3a => some GASPRICE
+  | 0x41 => some COINBASE
+  | 0x42 => some TIMESTAMP
+  | 0x43 => some NUMBER
+  | 0x44 => some PREVRANDAO
+  | 0x45 => some GASLIMIT
+  | 0x46 => some CHAINID
+  | 0x47 => some SELFBALANCE
+  | 0x48 => some BASEFEE
   | 0x50 => some POP
   | 0x51 => some MLOAD
   | 0x52 => some MSTORE
@@ -125,9 +138,22 @@ def modeledByte (b : Nat) : Prop :=
 theorem decodeByte?_ADD : decodeByte? 0x01 = some ADD := rfl
 theorem decodeByte?_STOP : decodeByte? 0x00 = some STOP := rfl
 theorem decodeByte?_EXP : decodeByte? 0x0a = some EXP := rfl
+theorem decodeByte?_ADDRESS : decodeByte? 0x30 = some ADDRESS := rfl
+theorem decodeByte?_ORIGIN : decodeByte? 0x32 = some ORIGIN := rfl
+theorem decodeByte?_CALLER : decodeByte? 0x33 = some CALLER := rfl
+theorem decodeByte?_CALLVALUE : decodeByte? 0x34 = some CALLVALUE := rfl
 theorem decodeByte?_CALLDATALOAD : decodeByte? 0x35 = some CALLDATALOAD := rfl
 theorem decodeByte?_CALLDATASIZE : decodeByte? 0x36 = some CALLDATASIZE := rfl
 theorem decodeByte?_CALLDATACOPY : decodeByte? 0x37 = some CALLDATACOPY := rfl
+theorem decodeByte?_GASPRICE : decodeByte? 0x3a = some GASPRICE := rfl
+theorem decodeByte?_COINBASE : decodeByte? 0x41 = some COINBASE := rfl
+theorem decodeByte?_TIMESTAMP : decodeByte? 0x42 = some TIMESTAMP := rfl
+theorem decodeByte?_NUMBER : decodeByte? 0x43 = some NUMBER := rfl
+theorem decodeByte?_PREVRANDAO : decodeByte? 0x44 = some PREVRANDAO := rfl
+theorem decodeByte?_GASLIMIT : decodeByte? 0x45 = some GASLIMIT := rfl
+theorem decodeByte?_CHAINID : decodeByte? 0x46 = some CHAINID := rfl
+theorem decodeByte?_SELFBALANCE : decodeByte? 0x47 = some SELFBALANCE := rfl
+theorem decodeByte?_BASEFEE : decodeByte? 0x48 = some BASEFEE := rfl
 theorem decodeByte?_MLOAD : decodeByte? 0x51 = some MLOAD := rfl
 theorem decodeByte?_PUSH0 : decodeByte? 0x5f = some PUSH0 := rfl
 theorem decodeByte?_PUSH1 : decodeByte? 0x60 = some (PUSH 1) := rfl
@@ -182,6 +208,58 @@ theorem byte?_roundtrip_REVERT :
 
 theorem byte?_roundtrip_INVALID :
     byte? INVALID = some 0xfe ∧ decodeByte? 0xfe = some INVALID := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_ADDRESS :
+    byte? ADDRESS = some 0x30 ∧ decodeByte? 0x30 = some ADDRESS := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_ORIGIN :
+    byte? ORIGIN = some 0x32 ∧ decodeByte? 0x32 = some ORIGIN := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_CALLER :
+    byte? CALLER = some 0x33 ∧ decodeByte? 0x33 = some CALLER := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_CALLVALUE :
+    byte? CALLVALUE = some 0x34 ∧ decodeByte? 0x34 = some CALLVALUE := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_GASPRICE :
+    byte? GASPRICE = some 0x3a ∧ decodeByte? 0x3a = some GASPRICE := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_COINBASE :
+    byte? COINBASE = some 0x41 ∧ decodeByte? 0x41 = some COINBASE := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_TIMESTAMP :
+    byte? TIMESTAMP = some 0x42 ∧ decodeByte? 0x42 = some TIMESTAMP := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_NUMBER :
+    byte? NUMBER = some 0x43 ∧ decodeByte? 0x43 = some NUMBER := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_PREVRANDAO :
+    byte? PREVRANDAO = some 0x44 ∧ decodeByte? 0x44 = some PREVRANDAO := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_GASLIMIT :
+    byte? GASLIMIT = some 0x45 ∧ decodeByte? 0x45 = some GASLIMIT := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_CHAINID :
+    byte? CHAINID = some 0x46 ∧ decodeByte? 0x46 = some CHAINID := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_SELFBALANCE :
+    byte? SELFBALANCE = some 0x47 ∧ decodeByte? 0x47 = some SELFBALANCE := by
+  exact ⟨rfl, rfl⟩
+
+theorem byte?_roundtrip_BASEFEE :
+    byte? BASEFEE = some 0x48 ∧ decodeByte? 0x48 = some BASEFEE := by
   exact ⟨rfl, rfl⟩
 
 end EvmOpcode
