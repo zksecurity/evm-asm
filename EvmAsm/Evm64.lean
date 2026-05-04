@@ -78,6 +78,7 @@ import EvmAsm.Evm64.Env.Spec
 import EvmAsm.Evm64.Env.StackSpec
 import EvmAsm.Evm64.Env.Wrappers
 import EvmAsm.Evm64.CallArgs
+import EvmAsm.Evm64.CreateArgs
 import EvmAsm.Evm64.LogArgs
 import EvmAsm.Evm64.TerminatingArgs
 
