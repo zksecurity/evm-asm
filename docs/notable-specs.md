@@ -25,6 +25,18 @@ downstream verifiers — when proving a higher-level property, prefer the alias
 over the underlying `_word_uni` / `_dispatch_uni` theorem so a future bound
 relaxation propagates automatically.
 
+### Unified case-split specs (single theorem per opcode)
+
+The monolithic stack specs that case-split internally on the dispatcher
+branch certificate (`DivStackSpecCase` / `ModStackSpecCase`). Prefer these
+when proving a higher-level property that does not need to mention the
+specific path — the dispatcher branch is hidden behind the certificate.
+
+| Theorem | Defined at | Pre / Post (plain English) |
+|---|---|---|
+| [`evm_div_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L482) | `Spec/Unified.lean:482` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : DivStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.div a b` under `evmWordIs`, all framed memory and registers preserved per `divStackDispatchPost`. |
+| [`evm_mod_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/7c5da808888e612c2d77be99afae07e3a7f90807/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L813) | `Spec/Unified.lean:813` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : ModStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.mod a b` under `evmWordIs`, all framed memory and registers preserved per `modStackDispatchPost`. |
+
 ### Dispatcher aliases
 
 Defined in
