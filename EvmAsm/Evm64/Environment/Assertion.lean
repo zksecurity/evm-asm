@@ -520,5 +520,37 @@ theorem envIs_baseFee_split (base : Word) (env : EvmEnv) :
   unfold envIsBlockBaseFeeRest
   ac_rfl
 
+/-- Remaining 16 env-field cells after the `callDataLen` cell is rotated
+    to the head. Used by `CALLDATASIZE` (slice 3 of `evm-asm-xjk8` /
+    `evm-asm-8mp7`) to frame on the single 64-bit length cell while
+    keeping ownership of every other env field. -/
+def envIsCallDataLenRest (base : Word) (env : EvmEnv) : Assertion :=
+  evmWordIs (base + BitVec.ofNat 64 addressOff)         (addrAsWord env.address) **
+  evmWordIs (base + BitVec.ofNat 64 selfBalanceOff)     env.selfBalance **
+  evmWordIs (base + BitVec.ofNat 64 callerOff)          (addrAsWord env.caller) **
+  evmWordIs (base + BitVec.ofNat 64 callValueOff)       env.callValue **
+  evmWordIs (base + BitVec.ofNat 64 txOriginOff)        (addrAsWord env.txOrigin) **
+  evmWordIs (base + BitVec.ofNat 64 gasPriceOff)        env.gasPrice **
+  evmWordIs (base + BitVec.ofNat 64 blockCoinbaseOff)   (addrAsWord env.blockCoinbase) **
+  evmWordIs (base + BitVec.ofNat 64 blockTimestampOff)  env.blockTimestamp **
+  evmWordIs (base + BitVec.ofNat 64 blockNumberOff)     env.blockNumber **
+  evmWordIs (base + BitVec.ofNat 64 blockPrevrandaoOff) env.blockPrevrandao **
+  evmWordIs (base + BitVec.ofNat 64 blockGasLimitOff)   env.blockGasLimit **
+  evmWordIs (base + BitVec.ofNat 64 blockBaseFeeOff)    env.blockBaseFee **
+  evmWordIs (base + BitVec.ofNat 64 chainIdOff)         env.chainId **
+  ((base + BitVec.ofNat 64 callDataPtrOff)    ↦ₘ env.callDataPtr) **
+  ((base + BitVec.ofNat 64 returnDataPtrOff)  ↦ₘ env.returnDataPtr) **
+  ((base + BitVec.ofNat 64 returnDataSizeOff) ↦ₘ env.returnDataSize)
+
+/-- Rotate the `callDataLen` cell to the head. Mirror of
+    `envIs_caller_split` for the `CALLDATASIZE` opcode. -/
+theorem envIs_callDataLen_split (base : Word) (env : EvmEnv) :
+    envIs base env =
+      (((base + BitVec.ofNat 64 callDataLenOff) ↦ₘ env.callDataLen) **
+        envIsCallDataLenRest base env) := by
+  rw [envIs_unfold]
+  unfold envIsCallDataLenRest
+  ac_rfl
+
 end EvmEnv
 end EvmAsm.Evm64
