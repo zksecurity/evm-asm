@@ -8,8 +8,6 @@
   Contents:
   - `c3_n_eq_u4_plus_one_of_single_addback` — sub-stub closing
     `c3_n = u4 + 1` under single-addback.
-  - `algCallAddbackBeqMsC3_eq_u4_plus_one_of_single_addback` —
-    irreducible-bundle wrapper.
   - `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback` —
     irreducible-bundle wrapper for the post1-val identity.
 -/
@@ -306,34 +304,6 @@ theorem c3_n_eq_u4_plus_one_of_single_addback (a b : EvmWord)
     (val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3))
     ((clzResult (b.getLimbN 3)).1.toNat % 64) u4.toNat ms.2.2.2.2.toNat
     h_mulsub h_addback h_u4_le h_post1_lt h_amod_pow_lt' h_u4_lt_c3
-
-/-- **Wrapper: c3 = u4 + 1 in single-addback (irreducible-form).**
-
-    Wraps `c3_n_eq_u4_plus_one_of_single_addback` to take its hypothesis
-    in irreducible-bundle form (`algCallAddbackBeqCarry a b ≠ 0`), avoiding
-    the deep let-chain elaboration cost at the call site. The conclusion
-    is also stated in irreducible form for symmetry.
-
-    Internally unfolds the irreducible defs and applies the closed sub-stub.
-    Caller should provide hb3nz, hshift_nz, hborrow, hsem, and the
-    irreducible-form hcarry_nz. -/
-theorem algCallAddbackBeqMsC3_eq_u4_plus_one_of_single_addback
-    (a b : EvmWord)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hborrow : isAddbackBorrowN4CallEvm a b)
-    (hsem : n4CallAddbackBeqSemanticHolds a b)
-    (hcarry_nz : algCallAddbackBeqCarry a b ≠ 0) :
-    (algCallAddbackBeqMsC3 a b).toNat = (algCallAddbackBeqU4 a b).toNat + 1 := by
-  -- Unfold the irreducible defs to get the let-chain forms.
-  show _ = _
-  rw [show (algCallAddbackBeqMsC3 a b).toNat = _ from by
-        unfold algCallAddbackBeqMsC3; rfl,
-      show (algCallAddbackBeqU4 a b).toNat = _ from by
-        unfold algCallAddbackBeqU4; rfl]
-  rw [algCallAddbackBeqCarry_unfold] at hcarry_nz
-  exact c3_n_eq_u4_plus_one_of_single_addback a b hb3nz hshift_nz hborrow hsem hcarry_nz
-
 
 /-- **Wrapper: post1Val = a%b * 2^s in single-addback (irreducible-form)** (CLOSED).
 
