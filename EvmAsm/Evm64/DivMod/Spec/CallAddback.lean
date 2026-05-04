@@ -932,41 +932,6 @@ theorem div128Quot_v2_phase1_div_invariant_under_runtime (a b : EvmWord)
       exact div128Quot_v2_phase1_div_invariant_overshoot_2_sub a b
         _hb3nz _hshift_nz _hbltu _hcarry2_nz _hborrow_v2 h_eq
 
-theorem div128Quot_v2_knuth_A_under_runtime (a b : EvmWord)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hbltu : isCallTrialN4Evm a b)
-    (hcarry2_nz : isAddbackCarry2NzN4CallEvm a b)
-    (hborrow_v2 : isAddbackBorrowN4CallEvm_v2 a b) :
-    let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
-    let antiShift :=
-      (signExtend12 (0 : BitVec 12) - (clzResult (b.getLimbN 3)).1).toNat % 64
-    let u4 := (a.getLimbN 3) >>> antiShift
-    let un3 := ((a.getLimbN 3) <<< shift) ||| ((a.getLimbN 2) >>> antiShift)
-    let b3' := ((b.getLimbN 3) <<< shift) ||| ((b.getLimbN 2) >>> antiShift)
-    let dHi := b3' >>> (32 : BitVec 6).toNat
-    let dLo := (b3' <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := un3 >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu u4 dHi
-    let rhat := u4 - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let qDlo := q1c * dLo
-    let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-    let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
-    let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
-    -- Knuth-A v2: q1'' is at least the true Phase-1 quotient.
-    q1''.toNat ≥ (u4.toNat * 2^32 + div_un1.toNat) / (dHi.toNat * 2^32 + dLo.toNat) := by
-  -- From the invariant `q1'' = floor(x/vTop)`, Knuth-A v2 (q1'' ≥ floor(x/vTop))
-  -- follows trivially by `Nat.le_of_eq` (in fact, equality holds).
-  intro shift antiShift u4 un3 b3' dHi dLo div_un1 q1 rhat hi1 q1c rhatc qDlo
-        rhatUn1 q1' rhat' q1''
-  have h_inv := div128Quot_v2_phase1_div_invariant_under_runtime a b hb3nz hshift_nz
-    hbltu hcarry2_nz hborrow_v2
-  simp only [] at h_inv
-  exact Nat.le_of_eq h_inv.symm
 
 theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
     n4CallAddbackBeqSemanticHolds a b =
