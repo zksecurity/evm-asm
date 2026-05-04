@@ -7,6 +7,7 @@
 
 -- `Eq.LimbSpec → Eq.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Eq.LimbSpec
+import EvmAsm.Evm64.Eq.Program
 import EvmAsm.Evm64.EvmWordArith.Eq
 import EvmAsm.Evm64.Stack
 import EvmAsm.Rv64.Tactics.XSimp
