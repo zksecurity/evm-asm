@@ -13,17 +13,6 @@
 
   Uses public helpers from `LoopBody.lean`:
   - `lb_sub`
-
-  **v2 migration plan (issue #1337):** This spec uses the buggy v1
-  `div128_spec` (with `divK_div128`). Once `n4CallAddbackBeqSemanticHolds_v2_of_call_addback_beq`
-  is closed (path 3 chain — see `EvmAsm/Evm64/DivMod/SpecCallAddbackBeq.lean`),
-  a parallel `divK_trial_call_path_v2_spec_within` needs to be added that:
-    1. Uses `div128_v2_spec` (PR #1392, merged) instead of `div128_spec`.
-    2. Uses `sharedDivModCode_v2 base` (referencing `divK_div128_v2`) as
-       the CodeReq instead of `sharedDivModCode base`.
-    3. Adjusts JAL target offset for v2's ~+40 byte size increase.
-  The v1 spec stays in place until v2 is fully wired through to
-  `evm_div`/`evm_mod`, at which point v1 can be deleted.
 -/
 
 import EvmAsm.Evm64.DivMod.LoopBody
@@ -115,52 +104,6 @@ theorem divK_trial_call_path_spec_within
   have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) Jf D
   -- 5. Final permutation
-  exact cpsTripleWithin_weaken
-    (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
-    full
-
-theorem divK_trial_call_path_v2_spec_within
-    (sp j uLo uHi vTop vtopBase : Word) (base : Word)
-    (v2Old v11Old : Word)
-    (retMem dMem dloMem un0Mem : Word)
-    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff) :
-    cpsTripleWithin 62 (base + trialJalOff) (base + div128CallRetOff) (sharedDivModCode_v2 base)
-      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
-       (.x2 ↦ᵣ v2Old) ** (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3968 ↦ₘ retMem) **
-       (sp + signExtend12 3960 ↦ₘ dMem) **
-       (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ un0Mem))
-      (div128V2SpecPost sp (base + div128CallRetOff) vTop uLo uHi) := by
-  unfold div128V2SpecPost
-  -- 1. JAL x2 560 at base+512.
-  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + trialJalOff) (by nofun)
-  rw [lb_jal_target, lb_jal_ret] at J
-  have Je := cpsTripleWithin_extend_code (hmono :=
-    lb_sub_v2 16 _ _ (by decide) (by bv_addr) (by decide)) J
-  -- 2. div128_v2 subroutine: base+1072 → base+516.
-  have D := div128_v2_spec_shared_within sp (base + div128CallRetOff) vTop uLo uHi base
-    j vtopBase v11Old retMem dMem dloMem un0Mem
-    halign
-  unfold div128V2SpecPost at D
-  -- 3. Frame JAL with all registers/memory for div128.
-  have Jf := cpsTripleWithin_frameR
-    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
-     (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
-     (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
-     (sp + signExtend12 3968 ↦ₘ retMem) **
-     (sp + signExtend12 3960 ↦ₘ dMem) **
-     (sp + signExtend12 3952 ↦ₘ dloMem) **
-     (sp + signExtend12 3944 ↦ₘ un0Mem))
-    (by pcFree) Je
-  -- 4. Compose JAL + div128_v2.
-  have full := cpsTripleWithin_seq_perm_same_cr
-    (fun h hp => by xperm_hyp hp) Jf D
-  -- 5. Final permutation.
   exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
