@@ -92,6 +92,7 @@ import EvmAsm.Evm64.StorageAccessOutcome
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.TerminatingHandlers
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
