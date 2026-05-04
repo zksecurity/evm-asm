@@ -60,6 +60,10 @@ import EvmAsm.Evm64.DivMod
 import EvmAsm.Evm64.SDiv
 import EvmAsm.Evm64.SMod
 
+-- ADDMOD / MULMOD skeletons (GH #91)
+import EvmAsm.Evm64.AddMod
+import EvmAsm.Evm64.MulMod
+
 -- Calling convention (LP64)
 import EvmAsm.Evm64.CallingConvention
 
