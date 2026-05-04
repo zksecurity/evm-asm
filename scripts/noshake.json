@@ -136,4 +136,6 @@
  "EvmAsm.Rv64.RLP.Phase2LongLoopFive":  ["EvmAsm.Rv64.RLP.Phase2LongLoopFour"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopSix":   ["EvmAsm.Rv64.RLP.Phase2LongLoopFive"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopSeven": ["EvmAsm.Rv64.RLP.Phase2LongLoopSix"],
- "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"]}}
+ "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"],
+ "EvmAsm.Evm64.EvmWordArith.IsZero": ["EvmAsm.Evm64.EvmWordArith.Common"],
+ "EvmAsm.Evm64.EvmWordArith.Eq": ["EvmAsm.Evm64.EvmWordArith.Common"]}}
