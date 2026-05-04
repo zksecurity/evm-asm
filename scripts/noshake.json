@@ -28,10 +28,20 @@
   "EvmAsm.Rv64.Tactics.LiftSpec":
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
   "EvmAsm.Evm64.SignExtend.Compose": ["EvmAsm.Evm64.EvmWordArith.Common"],
+  "EvmAsm.Evm64.EvmWordArith.Normalization": ["EvmAsm.Evm64.EvmWordArith.MulSubChain"],
+  "EvmAsm.Evm64.DivMod.Spec.N1V4DivBridge":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4"],
+  "EvmAsm.Evm64.DivMod.Spec.N1V4ModBridge":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4"],
+  "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Bridge":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeFalse",
+   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeTrue"],
   "EvmAsm.Rv64.AddrNorm": ["EvmAsm.Rv64.AddrNormAttr"],
   "EvmAsm.Rv64.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.RegOpsAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
+  "EvmAsm.Rv64.RegOps": ["EvmAsm.Rv64.Basic", "EvmAsm.Rv64.RegOpsAttr"],
   "EvmAsm.Rv64.ByteAlgAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
+  "EvmAsm.Rv64.ByteAlg": ["EvmAsm.Rv64.ByteOps", "EvmAsm.Rv64.ByteAlgAttr"],
   "EvmAsm.Evm64.DivMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Evm64.SDiv.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Evm64.SMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],

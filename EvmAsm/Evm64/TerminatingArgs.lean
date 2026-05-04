@@ -152,6 +152,47 @@ theorem stackArgumentCount_eq_two_of_hasMemoryRange (kind : Kind) :
     hasMemoryRange kind = true → stackArgumentCount kind = 2 := by
   cases kind <;> simp [hasMemoryRange, stackArgumentCount]
 
+theorem hasMemoryRange_of_stackArgumentCount_eq_two (kind : Kind) :
+    stackArgumentCount kind = 2 → hasMemoryRange kind = true := by
+  cases kind <;> simp [hasMemoryRange, stackArgumentCount]
+
+theorem hasMemoryRange_iff_stackArgumentCount_eq_two (kind : Kind) :
+    hasMemoryRange kind = true ↔ stackArgumentCount kind = 2 :=
+  ⟨stackArgumentCount_eq_two_of_hasMemoryRange kind,
+    hasMemoryRange_of_stackArgumentCount_eq_two kind⟩
+
+theorem reverts_imp_not_isSuccess (kind : Kind) :
+    reverts kind = true → isSuccess kind = false := by
+  cases kind <;> simp [reverts, isSuccess]
+
+/-- Whether the opcode signals a failed (non-success) termination. The
+boolean dual of `isSuccess`: REVERT and INVALID fail; STOP, RETURN, and
+SELFDESTRUCT succeed. -/
+def failed : Kind → Bool
+  | .stop => false
+  | .return_ => false
+  | .revert => true
+  | .invalid => true
+  | .selfdestruct => false
+
+@[simp] theorem failed_stop : failed .stop = false := rfl
+@[simp] theorem failed_return : failed .return_ = false := rfl
+@[simp] theorem failed_revert : failed .revert = true := rfl
+@[simp] theorem failed_invalid : failed .invalid = true := rfl
+@[simp] theorem failed_selfdestruct : failed .selfdestruct = false := rfl
+
+theorem failed_eq_not_isSuccess (kind : Kind) :
+    failed kind = !isSuccess kind := by
+  cases kind <;> rfl
+
+theorem isSuccess_eq_not_failed (kind : Kind) :
+    isSuccess kind = !failed kind := by
+  cases kind <;> rfl
+
+theorem reverts_imp_failed (kind : Kind) :
+    reverts kind = true → failed kind = true := by
+  cases kind <;> simp [reverts, failed]
+
 theorem dataRange_offset (offset size : EvmWord) :
     (dataRange { data := { offset := offset, size := size } }).offset = offset := rfl
 

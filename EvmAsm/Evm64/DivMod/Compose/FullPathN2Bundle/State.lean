@@ -123,19 +123,6 @@ theorem fullDivN2DenormPre_unfold (bltu_2 bltu_1 bltu_0 : Bool)
   delta fullDivN2DenormPre
   rfl
 
-theorem fullDivN2DenormPost_unfold (bltu_2 bltu_1 bltu_0 : Bool)
-    (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    fullDivN2DenormPost bltu_2 bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3 =
-    let shift := fullDivN2Shift b1
-    let r2 := fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-    let r1 := fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-    let r0 := fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1
-      r0.1 r1.1 r2.1 (0 : Word) **
-    ((sp + signExtend12 3992) ↦ₘ shift) := by
-  delta fullDivN2DenormPost
-  rfl
-
 theorem fullDivN2Frame_unfold (bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
     fullDivN2Frame bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
