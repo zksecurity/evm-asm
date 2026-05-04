@@ -62,5 +62,74 @@ theorem callDataLoadWord_nil (offset : Nat) :
   rw [callDataLoadWord, callDataLoadNat_nil]
   rfl
 
+/-! ### CALLDATACOPY pure helper
+
+`callDataCopyBytes data dataOffset size` is the byte sequence that
+CALLDATACOPY writes into EVM memory: `size` bytes drawn from `data`
+starting at `dataOffset`, zero-padding past the end of the calldata
+buffer. This is the executable mathematical target consumed by the
+CALLDATACOPY RISC-V program (evm-asm-r3sk / GH #104 slice 5);
+defining it here keeps the pure helper colocated with `callDataByte`,
+`callDataLoadWord`, and the rest of the pure calldata surface and
+unblocks the CALLDATACOPY program slice from the pure-helper side.
+-/
+
+/-- The byte sequence written by CALLDATACOPY:
+    `size` bytes from `data` starting at `dataOffset`, with
+    out-of-bounds reads producing zero. Length is `size` by
+    construction (see `callDataCopyBytes_length`). -/
+def callDataCopyBytes
+    (data : List (BitVec 8)) (dataOffset size : Nat) : List (BitVec 8) :=
+  (List.range size).map (fun i => callDataByte data (dataOffset + i))
+
+@[simp] theorem callDataCopyBytes_length
+    (data : List (BitVec 8)) (dataOffset size : Nat) :
+    (callDataCopyBytes data dataOffset size).length = size := by
+  simp [callDataCopyBytes]
+
+@[simp] theorem callDataCopyBytes_zero
+    (data : List (BitVec 8)) (dataOffset : Nat) :
+    callDataCopyBytes data dataOffset 0 = [] := by
+  simp [callDataCopyBytes]
+
+/-- Indexing into the copied byte buffer recovers a `callDataByte` read
+    at the corresponding source offset. Useful for stepping through the
+    CALLDATACOPY loop spec one byte at a time. -/
+theorem callDataCopyBytes_get
+    {data : List (BitVec 8)} {dataOffset size : Nat} {i : Nat}
+    (h : i < size) :
+    (callDataCopyBytes data dataOffset size)[i]'(by
+      simpa [callDataCopyBytes_length] using h)
+      = callDataByte data (dataOffset + i) := by
+  simp [callDataCopyBytes, List.getElem_map, List.getElem_range]
+
+/-- Specialization of `callDataCopyBytes_get` to indices known to lie
+    inside the source buffer: the result is the literal calldata byte. -/
+theorem callDataCopyBytes_get_of_in_bounds
+    {data : List (BitVec 8)} {dataOffset size : Nat} {i : Nat}
+    (h : i < size) (hsrc : dataOffset + i < data.length) :
+    (callDataCopyBytes data dataOffset size)[i]'(by
+      simpa [callDataCopyBytes_length] using h)
+      = data[dataOffset + i] := by
+  rw [callDataCopyBytes_get h, callDataByte_of_lt hsrc]
+
+/-- Specialization of `callDataCopyBytes_get` to indices past the source
+    buffer: the result is the zero-padding byte. -/
+theorem callDataCopyBytes_get_of_out_of_bounds
+    {data : List (BitVec 8)} {dataOffset size : Nat} {i : Nat}
+    (h : i < size) (hsrc : data.length ≤ dataOffset + i) :
+    (callDataCopyBytes data dataOffset size)[i]'(by
+      simpa [callDataCopyBytes_length] using h)
+      = 0 := by
+  rw [callDataCopyBytes_get h, callDataByte_of_ge hsrc]
+
+@[simp] theorem callDataCopyBytes_nil (dataOffset size : Nat) :
+    callDataCopyBytes [] dataOffset size = List.replicate size 0 := by
+  apply List.ext_getElem
+  · simp [callDataCopyBytes_length]
+  · intro i h₁ h₂
+    have hi : i < size := by simpa [callDataCopyBytes_length] using h₁
+    rw [callDataCopyBytes_get hi, callDataByte_nil, List.getElem_replicate]
+
 end Calldata
 end EvmAsm.Evm64
