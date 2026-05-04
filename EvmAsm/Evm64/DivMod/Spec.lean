@@ -11,7 +11,6 @@ import EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackPhase1Stubs
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackV2Bounds
 import EvmAsm.Evm64.DivMod.Spec.CallAddback
-import EvmAsm.Evm64.DivMod.Spec.CallAddbackQHatShifted
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackPost1Wrappers
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackMod

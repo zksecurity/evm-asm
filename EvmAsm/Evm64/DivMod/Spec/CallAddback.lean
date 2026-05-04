@@ -21,12 +21,7 @@
 
   The trailing leaf cluster (qHat = a/b + k sub-stubs and the
   algCallAddbackBeq_* Word-level Euclideans / val256 bounds) lives in
-  `Spec/CallAddbackSubStubs.lean` (#1078 sub-slice). The Phase-3
-  shifted-domain qHat sub-lemmas
-  (`qHat_mul_b_shifted_gt_a_shifted_under_runtime_v2`,
-  `qHat_gt_q_true_shifted_under_runtime_v2`,
-  `qHat_lower_shifted_under_runtime_v2`) live in
-  `Spec/CallAddbackQHatShifted.lean` (#1078 sub-slice).
+  `Spec/CallAddbackSubStubs.lean` (#1078 sub-slice).
 -/
 
 import EvmAsm.Evm64.DivMod.Spec.CallSkip
