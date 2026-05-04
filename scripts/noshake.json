@@ -67,6 +67,27 @@
   "EvmAsm.Evm64.Slt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Sgt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Multiply.Spec":["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.EvmWordArith.MulCorrect"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.CopyAU":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.LoopSetup":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.PhaseA":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.PhaseBInit":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.PhaseBTail":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.PhaseC2":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.ZeroPath":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
