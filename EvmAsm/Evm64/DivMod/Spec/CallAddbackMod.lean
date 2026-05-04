@@ -147,7 +147,7 @@ theorem mod_n4_call_addback_beq_single_addback_post1_limbs_close
     h_s_pos h_s_lt_64 hb3nz h_wrapper
 
 /-- **B.5: val256 of double-addback's second-addback equals
-    `val256(a) % val256(b) * 2^s`** (CLOSED modulo 2 stubs).
+    `val256(a) % val256(b) * 2^s`** (CLOSED).
 
     Mirrors `algCallAddbackBeqPost1Val_eq_amod_pow_s_of_single_addback`
     for the **double-addback** branch (carry = 0).
@@ -192,15 +192,15 @@ theorem algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback
     (algCallAddbackBeq_amod_pow_s_lt_pow256 a b hb3nz)
     (algCallAddbackBeqU4_toNat_lt_algCallAddbackBeqMsC3_toNat a b hborrow)
 
-/-- **B.7: per-limb mod equations for double-addback** (CLOSED modulo B.5).
+/-- **B.7: per-limb mod equations for double-addback** (CLOSED).
 
     Mirror of `mod_n4_call_addback_beq_single_addback_post1_limbs_close`
     for the double-addback branch (carry = 0). Composes:
-      * `algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback` (B.5, sorry)
+      * `algCallAddbackBeqAbPrimeVal_eq_amod_pow_s_of_double_addback` (B.5, CLOSED)
       * `algCallAddbackBeqAbPrimeVal_eq_val256_limbs` (B.4, closed)
       * `denorm_4limb_eq_mod_of_val256_eq_amod_pow_s` (existing)
 
-    The proof body is fully wired; closure depends only on B.5. -/
+    The proof body is fully wired and discharged. -/
 theorem mod_n4_call_addback_beq_double_addback_abPrime_limbs_close
     (a b : EvmWord)
     (hb3nz : b.getLimbN 3 ≠ 0)

@@ -24,6 +24,7 @@
 
 import EvmAsm.Evm64.MStore8.Program
 import EvmAsm.Evm64.Memory
+import EvmAsm.Evm64.Stack
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 import EvmAsm.Rv64.Tactics.XSimp

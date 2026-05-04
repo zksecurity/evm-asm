@@ -10,6 +10,7 @@
 
 -- `SignExtend.LimbSpec` transitively imports `Rv64.AddrNorm`.
 import EvmAsm.Evm64.SignExtend.LimbSpec
+import EvmAsm.Evm64.EvmWordArith.Common
 import EvmAsm.Evm64.EvmWordArith.SignExtend
 
 open EvmAsm.Rv64.Tactics
