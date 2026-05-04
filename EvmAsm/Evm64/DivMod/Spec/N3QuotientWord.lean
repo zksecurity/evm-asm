@@ -16,7 +16,7 @@
   See beads `evm-asm-pwvj`, parent `evm-asm-pb40` (#61).
 -/
 
-import EvmAsm.Evm64.DivMod.Spec.Dispatcher
+import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
 
 namespace EvmAsm.Evm64
 
