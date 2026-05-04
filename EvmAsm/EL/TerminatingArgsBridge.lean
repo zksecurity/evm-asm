@@ -207,6 +207,26 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- Kind-uniform bridge: the dispatcher output succeeds (`CallResult.succeeded`)
+exactly when the terminating opcode's `Kind.isSuccess` flag is true. STOP,
+RETURN, and SELFDESTRUCT all hit `mkStopResult`/`mkReturnResult` (status
+`.success`); REVERT and INVALID hit `mkRevertResult`/`mkFailureResult`
+(status `.revert` / `.failure`).
+
+NOTE: the dual `reverted ↔ Kind.reverts` direction does **not** hold
+uniformly: INVALID has `Kind.reverts = true` (it does roll back) but maps
+to `.failure` rather than `.revert`. The bridge therefore exposes only
+the success-side iff; downstream consumers that need to distinguish the
+revert/failure distinction can pattern-match on `Kind` directly. -/
+theorem mkResultFromArgs_succeeded_iff_isSuccess
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).succeeded
+      ↔ EvmAsm.Evm64.TerminatingArgs.isSuccess kind = true := by
+  cases kind <;> simp [mkResultFromArgs, mkStopResult, mkReturnResult,
+    mkRevertResult, mkFailureResult, CallResult.succeeded,
+    EvmAsm.Evm64.TerminatingArgs.isSuccess]
+
 end TerminatingArgsBridge
 
 end EvmAsm.EL
