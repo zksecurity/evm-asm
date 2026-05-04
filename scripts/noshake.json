@@ -8,6 +8,8 @@
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
   "EvmAsm.Rv64.RLP.Phase1":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.ExtractPure"],
+  "EvmAsm.Rv64.RLP.Phase3SingleByte":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE2": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE3": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE4": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
@@ -16,6 +18,10 @@
   ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.XPerm":
   ["EvmAsm.Rv64.SepLogic"],
+  "EvmAsm.Rv64.Tactics.XPermPure":
+  ["EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.Tactics.DropPure":
+  ["EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.SeqFrame":
   ["EvmAsm.Rv64.Tactics.PerfTrace", "EvmAsm.Rv64.InstructionSpecs"],
   "EvmAsm.Rv64.Tactics.LiftSpec":
@@ -110,4 +116,11 @@
  "EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation":
   ["EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases", "EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback", "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
  "EvmAsm.Evm64.DivMod.Spec.Dispatcher":
-  ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"]}}
+  ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopThree": ["EvmAsm.Rv64.RLP.Phase2LongLoopTwo"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopFour":  ["EvmAsm.Rv64.RLP.Phase2LongLoopThree"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopFive":  ["EvmAsm.Rv64.RLP.Phase2LongLoopFour"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopSix":   ["EvmAsm.Rv64.RLP.Phase2LongLoopFive"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopSeven": ["EvmAsm.Rv64.RLP.Phase2LongLoopSix"],
+ "EvmAsm.Rv64.RLP.Phase2LongLoopEight": ["EvmAsm.Rv64.RLP.Phase2LongLoopSeven"]}}

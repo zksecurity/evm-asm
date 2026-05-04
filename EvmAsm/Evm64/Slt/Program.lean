@@ -4,7 +4,7 @@
   256-bit EVM SLT program definition.
 -/
 
-import EvmAsm.Rv64.CPSSpec
+import EvmAsm.Rv64.Program
 
 namespace EvmAsm.Evm64
 
