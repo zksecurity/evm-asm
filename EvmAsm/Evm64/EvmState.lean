@@ -225,6 +225,25 @@ def evmStateGasRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   evmCodeIs layout.codeBase state.code **
   EvmEnv.envIs layout.envBase state.env
 
+/-- Everything in `evmStateIs` except the EVM stack assertion
+    `evmStackIs layout.stackPtr state.stack`. Mirrors `evmStateGasRest` /
+    `evmStateStatusRest` — opcode handlers that only update the EVM stack
+    component can frame against this rest. -/
+def evmStateStackRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmMemIs layout.memBase state.memoryCells state.memory **
+  evmMemSizeIs layout.memSizeLoc state.memSize **
+  evmCodeIs layout.codeBase state.code **
+  EvmEnv.envIs layout.envBase state.env
+
 /-- Everything in `evmStateIs` except the scalar status register. -/
 def evmStateStatusRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
@@ -255,6 +274,14 @@ theorem evmStateIs_gas_split (layout : EvmLayout) (state : EvmState) :
   unfold evmStateIs evmStateGasRest
   ac_rfl
 
+/-- Split out the EVM stack assertion from the composite state assertion. -/
+theorem evmStateIs_stack_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (evmStackIs layout.stackPtr state.stack **
+       evmStateStackRest layout state) := by
+  unfold evmStateIs evmStateStackRest
+  ac_rfl
+
 /-- Split out the status register from the composite state assertion. -/
 theorem evmStateIs_status_split (layout : EvmLayout) (state : EvmState) :
     evmStateIs layout state =
@@ -271,6 +298,11 @@ theorem pcFree_evmStatePcRest {layout : EvmLayout} {state : EvmState} :
 theorem pcFree_evmStateGasRest {layout : EvmLayout} {state : EvmState} :
     (evmStateGasRest layout state).pcFree := by
   unfold evmStateGasRest
+  pcFree
+
+theorem pcFree_evmStateStackRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateStackRest layout state).pcFree := by
+  unfold evmStateStackRest
   pcFree
 
 theorem pcFree_evmStateStatusRest {layout : EvmLayout} {state : EvmState} :
@@ -290,6 +322,10 @@ instance (layout : EvmLayout) (state : EvmState) :
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateGasRest layout state) :=
   ⟨pcFree_evmStateGasRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateStackRest layout state) :=
+  ⟨pcFree_evmStateStackRest⟩
 
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateStatusRest layout state) :=
