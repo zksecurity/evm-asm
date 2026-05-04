@@ -741,22 +741,6 @@ theorem evm_div_n4_full_max_skip_stack_pre_spec (sp base : Word)
     (fun _ hq => hq)
     hraw
 
-/-- Number of scratch memory cells the DIV/MOD program uses. Exposed as a
-    named definition so clients can reason about the scratch-region size
-    abstractly (e.g. for framing or sizing bounds) without poking into
-    `divScratchValues` / `divScratchOwn`'s internals. -/
-def divScratchCellCount : Nat := 15
-
-/-- `divScratchCellCount` is concretely 15. Stated as an `rfl` theorem for
-    convenient rewriting at call sites. -/
-theorem divScratchCellCount_eq : divScratchCellCount = 15 := rfl
-
-/-- `divScratchCellCount` is strictly positive. Useful for discharging
-    non-emptiness side conditions when reasoning abstractly about the
-    scratch region (e.g. in a size bound `sp + 32 * stack.length ≤
-    sp + ... - 32 * divScratchCellCount`). -/
-theorem divScratchCellCount_pos : 0 < divScratchCellCount := by decide
-
 /-- Bundled version of `evm_div_n4_full_max_skip_stack_pre_spec`: takes the
     precondition as a single `divN4StackPre` atom. Thin wrapper — unfolds the
     bundle and defers to the unbundled spec. Useful when composing into the
