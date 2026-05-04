@@ -4,7 +4,6 @@
   Per-limb AND spec.
 -/
 
-import EvmAsm.Evm64.And.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

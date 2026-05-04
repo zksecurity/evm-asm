@@ -207,6 +207,25 @@ theorem mkResultFromArgs_selfdestruct
     mkResultFromArgs .selfdestruct state data gasRemaining args
       = mkStopResult state data gasRemaining args := rfl
 
+/-- Kind-uniform: every terminating Kind preserves the input `WorldState`
+    through the dispatcher. Useful for handler specs that need to assert
+    state preservation independently of which terminating opcode fired. -/
+theorem mkResultFromArgs_state
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).state = state := by
+  cases kind <;> rfl
+
+/-- Kind-uniform: every terminating Kind threads `gasRemaining` through
+    the dispatcher unchanged. The dynamic-cost subtraction belongs to the
+    handler layer, not this packaging bridge. -/
+theorem mkResultFromArgs_gasRemaining
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).gasRemaining
+      = gasRemaining := by
+  cases kind <;> rfl
+
 /-- Kind-uniform characterization of `mkResultFromArgs.status`: each
 terminating Kind selects a fixed `CallStatus` regardless of the data /
 state / gas inputs. Mirrors the Kind-dispatch shape of
@@ -274,6 +293,26 @@ theorem mkResultFromArgs_selfdestruct_succeeded
     (args : TerminatingArgs) :
     (mkResultFromArgs .selfdestruct state data gasRemaining args).succeeded :=
   mkStopResult_succeeded state data gasRemaining args
+
+/-- Kind-uniform bridge: the dispatcher output succeeds (`CallResult.succeeded`)
+exactly when the terminating opcode's `Kind.isSuccess` flag is true. STOP,
+RETURN, and SELFDESTRUCT all hit `mkStopResult`/`mkReturnResult` (status
+`.success`); REVERT and INVALID hit `mkRevertResult`/`mkFailureResult`
+(status `.revert` / `.failure`).
+
+NOTE: the dual `reverted ↔ Kind.reverts` direction does **not** hold
+uniformly: INVALID has `Kind.reverts = true` (it does roll back) but maps
+to `.failure` rather than `.revert`. The bridge therefore exposes only
+the success-side iff; downstream consumers that need to distinguish the
+revert/failure distinction can pattern-match on `Kind` directly. -/
+theorem mkResultFromArgs_succeeded_iff_isSuccess
+    (kind : TerminatingKind) (state : WorldState) (data : List Byte)
+    (gasRemaining : Nat) (args : TerminatingArgs) :
+    (mkResultFromArgs kind state data gasRemaining args).succeeded
+      ↔ EvmAsm.Evm64.TerminatingArgs.isSuccess kind = true := by
+  cases kind <;> simp [mkResultFromArgs, mkStopResult, mkReturnResult,
+    mkRevertResult, mkFailureResult, CallResult.succeeded,
+    EvmAsm.Evm64.TerminatingArgs.isSuccess]
 
 /-- Kind-pointwise iff: the dispatcher's result is `reverted` exactly when the
     Kind is `.revert`. Note: this is sharper than `Kind.reverts`, which is

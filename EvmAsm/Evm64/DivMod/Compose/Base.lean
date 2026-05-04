@@ -398,23 +398,6 @@ theorem divScratchOwn_unfold {sp : Word} :
      memOwn (sp + signExtend12 3976)) := by
   delta divScratchOwn; rfl
 
-/-- Mid-tree variant of `divScratchOwn_unfold`: threads a `Q` through the
-    equality so `rw ←` can fold the 15 ownership atoms into a `divScratchOwn`
-    bundle **even when they sit in the middle of a longer sepConj chain**.
-    Parallel to `divScratchValues_unfold_right`. -/
-theorem divScratchOwn_unfold_right {sp : Word} {Q : Assertion} :
-    ((memOwn (sp + signExtend12 4088) ** memOwn (sp + signExtend12 4080) **
-      memOwn (sp + signExtend12 4072) ** memOwn (sp + signExtend12 4064) **
-      memOwn (sp + signExtend12 4056) ** memOwn (sp + signExtend12 4048) **
-      memOwn (sp + signExtend12 4040) ** memOwn (sp + signExtend12 4032) **
-      memOwn (sp + signExtend12 4024) ** memOwn (sp + signExtend12 4016) **
-      memOwn (sp + signExtend12 4008) ** memOwn (sp + signExtend12 4000) **
-      memOwn (sp + signExtend12 3992) **
-      memOwn (sp + signExtend12 3984) **
-      memOwn (sp + signExtend12 3976)) ** Q) =
-    (divScratchOwn sp ** Q) := by
-  rw [divScratchOwn_unfold]
-
 theorem pcFree_divScratchValues {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shiftMem nMem jMem : Word} :
     (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -455,11 +438,6 @@ theorem divScratchOwnCall_unfold {sp : Word} :
      memOwn (sp + signExtend12 3952) **
      memOwn (sp + signExtend12 3944)) := by
   delta divScratchOwnCall; rfl
-
-/-- `divScratchOwnCall` is pc-free: all atoms are `memOwn` (chained from
-    `divScratchOwn` + 4 new `memOwn`). -/
-theorem pcFree_divScratchOwnCall {sp : Word} : (divScratchOwnCall sp).pcFree := by
-  rw [divScratchOwnCall_unfold, divScratchOwn_unfold]; pcFree
 
 instance pcFreeInst_divScratchOwn (sp : Word) :
     Assertion.PCFree (divScratchOwn sp) :=

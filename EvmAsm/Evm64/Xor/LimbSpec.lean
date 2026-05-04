@@ -4,7 +4,6 @@
   Per-limb XOR spec.
 -/
 
-import EvmAsm.Evm64.Xor.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 
