@@ -7,7 +7,7 @@
   carry/borrow propagation.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Div128Lemmas
+import EvmAsm.Evm64.EvmWordArith.MultiLimb
 
 namespace EvmAsm.Evm64
 
