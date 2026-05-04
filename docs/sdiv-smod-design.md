@@ -70,33 +70,88 @@ SMOD. Both are pure 256-bit proofs with no RISC-V code.
 The existing unsigned divider (`EvmAsm/Evm64/DivMod/Program.lean :: evm_div`)
 already takes a long path through Knuth Algorithm D and is the most
 expensive opcode body in the project. We **must** reuse it rather than
-reimplement. The pattern is the same one used by EXP for multiplication
+reimplement. The pattern is the model used by EXP for multiplication
 (`EvmAsm/Evm64/Multiply/Callable.lean`), which @pirapira called out as
-the model in the slice 1 description.
+the reference in the slice 1 description — but the layout cannot be
+copied verbatim, because `evm_div` is structured differently from
+`evm_mul`.
 
-### `evm_div_callable` / `evm_mod_callable` shim layout
+### Why `evm_div ;; cc_ret` does not work (correction)
+
+`evm_mul`'s exit PC is at the end of the program, so appending `cc_ret`
+falls through naturally and `mul_callable` is just `evm_mul ;; cc_ret`.
+`evm_div`, by contrast, is laid out as
 
 ```
-def evm_div_callable : Program := evm_div ;; cc_ret    -- returns via JALR x0 x1 0
-def evm_mod_callable : Program := evm_mod ;; cc_ret
+  body (phases A..zeroPath)         instructions [0..265]    bytes 0..1060
+  NOP (exit PC)                     instruction  [266]       byte 1064
+  divK_div128 (private subroutine)  instructions [267..315]  bytes 1068..1260
 ```
 
-Both shims live under `EvmAsm/Evm64/DivMod/Callable.lean`. They mirror
-the `mul_callable` shim 1:1:
+— the exit PC of `evm_div_stack_spec` (`base + nopOff`, with
+`nopOff = 1068`) sits at byte 1064 (the NOP), *before* the appended
+`divK_div128` subroutine. The subroutine is reachable only via the
+`JAL .x2 556` inside `divK_loopBody`; it is **not** in the fall-through
+path. Appending `;; cc_ret` to `evm_div` would therefore place the
+return instruction at byte 1264 — well past `divK_div128` and entirely
+unreachable from the body's exit PC. So the obvious shim
+`evm_div ;; cc_ret` is wrong.
 
-* Length lemma: `evm_div_callable.length = evm_div.length + 1`.
-* `byte_length` lemma scaling by 4.
+(Side note on register clobber: the inner subroutine call uses
+`JAL .x2 _ ;; … ;; JALR .x0 .x2 0`, i.e. `x2` saves and restores the
+return address, **not** `x1`. So `x1` is not clobbered by `evm_div`'s
+internal call. The earlier worry about needing memory-saved `ra` because
+of an internal x1 clobber was incorrect.)
+
+### Corrected shim: replace the NOP with `cc_ret`
+
+The NOP at byte 1064 exists solely to separate the body's exit PC from
+the appended subroutine entry. We can repurpose it: replace
+`ADDI .x0 .x0 0` with `cc_ret` (= `JALR .x0 .x1 0`) and keep all other
+instructions — including `divK_div128` and the `JAL .x2 556` that
+targets it — at exactly the same offsets. Length, sub-offsets, branch
+targets, and `divK_loopBody`'s `subr_off = 556` are all preserved.
+
+```
+def evm_div_callable : Program :=
+  divK_phaseA 1020 ;; divK_phaseB ;; divK_clz ;;
+  divK_phaseC2 172 ;; divK_normB ;; divK_normA 40 ;;
+  divK_copyAU ;; divK_loopSetup 464 ;; divK_loopBody 560 7736 ;;
+  divK_denorm ;; divK_div_epilogue 24 ;; divK_zeroPath ;;
+  cc_ret ;;            -- replaces the NOP at instruction [266] / byte 1064
+  divK_div128
+
+def evm_mod_callable : Program := -- analogous, with divK_mod_epilogue
+```
+
+Both shims live under `EvmAsm/Evm64/DivMod/Callable.lean`. Properties
+needed:
+
+* `evm_div_callable.length = evm_div.length` (same total instruction
+  count: NOP swapped 1:1 for `cc_ret`).
+* `byte_length` lemma scaling by 4 (unchanged: 1264 bytes).
 * `_code` abbreviation `CodeReq.ofProg base evm_div_callable`.
-* Sub-code lemmas isolating the body and the `JALR` so that the existing
-  `evm_div_stack_spec` and the LP64 calling-convention `ret_spec` can be
-  composed at the byte-disjoint regions.
-* Round-trip `_function_spec` derived via `callNear_function_spec` (the
-  proven helper at `EvmAsm/Rv64/CallingConvention.lean`).
+* A code-equality lemma:
+  `evm_div_callable_code base = evm_div_code base ∪ cc_ret_code (base + nopOff)`
+  off the byte-disjoint NOP slot, so the existing `evm_div_stack_spec`
+  proven over `evm_div_code base` lifts through frame-monotonicity to
+  `evm_div_callable_code base` over the `[0, nopOff)` byte range.
+* Block split: `cpsTripleWithin` chain from `base` to `base + nopOff`
+  (= existing `evm_div_stack_spec`) composed with `cc_ret`'s
+  `cpsTripleWithin` at byte `nopOff` (taking PC to `ra &&& ~~~1`),
+  with the post being the divider's post under the `(.x1 ↦ᵣ ra_val)`
+  frame.
+* Round-trip `_function_spec` derived via `callNear_function_spec`.
 
-The shim is non-leaf-aware via `cc_prologue` / `cc_epilogue` only if the
-caller (SDIV / SMOD wrapper) needs to spill `ra`. The simplest routing is
-to make SDIV / SMOD the non-leaf and keep the divisor body as a leaf
-(no inner `JAL`s).
+### Caller (SDIV / SMOD) calling convention
+
+Because `evm_div`'s body uses the saved-set registers per LP64
+(callee-saved `s*` are not touched by the divider body — only `t*` /
+`a*` and the EVM stack pointer `x12` change), the SDIV / SMOD wrapper
+*may* keep its sign bits in `s1` / `s2` across the `JAL .x1
+evm_div_callable` call. The wrapper is non-leaf (it calls
+`evm_div_callable`), so it spills `ra` itself with `cc_prologue` /
+`cc_epilogue` exactly as the EXP wrapper does around `mul_callable`.
 
 ### evm_sdiv / evm_smod (caller) outline
 
