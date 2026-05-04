@@ -180,6 +180,8 @@
  "EvmAsm.Evm64.EvmWordArith.Comparison": ["EvmAsm.Evm64.EvmWordArith.Common"],
  "EvmAsm.Evm64.Env.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Env.Wrappers":
+  ["EvmAsm.Evm64.Env.StackSpec"],
  "EvmAsm.Evm64.MStore8.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.MLoad.Expansion":
