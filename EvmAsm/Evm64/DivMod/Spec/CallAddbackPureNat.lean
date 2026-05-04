@@ -14,7 +14,7 @@
   - `c3_eq_u4_plus_one_from_double_mulsub_addback_bounds`
   - `abPrime_val_eq_amod_pow_s_pure_nat`
 
-  Extracted from `Spec/CallAddback.lean` (file-size-exception, #1078).
+  Extracted from `Spec/CallAddback.lean` (#1078 split).
   No external Lean expression depends on these names other than the
   consumers in `CallAddback.lean` (the docstrings in `SpecCallAddbackBeq/`
   cross-reference them by name only). See evm-asm-rfl / sub-slice of

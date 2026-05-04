@@ -1,4 +1,3 @@
--- file-size-exception NOT required: this sibling file lives below cap.
 /-
   EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs
 

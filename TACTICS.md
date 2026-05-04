@@ -251,3 +251,23 @@ xperm (AC permutation proofs)
 
 Each layer builds on the one below. All tactics work at the `MetaM` level,
 constructing proof terms directly rather than using tactic combinators.
+
+
+## Scratchpad layout (parameterizing internal scratch cells)
+
+Routines with `sp`-relative internal scratch cells must take their layout as
+a parameter rather than baking `sp + signExtend12 N` literals into the spec.
+The convention lives in `AGENTS.md` (section "Scratchpad Layout (#334)") and
+the design rationale + migration plan in
+`docs/scratchpad-layout-design.md`.
+
+Canonical instances:
+
+- `EvmAsm/Evm64/Multiply/Layout.lean` — empty-layout pilot (Multiply has no
+  internal scratch; struct defined to fix the naming convention).
+- DivMod / Byte / Shift layouts will follow the same shape under #334
+  slice 4 (beads `evm-asm-vst1`).
+
+When writing a new spec that touches scratchpad cells, prefer
+`L.fieldName` over `sp + signExtend12 N` and add `(L : XxxScratchpadLayout)
+(hL : L.Valid)` parameters from day one.

@@ -4,7 +4,7 @@
   SIGNEXTEND correctness: limb-level sign-extension definitions and getLimb lemmas.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Common
+import EvmAsm.Evm64.Basic
 
 namespace EvmAsm.Evm64
 

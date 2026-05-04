@@ -9,6 +9,7 @@
 -- `SignExtend.Compose → SignExtend.LimbSpec → SignExtend.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.SignExtend.Compose
+import EvmAsm.Evm64.Stack
 
 open EvmAsm.Rv64.Tactics
 

@@ -4,7 +4,7 @@
   Pure CALLDATASIZE semantics for issue #104.
 -/
 
-import EvmAsm.Evm64.Calldata.Basic
+import EvmAsm.Evm64.Basic
 
 namespace EvmAsm.Evm64
 namespace Calldata

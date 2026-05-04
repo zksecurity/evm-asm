@@ -56,6 +56,10 @@ import EvmAsm.Evm64.Exp
 -- DivMod (Knuth Algorithm D)
 import EvmAsm.Evm64.DivMod
 
+-- SDIV / SMOD skeletons (GH #90, signed division/modulo)
+import EvmAsm.Evm64.SDiv
+import EvmAsm.Evm64.SMod
+
 -- Calling convention (LP64)
 import EvmAsm.Evm64.CallingConvention
 
@@ -65,6 +69,7 @@ import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
+import EvmAsm.Evm64.Env.Program
 import EvmAsm.Evm64.CallArgs
 import EvmAsm.Evm64.LogArgs
 

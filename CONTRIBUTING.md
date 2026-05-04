@@ -7,6 +7,13 @@ Start with:
 - [`README.md`](README.md) for the project overview
 - [`AGENTS.md`](AGENTS.md) for build instructions, project structure, and proof guidance
 - [`PLAN.md`](PLAN.md) for the current roadmap and task status
+- [`docs/notable-specs.md`](docs/notable-specs.md) for an index of notable proven
+  specifications (per-opcode stack specs, EvmWord correctness theorems,
+  RLP/ByteOps/calling-convention helpers) with permalinks to the exact theorem
+  statements at a pinned commit. Use it to find a spec without grepping. The
+  index is refreshed whenever a `#61`-class umbrella issue closes or quarterly,
+  whichever comes first; the bottom of that page documents the refresh
+  procedure.
 
 Before sending work for review:
 
