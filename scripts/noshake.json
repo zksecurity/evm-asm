@@ -36,6 +36,8 @@
   "EvmAsm.Evm64.SDiv.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Evm64.SMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Evm64.Exp.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
+  "EvmAsm.Evm64.AddMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
+  "EvmAsm.Evm64.MulMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.Tactics.XCancelStruct":
   ["EvmAsm.Rv64.SepLogic"],
  "EvmAsm.Evm64.Basic":
