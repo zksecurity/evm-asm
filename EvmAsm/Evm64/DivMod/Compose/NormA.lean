@@ -176,31 +176,6 @@ theorem divK_normA_full_spec_within (sp a0 a1 a2 a3 v5 v7 v10 shift antiShift : 
     (fun h hq => by xperm_hyp hq)
     h123456
 
-theorem divK_normA_full_spec (sp a0 a1 a2 a3 v5 v7 v10 shift antiShift : Word)
-    (u0Old u1Old u2Old u3Old u4Old : Word) (base : Word) :
-    let u4 := a3 >>> (antiShift.toNat % 64)
-    let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
-    let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
-    let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
-    let u0 := a0 <<< (shift.toNat % 64)
-    cpsTripleWithin 21 (base + normAOff) (base + loopSetupOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + signExtend12 4024) ↦ₘ u4Old) ** ((sp + signExtend12 4032) ↦ₘ u3Old) **
-       ((sp + signExtend12 4040) ↦ₘ u2Old) ** ((sp + signExtend12 4048) ↦ₘ u1Old) **
-       ((sp + signExtend12 4056) ↦ₘ u0Old))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u1) ** (.x7 ↦ᵣ u0) ** (.x10 ↦ᵣ (a0 >>> (antiShift.toNat % 64))) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4056) ↦ₘ u0)) :=
-  divK_normA_full_spec_within sp a0 a1 a2 a3 v5 v7 v10 shift antiShift
-    u0Old u1Old u2Old u3Old u4Old base
-
 -- ============================================================================
 -- Section 10j: CopyAU composition (copy a[] to u[], 9 instructions)
 -- base+396: used when shift=0 (no normalization needed)
@@ -233,23 +208,6 @@ theorem divK_copyAU_full_spec_within (sp : Word)
   have hcopy := divK_copyAU_spec_within sp (base + copyAUOff) a0 a1 a2 a3 u0 u1 u2 u3 u4 v5
   rw [show (base + copyAUOff : Word) + 36 = base + loopSetupOff from by bv_addr] at hcopy
   exact cpsTripleWithin_extend_code divK_copyAU_code_sub_divCode hcopy
-
-theorem divK_copyAU_full_spec (sp : Word)
-    (a0 a1 a2 a3 : Word) (u0 u1 u2 u3 u4 v5 : Word) (base : Word) :
-    cpsTripleWithin 9 (base + copyAUOff) (base + loopSetupOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) **
-       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ u4))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ a3) **
-       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + signExtend12 4056) ↦ₘ a0) ** ((sp + signExtend12 4048) ↦ₘ a1) **
-       ((sp + signExtend12 4040) ↦ₘ a2) ** ((sp + signExtend12 4032) ↦ₘ a3) **
-       ((sp + signExtend12 4024) ↦ₘ (0 : Word))) :=
-  divK_copyAU_full_spec_within sp a0 a1 a2 a3 u0 u1 u2 u3 u4 v5 base
 
 -- ============================================================================
 -- Section 10k: LoopSetup composition (4 instructions at base+432)
