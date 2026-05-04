@@ -92,6 +92,7 @@ import EvmAsm.Evm64.StorageAccessOutcome
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.InterpreterLoop
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
@@ -101,6 +102,7 @@ import EvmAsm.Evm64.PrecompileDispatch
 -- EVM memory model (issue #99)
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
+import EvmAsm.Evm64.KeccakArgs
 import EvmAsm.Evm64.LogGas
 import EvmAsm.Evm64.TerminatingGas
 import EvmAsm.Evm64.EvmState
