@@ -31,6 +31,7 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Evm64.Env.Field
 
 namespace EvmAsm.Evm64
