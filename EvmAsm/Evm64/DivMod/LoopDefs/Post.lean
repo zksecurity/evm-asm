@@ -81,16 +81,6 @@ def loopBodySkipPost (n : Word) (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) 
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   loopExitPost n sp j qHat ms.2.2.2.2 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
 
-/-- Full mulsub-addback postcondition for n loop body. -/
-@[irreducible]
-def loopBodyAddbackPost (n : Word) (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
-  let un0 := ms.1; let un1 := ms.2.1; let un2 := ms.2.2.1
-  let un3 := ms.2.2.2.1; let c3 := ms.2.2.2.2
-  let u4_new := uTop - c3
-  let ab := addbackN4 un0 un1 un2 un3 u4_new v0 v1 v2 v3
-  loopExitPost n sp j (qHat + signExtend12 4095) c3 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
-
 /-- Backward-compatible abbreviations for loopBodySkipPost. -/
 abbrev loopBodyN1SkipPost := loopBodySkipPost (1 : Word)
 abbrev loopBodyN2SkipPost := loopBodySkipPost (2 : Word)
@@ -120,23 +110,9 @@ abbrev loopBodyN2AddbackBeqPost := loopBodyAddbackBeqPost (2 : Word)
 abbrev loopBodyN3AddbackBeqPost := loopBodyAddbackBeqPost (3 : Word)
 abbrev loopBodyN4AddbackBeqPost := loopBodyAddbackBeqPost (4 : Word)
 
--- ============================================================================
--- Unified (Bool-parameterized) loop body postcondition: skip/addback+BEQ
--- Issue #283: Unify skip/addback via `(borrow_zero : Bool)`.
--- `borrow_zero = true`  → skip path (borrow = 0, mulsub didn't underflow)
--- `borrow_zero = false` → addback+BEQ path (borrow ≠ 0, mulsub underflowed)
--- ============================================================================
-
-/-- Unified loop body postcondition parameterized on borrow condition.
-    `borrow_zero = true` selects the skip path;
-    `borrow_zero = false` selects the addback+BEQ (double-addback) path. -/
-@[irreducible]
-def loopBodyUnifiedPost (borrow_zero : Bool) (n : Word)
-    (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  if borrow_zero then loopBodySkipPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
-  else loopBodyAddbackBeqPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
-
--- (Per-n unified-post abbreviations were removed as dead code.)
+-- (Bool-parameterized loopBodyUnifiedPost and per-n unified-post abbreviations
+-- were removed as dead code; callers use loopBodySkipPost / loopBodyAddbackBeqPost
+-- directly per execution path.)
 
 -- ============================================================================
 -- Call path postconditions for n=3 (includes div128 scratch cells)
@@ -411,10 +387,8 @@ theorem loopIterPostN3Call_skip {sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word}
         loopBodyN3CallSkipPostJ loopBodyN3SkipPost loopBodySkipPost loopExitPostN3 loopExitPost
   unfold mulsubN4_c3 at hb; simp only [if_neg hb]
 
-def loopIterPostN3 (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  match bltu with
-  | true => loopIterPostN3Call sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-  | false => loopIterPostN3Max sp j v0 v1 v2 v3 u0 u1 u2 u3 uTop ** empAssertion
+-- (Bool-dispatch wrapper loopIterPostN3 was removed as dead code; callers use
+-- loopIterPostN3Max / loopIterPostN3Call directly per execution path.)
 
 -- ============================================================================
 -- Two-iteration path postconditions with double addback for n=3
