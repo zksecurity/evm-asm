@@ -4,7 +4,6 @@
   Per-limb SUB specs (from Arithmetic.lean).
 -/
 
-import EvmAsm.Evm64.Sub.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

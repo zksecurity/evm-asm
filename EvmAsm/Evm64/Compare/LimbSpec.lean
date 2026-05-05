@@ -7,7 +7,6 @@
   - slt_msb_load_spec: MSB limb load (for SLT/SGT)
 -/
 
-import EvmAsm.Evm64.Stack
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

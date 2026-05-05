@@ -24,12 +24,14 @@ import EvmAsm.Evm64.EvmWordArith.MulCorrect
 -- Pure EXP semantic target.
 import EvmAsm.Evm64.EvmWordArith.Exp
 
+-- ADDMOD/MULMOD helper: 2^256 mod N as an EvmWord (#91).
+
 -- Div128Shift0 → Div128CallSkipClose → {Div128FinalAssembly +
 -- Div128KnuthLower + Div128QuotientBounds → KnuthTheoremB →
 -- {DivN4Overestimate, MaxTrialVacuity → CLZLemmas → DivN4Lemmas,
 -- DenormLemmas}, DivMod.LoopSemantic → {DivMulSubCarry, DivAddbackCarry}}.
--- `AddbackPinning` and `DivN4DoubleAddback` both import
--- `DivN4Overestimate`, which in turn imports `DivAccumulate`, covering
+-- `DivN4DoubleAddback` imports `DivN4Overestimate`, which in turn imports
+-- `DivAccumulate`, covering
 -- DivRemainderBound → DivAddbackLimb → DivMulSubLimb → DivLimbBridge →
 -- DivBridge → Normalization → MulSubChain → Div128Lemmas → MultiLimb →
 -- Div → Common.
@@ -47,7 +49,6 @@ import EvmAsm.Evm64.EvmWordArith.DivN4Lemmas
 import EvmAsm.Evm64.EvmWordArith.SkipBorrowExtract
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract
-import EvmAsm.Evm64.EvmWordArith.AddbackPinning
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2
 import EvmAsm.Evm64.EvmWordArith.Div128NoWrapDischarge
 import EvmAsm.Evm64.EvmWordArith.Div128NoWrapInvSearch
