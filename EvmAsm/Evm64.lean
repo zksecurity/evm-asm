@@ -107,6 +107,7 @@ import EvmAsm.Evm64.Dispatch.Program
 import EvmAsm.Evm64.Dispatch.EntrySpec
 import EvmAsm.Evm64.Dispatch.EntryAddrBridge
 import EvmAsm.Evm64.Dispatch.TailSpec
+import EvmAsm.Evm64.Dispatch.Compose
 import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
