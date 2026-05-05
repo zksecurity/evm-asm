@@ -9,4 +9,5 @@ import EvmAsm.EL.RLP.PrefixDecode
 import EvmAsm.EL.RLP.ListDecodeBridge
 import EvmAsm.EL.RLP.Program
 import EvmAsm.EL.RLP.ProgramSpec
+import EvmAsm.EL.RLP.FullDecode
 import EvmAsm.EL.RLP.Properties
