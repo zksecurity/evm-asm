@@ -236,6 +236,7 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Calldata.CopyMemory": ["Mathlib.Data.List.GetD"],
  "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
+ "EvmAsm.Evm64.EvmWordArith.DivMulSubCarry": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
  "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
   "EvmAsm.Rv64.SailEquiv.ShiftProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
   "EvmAsm.Rv64.SailEquiv.ImmProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
