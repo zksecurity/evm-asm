@@ -55,6 +55,7 @@ import EvmAsm.Evm64.Exp
 
 -- DivMod (Knuth Algorithm D)
 import EvmAsm.Evm64.DivMod
+import EvmAsm.Evm64.DivMod.Callable
 
 -- SDIV / SMOD skeletons (GH #90, signed division/modulo)
 import EvmAsm.Evm64.SDiv
