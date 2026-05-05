@@ -8,9 +8,9 @@
   with optional BEQ passthrough for the single-addback case.
 
   Three theorems (all public):
-  - `divK_mulsub_correction_addback_880_spec` — base+516 → base+880
-  - `divK_mulsub_correction_addback_named_880_spec` — same with named pre/post
-  - `divK_mulsub_correction_addback_spec` — base+516 → base+884 (with BEQ)
+  - `divK_mulsub_correction_addback_880_spec_within` — base+516 → base+880
+  - `divK_mulsub_correction_addback_named_880_spec_within` — same with named pre/post
+  - `divK_mulsub_correction_addback_spec_within` — base+516 → base+884 (with BEQ)
 
   Uses public helpers from `LoopBody.lean`:
   - `divK_mulsub_full_spec_within`
@@ -155,13 +155,6 @@ theorem divK_mulsub_correction_addback_880_spec_within
     (fun h hq => by xperm_hyp hq)
     MSCA
 
-def divK_mulsub_correction_addback_880_spec
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :=
-  divK_mulsub_correction_addback_880_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    v1Old v5Old v6Old v7Old v10Old v2Old base
-
 /-- Mulsub + correction addback (→880), named postcondition variant.
     Uses addbackN4/addbackN4_carry in postcondition for rewritability. -/
 theorem divK_mulsub_correction_addback_named_880_spec_within
@@ -199,13 +192,6 @@ theorem divK_mulsub_correction_addback_named_880_spec_within
   intro uBase ms c3 ab qHat' hborrow
   exact (divK_mulsub_correction_addback_880_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
     v1Old v5Old v6Old v7Old v10Old v2Old base) hborrow
-
-def divK_mulsub_correction_addback_named_880_spec
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :=
-  divK_mulsub_correction_addback_named_880_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    v1Old v5Old v6Old v7Old v10Old v2Old base
 
 /-- Mulsub + correction addback + BEQ passthrough: when mulsub produces borrow≠0,
     run addback, then BEQ falls through (carry ≠ 0).
@@ -321,12 +307,5 @@ theorem divK_mulsub_correction_addback_spec_within
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     full
-
-def divK_mulsub_correction_addback_spec
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :=
-  divK_mulsub_correction_addback_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    v1Old v5Old v6Old v7Old v10Old v2Old base
 
 end EvmAsm.Evm64

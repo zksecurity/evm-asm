@@ -11,7 +11,7 @@
   - val256-level Euclidean → EvmWord.div/mod correctness from limbs
 -/
 
-import EvmAsm.Evm64.EvmWordArith.DivBridge
+import EvmAsm.Evm64.EvmWordArith.MultiLimb
 
 namespace EvmAsm.Evm64
 

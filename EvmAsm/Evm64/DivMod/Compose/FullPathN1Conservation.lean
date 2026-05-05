@@ -5,7 +5,6 @@
 -/
 
 
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases
 import EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback
 import EvmAsm.Evm64.EvmWordArith.ModBridgeUtop
@@ -217,104 +216,8 @@ theorem n1StepsTelescoped_of_nat_conservation
   n1StepsTelescoped_of_telescopeInput v u r3 r2 r1 r0
     (n1StepsTelescopeInput_of_nat_conservation v u r3 r2 r1 r0 hsteps)
 
-theorem n1StepsTelescoped_of_conservation
-    (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word)
-    (hsteps : n1StepsConservation v u r3 r2 r1 r0) :
-    n1StepsTelescoped v u r3 r2 r1 r0 :=
-  n1StepsTelescoped_of_nat_conservation v u r3 r2 r1 r0
-    (n1StepsConservationNat_of_conservation v u r3 r2 r1 r0 hsteps)
-
-theorem n1StepsRemainderVal_eq_of_extended_eq_lt_pow256
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word) {target : Nat}
-    (h : n1StepRemainderVal r0 + n1StepsCarryVal r3 r2 r1 r0 = target)
-    (ht : target < 2^256) :
-    n1StepRemainderVal r0 = target := by
-  delta n1StepsCarryVal n1StepTopVal at h
-  norm_num at h ht ⊢
-  have hr : n1StepRemainderVal r0 < 2^256 := by
-    delta n1StepRemainderVal
-    exact EvmWord.val256_bound _ _ _ _
-  omega
 
 
-@[irreducible]
-def fullDivN1StepsTelescoped
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
-  let v := fullDivN1NormV b0 b1 b2 b3
-  let u := fullDivN1NormU a0 a1 a2 a3 b0
-  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-  let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-  n1StepsTelescoped v u r3 r2 r1 r0
-
-
-
-
-
-
-theorem iterWithDoubleAddback_qout_ge_sub_two
-    (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) (hq2 : 2 ≤ q.toNat) :
-    let out := iterWithDoubleAddback q v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    q.toNat - 2 ≤ out.1.toNat := by
-  intro out
-  subst out
-  by_cases hb : BitVec.ult uTop (mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
-  · rw [iterWithDoubleAddback_borrow (qHat := q) (v0 := v0) (v1 := v1)
-      (v2 := v2) (v3 := v3) (u0 := u0) (u1 := u1) (u2 := u2) (u3 := u3)
-      (uTop := uTop) hb]
-    let ms := mulsubN4 q v0 v1 v2 v3 u0 u1 u2 u3
-    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
-    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
-      (uTop - ms.2.2.2.2) v0 v1 v2 v3
-    by_cases hcarry : carry = 0
-    · rw [if_pos hcarry]
-      rw [add_signExtend12_4095_add_signExtend12_4095_toNat q hq2]
-    · rw [if_neg hcarry]
-      rw [add_signExtend12_4095_toNat q (by omega)]
-      omega
-  · rw [iterWithDoubleAddback_no_borrow (qHat := q) (v0 := v0) (v1 := v1)
-      (v2 := v2) (v3 := v3) (u0 := u0) (u1 := u1) (u2 := u2) (u3 := u3)
-      (uTop := uTop) hb]
-    simp
-
-theorem iterWithDoubleAddback_qout_ge_tsub_two
-    (q v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
-    let out := iterWithDoubleAddback q v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    q.toNat - 2 ≤ out.1.toNat := by
-  intro out
-  by_cases hq2 : 2 ≤ q.toNat
-  · exact iterWithDoubleAddback_qout_ge_sub_two q v0 v1 v2 v3 u0 u1 u2 u3 uTop hq2
-  · have hzero : q.toNat - 2 = 0 := by omega
-    rw [hzero]
-    exact Nat.zero_le _
-
-theorem iterN1_qout_ge_trial_sub_two
-    (bltu : Bool) (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
-    let qHat : Word := if bltu then div128Quot u1 u0 v0 else signExtend12 4095
-    let out := iterN1 bltu v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    qHat.toNat - 2 ≤ out.1.toNat := by
-  intro qHat out
-  subst qHat
-  subst out
-  cases bltu
-  · simp only [iterN1_false]
-    unfold iterN1Max
-    exact iterWithDoubleAddback_qout_ge_sub_two
-      (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3 uTop (by
-        rw [signExtend12_4095_toNat]
-        norm_num)
-  · simp only [ite_true, iterN1_true]
-    unfold iterN1Call
-    exact iterWithDoubleAddback_qout_ge_tsub_two
-      (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3 uTop
-
-
-theorem div_mul_pow_mul_pow_eq_div (a b s : Nat) :
-    (a * 2^s) / (b * 2^s) = a / b :=
-  Nat.mul_div_mul_right a b (by positivity : 0 < 2^s)
 
 
 end EvmAsm.Evm64
