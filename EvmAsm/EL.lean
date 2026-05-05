@@ -47,3 +47,4 @@ import EvmAsm.EL.TerminatingDataMemory
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.Block
+import EvmAsm.EL.BlockTrace
