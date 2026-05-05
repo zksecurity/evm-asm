@@ -93,6 +93,7 @@ import EvmAsm.Evm64.StorageAccessOutcome
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.InterpreterLoop
 
 -- Precompile dispatch surface (#116)
