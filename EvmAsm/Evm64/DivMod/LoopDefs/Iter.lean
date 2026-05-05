@@ -171,8 +171,8 @@ def div128Quot (uHi uLo vTop : Word) : Word :=
     can falsely fire, producing `q1' = q_true - 1`. Numerically witnessed:
     on `(uHi=2^64-2^32+1, uLo=0, vTop=2^64-1)`, `div128Quot_v2` returns
     `2^64-2^33+1` but the true quotient is `2^64-2^32+1` (undershoot 2^32).
-    Verified by `div128Quot_v2_buggy_at_unreachable_uHi` (decide-checked)
-    in `SpecCallAddbackBeq/NumericalTests.lean`.
+    (Previously verified by a decide-checked theorem in
+    `SpecCallAddbackBeq/NumericalTests.lean`, since deleted as dead code.)
 
     **Why this hasn't broken anything yet**: the buggy regime requires
     `uHi ≥ 2^63`, which is unreachable through shift normalization
@@ -194,8 +194,8 @@ def div128Quot (uHi uLo vTop : Word) : Word :=
     The fix is no-op under runtime preconditions; only suppresses
     truncation-induced spurious fires at unreachable Word-level inputs.
     Verification chain:
-    1. Update this def + flip `div128Quot_v2_buggy_at_unreachable_uHi`'s
-       conclusion to assert correctness.
+    1. Update this def + add a new decide-checked correctness theorem
+       on the (currently unreachable) buggy regime.
     2. Drop `rhatc < 2^32` precondition from Stub 2
        (`_phase1b_check_iff_overshoot_under_runtime`) since the guard
        provides it automatically.
