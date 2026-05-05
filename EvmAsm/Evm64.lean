@@ -72,6 +72,7 @@ import EvmAsm.Evm64.CallingConvention
 import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
+import EvmAsm.Evm64.ReturnData.CopyArgs
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
 import EvmAsm.Evm64.Env.Program
