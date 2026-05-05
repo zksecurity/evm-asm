@@ -107,26 +107,6 @@ is the canonical fix. -/
     else rhat2c
   div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
 
-/-- **v4 mirror of `isAddbackBorrowN4Call`**: the addback BEQ runtime
-    gating, using `div128Quot_v4` for the trial quotient. The branch
-    fires when the borrow check on `mulsubN4_c3 qHat ...` is true,
-    indicating qHat overshoots q_true. -/
-def isAddbackBorrowN4Call_v4 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
-  let shift := (clzResult b3).1
-  let antiShift := signExtend12 (0 : BitVec 12) - shift
-  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
-  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
-  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
-  let b0' := b0 <<< (shift.toNat % 64)
-  let u4 := a3 >>> (antiShift.toNat % 64)
-  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
-  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
-  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
-  let u0 := a0 <<< (shift.toNat % 64)
-  let qHat := div128Quot_v4 u4 u3 b3'
-  (if BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
-   then (1 : Word) else 0) ≠ (0 : Word)
-
 /-- **div128Quot_v4 unfolds via the component accessors**: structural
     bridge to compose the proven sub-stubs. -/
 theorem div128Quot_v4_eq_components (uHi uLo vTop : Word) :
@@ -691,17 +671,6 @@ theorem div128Quot_v4_eq_q_true_normalized
     (div128Quot_v4 u4 u3 b3').toNat =
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat :=
   div128Quot_v4_eq_q_true_normalized_of_lt u4 u3 b3' h_b3'_ge h_u4_lt_b3'
-
-/-- Lower-bound corollary of the v4 exact quotient theorem. This is the
-    div128 shape needed by later N1 digits where `uHi < vTop`, but
-    `uHi < 2^63` is not available. -/
-theorem div128Quot_v4_ge_q_true_normalized_of_lt
-    (u4 u3 b3' : Word)
-    (h_b3'_ge : b3'.toNat ≥ 2^63)
-    (h_u4_lt_b3' : u4.toNat < b3'.toNat) :
-    (u4.toNat * 2^64 + u3.toNat) / b3'.toNat ≤
-      (div128Quot_v4 u4 u3 b3').toNat := by
-  rw [div128Quot_v4_eq_q_true_normalized_of_lt u4 u3 b3' h_b3'_ge h_u4_lt_b3']
 
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.

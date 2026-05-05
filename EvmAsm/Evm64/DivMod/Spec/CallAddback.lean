@@ -26,8 +26,6 @@
 
 import EvmAsm.Evm64.DivMod.Spec.CallSkip
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat
-import EvmAsm.Evm64.DivMod.Spec.CallAddbackPhase1Stubs
-import EvmAsm.Evm64.DivMod.Spec.CallAddbackV2Bounds
 import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.AlgDefs
 import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.AlgEuclideans
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
@@ -124,19 +122,6 @@ def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
 -- sanity check on the v1 counterexample input) live in
 -- `EvmAsm/Evm64/DivMod/Spec/CallAddbackCounterexamples.lean` (extracted
 -- 2026 toward the #1078 file-size cap; see beads evm-asm-b5i).
-
--- NOTE: `div128Quot_v2_qHat_vTop_le` (the simple form, without no_wrap
--- implications) was previously a sorry stub here. It was provably FALSE
--- in general (the no_wrap conditions don't hold automatically, per
--- `div128Quot_v2_phase1_no_wrap_lo_FALSE_counterexample`), so the simple
--- form was unprovable.
---
--- Use `div128Quot_v2_qHat_vTop_le_full` (defined below, after the 7
--- proven sub-lemmas) instead — it takes the 3 v1-style no_wrap
--- implications as preconditions and is FULLY PROVEN by direct
--- composition.
-
-
 
 
 
