@@ -237,6 +237,7 @@
  "EvmAsm.Evm64.EvmWordArith.DivAddbackLimb": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivMulSubCarry": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble": ["EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
+"EvmAsm.Evm64.EvmWordArith.Val256ModBridge": ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
  "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
   "EvmAsm.Rv64.SailEquiv.ShiftProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
   "EvmAsm.Rv64.SailEquiv.ImmProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
