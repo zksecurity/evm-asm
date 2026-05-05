@@ -81,6 +81,7 @@ import EvmAsm.Evm64.CallArgs
 import EvmAsm.Evm64.CreateArgs
 import EvmAsm.Evm64.LogArgs
 import EvmAsm.Evm64.TerminatingArgs
+import EvmAsm.Evm64.TerminatingArgsStackDecode
 
 -- Static gas schedule (#117)
 import EvmAsm.Evm64.Gas
