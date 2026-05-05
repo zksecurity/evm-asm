@@ -5,6 +5,7 @@
   selector for HINT_READ and invoke ECALL for a one-dword input read.
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.HintSpecs
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.Tactics.RunBlock
