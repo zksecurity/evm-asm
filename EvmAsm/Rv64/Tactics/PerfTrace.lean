@@ -9,7 +9,7 @@
   Use with `set_option trace.profiler true` for wall-clock timing.
 -/
 
-import Lean
+import Lean.Util.Trace
 
 initialize Lean.registerTraceClass `runBlock.perf (inherited := true)
 initialize Lean.registerTraceClass `runBlock.perf.normalize (inherited := true)
