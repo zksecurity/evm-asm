@@ -23,6 +23,8 @@ import EvmAsm.Rv64.Tactics.XPermPure
 import EvmAsm.Rv64.Tactics.DropPure
 -- XCancelStruct: structural cancellation tactic (#245 slice 3, beads evm-asm-otgf).
 import EvmAsm.Rv64.Tactics.XCancelStruct
+-- SymStep: symbolic-simulation prototype (#302 slice 2, beads evm-asm-avjm).
+import EvmAsm.Rv64.Tactics.SymStep
 import EvmAsm.Rv64.RLP
 -- The `*Attr` files are imported by their non-Attr counterparts.
 import EvmAsm.Rv64.RegOps
