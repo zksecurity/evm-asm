@@ -5,6 +5,7 @@
   5 instructions (ADDI + 4 × SD x0).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64

@@ -12,25 +12,25 @@ namespace InterpreterLoopCompose
 
 abbrev Handler := InterpreterLoop.Handler
 
-/-- Non-running states are fixed points for every fuel budget. -/
+/-- Non-running states are fixed points for every nSteps budget. -/
 theorem loopFuel_of_not_running
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status ≠ .running) :
-    InterpreterLoop.loopFuel handler fuel state = state := by
-  cases fuel with
+    InterpreterLoop.loopFuel handler nSteps state = state := by
+  cases nSteps with
   | zero => rfl
   | succ _ =>
       cases h : state.status <;> simp [InterpreterLoop.loopFuel, h] at h_status ⊢
 
 /-- Distinctive token: InterpreterLoopCompose.loopFuel_add #109. -/
 theorem loopFuel_add
-    (handler : Handler) (fuelA fuelB : Nat) (state : EvmState) :
-    InterpreterLoop.loopFuel handler (fuelA + fuelB) state =
-      InterpreterLoop.loopFuel handler fuelB
-        (InterpreterLoop.loopFuel handler fuelA state) := by
-  induction fuelA generalizing state with
+    (handler : Handler) (nStepsA nStepsB : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel handler (nStepsA + nStepsB) state =
+      InterpreterLoop.loopFuel handler nStepsB
+        (InterpreterLoop.loopFuel handler nStepsA state) := by
+  induction nStepsA generalizing state with
   | zero => simp
-  | succ fuelA ih =>
+  | succ nStepsA ih =>
       rw [Nat.succ_add]
       cases h_status : state.status
       · simp [InterpreterLoop.loopFuel, h_status]
@@ -41,18 +41,18 @@ theorem loopFuel_add
       · simp [InterpreterLoop.loopFuel, h_status, loopFuel_of_not_running]
 
 theorem loopFuel_one_add
-    (handler : Handler) (fuel : Nat) (state : EvmState) :
-    InterpreterLoop.loopFuel handler (1 + fuel) state =
-      InterpreterLoop.loopFuel handler fuel
+    (handler : Handler) (nSteps : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel handler (1 + nSteps) state =
+      InterpreterLoop.loopFuel handler nSteps
         (InterpreterLoop.loopFuel handler 1 state) := by
-  exact loopFuel_add handler 1 fuel state
+  exact loopFuel_add handler 1 nSteps state
 
 theorem loopFuel_add_one
-    (handler : Handler) (fuel : Nat) (state : EvmState) :
-    InterpreterLoop.loopFuel handler (fuel + 1) state =
+    (handler : Handler) (nSteps : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel handler (nSteps + 1) state =
       InterpreterLoop.loopFuel handler 1
-        (InterpreterLoop.loopFuel handler fuel state) := by
-  exact loopFuel_add handler fuel 1 state
+        (InterpreterLoop.loopFuel handler nSteps state) := by
+  exact loopFuel_add handler nSteps 1 state
 
 end InterpreterLoopCompose
 
