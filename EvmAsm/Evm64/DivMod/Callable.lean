@@ -81,25 +81,6 @@ def evm_mod_callable : Program :=
   divK_div128
 
 -- ============================================================================
--- Length lemmas
--- ============================================================================
-
-/-- `evm_div_callable` has the same instruction count as `evm_div`
-    (1:1 NOP↔`cc_ret` swap). -/
-theorem evm_div_callable_length : evm_div_callable.length = 319 := by
-  native_decide
-
-/-- `evm_mod_callable` has the same instruction count as `evm_mod`. -/
-theorem evm_mod_callable_length : evm_mod_callable.length = 319 := by
-  native_decide
-
-theorem evm_div_callable_byte_length : 4 * evm_div_callable.length = 1276 := by
-  rw [evm_div_callable_length]
-
-theorem evm_mod_callable_byte_length : 4 * evm_mod_callable.length = 1276 := by
-  rw [evm_mod_callable_length]
-
--- ============================================================================
 -- CodeReq abbreviations
 -- ============================================================================
 
