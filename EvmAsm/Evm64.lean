@@ -100,6 +100,7 @@ import EvmAsm.Evm64.StorageArgs
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.Dispatch.Program
 import EvmAsm.Evm64.Dispatch.EntrySpec
+import EvmAsm.Evm64.Dispatch.TailSpec
 import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
