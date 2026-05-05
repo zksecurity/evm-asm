@@ -15,6 +15,7 @@ import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.LogDataBridge
 import EvmAsm.EL.LogCallEffects
+import EvmAsm.EL.LogExecutionBridge
 import EvmAsm.EL.KeccakInputBridge
 import EvmAsm.EL.KeccakEcallBridge
 import EvmAsm.EL.KeccakResultBridge
