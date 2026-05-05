@@ -328,18 +328,9 @@ def loopBodyPre (n : Word)
   ((uBase + signExtend12 4064) ↦ₘ uTop) **
   (qAddr ↦ₘ qOld)
 
-/-- Precondition for a single-iteration loop body with scratch cells (call path).
-    Shared across call_skip, call_addback, and the unified call-path specs. -/
-@[irreducible]
-def loopBodyPreWithScratch (n : Word)
-    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
-     retMem dMem dloMem scratch_un0 : Word) : Assertion :=
-  loopBodyPre n sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld **
-  (sp + signExtend12 3968 ↦ₘ retMem) **
-  (sp + signExtend12 3960 ↦ₘ dMem) **
-  (sp + signExtend12 3952 ↦ₘ dloMem) **
-  (sp + signExtend12 3944 ↦ₘ scratch_un0)
+-- (Removed dead def `loopBodyPreWithScratch`: a `loopBodyPre` extension with
+-- four scratch cells (ret/d/dlo/un0) for the call path. It had no consumers;
+-- call-path specs build the scratch chain inline. Authored by @pirapira;
+-- implemented by Hermes-bot (evm-hermes).)
 
 end EvmAsm.Evm64
