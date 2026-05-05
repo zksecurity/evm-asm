@@ -25,6 +25,7 @@ import EvmAsm.EL.KeccakExecutionBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
+import EvmAsm.EL.Conformance.Log
 import EvmAsm.EL.Conformance.ExpGas
 import EvmAsm.EL.Conformance.RLP
 import EvmAsm.EL.Conformance.RLPFullDecodeBridge
