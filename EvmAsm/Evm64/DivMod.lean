@@ -13,9 +13,7 @@ import EvmAsm.Evm64.DivMod.Spec
 -- cover the MOD n=1/n=2/n=3 wrappers. FullPathN2Bundle carries shared N2
 -- irreducible intermediates for later full-wrapper refactors.
 -- Spec.V4 transitively covers SpecCallAddbackBeq (+ AlgDefs, AlgEuclideans)
--- and LoopDefs.IterV4InvariantsPhase2 (→ IterV4Invariants). The leaf
--- NumericalTests file is imported explicitly so the
--- unimported-file check (#1209/#1440) sees it reachable from the umbrella.
+-- and LoopDefs.IterV4InvariantsPhase2 (→ IterV4Invariants).
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin
@@ -30,4 +28,3 @@ import EvmAsm.Evm64.DivMod.Compose.ModFullPathN3LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
 import EvmAsm.Evm64.DivMod.Spec.V4
-import EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.NumericalTests
