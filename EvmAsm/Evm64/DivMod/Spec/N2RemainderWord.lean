@@ -98,30 +98,4 @@ theorem fullModN2_hmods_of_word_eq
     delta fullModN2RemainderWord
     exact EvmWord.getLimbN_fromLimbs_3
 
-/-- The `toNat` of the packed remainder word equals the four-limb
-    `EvmWord.val256` of the denormalized remainder limbs. -/
-theorem fullModN2RemainderWord_toNat
-    (bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    (fullModN2RemainderWord bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3).toNat =
-    EvmWord.val256
-      (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.1 >>>
-          ((fullDivN2Shift b1).toNat % 64)) |||
-        ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 <<<
-          ((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat % 64)))
-      (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 >>>
-          ((fullDivN2Shift b1).toNat % 64)) |||
-        ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 <<<
-          ((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat % 64)))
-      (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 >>>
-          ((fullDivN2Shift b1).toNat % 64)) |||
-        ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 <<<
-          ((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat % 64)))
-      ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 >>>
-        ((fullDivN2Shift b1).toNat % 64)) := by
-  delta fullModN2RemainderWord
-  rw [EvmWord.fromLimbs_toNat]
-  rfl
-
 end EvmAsm.Evm64
