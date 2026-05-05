@@ -479,41 +479,6 @@ theorem fullDivN1Shift_toNat_lt_64 (b0 : Word) :
   have hle := clzResult_fst_toNat_le b0
   omega
 
-theorem fullDivN1Shift_toNat_mod_eq (b0 : Word) :
-    (fullDivN1Shift b0).toNat % 64 = (fullDivN1Shift b0).toNat := by
-  exact Nat.mod_eq_of_lt (fullDivN1Shift_toNat_lt_64 b0)
-
-theorem fullDivN1AntiShift_unfold (b0 : Word) :
-    fullDivN1AntiShift b0 = signExtend12 (0 : BitVec 12) - fullDivN1Shift b0 := by
-  delta fullDivN1AntiShift
-  rfl
-
-theorem fullDivN1AntiShift_toNat_mod_eq {b0 : Word}
-    (hshift_nz : fullDivN1Shift b0 ≠ 0) :
-    (signExtend12 (0 : BitVec 12) - fullDivN1Shift b0).toNat % 64 =
-      64 - (fullDivN1Shift b0).toNat := by
-  have h1 : 1 ≤ (fullDivN1Shift b0).toNat :=
-    fullDivN1Shift_toNat_pos_of_ne_zero hshift_nz
-  have h63 : (fullDivN1Shift b0).toNat ≤ 63 := by
-    have hlt := fullDivN1Shift_toNat_lt_64 b0
-    omega
-  have h0 : (signExtend12 (0 : BitVec 12) : Word) = 0 := by decide
-  rw [h0]
-  have hshift_toNat : ((0 : Word) - fullDivN1Shift b0).toNat =
-      2^64 - (fullDivN1Shift b0).toNat := by
-    rw [BitVec.toNat_sub]
-    simp
-    omega
-  rw [hshift_toNat]
-  have hsplit : 2^64 - (fullDivN1Shift b0).toNat =
-      (2^64 - 64) + (64 - (fullDivN1Shift b0).toNat) := by
-    omega
-  rw [hsplit, Nat.add_mod]
-  have hmod64 : (2^64 - 64) % 64 = 0 := by decide
-  rw [hmod64]
-  simp
-  omega
-
 theorem evm_div_n1_denorm_epilogue_bundled_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)

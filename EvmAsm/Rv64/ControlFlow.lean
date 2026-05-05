@@ -12,6 +12,7 @@
 
 -- `GenericSpecs` transitively imports `Basic`, `Instructions`, `Program`
 -- (via `Execution`), `SepLogic`, `Execution`, and `CPSSpec`.
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.GenericSpecs
 import EvmAsm.Rv64.Tactics.SpecDb
 

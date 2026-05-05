@@ -19,6 +19,7 @@
     x11 — output: payload length (zero-extended)
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 
