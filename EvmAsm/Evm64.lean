@@ -108,6 +108,7 @@ import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterLoopStatus
 import EvmAsm.Evm64.InterpreterSimulation
 import EvmAsm.Evm64.InterpreterTrace
+import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
 
 -- Precompile dispatch surface (#116)
