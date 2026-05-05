@@ -107,6 +107,7 @@ import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.EnvHandlers
+import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
 import EvmAsm.Evm64.TerminatingLoopBridge
@@ -152,3 +153,4 @@ import EvmAsm.Evm64.Calldata.LoadProgram
 import EvmAsm.Evm64.Calldata.CopyArgs
 import EvmAsm.Evm64.Calldata.CopyExec
 import EvmAsm.Evm64.Calldata.CopyMemory
+import EvmAsm.Evm64.Calldata.CopyProgram
