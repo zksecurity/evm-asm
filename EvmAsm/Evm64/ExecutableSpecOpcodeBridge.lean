@@ -17,6 +17,9 @@ namespace Ops
 
 def STOP : Nat := 0x00
 def KECCAK : Nat := 0x20
+def CALLDATALOAD : Nat := 0x35
+def CALLDATASIZE : Nat := 0x36
+def CALLDATACOPY : Nat := 0x37
 def POP : Nat := 0x50
 def MLOAD : Nat := 0x51
 def MSTORE : Nat := 0x52
@@ -83,6 +86,30 @@ theorem roundtrip_execSpec_STOP :
 theorem roundtrip_execSpec_KECCAK :
     EvmOpcode.byte? EvmOpcode.KECCAK256 = some Ops.KECCAK ∧
       EvmOpcode.decodeByte? Ops.KECCAK = some EvmOpcode.KECCAK256 := by
+  exact ⟨rfl, rfl⟩
+
+/-- Distinctive token:
+    ExecutableSpecOpcodeBridge.roundtrip_execSpec_CALLDATALOAD #109 #104. -/
+theorem roundtrip_execSpec_CALLDATALOAD :
+    EvmOpcode.byte? EvmOpcode.CALLDATALOAD = some Ops.CALLDATALOAD ∧
+      EvmOpcode.decodeByte? Ops.CALLDATALOAD =
+        some EvmOpcode.CALLDATALOAD := by
+  exact ⟨rfl, rfl⟩
+
+/-- Distinctive token:
+    ExecutableSpecOpcodeBridge.roundtrip_execSpec_CALLDATASIZE #109 #104. -/
+theorem roundtrip_execSpec_CALLDATASIZE :
+    EvmOpcode.byte? EvmOpcode.CALLDATASIZE = some Ops.CALLDATASIZE ∧
+      EvmOpcode.decodeByte? Ops.CALLDATASIZE =
+        some EvmOpcode.CALLDATASIZE := by
+  exact ⟨rfl, rfl⟩
+
+/-- Distinctive token:
+    ExecutableSpecOpcodeBridge.roundtrip_execSpec_CALLDATACOPY #109 #104. -/
+theorem roundtrip_execSpec_CALLDATACOPY :
+    EvmOpcode.byte? EvmOpcode.CALLDATACOPY = some Ops.CALLDATACOPY ∧
+      EvmOpcode.decodeByte? Ops.CALLDATACOPY =
+        some EvmOpcode.CALLDATACOPY := by
   exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_POP :
