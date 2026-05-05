@@ -49,6 +49,13 @@ theorem logDataFromMemory_get
       readByte (dataStart args + i) := by
   simp [logDataFromMemory, List.getElem_map, List.getElem_range]
 
+theorem logDataFromMemory_get?
+    (readByte : MemoryReader) (args : LogArgs) (i : Nat)
+    (h : i < dataSize args) :
+    (logDataFromMemory readByte args)[i]? =
+      some (readByte (dataStart args + i)) := by
+  simp [logDataFromMemory, h]
+
 @[simp] theorem logDataFromMemory_zero_size
     (readByte : MemoryReader) (rangeOffset : EvmAsm.Evm64.EvmWord)
     (topics : List EvmAsm.Evm64.EvmWord) :
@@ -82,6 +89,41 @@ theorem mkLogEntryFromMemoryTopicCountOk
     (mkLogEntryFromMemory emitter readByte args).topicCountOk := by
   exact LogArgsBridge.topicCountOk_of_logArgs
     kind emitter (logDataFromMemory readByte args) args h_topics
+
+/-- Append a LOG entry directly from stack args and a pure memory reader.
+    Distinctive token: LogDataBridge.appendLogFromMemory #112. -/
+def appendLogFromMemory
+    (logs : LogState) (emitter : Address) (readByte : MemoryReader) (args : LogArgs) :
+    LogState :=
+  LogArgsBridge.appendLogFromArgs logs emitter (logDataFromMemory readByte args) args
+
+theorem appendLogFromMemory_entries
+    (logs : LogState) (emitter : Address) (readByte : MemoryReader) (args : LogArgs) :
+    (appendLogFromMemory logs emitter readByte args).entries =
+      logs.entries ++ [mkLogEntryFromMemory emitter readByte args] := rfl
+
+theorem appendLogFromMemory_length
+    (logs : LogState) (emitter : Address) (readByte : MemoryReader) (args : LogArgs) :
+    (appendLogFromMemory logs emitter readByte args).entries.length =
+      logs.entries.length + 1 := by
+  simp [appendLogFromMemory, LogArgsBridge.appendLogFromArgs]
+
+theorem appendLogFromMemory_lastData
+    (logs : LogState) (emitter : Address) (readByte : MemoryReader) (args : LogArgs) :
+    ((appendLogFromMemory logs emitter readByte args).entries.getLast
+        (by simp [appendLogFromMemory, LogArgsBridge.appendLogFromArgs])).data =
+      logDataFromMemory readByte args := by
+  simp [appendLogFromMemory, LogArgsBridge.appendLogFromArgs,
+    LogArgsBridge.mkLogEntry, LogEntry.mkChecked]
+
+theorem appendLogFromMemory_lastTopicCountOk
+    (logs : LogState) (kind : LogArgsBridge.LogKind) (emitter : Address)
+    (readByte : MemoryReader) (args : LogArgs)
+    (h_topics : EvmAsm.Evm64.LogArgs.topicCountOk kind args) :
+    ((appendLogFromMemory logs emitter readByte args).entries.getLast
+        (by simp [appendLogFromMemory, LogArgsBridge.appendLogFromArgs])).topicCountOk := by
+  simpa [appendLogFromMemory, LogArgsBridge.appendLogFromArgs, mkLogEntryFromMemory]
+    using mkLogEntryFromMemoryTopicCountOk kind emitter readByte args h_topics
 
 end LogDataBridge
 
