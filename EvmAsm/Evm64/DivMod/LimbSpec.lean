@@ -28,7 +28,6 @@ import EvmAsm.Evm64.DivMod.LimbSpec.MulSubSetup
 import EvmAsm.Evm64.DivMod.LimbSpec.NormA
 import EvmAsm.Evm64.DivMod.LimbSpec.NormB
 import EvmAsm.Evm64.DivMod.LimbSpec.PhaseA
-import EvmAsm.Evm64.DivMod.LimbSpec.PhaseBCascade
 import EvmAsm.Evm64.DivMod.LimbSpec.PhaseBInit
 import EvmAsm.Evm64.DivMod.LimbSpec.PhaseBTail
 import EvmAsm.Evm64.DivMod.LimbSpec.PhaseC2
@@ -92,11 +91,6 @@ open EvmAsm.Rv64
 
 -- Phase C2 specs (divK_phaseC2_{code,body_spec,spec}) moved to
 -- EvmAsm.Evm64.DivMod.LimbSpec.PhaseC2 (ninth chunk of #312 split).
--- Re-exported via the import at the top of this file, so downstream surface
--- is unchanged.
-
--- Phase B cascade step spec (divK_phaseB_cascade_step_{code,spec}) moved to
--- EvmAsm.Evm64.DivMod.LimbSpec.PhaseBCascade (eleventh chunk of #312 split).
 -- Re-exported via the import at the top of this file, so downstream surface
 -- is unchanged.
 
