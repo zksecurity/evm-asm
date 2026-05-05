@@ -125,8 +125,8 @@
   "EvmAsm.Evm64.Eq.Spec":      ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Eq.LimbSpec", "EvmAsm.Evm64.EvmWordArith.Eq"],
   "EvmAsm.Evm64.IsZero.Spec":  ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.IsZero.LimbSpec", "EvmAsm.Evm64.EvmWordArith.IsZero"],
   "EvmAsm.Evm64.Byte.Spec":    ["EvmAsm.Rv64.AddrNorm"],
-  "EvmAsm.Evm64.Slt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Compare.LimbSpec", "EvmAsm.Evm64.EvmWordArith.Comparison", "EvmAsm.Rv64.AddrNorm"],
-  "EvmAsm.Evm64.Sgt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Compare.LimbSpec", "EvmAsm.Evm64.EvmWordArith.Comparison", "EvmAsm.Rv64.AddrNorm"],
+  "EvmAsm.Evm64.Slt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Compare.LimbSpec", "EvmAsm.Evm64.EvmWordArith.Comparison", "EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.ControlFlow"],
+  "EvmAsm.Evm64.Sgt.Spec":     ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Compare.LimbSpec", "EvmAsm.Evm64.EvmWordArith.Comparison", "EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.ControlFlow"],
   "EvmAsm.Evm64.Multiply.Spec":["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.EvmWordArith.MulCorrect"],
   "EvmAsm.Evm64.DivMod.LimbSpec.CopyAU":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
