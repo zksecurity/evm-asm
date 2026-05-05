@@ -70,26 +70,6 @@ theorem n1StepConservationNat_of_conservation
   delta n1StepRemainderVal n1StepTopVal
   exact h
 
-theorem n1StepExtendedRemainder_lt_of_floor_le
-    (v0 v1 v2 u0 u1 u2 u3 uTop : Word)
-    (out : Word × Word × Word × Word × Word × Word)
-    (hbnz : v0 ||| v1 ||| v2 ||| (0 : Word) ≠ 0)
-    (h : n1StepConservation v0 v1 v2 u0 u1 u2 u3 uTop out)
-    (hge : (EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256) /
-        EvmWord.val256 v0 v1 v2 0 ≤ out.1.toNat) :
-    n1StepRemainderVal out + n1StepTopVal out * 2^256 <
-      EvmWord.val256 v0 v1 v2 0 := by
-  have hv_pos : 0 < EvmWord.val256 v0 v1 v2 0 :=
-    EvmWord.val256_pos_of_or_ne_zero hbnz
-  have heq : EvmWord.val256 u0 u1 u2 u3 + uTop.toNat * 2^256 =
-      out.1.toNat * EvmWord.val256 v0 v1 v2 0 +
-        (n1StepRemainderVal out + n1StepTopVal out * 2^256) := by
-    delta n1StepConservation at h
-    delta n1StepRemainderVal n1StepTopVal
-    omega
-  have ⟨_, hr_lt⟩ := EvmWord.remainder_lt_of_ge_floor hv_pos heq hge
-  exact hr_lt
-
 @[irreducible]
 def n1StepsTelescoped
     (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
@@ -256,17 +236,6 @@ theorem n1StepsRemainderVal_eq_of_extended_eq_lt_pow256
     delta n1StepRemainderVal
     exact EvmWord.val256_bound _ _ _ _
   omega
-
-theorem n1StepsRemainderVal_eq_mod_mul_pow_of_normalized_euclidean
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word)
-    {aVal bVal qVal s : Nat}
-    (heq : aVal * 2^s =
-      qVal * (bVal * 2^s) + (n1StepRemainderVal r0 + n1StepsCarryVal r3 r2 r1 r0))
-    (hlt : n1StepRemainderVal r0 + n1StepsCarryVal r3 r2 r1 r0 < bVal * 2^s)
-    (hbound : aVal % bVal * 2^s < 2^256) :
-    n1StepRemainderVal r0 = aVal % bVal * 2^s := by
-  have htarget := EvmWord.normalized_remainder_eq_mod_mul_pow s heq hlt
-  exact n1StepsRemainderVal_eq_of_extended_eq_lt_pow256 r3 r2 r1 r0 htarget hbound
 
 @[irreducible]
 def fullDivN1StepsConservation
@@ -550,33 +519,5 @@ theorem div_mul_pow_mul_pow_eq_div (a b s : Nat) :
     (a * 2^s) / (b * 2^s) = a / b :=
   Nat.mul_div_mul_right a b (by positivity : 0 < 2^s)
 
-
-theorem fullDivN1ExtendedRemainder_lt_of_telescoped_quotient_le
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
-    (hshift_nz : fullDivN1Shift b0 ≠ 0)
-    (htel : fullDivN1StepsTelescoped bltu_3 bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3)
-    (hge : EvmWord.val256 a0 a1 a2 a3 / EvmWord.val256 b0 b1 b2 b3 ≤
-      (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat * (2^64)^3 +
-        (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat * (2^64)^2 +
-        (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat *
-          (2^64) +
-        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1.toNat) :
-    n1StepRemainderVal
-        (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) +
-        n1StepsCarryVal
-          (fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3)
-          (fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3) <
-      EvmWord.val256 b0 b1 b2 b3 * 2 ^ ((fullDivN1Shift b0).toNat % 64) := by
-  exact fullDivN1ExtendedRemainder_lt_of_telescoped_floor_le
-    bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-    hb2z hb3z hbnz hshift_nz htel (by
-      rw [div_mul_pow_mul_pow_eq_div]
-      exact hge)
 
 end EvmAsm.Evm64
