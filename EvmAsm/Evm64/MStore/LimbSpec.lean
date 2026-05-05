@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.MStore.ByteAlg
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 import EvmAsm.Rv64.Tactics.XSimp

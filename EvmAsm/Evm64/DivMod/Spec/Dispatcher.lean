@@ -6,8 +6,6 @@
 
 import EvmAsm.Evm64.DivMod.Spec.Base
 import EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationRuntime
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified

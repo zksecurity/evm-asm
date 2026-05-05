@@ -72,21 +72,6 @@ fires at the outer `s` and converts it to a `∧`.
 Tracked under beads `evm-asm-22a` / GH #1435.
 -/
 
-/-- Bubble a pure leaf one step left through an associated chain
-    `P ** ⌜Q⌝ ** R = ⌜Q⌝ ** P ** R`. Stated as `Assertion = Assertion` so
-    `simp only` will apply it at any depth inside a nested `**` chain. -/
-theorem sepConj_pure_mid_left_eq {P : Assertion} {Q : Prop} {R : Assertion} :
-    (P ** ⌜Q⌝ ** R) = (⌜Q⌝ ** P ** R) := by
-  rw [← sepConj_assoc', ← sepConj_assoc', sepConj_comm' P (⌜Q⌝)]
-
-/-- Bubble a pure leaf at the right end of a chain leftward past one
-    resource: `P ** R ** ⌜Q⌝ = ⌜Q⌝ ** P ** R`. Sibling of
-    `sepConj_pure_mid_left_eq` for the trailing-pure case. -/
-theorem sepConj_pure_mid_right_eq {P R : Assertion} {Q : Prop} :
-    (P ** R ** ⌜Q⌝) = (⌜Q⌝ ** P ** R) := by
-  rw [sepConj_comm' R (⌜Q⌝), ← sepConj_assoc',
-      sepConj_comm' P (⌜Q⌝), sepConj_assoc']
-
 /-- `extract_pure h` rewrites a separation-logic hypothesis
     `h : (A₁ ** … ** Aₙ) s` into a `∧`-chain whose left conjuncts are
     the pure atoms (`⌜P⌝`) extracted from the chain and whose tail is

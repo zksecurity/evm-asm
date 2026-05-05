@@ -12,7 +12,7 @@ namespace InterpreterLoopStatus
 
 abbrev Handler := InterpreterLoop.Handler
 
-/-- Predicate for states that the fuel-bounded interpreter loop leaves fixed.
+/-- Predicate for states that the nSteps-bounded interpreter loop leaves fixed.
     Distinctive token: InterpreterLoopStatus.loopFuel_nonRunning #108. -/
 def nonRunning (state : EvmState) : Prop :=
   state.status ≠ .running
@@ -34,38 +34,38 @@ theorem nonRunning_of_error {state : EvmState}
   simp [nonRunning, h_status]
 
 theorem loopFuel_nonRunning
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_nonRunning : nonRunning state) :
-    InterpreterLoop.loopFuel handler fuel state = state := by
-  cases fuel with
+    InterpreterLoop.loopFuel handler nSteps state = state := by
+  cases nSteps with
   | zero => rfl
-  | succ fuel =>
+  | succ nSteps =>
       cases h_status : state.status <;>
         simp [InterpreterLoop.loopFuel, h_status, nonRunning] at h_nonRunning ⊢
 
 theorem loopFuel_stopped
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .stopped) :
-    InterpreterLoop.loopFuel handler fuel state = state :=
-  loopFuel_nonRunning handler fuel state (nonRunning_of_stopped h_status)
+    InterpreterLoop.loopFuel handler nSteps state = state :=
+  loopFuel_nonRunning handler nSteps state (nonRunning_of_stopped h_status)
 
 theorem loopFuel_returned
-    (handler : Handler) (fuel : Nat) (state : EvmState) (data : List (BitVec 8))
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
     (h_status : state.status = .returned data) :
-    InterpreterLoop.loopFuel handler fuel state = state :=
-  loopFuel_nonRunning handler fuel state (nonRunning_of_returned h_status)
+    InterpreterLoop.loopFuel handler nSteps state = state :=
+  loopFuel_nonRunning handler nSteps state (nonRunning_of_returned h_status)
 
 theorem loopFuel_reverted
-    (handler : Handler) (fuel : Nat) (state : EvmState) (data : List (BitVec 8))
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
     (h_status : state.status = .reverted data) :
-    InterpreterLoop.loopFuel handler fuel state = state :=
-  loopFuel_nonRunning handler fuel state (nonRunning_of_reverted h_status)
+    InterpreterLoop.loopFuel handler nSteps state = state :=
+  loopFuel_nonRunning handler nSteps state (nonRunning_of_reverted h_status)
 
 theorem loopFuel_error
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .error) :
-    InterpreterLoop.loopFuel handler fuel state = state :=
-  loopFuel_nonRunning handler fuel state (nonRunning_of_error h_status)
+    InterpreterLoop.loopFuel handler nSteps state = state :=
+  loopFuel_nonRunning handler nSteps state (nonRunning_of_error h_status)
 
 theorem loopFuel_one_eof_invalid
     (handler : Handler) {state : EvmState}

@@ -55,6 +55,7 @@ import EvmAsm.Evm64.Exp
 
 -- DivMod (Knuth Algorithm D)
 import EvmAsm.Evm64.DivMod
+import EvmAsm.Evm64.DivMod.Callable
 
 -- SDIV / SMOD skeletons (GH #90, signed division/modulo)
 import EvmAsm.Evm64.SDiv
@@ -97,18 +98,26 @@ import EvmAsm.Evm64.StorageArgs
 
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
+import EvmAsm.Evm64.Dispatch.Program
+import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
+import EvmAsm.Evm64.TerminatingLoopBridge
 import EvmAsm.Evm64.HandlerLoopSimulationBridge
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterLoopStatus
 import EvmAsm.Evm64.InterpreterSimulation
 import EvmAsm.Evm64.InterpreterTrace
+import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
+import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
+import EvmAsm.Evm64.InterpreterExecutableFetchBridge
+import EvmAsm.Evm64.InterpreterExecutableStepBridge
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
@@ -132,9 +141,11 @@ import EvmAsm.Evm64.MLoad
 
 -- Calldata helpers (issue #104)
 import EvmAsm.Evm64.Calldata.Basic
+import EvmAsm.Evm64.Calldata.LoadArgs
 import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Calldata.SizeProgram
 import EvmAsm.Evm64.Calldata.SizeSpec
 import EvmAsm.Evm64.Calldata.LoadProgram
 import EvmAsm.Evm64.Calldata.CopyArgs
 import EvmAsm.Evm64.Calldata.CopyExec
+import EvmAsm.Evm64.Calldata.CopyMemory
