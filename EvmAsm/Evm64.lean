@@ -73,6 +73,9 @@ import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.ReturnData.Basic
+import EvmAsm.Evm64.ReturnData.CopyArgs
+import EvmAsm.Evm64.ReturnData.CopyExec
+import EvmAsm.Evm64.ReturnData.CopyMemory
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
 import EvmAsm.Evm64.Env.Program
@@ -101,6 +104,7 @@ import EvmAsm.Evm64.StorageArgs
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.Dispatch.Program
 import EvmAsm.Evm64.Dispatch.EntrySpec
+import EvmAsm.Evm64.Dispatch.EntryAddrBridge
 import EvmAsm.Evm64.Dispatch.TailSpec
 import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
@@ -108,12 +112,18 @@ import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.HandlerTableByte
 import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.Code.Basic
+import EvmAsm.Evm64.Code.CopyArgs
+import EvmAsm.Evm64.Code.CopyArgsStackDecode
+import EvmAsm.Evm64.Code.CopyExec
+import EvmAsm.Evm64.Code.CopyMemory
 import EvmAsm.Evm64.CodeHandlers
 import EvmAsm.Evm64.PushHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.MemoryHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.DupSwapHandlers
+import EvmAsm.Evm64.CalldataHandlers
 import EvmAsm.Evm64.ShiftHandlers
 import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ReturnDataHandlers
@@ -121,6 +131,7 @@ import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.SupportedHandlers
+import EvmAsm.Evm64.SupportedHandlerByte
 import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
 import EvmAsm.Evm64.TerminatingLoopBridge

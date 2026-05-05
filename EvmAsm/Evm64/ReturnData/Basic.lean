@@ -5,7 +5,8 @@
   (GH #107 / GH #114).
 -/
 
-import EvmAsm.Evm64.Basic
+-- (No `import EvmAsm.Evm64.Basic`: this module only uses `BitVec 8`,
+-- not anything from `Evm64.Basic`; dropped per shake hygiene, slice of #1045.)
 
 namespace EvmAsm.Evm64
 namespace ReturnData
