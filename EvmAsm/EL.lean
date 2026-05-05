@@ -42,6 +42,7 @@ import EvmAsm.EL.StorageStackBridge
 import EvmAsm.EL.StorageEcallBridge
 import EvmAsm.EL.StorageEcallStackBridge
 import EvmAsm.EL.StorageArgsEcallBridge
+import EvmAsm.EL.StorageStackExecutionBridge
 import EvmAsm.EL.Transaction
 import EvmAsm.EL.MessageCall
 import EvmAsm.EL.MessageCallExecution
