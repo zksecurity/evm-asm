@@ -142,6 +142,24 @@ theorem modAdd_eq_addmod_of_ne_zero (a b N : EvmWord) (h : N ≠ 0) :
   unfold modAdd addmod
   rw [if_neg h]
 
+-- ============================================================================
+-- Carry-split bridge for ADDMOD
+-- ============================================================================
+
+/-- ADDMOD-via-carry-split: when `N ≠ 0`, the algebraic ADDMOD result is the
+    `mod N` of `addCarry`'s outputs combined as a 257-bit Nat.
+
+    This is the algebraic bridge used by the runtime spec (slice 3,
+    `evm-asm-sord`): the RISC-V add-with-carry pipeline returns a
+    `(carry-bit, truncated-256-bit-sum)` pair, and downstream code wants
+    to identify the post-condition with `EvmWord.addmod`. The lemma is a
+    direct consequence of `addCarry_spec` and `addmod_correct`. -/
+theorem addmod_eq_carry_split (a b N : EvmWord) (h : N ≠ 0) :
+    (EvmWord.addmod a b N).toNat =
+      ((if (addCarry a b).fst then 2 ^ 256 else 0) + (addCarry a b).snd.toNat)
+        % N.toNat := by
+  rw [addmod_correct, if_neg h, ← addCarry_spec]
+
 end EvmWord
 
 end EvmAsm.Evm64
