@@ -1,0 +1,220 @@
+/-
+  EvmAsm.Evm64.CallArgsStackDecode
+
+  Pure top-of-stack decoders for CALL-family argument records (GH #114).
+-/
+
+import EvmAsm.Evm64.CallArgs
+
+namespace EvmAsm.Evm64
+
+namespace CallArgsStackDecode
+
+open CallArgs
+
+/--
+Decode CALL stack arguments from the top-of-stack list order:
+`gas, to, value, input_offset, input_size, output_offset, output_size`.
+
+Distinctive token: CallArgsStackDecode.decodeCallStack? #114.
+-/
+def decodeCallStack? : List EvmWord → Option Call
+  | gas :: to :: value :: inputOffset :: inputSize :: outputOffset ::
+      outputSize :: _ =>
+      some
+        { gas := gas
+          to := to
+          value := value
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } }
+  | _ => none
+
+/--
+Decode STATICCALL stack arguments from the top-of-stack list order:
+`gas, to, input_offset, input_size, output_offset, output_size`.
+-/
+def decodeStaticCallStack? : List EvmWord → Option StaticCall
+  | gas :: to :: inputOffset :: inputSize :: outputOffset :: outputSize :: _ =>
+      some
+        { gas := gas
+          to := to
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } }
+  | _ => none
+
+/--
+Decode DELEGATECALL stack arguments from the top-of-stack list order:
+`gas, to, input_offset, input_size, output_offset, output_size`.
+-/
+def decodeDelegateCallStack? : List EvmWord → Option DelegateCall
+  | gas :: to :: inputOffset :: inputSize :: outputOffset :: outputSize :: _ =>
+      some
+        { gas := gas
+          to := to
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } }
+  | _ => none
+
+theorem decodeCallStack?_cons
+    (gas to value inputOffset inputSize outputOffset outputSize : EvmWord)
+    (rest : List EvmWord) :
+    decodeCallStack?
+      (gas :: to :: value :: inputOffset :: inputSize :: outputOffset ::
+        outputSize :: rest) =
+      some
+        { gas := gas
+          to := to
+          value := value
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } } := rfl
+
+theorem decodeStaticCallStack?_cons
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord)
+    (rest : List EvmWord) :
+    decodeStaticCallStack?
+      (gas :: to :: inputOffset :: inputSize :: outputOffset ::
+        outputSize :: rest) =
+      some
+        { gas := gas
+          to := to
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } } := rfl
+
+theorem decodeDelegateCallStack?_cons
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord)
+    (rest : List EvmWord) :
+    decodeDelegateCallStack?
+      (gas :: to :: inputOffset :: inputSize :: outputOffset ::
+        outputSize :: rest) =
+      some
+        { gas := gas
+          to := to
+          input := { offset := inputOffset, size := inputSize }
+          output := { offset := outputOffset, size := outputSize } } := rfl
+
+theorem decodeCallStack?_eq_some_iff {stack : List EvmWord} {args : Call} :
+    decodeCallStack? stack = some args ↔
+      ∃ gas to value inputOffset inputSize outputOffset outputSize rest,
+        stack =
+          gas :: to :: value :: inputOffset :: inputSize :: outputOffset ::
+            outputSize :: rest ∧
+        args =
+          { gas := gas
+            to := to
+            value := value
+            input := { offset := inputOffset, size := inputSize }
+            output := { offset := outputOffset, size := outputSize } } := by
+  constructor
+  · cases stack with
+    | nil => simp [decodeCallStack?]
+    | cons gas s1 =>
+      cases s1 with
+      | nil => simp [decodeCallStack?]
+      | cons to s2 =>
+        cases s2 with
+        | nil => simp [decodeCallStack?]
+        | cons value s3 =>
+          cases s3 with
+          | nil => simp [decodeCallStack?]
+          | cons inputOffset s4 =>
+            cases s4 with
+            | nil => simp [decodeCallStack?]
+            | cons inputSize s5 =>
+              cases s5 with
+              | nil => simp [decodeCallStack?]
+              | cons outputOffset s6 =>
+                cases s6 with
+                | nil => simp [decodeCallStack?]
+                | cons outputSize rest =>
+                  intro h
+                  injection h with h_args
+                  subst h_args
+                  exact ⟨gas, to, value, inputOffset, inputSize, outputOffset,
+                    outputSize, rest, rfl, rfl⟩
+  · rintro ⟨gas, to, value, inputOffset, inputSize, outputOffset, outputSize,
+      rest, rfl, rfl⟩
+    rfl
+
+theorem decodeStaticCallStack?_eq_some_iff
+    {stack : List EvmWord} {args : StaticCall} :
+    decodeStaticCallStack? stack = some args ↔
+      ∃ gas to inputOffset inputSize outputOffset outputSize rest,
+        stack =
+          gas :: to :: inputOffset :: inputSize :: outputOffset ::
+            outputSize :: rest ∧
+        args =
+          { gas := gas
+            to := to
+            input := { offset := inputOffset, size := inputSize }
+            output := { offset := outputOffset, size := outputSize } } := by
+  constructor
+  · cases stack with
+    | nil => simp [decodeStaticCallStack?]
+    | cons gas s1 =>
+      cases s1 with
+      | nil => simp [decodeStaticCallStack?]
+      | cons to s2 =>
+        cases s2 with
+        | nil => simp [decodeStaticCallStack?]
+        | cons inputOffset s3 =>
+          cases s3 with
+          | nil => simp [decodeStaticCallStack?]
+          | cons inputSize s4 =>
+            cases s4 with
+            | nil => simp [decodeStaticCallStack?]
+            | cons outputOffset s5 =>
+              cases s5 with
+              | nil => simp [decodeStaticCallStack?]
+              | cons outputSize rest =>
+                intro h
+                injection h with h_args
+                subst h_args
+                exact ⟨gas, to, inputOffset, inputSize, outputOffset,
+                  outputSize, rest, rfl, rfl⟩
+  · rintro ⟨gas, to, inputOffset, inputSize, outputOffset, outputSize, rest,
+      rfl, rfl⟩
+    rfl
+
+theorem decodeDelegateCallStack?_eq_some_iff
+    {stack : List EvmWord} {args : DelegateCall} :
+    decodeDelegateCallStack? stack = some args ↔
+      ∃ gas to inputOffset inputSize outputOffset outputSize rest,
+        stack =
+          gas :: to :: inputOffset :: inputSize :: outputOffset ::
+            outputSize :: rest ∧
+        args =
+          { gas := gas
+            to := to
+            input := { offset := inputOffset, size := inputSize }
+            output := { offset := outputOffset, size := outputSize } } := by
+  constructor
+  · cases stack with
+    | nil => simp [decodeDelegateCallStack?]
+    | cons gas s1 =>
+      cases s1 with
+      | nil => simp [decodeDelegateCallStack?]
+      | cons to s2 =>
+        cases s2 with
+        | nil => simp [decodeDelegateCallStack?]
+        | cons inputOffset s3 =>
+          cases s3 with
+          | nil => simp [decodeDelegateCallStack?]
+          | cons inputSize s4 =>
+            cases s4 with
+            | nil => simp [decodeDelegateCallStack?]
+            | cons outputOffset s5 =>
+              cases s5 with
+              | nil => simp [decodeDelegateCallStack?]
+              | cons outputSize rest =>
+                intro h
+                injection h with h_args
+                subst h_args
+                exact ⟨gas, to, inputOffset, inputSize, outputOffset,
+                  outputSize, rest, rfl, rfl⟩
+  · rintro ⟨gas, to, inputOffset, inputSize, outputOffset, outputSize, rest,
+      rfl, rfl⟩
+    rfl
+
+end CallArgsStackDecode
+
+end EvmAsm.Evm64

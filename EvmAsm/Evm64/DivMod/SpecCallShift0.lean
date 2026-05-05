@@ -20,7 +20,7 @@
   proved there).
 -/
 
-import EvmAsm.Evm64.DivMod.SpecCall
+import EvmAsm.Evm64.DivMod.Spec.CallSkip
 
 namespace EvmAsm.Evm64
 
