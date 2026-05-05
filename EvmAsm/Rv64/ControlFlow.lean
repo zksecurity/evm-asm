@@ -118,57 +118,6 @@ example : (runIfEqArith 5 5 3).bind (fun s => some (s.getReg .x12)) = some 10 :=
 example : (runIfEqArith 10 3 2).bind (fun s => some (s.getReg .x12)) = some 7 := by
   decide
 
--- ============================================================================
--- Helper lemmas for symbolic proofs
--- ============================================================================
-
-/-- A predicate on MachineState is PC-independent: it holds regardless of the PC value. -/
-def pcIndep (P : MachineState → Prop) : Prop := ∀ s v, P s → P (s.setPC v)
-
-theorem pcIndep_and {P Q : MachineState → Prop} (hP : pcIndep P) (hQ : pcIndep Q) :
-    pcIndep (fun s => P s ∧ Q s) := by
-  intro s v ⟨hp, hq⟩
-  exact ⟨hP s v hp, hQ s v hq⟩
-
-theorem pcIndep_holdsFor_regIs {r : Reg} {val : Word} :
-    pcIndep (regIs r val).holdsFor := by
-  intro s v h
-  simp only [holdsFor_regIs, MachineState.getReg_setPC] at *; exact h
-
-theorem pcIndep_holdsFor_memIs {a : Word} {val : Word} :
-    pcIndep (memIs a val).holdsFor := by
-  intro s v h
-  simp only [holdsFor_memIs, MachineState.getMem, MachineState.setPC] at *; exact h
-
-theorem pcIndep_committedIs {vals : List (Word × Word)} :
-    pcIndep (MachineState.committedIs vals) := by
-  intro s v h
-  simp only [MachineState.committedIs, MachineState.committed_setPC] at *; exact h
-
-theorem pcIndep_publicValuesIs {vals : List (BitVec 8)} :
-    pcIndep (MachineState.publicValuesIs vals) := by
-  intro s v h
-  simp only [MachineState.publicValuesIs, MachineState.publicValues_setPC] at *; exact h
-
-theorem pcIndep_privateInputIs {vals : List (BitVec 8)} :
-    pcIndep (MachineState.privateInputIs vals) := by
-  intro s v h
-  simp only [MachineState.privateInputIs, MachineState.privateInput_setPC] at *; exact h
-
-theorem pcIndep_holdsFor_sepConj {P Q : Assertion} (hP : P.pcFree) (hQ : Q.pcFree) :
-    pcIndep ((P ** Q).holdsFor) := by
-  intro s v ⟨h, hcompat, h1, h2, hd, hunion, hp1, hp2⟩
-  refine ⟨h, ?_, h1, h2, hd, hunion, hp1, hp2⟩
-  have hpc_none := pcFree_sepConj hP hQ h ⟨h1, h2, hd, hunion, hp1, hp2⟩
-  rw [← hunion] at hpc_none hcompat ⊢
-  obtain ⟨hr, hm, hc, hpc, hpv, hpi⟩ := hcompat
-  exact ⟨fun r' v' hv => by rw [MachineState.getReg_setPC]; exact hr r' v' hv,
-         fun a' v' hv => by simp [MachineState.getMem, MachineState.setPC]; exact hm a' v' hv,
-         fun a' i' hv => by rw [MachineState.code_setPC]; exact hc a' i' hv,
-         fun v' hv => by rw [hpc_none] at hv; simp at hv,
-         fun v' hv => by simp [MachineState.setPC] at *; exact hpv v' hv,
-         fun v' hv => by simp [MachineState.setPC] at *; exact hpi v' hv⟩
-
 /-- Sign-extend a small 13-bit value (MSB clear) to 64 bits. -/
 theorem signExtend13_ofNat_small {n : Nat} (h : n < 2^12) :
     signExtend13 (BitVec.ofNat 13 n) = BitVec.ofNat 64 n := by
