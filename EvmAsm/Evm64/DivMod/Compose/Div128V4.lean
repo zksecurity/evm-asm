@@ -43,7 +43,8 @@ private theorem d128_v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr
 
 /-- Bundled postcondition for `div128_v4_spec`.
 
-    Like the v2 layout but uses `q0''` (post-Phase-2b-2nd-D3)
+    Mirrors `div128SpecPost` but uses `q0''` (post-Phase-2b-2nd-D3)
+
     instead of `q0'`, matching `div128Quot_v4`'s output. The Phase 1
     intermediates (q1, rhat, q1c, rhatc, q1', rhat', q1'', rhat'') are
     identical between v2 and v4 — the v4 fix is in Phase 2b only.
