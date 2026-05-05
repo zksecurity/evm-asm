@@ -39,7 +39,6 @@
 -/
 
 import EvmAsm.Rv64.Program
-import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64
 
