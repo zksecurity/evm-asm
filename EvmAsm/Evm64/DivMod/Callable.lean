@@ -133,4 +133,129 @@ abbrev evm_mod_callable_code (base : Word) : CodeReq :=
     CodeReq.ofProg (base + div128Off)     divK_div128
   ]
 
+-- ============================================================================
+-- Equality bridges with CodeReq.ofProg
+--
+-- These connect the 14-block `unionAll` abbreviations with the canonical
+-- `CodeReq.ofProg base ·` form produced by `evm_div_callable` /
+-- `evm_mod_callable`'s 13-`;;` sequence. The proof iterates
+-- `CodeReq.ofProg_append` 13 times, normalizing the running base offset to
+-- the named constant from `Compose/Offsets.lean` after each step. Mirrors
+-- `evm_mul_code_eq_ofProg` (Multiply/LimbSpec.lean) and `expLoopCode_eq_*`
+-- (Exp/Compose/Base.lean) — same pattern, longer chain.
+-- ============================================================================
+
+open EvmAsm.Rv64.CodeReq in
+theorem evm_div_callable_code_eq_ofProg (base : Word) :
+    evm_div_callable_code base = CodeReq.ofProg base evm_div_callable := by
+  unfold evm_div_callable_code evm_div_callable cc_ret_code
+  simp only [unionAll_cons, unionAll_nil, union_empty_right]
+  unfold seq
+  unfold Program
+  symm
+  -- Block 0 → 1: phaseA ;; rest, advance offset to phaseBOff = 32.
+  rw [ofProg_append]
+  rw [show base + BitVec.ofNat 64 (4 * (divK_phaseA 1020).length) =
+        base + phaseBOff by rw [divK_phaseA_len]; rfl]
+  -- Block 1 → 2: phaseB, advance to clzOff = 116.
+  rw [ofProg_append]
+  rw [show (base + phaseBOff) + BitVec.ofNat 64 (4 * divK_phaseB.length) =
+        base + clzOff by rw [divK_phaseB_len]; bv_omega]
+  -- Block 2 → 3: clz, advance to phaseC2Off = 212.
+  rw [ofProg_append]
+  rw [show (base + clzOff) + BitVec.ofNat 64 (4 * divK_clz.length) =
+        base + phaseC2Off by rw [divK_clz_len]; bv_omega]
+  -- Block 3 → 4: phaseC2, advance to normBOff = 228.
+  rw [ofProg_append]
+  rw [show (base + phaseC2Off) + BitVec.ofNat 64 (4 * (divK_phaseC2 172).length) =
+        base + normBOff by rw [divK_phaseC2_len]; bv_omega]
+  -- Block 4 → 5: normB, advance to normAOff = 312.
+  rw [ofProg_append]
+  rw [show (base + normBOff) + BitVec.ofNat 64 (4 * divK_normB.length) =
+        base + normAOff by rw [divK_normB_len]; bv_omega]
+  -- Block 5 → 6: normA, advance to copyAUOff = 396.
+  rw [ofProg_append]
+  rw [show (base + normAOff) + BitVec.ofNat 64 (4 * (divK_normA 40).length) =
+        base + copyAUOff by rw [divK_normA_len]; bv_omega]
+  -- Block 6 → 7: copyAU, advance to loopSetupOff = 432.
+  rw [ofProg_append]
+  rw [show (base + copyAUOff) + BitVec.ofNat 64 (4 * divK_copyAU.length) =
+        base + loopSetupOff by rw [divK_copyAU_len]; bv_omega]
+  -- Block 7 → 8: loopSetup, advance to loopBodyOff = 448.
+  rw [ofProg_append]
+  rw [show (base + loopSetupOff) + BitVec.ofNat 64 (4 * (divK_loopSetup 464).length) =
+        base + loopBodyOff by rw [divK_loopSetup_len]; bv_omega]
+  -- Block 8 → 9: loopBody, advance to denormOff = 908.
+  rw [ofProg_append]
+  rw [show (base + loopBodyOff) + BitVec.ofNat 64 (4 * (divK_loopBody 560 7736).length) =
+        base + denormOff by rw [divK_loopBody_len]; bv_omega]
+  -- Block 9 → 10: denorm, advance to epilogueOff = 1008.
+  rw [ofProg_append]
+  rw [show (base + denormOff) + BitVec.ofNat 64 (4 * divK_denorm.length) =
+        base + epilogueOff by rw [divK_denorm_len]; bv_omega]
+  -- Block 10 → 11: div_epilogue, advance to zeroPathOff = 1048.
+  rw [ofProg_append]
+  rw [show (base + epilogueOff) + BitVec.ofNat 64 (4 * (divK_div_epilogue 24).length) =
+        base + zeroPathOff by rw [divK_divEpilogue_len]; bv_omega]
+  -- Block 11 → 12: zeroPath, advance to nopOff = 1068 (the cc_ret slot).
+  rw [ofProg_append]
+  rw [show (base + zeroPathOff) + BitVec.ofNat 64 (4 * divK_zeroPath.length) =
+        base + nopOff by rw [divK_zeroPath_len]; bv_omega]
+  -- Block 12 → 13: cc_ret (single instruction), advance to div128Off = 1072.
+  rw [ofProg_append]
+  rw [show (base + nopOff) + BitVec.ofNat 64 (4 * cc_ret.length) =
+        base + div128Off by
+    show (base + nopOff) + BitVec.ofNat 64 (4 * 1) = base + div128Off
+    bv_omega]
+
+open EvmAsm.Rv64.CodeReq in
+theorem evm_mod_callable_code_eq_ofProg (base : Word) :
+    evm_mod_callable_code base = CodeReq.ofProg base evm_mod_callable := by
+  unfold evm_mod_callable_code evm_mod_callable cc_ret_code
+  simp only [unionAll_cons, unionAll_nil, union_empty_right]
+  unfold seq
+  unfold Program
+  symm
+  rw [ofProg_append]
+  rw [show base + BitVec.ofNat 64 (4 * (divK_phaseA 1020).length) =
+        base + phaseBOff by rw [divK_phaseA_len]; rfl]
+  rw [ofProg_append]
+  rw [show (base + phaseBOff) + BitVec.ofNat 64 (4 * divK_phaseB.length) =
+        base + clzOff by rw [divK_phaseB_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + clzOff) + BitVec.ofNat 64 (4 * divK_clz.length) =
+        base + phaseC2Off by rw [divK_clz_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + phaseC2Off) + BitVec.ofNat 64 (4 * (divK_phaseC2 172).length) =
+        base + normBOff by rw [divK_phaseC2_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + normBOff) + BitVec.ofNat 64 (4 * divK_normB.length) =
+        base + normAOff by rw [divK_normB_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + normAOff) + BitVec.ofNat 64 (4 * (divK_normA 40).length) =
+        base + copyAUOff by rw [divK_normA_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + copyAUOff) + BitVec.ofNat 64 (4 * divK_copyAU.length) =
+        base + loopSetupOff by rw [divK_copyAU_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + loopSetupOff) + BitVec.ofNat 64 (4 * (divK_loopSetup 464).length) =
+        base + loopBodyOff by rw [divK_loopSetup_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + loopBodyOff) + BitVec.ofNat 64 (4 * (divK_loopBody 560 7736).length) =
+        base + denormOff by rw [divK_loopBody_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + denormOff) + BitVec.ofNat 64 (4 * divK_denorm.length) =
+        base + epilogueOff by rw [divK_denorm_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + epilogueOff) + BitVec.ofNat 64 (4 * (divK_mod_epilogue 24).length) =
+        base + zeroPathOff by rw [divK_modEpilogue_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + zeroPathOff) + BitVec.ofNat 64 (4 * divK_zeroPath.length) =
+        base + nopOff by rw [divK_zeroPath_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + nopOff) + BitVec.ofNat 64 (4 * cc_ret.length) =
+        base + div128Off by
+    show (base + nopOff) + BitVec.ofNat 64 (4 * 1) = base + div128Off
+    bv_omega]
+
 end EvmAsm.Evm64
