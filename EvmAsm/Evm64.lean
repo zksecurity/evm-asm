@@ -72,6 +72,7 @@ import EvmAsm.Evm64.CallingConvention
 import EvmAsm.Evm64.Environment
 import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
+import EvmAsm.Evm64.ReturnData.Basic
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
 import EvmAsm.Evm64.Env.Program
@@ -108,7 +109,9 @@ import EvmAsm.Evm64.HandlerTableByte
 import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.CodeHandlers
+import EvmAsm.Evm64.PushHandlers
 import EvmAsm.Evm64.ControlHandlers
+import EvmAsm.Evm64.MemoryHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.DupSwapHandlers
 import EvmAsm.Evm64.ShiftHandlers
