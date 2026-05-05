@@ -13,6 +13,7 @@ import EvmAsm.EL.CreateEffects
 import EvmAsm.EL.CreateCollision
 import EvmAsm.EL.CreateCollisionResult
 import EvmAsm.EL.CreateResultBridge
+import EvmAsm.EL.CreateStackExecutionBridge
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
 import EvmAsm.EL.LogDataBridge
