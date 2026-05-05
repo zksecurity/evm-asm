@@ -40,6 +40,32 @@ theorem decodeListPayload_eq_none_of_leftover
   | cons b bs =>
       simp [decodeListPayload, h_decode]
 
+/--
+List-payload decode failure is exactly either recursive decoder failure or
+successful payload-prefix decode with trailing bytes left over.
+
+Distinctive token: ListDecodeBridge.decodeListPayload_eq_none_iff #120.
+-/
+theorem decodeListPayload_eq_none_iff (nDepth : Nat) (payload : List Byte) :
+    decodeListPayload nDepth payload = none ↔
+      decodeItems nDepth payload = none ∨
+        ∃ items leftover,
+          decodeItems nDepth payload = some (items, leftover) ∧ leftover ≠ [] := by
+  unfold decodeListPayload
+  cases h_decode : decodeItems nDepth payload with
+  | none => simp
+  | some decoded =>
+      cases decoded with
+      | mk items leftover =>
+          cases leftover with
+          | nil => simp
+          | cons b rest =>
+              constructor
+              · intro _
+                exact Or.inr ⟨items, b :: rest, rfl, by simp⟩
+              · intro _
+                rfl
+
 theorem decodeAux_cons_shortList_eq_decodeListPayload
     (nDepth : Nat) (pfx : Byte) (rest : List Byte)
     (h_class : classifyPrefix pfx = .shortList) :
