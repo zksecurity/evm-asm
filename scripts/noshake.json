@@ -261,7 +261,7 @@
     "EvmAsm.Evm64.EvmWordArith.Div128Lemmas",
     "EvmAsm.Evm64.DivMod.LoopSemantic"
   ],
- "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop": ["EvmAsm.Evm64.EvmWordArith.Val256ModBridge"],
+ "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop": ["EvmAsm.Evm64.EvmWordArith.Val256ModBridge", "EvmAsm.Evm64.EvmWordArith.DenormLemmas"],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble": ["EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
 "EvmAsm.Evm64.EvmWordArith.Val256ModBridge": ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
  "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
