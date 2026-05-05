@@ -301,4 +301,3 @@ theorem div128_spec_within (sp retAddr d uLo uHi : Word) (base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12345
-

@@ -15,11 +15,11 @@
     bundles 9 registers + `evmWordIs sp a` + `evmWordIs (sp+32) b` +
     `divScratchValues` starting state. Unfold helpers: `_unfold`,
     `_unfold_atoms`.
-  * Postcondition bundle: `divN4MaxSkipStackPost` (`modN4MaxSkipStackPost`) —
-    `@[irreducible]`, bundles 9 registers (7 weakened to `regOwn`) +
-    `evmWordIs sp a` (preserved) + `evmWordIs (sp+32) (EvmWord.div a b)`
-    (`EvmWord.mod a b` for MOD) + `divScratchOwn`. Unfold helpers: `_unfold`,
-    `_unfold_atoms`.
+  * Postcondition bundle: `divN4MaxSkipStackPost` — `@[irreducible]`, bundles
+    9 registers (7 weakened to `regOwn`) + `evmWordIs sp a` (preserved) +
+    `evmWordIs (sp+32) (EvmWord.div a b)` + `divScratchOwn`. Unfold helpers:
+    `_unfold`, `_unfold_atoms`. (The MOD counterpart used a different
+    denormalization bridge and is no longer materialized here.)
   * Runtime condition wrappers (EvmWord form): `isMaxTrialN4Evm`,
     `isSkipBorrowN4MaxEvm`, `isCallTrialN4Evm`, `isSkipBorrowN4CallEvm`,
     `isAddbackBorrowN4CallEvm`. Each is a thin shim over the Word-level
@@ -27,12 +27,12 @@
   * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages
     the un-normalized `mulsubN4`-carry hypothesis that
     `n4_max_skip_div_mod_getLimbN` consumes.
-  * Weakeners: `div_n4_max_skip_stack_weaken`, `mod_n4_max_skip_stack_weaken` —
-    turn specific register values + `evmWordIs` operand atoms + `divScratchValues`
-    into `divN4MaxSkipStackPost` / `modN4MaxSkipStackPost`.
+  * Weakener: `div_n4_max_skip_stack_weaken` — turns specific register values
+    + `evmWordIs` operand atoms + `divScratchValues` into
+    `divN4MaxSkipStackPost`. (The MOD counterpart `mod_n4_max_skip_stack_weaken`
+    has been removed along with `modN4MaxSkipStackPost`.)
   * `pcFree` instances for the stack-pre/post bundles defined here
-    (`divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`,
-    `modN4MaxSkipStackPost`). `pcFree` instances for the post bundles
+    (`divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`). `pcFree` instances for the post bundles
     defined in `Compose/Base.lean` (`divScratchOwn`, `denormDivPost`,
     `denormModPost`, `loopSetupPost`, `normBPost`) live next to their
     defs, as does `pcFree_fullDivN4MaxSkipPost` in
@@ -247,23 +247,6 @@ instance (sp : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
 -- `modN4StackPreCall` (MOD-side call-trial pre-bundle) lives in
 -- `DivMod/SpecCall.lean` to stay under the Spec.lean file-size guardrail.
 
-/-- Named unfold for `modN4StackPre`. Mirror of `divN4StackPre_unfold`. -/
-theorem modN4StackPre_unfold {sp : Word} {a b : EvmWord}
-    {v5 v6 v7 v10 v11 : Word}
-    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem : Word} :
-    modN4StackPre sp a b v5 v6 v7 v10 v11
-        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem =
-    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
-     (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-     (.x2 ↦ᵣ (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)) **
-     (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
-     (.x11 ↦ᵣ v11) **
-     evmWordIs sp a ** evmWordIs (sp + 32) b **
-     divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-       shiftMem nMem jMem) := by
-  delta modN4StackPre; rfl
-
 /-- Named unfold for `divN4MaxSkipStackPost`. Restores access to the
     underlying definition once the `@[irreducible]` attribute has made
     `delta` the only way in at call sites. -/
@@ -307,69 +290,6 @@ theorem div_n4_max_skip_stack_weaken
       divN4MaxSkipStackPost sp a b h := by
   intro h hp
   delta divN4MaxSkipStackPost
-  refine sepConj_mono_right ?_ h hp
-  iterate 7 apply sepConj_mono (regIs_implies_regOwn _)
-  apply sepConj_mono_right
-  apply sepConj_mono_right
-  apply sepConj_mono_right
-  exact divScratchValues_implies_divScratchOwn
-    sp q0P q1P q2_p q3_p u0P u1P u2P u3P u4_p u5_p u6_p u7_p
-    shift_p n_p j_p
-
-/-- MOD counterpart of `divN4MaxSkipStackPost`: same structure, same register
-    and scratch handling, but the second operand slot holds `EvmWord.mod a b`
-    instead of `EvmWord.div a b`. Target shape for the forthcoming MOD stack
-    spec on the n=4 max+skip sub-path. -/
-@[irreducible]
-def modN4MaxSkipStackPost (sp : Word) (a b : EvmWord) : Assertion :=
-  (.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
-  regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
-  regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
-  evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.mod a b) **
-  divScratchOwn sp
-
-/-- Named unfold for `modN4MaxSkipStackPost`. -/
-theorem modN4MaxSkipStackPost_unfold {sp : Word} {a b : EvmWord} :
-    modN4MaxSkipStackPost sp a b =
-    ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x1 ** regOwn .x2 **
-     regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
-     regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
-     evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.mod a b) **
-     divScratchOwn sp) := by
-  delta modN4MaxSkipStackPost; rfl
-
-theorem pcFree_modN4MaxSkipStackPost {sp : Word} {a b : EvmWord} :
-    (modN4MaxSkipStackPost sp a b).pcFree := by
-  rw [modN4MaxSkipStackPost_unfold]; pcFree
-
-instance (sp : Word) (a b : EvmWord) :
-    Assertion.PCFree (modN4MaxSkipStackPost sp a b) :=
-  ⟨pcFree_modN4MaxSkipStackPost⟩
-
--- ============================================================================
--- pcFree for DivMod post bundles
--- ============================================================================
-
-/-- MOD counterpart of `div_n4_max_skip_stack_weaken`. Same pattern, same
-    register/memory weakenings — only the result-slot `evmWordIs` holds
-    `EvmWord.mod a b` instead of `EvmWord.div a b`. -/
-theorem mod_n4_max_skip_stack_weaken
-    (sp : Word) (a b : EvmWord)
-    {v1_p v2_p v5_p v6_p v7_p v10_p v11_p : Word}
-    {q0P q1P q2_p q3_p u0P u1P u2P u3P u4_p u5_p u6_p u7_p
-     shift_p n_p j_p : Word} :
-    ∀ h,
-      ((.x12 ↦ᵣ (sp + 32)) **
-       (.x1 ↦ᵣ v1_p) ** (.x2 ↦ᵣ v2_p) **
-       (.x5 ↦ᵣ v5_p) ** (.x6 ↦ᵣ v6_p) ** (.x7 ↦ᵣ v7_p) **
-       (.x10 ↦ᵣ v10_p) ** (.x11 ↦ᵣ v11_p) **
-       (.x0 ↦ᵣ (0 : Word)) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.mod a b) **
-       divScratchValues sp q0P q1P q2_p q3_p u0P u1P u2P u3P u4_p
-         u5_p u6_p u7_p shift_p n_p j_p) h →
-      modN4MaxSkipStackPost sp a b h := by
-  intro h hp
-  delta modN4MaxSkipStackPost
   refine sepConj_mono_right ?_ h hp
   iterate 7 apply sepConj_mono (regIs_implies_regOwn _)
   apply sepConj_mono_right
@@ -567,9 +487,9 @@ theorem evm_mod_bzero_stack_spec_within (sp base : Word)
     (full-path MOD from `base` to `base + nopOff` on the n=4 max+skip sub-path),
     but with the operands bundled as `evmWordIs sp a` / `evmWordIs (sp+32) b`
     and the 15 scratch cells bundled as `divScratchValues`. The postcondition
-    is still the concrete `fullModN4MaxSkipPost` — turning that into
-    `modN4MaxSkipStackPost` requires a denormalization bridge that's deferred
-    to the forthcoming MOD stack spec. -/
+    is still the concrete `fullModN4MaxSkipPost`; the MOD stack-spec surface
+    uses the `fullModN4MaxSkipPost`-based path directly (no `divN4MaxSkipStackPost`-style
+    bundle is required here). -/
 theorem evm_mod_n4_full_max_skip_stack_pre_spec_within (sp base : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11Old : Word)
     (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7

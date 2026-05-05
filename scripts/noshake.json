@@ -139,7 +139,7 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
-  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1"],
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail"],
   "EvmAsm.Evm64.DivMod.Compose.Offsets":
@@ -228,6 +228,8 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Calldata.CopyMemory": ["Mathlib.Data.List.GetD"],
+ "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
   "EvmAsm.Rv64.SailEquiv.ShiftProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
   "EvmAsm.Rv64.SailEquiv.ImmProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
