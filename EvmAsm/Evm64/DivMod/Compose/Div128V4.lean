@@ -30,7 +30,7 @@ open EvmAsm.Rv64
 -- ============================================================================
 
 -- v4 helper: singleton at index k of divK_div128_v4 ⊆ ofProg-based v4 cr.
--- Mirrors `d128_v2_sub` but uses `divK_div128_v4`.
+-- Mirrors `d128_sub` but uses `divK_div128_v4`.
 private theorem d128_v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
     (hk : k < divK_div128_v4.length)
     (h_addr : addr = (base + div128Off) + BitVec.ofNat 64 (4 * k))
@@ -43,7 +43,7 @@ private theorem d128_v4_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr
 
 /-- Bundled postcondition for `div128_v4_spec`.
 
-    Mirrors `div128V2SpecPost` but uses `q0''` (post-Phase-2b-2nd-D3)
+    Like the v2 layout but uses `q0''` (post-Phase-2b-2nd-D3)
     instead of `q0'`, matching `div128Quot_v4`'s output. The Phase 1
     intermediates (q1, rhat, q1c, rhatc, q1', rhat', q1'', rhat'') are
     identical between v2 and v4 — the v4 fix is in Phase 2b only.
