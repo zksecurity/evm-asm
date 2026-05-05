@@ -114,6 +114,7 @@ import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.Code.Basic
 import EvmAsm.Evm64.Code.CopyArgs
 import EvmAsm.Evm64.Code.CopyExec
+import EvmAsm.Evm64.Code.CopyMemory
 import EvmAsm.Evm64.CodeHandlers
 import EvmAsm.Evm64.PushHandlers
 import EvmAsm.Evm64.ControlHandlers
