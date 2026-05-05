@@ -52,15 +52,15 @@ theorem stepWithHandler_matchesSpec
 /-- Distinctive token: InterpreterSimulation.loopFuel_matchesSpec #109. -/
 theorem loopFuel_matchesSpec
     {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) :
-    ∀ (fuel : Nat) (state : EvmState),
-      InterpreterLoop.loopFuel impl fuel state =
-        InterpreterLoop.loopFuel spec fuel state
+    ∀ (nSteps : Nat) (state : EvmState),
+      InterpreterLoop.loopFuel impl nSteps state =
+        InterpreterLoop.loopFuel spec nSteps state
   | 0, _ => rfl
-  | fuel + 1, state => by
+  | nSteps + 1, state => by
       cases h_status : state.status <;>
         simp [InterpreterLoop.loopFuel, h_status]
       rw [stepWithHandler_matchesSpec h_match]
-      exact loopFuel_matchesSpec h_match fuel (InterpreterLoop.stepWithHandler spec state)
+      exact loopFuel_matchesSpec h_match nSteps (InterpreterLoop.stepWithHandler spec state)
 
 end InterpreterSimulation
 

@@ -14,7 +14,7 @@ namespace HandlerLoopSimulationBridge
 /--
 If a handler table dispatches each decoded opcode like the executable-spec
 handler, then the table-backed interpreter loop matches the executable-spec
-loop for every fuel budget.
+loop for every nSteps budget.
 
 Distinctive token: HandlerLoopSimulationBridge.loopFuel_table_matchesSpec #107 #109.
 -/
@@ -23,9 +23,9 @@ theorem loopFuel_table_matchesSpec
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
       InterpreterLoop.decodeCurrentOpcode? state = some opcode →
         HandlerTable.dispatchOpcode table opcode state = spec opcode state) :
-    ∀ (fuel : Nat) (state : EvmState),
-      InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) fuel state =
-        InterpreterLoop.loopFuel spec fuel state := by
+    ∀ (nSteps : Nat) (state : EvmState),
+      InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) nSteps state =
+        InterpreterLoop.loopFuel spec nSteps state := by
   exact InterpreterSimulation.loopFuel_matchesSpec
     (HandlerLoopBridge.handlerMatchesSpec_of_dispatch_eq table spec h_dispatch)
 
@@ -45,10 +45,10 @@ theorem loopFuel_table_matchesSpec_at
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
       InterpreterLoop.decodeCurrentOpcode? state = some opcode →
         HandlerTable.dispatchOpcode table opcode state = spec opcode state)
-    (fuel : Nat) (state : EvmState) :
-    InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) fuel state =
-      InterpreterLoop.loopFuel spec fuel state := by
-  exact loopFuel_table_matchesSpec table spec h_dispatch fuel state
+    (nSteps : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) nSteps state =
+      InterpreterLoop.loopFuel spec nSteps state := by
+  exact loopFuel_table_matchesSpec table spec h_dispatch nSteps state
 
 end HandlerLoopSimulationBridge
 
