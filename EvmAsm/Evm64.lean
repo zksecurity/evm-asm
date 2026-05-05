@@ -110,6 +110,7 @@ import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.CodeHandlers
 import EvmAsm.Evm64.ControlHandlers
+import EvmAsm.Evm64.MemoryHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.DupSwapHandlers
 import EvmAsm.Evm64.ShiftHandlers
