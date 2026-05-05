@@ -21,12 +21,12 @@ Distinctive token: InterpreterTrace.loopTrace #108.
 -/
 def loopTrace (handler : Handler) : Nat → EvmState → List EvmOpcode
   | 0, _ => []
-  | fuel + 1, state =>
+  | nSteps + 1, state =>
       match state.status with
       | .running =>
           match InterpreterLoop.decodeCurrentOpcode? state with
           | some opcode =>
-              opcode :: loopTrace handler fuel (InterpreterLoop.stepWithHandler handler state)
+              opcode :: loopTrace handler nSteps (InterpreterLoop.stepWithHandler handler state)
           | none => []
       | _ => []
 
@@ -34,48 +34,48 @@ def loopTrace (handler : Handler) : Nat → EvmState → List EvmOpcode
     loopTrace handler 0 state = [] := rfl
 
 theorem loopTrace_succ_decode
-    (handler : Handler) (fuel : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (handler : Handler) (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
     (h_status : state.status = .running)
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
-    loopTrace handler (fuel + 1) state =
-      opcode :: loopTrace handler fuel (InterpreterLoop.stepWithHandler handler state) := by
+    loopTrace handler (nSteps + 1) state =
+      opcode :: loopTrace handler nSteps (InterpreterLoop.stepWithHandler handler state) := by
   simp [loopTrace, h_status, h_decode]
 
 theorem loopTrace_succ_unsupported
-    (handler : Handler) (fuel : Nat) {state : EvmState}
+    (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .running)
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
-    loopTrace handler (fuel + 1) state = [] := by
+    loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status, h_decode]
 
 theorem loopTrace_succ_stopped
-    (handler : Handler) (fuel : Nat) {state : EvmState}
+    (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .stopped) :
-    loopTrace handler (fuel + 1) state = [] := by
+    loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
 theorem loopTrace_succ_returned
-    (handler : Handler) (fuel : Nat) {state : EvmState} {data : List (BitVec 8)}
+    (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
     (h_status : state.status = .returned data) :
-    loopTrace handler (fuel + 1) state = [] := by
+    loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
 theorem loopTrace_succ_reverted
-    (handler : Handler) (fuel : Nat) {state : EvmState} {data : List (BitVec 8)}
+    (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
     (h_status : state.status = .reverted data) :
-    loopTrace handler (fuel + 1) state = [] := by
+    loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
 theorem loopTrace_succ_error
-    (handler : Handler) (fuel : Nat) {state : EvmState}
+    (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .error) :
-    loopTrace handler (fuel + 1) state = [] := by
+    loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
 theorem loopTrace_length_le_fuel (handler : Handler) :
-    ∀ (fuel : Nat) (state : EvmState), (loopTrace handler fuel state).length ≤ fuel
+    ∀ (nSteps : Nat) (state : EvmState), (loopTrace handler nSteps state).length ≤ nSteps
   | 0, _ => Nat.zero_le 0
-  | fuel + 1, state => by
+  | nSteps + 1, state => by
       cases h_status : state.status <;>
         simp [loopTrace, h_status]
       cases h_decode : InterpreterLoop.decodeCurrentOpcode? state with
@@ -83,7 +83,7 @@ theorem loopTrace_length_le_fuel (handler : Handler) :
           simp
       | some opcode =>
           simp [
-            Nat.succ_le_succ (loopTrace_length_le_fuel handler fuel
+            Nat.succ_le_succ (loopTrace_length_le_fuel handler nSteps
               (InterpreterLoop.stepWithHandler handler state))]
 
 end InterpreterTrace

@@ -36,14 +36,14 @@ def stepWithHandler (handler : Handler) (state : EvmState) : EvmState :=
   | some opcode => handler opcode state
   | none => state.invalid
 
-/-- Fuel-bounded interpreter loop. Non-running states are returned unchanged;
-    running states take at most `fuel` fetch/decode/dispatch steps.
+/-- Step-bounded interpreter loop. Non-running states are returned unchanged;
+    running states take at most `nSteps` fetch/decode/dispatch steps.
     Distinctive token: InterpreterLoop.loopFuel. -/
 def loopFuel (handler : Handler) : Nat → EvmState → EvmState
   | 0, state => state
-  | fuel + 1, state =>
+  | nSteps + 1, state =>
       match state.status with
-      | .running => loopFuel handler fuel (stepWithHandler handler state)
+      | .running => loopFuel handler nSteps (stepWithHandler handler state)
       | _ => state
 
 theorem fetchOpcodeByte?_of_lt
@@ -83,34 +83,34 @@ theorem stepWithHandler_of_unsupported
     loopFuel handler 0 state = state := rfl
 
 theorem loopFuel_succ_running
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .running) :
-    loopFuel handler (fuel + 1) state =
-      loopFuel handler fuel (stepWithHandler handler state) := by
+    loopFuel handler (nSteps + 1) state =
+      loopFuel handler nSteps (stepWithHandler handler state) := by
   simp [loopFuel, h_status]
 
 theorem loopFuel_succ_stopped
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .stopped) :
-    loopFuel handler (fuel + 1) state = state := by
+    loopFuel handler (nSteps + 1) state = state := by
   simp [loopFuel, h_status]
 
 theorem loopFuel_succ_returned
-    (handler : Handler) (fuel : Nat) (state : EvmState) (data : List (BitVec 8))
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
     (h_status : state.status = .returned data) :
-    loopFuel handler (fuel + 1) state = state := by
+    loopFuel handler (nSteps + 1) state = state := by
   simp [loopFuel, h_status]
 
 theorem loopFuel_succ_reverted
-    (handler : Handler) (fuel : Nat) (state : EvmState) (data : List (BitVec 8))
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
     (h_status : state.status = .reverted data) :
-    loopFuel handler (fuel + 1) state = state := by
+    loopFuel handler (nSteps + 1) state = state := by
   simp [loopFuel, h_status]
 
 theorem loopFuel_succ_error
-    (handler : Handler) (fuel : Nat) (state : EvmState)
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .error) :
-    loopFuel handler (fuel + 1) state = state := by
+    loopFuel handler (nSteps + 1) state = state := by
   simp [loopFuel, h_status]
 
 theorem stepWithHandler_eof_invalid
