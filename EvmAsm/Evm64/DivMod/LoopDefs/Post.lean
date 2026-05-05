@@ -120,23 +120,9 @@ abbrev loopBodyN2AddbackBeqPost := loopBodyAddbackBeqPost (2 : Word)
 abbrev loopBodyN3AddbackBeqPost := loopBodyAddbackBeqPost (3 : Word)
 abbrev loopBodyN4AddbackBeqPost := loopBodyAddbackBeqPost (4 : Word)
 
--- ============================================================================
--- Unified (Bool-parameterized) loop body postcondition: skip/addback+BEQ
--- Issue #283: Unify skip/addback via `(borrow_zero : Bool)`.
--- `borrow_zero = true`  → skip path (borrow = 0, mulsub didn't underflow)
--- `borrow_zero = false` → addback+BEQ path (borrow ≠ 0, mulsub underflowed)
--- ============================================================================
-
-/-- Unified loop body postcondition parameterized on borrow condition.
-    `borrow_zero = true` selects the skip path;
-    `borrow_zero = false` selects the addback+BEQ (double-addback) path. -/
-@[irreducible]
-def loopBodyUnifiedPost (borrow_zero : Bool) (n : Word)
-    (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  if borrow_zero then loopBodySkipPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
-  else loopBodyAddbackBeqPost n sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
-
--- (Per-n unified-post abbreviations were removed as dead code.)
+-- (Bool-parameterized loopBodyUnifiedPost and per-n unified-post abbreviations
+-- were removed as dead code; callers use loopBodySkipPost / loopBodyAddbackBeqPost
+-- directly per execution path.)
 
 -- ============================================================================
 -- Call path postconditions for n=3 (includes div128 scratch cells)
@@ -411,10 +397,8 @@ theorem loopIterPostN3Call_skip {sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word}
         loopBodyN3CallSkipPostJ loopBodyN3SkipPost loopBodySkipPost loopExitPostN3 loopExitPost
   unfold mulsubN4_c3 at hb; simp only [if_neg hb]
 
-def loopIterPostN3 (bltu : Bool) (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  match bltu with
-  | true => loopIterPostN3Call sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-  | false => loopIterPostN3Max sp j v0 v1 v2 v3 u0 u1 u2 u3 uTop ** empAssertion
+-- (Bool-dispatch wrapper loopIterPostN3 was removed as dead code; callers use
+-- loopIterPostN3Max / loopIterPostN3Call directly per execution path.)
 
 -- ============================================================================
 -- Two-iteration path postconditions with double addback for n=3
