@@ -31,6 +31,7 @@ import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallInputBridge
 import EvmAsm.EL.CallOutputBridge
 import EvmAsm.EL.CallStackBridge
+import EvmAsm.EL.CallResultEffectsBridge
 import EvmAsm.EL.CallValueTransfer
 import EvmAsm.EL.SelfdestructEffects
 import EvmAsm.EL.TerminatingArgsBridge
