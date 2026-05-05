@@ -75,6 +75,7 @@ import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.ReturnData.Basic
 import EvmAsm.Evm64.ReturnData.CopyArgs
 import EvmAsm.Evm64.ReturnData.CopyExec
+import EvmAsm.Evm64.ReturnData.CopyMemory
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Env.Semantics
 import EvmAsm.Evm64.Env.Program
