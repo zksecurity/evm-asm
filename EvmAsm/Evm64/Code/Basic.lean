@@ -5,8 +5,6 @@
   (GH #107 / GH #118).
 -/
 
-import EvmAsm.Evm64.Basic
-
 namespace EvmAsm.Evm64
 namespace Code
 
