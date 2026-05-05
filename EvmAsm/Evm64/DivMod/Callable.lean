@@ -21,8 +21,8 @@
   NOP).
 
   This file is **prep slice A** for evm-asm-8pfe / GH #90: it
-  introduces only the Program definitions and length / byte_length
-  lemmas. Code-region helpers, sub-code lemmas and the
+  introduces only the Program definitions and length lemmas.
+  Code-region helpers, sub-code lemmas and the
   `_function_spec` round-trip will land in follow-up slices.
 
   Reference: GH #90 (parent evm-asm-34sg), beads slice evm-asm-0tnux.
@@ -78,24 +78,5 @@ def evm_mod_callable : Program :=
   divK_zeroPath ;;
   cc_ret ;;            -- replaces the NOP at the exit slot
   divK_div128
-
--- ============================================================================
--- Length / byte_length lemmas
--- ============================================================================
-
-/-- `evm_div_callable` has the same instruction count as `evm_div`
-    (1:1 NOP↔`cc_ret` swap). -/
-theorem evm_div_callable_length : evm_div_callable.length = 319 := by
-  native_decide
-
-/-- `evm_mod_callable` has the same instruction count as `evm_mod`. -/
-theorem evm_mod_callable_length : evm_mod_callable.length = 319 := by
-  native_decide
-
-theorem evm_div_callable_byte_length : 4 * evm_div_callable.length = 1276 := by
-  rw [evm_div_callable_length]
-
-theorem evm_mod_callable_byte_length : 4 * evm_mod_callable.length = 1276 := by
-  rw [evm_mod_callable_length]
 
 end EvmAsm.Evm64

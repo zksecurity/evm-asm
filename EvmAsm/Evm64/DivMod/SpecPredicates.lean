@@ -86,10 +86,4 @@ theorem isAddbackCarry2NzN4CallEvm_def {a b : EvmWord} :
     isAddbackCarry2NzN4CallAb (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
                               (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
 
-/-- v2 mirror of `isAddbackBorrowN4CallEvm` — uses `div128Quot_v2` via
-    `isAddbackBorrowN4Call_v2`. Issue #1337 algorithm fix migration. -/
-def isAddbackBorrowN4CallEvm_v2 (a b : EvmWord) : Prop :=
-  isAddbackBorrowN4Call_v2 (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-                           (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
 end EvmAsm.Evm64
