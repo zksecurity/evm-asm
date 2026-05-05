@@ -93,6 +93,7 @@ import EvmAsm.Evm64.StorageAccessOutcome
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.DupSwapHandlers
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
