@@ -176,6 +176,7 @@ import EvmAsm.Evm64.Calldata.SizeProgram
 import EvmAsm.Evm64.Calldata.SizeSpec
 import EvmAsm.Evm64.Calldata.LoadProgram
 import EvmAsm.Evm64.Calldata.CopyArgs
+import EvmAsm.Evm64.Calldata.CopyArgsStackDecode
 import EvmAsm.Evm64.Calldata.CopyExec
 import EvmAsm.Evm64.Calldata.CopyMemory
 import EvmAsm.Evm64.Calldata.CopyProgram
