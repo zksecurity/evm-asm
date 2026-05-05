@@ -16,6 +16,7 @@
 -/
 
 import EvmAsm.Evm64.EvmWordArith.DivLimbBridge
+import EvmAsm.Evm64.EvmWordArith.DivBridge
 import EvmAsm.Rv64.AddrNorm
 
 namespace EvmAsm.Evm64

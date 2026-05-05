@@ -27,16 +27,16 @@ def readLength (bs : List Byte) (n : Nat) : Option (Nat × List Byte) := do
 
 /-! ## Decoding
 
-Both `decodeAux` and `decodeItems` structurally recurse on `fuel`.
-Each item decode consumes 2 units of fuel (one in `decodeAux`, one in
-`decodeItems`), so we use `2 * bs.length` as the initial fuel. -/
+Both `decodeAux` and `decodeItems` structurally recurse on `nDepth`.
+Each item decode consumes 2 units of nDepth (one in `decodeAux`, one in
+`decodeItems`), so we use `2 * bs.length` as the initial nDepth. -/
 
 mutual
 /-- Decode one RLP item from the byte stream. -/
-def decodeAux (fuel : Nat) (bs : List Byte) : Option (RLPItem × List Byte) :=
-  match fuel with
+def decodeAux (nDepth : Nat) (bs : List Byte) : Option (RLPItem × List Byte) :=
+  match nDepth with
   | 0 => none
-  | fuel + 1 =>
+  | nDepth + 1 =>
   match bs with
   | [] => none
   | pfx :: rest =>
@@ -65,7 +65,7 @@ def decodeAux (fuel : Nat) (bs : List Byte) : Option (RLPItem × List Byte) :=
       -- Short list: prefix = 0xC0 + len
       let len := p - 0xC0
       do let (payload, rest') ← takeBytes rest len
-         let (items, leftover) ← decodeItems fuel payload
+         let (items, leftover) ← decodeItems nDepth payload
          if List.isEmpty leftover then some (.list items, rest')
          else none
     else
@@ -76,20 +76,20 @@ def decodeAux (fuel : Nat) (bs : List Byte) : Option (RLPItem × List Byte) :=
          if lenVal ≤ 55 then none
          else do
            let (payload, rest'') ← takeBytes rest' lenVal
-           let (items, leftover) ← decodeItems fuel payload
+           let (items, leftover) ← decodeItems nDepth payload
            if List.isEmpty leftover then some (.list items, rest'')
            else none
 
 /-- Decode consecutive items from a byte stream until empty. -/
-def decodeItems (fuel : Nat) (bs : List Byte) : Option (List RLPItem × List Byte) :=
+def decodeItems (nDepth : Nat) (bs : List Byte) : Option (List RLPItem × List Byte) :=
   match bs with
   | [] => some ([], [])
   | _ =>
-    match fuel with
+    match nDepth with
     | 0 => none
-    | fuel + 1 => do
-      let (item, rest) ← decodeAux fuel bs
-      let (items, rest') ← decodeItems fuel rest
+    | nDepth + 1 => do
+      let (item, rest) ← decodeAux nDepth bs
+      let (items, rest') ← decodeItems nDepth rest
       some (item :: items, rest')
 end
 
@@ -97,12 +97,12 @@ end
 def decode (bs : List Byte) : Option (RLPItem × List Byte) :=
   decodeAux (2 * bs.length) bs
 
-/-- Expose the exact fuel budget used by the top-level decode wrapper. -/
+/-- Expose the exact nDepth budget used by the top-level decode wrapper. -/
 theorem decode_eq_decodeAux_length (bs : List Byte) :
     decode bs = decodeAux (2 * bs.length) bs := by
   rfl
 
-/-- Top-level decode on a nonempty stream uses two fuel units for the head byte
+/-- Top-level decode on a nonempty stream uses two nDepth units for the head byte
     plus twice the tail length. -/
 theorem decode_cons_eq_decodeAux_fuel (pfx : Byte) (rest : List Byte) :
     decode (pfx :: rest) = decodeAux (2 * rest.length + 2) (pfx :: rest) := by

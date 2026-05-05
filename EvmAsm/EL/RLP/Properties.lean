@@ -48,44 +48,44 @@ theorem readLength_length_lt {bs : List Byte} {n : Nat} (h : bs.length < n) :
 
 /-! ## decodeAux trivial cases -/
 
-/-- `decodeAux 0` always returns `none` (no fuel). -/
+/-- `decodeAux 0` always returns `none` (no nDepth). -/
 theorem decodeAux_zero_fuel (bs : List Byte) :
     decodeAux 0 bs = none := by
   simp [decodeAux]
 
-/-- `decodeAux` on an empty stream returns `none` regardless of fuel. -/
-theorem decodeAux_nil (fuel : Nat) :
-    decodeAux fuel [] = none := by
-  cases fuel <;> simp [decodeAux]
+/-- `decodeAux` on an empty stream returns `none` regardless of nDepth. -/
+theorem decodeAux_nil (nDepth : Nat) :
+    decodeAux nDepth [] = none := by
+  cases nDepth <;> simp [decodeAux]
 
 /-- Single-byte items: when the prefix `p` satisfies `p < 0x80`, `decodeAux`
     succeeds and returns `(.bytes [p], rest)` consuming one byte. -/
-theorem decodeAux_single_byte (fuel : Nat) (pfx : Byte) (rest : List Byte)
+theorem decodeAux_single_byte (nDepth : Nat) (pfx : Byte) (rest : List Byte)
     (h : pfx.toNat < 0x80) :
-    decodeAux (fuel + 1) (pfx :: rest) = some (.bytes [pfx], rest) := by
+    decodeAux (nDepth + 1) (pfx :: rest) = some (.bytes [pfx], rest) := by
   simp [decodeAux, h]
 
 /-- Empty short byte string (prefix `0x80`): `decodeAux` returns `(.bytes [], rest)`
     consuming only the prefix byte. -/
-theorem decodeAux_empty_string (fuel : Nat) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0x80 : Byte) :: rest) = some (.bytes [], rest) := by
+theorem decodeAux_empty_string (nDepth : Nat) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0x80 : Byte) :: rest) = some (.bytes [], rest) := by
   simp [decodeAux, takeBytes]
 
 /-- Empty list (prefix `0xC0`): `decodeAux` returns `(.list [], rest)`
     consuming exactly the prefix byte. The short-list branch fires with
     `len = 0`, so `takeBytes rest 0 = some ([], rest)` and the recursive
-    `decodeItems fuel []` returns `some ([], [])` which has empty
+    `decodeItems nDepth []` returns `some ([], [])` which has empty
     leftover. -/
-theorem decodeAux_empty_list (fuel : Nat) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0xC0 : Byte) :: rest) = some (.list [], rest) := by
+theorem decodeAux_empty_list (nDepth : Nat) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0xC0 : Byte) :: rest) = some (.list [], rest) := by
   simp [decodeAux, takeBytes, decodeItems]
 
 /-- Two-byte short string (prefix `0x82`): `decodeAux` returns
     `(.bytes [b1, b2], rest)` consuming three bytes (prefix + 2 payload).
     The two-byte payload is multi-byte, so the canonical-form check
     (which only fires for single-byte strings) is bypassed. -/
-theorem decodeAux_two_byte_string (fuel : Nat) (b1 b2 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0x82 : Byte) :: b1 :: b2 :: rest) =
+theorem decodeAux_two_byte_string (nDepth : Nat) (b1 b2 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0x82 : Byte) :: b1 :: b2 :: rest) =
       some (.bytes [b1, b2], rest) := by
   simp [decodeAux, takeBytes]
 
@@ -93,32 +93,32 @@ theorem decodeAux_two_byte_string (fuel : Nat) (b1 b2 : Byte) (rest : List Byte)
     `(.bytes [b1, b2, b3], rest)` consuming four bytes (prefix + 3
     payload). Multi-byte payload bypasses the canonical-form check. -/
 theorem decodeAux_three_byte_string
-    (fuel : Nat) (b1 b2 b3 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0x83 : Byte) :: b1 :: b2 :: b3 :: rest) =
+    (nDepth : Nat) (b1 b2 b3 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0x83 : Byte) :: b1 :: b2 :: b3 :: rest) =
       some (.bytes [b1, b2, b3], rest) := by
   simp [decodeAux, takeBytes]
 
 /-- Four-byte short string (prefix `0x84`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_four_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0x84 : Byte) :: b1 :: b2 :: b3 :: b4 :: rest) =
+    (nDepth : Nat) (b1 b2 b3 b4 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0x84 : Byte) :: b1 :: b2 :: b3 :: b4 :: rest) =
       some (.bytes [b1, b2, b3, b4], rest) := by
   simp [decodeAux, takeBytes]
 
 /-- Five-byte short string (prefix `0x85`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_five_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1) ((0x85 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: rest) =
+    (nDepth : Nat) (b1 b2 b3 b4 b5 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1) ((0x85 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5], rest) := by
   simp [decodeAux, takeBytes]
 
 /-- Six-byte short string (prefix `0x86`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_six_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x86 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6], rest) := by
   simp [decodeAux, takeBytes]
@@ -126,8 +126,8 @@ theorem decodeAux_six_byte_string
 /-- Seven-byte short string (prefix `0x87`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_seven_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x87 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7], rest) := by
   simp [decodeAux, takeBytes]
@@ -135,8 +135,8 @@ theorem decodeAux_seven_byte_string
 /-- Eight-byte short string (prefix `0x88`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_eight_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x88 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8], rest) := by
   simp [decodeAux, takeBytes]
@@ -144,8 +144,8 @@ theorem decodeAux_eight_byte_string
 /-- Nine-byte short string (prefix `0x89`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_nine_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x89 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9], rest) := by
   simp [decodeAux, takeBytes]
@@ -153,8 +153,8 @@ theorem decodeAux_nine_byte_string
 /-- Ten-byte short string (prefix `0x8A`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_ten_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x8A : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10], rest) := by
   simp [decodeAux, takeBytes]
@@ -162,8 +162,8 @@ theorem decodeAux_ten_byte_string
 /-- Eleven-byte short string (prefix `0x8B`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_eleven_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Byte) (rest : List Byte) :
-    decodeAux (fuel + 1)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Byte) (rest : List Byte) :
+    decodeAux (nDepth + 1)
         ((0x8B : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11], rest) := by
@@ -172,9 +172,9 @@ theorem decodeAux_eleven_byte_string
 /-- Twelve-byte short string (prefix `0x8C`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twelve_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x8C : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12], rest) := by
@@ -183,9 +183,9 @@ theorem decodeAux_twelve_byte_string
 /-- Thirteen-byte short string (prefix `0x8D`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirteen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x8D : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13], rest) := by
@@ -194,9 +194,9 @@ theorem decodeAux_thirteen_byte_string
 /-- Fourteen-byte short string (prefix `0x8E`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_fourteen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x8E : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14],
@@ -206,9 +206,9 @@ theorem decodeAux_fourteen_byte_string
 /-- Fifteen-byte short string (prefix `0x8F`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_fifteen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x8F : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: rest) =
       some (.bytes [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15],
@@ -218,9 +218,9 @@ theorem decodeAux_fifteen_byte_string
 /-- Sixteen-byte short string (prefix `0x90`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_sixteen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x90 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: rest) =
       some (.bytes
@@ -231,9 +231,9 @@ theorem decodeAux_sixteen_byte_string
 /-- Seventeen-byte short string (prefix `0x91`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_seventeen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x91 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: rest) =
       some (.bytes
@@ -244,9 +244,9 @@ theorem decodeAux_seventeen_byte_string
 /-- Eighteen-byte short string (prefix `0x92`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_eighteen_byte_string
-    (fuel : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 : Byte)
+    (nDepth : Nat) (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x92 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: rest) =
       some (.bytes
@@ -258,10 +258,10 @@ theorem decodeAux_eighteen_byte_string
 /-- Nineteen-byte short string (prefix `0x93`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_nineteen_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x93 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: rest) =
       some (.bytes
@@ -273,10 +273,10 @@ theorem decodeAux_nineteen_byte_string
 /-- Twenty-byte short string (prefix `0x94`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x94 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: rest) =
       some (.bytes
@@ -288,10 +288,10 @@ theorem decodeAux_twenty_byte_string
 /-- Twenty-one-byte short string (prefix `0x95`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_one_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x95 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           rest) =
@@ -304,11 +304,11 @@ theorem decodeAux_twenty_one_byte_string
 /-- Twenty-two-byte short string (prefix `0x96`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_two_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 :
       Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x96 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: rest) =
@@ -321,11 +321,11 @@ theorem decodeAux_twenty_two_byte_string
 /-- Twenty-three-byte short string (prefix `0x97`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_three_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x97 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: rest) =
@@ -338,11 +338,11 @@ theorem decodeAux_twenty_three_byte_string
 /-- Twenty-four-byte short string (prefix `0x98`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_four_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x98 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: rest) =
@@ -355,11 +355,11 @@ theorem decodeAux_twenty_four_byte_string
 /-- Twenty-five-byte short string (prefix `0x99`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_five_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x99 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: rest) =
@@ -372,11 +372,11 @@ theorem decodeAux_twenty_five_byte_string
 /-- Twenty-six-byte short string (prefix `0x9A`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_six_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9A : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: rest) =
@@ -389,11 +389,11 @@ theorem decodeAux_twenty_six_byte_string
 /-- Twenty-seven-byte short string (prefix `0x9B`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_seven_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9B : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: rest) =
@@ -406,11 +406,11 @@ theorem decodeAux_twenty_seven_byte_string
 /-- Twenty-eight-byte short string (prefix `0x9C`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_eight_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9C : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: rest) =
@@ -423,11 +423,11 @@ theorem decodeAux_twenty_eight_byte_string
 /-- Twenty-nine-byte short string (prefix `0x9D`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_twenty_nine_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9D : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: rest) =
@@ -440,11 +440,11 @@ theorem decodeAux_twenty_nine_byte_string
 /-- Thirty-byte short string (prefix `0x9E`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9E : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: rest) =
@@ -457,11 +457,11 @@ theorem decodeAux_thirty_byte_string
 /-- Thirty-one-byte short string (prefix `0x9F`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_one_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0x9F : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -475,11 +475,11 @@ theorem decodeAux_thirty_one_byte_string
 /-- Thirty-two-byte short string (prefix `0xA0`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_two_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA0 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -493,11 +493,11 @@ theorem decodeAux_thirty_two_byte_string
 /-- Thirty-three-byte short string (prefix `0xA1`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_three_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA1 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -512,11 +512,11 @@ theorem decodeAux_thirty_three_byte_string
 /-- Thirty-four-byte short string (prefix `0xA2`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_four_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA2 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -531,11 +531,11 @@ theorem decodeAux_thirty_four_byte_string
 /-- Thirty-five-byte short string (prefix `0xA3`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_five_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA3 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -550,11 +550,11 @@ theorem decodeAux_thirty_five_byte_string
 /-- Thirty-six-byte short string (prefix `0xA4`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_six_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA4 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -569,11 +569,11 @@ theorem decodeAux_thirty_six_byte_string
 /-- Thirty-seven-byte short string (prefix `0xA5`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_seven_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA5 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -588,11 +588,11 @@ theorem decodeAux_thirty_seven_byte_string
 /-- Thirty-eight-byte short string (prefix `0xA6`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_eight_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA6 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -607,11 +607,11 @@ theorem decodeAux_thirty_eight_byte_string
 /-- Thirty-nine-byte short string (prefix `0xA7`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_thirty_nine_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA7 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -626,12 +626,12 @@ theorem decodeAux_thirty_nine_byte_string
 /-- Forty-byte short string (prefix `0xA8`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_forty_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 :
       Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA8 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -646,12 +646,12 @@ theorem decodeAux_forty_byte_string
 /-- Forty-one-byte short string (prefix `0xA9`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_forty_one_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 :
       Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xA9 : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -667,12 +667,12 @@ theorem decodeAux_forty_one_byte_string
 /-- Forty-two-byte short string (prefix `0xAA`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_forty_two_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42 :
       Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xAA : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -688,12 +688,12 @@ theorem decodeAux_forty_two_byte_string
 /-- Forty-three-byte short string (prefix `0xAB`). Multi-byte payload
     bypasses the canonical-form check. -/
 theorem decodeAux_forty_three_byte_string
-    (fuel : Nat)
+    (nDepth : Nat)
     (b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22
       b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42
       b43 : Byte)
     (rest : List Byte) :
-    decodeAux (fuel + 1)
+    decodeAux (nDepth + 1)
         ((0xAB : Byte) :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 ::
           b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: b17 :: b18 :: b19 :: b20 :: b21 ::
           b22 :: b23 :: b24 :: b25 :: b26 :: b27 :: b28 :: b29 :: b30 :: b31 ::
@@ -711,8 +711,8 @@ theorem decodeAux_forty_three_byte_string
     been encoded as itself, not under prefix `0x81`), so `decodeAux`
     returns `none`. -/
 theorem decodeAux_canonical_rejection_single
-    (fuel : Nat) (b : Byte) (rest : List Byte) (h : b.toNat < 0x80) :
-    decodeAux (fuel + 1) ((0x81 : Byte) :: b :: rest) = none := by
+    (nDepth : Nat) (b : Byte) (rest : List Byte) (h : b.toNat < 0x80) :
+    decodeAux (nDepth + 1) ((0x81 : Byte) :: b :: rest) = none := by
   simp [decodeAux, takeBytes, h]
 
 /-- Singleton list containing one small byte: top-level `decode` of
@@ -910,18 +910,18 @@ theorem decode_nil : decode ([] : List Byte) = none := by
   simp [decode, decodeAux]
 
 /-- `decode [pfx]` returns `(.bytes [pfx], [])` whenever `pfx < 0x80`.
-    Specializes `decodeAux_single_byte` at the top-level fuel. -/
+    Specializes `decodeAux_single_byte` at the top-level nDepth. -/
 theorem decode_single_byte (pfx : Byte) (h : pfx.toNat < 0x80) :
     decode [pfx] = some (.bytes [pfx], []) := by
   simp [decode, decodeAux, h]
 
 /-- `decode [0x80] = some (.bytes [], [])` — the canonical empty-string
-    encoding. Specializes `decodeAux_empty_string` at the top-level fuel. -/
+    encoding. Specializes `decodeAux_empty_string` at the top-level nDepth. -/
 theorem decode_empty_string : decode [(0x80 : Byte)] = some (.bytes [], []) := by
   simp [decode, decodeAux, takeBytes]
 
 /-- `decode [0xC0] = some (.list [], [])` — the canonical empty-list
-    encoding. Specializes `decodeAux_empty_list` at the top-level fuel. -/
+    encoding. Specializes `decodeAux_empty_list` at the top-level nDepth. -/
 theorem decode_empty_list : decode [(0xC0 : Byte)] = some (.list [], []) := by
   simp [decode, decodeAux, takeBytes, decodeItems]
 
