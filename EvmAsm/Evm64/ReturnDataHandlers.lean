@@ -1,0 +1,63 @@
+/-
+  EvmAsm.Evm64.ReturnDataHandlers
+
+  Pure RETURNDATASIZE handler-table entry for the interpreter handler layer
+  (GH #107).
+-/
+
+import EvmAsm.Evm64.HandlerTable
+
+namespace EvmAsm.Evm64
+
+namespace ReturnDataHandlers
+
+/-- EVM word pushed by RETURNDATASIZE for the current abstract state. -/
+def returnDataSizeWord (state : EvmState) : EvmWord :=
+  BitVec.ofNat 256 state.env.returnDataSize.toNat
+
+/-- RETURNDATASIZE pushes the current returndata buffer length in bytes. -/
+def returnDataSizeHandler : OpcodeHandler :=
+  fun state => state.withStack (returnDataSizeWord state :: state.stack)
+
+/-- Lookup just the returndata handler introduced in this slice. -/
+def returnDataHandler? : EvmOpcode → Option OpcodeHandler
+  | .RETURNDATASIZE => some returnDataSizeHandler
+  | _ => none
+
+/-- Handler table fragment containing the RETURNDATASIZE entry.
+    Distinctive token: ReturnDataHandlers.returnDataSizeHandlerTable #107. -/
+def returnDataSizeHandlerTable : HandlerTable :=
+  returnDataHandler?
+
+@[simp] theorem returnDataHandler?_RETURNDATASIZE :
+    returnDataHandler? .RETURNDATASIZE = some returnDataSizeHandler := rfl
+
+@[simp] theorem returnDataSizeHandler_stack (state : EvmState) :
+    (returnDataSizeHandler state).stack =
+      returnDataSizeWord state :: state.stack := rfl
+
+@[simp] theorem returnDataSizeHandler_status (state : EvmState) :
+    (returnDataSizeHandler state).status = state.status := rfl
+
+@[simp] theorem returnDataSizeHandler_env (state : EvmState) :
+    (returnDataSizeHandler state).env = state.env := rfl
+
+@[simp] theorem returnDataSizeHandlerTable_RETURNDATASIZE :
+    returnDataSizeHandlerTable .RETURNDATASIZE =
+      some returnDataSizeHandler := rfl
+
+@[simp] theorem dispatchOpcode?_returnDataSizeHandlerTable_RETURNDATASIZE
+    (state : EvmState) :
+    HandlerTable.dispatchOpcode? returnDataSizeHandlerTable .RETURNDATASIZE state =
+      some (returnDataSizeHandler state) := by
+  simp [HandlerTable.dispatchOpcode?]
+
+@[simp] theorem dispatchOpcode_returnDataSizeHandlerTable_RETURNDATASIZE
+    (state : EvmState) :
+    HandlerTable.dispatchOpcode returnDataSizeHandlerTable .RETURNDATASIZE state =
+      returnDataSizeHandler state := by
+  simp [HandlerTable.dispatchOpcode]
+
+end ReturnDataHandlers
+
+end EvmAsm.Evm64

@@ -113,6 +113,7 @@ import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.DupSwapHandlers
 import EvmAsm.Evm64.ShiftHandlers
 import EvmAsm.Evm64.EnvHandlers
+import EvmAsm.Evm64.ReturnDataHandlers
 import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
