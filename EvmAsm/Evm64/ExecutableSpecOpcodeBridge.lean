@@ -1,0 +1,153 @@
+/-
+  EvmAsm.Evm64.ExecutableSpecOpcodeBridge
+
+  Opcode-byte bridge to the Ethereum executable-spec `Ops` table in
+  execution-specs/src/ethereum/forks/frontier/vm/instructions/__init__.py
+  (GH #109).
+-/
+
+import EvmAsm.Evm64.Dispatch
+import Mathlib.Tactic.IntervalCases
+
+namespace EvmAsm.Evm64
+
+namespace ExecutableSpecOpcodeBridge
+
+namespace Ops
+
+def STOP : Nat := 0x00
+def KECCAK : Nat := 0x20
+def POP : Nat := 0x50
+def MLOAD : Nat := 0x51
+def MSTORE : Nat := 0x52
+def MSTORE8 : Nat := 0x53
+def PUSH0 : Nat := 0x5f
+def CREATE : Nat := 0xf0
+def CALL : Nat := 0xf1
+def RETURN : Nat := 0xf3
+def DELEGATECALL : Nat := 0xf4
+def CREATE2 : Nat := 0xf5
+def REVERT : Nat := 0xfd
+def INVALID : Nat := 0xfe
+def SELFDESTRUCT : Nat := 0xff
+
+end Ops
+
+/-- Executable-spec byte for `PUSH1` through `PUSH32`. -/
+def execSpecPushByte (n : Nat) : Nat :=
+  0x5f + n
+
+/-- Executable-spec byte for `LOG0` through `LOG4`. -/
+def execSpecLogByte (kind : LogArgs.Kind) : Nat :=
+  0xa0 + LogArgs.topicCount kind
+
+theorem decode_execSpecPushByte_of_valid
+    {n : Nat} (h_low : 1 ≤ n) (h_high : n ≤ 32) :
+    EvmOpcode.decodeByte? (execSpecPushByte n) = some (EvmOpcode.PUSH n) := by
+  unfold execSpecPushByte
+  interval_cases n <;> rfl
+
+theorem byte?_execSpecPush_of_valid
+    {n : Nat} (h_low : 1 ≤ n) (h_high : n ≤ 32) :
+    EvmOpcode.byte? (EvmOpcode.PUSH n) = some (execSpecPushByte n) := by
+  unfold execSpecPushByte EvmOpcode.byte? EvmOpcode.validPushWidth
+  interval_cases n <;> rfl
+
+theorem roundtrip_execSpecPush_of_valid
+    {n : Nat} (h_low : 1 ≤ n) (h_high : n ≤ 32) :
+    EvmOpcode.byte? (EvmOpcode.PUSH n) = some (execSpecPushByte n) ∧
+      EvmOpcode.decodeByte? (execSpecPushByte n) = some (EvmOpcode.PUSH n) :=
+  ⟨byte?_execSpecPush_of_valid h_low h_high,
+    decode_execSpecPushByte_of_valid h_low h_high⟩
+
+theorem decode_execSpecLogByte (kind : LogArgs.Kind) :
+    EvmOpcode.decodeByte? (execSpecLogByte kind) = some (EvmOpcode.LOG kind) := by
+  cases kind <;> rfl
+
+theorem byte?_execSpecLog (kind : LogArgs.Kind) :
+    EvmOpcode.byte? (EvmOpcode.LOG kind) = some (execSpecLogByte kind) := by
+  cases kind <;> rfl
+
+theorem roundtrip_execSpecLog (kind : LogArgs.Kind) :
+    EvmOpcode.byte? (EvmOpcode.LOG kind) = some (execSpecLogByte kind) ∧
+      EvmOpcode.decodeByte? (execSpecLogByte kind) = some (EvmOpcode.LOG kind) :=
+  ⟨byte?_execSpecLog kind, decode_execSpecLogByte kind⟩
+
+theorem roundtrip_execSpec_STOP :
+    EvmOpcode.byte? EvmOpcode.STOP = some Ops.STOP ∧
+      EvmOpcode.decodeByte? Ops.STOP = some EvmOpcode.STOP := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_KECCAK :
+    EvmOpcode.byte? EvmOpcode.KECCAK256 = some Ops.KECCAK ∧
+      EvmOpcode.decodeByte? Ops.KECCAK = some EvmOpcode.KECCAK256 := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_POP :
+    EvmOpcode.byte? EvmOpcode.POP = some Ops.POP ∧
+      EvmOpcode.decodeByte? Ops.POP = some EvmOpcode.POP := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_MLOAD :
+    EvmOpcode.byte? EvmOpcode.MLOAD = some Ops.MLOAD ∧
+      EvmOpcode.decodeByte? Ops.MLOAD = some EvmOpcode.MLOAD := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_MSTORE :
+    EvmOpcode.byte? EvmOpcode.MSTORE = some Ops.MSTORE ∧
+      EvmOpcode.decodeByte? Ops.MSTORE = some EvmOpcode.MSTORE := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_MSTORE8 :
+    EvmOpcode.byte? EvmOpcode.MSTORE8 = some Ops.MSTORE8 ∧
+      EvmOpcode.decodeByte? Ops.MSTORE8 = some EvmOpcode.MSTORE8 := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_PUSH0 :
+    EvmOpcode.byte? EvmOpcode.PUSH0 = some Ops.PUSH0 ∧
+      EvmOpcode.decodeByte? Ops.PUSH0 = some EvmOpcode.PUSH0 := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_CREATE :
+    EvmOpcode.byte? EvmOpcode.CREATE = some Ops.CREATE ∧
+      EvmOpcode.decodeByte? Ops.CREATE = some EvmOpcode.CREATE := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_CALL :
+    EvmOpcode.byte? EvmOpcode.CALL = some Ops.CALL ∧
+      EvmOpcode.decodeByte? Ops.CALL = some EvmOpcode.CALL := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_RETURN :
+    EvmOpcode.byte? EvmOpcode.RETURN = some Ops.RETURN ∧
+      EvmOpcode.decodeByte? Ops.RETURN = some EvmOpcode.RETURN := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_DELEGATECALL :
+    EvmOpcode.byte? EvmOpcode.DELEGATECALL = some Ops.DELEGATECALL ∧
+      EvmOpcode.decodeByte? Ops.DELEGATECALL = some EvmOpcode.DELEGATECALL := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_CREATE2 :
+    EvmOpcode.byte? EvmOpcode.CREATE2 = some Ops.CREATE2 ∧
+      EvmOpcode.decodeByte? Ops.CREATE2 = some EvmOpcode.CREATE2 := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_REVERT :
+    EvmOpcode.byte? EvmOpcode.REVERT = some Ops.REVERT ∧
+      EvmOpcode.decodeByte? Ops.REVERT = some EvmOpcode.REVERT := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_INVALID :
+    EvmOpcode.byte? EvmOpcode.INVALID = some Ops.INVALID ∧
+      EvmOpcode.decodeByte? Ops.INVALID = some EvmOpcode.INVALID := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_SELFDESTRUCT :
+    EvmOpcode.byte? EvmOpcode.SELFDESTRUCT = some Ops.SELFDESTRUCT ∧
+      EvmOpcode.decodeByte? Ops.SELFDESTRUCT = some EvmOpcode.SELFDESTRUCT := by
+  exact ⟨rfl, rfl⟩
+
+end ExecutableSpecOpcodeBridge
+
+end EvmAsm.Evm64
