@@ -21,8 +21,8 @@
   NOP).
 
   This file is **prep slice A** for evm-asm-8pfe / GH #90: it
-  introduces only the Program definitions and length / byte_length
-  lemmas. Code-region helpers, sub-code lemmas and the
+  introduces only the Program definitions and length lemmas.
+  Code-region helpers, sub-code lemmas and the
   `_function_spec` round-trip will land in follow-up slices.
 
   Reference: GH #90 (parent evm-asm-34sg), beads slice evm-asm-0tnux.
@@ -81,7 +81,7 @@ def evm_mod_callable : Program :=
   divK_div128
 
 -- ============================================================================
--- Length / byte_length lemmas
+-- Length lemmas
 -- ============================================================================
 
 /-- `evm_div_callable` has the same instruction count as `evm_div`
