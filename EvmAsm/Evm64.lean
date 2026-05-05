@@ -106,6 +106,7 @@ import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.InterpreterFetchProgram
