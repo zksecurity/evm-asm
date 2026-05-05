@@ -217,13 +217,7 @@ theorem n1StepsTelescoped_of_nat_conservation
   n1StepsTelescoped_of_telescopeInput v u r3 r2 r1 r0
     (n1StepsTelescopeInput_of_nat_conservation v u r3 r2 r1 r0 hsteps)
 
-theorem n1StepsTelescoped_of_conservation
-    (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word)
-    (hsteps : n1StepsConservation v u r3 r2 r1 r0) :
-    n1StepsTelescoped v u r3 r2 r1 r0 :=
-  n1StepsTelescoped_of_nat_conservation v u r3 r2 r1 r0
-    (n1StepsConservationNat_of_conservation v u r3 r2 r1 r0 hsteps)
+
 
 end EvmAsm.Evm64
 
