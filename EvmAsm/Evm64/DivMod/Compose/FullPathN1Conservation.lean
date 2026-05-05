@@ -238,18 +238,6 @@ theorem n1StepsRemainderVal_eq_of_extended_eq_lt_pow256
   omega
 
 @[irreducible]
-def fullDivN1StepsConservation
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
-  let v := fullDivN1NormV b0 b1 b2 b3
-  let u := fullDivN1NormU a0 a1 a2 a3 b0
-  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-  let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-  n1StepsConservation v u r3 r2 r1 r0
-
-@[irreducible]
 def fullDivN1StepsTelescoped
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
@@ -261,37 +249,6 @@ def fullDivN1StepsTelescoped
   let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
   n1StepsTelescoped v u r3 r2 r1 r0
 
-@[irreducible]
-def fullDivN1QuotientVal
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Nat :=
-  let B := 2^64
-  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-  let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
-  r3.1.toNat * B^3 + r2.1.toNat * B^2 + r1.1.toNat * B + r0.1.toNat
-
-@[irreducible]
-def fullDivN1CorrectedTrialVal
-    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Nat :=
-  let B := 2^64
-  let v := fullDivN1NormV b0 b1 b2 b3
-  let u := fullDivN1NormU a0 a1 a2 a3 b0
-  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
-  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
-  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
-  let qHat3 : Word := if bltu_3 then div128Quot u.2.2.2.2 u.2.2.2.1 v.1
-    else signExtend12 4095
-  let qHat2 : Word := if bltu_2 then div128Quot r3.2.1 u.2.2.1 v.1
-    else signExtend12 4095
-  let qHat1 : Word := if bltu_1 then div128Quot r2.2.1 u.2.1 v.1
-    else signExtend12 4095
-  let qHat0 : Word := if bltu_0 then div128Quot r1.2.1 u.1 v.1
-    else signExtend12 4095
-  (qHat3.toNat - 2) * B^3 + (qHat2.toNat - 2) * B^2 +
-    (qHat1.toNat - 2) * B + (qHat0.toNat - 2)
 
 
 
