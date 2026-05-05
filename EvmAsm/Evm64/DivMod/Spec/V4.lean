@@ -692,17 +692,6 @@ theorem div128Quot_v4_eq_q_true_normalized
       (u4.toNat * 2^64 + u3.toNat) / b3'.toNat :=
   div128Quot_v4_eq_q_true_normalized_of_lt u4 u3 b3' h_b3'_ge h_u4_lt_b3'
 
-/-- Lower-bound corollary of the v4 exact quotient theorem. This is the
-    div128 shape needed by later N1 digits where `uHi < vTop`, but
-    `uHi < 2^63` is not available. -/
-theorem div128Quot_v4_ge_q_true_normalized_of_lt
-    (u4 u3 b3' : Word)
-    (h_b3'_ge : b3'.toNat ≥ 2^63)
-    (h_u4_lt_b3' : u4.toNat < b3'.toNat) :
-    (u4.toNat * 2^64 + u3.toNat) / b3'.toNat ≤
-      (div128Quot_v4 u4 u3 b3').toNat := by
-  rw [div128Quot_v4_eq_q_true_normalized_of_lt u4 u3 b3' h_b3'_ge h_u4_lt_b3']
-
 /-- **`n4CallSkipSemanticHolds_v4` holds unconditionally** under the
     standard call-trial preconditions.
 
