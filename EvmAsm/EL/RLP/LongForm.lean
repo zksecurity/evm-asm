@@ -3,7 +3,7 @@
 
   Branch lemmas for long-form byte-string and list decoding.
 -/
-import EvmAsm.EL.RLP.ReadLength
+import EvmAsm.EL.RLP.Decode
 
 namespace EvmAsm.EL.RLP
 
