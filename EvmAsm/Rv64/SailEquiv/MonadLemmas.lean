@@ -738,16 +738,6 @@ theorem runSail_get_next_pc {s : SailState} {v : BitVec 64}
 @[simp] private theorem sail_access_eq (v : BitVec w) (i : Nat) :
     Sail.BitVec.access v i = BitVec.ofBool v[i]! := rfl
 
-private theorem align4_bit0 (v : BitVec 64) (h : v &&& 3 = 0) :
-    v[0] = false := by
-  show v.getLsbD 0 = false
-  have := congrArg (·.getLsbD 0) h; simp at this; exact this
-
-private theorem align4_bit1 (v : BitVec 64) (h : v &&& 3 = 0) :
-    v[1] = false := by
-  show v.getLsbD 1 = false
-  have := congrArg (·.getLsbD 1) h; simp at this; exact this
-
 /-- currentlyEnabled Ext_Zca succeeds when misa is readable.
     Returns the MISA C-bit check result without modifying state. -/
 -- currentlyEnabled Ext_Zca → Ext_C → readReg misa. Both hartSupports are true.

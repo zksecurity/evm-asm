@@ -21,10 +21,12 @@ import EvmAsm.EL.LogExecutionBridge
 import EvmAsm.EL.KeccakInputBridge
 import EvmAsm.EL.KeccakEcallBridge
 import EvmAsm.EL.KeccakResultBridge
+import EvmAsm.EL.KeccakStackBridge
 import EvmAsm.EL.KeccakExecutionBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
+import EvmAsm.EL.Conformance.Log
 import EvmAsm.EL.Conformance.ExpGas
 import EvmAsm.EL.Conformance.RLP
 import EvmAsm.EL.Conformance.RLPFullDecodeBridge
@@ -42,6 +44,8 @@ import EvmAsm.EL.MessageCallExecution
 import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallInputBridge
 import EvmAsm.EL.CallOutputBridge
+import EvmAsm.EL.CallStackBridge
+import EvmAsm.EL.CallResultEffectsBridge
 import EvmAsm.EL.CallOutputMemory
 import EvmAsm.EL.CallOutputArgsMemory
 import EvmAsm.EL.CallValueTransfer

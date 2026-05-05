@@ -89,6 +89,7 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SepLogic
 import EvmAsm.Evm64.Environment.Layout
 
