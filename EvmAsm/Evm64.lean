@@ -78,23 +78,37 @@ import EvmAsm.Evm64.Env.Spec
 import EvmAsm.Evm64.Env.StackSpec
 import EvmAsm.Evm64.Env.Wrappers
 import EvmAsm.Evm64.CallArgs
+import EvmAsm.Evm64.CallArgsStackDecode
 import EvmAsm.Evm64.CreateArgs
+import EvmAsm.Evm64.CreateArgsStackDecode
 import EvmAsm.Evm64.LogArgs
+import EvmAsm.Evm64.LogArgsStackDecode
 import EvmAsm.Evm64.TerminatingArgs
+import EvmAsm.Evm64.TerminatingArgsStackDecode
 
 -- Static gas schedule (#117)
 import EvmAsm.Evm64.Gas
 import EvmAsm.Evm64.Env.Gas
 import EvmAsm.Evm64.StorageGas
 import EvmAsm.Evm64.StorageAccess
+import EvmAsm.Evm64.StorageAccessWarm
 import EvmAsm.Evm64.StorageAccessOutcome
+import EvmAsm.Evm64.StorageArgs
 
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
+import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.HandlerLoopBridge
+import EvmAsm.Evm64.HandlerLoopSimulationBridge
 import EvmAsm.Evm64.InterpreterLoop
+import EvmAsm.Evm64.InterpreterLoopStatus
 import EvmAsm.Evm64.InterpreterSimulation
+import EvmAsm.Evm64.InterpreterTrace
+import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
 
 -- Precompile dispatch surface (#116)
@@ -106,6 +120,7 @@ import EvmAsm.Evm64.PrecompileDispatch
 import EvmAsm.Evm64.Memory
 import EvmAsm.Evm64.MemoryGas
 import EvmAsm.Evm64.KeccakArgs
+import EvmAsm.Evm64.KeccakArgsStackDecode
 import EvmAsm.Evm64.LogGas
 import EvmAsm.Evm64.LogArgsGas
 import EvmAsm.Evm64.TerminatingGas
@@ -122,3 +137,6 @@ import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Calldata.SizeProgram
 import EvmAsm.Evm64.Calldata.SizeSpec
 import EvmAsm.Evm64.Calldata.LoadProgram
+import EvmAsm.Evm64.Calldata.CopyArgs
+import EvmAsm.Evm64.Calldata.CopyExec
+import EvmAsm.Evm64.Calldata.CopyMemory
