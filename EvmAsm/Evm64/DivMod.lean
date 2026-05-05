@@ -12,8 +12,12 @@ import EvmAsm.Evm64.DivMod.Spec
 -- LoopDefs + EvmWordArith.DivN4Overestimate. ModFullPathN{1,2,3}LoopUnified
 -- cover the MOD n=1/n=2/n=3 wrappers. FullPathN2Bundle carries shared N2
 -- irreducible intermediates for later full-wrapper refactors.
--- Spec.V4 transitively covers SpecCallAddbackBeq (+ AlgDefs, AlgEuclideans)
--- and LoopDefs.IterV4InvariantsPhase2 (→ IterV4Invariants).
+-- Removed: import EvmAsm.Evm64.DivMod.Spec.V4 (deleted: 716 LOC of unused v4 closure
+-- theorems; SpecCallAddbackBeq is reachable via direct imports).
+-- IterV4InvariantsPhase2 was re-exported by Spec/V4; wire it directly here so the
+-- full Helpers → Overshoots → Invariants → Phase2 chain stays imported.
+import EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2
+
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin
@@ -25,4 +29,3 @@ import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN3LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
-import EvmAsm.Evm64.DivMod.Spec.V4
