@@ -97,6 +97,8 @@ import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
+import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
+import EvmAsm.Evm64.InterpreterExecutableFetchBridge
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
