@@ -865,45 +865,6 @@ theorem div128Quot_v4_hi_fix_eucl_generic
     omega
 
 
-/-- **Generic hi-fix rc bound**: parameterized version of
-    `_phase1_rhatc_lt_2_dHi`. Under shift-norm (`dHi ≥ 2^31`,
-    `dHi < 2^32`), the post-hi-fix `rc.toNat < 2 * dHi.toNat`. -/
-theorem div128Quot_v4_hi_fix_rc_lt_2_dHi_generic
-    (D dHi : Word)
-    (hdHi_ge : dHi.toNat ≥ 2 ^ 31)
-    (hdHi_lt : dHi.toNat < 2 ^ 32) :
-    let q := rv64_divu D dHi
-    let r := D - q * dHi
-    let hi := q >>> (32 : BitVec 6).toNat
-    let rc := if hi = 0 then r else r + dHi
-    rc.toNat < 2 * dHi.toNat := by
-  intro q r hi rc
-  have hdHi_ne : dHi ≠ 0 := by
-    intro heq; rw [heq] at hdHi_ge; simp at hdHi_ge
-  have h_q_eucl : D.toNat = q.toNat * dHi.toNat + D.toNat % dHi.toNat :=
-    EvmWord.rv64_divu_euclidean D dHi hdHi_ne
-  have h_q_dHi_le : q.toNat * dHi.toNat ≤ D.toNat :=
-    EvmWord.rv64_divu_mul_le D dHi hdHi_ne
-  have h_q_dHi_toNat : (q * dHi).toNat = q.toNat * dHi.toNat := by
-    rw [BitVec.toNat_mul]
-    exact Nat.mod_eq_of_lt (lt_of_le_of_lt h_q_dHi_le D.isLt)
-  have h_r_toNat : r.toNat = D.toNat % dHi.toNat := by
-    show (D - q * dHi).toNat = _
-    rw [BitVec.toNat_sub, h_q_dHi_toNat]; omega
-  have h_r_lt : r.toNat < dHi.toNat :=
-    h_r_toNat ▸ Nat.mod_lt _
-      (Nat.pos_of_ne_zero (fun h => hdHi_ne (BitVec.eq_of_toNat_eq h)))
-  by_cases h_hi : hi = 0
-  · show (if hi = 0 then r else r + dHi).toNat < 2 * dHi.toNat
-    rw [if_pos h_hi]; linarith
-  · show (if hi = 0 then r else r + dHi).toNat < 2 * dHi.toNat
-    rw [if_neg h_hi, BitVec.toNat_add]
-    have h_no_ov : r.toNat + dHi.toNat < 2 ^ 64 := by
-      have : r.toNat + dHi.toNat < 2^32 + 2^32 := by linarith
-      linarith [show (2:Nat)^32 + 2^32 < 2^64 from by decide]
-    rw [Nat.mod_eq_of_lt h_no_ov]; linarith
-
-
 /-- **Phase-1a rhatc bound**: under shift-norm, `rhatc.toNat < 2 * dHi.toNat`.
 
     Case analysis on `hi1`:
@@ -958,56 +919,6 @@ theorem div128Quot_v4_phase1_rhatc_lt_2_dHi
     rw [Nat.mod_eq_of_lt h_no_ov]; linarith
 
 
-/-- **Generic `phase2b_q0'` is bounded above by its q input**:
-    `phase2b_q0'` returns either `q` (BLTU doesn't fire) or `q - 1`
-    (BLTU fires, requires q ≥ 1). Either way, `q'.toNat ≤ q.toNat`.
-
-    Phase-agnostic: works for any (q, rhat, dLo, div_un). -/
-theorem div128Quot_v4_phase1b_q_prime_le_q_generic
-    (q rhat dLo div_un : Word) :
-    (div128Quot_phase2b_q0' q rhat dLo div_un).toNat ≤ q.toNat := by
-  unfold div128Quot_phase2b_q0'
-  by_cases h_g : rhat >>> (32 : BitVec 6).toNat = 0
-  · simp only [h_g, if_true]
-    by_cases h_b : BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
-    · rw [if_pos h_b, BitVec.toNat_add, signExtend12_4095_toNat]
-      by_cases h_q_zero : q.toNat = 0
-      · -- BLTU fires but q*dLo = 0 — contradiction.
-        exfalso
-        have h_q_dLo_zero : (q * dLo).toNat = 0 := by
-          rw [BitVec.toNat_mul, h_q_zero, Nat.zero_mul, Nat.zero_mod]
-        have := BitVec.ult_iff_toNat_lt.mp h_b
-        rw [h_q_dLo_zero] at this
-        exact Nat.not_lt_zero _ this
-      · have h_q_pos : q.toNat ≥ 1 := by omega
-        have hq_lt_word : q.toNat - 1 < 2^64 := by have := q.isLt; omega
-        rw [show q.toNat + (2^64 - 1) = (q.toNat - 1) + 2^64 from by omega,
-            Nat.add_mod_right, Nat.mod_eq_of_lt hq_lt_word]
-        omega
-    · rw [if_neg h_b]
-  · simp only [h_g, if_false]; rfl
-
-
-/-- **Generic `rhat`-update step is bounded by `rhat + dHi`**:
-    after the BLTU update, the new `rhat'` is either `rhat` or
-    `rhat + dHi`. So `rhat'.toNat ≤ rhat.toNat + dHi.toNat`,
-    provided `rhat + dHi` doesn't overflow.
-
-    Phase-agnostic. -/
-theorem div128Quot_v4_phase1b_rhat_prime_le_step_generic
-    (q rhat dLo div_un dHi : Word)
-    (h_no_overflow : rhat.toNat + dHi.toNat < 2 ^ 64) :
-    (if rhat >>> (32 : BitVec 6).toNat = 0 then
-       (if BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
-        then rhat + dHi else rhat)
-     else rhat).toNat ≤ rhat.toNat + dHi.toNat := by
-  by_cases h_g : rhat >>> (32 : BitVec 6).toNat = 0
-  · simp only [h_g, if_true]
-    by_cases h_b : BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| div_un) (q * dLo)
-    · rw [if_pos h_b, BitVec.toNat_add]
-      exact le_of_eq (Nat.mod_eq_of_lt h_no_overflow)
-    · rw [if_neg h_b]; linarith
-  · simp only [h_g, if_false]; linarith
 
 
 /-- **Phase-1b 1-correction Eucl preservation (v4 Word↔Nat)**: each
