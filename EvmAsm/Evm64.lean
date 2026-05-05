@@ -99,13 +99,16 @@ import EvmAsm.Evm64.StorageArgs
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.Dispatch.Program
+import EvmAsm.Evm64.Dispatch.EntrySpec
 import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.HandlerTableByte
 import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.DupSwapHandlers
 import EvmAsm.Evm64.ShiftHandlers
 import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ComparisonHandlers
