@@ -919,8 +919,6 @@ theorem div128Quot_v4_phase1_rhatc_lt_2_dHi
     rw [Nat.mod_eq_of_lt h_no_ov]; linarith
 
 
-
-
 /-- **Phase-1b 1-correction Eucl preservation (v4 Word↔Nat)**: each
     `phase2b_q0'` correction preserves the Phase-1a Euclidean identity
     at the toNat level: q.toNat * dHi.toNat + rhat.toNat = uHi.toNat
