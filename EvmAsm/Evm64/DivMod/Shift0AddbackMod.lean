@@ -6,7 +6,7 @@
 -/
 
 -- `SpecCall` transitively imports `EvmWordArith.Div128Shift0`.
-import EvmAsm.Evm64.DivMod.SpecCall
+import EvmAsm.Evm64.DivMod.Spec.CallSkip
 
 namespace EvmAsm.Evm64
 

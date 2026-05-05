@@ -5,6 +5,7 @@
   1 instruction (ADDI x12 x12 32).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64

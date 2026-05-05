@@ -558,6 +558,107 @@ theorem exp_loop_un_marshal_and_restore_byte_length :
     4 * exp_loop_un_marshal_and_restore.length = 36 := by
   rw [exp_loop_un_marshal_and_restore_length]
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration squaring call (#92 slice 3-squaring-call, beads evm-asm-ywrjr)
+-- ----------------------------------------------------------------------------
+--
+-- Per docs/92-exp-frame-design.md §5 + §8, the per-iteration squaring step
+-- composes four already-merged sub-blocks:
+--
+--   exp_squaring_call_block mulOff :=
+--     exp_loop_marshal_factor1                ;;  -- 8 instr (32 bytes)
+--     exp_loop_marshal_result_to_factor2      ;;  -- 8 instr (32 bytes)
+--     exp_square_block mulOff                 ;;  -- 1 instr (4 bytes; JAL → mul)
+--     exp_loop_un_marshal_and_restore             -- 9 instr (36 bytes)
+--
+-- Total: 26 instructions = 104 bytes.
+-- Pure structural composition: marshalling specs land in the limb-level
+-- slice (`evm-asm-mtj3`) and the full-loop composition in `evm-asm-w5mk`.
+
+/-- Per-iteration squaring step: marshal factor1 + result→factor2, JAL into
+    `mul_callable`, then un-marshal and restore the scratch frame. 26
+    instructions. -/
+def exp_squaring_call_block (mulOff : BitVec 21) : Program :=
+  exp_loop_marshal_factor1 ;;
+  exp_loop_marshal_result_to_factor2 ;;
+  exp_square_block mulOff ;;
+  exp_loop_un_marshal_and_restore
+
+theorem exp_squaring_call_block_length (mulOff : BitVec 21) :
+    (exp_squaring_call_block mulOff).length = 26 := by
+  show (((exp_loop_marshal_factor1 ;;
+          exp_loop_marshal_result_to_factor2) ;;
+         exp_square_block mulOff) ;;
+        exp_loop_un_marshal_and_restore).length = 26
+  simp only [seq, Program.length_append,
+    exp_loop_marshal_factor1_length,
+    exp_loop_marshal_result_to_factor2_length,
+    exp_square_block_length,
+    exp_loop_un_marshal_and_restore_length]
+
+theorem exp_squaring_call_block_byte_length (mulOff : BitVec 21) :
+    4 * (exp_squaring_call_block mulOff).length = 104 := by
+  rw [exp_squaring_call_block_length]
+
+
+-- ----------------------------------------------------------------------------
+-- Conditional-multiply taken-branch composite: exp_cond_mul_call_block
+-- (#92 slice 3-cond-mul-call, beads evm-asm-1uu01)
+-- ----------------------------------------------------------------------------
+--
+-- Sibling of `exp_squaring_call_block` (slice evm-asm-ywrjr). The
+-- conditional-multiply taken-branch performs the same 4-block composition
+-- as the squaring tail, but loads the base `a` into the `factor2` slot
+-- instead of copying `result` into it. The surrounding scaffold
+-- (`evm_exp`, slice evm-asm-ahaz) hoists the BEQ that skips this block
+-- when the current exponent bit is zero.
+--
+-- Layout (26 instructions = 104 bytes):
+--
+--     exp_cond_mul_call_block mulOff :=
+--       exp_loop_marshal_factor1 ;;            -- 8 instr (place result at f1 slot)
+--       exp_loop_marshal_a_to_factor2 ;;       -- 8 instr (place base `a` at f2 slot)
+--       exp_square_block mulOff ;;             -- 1 instr (JAL mul_callable)
+--       exp_loop_un_marshal_and_restore        -- 9 instr (copy MUL output back; ADDI x12 -32)
+--
+-- The block name retains `_call` to mirror `exp_squaring_call_block`; the
+-- conditional gating (BEQ skip when `x10 == 0`) is composed in by the
+-- top-level `evm_exp` layout, not by this block. Pure structural
+-- composition; per-iteration limb specs land in evm-asm-mtj3 and the
+-- full-loop spec in evm-asm-w5mk.
+
+/-- Conditional-multiply (taken-branch) composite for one EXP iteration:
+    marshal `result` into the LP64 `factor1` slot, marshal base `a` into
+    the LP64 `factor2` slot, JAL into `mul_callable`, and copy the MUL
+    output back into the local scratch frame while restoring `x12` to
+    its pre-call position. 26 instructions, 104 bytes.
+
+    `mulOff` is the signed 21-bit JAL offset to `mul_callable` (shared
+    with `exp_squaring_call_block` and the bare `exp_square_block`; the
+    concrete numeric value is pinned once the surrounding `evm_exp`
+    layout is final in slice evm-asm-ahaz). -/
+def exp_cond_mul_call_block (mulOff : BitVec 21) : Program :=
+  exp_loop_marshal_factor1 ;;
+  exp_loop_marshal_a_to_factor2 ;;
+  exp_square_block mulOff ;;
+  exp_loop_un_marshal_and_restore
+
+theorem exp_cond_mul_call_block_length (mulOff : BitVec 21) :
+    (exp_cond_mul_call_block mulOff).length = 26 := by
+  show (((exp_loop_marshal_factor1 ;;
+            exp_loop_marshal_a_to_factor2) ;;
+            exp_square_block mulOff) ;;
+          exp_loop_un_marshal_and_restore).length = 26
+  simp only [seq, Program.length_append,
+    exp_loop_marshal_factor1_length,
+    exp_loop_marshal_a_to_factor2_length,
+    exp_square_block_length,
+    exp_loop_un_marshal_and_restore_length]
+
+theorem exp_cond_mul_call_block_byte_length (mulOff : BitVec 21) :
+    4 * (exp_cond_mul_call_block mulOff).length = 104 := by
+  rw [exp_cond_mul_call_block_length]
+
 
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
