@@ -18,7 +18,7 @@
   `EvmAsm/Evm64/Calldata/SizeSpec.lean`.
 -/
 
-import EvmAsm.Evm64.Env.Spec
+import EvmAsm.Evm64.Env.Program
 import EvmAsm.Evm64.Env.Field
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.Stack

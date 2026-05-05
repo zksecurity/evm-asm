@@ -4,7 +4,6 @@
   Per-limb NOT spec.
 -/
 
-import EvmAsm.Evm64.Not.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

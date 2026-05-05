@@ -93,5 +93,70 @@ theorem checkVector?_none_error
     checkVector? run { id := id, input := input, expected := .error label } = .errored id label := by
   simp [checkVector?, h_run]
 
+/-- Check a batch of total executable-spec conformance vectors.
+    Distinctive token: conformanceBatchHelpers. -/
+def checkBatch [DecidableEq ο] (run : ι → ο) (vectors : List (TestVector ι ο)) :
+    List CheckResult :=
+  vectors.map (checkVector run)
+
+/-- Check a batch of partial executable-spec conformance vectors. -/
+def checkBatch? [DecidableEq ο] (run : ι → Option ο) (vectors : List (TestVector ι ο)) :
+    List CheckResult :=
+  vectors.map (checkVector? run)
+
+/-- Batch predicate used by conformance files that expect every vector to pass. -/
+def allPassed : List CheckResult → Prop
+  | [] => True
+  | result :: rest => result.isPassed ∧ allPassed rest
+
+@[simp] theorem checkBatch_nil [DecidableEq ο] (run : ι → ο) :
+    checkBatch run [] = [] := rfl
+
+@[simp] theorem checkBatch?_nil [DecidableEq ο] (run : ι → Option ο) :
+    checkBatch? run [] = [] := rfl
+
+@[simp] theorem checkBatch_cons [DecidableEq ο] (run : ι → ο)
+    (vector : TestVector ι ο) (vectors : List (TestVector ι ο)) :
+    checkBatch run (vector :: vectors) = checkVector run vector :: checkBatch run vectors := rfl
+
+@[simp] theorem checkBatch?_cons [DecidableEq ο] (run : ι → Option ο)
+    (vector : TestVector ι ο) (vectors : List (TestVector ι ο)) :
+    checkBatch? run (vector :: vectors) = checkVector? run vector :: checkBatch? run vectors := rfl
+
+@[simp] theorem checkBatch_append [DecidableEq ο] (run : ι → ο)
+    (left right : List (TestVector ι ο)) :
+    checkBatch run (left ++ right) = checkBatch run left ++ checkBatch run right := by
+  simp [checkBatch]
+
+@[simp] theorem checkBatch?_append [DecidableEq ο] (run : ι → Option ο)
+    (left right : List (TestVector ι ο)) :
+    checkBatch? run (left ++ right) = checkBatch? run left ++ checkBatch? run right := by
+  simp [checkBatch?]
+
+@[simp] theorem allPassed_nil : allPassed [] := trivial
+
+@[simp] theorem allPassed_cons (result : CheckResult) (rest : List CheckResult) :
+    allPassed (result :: rest) ↔ result.isPassed ∧ allPassed rest := Iff.rfl
+
+@[simp] theorem allPassed_passed_cons (rest : List CheckResult) :
+    allPassed (.passed :: rest) ↔ allPassed rest := by
+  simp [allPassed]
+
+@[simp] theorem not_allPassed_failed_cons (id : String) (rest : List CheckResult) :
+    ¬ allPassed (.failed id :: rest) := by
+  simp [allPassed]
+
+@[simp] theorem not_allPassed_errored_cons (id label : String) (rest : List CheckResult) :
+    ¬ allPassed (.errored id label :: rest) := by
+  simp [allPassed]
+
+theorem allPassed_append (left right : List CheckResult) :
+    allPassed (left ++ right) ↔ allPassed left ∧ allPassed right := by
+  induction left with
+  | nil =>
+      simp [allPassed]
+  | cons result rest ih =>
+      cases result <;> simp [allPassed, ih]
+
 end Conformance
 end EvmAsm.EL

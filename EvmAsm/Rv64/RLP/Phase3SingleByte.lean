@@ -23,6 +23,7 @@
   separate files.
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.XSimp
 

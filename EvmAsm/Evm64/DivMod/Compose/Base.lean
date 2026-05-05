@@ -315,28 +315,6 @@ theorem divScratchValues_unfold {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      ((sp + signExtend12 3976) ↦ₘ jMem)) := by
   delta divScratchValues; rfl
 
-/-- Mid-tree variant of `divScratchValues_unfold`: threads a `Q` through the
-    equality so `rw ←` can fold the 15 atoms into a `divScratchValues` bundle
-    **even when they sit in the middle of a longer sepConj chain**. Counterpart
-    to `evmWordIs_sp{_,32}_limbs_eq_right`. Used by the DIV/MOD stack-spec
-    composition where scratch atoms are scattered across the unfolded
-    `fullDivN4MaxSkipPost` post. -/
-theorem divScratchValues_unfold_right {sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    shiftMem nMem jMem : Word} {Q : Assertion} :
-    (((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
-     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
-     ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-     ((sp + signExtend12 4024) ↦ₘ u4) ** ((sp + signExtend12 4016) ↦ₘ u5) **
-     ((sp + signExtend12 4008) ↦ₘ u6) ** ((sp + signExtend12 4000) ↦ₘ u7) **
-     ((sp + signExtend12 3992) ↦ₘ shiftMem) **
-     ((sp + signExtend12 3984) ↦ₘ nMem) **
-     ((sp + signExtend12 3976) ↦ₘ jMem) ** Q) =
-    (divScratchValues sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      shiftMem nMem jMem ** Q) := by
-  rw [divScratchValues_unfold]
-  iterate 14 rw [sepConj_assoc']
-
 /-- Extension of `divScratchValues` with the 4 additional call-path scratch
     cells at `sp + signExtend12 3968/3960/3952/3944` — the `div128`-subroutine
     return address, the normalized top-divisor limb `d = b3'`, its low 32
