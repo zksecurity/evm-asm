@@ -95,6 +95,7 @@ import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterSimulation
+import EvmAsm.Evm64.InterpreterLoopSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
 
 -- Precompile dispatch surface (#116)
