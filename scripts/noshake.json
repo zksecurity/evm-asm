@@ -206,6 +206,8 @@
   ["EvmAsm.Evm64.DivMod.LoopBodyN3"],
  "EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation":
   ["EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases", "EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback", "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
+ "EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationV4":
+  ["EvmAsm.Evm64.DivMod.Spec.V4"],
  "EvmAsm.Evm64.DivMod.Spec.Dispatcher":
   ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
