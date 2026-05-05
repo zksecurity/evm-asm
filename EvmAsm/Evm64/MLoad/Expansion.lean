@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Memory
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.ExtractPure
