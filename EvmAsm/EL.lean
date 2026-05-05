@@ -10,6 +10,7 @@ import EvmAsm.EL.CreateArgsBridge
 import EvmAsm.EL.CreateEffects
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
+import EvmAsm.EL.LogDataBridge
 import EvmAsm.EL.LogCallEffects
 import EvmAsm.EL.KeccakResultBridge
 import EvmAsm.EL.Conformance
