@@ -485,25 +485,7 @@ theorem evm_mod_bzero_stack_spec_within (sp base : Word)
 -- Sublemmas towards evm_div_n4_max_skip_stack_spec (reshape plan)
 -- ============================================================================
 
-/-- Output-slot semantic reshape ("S2" from the reshape plan): the four
-    output-slot atoms in `fullDivN4MaxSkipPost` carry the concrete values
-    `signExtend12 4095 / 0 / 0 / 0`. Under the semantic precondition
-    `n4MaxSkipSemanticHolds` (and shift non-zero), those values equal
-    `(EvmWord.div a b).getLimbN 0..3`, so the four atoms fold into
-    `evmWordIs (sp + 32) (EvmWord.div a b)`. -/
-theorem output_slot_to_evmWordIs_div_n4_max_skip {sp : Word} {a b : EvmWord}
-    (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxSkipSemanticHolds a b) :
-    (((sp + 32) ↦ₘ (signExtend12 4095 : Word)) **
-     ((sp + 40) ↦ₘ (0 : Word)) **
-     ((sp + 48) ↦ₘ (0 : Word)) **
-     ((sp + 56) ↦ₘ (0 : Word))) =
-    evmWordIs (sp + 32) (EvmWord.div a b) := by
-  obtain ⟨hdiv0, hdiv1, hdiv2, hdiv3, _, _, _, _⟩ :=
-    n4_max_skip_div_mod_getLimbN a b hb3nz hsem
-  rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
-      hdiv0 hdiv1 hdiv2 hdiv3]
-
-/-- MOD counterpart of `output_slot_to_evmWordIs_div_n4_max_skip`: on the
+/-- MOD output-slot semantic reshape ("S2" from the reshape plan): on the
     max+skip path, the mod result limbs equal the four `mulsubN4` outputs. -/
 theorem output_slot_to_evmWordIs_mod_n4_max_skip {sp : Word} {a b : EvmWord}
     (hb3nz : b.getLimbN 3 ≠ 0) (hsem : n4MaxSkipSemanticHolds a b) :

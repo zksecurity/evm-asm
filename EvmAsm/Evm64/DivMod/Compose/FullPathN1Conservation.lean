@@ -120,20 +120,6 @@ def n1StepsTelescopeInput
   u.1.toNat + n1StepRemainderVal r1 * B =
     r0.1.toNat * V + n1StepRemainderVal r0 + n1StepTopVal r0 * B^4
 
-theorem n1StepsConservationNat_of_conservation
-    (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word)
-    (hsteps : n1StepsConservation v u r3 r2 r1 r0) :
-    n1StepsConservationNat v u r3 r2 r1 r0 := by
-  delta n1StepsConservation at hsteps
-  delta n1StepsConservationNat
-  rcases hsteps with ⟨h3, h2, h1, h0⟩
-  exact ⟨
-    n1StepConservationNat_of_conservation _ _ _ _ _ _ _ _ _ h3,
-    n1StepConservationNat_of_conservation _ _ _ _ _ _ _ _ _ h2,
-    n1StepConservationNat_of_conservation _ _ _ _ _ _ _ _ _ h1,
-    n1StepConservationNat_of_conservation _ _ _ _ _ _ _ _ _ h0⟩
-
 theorem n1TelescopeInput3_of_nat
     (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
     (r3 : Word × Word × Word × Word × Word × Word)
@@ -207,14 +193,6 @@ theorem n1StepsTelescoped_of_telescopeInput
   unfold EvmWord.val256 at ht ⊢
   ring_nf at ht ⊢
   exact ht
-
-theorem n1StepsTelescoped_of_nat_conservation
-    (v : Word × Word × Word × Word) (u : Word × Word × Word × Word × Word)
-    (r3 r2 r1 r0 : Word × Word × Word × Word × Word × Word)
-    (hsteps : n1StepsConservationNat v u r3 r2 r1 r0) :
-    n1StepsTelescoped v u r3 r2 r1 r0 :=
-  n1StepsTelescoped_of_telescopeInput v u r3 r2 r1 r0
-    (n1StepsTelescopeInput_of_nat_conservation v u r3 r2 r1 r0 hsteps)
 
 
 

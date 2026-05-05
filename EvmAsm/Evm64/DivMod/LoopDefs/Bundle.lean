@@ -302,4 +302,12 @@ def loopN1Iter210PreWithScratch (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
   (sp + signExtend12 3952 ↦ₘ dloMem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
 
+-- (Removed dead defs `loopBodyPre` and `loopBodyPreWithScratch`: shared
+-- one-iteration loop-body preconditions parametric on the stored divisor
+-- limb count, plus a four-scratch-cell extension for the call path. Both
+-- had no consumers anywhere in EvmAsm/ — call-path specs build the
+-- scratch chain inline and the surface specs work directly with their
+-- per-N preconditions. Authored by @pirapira;
+-- implemented by Hermes-bot (evm-hermes).)
+
 end EvmAsm.Evm64
