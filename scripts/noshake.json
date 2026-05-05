@@ -75,6 +75,8 @@
   "EvmAsm.Evm64.MulMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.Tactics.XCancelStruct":
   ["EvmAsm.Rv64.SepLogic"],
+  "EvmAsm.Rv64.Tactics.SymStep":
+  ["EvmAsm.Rv64.Execution"],
  "EvmAsm.Evm64.Basic":
   ["Std.Tactic.BVDecide", "EvmAsm.Rv64.Basic"],
  "EvmAsm.Evm64.CodeRegion":
@@ -87,6 +89,8 @@
   ["EvmAsm.Rv64.Basic", "Std.Tactic.BVDecide"],
  "EvmAsm.Evm64.SpAddr":
   ["EvmAsm.Rv64.Tactics.SeqFrame"],
+  "EvmAsm.Evm64.Dispatch.EntrySpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Stack":
   ["EvmAsm.Evm64.SpAddr"],
   "EvmAsm.Evm64.MSize.Spec":
@@ -229,6 +233,7 @@
    "EvmAsm.Evm64.DivMod.Spec.N3ModBridge",
    "EvmAsm.Evm64.DivMod.N4StackSpecWithin"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
+ "EvmAsm.Rv64.RLP.Phase1E3LongStringOne": ["EvmAsm.Rv64.RLP.Phase1E3FullPath", "EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopThree": ["EvmAsm.Rv64.RLP.Phase2LongLoopTwo"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopFour":  ["EvmAsm.Rv64.RLP.Phase2LongLoopThree"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopFive":  ["EvmAsm.Rv64.RLP.Phase2LongLoopFour"],
