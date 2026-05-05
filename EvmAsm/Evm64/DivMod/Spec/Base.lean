@@ -24,8 +24,8 @@
     `isSkipBorrowN4MaxEvm`, `isCallTrialN4Evm`, `isSkipBorrowN4CallEvm`,
     `isAddbackBorrowN4CallEvm`. Each is a thin shim over the Word-level
     predicate plus a `_def` `rfl` lemma.
-  * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages
-    the un-normalized `mulsubN4`-carry hypothesis that
+  * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages the
+    un-normalized `mulsubN4`-carry hypothesis that
     `n4_max_skip_div_mod_getLimbN` consumes.
   * Weakener: `div_n4_max_skip_stack_weaken` — turns specific register values
     + `evmWordIs` operand atoms + `divScratchValues` into
