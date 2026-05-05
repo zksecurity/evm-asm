@@ -7,6 +7,7 @@
 
 import EvmAsm.EL.Conformance
 import EvmAsm.Evm64.Code.CopyExec
+import EvmAsm.Evm64.Code.CopyArgsStackDecode
 
 namespace EvmAsm.EL
 namespace Conformance
@@ -22,11 +23,22 @@ structure CodeCopyInput where
   size : EvmWord
   deriving Repr
 
+/-- Input shape for a CODECOPY stack-decoder conformance vector. -/
+structure CodeCopyStackInput where
+  code : List (BitVec 8)
+  stack : List EvmWord
+  deriving Repr
+
 def runCodeCopy (input : CodeCopyInput) : List (BitVec 8) :=
   EvmAsm.Evm64.CodeCopyExec.copiedBytesFromArgs
     input.code
     (EvmAsm.Evm64.CodeCopyArgs.copyArgs
       input.destOffset input.codeOffset input.size)
+
+def runCodeCopyStack? (input : CodeCopyStackInput) :
+    Option (List (BitVec 8)) :=
+  EvmAsm.Evm64.CodeCopyArgsStackDecode.decodeCodeCopyStack? input.stack
+    |>.map (EvmAsm.Evm64.CodeCopyExec.copiedBytesFromArgs input.code)
 
 /-- CODECOPY zero-pads bytes copied past the end of code.
     Distinctive token: codeCopyZeroPadVector #125 #107 #118. -/
@@ -40,6 +52,27 @@ def codeCopyZeroPadVector :
         size := 4 }
     expected := .value [(0xaa : BitVec 8), 0, 0, 0] }
 
+/-- Stack-decoded CODECOPY uses stack words as
+    `destOffset, codeOffset, size`; the executable helper here returns only
+    the copied byte sequence. Distinctive token: runCodeCopyStack?
+    #107 #118 #125. -/
+def codeCopyStackVector :
+    TestVector CodeCopyStackInput (List (BitVec 8)) :=
+  { id := "codecopy-stack-decode"
+    input :=
+      { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+        stack := [(64 : EvmWord), (1 : EvmWord), (4 : EvmWord)] }
+    expected := .value [(0xaa : BitVec 8), 0, 0, 0] }
+
+/-- CODECOPY stack decoding fails unless all three stack operands exist. -/
+def codeCopyStackUnderflowVector :
+    TestVector CodeCopyStackInput (List (BitVec 8)) :=
+  { id := "codecopy-stack-underflow"
+    input :=
+      { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+        stack := [(64 : EvmWord), (1 : EvmWord)] }
+    expected := .error "stack-underflow" }
+
 theorem runCodeCopy_zeroPad :
     runCodeCopy
       { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
@@ -47,6 +80,17 @@ theorem runCodeCopy_zeroPad :
         codeOffset := 1
         size := 4 } =
       [(0xaa : BitVec 8), 0, 0, 0] := rfl
+
+theorem runCodeCopyStack_decoded :
+    runCodeCopyStack?
+      { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+        stack := [(64 : EvmWord), (1 : EvmWord), (4 : EvmWord)] } =
+      some [(0xaa : BitVec 8), 0, 0, 0] := rfl
+
+theorem runCodeCopyStack_underflow :
+    runCodeCopyStack?
+      { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+        stack := [(64 : EvmWord), (1 : EvmWord)] } = none := rfl
 
 theorem codeCopyZeroPadVector_passed :
     checkVector runCodeCopy codeCopyZeroPadVector = .passed :=
@@ -59,14 +103,38 @@ theorem codeCopyZeroPadVector_passed :
     [(0xaa : BitVec 8), 0, 0, 0]
     runCodeCopy_zeroPad
 
+theorem codeCopyStackVector_passed :
+    checkVector? runCodeCopyStack? codeCopyStackVector = .passed :=
+  checkVector?_some_passed runCodeCopyStack?
+    "codecopy-stack-decode"
+    { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+      stack := [(64 : EvmWord), (1 : EvmWord), (4 : EvmWord)] }
+    [(0xaa : BitVec 8), 0, 0, 0]
+    runCodeCopyStack_decoded
+
+theorem codeCopyStackUnderflowVector_errored :
+    checkVector? runCodeCopyStack? codeCopyStackUnderflowVector =
+      .errored "codecopy-stack-underflow" "stack-underflow" :=
+  checkVector?_none_error runCodeCopyStack?
+    "codecopy-stack-underflow"
+    "stack-underflow"
+    { code := [(0x60 : BitVec 8), (0xaa : BitVec 8)]
+      stack := [(64 : EvmWord), (1 : EvmWord)] }
+    runCodeCopyStack_underflow
+
 /-- Compact checked-vector batch for code executable helpers.
     Distinctive token: codeConformanceVectors #125 #107 #118. -/
 def codeConformanceVectors : List CheckResult :=
-  [checkVector runCodeCopy codeCopyZeroPadVector]
+  [ checkVector runCodeCopy codeCopyZeroPadVector
+  , checkVector? runCodeCopyStack? codeCopyStackVector
+  , checkVector? runCodeCopyStack? codeCopyStackUnderflowVector
+  ]
 
 theorem codeConformanceVectors_passed :
-    codeConformanceVectors = [.passed] := by
+    codeConformanceVectors =
+      [.passed, .passed, .errored "codecopy-stack-underflow" "stack-underflow"] := by
   simp [codeConformanceVectors, codeCopyZeroPadVector_passed]
+  exact ⟨codeCopyStackVector_passed, codeCopyStackUnderflowVector_errored⟩
 
 end Code
 end Conformance
