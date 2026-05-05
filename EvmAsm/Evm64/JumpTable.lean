@@ -25,6 +25,7 @@
 
 import EvmAsm.Rv64.Basic
 import EvmAsm.Rv64.SepLogic
+import EvmAsm.Evm64.Dispatch
 
 namespace EvmAsm.Evm64
 
@@ -175,6 +176,82 @@ def jumpTableOfHandlers
     jumpTableOfHandlers invalidHandler (fun _ => none) opcode
       = invalidHandler := by
   simp [jumpTableOfHandlers]
+
+/-! ### Decoder-backed handler address tables
+
+The pure decoder (`EvmOpcode.decodeByte?`) tells us whether an opcode byte is
+currently modeled. The jump table, however, is indexed by raw bytes and stores
+RV64 handler addresses. These helpers bridge the two surfaces: decoded opcodes
+use their opcode-address map, while undecoded bytes fall through to the
+INVALID handler address.
+-/
+
+/-- Partial raw-byte lookup obtained by decoding each byte to an `EvmOpcode`
+    and then mapping decoded opcodes to handler addresses. -/
+def opcodeHandlerAddressLookup
+    (handlers : EvmOpcode → Word) : Fin 256 → Option Word :=
+  fun opcodeByte => (EvmOpcode.decodeByte? opcodeByte.val).map handlers
+
+/-- Total raw-byte jump table for opcode handlers, with undecoded bytes routed
+    to the INVALID handler address. -/
+def jumpTableOfOpcodes
+    (invalidHandler : Word) (handlers : EvmOpcode → Word) : Fin 256 → Word :=
+  jumpTableOfHandlers invalidHandler (opcodeHandlerAddressLookup handlers)
+
+@[simp] theorem opcodeHandlerAddressLookup_some
+    (handlers : EvmOpcode → Word) (opcodeByte : Fin 256) (opcode : EvmOpcode)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = some opcode) :
+    opcodeHandlerAddressLookup handlers opcodeByte = some (handlers opcode) := by
+  simp [opcodeHandlerAddressLookup, h_decode]
+
+@[simp] theorem opcodeHandlerAddressLookup_none
+    (handlers : EvmOpcode → Word) (opcodeByte : Fin 256)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = none) :
+    opcodeHandlerAddressLookup handlers opcodeByte = none := by
+  simp [opcodeHandlerAddressLookup, h_decode]
+
+@[simp] theorem jumpTableOfOpcodes_decode_some
+    (invalidHandler : Word) (handlers : EvmOpcode → Word)
+    (opcodeByte : Fin 256) (opcode : EvmOpcode)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = some opcode) :
+    jumpTableOfOpcodes invalidHandler handlers opcodeByte = handlers opcode := by
+  simp [jumpTableOfOpcodes, h_decode]
+
+@[simp] theorem jumpTableOfOpcodes_decode_none
+    (invalidHandler : Word) (handlers : EvmOpcode → Word)
+    (opcodeByte : Fin 256)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = none) :
+    jumpTableOfOpcodes invalidHandler handlers opcodeByte = invalidHandler := by
+  simp [jumpTableOfOpcodes, h_decode]
+
+/-- If a decoder-backed jump table is present in RV64 memory, an unsupported
+    opcode byte reads back the INVALID handler address. This is the byte-level
+    layout bridge needed before the dispatch proof wires the loaded address to
+    the INVALID handler path. -/
+theorem jumpTableOfOpcodes_decode_none_getMem
+    {base invalidHandler : Word} {handlers : EvmOpcode → Word}
+    {s : MachineState}
+    (hP : (dispatchTableIs base (jumpTableOfOpcodes invalidHandler handlers)).holdsFor s)
+    (opcodeByte : Fin 256)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = none) :
+    s.getMem (base + BitVec.ofNat 64 (8 * opcodeByte.val))
+      = invalidHandler := by
+  rw [dispatchTableIs_getMem hP opcodeByte]
+  exact jumpTableOfOpcodes_decode_none invalidHandler handlers opcodeByte h_decode
+
+/-- Decoder-backed memory reads return the handler address assigned to the
+    decoded opcode when the byte is supported. -/
+theorem jumpTableOfOpcodes_decode_some_getMem
+    {base invalidHandler : Word} {handlers : EvmOpcode → Word}
+    {s : MachineState}
+    (hP : (dispatchTableIs base (jumpTableOfOpcodes invalidHandler handlers)).holdsFor s)
+    (opcodeByte : Fin 256) (opcode : EvmOpcode)
+    (h_decode : EvmOpcode.decodeByte? opcodeByte.val = some opcode) :
+    s.getMem (base + BitVec.ofNat 64 (8 * opcodeByte.val))
+      = handlers opcode := by
+  rw [dispatchTableIs_getMem hP opcodeByte]
+  exact jumpTableOfOpcodes_decode_some invalidHandler handlers opcodeByte opcode h_decode
+
 /-! ### Entry / rest split.
 
 The dispatch RV64 program needs to LD one specific table entry; the LD
