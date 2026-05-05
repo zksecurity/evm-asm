@@ -115,6 +115,7 @@ import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
+import EvmAsm.Evm64.SupportedHandlers
 import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
 import EvmAsm.Evm64.TerminatingLoopBridge
