@@ -37,6 +37,7 @@ def CALL : Nat := 0xf1
 def RETURN : Nat := 0xf3
 def DELEGATECALL : Nat := 0xf4
 def CREATE2 : Nat := 0xf5
+def STATICCALL : Nat := 0xfa
 def REVERT : Nat := 0xfd
 def INVALID : Nat := 0xfe
 def SELFDESTRUCT : Nat := 0xff
@@ -56,6 +57,12 @@ def execSpecBlockBlobByte : EvmOpcode.BlockBlobKind → Nat
   | .blockhash => Ops.BLOCKHASH
   | .blobhash => Ops.BLOBHASH
   | .blobbasefee => Ops.BLOBBASEFEE
+
+/-- Executable-spec byte for the CALL-family opcode classifier. -/
+def execSpecCallByte : CallArgs.Kind → Nat
+  | .call => Ops.CALL
+  | .delegatecall => Ops.DELEGATECALL
+  | .staticcall => Ops.STATICCALL
 
 /-- EVM opcode represented by a frame-terminating opcode classifier. -/
 def opcodeOfTerminatingKind : TerminatingArgs.Kind → EvmOpcode
@@ -143,6 +150,18 @@ theorem roundtrip_execSpecBlockBlobKind
         some (execSpecBlockBlobByte kind) ∧
       EvmOpcode.decodeByte? (execSpecBlockBlobByte kind) =
         some (EvmOpcode.ofBlockBlobKind kind) := by
+  cases kind <;> exact ⟨rfl, rfl⟩
+
+/--
+Executable-spec roundtrip for CALL, DELEGATECALL, and STATICCALL.
+
+Distinctive token:
+ExecutableSpecOpcodeBridge.roundtrip_execSpecCallKind #109 #114.
+-/
+theorem roundtrip_execSpecCallKind (kind : CallArgs.Kind) :
+    EvmOpcode.byte? (EvmOpcode.ofCallKind kind) = some (execSpecCallByte kind) ∧
+      EvmOpcode.decodeByte? (execSpecCallByte kind) =
+        some (EvmOpcode.ofCallKind kind) := by
   cases kind <;> exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_STOP :
