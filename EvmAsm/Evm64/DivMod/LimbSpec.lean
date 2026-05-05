@@ -8,7 +8,6 @@
 -- Every `LimbSpec.*` sub-file already imports `DivMod.Program`,
 -- `Rv64.SyscallSpecs`, `Rv64.ControlFlow`, `Rv64.Tactics.XSimp`, and
 -- `Rv64.Tactics.RunBlock`, so those direct imports would be redundant.
-import EvmAsm.Evm64.DivMod.LimbSpec.AddBack
 import EvmAsm.Evm64.DivMod.LimbSpec.AddBackFinalLoopControl
 import EvmAsm.Evm64.DivMod.LimbSpec.CLZ
 import EvmAsm.Evm64.DivMod.LimbSpec.CopyAU
@@ -110,10 +109,9 @@ open EvmAsm.Rv64
 -- Re-exported via the import at the top of this file, so downstream surface
 -- is unchanged.
 
--- Add-back partA/partB specs (divK_addback_{partA,partB}_spec) moved to
--- EvmAsm.Evm64.DivMod.LimbSpec.AddBack (fifteenth chunk of #312 split).
--- Re-exported via the import at the top of this file, so downstream surface
--- is unchanged.
+-- Add-back partA/partB per-limb specs were superseded after #61 closure
+-- (divK_addback_{partA,partB}_spec_within deleted; the entire file
+-- EvmAsm.Evm64.DivMod.LimbSpec.AddBack was unused).
 
 -- Sub-carry + Store-qj specs (divK_sub_carry_spec_within, divK_store_qj_{addr,write}_spec)
 -- moved to EvmAsm.Evm64.DivMod.LimbSpec.SubCarryStoreQj (sixteenth chunk of #312
