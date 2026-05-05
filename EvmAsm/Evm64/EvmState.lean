@@ -94,6 +94,22 @@ def chargeGas? (state : EvmState) (cost : Nat) : Option EvmState :=
 def withStack (state : EvmState) (stack : List EvmWord) : EvmState :=
   { state with stack := stack }
 
+def withMemoryCells (state : EvmState) (memoryCells : Nat) : EvmState :=
+  { state with memoryCells := memoryCells }
+
+def withMemory (state : EvmState) (memory : Nat → Word) : EvmState :=
+  { state with memory := memory }
+
+def withMemSize (state : EvmState) (memSize : Nat) : EvmState :=
+  { state with memSize := memSize }
+
+/-- Update all abstract memory fields at once. Memory-owning handlers can use
+    this when an opcode both changes contents and expands the high-water mark. -/
+def withMemoryState
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) : EvmState :=
+  { state with memoryCells := memoryCells, memory := memory, memSize := memSize }
+
 def withStatus (state : EvmState) (status : EvmStatus) : EvmState :=
   { state with status := status }
 
@@ -131,6 +147,65 @@ theorem chargeGas?_of_not_hasGas {state : EvmState} {cost : Nat}
 
 @[simp] theorem withStack_stack (state : EvmState) (stack : List EvmWord) :
     (withStack state stack).stack = stack := rfl
+
+@[simp] theorem withMemoryCells_memoryCells
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memoryCells = memoryCells := rfl
+
+@[simp] theorem withMemoryCells_memory
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memory = state.memory := rfl
+
+@[simp] theorem withMemoryCells_memSize
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memSize = state.memSize := rfl
+
+@[simp] theorem withMemory_memory (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memory = memory := rfl
+
+@[simp] theorem withMemory_memoryCells
+    (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem withMemory_memSize
+    (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memSize = state.memSize := rfl
+
+@[simp] theorem withMemSize_memSize (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memSize = memSize := rfl
+
+@[simp] theorem withMemSize_memoryCells (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem withMemSize_memory (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memory = state.memory := rfl
+
+@[simp] theorem withMemoryState_memoryCells
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memoryCells =
+      memoryCells := rfl
+
+@[simp] theorem withMemoryState_memory
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memory = memory := rfl
+
+@[simp] theorem withMemoryState_memSize
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memSize = memSize := rfl
+
+@[simp] theorem withMemoryState_stack
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).stack = state.stack := rfl
+
+@[simp] theorem withMemoryState_status
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).status =
+      state.status := rfl
 
 @[simp] theorem withStatus_status (state : EvmState) (status : EvmStatus) :
     (withStatus state status).status = status := rfl
