@@ -33,6 +33,13 @@ def offsetNat (args : Args) : Nat :=
 def loadedWordFromArgs (data : List (BitVec 8)) (args : Args) : EvmWord :=
   Calldata.callDataLoadWord data (offsetNat args)
 
+/-- The `i`th byte in the 32-byte CALLDATALOAD window selected by decoded
+    stack arguments.  This keeps later stack specs phrased through `Args`
+    instead of separately threading host offsets. -/
+def windowByteFromArgs
+    (data : List (BitVec 8)) (args : Args) (i : Nat) : BitVec 8 :=
+  Calldata.callDataByte data (offsetNat args + i)
+
 theorem stackArgumentCount_eq_one : stackArgumentCount = 1 := rfl
 
 theorem resultCount_eq_one : resultCount = 1 := rfl
@@ -47,6 +54,37 @@ theorem loadedWordFromArgs_eq
     (data : List (BitVec 8)) (args : Args) :
     loadedWordFromArgs data args =
       Calldata.callDataLoadWord data args.offset.toNat := rfl
+
+theorem windowByteFromArgs_eq
+    (data : List (BitVec 8)) (args : Args) (i : Nat) :
+    windowByteFromArgs data args i =
+      Calldata.callDataByte data (args.offset.toNat + i) := rfl
+
+theorem windowByteFromArgs_loadArgs
+    (data : List (BitVec 8)) (offset : EvmWord) (i : Nat) :
+    windowByteFromArgs data (loadArgs offset) i =
+      Calldata.callDataByte data (offset.toNat + i) := rfl
+
+theorem windowByteFromArgs_of_in_bounds
+    {data : List (BitVec 8)} {args : Args} {i : Nat}
+    (h : offsetNat args + i < data.length) :
+    windowByteFromArgs data args i = data[offsetNat args + i] := by
+  rw [windowByteFromArgs, Calldata.callDataByte_of_lt h]
+
+theorem windowByteFromArgs_of_out_of_bounds
+    {data : List (BitVec 8)} {args : Args} {i : Nat}
+    (h : data.length ≤ offsetNat args + i) :
+    windowByteFromArgs data args i = 0 := by
+  rw [windowByteFromArgs, Calldata.callDataByte_of_ge h]
+
+theorem loadedWordFromArgs_eq_window_fold
+    (data : List (BitVec 8)) (args : Args) :
+    loadedWordFromArgs data args =
+      BitVec.ofNat 256
+        ((List.range 32).foldl
+          (fun acc i => Calldata.appendByte acc (windowByteFromArgs data args i))
+          0) := by
+  rfl
 
 @[simp] theorem loadedWordFromArgs_nil (offset : EvmWord) :
     loadedWordFromArgs [] (loadArgs offset) = 0 := by

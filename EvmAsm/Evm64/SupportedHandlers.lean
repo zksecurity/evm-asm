@@ -15,6 +15,7 @@ import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.ShiftHandlers
+import EvmAsm.Evm64.DupSwapHandlers
 
 namespace EvmAsm.Evm64
 
@@ -35,7 +36,8 @@ def supportedHandlerTable : HandlerTable :=
   HandlerTable.orElse ArithmeticHandlers.arithmeticHandlerTable <|
   HandlerTable.orElse BitwiseHandlers.bitwiseHandlerTable <|
   HandlerTable.orElse ComparisonHandlers.comparisonHandlerTable
-    ShiftHandlers.shiftHandlerTable
+    (HandlerTable.orElse ShiftHandlers.shiftHandlerTable
+      DupSwapHandlers.dupSwapHandlerTable)
 
 theorem lookup_of_terminating
     {opcode : EvmOpcode} {handler : OpcodeHandler}
@@ -179,6 +181,32 @@ theorem lookup_of_shift
   rw [HandlerTable.orElse_left_none h_arithmetic]
   rw [HandlerTable.orElse_left_none h_bitwise]
   rw [HandlerTable.orElse_left_none h_comparison]
+  exact HandlerTable.orElse_left_some h_lookup
+
+theorem lookup_of_dupSwap
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_terminating :
+      TerminatingHandlers.terminatingHandlerTable opcode = none)
+    (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
+    (h_control : ControlHandlers.controlHandlerTable opcode = none)
+    (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
+    (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
+    (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
+    (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
+    (h_shift : ShiftHandlers.shiftHandlerTable opcode = none)
+    (h_lookup : DupSwapHandlers.dupSwapHandlerTable opcode = some handler) :
+    supportedHandlerTable opcode = some handler := by
+  unfold supportedHandlerTable
+  rw [HandlerTable.orElse_left_none h_terminating]
+  rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
+  rw [HandlerTable.orElse_left_none h_control]
+  rw [HandlerTable.orElse_left_none h_env]
+  rw [HandlerTable.orElse_left_none h_arithmetic]
+  rw [HandlerTable.orElse_left_none h_bitwise]
+  rw [HandlerTable.orElse_left_none h_comparison]
+  rw [HandlerTable.orElse_left_none h_shift]
   exact h_lookup
 
 theorem dispatchOpcode?_of_lookup
@@ -217,6 +245,42 @@ theorem supportedHandlerTable_PUSH_of_valid
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
     (PushHandlers.pushHandler?_PUSH_of_valid h_valid)
+
+theorem supportedHandlerTable_DUP_of_valid
+    {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true) :
+    supportedHandlerTable (.DUP n) =
+      some (DupSwapHandlers.dupHandler n) := by
+  exact lookup_of_dupSwap
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ArithmeticHandlers.arithmeticHandlerTable,
+      ArithmeticHandlers.arithmeticHandler?])
+    (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
+    (by simp [ComparisonHandlers.comparisonHandlerTable,
+      ComparisonHandlers.comparisonHandler?])
+    (by simp [ShiftHandlers.shiftHandlerTable, ShiftHandlers.shiftHandler?])
+    (DupSwapHandlers.dupSwapHandler?_DUP_of_valid h_valid)
+
+theorem supportedHandlerTable_SWAP_of_valid
+    {n : Nat} (h_valid : EvmOpcode.validSwapIndex n = true) :
+    supportedHandlerTable (.SWAP n) =
+      some (DupSwapHandlers.swapHandler n) := by
+  exact lookup_of_dupSwap
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ArithmeticHandlers.arithmeticHandlerTable,
+      ArithmeticHandlers.arithmeticHandler?])
+    (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
+    (by simp [ComparisonHandlers.comparisonHandlerTable,
+      ComparisonHandlers.comparisonHandler?])
+    (by simp [ShiftHandlers.shiftHandlerTable, ShiftHandlers.shiftHandler?])
+    (DupSwapHandlers.dupSwapHandler?_SWAP_of_valid h_valid)
 
 end SupportedHandlers
 
