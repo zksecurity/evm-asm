@@ -24,6 +24,7 @@ import EvmAsm.EL.WorldState
 import EvmAsm.EL.WorldStateAccount
 import EvmAsm.EL.Storage
 import EvmAsm.EL.StorageAccessBridge
+import EvmAsm.EL.StorageStackBridge
 import EvmAsm.EL.StorageEcallBridge
 import EvmAsm.EL.Transaction
 import EvmAsm.EL.MessageCall
