@@ -68,6 +68,21 @@ theorem pushHandler_pc_eq
     (n : Nat) (state : EvmState) :
     (pushHandler n state).pc = state.pc + 1 + n := rfl
 
+/--
+The pure PUSH handler updates the interpreter state with the same stack and
+program-counter components as the bundled executable PUSH effect.
+
+Distinctive token:
+PushHandlers.pushHandler_eq_effectFromCode #101 #107.
+-/
+theorem pushHandler_eq_effectFromCode
+    (n : Nat) (state : EvmState) :
+    (pushHandler n state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (pushHandler n state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  constructor <;> rfl
+
 theorem dispatchOpcode?_pushHandlerTable_PUSH_of_valid
     {n : Nat} (h_valid : EvmOpcode.validPushWidth n = true)
     (state : EvmState) :
