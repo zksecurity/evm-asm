@@ -1,0 +1,132 @@
+/-
+  EvmAsm.EL.KeccakStackExecutionBridge
+
+  Pure stack-to-accelerator execution bridge for KECCAK256 (GH #111).
+-/
+
+import EvmAsm.Evm64.KeccakArgsStackDecode
+import EvmAsm.EL.KeccakEcallBridge
+import EvmAsm.EL.KeccakStackBridge
+
+namespace EvmAsm.EL
+
+namespace KeccakStackExecutionBridge
+
+abbrev EvmWord := EvmAsm.Evm64.EvmWord
+abbrev MemoryReader := KeccakInputBridge.MemoryReader
+abbrev AcceleratorInput := KeccakInputBridge.AcceleratorInput
+abbrev AcceleratorOutput := KeccakResultBridge.AcceleratorOutput
+abbrev KeccakRequest := KeccakEcallBridge.KeccakRequest
+abbrev KeccakResult := KeccakEcallBridge.KeccakResult
+
+/-- KECCAK accelerator model used by the pure execution bridge. -/
+abbrev Accelerator := AcceleratorInput -> AcceleratorOutput
+
+/-- Build the KECCAK ECALL request from decoded stack words and memory.
+    Distinctive token: KeccakStackExecutionBridge.runKeccakStack? #111. -/
+def requestFromStack? (memory : MemoryReader) (stack : List EvmWord) :
+    Option KeccakRequest :=
+  match EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack? stack with
+  | some args =>
+      some (KeccakEcallBridge.requestFromInput
+        (KeccakInputBridge.acceleratorInputFromArgs memory args))
+  | none => none
+
+/-- Execute the KECCAK accelerator from stack-decoded operands. -/
+def resultFromStack? (accelerator : Accelerator)
+    (memory : MemoryReader) (stack : List EvmWord) : Option KeccakResult :=
+  (requestFromStack? memory stack).map
+    (fun request => KeccakEcallBridge.executeKeccakEcall accelerator request)
+
+/--
+Run the pure KECCAK stack effect: pop `offset, size`, hash the requested memory
+slice with the accelerator, then push the returned 256-bit hash.
+-/
+def runKeccakStack? (accelerator : Accelerator)
+    (memory : MemoryReader) : List EvmWord -> Option (List EvmWord)
+  | offset :: size :: rest =>
+      let args := EvmAsm.Evm64.KeccakArgs.keccakArgs offset size
+      let input := KeccakInputBridge.acceleratorInputFromArgs memory args
+      let result := KeccakEcallBridge.executeKeccakEcall accelerator
+        (KeccakEcallBridge.requestFromInput input)
+      some (KeccakEcallBridge.stackWordFromResult result :: rest)
+  | _ => none
+
+theorem requestFromStack?_some
+    (memory : MemoryReader) (offset size : EvmWord) (rest : List EvmWord) :
+    requestFromStack? memory (offset :: size :: rest) =
+      some (KeccakEcallBridge.requestFromInput
+        (KeccakInputBridge.acceleratorInputFromArgs memory
+          (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) := rfl
+
+@[simp] theorem requestFromStack?_nil (memory : MemoryReader) :
+    requestFromStack? memory [] = none := rfl
+
+@[simp] theorem requestFromStack?_singleton
+    (memory : MemoryReader) (offset : EvmWord) :
+    requestFromStack? memory [offset] = none := rfl
+
+theorem resultFromStack?_some
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (offset size : EvmWord) (rest : List EvmWord) :
+    resultFromStack? accelerator memory (offset :: size :: rest) =
+      some (KeccakEcallBridge.executeKeccakEcall accelerator
+        (KeccakEcallBridge.requestFromInput
+          (KeccakInputBridge.acceleratorInputFromArgs memory
+            (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size)))) := rfl
+
+theorem runKeccakStack?_some
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (offset size : EvmWord) (rest : List EvmWord) :
+    runKeccakStack? accelerator memory (offset :: size :: rest) =
+      some
+        (KeccakResultBridge.stackWordFromAcceleratorOutput
+            (accelerator
+              (KeccakInputBridge.acceleratorInputFromArgs memory
+                (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) :: rest) := rfl
+
+@[simp] theorem runKeccakStack?_nil
+    (accelerator : Accelerator) (memory : MemoryReader) :
+    runKeccakStack? accelerator memory [] = none := rfl
+
+@[simp] theorem runKeccakStack?_singleton
+    (accelerator : Accelerator) (memory : MemoryReader) (offset : EvmWord) :
+    runKeccakStack? accelerator memory [offset] = none := rfl
+
+theorem runKeccakStack?_length
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    out.length + EvmAsm.Evm64.KeccakArgs.stackArgumentCount =
+      stack.length + EvmAsm.Evm64.KeccakArgs.resultCount := by
+  cases stack with
+  | nil => simp at h_run
+  | cons offset tail =>
+      cases tail with
+      | nil => simp at h_run
+      | cons size rest =>
+          simp [runKeccakStack?] at h_run
+          cases h_run
+          simp [EvmAsm.Evm64.KeccakArgs.stackArgumentCount,
+            EvmAsm.Evm64.KeccakArgs.resultCount]
+
+theorem runKeccakStack?_head?
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (offset size : EvmWord) (rest : List EvmWord) :
+    (runKeccakStack? accelerator memory (offset :: size :: rest)).map List.head? =
+      some
+        (some
+          (KeccakResultBridge.stackWordFromAcceleratorOutput
+            (accelerator
+              (KeccakInputBridge.acceleratorInputFromArgs memory
+                (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))))) := rfl
+
+theorem runKeccakStack?_tail?
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (offset size : EvmWord) (rest : List EvmWord) :
+    (runKeccakStack? accelerator memory (offset :: size :: rest)).map List.tail? =
+      some (some rest) := rfl
+
+end KeccakStackExecutionBridge
+
+end EvmAsm.EL
