@@ -238,7 +238,12 @@
  "EvmAsm.Evm64.DivMod.LoopSemantic":
   ["EvmAsm.Evm64.EvmWordArith.DivMulSubCarry", "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry"],
  "EvmAsm.Evm64.EvmWordArith.DivAccumulate": ["EvmAsm.Evm64.EvmWordArith.DivRemainderBound"],
- "EvmAsm.Evm64.EvmWordArith.DivN4Overestimate": ["EvmAsm.Evm64.EvmWordArith.DivAccumulate"],
+ "EvmAsm.Evm64.EvmWordArith.DivN4Overestimate":
+  [
+    "EvmAsm.Evm64.EvmWordArith.DivAccumulate",
+    "EvmAsm.Evm64.EvmWordArith.Div128Lemmas",
+    "EvmAsm.Evm64.DivMod.LoopSemantic"
+  ],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop": ["EvmAsm.Evm64.EvmWordArith.Val256ModBridge"],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble": ["EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
 "EvmAsm.Evm64.EvmWordArith.Val256ModBridge": ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
