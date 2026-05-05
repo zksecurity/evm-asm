@@ -36,7 +36,7 @@ def stepWithHandler (handler : Handler) (state : EvmState) : EvmState :=
   | some opcode => handler opcode state
   | none => state.invalid
 
-/-- Fuel-bounded interpreter loop. Non-running states are returned unchanged;
+/-- Step-bounded interpreter loop. Non-running states are returned unchanged;
     running states take at most `nSteps` fetch/decode/dispatch steps.
     Distinctive token: InterpreterLoop.loopFuel. -/
 def loopFuel (handler : Handler) : Nat → EvmState → EvmState
