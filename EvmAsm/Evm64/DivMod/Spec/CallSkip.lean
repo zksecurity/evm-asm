@@ -122,7 +122,8 @@ instance (sp : Word) (a b : EvmWord) :
     Assertion.PCFree (divN4CallSkipStackPost sp a b) :=
   ⟨pcFree_divN4CallSkipStackPost sp a b⟩
 
-/-- MOD-side call-trial post bundle. Same shape as `divN4CallSkipStackPost`
+/-- Call-trial counterpart to `divN4MaxSkipStackPost` for the MOD result.
+    Identical content
     except for the scratch ownership: uses `divScratchOwnCall` (19 cells).
     Paired with `modN4StackPreCall` for
     `evm_mod_n4_call_skip_stack_spec_within`. -/
