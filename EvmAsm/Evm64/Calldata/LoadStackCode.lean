@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Calldata.LoadProgram
+import EvmAsm.Evm64.Calldata.LoadArgs
 import EvmAsm.Evm64.MLoad.StackSpec
 
 namespace EvmAsm.Evm64
@@ -49,6 +50,97 @@ theorem evm_calldataload_window_of_mloadStackCode_spec_within
       P Q := by
   rw [evm_calldataload_window_code_eq_mloadStackCode]
   exact h
+
+/--
+The byte-level semantic word produced by the CALLDATALOAD in-bounds window,
+phrased through decoded stack arguments.
+
+Distinctive token:
+Calldata.LoadStackCode.calldataLoadWindowOutputWordFromArgs #104.
+-/
+def calldataLoadWindowOutputWordFromArgs
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) : EvmWord :=
+  mloadLoadedWordFromBytes
+    (CallDataLoadArgs.windowByteFromArgs data args 0)
+    (CallDataLoadArgs.windowByteFromArgs data args 1)
+    (CallDataLoadArgs.windowByteFromArgs data args 2)
+    (CallDataLoadArgs.windowByteFromArgs data args 3)
+    (CallDataLoadArgs.windowByteFromArgs data args 4)
+    (CallDataLoadArgs.windowByteFromArgs data args 5)
+    (CallDataLoadArgs.windowByteFromArgs data args 6)
+    (CallDataLoadArgs.windowByteFromArgs data args 7)
+    (CallDataLoadArgs.windowByteFromArgs data args 8)
+    (CallDataLoadArgs.windowByteFromArgs data args 9)
+    (CallDataLoadArgs.windowByteFromArgs data args 10)
+    (CallDataLoadArgs.windowByteFromArgs data args 11)
+    (CallDataLoadArgs.windowByteFromArgs data args 12)
+    (CallDataLoadArgs.windowByteFromArgs data args 13)
+    (CallDataLoadArgs.windowByteFromArgs data args 14)
+    (CallDataLoadArgs.windowByteFromArgs data args 15)
+    (CallDataLoadArgs.windowByteFromArgs data args 16)
+    (CallDataLoadArgs.windowByteFromArgs data args 17)
+    (CallDataLoadArgs.windowByteFromArgs data args 18)
+    (CallDataLoadArgs.windowByteFromArgs data args 19)
+    (CallDataLoadArgs.windowByteFromArgs data args 20)
+    (CallDataLoadArgs.windowByteFromArgs data args 21)
+    (CallDataLoadArgs.windowByteFromArgs data args 22)
+    (CallDataLoadArgs.windowByteFromArgs data args 23)
+    (CallDataLoadArgs.windowByteFromArgs data args 24)
+    (CallDataLoadArgs.windowByteFromArgs data args 25)
+    (CallDataLoadArgs.windowByteFromArgs data args 26)
+    (CallDataLoadArgs.windowByteFromArgs data args 27)
+    (CallDataLoadArgs.windowByteFromArgs data args 28)
+    (CallDataLoadArgs.windowByteFromArgs data args 29)
+    (CallDataLoadArgs.windowByteFromArgs data args 30)
+    (CallDataLoadArgs.windowByteFromArgs data args 31)
+
+/--
+Fold the four MLOAD-style packed output limbs produced by the CALLDATALOAD
+window core into the EVM stack word selected by decoded calldata arguments.
+-/
+theorem calldataLoadWindowOutputWordFromArgs_evmStackIs_fold
+    (sp : Word) (rest : List EvmWord)
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) :
+    (((sp ↦ₘ mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 24)
+        (CallDataLoadArgs.windowByteFromArgs data args 25)
+        (CallDataLoadArgs.windowByteFromArgs data args 26)
+        (CallDataLoadArgs.windowByteFromArgs data args 27)
+        (CallDataLoadArgs.windowByteFromArgs data args 28)
+        (CallDataLoadArgs.windowByteFromArgs data args 29)
+        (CallDataLoadArgs.windowByteFromArgs data args 30)
+        (CallDataLoadArgs.windowByteFromArgs data args 31)) **
+      ((sp + 8) ↦ₘ mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 16)
+        (CallDataLoadArgs.windowByteFromArgs data args 17)
+        (CallDataLoadArgs.windowByteFromArgs data args 18)
+        (CallDataLoadArgs.windowByteFromArgs data args 19)
+        (CallDataLoadArgs.windowByteFromArgs data args 20)
+        (CallDataLoadArgs.windowByteFromArgs data args 21)
+        (CallDataLoadArgs.windowByteFromArgs data args 22)
+        (CallDataLoadArgs.windowByteFromArgs data args 23)) **
+      ((sp + 16) ↦ₘ mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 8)
+        (CallDataLoadArgs.windowByteFromArgs data args 9)
+        (CallDataLoadArgs.windowByteFromArgs data args 10)
+        (CallDataLoadArgs.windowByteFromArgs data args 11)
+        (CallDataLoadArgs.windowByteFromArgs data args 12)
+        (CallDataLoadArgs.windowByteFromArgs data args 13)
+        (CallDataLoadArgs.windowByteFromArgs data args 14)
+        (CallDataLoadArgs.windowByteFromArgs data args 15)) **
+      ((sp + 24) ↦ₘ mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 0)
+        (CallDataLoadArgs.windowByteFromArgs data args 1)
+        (CallDataLoadArgs.windowByteFromArgs data args 2)
+        (CallDataLoadArgs.windowByteFromArgs data args 3)
+        (CallDataLoadArgs.windowByteFromArgs data args 4)
+        (CallDataLoadArgs.windowByteFromArgs data args 5)
+        (CallDataLoadArgs.windowByteFromArgs data args 6)
+        (CallDataLoadArgs.windowByteFromArgs data args 7))) **
+      evmStackIs (sp + 32) rest) =
+    evmStackIs sp (calldataLoadWindowOutputWordFromArgs data args :: rest) := by
+  unfold calldataLoadWindowOutputWordFromArgs
+  rw [mloadLoadedWordFromBytes_evmStackIs_fold]
 
 end Calldata
 end EvmAsm.Evm64
