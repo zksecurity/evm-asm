@@ -81,16 +81,6 @@ def loopBodySkipPost (n : Word) (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) 
   let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
   loopExitPost n sp j qHat ms.2.2.2.2 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - ms.2.2.2.2) v0 v1 v2 v3
 
-/-- Full mulsub-addback postcondition for n loop body. -/
-@[irreducible]
-def loopBodyAddbackPost (n : Word) (sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
-  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
-  let un0 := ms.1; let un1 := ms.2.1; let un2 := ms.2.2.1
-  let un3 := ms.2.2.2.1; let c3 := ms.2.2.2.2
-  let u4_new := uTop - c3
-  let ab := addbackN4 un0 un1 un2 un3 u4_new v0 v1 v2 v3
-  loopExitPost n sp j (qHat + signExtend12 4095) c3 ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2 v0 v1 v2 v3
-
 /-- Backward-compatible abbreviations for loopBodySkipPost. -/
 abbrev loopBodyN1SkipPost := loopBodySkipPost (1 : Word)
 abbrev loopBodyN2SkipPost := loopBodySkipPost (2 : Word)
