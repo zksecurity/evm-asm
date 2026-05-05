@@ -302,35 +302,4 @@ def loopN1Iter210PreWithScratch (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
   (sp + signExtend12 3952 ↦ₘ dloMem) **
   (sp + signExtend12 3944 ↦ₘ scratch_un0)
 
--- ============================================================================
--- One-iteration loop body precondition (parametric on limb count n)
--- ============================================================================
-
-/-- Precondition for a single-iteration loop body (no scratch cells).
-    Shared across max_skip, max_addback, and the unified max-path specs.
-    Parametric on `n : Word` (the stored divisor limb count, used only in the
-    `sp + signExtend12 3984 ↦ₘ n` cell). -/
-@[irreducible]
-def loopBodyPre (n : Word)
-    (sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
-     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word) : Assertion :=
-  let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
-  let qAddr := sp + signExtend12 4088 - j <<< (3 : BitVec 6).toNat
-  (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-  (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-  (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
-  (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
-  (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
-  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
-  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
-  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
-  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-  ((uBase + signExtend12 4064) ↦ₘ uTop) **
-  (qAddr ↦ₘ qOld)
-
--- (Removed dead def `loopBodyPreWithScratch`: a `loopBodyPre` extension with
--- four scratch cells (ret/d/dlo/un0) for the call path. It had no consumers;
--- call-path specs build the scratch chain inline. Authored by @pirapira;
--- implemented by Hermes-bot (evm-hermes).)
-
 end EvmAsm.Evm64
