@@ -19,6 +19,7 @@ import EvmAsm.EL.KeccakResultBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Calldata
 import EvmAsm.EL.Conformance.RLP
+import EvmAsm.EL.Conformance.RLPFullDecodeBridge
 import EvmAsm.EL.WorldState
 import EvmAsm.EL.WorldStateAccount
 import EvmAsm.EL.Storage
