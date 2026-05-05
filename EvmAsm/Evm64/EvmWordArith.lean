@@ -25,7 +25,6 @@ import EvmAsm.Evm64.EvmWordArith.MulCorrect
 import EvmAsm.Evm64.EvmWordArith.Exp
 
 -- ADDMOD/MULMOD helper: 2^256 mod N as an EvmWord (#91).
-import EvmAsm.Evm64.EvmWordArith.Pow256ModN
 
 -- Div128Shift0 → Div128CallSkipClose → {Div128FinalAssembly +
 -- Div128KnuthLower + Div128QuotientBounds → KnuthTheoremB →
