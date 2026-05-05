@@ -135,6 +135,7 @@ import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.SupportedHandlers
 import EvmAsm.Evm64.SupportedHandlerByte
+import EvmAsm.Evm64.SupportedLoopBridge
 import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
 import EvmAsm.Evm64.TerminatingLoopBridge
