@@ -22,6 +22,9 @@ def KECCAK : Nat := 0x20
 def CALLDATALOAD : Nat := 0x35
 def CALLDATASIZE : Nat := 0x36
 def CALLDATACOPY : Nat := 0x37
+def BLOCKHASH : Nat := 0x40
+def BLOBHASH : Nat := 0x49
+def BLOBBASEFEE : Nat := 0x4a
 def POP : Nat := 0x50
 def MLOAD : Nat := 0x51
 def MSTORE : Nat := 0x52
@@ -47,6 +50,12 @@ def execSpecPushByte (n : Nat) : Nat :=
 /-- Executable-spec byte for `LOG0` through `LOG4`. -/
 def execSpecLogByte (kind : LogArgs.Kind) : Nat :=
   0xa0 + LogArgs.topicCount kind
+
+/-- Executable-spec byte for the block/blob opcode family. -/
+def execSpecBlockBlobByte : EvmOpcode.BlockBlobKind → Nat
+  | .blockhash => Ops.BLOCKHASH
+  | .blobhash => Ops.BLOBHASH
+  | .blobbasefee => Ops.BLOBBASEFEE
 
 /-- EVM opcode represented by a frame-terminating opcode classifier. -/
 def opcodeOfTerminatingKind : TerminatingArgs.Kind → EvmOpcode
@@ -121,6 +130,20 @@ theorem roundtrip_execSpecSimpleEnvField
     EvmOpcode.byte? field.opcode = some field.opcodeByte ∧
       EvmOpcode.decodeByte? field.opcodeByte = some field.opcode := by
   cases field <;> exact ⟨rfl, rfl⟩
+
+/--
+Executable-spec roundtrip for BLOCKHASH, BLOBHASH, and BLOBBASEFEE.
+
+Distinctive token:
+ExecutableSpecOpcodeBridge.roundtrip_execSpecBlockBlobKind #109 #124 #117.
+-/
+theorem roundtrip_execSpecBlockBlobKind
+    (kind : EvmOpcode.BlockBlobKind) :
+    EvmOpcode.byte? (EvmOpcode.ofBlockBlobKind kind) =
+        some (execSpecBlockBlobByte kind) ∧
+      EvmOpcode.decodeByte? (execSpecBlockBlobByte kind) =
+        some (EvmOpcode.ofBlockBlobKind kind) := by
+  cases kind <;> exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_STOP :
     EvmOpcode.byte? EvmOpcode.STOP = some Ops.STOP ∧
