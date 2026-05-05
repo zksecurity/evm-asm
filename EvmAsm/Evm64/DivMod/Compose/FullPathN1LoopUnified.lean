@@ -464,21 +464,6 @@ theorem fullDivN1Shift_unfold (b0 : Word) :
   delta fullDivN1Shift
   rfl
 
-theorem fullDivN1Shift_toNat_pos_of_ne_zero {b0 : Word}
-    (hshift_nz : fullDivN1Shift b0 ≠ 0) :
-    0 < (fullDivN1Shift b0).toNat := by
-  rcases Nat.eq_zero_or_pos (fullDivN1Shift b0).toNat with h0 | hpos
-  · exfalso
-    apply hshift_nz
-    exact BitVec.eq_of_toNat_eq h0
-  · exact hpos
-
-theorem fullDivN1Shift_toNat_lt_64 (b0 : Word) :
-    (fullDivN1Shift b0).toNat < 64 := by
-  rw [fullDivN1Shift_unfold]
-  have hle := clzResult_fst_toNat_le b0
-  omega
-
 theorem evm_div_n1_denorm_epilogue_bundled_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
