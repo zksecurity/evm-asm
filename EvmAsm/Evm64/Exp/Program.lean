@@ -660,6 +660,7 @@ theorem exp_cond_mul_call_block_byte_length (mulOff : BitVec 21) :
   rw [exp_cond_mul_call_block_length]
 
 
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
