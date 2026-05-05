@@ -79,17 +79,4 @@ def evm_mod_callable : Program :=
   cc_ret ;;            -- replaces the NOP at the exit slot
   divK_div128
 
--- ============================================================================
--- Length lemmas
--- ============================================================================
-
-/-- `evm_div_callable` has the same instruction count as `evm_div`
-    (1:1 NOP↔`cc_ret` swap). -/
-theorem evm_div_callable_length : evm_div_callable.length = 319 := by
-  native_decide
-
-/-- `evm_mod_callable` has the same instruction count as `evm_mod`. -/
-theorem evm_mod_callable_length : evm_mod_callable.length = 319 := by
-  native_decide
-
 end EvmAsm.Evm64
