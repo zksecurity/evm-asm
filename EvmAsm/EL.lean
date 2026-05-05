@@ -17,6 +17,7 @@ import EvmAsm.EL.LogCallEffects
 import EvmAsm.EL.KeccakInputBridge
 import EvmAsm.EL.KeccakResultBridge
 import EvmAsm.EL.Conformance
+import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
 import EvmAsm.EL.Conformance.RLP
 import EvmAsm.EL.WorldState
