@@ -298,6 +298,43 @@ def evmStateEnvRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   evmMemSizeIs layout.memSizeLoc state.memSize **
   evmCodeIs layout.codeBase state.code
 
+/-- Everything in `evmStateIs` except the EVM memory assertion
+    `evmMemIs layout.memBase state.memoryCells state.memory`. Mirrors the
+    stack/code/env rests — memory-owning handlers such as MLOAD, MSTORE, and
+    MSTORE8 can frame against this rest. -/
+def evmStateMemoryRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmStackIs layout.stackPtr state.stack **
+  evmMemSizeIs layout.memSizeLoc state.memSize **
+  evmCodeIs layout.codeBase state.code **
+  EvmEnv.envIs layout.envBase state.env
+
+/-- Everything in `evmStateIs` except the EVM memory-size assertion
+    `evmMemSizeIs layout.memSizeLoc state.memSize`. Memory-expanding handlers
+    can frame against this rest while updating the high-water mark. -/
+def evmStateMemSizeRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmStackIs layout.stackPtr state.stack **
+  evmMemIs layout.memBase state.memoryCells state.memory **
+  evmCodeIs layout.codeBase state.code **
+  EvmEnv.envIs layout.envBase state.env
+
 /-- Everything in `evmStateIs` except the scalar status register. -/
 def evmStateStatusRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
@@ -371,6 +408,23 @@ theorem evmStateIs_env_split (layout : EvmLayout) (state : EvmState) :
   unfold evmStateIs evmStateEnvRest
   ac_rfl
 
+/-- Split out the EVM memory assertion from the composite state assertion. -/
+theorem evmStateIs_memory_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (evmMemIs layout.memBase state.memoryCells state.memory **
+       evmStateMemoryRest layout state) := by
+  unfold evmStateIs evmStateMemoryRest
+  ac_rfl
+
+/-- Split out the EVM memory-size assertion from the composite state
+    assertion. -/
+theorem evmStateIs_memSize_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (evmMemSizeIs layout.memSizeLoc state.memSize **
+       evmStateMemSizeRest layout state) := by
+  unfold evmStateIs evmStateMemSizeRest
+  ac_rfl
+
 theorem pcFree_evmStatePcRest {layout : EvmLayout} {state : EvmState} :
     (evmStatePcRest layout state).pcFree := by
   unfold evmStatePcRest
@@ -406,6 +460,16 @@ theorem pcFree_evmStateEnvRest {layout : EvmLayout} {state : EvmState} :
   unfold evmStateEnvRest
   pcFree
 
+theorem pcFree_evmStateMemoryRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateMemoryRest layout state).pcFree := by
+  unfold evmStateMemoryRest
+  pcFree
+
+theorem pcFree_evmStateMemSizeRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateMemSizeRest layout state).pcFree := by
+  unfold evmStateMemSizeRest
+  pcFree
+
 theorem pcFree_evmStateIs {layout : EvmLayout} {state : EvmState} :
     (evmStateIs layout state).pcFree := by
   unfold evmStateIs
@@ -438,6 +502,14 @@ instance (layout : EvmLayout) (state : EvmState) :
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateEnvRest layout state) :=
   ⟨pcFree_evmStateEnvRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateMemoryRest layout state) :=
+  ⟨pcFree_evmStateMemoryRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateMemSizeRest layout state) :=
+  ⟨pcFree_evmStateMemSizeRest⟩
 
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateIs layout state) :=
