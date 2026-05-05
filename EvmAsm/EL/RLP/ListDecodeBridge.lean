@@ -13,27 +13,27 @@ namespace ListDecodeBridge
 /-- Decode an RLP list payload and require that the payload decoder consumes
     the payload exactly. Distinctive token: ListDecodeBridge.decodeListPayload
     #120. -/
-def decodeListPayload (fuel : Nat) (payload : List Byte) : Option (List RLPItem) := do
-  let (items, leftover) ← decodeItems fuel payload
+def decodeListPayload (nDepth : Nat) (payload : List Byte) : Option (List RLPItem) := do
+  let (items, leftover) ← decodeItems nDepth payload
   if List.isEmpty leftover then some items else none
 
 theorem decodeListPayload_eq_some_of_decodeItems_empty
-    {fuel : Nat} {payload : List Byte} {items : List RLPItem}
-    (h_decode : decodeItems fuel payload = some (items, [])) :
-    decodeListPayload fuel payload = some items := by
+    {nDepth : Nat} {payload : List Byte} {items : List RLPItem}
+    (h_decode : decodeItems nDepth payload = some (items, [])) :
+    decodeListPayload nDepth payload = some items := by
   simp [decodeListPayload, h_decode]
 
 theorem decodeListPayload_eq_none_of_decodeItems_none
-    {fuel : Nat} {payload : List Byte}
-    (h_decode : decodeItems fuel payload = none) :
-    decodeListPayload fuel payload = none := by
+    {nDepth : Nat} {payload : List Byte}
+    (h_decode : decodeItems nDepth payload = none) :
+    decodeListPayload nDepth payload = none := by
   simp [decodeListPayload, h_decode]
 
 theorem decodeListPayload_eq_none_of_leftover
-    {fuel : Nat} {payload : List Byte} {items : List RLPItem} {leftover : List Byte}
-    (h_decode : decodeItems fuel payload = some (items, leftover))
+    {nDepth : Nat} {payload : List Byte} {items : List RLPItem} {leftover : List Byte}
+    (h_decode : decodeItems nDepth payload = some (items, leftover))
     (h_leftover : leftover ≠ []) :
-    decodeListPayload fuel payload = none := by
+    decodeListPayload nDepth payload = none := by
   cases leftover with
   | nil =>
       contradiction
@@ -41,20 +41,20 @@ theorem decodeListPayload_eq_none_of_leftover
       simp [decodeListPayload, h_decode]
 
 theorem decodeAux_cons_shortList_eq_decodeListPayload
-    (fuel : Nat) (pfx : Byte) (rest : List Byte)
+    (nDepth : Nat) (pfx : Byte) (rest : List Byte)
     (h_class : classifyPrefix pfx = .shortList) :
-    decodeAux (fuel + 1) (pfx :: rest) =
+    decodeAux (nDepth + 1) (pfx :: rest) =
       (do
         let (payload, rest') ← takeBytes rest (rlpPrefixShortListPayloadLen pfx)
-        let items ← decodeListPayload fuel payload
+        let items ← decodeListPayload nDepth payload
         some (.list items, rest')) := by
-  rw [decodeAux_cons_shortList_of_classifyPrefix fuel pfx rest h_class]
+  rw [decodeAux_cons_shortList_of_classifyPrefix nDepth pfx rest h_class]
   cases h_take : takeBytes rest (rlpPrefixShortListPayloadLen pfx) with
   | none =>
       simp [decodeListPayload]
   | some pair =>
       rcases pair with ⟨payload, rest'⟩
-      cases h_decode : decodeItems fuel payload with
+      cases h_decode : decodeItems nDepth payload with
       | none =>
           simp [decodeListPayload, h_decode]
       | some pair' =>
@@ -62,17 +62,17 @@ theorem decodeAux_cons_shortList_eq_decodeListPayload
           cases leftover <;> simp [decodeListPayload, h_decode]
 
 theorem decodeAux_cons_longList_eq_decodeListPayload
-    (fuel : Nat) (pfx : Byte) (rest : List Byte)
+    (nDepth : Nat) (pfx : Byte) (rest : List Byte)
     (h_class : classifyPrefix pfx = .longList) :
-    decodeAux (fuel + 1) (pfx :: rest) =
+    decodeAux (nDepth + 1) (pfx :: rest) =
       (do
         let (lenVal, rest') ← readLength rest (rlpPrefixLongListLenOfLen pfx)
         if lenVal ≤ 55 then none
         else do
           let (payload, rest'') ← takeBytes rest' lenVal
-          let items ← decodeListPayload fuel payload
+          let items ← decodeListPayload nDepth payload
           some (.list items, rest'')) := by
-  rw [decodeAux_cons_longList_of_classifyPrefix fuel pfx rest h_class]
+  rw [decodeAux_cons_longList_of_classifyPrefix nDepth pfx rest h_class]
   cases h_read : readLength rest (rlpPrefixLongListLenOfLen pfx) with
   | none =>
       simp [decodeListPayload]
@@ -85,7 +85,7 @@ theorem decodeAux_cons_longList_eq_decodeListPayload
             simp [decodeListPayload, h_short, h_take]
         | some pair' =>
             rcases pair' with ⟨payload, rest''⟩
-            cases h_decode : decodeItems fuel payload with
+            cases h_decode : decodeItems nDepth payload with
             | none =>
                 simp [decodeListPayload, h_short, h_take, h_decode]
             | some pair'' =>
