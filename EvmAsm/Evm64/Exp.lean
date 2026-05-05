@@ -12,6 +12,7 @@
 
 import EvmAsm.Evm64.Exp.AddrNormAttr
 import EvmAsm.Evm64.Exp.Program
+import EvmAsm.Evm64.Exp.Gas
 import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base
