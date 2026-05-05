@@ -309,4 +309,5 @@
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
-"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.EL.RLP.ReadLengthBridge": ["EvmAsm.EL.RLP.ReadLength"]}}
