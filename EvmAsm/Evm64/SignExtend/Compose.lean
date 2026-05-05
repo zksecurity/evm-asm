@@ -64,23 +64,6 @@ private theorem cascade_17_sub_signextCode {base : Word} :
   CodeReq.ofProg_mono_sub base (base + 68) evm_signextend (signext_cascade_step_prog 2 24) 17
     (by bv_omega) (by decide) (by decide) (by decide)
 
-/-- Phase C code (union chain, 5 instrs at +56) is subsumed by signextCode. -/
-private theorem phase_c_sub_signextCode {base : Word} :
-    ∀ a i, signext_phase_c_code (base + 56) a = some i → signextCode base a = some i := by
-  unfold signext_phase_c_code
-  apply CodeReq.union_sub
-  · exact singleton_sub_signextCode base (base + 56) (.BEQ .x5 .x0 100) 14
-      (by decide) (by bv_omega) (by decide)
-  · apply CodeReq.union_sub
-    · unfold signext_cascade_step_code
-      have : (base + 56 : Word) + 4 = base + 60 := by bv_omega
-      rw [this]
-      exact cascade_15_sub_signextCode
-    · unfold signext_cascade_step_code
-      have : (base + 56 : Word) + 12 = base + 68 := by bv_omega
-      rw [this]
-      exact cascade_17_sub_signextCode
-
 private theorem phase_c_beq0_sub_signextCode {base : Word} :
     ∀ a i, CodeReq.singleton (base + 56) (.BEQ .x5 .x0 100) a = some i → signextCode base a = some i :=
   singleton_sub_signextCode base (base + 56) (.BEQ .x5 .x0 100) 14
@@ -196,11 +179,6 @@ private theorem se_beq_target {base : Word} : (base + 32 : Word) + signExtend13 
 -- Phase C exit addresses
 private theorem se_c_e0 {base : Word} : (base + 56 : Word) + signExtend13 100 = base + 156 := by
   rv64_addr
-private theorem se_c_e1 {base : Word} : ((base + 56 : Word) + 8) + signExtend13 60 = base + 124 := by
-  rv64_addr
-private theorem se_c_e2 {base : Word} : ((base + 56 : Word) + 16) + signExtend13 24 = base + 96 := by
-  rv64_addr
-private theorem se_c_e3 {base : Word} : (base + 56 : Word) + 20 = base + 76 := by bv_omega
 -- Body exit addresses (JAL targets)
 private theorem se_body3_exit {base : Word} : ((base + 76 : Word) + 16) + signExtend21 96 = base + 188 := by
   rv64_addr
