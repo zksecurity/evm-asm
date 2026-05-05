@@ -58,6 +58,78 @@ theorem stepWithHandler_of_roundtrip
     InterpreterLoop.stepWithHandler handler state = handler opcode state := by
   exact stepWithHandler_of_execSpecByte handler h_pc h_code h_roundtrip.2
 
+/--
+Parameterized executable-spec bridge for `PUSH1` through `PUSH32`.
+
+Distinctive token:
+InterpreterExecutableFetchBridge.decodeCurrentOpcode?_of_execSpecPushByte #109 #101.
+-/
+theorem decodeCurrentOpcode?_of_execSpecPushByte
+    {state : EvmState} {n : Nat}
+    (h_low : 1 ≤ n) (h_high : n ≤ 32)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecPushByte n : BitVec 8)) :
+    InterpreterLoop.decodeCurrentOpcode? state = some (EvmOpcode.PUSH n) := by
+  have h_byte :
+      (ExecutableSpecOpcodeBridge.execSpecPushByte n : BitVec 8).toNat =
+        ExecutableSpecOpcodeBridge.execSpecPushByte n := by
+    unfold ExecutableSpecOpcodeBridge.execSpecPushByte
+    interval_cases n <;> rfl
+  exact decodeCurrentOpcode?_of_execSpecByte h_pc h_code
+    (by
+      rw [h_byte]
+      exact (ExecutableSpecOpcodeBridge.roundtrip_execSpecPush_of_valid
+        h_low h_high).2)
+
+theorem stepWithHandler_of_execSpecPushByte
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState} {n : Nat}
+    (h_low : 1 ≤ n) (h_high : n ≤ 32)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecPushByte n : BitVec 8)) :
+    InterpreterLoop.stepWithHandler handler state =
+      handler (EvmOpcode.PUSH n) state := by
+  exact InterpreterLoop.stepWithHandler_of_decode handler
+    (decodeCurrentOpcode?_of_execSpecPushByte h_low h_high h_pc h_code)
+
+/--
+Parameterized executable-spec bridge for `LOG0` through `LOG4`.
+
+Distinctive token:
+InterpreterExecutableFetchBridge.decodeCurrentOpcode?_of_execSpecLogByte #109 #112.
+-/
+theorem decodeCurrentOpcode?_of_execSpecLogByte
+    {state : EvmState} (kind : LogArgs.Kind)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecLogByte kind : BitVec 8)) :
+    InterpreterLoop.decodeCurrentOpcode? state = some (EvmOpcode.LOG kind) := by
+  have h_byte :
+      (ExecutableSpecOpcodeBridge.execSpecLogByte kind : BitVec 8).toNat =
+        ExecutableSpecOpcodeBridge.execSpecLogByte kind := by
+    cases kind <;> rfl
+  exact decodeCurrentOpcode?_of_execSpecByte h_pc h_code
+    (by
+      rw [h_byte]
+      exact (ExecutableSpecOpcodeBridge.roundtrip_execSpecLog kind).2)
+
+theorem stepWithHandler_of_execSpecLogByte
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState} (kind : LogArgs.Kind)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecLogByte kind : BitVec 8)) :
+    InterpreterLoop.stepWithHandler handler state =
+      handler (EvmOpcode.LOG kind) state := by
+  exact InterpreterLoop.stepWithHandler_of_decode handler
+    (decodeCurrentOpcode?_of_execSpecLogByte kind h_pc h_code)
+
 theorem decodeCurrentOpcode?_of_execSpec_CALL
     {state : EvmState}
     (h_pc : state.pc < state.code.length)
