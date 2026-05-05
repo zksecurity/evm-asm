@@ -52,6 +52,7 @@ import EvmAsm.EL.CallOutputBridge
 import EvmAsm.EL.CallStackBridge
 import EvmAsm.EL.CallResultEffectsBridge
 import EvmAsm.EL.CallExecutionBridge
+import EvmAsm.EL.CallStackExecutionBridge
 import EvmAsm.EL.CallOutputMemory
 import EvmAsm.EL.CallOutputArgsMemory
 import EvmAsm.EL.CallValueTransfer
