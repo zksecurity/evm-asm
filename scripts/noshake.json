@@ -15,6 +15,10 @@
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE3": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE4": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE5": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
+ "EvmAsm.Rv64.RLP.Phase1E4FullPath":
+ ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE4", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
+ "EvmAsm.Rv64.RLP.Phase1E5FullPath":
+ ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE5", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase2LongLoad":
   ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.XPerm":
@@ -204,8 +208,6 @@
   ["EvmAsm.Evm64.DivMod.LoopBodyN2"],
  "EvmAsm.Evm64.DivMod.LoopIterN3":
   ["EvmAsm.Evm64.DivMod.LoopBodyN3"],
- "EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation":
-  ["EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases", "EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback", "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
  "EvmAsm.Evm64.DivMod.Spec.Dispatcher":
   ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
@@ -235,9 +237,19 @@
  "EvmAsm.Evm64.Calldata.CopyMemory": ["Mathlib.Data.List.GetD"],
  "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivAddbackLimb": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
+ "EvmAsm.Evm64.EvmWordArith.DivRemainderBound": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivMulSubCarry": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
+ "EvmAsm.Evm64.EvmWordArith.DivMulSubLimb":
+  ["EvmAsm.Evm64.EvmWordArith.DivLimbBridge", "EvmAsm.Evm64.EvmWordArith.DivBridge", "EvmAsm.Rv64.AddrNorm"],
+ "EvmAsm.Evm64.DivMod.LoopSemantic":
+  ["EvmAsm.Evm64.EvmWordArith.DivMulSubCarry", "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry"],
  "EvmAsm.Evm64.EvmWordArith.DivAccumulate": ["EvmAsm.Evm64.EvmWordArith.DivRemainderBound"],
- "EvmAsm.Evm64.EvmWordArith.DivN4Overestimate": ["EvmAsm.Evm64.EvmWordArith.DivAccumulate"],
+ "EvmAsm.Evm64.EvmWordArith.DivN4Overestimate":
+  [
+    "EvmAsm.Evm64.EvmWordArith.DivAccumulate",
+    "EvmAsm.Evm64.EvmWordArith.Div128Lemmas",
+    "EvmAsm.Evm64.DivMod.LoopSemantic"
+  ],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop": ["EvmAsm.Evm64.EvmWordArith.Val256ModBridge", "EvmAsm.Evm64.EvmWordArith.DenormLemmas"],
  "EvmAsm.Evm64.EvmWordArith.ModBridgeAssemble": ["EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
 "EvmAsm.Evm64.EvmWordArith.Val256ModBridge": ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
@@ -259,6 +271,7 @@
  ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
 "EvmAsm.Evm64.EvmWordArith.DivN4Lemmas": ["EvmAsm.Evm64.EvmWordArith.DivBridge"],
+"EvmAsm.Evm64.EvmWordArith.AddbackPinning": ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
  ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"],
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
