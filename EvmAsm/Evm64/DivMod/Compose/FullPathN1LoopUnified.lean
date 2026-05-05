@@ -474,12 +474,6 @@ theorem fullDivN1NormV_unfold (b0 b1 b2 b3 : Word) :
   delta fullDivN1NormV
   rfl
 
-theorem fullDivN1NormV_v3_eq_zero_of_high_zero
-    (b0 b1 b2 b3 : Word) (hb3z : b3 = 0) (hb2z : b2 = 0) :
-    (fullDivN1NormV b0 b1 b2 b3).2.2.2 = 0 := by
-  rw [fullDivN1NormV_unfold]
-  simp [hb3z, hb2z]
-
 theorem fullDivN1NormV_v0_ge_pow63_of_high_zero
     (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
@@ -493,25 +487,6 @@ theorem fullDivN1NormV_v0_ge_pow63_of_high_zero
   rw [fullDivN1Shift_unfold]
   exact b3_shifted_ge_pow63 hb0nz
 
-theorem fullDivN1NormV_or_ne_zero_of_high_zero
-    (b0 b1 b2 b3 : Word) (hb1z : b1 = 0) (hb2z : b2 = 0) (hb3z : b3 = 0)
-    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
-    (fullDivN1NormV b0 b1 b2 b3).1 |||
-      (fullDivN1NormV b0 b1 b2 b3).2.1 |||
-      (fullDivN1NormV b0 b1 b2 b3).2.2.1 |||
-      (fullDivN1NormV b0 b1 b2 b3).2.2.2 ≠ 0 := by
-  have hge := fullDivN1NormV_v0_ge_pow63_of_high_zero b0 b1 b2 b3
-    hb1z hb2z hb3z hbnz
-  have hfirst_ne : (fullDivN1NormV b0 b1 b2 b3).1 ≠ 0 := by
-    intro hzero
-    have hto : ((fullDivN1NormV b0 b1 b2 b3).1).toNat = 0 := by
-      simp [hzero]
-    omega
-  intro hzero
-  have hz3 := BitVec.or_eq_zero_iff.mp hzero
-  have hz2 := BitVec.or_eq_zero_iff.mp hz3.1
-  have hz1 := BitVec.or_eq_zero_iff.mp hz2.1
-  exact hfirst_ne hz1.1
 theorem evm_div_n1_denorm_epilogue_bundled_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
