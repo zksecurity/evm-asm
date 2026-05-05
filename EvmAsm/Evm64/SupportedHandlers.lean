@@ -13,6 +13,7 @@ import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ReturnDataHandlers
 import EvmAsm.Evm64.CodeHandlers
+import EvmAsm.Evm64.MemoryHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ComparisonHandlers
@@ -38,6 +39,7 @@ def supportedHandlerTable : HandlerTable :=
   HandlerTable.orElse EnvHandlers.simpleEnvHandlerTable <|
   HandlerTable.orElse ReturnDataHandlers.returnDataSizeHandlerTable <|
   HandlerTable.orElse CodeHandlers.codeHandlerTable <|
+  HandlerTable.orElse MemoryHandlers.msizeHandlerTable <|
   HandlerTable.orElse ArithmeticHandlers.arithmeticHandlerTable <|
   HandlerTable.orElse BitwiseHandlers.bitwiseHandlerTable <|
   HandlerTable.orElse ComparisonHandlers.comparisonHandlerTable
@@ -115,6 +117,7 @@ theorem lookup_of_arithmetic
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_lookup : ArithmeticHandlers.arithmeticHandlerTable opcode = some handler) :
     supportedHandlerTable opcode = some handler := by
   unfold supportedHandlerTable
@@ -125,6 +128,7 @@ theorem lookup_of_arithmetic
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   exact HandlerTable.orElse_left_some h_lookup
 
 theorem lookup_of_returnData
@@ -165,6 +169,28 @@ theorem lookup_of_code
   rw [HandlerTable.orElse_left_none h_returnData]
   exact HandlerTable.orElse_left_some h_lookup
 
+theorem lookup_of_memory
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_terminating :
+      TerminatingHandlers.terminatingHandlerTable opcode = none)
+    (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
+    (h_control : ControlHandlers.controlHandlerTable opcode = none)
+    (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
+    (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
+    (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_lookup : MemoryHandlers.msizeHandlerTable opcode = some handler) :
+    supportedHandlerTable opcode = some handler := by
+  unfold supportedHandlerTable
+  rw [HandlerTable.orElse_left_none h_terminating]
+  rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
+  rw [HandlerTable.orElse_left_none h_control]
+  rw [HandlerTable.orElse_left_none h_env]
+  rw [HandlerTable.orElse_left_none h_returnData]
+  rw [HandlerTable.orElse_left_none h_code]
+  exact HandlerTable.orElse_left_some h_lookup
+
 theorem lookup_of_bitwise
     {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_terminating :
@@ -175,6 +201,7 @@ theorem lookup_of_bitwise
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
     (h_lookup : BitwiseHandlers.bitwiseHandlerTable opcode = some handler) :
     supportedHandlerTable opcode = some handler := by
@@ -186,6 +213,7 @@ theorem lookup_of_bitwise
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   rw [HandlerTable.orElse_left_none h_arithmetic]
   exact HandlerTable.orElse_left_some h_lookup
 
@@ -199,6 +227,7 @@ theorem lookup_of_comparison
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
     (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
     (h_lookup : ComparisonHandlers.comparisonHandlerTable opcode = some handler) :
@@ -211,6 +240,7 @@ theorem lookup_of_comparison
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   rw [HandlerTable.orElse_left_none h_arithmetic]
   rw [HandlerTable.orElse_left_none h_bitwise]
   exact HandlerTable.orElse_left_some h_lookup
@@ -225,6 +255,7 @@ theorem lookup_of_shift
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
     (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
     (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
@@ -238,6 +269,7 @@ theorem lookup_of_shift
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   rw [HandlerTable.orElse_left_none h_arithmetic]
   rw [HandlerTable.orElse_left_none h_bitwise]
   rw [HandlerTable.orElse_left_none h_comparison]
@@ -253,6 +285,7 @@ theorem lookup_of_dupSwap
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
     (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
     (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
@@ -268,6 +301,7 @@ theorem lookup_of_dupSwap
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   rw [HandlerTable.orElse_left_none h_arithmetic]
   rw [HandlerTable.orElse_left_none h_bitwise]
   rw [HandlerTable.orElse_left_none h_comparison]
@@ -285,6 +319,7 @@ theorem lookup_of_calldata
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_returnData : ReturnDataHandlers.returnDataSizeHandlerTable opcode = none)
     (h_code : CodeHandlers.codeHandlerTable opcode = none)
+    (h_memory : MemoryHandlers.msizeHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
     (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
     (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
@@ -299,6 +334,7 @@ theorem lookup_of_calldata
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_returnData]
   rw [HandlerTable.orElse_left_none h_code]
+  rw [HandlerTable.orElse_left_none h_memory]
   rw [HandlerTable.orElse_left_none h_arithmetic]
   rw [HandlerTable.orElse_left_none h_bitwise]
   rw [HandlerTable.orElse_left_none h_comparison]
@@ -357,6 +393,20 @@ theorem dispatchOpcode_of_lookup
       ReturnDataHandlers.returnDataHandler?])
     CodeHandlers.codeHandlerTable_CODESIZE
 
+@[simp] theorem supportedHandlerTable_MSIZE :
+    supportedHandlerTable .MSIZE =
+      some MemoryHandlers.msizeHandler := by
+  exact lookup_of_memory
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
+      ReturnDataHandlers.returnDataHandler?])
+    (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    MemoryHandlers.msizeHandlerTable_MSIZE
+
 @[simp] theorem supportedHandlerTable_CALLDATASIZE :
     supportedHandlerTable .CALLDATASIZE =
       some CalldataHandlers.callDataSizeHandler := by
@@ -369,6 +419,7 @@ theorem dispatchOpcode_of_lookup
     (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
       ReturnDataHandlers.returnDataHandler?])
     (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    (by simp [MemoryHandlers.msizeHandlerTable, MemoryHandlers.memoryHandler?])
     (by simp [ArithmeticHandlers.arithmeticHandlerTable,
       ArithmeticHandlers.arithmeticHandler?])
     (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
@@ -399,6 +450,7 @@ theorem supportedHandlerTable_DUP_of_valid
     (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
       ReturnDataHandlers.returnDataHandler?])
     (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    (by simp [MemoryHandlers.msizeHandlerTable, MemoryHandlers.memoryHandler?])
     (by simp [ArithmeticHandlers.arithmeticHandlerTable,
       ArithmeticHandlers.arithmeticHandler?])
     (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
@@ -422,6 +474,7 @@ theorem supportedHandlerTable_SWAP_of_valid
     (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
       ReturnDataHandlers.returnDataHandler?])
     (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    (by simp [MemoryHandlers.msizeHandlerTable, MemoryHandlers.memoryHandler?])
     (by simp [ArithmeticHandlers.arithmeticHandlerTable,
       ArithmeticHandlers.arithmeticHandler?])
     (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
