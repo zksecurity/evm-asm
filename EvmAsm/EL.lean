@@ -11,6 +11,7 @@ import EvmAsm.EL.CreateArgsBridge
 import EvmAsm.EL.CreateInitcodeBridge
 import EvmAsm.EL.CreateEffects
 import EvmAsm.EL.CreateCollision
+import EvmAsm.EL.CreateCollisionResult
 import EvmAsm.EL.CreateResultBridge
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
@@ -48,6 +49,7 @@ import EvmAsm.EL.TerminatingArgsBridge
 import EvmAsm.EL.TerminatingCallOutput
 import EvmAsm.EL.TerminatingCallerVisible
 import EvmAsm.EL.TerminatingDataMemory
+import EvmAsm.EL.TerminatingExecutionBridge
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.TransactionExecutionShape

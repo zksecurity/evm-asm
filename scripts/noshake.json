@@ -84,6 +84,10 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Swap.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.MStore.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.MLoad.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Add.LimbSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Sub.LimbSpec":
@@ -135,7 +139,7 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
-  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1"],
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail"],
   "EvmAsm.Evm64.DivMod.Compose.Offsets":
@@ -212,6 +216,8 @@
  "EvmAsm.Evm64.EvmWordArith.Comparison": ["EvmAsm.Evm64.EvmWordArith.Common"],
  "EvmAsm.Evm64.Env.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Env.StackSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Env.Wrappers":
   ["EvmAsm.Evm64.Env.StackSpec"],
  "EvmAsm.Evm64.MStore8.Spec":
@@ -222,6 +228,8 @@
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Calldata.CopyMemory": ["Mathlib.Data.List.GetD"],
+ "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Rv64.SailEquiv.StateRel": ["LeanRV64D"],
   "EvmAsm.Rv64.SailEquiv.ShiftProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
   "EvmAsm.Rv64.SailEquiv.ImmProofs": ["EvmAsm.Rv64.SailEquiv.ALUProofs"],
@@ -240,4 +248,7 @@
  ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
- ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"]}}
+ ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"],
+"EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
+"EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}

@@ -70,7 +70,6 @@ theorem n1StepConservationNat_of_conservation
   delta n1StepRemainderVal n1StepTopVal
   exact h
 
-
 theorem n1StepExtendedRemainder_lt_of_floor_le
     (v0 v1 v2 u0 u1 u2 u3 uTop : Word)
     (out : Word × Word × Word × Word × Word × Word)
@@ -324,7 +323,6 @@ def fullDivN1CorrectedTrialVal
     else signExtend12 4095
   (qHat3.toNat - 2) * B^3 + (qHat2.toNat - 2) * B^2 +
     (qHat1.toNat - 2) * B + (qHat0.toNat - 2)
-
 
 
 

@@ -12,7 +12,7 @@ import EvmAsm.Evm64.DivMod.Spec
 -- LoopDefs + EvmWordArith.DivN4Overestimate. ModFullPathN{1,2,3}LoopUnified
 -- cover the MOD n=1/n=2/n=3 wrappers. FullPathN2Bundle carries shared N2
 -- irreducible intermediates for later full-wrapper refactors. FullPathN2Full
--- covers FullPathN2LoopUnified + FullPathN2Cases + FullPath.
+-- covers FullPathN2LoopUnified + FullPath.
 -- Spec.V4 transitively covers SpecCallAddbackBeq (+ AlgDefs, AlgEuclideans)
 -- and LoopDefs.IterV4InvariantsPhase2 (→ IterV4Invariants). The leaf
 -- NumericalTests file is imported explicitly so the
@@ -25,7 +25,6 @@ import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationRuntime
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationV4
-import EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN2LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified

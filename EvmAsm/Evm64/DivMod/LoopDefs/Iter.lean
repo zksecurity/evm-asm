@@ -496,18 +496,4 @@ def isAddbackBorrowN2Call (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
   (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) ≠ (0 : Word)
 
 
-/-- j=0 BLTU condition for n=3 max path after j=1 max+skip: u3_j0 ≥ v2. -/
-def isMaxBltuN3After_j1_skip (v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Prop :=
-  let qHat : Word := signExtend12 4095
-  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
-  ¬BitVec.ult ms.2.2.1 v2
-
-/-- j=0 borrow=0 condition for n=3 max path after j=1 max+skip. -/
-def isSkipBorrowN3After_j1_skip (v0 v1 v2 v3 u0 u1 u2 u3 u0Orig : Word) : Prop :=
-  let qHat : Word := signExtend12 4095
-  let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
-  (if BitVec.ult ms.2.2.2.1
-      (mulsubN4_c3 qHat v0 v1 v2 v3 u0Orig ms.1 ms.2.1 ms.2.2.1)
-    then (1 : Word) else 0) = (0 : Word)
-
 end EvmAsm.Evm64
