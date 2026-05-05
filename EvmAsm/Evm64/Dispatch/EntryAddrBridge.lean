@@ -22,7 +22,11 @@
   Refs GH #106, beads `evm-asm-b11gg`, parent `evm-asm-77w8s`.
 -/
 
-import EvmAsm.Evm64.Dispatch.Program
+-- Only `Word` (= `BitVec 64`) and standard `BitVec` lemmas are used here; pull
+-- them in directly via `EvmAsm.Rv64.Program` (which transitively imports
+-- `EvmAsm.Rv64.Basic` where the `Word` notation lives) instead of the larger
+-- `EvmAsm.Evm64.Dispatch.Program`. Slice of #1045.
+import EvmAsm.Rv64.Program
 
 namespace EvmAsm.Evm64
 namespace Dispatch
