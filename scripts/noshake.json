@@ -15,10 +15,14 @@
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE3": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE4": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE5": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
- "EvmAsm.Rv64.RLP.Phase1E4FullPath":
- ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE4", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
- "EvmAsm.Rv64.RLP.Phase1E5FullPath":
- ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE5", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
+  "EvmAsm.Rv64.RLP.Phase1E2FullPath":
+  ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE2", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
+  "EvmAsm.Rv64.RLP.Phase1E3FullPath":
+  ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE3", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
+  "EvmAsm.Rv64.RLP.Phase1E4FullPath":
+  ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE4", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
+  "EvmAsm.Rv64.RLP.Phase1E5FullPath":
+  ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE5", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase2LongLoad":
   ["EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.XPerm":
