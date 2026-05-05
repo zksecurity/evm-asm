@@ -97,6 +97,7 @@ import EvmAsm.Evm64.StorageAccessOutcome
 import EvmAsm.Evm64.StorageArgs
 
 -- Opcode dispatch surface (#106)
+import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
