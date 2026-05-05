@@ -104,6 +104,7 @@ import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.PushHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.ShiftHandlers

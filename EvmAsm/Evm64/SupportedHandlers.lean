@@ -8,6 +8,7 @@
 import EvmAsm.Evm64.HandlerTableCompose
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.PushHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ArithmeticHandlers
@@ -28,6 +29,7 @@ Distinctive token: SupportedHandlers.supportedHandlerTable #107.
 def supportedHandlerTable : HandlerTable :=
   HandlerTable.orElse TerminatingHandlers.terminatingHandlerTable <|
   HandlerTable.orElse StackHandlers.stackHandlerTable <|
+  HandlerTable.orElse PushHandlers.pushHandlerTable <|
   HandlerTable.orElse ControlHandlers.controlHandlerTable <|
   HandlerTable.orElse EnvHandlers.simpleEnvHandlerTable <|
   HandlerTable.orElse ArithmeticHandlers.arithmeticHandlerTable <|
@@ -58,7 +60,21 @@ theorem lookup_of_control
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_lookup : ControlHandlers.controlHandlerTable opcode = some handler) :
+    supportedHandlerTable opcode = some handler := by
+  unfold supportedHandlerTable
+  rw [HandlerTable.orElse_left_none h_terminating]
+  rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
+  exact HandlerTable.orElse_left_some h_lookup
+
+theorem lookup_of_push
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_terminating :
+      TerminatingHandlers.terminatingHandlerTable opcode = none)
+    (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_lookup : PushHandlers.pushHandlerTable opcode = some handler) :
     supportedHandlerTable opcode = some handler := by
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
@@ -70,12 +86,14 @@ theorem lookup_of_env
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_control : ControlHandlers.controlHandlerTable opcode = none)
     (h_lookup : EnvHandlers.simpleEnvHandlerTable opcode = some handler) :
     supportedHandlerTable opcode = some handler := by
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
   rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
   rw [HandlerTable.orElse_left_none h_control]
   exact HandlerTable.orElse_left_some h_lookup
 
@@ -84,6 +102,7 @@ theorem lookup_of_arithmetic
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_control : ControlHandlers.controlHandlerTable opcode = none)
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_lookup : ArithmeticHandlers.arithmeticHandlerTable opcode = some handler) :
@@ -91,6 +110,7 @@ theorem lookup_of_arithmetic
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
   rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
   rw [HandlerTable.orElse_left_none h_control]
   rw [HandlerTable.orElse_left_none h_env]
   exact HandlerTable.orElse_left_some h_lookup
@@ -100,6 +120,7 @@ theorem lookup_of_bitwise
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_control : ControlHandlers.controlHandlerTable opcode = none)
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
@@ -108,6 +129,7 @@ theorem lookup_of_bitwise
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
   rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
   rw [HandlerTable.orElse_left_none h_control]
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_arithmetic]
@@ -118,6 +140,7 @@ theorem lookup_of_comparison
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_control : ControlHandlers.controlHandlerTable opcode = none)
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
@@ -127,6 +150,7 @@ theorem lookup_of_comparison
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
   rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
   rw [HandlerTable.orElse_left_none h_control]
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_arithmetic]
@@ -138,6 +162,7 @@ theorem lookup_of_shift
     (h_terminating :
       TerminatingHandlers.terminatingHandlerTable opcode = none)
     (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_push : PushHandlers.pushHandlerTable opcode = none)
     (h_control : ControlHandlers.controlHandlerTable opcode = none)
     (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
     (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
@@ -148,6 +173,7 @@ theorem lookup_of_shift
   unfold supportedHandlerTable
   rw [HandlerTable.orElse_left_none h_terminating]
   rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_push]
   rw [HandlerTable.orElse_left_none h_control]
   rw [HandlerTable.orElse_left_none h_env]
   rw [HandlerTable.orElse_left_none h_arithmetic]
@@ -182,6 +208,15 @@ theorem dispatchOpcode_of_lookup
   exact lookup_of_stack
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     StackHandlers.stackHandlerTable_PUSH0
+
+theorem supportedHandlerTable_PUSH_of_valid
+    {n : Nat} (h_valid : EvmOpcode.validPushWidth n = true) :
+    supportedHandlerTable (.PUSH n) =
+      some (PushHandlers.pushHandler n) := by
+  exact lookup_of_push
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (PushHandlers.pushHandler?_PUSH_of_valid h_valid)
 
 end SupportedHandlers
 
