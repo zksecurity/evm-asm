@@ -42,8 +42,10 @@
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Branches"],
   "EvmAsm.Evm64.DivMod.Shift0Dispatcher":
   ["EvmAsm.Evm64.DivMod.Shift0AddbackMod", "EvmAsm.Evm64.DivMod.SpecCallShift0"],
-  "EvmAsm.Evm64.DivMod.N4StackSpec":
+ "EvmAsm.Evm64.DivMod.N4StackSpec":
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackMod"],
+ "EvmAsm.Evm64.DivMod.N4StackSpecWithin":
+  ["EvmAsm.Evm64.DivMod.N4StackSpec"],
   "EvmAsm.Evm64.EvmWordArith.DivBridge":
   ["EvmAsm.Evm64.EvmWordArith.Normalization"],
   "EvmAsm.Rv64.AddrNorm": ["EvmAsm.Rv64.AddrNormAttr"],
@@ -249,6 +251,7 @@
 "EvmAsm.Evm64.EvmWordArith.MulCorrect":
  ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
+"EvmAsm.Evm64.EvmWordArith.DivN4Lemmas": ["EvmAsm.Evm64.EvmWordArith.DivBridge"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
  ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"],
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],

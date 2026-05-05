@@ -112,6 +112,7 @@ import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.InterpreterExecutableFetchBridge
+import EvmAsm.Evm64.InterpreterExecutableStepBridge
 
 -- Precompile dispatch surface (#116)
 import EvmAsm.Evm64.Precompile
