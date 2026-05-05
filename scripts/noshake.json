@@ -309,4 +309,23 @@
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
-"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.Evm64.Dispatch.Compose": ["EvmAsm.Evm64.Dispatch.EntryAddrBridge"],
+"EvmAsm.Evm64.DivMod.Compose.FullPath":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA", "EvmAsm.Evm64.DivMod.Compose.Epilogue",
+  "EvmAsm.Evm64.DivMod.Compose.ModEpilogue"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN1":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN2":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN3":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Spec.CallSkip":
+ ["EvmAsm.Evm64.EvmWordArith.Div128Shift0",
+  "EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract",
+  "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2",
+  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"]}}
