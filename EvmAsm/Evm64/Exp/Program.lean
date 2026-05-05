@@ -559,6 +559,63 @@ theorem exp_loop_un_marshal_and_restore_byte_length :
   rw [exp_loop_un_marshal_and_restore_length]
 
 
+-- ----------------------------------------------------------------------------
+-- Per-iteration squaring call block (#92 slice 3-squaring-call,
+-- beads evm-asm-ywrjr)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-frame-design.md` §5 ("squaring marshal+call+un") and §8
+-- action items 1, 2, 4: the per-iteration unconditional squaring step is the
+-- structural composition of four already-merged sub-blocks:
+--
+--     exp_squaring_call_block mulOff :=
+--       exp_loop_marshal_factor1 ;;             --  8 instr (result -> x12+0..+24)
+--       exp_loop_marshal_result_to_factor2 ;;   --  8 instr (result -> x12+32..+56)
+--       exp_square_block mulOff ;;              --  1 instr (JAL .x1 mulOff)
+--       exp_loop_un_marshal_and_restore         --  9 instr (un-marshal + ADDI)
+--
+-- Total: 26 instructions = 104 bytes per squaring step. This is the
+-- iteration-unit referenced by §7 ("Updated per-iteration instruction count")
+-- as the *26* line for "squaring marshal+call+un".
+--
+-- Pure structural composition; no specs and no marshalling-spec proofs land
+-- here — those are slice 4 (`evm-asm-mtj3`) / slice 5 (`evm-asm-w5mk`).
+-- The full per-iteration body further composes this with the
+-- conditional-multiply call block and the loop-back tail; that lands in a
+-- subsequent compose slice once the cond-mul call block is also extracted.
+
+/-- Per-iteration squaring call block: marshal `result` into both LP64 MUL
+    operand slots (factor-1 at `x12 + 0..+24` from the local frame, factor-2
+    at `x12 + 32..+56` likewise), JAL into `mul_callable` via signed offset
+    `mulOff`, then un-marshal the MUL output back into the local scratch
+    frame and restore `x12 := x12_loop` via `ADDI .x12 .x12 (-32)`. 26
+    instructions, 104 bytes.
+
+    `mulOff` is the signed 21-bit JAL offset to `mul_callable`; pinned by
+    the surrounding `evm_exp` layout in slice evm-asm-ahaz. -/
+def exp_squaring_call_block (mulOff : BitVec 21) : Program :=
+  exp_loop_marshal_factor1 ;;
+  exp_loop_marshal_result_to_factor2 ;;
+  exp_square_block mulOff ;;
+  exp_loop_un_marshal_and_restore
+
+theorem exp_squaring_call_block_length (mulOff : BitVec 21) :
+    (exp_squaring_call_block mulOff).length = 26 := by
+  show ((exp_loop_marshal_factor1 ;;
+         exp_loop_marshal_result_to_factor2) ;;
+        exp_square_block mulOff ;;
+        exp_loop_un_marshal_and_restore).length = 26
+  simp only [seq, Program.length_append,
+    exp_loop_marshal_factor1_length,
+    exp_loop_marshal_result_to_factor2_length,
+    exp_square_block_length,
+    exp_loop_un_marshal_and_restore_length]
+
+theorem exp_squaring_call_block_byte_length (mulOff : BitVec 21) :
+    4 * (exp_squaring_call_block mulOff).length = 104 := by
+  rw [exp_squaring_call_block_length]
+
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
