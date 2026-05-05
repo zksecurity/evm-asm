@@ -31,6 +31,7 @@
       (`BitVec.ult v5 kVal` on the taken side, `¬…` on the fall-through).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.ExtractPure
 import EvmAsm.Rv64.Tactics.XSimp

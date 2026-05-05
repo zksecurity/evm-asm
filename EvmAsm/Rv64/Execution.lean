@@ -15,8 +15,10 @@
   - step / stepN: single-step and multi-step execution over code memory
 -/
 
--- `Program` transitively imports `Instructions` and (via `Instructions`) `Basic`.
-import EvmAsm.Rv64.Program
+-- `Instructions` transitively imports `Basic`. `Program` is not used in this
+-- module — its consumers (RLP/opcode programs, ControlFlow) import `Program`
+-- directly.
+import EvmAsm.Rv64.Instructions
 
 namespace EvmAsm.Rv64
 

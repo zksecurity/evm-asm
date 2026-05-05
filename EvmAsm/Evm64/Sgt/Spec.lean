@@ -10,6 +10,7 @@
 -/
 
 -- `Sgt.Program → Stack → SpAddr`.
+import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Sgt.Program
 import EvmAsm.Evm64.Compare.LimbSpec
 import EvmAsm.Evm64.EvmWordArith.Comparison
