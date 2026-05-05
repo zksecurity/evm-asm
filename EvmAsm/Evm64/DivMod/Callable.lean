@@ -30,6 +30,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Program
+import EvmAsm.Evm64.DivMod.Compose.Base
 import EvmAsm.Evm64.CallingConvention
 
 namespace EvmAsm.Evm64
@@ -97,5 +98,58 @@ theorem evm_div_callable_byte_length : 4 * evm_div_callable.length = 1276 := by
 
 theorem evm_mod_callable_byte_length : 4 * evm_mod_callable.length = 1276 := by
   rw [evm_mod_callable_length]
+
+-- ============================================================================
+-- CodeReq abbreviations
+-- ============================================================================
+
+/-- 14-block CodeReq layout for `evm_div_callable`. Identical to `divCode`
+    (see `Evm64/DivMod/Compose/Base.lean`) except block 12 — the NOP at
+    `nopOff = 1068` — is replaced with `cc_ret_code (base + nopOff)` to
+    match the NOP↔`cc_ret` swap performed in `evm_div_callable`'s Program
+    definition. All other blocks (including the appended `divK_div128`
+    subroutine at `div128Off = 1072`) keep the same offset, so internal
+    branch targets remain valid.
+
+    No equality bridge with `CodeReq.ofProg base evm_div_callable` is
+    proved here; that is a follow-up slice. -/
+abbrev evm_div_callable_code (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,
+    CodeReq.ofProg (base + clzOff)        divK_clz,
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),
+    CodeReq.ofProg (base + normBOff)      divK_normB,
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),
+    CodeReq.ofProg (base + denormOff)     divK_denorm,
+    CodeReq.ofProg (base + epilogueOff)   (divK_div_epilogue 24),
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,
+    cc_ret_code   (base + nopOff),                          -- block 12: NOP ↔ cc_ret swap
+    CodeReq.ofProg (base + div128Off)     divK_div128
+  ]
+
+/-- 14-block CodeReq layout for `evm_mod_callable`. Identical to
+    `evm_div_callable_code` except block 10 uses `divK_mod_epilogue`
+    (mirrors `modCode` vs `divCode` in `Compose/Base.lean`). -/
+abbrev evm_mod_callable_code (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,
+    CodeReq.ofProg (base + clzOff)        divK_clz,
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),
+    CodeReq.ofProg (base + normBOff)      divK_normB,
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),
+    CodeReq.ofProg (base + denormOff)     divK_denorm,
+    CodeReq.ofProg (base + epilogueOff)   (divK_mod_epilogue 24),
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,
+    cc_ret_code   (base + nopOff),                          -- block 12: NOP ↔ cc_ret swap
+    CodeReq.ofProg (base + div128Off)     divK_div128
+  ]
 
 end EvmAsm.Evm64
