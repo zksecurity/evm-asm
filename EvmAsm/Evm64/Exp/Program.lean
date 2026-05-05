@@ -394,10 +394,6 @@ def exp_loop_marshal_factor1 : Program :=
 theorem exp_loop_marshal_factor1_length :
     exp_loop_marshal_factor1.length = 8 := by decide
 
-theorem exp_loop_marshal_factor1_byte_length :
-    4 * exp_loop_marshal_factor1.length = 32 := by
-  rw [exp_loop_marshal_factor1_length]
-
 -- ----------------------------------------------------------------------------
 -- Per-iteration marshalling helpers (#92 slice 3-marshal-result-to-factor2,
 -- beads evm-asm-z5yv)
@@ -440,10 +436,6 @@ def exp_loop_marshal_result_to_factor2 : Program :=
 
 theorem exp_loop_marshal_result_to_factor2_length :
     exp_loop_marshal_result_to_factor2.length = 8 := by decide
-
-theorem exp_loop_marshal_result_to_factor2_byte_length :
-    4 * exp_loop_marshal_result_to_factor2.length = 32 := by
-  rw [exp_loop_marshal_result_to_factor2_length]
 
 -- ----------------------------------------------------------------------------
 -- Per-iteration marshalling helpers (#92 slice 3-marshal-a-to-factor2,
@@ -491,10 +483,6 @@ def exp_loop_marshal_a_to_factor2 : Program :=
 
 theorem exp_loop_marshal_a_to_factor2_length :
     exp_loop_marshal_a_to_factor2.length = 8 := by decide
-
-theorem exp_loop_marshal_a_to_factor2_byte_length :
-    4 * exp_loop_marshal_a_to_factor2.length = 32 := by
-  rw [exp_loop_marshal_a_to_factor2_length]
 
 
 -- ----------------------------------------------------------------------------
@@ -553,10 +541,6 @@ def exp_loop_un_marshal_and_restore : Program :=
 
 theorem exp_loop_un_marshal_and_restore_length :
     exp_loop_un_marshal_and_restore.length = 9 := by decide
-
-theorem exp_loop_un_marshal_and_restore_byte_length :
-    4 * exp_loop_un_marshal_and_restore.length = 36 := by
-  rw [exp_loop_un_marshal_and_restore_length]
 
 
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
