@@ -63,6 +63,7 @@ import EvmAsm.EL.TerminatingCallOutput
 import EvmAsm.EL.TerminatingCallerVisible
 import EvmAsm.EL.TerminatingDataMemory
 import EvmAsm.EL.TerminatingExecutionBridge
+import EvmAsm.EL.TerminatingStackExecutionBridge
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.TransactionExecutionShape
