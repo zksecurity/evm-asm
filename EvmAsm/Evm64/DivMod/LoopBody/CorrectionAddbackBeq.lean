@@ -7,8 +7,8 @@
   outcomes (single-addback fall-through and double-addback back-branch).
 
   Uses public helpers from `LoopBody.lean`:
-  - `divK_mulsub_correction_addback_spec`
-  - `divK_mulsub_correction_addback_named_880_spec`
+  - `divK_mulsub_correction_addback_spec_within`
+  - `divK_mulsub_correction_addback_named_880_spec_within`
   - `divK_double_addback_beq_named_spec_within`
 -/
 
