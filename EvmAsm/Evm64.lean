@@ -109,6 +109,7 @@ import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.DupSwapHandlers
+import EvmAsm.Evm64.CalldataHandlers
 import EvmAsm.Evm64.ShiftHandlers
 import EvmAsm.Evm64.EnvHandlers
 import EvmAsm.Evm64.ComparisonHandlers

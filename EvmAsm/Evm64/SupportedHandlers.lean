@@ -14,6 +14,7 @@ import EvmAsm.Evm64.ArithmeticHandlers
 import EvmAsm.Evm64.BitwiseHandlers
 import EvmAsm.Evm64.ComparisonHandlers
 import EvmAsm.Evm64.ShiftHandlers
+import EvmAsm.Evm64.CalldataHandlers
 import EvmAsm.Evm64.DupSwapHandlers
 
 namespace EvmAsm.Evm64
@@ -35,7 +36,8 @@ def supportedHandlerTable : HandlerTable :=
   HandlerTable.orElse BitwiseHandlers.bitwiseHandlerTable <|
   HandlerTable.orElse ComparisonHandlers.comparisonHandlerTable
     (HandlerTable.orElse ShiftHandlers.shiftHandlerTable
-      DupSwapHandlers.dupSwapHandlerTable)
+      (HandlerTable.orElse CalldataHandlers.calldataHandlerTable
+        DupSwapHandlers.dupSwapHandlerTable))
 
 theorem lookup_of_terminating
     {opcode : EvmOpcode} {handler : OpcodeHandler}
@@ -168,6 +170,7 @@ theorem lookup_of_dupSwap
     (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
     (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
     (h_shift : ShiftHandlers.shiftHandlerTable opcode = none)
+    (h_calldata : CalldataHandlers.calldataHandlerTable opcode = none)
     (h_lookup : DupSwapHandlers.dupSwapHandlerTable opcode = some handler) :
     supportedHandlerTable opcode = some handler := by
   unfold supportedHandlerTable
@@ -179,7 +182,32 @@ theorem lookup_of_dupSwap
   rw [HandlerTable.orElse_left_none h_bitwise]
   rw [HandlerTable.orElse_left_none h_comparison]
   rw [HandlerTable.orElse_left_none h_shift]
+  rw [HandlerTable.orElse_left_none h_calldata]
   exact h_lookup
+
+theorem lookup_of_calldata
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_terminating :
+      TerminatingHandlers.terminatingHandlerTable opcode = none)
+    (h_stack : StackHandlers.stackHandlerTable opcode = none)
+    (h_control : ControlHandlers.controlHandlerTable opcode = none)
+    (h_env : EnvHandlers.simpleEnvHandlerTable opcode = none)
+    (h_arithmetic : ArithmeticHandlers.arithmeticHandlerTable opcode = none)
+    (h_bitwise : BitwiseHandlers.bitwiseHandlerTable opcode = none)
+    (h_comparison : ComparisonHandlers.comparisonHandlerTable opcode = none)
+    (h_shift : ShiftHandlers.shiftHandlerTable opcode = none)
+    (h_lookup : CalldataHandlers.calldataHandlerTable opcode = some handler) :
+    supportedHandlerTable opcode = some handler := by
+  unfold supportedHandlerTable
+  rw [HandlerTable.orElse_left_none h_terminating]
+  rw [HandlerTable.orElse_left_none h_stack]
+  rw [HandlerTable.orElse_left_none h_control]
+  rw [HandlerTable.orElse_left_none h_env]
+  rw [HandlerTable.orElse_left_none h_arithmetic]
+  rw [HandlerTable.orElse_left_none h_bitwise]
+  rw [HandlerTable.orElse_left_none h_comparison]
+  rw [HandlerTable.orElse_left_none h_shift]
+  exact HandlerTable.orElse_left_some h_lookup
 
 theorem dispatchOpcode?_of_lookup
     {opcode : EvmOpcode} {handler : OpcodeHandler}
@@ -209,6 +237,22 @@ theorem dispatchOpcode_of_lookup
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     StackHandlers.stackHandlerTable_PUSH0
 
+@[simp] theorem supportedHandlerTable_CALLDATASIZE :
+    supportedHandlerTable .CALLDATASIZE =
+      some CalldataHandlers.callDataSizeHandler := by
+  exact lookup_of_calldata
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ArithmeticHandlers.arithmeticHandlerTable,
+      ArithmeticHandlers.arithmeticHandler?])
+    (by simp [BitwiseHandlers.bitwiseHandlerTable, BitwiseHandlers.bitwiseHandler?])
+    (by simp [ComparisonHandlers.comparisonHandlerTable,
+      ComparisonHandlers.comparisonHandler?])
+    (by simp [ShiftHandlers.shiftHandlerTable, ShiftHandlers.shiftHandler?])
+    CalldataHandlers.calldataHandlerTable_CALLDATASIZE
+
 theorem supportedHandlerTable_DUP_of_valid
     {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true) :
     supportedHandlerTable (.DUP n) =
@@ -224,6 +268,8 @@ theorem supportedHandlerTable_DUP_of_valid
     (by simp [ComparisonHandlers.comparisonHandlerTable,
       ComparisonHandlers.comparisonHandler?])
     (by simp [ShiftHandlers.shiftHandlerTable, ShiftHandlers.shiftHandler?])
+    (by simp [CalldataHandlers.calldataHandlerTable,
+      CalldataHandlers.calldataHandler?])
     (DupSwapHandlers.dupSwapHandler?_DUP_of_valid h_valid)
 
 theorem supportedHandlerTable_SWAP_of_valid
@@ -241,6 +287,8 @@ theorem supportedHandlerTable_SWAP_of_valid
     (by simp [ComparisonHandlers.comparisonHandlerTable,
       ComparisonHandlers.comparisonHandler?])
     (by simp [ShiftHandlers.shiftHandlerTable, ShiftHandlers.shiftHandler?])
+    (by simp [CalldataHandlers.calldataHandlerTable,
+      CalldataHandlers.calldataHandler?])
     (DupSwapHandlers.dupSwapHandler?_SWAP_of_valid h_valid)
 
 end SupportedHandlers
