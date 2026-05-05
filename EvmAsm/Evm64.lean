@@ -92,6 +92,8 @@ import EvmAsm.Evm64.StorageAccessOutcome
 -- Opcode dispatch surface (#106)
 import EvmAsm.Evm64.Dispatch
 import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.StackHandlers
+import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterSimulation
