@@ -160,6 +160,55 @@ theorem addmod_eq_carry_split (a b N : EvmWord) (h : N ≠ 0) :
         % N.toNat := by
   rw [addmod_correct, if_neg h, ← addCarry_spec]
 
+-- ============================================================================
+-- pow256ModN: 2^256 mod N
+-- ============================================================================
+--
+-- Constant the runtime needs to materialize the algebraic value
+-- `2^256 mod N` as an `EvmWord`. Used by the runtime variants of
+-- ADDMOD/MULMOD that produce a `(high, low)` pair from a wider
+-- intermediate (carry-bit + 256-bit sum for ADDMOD; 256+256 schoolbook
+-- product for MULMOD) and need to reduce the high half by N. The
+-- natural-number identity
+--
+--     (h * 2^256 + l) % N = (h * (2^256 % N) + l) % N
+--
+-- means the runtime can multiply the high half by the constant
+-- `pow256ModN N` (a 256-bit value) instead of working with a wider
+-- intermediate.
+--
+-- Slice scope: pure word-level definition + correctness lemma; downstream
+-- slices wire it into the runtime programs (beads parent evm-asm-z7qm,
+-- GH #91).
+
+/-- The constant `2^256 mod N` as an `EvmWord`. Returns 0 when `N = 0`,
+    matching the convention used by `addmod` / `mulmod`. The truncation
+    via `BitVec.ofNat 256` is a no-op because `2^256 % N.toNat < N.toNat
+    ≤ 2^256`. -/
+def pow256ModN (N : EvmWord) : EvmWord :=
+  if N = 0 then 0 else BitVec.ofNat 256 (2 ^ 256 % N.toNat)
+
+/-- Algebraic correctness of `EvmWord.pow256ModN`. -/
+theorem pow256ModN_correct (N : EvmWord) :
+    (EvmWord.pow256ModN N).toNat =
+      if N = 0 then 0 else 2 ^ 256 % N.toNat := by
+  unfold pow256ModN
+  by_cases h : N = 0
+  · simp [h]
+  · simp only [if_neg h]
+    rw [BitVec.toNat_ofNat]
+    have hNpos : 0 < N.toNat := by
+      have hne : N.toNat ≠ 0 := by
+        intro hz
+        apply h
+        exact BitVec.eq_of_toNat_eq (by simpa using hz)
+      omega
+    have hlt : 2 ^ 256 % N.toNat < 2 ^ 256 := by
+      have hN : N.toNat < 2 ^ 256 := N.isLt
+      have : 2 ^ 256 % N.toNat < N.toNat := Nat.mod_lt _ hNpos
+      omega
+    exact Nat.mod_eq_of_lt hlt
+
 end EvmWord
 
 end EvmAsm.Evm64
