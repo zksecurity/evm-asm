@@ -226,37 +226,6 @@ theorem q_true_x_lt_vTop_pow32_arith
     omega
   omega
 
-/-- Pure-Nat helper: `x < (x/V + 1) * V` when `V > 0`. Used to derive
-    "case 1 overshoots" (q_true + 1) * vTop > x. -/
-theorem x_lt_succ_div_mul (x V : Nat) (hV : 0 < V) :
-    x < (x / V + 1) * V := by
-  have h_div_mod : V * (x / V) + x % V = x := Nat.div_add_mod x V
-  have h_mod_lt : x % V < V := Nat.mod_lt _ hV
-  have h_eq : (x / V + 1) * V = V * (x / V) + V := by
-    rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm V (x / V)]
-  omega
-
-/-- Pure-Nat helper: `q_true * dHi ≤ u4` from the Phase-1a Euclidean and
-    case 1 hypothesis. Used to bridge between rhatc-form and rhat'-form. -/
-theorem qt_dHi_le_u4_case_1
-    (q_true q1c dHi rhatc u4 : Nat)
-    (h_post1a : q1c * dHi + rhatc = u4)
-    (h_q1c_eq : q1c = q_true + 1) :
-    q_true * dHi ≤ u4 := by
-  rw [h_q1c_eq] at h_post1a
-  have h_eq : (q_true + 1) * dHi = q_true * dHi + dHi := by ring
-  omega
-
-/-- Pure-Nat helper for case 2 inner BLTU: `dHi*2^32 ≤ u4*2^32 - q_true*dHi*2^32`
-    from `(q_true + 2)*dHi*2^32 ≤ u4*2^32`. -/
-theorem case_2_dHi_2pow32_le_arith
-    (q_true dHi U QdHi DHi : Nat)
-    (h_decomp : (q_true + 2) * dHi * 2^32 = QdHi + (DHi + DHi))
-    (h_dhi_eq : DHi = dHi * 2^32)
-    (h_le : (q_true + 2) * dHi * 2^32 ≤ U) :
-    DHi ≤ U - QdHi := by
-  omega
-
 /-- **Sub-stub: post1 = a%b * 2^s from c3 = u4 + 1 (pure Nat).**
 
     Given the closed Nat lemmas + `c3_n_eq_u4_plus_one_of_single_addback`'s
