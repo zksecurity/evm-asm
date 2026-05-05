@@ -74,6 +74,7 @@ import EvmAsm.Evm64.Environment.Layout
 import EvmAsm.Evm64.Environment.Assertion
 import EvmAsm.Evm64.ReturnData.Basic
 import EvmAsm.Evm64.ReturnData.CopyArgs
+import EvmAsm.Evm64.ReturnData.CopyArgsStackDecode
 import EvmAsm.Evm64.ReturnData.CopyExec
 import EvmAsm.Evm64.ReturnData.CopyMemory
 import EvmAsm.Evm64.Env.Field
@@ -106,6 +107,7 @@ import EvmAsm.Evm64.Dispatch.Program
 import EvmAsm.Evm64.Dispatch.EntrySpec
 import EvmAsm.Evm64.Dispatch.EntryAddrBridge
 import EvmAsm.Evm64.Dispatch.TailSpec
+import EvmAsm.Evm64.Dispatch.Compose
 import EvmAsm.Evm64.JumpTable
 import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.HandlerTable
@@ -170,11 +172,13 @@ import EvmAsm.Evm64.MLoad
 -- Calldata helpers (issue #104)
 import EvmAsm.Evm64.Calldata.Basic
 import EvmAsm.Evm64.Calldata.LoadArgs
+import EvmAsm.Evm64.Calldata.LoadArgsStackDecode
 import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Calldata.SizeProgram
 import EvmAsm.Evm64.Calldata.SizeSpec
 import EvmAsm.Evm64.Calldata.LoadProgram
 import EvmAsm.Evm64.Calldata.CopyArgs
+import EvmAsm.Evm64.Calldata.CopyArgsStackDecode
 import EvmAsm.Evm64.Calldata.CopyExec
 import EvmAsm.Evm64.Calldata.CopyMemory
 import EvmAsm.Evm64.Calldata.CopyProgram
