@@ -52,6 +52,11 @@
   ["EvmAsm.Evm64.DivMod.Shift0AddbackMod", "EvmAsm.Evm64.DivMod.SpecCallShift0"],
  "EvmAsm.Evm64.DivMod.N4StackSpec":
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackMod"],
+ "EvmAsm.Evm64.DivMod.Spec.CallAddbackPost1Wrappers":
+  ["EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs"],
+ "EvmAsm.Evm64.DivMod.Spec.CallAddbackMod":
+  ["EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs",
+   "EvmAsm.Evm64.DivMod.Spec.CallAddbackPost1Wrappers"],
  "EvmAsm.Evm64.DivMod.N4StackSpecWithin":
   ["EvmAsm.Evm64.DivMod.N4StackSpec"],
   "EvmAsm.Evm64.EvmWordArith.DivBridge":
