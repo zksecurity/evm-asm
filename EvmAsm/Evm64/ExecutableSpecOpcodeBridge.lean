@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Dispatch
+import EvmAsm.Evm64.Env.Gas
 import EvmAsm.Evm64.TerminatingArgs
 import Mathlib.Tactic.IntervalCases
 
@@ -108,6 +109,18 @@ theorem roundtrip_execSpecTerminatingKind (kind : TerminatingArgs.Kind) :
       EvmOpcode.decodeByte? (execSpecTerminatingByte kind) =
         some (opcodeOfTerminatingKind kind) := by
   cases kind <;> exact ⟨rfl, rfl⟩
+
+/--
+Executable-spec roundtrip for the simple environment opcode family.
+
+Distinctive token:
+ExecutableSpecOpcodeBridge.roundtrip_execSpecSimpleEnvField #109 #103.
+-/
+theorem roundtrip_execSpecSimpleEnvField
+    (field : Env.SimpleEnvField) :
+    EvmOpcode.byte? field.opcode = some field.opcodeByte ∧
+      EvmOpcode.decodeByte? field.opcodeByte = some field.opcode := by
+  cases field <;> exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_STOP :
     EvmOpcode.byte? EvmOpcode.STOP = some Ops.STOP ∧
