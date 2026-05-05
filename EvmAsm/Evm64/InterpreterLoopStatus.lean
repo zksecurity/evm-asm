@@ -83,6 +83,15 @@ theorem loopFuel_one_unsupported_invalid
   rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
   simp [InterpreterLoop.stepWithHandler_of_unsupported handler h_decode]
 
+theorem loopFuel_one_fetch_unsupported_invalid
+    (handler : Handler) {state : EvmState} {byte : BitVec 8}
+    (h_status : state.status = .running)
+    (h_fetch : InterpreterLoop.fetchOpcodeByte? state = some byte)
+    (h_decode : EvmOpcode.decodeByte? byte.toNat = none) :
+    InterpreterLoop.loopFuel handler 1 state = state.invalid :=
+  loopFuel_one_unsupported_invalid handler h_status
+    (InterpreterLoop.decodeCurrentOpcode?_of_fetch_unsupported h_fetch h_decode)
+
 theorem loopFuel_one_decode
     (handler : Handler) {state : EvmState} {opcode : EvmOpcode}
     (h_status : state.status = .running)

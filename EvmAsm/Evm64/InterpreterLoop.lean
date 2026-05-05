@@ -62,6 +62,13 @@ theorem decodeCurrentOpcode?_of_fetch
     decodeCurrentOpcode? state = EvmOpcode.decodeByte? byte.toNat := by
   simp [decodeCurrentOpcode?, h_fetch]
 
+theorem decodeCurrentOpcode?_of_fetch_unsupported
+    {state : EvmState} {byte : BitVec 8}
+    (h_fetch : fetchOpcodeByte? state = some byte)
+    (h_decode : EvmOpcode.decodeByte? byte.toNat = none) :
+    decodeCurrentOpcode? state = none := by
+  rw [decodeCurrentOpcode?_of_fetch h_fetch, h_decode]
+
 theorem decodeCurrentOpcode?_of_eof
     {state : EvmState} (h_fetch : fetchOpcodeByte? state = none) :
     decodeCurrentOpcode? state = none := by
@@ -78,6 +85,14 @@ theorem stepWithHandler_of_unsupported
     (h_decode : decodeCurrentOpcode? state = none) :
     stepWithHandler handler state = state.invalid := by
   simp [stepWithHandler, h_decode]
+
+theorem stepWithHandler_of_fetch_unsupported
+    (handler : Handler) {state : EvmState} {byte : BitVec 8}
+    (h_fetch : fetchOpcodeByte? state = some byte)
+    (h_decode : EvmOpcode.decodeByte? byte.toNat = none) :
+    stepWithHandler handler state = state.invalid :=
+  stepWithHandler_of_unsupported handler
+    (decodeCurrentOpcode?_of_fetch_unsupported h_fetch h_decode)
 
 @[simp] theorem loopFuel_zero (handler : Handler) (state : EvmState) :
     loopFuel handler 0 state = state := rfl
