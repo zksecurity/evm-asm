@@ -100,11 +100,4 @@ theorem divK_mulsub_correction_skip_spec_within
     (fun h hq => by xperm_hyp hq)
     MSCS
 
-def divK_mulsub_correction_skip_spec
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :=
-  divK_mulsub_correction_skip_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-    v1Old v5Old v6Old v7Old v10Old v2Old base
-
 end EvmAsm.Evm64

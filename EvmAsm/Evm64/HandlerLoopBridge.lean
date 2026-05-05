@@ -1,0 +1,80 @@
+/-
+  EvmAsm.Evm64.HandlerLoopBridge
+
+  Adapter from handler tables to the pure interpreter loop (GH #107).
+-/
+
+import EvmAsm.Evm64.HandlerTable
+import EvmAsm.Evm64.InterpreterSimulation
+
+namespace EvmAsm.Evm64
+
+namespace HandlerLoopBridge
+
+/--
+Adapt a partial opcode handler table to the total handler expected by
+`InterpreterLoop.stepWithHandler`.
+
+Distinctive token: HandlerLoopBridge.toLoopHandler #107.
+-/
+def toLoopHandler (table : HandlerTable) : InterpreterLoop.Handler :=
+  fun opcode state => HandlerTable.dispatchOpcode table opcode state
+
+@[simp] theorem toLoopHandler_apply
+    (table : HandlerTable) (opcode : EvmOpcode) (state : EvmState) :
+    toLoopHandler table opcode state =
+      HandlerTable.dispatchOpcode table opcode state := rfl
+
+theorem stepWithTableHandler_of_decode
+    (table : HandlerTable) {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    InterpreterLoop.stepWithHandler (toLoopHandler table) state =
+      HandlerTable.dispatchOpcode table opcode state := by
+  simp [InterpreterLoop.stepWithHandler, h_decode, toLoopHandler]
+
+theorem stepWithTableHandler_missing_invalid
+    {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = none) :
+    InterpreterLoop.stepWithHandler (toLoopHandler table) state = state.invalid := by
+  rw [stepWithTableHandler_of_decode table h_decode]
+  exact HandlerTable.dispatchOpcode_none h_lookup state
+
+theorem stepWithTableHandler_empty_of_decode
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    InterpreterLoop.stepWithHandler (toLoopHandler HandlerTable.empty) state =
+      state.invalid := by
+  exact stepWithTableHandler_missing_invalid h_decode (HandlerTable.empty_apply opcode)
+
+theorem loopFuel_succ_running_decode
+    (table : HandlerTable) (fuel : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    InterpreterLoop.loopFuel (toLoopHandler table) (fuel + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler table) fuel
+        (HandlerTable.dispatchOpcode table opcode state) := by
+  rw [InterpreterLoop.loopFuel_succ_running (toLoopHandler table) fuel state h_status]
+  rw [stepWithTableHandler_of_decode table h_decode]
+
+theorem loopFuel_empty_succ_running_decode
+    (fuel : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) (fuel + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) fuel state.invalid := by
+  rw [loopFuel_succ_running_decode HandlerTable.empty fuel h_status h_decode]
+  simp [HandlerTable.dispatchOpcode]
+
+theorem handlerMatchesSpec_of_dispatch_eq
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state) :
+    InterpreterSimulation.HandlerMatchesSpec (toLoopHandler table) spec := by
+  intro opcode state h_decode
+  exact h_dispatch opcode state h_decode
+
+end HandlerLoopBridge
+
+end EvmAsm.Evm64
