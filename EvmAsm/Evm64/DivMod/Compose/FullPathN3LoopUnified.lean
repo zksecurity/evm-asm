@@ -504,17 +504,6 @@ theorem fullDivN3C3_true (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
   delta fullDivN3C3
   rfl
 
-theorem fullDivN3Scratch_false_false (sp base a0 a1 a2 a3 b0 b1 b2 b3
-    retMem dMem dloMem scratch_un0 : Word) :
-    fullDivN3Scratch false false sp base a0 a1 a2 a3 b0 b1 b2 b3
-      retMem dMem dloMem scratch_un0 =
-    ((sp + signExtend12 3968 ↦ₘ retMem) **
-     (sp + signExtend12 3960 ↦ₘ dMem) **
-     (sp + signExtend12 3952 ↦ₘ dloMem) **
-     (sp + signExtend12 3944 ↦ₘ scratch_un0)) := by
-  delta fullDivN3Scratch
-  rfl
-
 theorem fullDivN3Scratch_false_true (sp base a0 a1 a2 a3 b0 b1 b2 b3
     retMem dMem dloMem scratch_un0 : Word) :
     fullDivN3Scratch false true sp base a0 a1 a2 a3 b0 b1 b2 b3
