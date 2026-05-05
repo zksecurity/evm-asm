@@ -22,6 +22,8 @@ def MLOAD : Nat := 0x51
 def MSTORE : Nat := 0x52
 def MSTORE8 : Nat := 0x53
 def PUSH0 : Nat := 0x5f
+def RETURNDATASIZE : Nat := 0x3d
+def RETURNDATACOPY : Nat := 0x3e
 def CREATE : Nat := 0xf0
 def CALL : Nat := 0xf1
 def RETURN : Nat := 0xf3
@@ -106,6 +108,22 @@ theorem roundtrip_execSpec_MSTORE8 :
 theorem roundtrip_execSpec_PUSH0 :
     EvmOpcode.byte? EvmOpcode.PUSH0 = some Ops.PUSH0 ∧
       EvmOpcode.decodeByte? Ops.PUSH0 = some EvmOpcode.PUSH0 := by
+  exact ⟨rfl, rfl⟩
+
+/-- Distinctive token:
+    ExecutableSpecOpcodeBridge.roundtrip_execSpec_RETURNDATASIZE #109 #114. -/
+theorem roundtrip_execSpec_RETURNDATASIZE :
+    EvmOpcode.byte? EvmOpcode.RETURNDATASIZE = some Ops.RETURNDATASIZE ∧
+      EvmOpcode.decodeByte? Ops.RETURNDATASIZE =
+        some EvmOpcode.RETURNDATASIZE := by
+  exact ⟨rfl, rfl⟩
+
+/-- Distinctive token:
+    ExecutableSpecOpcodeBridge.roundtrip_execSpec_RETURNDATACOPY #109 #114. -/
+theorem roundtrip_execSpec_RETURNDATACOPY :
+    EvmOpcode.byte? EvmOpcode.RETURNDATACOPY = some Ops.RETURNDATACOPY ∧
+      EvmOpcode.decodeByte? Ops.RETURNDATACOPY =
+        some EvmOpcode.RETURNDATACOPY := by
   exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_CREATE :
