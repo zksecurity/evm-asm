@@ -24,14 +24,13 @@
     `isSkipBorrowN4MaxEvm`, `isCallTrialN4Evm`, `isSkipBorrowN4CallEvm`,
     `isAddbackBorrowN4CallEvm`. Each is a thin shim over the Word-level
     predicate plus a `_def` `rfl` lemma.
-  * Semantic-correctness predicates: `n4MaxSkipSemanticHolds`,
-    `n4MaxAddbackSemanticHolds`, `n4MaxDoubleAddbackSemanticHolds` — package
-    the un-normalized `mulsubN4`-carry hypotheses that
-    `n4_max_skip_div_mod_getLimbN` / `n4_max_addback_div_mod_getLimbN` /
-    `n4_max_double_addback_div_mod_getLimbN` consume.
+  * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages
+    the un-normalized `mulsubN4`-carry hypothesis that
+    `n4_max_skip_div_mod_getLimbN` consumes.
   * Weakener: `div_n4_max_skip_stack_weaken` — turns specific register values
     + `evmWordIs` operand atoms + `divScratchValues` into
-    `divN4MaxSkipStackPost`.
+    `divN4MaxSkipStackPost`. (The MOD counterpart `mod_n4_max_skip_stack_weaken`
+    has been removed along with `modN4MaxSkipStackPost`.)
   * `pcFree` instances for the stack-pre/post bundles defined here
     (`divN4StackPre`, `modN4StackPre`, `divN4MaxSkipStackPost`). `pcFree` instances for the post bundles
     defined in `Compose/Base.lean` (`divScratchOwn`, `denormDivPost`,
@@ -79,42 +78,6 @@ def n4MaxSkipSemanticHolds (a b : EvmWord) : Prop :=
   (mulsubN4 (signExtend12 4095)
       (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
       (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)).2.2.2.2 = 0
-
-/-- Semantic-correctness precondition for the n=4 max+addback sub-path: on
-    **un-normalized** `a`, `b` limbs with the maximum trial quotient, the
-    mulsub carry is `1` *and* the addback carry is `1`. Together these two
-    facts feed `n4_max_addback_div_mod_getLimbN` to conclude the per-limb
-    `EvmWord.div` / `EvmWord.mod` equalities. -/
-def n4MaxAddbackSemanticHolds (a b : EvmWord) : Prop :=
-  let ms := mulsubN4 (signExtend12 4095)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-  ms.2.2.2.2 = 1 ∧
-  addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 1
-
-/-- Semantic-correctness precondition for the n=4 max+double-addback sub-path:
-    on **un-normalized** `a`, `b` limbs with the maximum trial quotient, the
-    mulsub carry is `1`, the *first* addback carry is `0` (first addback didn't
-    overflow the low 256 bits), and the *second* addback carry is `1`
-    (second addback did overflow). Together these three facts feed
-    `n4_max_double_addback_div_mod_getLimbN` to conclude the per-limb
-    `EvmWord.div` / `EvmWord.mod` equalities for the double-addback path.
-
-    This is distinct from `n4MaxAddbackSemanticHolds` (single-addback: c3=1 ∧
-    carry1=1) and fires on the complementary algorithm branch where the first
-    addback doesn't correct the borrow but the second one does. -/
-def n4MaxDoubleAddbackSemanticHolds (a b : EvmWord) : Prop :=
-  let ms := mulsubN4 (signExtend12 4095)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-  let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 ((0 : Word) - ms.2.2.2.2)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-  ms.2.2.2.2 = 1 ∧
-  addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) = 0 ∧
-  (addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).toNat = 1
 
 /-- Stack-level postcondition shape for the n=4 DIV max+skip path.
 
