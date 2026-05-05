@@ -9,6 +9,7 @@ import EvmAsm.EL.Conformance
 import EvmAsm.Evm64.Calldata.Basic
 import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Calldata.LoadArgsStackDecode
+import EvmAsm.Evm64.Calldata.CopyArgsStackDecode
 
 namespace EvmAsm.EL
 namespace Conformance
@@ -40,6 +41,12 @@ structure CallDataCopyInput where
   size : Nat
   deriving Repr
 
+/-- Input shape for a CALLDATACOPY stack-decoder conformance vector. -/
+structure CallDataCopyStackInput where
+  data : List (BitVec 8)
+  stack : List EvmWord
+  deriving Repr
+
 def runCallDataLoad (input : CallDataLoadInput) : EvmWord :=
   EvmAsm.Evm64.Calldata.callDataLoadWord input.data input.offset
 
@@ -54,6 +61,14 @@ def runCallDataSize (input : CallDataSizeInput) : EvmWord :=
 def runCallDataCopy (input : CallDataCopyInput) : List (BitVec 8) :=
   EvmAsm.Evm64.Calldata.callDataCopyBytes
     input.data input.dataOffset input.size
+
+def runCallDataCopyStack? (input : CallDataCopyStackInput) :
+    Option (List (BitVec 8)) :=
+  EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack? input.stack
+    |>.map (fun args =>
+      EvmAsm.Evm64.Calldata.callDataCopyBytes input.data
+        (EvmAsm.Evm64.CallDataCopyArgs.sourceOffsetNat args)
+        (EvmAsm.Evm64.CallDataCopyArgs.sizeNat args))
 
 /-- CALLDATALOAD reads zero when the requested 32-byte window starts at the
     end of calldata. Distinctive token: callDataLoadOutOfBoundsVector. -/
@@ -90,6 +105,23 @@ def callDataCopyZeroPadVector :
     input := { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 }
     expected := .value [(0xaa : BitVec 8), 0, 0] }
 
+/-- Stack-decoded CALLDATACOPY uses stack words as
+    `destOffset, dataOffset, size`; the executable helper here returns only
+    the copied byte sequence. Distinctive token: runCallDataCopyStack?
+    #104 #125. -/
+def callDataCopyStackVector :
+    TestVector CallDataCopyStackInput (List (BitVec 8)) :=
+  { id := "calldatacopy-stack-decode"
+    input := { data := [(0xaa : BitVec 8)], stack := [0, 0, (3 : EvmWord)] }
+    expected := .value [(0xaa : BitVec 8), 0, 0] }
+
+/-- CALLDATACOPY stack decoding fails unless all three stack operands exist. -/
+def callDataCopyStackUnderflowVector :
+    TestVector CallDataCopyStackInput (List (BitVec 8)) :=
+  { id := "calldatacopy-stack-underflow"
+    input := { data := [(0xaa : BitVec 8)], stack := [0, 0] }
+    expected := .error "stack-underflow" }
+
 theorem runCallDataLoad_outOfBounds :
     runCallDataLoad { data := [(0x12 : BitVec 8)], offset := 1 } = 0 := by
   exact EvmAsm.Evm64.Calldata.callDataLoadWord_of_ge_length (by decide)
@@ -118,6 +150,15 @@ theorem runCallDataCopy_zeroPad :
     runCallDataCopy
       { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 } =
       [(0xaa : BitVec 8), 0, 0] := rfl
+
+theorem runCallDataCopyStack_decoded :
+    runCallDataCopyStack?
+      { data := [(0xaa : BitVec 8)], stack := [0, 0, (3 : EvmWord)] } =
+      some [(0xaa : BitVec 8), 0, 0] := rfl
+
+theorem runCallDataCopyStack_underflow :
+    runCallDataCopyStack?
+      { data := [(0xaa : BitVec 8)], stack := [0, 0] } = none := rfl
 
 theorem callDataLoadOutOfBoundsVector_passed :
     checkVector runCallDataLoad callDataLoadOutOfBoundsVector = .passed :=
@@ -160,6 +201,23 @@ theorem callDataCopyZeroPadVector_passed :
     [(0xaa : BitVec 8), 0, 0]
     runCallDataCopy_zeroPad
 
+theorem callDataCopyStackVector_passed :
+    checkVector? runCallDataCopyStack? callDataCopyStackVector = .passed :=
+  checkVector?_some_passed runCallDataCopyStack?
+    "calldatacopy-stack-decode"
+    { data := [(0xaa : BitVec 8)], stack := [0, 0, (3 : EvmWord)] }
+    [(0xaa : BitVec 8), 0, 0]
+    runCallDataCopyStack_decoded
+
+theorem callDataCopyStackUnderflowVector_errored :
+    checkVector? runCallDataCopyStack? callDataCopyStackUnderflowVector =
+      .errored "calldatacopy-stack-underflow" "stack-underflow" :=
+  checkVector?_none_error runCallDataCopyStack?
+    "calldatacopy-stack-underflow"
+    "stack-underflow"
+    { data := [(0xaa : BitVec 8)], stack := [0, 0] }
+    runCallDataCopyStack_underflow
+
 /-- Compact initial checked-vector batch for calldata executable helpers.
     Distinctive token: calldataConformanceVectors. -/
 def calldataConformanceVectors : List CheckResult :=
@@ -168,15 +226,19 @@ def calldataConformanceVectors : List CheckResult :=
   , checkVector? runCallDataLoadStack? callDataLoadStackUnderflowVector
   , checkVector runCallDataSize callDataSizeTwoBytesVector
   , checkVector runCallDataCopy callDataCopyZeroPadVector
+  , checkVector? runCallDataCopyStack? callDataCopyStackVector
+  , checkVector? runCallDataCopyStack? callDataCopyStackUnderflowVector
   ]
 
 theorem calldataConformanceVectors_passed :
     calldataConformanceVectors =
       [.passed, .passed, .errored "calldataload-stack-underflow" "stack-underflow",
-        .passed, .passed] := by
+        .passed, .passed, .passed,
+        .errored "calldatacopy-stack-underflow" "stack-underflow"] := by
   simp [calldataConformanceVectors, callDataLoadOutOfBoundsVector_passed,
     callDataLoadStackVector_passed, callDataLoadStackUnderflowVector_errored,
-    callDataSizeTwoBytesVector_passed, callDataCopyZeroPadVector_passed]
+    callDataSizeTwoBytesVector_passed, callDataCopyZeroPadVector_passed,
+    callDataCopyStackVector_passed, callDataCopyStackUnderflowVector_errored]
 
 end Calldata
 end Conformance
