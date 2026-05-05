@@ -6,7 +6,6 @@
 
 import EvmAsm.Evm64.KeccakArgsStackDecode
 import EvmAsm.EL.KeccakEcallBridge
-import EvmAsm.EL.KeccakStackBridge
 
 namespace EvmAsm.EL
 
