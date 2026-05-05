@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.EL.CallOutputMemory
+import EvmAsm.EL.CallArgsBridge
 
 namespace EvmAsm.EL
 
