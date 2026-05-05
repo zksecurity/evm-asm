@@ -4,7 +4,7 @@
   Generic CALL-family result/output bridge for GH #114.
 -/
 
-import EvmAsm.EL.CallArgsBridge
+import EvmAsm.Evm64.CallArgs
 import EvmAsm.EL.MessageCallExecution
 
 namespace EvmAsm.EL

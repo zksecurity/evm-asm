@@ -4,6 +4,7 @@
   First RV64 opcode-fetch block for the interpreter main loop (GH #108).
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 

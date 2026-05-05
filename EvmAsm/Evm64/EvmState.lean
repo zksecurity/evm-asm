@@ -94,6 +94,22 @@ def chargeGas? (state : EvmState) (cost : Nat) : Option EvmState :=
 def withStack (state : EvmState) (stack : List EvmWord) : EvmState :=
   { state with stack := stack }
 
+def withMemoryCells (state : EvmState) (memoryCells : Nat) : EvmState :=
+  { state with memoryCells := memoryCells }
+
+def withMemory (state : EvmState) (memory : Nat → Word) : EvmState :=
+  { state with memory := memory }
+
+def withMemSize (state : EvmState) (memSize : Nat) : EvmState :=
+  { state with memSize := memSize }
+
+/-- Update all abstract memory fields at once. Memory-owning handlers can use
+    this when an opcode both changes contents and expands the high-water mark. -/
+def withMemoryState
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) : EvmState :=
+  { state with memoryCells := memoryCells, memory := memory, memSize := memSize }
+
 def withStatus (state : EvmState) (status : EvmStatus) : EvmState :=
   { state with status := status }
 
@@ -131,6 +147,65 @@ theorem chargeGas?_of_not_hasGas {state : EvmState} {cost : Nat}
 
 @[simp] theorem withStack_stack (state : EvmState) (stack : List EvmWord) :
     (withStack state stack).stack = stack := rfl
+
+@[simp] theorem withMemoryCells_memoryCells
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memoryCells = memoryCells := rfl
+
+@[simp] theorem withMemoryCells_memory
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memory = state.memory := rfl
+
+@[simp] theorem withMemoryCells_memSize
+    (state : EvmState) (memoryCells : Nat) :
+    (withMemoryCells state memoryCells).memSize = state.memSize := rfl
+
+@[simp] theorem withMemory_memory (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memory = memory := rfl
+
+@[simp] theorem withMemory_memoryCells
+    (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem withMemory_memSize
+    (state : EvmState) (memory : Nat → Word) :
+    (withMemory state memory).memSize = state.memSize := rfl
+
+@[simp] theorem withMemSize_memSize (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memSize = memSize := rfl
+
+@[simp] theorem withMemSize_memoryCells (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memoryCells = state.memoryCells := rfl
+
+@[simp] theorem withMemSize_memory (state : EvmState) (memSize : Nat) :
+    (withMemSize state memSize).memory = state.memory := rfl
+
+@[simp] theorem withMemoryState_memoryCells
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memoryCells =
+      memoryCells := rfl
+
+@[simp] theorem withMemoryState_memory
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memory = memory := rfl
+
+@[simp] theorem withMemoryState_memSize
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).memSize = memSize := rfl
+
+@[simp] theorem withMemoryState_stack
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).stack = state.stack := rfl
+
+@[simp] theorem withMemoryState_status
+    (state : EvmState) (memoryCells : Nat) (memory : Nat → Word)
+    (memSize : Nat) :
+    (withMemoryState state memoryCells memory memSize).status =
+      state.status := rfl
 
 @[simp] theorem withStatus_status (state : EvmState) (status : EvmStatus) :
     (withStatus state status).status = status := rfl
@@ -298,6 +373,43 @@ def evmStateEnvRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   evmMemSizeIs layout.memSizeLoc state.memSize **
   evmCodeIs layout.codeBase state.code
 
+/-- Everything in `evmStateIs` except the EVM memory assertion
+    `evmMemIs layout.memBase state.memoryCells state.memory`. Mirrors the
+    stack/code/env rests — memory-owning handlers such as MLOAD, MSTORE, and
+    MSTORE8 can frame against this rest. -/
+def evmStateMemoryRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmStackIs layout.stackPtr state.stack **
+  evmMemSizeIs layout.memSizeLoc state.memSize **
+  evmCodeIs layout.codeBase state.code **
+  EvmEnv.envIs layout.envBase state.env
+
+/-- Everything in `evmStateIs` except the EVM memory-size assertion
+    `evmMemSizeIs layout.memSizeLoc state.memSize`. Memory-expanding handlers
+    can frame against this rest while updating the high-water mark. -/
+def evmStateMemSizeRest (layout : EvmLayout) (state : EvmState) : Assertion :=
+  (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
+  (layout.gasReg ↦ᵣ BitVec.ofNat 64 state.gas) **
+  (layout.memBaseReg ↦ᵣ layout.memBase) **
+  (layout.memSizeReg ↦ᵣ layout.memSizeLoc) **
+  (layout.codeBaseReg ↦ᵣ layout.codeBase) **
+  (layout.codeLenReg ↦ᵣ BitVec.ofNat 64 state.codeLen) **
+  (layout.envBaseReg ↦ᵣ layout.envBase) **
+  (layout.statusReg ↦ᵣ state.status.tag) **
+  (.x12 ↦ᵣ layout.stackPtr) **
+  evmStackIs layout.stackPtr state.stack **
+  evmMemIs layout.memBase state.memoryCells state.memory **
+  evmCodeIs layout.codeBase state.code **
+  EvmEnv.envIs layout.envBase state.env
+
 /-- Everything in `evmStateIs` except the scalar status register. -/
 def evmStateStatusRest (layout : EvmLayout) (state : EvmState) : Assertion :=
   (layout.pcReg ↦ᵣ BitVec.ofNat 64 state.pc) **
@@ -371,6 +483,23 @@ theorem evmStateIs_env_split (layout : EvmLayout) (state : EvmState) :
   unfold evmStateIs evmStateEnvRest
   ac_rfl
 
+/-- Split out the EVM memory assertion from the composite state assertion. -/
+theorem evmStateIs_memory_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (evmMemIs layout.memBase state.memoryCells state.memory **
+       evmStateMemoryRest layout state) := by
+  unfold evmStateIs evmStateMemoryRest
+  ac_rfl
+
+/-- Split out the EVM memory-size assertion from the composite state
+    assertion. -/
+theorem evmStateIs_memSize_split (layout : EvmLayout) (state : EvmState) :
+    evmStateIs layout state =
+      (evmMemSizeIs layout.memSizeLoc state.memSize **
+       evmStateMemSizeRest layout state) := by
+  unfold evmStateIs evmStateMemSizeRest
+  ac_rfl
+
 theorem pcFree_evmStatePcRest {layout : EvmLayout} {state : EvmState} :
     (evmStatePcRest layout state).pcFree := by
   unfold evmStatePcRest
@@ -406,6 +535,16 @@ theorem pcFree_evmStateEnvRest {layout : EvmLayout} {state : EvmState} :
   unfold evmStateEnvRest
   pcFree
 
+theorem pcFree_evmStateMemoryRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateMemoryRest layout state).pcFree := by
+  unfold evmStateMemoryRest
+  pcFree
+
+theorem pcFree_evmStateMemSizeRest {layout : EvmLayout} {state : EvmState} :
+    (evmStateMemSizeRest layout state).pcFree := by
+  unfold evmStateMemSizeRest
+  pcFree
+
 theorem pcFree_evmStateIs {layout : EvmLayout} {state : EvmState} :
     (evmStateIs layout state).pcFree := by
   unfold evmStateIs
@@ -438,6 +577,14 @@ instance (layout : EvmLayout) (state : EvmState) :
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateEnvRest layout state) :=
   ⟨pcFree_evmStateEnvRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateMemoryRest layout state) :=
+  ⟨pcFree_evmStateMemoryRest⟩
+
+instance (layout : EvmLayout) (state : EvmState) :
+    Assertion.PCFree (evmStateMemSizeRest layout state) :=
+  ⟨pcFree_evmStateMemSizeRest⟩
 
 instance (layout : EvmLayout) (state : EvmState) :
     Assertion.PCFree (evmStateIs layout state) :=
