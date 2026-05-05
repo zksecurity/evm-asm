@@ -4,7 +4,6 @@
   Per-limb ADD specs (from Arithmetic.lean).
 -/
 
-import EvmAsm.Evm64.Add.Program
 import EvmAsm.Rv64.SyscallSpecs
 import EvmAsm.Rv64.Tactics.RunBlock
 
