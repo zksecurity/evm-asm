@@ -87,6 +87,7 @@ import EvmAsm.Evm64.Gas
 import EvmAsm.Evm64.Env.Gas
 import EvmAsm.Evm64.StorageGas
 import EvmAsm.Evm64.StorageAccess
+import EvmAsm.Evm64.StorageAccessWarm
 import EvmAsm.Evm64.StorageAccessOutcome
 
 -- Opcode dispatch surface (#106)
