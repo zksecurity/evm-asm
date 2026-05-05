@@ -64,20 +64,4 @@ theorem fullDivN2_hdivs_of_word_eq
     delta fullDivN2QuotientWord
     exact EvmWord.getLimbN_fromLimbs_3
 
-/-- The `toNat` of the packed quotient word equals the four-limb
-    `EvmWord.val256` of the per-limb results (with top limb zero). -/
-theorem fullDivN2QuotientWord_toNat
-    (bltu_2 bltu_1 bltu_0 : Bool)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    (fullDivN2QuotientWord bltu_2 bltu_1 bltu_0
-      a0 a1 a2 a3 b0 b1 b2 b3).toNat =
-    EvmWord.val256
-      (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
-      (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
-      (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1
-      (0 : Word) := by
-  delta fullDivN2QuotientWord
-  rw [EvmWord.fromLimbs_toNat]
-  rfl
-
 end EvmAsm.Evm64
