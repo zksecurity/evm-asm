@@ -5,6 +5,7 @@
   selector for HINT_LEN and invoke ECALL to read the private-input length.
 -/
 
+import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.HintSpecs
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Rv64.Tactics.XSimp

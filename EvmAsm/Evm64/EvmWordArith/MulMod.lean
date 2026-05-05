@@ -21,6 +21,7 @@
 -/
 
 import EvmAsm.Evm64.Basic
+import EvmAsm.Evm64.EvmWordArith.MulHigh
 
 namespace EvmAsm.Evm64
 
@@ -57,6 +58,23 @@ theorem mulmod_correct (a b N : EvmWord) :
       have : (a.toNat * b.toNat) % N.toNat < N.toNat := Nat.mod_lt _ hNpos
       omega
     exact Nat.mod_eq_of_lt hlt
+
+/-- Algebraic bridge from the schoolbook split `(mulHigh, low)` to
+    `mulmod`. With `N ≠ 0`,
+
+      `(mulmod a b N).toNat =
+         ((mulHigh a b).toNat * 2^256 + (a * b).toNat) % N.toNat`.
+
+    Direct consequence of `mulHigh_mul_split` and `mulmod_correct`. The
+    future `evm_mulmod_stack_spec` (slice 5, beads `evm-asm-m4wu`) emits
+    a limb-level (high-256, low-256) pair from the 4×4 schoolbook
+    multiply and uses this bridge to close the algebraic side without
+    inlining the high/low split. Mirrors
+    `EvmWord.addmod_eq_carry_split` for the MULMOD side. -/
+theorem mulmod_eq_high_low_split (a b N : EvmWord) (h : N ≠ 0) :
+    (EvmWord.mulmod a b N).toNat =
+      ((EvmWord.mulHigh a b).toNat * 2 ^ 256 + (a * b).toNat) % N.toNat := by
+  rw [mulmod_correct, if_neg h, ← mulHigh_mul_split]
 
 end EvmWord
 
