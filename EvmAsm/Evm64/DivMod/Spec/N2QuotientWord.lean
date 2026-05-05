@@ -80,5 +80,4 @@ theorem fullDivN2QuotientWord_toNat
   rw [EvmWord.fromLimbs_toNat]
   rfl
 
-
 end EvmAsm.Evm64

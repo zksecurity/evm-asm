@@ -127,18 +127,6 @@ def isAddbackBorrowN4Call_v4 (a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Prop :=
   (if BitVec.ult u4 (mulsubN4_c3 qHat b0' b1' b2' b3' u0 u1 u2 u3)
    then (1 : Word) else 0) ≠ (0 : Word)
 
-/-- **EvmWord wrapper for `isAddbackBorrowN4Call_v4`**. -/
-def isAddbackBorrowN4CallEvm_v4 (a b : EvmWord) : Prop :=
-  isAddbackBorrowN4Call_v4
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-
-theorem isAddbackBorrowN4CallEvm_v4_def {a b : EvmWord} :
-    isAddbackBorrowN4CallEvm_v4 a b =
-    isAddbackBorrowN4Call_v4
-      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) := rfl
-
 /-- **div128Quot_v4 unfolds via the component accessors**: structural
     bridge to compose the proven sub-stubs. -/
 theorem div128Quot_v4_eq_components (uHi uLo vTop : Word) :

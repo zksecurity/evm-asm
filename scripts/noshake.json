@@ -42,8 +42,10 @@
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Branches"],
   "EvmAsm.Evm64.DivMod.Shift0Dispatcher":
   ["EvmAsm.Evm64.DivMod.Shift0AddbackMod", "EvmAsm.Evm64.DivMod.SpecCallShift0"],
-  "EvmAsm.Evm64.DivMod.N4StackSpec":
+ "EvmAsm.Evm64.DivMod.N4StackSpec":
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackMod"],
+ "EvmAsm.Evm64.DivMod.N4StackSpecWithin":
+  ["EvmAsm.Evm64.DivMod.N4StackSpec"],
   "EvmAsm.Evm64.EvmWordArith.DivBridge":
   ["EvmAsm.Evm64.EvmWordArith.Normalization"],
   "EvmAsm.Rv64.AddrNorm": ["EvmAsm.Rv64.AddrNormAttr"],
@@ -174,6 +176,8 @@
    "EvmAsm.Evm64.DivMod.LoopBody.MulsubCorrectionSkip"],
   "EvmAsm.Evm64.DivMod.Compose.ModFullPathN1LoopUnified":
  ["EvmAsm.Evm64.DivMod.Compose.ModFullPathN4"],
+  "EvmAsm.Evm64.DivMod.Compose.ModFullPathN3LoopUnified":
+ ["EvmAsm.Evm64.DivMod.Compose.ModFullPathN4"],
  "EvmAsm.Evm64.DivMod.LoopBodyN4":
   ["EvmAsm.Evm64.DivMod.LoopBody.TrialCall",
    "EvmAsm.Evm64.DivMod.LoopBody.TrialMax",
@@ -202,8 +206,10 @@
   ["EvmAsm.Evm64.DivMod.LoopBodyN3"],
  "EvmAsm.Evm64.DivMod.Compose.FullPathN1Conservation":
   ["EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.CompensationCases", "EvmAsm.Evm64.EvmWordArith.DivN4DoubleAddback", "EvmAsm.Evm64.EvmWordArith.ModBridgeUtop"],
+ "EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationV4":
+  ["EvmAsm.Evm64.DivMod.Spec.V4"],
  "EvmAsm.Evm64.DivMod.Spec.Dispatcher":
-  ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge", "EvmAsm.Evm64.DivMod.Compose.FullPathN1ConservationRuntime"],
+  ["EvmAsm.Evm64.DivMod.Spec.Base", "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopThree": ["EvmAsm.Rv64.RLP.Phase2LongLoopTwo"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopFour":  ["EvmAsm.Rv64.RLP.Phase2LongLoopThree"],
@@ -247,6 +253,7 @@
 "EvmAsm.Evm64.EvmWordArith.MulCorrect":
  ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
+"EvmAsm.Evm64.EvmWordArith.DivN4Lemmas": ["EvmAsm.Evm64.EvmWordArith.DivBridge"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
  ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"],
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],

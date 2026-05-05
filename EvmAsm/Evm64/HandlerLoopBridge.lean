@@ -48,22 +48,22 @@ theorem stepWithTableHandler_empty_of_decode
   exact stepWithTableHandler_missing_invalid h_decode (HandlerTable.empty_apply opcode)
 
 theorem loopFuel_succ_running_decode
-    (table : HandlerTable) (fuel : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (table : HandlerTable) (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
     (h_status : state.status = .running)
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
-    InterpreterLoop.loopFuel (toLoopHandler table) (fuel + 1) state =
-      InterpreterLoop.loopFuel (toLoopHandler table) fuel
+    InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler table) nSteps
         (HandlerTable.dispatchOpcode table opcode state) := by
-  rw [InterpreterLoop.loopFuel_succ_running (toLoopHandler table) fuel state h_status]
+  rw [InterpreterLoop.loopFuel_succ_running (toLoopHandler table) nSteps state h_status]
   rw [stepWithTableHandler_of_decode table h_decode]
 
 theorem loopFuel_empty_succ_running_decode
-    (fuel : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
     (h_status : state.status = .running)
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
-    InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) (fuel + 1) state =
-      InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) fuel state.invalid := by
-  rw [loopFuel_succ_running_decode HandlerTable.empty fuel h_status h_decode]
+    InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) (nSteps + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) nSteps state.invalid := by
+  rw [loopFuel_succ_running_decode HandlerTable.empty nSteps h_status h_decode]
   simp [HandlerTable.dispatchOpcode]
 
 theorem handlerMatchesSpec_of_dispatch_eq

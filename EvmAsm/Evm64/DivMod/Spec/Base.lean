@@ -24,8 +24,8 @@
     `isSkipBorrowN4MaxEvm`, `isCallTrialN4Evm`, `isSkipBorrowN4CallEvm`,
     `isAddbackBorrowN4CallEvm`. Each is a thin shim over the Word-level
     predicate plus a `_def` `rfl` lemma.
-  * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages
-    the un-normalized `mulsubN4`-carry hypothesis that
+  * Semantic-correctness predicate: `n4MaxSkipSemanticHolds` — packages the
+    un-normalized `mulsubN4`-carry hypothesis that
     `n4_max_skip_div_mod_getLimbN` consumes.
   * Weakener: `div_n4_max_skip_stack_weaken` — turns specific register values
     + `evmWordIs` operand atoms + `divScratchValues` into
@@ -480,55 +480,6 @@ theorem evm_mod_bzero_stack_spec_within (sp base : Word)
          ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)))
         from by xperm) h).mp w1)
     h_raw
-
-/-- MOD mirror of `evm_div_n4_full_max_skip_stack_pre_spec`.
-
-    EvmWord-level wrapper around `evm_mod_n4_full_max_skip_spec`. Same guarantee
-    (full-path MOD from `base` to `base + nopOff` on the n=4 max+skip sub-path),
-    but with the operands bundled as `evmWordIs sp a` / `evmWordIs (sp+32) b`
-    and the 15 scratch cells bundled as `divScratchValues`. The postcondition
-    is still the concrete `fullModN4MaxSkipPost`; the MOD stack-spec surface
-    uses the `fullModN4MaxSkipPost`-based path directly (no `divN4MaxSkipStackPost`-style
-    bundle is required here). -/
-theorem evm_mod_n4_full_max_skip_stack_pre_spec_within (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11Old : Word)
-    (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
-     nMem shiftMem jMem : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
-    (hbltu : isMaxTrialN4Evm a b)
-    (hborrow : isSkipBorrowN4MaxEvm a b) :
-    cpsTripleWithin 214 base (base + nopOff) (modCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x2 ↦ᵣ (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)) **
-       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
-       (.x11 ↦ᵣ v11Old) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b **
-       divScratchValues sp q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old
-         u5 u6 u7 shiftMem nMem jMem)
-      (fullModN4MaxSkipPost sp
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) := by
-  have hbnz' : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0 :=
-    (EvmWord.ne_zero_iff_getLimbN_or).mp hbnz
-  have hraw := evm_mod_n4_full_max_skip_spec_within sp base
-    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
-    v5 v6 v7 v10 v11Old
-    q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
-    nMem shiftMem jMem
-    hbnz' hb3nz hshift_nz hbltu hborrow
-  exact cpsTripleWithin_weaken
-    (fun h hp => by
-      rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ rfl rfl rfl rfl,
-          evmWordIs_sp32_limbs_eq sp b _ _ _ _ rfl rfl rfl rfl,
-          divScratchValues_unfold] at hp
-      rw [word_add_zero]
-      xperm_hyp hp)
-    (fun _ hq => hq)
-    hraw
 
 -- ============================================================================
 -- Sublemmas towards evm_div_n4_max_skip_stack_spec (reshape plan)

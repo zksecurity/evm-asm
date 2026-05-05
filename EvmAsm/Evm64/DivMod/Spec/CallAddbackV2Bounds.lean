@@ -5,8 +5,7 @@
   Extracted from Spec/CallAddback.lean per #1078 / beads evm-asm-q62k to
   trim the over-cap CallAddback.lean.
 
-  Contents (8 theorems, leaf-level relative to the Phase-1 div-invariant
-  cluster that still lives in CallAddback.lean):
+  Contents (8 theorems, leaf-level Knuth-B bound helpers):
 
   - `div128Quot_v2_q1_prime_prime_le_q1_prime`
   - `div128Quot_v2_q1_prime_prime_dLo_no_wrap`
@@ -18,9 +17,9 @@
   - `div128Quot_v2_phase1c_in_knuth_range_under_runtime`
 
   No proof changes: this is a pure structural move. The downstream
-  Phase-1 cluster in CallAddback.lean (overshoot_{0,1,2}_sub plus
-  div128Quot_v2_phase1_div_invariant_under_runtime) imports this module
-  via the existing CallAddback.lean prelude.
+  Phase-1 div-invariant cluster that previously consumed these bounds
+  in CallAddback.lean has been deleted as dead code (v2 chain
+  superseded by v4 closure path).
 
   Issue #1337 algorithm fix migration (decomposition surface).
 -/
