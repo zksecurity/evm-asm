@@ -235,6 +235,7 @@
  "EvmAsm.Evm64.Calldata.CopyMemory": ["Mathlib.Data.List.GetD"],
  "EvmAsm.Evm64.EvmWordArith.DivAddbackCarry": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivAddbackLimb": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
+ "EvmAsm.Evm64.EvmWordArith.DivRemainderBound": ["EvmAsm.Evm64.EvmWordArith.DivAddbackLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivMulSubCarry": ["EvmAsm.Evm64.EvmWordArith.DivMulSubLimb"],
  "EvmAsm.Evm64.EvmWordArith.DivAccumulate": ["EvmAsm.Evm64.EvmWordArith.DivRemainderBound"],
  "EvmAsm.Evm64.EvmWordArith.DivN4Overestimate": ["EvmAsm.Evm64.EvmWordArith.DivAccumulate"],
