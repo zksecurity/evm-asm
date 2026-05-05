@@ -118,6 +118,7 @@ import EvmAsm.Evm64.MLoad
 
 -- Calldata helpers (issue #104)
 import EvmAsm.Evm64.Calldata.Basic
+import EvmAsm.Evm64.Calldata.LoadArgs
 import EvmAsm.Evm64.Calldata.Size
 import EvmAsm.Evm64.Calldata.SizeProgram
 import EvmAsm.Evm64.Calldata.SizeSpec
