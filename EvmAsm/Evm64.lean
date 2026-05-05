@@ -105,6 +105,7 @@ import EvmAsm.Evm64.HandlerTable
 import EvmAsm.Evm64.StackHandlers
 import EvmAsm.Evm64.ControlHandlers
 import EvmAsm.Evm64.TerminatingHandlers
+import EvmAsm.Evm64.InterpreterFetchProgram
 import EvmAsm.Evm64.HandlerLoopBridge
 import EvmAsm.Evm64.TerminatingLoopBridge
 import EvmAsm.Evm64.HandlerLoopSimulationBridge
