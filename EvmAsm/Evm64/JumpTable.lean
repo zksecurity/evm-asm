@@ -132,6 +132,49 @@ theorem dispatchTableIs_getMem
     apply Fin.ext; simp
   simpa [Nat.zero_add, hfin] using h
 
+
+/-! ### Constructing a `Fin 256 → Word` table with an INVALID default
+
+This block lifts a *partial* opcode → handler-address map (`Fin 256 → Option
+Word`, only set for implemented opcodes) into the *total* `Fin 256 → Word`
+shape that the `dispatchTableIs` layout takes, by routing every unset opcode
+to a single `invalidHandler` address. This is layer (a) of GH #106 slice 4
+(beads `evm-asm-3ho93` / `evm-asm-hbdu9`); the matching semantic step —
+proving that JALR-ing to `invalidHandler` drives `EvmState` into its invalid
+status — is layer (b) and lands once `dispatch_spec` (slice 3) is in.
+-/
+
+/-- Total handler-address table built from a partial opcode → handler map
+    and a fall-back `invalidHandler` address. Opcodes for which `lookup`
+    returns `none` are routed to `invalidHandler`. -/
+def jumpTableOfHandlers
+    (invalidHandler : Word) (lookup : Fin 256 → Option Word) : Fin 256 → Word :=
+  fun opcode => (lookup opcode).getD invalidHandler
+
+/-- Lookup is the implemented handler when the partial map covers the
+    opcode. -/
+@[simp] theorem jumpTableOfHandlers_some
+    (invalidHandler : Word) (lookup : Fin 256 → Option Word)
+    (opcode : Fin 256) (h : Word) (hp : lookup opcode = some h) :
+    jumpTableOfHandlers invalidHandler lookup opcode = h := by
+  simp [jumpTableOfHandlers, hp]
+
+/-- Lookup falls back to `invalidHandler` when the partial map does not
+    cover the opcode — this is what makes a transition to INVALID the
+    default for unimplemented opcodes once `dispatch_spec` is wired in. -/
+@[simp] theorem jumpTableOfHandlers_none
+    (invalidHandler : Word) (lookup : Fin 256 → Option Word)
+    (opcode : Fin 256) (hp : lookup opcode = none) :
+    jumpTableOfHandlers invalidHandler lookup opcode = invalidHandler := by
+  simp [jumpTableOfHandlers, hp]
+
+/-- The all-`none` partial map produces the constant `invalidHandler` table
+    — useful as a base case for incrementally extending coverage. -/
+@[simp] theorem jumpTableOfHandlers_const_none
+    (invalidHandler : Word) (opcode : Fin 256) :
+    jumpTableOfHandlers invalidHandler (fun _ => none) opcode
+      = invalidHandler := by
+  simp [jumpTableOfHandlers]
 /-! ### Entry / rest split.
 
 The dispatch RV64 program needs to LD one specific table entry; the LD
@@ -223,5 +266,6 @@ theorem dispatchTableIs_split (base : Word) (handlers : Fin 256 → Word)
   unfold dispatchTableIs.rest
   -- Goal: `prefix ** entry ** suffix = entry ** prefix ** suffix`.
   ac_rfl
+
 
 end EvmAsm.Evm64
