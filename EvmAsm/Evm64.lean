@@ -91,6 +91,7 @@ import EvmAsm.Evm64.Gas
 import EvmAsm.Evm64.Env.Gas
 import EvmAsm.Evm64.StorageGas
 import EvmAsm.Evm64.StorageAccess
+import EvmAsm.Evm64.StorageAccessWarm
 import EvmAsm.Evm64.StorageAccessOutcome
 
 -- Opcode dispatch surface (#106)
@@ -105,6 +106,7 @@ import EvmAsm.Evm64.HandlerLoopSimulationBridge
 import EvmAsm.Evm64.InterpreterLoop
 import EvmAsm.Evm64.InterpreterSimulation
 import EvmAsm.Evm64.InterpreterTrace
+import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
 
 -- Precompile dispatch surface (#116)
@@ -134,3 +136,4 @@ import EvmAsm.Evm64.Calldata.SizeSpec
 import EvmAsm.Evm64.Calldata.LoadProgram
 import EvmAsm.Evm64.Calldata.CopyArgs
 import EvmAsm.Evm64.Calldata.CopyExec
+import EvmAsm.Evm64.Calldata.CopyMemory

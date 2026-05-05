@@ -61,7 +61,7 @@
   "EvmAsm.Rv64.Tactics.XCancelStruct":
   ["EvmAsm.Rv64.SepLogic"],
  "EvmAsm.Evm64.Basic":
-  ["Std.Tactic.BVDecide"],
+  ["Std.Tactic.BVDecide", "EvmAsm.Rv64.Basic"],
  "EvmAsm.Evm64.CodeRegion":
   ["EvmAsm.Evm64.Basic", "EvmAsm.Rv64.ByteOps", "Mathlib.Tactic.Ring"],
  "EvmAsm.Evm64.Memory":
@@ -83,6 +83,10 @@
   "EvmAsm.Evm64.Dup.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Swap.Spec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.MStore.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.MLoad.LimbSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Add.LimbSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
@@ -212,6 +216,8 @@
  "EvmAsm.Evm64.EvmWordArith.Comparison": ["EvmAsm.Evm64.EvmWordArith.Common"],
  "EvmAsm.Evm64.Env.Spec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+ "EvmAsm.Evm64.Env.StackSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Env.Wrappers":
   ["EvmAsm.Evm64.Env.StackSpec"],
  "EvmAsm.Evm64.MStore8.Spec":
@@ -240,4 +246,6 @@
  ["EvmAsm.Evm64.EvmWordArith.MultiLimb", "EvmAsm.Evm64.EvmWordArith.Arithmetic"],
 "EvmAsm.Evm64.EvmWordArith.Div": ["EvmAsm.Evm64.EvmWordArith.Common"],
 "EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat":
- ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"]}}
+ ["Mathlib.Tactic.Ring", "Mathlib.Tactic.Linarith"],
+"EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}

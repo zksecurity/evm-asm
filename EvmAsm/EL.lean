@@ -10,6 +10,8 @@ import EvmAsm.EL.CreateAddressExecutableBridge
 import EvmAsm.EL.CreateArgsBridge
 import EvmAsm.EL.CreateInitcodeBridge
 import EvmAsm.EL.CreateEffects
+import EvmAsm.EL.CreateCollision
+import EvmAsm.EL.CreateCollisionResult
 import EvmAsm.EL.CreateResultBridge
 import EvmAsm.EL.Logs
 import EvmAsm.EL.LogArgsBridge
@@ -24,10 +26,12 @@ import EvmAsm.EL.Conformance.ExpGas
 import EvmAsm.EL.Conformance.RLP
 import EvmAsm.EL.WorldState
 import EvmAsm.EL.WorldStateAccount
+import EvmAsm.EL.WorldStateFrame
 import EvmAsm.EL.Storage
 import EvmAsm.EL.StorageAccessBridge
 import EvmAsm.EL.StorageStackBridge
 import EvmAsm.EL.StorageEcallBridge
+import EvmAsm.EL.StorageEcallStackBridge
 import EvmAsm.EL.Transaction
 import EvmAsm.EL.MessageCall
 import EvmAsm.EL.MessageCallExecution
@@ -35,11 +39,15 @@ import EvmAsm.EL.CallArgsBridge
 import EvmAsm.EL.CallInputBridge
 import EvmAsm.EL.CallOutputBridge
 import EvmAsm.EL.CallOutputMemory
+import EvmAsm.EL.CallOutputArgsMemory
 import EvmAsm.EL.CallValueTransfer
 import EvmAsm.EL.SelfdestructEffects
 import EvmAsm.EL.TerminatingArgsBridge
 import EvmAsm.EL.TerminatingCallOutput
 import EvmAsm.EL.TerminatingCallerVisible
+import EvmAsm.EL.TerminatingDataMemory
+import EvmAsm.EL.TerminatingExecutionBridge
 import EvmAsm.EL.TransactionCall
 import EvmAsm.EL.TransactionExecution
+import EvmAsm.EL.TransactionExecutionShape
 import EvmAsm.EL.Block

@@ -1001,63 +1001,6 @@ theorem div128Quot_v4_phase2_perfect (uHi uLo vTop : Word)
       exact div128Quot_v4_phase2_overshoot_2_sub uHi uLo vTop
         h_vTop_ge_pow63 h_uHi_lt_vTop h_eq
 
-/-- **Phase-2 Euclidean for q0'' (v4).** Combines Phase-2 perfection with
-    the classical Euclidean to give the closure step for
-    `div128Quot_v4_phase2_no_wrap_lo`. -/
-theorem div128Quot_v4_phase2_euclidean (uHi uLo vTop : Word)
-    (h_vTop_ge_pow63 : vTop.toNat ≥ 2^63)
-    (h_uHi_lt_vTop : uHi.toNat < vTop.toNat) :
-    let dHi := vTop >>> (32 : BitVec 6).toNat
-    let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un1 := uLo >>> (32 : BitVec 6).toNat
-    let q1 := rv64_divu uHi dHi
-    let rhat := uHi - q1 * dHi
-    let hi1 := q1 >>> (32 : BitVec 6).toNat
-    let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
-    let rhatc := if hi1 = 0 then rhat else rhat + dHi
-    let q1' := div128Quot_phase2b_q0' q1c rhatc dLo div_un1
-    let rhat' :=
-      if rhatc >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo := q1c * dLo
-        let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-      else rhatc
-    let q1'' := div128Quot_phase2b_q0' q1' rhat' dLo div_un1
-    let rhat'' :=
-      if rhat' >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q1' * dLo
-        let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
-        if BitVec.ult rhatUn1' qDlo2 then rhat' + dHi else rhat'
-      else rhat'
-    let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
-    let cu_q1_dlo := q1'' * dLo
-    let un21 := cu_rhat_un1 - cu_q1_dlo
-    let q0 := rv64_divu un21 dHi
-    let rhat2 := un21 - q0 * dHi
-    let hi2 := q0 >>> (32 : BitVec 6).toNat
-    let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
-    let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
-    let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo div_un0
-    let rhat2' :=
-      if rhat2c >>> (32 : BitVec 6).toNat = 0 then
-        let qDlo2 := q0c * dLo
-        let rhatUn0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| div_un0
-        if BitVec.ult rhatUn0 qDlo2 then rhat2c + dHi else rhat2c
-      else rhat2c
-    let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
-    q0''.toNat * (dHi.toNat * 2^32 + dLo.toNat) ≤
-      un21.toNat * 2^32 + div_un0.toNat := by
-  intro dHi dLo div_un0 div_un1 q1 rhat hi1 q1c rhatc q1' rhat' q1'' rhat''
-        cu_rhat_un1 cu_q1_dlo un21 q0 rhat2 hi2 q0c rhat2c q0' rhat2' q0''
-  -- `_phase2_perfect` gives q0''.toNat = (un21*2^32 + div_un0) / vTop.
-  have h_perfect := div128Quot_v4_phase2_perfect uHi uLo vTop
-    h_vTop_ge_pow63 h_uHi_lt_vTop
-  rw [show q0''.toNat = (un21.toNat * 2^32 + div_un0.toNat) /
-                        (dHi.toNat * 2^32 + dLo.toNat) from h_perfect]
-  -- Standard `q * vTop ≤ un21*2^32 + div_un0` floor inequality.
-  exact Nat.div_mul_le_self _ _
-
 /-- **Phase-2 final Euclidean bridge (v4)**: after Phase-2's 2-correction
     loop, `q0''` and `rhat2''` satisfy the Phase-2 Euclidean at toNat:
 
