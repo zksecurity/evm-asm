@@ -109,9 +109,9 @@ open EvmAsm.Rv64
 -- Re-exported via the import at the top of this file, so downstream surface
 -- is unchanged.
 
--- Add-back partA/partB specs (divK_addback_{partA,partB}_spec) — file
--- EvmAsm.Evm64.DivMod.LimbSpec.AddBack deleted as dead code; both specs
--- had zero call sites at #61 closure.
+-- Add-back partA/partB per-limb specs (divK_addback_{partA,partB}_spec_within)
+-- were superseded after #61 closure; the entire file
+-- EvmAsm.Evm64.DivMod.LimbSpec.AddBack was unused and has been deleted.
 
 -- Sub-carry + Store-qj specs (divK_sub_carry_spec_within, divK_store_qj_{addr,write}_spec)
 -- moved to EvmAsm.Evm64.DivMod.LimbSpec.SubCarryStoreQj (sixteenth chunk of #312
