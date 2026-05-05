@@ -89,6 +89,8 @@
   ["EvmAsm.Rv64.Basic", "Std.Tactic.BVDecide"],
  "EvmAsm.Evm64.SpAddr":
   ["EvmAsm.Rv64.Tactics.SeqFrame"],
+  "EvmAsm.Evm64.Dispatch.EntrySpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Stack":
   ["EvmAsm.Evm64.SpAddr"],
   "EvmAsm.Evm64.MSize.Spec":
