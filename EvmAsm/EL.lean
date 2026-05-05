@@ -6,6 +6,7 @@
 import EvmAsm.EL.RLP
 import EvmAsm.EL.Create
 import EvmAsm.EL.CreateAddress
+import EvmAsm.EL.CreateAddressExecutableBridge
 import EvmAsm.EL.CreateArgsBridge
 import EvmAsm.EL.CreateInitcodeBridge
 import EvmAsm.EL.CreateEffects
