@@ -13,7 +13,10 @@ import EvmAsm.Evm64.DivMod.Spec
 -- cover the MOD n=1/n=2/n=3 wrappers. FullPathN2Bundle carries shared N2
 -- irreducible intermediates for later full-wrapper refactors.
 -- Removed: import EvmAsm.Evm64.DivMod.Spec.V4 (deleted: 716 LOC of unused v4 closure
--- theorems; SpecCallAddbackBeq + IterV4InvariantsPhase2 are reachable via direct imports).
+-- theorems; SpecCallAddbackBeq is reachable via direct imports).
+-- IterV4InvariantsPhase2 was re-exported by Spec/V4; wire it directly here so the
+-- full Helpers → Overshoots → Invariants → Phase2 chain stays imported.
+import EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2
 
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.N4StackSpec
