@@ -45,6 +45,31 @@ theorem decodeFully_eq_none_of_decode_leftover
   | nil => contradiction
   | cons b rest => simp [h_decode]
 
+/--
+Complete-decode failure is exactly either decoder failure or successful
+prefix decode with trailing bytes left over.
+
+Distinctive token: FullDecode.decodeFully_eq_none_iff #120.
+-/
+theorem decodeFully_eq_none_iff (bs : List Byte) :
+    decodeFully bs = none ↔
+      decode bs = none ∨
+        ∃ item leftover, decode bs = some (item, leftover) ∧ leftover ≠ [] := by
+  unfold decodeFully
+  cases h_decode : decode bs with
+  | none => simp
+  | some decoded =>
+      cases decoded with
+      | mk item leftover =>
+          cases leftover with
+          | nil => simp
+          | cons b rest =>
+              constructor
+              · intro _
+                exact Or.inr ⟨item, b :: rest, rfl, by simp⟩
+              · intro _
+                rfl
+
 theorem decodeFully_eq_some_of_decode
     {bs : List Byte} {item : RLPItem}
     (h_decode : decode bs = some (item, [])) :
