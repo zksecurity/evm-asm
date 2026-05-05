@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Dispatch
+import EvmAsm.Evm64.TerminatingArgs
 import Mathlib.Tactic.IntervalCases
 
 namespace EvmAsm.Evm64
@@ -46,6 +47,22 @@ def execSpecPushByte (n : Nat) : Nat :=
 def execSpecLogByte (kind : LogArgs.Kind) : Nat :=
   0xa0 + LogArgs.topicCount kind
 
+/-- EVM opcode represented by a frame-terminating opcode classifier. -/
+def opcodeOfTerminatingKind : TerminatingArgs.Kind → EvmOpcode
+  | .stop => .STOP
+  | .return_ => .RETURN
+  | .revert => .REVERT
+  | .invalid => .INVALID
+  | .selfdestruct => .SELFDESTRUCT
+
+/-- Executable-spec byte for a frame-terminating opcode classifier. -/
+def execSpecTerminatingByte : TerminatingArgs.Kind → Nat
+  | .stop => Ops.STOP
+  | .return_ => Ops.RETURN
+  | .revert => Ops.REVERT
+  | .invalid => Ops.INVALID
+  | .selfdestruct => Ops.SELFDESTRUCT
+
 theorem decode_execSpecPushByte_of_valid
     {n : Nat} (h_low : 1 ≤ n) (h_high : n ≤ 32) :
     EvmOpcode.decodeByte? (execSpecPushByte n) = some (EvmOpcode.PUSH n) := by
@@ -77,6 +94,20 @@ theorem roundtrip_execSpecLog (kind : LogArgs.Kind) :
     EvmOpcode.byte? (EvmOpcode.LOG kind) = some (execSpecLogByte kind) ∧
       EvmOpcode.decodeByte? (execSpecLogByte kind) = some (EvmOpcode.LOG kind) :=
   ⟨byte?_execSpecLog kind, decode_execSpecLogByte kind⟩
+
+/--
+Executable-spec roundtrip for STOP, RETURN, REVERT, INVALID, and
+SELFDESTRUCT as one opcode family.
+
+Distinctive token:
+ExecutableSpecOpcodeBridge.roundtrip_execSpecTerminatingKind #109 #113.
+-/
+theorem roundtrip_execSpecTerminatingKind (kind : TerminatingArgs.Kind) :
+    EvmOpcode.byte? (opcodeOfTerminatingKind kind) =
+        some (execSpecTerminatingByte kind) ∧
+      EvmOpcode.decodeByte? (execSpecTerminatingByte kind) =
+        some (opcodeOfTerminatingKind kind) := by
+  cases kind <;> exact ⟨rfl, rfl⟩
 
 theorem roundtrip_execSpec_STOP :
     EvmOpcode.byte? EvmOpcode.STOP = some Ops.STOP ∧
