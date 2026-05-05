@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Push.Immediate
+import EvmAsm.Evm64.Push.Width
 
 namespace EvmAsm.Evm64
 namespace PushExecEffect
@@ -93,6 +94,20 @@ theorem effectFromCode_stack
     (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
     (effectFromCode code pc n stack).stack = stackAfterPush code pc n stack := rfl
 
+theorem effectFromCode_stack_head
+    (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
+    (effectFromCode code pc n stack).stack.head? =
+      some (pushedWordFromCode code pc n) := rfl
+
+theorem effectFromCode_stack_tail
+    (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
+    (effectFromCode code pc n stack).stack.tail = stack := rfl
+
+@[simp] theorem effectFromCode_stack_length
+    (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
+    (effectFromCode code pc n stack).stack.length = stack.length + 1 := by
+  simp [effectFromCode, stackAfterPush]
+
 @[simp] theorem pushedWordFromCode_nil (pc n : Nat) :
     pushedWordFromCode [] pc n = PushImmediate.pushImmediateWordFromCode [] pc n := rfl
 
@@ -100,6 +115,19 @@ theorem pc_lt_pcAfterPushFromCode_of_width_pos
     {code : List (BitVec 8)} {pc n : Nat} (h_pos : 0 < n) :
     pc < pcAfterPushFromCode code pc n := by
   exact PushImmediate.pc_lt_pcAfterPush_of_width_pos h_pos
+
+theorem effectFromCode_pc_gt_pc_of_validWidth
+    {code : List (BitVec 8)} {pc n : Nat}
+    (h_valid : PushWidth.validWidth n) :
+    pc < (effectFromCode code pc n []).pc := by
+  exact PushWidth.pcAfterPush_gt_pc h_valid
+
+/-- Distinctive token: PushExecEffect.effectFromCode_pc_le_pc_plus_33 #101. -/
+theorem effectFromCode_pc_le_pc_plus_33_of_validWidth
+    {code : List (BitVec 8)} {pc n : Nat} {stack : List EvmWord}
+    (h_valid : PushWidth.validWidth n) :
+    (effectFromCode code pc n stack).pc ≤ pc + 33 := by
+  exact PushWidth.pcAfterPush_le_pc_plus_33 h_valid
 
 end PushExecEffect
 end EvmAsm.Evm64
