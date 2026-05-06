@@ -217,6 +217,35 @@ theorem runCalldataStack?_copy_eq_none_iff
               simp [runCalldataStack?, stackRestAfterCalldata?,
                 EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
 
+/--
+Generic kind-indexed failure characterization combining the per-opcode
+`runCalldataStack?_*_eq_none_iff` lemmas. CALLDATALOAD/CALLDATASIZE/CALLDATACOPY
+all fail exactly when the operand stack does not contain enough words to supply
+their `argumentCount`.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_eq_none_iff #104 #107.
+-/
+theorem runCalldataStack?_eq_none_iff
+    (kind : Kind) (data : List (BitVec 8)) (stack : List EvmWord) :
+    runCalldataStack? kind { data := data, stack := stack } = none ↔
+      stack.length < argumentCount kind := by
+  cases kind
+  · -- callDataLoad: argumentCount = 1
+    have h_arg : argumentCount .callDataLoad = 1 := by
+      simp [argumentCount, EvmAsm.Evm64.CallDataLoadArgs.stackArgumentCount]
+    rw [h_arg, runCalldataStack?_load_eq_none_iff]
+    cases stack <;> simp
+  · -- callDataSize: argumentCount = 0, never fails
+    have h_arg : argumentCount .callDataSize = 0 := rfl
+    rw [h_arg]
+    simp [show (¬ stack.length < 0) from Nat.not_lt_zero _,
+      runCalldataStack?_size_ne_none data stack]
+  · -- callDataCopy: argumentCount = 3
+    have h_arg : argumentCount .callDataCopy = 3 := by
+      simp [argumentCount, EvmAsm.Evm64.CallDataCopyArgs.stackArgumentCount]
+    rw [h_arg, runCalldataStack?_copy_eq_none_iff]
+
 theorem runCalldataStack?_stack_length
     {kind : Kind} {state : CalldataStackState} {out : CalldataStackResult}
     (h_run : runCalldataStack? kind state = some out) :
