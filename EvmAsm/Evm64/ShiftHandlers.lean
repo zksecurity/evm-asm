@@ -145,6 +145,32 @@ theorem shiftHandler_status_of_shiftStack?_none
 @[simp] theorem shiftHandler?_SAR :
     shiftHandler? .SAR = some sarHandler := rfl
 
+@[simp] theorem eq_shlHandler_iff (handler : OpcodeHandler) :
+    shlHandler = handler ↔ handler = shlHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_shrHandler_iff (handler : OpcodeHandler) :
+    shrHandler = handler ↔ handler = shrHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_sarHandler_iff (handler : OpcodeHandler) :
+    sarHandler = handler ↔ handler = sarHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem shiftHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    shiftHandler? opcode = some handler ↔
+      (opcode = .SHL ∧ handler = shlHandler) ∨
+        (opcode = .SHR ∧ handler = shrHandler) ∨
+          (opcode = .SAR ∧ handler = sarHandler) := by
+  cases opcode <;> simp [shiftHandler?]
+
+theorem shiftHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    shiftHandler? opcode = none ↔
+      opcode ≠ .SHL ∧ opcode ≠ .SHR ∧ opcode ≠ .SAR := by
+  cases opcode <;> simp [shiftHandler?]
+
 theorem dispatchOpcode?_shiftHandlerTable_SHL
     (state : EvmState) :
     HandlerTable.dispatchOpcode? shiftHandlerTable .SHL state =
