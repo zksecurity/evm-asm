@@ -16,7 +16,6 @@
 -- `DivMod.Program`, `Rv64.SyscallSpecs`, `Rv64.ControlFlow`,
 -- `Rv64.Tactics.XSimp`, `Rv64.Tactics.RunBlock`.
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128Phase1
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1
 
 open EvmAsm.Rv64.Tactics

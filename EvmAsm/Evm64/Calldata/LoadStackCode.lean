@@ -528,5 +528,56 @@ theorem calldataload_window_one_limb_q3_stack_spec_within
     offReg byteReg accReg addrReg envPtrReg base a i
     (mloadFourLimbsCode_one_limb_q3_sub addrReg byteReg accReg base a i hq)
 
+/--
+CALLDATALOAD window one-limb sequence stack spec: compose the four merged
+per-quarter wrappers (`calldataload_window_one_limb_q{0,1,2,3}_stack_spec_within`)
+into a single triple from `base + 8` to `base + 376` over
+`evm_calldataload_window_code`.
+
+Takes one concrete `mloadOneLimbCode` byte-load triple per byte-window quarter
+and chains them via three `cpsTripleWithin_seq_same_cr` applications. Lets
+followup slices instantiate each quarter directly with a concrete byte-load
+triple (without first wrapping in `mloadFourLimbsCode` and then
+`mload_four_limb_sequence_spec_within`), and then combine with
+`calldataload_window_prologue_stack_spec_within` to land the full
+`evm_calldataload_stack_spec` (evm-asm-pgeuo / GH #104).
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_one_limb_sequence_stack_spec_within #104.
+-/
+theorem calldataload_window_one_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P0 P1 P2 P3 P4 : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) P0 P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P3 P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      P0 P4 :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_seq_same_cr
+      (cpsTripleWithin_seq_same_cr
+        (calldataload_window_one_limb_q0_stack_spec_within
+          offReg byteReg accReg addrReg envPtrReg base h0)
+        (calldataload_window_one_limb_q1_stack_spec_within
+          offReg byteReg accReg addrReg envPtrReg base h1))
+      (calldataload_window_one_limb_q2_stack_spec_within
+        offReg byteReg accReg addrReg envPtrReg base h2))
+    (calldataload_window_one_limb_q3_stack_spec_within
+      offReg byteReg accReg addrReg envPtrReg base h3)
+
 end Calldata
 end EvmAsm.Evm64
