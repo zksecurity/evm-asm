@@ -190,5 +190,29 @@ theorem dispatchOpcode_arithmeticHandlerTable_MUL
       mulHandler state := by
   exact HandlerTable.dispatchOpcode_some arithmeticHandler?_MUL state
 
+theorem dispatchOpcode_arithmeticHandlerTable_ADD_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a + b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode arithmeticHandlerTable .ADD state).status =
+      state.status := by
+  rw [dispatchOpcode_arithmeticHandlerTable_ADD state]
+  simp [addHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_arithmeticHandlerTable_SUB_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a - b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode arithmeticHandlerTable .SUB state).status =
+      state.status := by
+  rw [dispatchOpcode_arithmeticHandlerTable_SUB state]
+  simp [subHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_arithmeticHandlerTable_MUL_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a * b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode arithmeticHandlerTable .MUL state).status =
+      state.status := by
+  rw [dispatchOpcode_arithmeticHandlerTable_MUL state]
+  simp [mulHandler, binaryHandler, h_stack, EvmState.withStack]
+
 end ArithmeticHandlers
 end EvmAsm.Evm64
