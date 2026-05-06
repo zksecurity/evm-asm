@@ -826,16 +826,26 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
   SSTORE updates `storage[key] := value`.
 
 #### 8.2 Precompiles (via zkvm_accelerators)
-- Map EVM precompile addresses (0x01-0x11) to `zkvm_accelerators.h` calls.
+- The canonical C ABI is the vendored header
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  (eth-act zkvm-standards). See
+  [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for the ADR; per-function bridge progress is tracked in beads parent
+  `evm-asm-nr2sk`.
+- Map EVM precompile addresses (0x01-0x11, 0x100) to `zkvm_accelerators.h` calls.
 - ECRECOVER (0x01) → `zkvm_secp256k1_ecrecover`
 - SHA256 (0x02) → `zkvm_sha256`
 - RIPEMD160 (0x03) → `zkvm_ripemd160`
+- IDENTITY (0x04) → no accelerator (pure memcpy)
 - MODEXP (0x05) → `zkvm_modexp`
-- BN254 (0x06-0x08) → `zkvm_bn254_*`
+- BN254 G1 ADD/MUL/PAIRING (0x06–0x08) → `zkvm_bn254_g1_add` / `zkvm_bn254_g1_mul` / `zkvm_bn254_pairing`
 - BLAKE2f (0x09) → `zkvm_blake2f`
-- KZG (0x0a) → `zkvm_kzg_point_eval`
-- BLS12-381 (0x0b-0x11) → `zkvm_bls12_*`
-- secp256r1 (0x100) → `zkvm_secp256r1_verify`
+- KZG point eval (0x0a) → `zkvm_kzg_point_eval`
+- BLS12-381 G1/G2 ADD/MSM, PAIRING, MAP_FP/FP2 (0x0b–0x11) → `zkvm_bls12_*`
+- secp256r1 verify (0x100) → `zkvm_secp256r1_verify`
+- Non-precompile accelerators reused elsewhere: `zkvm_keccak256` (KECCAK256
+  opcode, §8.3), `zkvm_secp256k1_verify` (transaction signature
+  verification).
 
 #### 8.3 KECCAK256 (via accelerator)
 - Pop offset+size, hash EVM memory region.
