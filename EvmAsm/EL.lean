@@ -42,6 +42,9 @@ import EvmAsm.EL.Bn254G1MulEcallBridge
 import EvmAsm.EL.Bls12G2MsmInputBridge
 import EvmAsm.EL.Bls12G2MsmResultBridge
 import EvmAsm.EL.Bls12G2MsmEcallBridge
+import EvmAsm.EL.Bn254G1AddInputBridge
+import EvmAsm.EL.Bn254G1AddResultBridge
+import EvmAsm.EL.Bn254G1AddEcallBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
