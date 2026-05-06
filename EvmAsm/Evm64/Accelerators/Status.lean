@@ -86,5 +86,24 @@ theorem zkvmStatusEokWord_ne_efailWord :
     zkvmStatusEokWord ≠ zkvmStatusEfailWord := by
   decide
 
+/-- RV64 `a0` return-register encoding for a zkVM accelerator status. -/
+def zkvmStatusToWord : Accelerators.ZkvmStatus → Word
+  | .eok => zkvmStatusEokWord
+  | .efail => zkvmStatusEfailWord
+
+@[simp] theorem zkvmStatusToWord_eok :
+    zkvmStatusToWord .eok = zkvmStatusEokWord := rfl
+
+@[simp] theorem zkvmStatusToWord_efail :
+    zkvmStatusToWord .efail = zkvmStatusEfailWord := rfl
+
+/-- The RV64 return-register encoding is injective over accelerator statuses. -/
+theorem zkvmStatusToWord_injective :
+    Function.Injective zkvmStatusToWord := by
+  intro a b h
+  cases a <;> cases b <;> simp [zkvmStatusToWord] at h ⊢
+  · exact absurd h zkvmStatusEokWord_ne_efailWord
+  · exact absurd h zkvmStatusEokWord_ne_efailWord.symm
+
 end Rv64
 end EvmAsm
