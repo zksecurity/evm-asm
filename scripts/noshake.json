@@ -320,6 +320,7 @@
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
 "EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.EL.RLP.ReadLengthBridge": ["EvmAsm.EL.RLP.ReadLength"],
 "EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers":
  ["EvmAsm.Evm64.DivMod.SpecCall"],
 "EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots":
