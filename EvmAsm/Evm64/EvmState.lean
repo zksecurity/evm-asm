@@ -123,6 +123,14 @@ def withStatus (state : EvmState) (status : EvmStatus) : EvmState :=
     state.hasGas 0 = true := by
   simp [hasGas]
 
+theorem hasGas_eq_true_iff (state : EvmState) (cost : Nat) :
+    state.hasGas cost = true ↔ cost ≤ state.gas := by
+  simp [hasGas]
+
+theorem hasGas_eq_false_iff (state : EvmState) (cost : Nat) :
+    state.hasGas cost = false ↔ ¬ cost ≤ state.gas := by
+  simp [hasGas]
+
 @[simp] theorem chargeGas_gas (state : EvmState) (cost : Nat) :
     (state.chargeGas cost).gas = state.gas - cost := rfl
 
@@ -144,6 +152,22 @@ theorem chargeGas?_of_not_hasGas {state : EvmState} {cost : Nat}
     (h_gas : state.hasGas cost = false) :
     state.chargeGas? cost = none := by
   simp [chargeGas?, h_gas]
+
+theorem chargeGas?_eq_some_iff {state out : EvmState} {cost : Nat} :
+    state.chargeGas? cost = some out ↔
+      state.hasGas cost = true ∧ out = state.chargeGas cost := by
+  cases h_gas : state.hasGas cost
+  · simp [chargeGas?, h_gas]
+  · simp only [chargeGas?, h_gas, ↓reduceIte, Option.some.injEq, true_and]
+    constructor
+    · intro h_eq
+      exact h_eq.symm
+    · intro h_eq
+      exact h_eq.symm
+
+theorem chargeGas?_eq_none_iff {state : EvmState} {cost : Nat} :
+    state.chargeGas? cost = none ↔ state.hasGas cost = false := by
+  cases h_gas : state.hasGas cost <;> simp [chargeGas?, h_gas]
 
 @[simp] theorem withStack_stack (state : EvmState) (stack : List EvmWord) :
     (withStack state stack).stack = stack := rfl
