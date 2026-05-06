@@ -252,6 +252,48 @@ theorem unaryHandler_status_of_unaryStack?_none
 @[simp] theorem comparisonHandler?_ISZERO :
     comparisonHandler? .ISZERO = some iszeroHandler := rfl
 
+@[simp] theorem eq_ltHandler_iff (handler : OpcodeHandler) :
+    ltHandler = handler ↔ handler = ltHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_gtHandler_iff (handler : OpcodeHandler) :
+    gtHandler = handler ↔ handler = gtHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_sltHandler_iff (handler : OpcodeHandler) :
+    sltHandler = handler ↔ handler = sltHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_sgtHandler_iff (handler : OpcodeHandler) :
+    sgtHandler = handler ↔ handler = sgtHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_eqHandler_iff (handler : OpcodeHandler) :
+    eqHandler = handler ↔ handler = eqHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_iszeroHandler_iff (handler : OpcodeHandler) :
+    iszeroHandler = handler ↔ handler = iszeroHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem comparisonHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    comparisonHandler? opcode = some handler ↔
+      (opcode = .LT ∧ handler = ltHandler) ∨
+        (opcode = .GT ∧ handler = gtHandler) ∨
+          (opcode = .SLT ∧ handler = sltHandler) ∨
+            (opcode = .SGT ∧ handler = sgtHandler) ∨
+              (opcode = .EQ ∧ handler = eqHandler) ∨
+                (opcode = .ISZERO ∧ handler = iszeroHandler) := by
+  cases opcode <;> simp [comparisonHandler?]
+
+theorem comparisonHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    comparisonHandler? opcode = none ↔
+      opcode ≠ .LT ∧ opcode ≠ .GT ∧ opcode ≠ .SLT ∧
+        opcode ≠ .SGT ∧ opcode ≠ .EQ ∧ opcode ≠ .ISZERO := by
+  cases opcode <;> simp [comparisonHandler?]
+
 theorem dispatchOpcode?_comparisonHandlerTable_LT
     (state : EvmState) :
     HandlerTable.dispatchOpcode? comparisonHandlerTable .LT state =
