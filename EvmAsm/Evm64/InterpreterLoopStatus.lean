@@ -55,11 +55,23 @@ theorem loopFuel_stopped
     InterpreterLoop.loopFuel handler nSteps state = state :=
   loopFuel_nonRunning handler nSteps state (nonRunning_of_stopped h_status)
 
+theorem loopFuel_stopped_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
+    (h_status : state.status = .stopped) :
+    (InterpreterLoop.loopFuel handler nSteps state).status = .stopped := by
+  rw [loopFuel_stopped handler nSteps state h_status, h_status]
+
 theorem loopFuel_returned
     (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
     (h_status : state.status = .returned data) :
     InterpreterLoop.loopFuel handler nSteps state = state :=
   loopFuel_nonRunning handler nSteps state (nonRunning_of_returned h_status)
+
+theorem loopFuel_returned_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
+    (h_status : state.status = .returned data) :
+    (InterpreterLoop.loopFuel handler nSteps state).status = .returned data := by
+  rw [loopFuel_returned handler nSteps state data h_status, h_status]
 
 theorem loopFuel_reverted
     (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
@@ -67,11 +79,23 @@ theorem loopFuel_reverted
     InterpreterLoop.loopFuel handler nSteps state = state :=
   loopFuel_nonRunning handler nSteps state (nonRunning_of_reverted h_status)
 
+theorem loopFuel_reverted_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState) (data : List (BitVec 8))
+    (h_status : state.status = .reverted data) :
+    (InterpreterLoop.loopFuel handler nSteps state).status = .reverted data := by
+  rw [loopFuel_reverted handler nSteps state data h_status, h_status]
+
 theorem loopFuel_error
     (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .error) :
     InterpreterLoop.loopFuel handler nSteps state = state :=
   loopFuel_nonRunning handler nSteps state (nonRunning_of_error h_status)
+
+theorem loopFuel_error_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
+    (h_status : state.status = .error) :
+    (InterpreterLoop.loopFuel handler nSteps state).status = .error := by
+  rw [loopFuel_error handler nSteps state h_status, h_status]
 
 theorem loopFuel_one_eof_invalid
     (handler : Handler) {state : EvmState}
