@@ -148,6 +148,32 @@ theorem decodeCreateStack?_eq_none_iff (kind : Kind) (stack : List EvmWord) :
   | create => exact decodeCreateStack?_create_eq_none_iff stack
   | create2 => exact decodeCreateStack?_create2_eq_none_iff stack
 
+theorem decodeCreateStack?_create_none_of_empty :
+    decodeCreateStack? .create [] = none := rfl
+
+theorem decodeCreateStack?_create_none_of_one
+    (value : EvmWord) :
+    decodeCreateStack? .create [value] = none := rfl
+
+theorem decodeCreateStack?_create_none_of_two
+    (value offset : EvmWord) :
+    decodeCreateStack? .create [value, offset] = none := rfl
+
+theorem decodeCreateStack?_create2_none_of_empty :
+    decodeCreateStack? .create2 [] = none := rfl
+
+theorem decodeCreateStack?_create2_none_of_one
+    (value : EvmWord) :
+    decodeCreateStack? .create2 [value] = none := rfl
+
+theorem decodeCreateStack?_create2_none_of_two
+    (value offset : EvmWord) :
+    decodeCreateStack? .create2 [value, offset] = none := rfl
+
+theorem decodeCreateStack?_create2_none_of_three
+    (value offset size : EvmWord) :
+    decodeCreateStack? .create2 [value, offset, size] = none := rfl
+
 theorem decodedKind_create (value offset size : EvmWord) :
     decodedKind (.create (mkCreate value offset size)) = .create := rfl
 
