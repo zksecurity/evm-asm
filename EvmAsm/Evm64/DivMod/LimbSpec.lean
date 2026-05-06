@@ -14,6 +14,7 @@ import EvmAsm.Evm64.DivMod.LimbSpec.CopyAU
 import EvmAsm.Evm64.DivMod.LimbSpec.Denorm
 -- `Div128Step1` covers `Div128Clamp`, `Div128Phase1`, `Div128ProdCheck1`.
 -- `Div128Step2` covers `Div128Clamp`, `Div128ProdCheck2`, `Div128Tail`.
+import EvmAsm.Evm64.DivMod.LimbSpec.Div128Phase1
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128PhaseEnd
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2
