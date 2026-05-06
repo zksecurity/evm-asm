@@ -203,6 +203,61 @@ theorem dispatchAddress?_address (p : Precompile) (caller : Address)
         out := by
   simp [dispatchAddress?, decode?_address p]
 
+theorem dispatchAddress?_eq_some_iff
+    {addr caller : Address} {payload out : List (BitVec 8)} {gas : Nat}
+    {result : PrecompileResult} :
+    dispatchAddress? addr caller payload out gas = some result ↔
+      ∃ target, decode? addr = some target ∧
+        dispatch?
+          { target := target
+            caller := caller
+            input := payload
+            gas := gas }
+          out = some result := by
+  unfold dispatchAddress?
+  cases h_decode : decode? addr with
+  | none =>
+      simp
+  | some target =>
+      simp only
+      constructor
+      · intro h_dispatch
+        exact ⟨target, rfl, h_dispatch⟩
+      · rintro ⟨target', h_target, h_dispatch⟩
+        injection h_target with h_target_eq
+        subst h_target_eq
+        exact h_dispatch
+
+theorem dispatchAddress?_eq_none_iff
+    {addr caller : Address} {payload out : List (BitVec 8)} {gas : Nat} :
+    dispatchAddress? addr caller payload out gas = none ↔
+      decode? addr = none ∨
+        ∃ target, decode? addr = some target ∧
+          dispatch?
+            { target := target
+              caller := caller
+              input := payload
+              gas := gas }
+            out = none := by
+  unfold dispatchAddress?
+  cases h_decode : decode? addr with
+  | none =>
+      simp
+  | some target =>
+      simp only
+      constructor
+      · intro h_dispatch
+        exact Or.inr ⟨target, rfl, h_dispatch⟩
+      · intro h_none
+        cases h_none with
+        | inl h_decode_none =>
+            simp at h_decode_none
+        | inr h_dispatch =>
+            obtain ⟨target', h_target, h_dispatch_none⟩ := h_dispatch
+            injection h_target with h_target_eq
+            subst h_target_eq
+            exact h_dispatch_none
+
 theorem dispatchAddress?_preservesGasBound {addr caller : Address}
     {payload out : List (BitVec 8)} {gas : Nat} {result : PrecompileResult}
     (h_dispatch : dispatchAddress? addr caller payload out gas = some result) :
