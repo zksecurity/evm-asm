@@ -97,6 +97,20 @@ theorem loopFuel_error_status
     (InterpreterLoop.loopFuel handler nSteps state).status = .error := by
   rw [loopFuel_error handler nSteps state h_status, h_status]
 
+theorem stepWithHandler_eof_invalid_status
+    (handler : Handler) {state : EvmState}
+    (h_pc : state.code.length ≤ state.pc) :
+    (InterpreterLoop.stepWithHandler handler state).status = .error := by
+  rw [InterpreterLoop.stepWithHandler_eof_invalid handler h_pc]
+  exact EvmState.invalid_status state
+
+theorem stepWithHandler_unsupported_invalid_status
+    (handler : Handler) {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
+    (InterpreterLoop.stepWithHandler handler state).status = .error := by
+  rw [InterpreterLoop.stepWithHandler_of_unsupported handler h_decode]
+  exact EvmState.invalid_status state
+
 theorem loopFuel_one_eof_invalid
     (handler : Handler) {state : EvmState}
     (h_status : state.status = .running)
