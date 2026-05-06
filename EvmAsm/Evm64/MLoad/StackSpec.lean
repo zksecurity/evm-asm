@@ -272,6 +272,81 @@ theorem mloadFourLimbsCode_one_limb_q2_sub
       (mloadFourLimbs_q1_disjoint_q2 addrReg byteReg accReg base)
       CodeReq.union_mono_left)
 
+/-- Disjointness of the q0 and q3 one-limb byte-pack blocks within
+    `mloadFourLimbsCode`. q0 spans `base + 8 .. base + 100`, q3 spans
+    `base + 284 .. base + 376`; both are 23-instruction `mloadOneLimbProg`
+    blocks expressible as `CodeReq.ofProg`. -/
+private theorem mloadFourLimbs_q0_disjoint_q3
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    CodeReq.Disjoint
+      (mloadOneLimbCode addrReg byteReg accReg
+        24 25 26 27 28 29 30 31 0 (base + 8))
+      (mloadOneLimbCode addrReg byteReg accReg
+        0 1 2 3 4 5 6 7 24 (base + 284)) := by
+  rw [mloadOneLimbCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  refine CodeReq.ofProg_disjoint_range_len _ _ 23 _ _ 23 ?_ ?_ ?_
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · intro k1 k2 hk1 hk2; bv_omega
+
+/-- Disjointness of the q1 and q3 one-limb byte-pack blocks within
+    `mloadFourLimbsCode`. q1 spans `base + 100 .. base + 192`, q3 spans
+    `base + 284 .. base + 376`; both are 23-instruction `mloadOneLimbProg`
+    blocks expressible as `CodeReq.ofProg`. -/
+private theorem mloadFourLimbs_q1_disjoint_q3
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    CodeReq.Disjoint
+      (mloadOneLimbCode addrReg byteReg accReg
+        16 17 18 19 20 21 22 23 8 (base + 100))
+      (mloadOneLimbCode addrReg byteReg accReg
+        0 1 2 3 4 5 6 7 24 (base + 284)) := by
+  rw [mloadOneLimbCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  refine CodeReq.ofProg_disjoint_range_len _ _ 23 _ _ 23 ?_ ?_ ?_
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · intro k1 k2 hk1 hk2; bv_omega
+
+/-- Disjointness of the q2 and q3 one-limb byte-pack blocks within
+    `mloadFourLimbsCode`. q2 spans `base + 192 .. base + 284`, q3 spans
+    `base + 284 .. base + 376`; both are 23-instruction `mloadOneLimbProg`
+    blocks expressible as `CodeReq.ofProg`. -/
+private theorem mloadFourLimbs_q2_disjoint_q3
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    CodeReq.Disjoint
+      (mloadOneLimbCode addrReg byteReg accReg
+        8 9 10 11 12 13 14 15 16 (base + 192))
+      (mloadOneLimbCode addrReg byteReg accReg
+        0 1 2 3 4 5 6 7 24 (base + 284)) := by
+  rw [mloadOneLimbCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  refine CodeReq.ofProg_disjoint_range_len _ _ 23 _ _ 23 ?_ ?_ ?_
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · intro k1 k2 hk1 hk2; bv_omega
+
+/-- Subsumption witness: the q3 one-limb byte-pack block, placed at
+    `base + 284 .. base + 376`, is the fourth (rightmost) union member of
+    `mloadFourLimbsCode`. Proved by stepping past q0, q1, and q2 with
+    `mono_union_right` (using disjointness with each), reaching the tail
+    position of the innermost union which is itself the q3 block.
+
+    Consumer: `calldataload_window_one_limb_q3_stack_spec_within`
+    (Calldata/LoadStackCode.lean) — sister to the q0 / q1 / q2 witnesses,
+    closing the four sub-slices of `evm-asm-pgeuo` (#104). -/
+theorem mloadFourLimbsCode_one_limb_q3_sub
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) a = some i →
+      (mloadFourLimbsCode addrReg byteReg accReg base) a = some i := by
+  unfold mloadFourLimbsCode
+  exact CodeReq.mono_union_right
+    (mloadFourLimbs_q0_disjoint_q3 addrReg byteReg accReg base)
+    (CodeReq.mono_union_right
+      (mloadFourLimbs_q1_disjoint_q3 addrReg byteReg accReg base)
+      (CodeReq.mono_union_right
+        (mloadFourLimbs_q2_disjoint_q3 addrReg byteReg accReg base)
+        (fun _ _ h => h)))
+
 theorem mload_four_limbs_stack_spec_within
     {n : Nat} {P Q : Assertion}
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
