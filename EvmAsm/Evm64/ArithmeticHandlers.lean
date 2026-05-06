@@ -58,6 +58,36 @@ def arithmeticHandlerTable : HandlerTable :=
     (op : EvmWord → EvmWord → EvmWord) (a : EvmWord) :
     binaryStack? op [a] = none := rfl
 
+theorem binaryStack?_eq_some_iff
+    (op : EvmWord → EvmWord → EvmWord)
+    (stack stack' : List EvmWord) :
+    binaryStack? op stack = some stack' ↔
+      ∃ a b rest, stack = a :: b :: rest ∧ stack' = op a b :: rest := by
+  constructor
+  · intro h_stack
+    rcases stack with _ | ⟨a, _ | ⟨b, rest⟩⟩ <;>
+      simp [binaryStack?] at h_stack
+    cases h_stack
+    exact ⟨a, b, rest, rfl, rfl⟩
+  · rintro ⟨a, b, rest, rfl, rfl⟩
+    rfl
+
+theorem binaryStack?_eq_none_iff
+    (op : EvmWord → EvmWord → EvmWord) (stack : List EvmWord) :
+    binaryStack? op stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_stack
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [binaryStack?] at h_stack
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 theorem binaryHandler_stack_of_binaryStack?_some
     {op : EvmWord → EvmWord → EvmWord} {state : EvmState}
     {stack' : List EvmWord}
