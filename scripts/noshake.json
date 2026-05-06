@@ -1,6 +1,7 @@
 {"ignoreImport": ["Init", "Lean"],
  "ignore":
- {"EvmAsm.Rv64.ByteOps":
+ {"EvmAsm.Evm64.Accelerators.SyscallIds": ["EvmAsm.Rv64.Basic"],
+  "EvmAsm.Rv64.ByteOps":
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic",
    "Std.Tactic.BVDecide"],
   "EvmAsm.Rv64.HalfwordOps":
