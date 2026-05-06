@@ -163,6 +163,23 @@ theorem decodeSelfdestructStack?_eq_none_iff (stack : List EvmWord) :
     · rfl
     · simp at h_len
 
+theorem decodeReturnStack?_none_of_empty :
+    decodeReturnStack? [] = none := rfl
+
+theorem decodeReturnStack?_none_of_one
+    (offset : EvmWord) :
+    decodeReturnStack? [offset] = none := rfl
+
+theorem decodeRevertStack?_none_of_empty :
+    decodeRevertStack? [] = none := rfl
+
+theorem decodeRevertStack?_none_of_one
+    (offset : EvmWord) :
+    decodeRevertStack? [offset] = none := rfl
+
+theorem decodeSelfdestructStack?_none_of_empty :
+    decodeSelfdestructStack? [] = none := rfl
+
 theorem decodeReturnStack?_dataRange
     (offset size : EvmWord) (rest : List EvmWord) :
     dataRange (Option.getD
