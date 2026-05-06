@@ -361,6 +361,52 @@ theorem mload_four_limbs_stack_spec_within
       offReg byteReg accReg addrReg memBaseReg base)
 
 /--
+MLOAD combined stack spec: sequentially compose the prologue half
+(`mload_prologue_stack_spec_within`) with a caller-supplied four-limbs
+core triple (over `mloadStackCode`) via `cpsTripleWithin_seq_same_cr`.
+
+Direct MLOAD analog of
+`Calldata.LoadStackCode.calldataload_window_combined_stack_spec_within`.
+The prologue threads `(sp ↦ₘ offset)` and the resolved address registers
+through to the four-limbs side; the caller only needs to supply a
+four-limbs triple whose precondition matches the prologue's postcondition
+(after the `addrReg ← memBase + offset` resolve) and whose postcondition
+is an arbitrary `Q`.
+
+Foundation lemma toward the upcoming `evm_mload_stack_spec_within`
+(evm-asm-lrhou / GH #53 follow-up): subsequent slices instantiate the
+four-limbs hypothesis with a concrete byte-window read (e.g. via
+`mload_four_limbs_stack_spec_within` together with a concrete byte-window
+core spec).
+
+Distinctive token: mload_combined_stack_spec_within #53.
+-/
+theorem mload_combined_stack_spec_within
+    {n : Nat} {Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 376)
+        (mloadStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        Q) :
+    cpsTripleWithin (2 + n) base (base + 376)
+      (mloadStackCode offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (mload_prologue_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
+    h4
+
+/--
   The 256-bit value loaded by MLOAD when each output limb is assembled from
   an adjacent low/high dword pair. The four limbs are stored in EVM-stack
   little-endian order: limb 0 at `sp`, limb 3 at `sp + 24`.
