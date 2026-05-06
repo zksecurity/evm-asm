@@ -97,27 +97,4 @@ def div128Quot_v4 (uHi uLo vTop : Word) : Word :=
   let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo div_un0
   (q1'' <<< (32 : BitVec 6).toNat) ||| q0''
 
-/-- Idempotency of `div128Quot_phase2b_q0'` when its inner BLTU doesn't
-    fire on q's mul. If the outer guard `rhat >>> 32 = 0` fails OR the
-    inner BLTU `(rhat << 32) | divUn < q * dLo` fails, the helper
-    returns its input `q` unchanged.
-
-    A small reusable algebraic identity, useful any time we need to
-    show a `phase2b_q0'` call is a no-op (e.g. when the algorithm has
-    already converged at a given correction step). -/
-theorem div128Quot_phase2b_q0'_eq_self_of_no_bltu
-    (q rhat dLo divUn : Word)
-    (h : ¬ (rhat >>> (32 : BitVec 6).toNat = 0 ∧
-        BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| divUn) (q * dLo))) :
-    div128Quot_phase2b_q0' q rhat dLo divUn = q := by
-  unfold div128Quot_phase2b_q0'
-  by_cases h_guard : rhat >>> (32 : BitVec 6).toNat = 0
-  · simp only [h_guard, if_true]
-    have h_bltu : ¬ BitVec.ult ((rhat <<< (32 : BitVec 6).toNat) ||| divUn) (q * dLo) :=
-      fun hb => h ⟨h_guard, hb⟩
-    simp only [Bool.not_eq_true] at h_bltu
-    rw [h_bltu]
-    rfl
-  · simp only [h_guard, if_false]
-
 end EvmAsm.Evm64
