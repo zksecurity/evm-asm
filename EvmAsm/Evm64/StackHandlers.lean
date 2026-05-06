@@ -97,6 +97,11 @@ theorem popHandler_nil_stack (state : EvmState) :
       popHandler state := by
   simp [HandlerTable.dispatchOpcode]
 
+theorem dispatchOpcode_stackHandlerTable_POP_status (state : EvmState) :
+    (HandlerTable.dispatchOpcode stackHandlerTable .POP state).status =
+      (popHandler state).status := by
+  rw [dispatchOpcode_stackHandlerTable_POP state]
+
 @[simp] theorem dispatchOpcode?_stackHandlerTable_PUSH0 (state : EvmState) :
     HandlerTable.dispatchOpcode? stackHandlerTable .PUSH0 state =
       some (push0Handler state) := by
@@ -106,6 +111,12 @@ theorem popHandler_nil_stack (state : EvmState) :
     HandlerTable.dispatchOpcode stackHandlerTable .PUSH0 state =
       push0Handler state := by
   simp [HandlerTable.dispatchOpcode]
+
+theorem dispatchOpcode_stackHandlerTable_PUSH0_status (state : EvmState) :
+    (HandlerTable.dispatchOpcode stackHandlerTable .PUSH0 state).status =
+      state.status := by
+  rw [dispatchOpcode_stackHandlerTable_PUSH0 state]
+  exact push0Handler_status state
 
 end StackHandlers
 
