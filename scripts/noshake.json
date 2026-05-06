@@ -196,6 +196,12 @@
   ["EvmAsm.Evm64.Shift.ComposeBase"],
   "EvmAsm.Evm64.Shift.SarCompose":
   ["EvmAsm.Evm64.Shift.ComposeBase"],
+  "EvmAsm.Evm64.Compare.LimbSpec":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.Shift.LimbSpec":
+  ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.NormDefs":
   ["EvmAsm.Rv64.Basic"],
   "EvmAsm.Evm64.DivMod.LoopBodyN1":
