@@ -11,8 +11,6 @@
 
 import EvmAsm.Evm64.AddMod.Program
 import EvmAsm.Rv64.SyscallSpecs
-import EvmAsm.Rv64.Tactics.XSimp
-import EvmAsm.Rv64.Tactics.RunBlock
 
 namespace EvmAsm.Evm64
 
