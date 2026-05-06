@@ -38,8 +38,6 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
-import EvmAsm.Rv64.SepLogic
-
 namespace EvmAsm.Evm64
 
 /-- Layout of the EXP routine's `sp`-relative internal scratch cells.

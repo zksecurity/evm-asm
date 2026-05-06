@@ -77,6 +77,84 @@ def bitwiseHandlerTable : HandlerTable :=
     (op : EvmWord → EvmWord) :
     unaryStack? op [] = none := rfl
 
+theorem binaryStack?_eq_some_iff
+    (op : EvmWord → EvmWord → EvmWord) (stack stack' : List EvmWord) :
+    binaryStack? op stack = some stack' ↔
+      ∃ a b rest, stack = a :: b :: rest ∧ stack' = op a b :: rest := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp [binaryStack?] at h_stack
+    | cons a stackTail =>
+        cases stackTail with
+        | nil =>
+            simp [binaryStack?] at h_stack
+        | cons b rest =>
+            simp [binaryStack?] at h_stack
+            exact ⟨a, b, rest, rfl, h_stack.symm⟩
+  · rintro ⟨a, b, rest, rfl, rfl⟩
+    simp [binaryStack?]
+
+theorem binaryStack?_eq_none_iff
+    (op : EvmWord → EvmWord → EvmWord) (stack : List EvmWord) :
+    binaryStack? op stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp
+    | cons a stackTail =>
+        cases stackTail with
+        | nil =>
+            simp
+        | cons b rest =>
+            simp [binaryStack?] at h_stack
+  · intro h_len
+    cases stack with
+    | nil =>
+        simp [binaryStack?]
+    | cons a stackTail =>
+        cases stackTail with
+        | nil =>
+            simp [binaryStack?]
+        | cons b rest =>
+            exfalso
+            simp at h_len
+            omega
+
+theorem unaryStack?_eq_some_iff
+    (op : EvmWord → EvmWord) (stack stack' : List EvmWord) :
+    unaryStack? op stack = some stack' ↔
+      ∃ a rest, stack = a :: rest ∧ stack' = op a :: rest := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp [unaryStack?] at h_stack
+    | cons a rest =>
+        simp [unaryStack?] at h_stack
+        exact ⟨a, rest, rfl, h_stack.symm⟩
+  · rintro ⟨a, rest, rfl, rfl⟩
+    simp [unaryStack?]
+
+theorem unaryStack?_eq_none_iff
+    (op : EvmWord → EvmWord) (stack : List EvmWord) :
+    unaryStack? op stack = none ↔ stack.length < 1 := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp
+    | cons a rest =>
+        simp [unaryStack?] at h_stack
+  · intro h_len
+    cases stack with
+    | nil =>
+        simp [unaryStack?]
+    | cons a rest =>
+        simp at h_len
+
 theorem binaryHandler_stack_of_binaryStack?_some
     {op : EvmWord → EvmWord → EvmWord} {state : EvmState}
     {stack' : List EvmWord}
@@ -136,6 +214,37 @@ theorem unaryHandler_status_of_unaryStack?_none
 
 @[simp] theorem bitwiseHandler?_NOT :
     bitwiseHandler? .NOT = some notHandler := rfl
+
+@[simp] theorem eq_andHandler_iff (handler : OpcodeHandler) :
+    andHandler = handler ↔ handler = andHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_orHandler_iff (handler : OpcodeHandler) :
+    orHandler = handler ↔ handler = orHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_xorHandler_iff (handler : OpcodeHandler) :
+    xorHandler = handler ↔ handler = xorHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_notHandler_iff (handler : OpcodeHandler) :
+    notHandler = handler ↔ handler = notHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem bitwiseHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    bitwiseHandler? opcode = some handler ↔
+      (opcode = .AND ∧ handler = andHandler) ∨
+        (opcode = .OR ∧ handler = orHandler) ∨
+          (opcode = .XOR ∧ handler = xorHandler) ∨
+            (opcode = .NOT ∧ handler = notHandler) := by
+  cases opcode <;> simp [bitwiseHandler?]
+
+theorem bitwiseHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    bitwiseHandler? opcode = none ↔
+      opcode ≠ .AND ∧ opcode ≠ .OR ∧ opcode ≠ .XOR ∧ opcode ≠ .NOT := by
+  cases opcode <;> simp [bitwiseHandler?]
 
 theorem dispatchOpcode?_bitwiseHandlerTable_AND
     (state : EvmState) :

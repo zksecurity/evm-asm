@@ -40,6 +40,26 @@ def stackHandlerTable : HandlerTable :=
 @[simp] theorem stackHandler?_PUSH0 :
     stackHandler? .PUSH0 = some push0Handler := rfl
 
+@[simp] theorem eq_popHandler_iff (handler : OpcodeHandler) :
+    popHandler = handler ↔ handler = popHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_push0Handler_iff (handler : OpcodeHandler) :
+    push0Handler = handler ↔ handler = push0Handler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem stackHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    stackHandler? opcode = some handler ↔
+      (opcode = .POP ∧ handler = popHandler) ∨
+        (opcode = .PUSH0 ∧ handler = push0Handler) := by
+  cases opcode <;> simp [stackHandler?]
+
+theorem stackHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    stackHandler? opcode = none ↔ opcode ≠ .POP ∧ opcode ≠ .PUSH0 := by
+  cases opcode <;> simp [stackHandler?]
+
 theorem popHandler_cons_stack
     (state : EvmState) (word : EvmWord) (stack : List EvmWord) :
     (popHandler { state with stack := word :: stack }).stack = stack := rfl

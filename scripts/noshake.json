@@ -9,6 +9,8 @@
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
   "EvmAsm.Rv64.RLP.Phase1":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.ExtractPure"],
+  "EvmAsm.Rv64.RLP.Phase2Short":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Rv64.RLP.Phase3SingleByte":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE2": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
@@ -25,6 +27,9 @@
   ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE5", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase2LongLoad":
   ["EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.RLP.Phase2LongAcc":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Rv64.RLP.Phase4HintRead":
   ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
@@ -43,6 +48,8 @@
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
   "EvmAsm.Evm64.SignExtend.Compose": ["EvmAsm.Evm64.EvmWordArith.Common"],
   "EvmAsm.Evm64.EvmWordArith.Normalization": ["EvmAsm.Evm64.EvmWordArith.MulSubChain"],
+  "EvmAsm.Evm64.DivMod.AddrNorm":
+  ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Evm64.DivMod.AddrNormAttr"],
   "EvmAsm.Evm64.DivMod.Spec.N1V4DivBridge":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4"],
   "EvmAsm.Evm64.DivMod.Spec.N1V4ModBridge":
@@ -50,6 +57,8 @@
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Bridge":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeFalse",
    "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeTrue"],
+  "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Full":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Bridge"],
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeFalse":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Branches"],
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeTrue":
@@ -265,6 +274,8 @@
   ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Calldata.SizeSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+ "EvmAsm.Rv64.ControlFlow":
+  ["EvmAsm.Rv64.GenericSpecs", "EvmAsm.Rv64.Tactics.SpecDb"],
  "EvmAsm.Evm64.InterpreterFetchProgram":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
@@ -319,4 +330,45 @@
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
-"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.Evm64.Dispatch.TailSpec":
+ ["EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+"EvmAsm.Evm64.Calldata.CopySpec":
+ ["EvmAsm.Evm64.Calldata.CopyProgram", "EvmAsm.Rv64.SyscallSpecs",
+  "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Evm64.DivMod.Callable": ["EvmAsm.Evm64.DivMod.Compose.Base"],
+"EvmAsm.Rv64.RLP.Phase3LongList":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3LongString":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3ShortList":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3ShortString":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.EL.RLP.ReadLengthBridge": ["EvmAsm.EL.RLP.ReadLength"],
+"EvmAsm.Evm64.Dispatch.Compose": ["EvmAsm.Evm64.Dispatch.EntryAddrBridge"],
+"EvmAsm.Evm64.Dispatch.Spec": ["EvmAsm.Evm64.Dispatch.Compose"],
+"EvmAsm.Evm64.DivMod.Compose.FullPath":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA", "EvmAsm.Evm64.DivMod.Compose.Epilogue",
+  "EvmAsm.Evm64.DivMod.Compose.ModEpilogue"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN1":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN2":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN3":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Spec.CallSkip":
+ ["EvmAsm.Evm64.EvmWordArith.Div128Shift0",
+  "EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract",
+  "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2",
+  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
+"EvmAsm.Rv64.InstructionSpecs": ["EvmAsm.Rv64.GenericSpecs"],
+"EvmAsm.Rv64.SyscallSpecs":
+ ["EvmAsm.Rv64.InstructionSpecs", "EvmAsm.Rv64.ByteOps",
+  "EvmAsm.Rv64.HalfwordOps", "EvmAsm.Rv64.WordOps",
+  "EvmAsm.Rv64.Tactics.SpecDb"],
+"EvmAsm.Rv64.HintSpecs": ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"]}}

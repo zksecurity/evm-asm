@@ -27,6 +27,46 @@ theorem decodeKeccakStack?_some
     decodeKeccakStack? (offset :: size :: rest) =
       some (keccakArgs offset size) := rfl
 
+/--
+`decodeKeccakStack?` returns `some` exactly when the stack starts with two
+elements `offset, size`, and the decoded args are `keccakArgs offset size`.
+
+Distinctive token: KeccakArgsStackDecode.decodeKeccakStack?_eq_some_iff #111.
+-/
+theorem decodeKeccakStack?_eq_some_iff
+    (stack : List EvmWord) (decoded : Args) :
+    decodeKeccakStack? stack = some decoded ↔
+      ∃ offset size rest,
+        stack = offset :: size :: rest ∧ decoded = keccakArgs offset size := by
+  constructor
+  · intro h_decode
+    cases stack with
+    | nil => simp [decodeKeccakStack?] at h_decode
+    | cons offset tail =>
+        cases tail with
+        | nil => simp [decodeKeccakStack?] at h_decode
+        | cons size rest =>
+            simp [decodeKeccakStack?] at h_decode
+            exact ⟨offset, size, rest, rfl, h_decode.symm⟩
+  · rintro ⟨offset, size, rest, rfl, rfl⟩
+    rfl
+
+/--
+`decodeKeccakStack?` returns `none` exactly when the stack has fewer than
+two elements.
+
+Distinctive token: KeccakArgsStackDecode.decodeKeccakStack?_eq_none_iff #111.
+-/
+theorem decodeKeccakStack?_eq_none_iff
+    (stack : List EvmWord) :
+    decodeKeccakStack? stack = none ↔ stack.length < 2 := by
+  cases stack with
+  | nil => simp [decodeKeccakStack?]
+  | cons offset tail =>
+      cases tail with
+      | nil => simp [decodeKeccakStack?]
+      | cons size rest => simp [decodeKeccakStack?]
+
 theorem decoded_inputRange (offset size : EvmWord) :
     inputRange (keccakArgs offset size) =
       { offset := offset, size := size } := rfl

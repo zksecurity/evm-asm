@@ -58,6 +58,53 @@ def shiftHandlerTable : HandlerTable :=
     (op : EvmWord → Nat → EvmWord) (shift : EvmWord) :
     shiftStack? op [shift] = none := rfl
 
+theorem shiftStack?_eq_some_iff
+    (op : EvmWord → Nat → EvmWord) (stack stack' : List EvmWord) :
+    shiftStack? op stack = some stack' ↔
+      ∃ shift value rest, stack = shift :: value :: rest ∧
+        stack' = op value shift.toNat :: rest := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp [shiftStack?] at h_stack
+    | cons shift stackTail =>
+        cases stackTail with
+        | nil =>
+            simp [shiftStack?] at h_stack
+        | cons value rest =>
+            simp [shiftStack?] at h_stack
+            exact ⟨shift, value, rest, rfl, h_stack.symm⟩
+  · rintro ⟨shift, value, rest, rfl, rfl⟩
+    simp [shiftStack?]
+
+theorem shiftStack?_eq_none_iff
+    (op : EvmWord → Nat → EvmWord) (stack : List EvmWord) :
+    shiftStack? op stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp
+    | cons shift stackTail =>
+        cases stackTail with
+        | nil =>
+            simp
+        | cons value rest =>
+            simp [shiftStack?] at h_stack
+  · intro h_len
+    cases stack with
+    | nil =>
+        simp [shiftStack?]
+    | cons shift stackTail =>
+        cases stackTail with
+        | nil =>
+            simp [shiftStack?]
+        | cons value rest =>
+            exfalso
+            simp at h_len
+            omega
+
 theorem shiftHandler_stack_of_shiftStack?_some
     {op : EvmWord → Nat → EvmWord} {state : EvmState}
     {stack' : List EvmWord}

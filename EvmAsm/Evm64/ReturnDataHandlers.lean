@@ -32,6 +32,21 @@ def returnDataSizeHandlerTable : HandlerTable :=
 @[simp] theorem returnDataHandler?_RETURNDATASIZE :
     returnDataHandler? .RETURNDATASIZE = some returnDataSizeHandler := rfl
 
+@[simp] theorem eq_returnDataSizeHandler_iff (handler : OpcodeHandler) :
+    returnDataSizeHandler = handler ↔ handler = returnDataSizeHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem returnDataHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    returnDataHandler? opcode = some handler ↔
+      opcode = .RETURNDATASIZE ∧ handler = returnDataSizeHandler := by
+  cases opcode <;> simp [returnDataHandler?]
+
+theorem returnDataHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    returnDataHandler? opcode = none ↔ opcode ≠ .RETURNDATASIZE := by
+  cases opcode <;> simp [returnDataHandler?]
+
 @[simp] theorem returnDataSizeHandler_stack (state : EvmState) :
     (returnDataSizeHandler state).stack =
       returnDataSizeWord state :: state.stack := rfl

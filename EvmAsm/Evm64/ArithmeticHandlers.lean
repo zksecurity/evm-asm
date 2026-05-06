@@ -58,6 +58,36 @@ def arithmeticHandlerTable : HandlerTable :=
     (op : EvmWord → EvmWord → EvmWord) (a : EvmWord) :
     binaryStack? op [a] = none := rfl
 
+theorem binaryStack?_eq_some_iff
+    (op : EvmWord → EvmWord → EvmWord)
+    (stack stack' : List EvmWord) :
+    binaryStack? op stack = some stack' ↔
+      ∃ a b rest, stack = a :: b :: rest ∧ stack' = op a b :: rest := by
+  constructor
+  · intro h_stack
+    rcases stack with _ | ⟨a, _ | ⟨b, rest⟩⟩ <;>
+      simp [binaryStack?] at h_stack
+    cases h_stack
+    exact ⟨a, b, rest, rfl, rfl⟩
+  · rintro ⟨a, b, rest, rfl, rfl⟩
+    rfl
+
+theorem binaryStack?_eq_none_iff
+    (op : EvmWord → EvmWord → EvmWord) (stack : List EvmWord) :
+    binaryStack? op stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_stack
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [binaryStack?] at h_stack
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 theorem binaryHandler_stack_of_binaryStack?_some
     {op : EvmWord → EvmWord → EvmWord} {state : EvmState}
     {stack' : List EvmWord}
@@ -97,6 +127,32 @@ theorem binaryHandler_status_of_binaryStack?_none
 
 @[simp] theorem arithmeticHandler?_MUL :
     arithmeticHandler? .MUL = some mulHandler := rfl
+
+@[simp] theorem eq_addHandler_iff (handler : OpcodeHandler) :
+    addHandler = handler ↔ handler = addHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_subHandler_iff (handler : OpcodeHandler) :
+    subHandler = handler ↔ handler = subHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_mulHandler_iff (handler : OpcodeHandler) :
+    mulHandler = handler ↔ handler = mulHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem arithmeticHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    arithmeticHandler? opcode = some handler ↔
+      (opcode = .ADD ∧ handler = addHandler) ∨
+        (opcode = .SUB ∧ handler = subHandler) ∨
+          (opcode = .MUL ∧ handler = mulHandler) := by
+  cases opcode <;> simp [arithmeticHandler?]
+
+theorem arithmeticHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    arithmeticHandler? opcode = none ↔
+      opcode ≠ .ADD ∧ opcode ≠ .SUB ∧ opcode ≠ .MUL := by
+  cases opcode <;> simp [arithmeticHandler?]
 
 theorem dispatchOpcode?_arithmeticHandlerTable_ADD
     (state : EvmState) :
