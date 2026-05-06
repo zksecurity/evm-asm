@@ -41,12 +41,27 @@ theorem loopTrace_succ_decode
       opcode :: loopTrace handler nSteps (InterpreterLoop.stepWithHandler handler state) := by
   simp [loopTrace, h_status, h_decode]
 
+theorem loopTrace_one_decode
+    (handler : Handler) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    loopTrace handler 1 state = [opcode] := by
+  rw [loopTrace_succ_decode handler 0 h_status h_decode]
+  rfl
+
 theorem loopTrace_succ_unsupported
     (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .running)
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
     loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status, h_decode]
+
+theorem loopTrace_one_unsupported
+    (handler : Handler) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
+    loopTrace handler 1 state = [] := by
+  exact loopTrace_succ_unsupported handler 0 h_status h_decode
 
 theorem loopTrace_succ_stopped
     (handler : Handler) (nSteps : Nat) {state : EvmState}
