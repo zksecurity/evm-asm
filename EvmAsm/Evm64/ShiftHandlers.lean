@@ -207,5 +207,33 @@ theorem dispatchOpcode_shiftHandlerTable_SAR
       sarHandler state := by
   exact HandlerTable.dispatchOpcode_some shiftHandler?_SAR state
 
+theorem dispatchOpcode_shiftHandlerTable_SHL_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : shiftStack? (fun value n => value <<< n) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode shiftHandlerTable .SHL state).status =
+      state.status := by
+  rw [dispatchOpcode_shiftHandlerTable_SHL state]
+  simp [shlHandler, shiftHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_shiftHandlerTable_SHR_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : shiftStack? (fun value n => value >>> n) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode shiftHandlerTable .SHR state).status =
+      state.status := by
+  rw [dispatchOpcode_shiftHandlerTable_SHR state]
+  simp [shrHandler, shiftHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_shiftHandlerTable_SAR_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack :
+      shiftStack? (fun value n => BitVec.sshiftRight value n) state.stack =
+        some stack') :
+    (HandlerTable.dispatchOpcode shiftHandlerTable .SAR state).status =
+      state.status := by
+  rw [dispatchOpcode_shiftHandlerTable_SAR state]
+  simp [sarHandler, shiftHandler, h_stack, EvmState.withStack]
+
 end ShiftHandlers
 end EvmAsm.Evm64
