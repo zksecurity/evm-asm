@@ -202,6 +202,12 @@
   ["EvmAsm.Evm64.Shift.ComposeBase"],
   "EvmAsm.Evm64.Shift.SarCompose":
   ["EvmAsm.Evm64.Shift.ComposeBase"],
+  "EvmAsm.Evm64.Shift.Compose":
+  ["EvmAsm.Evm64.Shift.ComposeBase"],
+  "EvmAsm.Evm64.Shift.ShlSpec":
+  ["EvmAsm.Evm64.Shift.LimbSpec"],
+  "EvmAsm.Evm64.Shift.SarSpec":
+  ["EvmAsm.Evm64.Shift.LimbSpec"],
   "EvmAsm.Evm64.Compare.LimbSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.Shift.LimbSpec":
