@@ -50,6 +50,16 @@ def acceleratorSelectors : List Nat :=
    bls12_pairing, bls12_map_fp_to_g1, bls12_map_fp2_to_g2,
    secp256r1_verify]
 
+/-- The canonical accelerator selector table contains exactly 19 entries. -/
+theorem acceleratorSelectors_length :
+    acceleratorSelectors.length = 19 := by
+  decide
+
+/-- The canonical accelerator selector table has no duplicate IDs. -/
+theorem acceleratorSelectors_nodup :
+    acceleratorSelectors.Nodup := by
+  decide
+
 /-- Decidable predicate: `id` is one of the accelerator selectors. -/
 def isAccelerator (id : Nat) : Prop := id ∈ acceleratorSelectors
 
@@ -83,6 +93,10 @@ theorem dispatchWord_ne_eokWord (id : Nat) :
     dispatchWord id ≠ Rv64.zkvmStatusEokWord := by
   rw [dispatchWord_eq_efailWord]
   exact Rv64.zkvmStatusEokWord_ne_efailWord.symm
+
+theorem dispatchWord_decodes_efail (id : Nat) :
+    Rv64.zkvmStatusFromWord? (dispatchWord id) = some ZkvmStatus.efail := by
+  simp [dispatchWord]
 
 /-! ## Sanity properties
 
