@@ -92,6 +92,29 @@ theorem runKeccakStack?_some
     (accelerator : Accelerator) (memory : MemoryReader) (offset : EvmWord) :
     runKeccakStack? accelerator memory [offset] = none := rfl
 
+theorem runKeccakStack?_eq_none_iff
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (stack : List EvmWord) :
+    runKeccakStack? accelerator memory stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_run
+    cases stack with
+    | nil => simp
+    | cons offset tail =>
+        cases tail with
+        | nil => simp
+        | cons size rest =>
+            simp [runKeccakStack?] at h_run
+  · intro h_len
+    cases stack with
+    | nil => rfl
+    | cons offset tail =>
+        cases tail with
+        | nil => rfl
+        | cons size rest =>
+            simp at h_len
+            omega
+
 theorem runKeccakStack?_length
     {accelerator : Accelerator} {memory : MemoryReader}
     {stack out : List EvmWord}
