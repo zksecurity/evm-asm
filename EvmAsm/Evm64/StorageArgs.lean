@@ -148,6 +148,27 @@ theorem decodeStorageStack?_sstore_eq_none_iff
             simp [argumentCount] at h_len
             omega
 
+theorem decodeStorageStack?_eq_some_iff
+    (kind : Kind) (stack : List EvmWord) (decoded : Decoded) :
+    decodeStorageStack? kind stack = some decoded ↔
+      match kind with
+      | .sload =>
+          ∃ slot rest,
+            stack = slot :: rest ∧ decoded = .sload (mkSLoad slot)
+      | .sstore =>
+          ∃ slot value rest,
+            stack = slot :: value :: rest ∧ decoded = .sstore (mkSStore slot value) := by
+  cases kind with
+  | sload => exact decodeStorageStack?_sload_eq_some_iff stack decoded
+  | sstore => exact decodeStorageStack?_sstore_eq_some_iff stack decoded
+
+theorem decodeStorageStack?_eq_none_iff
+    (kind : Kind) (stack : List EvmWord) :
+    decodeStorageStack? kind stack = none ↔ stack.length < argumentCount kind := by
+  cases kind with
+  | sload => exact decodeStorageStack?_sload_eq_none_iff stack
+  | sstore => exact decodeStorageStack?_sstore_eq_none_iff stack
+
 theorem decodedKind_sload (slot : EvmWord) :
     decodedKind (.sload (mkSLoad slot)) = .sload := rfl
 
