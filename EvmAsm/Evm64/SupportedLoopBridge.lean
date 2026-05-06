@@ -80,6 +80,26 @@ theorem loopFuel_supported_missing_invalid
   exact congrArg (InterpreterLoop.loopFuel supportedLoopHandler nSteps)
     (HandlerTable.dispatchOpcode_none h_lookup state)
 
+/--
+When the interpreter loop decodes a valid PUSHn opcode, one step through the
+supported-handler table has the same program-counter and stack effect as the
+executable PUSH bridge `PushExecEffect.effectFromCode`.
+
+Distinctive token:
+SupportedLoopBridge.stepWithSupportedHandler_PUSH_effectFromCode #101 #107 #108.
+-/
+theorem stepWithSupportedHandler_PUSH_effectFromCode
+    {state : EvmState} {n : Nat}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some (.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (InterpreterLoop.stepWithHandler supportedLoopHandler state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+    h_valid state
+
 end SupportedLoopBridge
 
 end EvmAsm.Evm64
