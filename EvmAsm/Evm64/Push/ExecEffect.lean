@@ -94,6 +94,21 @@ theorem effectFromCode_stack
     (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
     (effectFromCode code pc n stack).stack = stackAfterPush code pc n stack := rfl
 
+/--
+The executable PUSH effect stack is exactly its decoded word consed onto the
+input stack.
+
+Distinctive token: PushExecEffect.effectFromCode_stack_eq_word_cons #101 #107.
+-/
+theorem effectFromCode_stack_eq_word_cons
+    (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
+    (effectFromCode code pc n stack).stack =
+      (effectFromCode code pc n stack).word :: stack := rfl
+
+theorem effectFromCode_pc_eq_pc_plus_width
+    (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
+    (effectFromCode code pc n stack).pc = pc + 1 + n := rfl
+
 theorem effectFromCode_stack_head
     (code : List (BitVec 8)) (pc n : Nat) (stack : List EvmWord) :
     (effectFromCode code pc n stack).stack.head? =

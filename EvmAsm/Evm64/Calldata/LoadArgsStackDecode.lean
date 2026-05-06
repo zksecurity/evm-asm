@@ -43,6 +43,22 @@ theorem decodeCallDataLoadStack?_eq_some_iff
   · rintro ⟨offset, rest, rfl, rfl⟩
     rfl
 
+/--
+CALLDATALOAD stack decoding fails exactly when the stack is empty.
+
+Distinctive token:
+CallDataLoadArgsStackDecode.decodeCallDataLoadStack?_eq_none_iff #104 #107.
+-/
+theorem decodeCallDataLoadStack?_eq_none_iff
+    (stack : List EvmWord) :
+    decodeCallDataLoadStack? stack = none ↔ stack = [] := by
+  cases stack with
+  | nil => simp [decodeCallDataLoadStack?]
+  | cons offset rest => simp [decodeCallDataLoadStack?]
+
+theorem decodeCallDataLoadStack?_none_of_empty :
+    decodeCallDataLoadStack? [] = none := rfl
+
 theorem decodeCallDataLoadStack?_offset
     (offset : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.offset)
