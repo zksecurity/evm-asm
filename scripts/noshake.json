@@ -25,6 +25,12 @@
   ["EvmAsm.Rv64.RLP.Phase1CascadePrefixE5", "EvmAsm.Rv64.RLP.Phase1Disjoint"],
   "EvmAsm.Rv64.RLP.Phase2LongLoad":
   ["EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.RLP.Phase4HintRead":
+  ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.RLP.Phase4HintLen":
+  ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.XPerm":
   ["EvmAsm.Rv64.SepLogic"],
   "EvmAsm.Rv64.Tactics.XPermPure":
