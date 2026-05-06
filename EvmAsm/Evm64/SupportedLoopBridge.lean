@@ -42,6 +42,40 @@ theorem stepWithSupportedHandler_of_lookup
   rw [stepWithSupportedHandler_of_decode h_decode]
   exact SupportedHandlers.dispatchOpcode_of_lookup h_lookup state
 
+/--
+When the supported interpreter loop decodes a valid PUSH opcode, the one-step
+handler has the same bundled PC and stack effect as the executable PUSH bridge.
+
+Distinctive token:
+SupportedLoopBridge.stepWithSupportedHandler_PUSH_effectFromCode
+#101 #107 #108.
+-/
+theorem stepWithSupportedHandler_PUSH_effectFromCode
+    {state : EvmState} {n : Nat}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (InterpreterLoop.stepWithHandler supportedLoopHandler state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+    h_valid state
+
+/--
+When the combined supported loop decodes STOP, one interpreter step terminates
+successfully.
+
+Distinctive token: SupportedLoopBridge.stepWithSupportedHandler_STOP #107 #108 #113.
+-/
+theorem stepWithSupportedHandler_STOP
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    InterpreterLoop.stepWithHandler supportedLoopHandler state = state.stop := by
+  exact stepWithSupportedHandler_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_STOP
+
 theorem stepWithSupportedHandler_missing_invalid
     {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
@@ -68,6 +102,15 @@ theorem loopFuel_supported_succ_running_lookup
       InterpreterLoop.loopFuel supportedLoopHandler nSteps (handler state) := by
   rw [loopFuel_supported_succ_running_decode nSteps h_status h_decode]
   rw [SupportedHandlers.dispatchOpcode_of_lookup h_lookup state]
+
+theorem loopFuel_supported_succ_running_STOP
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state =
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps state.stop := by
+  exact loopFuel_supported_succ_running_lookup nSteps h_status h_decode
+    SupportedHandlers.supportedHandlerTable_STOP
 
 theorem loopFuel_supported_missing_invalid
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
