@@ -38,6 +38,18 @@ def controlHandler? : EvmOpcode → Option OpcodeHandler
   | .JUMPDEST => some jumpdestHandler
   | _ => none
 
+@[simp] theorem eq_pcHandler_iff (handler : OpcodeHandler) :
+    pcHandler = handler ↔ handler = pcHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_gasHandler_iff (handler : OpcodeHandler) :
+    gasHandler = handler ↔ handler = gasHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_jumpdestHandler_iff (handler : OpcodeHandler) :
+    jumpdestHandler = handler ↔ handler = jumpdestHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
 /-- Handler table fragment containing PC, GAS, and JUMPDEST entries.
     Distinctive token: ControlHandlers.controlHandlerTable #107. -/
 def controlHandlerTable : HandlerTable :=
@@ -51,6 +63,20 @@ def controlHandlerTable : HandlerTable :=
 
 @[simp] theorem controlHandler?_JUMPDEST :
     controlHandler? .JUMPDEST = some jumpdestHandler := rfl
+
+theorem controlHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    controlHandler? opcode = some handler ↔
+      (opcode = .PC ∧ handler = pcHandler) ∨
+        (opcode = .GAS ∧ handler = gasHandler) ∨
+          (opcode = .JUMPDEST ∧ handler = jumpdestHandler) := by
+  cases opcode <;> simp [controlHandler?]
+
+theorem controlHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    controlHandler? opcode = none ↔
+      opcode ≠ .PC ∧ opcode ≠ .GAS ∧ opcode ≠ .JUMPDEST := by
+  cases opcode <;> simp [controlHandler?]
 
 @[simp] theorem pcHandler_stack (state : EvmState) :
     (pcHandler state).stack = pcWord state :: state.stack := rfl
