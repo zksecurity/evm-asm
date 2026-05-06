@@ -41,6 +41,22 @@ theorem stepWithTableHandler_of_lookup
   rw [stepWithTableHandler_of_decode table h_decode]
   exact HandlerTable.dispatchOpcode_some h_lookup state
 
+theorem stepWithTableHandler_of_decode_status
+    (table : HandlerTable) {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler table) state).status =
+      (HandlerTable.dispatchOpcode table opcode state).status := by
+  rw [stepWithTableHandler_of_decode table h_decode]
+
+theorem stepWithTableHandler_of_lookup_status
+    {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
+    {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = some handler) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler table) state).status =
+      (handler state).status := by
+  rw [stepWithTableHandler_of_lookup h_decode h_lookup]
+
 theorem stepWithTableHandler_missing_invalid
     {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
