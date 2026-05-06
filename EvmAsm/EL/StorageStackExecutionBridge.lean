@@ -66,6 +66,23 @@ theorem stackRestAfterStorage?_sstore
 @[simp] theorem stackRestAfterStorage?_nil (kind : StorageKind) :
     stackRestAfterStorage? kind [] = none := rfl
 
+theorem runStorageStack?_eq_none_iff
+    (kind : StorageKind) (state : WorldState) (accesses : StorageAccessList)
+    (address : Address) (stackState : StorageStackState) :
+    runStorageStack? kind state accesses address stackState = none ↔
+      EvmAsm.Evm64.StorageArgs.decodeStorageStack? kind stackState.stack = none ∨
+        stackRestAfterStorage? kind stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runStorageStack?]
+      cases h_decode :
+          EvmAsm.Evm64.StorageArgs.decodeStorageStack? kind stack with
+      | none => simp
+      | some decoded =>
+          cases h_rest : stackRestAfterStorage? kind stack with
+          | none => simp
+          | some rest => simp
+
 theorem stackWordsFromDecoded_sload
     (state : WorldState) (accesses : StorageAccessList) (address : Address)
     (slot : EvmWord) :
