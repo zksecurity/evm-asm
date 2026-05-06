@@ -146,6 +146,24 @@ theorem accelerator_ids_in_range :
       0x100 ≤ id ∧ id < 0x113 := by
   decide
 
+/-! ## RV64 selector words -/
+
+/-- RV64 `t0` selector-register encoding for a syscall ID. -/
+def toWord (id : Nat) : BitVec 64 := BitVec.ofNat 64 id
+
+/-- The active framing and accelerator selectors remain pairwise distinct after
+lifting to RV64 selector-register words. -/
+theorem allSelectorWords_pairwiseDistinct :
+    [toWord halt, toWord commit, toWord hintLen, toWord hintRead,
+     toWord keccak256, toWord secp256k1_verify,
+     toWord secp256k1_ecrecover, toWord sha256, toWord ripemd160, toWord modexp,
+     toWord bn254_g1_add, toWord bn254_g1_mul, toWord bn254_pairing,
+     toWord blake2f, toWord kzg_point_eval,
+     toWord bls12_g1_add, toWord bls12_g1_msm, toWord bls12_g2_add, toWord bls12_g2_msm,
+     toWord bls12_pairing, toWord bls12_map_fp_to_g1, toWord bls12_map_fp2_to_g2,
+     toWord secp256r1_verify].Nodup := by
+  decide
+
 end SyscallId
 
 /-! ## RV64 Word lifts of the syscall IDs
