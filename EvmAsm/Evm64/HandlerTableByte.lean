@@ -47,6 +47,14 @@ def dispatchByte (table : HandlerTable) (b : Fin 256)
       HandlerTable.dispatchOpcode table opcode state := by
   simp [dispatchByte, h_decode]
 
+theorem dispatchByte_decoded_status
+    (table : HandlerTable) (b : Fin 256) (opcode : EvmOpcode)
+    (state : EvmState)
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode) :
+    (dispatchByte table b state).status =
+      (HandlerTable.dispatchOpcode table opcode state).status := by
+  rw [dispatchByte_decoded table b opcode state h_decode]
+
 @[simp] theorem dispatchByte_undecoded
     (table : HandlerTable) (b : Fin 256) (state : EvmState)
     (h_decode : EvmOpcode.decodeByte? b.val = none) :
@@ -61,6 +69,14 @@ theorem dispatchByte_decoded_lookup
     dispatchByte table b state = handler state := by
   rw [dispatchByte_decoded table b opcode state h_decode]
   exact HandlerTable.dispatchOpcode_some h_lookup state
+
+theorem dispatchByte_decoded_lookup_status
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (state : EvmState)
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = some handler) :
+    (dispatchByte table b state).status = (handler state).status := by
+  rw [dispatchByte_decoded_lookup state h_decode h_lookup]
 
 theorem dispatchByte_decoded_missing
     {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
