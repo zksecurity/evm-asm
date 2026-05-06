@@ -36,6 +36,9 @@ import EvmAsm.EL.Secp256k1VerifyEcallBridge
 import EvmAsm.EL.KeccakStackBridge
 import EvmAsm.EL.KeccakExecutionBridge
 import EvmAsm.EL.KeccakStackExecutionBridge
+import EvmAsm.EL.Secp256k1EcrecoverInputBridge
+import EvmAsm.EL.Secp256k1EcrecoverResultBridge
+import EvmAsm.EL.Secp256k1EcrecoverEcallBridge
 import EvmAsm.EL.ModexpInputBridge
 import EvmAsm.EL.ModexpResultBridge
 import EvmAsm.EL.ModexpEcallBridge
