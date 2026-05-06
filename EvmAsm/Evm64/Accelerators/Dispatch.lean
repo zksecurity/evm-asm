@@ -31,6 +31,7 @@
   Refs: parent beads task `evm-asm-nr2sk`, slice `evm-asm-xofw2`.
 -/
 
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm
