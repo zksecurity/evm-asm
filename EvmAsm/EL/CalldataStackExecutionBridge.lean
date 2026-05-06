@@ -292,6 +292,33 @@ theorem runCalldataStack?_eq_some_iff
   · exact runCalldataStack?_size_eq_some_iff
   · exact runCalldataStack?_copy_eq_some_iff
 
+/--
+Successful CALLDATACOPY stack execution exposes exactly `size.toNat` copied
+bytes from the decoded operand triple.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_copy_copiedBytes_length #104 #107.
+-/
+theorem runCalldataStack?_copy_copiedBytes_length
+    {data : List (BitVec 8)} {stack : List EvmWord} {out : CalldataStackResult}
+    {destOffset dataOffset size : EvmWord} {rest : List EvmWord}
+    (h_run : runCalldataStack? .callDataCopy { data := data, stack := stack } =
+      some out)
+    (h_stack : stack = destOffset :: dataOffset :: size :: rest) :
+    out.effects.copiedBytes.length = size.toNat := by
+  have h_shape :=
+    (runCalldataStack?_copy_eq_some_iff.mp h_run)
+  rcases h_shape with
+    ⟨destOffset', dataOffset', size', rest', h_stack', h_out⟩
+  have h_stack_eq :
+      destOffset :: dataOffset :: size :: rest =
+        destOffset' :: dataOffset' :: size' :: rest' := by
+    rw [← h_stack]
+    exact h_stack'
+  cases h_stack_eq
+  subst h_out
+  simp [EvmAsm.Evm64.CallDataCopyArgs.copyArgs]
+
 theorem runCalldataStack?_load_underflow (data : List (BitVec 8)) :
     runCalldataStack? .callDataLoad { data := data, stack := [] } = none := rfl
 
