@@ -26,6 +26,9 @@ import EvmAsm.EL.KeccakResultBridge
 import EvmAsm.EL.KeccakStackBridge
 import EvmAsm.EL.KeccakExecutionBridge
 import EvmAsm.EL.KeccakStackExecutionBridge
+import EvmAsm.EL.Secp256r1VerifyInputBridge
+import EvmAsm.EL.Secp256r1VerifyResultBridge
+import EvmAsm.EL.Secp256r1VerifyEcallBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
