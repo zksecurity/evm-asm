@@ -150,6 +150,37 @@ theorem decodeLogStack?_log4_eq_some_iff
   · rintro ⟨offset, size, topic0, topic1, topic2, topic3, rest, rfl, rfl⟩
     rfl
 
+theorem decodeLogStack?_eq_some_iff
+    (kind : Kind) (stack : List EvmWord) (decoded : Args) :
+    decodeLogStack? kind stack = some decoded ↔
+      match kind with
+      | .log0 =>
+          ∃ offset size rest,
+            stack = offset :: size :: rest ∧
+            decoded = mkArgs offset size []
+      | .log1 =>
+          ∃ offset size topic0 rest,
+            stack = offset :: size :: topic0 :: rest ∧
+            decoded = mkArgs offset size [topic0]
+      | .log2 =>
+          ∃ offset size topic0 topic1 rest,
+            stack = offset :: size :: topic0 :: topic1 :: rest ∧
+            decoded = mkArgs offset size [topic0, topic1]
+      | .log3 =>
+          ∃ offset size topic0 topic1 topic2 rest,
+            stack = offset :: size :: topic0 :: topic1 :: topic2 :: rest ∧
+            decoded = mkArgs offset size [topic0, topic1, topic2]
+      | .log4 =>
+          ∃ offset size topic0 topic1 topic2 topic3 rest,
+            stack = offset :: size :: topic0 :: topic1 :: topic2 :: topic3 :: rest ∧
+            decoded = mkArgs offset size [topic0, topic1, topic2, topic3] := by
+  cases kind
+  · exact decodeLogStack?_log0_eq_some_iff stack decoded
+  · exact decodeLogStack?_log1_eq_some_iff stack decoded
+  · exact decodeLogStack?_log2_eq_some_iff stack decoded
+  · exact decodeLogStack?_log3_eq_some_iff stack decoded
+  · exact decodeLogStack?_log4_eq_some_iff stack decoded
+
 /--
 LOG-family stack decoding fails exactly when the stack is shorter than the
 required number of stack arguments for that kind.
