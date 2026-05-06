@@ -107,6 +107,44 @@ theorem decodeSelfdestructStack?_eq_some_iff
   · rintro ⟨rest, rfl⟩
     rfl
 
+theorem decodeReturnStack?_eq_none_iff (stack : List EvmWord) :
+    decodeReturnStack? stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [decodeReturnStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+theorem decodeRevertStack?_eq_none_iff (stack : List EvmWord) :
+    decodeRevertStack? stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [decodeRevertStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+theorem decodeSelfdestructStack?_eq_none_iff (stack : List EvmWord) :
+    decodeSelfdestructStack? stack = none ↔ stack.length < 1 := by
+  cases stack with
+  | nil =>
+      simp [decodeSelfdestructStack?]
+  | cons beneficiary rest =>
+      simp [decodeSelfdestructStack?]
+
 theorem decodeReturnStack?_dataRange
     (offset size : EvmWord) (rest : List EvmWord) :
     dataRange (Option.getD
