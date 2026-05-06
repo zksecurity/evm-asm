@@ -82,6 +82,26 @@ theorem stackRestAfterCreate?_create2
     (kind : CreateKind) (value : EvmWord) :
     stackRestAfterCreate? kind [value] = none := rfl
 
+/--
+Distinctive token: CreateStackExecutionBridge.runCreateStack?_eq_none_iff #115 #107.
+-/
+theorem runCreateStack?_eq_none_iff
+    (kind : CreateKind) (creator : Address) (readByte : MemoryReader)
+    (gas : EvmWord) (executor : Executor) (state : CreateStackState) :
+    runCreateStack? kind creator readByte gas executor state = none ↔
+      requestFromStack? kind creator readByte gas state.stack = none ∨
+        stackRestAfterCreate? kind state.stack = none := by
+  cases state with
+  | mk stack =>
+      simp [runCreateStack?]
+      cases h_request :
+          requestFromStack? kind creator readByte gas stack with
+      | none => simp
+      | some request =>
+          cases h_rest : stackRestAfterCreate? kind stack with
+          | none => simp
+          | some rest => simp
+
 theorem requestFromStack?_create
     (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
     (value offset size : EvmWord) (rest : List EvmWord) :
