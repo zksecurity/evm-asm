@@ -63,6 +63,13 @@ theorem decodeExpStack?_eq_none_iff
             simp [decodeExpStack?]
   · rintro (rfl | ⟨base, rfl⟩) <;> rfl
 
+theorem decodeExpStack?_none_of_empty :
+    decodeExpStack? [] = none := rfl
+
+theorem decodeExpStack?_none_of_one
+    (base : EvmWord) :
+    decodeExpStack? [base] = none := rfl
+
 theorem decodeExpStack?_base
     (base exponent : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.base)
