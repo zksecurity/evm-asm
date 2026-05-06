@@ -216,6 +216,16 @@ theorem loopFuel_supported_missing_invalid
   exact congrArg (InterpreterLoop.loopFuel supportedLoopHandler nSteps)
     (HandlerTable.dispatchOpcode_none h_lookup state)
 
+theorem loopFuel_supported_missing_invalid_status
+    (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = none) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_supported_missing_invalid nSteps h_status h_decode h_lookup]
+  exact loopFuel_supported_invalid_fixed_status nSteps state
+
 end SupportedLoopBridge
 
 end EvmAsm.Evm64
