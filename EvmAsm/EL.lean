@@ -31,6 +31,7 @@ import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
 import EvmAsm.EL.CalldataStackExecutionBridge
 import EvmAsm.EL.Conformance.Code
+import EvmAsm.EL.Conformance.CreateStackExecution
 import EvmAsm.EL.Conformance.KeccakStackExecution
 import EvmAsm.EL.Conformance.ReturnData
 import EvmAsm.EL.Conformance.Log
