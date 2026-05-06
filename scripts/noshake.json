@@ -265,6 +265,8 @@
   ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
  "EvmAsm.Evm64.Calldata.SizeSpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+ "EvmAsm.Rv64.ControlFlow":
+  ["EvmAsm.Rv64.GenericSpecs", "EvmAsm.Rv64.Tactics.SpecDb"],
  "EvmAsm.Evm64.InterpreterFetchProgram":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
  "EvmAsm.Evm64.Push.Spec":
