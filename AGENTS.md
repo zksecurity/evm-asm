@@ -159,6 +159,12 @@ Pitfalls:
 
 ## References
 
+- **Accelerator C ABI (source of truth)**:
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  is the canonical interface for cryptographic precompiles, KECCAK256, and
+  secp256k1 verification. See [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for how it maps to ECALL syscall IDs (which use SP1 transport conventions)
+  and to EVM precompile addresses.
 - **Original paper**: Kennedy et al., "Coq: The world's best macro assembler?" PPDP 2013
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
 - **zkvm_accelerators.h**: `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
