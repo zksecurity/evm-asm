@@ -23,6 +23,7 @@ import EvmAsm.EL.LogStackExecutionBridge
 import EvmAsm.EL.KeccakInputBridge
 import EvmAsm.EL.KeccakEcallBridge
 import EvmAsm.EL.KeccakResultBridge
+import EvmAsm.EL.KeccakStatusBridge
 import EvmAsm.EL.Secp256k1VerifyInputBridge
 import EvmAsm.EL.Secp256k1VerifyResultBridge
 import EvmAsm.EL.Secp256k1VerifyEcallBridge
