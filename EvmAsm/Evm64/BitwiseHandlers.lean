@@ -294,5 +294,37 @@ theorem dispatchOpcode_bitwiseHandlerTable_NOT
       notHandler state := by
   exact HandlerTable.dispatchOpcode_some bitwiseHandler?_NOT state
 
+theorem dispatchOpcode_bitwiseHandlerTable_AND_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a &&& b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode bitwiseHandlerTable .AND state).status =
+      state.status := by
+  rw [dispatchOpcode_bitwiseHandlerTable_AND state]
+  simp [andHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_bitwiseHandlerTable_OR_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a ||| b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode bitwiseHandlerTable .OR state).status =
+      state.status := by
+  rw [dispatchOpcode_bitwiseHandlerTable_OR state]
+  simp [orHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_bitwiseHandlerTable_XOR_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => a ^^^ b) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode bitwiseHandlerTable .XOR state).status =
+      state.status := by
+  rw [dispatchOpcode_bitwiseHandlerTable_XOR state]
+  simp [xorHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_bitwiseHandlerTable_NOT_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : unaryStack? (fun a => ~~~a) state.stack = some stack') :
+    (HandlerTable.dispatchOpcode bitwiseHandlerTable .NOT state).status =
+      state.status := by
+  rw [dispatchOpcode_bitwiseHandlerTable_NOT state]
+  simp [notHandler, unaryHandler, h_stack, EvmState.withStack]
+
 end BitwiseHandlers
 end EvmAsm.Evm64
