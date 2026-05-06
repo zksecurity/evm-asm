@@ -74,6 +74,80 @@ theorem decodeStorageStack?_sstore
     decodeStorageStack? .sstore (slot :: value :: rest) =
       some (.sstore (mkSStore slot value)) := rfl
 
+/--
+SLOAD stack decoding succeeds exactly when the stack has a top slot word.
+
+Distinctive token: StorageArgs.decodeStorageStack?_sload_eq_some_iff #110.
+-/
+theorem decodeStorageStack?_sload_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeStorageStack? .sload stack = some decoded ↔
+      ∃ slot rest, stack = slot :: rest ∧ decoded = .sload (mkSLoad slot) := by
+  constructor
+  · intro h_decode
+    cases stack with
+    | nil => simp [decodeStorageStack?] at h_decode
+    | cons slot rest =>
+        simp [decodeStorageStack?] at h_decode
+        cases h_decode
+        exact ⟨slot, rest, rfl, rfl⟩
+  · rintro ⟨slot, rest, rfl, rfl⟩
+    rfl
+
+theorem decodeStorageStack?_sstore_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeStorageStack? .sstore stack = some decoded ↔
+      ∃ slot value rest,
+        stack = slot :: value :: rest ∧ decoded = .sstore (mkSStore slot value) := by
+  constructor
+  · intro h_decode
+    cases stack with
+    | nil => simp [decodeStorageStack?] at h_decode
+    | cons slot tail =>
+        cases tail with
+        | nil => simp [decodeStorageStack?] at h_decode
+        | cons value rest =>
+            simp [decodeStorageStack?] at h_decode
+            cases h_decode
+            exact ⟨slot, value, rest, rfl, rfl⟩
+  · rintro ⟨slot, value, rest, rfl, rfl⟩
+    rfl
+
+theorem decodeStorageStack?_sload_eq_none_iff
+    (stack : List EvmWord) :
+    decodeStorageStack? .sload stack = none ↔ stack.length < argumentCount .sload := by
+  constructor
+  · intro h_decode
+    cases stack with
+    | nil => simp [argumentCount]
+    | cons slot rest => simp [decodeStorageStack?] at h_decode
+  · intro h_len
+    cases stack with
+    | nil => rfl
+    | cons slot rest =>
+        simp [argumentCount] at h_len
+
+theorem decodeStorageStack?_sstore_eq_none_iff
+    (stack : List EvmWord) :
+    decodeStorageStack? .sstore stack = none ↔ stack.length < argumentCount .sstore := by
+  constructor
+  · intro h_decode
+    cases stack with
+    | nil => simp [argumentCount]
+    | cons slot tail =>
+        cases tail with
+        | nil => simp [argumentCount]
+        | cons value rest => simp [decodeStorageStack?] at h_decode
+  · intro h_len
+    cases stack with
+    | nil => rfl
+    | cons slot tail =>
+        cases tail with
+        | nil => rfl
+        | cons value rest =>
+            simp [argumentCount] at h_len
+            omega
+
 theorem decodedKind_sload (slot : EvmWord) :
     decodedKind (.sload (mkSLoad slot)) = .sload := rfl
 
