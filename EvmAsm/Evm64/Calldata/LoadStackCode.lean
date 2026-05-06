@@ -397,5 +397,37 @@ theorem calldataLoadWindowOutputWordFromArgs_evmStackIs_fold
   unfold calldataLoadWindowOutputWordFromArgs
   rw [mloadLoadedWordFromBytes_evmStackIs_fold]
 
+/--
+CALLDATALOAD window q0 one-limb stack spec: transport a concrete
+`mloadOneLimbCode` byte-load triple at `base + 8 .. base + 100` (the
+least-significant one-limb byte-pack block within `mloadFourLimbsCode`)
+to the program-identical `evm_calldataload_window_code`.
+
+Lets followup slices instantiate `h0` of
+`calldataload_window_combined_four_limb_sequence_stack_spec_within`
+directly with a concrete byte-load triple, without first wrapping in
+`mloadFourLimbsCode`. q1/q2/q3 quarters land in followup sub-slices
+(each needs its own subsumption witness).
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_one_limb_q0_stack_spec_within #104.
+-/
+theorem calldataload_window_one_limb_q0_stack_spec_within
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) P Q) :
+    cpsTripleWithin n (base + 8) (base + 100)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      P Q := by
+  rw [evm_calldataload_window_code_eq_mloadStackCode]
+  refine cpsTripleWithin_extend_code (hmono := ?_) h
+  intro a i hq
+  exact mloadStackCode_four_limbs_sub
+    offReg byteReg accReg addrReg envPtrReg base a i
+    (mloadFourLimbsCode_one_limb_q0_sub addrReg byteReg accReg base a i hq)
+
 end Calldata
 end EvmAsm.Evm64

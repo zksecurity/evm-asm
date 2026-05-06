@@ -163,6 +163,24 @@ theorem mload_four_limb_sequence_spec_within
       h2)
     h3
 
+/-- Subsumption witness: the q0 (least-significant) one-limb byte-pack block,
+    placed at `base + 8 .. base + 100`, is the leftmost union member of
+    `mloadFourLimbsCode`. Proved by left-bias of `CodeReq.union`.
+
+    Consumer: `calldataload_window_one_limb_q0_stack_spec_within`
+    (Calldata/LoadStackCode.lean) which lets callers supply a concrete
+    `mloadOneLimbCode` byte-load triple in place of an `mloadFourLimbsCode`
+    triple when wiring the four-limb byte-window read in
+    `evm_calldataload_stack_spec` (evm-asm-pgeuo / GH #104). -/
+theorem mloadFourLimbsCode_one_limb_q0_sub
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) a = some i →
+      (mloadFourLimbsCode addrReg byteReg accReg base) a = some i := by
+  unfold mloadFourLimbsCode
+  exact CodeReq.union_mono_left
+
 theorem mload_four_limbs_stack_spec_within
     {n : Nat} {P Q : Assertion}
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
