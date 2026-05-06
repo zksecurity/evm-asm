@@ -78,6 +78,24 @@ theorem dispatchByte_decoded_lookup_status
     (dispatchByte table b state).status = (handler state).status := by
   rw [dispatchByte_decoded_lookup state h_decode h_lookup]
 
+/--
+If the decoded opcode byte looks up a status-preserving handler, byte-level
+dispatch preserves the incoming interpreter status.
+
+Distinctive token:
+HandlerTable.dispatchByte_decoded_lookup_preserves_status #106 #107.
+-/
+theorem dispatchByte_decoded_lookup_preserves_status
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = some handler)
+    (h_status : ∀ state : EvmState, (handler state).status = state.status)
+    (state : EvmState) :
+    (dispatchByte table b state).status = state.status := by
+  rw [dispatchByte_decoded_lookup_status state h_decode h_lookup]
+  exact h_status state
+
 theorem dispatchByte_decoded_missing
     {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
     (state : EvmState)
