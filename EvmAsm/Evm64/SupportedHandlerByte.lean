@@ -33,6 +33,27 @@ theorem dispatchByte_supported_of_decode
   exact HandlerTable.dispatchByte_decoded
     SupportedHandlers.supportedHandlerTable b opcode state h_decode
 
+/--
+Byte-level dispatch of a decoded valid PUSH opcode through the combined
+supported-handler table has the same program-counter and stack effect as the
+executable PUSH bridge.
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_PUSH_effectFromCode #101 #107.
+-/
+theorem dispatchByte_supported_PUSH_effectFromCode
+    {b : Fin 256} {n : Nat}
+    (h_decode : EvmOpcode.decodeByte? b.val = some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  rw [dispatchByte_supported_of_decode h_decode state]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+    h_valid state
+
 theorem dispatchByte_supported_undecoded
     {b : Fin 256} (h_decode : EvmOpcode.decodeByte? b.val = none)
     (state : EvmState) :
