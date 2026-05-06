@@ -158,6 +158,15 @@ theorem precompileGasCost?_eq_none_iff (p : Precompile) (inputLen : Nat) :
     precompileGasCost? p inputLen = none ↔ p = modexp ∨ p = blake2f := by
   cases p <;> simp [precompileGasCost?, gasSchedule]
 
+theorem precompileGasCost?_isSome_iff (p : Precompile) (inputLen : Nat) :
+    (precompileGasCost? p inputLen).isSome ↔ p ≠ modexp ∧ p ≠ blake2f := by
+  cases p <;> simp [precompileGasCost?, gasSchedule]
+
+theorem precompileGasCost?_exists_some_iff (p : Precompile) (inputLen : Nat) :
+    (∃ cost, precompileGasCost? p inputLen = some cost) ↔
+      p ≠ modexp ∧ p ≠ blake2f := by
+  cases p <;> simp [precompileGasCost?, gasSchedule]
+
 theorem blake2fGas_eq_rounds (rounds : Nat) :
     blake2fGas rounds = rounds := rfl
 
