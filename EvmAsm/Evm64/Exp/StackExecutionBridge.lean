@@ -73,6 +73,43 @@ theorem runExpStack?_underflow_nil :
 theorem runExpStack?_underflow_one (base : EvmWord) :
     runExpStack? { stack := [base] } = none := rfl
 
+theorem stackRestAfterExp?_eq_none_iff
+    {stack : List EvmWord} :
+    stackRestAfterExp? stack = none ↔
+      stack = [] ∨ ∃ base, stack = [base] := by
+  constructor
+  · cases stack with
+    | nil =>
+        intro _h
+        exact Or.inl rfl
+    | cons base tail =>
+        cases tail with
+        | nil =>
+            intro _h
+            exact Or.inr ⟨base, rfl⟩
+        | cons exponent rest =>
+            simp [stackRestAfterExp?]
+  · rintro (rfl | ⟨base, rfl⟩) <;> rfl
+
+theorem runExpStack?_eq_none_iff
+    {state : ExpStackState} :
+    runExpStack? state = none ↔
+      state.stack = [] ∨ ∃ base, state.stack = [base] := by
+  cases state with
+  | mk stack =>
+      cases stack with
+      | nil =>
+          simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+            stackRestAfterExp?, Option.bind]
+      | cons base tail =>
+          cases tail with
+          | nil =>
+              simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+                stackRestAfterExp?, Option.bind]
+          | cons exponent rest =>
+              simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+                stackRestAfterExp?, Option.bind]
+
 theorem runExpStack?_stack_length
     {state : ExpStackState} {out : ExpStackResult}
     (h_run : runExpStack? state = some out) :
