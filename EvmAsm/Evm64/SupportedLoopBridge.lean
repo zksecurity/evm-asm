@@ -78,6 +78,17 @@ theorem stepWithSupportedHandler_PUSH_effectFromCode
   exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
     h_valid state
 
+theorem stepWithSupportedHandler_PUSH_status
+    {state : EvmState} {n : Nat}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_of_valid_status
+    h_valid state
+
 /--
 When the combined supported loop decodes STOP, one interpreter step terminates
 successfully.
