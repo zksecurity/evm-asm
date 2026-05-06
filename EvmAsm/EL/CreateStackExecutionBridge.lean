@@ -82,6 +82,32 @@ theorem stackRestAfterCreate?_create2
     (kind : CreateKind) (value : EvmWord) :
     stackRestAfterCreate? kind [value] = none := rfl
 
+theorem stackRestAfterCreate?_create_none_of_empty :
+    stackRestAfterCreate? .create [] = none := rfl
+
+theorem stackRestAfterCreate?_create_none_of_one
+    (value : EvmWord) :
+    stackRestAfterCreate? .create [value] = none := rfl
+
+theorem stackRestAfterCreate?_create_none_of_two
+    (value offset : EvmWord) :
+    stackRestAfterCreate? .create [value, offset] = none := rfl
+
+theorem stackRestAfterCreate?_create2_none_of_empty :
+    stackRestAfterCreate? .create2 [] = none := rfl
+
+theorem stackRestAfterCreate?_create2_none_of_one
+    (value : EvmWord) :
+    stackRestAfterCreate? .create2 [value] = none := rfl
+
+theorem stackRestAfterCreate?_create2_none_of_two
+    (value offset : EvmWord) :
+    stackRestAfterCreate? .create2 [value, offset] = none := rfl
+
+theorem stackRestAfterCreate?_create2_none_of_three
+    (value offset size : EvmWord) :
+    stackRestAfterCreate? .create2 [value, offset, size] = none := rfl
+
 /--
 Distinctive token: CreateStackExecutionBridge.runCreateStack?_eq_none_iff #115 #107.
 -/
@@ -146,6 +172,51 @@ theorem runCreateStack?_create2
                   (EvmAsm.Evm64.CreateArgsStackDecode.mkCreate2
                     value offset size salt))) ::
               rest } := rfl
+
+theorem runCreateStack?_create_none_of_empty
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) :
+    runCreateStack? .create creator readByte gas executor { stack := [] } =
+      none := rfl
+
+theorem runCreateStack?_create_none_of_one
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) (value : EvmWord) :
+    runCreateStack? .create creator readByte gas executor { stack := [value] } =
+      none := rfl
+
+theorem runCreateStack?_create_none_of_two
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) (value offset : EvmWord) :
+    runCreateStack? .create creator readByte gas executor
+        { stack := [value, offset] } =
+      none := rfl
+
+theorem runCreateStack?_create2_none_of_empty
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) :
+    runCreateStack? .create2 creator readByte gas executor { stack := [] } =
+      none := rfl
+
+theorem runCreateStack?_create2_none_of_one
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) (value : EvmWord) :
+    runCreateStack? .create2 creator readByte gas executor { stack := [value] } =
+      none := rfl
+
+theorem runCreateStack?_create2_none_of_two
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) (value offset : EvmWord) :
+    runCreateStack? .create2 creator readByte gas executor
+        { stack := [value, offset] } =
+      none := rfl
+
+theorem runCreateStack?_create2_none_of_three
+    (creator : Address) (readByte : MemoryReader) (gas : EvmWord)
+    (executor : Executor) (value offset size : EvmWord) :
+    runCreateStack? .create2 creator readByte gas executor
+        { stack := [value, offset, size] } =
+      none := rfl
 
 /--
 Distinctive token: CreateStackExecutionBridge.runCreateStack?_eq_some_iff #115 #107.
