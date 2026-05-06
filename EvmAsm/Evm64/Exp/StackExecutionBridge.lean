@@ -73,6 +73,13 @@ theorem runExpStack?_underflow_nil :
 theorem runExpStack?_underflow_one (base : EvmWord) :
     runExpStack? { stack := [base] } = none := rfl
 
+theorem stackRestAfterExp?_none_of_empty :
+    stackRestAfterExp? [] = none := rfl
+
+theorem stackRestAfterExp?_none_of_one
+    (base : EvmWord) :
+    stackRestAfterExp? [base] = none := rfl
+
 theorem stackRestAfterExp?_eq_none_iff
     {stack : List EvmWord} :
     stackRestAfterExp? stack = none ↔
