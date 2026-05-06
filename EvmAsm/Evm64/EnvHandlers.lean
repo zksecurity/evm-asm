@@ -40,6 +40,33 @@ def simpleEnvHandler? (opcode : EvmOpcode) : Option OpcodeHandler :=
   | some field => some (simpleEnvHandler field)
   | none => none
 
+theorem simpleEnvHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    simpleEnvHandler? opcode = some handler ↔
+      ∃ field, fieldOfOpcode? opcode = some field ∧
+        handler = simpleEnvHandler field := by
+  constructor
+  · intro h_handler
+    unfold simpleEnvHandler? at h_handler
+    cases h_field : fieldOfOpcode? opcode with
+    | none =>
+        simp [h_field] at h_handler
+    | some field =>
+        simp [h_field] at h_handler
+        exact ⟨field, rfl, h_handler.symm⟩
+  · rintro ⟨field, h_field, rfl⟩
+    simp [simpleEnvHandler?, h_field]
+
+theorem simpleEnvHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    simpleEnvHandler? opcode = none ↔ fieldOfOpcode? opcode = none := by
+  unfold simpleEnvHandler?
+  cases h_field : fieldOfOpcode? opcode with
+  | none =>
+      simp
+  | some field =>
+      simp
+
 /-- Handler table containing the generic simple environment opcode entries.
     Distinctive token: EnvHandlers.simpleEnvHandlerTable #107. -/
 def simpleEnvHandlerTable : HandlerTable :=
