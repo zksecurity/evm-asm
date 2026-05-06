@@ -119,6 +119,20 @@ theorem isPrecompileAddress_address (p : Precompile) :
   rw [ofAddress?_address p]
   simp
 
+theorem isPrecompileAddress_iff_exists {addr : Address} :
+    isPrecompileAddress addr ↔ ∃ p, ofAddress? addr = some p := by
+  unfold isPrecompileAddress
+  cases h_decode : ofAddress? addr with
+  | none =>
+      simp
+  | some p =>
+      simp
+
+theorem not_isPrecompileAddress_iff_none {addr : Address} :
+    ¬ isPrecompileAddress addr ↔ ofAddress? addr = none := by
+  unfold isPrecompileAddress
+  cases ofAddress? addr <;> simp
+
 theorem inputWords_zero : inputWords 0 = 0 := rfl
 
 theorem inputWords_thirty_three : inputWords 33 = 2 := rfl
@@ -139,6 +153,10 @@ theorem precompileGasCost?_modexp_none (inputLen : Nat) :
 
 theorem precompileGasCost?_blake2f_none (inputLen : Nat) :
     precompileGasCost? blake2f inputLen = none := rfl
+
+theorem precompileGasCost?_eq_none_iff (p : Precompile) (inputLen : Nat) :
+    precompileGasCost? p inputLen = none ↔ p = modexp ∨ p = blake2f := by
+  cases p <;> simp [precompileGasCost?, gasSchedule]
 
 theorem blake2fGas_eq_rounds (rounds : Nat) :
     blake2fGas rounds = rounds := rfl
