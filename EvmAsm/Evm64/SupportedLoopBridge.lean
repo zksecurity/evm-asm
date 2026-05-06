@@ -43,6 +43,27 @@ theorem stepWithSupportedHandler_of_lookup
   exact SupportedHandlers.dispatchOpcode_of_lookup h_lookup state
 
 /--
+When the supported interpreter loop decodes a valid PUSH opcode, the one-step
+handler has the same bundled PC and stack effect as the executable PUSH bridge.
+
+Distinctive token:
+SupportedLoopBridge.stepWithSupportedHandler_PUSH_effectFromCode
+#101 #107 #108.
+-/
+theorem stepWithSupportedHandler_PUSH_effectFromCode
+    {state : EvmState} {n : Nat}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (InterpreterLoop.stepWithHandler supportedLoopHandler state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+    h_valid state
+
+/--
 When the combined supported loop decodes STOP, one interpreter step terminates
 successfully.
 
