@@ -68,12 +68,26 @@ theorem dispatchOpcode_orElse_left
     dispatchOpcode (orElse left right) opcode state = handler state := by
   simp [dispatchOpcode, dispatchOpcode?_orElse_left h_left state]
 
+theorem dispatchOpcode_orElse_left_status
+    {left right : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_left : left opcode = some handler) (state : EvmState) :
+    (dispatchOpcode (orElse left right) opcode state).status =
+      (handler state).status := by
+  rw [dispatchOpcode_orElse_left h_left state]
+
 theorem dispatchOpcode_orElse_right
     {left right : HandlerTable} {opcode : EvmOpcode}
     (h_left : left opcode = none) (state : EvmState) :
     dispatchOpcode (orElse left right) opcode state =
       dispatchOpcode right opcode state := by
   simp [dispatchOpcode, dispatchOpcode?_orElse_right h_left state]
+
+theorem dispatchOpcode_orElse_right_status
+    {left right : HandlerTable} {opcode : EvmOpcode}
+    (h_left : left opcode = none) (state : EvmState) :
+    (dispatchOpcode (orElse left right) opcode state).status =
+      (dispatchOpcode right opcode state).status := by
+  rw [dispatchOpcode_orElse_right h_left state]
 
 /-- Lookup-result characterization of `orElse` returning `some`. The combined
     table delegates to the right operand only when the left operand has no
