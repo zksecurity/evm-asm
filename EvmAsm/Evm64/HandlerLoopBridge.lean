@@ -32,6 +32,15 @@ theorem stepWithTableHandler_of_decode
       HandlerTable.dispatchOpcode table opcode state := by
   simp [InterpreterLoop.stepWithHandler, h_decode, toLoopHandler]
 
+theorem stepWithTableHandler_of_lookup
+    {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
+    {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = some handler) :
+    InterpreterLoop.stepWithHandler (toLoopHandler table) state = handler state := by
+  rw [stepWithTableHandler_of_decode table h_decode]
+  exact HandlerTable.dispatchOpcode_some h_lookup state
+
 theorem stepWithTableHandler_missing_invalid
     {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
@@ -56,6 +65,28 @@ theorem loopFuel_succ_running_decode
         (HandlerTable.dispatchOpcode table opcode state) := by
   rw [InterpreterLoop.loopFuel_succ_running (toLoopHandler table) nSteps state h_status]
   rw [stepWithTableHandler_of_decode table h_decode]
+
+theorem loopFuel_succ_running_lookup
+    {table : HandlerTable} (nSteps : Nat) {state : EvmState}
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = some handler) :
+    InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler table) nSteps (handler state) := by
+  rw [loopFuel_succ_running_decode table nSteps h_status h_decode]
+  rw [HandlerTable.dispatchOpcode_some h_lookup state]
+
+theorem loopFuel_succ_running_missing_invalid
+    {table : HandlerTable} (nSteps : Nat) {state : EvmState}
+    {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = none) :
+    InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler table) nSteps state.invalid := by
+  rw [loopFuel_succ_running_decode table nSteps h_status h_decode]
+  rw [HandlerTable.dispatchOpcode_none h_lookup state]
 
 theorem loopFuel_empty_succ_running_decode
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
