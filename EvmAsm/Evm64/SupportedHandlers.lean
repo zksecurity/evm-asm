@@ -469,6 +469,15 @@ theorem dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
     (supportedHandlerTable_PUSH_of_valid h_valid) state]
   exact PushHandlers.pushHandler_eq_effectFromCode n state
 
+theorem dispatchOpcode_supportedHandlerTable_PUSH_of_valid_status
+    {n : Nat} (h_valid : EvmOpcode.validPushWidth n = true)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable (.PUSH n) state).status =
+      state.status := by
+  rw [HandlerTable.dispatchOpcode_some
+    (supportedHandlerTable_PUSH_of_valid h_valid) state]
+  exact PushHandlers.pushHandler_status n state
+
 theorem supportedHandlerTable_DUP_of_valid
     {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true) :
     supportedHandlerTable (.DUP n) =
