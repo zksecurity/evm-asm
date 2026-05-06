@@ -14,9 +14,8 @@ import EvmAsm.Evm64.DivMod.Spec
 -- irreducible intermediates for later full-wrapper refactors.
 -- Removed: import EvmAsm.Evm64.DivMod.Spec.V4 (deleted: 716 LOC of unused v4 closure
 -- theorems; SpecCallAddbackBeq is reachable via direct imports).
--- IterV4InvariantsPhase2 was re-exported by Spec/V4; wire it directly here so the
--- full Helpers → Overshoots → Invariants → Phase2 chain stays imported.
-import EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2
+-- Removed: import EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2 (deleted:
+-- file contained only 2 unused private Phase-2 overshoot lemmas, 464 LOC).
 
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.N4StackSpec
