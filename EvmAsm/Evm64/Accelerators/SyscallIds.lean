@@ -147,5 +147,125 @@ theorem accelerator_ids_in_range :
   decide
 
 end SyscallId
+
+/-! ## RV64 Word lifts of the syscall IDs
+
+The ECALL convention places the selector in `t0` (`x5`), which is a 64-bit
+RISC-V register. ECALL call sites today produce the selector as
+`BitVec.ofNat 64 _` of the `Nat` constants above. This section gives each
+selector a named `Word` (= `BitVec 64`) constant, so callable wrappers and
+ECALL handler specs can refer to them by name, and bundles a Word-level
+pairwise-distinctness theorem matching `SyscallId.allSelectors_pairwiseDistinct`.
+
+All selector values live well below `2^64`, so `BitVec.ofNat 64` is
+injective on this set and the Word distinctness mirrors the `Nat` one.
+-/
+
 end Accelerators
+end EvmAsm
+
+namespace EvmAsm
+namespace Rv64
+namespace SyscallIdWord
+
+open EvmAsm.Accelerators
+
+/-! ### Non-precompile accelerators -/
+
+/-- `zkvm_keccak256` selector as RV64 `Word`. -/
+def keccak256 : Word := BitVec.ofNat 64 SyscallId.keccak256
+
+/-- `zkvm_secp256k1_verify` selector as RV64 `Word`. -/
+def secp256k1_verify : Word := BitVec.ofNat 64 SyscallId.secp256k1_verify
+
+/-! ### Precompile accelerators (Ethereum precompiles `0x01`–`0x11`) -/
+
+/-- `zkvm_secp256k1_ecrecover` selector as RV64 `Word`. -/
+def secp256k1_ecrecover : Word := BitVec.ofNat 64 SyscallId.secp256k1_ecrecover
+
+/-- `zkvm_sha256` selector as RV64 `Word`. -/
+def sha256 : Word := BitVec.ofNat 64 SyscallId.sha256
+
+/-- `zkvm_ripemd160` selector as RV64 `Word`. -/
+def ripemd160 : Word := BitVec.ofNat 64 SyscallId.ripemd160
+
+/-- `zkvm_modexp` selector as RV64 `Word`. -/
+def modexp : Word := BitVec.ofNat 64 SyscallId.modexp
+
+/-- `zkvm_bn254_g1_add` selector as RV64 `Word`. -/
+def bn254_g1_add : Word := BitVec.ofNat 64 SyscallId.bn254_g1_add
+
+/-- `zkvm_bn254_g1_mul` selector as RV64 `Word`. -/
+def bn254_g1_mul : Word := BitVec.ofNat 64 SyscallId.bn254_g1_mul
+
+/-- `zkvm_bn254_pairing` selector as RV64 `Word`. -/
+def bn254_pairing : Word := BitVec.ofNat 64 SyscallId.bn254_pairing
+
+/-- `zkvm_blake2f` selector as RV64 `Word`. -/
+def blake2f : Word := BitVec.ofNat 64 SyscallId.blake2f
+
+/-- `zkvm_kzg_point_eval` selector as RV64 `Word`. -/
+def kzg_point_eval : Word := BitVec.ofNat 64 SyscallId.kzg_point_eval
+
+/-- `zkvm_bls12_g1_add` selector as RV64 `Word`. -/
+def bls12_g1_add : Word := BitVec.ofNat 64 SyscallId.bls12_g1_add
+
+/-- `zkvm_bls12_g1_msm` selector as RV64 `Word`. -/
+def bls12_g1_msm : Word := BitVec.ofNat 64 SyscallId.bls12_g1_msm
+
+/-- `zkvm_bls12_g2_add` selector as RV64 `Word`. -/
+def bls12_g2_add : Word := BitVec.ofNat 64 SyscallId.bls12_g2_add
+
+/-- `zkvm_bls12_g2_msm` selector as RV64 `Word`. -/
+def bls12_g2_msm : Word := BitVec.ofNat 64 SyscallId.bls12_g2_msm
+
+/-- `zkvm_bls12_pairing` selector as RV64 `Word`. -/
+def bls12_pairing : Word := BitVec.ofNat 64 SyscallId.bls12_pairing
+
+/-- `zkvm_bls12_map_fp_to_g1` selector as RV64 `Word`. -/
+def bls12_map_fp_to_g1 : Word := BitVec.ofNat 64 SyscallId.bls12_map_fp_to_g1
+
+/-- `zkvm_bls12_map_fp2_to_g2` selector as RV64 `Word`. -/
+def bls12_map_fp2_to_g2 : Word := BitVec.ofNat 64 SyscallId.bls12_map_fp2_to_g2
+
+/-! ### Extended precompiles -/
+
+/-- `zkvm_secp256r1_verify` selector as RV64 `Word`. -/
+def secp256r1_verify : Word := BitVec.ofNat 64 SyscallId.secp256r1_verify
+
+/-! ### Reserved framing selectors -/
+
+/-- HALT framing selector as RV64 `Word`. -/
+def halt : Word := BitVec.ofNat 64 SyscallId.halt
+
+/-- COMMIT framing selector as RV64 `Word`. -/
+def commit : Word := BitVec.ofNat 64 SyscallId.commit
+
+/-- HINT_LEN framing selector as RV64 `Word`. -/
+def hintLen : Word := BitVec.ofNat 64 SyscallId.hintLen
+
+/-- HINT_READ framing selector as RV64 `Word`. -/
+def hintRead : Word := BitVec.ofNat 64 SyscallId.hintRead
+
+/-! ### Sanity properties
+
+Word-level pairwise distinctness mirrors `SyscallId.allSelectors_pairwiseDistinct`.
+Discharged by `decide`; if a future revision collides two IDs, this proof
+fails at build time alongside the `Nat`-level one. -/
+
+/-- All 23 selectors above are pairwise distinct as 64-bit `Word` values. -/
+theorem allSelectors_pairwiseDistinct :
+    [halt, commit, hintLen, hintRead,
+     keccak256, secp256k1_verify,
+     secp256k1_ecrecover, sha256, ripemd160, modexp,
+     bn254_g1_add, bn254_g1_mul, bn254_pairing,
+     blake2f, kzg_point_eval,
+     bls12_g1_add, bls12_g1_msm, bls12_g2_add, bls12_g2_msm,
+     bls12_pairing, bls12_map_fp_to_g1, bls12_map_fp2_to_g2,
+     secp256r1_verify].Nodup := by
+  decide
+
+end SyscallIdWord
+
+end Rv64
 end EvmAsm
