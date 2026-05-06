@@ -80,6 +80,90 @@ theorem dispatch?_fail_of_gasCost?_gt {input : PrecompileInput} {out : List (Bit
   have h_not : ¬ cost ≤ input.gas := Nat.not_le.mpr h_gt
   simp [dispatch?, h_cost, h_not]
 
+theorem dispatch?_eq_none_iff {input : PrecompileInput} {out : List (BitVec 8)} :
+    dispatch? input out = none ↔ gasCost? input = none := by
+  unfold dispatch?
+  cases h_cost : gasCost? input with
+  | none =>
+      simp
+  | some cost =>
+      by_cases h_le : cost ≤ input.gas <;> simp [h_le]
+
+theorem dispatch?_eq_some_ok_iff
+    {input : PrecompileInput} {out : List (BitVec 8)} {gasRemaining : Nat} :
+    dispatch? input out = some (PrecompileResult.ok out gasRemaining) ↔
+      ∃ cost, gasCost? input = some cost ∧ cost ≤ input.gas ∧
+        gasRemaining = input.gas - cost := by
+  unfold dispatch?
+  cases h_cost : gasCost? input with
+  | none =>
+      simp
+  | some cost =>
+      by_cases h_le : cost ≤ input.gas
+      · simp only [h_le, ↓reduceIte]
+        constructor
+        · intro h_eq
+          have h_result :
+              PrecompileResult.ok out (input.gas - cost) =
+                PrecompileResult.ok out gasRemaining := by
+            simpa using h_eq
+          have h_remaining : gasRemaining = input.gas - cost := by
+            cases h_result
+            rfl
+          exact ⟨cost, rfl, h_le, h_remaining⟩
+        · rintro ⟨cost', h_cost', h_le', h_remaining⟩
+          injection h_cost' with h_cost_eq
+          subst h_cost_eq
+          rw [h_remaining]
+      · simp only [h_le, ↓reduceIte]
+        constructor
+        · intro h_eq
+          have h_status_eq :=
+            congrArg PrecompileResult.status (Option.some.inj h_eq)
+          simp [PrecompileResult.fail, PrecompileResult.ok] at h_status_eq
+        · rintro ⟨cost', h_cost', h_le', h_remaining⟩
+          injection h_cost' with h_cost_eq
+          subst h_cost_eq
+          exact False.elim (h_le h_le')
+
+theorem dispatch?_eq_some_fail_iff
+    {input : PrecompileInput} {out : List (BitVec 8)} {gasRemaining : Nat} :
+    dispatch? input out = some (PrecompileResult.fail gasRemaining) ↔
+      ∃ cost, gasCost? input = some cost ∧ input.gas < cost ∧
+        gasRemaining = input.gas := by
+  unfold dispatch?
+  cases h_cost : gasCost? input with
+  | none =>
+      simp
+  | some cost =>
+      by_cases h_le : cost ≤ input.gas
+      · simp only [h_le, ↓reduceIte]
+        constructor
+        · intro h_eq
+          have h_status_eq :=
+            congrArg PrecompileResult.status (Option.some.inj h_eq)
+          simp [PrecompileResult.fail, PrecompileResult.ok] at h_status_eq
+        · rintro ⟨cost', h_cost', h_gt, h_remaining⟩
+          injection h_cost' with h_cost_eq
+          subst h_cost_eq
+          exact False.elim (Nat.not_lt_of_ge h_le h_gt)
+      · have h_gt : input.gas < cost := Nat.lt_of_not_ge h_le
+        simp only [h_le, ↓reduceIte]
+        constructor
+        · intro h_eq
+          have h_result :
+              PrecompileResult.fail input.gas =
+                PrecompileResult.fail gasRemaining := by
+            simpa using h_eq
+          have h_remaining : gasRemaining = input.gas := by
+            cases h_result
+            rfl
+          exact ⟨cost, rfl, h_gt, h_remaining⟩
+        · rintro ⟨cost', h_cost', h_gt', h_remaining⟩
+          injection h_cost' with h_cost_eq
+          subst h_cost_eq
+          rw [h_remaining]
+
 theorem dispatch?_preservesGasBound {input : PrecompileInput} {out : List (BitVec 8)}
     {result : PrecompileResult} (h_dispatch : dispatch? input out = some result) :
     PrecompileResult.preservesGasBound input result := by
