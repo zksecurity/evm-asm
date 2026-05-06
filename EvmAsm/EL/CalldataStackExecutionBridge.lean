@@ -164,6 +164,59 @@ theorem runCalldataStack?_copy_underflow_two
     runCalldataStack? .callDataCopy
       { data := data, stack := [destOffset, dataOffset] } = none := rfl
 
+/--
+CALLDATALOAD stack execution fails exactly when the operand stack is empty.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_load_eq_none_iff #104 #107.
+-/
+theorem runCalldataStack?_load_eq_none_iff
+    (data : List (BitVec 8)) (stack : List EvmWord) :
+    runCalldataStack? .callDataLoad { data := data, stack := stack } = none ↔
+      stack = [] := by
+  cases stack with
+  | nil =>
+      simp [runCalldataStack?,
+        EvmAsm.Evm64.CallDataLoadArgsStackDecode.decodeCallDataLoadStack?]
+  | cons offset rest =>
+      simp [runCalldataStack?, stackRestAfterCalldata?,
+        EvmAsm.Evm64.CallDataLoadArgsStackDecode.decodeCallDataLoadStack?]
+
+/-- CALLDATASIZE stack execution is total. -/
+theorem runCalldataStack?_size_ne_none
+    (data : List (BitVec 8)) (stack : List EvmWord) :
+    runCalldataStack? .callDataSize { data := data, stack := stack } ≠ none := by
+  simp [runCalldataStack?]
+
+/--
+CALLDATACOPY stack execution fails exactly when fewer than three operand words
+are available.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_copy_eq_none_iff #104 #107.
+-/
+theorem runCalldataStack?_copy_eq_none_iff
+    (data : List (BitVec 8)) (stack : List EvmWord) :
+    runCalldataStack? .callDataCopy { data := data, stack := stack } = none ↔
+      stack.length < 3 := by
+  cases stack with
+  | nil =>
+      simp [runCalldataStack?,
+        EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
+  | cons destOffset tail =>
+      cases tail with
+      | nil =>
+          simp [runCalldataStack?, stackRestAfterCalldata?,
+            EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
+      | cons dataOffset tail =>
+          cases tail with
+          | nil =>
+              simp [runCalldataStack?, stackRestAfterCalldata?,
+                EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
+          | cons size rest =>
+              simp [runCalldataStack?, stackRestAfterCalldata?,
+                EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
+
 theorem runCalldataStack?_stack_length
     {kind : Kind} {state : CalldataStackState} {out : CalldataStackResult}
     (h_run : runCalldataStack? kind state = some out) :
