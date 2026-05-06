@@ -105,5 +105,44 @@ theorem zkvmStatusToWord_injective :
   · exact absurd h zkvmStatusEokWord_ne_efailWord
   · exact absurd h zkvmStatusEokWord_ne_efailWord.symm
 
+/-- Decode an RV64 `a0` return-register word back to a zkVM accelerator status,
+when the word is one of the two ABI status encodings. -/
+def zkvmStatusFromWord? (word : Word) : Option Accelerators.ZkvmStatus :=
+  if word = zkvmStatusEokWord then
+    some .eok
+  else if word = zkvmStatusEfailWord then
+    some .efail
+  else
+    none
+
+@[simp] theorem zkvmStatusFromWord?_eok :
+    zkvmStatusFromWord? zkvmStatusEokWord = some .eok := by
+  simp [zkvmStatusFromWord?]
+
+@[simp] theorem zkvmStatusFromWord?_efail :
+    zkvmStatusFromWord? zkvmStatusEfailWord = some .efail := by
+  simp [zkvmStatusFromWord?, zkvmStatusEokWord_ne_efailWord.symm]
+
+theorem zkvmStatusFromWord?_toWord (status : Accelerators.ZkvmStatus) :
+    zkvmStatusFromWord? (zkvmStatusToWord status) = some status := by
+  cases status <;> simp [zkvmStatusToWord]
+
+theorem zkvmStatusFromWord?_some_eq_toWord
+    {word : Word} {status : Accelerators.ZkvmStatus}
+    (h_status : zkvmStatusFromWord? word = some status) :
+    word = zkvmStatusToWord status := by
+  cases status
+  · by_cases h_eok : word = zkvmStatusEokWord
+    · simpa [zkvmStatusToWord] using h_eok
+    · by_cases h_efail : word = zkvmStatusEfailWord
+      · simp [zkvmStatusFromWord?, h_efail] at h_status
+        exact False.elim (zkvmStatusEokWord_ne_efailWord h_status.symm)
+      · simp [zkvmStatusFromWord?, h_eok, h_efail] at h_status
+  · by_cases h_eok : word = zkvmStatusEokWord
+    · simp [zkvmStatusFromWord?, h_eok] at h_status
+    · by_cases h_efail : word = zkvmStatusEfailWord
+      · simpa [zkvmStatusToWord] using h_efail
+      · simp [zkvmStatusFromWord?, h_eok, h_efail] at h_status
+
 end Rv64
 end EvmAsm
