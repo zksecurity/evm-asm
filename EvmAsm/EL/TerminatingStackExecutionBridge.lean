@@ -86,6 +86,23 @@ theorem stackRestAfterTerminating?_selfdestruct
     stackRestAfterTerminating? .selfdestruct (beneficiary :: rest) =
       some rest := rfl
 
+theorem stackRestAfterTerminating?_return_none_of_empty :
+    stackRestAfterTerminating? .return_ [] = none := rfl
+
+theorem stackRestAfterTerminating?_return_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterTerminating? .return_ [offset] = none := rfl
+
+theorem stackRestAfterTerminating?_revert_none_of_empty :
+    stackRestAfterTerminating? .revert [] = none := rfl
+
+theorem stackRestAfterTerminating?_revert_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterTerminating? .revert [offset] = none := rfl
+
+theorem stackRestAfterTerminating?_selfdestruct_none_of_empty :
+    stackRestAfterTerminating? .selfdestruct [] = none := rfl
+
 theorem argsFromStack?_return
     (offset size : EvmWord) (rest : List EvmWord) :
     argsFromStack? .return_ (offset :: size :: rest) =
@@ -100,6 +117,23 @@ theorem argsFromStack?_selfdestruct
     (beneficiary : EvmWord) (rest : List EvmWord) :
     argsFromStack? .selfdestruct (beneficiary :: rest) =
       some (EvmAsm.Evm64.TerminatingArgs.returnArgs 0 0) := rfl
+
+theorem argsFromStack?_return_none_of_empty :
+    argsFromStack? .return_ [] = none := rfl
+
+theorem argsFromStack?_return_none_of_one
+    (offset : EvmWord) :
+    argsFromStack? .return_ [offset] = none := rfl
+
+theorem argsFromStack?_revert_none_of_empty :
+    argsFromStack? .revert [] = none := rfl
+
+theorem argsFromStack?_revert_none_of_one
+    (offset : EvmWord) :
+    argsFromStack? .revert [offset] = none := rfl
+
+theorem argsFromStack?_selfdestruct_none_of_empty :
+    argsFromStack? .selfdestruct [] = none := rfl
 
 theorem runTerminatingStack?_stop
     (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat)
@@ -154,6 +188,36 @@ theorem runTerminatingStack?_selfdestruct
               .selfdestruct state readByte gasRemaining
               (EvmAsm.Evm64.TerminatingArgs.returnArgs 0 0)
           stack := rest } := rfl
+
+theorem runTerminatingStack?_return_none_of_empty
+    (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat) :
+    runTerminatingStack? .return_ state readByte gasRemaining { stack := [] } =
+      none := rfl
+
+theorem runTerminatingStack?_return_none_of_one
+    (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat)
+    (offset : EvmWord) :
+    runTerminatingStack? .return_ state readByte gasRemaining
+        { stack := [offset] } =
+      none := rfl
+
+theorem runTerminatingStack?_revert_none_of_empty
+    (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat) :
+    runTerminatingStack? .revert state readByte gasRemaining { stack := [] } =
+      none := rfl
+
+theorem runTerminatingStack?_revert_none_of_one
+    (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat)
+    (offset : EvmWord) :
+    runTerminatingStack? .revert state readByte gasRemaining
+        { stack := [offset] } =
+      none := rfl
+
+theorem runTerminatingStack?_selfdestruct_none_of_empty
+    (state : WorldState) (readByte : MemoryReader) (gasRemaining : Nat) :
+    runTerminatingStack? .selfdestruct state readByte gasRemaining
+        { stack := [] } =
+      none := rfl
 
 theorem runTerminatingStack?_eq_none_iff
     (kind : TerminatingKind) (state : WorldState) (readByte : MemoryReader)
