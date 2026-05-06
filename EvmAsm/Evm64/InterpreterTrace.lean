@@ -85,11 +85,25 @@ theorem loopTrace_succ_stopped
     loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
+theorem loopTrace_succ_stopped_length
+    (handler : Handler) (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .stopped) :
+    (loopTrace handler (nSteps + 1) state).length = 0 := by
+  rw [loopTrace_succ_stopped handler nSteps h_status]
+  rfl
+
 theorem loopTrace_succ_returned
     (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
     (h_status : state.status = .returned data) :
     loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
+
+theorem loopTrace_succ_returned_length
+    (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
+    (h_status : state.status = .returned data) :
+    (loopTrace handler (nSteps + 1) state).length = 0 := by
+  rw [loopTrace_succ_returned handler nSteps h_status]
+  rfl
 
 theorem loopTrace_succ_reverted
     (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
@@ -97,11 +111,25 @@ theorem loopTrace_succ_reverted
     loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
 
+theorem loopTrace_succ_reverted_length
+    (handler : Handler) (nSteps : Nat) {state : EvmState} {data : List (BitVec 8)}
+    (h_status : state.status = .reverted data) :
+    (loopTrace handler (nSteps + 1) state).length = 0 := by
+  rw [loopTrace_succ_reverted handler nSteps h_status]
+  rfl
+
 theorem loopTrace_succ_error
     (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .error) :
     loopTrace handler (nSteps + 1) state = [] := by
   simp [loopTrace, h_status]
+
+theorem loopTrace_succ_error_length
+    (handler : Handler) (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .error) :
+    (loopTrace handler (nSteps + 1) state).length = 0 := by
+  rw [loopTrace_succ_error handler nSteps h_status]
+  rfl
 
 theorem loopTrace_length_le_fuel (handler : Handler) :
     ∀ (nSteps : Nat) (state : EvmState), (loopTrace handler nSteps state).length ≤ nSteps
