@@ -17,4 +17,5 @@ import EvmAsm.Evm64.Exp.Args
 import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base
+import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
