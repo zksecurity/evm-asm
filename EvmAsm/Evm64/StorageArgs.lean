@@ -169,6 +169,16 @@ theorem decodeStorageStack?_eq_none_iff
   | sload => exact decodeStorageStack?_sload_eq_none_iff stack
   | sstore => exact decodeStorageStack?_sstore_eq_none_iff stack
 
+theorem decodeStorageStack?_sload_none_of_empty :
+    decodeStorageStack? .sload [] = none := rfl
+
+theorem decodeStorageStack?_sstore_none_of_empty :
+    decodeStorageStack? .sstore [] = none := rfl
+
+theorem decodeStorageStack?_sstore_none_of_one
+    (slot : EvmWord) :
+    decodeStorageStack? .sstore [slot] = none := rfl
+
 theorem decodedKind_sload (slot : EvmWord) :
     decodedKind (.sload (mkSLoad slot)) = .sload := rfl
 
