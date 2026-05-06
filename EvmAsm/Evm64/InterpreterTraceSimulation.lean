@@ -57,6 +57,15 @@ theorem loopFuelAndTrace_matchesSpec
     InterpreterSimulation.loopFuel_matchesSpec h_match nSteps state,
     loopTrace_matchesSpec h_match nSteps state]
 
+theorem loopFuelAndTrace_matchesSpec_status
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl nSteps state).status =
+      (InterpreterLoop.loopFuel spec nSteps state).status := by
+  exact congrArg (fun result => result.1.status)
+    (loopFuelAndTrace_matchesSpec h_match nSteps state)
+
 end InterpreterTraceSimulation
 
 end EvmAsm.Evm64
