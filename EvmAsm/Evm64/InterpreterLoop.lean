@@ -56,6 +56,31 @@ theorem fetchOpcodeByte?_of_ge
     fetchOpcodeByte? state = none := by
   simp [fetchOpcodeByte?, show ¬ state.pc < state.code.length from by omega]
 
+theorem fetchOpcodeByte?_eq_some_iff
+    {state : EvmState} {byte : BitVec 8} :
+    fetchOpcodeByte? state = some byte ↔
+      ∃ h_pc : state.pc < state.code.length, byte = state.code[state.pc]'h_pc := by
+  unfold fetchOpcodeByte?
+  by_cases h_pc : state.pc < state.code.length
+  · rw [dif_pos h_pc]
+    constructor
+    · intro h_eq
+      injection h_eq with h_byte
+      exact ⟨h_pc, h_byte.symm⟩
+    · rintro ⟨h_pc', h_eq⟩
+      simp only [h_eq]
+  · rw [dif_neg h_pc]
+    simp [h_pc]
+
+theorem fetchOpcodeByte?_eq_none_iff {state : EvmState} :
+    fetchOpcodeByte? state = none ↔ state.code.length ≤ state.pc := by
+  unfold fetchOpcodeByte?
+  by_cases h_pc : state.pc < state.code.length
+  · have h_not : ¬ state.code.length ≤ state.pc := Nat.not_le_of_gt h_pc
+    simp [h_pc, h_not]
+  · have h_le : state.code.length ≤ state.pc := Nat.le_of_not_gt h_pc
+    simp [h_pc, h_le]
+
 theorem decodeCurrentOpcode?_of_fetch
     {state : EvmState} {byte : BitVec 8}
     (h_fetch : fetchOpcodeByte? state = some byte) :
