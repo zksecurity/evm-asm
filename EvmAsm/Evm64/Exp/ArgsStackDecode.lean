@@ -45,6 +45,21 @@ theorem decodeExpStack?_eq_some_iff
   · rintro ⟨base, exponent, rest, rfl, rfl⟩
     rfl
 
+theorem decodeExpStack?_eq_none_iff (stack : List EvmWord) :
+    decodeExpStack? stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [decodeExpStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 theorem decodeExpStack?_base
     (base exponent : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.base)
