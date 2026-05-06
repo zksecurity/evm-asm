@@ -105,6 +105,32 @@ theorem loopFuel_succ_running_missing_invalid
   rw [loopFuel_succ_running_decode table nSteps h_status h_decode]
   rw [HandlerTable.dispatchOpcode_none h_lookup state]
 
+theorem loopFuel_table_invalid_fixed
+    (table : HandlerTable) :
+    ∀ (nSteps : Nat) (state : EvmState),
+      InterpreterLoop.loopFuel (toLoopHandler table) nSteps state.invalid = state.invalid
+  | 0, _ => rfl
+  | nSteps + 1, state => by
+      simp [InterpreterLoop.loopFuel]
+
+theorem loopFuel_table_invalid_fixed_status
+    (table : HandlerTable) (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel (toLoopHandler table) nSteps state.invalid).status =
+      .error := by
+  rw [loopFuel_table_invalid_fixed table nSteps state]
+  exact EvmState.invalid_status state
+
+theorem loopFuel_succ_running_missing_invalid_status
+    {table : HandlerTable} (nSteps : Nat) {state : EvmState}
+    {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = none) :
+    (InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_succ_running_missing_invalid nSteps h_status h_decode h_lookup]
+  exact loopFuel_table_invalid_fixed_status table nSteps state
+
 theorem loopFuel_empty_succ_running_decode
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
     (h_status : state.status = .running)
