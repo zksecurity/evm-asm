@@ -33,6 +33,12 @@
  "EvmAsm.Rv64.RLP.Phase2LongIter":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.RLP.Phase2LongLoopBody":
+  ["EvmAsm.Rv64.Tactics.ExtractPure", "EvmAsm.Rv64.Tactics.XPermPure"],
+  "EvmAsm.EL.RLP.ProgramSpec":
+  ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock",
+   "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.RLP.Phase4HintRead":
   ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
