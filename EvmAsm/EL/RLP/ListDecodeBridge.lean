@@ -130,6 +130,48 @@ theorem decodeAux_cons_shortList_eq_decodeListPayload
           rcases pair' with ⟨items, leftover⟩
           cases leftover <;> simp [decodeListPayload, h_decode]
 
+/--
+Classified short-list decode succeeds exactly when the payload slice is
+available and list-payload decoding consumes it exactly.
+
+Distinctive token:
+ListDecodeBridge.decodeAux_cons_shortList_eq_some_iff #120.
+-/
+theorem decodeAux_cons_shortList_eq_some_iff
+    (nDepth : Nat) (pfx : Byte) (rest : List Byte)
+    (h_class : classifyPrefix pfx = .shortList)
+    (items : List RLPItem) (rest' : List Byte) :
+    decodeAux (nDepth + 1) (pfx :: rest) = some (.list items, rest') ↔
+      ∃ payload,
+        takeBytes rest (rlpPrefixShortListPayloadLen pfx) = some (payload, rest') ∧
+          decodeListPayload nDepth payload = some items := by
+  rw [decodeAux_cons_shortList_eq_decodeListPayload nDepth pfx rest h_class]
+  cases h_take : takeBytes rest (rlpPrefixShortListPayloadLen pfx) with
+  | none =>
+      simp
+  | some pair =>
+      rcases pair with ⟨payload, slicedRest⟩
+      cases h_payload : decodeListPayload nDepth payload with
+      | none =>
+          simp [h_payload]
+      | some decodedItems =>
+          constructor
+          · intro h_some
+            simp [h_payload] at h_some
+            exact ⟨payload, by simp [h_some.2],
+              by simpa [h_some.1] using h_payload⟩
+          · rintro ⟨payload', h_take', h_decode'⟩
+            have h_pair : (payload, slicedRest) = (payload', rest') := by
+              simpa [h_take] using h_take'
+            have h_payload_eq : payload = payload' := congrArg Prod.fst h_pair
+            have h_rest_eq : slicedRest = rest' := congrArg Prod.snd h_pair
+            have h_decode_payload :
+                decodeListPayload nDepth payload = some items := by
+              simpa [h_payload_eq] using h_decode'
+            have h_items : decodedItems = items :=
+              Option.some.inj (h_payload.symm.trans h_decode_payload)
+            simp [h_payload, h_items, h_rest_eq]
+
 theorem decodeAux_cons_longList_eq_decodeListPayload
     (nDepth : Nat) (pfx : Byte) (rest : List Byte)
     (h_class : classifyPrefix pfx = .longList) :
