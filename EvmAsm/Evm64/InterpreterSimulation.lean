@@ -40,6 +40,13 @@ theorem HandlerMatchesSpec.trans
   intro opcode state h_decode
   exact (h_left opcode state h_decode).trans (h_right opcode state h_decode)
 
+theorem HandlerMatchesSpec.status_eq
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec)
+    {opcode : EvmOpcode} {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (impl opcode state).status = (spec opcode state).status := by
+  rw [h_match opcode state h_decode]
+
 theorem stepWithHandler_matchesSpec
     {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) (state : EvmState) :
     InterpreterLoop.stepWithHandler impl state =
