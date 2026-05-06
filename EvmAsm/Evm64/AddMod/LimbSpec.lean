@@ -20,4 +20,35 @@ open EvmAsm.Rv64
 
 -- Per-block specs land in slice evm-asm-sord and below.
 
+-- ============================================================================
+-- evm_addmod_phase1_carry (1 instruction, slice evm-asm-ot10w toward
+-- evm-asm-s7v49)
+-- ============================================================================
+--
+-- `evm_addmod_phase1_carry` (defined in `Evm64/AddMod/Program.lean`) is the
+-- single-instruction `ADDI x7 x5 0` block — a register `MV` that copies the
+-- 257th carry bit from `x5` into `x7`, freeing `x5` for the modulus-reduction
+-- phase that follows. Mirrors the shape of `addi_spec_gen_within`: a
+-- `CodeReq.ofProg → singleton` rewrite plus `addi_spec_gen_within` with
+-- `imm = 0`.
+--
+-- Note: post-state register value is `v5 + signExtend12 (0 : BitVec 12)` (the
+-- raw shape produced by `addi_spec_gen_within`); downstream callers normalize
+-- via `BitVec.add_zero` / `signExtend12` simp lemmas as needed.
+
+abbrev evm_addmod_phase1_carry_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base evm_addmod_phase1_carry
+
+theorem evm_addmod_phase1_carry_spec_within
+    (v5 vOld : Word) (base : Word) :
+    let code := evm_addmod_phase1_carry_code base
+    cpsTripleWithin 1 base (base + 4) code
+      ((.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ vOld))
+      ((.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ (v5 + signExtend12 (0 : BitVec 12)))) := by
+  show cpsTripleWithin 1 base (base + 4)
+    (CodeReq.ofProg base evm_addmod_phase1_carry) _ _
+  rw [show CodeReq.ofProg base evm_addmod_phase1_carry =
+      CodeReq.singleton base (.ADDI .x7 .x5 0) from CodeReq.ofProg_singleton]
+  exact addi_spec_gen_within .x7 .x5 vOld v5 0 base (by nofun)
+
 end EvmAsm.Evm64
