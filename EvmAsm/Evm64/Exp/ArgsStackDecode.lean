@@ -45,6 +45,24 @@ theorem decodeExpStack?_eq_some_iff
   · rintro ⟨base, exponent, rest, rfl, rfl⟩
     rfl
 
+theorem decodeExpStack?_eq_none_iff
+    {stack : List EvmWord} :
+    decodeExpStack? stack = none ↔
+      stack = [] ∨ ∃ base, stack = [base] := by
+  constructor
+  · cases stack with
+    | nil =>
+        intro _h
+        exact Or.inl rfl
+    | cons base tail =>
+        cases tail with
+        | nil =>
+            intro _h
+            exact Or.inr ⟨base, rfl⟩
+        | cons exponent rest =>
+            simp [decodeExpStack?]
+  · rintro (rfl | ⟨base, rfl⟩) <;> rfl
+
 theorem decodeExpStack?_base
     (base exponent : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.base)
