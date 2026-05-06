@@ -178,6 +178,30 @@ theorem dupSwapHandler?_SWAP_of_invalid {n : Nat}
     dupSwapHandler? (.SWAP n) = none := by
   simp [dupSwapHandler?, h_valid]
 
+@[simp] theorem eq_dupHandler_iff (n : Nat) (handler : OpcodeHandler) :
+    dupHandler n = handler ↔ handler = dupHandler n := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_swapHandler_iff (n : Nat) (handler : OpcodeHandler) :
+    swapHandler n = handler ↔ handler = swapHandler n := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem dupSwapHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    dupSwapHandler? opcode = some handler ↔
+      (∃ n, opcode = .DUP n ∧ EvmOpcode.validDupIndex n = true ∧
+        handler = dupHandler n) ∨
+        (∃ n, opcode = .SWAP n ∧ EvmOpcode.validSwapIndex n = true ∧
+          handler = swapHandler n) := by
+  cases opcode <;> simp [dupSwapHandler?]
+
+theorem dupSwapHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    dupSwapHandler? opcode = none ↔
+      (∀ n, opcode = .DUP n → EvmOpcode.validDupIndex n = false) ∧
+        (∀ n, opcode = .SWAP n → EvmOpcode.validSwapIndex n = false) := by
+  cases opcode <;> simp [dupSwapHandler?]
+
 theorem dupHandler_stack_of_dupStack?_some
     {n : Nat} {state : EvmState} {stack' : List EvmWord}
     (h_stack : dupStack? n state.stack = some stack') :
