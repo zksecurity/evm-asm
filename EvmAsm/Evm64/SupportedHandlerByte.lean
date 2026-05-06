@@ -70,5 +70,59 @@ theorem dispatchByte_supported_undecoded_status
   exact HandlerTable.dispatchByte_undecoded_status
     SupportedHandlers.supportedHandlerTable b state h_decode
 
+/--
+Byte-level dispatch of a decoded STOP opcode through the combined
+supported-handler table executes the `state.stop` step.
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_STOP_byte #106 #107 #113.
+-/
+theorem dispatchByte_supported_STOP_byte
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .STOP)
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state =
+      state.stop := by
+  rw [dispatchByte_supported_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_STOP state]
+  rfl
+
+/-- Status projection of `dispatchByte_supported_STOP_byte`. -/
+theorem dispatchByte_supported_STOP_byte_status
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .STOP)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      .stopped := by
+  rw [dispatchByte_supported_STOP_byte h_decode state]
+  exact EvmState.stop_status state
+
+/--
+Byte-level dispatch of a decoded INVALID opcode through the combined
+supported-handler table executes the `state.invalid` step.
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_INVALID_byte #106 #107 #113.
+-/
+theorem dispatchByte_supported_INVALID_byte
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .INVALID)
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state =
+      state.invalid := by
+  rw [dispatchByte_supported_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_INVALID state]
+  rfl
+
+/-- Status projection of `dispatchByte_supported_INVALID_byte`. -/
+theorem dispatchByte_supported_INVALID_byte_status
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .INVALID)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      .error := by
+  rw [dispatchByte_supported_INVALID_byte h_decode state]
+  exact EvmState.invalid_status state
+
 end SupportedHandlerByte
 end EvmAsm.Evm64

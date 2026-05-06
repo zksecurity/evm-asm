@@ -362,6 +362,11 @@ theorem dispatchOpcode_of_lookup
       some TerminatingHandlers.stopHandler := by
   exact lookup_of_terminating TerminatingHandlers.terminatingHandlerTable_STOP
 
+@[simp] theorem supportedHandlerTable_INVALID :
+    supportedHandlerTable .INVALID =
+      some TerminatingHandlers.invalidHandler := by
+  exact lookup_of_terminating TerminatingHandlers.terminatingHandlerTable_INVALID
+
 @[simp] theorem supportedHandlerTable_PUSH0 :
     supportedHandlerTable .PUSH0 =
       some StackHandlers.push0Handler := by
