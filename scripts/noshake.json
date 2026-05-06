@@ -102,6 +102,8 @@
   ["EvmAsm.Rv64.SepLogic"],
   "EvmAsm.Rv64.Tactics.SymStep":
   ["EvmAsm.Rv64.Execution"],
+  "EvmAsm.Evm64.Accelerators.Status":
+  ["EvmAsm.Rv64.Basic"],
  "EvmAsm.Evm64.Basic":
   ["Std.Tactic.BVDecide", "EvmAsm.Rv64.Basic"],
  "EvmAsm.Evm64.CodeRegion":
