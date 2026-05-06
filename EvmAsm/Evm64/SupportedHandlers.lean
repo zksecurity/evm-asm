@@ -362,6 +362,11 @@ theorem dispatchOpcode_of_lookup
       some TerminatingHandlers.stopHandler := by
   exact lookup_of_terminating TerminatingHandlers.terminatingHandlerTable_STOP
 
+@[simp] theorem supportedHandlerTable_INVALID :
+    supportedHandlerTable .INVALID =
+      some TerminatingHandlers.invalidHandler := by
+  exact lookup_of_terminating TerminatingHandlers.terminatingHandlerTable_INVALID
+
 @[simp] theorem supportedHandlerTable_PUSH0 :
     supportedHandlerTable .PUSH0 =
       some StackHandlers.push0Handler := by
@@ -436,6 +441,25 @@ theorem supportedHandlerTable_PUSH_of_valid
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
     (PushHandlers.pushHandler?_PUSH_of_valid h_valid)
+
+/--
+Dispatching a valid PUSH opcode through the combined supported-handler table
+has the same program-counter and stack effect as the executable PUSH bridge.
+
+Distinctive token:
+SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+#101 #107.
+-/
+theorem dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
+    {n : Nat} (h_valid : EvmOpcode.validPushWidth n = true)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable (.PUSH n) state).pc =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).pc ∧
+      (HandlerTable.dispatchOpcode supportedHandlerTable (.PUSH n) state).stack =
+        (PushExecEffect.effectFromCode state.code state.pc n state.stack).stack := by
+  rw [HandlerTable.dispatchOpcode_some
+    (supportedHandlerTable_PUSH_of_valid h_valid) state]
+  exact PushHandlers.pushHandler_eq_effectFromCode n state
 
 theorem supportedHandlerTable_DUP_of_valid
     {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true) :

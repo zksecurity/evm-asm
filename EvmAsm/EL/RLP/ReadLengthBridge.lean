@@ -54,6 +54,15 @@ theorem decodeLengthField?_none_of_readLength_none
     decodeLengthField? bs n = none := by
   simp [decodeLengthField?, h_read]
 
+theorem decodeLengthField?_eq_none_iff (bs : List Byte) (n : Nat) :
+    decodeLengthField? bs n = none ↔ readLength bs n = none := by
+  unfold decodeLengthField?
+  cases h_read : readLength bs n with
+  | none => simp
+  | some decoded =>
+      cases decoded
+      simp
+
 theorem decodeLengthField?_some_of_readLength
     {bs rest : List Byte} {n lenVal : Nat}
     (h_read : readLength bs n = some (lenVal, rest)) :

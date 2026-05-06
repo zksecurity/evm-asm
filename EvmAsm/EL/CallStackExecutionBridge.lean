@@ -167,6 +167,91 @@ theorem runCallStack?_delegatecall
                 output := { offset := outputOffset, size := outputSize } }
           stack := rest } := rfl
 
+theorem runCallStack?_call_eq_none_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) :
+    runCallStack? .call state caller callee apparentValue readByte isStatic
+        executor stackState = none ↔
+      EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack = none ∨
+        stackRestAfterCall? .call stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runCallStack?]
+      cases h_decode :
+          EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterCall? .call stack with
+          | none => simp
+          | some rest => simp
+
+theorem runCallStack?_staticcall_eq_none_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) :
+    runCallStack? .staticcall state caller callee apparentValue readByte
+        isStatic executor stackState = none ↔
+      EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+          stackState.stack = none ∨
+        stackRestAfterCall? .staticcall stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runCallStack?]
+      cases h_decode :
+          EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack? stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterCall? .staticcall stack with
+          | none => simp
+          | some rest => simp
+
+theorem runCallStack?_delegatecall_eq_none_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) :
+    runCallStack? .delegatecall state caller callee apparentValue readByte
+        isStatic executor stackState = none ↔
+      EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+          stackState.stack = none ∨
+        stackRestAfterCall? .delegatecall stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runCallStack?]
+      cases h_decode :
+          EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack? stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterCall? .delegatecall stack with
+          | none => simp
+          | some rest => simp
+
+/--
+Distinctive token: CallStackExecutionBridge.runCallStack?_eq_none_iff #114 #107.
+-/
+theorem runCallStack?_eq_none_iff
+    (kind : CallKind) (state : WorldState) (caller callee : Address)
+    (apparentValue : Word256) (readByte : MemoryReader) (isStatic : Bool)
+    (executor : CallExecutor) (stackState : CallStackState) :
+    runCallStack? kind state caller callee apparentValue readByte isStatic
+        executor stackState = none ↔
+      (kind = .call ∧
+        (EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack?
+            stackState.stack = none ∨
+          stackRestAfterCall? .call stackState.stack = none)) ∨
+      (kind = .staticcall ∧
+        (EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+            stackState.stack = none ∨
+          stackRestAfterCall? .staticcall stackState.stack = none)) ∨
+      (kind = .delegatecall ∧
+        (EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+            stackState.stack = none ∨
+          stackRestAfterCall? .delegatecall stackState.stack = none)) := by
+  cases kind
+  · simp [runCallStack?_call_eq_none_iff]
+  · simp [runCallStack?_staticcall_eq_none_iff]
+  · simp [runCallStack?_delegatecall_eq_none_iff]
+
 theorem runCallStack?_effects_stack_length
     {kind : CallKind} {state : WorldState} {caller callee : Address}
     {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}
