@@ -110,6 +110,13 @@ theorem dispatchOpcode_simpleEnvHandlerTable_of_field
   exact HandlerTable.dispatchOpcode_some
     (simpleEnvHandler?_of_field field) state
 
+theorem dispatchOpcode_simpleEnvHandlerTable_of_field_status
+    (field : SimpleEnvField) (state : EvmState) :
+    (HandlerTable.dispatchOpcode simpleEnvHandlerTable field.opcode state).status =
+      state.status := by
+  rw [dispatchOpcode_simpleEnvHandlerTable_of_field field state]
+  exact simpleEnvHandler_status field state
+
 @[simp] theorem fieldOfOpcode?_ADDRESS :
     fieldOfOpcode? .ADDRESS = some .address := rfl
 
