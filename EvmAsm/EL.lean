@@ -39,6 +39,9 @@ import EvmAsm.EL.KeccakStackExecutionBridge
 import EvmAsm.EL.Bls12G1MsmInputBridge
 import EvmAsm.EL.Bls12G1MsmResultBridge
 import EvmAsm.EL.Bls12G1MsmEcallBridge
+import EvmAsm.EL.ModexpInputBridge
+import EvmAsm.EL.ModexpResultBridge
+import EvmAsm.EL.ModexpEcallBridge
 import EvmAsm.EL.Ripemd160InputBridge
 import EvmAsm.EL.Ripemd160EcallBridge
 import EvmAsm.EL.Ripemd160ResultBridge
