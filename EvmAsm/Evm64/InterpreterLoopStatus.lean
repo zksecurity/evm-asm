@@ -125,6 +125,13 @@ theorem loopFuel_one_decode
   rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
   simp [InterpreterLoop.stepWithHandler_of_decode handler h_decode]
 
+theorem loopFuel_one_decode_status
+    (handler : Handler) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.loopFuel handler 1 state).status = (handler opcode state).status := by
+  rw [loopFuel_one_decode handler h_status h_decode]
+
 end InterpreterLoopStatus
 
 end EvmAsm.Evm64
