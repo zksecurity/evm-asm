@@ -75,6 +75,16 @@ theorem dispatchOpcode_orElse_left_status
       (handler state).status := by
   rw [dispatchOpcode_orElse_left h_left state]
 
+theorem dispatchOpcode_orElse_left_preserves_status
+    {left right : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_left : left opcode = some handler)
+    (h_status : ∀ state : EvmState, (handler state).status = state.status)
+    (state : EvmState) :
+    (dispatchOpcode (orElse left right) opcode state).status =
+      state.status := by
+  rw [dispatchOpcode_orElse_left_status h_left state]
+  exact h_status state
+
 theorem dispatchOpcode_orElse_right
     {left right : HandlerTable} {opcode : EvmOpcode}
     (h_left : left opcode = none) (state : EvmState) :
@@ -88,6 +98,18 @@ theorem dispatchOpcode_orElse_right_status
     (dispatchOpcode (orElse left right) opcode state).status =
       (dispatchOpcode right opcode state).status := by
   rw [dispatchOpcode_orElse_right h_left state]
+
+theorem dispatchOpcode_orElse_right_preserves_status
+    {left right : HandlerTable} {opcode : EvmOpcode}
+    (h_left : left opcode = none)
+    (h_status :
+      ∀ state : EvmState,
+        (dispatchOpcode right opcode state).status = state.status)
+    (state : EvmState) :
+    (dispatchOpcode (orElse left right) opcode state).status =
+      state.status := by
+  rw [dispatchOpcode_orElse_right_status h_left state]
+  exact h_status state
 
 /-- Lookup-result characterization of `orElse` returning `some`. The combined
     table delegates to the right operand only when the left operand has no
