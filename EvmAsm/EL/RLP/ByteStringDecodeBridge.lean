@@ -156,6 +156,84 @@ theorem decodeAux_cons_longBytes_eq_some_iff
               have h_out : outRest = rest'' := congrArg Prod.snd h_payload_pair
               simp [h_short, h_take, h_payload, h_out, Option.bind]
 
+/--
+Classified short-byte-string decode fails when the payload slice is unavailable.
+
+Distinctive token:
+ByteStringDecodeBridge.decodeAux_cons_shortBytes_eq_none_of_takeBytes_none #120.
+-/
+theorem decodeAux_cons_shortBytes_eq_none_of_takeBytes_none
+    (nDepth : Nat) (pfx : Byte) (rest : List Byte)
+    (h_class : classifyPrefix pfx = .shortBytes)
+    (h_take : takeBytes rest (rlpPrefixShortBytesPayloadLen pfx) = none) :
+    decodeAux (nDepth + 1) (pfx :: rest) = none := by
+  rw [decodeAux_cons_shortBytes_of_classifyPrefix nDepth pfx rest h_class]
+  simp [h_take]
+
+/--
+Classified short-byte-string decode fails when a singleton payload uses the
+short-string encoding even though it is canonical only as a single byte.
+
+Distinctive token:
+ByteStringDecodeBridge.decodeAux_cons_shortBytes_eq_none_of_singleton_short #120.
+-/
+theorem decodeAux_cons_shortBytes_eq_none_of_singleton_short
+    (nDepth : Nat) (pfx b : Byte) (rest rest' : List Byte)
+    (h_class : classifyPrefix pfx = .shortBytes)
+    (h_take : takeBytes rest (rlpPrefixShortBytesPayloadLen pfx) = some ([b], rest'))
+    (h_short : b.toNat < 0x80) :
+    decodeAux (nDepth + 1) (pfx :: rest) = none := by
+  rw [decodeAux_cons_shortBytes_of_classifyPrefix nDepth pfx rest h_class]
+  simp [h_take, h_short]
+
+/--
+Classified long-byte-string decode fails when the long-form length field fails.
+
+Distinctive token:
+ByteStringDecodeBridge.decodeAux_cons_longBytes_eq_none_of_readLength_none #120.
+-/
+theorem decodeAux_cons_longBytes_eq_none_of_readLength_none
+    (nDepth : Nat) (pfx : Byte) (rest : List Byte)
+    (h_class : classifyPrefix pfx = .longBytes)
+    (h_read : readLength rest (rlpPrefixLongBytesLenOfLen pfx) = none) :
+    decodeAux (nDepth + 1) (pfx :: rest) = none := by
+  rw [decodeAux_cons_longBytes_of_classifyPrefix nDepth pfx rest h_class]
+  simp [h_read]
+
+/--
+Classified long-byte-string decode fails when the decoded length is short-form
+canonical and therefore invalid as long-form RLP.
+
+Distinctive token:
+ByteStringDecodeBridge.decodeAux_cons_longBytes_eq_none_of_len_le_55 #120.
+-/
+theorem decodeAux_cons_longBytes_eq_none_of_len_le_55
+    (nDepth : Nat) (pfx : Byte) (rest rest' : List Byte) (lenVal : Nat)
+    (h_class : classifyPrefix pfx = .longBytes)
+    (h_read : readLength rest (rlpPrefixLongBytesLenOfLen pfx) = some (lenVal, rest'))
+    (h_short : lenVal ≤ 55) :
+    decodeAux (nDepth + 1) (pfx :: rest) = none := by
+  rw [decodeAux_cons_longBytes_of_classifyPrefix nDepth pfx rest h_class]
+  simp [h_read, h_short]
+
+/--
+Classified long-byte-string decode fails when the long payload slice is
+unavailable after a canonical long length.
+
+Distinctive token:
+ByteStringDecodeBridge.decodeAux_cons_longBytes_eq_none_of_takeBytes_none #120.
+-/
+theorem decodeAux_cons_longBytes_eq_none_of_takeBytes_none
+    (nDepth : Nat) (pfx : Byte) (rest rest' : List Byte) (lenVal : Nat)
+    (h_class : classifyPrefix pfx = .longBytes)
+    (h_read : readLength rest (rlpPrefixLongBytesLenOfLen pfx) = some (lenVal, rest'))
+    (h_long : 55 < lenVal)
+    (h_take : takeBytes rest' lenVal = none) :
+    decodeAux (nDepth + 1) (pfx :: rest) = none := by
+  rw [decodeAux_cons_longBytes_of_classifyPrefix nDepth pfx rest h_class]
+  have h_not_short : ¬ lenVal ≤ 55 := by omega
+  simp [h_read, h_not_short, h_take, Option.bind]
+
 end ByteStringDecodeBridge
 
 end EvmAsm.EL.RLP
