@@ -308,6 +308,81 @@ theorem decodeLogStack?_eq_none_iff
   | log3 => exact decodeLogStack?_log3_eq_none_iff stack
   | log4 => exact decodeLogStack?_log4_eq_none_iff stack
 
+theorem decodeLogStack?_log0_none_of_empty :
+    decodeLogStack? .log0 [] = none := rfl
+
+theorem decodeLogStack?_log0_none_of_one
+    (offset : EvmWord) :
+    decodeLogStack? .log0 [offset] = none := rfl
+
+theorem decodeLogStack?_log1_none_of_empty :
+    decodeLogStack? .log1 [] = none := rfl
+
+theorem decodeLogStack?_log1_none_of_one
+    (offset : EvmWord) :
+    decodeLogStack? .log1 [offset] = none := rfl
+
+theorem decodeLogStack?_log1_none_of_two
+    (offset size : EvmWord) :
+    decodeLogStack? .log1 [offset, size] = none := rfl
+
+theorem decodeLogStack?_log2_none_of_empty :
+    decodeLogStack? .log2 [] = none := rfl
+
+theorem decodeLogStack?_log2_none_of_one
+    (offset : EvmWord) :
+    decodeLogStack? .log2 [offset] = none := rfl
+
+theorem decodeLogStack?_log2_none_of_two
+    (offset size : EvmWord) :
+    decodeLogStack? .log2 [offset, size] = none := rfl
+
+theorem decodeLogStack?_log2_none_of_three
+    (offset size topic0 : EvmWord) :
+    decodeLogStack? .log2 [offset, size, topic0] = none := rfl
+
+theorem decodeLogStack?_log3_none_of_empty :
+    decodeLogStack? .log3 [] = none := rfl
+
+theorem decodeLogStack?_log3_none_of_one
+    (offset : EvmWord) :
+    decodeLogStack? .log3 [offset] = none := rfl
+
+theorem decodeLogStack?_log3_none_of_two
+    (offset size : EvmWord) :
+    decodeLogStack? .log3 [offset, size] = none := rfl
+
+theorem decodeLogStack?_log3_none_of_three
+    (offset size topic0 : EvmWord) :
+    decodeLogStack? .log3 [offset, size, topic0] = none := rfl
+
+theorem decodeLogStack?_log3_none_of_four
+    (offset size topic0 topic1 : EvmWord) :
+    decodeLogStack? .log3 [offset, size, topic0, topic1] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_empty :
+    decodeLogStack? .log4 [] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_one
+    (offset : EvmWord) :
+    decodeLogStack? .log4 [offset] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_two
+    (offset size : EvmWord) :
+    decodeLogStack? .log4 [offset, size] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_three
+    (offset size topic0 : EvmWord) :
+    decodeLogStack? .log4 [offset, size, topic0] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_four
+    (offset size topic0 topic1 : EvmWord) :
+    decodeLogStack? .log4 [offset, size, topic0, topic1] = none := rfl
+
+theorem decodeLogStack?_log4_none_of_five
+    (offset size topic0 topic1 topic2 : EvmWord) :
+    decodeLogStack? .log4 [offset, size, topic0, topic1, topic2] = none := rfl
+
 theorem decodeLogStack?_log0_topicCountOk
     (offset size : EvmWord) (_rest : List EvmWord) :
     topicCountOk .log0 (mkArgs offset size []) := rfl
