@@ -54,6 +54,8 @@
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Bridge":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeFalse",
    "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeTrue"],
+  "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Full":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Bridge"],
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeFalse":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Branches"],
   "EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.BridgeTrue":
