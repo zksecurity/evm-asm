@@ -9,6 +9,8 @@
   ["Mathlib.Tactic.IntervalCases", "Mathlib.Tactic.FinCases", "Mathlib.Data.Fintype.Basic"],
   "EvmAsm.Rv64.RLP.Phase1":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.ExtractPure"],
+  "EvmAsm.Rv64.RLP.Phase2Short":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Rv64.RLP.Phase3SingleByte":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.RLP.Phase1CascadePrefixE2": ["EvmAsm.Rv64.RLP.Phase1Disjoint"],
