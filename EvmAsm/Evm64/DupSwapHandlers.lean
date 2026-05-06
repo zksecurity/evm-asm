@@ -242,6 +242,24 @@ theorem dispatchOpcode_dupSwapHandlerTable_SWAP_of_valid
   exact HandlerTable.dispatchOpcode_some
     (dupSwapHandler?_SWAP_of_valid h_valid) state
 
+theorem dispatchOpcode_dupSwapHandlerTable_DUP_of_valid_status_of_some
+    {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true)
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : dupStack? n state.stack = some stack') :
+    (HandlerTable.dispatchOpcode dupSwapHandlerTable (.DUP n) state).status =
+      state.status := by
+  rw [dispatchOpcode_dupSwapHandlerTable_DUP_of_valid h_valid state]
+  simp [dupHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_dupSwapHandlerTable_SWAP_of_valid_status_of_some
+    {n : Nat} (h_valid : EvmOpcode.validSwapIndex n = true)
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : swapStack? n state.stack = some stack') :
+    (HandlerTable.dispatchOpcode dupSwapHandlerTable (.SWAP n) state).status =
+      state.status := by
+  rw [dispatchOpcode_dupSwapHandlerTable_SWAP_of_valid h_valid state]
+  simp [swapHandler, h_stack, EvmState.withStack]
+
 theorem dispatchOpcode?_dupSwapHandlerTable_DUP_of_valid
     {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true)
     (state : EvmState) :
