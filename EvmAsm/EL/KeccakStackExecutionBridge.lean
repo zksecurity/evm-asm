@@ -58,6 +58,40 @@ theorem requestFromStack?_some
         (KeccakInputBridge.acceleratorInputFromArgs memory
           (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) := rfl
 
+/--
+The stack-to-request bridge succeeds exactly when the stack contains the
+`offset, size` pair required by KECCAK256.
+
+Distinctive token: KeccakStackExecutionBridge.requestFromStack?_eq_some_iff #111.
+-/
+theorem requestFromStack?_eq_some_iff
+    (memory : MemoryReader) (stack : List EvmWord) (request : KeccakRequest) :
+    requestFromStack? memory stack = some request ↔
+      ∃ offset size rest,
+        stack = offset :: size :: rest ∧
+          request =
+            KeccakEcallBridge.requestFromInput
+              (KeccakInputBridge.acceleratorInputFromArgs memory
+                (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size)) := by
+  constructor
+  · intro h_request
+    cases stack with
+    | nil =>
+        simp [requestFromStack?,
+          EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_request
+    | cons offset tail =>
+        cases tail with
+        | nil =>
+            simp [requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_request
+        | cons size rest =>
+            simp [requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_request
+            cases h_request
+            exact ⟨offset, size, rest, rfl, rfl⟩
+  · rintro ⟨offset, size, rest, rfl, rfl⟩
+    rfl
+
 @[simp] theorem requestFromStack?_nil (memory : MemoryReader) :
     requestFromStack? memory [] = none := rfl
 
@@ -73,6 +107,36 @@ theorem resultFromStack?_some
         (KeccakEcallBridge.requestFromInput
           (KeccakInputBridge.acceleratorInputFromArgs memory
             (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size)))) := rfl
+
+theorem resultFromStack?_eq_some_iff
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (stack : List EvmWord) (result : KeccakResult) :
+    resultFromStack? accelerator memory stack = some result ↔
+      ∃ offset size rest,
+        stack = offset :: size :: rest ∧
+          result =
+            KeccakEcallBridge.executeKeccakEcall accelerator
+              (KeccakEcallBridge.requestFromInput
+                (KeccakInputBridge.acceleratorInputFromArgs memory
+                  (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) := by
+  constructor
+  · intro h_result
+    cases stack with
+    | nil =>
+        simp [resultFromStack?, requestFromStack?,
+          EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_result
+    | cons offset tail =>
+        cases tail with
+        | nil =>
+            simp [resultFromStack?, requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_result
+        | cons size rest =>
+            simp [resultFromStack?, requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_result
+            cases h_result
+            exact ⟨offset, size, rest, rfl, rfl⟩
+  · rintro ⟨offset, size, rest, rfl, rfl⟩
+    rfl
 
 theorem runKeccakStack?_some
     (accelerator : Accelerator) (memory : MemoryReader)
