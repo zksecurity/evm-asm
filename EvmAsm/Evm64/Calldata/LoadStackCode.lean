@@ -95,6 +95,74 @@ def calldataLoadWindowOutputWordFromArgs
     (CallDataLoadArgs.windowByteFromArgs data args 31)
 
 /--
+The low stack limb of the CALLDATALOAD byte-window word is the packed
+least-significant byte block produced by the window core.
+-/
+theorem getLimbN_calldataLoadWindowOutputWordFromArgs_0
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) :
+    (calldataLoadWindowOutputWordFromArgs data args).getLimbN 0 =
+      mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 24)
+        (CallDataLoadArgs.windowByteFromArgs data args 25)
+        (CallDataLoadArgs.windowByteFromArgs data args 26)
+        (CallDataLoadArgs.windowByteFromArgs data args 27)
+        (CallDataLoadArgs.windowByteFromArgs data args 28)
+        (CallDataLoadArgs.windowByteFromArgs data args 29)
+        (CallDataLoadArgs.windowByteFromArgs data args 30)
+        (CallDataLoadArgs.windowByteFromArgs data args 31) := by
+  unfold calldataLoadWindowOutputWordFromArgs
+  rw [getLimbN_mloadLoadedWordFromBytes_0]
+
+theorem getLimbN_calldataLoadWindowOutputWordFromArgs_1
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) :
+    (calldataLoadWindowOutputWordFromArgs data args).getLimbN 1 =
+      mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 16)
+        (CallDataLoadArgs.windowByteFromArgs data args 17)
+        (CallDataLoadArgs.windowByteFromArgs data args 18)
+        (CallDataLoadArgs.windowByteFromArgs data args 19)
+        (CallDataLoadArgs.windowByteFromArgs data args 20)
+        (CallDataLoadArgs.windowByteFromArgs data args 21)
+        (CallDataLoadArgs.windowByteFromArgs data args 22)
+        (CallDataLoadArgs.windowByteFromArgs data args 23) := by
+  unfold calldataLoadWindowOutputWordFromArgs
+  rw [getLimbN_mloadLoadedWordFromBytes_1]
+
+theorem getLimbN_calldataLoadWindowOutputWordFromArgs_2
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) :
+    (calldataLoadWindowOutputWordFromArgs data args).getLimbN 2 =
+      mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 8)
+        (CallDataLoadArgs.windowByteFromArgs data args 9)
+        (CallDataLoadArgs.windowByteFromArgs data args 10)
+        (CallDataLoadArgs.windowByteFromArgs data args 11)
+        (CallDataLoadArgs.windowByteFromArgs data args 12)
+        (CallDataLoadArgs.windowByteFromArgs data args 13)
+        (CallDataLoadArgs.windowByteFromArgs data args 14)
+        (CallDataLoadArgs.windowByteFromArgs data args 15) := by
+  unfold calldataLoadWindowOutputWordFromArgs
+  rw [getLimbN_mloadLoadedWordFromBytes_2]
+
+/--
+Distinctive token:
+Calldata.LoadStackCode.getLimbN_calldataLoadWindowOutputWordFromArgs_3 #104 #107.
+-/
+theorem getLimbN_calldataLoadWindowOutputWordFromArgs_3
+    (data : List (BitVec 8)) (args : CallDataLoadArgs.Args) :
+    (calldataLoadWindowOutputWordFromArgs data args).getLimbN 3 =
+      mloadPackedLimb
+        (CallDataLoadArgs.windowByteFromArgs data args 0)
+        (CallDataLoadArgs.windowByteFromArgs data args 1)
+        (CallDataLoadArgs.windowByteFromArgs data args 2)
+        (CallDataLoadArgs.windowByteFromArgs data args 3)
+        (CallDataLoadArgs.windowByteFromArgs data args 4)
+        (CallDataLoadArgs.windowByteFromArgs data args 5)
+        (CallDataLoadArgs.windowByteFromArgs data args 6)
+        (CallDataLoadArgs.windowByteFromArgs data args 7) := by
+  unfold calldataLoadWindowOutputWordFromArgs
+  rw [getLimbN_mloadLoadedWordFromBytes_3]
+
+/--
 Fold the four MLOAD-style packed output limbs produced by the CALLDATALOAD
 window core into the EVM stack word selected by decoded calldata arguments.
 -/
