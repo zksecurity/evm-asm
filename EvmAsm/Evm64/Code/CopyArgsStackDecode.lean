@@ -50,6 +50,23 @@ theorem decodeCodeCopyStack?_eq_some_iff
   · rintro ⟨destOffset, codeOffset, size, rest, rfl, rfl⟩
     rfl
 
+theorem decodeCodeCopyStack?_eq_none_iff (stack : List EvmWord) :
+    decodeCodeCopyStack? stack = none ↔ stack.length < 3 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · simp
+    · simp
+    · simp
+    · simp [decodeCodeCopyStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 theorem decodeCodeCopyStack?_destOffset
     (destOffset codeOffset size : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.destOffset)
