@@ -155,6 +155,22 @@ theorem runTerminatingStack?_selfdestruct
               (EvmAsm.Evm64.TerminatingArgs.returnArgs 0 0)
           stack := rest } := rfl
 
+theorem runTerminatingStack?_eq_none_iff
+    (kind : TerminatingKind) (state : WorldState) (readByte : MemoryReader)
+    (gasRemaining : Nat) (stackState : TerminatingStackState) :
+    runTerminatingStack? kind state readByte gasRemaining stackState = none ↔
+      argsFromStack? kind stackState.stack = none ∨
+        stackRestAfterTerminating? kind stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runTerminatingStack?]
+      cases h_args : argsFromStack? kind stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterTerminating? kind stack with
+          | none => simp
+          | some rest => simp
+
 theorem runTerminatingStack?_stack_length
     {kind : TerminatingKind} {state : WorldState} {readByte : MemoryReader}
     {gasRemaining : Nat} {stackState : TerminatingStackState}
