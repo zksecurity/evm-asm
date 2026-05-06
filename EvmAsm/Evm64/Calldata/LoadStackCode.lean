@@ -186,6 +186,59 @@ theorem calldataload_window_combined_stack_spec_within
     h4
 
 /--
+CALLDATALOAD window combined four-limb sequence stack spec: combine the
+prologue half (`calldataload_window_prologue_stack_spec_within`) with the
+four byte-window quarter triples (composed via
+`calldataload_window_four_limb_sequence_stack_spec_within`) into a single
+triple from `base` to `base + 376` over `evm_calldataload_window_code`.
+
+This is a one-line composition of the existing combined spec
+(`calldataload_window_combined_stack_spec_within`, which takes a single
+four-limbs core triple) with the four-limb sequence spec
+(`calldataload_window_four_limb_sequence_stack_spec_within`, which produces
+that consolidated four-limbs triple from four byte-window quarter triples).
+Subsequent slices instantiate each `hN` with a concrete byte-load triple to
+land the full `evm_calldataload_stack_spec` (evm-asm-pgeuo / GH #104) without
+re-doing the prologue/transport plumbing.
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_combined_four_limb_sequence_stack_spec_within #104.
+-/
+theorem calldataload_window_combined_four_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg)
+    (sp offset offOld addrOld envPtr : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadFourLimbsCode addrReg byteReg accReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ (envPtr + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  calldataload_window_combined_stack_spec_within
+    offReg byteReg accReg addrReg envPtrReg
+    sp offset offOld addrOld envPtr base h_off_ne_x0 h_addr_ne_x0
+    (calldataload_window_four_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg envPtrReg base h0 h1 h2 h3)
+
+/--
 The byte-level semantic word produced by the CALLDATALOAD in-bounds window,
 phrased through decoded stack arguments.
 
