@@ -144,5 +144,21 @@ theorem zkvmStatusFromWord?_some_eq_toWord
       · simpa [zkvmStatusToWord] using h_efail
       · simp [zkvmStatusFromWord?, h_eok, h_efail] at h_status
 
+theorem zkvmStatusFromWord?_eq_none_iff (word : Word) :
+    zkvmStatusFromWord? word = none ↔
+      word ≠ zkvmStatusEokWord ∧ word ≠ zkvmStatusEfailWord := by
+  by_cases h_eok : word = zkvmStatusEokWord
+  · simp [zkvmStatusFromWord?, h_eok]
+  · by_cases h_efail : word = zkvmStatusEfailWord
+    · simp [zkvmStatusFromWord?, h_efail, zkvmStatusEokWord_ne_efailWord.symm]
+    · simp [zkvmStatusFromWord?, h_eok, h_efail]
+
+theorem zkvmStatusFromWord?_eq_none_of_ne_status_words
+    {word : Word}
+    (h_eok : word ≠ zkvmStatusEokWord)
+    (h_efail : word ≠ zkvmStatusEfailWord) :
+    zkvmStatusFromWord? word = none :=
+  (zkvmStatusFromWord?_eq_none_iff word).2 ⟨h_eok, h_efail⟩
+
 end Rv64
 end EvmAsm
