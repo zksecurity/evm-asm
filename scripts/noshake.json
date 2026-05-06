@@ -322,6 +322,20 @@
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
 "EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.Evm64.Dispatch.TailSpec":
+ ["EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
+"EvmAsm.Evm64.Calldata.CopySpec":
+ ["EvmAsm.Evm64.Calldata.CopyProgram", "EvmAsm.Rv64.SyscallSpecs",
+  "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Evm64.DivMod.Callable": ["EvmAsm.Evm64.DivMod.Compose.Base"],
+"EvmAsm.Rv64.RLP.Phase3LongList":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3LongString":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3ShortList":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
+"EvmAsm.Rv64.RLP.Phase3ShortString":
+ ["EvmAsm.EL.RLP.ProgramSpec", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"],
 "EvmAsm.EL.RLP.ReadLengthBridge": ["EvmAsm.EL.RLP.ReadLength"],
 "EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers":
  ["EvmAsm.Evm64.DivMod.SpecCall"],
