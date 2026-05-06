@@ -140,6 +140,15 @@ theorem loopFuel_empty_succ_running_decode
   rw [loopFuel_succ_running_decode HandlerTable.empty nSteps h_status h_decode]
   simp [HandlerTable.dispatchOpcode]
 
+theorem loopFuel_empty_succ_running_decode_status
+    (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.loopFuel (toLoopHandler HandlerTable.empty) (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_empty_succ_running_decode nSteps h_status h_decode]
+  exact loopFuel_table_invalid_fixed_status HandlerTable.empty nSteps state
+
 theorem handlerMatchesSpec_of_dispatch_eq
     (table : HandlerTable) (spec : InterpreterLoop.Handler)
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
