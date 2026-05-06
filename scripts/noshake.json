@@ -319,4 +319,38 @@
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
-"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"]}}
+"EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers":
+ ["EvmAsm.Evm64.DivMod.SpecCall"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants"],
+"EvmAsm.Evm64.Dispatch.Compose": ["EvmAsm.Evm64.Dispatch.EntryAddrBridge"],
+"EvmAsm.Evm64.Dispatch.Spec": ["EvmAsm.Evm64.Dispatch.Compose"],
+"EvmAsm.Evm64.DivMod.Compose.FullPath":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA", "EvmAsm.Evm64.DivMod.Compose.Epilogue",
+  "EvmAsm.Evm64.DivMod.Compose.ModEpilogue"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN1":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN2":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN3":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Spec.CallSkip":
+ ["EvmAsm.Evm64.EvmWordArith.Div128Shift0",
+  "EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract",
+  "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2",
+  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
+"EvmAsm.Rv64.InstructionSpecs": ["EvmAsm.Rv64.GenericSpecs"],
+"EvmAsm.Rv64.SyscallSpecs":
+ ["EvmAsm.Rv64.InstructionSpecs", "EvmAsm.Rv64.ByteOps",
+  "EvmAsm.Rv64.HalfwordOps", "EvmAsm.Rv64.WordOps",
+  "EvmAsm.Rv64.Tactics.SpecDb"],
+"EvmAsm.Rv64.HintSpecs": ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"]}}

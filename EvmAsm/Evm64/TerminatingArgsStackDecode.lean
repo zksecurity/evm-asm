@@ -107,6 +107,62 @@ theorem decodeSelfdestructStack?_eq_some_iff
   · rintro ⟨rest, rfl⟩
     rfl
 
+/--
+Failure characterization for `decodeReturnStack?`: the decoder returns `none`
+exactly when the stack has fewer than 2 elements.
+
+Distinctive token: TerminatingArgsStackDecode.decodeReturnStack?_eq_none_iff #113.
+-/
+theorem decodeReturnStack?_eq_none_iff (stack : List EvmWord) :
+    decodeReturnStack? stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [decodeReturnStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+/--
+Failure characterization for `decodeRevertStack?`: the decoder returns `none`
+exactly when the stack has fewer than 2 elements.
+-/
+theorem decodeRevertStack?_eq_none_iff (stack : List EvmWord) :
+    decodeRevertStack? stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · simp
+    · simp
+    · simp [decodeRevertStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _⟩⟩
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+/--
+Failure characterization for `decodeSelfdestructStack?`: the decoder returns
+`none` exactly when the stack is empty.
+-/
+theorem decodeSelfdestructStack?_eq_none_iff (stack : List EvmWord) :
+    decodeSelfdestructStack? stack = none ↔ stack.length < 1 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _⟩
+    · simp
+    · simp [decodeSelfdestructStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _⟩
+    · rfl
+    · simp at h_len
+
 theorem decodeReturnStack?_dataRange
     (offset size : EvmWord) (rest : List EvmWord) :
     dataRange (Option.getD

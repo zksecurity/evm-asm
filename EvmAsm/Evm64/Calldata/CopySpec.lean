@@ -218,6 +218,80 @@ theorem evm_calldatacopy_preamble_stack_spec_within
       xperm_hyp hp)
     hFramed
 
+/--
+The separated CALLDATACOPY preamble CodeReq is the prefix of the full
+`evm_calldatacopy_code` program.
+
+Distinctive token:
+Calldata.CopySpec.evm_calldatacopy_preamble_code_sub_full #104.
+-/
+theorem evm_calldatacopy_preamble_code_sub_full
+    (envBaseReg memBaseReg destReg srcReg cntReg cdpReg endReg byteReg : Reg)
+    (base : Word) :
+    ∀ a i,
+      (evm_calldatacopy_preamble_code envBaseReg memBaseReg destReg srcReg
+        cntReg cdpReg endReg base) a = some i →
+      (evm_calldatacopy_code envBaseReg memBaseReg destReg srcReg cntReg
+        cdpReg endReg byteReg base) a = some i := by
+  exact CodeReq.ofProg_mono_sub base base
+    (evm_calldatacopy envBaseReg memBaseReg destReg srcReg cntReg cdpReg
+      endReg byteReg)
+    (evm_calldatacopy_preamble envBaseReg memBaseReg destReg srcReg cntReg
+      cdpReg endReg)
+    0
+    (by simp)
+    (by
+      unfold evm_calldatacopy evm_calldatacopy_preamble
+      rfl)
+    (by
+      rw [evm_calldatacopy_preamble_length, evm_calldatacopy_length]
+      omega)
+    (by
+      rw [evm_calldatacopy_length]
+      norm_num)
+
+/--
+Full-code version of `evm_calldatacopy_preamble_stack_spec_within`, useful
+for composing the preamble with later loop specs over `evm_calldatacopy_code`.
+-/
+theorem evm_calldatacopy_full_code_preamble_stack_spec_within
+    (envBaseReg memBaseReg destReg srcReg cntReg cdpReg endReg byteReg : Reg)
+    (hdest_ne_x0 : destReg ≠ .x0)
+    (hsrc_ne_x0 : srcReg ≠ .x0)
+    (hcnt_ne_x0 : cntReg ≠ .x0)
+    (hcdp_ne_x0 : cdpReg ≠ .x0)
+    (hend_ne_x0 : endReg ≠ .x0)
+    (sp base envAddr memBase destOld srcOld cntOld cdpOld endOld : Word)
+    (env : EvmEnv) (destOffset dataOffset size : EvmWord)
+    (rest : List EvmWord) :
+    let code := evm_calldatacopy_code envBaseReg memBaseReg
+      destReg srcReg cntReg cdpReg endReg byteReg base
+    cpsTripleWithin 9 base (base + 36) code
+      ((.x12 ↦ᵣ sp) ** (envBaseReg ↦ᵣ envAddr) **
+       (memBaseReg ↦ᵣ memBase) ** (destReg ↦ᵣ destOld) **
+       (srcReg ↦ᵣ srcOld) ** (cntReg ↦ᵣ cntOld) **
+       (cdpReg ↦ᵣ cdpOld) ** (endReg ↦ᵣ endOld) **
+       evmStackIs sp [destOffset, dataOffset, size] **
+       evmStackIs (sp + 96) rest ** envIs envAddr env)
+      ((.x12 ↦ᵣ (sp + 96)) ** (envBaseReg ↦ᵣ envAddr) **
+       (memBaseReg ↦ᵣ memBase) **
+       (destReg ↦ᵣ (memBase + destOffset.getLimbN 0)) **
+       (srcReg ↦ᵣ (env.callDataPtr + dataOffset.getLimbN 0)) **
+       (cntReg ↦ᵣ size.getLimbN 0) **
+       (cdpReg ↦ᵣ env.callDataPtr) **
+       (endReg ↦ᵣ (env.callDataLen + env.callDataPtr)) **
+       evmStackIs sp [destOffset, dataOffset, size] **
+       evmStackIs (sp + 96) rest ** envIs envAddr env) := by
+  intro code
+  exact cpsTripleWithin_extend_code
+    (h := evm_calldatacopy_preamble_stack_spec_within
+      envBaseReg memBaseReg destReg srcReg cntReg cdpReg endReg
+      hdest_ne_x0 hsrc_ne_x0 hcnt_ne_x0 hcdp_ne_x0 hend_ne_x0
+      sp base envAddr memBase destOld srcOld cntOld cdpOld endOld env
+      destOffset dataOffset size rest)
+    (hmono := evm_calldatacopy_preamble_code_sub_full
+      envBaseReg memBaseReg destReg srcReg cntReg cdpReg endReg byteReg base)
+
 /-- Partial memory-effect bridge for the bytes the loop is meant to write:
     at each destination-relative index below `size`, the byte selected by the
     CALLDATACOPY memory helper is the executable calldata byte at

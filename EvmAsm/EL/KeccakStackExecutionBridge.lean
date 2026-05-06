@@ -100,8 +100,8 @@ theorem requestFromStack?_eq_some_iff
     requestFromStack? memory [offset] = none := rfl
 
 /--
-The stack-to-request bridge fails exactly when the stack has fewer than two
-entries (no `offset, size` pair to decode).
+The stack-to-request bridge fails exactly on stacks missing the KECCAK256
+`offset, size` pair.
 
 Distinctive token: KeccakStackExecutionBridge.requestFromStack?_eq_none_iff #111.
 -/
@@ -214,6 +214,31 @@ theorem runKeccakStack?_some
             (accelerator
               (KeccakInputBridge.acceleratorInputFromArgs memory
                 (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) :: rest) := rfl
+
+theorem runKeccakStack?_eq_some_iff
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (stack out : List EvmWord) :
+    runKeccakStack? accelerator memory stack = some out ↔
+      ∃ offset size rest,
+        stack = offset :: size :: rest ∧
+          out =
+            KeccakResultBridge.stackWordFromAcceleratorOutput
+              (accelerator
+                (KeccakInputBridge.acceleratorInputFromArgs memory
+                  (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) :: rest := by
+  constructor
+  · intro h_run
+    cases stack with
+    | nil => simp [runKeccakStack?] at h_run
+    | cons offset tail =>
+        cases tail with
+        | nil => simp [runKeccakStack?] at h_run
+        | cons size rest =>
+            simp [runKeccakStack?] at h_run
+            cases h_run
+            exact ⟨offset, size, rest, rfl, rfl⟩
+  · rintro ⟨offset, size, rest, rfl, rfl⟩
+    rfl
 
 @[simp] theorem runKeccakStack?_nil
     (accelerator : Accelerator) (memory : MemoryReader) :
