@@ -768,6 +768,55 @@ theorem exp_iter_body_full_byte_length
   rw [exp_iter_body_full_length]
 
 
+-- ----------------------------------------------------------------------------
+-- EVM-stack pointer advance/restore (#92 slice, beads evm-asm-zk5v9)
+-- ----------------------------------------------------------------------------
+--
+-- Per `docs/92-exp-frame-design.md` §4, the EXP loop body runs with `x12`
+-- pointed at `x12_loop = sp_evm0 + 64` rather than at the original EVM stack
+-- base `sp_evm0`. The +64 advance moves the in-loop "MUL operand window"
+-- (`x12 + 0 .. x12 + 56`) above the original `a`/`b` operand window
+-- (`sp_evm0 + 0 .. + 56`) so MUL's outputs at `x12_loop + 32 .. + 56` do
+-- NOT clobber the original operands. The advance is done once between the
+-- prologue and the loop body; the inverse `-64` restore is done once after
+-- the loop body (before `exp_epilogue` copies `result` out and applies the
+-- final `+32` EVM `pop`).
+--
+-- These are single-instruction Programs; we package them as named blocks so
+-- the surrounding `evm_exp` layout (slice evm-asm-ahaz) and the full-loop
+-- composition (slice evm-asm-w5mk) can compose them structurally with the
+-- other `exp_*` sub-blocks already defined above.
+
+/-- Single-instruction block that advances the EVM stack pointer `x12` by
+    +64 bytes (one EXP loop-frame offset), moving from `sp_evm0` to
+    `x12_loop = sp_evm0 + 64`. Emitted once between the EXP prologue and
+    the 256-iteration square-and-multiply loop body. 1 instruction. -/
+def exp_loop_pointer_advance : Program :=
+  ADDI .x12 .x12 64
+
+theorem exp_loop_pointer_advance_length :
+    exp_loop_pointer_advance.length = 1 := rfl
+
+theorem exp_loop_pointer_advance_byte_length :
+    4 * exp_loop_pointer_advance.length = 4 := by
+  rw [exp_loop_pointer_advance_length]
+
+/-- Single-instruction block that restores the EVM stack pointer `x12` from
+    `x12_loop = sp_evm0 + 64` back to the original EVM stack base
+    `sp_evm0`. Emitted once after the 256-iteration square-and-multiply
+    loop body, immediately before `exp_epilogue` copies the running
+    accumulator `result` out to the EVM stack and applies the final `+32`
+    EVM `pop`. 1 instruction. -/
+def exp_loop_pointer_restore : Program :=
+  ADDI .x12 .x12 (-64)
+
+theorem exp_loop_pointer_restore_length :
+    exp_loop_pointer_restore.length = 1 := rfl
+
+theorem exp_loop_pointer_restore_byte_length :
+    4 * exp_loop_pointer_restore.length = 4 := by
+  rw [exp_loop_pointer_restore_length]
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
