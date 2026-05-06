@@ -705,6 +705,69 @@ theorem exp_cond_mul_call_with_skip_block_byte_length
 
 
 
+-- ----------------------------------------------------------------------------
+-- Full per-iteration loop body: exp_iter_body_full
+-- (#92 slice, beads evm-asm-cqsr9)
+-- ----------------------------------------------------------------------------
+--
+-- One complete iteration of the EXP square-and-multiply loop, including the
+-- per-iteration MUL marshalling for both the squaring step and the conditional
+-- multiply, the BEQ skip gate around the conditional multiply, and the
+-- counter-decrement + backward branch tail. This is the unit that the
+-- 256-iteration `evm_exp` body (slice evm-asm-ahaz) repeats.
+--
+-- Layout (58 instructions = 232 bytes per iteration):
+--
+--     exp_iter_body_full mulOff skipOff backOff :=
+--       exp_bit_test_block                              ;;  -- 3 instr (bit test)
+--       exp_squaring_call_block mulOff                  ;;  -- 26 instr (marshal+JAL+un-marshal)
+--       exp_cond_mul_call_with_skip_block mulOff skipOff ;;  -- 27 instr (BEQ skip + cond mul call)
+--       exp_loop_back backOff                                -- 2 instr (ADDI x9 -1 ;; BNE)
+--
+-- Per-block specs are already merged (slices 4a..4d, beads evm-asm-mtj3 covers
+-- the limb-level composition); this slice is structural composition only.
+-- The full-loop cpsTriple lands in slice 5 (evm-asm-w5mk).
+
+/-- One full iteration of the EXP square-and-multiply loop, including
+    per-iteration MUL marshalling for both the squaring step and the
+    conditional multiply, the BEQ skip gate around the conditional
+    multiply, and the iteration-counter decrement + backward branch.
+    58 instructions, 232 bytes.
+
+    `mulOff` is the signed 21-bit JAL offset to `mul_callable` (shared by
+    the squaring and conditional-multiply call sites). `skipOff` is the
+    BEQ branch offset that skips past the conditional-multiply taken
+    branch when the current exponent bit is zero (= 108 bytes when the
+    surrounding layout is final). `backOff` is the signed 13-bit BNE byte
+    offset back to the top of the iteration body (negative). All three
+    are pinned by the surrounding `evm_exp` layout in slice
+    evm-asm-ahaz. -/
+def exp_iter_body_full
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : Program :=
+  exp_bit_test_block ;;
+  exp_squaring_call_block mulOff ;;
+  exp_cond_mul_call_with_skip_block mulOff skipOff ;;
+  exp_loop_back backOff
+
+theorem exp_iter_body_full_length
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (exp_iter_body_full mulOff skipOff backOff).length = 58 := by
+  show (((exp_bit_test_block ;;
+          exp_squaring_call_block mulOff) ;;
+         exp_cond_mul_call_with_skip_block mulOff skipOff) ;;
+        exp_loop_back backOff).length = 58
+  simp only [seq, Program.length_append,
+    exp_bit_test_block_length,
+    exp_squaring_call_block_length,
+    exp_cond_mul_call_with_skip_block_length,
+    exp_loop_back_length]
+
+theorem exp_iter_body_full_byte_length
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    4 * (exp_iter_body_full mulOff skipOff backOff).length = 232 := by
+  rw [exp_iter_body_full_length]
+
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
