@@ -107,6 +107,44 @@ theorem calldataload_window_four_limbs_stack_spec_within
     offReg byteReg accReg addrReg envPtrReg base h
 
 /--
+CALLDATALOAD window four-limb sequence stack spec: compose four
+program-identical `mloadFourLimbsCode` triples (one per byte-window quarter
+spanning `base + 8 .. base + 100 .. 192 .. 284 .. 376`) into a single triple
+on the in-bounds `evm_calldataload_window_code`. Mirrors
+`mload_four_limb_sequence_spec_within` plus the
+`calldataload_window_four_limbs_stack_spec_within` transport.
+
+Subsequent slices can instantiate each `hN` with a concrete byte-load triple
+to obtain a single four-limb byte-window read in the calldataload setting,
+without re-doing the program-identity transport.
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_four_limb_sequence_stack_spec_within #104.
+-/
+theorem calldataload_window_four_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P0 P1 P2 P3 P4 : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P0 P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P3 P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      P0 P4 :=
+  calldataload_window_four_limbs_stack_spec_within
+    offReg byteReg accReg addrReg envPtrReg base
+    (mload_four_limb_sequence_spec_within
+      addrReg byteReg accReg base h0 h1 h2 h3)
+
+/--
 CALLDATALOAD window combined stack spec: sequentially compose the prologue
 half (`calldataload_window_prologue_stack_spec_within`) with a caller-supplied
 four-limbs core triple via `cpsTripleWithin_seq_same_cr`.
