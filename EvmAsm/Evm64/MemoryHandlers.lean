@@ -32,6 +32,21 @@ def msizeHandlerTable : HandlerTable :=
 @[simp] theorem memoryHandler?_MSIZE :
     memoryHandler? .MSIZE = some msizeHandler := rfl
 
+@[simp] theorem eq_msizeHandler_iff (handler : OpcodeHandler) :
+    msizeHandler = handler ↔ handler = msizeHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem memoryHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    memoryHandler? opcode = some handler ↔
+      opcode = .MSIZE ∧ handler = msizeHandler := by
+  cases opcode <;> simp [memoryHandler?]
+
+theorem memoryHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    memoryHandler? opcode = none ↔ opcode ≠ .MSIZE := by
+  cases opcode <;> simp [memoryHandler?]
+
 @[simp] theorem msizeHandler_stack (state : EvmState) :
     (msizeHandler state).stack = msizeWord state :: state.stack := rfl
 
