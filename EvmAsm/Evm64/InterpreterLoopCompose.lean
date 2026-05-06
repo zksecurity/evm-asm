@@ -54,12 +54,26 @@ theorem loopFuel_one_add
         (InterpreterLoop.loopFuel handler 1 state) := by
   exact loopFuel_add handler 1 nSteps state
 
+theorem loopFuel_one_add_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel handler (1 + nSteps) state).status =
+      (InterpreterLoop.loopFuel handler nSteps
+        (InterpreterLoop.loopFuel handler 1 state)).status := by
+  rw [loopFuel_one_add handler nSteps state]
+
 theorem loopFuel_add_one
     (handler : Handler) (nSteps : Nat) (state : EvmState) :
     InterpreterLoop.loopFuel handler (nSteps + 1) state =
       InterpreterLoop.loopFuel handler 1
         (InterpreterLoop.loopFuel handler nSteps state) := by
   exact loopFuel_add handler nSteps 1 state
+
+theorem loopFuel_add_one_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel handler (nSteps + 1) state).status =
+      (InterpreterLoop.loopFuel handler 1
+        (InterpreterLoop.loopFuel handler nSteps state)).status := by
+  rw [loopFuel_add_one handler nSteps state]
 
 end InterpreterLoopCompose
 
