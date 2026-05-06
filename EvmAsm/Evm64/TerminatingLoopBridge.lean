@@ -65,13 +65,23 @@ theorem stepWithTerminatingHandler_INVALID_status
   rw [stepWithTerminatingHandler_INVALID h_decode]
   exact EvmState.invalid_status state
 
+/--
+Decoded opcodes absent from `terminatingHandlerTable` step to `state.invalid`
+through the terminating loop handler.
+
+Distinctive token: TerminatingLoopBridge.stepWithTerminatingHandler_missing_invalid #113.
+-/
 theorem stepWithTerminatingHandler_missing_invalid
     {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
     (h_lookup : TerminatingHandlers.terminatingHandlerTable opcode = none) :
-    InterpreterLoop.stepWithHandler terminatingLoopHandler state = state.invalid := by
-  exact HandlerLoopBridge.stepWithTableHandler_missing_invalid h_decode h_lookup
+    InterpreterLoop.stepWithHandler terminatingLoopHandler state = state.invalid :=
+  HandlerLoopBridge.stepWithTableHandler_missing_invalid h_decode h_lookup
 
+/--
+Status projection of `stepWithTerminatingHandler_missing_invalid`: missing-entry
+opcodes step to `.error`.
+-/
 theorem stepWithTerminatingHandler_missing_invalid_status
     {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
