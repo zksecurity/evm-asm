@@ -244,6 +244,24 @@ theorem loopFuel_supported_missing_invalid_status
   rw [loopFuel_supported_missing_invalid nSteps h_status h_decode h_lookup]
   exact loopFuel_supported_invalid_fixed_status nSteps state
 
+theorem loopFuel_supported_succ_running_unsupported_invalid
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
+    InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state =
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps state.invalid :=
+  HandlerLoopBridge.loopFuel_succ_running_unsupported_invalid
+    SupportedHandlers.supportedHandlerTable nSteps h_status h_decode
+
+theorem loopFuel_supported_succ_running_unsupported_status
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_supported_succ_running_unsupported_invalid nSteps h_status h_decode]
+  exact loopFuel_supported_invalid_fixed_status nSteps state
+
 end SupportedLoopBridge
 
 end EvmAsm.Evm64
