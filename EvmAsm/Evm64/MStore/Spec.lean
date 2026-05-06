@@ -1122,6 +1122,52 @@ theorem mstore_prologue_stack_spec_within
       sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
     (hmono := mstoreStackCode_prologue_sub offReg byteReg accReg addrReg memBaseReg base)
 
+/--
+MSTORE combined stack spec: sequentially compose the prologue half
+(`mstore_prologue_stack_spec_within`) with a caller-supplied four-limbs
+core triple (over `mstoreStackCode`) via `cpsTripleWithin_seq_same_cr`.
+
+Direct MSTORE analog of
+`EvmAsm.Evm64.mload_combined_stack_spec_within`. The prologue threads
+`(sp ↦ₘ offset)` and the resolved address registers through to the
+four-limbs side; the caller only needs to supply a four-limbs triple
+whose precondition matches the prologue's postcondition (after the
+`addrReg ← memBase + offset` resolve) and whose postcondition is an
+arbitrary `Q`.
+
+Foundation lemma toward the upcoming `evm_mstore_stack_spec_within`
+(evm-asm-ln8t5 / GH #53 follow-up): subsequent slices instantiate the
+four-limbs hypothesis with a concrete byte-window write and compose
+with `mstore_epilogue_stack_spec_within` for the full
+`base .. base + 284` triple.
+
+Distinctive token: mstore_combined_stack_spec_within #53.
+-/
+theorem mstore_combined_stack_spec_within
+    {n : Nat} {Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 280)
+        (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        Q) :
+    cpsTripleWithin (2 + n) base (base + 280)
+      (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (mstore_prologue_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
+    h4
+
 theorem mstore_prologue_evm_mstore_frame_spec_within
     (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
     (sp offset offOld addrOld memBase : Word) (base : Word)
