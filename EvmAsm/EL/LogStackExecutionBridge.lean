@@ -96,6 +96,23 @@ theorem stackRestAfterLog?_log4
 @[simp] theorem stackRestAfterLog?_singleton (kind : LogKind) (offset : EvmWord) :
     stackRestAfterLog? kind [offset] = none := rfl
 
+theorem runLogStack?_eq_none_iff
+    (kind : LogKind) (emitter : Address) (readByte : MemoryReader)
+    (state : LogStackState) :
+    runLogStack? kind emitter readByte state = none ↔
+      EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind state.stack = none ∨
+        stackRestAfterLog? kind state.stack = none := by
+  cases state with
+  | mk effects stack =>
+      simp [runLogStack?]
+      cases h_decode :
+          EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterLog? kind stack with
+          | none => simp
+          | some rest => simp
+
 theorem runLogStack?_log0
     (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
     (offset size : EvmWord) (rest : List EvmWord) :
