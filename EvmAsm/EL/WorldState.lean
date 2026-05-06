@@ -227,6 +227,20 @@ theorem getAccount_setAccountCode_ne
   cases h_account : getAccount state addr <;>
     simp [getAccount_setAccount_ne, h_ne]
 
+theorem accountCode?_setAccountCode_ne
+    (state : WorldState) {addr other : Address} (codeHash : Hash256) (code : List Byte)
+    (h_ne : other ≠ addr) :
+    accountCode? (setAccountCode state addr codeHash code) other =
+      accountCode? state other := by
+  simp [accountCode?, getAccount_setAccountCode_ne state codeHash code h_ne]
+
+theorem accountCodeHash?_setAccountCode_ne
+    (state : WorldState) {addr other : Address} (codeHash : Hash256) (code : List Byte)
+    (h_ne : other ≠ addr) :
+    accountCodeHash? (setAccountCode state addr codeHash code) other =
+      accountCodeHash? state other := by
+  simp [accountCodeHash?, getAccount_setAccountCode_ne state codeHash code h_ne]
+
 @[simp] theorem accountBalance?_empty (addr : Address) :
     accountBalance? empty addr = none := rfl
 
@@ -292,6 +306,13 @@ theorem getAccount_setAccountBalance_ne
   | some account =>
       exact getAccount_setAccount_ne state { account with balance := balance } h_ne
 
+theorem accountBalance?_setAccountBalance_ne
+    {state : WorldState} {addr other : Address} {balance : Word256}
+    (h_ne : other ≠ addr) :
+    accountBalance? (setAccountBalance state addr balance) other =
+      accountBalance? state other := by
+  simp [accountBalance?, getAccount_setAccountBalance_ne h_ne]
+
 @[simp] theorem accountNonce?_empty (addr : Address) :
     accountNonce? empty addr = none := rfl
 
@@ -356,6 +377,13 @@ theorem getAccount_setAccountNonce_ne
   | none => rfl
   | some account =>
       exact getAccount_setAccount_ne state { account with nonce := nonce } h_ne
+
+theorem accountNonce?_setAccountNonce_ne
+    {state : WorldState} {addr other : Address} {nonce : Nat}
+    (h_ne : other ≠ addr) :
+    accountNonce? (setAccountNonce state addr nonce) other =
+      accountNonce? state other := by
+  simp [accountNonce?, getAccount_setAccountNonce_ne h_ne]
 
 @[simp] theorem getStorage_setStorage_same
     (state : WorldState) (addr : Address) (key : StorageKey) (value : Word256) :
