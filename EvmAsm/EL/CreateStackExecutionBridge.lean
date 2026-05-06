@@ -127,6 +127,36 @@ theorem runCreateStack?_create2
                     value offset size salt))) ::
               rest } := rfl
 
+/--
+Distinctive token: CreateStackExecutionBridge.runCreateStack?_eq_some_iff #115 #107.
+-/
+theorem runCreateStack?_eq_some_iff
+    (kind : CreateKind) (creator : Address) (readByte : MemoryReader)
+    (gas : EvmWord) (executor : Executor) (state out : CreateStackState) :
+    runCreateStack? kind creator readByte gas executor state = some out ↔
+      ∃ request rest,
+        requestFromStack? kind creator readByte gas state.stack = some request ∧
+        stackRestAfterCreate? kind state.stack = some rest ∧
+        out =
+          { stack :=
+              CreateResultBridge.createResultStackWord (executor request) :: rest } := by
+  cases state with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runCreateStack?] at h_run
+        cases h_request :
+            requestFromStack? kind creator readByte gas stack with
+        | none => simp [h_request] at h_run
+        | some request =>
+            cases h_rest : stackRestAfterCreate? kind stack with
+            | none => simp [h_request, h_rest] at h_run
+            | some rest =>
+                simp [h_request, h_rest] at h_run
+                exact ⟨request, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨request, rest, h_request, h_rest, rfl⟩
+        simp [runCreateStack?, h_request, h_rest]
+
 theorem runCreateStack?_stack_length
     {kind : CreateKind} {creator : Address} {readByte : MemoryReader}
     {gas : EvmWord} {executor : Executor} {state out : CreateStackState}
