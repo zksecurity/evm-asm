@@ -167,6 +167,165 @@ theorem runCallStack?_delegatecall
                 output := { offset := outputOffset, size := outputSize } }
           stack := rest } := rfl
 
+theorem runCallStack?_call_eq_some_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) (out : CallStackResult) :
+    runCallStack? .call state caller callee apparentValue readByte isStatic executor
+        stackState = some out ↔
+      ∃ args rest,
+        EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack =
+          some args ∧
+        stackRestAfterCall? .call stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.callVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.callInputFromMemory state caller callee
+                    readByte isStatic args))
+                args
+            stack := rest } := by
+  cases stackState with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runCallStack?] at h_run
+        cases h_decode :
+            EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stack with
+        | none => simp [h_decode] at h_run
+        | some args =>
+            cases h_rest : stackRestAfterCall? .call stack with
+            | none => simp [h_decode, h_rest] at h_run
+            | some rest =>
+                simp [h_decode, h_rest] at h_run
+                exact ⟨args, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨args, rest, h_decode, h_rest, rfl⟩
+        simp [runCallStack?, h_decode, h_rest]
+
+theorem runCallStack?_staticcall_eq_some_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) (out : CallStackResult) :
+    runCallStack? .staticcall state caller callee apparentValue readByte
+        isStatic executor stackState = some out ↔
+      ∃ args rest,
+        EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+            stackState.stack = some args ∧
+        stackRestAfterCall? .staticcall stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.staticCallVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.staticCallInputFromMemory state caller callee
+                    readByte args))
+                args
+            stack := rest } := by
+  cases stackState with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runCallStack?] at h_run
+        cases h_decode :
+            EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack? stack with
+        | none => simp [h_decode] at h_run
+        | some args =>
+            cases h_rest : stackRestAfterCall? .staticcall stack with
+            | none => simp [h_decode, h_rest] at h_run
+            | some rest =>
+                simp [h_decode, h_rest] at h_run
+                exact ⟨args, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨args, rest, h_decode, h_rest, rfl⟩
+        simp [runCallStack?, h_decode, h_rest]
+
+theorem runCallStack?_delegatecall_eq_some_iff
+    (state : WorldState) (caller callee : Address) (apparentValue : Word256)
+    (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
+    (stackState : CallStackState) (out : CallStackResult) :
+    runCallStack? .delegatecall state caller callee apparentValue readByte
+        isStatic executor stackState = some out ↔
+      ∃ args rest,
+        EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+            stackState.stack = some args ∧
+        stackRestAfterCall? .delegatecall stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.delegateCallVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.delegateCallInputFromMemory state caller
+                    callee apparentValue readByte isStatic args))
+                args
+            stack := rest } := by
+  cases stackState with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runCallStack?] at h_run
+        cases h_decode :
+            EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack? stack with
+        | none => simp [h_decode] at h_run
+        | some args =>
+            cases h_rest : stackRestAfterCall? .delegatecall stack with
+            | none => simp [h_decode, h_rest] at h_run
+            | some rest =>
+                simp [h_decode, h_rest] at h_run
+                exact ⟨args, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨args, rest, h_decode, h_rest, rfl⟩
+        simp [runCallStack?, h_decode, h_rest]
+
+/--
+Distinctive token: CallStackExecutionBridge.runCallStack?_eq_some_iff #114 #107.
+-/
+theorem runCallStack?_eq_some_iff
+    (kind : CallKind) (state : WorldState) (caller callee : Address)
+    (apparentValue : Word256) (readByte : MemoryReader) (isStatic : Bool)
+    (executor : CallExecutor) (stackState : CallStackState)
+    (out : CallStackResult) :
+    runCallStack? kind state caller callee apparentValue readByte isStatic
+        executor stackState = some out ↔
+      (∃ args rest,
+        kind = .call ∧
+        EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack =
+          some args ∧
+        stackRestAfterCall? .call stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.callVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.callInputFromMemory state caller callee
+                    readByte isStatic args))
+                args
+            stack := rest }) ∨
+      (∃ args rest,
+        kind = .staticcall ∧
+        EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+            stackState.stack = some args ∧
+        stackRestAfterCall? .staticcall stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.staticCallVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.staticCallInputFromMemory state caller callee
+                    readByte args))
+                args
+            stack := rest }) ∨
+      (∃ args rest,
+        kind = .delegatecall ∧
+        EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+            stackState.stack = some args ∧
+        stackRestAfterCall? .delegatecall stackState.stack = some rest ∧
+        out =
+          { effects :=
+              CallExecutionBridge.delegateCallVisibleEffectsFromResult
+                (executor
+                  (CallExecutionBridge.delegateCallInputFromMemory state caller
+                    callee apparentValue readByte isStatic args))
+                args
+            stack := rest }) := by
+  cases kind
+  · simp [runCallStack?_call_eq_some_iff]
+  · simp [runCallStack?_staticcall_eq_some_iff]
+  · simp [runCallStack?_delegatecall_eq_some_iff]
+
 theorem runCallStack?_call_eq_none_iff
     (state : WorldState) (caller callee : Address) (apparentValue : Word256)
     (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
