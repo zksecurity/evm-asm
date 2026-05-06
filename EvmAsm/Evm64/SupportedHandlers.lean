@@ -526,6 +526,26 @@ theorem supportedHandlerTable_SWAP_of_valid
       CalldataHandlers.calldataHandler?])
     (DupSwapHandlers.dupSwapHandler?_SWAP_of_valid h_valid)
 
+theorem dispatchOpcode_supportedHandlerTable_DUP_of_valid_status_of_some
+    {n : Nat} (h_valid : EvmOpcode.validDupIndex n = true)
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : DupSwapHandlers.dupStack? n state.stack = some stack') :
+    (HandlerTable.dispatchOpcode supportedHandlerTable (.DUP n) state).status =
+      state.status := by
+  rw [HandlerTable.dispatchOpcode_some
+    (supportedHandlerTable_DUP_of_valid h_valid) state]
+  simp [DupSwapHandlers.dupHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_supportedHandlerTable_SWAP_of_valid_status_of_some
+    {n : Nat} (h_valid : EvmOpcode.validSwapIndex n = true)
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : DupSwapHandlers.swapStack? n state.stack = some stack') :
+    (HandlerTable.dispatchOpcode supportedHandlerTable (.SWAP n) state).status =
+      state.status := by
+  rw [HandlerTable.dispatchOpcode_some
+    (supportedHandlerTable_SWAP_of_valid h_valid) state]
+  simp [DupSwapHandlers.swapHandler, h_stack, EvmState.withStack]
+
 end SupportedHandlers
 
 end EvmAsm.Evm64
