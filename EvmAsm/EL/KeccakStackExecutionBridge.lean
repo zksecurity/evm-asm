@@ -84,6 +84,31 @@ theorem runKeccakStack?_some
               (KeccakInputBridge.acceleratorInputFromArgs memory
                 (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) :: rest) := rfl
 
+theorem runKeccakStack?_eq_some_iff
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (stack out : List EvmWord) :
+    runKeccakStack? accelerator memory stack = some out ↔
+      ∃ offset size rest,
+        stack = offset :: size :: rest ∧
+          out =
+            KeccakResultBridge.stackWordFromAcceleratorOutput
+              (accelerator
+                (KeccakInputBridge.acceleratorInputFromArgs memory
+                  (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size))) :: rest := by
+  constructor
+  · intro h_run
+    cases stack with
+    | nil => simp [runKeccakStack?] at h_run
+    | cons offset tail =>
+        cases tail with
+        | nil => simp [runKeccakStack?] at h_run
+        | cons size rest =>
+            simp [runKeccakStack?] at h_run
+            cases h_run
+            exact ⟨offset, size, rest, rfl, rfl⟩
+  · rintro ⟨offset, size, rest, rfl, rfl⟩
+    rfl
+
 @[simp] theorem runKeccakStack?_nil
     (accelerator : Accelerator) (memory : MemoryReader) :
     runKeccakStack? accelerator memory [] = none := rfl
