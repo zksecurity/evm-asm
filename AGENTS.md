@@ -159,9 +159,20 @@ Pitfalls:
 
 ## References
 
+- **Accelerator C ABI (source of truth)**:
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  is the canonical interface for cryptographic precompiles, KECCAK256, and
+  secp256k1 verification. See [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for how it maps to ECALL syscall IDs (which use SP1 transport conventions)
+  and to EVM precompile addresses.
 - **Original paper**: Kennedy et al., "Coq: The world's best macro assembler?" PPDP 2013
   https://www.microsoft.com/en-us/research/publication/coq-worlds-best-macro-assembler/
-- **SP1 zkVM**: https://github.com/succinctlabs/sp1
+- **zkvm_accelerators.h**: `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  is the source of truth for accelerator function signatures, argument
+  layouts, and `zkvm_status` framing used by all EVM precompile and
+  KECCAK256 bridges. See [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md).
+- **SP1 zkVM**: https://github.com/succinctlabs/sp1 (RISC-V `ECALL`
+  framing only; function set follows `zkvm_accelerators.h`)
 - **RISC-V ISA**: https://riscv.org/technical/specifications/
 - **sail-riscv-lean**: https://github.com/opencompl/sail-riscv-lean (same toolchain)
 - **Lean 4 docs**: https://lean-lang.org/documentation/
