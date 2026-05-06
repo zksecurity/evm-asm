@@ -66,6 +66,16 @@ theorem stackRestAfterStorage?_sstore
 @[simp] theorem stackRestAfterStorage?_nil (kind : StorageKind) :
     stackRestAfterStorage? kind [] = none := rfl
 
+theorem stackRestAfterStorage?_sload_none_of_empty :
+    stackRestAfterStorage? .sload [] = none := rfl
+
+theorem stackRestAfterStorage?_sstore_none_of_empty :
+    stackRestAfterStorage? .sstore [] = none := rfl
+
+theorem stackRestAfterStorage?_sstore_none_of_one
+    (slot : EvmWord) :
+    stackRestAfterStorage? .sstore [slot] = none := rfl
+
 theorem runStorageStack?_eq_none_iff
     (kind : StorageKind) (state : WorldState) (accesses : StorageAccessList)
     (address : Address) (stackState : StorageStackState) :
@@ -109,6 +119,20 @@ theorem runStorageStack?_sstore
     runStorageStack? .sstore state accesses address
         { stack := slot :: value :: rest } =
       some { stack := rest } := rfl
+
+theorem runStorageStack?_sload_none_of_empty
+    (state : WorldState) (accesses : StorageAccessList) (address : Address) :
+    runStorageStack? .sload state accesses address { stack := [] } = none := rfl
+
+theorem runStorageStack?_sstore_none_of_empty
+    (state : WorldState) (accesses : StorageAccessList) (address : Address) :
+    runStorageStack? .sstore state accesses address { stack := [] } = none := rfl
+
+theorem runStorageStack?_sstore_none_of_one
+    (state : WorldState) (accesses : StorageAccessList) (address : Address)
+    (slot : EvmWord) :
+    runStorageStack? .sstore state accesses address { stack := [slot] } =
+      none := rfl
 
 theorem runStorageStack?_eq_some_iff
     (kind : StorageKind) (state : WorldState) (accesses : StorageAccessList)
