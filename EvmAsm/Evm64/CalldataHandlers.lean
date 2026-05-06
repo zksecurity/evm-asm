@@ -46,6 +46,21 @@ def calldataHandlerTable : HandlerTable :=
 @[simp] theorem calldataHandler?_CALLDATASIZE :
     calldataHandler? .CALLDATASIZE = some callDataSizeHandler := rfl
 
+@[simp] theorem eq_callDataSizeHandler_iff (handler : OpcodeHandler) :
+    callDataSizeHandler = handler ↔ handler = callDataSizeHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem calldataHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    calldataHandler? opcode = some handler ↔
+      opcode = .CALLDATASIZE ∧ handler = callDataSizeHandler := by
+  cases opcode <;> simp [calldataHandler?]
+
+theorem calldataHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    calldataHandler? opcode = none ↔ opcode ≠ .CALLDATASIZE := by
+  cases opcode <;> simp [calldataHandler?]
+
 @[simp] theorem calldataHandlerTable_CALLDATASIZE :
     calldataHandlerTable .CALLDATASIZE = some callDataSizeHandler := rfl
 
