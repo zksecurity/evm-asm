@@ -68,6 +68,13 @@ theorem loopFuel_matchesSpec
       rw [stepWithHandler_matchesSpec h_match]
       exact loopFuel_matchesSpec h_match nSteps (InterpreterLoop.stepWithHandler spec state)
 
+theorem loopFuel_matchesSpec_status
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl nSteps state).status =
+      (InterpreterLoop.loopFuel spec nSteps state).status := by
+  rw [loopFuel_matchesSpec h_match nSteps state]
+
 end InterpreterSimulation
 
 end EvmAsm.Evm64
