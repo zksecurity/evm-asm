@@ -312,9 +312,21 @@ This is a **prototype** demonstrating the approach. Current state:
 - Knuth, D.E. (1997). *The Art of Computer Programming, Volume 2:
   Seminumerical Algorithms* (3rd ed.), §4.3.1 "The Classical Algorithms."
   Addison-Wesley. Algorithm D is used for the DIV/MOD opcodes in `Evm64/DivMod.lean`.
-- SP1 zkVM: https://github.com/succinctlabs/sp1
-  The `ECALL`-based syscall mechanism follows SP1's conventions.
 - zkvm-standards: https://github.com/eth-act/zkvm-standards
-  Tentative standards for zkVM RISC-V target, I/O interface, and C-interface accelerators.
+  Standards for zkVM RISC-V target, I/O interface, and C-interface
+  accelerators. The vendored header at
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  is the canonical accelerator C ABI targeted by the verified guest for
+  cryptographic precompiles, KECCAK256, and secp256k1 verification; see
+  [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for the decision record, full design note, and per-precompile coverage /
+  EVM-precompile → accelerator mapping table.
+- SP1 zkVM: https://github.com/succinctlabs/sp1
+  The RISC-V `ECALL` framing (instruction encoding, register
+  convention, return-via-`a0`) follows the same mechanism SP1 uses;
+  the *function set* and argument layout follow `zkvm_accelerators.h`,
+  not SP1's syscall table. Concrete syscall IDs are a host detail
+  remapped in the ECALL handler and tracked per-bridge in beads
+  parent `evm-asm-nr2sk`.
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
