@@ -39,12 +39,18 @@ import EvmAsm.EL.KeccakStackExecutionBridge
 import EvmAsm.EL.Bls12MapFpToG1InputBridge
 import EvmAsm.EL.Bls12MapFpToG1ResultBridge
 import EvmAsm.EL.Bls12MapFpToG1EcallBridge
+import EvmAsm.EL.Ripemd160InputBridge
+import EvmAsm.EL.Ripemd160EcallBridge
+import EvmAsm.EL.Ripemd160ResultBridge
 import EvmAsm.EL.Bn254G1MulInputBridge
 import EvmAsm.EL.Bn254G1MulResultBridge
 import EvmAsm.EL.Bn254G1MulEcallBridge
 import EvmAsm.EL.Bls12G2MsmInputBridge
 import EvmAsm.EL.Bls12G2MsmResultBridge
 import EvmAsm.EL.Bls12G2MsmEcallBridge
+import EvmAsm.EL.Bn254G1AddInputBridge
+import EvmAsm.EL.Bn254G1AddResultBridge
+import EvmAsm.EL.Bn254G1AddEcallBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
@@ -96,3 +102,6 @@ import EvmAsm.EL.TransactionExecution
 import EvmAsm.EL.TransactionExecutionShape
 import EvmAsm.EL.Block
 import EvmAsm.EL.BlockTrace
+import EvmAsm.EL.Bls12G2AddInputBridge
+import EvmAsm.EL.Bls12G2AddResultBridge
+import EvmAsm.EL.Bls12G2AddEcallBridge

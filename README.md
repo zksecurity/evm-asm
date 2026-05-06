@@ -316,9 +316,11 @@ This is a **prototype** demonstrating the approach. Current state:
   Standards for zkVM RISC-V target, I/O interface, and C-interface
   accelerators. The vendored header at
   `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
-  is the canonical accelerator C ABI targeted by the verified guest;
-  see [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
-  for the decision record and per-precompile coverage map.
+  is the canonical accelerator C ABI targeted by the verified guest for
+  cryptographic precompiles, KECCAK256, and secp256k1 verification; see
+  [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for the decision record, full design note, and per-precompile coverage /
+  EVM-precompile → accelerator mapping table.
 - SP1 zkVM: https://github.com/succinctlabs/sp1
   The RISC-V `ECALL` framing (instruction encoding, register
   convention, return-via-`a0`) follows the same mechanism SP1 uses;
