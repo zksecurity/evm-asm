@@ -24,7 +24,6 @@
 -/
 
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1
-import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck2
 
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64.AddrNorm (se21_12)
