@@ -48,6 +48,23 @@ theorem pushHandler?_PUSH_of_invalid {n : Nat}
     pushHandler? (.PUSH n) = none := by
   simp [pushHandler?, h_valid]
 
+@[simp] theorem eq_pushHandler_iff (n : Nat) (handler : OpcodeHandler) :
+    pushHandler n = handler ↔ handler = pushHandler n := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem pushHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    pushHandler? opcode = some handler ↔
+      ∃ n, opcode = .PUSH n ∧ EvmOpcode.validPushWidth n = true ∧
+        handler = pushHandler n := by
+  cases opcode <;> simp [pushHandler?]
+
+theorem pushHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    pushHandler? opcode = none ↔
+      ∀ n, opcode = .PUSH n → EvmOpcode.validPushWidth n = false := by
+  cases opcode <;> simp [pushHandler?]
+
 @[simp] theorem pushHandler_stack (n : Nat) (state : EvmState) :
     (pushHandler n state).stack =
       PushExecEffect.stackAfterPush state.code state.pc n state.stack := rfl
