@@ -217,6 +217,28 @@ theorem runCalldataStack?_copy_eq_none_iff
               simp [runCalldataStack?, stackRestAfterCalldata?,
                 EvmAsm.Evm64.CallDataCopyArgsStackDecode.decodeCallDataCopyStack?]
 
+/--
+Kind-indexed failure characterization for calldata stack execution.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_kind_eq_none_iff #104 #107.
+-/
+theorem runCalldataStack?_eq_none_iff
+    (kind : Kind) (data : List (BitVec 8)) (stack : List EvmWord) :
+    runCalldataStack? kind { data := data, stack := stack } = none ↔
+      match kind with
+      | .callDataLoad => stack = []
+      | .callDataSize => False
+      | .callDataCopy => stack.length < 3 := by
+  cases kind
+  · exact runCalldataStack?_load_eq_none_iff data stack
+  · constructor
+    · intro h_none
+      exact (runCalldataStack?_size_ne_none data stack) h_none
+    · intro h_false
+      cases h_false
+  · exact runCalldataStack?_copy_eq_none_iff data stack
+
 theorem runCalldataStack?_stack_length
     {kind : Kind} {state : CalldataStackState} {out : CalldataStackResult}
     (h_run : runCalldataStack? kind state = some out) :
