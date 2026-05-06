@@ -107,6 +107,47 @@ theorem calldataload_window_four_limbs_stack_spec_within
     offReg byteReg accReg addrReg envPtrReg base h
 
 /--
+CALLDATALOAD window combined stack spec: sequentially compose the prologue
+half (`calldataload_window_prologue_stack_spec_within`) with a caller-supplied
+four-limbs core triple via `cpsTripleWithin_seq_same_cr`.
+
+Takes the four-limbs core triple as a hypothesis whose precondition matches
+the prologue's postcondition (after the `addrReg ← envPtr + offset` resolve)
+and whose postcondition is an arbitrary `Q`. The prologue threads
+`(sp ↦ₘ offset)` and the resolved address registers through to the four-limbs
+side, so the caller only needs to instantiate the four-limbs hypothesis with
+a concrete byte-window read (e.g. via `mload_four_limbs_stack_spec_within`
+together with a concrete byte-window core spec).
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_combined_stack_spec_within #104.
+-/
+theorem calldataload_window_combined_stack_spec_within
+    {n : Nat} {Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg)
+    (sp offset offOld addrOld envPtr : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 376)
+        (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ (envPtr + offset)) **
+         (sp ↦ₘ offset))
+        Q) :
+    cpsTripleWithin (2 + n) base (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (calldataload_window_prologue_stack_spec_within
+      offReg byteReg accReg addrReg envPtrReg
+      sp offset offOld addrOld envPtr base h_off_ne_x0 h_addr_ne_x0)
+    h4
+
+/--
 The byte-level semantic word produced by the CALLDATALOAD in-bounds window,
 phrased through decoded stack arguments.
 
