@@ -100,6 +100,88 @@ theorem stackRestAfterCall?_delegatecall
         (gas :: to :: inputOffset :: inputSize :: outputOffset :: outputSize :: rest) =
       some rest := rfl
 
+theorem stackRestAfterCall?_call_none_of_empty :
+    stackRestAfterCall? .call [] = none := rfl
+
+theorem stackRestAfterCall?_call_none_of_one
+    (gas : EvmWord) :
+    stackRestAfterCall? .call [gas] = none := rfl
+
+theorem stackRestAfterCall?_call_none_of_two
+    (gas to : EvmWord) :
+    stackRestAfterCall? .call [gas, to] = none := rfl
+
+theorem stackRestAfterCall?_call_none_of_three
+    (gas to value : EvmWord) :
+    stackRestAfterCall? .call [gas, to, value] = none := rfl
+
+theorem stackRestAfterCall?_call_none_of_four
+    (gas to value inputOffset : EvmWord) :
+    stackRestAfterCall? .call [gas, to, value, inputOffset] = none := rfl
+
+theorem stackRestAfterCall?_call_none_of_five
+    (gas to value inputOffset inputSize : EvmWord) :
+    stackRestAfterCall? .call [gas, to, value, inputOffset, inputSize] =
+      none := rfl
+
+theorem stackRestAfterCall?_call_none_of_six
+    (gas to value inputOffset inputSize outputOffset : EvmWord) :
+    stackRestAfterCall? .call
+        [gas, to, value, inputOffset, inputSize, outputOffset] =
+      none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_empty :
+    stackRestAfterCall? .staticcall [] = none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_one
+    (gas : EvmWord) :
+    stackRestAfterCall? .staticcall [gas] = none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_two
+    (gas to : EvmWord) :
+    stackRestAfterCall? .staticcall [gas, to] = none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_three
+    (gas to inputOffset : EvmWord) :
+    stackRestAfterCall? .staticcall [gas, to, inputOffset] = none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_four
+    (gas to inputOffset inputSize : EvmWord) :
+    stackRestAfterCall? .staticcall [gas, to, inputOffset, inputSize] =
+      none := rfl
+
+theorem stackRestAfterCall?_staticcall_none_of_five
+    (gas to inputOffset inputSize outputOffset : EvmWord) :
+    stackRestAfterCall? .staticcall
+        [gas, to, inputOffset, inputSize, outputOffset] =
+      none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_empty :
+    stackRestAfterCall? .delegatecall [] = none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_one
+    (gas : EvmWord) :
+    stackRestAfterCall? .delegatecall [gas] = none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_two
+    (gas to : EvmWord) :
+    stackRestAfterCall? .delegatecall [gas, to] = none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_three
+    (gas to inputOffset : EvmWord) :
+    stackRestAfterCall? .delegatecall [gas, to, inputOffset] = none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_four
+    (gas to inputOffset inputSize : EvmWord) :
+    stackRestAfterCall? .delegatecall [gas, to, inputOffset, inputSize] =
+      none := rfl
+
+theorem stackRestAfterCall?_delegatecall_none_of_five
+    (gas to inputOffset inputSize outputOffset : EvmWord) :
+    stackRestAfterCall? .delegatecall
+        [gas, to, inputOffset, inputSize, outputOffset] =
+      none := rfl
+
 theorem runCallStack?_call
     (state : WorldState) (caller callee : Address) (apparentValue : Word256)
     (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
