@@ -167,6 +167,20 @@ theorem resultFromStack?_eq_some_iff
   · rintro ⟨offset, size, rest, rfl, rfl⟩
     rfl
 
+@[simp] theorem resultFromStack?_nil
+    (accelerator : Accelerator) (memory : MemoryReader) :
+    resultFromStack? accelerator memory [] = none := rfl
+
+@[simp] theorem resultFromStack?_singleton
+    (accelerator : Accelerator) (memory : MemoryReader) (offset : EvmWord) :
+    resultFromStack? accelerator memory [offset] = none := rfl
+
+/--
+The stack-to-result bridge fails exactly when the stack has fewer than two
+entries (no `offset, size` pair to decode).
+
+Distinctive token: KeccakStackExecutionBridge.resultFromStack?_eq_none_iff #111.
+-/
 theorem resultFromStack?_eq_none_iff
     (accelerator : Accelerator) (memory : MemoryReader)
     (stack : List EvmWord) :
