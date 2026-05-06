@@ -37,6 +37,27 @@ def terminatingHandlerTable : HandlerTable :=
 @[simp] theorem terminatingHandler?_INVALID :
     terminatingHandler? .INVALID = some invalidHandler := rfl
 
+@[simp] theorem eq_stopHandler_iff (handler : OpcodeHandler) :
+    stopHandler = handler ↔ handler = stopHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_invalidHandler_iff (handler : OpcodeHandler) :
+    invalidHandler = handler ↔ handler = invalidHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem terminatingHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    terminatingHandler? opcode = some handler ↔
+      (opcode = .STOP ∧ handler = stopHandler) ∨
+        (opcode = .INVALID ∧ handler = invalidHandler) := by
+  cases opcode <;> simp [terminatingHandler?]
+
+theorem terminatingHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    terminatingHandler? opcode = none ↔
+      opcode ≠ .STOP ∧ opcode ≠ .INVALID := by
+  cases opcode <;> simp [terminatingHandler?]
+
 @[simp] theorem stopHandler_status (state : EvmState) :
     (stopHandler state).status = .stopped := rfl
 
