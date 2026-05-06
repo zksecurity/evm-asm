@@ -23,6 +23,9 @@ import EvmAsm.EL.LogStackExecutionBridge
 import EvmAsm.EL.KeccakInputBridge
 import EvmAsm.EL.KeccakEcallBridge
 import EvmAsm.EL.KeccakResultBridge
+import EvmAsm.EL.Sha256InputBridge
+import EvmAsm.EL.Sha256EcallBridge
+import EvmAsm.EL.Sha256ResultBridge
 import EvmAsm.EL.Blake2fInputBridge
 import EvmAsm.EL.Blake2fResultBridge
 import EvmAsm.EL.Blake2fEcallBridge
@@ -36,6 +39,9 @@ import EvmAsm.EL.KeccakStackExecutionBridge
 import EvmAsm.EL.Ripemd160InputBridge
 import EvmAsm.EL.Ripemd160EcallBridge
 import EvmAsm.EL.Ripemd160ResultBridge
+import EvmAsm.EL.Bn254G1MulInputBridge
+import EvmAsm.EL.Bn254G1MulResultBridge
+import EvmAsm.EL.Bn254G1MulEcallBridge
 import EvmAsm.EL.Bls12G2MsmInputBridge
 import EvmAsm.EL.Bls12G2MsmResultBridge
 import EvmAsm.EL.Bls12G2MsmEcallBridge
