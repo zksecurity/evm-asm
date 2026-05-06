@@ -54,6 +54,41 @@ theorem dispatchByte_supported_PUSH_effectFromCode
   exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
     h_valid state
 
+/--
+Concrete STOP byte dispatch through the combined supported-handler table
+terminates the state successfully.
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_STOP_byte #106 #107 #113.
+-/
+theorem dispatchByte_supported_STOP_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x00, by decide⟩ : Fin 256) state = state.stop := by
+  exact dispatchByte_supported_of_lookup EvmOpcode.decodeByte?_STOP
+    SupportedHandlers.supportedHandlerTable_STOP state
+
+@[simp] theorem dispatchByte_supported_STOP_byte_status
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x00, by decide⟩ : Fin 256) state).status = .stopped := by
+  rw [dispatchByte_supported_STOP_byte]
+  exact EvmState.stop_status state
+
+theorem dispatchByte_supported_INVALID_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0xfe, by decide⟩ : Fin 256) state = state.invalid := by
+  exact dispatchByte_supported_of_lookup EvmOpcode.decodeByte?_INVALID
+    SupportedHandlers.supportedHandlerTable_INVALID state
+
+@[simp] theorem dispatchByte_supported_INVALID_byte_status
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0xfe, by decide⟩ : Fin 256) state).status = .error := by
+  rw [dispatchByte_supported_INVALID_byte]
+  exact EvmState.invalid_status state
+
 theorem dispatchByte_supported_undecoded
     {b : Fin 256} (h_decode : EvmOpcode.decodeByte? b.val = none)
     (state : EvmState) :
