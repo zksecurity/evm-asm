@@ -1265,4 +1265,49 @@ theorem mstore_full_evm_mstore_spec_within
     (mstore_epilogue_evm_mstore_frame_spec_within
       offReg valReg byteReg accReg addrReg memBaseReg sp base FPost hFPost)
 
+/--
+MSTORE full stack spec: sequentially compose `mstore_combined_stack_spec_within`
+(prologue + caller-supplied four-limbs core triple) with the framed epilogue
+to yield the full `base .. base + 284` triple over `mstoreStackCode`.
+
+The caller's four-limbs hypothesis `h4` produces the intermediate post
+`(.x12 ↦ᵣ sp) ** F`; the epilogue (one ADDI on `.x12`) is framed with `F`
+to yield the final post `(.x12 ↦ᵣ (sp + 64)) ** F`.
+
+Foundation lemma toward the upcoming `evm_mstore_stack_spec_within`
+(evm-asm-ln8t5 / GH #53 follow-up): instantiate `h4` with a concrete
+byte-window write on `mstoreStackCode` to land the topmost stack triple.
+
+Distinctive token: mstore_full_stack_spec_within #53.
+-/
+theorem mstore_full_stack_spec_within
+    {n : Nat} {F : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 280)
+        (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        (((.x12 : Reg) ↦ᵣ sp) ** F)) :
+    cpsTripleWithin (2 + n + 1) base (base + 284)
+      (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ (sp + 64)) ** F) :=
+  cpsTripleWithin_seq_same_cr
+    (mstore_combined_stack_spec_within
+      (Q := ((.x12 : Reg) ↦ᵣ sp) ** F)
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base
+      h_off_ne_x0 h_addr_ne_x0 h4)
+    (cpsTripleWithin_frameR F hF
+      (mstore_epilogue_stack_spec_within
+        offReg byteReg accReg addrReg memBaseReg sp base))
+
 end EvmAsm.Evm64
