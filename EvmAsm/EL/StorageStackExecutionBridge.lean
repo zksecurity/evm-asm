@@ -93,6 +93,32 @@ theorem runStorageStack?_sstore
         { stack := slot :: value :: rest } =
       some { stack := rest } := rfl
 
+theorem runStorageStack?_eq_some_iff
+    (kind : StorageKind) (state : WorldState) (accesses : StorageAccessList)
+    (address : Address) (stackState out : StorageStackState) :
+    runStorageStack? kind state accesses address stackState = some out ↔
+      ∃ decoded rest,
+        EvmAsm.Evm64.StorageArgs.decodeStorageStack? kind stackState.stack =
+          some decoded ∧
+        stackRestAfterStorage? kind stackState.stack = some rest ∧
+        out = { stack := stackWordsFromDecoded state accesses address decoded ++ rest } := by
+  cases stackState with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runStorageStack?] at h_run
+        cases h_decode :
+            EvmAsm.Evm64.StorageArgs.decodeStorageStack? kind stack with
+        | none => simp [h_decode] at h_run
+        | some decoded =>
+            cases h_rest : stackRestAfterStorage? kind stack with
+            | none => simp [h_decode, h_rest] at h_run
+            | some rest =>
+                simp [h_decode, h_rest] at h_run
+                exact ⟨decoded, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨decoded, rest, h_decode, h_rest, rfl⟩
+        simp [runStorageStack?, h_decode, h_rest]
+
 theorem runStorageStack?_stack_length
     {kind : StorageKind} {state : WorldState} {accesses : StorageAccessList}
     {address : Address} {stackState out : StorageStackState}
