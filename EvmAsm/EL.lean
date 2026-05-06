@@ -26,6 +26,9 @@ import EvmAsm.EL.KeccakResultBridge
 import EvmAsm.EL.KeccakStackBridge
 import EvmAsm.EL.KeccakExecutionBridge
 import EvmAsm.EL.KeccakStackExecutionBridge
+import EvmAsm.EL.Bls12MapFpToG1InputBridge
+import EvmAsm.EL.Bls12MapFpToG1ResultBridge
+import EvmAsm.EL.Bls12MapFpToG1EcallBridge
 import EvmAsm.EL.Conformance
 import EvmAsm.EL.Conformance.Call
 import EvmAsm.EL.Conformance.Calldata
