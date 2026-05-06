@@ -11,6 +11,7 @@ import EvmAsm.Evm64.CodeRegion
 -- Accelerator C ABI bridges (zkvm_accelerators.h)
 import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
+import EvmAsm.Evm64.Accelerators.Dispatch
 
 -- Stack operations
 import EvmAsm.Evm64.Pop
