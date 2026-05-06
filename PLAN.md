@@ -827,15 +827,29 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 
 #### 8.2 Precompiles (via zkvm_accelerators)
 - Map EVM precompile addresses (0x01-0x11) to `zkvm_accelerators.h` calls.
+- Per-function bridge audit and tracking lives in beads `evm-asm-nr2sk`
+  (input/output Lean payload types, syscall ID, Hoare-triple bridge spec).
+  Design note: [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md).
 - ECRECOVER (0x01) → `zkvm_secp256k1_ecrecover`
 - SHA256 (0x02) → `zkvm_sha256`
 - RIPEMD160 (0x03) → `zkvm_ripemd160`
+- IDENTITY (0x04) → no accelerator (pure memory copy)
 - MODEXP (0x05) → `zkvm_modexp`
-- BN254 (0x06-0x08) → `zkvm_bn254_*`
+- BN254_ADD (0x06) → `zkvm_bn254_g1_add`
+- BN254_MUL (0x07) → `zkvm_bn254_g1_mul`
+- BN254_PAIRING (0x08) → `zkvm_bn254_pairing`
 - BLAKE2f (0x09) → `zkvm_blake2f`
-- KZG (0x0a) → `zkvm_kzg_point_eval`
-- BLS12-381 (0x0b-0x11) → `zkvm_bls12_*`
-- secp256r1 (0x100) → `zkvm_secp256r1_verify`
+- KZG_POINT_EVAL (0x0a) → `zkvm_kzg_point_eval`
+- BLS12_G1_ADD (0x0b) → `zkvm_bls12_g1_add`
+- BLS12_G1_MSM (0x0c) → `zkvm_bls12_g1_msm`
+- BLS12_G2_ADD (0x0d) → `zkvm_bls12_g2_add`
+- BLS12_G2_MSM (0x0e) → `zkvm_bls12_g2_msm`
+- BLS12_PAIRING (0x0f) → `zkvm_bls12_pairing`
+- BLS12_MAP_FP_TO_G1 (0x10) → `zkvm_bls12_map_fp_to_g1`
+- BLS12_MAP_FP2_TO_G2 (0x11) → `zkvm_bls12_map_fp2_to_g2`
+- secp256r1_verify (0x100) → `zkvm_secp256r1_verify`
+- Non-precompile accelerators reused by EVM opcode handlers: `zkvm_keccak256`
+  (KECCAK256 opcode), `zkvm_secp256k1_verify` (auxiliary).
 
 #### 8.3 KECCAK256 (via accelerator)
 - Pop offset+size, hash EVM memory region.

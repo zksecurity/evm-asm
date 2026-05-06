@@ -312,9 +312,17 @@ This is a **prototype** demonstrating the approach. Current state:
 - Knuth, D.E. (1997). *The Art of Computer Programming, Volume 2:
   Seminumerical Algorithms* (3rd ed.), §4.3.1 "The Classical Algorithms."
   Addison-Wesley. Algorithm D is used for the DIV/MOD opcodes in `Evm64/DivMod.lean`.
+- Accelerator C ABI: `zkvm_accelerators.h` from the
+  [zkvm-standards](https://github.com/eth-act/zkvm-standards) repository
+  (vendored at
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`)
+  is the canonical interface for cryptographic precompiles, KECCAK256, and
+  secp256k1 verification. The ECALL transport layer (syscall numbering,
+  HALT/COMMIT/HINT_LEN/HINT_READ IDs) follows SP1's conventions; per-accelerator
+  syscall IDs are assigned per bridge as they land. See
+  [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for the full design note and the EVM-precompile → accelerator mapping table.
 - SP1 zkVM: https://github.com/succinctlabs/sp1
-  The `ECALL`-based syscall mechanism follows SP1's conventions.
-- zkvm-standards: https://github.com/eth-act/zkvm-standards
-  Tentative standards for zkVM RISC-V target, I/O interface, and C-interface accelerators.
+  Source of the ECALL transport convention reused by this project.
 - sail-riscv-lean: https://github.com/opencompl/sail-riscv-lean
 - RISC-V ISA specification: https://riscv.org/technical/specifications/
