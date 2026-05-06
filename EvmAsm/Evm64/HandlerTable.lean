@@ -98,6 +98,23 @@ theorem dispatchOpcode?_none {table : HandlerTable} {opcode : EvmOpcode}
     dispatchOpcode? table opcode state = none := by
   simp [dispatchOpcode?, h_lookup]
 
+theorem dispatchOpcode?_eq_some_iff {table : HandlerTable}
+    {opcode : EvmOpcode} {state state' : EvmState} :
+    dispatchOpcode? table opcode state = some state' ↔
+      ∃ handler, table opcode = some handler ∧ handler state = state' := by
+  unfold dispatchOpcode?
+  cases h_lookup : table opcode with
+  | none =>
+      simp
+  | some handler =>
+      simp
+
+theorem dispatchOpcode?_eq_none_iff {table : HandlerTable}
+    {opcode : EvmOpcode} {state : EvmState} :
+    dispatchOpcode? table opcode state = none ↔ table opcode = none := by
+  unfold dispatchOpcode?
+  cases table opcode <;> simp
+
 theorem dispatchOpcode_some {table : HandlerTable} {opcode : EvmOpcode}
     {handler : OpcodeHandler} (h_lookup : table opcode = some handler)
     (state : EvmState) :
