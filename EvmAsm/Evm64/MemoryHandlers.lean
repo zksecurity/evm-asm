@@ -71,6 +71,13 @@ theorem memoryHandler?_eq_none_iff
       msizeHandler state := by
   simp [HandlerTable.dispatchOpcode]
 
+theorem dispatchOpcode_msizeHandlerTable_MSIZE_status
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode msizeHandlerTable .MSIZE state).status =
+      state.status := by
+  rw [dispatchOpcode_msizeHandlerTable_MSIZE state]
+  exact msizeHandler_status state
+
 end MemoryHandlers
 
 end EvmAsm.Evm64

@@ -77,5 +77,12 @@ theorem dispatchOpcode_codeHandlerTable_CODESIZE
   exact HandlerTable.dispatchOpcode_some
     codeHandlerTable_CODESIZE state
 
+theorem dispatchOpcode_codeHandlerTable_CODESIZE_status
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode codeHandlerTable .CODESIZE state).status =
+      state.status := by
+  rw [dispatchOpcode_codeHandlerTable_CODESIZE state]
+  exact codeSizeHandler_status state
+
 end CodeHandlers
 end EvmAsm.Evm64

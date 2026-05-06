@@ -57,6 +57,17 @@ theorem stepWithTableHandler_of_lookup_status
       (handler state).status := by
   rw [stepWithTableHandler_of_lookup h_decode h_lookup]
 
+theorem stepWithTableHandler_of_lookup_preserves_status
+    {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
+    {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = some handler)
+    (h_status : ∀ state : EvmState, (handler state).status = state.status) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler table) state).status =
+      state.status := by
+  rw [stepWithTableHandler_of_lookup_status h_decode h_lookup]
+  exact h_status state
+
 theorem stepWithTableHandler_missing_invalid
     {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
@@ -87,6 +98,19 @@ theorem stepWithTableHandler_empty_of_decode_status
     (InterpreterLoop.stepWithHandler (toLoopHandler HandlerTable.empty) state).status =
       .error := by
   rw [stepWithTableHandler_empty_of_decode h_decode]
+  exact EvmState.invalid_status state
+
+theorem stepWithTableHandler_eof_invalid
+    (table : HandlerTable) {state : EvmState}
+    (h_pc : state.code.length ≤ state.pc) :
+    InterpreterLoop.stepWithHandler (toLoopHandler table) state = state.invalid := by
+  exact InterpreterLoop.stepWithHandler_eof_invalid (toLoopHandler table) h_pc
+
+theorem stepWithTableHandler_eof_invalid_status
+    (table : HandlerTable) {state : EvmState}
+    (h_pc : state.code.length ≤ state.pc) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler table) state).status = .error := by
+  rw [stepWithTableHandler_eof_invalid table h_pc]
   exact EvmState.invalid_status state
 
 theorem loopFuel_succ_running_decode
@@ -182,6 +206,24 @@ theorem loopFuel_succ_running_unsupported_invalid_status
     (InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state).status =
       .error := by
   rw [loopFuel_succ_running_unsupported_invalid table nSteps h_status h_decode]
+  exact loopFuel_table_invalid_fixed_status table nSteps state
+
+theorem loopFuel_succ_running_eof_invalid
+    (table : HandlerTable) (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.code.length ≤ state.pc) :
+    InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state =
+      InterpreterLoop.loopFuel (toLoopHandler table) nSteps state.invalid := by
+  rw [InterpreterLoop.loopFuel_succ_running (toLoopHandler table) nSteps state h_status]
+  rw [stepWithTableHandler_eof_invalid table h_pc]
+
+theorem loopFuel_succ_running_eof_invalid_status
+    (table : HandlerTable) (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.code.length ≤ state.pc) :
+    (InterpreterLoop.loopFuel (toLoopHandler table) (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_succ_running_eof_invalid table nSteps h_status h_pc]
   exact loopFuel_table_invalid_fixed_status table nSteps state
 
 theorem loopFuel_empty_succ_running_decode

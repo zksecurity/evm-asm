@@ -78,6 +78,41 @@ theorem stepWithSupportedHandler_PUSH_effectFromCode
   exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_effectFromCode
     h_valid state
 
+theorem stepWithSupportedHandler_PUSH_status
+    {state : EvmState} {n : Nat}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_PUSH_of_valid_status
+    h_valid state
+
+theorem stepWithSupportedHandler_DUP_status_of_some
+    {state : EvmState} {n : Nat} {stack' : List EvmWord}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.DUP n))
+    (h_valid : EvmOpcode.validDupIndex n = true)
+    (h_stack : DupSwapHandlers.dupStack? n state.stack = some stack') :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_DUP_of_valid_status_of_some
+    h_valid h_stack
+
+theorem stepWithSupportedHandler_SWAP_status_of_some
+    {state : EvmState} {n : Nat} {stack' : List EvmWord}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state =
+      some (EvmOpcode.SWAP n))
+    (h_valid : EvmOpcode.validSwapIndex n = true)
+    (h_stack : DupSwapHandlers.swapStack? n state.stack = some stack') :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+  exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_SWAP_of_valid_status_of_some
+    h_valid h_stack
+
 /--
 When the combined supported loop decodes STOP, one interpreter step terminates
 successfully.

@@ -132,6 +132,24 @@ theorem controlHandler?_eq_none_iff
       jumpdestHandler state := by
   simp [HandlerTable.dispatchOpcode]
 
+theorem dispatchOpcode_controlHandlerTable_PC_status (state : EvmState) :
+    (HandlerTable.dispatchOpcode controlHandlerTable .PC state).status =
+      state.status := by
+  rw [dispatchOpcode_controlHandlerTable_PC state]
+  exact pcHandler_status state
+
+theorem dispatchOpcode_controlHandlerTable_GAS_status (state : EvmState) :
+    (HandlerTable.dispatchOpcode controlHandlerTable .GAS state).status =
+      state.status := by
+  rw [dispatchOpcode_controlHandlerTable_GAS state]
+  exact gasHandler_status state
+
+theorem dispatchOpcode_controlHandlerTable_JUMPDEST_status (state : EvmState) :
+    (HandlerTable.dispatchOpcode controlHandlerTable .JUMPDEST state).status =
+      state.status := by
+  rw [dispatchOpcode_controlHandlerTable_JUMPDEST state]
+  rfl
+
 end ControlHandlers
 
 end EvmAsm.Evm64

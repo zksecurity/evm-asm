@@ -366,5 +366,59 @@ theorem dispatchOpcode_comparisonHandlerTable_ISZERO
       iszeroHandler state := by
   exact HandlerTable.dispatchOpcode_some comparisonHandler?_ISZERO state
 
+theorem dispatchOpcode_comparisonHandlerTable_LT_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? BitVec.ult state.stack = some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .LT state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_LT state]
+  simp [ltHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_comparisonHandlerTable_GT_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => BitVec.ult b a) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .GT state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_GT state]
+  simp [gtHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_comparisonHandlerTable_SLT_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? BitVec.slt state.stack = some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .SLT state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_SLT state]
+  simp [sltHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_comparisonHandlerTable_SGT_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => BitVec.slt b a) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .SGT state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_SGT state]
+  simp [sgtHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_comparisonHandlerTable_EQ_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : binaryStack? (fun a b => decide (a = b)) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .EQ state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_EQ state]
+  simp [eqHandler, binaryHandler, h_stack, EvmState.withStack]
+
+theorem dispatchOpcode_comparisonHandlerTable_ISZERO_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : unaryStack? (fun a => decide (a = (0 : EvmWord))) state.stack =
+      some stack') :
+    (HandlerTable.dispatchOpcode comparisonHandlerTable .ISZERO state).status =
+      state.status := by
+  rw [dispatchOpcode_comparisonHandlerTable_ISZERO state]
+  cases h_stack_state : state.stack <;>
+    simp [unaryStack?, iszeroHandler, unaryHandler, EvmState.withStack,
+      h_stack_state] at h_stack ⊢
+
 end ComparisonHandlers
 end EvmAsm.Evm64

@@ -65,6 +65,22 @@ theorem stepWithTerminatingHandler_INVALID_status
   rw [stepWithTerminatingHandler_INVALID h_decode]
   exact EvmState.invalid_status state
 
+theorem stepWithTerminatingHandler_missing_invalid
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : TerminatingHandlers.terminatingHandlerTable opcode = none) :
+    InterpreterLoop.stepWithHandler terminatingLoopHandler state = state.invalid := by
+  exact HandlerLoopBridge.stepWithTableHandler_missing_invalid h_decode h_lookup
+
+theorem stepWithTerminatingHandler_missing_invalid_status
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : TerminatingHandlers.terminatingHandlerTable opcode = none) :
+    (InterpreterLoop.stepWithHandler terminatingLoopHandler state).status =
+      .error := by
+  rw [stepWithTerminatingHandler_missing_invalid h_decode h_lookup]
+  exact EvmState.invalid_status state
+
 theorem loopFuel_stop_fixed :
     ∀ (fuel : Nat) (state : EvmState),
       InterpreterLoop.loopFuel terminatingLoopHandler fuel state.stop = state.stop

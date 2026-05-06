@@ -826,10 +826,14 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
   SSTORE updates `storage[key] := value`.
 
 #### 8.2 Precompiles (via zkvm_accelerators)
-- Map EVM precompile addresses (0x01-0x11) to `zkvm_accelerators.h` calls.
-- Per-function bridge audit and tracking lives in beads `evm-asm-nr2sk`
-  (input/output Lean payload types, syscall ID, Hoare-triple bridge spec).
-  Design note: [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md).
+- The canonical C ABI is the vendored header
+  `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators/zkvm_accelerators.h`
+  (eth-act zkvm-standards). See
+  [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
+  for the ADR; per-function bridge progress (input/output Lean payload types,
+  syscall ID, Hoare-triple bridge spec) is tracked in beads parent
+  `evm-asm-nr2sk`.
+- Map EVM precompile addresses (0x01-0x11, 0x100) to `zkvm_accelerators.h` calls.
 - ECRECOVER (0x01) → `zkvm_secp256k1_ecrecover`
 - SHA256 (0x02) → `zkvm_sha256`
 - RIPEMD160 (0x03) → `zkvm_ripemd160`
@@ -849,7 +853,8 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 - BLS12_MAP_FP2_TO_G2 (0x11) → `zkvm_bls12_map_fp2_to_g2`
 - secp256r1_verify (0x100) → `zkvm_secp256r1_verify`
 - Non-precompile accelerators reused by EVM opcode handlers: `zkvm_keccak256`
-  (KECCAK256 opcode), `zkvm_secp256k1_verify` (auxiliary).
+  (KECCAK256 opcode, §8.3), `zkvm_secp256k1_verify` (transaction signature
+  verification).
 
 #### 8.3 KECCAK256 (via accelerator)
 - Pop offset+size, hash EVM memory region.
