@@ -661,6 +661,50 @@ theorem exp_cond_mul_call_block_byte_length (mulOff : BitVec 21) :
 
 
 
+-- ----------------------------------------------------------------------------
+-- Conditional-multiply with BEQ skip gate: exp_cond_mul_call_with_skip_block
+-- (#92 slice 3-cond-mul-with-skip, beads evm-asm-qqz3m)
+-- ----------------------------------------------------------------------------
+--
+-- Wraps `exp_cond_mul_call_block` with the leading BEQ instruction that
+-- skips past the entire 26-instruction taken-branch composite when the
+-- current exponent bit is zero (`x10 == 0`). Per
+-- `docs/92-exp-frame-design.md` §6 and §8, the per-iteration conditional
+-- multiply step has shape
+--
+--     BEQ x10, x0, +108                ;; skip taken branch (1 instr)
+--     exp_cond_mul_call_block mulOff   ;; taken: marshal+JAL+un-marshal (26 instr)
+--
+-- Pure structural composition; no specs in this slice. The BEQ branch
+-- offset is the byte distance from the BEQ site to the instruction
+-- immediately past the taken branch — i.e. exactly the byte length of
+-- `exp_cond_mul_call_block` (= 104 bytes / 26 instr). Callers must pin
+-- `skipOff` accordingly when they assemble the surrounding `evm_exp`
+-- layout in slice evm-asm-ahaz.
+
+/-- Conditional-multiply step with BEQ skip gate: `BEQ x10, x0, skipOff`
+    followed by the 26-instruction taken-branch composite
+    `exp_cond_mul_call_block mulOff`. 27 instructions, 108 bytes. -/
+def exp_cond_mul_call_with_skip_block
+    (mulOff : BitVec 21) (skipOff : BitVec 13) : Program :=
+  single (.BEQ .x10 .x0 skipOff) ;;
+  exp_cond_mul_call_block mulOff
+
+theorem exp_cond_mul_call_with_skip_block_length
+    (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    (exp_cond_mul_call_with_skip_block mulOff skipOff).length = 27 := by
+  show (single (.BEQ .x10 .x0 skipOff) ;;
+        exp_cond_mul_call_block mulOff).length = 27
+  simp only [seq, Program.length_append, exp_cond_mul_call_block_length]
+  rfl
+
+theorem exp_cond_mul_call_with_skip_block_byte_length
+    (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    4 * (exp_cond_mul_call_with_skip_block mulOff skipOff).length = 108 := by
+  rw [exp_cond_mul_call_with_skip_block_length]
+
+
+
 -- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
 -- See `docs/92-exp-survey.md` for the algorithm and reuse points.
 
