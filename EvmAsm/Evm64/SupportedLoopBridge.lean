@@ -34,6 +34,13 @@ theorem stepWithSupportedHandler_of_decode
   exact HandlerLoopBridge.stepWithTableHandler_of_decode
     SupportedHandlers.supportedHandlerTable h_decode
 
+theorem stepWithSupportedHandler_of_decode_status
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      (HandlerTable.dispatchOpcode SupportedHandlers.supportedHandlerTable opcode state).status := by
+  rw [stepWithSupportedHandler_of_decode h_decode]
+
 theorem stepWithSupportedHandler_of_lookup
     {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
@@ -41,6 +48,14 @@ theorem stepWithSupportedHandler_of_lookup
     InterpreterLoop.stepWithHandler supportedLoopHandler state = handler state := by
   rw [stepWithSupportedHandler_of_decode h_decode]
   exact SupportedHandlers.dispatchOpcode_of_lookup h_lookup state
+
+theorem stepWithSupportedHandler_of_lookup_status
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      (handler state).status := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
 
 /--
 When the supported interpreter loop decodes a valid PUSH opcode, the one-step
