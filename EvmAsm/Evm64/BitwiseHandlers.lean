@@ -215,6 +215,37 @@ theorem unaryHandler_status_of_unaryStack?_none
 @[simp] theorem bitwiseHandler?_NOT :
     bitwiseHandler? .NOT = some notHandler := rfl
 
+@[simp] theorem eq_andHandler_iff (handler : OpcodeHandler) :
+    andHandler = handler ↔ handler = andHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_orHandler_iff (handler : OpcodeHandler) :
+    orHandler = handler ↔ handler = orHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_xorHandler_iff (handler : OpcodeHandler) :
+    xorHandler = handler ↔ handler = xorHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_notHandler_iff (handler : OpcodeHandler) :
+    notHandler = handler ↔ handler = notHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem bitwiseHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    bitwiseHandler? opcode = some handler ↔
+      (opcode = .AND ∧ handler = andHandler) ∨
+        (opcode = .OR ∧ handler = orHandler) ∨
+          (opcode = .XOR ∧ handler = xorHandler) ∨
+            (opcode = .NOT ∧ handler = notHandler) := by
+  cases opcode <;> simp [bitwiseHandler?]
+
+theorem bitwiseHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    bitwiseHandler? opcode = none ↔
+      opcode ≠ .AND ∧ opcode ≠ .OR ∧ opcode ≠ .XOR ∧ opcode ≠ .NOT := by
+  cases opcode <;> simp [bitwiseHandler?]
+
 theorem dispatchOpcode?_bitwiseHandlerTable_AND
     (state : EvmState) :
     HandlerTable.dispatchOpcode? bitwiseHandlerTable .AND state =
