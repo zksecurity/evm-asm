@@ -84,6 +84,29 @@ theorem calldataload_window_prologue_stack_spec_within
       sp offset offOld addrOld envPtr base h_off_ne_x0 h_addr_ne_x0)
 
 /--
+Transport the MLOAD four-limbs stack spec to the program-identical in-bounds
+CALLDATALOAD window core. Mirrors `calldataload_window_prologue_stack_spec_within`
+for the four-limbs side: combined, both pieces give the prologue + byte-window
+ingredients for the upcoming `evm_calldataload_stack_spec`
+(evm-asm-pgeuo / GH #104).
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_four_limbs_stack_spec_within #104.
+-/
+theorem calldataload_window_four_limbs_stack_spec_within
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 376)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P Q) :
+    cpsTripleWithin n (base + 8) (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      P Q := by
+  rw [evm_calldataload_window_code_eq_mloadStackCode]
+  exact mload_four_limbs_stack_spec_within
+    offReg byteReg accReg addrReg envPtrReg base h
+
+/--
 The byte-level semantic word produced by the CALLDATALOAD in-bounds window,
 phrased through decoded stack arguments.
 
