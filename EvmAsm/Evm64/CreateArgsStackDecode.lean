@@ -60,6 +60,78 @@ theorem decodeCreateStack?_create2
     decodeCreateStack? .create2 (value :: offset :: size :: salt :: rest) =
       some (.create2 (mkCreate2 value offset size salt)) := rfl
 
+theorem decodeCreateStack?_create_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeCreateStack? .create stack = some decoded ↔
+      ∃ value offset size rest,
+        stack = value :: offset :: size :: rest ∧
+          decoded = .create (mkCreate value offset size) := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨value, _ | ⟨offset, _ | ⟨size, rest⟩⟩⟩ <;>
+      simp [decodeCreateStack?] at h_decode
+    cases h_decode
+    exact ⟨value, offset, size, rest, rfl, rfl⟩
+  · rintro ⟨value, offset, size, rest, rfl, rfl⟩
+    rfl
+
+theorem decodeCreateStack?_create2_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeCreateStack? .create2 stack = some decoded ↔
+      ∃ value offset size salt rest,
+        stack = value :: offset :: size :: salt :: rest ∧
+          decoded = .create2 (mkCreate2 value offset size salt) := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨value, _ | ⟨offset, _ | ⟨size, _ | ⟨salt, rest⟩⟩⟩⟩ <;>
+      simp [decodeCreateStack?] at h_decode
+    cases h_decode
+    exact ⟨value, offset, size, salt, rest, rfl, rfl⟩
+  · rintro ⟨value, offset, size, salt, rest, rfl, rfl⟩
+    rfl
+
+theorem decodeCreateStack?_create_eq_none_iff (stack : List EvmWord) :
+    decodeCreateStack? .create stack = none ↔ stack.length < argumentCount .create := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · simp [argumentCount]
+    · simp [argumentCount]
+    · simp [argumentCount]
+    · simp [decodeCreateStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · simp [argumentCount] at h_len
+      omega
+
+theorem decodeCreateStack?_create2_eq_none_iff (stack : List EvmWord) :
+    decodeCreateStack? .create2 stack = none ↔ stack.length < argumentCount .create2 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩
+    · simp [argumentCount]
+    · simp [argumentCount]
+    · simp [argumentCount]
+    · simp [argumentCount]
+    · simp [decodeCreateStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp [argumentCount] at h_len
+      omega
+
+theorem decodeCreateStack?_eq_none_iff (kind : Kind) (stack : List EvmWord) :
+    decodeCreateStack? kind stack = none ↔ stack.length < argumentCount kind := by
+  cases kind with
+  | create => exact decodeCreateStack?_create_eq_none_iff stack
+  | create2 => exact decodeCreateStack?_create2_eq_none_iff stack
+
 theorem decodedKind_create (value offset size : EvmWord) :
     decodedKind (.create (mkCreate value offset size)) = .create := rfl
 
