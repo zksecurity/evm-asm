@@ -49,6 +49,14 @@ theorem loopTrace_one_decode
   rw [loopTrace_succ_decode handler 0 h_status h_decode]
   rfl
 
+theorem loopTrace_one_decode_length
+    (handler : Handler) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (loopTrace handler 1 state).length = 1 := by
+  rw [loopTrace_one_decode handler h_status h_decode]
+  rfl
+
 theorem loopTrace_succ_unsupported
     (handler : Handler) (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .running)
@@ -62,6 +70,14 @@ theorem loopTrace_one_unsupported
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
     loopTrace handler 1 state = [] := by
   exact loopTrace_succ_unsupported handler 0 h_status h_decode
+
+theorem loopTrace_one_unsupported_length
+    (handler : Handler) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = none) :
+    (loopTrace handler 1 state).length = 0 := by
+  rw [loopTrace_one_unsupported handler h_status h_decode]
+  rfl
 
 theorem loopTrace_succ_stopped
     (handler : Handler) (nSteps : Nat) {state : EvmState}
