@@ -116,6 +116,14 @@ theorem dispatchOpcode_pushHandlerTable_PUSH_of_valid
   exact HandlerTable.dispatchOpcode_some
     (pushHandler?_PUSH_of_valid h_valid) state
 
+theorem dispatchOpcode_pushHandlerTable_PUSH_of_valid_status
+    {n : Nat} (h_valid : EvmOpcode.validPushWidth n = true)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode pushHandlerTable (.PUSH n) state).status =
+      state.status := by
+  rw [dispatchOpcode_pushHandlerTable_PUSH_of_valid h_valid state]
+  exact pushHandler_status n state
+
 end PushHandlers
 
 end EvmAsm.Evm64
