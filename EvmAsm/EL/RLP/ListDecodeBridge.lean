@@ -23,6 +23,24 @@ theorem decodeListPayload_eq_some_of_decodeItems_empty
     decodeListPayload nDepth payload = some items := by
   simp [decodeListPayload, h_decode]
 
+/--
+List-payload decode succeeds exactly when recursive item decoding consumes the
+whole payload.
+
+Distinctive token: ListDecodeBridge.decodeListPayload_eq_some_iff #120.
+-/
+theorem decodeListPayload_eq_some_iff
+    (nDepth : Nat) (payload : List Byte) (items : List RLPItem) :
+    decodeListPayload nDepth payload = some items ↔
+      decodeItems nDepth payload = some (items, []) := by
+  unfold decodeListPayload
+  cases h_decode : decodeItems nDepth payload with
+  | none => simp
+  | some decoded =>
+      cases decoded with
+      | mk decodedItems leftover =>
+          cases leftover <;> simp
+
 theorem decodeListPayload_eq_none_of_decodeItems_none
     {nDepth : Nat} {payload : List Byte}
     (h_decode : decodeItems nDepth payload = none) :
