@@ -53,11 +53,38 @@ def dispatchByte (table : HandlerTable) (b : Fin 256)
     dispatchByte table b state = state.invalid := by
   simp [dispatchByte, h_decode]
 
+theorem dispatchByte_decoded_lookup
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (state : EvmState)
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = some handler) :
+    dispatchByte table b state = handler state := by
+  rw [dispatchByte_decoded table b opcode state h_decode]
+  exact HandlerTable.dispatchOpcode_some h_lookup state
+
+theorem dispatchByte_decoded_missing
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    (state : EvmState)
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = none) :
+    dispatchByte table b state = state.invalid := by
+  rw [dispatchByte_decoded table b opcode state h_decode]
+  exact HandlerTable.dispatchOpcode_none h_lookup state
+
 theorem dispatchByte_undecoded_status
     (table : HandlerTable) (b : Fin 256) (state : EvmState)
     (h_decode : EvmOpcode.decodeByte? b.val = none) :
     (dispatchByte table b state).status = .error := by
   rw [dispatchByte_undecoded table b state h_decode]
+  exact EvmState.invalid_status state
+
+theorem dispatchByte_decoded_missing_status
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    (state : EvmState)
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = none) :
+    (dispatchByte table b state).status = .error := by
+  rw [dispatchByte_decoded_missing state h_decode h_lookup]
   exact EvmState.invalid_status state
 
 /-- Empty handler table dispatches every byte to the INVALID step. -/
