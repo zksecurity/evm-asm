@@ -52,6 +52,13 @@ theorem loopFuel_eq_of_loopResultsMatch
       InterpreterLoop.loopFuel spec fuel state :=
   h_match fuel state
 
+theorem loopFuel_status_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).status =
+      (InterpreterLoop.loopFuel spec fuel state).status := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
 theorem loopResultsMatch_of_eq
     {impl spec : Handler}
     (h_eq : ∀ (opcode : EvmOpcode) (state : EvmState), impl opcode state = spec opcode state) :
