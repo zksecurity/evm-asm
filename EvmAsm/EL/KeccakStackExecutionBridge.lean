@@ -99,6 +99,35 @@ theorem requestFromStack?_eq_some_iff
     (memory : MemoryReader) (offset : EvmWord) :
     requestFromStack? memory [offset] = none := rfl
 
+/--
+The stack-to-request bridge fails exactly when the stack has fewer than two
+entries (no `offset, size` pair to decode).
+
+Distinctive token: KeccakStackExecutionBridge.requestFromStack?_eq_none_iff #111.
+-/
+theorem requestFromStack?_eq_none_iff
+    (memory : MemoryReader) (stack : List EvmWord) :
+    requestFromStack? memory stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_request
+    cases stack with
+    | nil => simp
+    | cons offset tail =>
+        cases tail with
+        | nil => simp
+        | cons size rest =>
+            simp [requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_request
+  · intro h_len
+    cases stack with
+    | nil => rfl
+    | cons offset tail =>
+        cases tail with
+        | nil => rfl
+        | cons size rest =>
+            simp at h_len
+            omega
+
 theorem resultFromStack?_some
     (accelerator : Accelerator) (memory : MemoryReader)
     (offset size : EvmWord) (rest : List EvmWord) :
@@ -137,6 +166,44 @@ theorem resultFromStack?_eq_some_iff
             exact ⟨offset, size, rest, rfl, rfl⟩
   · rintro ⟨offset, size, rest, rfl, rfl⟩
     rfl
+
+@[simp] theorem resultFromStack?_nil
+    (accelerator : Accelerator) (memory : MemoryReader) :
+    resultFromStack? accelerator memory [] = none := rfl
+
+@[simp] theorem resultFromStack?_singleton
+    (accelerator : Accelerator) (memory : MemoryReader) (offset : EvmWord) :
+    resultFromStack? accelerator memory [offset] = none := rfl
+
+/--
+The stack-to-result bridge fails exactly when the stack has fewer than two
+entries (no `offset, size` pair to decode).
+
+Distinctive token: KeccakStackExecutionBridge.resultFromStack?_eq_none_iff #111.
+-/
+theorem resultFromStack?_eq_none_iff
+    (accelerator : Accelerator) (memory : MemoryReader)
+    (stack : List EvmWord) :
+    resultFromStack? accelerator memory stack = none ↔ stack.length < 2 := by
+  constructor
+  · intro h_result
+    cases stack with
+    | nil => simp
+    | cons offset tail =>
+        cases tail with
+        | nil => simp
+        | cons size rest =>
+            simp [resultFromStack?, requestFromStack?,
+              EvmAsm.Evm64.KeccakArgsStackDecode.decodeKeccakStack?] at h_result
+  · intro h_len
+    cases stack with
+    | nil => rfl
+    | cons offset tail =>
+        cases tail with
+        | nil => rfl
+        | cons size rest =>
+            simp at h_len
+            omega
 
 theorem runKeccakStack?_some
     (accelerator : Accelerator) (memory : MemoryReader)
