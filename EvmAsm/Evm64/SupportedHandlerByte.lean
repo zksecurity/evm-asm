@@ -74,6 +74,25 @@ theorem dispatchByte_supported_PUSH_effectFromCode
     h_valid state
 
 /--
+Status projection for byte-level dispatch of a decoded valid PUSH opcode
+through the combined supported-handler table.
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_PUSH_status #101 #107.
+-/
+theorem dispatchByte_supported_PUSH_status
+    {b : Fin 256} {n : Nat}
+    (h_decode : EvmOpcode.decodeByte? b.val = some (EvmOpcode.PUSH n))
+    (h_valid : EvmOpcode.validPushWidth n = true)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      state.status := by
+  rw [dispatchByte_supported_of_decode h_decode state]
+  rw [HandlerTable.dispatchOpcode_some
+    (SupportedHandlers.supportedHandlerTable_PUSH_of_valid h_valid) state]
+  exact PushHandlers.pushHandler_status n state
+
+/--
 Concrete STOP byte dispatch through the combined supported-handler table
 terminates the state successfully.
 
