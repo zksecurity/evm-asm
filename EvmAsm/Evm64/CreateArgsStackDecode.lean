@@ -86,6 +86,90 @@ theorem decodedArgumentCount_create (value offset size : EvmWord) :
 theorem decodedArgumentCount_create2 (value offset size salt : EvmWord) :
     decodedArgumentCount (.create2 (mkCreate2 value offset size salt)) = 4 := rfl
 
+/-! ### Direct success/failure characterization lemmas -/
+
+/--
+Success characterization for CREATE: `decodeCreateStack? .create stack` returns
+`some decoded` iff `stack` starts with three elements and `decoded` is the
+corresponding `.create` value.
+-/
+theorem decodeCreateStack?_create_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeCreateStack? .create stack = some decoded ↔
+      ∃ value offset size rest,
+        stack = value :: offset :: size :: rest ∧
+          decoded = .create (mkCreate value offset size) := by
+  constructor
+  · intro h
+    match stack with
+    | [] => simp [decodeCreateStack?] at h
+    | [_] => simp [decodeCreateStack?] at h
+    | [_, _] => simp [decodeCreateStack?] at h
+    | value :: offset :: size :: rest =>
+        simp [decodeCreateStack?] at h
+        exact ⟨value, offset, size, rest, rfl, h.symm⟩
+  · rintro ⟨value, offset, size, rest, rfl, rfl⟩
+    rfl
+
+/--
+Success characterization for CREATE2: `decodeCreateStack? .create2 stack`
+returns `some decoded` iff `stack` starts with four elements and `decoded` is
+the corresponding `.create2` value.
+-/
+theorem decodeCreateStack?_create2_eq_some_iff
+    (stack : List EvmWord) (decoded : Decoded) :
+    decodeCreateStack? .create2 stack = some decoded ↔
+      ∃ value offset size salt rest,
+        stack = value :: offset :: size :: salt :: rest ∧
+          decoded = .create2 (mkCreate2 value offset size salt) := by
+  constructor
+  · intro h
+    match stack with
+    | [] => simp [decodeCreateStack?] at h
+    | [_] => simp [decodeCreateStack?] at h
+    | [_, _] => simp [decodeCreateStack?] at h
+    | [_, _, _] => simp [decodeCreateStack?] at h
+    | value :: offset :: size :: salt :: rest =>
+        simp [decodeCreateStack?] at h
+        exact ⟨value, offset, size, salt, rest, rfl, h.symm⟩
+  · rintro ⟨value, offset, size, salt, rest, rfl, rfl⟩
+    rfl
+
+/--
+Failure characterization for CREATE: `decodeCreateStack? .create stack`
+returns `none` iff `stack` has fewer than three elements.
+-/
+theorem decodeCreateStack?_create_eq_none_iff (stack : List EvmWord) :
+    decodeCreateStack? .create stack = none ↔ stack.length < 3 := by
+  match stack with
+  | [] => simp [decodeCreateStack?]
+  | [_] => simp [decodeCreateStack?]
+  | [_, _] => simp [decodeCreateStack?]
+  | _ :: _ :: _ :: _ => simp [decodeCreateStack?]
+
+/--
+Failure characterization for CREATE2: `decodeCreateStack? .create2 stack`
+returns `none` iff `stack` has fewer than four elements.
+-/
+theorem decodeCreateStack?_create2_eq_none_iff (stack : List EvmWord) :
+    decodeCreateStack? .create2 stack = none ↔ stack.length < 4 := by
+  match stack with
+  | [] => simp [decodeCreateStack?]
+  | [_] => simp [decodeCreateStack?]
+  | [_, _] => simp [decodeCreateStack?]
+  | [_, _, _] => simp [decodeCreateStack?]
+  | _ :: _ :: _ :: _ :: _ => simp [decodeCreateStack?]
+
+/--
+Generic failure characterization: `decodeCreateStack? kind stack` returns
+`none` iff `stack` has fewer elements than `argumentCount kind`.
+-/
+theorem decodeCreateStack?_eq_none_iff (kind : Kind) (stack : List EvmWord) :
+    decodeCreateStack? kind stack = none ↔ stack.length < argumentCount kind := by
+  cases kind with
+  | create => simpa using decodeCreateStack?_create_eq_none_iff stack
+  | create2 => simpa using decodeCreateStack?_create2_eq_none_iff stack
+
 end CreateArgsStackDecode
 
 end EvmAsm.Evm64
