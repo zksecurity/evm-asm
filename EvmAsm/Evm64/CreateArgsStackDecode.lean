@@ -90,6 +90,22 @@ theorem decodeCreateStack?_create2_eq_some_iff
   · rintro ⟨value, offset, size, salt, rest, rfl, rfl⟩
     rfl
 
+theorem decodeCreateStack?_eq_some_iff
+    (kind : Kind) (stack : List EvmWord) (decoded : Decoded) :
+    decodeCreateStack? kind stack = some decoded ↔
+      match kind with
+      | .create =>
+          ∃ value offset size rest,
+            stack = value :: offset :: size :: rest ∧
+              decoded = .create (mkCreate value offset size)
+      | .create2 =>
+          ∃ value offset size salt rest,
+            stack = value :: offset :: size :: salt :: rest ∧
+              decoded = .create2 (mkCreate2 value offset size salt) := by
+  cases kind with
+  | create => exact decodeCreateStack?_create_eq_some_iff stack decoded
+  | create2 => exact decodeCreateStack?_create2_eq_some_iff stack decoded
+
 theorem decodeCreateStack?_create_eq_none_iff (stack : List EvmWord) :
     decodeCreateStack? .create stack = none ↔ stack.length < argumentCount .create := by
   constructor
