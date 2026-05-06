@@ -9,6 +9,7 @@
 import EvmAsm.Evm64.CodeRegion
 
 -- Accelerator C ABI bridges (zkvm_accelerators.h)
+import EvmAsm.Evm64.Accelerators.Types
 import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 import EvmAsm.Evm64.Accelerators.Dispatch
