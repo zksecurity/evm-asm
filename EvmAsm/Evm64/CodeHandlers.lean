@@ -45,6 +45,21 @@ def codeHandlerTable : HandlerTable :=
 @[simp] theorem codeHandler?_CODESIZE :
     codeHandler? .CODESIZE = some codeSizeHandler := rfl
 
+@[simp] theorem eq_codeSizeHandler_iff (handler : OpcodeHandler) :
+    codeSizeHandler = handler ↔ handler = codeSizeHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem codeHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    codeHandler? opcode = some handler ↔
+      opcode = .CODESIZE ∧ handler = codeSizeHandler := by
+  cases opcode <;> simp [codeHandler?]
+
+theorem codeHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    codeHandler? opcode = none ↔ opcode ≠ .CODESIZE := by
+  cases opcode <;> simp [codeHandler?]
+
 @[simp] theorem codeHandlerTable_CODESIZE :
     codeHandlerTable .CODESIZE = some codeSizeHandler := rfl
 
