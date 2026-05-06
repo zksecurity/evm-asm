@@ -63,6 +63,18 @@ theorem writesAddress_at_destination_add
     CallDataCopyArgs.sizeNat
   omega
 
+theorem writesAddress_iff_exists_index
+    (args : CallDataCopyArgs.Args) (addr : Nat) :
+    writesAddress args addr ↔
+      ∃ i, i < args.size.toNat ∧ addr = destinationStart args + i := by
+  unfold writesAddress destinationEnd destinationStart CallDataCopyArgs.destinationOffsetNat
+    CallDataCopyArgs.sizeNat
+  constructor
+  · intro h
+    refine ⟨addr - args.destOffset.toNat, ?_, ?_⟩ <;> omega
+  · rintro ⟨i, h_lt, rfl⟩
+    omega
+
 theorem writeIndex_at_destination_add
     (args : CallDataCopyArgs.Args) (i : Nat) :
     writeIndex args (destinationStart args + i) = i := by

@@ -51,6 +51,23 @@ theorem decodeReturnDataCopyStack?_eq_some_iff
   · rintro ⟨destOffset, dataOffset, size, rest, rfl, rfl⟩
     rfl
 
+theorem decodeReturnDataCopyStack?_eq_none_iff (stack : List EvmWord) :
+    decodeReturnDataCopyStack? stack = none ↔ stack.length < 3 := by
+  constructor
+  · intro h_decode
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · simp
+    · simp
+    · simp
+    · simp [decodeReturnDataCopyStack?] at h_decode
+  · intro h_len
+    rcases stack with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 theorem decodeReturnDataCopyStack?_destOffset
     (destOffset dataOffset size : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.destOffset)

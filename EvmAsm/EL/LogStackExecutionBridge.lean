@@ -96,6 +96,23 @@ theorem stackRestAfterLog?_log4
 @[simp] theorem stackRestAfterLog?_singleton (kind : LogKind) (offset : EvmWord) :
     stackRestAfterLog? kind [offset] = none := rfl
 
+theorem runLogStack?_eq_none_iff
+    (kind : LogKind) (emitter : Address) (readByte : MemoryReader)
+    (state : LogStackState) :
+    runLogStack? kind emitter readByte state = none ↔
+      EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind state.stack = none ∨
+        stackRestAfterLog? kind state.stack = none := by
+  cases state with
+  | mk effects stack =>
+      simp [runLogStack?]
+      cases h_decode :
+          EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterLog? kind stack with
+          | none => simp
+          | some rest => simp
+
 theorem runLogStack?_log0
     (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
     (offset size : EvmWord) (rest : List EvmWord) :
@@ -155,6 +172,36 @@ theorem runLogStack?_log4
               (EvmAsm.Evm64.LogArgsStackDecode.mkArgs offset size
                 [topic0, topic1, topic2, topic3])
           stack := rest } := rfl
+
+theorem runLogStack?_eq_some_iff
+    (kind : LogKind) (emitter : Address) (readByte : MemoryReader)
+    (state out : LogStackState) :
+    runLogStack? kind emitter readByte state = some out ↔
+      ∃ args rest,
+        EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind state.stack =
+          some args ∧
+        stackRestAfterLog? kind state.stack = some rest ∧
+        out =
+          { effects :=
+              LogExecutionBridge.appendLogFromMemory
+                state.effects emitter readByte args
+            stack := rest } := by
+  cases state with
+  | mk effects stack =>
+      constructor
+      · intro h_run
+        simp [runLogStack?] at h_run
+        cases h_decode :
+            EvmAsm.Evm64.LogArgsStackDecode.decodeLogStack? kind stack with
+        | none => simp [h_decode] at h_run
+        | some args =>
+            cases h_rest : stackRestAfterLog? kind stack with
+            | none => simp [h_decode, h_rest] at h_run
+            | some rest =>
+                simp [h_decode, h_rest] at h_run
+                exact ⟨args, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨args, rest, h_decode, h_rest, rfl⟩
+        simp [runLogStack?, h_decode, h_rest]
 
 theorem runLogStack?_stack_length
     {kind : LogKind} {emitter : Address} {readByte : MemoryReader}

@@ -51,6 +51,37 @@ theorem decodeCallDataCopyStack?_eq_some_iff
   · rintro ⟨destOffset, dataOffset, size, rest, rfl, rfl⟩
     rfl
 
+/--
+CALLDATACOPY stack decoding fails exactly when fewer than three stack words are
+available.
+
+Distinctive token:
+CallDataCopyArgsStackDecode.decodeCallDataCopyStack?_eq_none_iff #104 #107.
+-/
+theorem decodeCallDataCopyStack?_eq_none_iff
+    (stack : List EvmWord) :
+    decodeCallDataCopyStack? stack = none ↔ stack.length < 3 := by
+  cases stack with
+  | nil => simp [decodeCallDataCopyStack?]
+  | cons destOffset s1 =>
+      cases s1 with
+      | nil => simp [decodeCallDataCopyStack?]
+      | cons dataOffset s2 =>
+          cases s2 with
+          | nil => simp [decodeCallDataCopyStack?]
+          | cons size rest => simp [decodeCallDataCopyStack?]
+
+theorem decodeCallDataCopyStack?_none_of_empty :
+    decodeCallDataCopyStack? [] = none := rfl
+
+theorem decodeCallDataCopyStack?_none_of_one
+    (destOffset : EvmWord) :
+    decodeCallDataCopyStack? [destOffset] = none := rfl
+
+theorem decodeCallDataCopyStack?_none_of_two
+    (destOffset dataOffset : EvmWord) :
+    decodeCallDataCopyStack? [destOffset, dataOffset] = none := rfl
+
 theorem decodeCallDataCopyStack?_destOffset
     (destOffset dataOffset size : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.destOffset)

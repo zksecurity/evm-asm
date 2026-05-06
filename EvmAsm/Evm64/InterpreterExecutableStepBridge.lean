@@ -41,6 +41,48 @@ theorem loopFuel_one_of_roundtrip
     InterpreterLoop.loopFuel handler 1 state = handler opcode state := by
   exact loopFuel_one_of_execSpecByte handler h_status h_pc h_code h_roundtrip.2
 
+/--
+One-step running-loop bridge for executable-spec `PUSH1` through `PUSH32`
+bytes.
+
+Distinctive token:
+InterpreterExecutableStepBridge.loopFuel_one_of_execSpecPushByte #109 #101.
+-/
+theorem loopFuel_one_of_execSpecPushByte
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState} {n : Nat}
+    (h_status : state.status = .running)
+    (h_low : 1 ≤ n) (h_high : n ≤ 32)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecPushByte n : BitVec 8)) :
+    InterpreterLoop.loopFuel handler 1 state =
+      handler (EvmOpcode.PUSH n) state := by
+  rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
+  exact InterpreterExecutableFetchBridge.stepWithHandler_of_execSpecPushByte
+    handler h_low h_high h_pc h_code
+
+/--
+One-step running-loop bridge for executable-spec `LOG0` through `LOG4` bytes.
+
+Distinctive token:
+InterpreterExecutableStepBridge.loopFuel_one_of_execSpecLogByte #109 #112.
+-/
+theorem loopFuel_one_of_execSpecLogByte
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState} (kind : LogArgs.Kind)
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.execSpecLogByte kind : BitVec 8)) :
+    InterpreterLoop.loopFuel handler 1 state =
+      handler (EvmOpcode.LOG kind) state := by
+  rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
+  exact InterpreterExecutableFetchBridge.stepWithHandler_of_execSpecLogByte
+    handler kind h_pc h_code
+
 theorem loopFuel_one_of_unsupported
     (handler : InterpreterLoop.Handler)
     {state : EvmState} {byte : BitVec 8}
