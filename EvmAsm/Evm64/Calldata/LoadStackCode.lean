@@ -579,5 +579,65 @@ theorem calldataload_window_one_limb_sequence_stack_spec_within
     (calldataload_window_one_limb_q3_stack_spec_within
       offReg byteReg accReg addrReg envPtrReg base h3)
 
+/--
+CALLDATALOAD window combined one-limb sequence stack spec: combine the
+prologue half (`calldataload_window_prologue_stack_spec_within`) with the
+four byte-window quarter triples (composed via
+`calldataload_window_one_limb_sequence_stack_spec_within`) into a single
+triple from `base` to `base + 376` over `evm_calldataload_window_code`.
+
+This is a one-line composition of the existing combined spec
+(`calldataload_window_combined_stack_spec_within`, which takes a single
+four-limbs core triple) with the one-limb sequence spec
+(`calldataload_window_one_limb_sequence_stack_spec_within`, which produces
+that consolidated four-limbs triple from four byte-window quarter
+`mloadOneLimbCode` triples directly). Mirrors
+`calldataload_window_combined_four_limb_sequence_stack_spec_within`, but
+takes per-quarter `mloadOneLimbCode` triples instead of `mloadFourLimbsCode`
+wrappers, eliminating an intermediate transport step in followup slices that
+wire concrete byte-load triples toward the full `evm_calldataload_stack_spec`
+(evm-asm-pgeuo / GH #104).
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_combined_one_limb_sequence_stack_spec_within #104.
+-/
+theorem calldataload_window_combined_one_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg)
+    (sp offset offOld addrOld envPtr : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8))
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ (envPtr + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  calldataload_window_combined_stack_spec_within
+    offReg byteReg accReg addrReg envPtrReg
+    sp offset offOld addrOld envPtr base h_off_ne_x0 h_addr_ne_x0
+    (calldataload_window_one_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg envPtrReg base h0 h1 h2 h3)
+
 end Calldata
 end EvmAsm.Evm64
