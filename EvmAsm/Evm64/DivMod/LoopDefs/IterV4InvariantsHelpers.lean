@@ -21,7 +21,6 @@
   Authored by @pirapira; implemented by Hermes-bot (evm-hermes).
 -/
 
-import EvmAsm.Evm64.DivMod.LoopDefs.IterV4
 import EvmAsm.Evm64.DivMod.SpecCall
 
 namespace EvmAsm.Evm64
