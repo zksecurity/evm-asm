@@ -338,4 +338,10 @@
  ["EvmAsm.Evm64.EvmWordArith.Div128Shift0",
   "EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract",
   "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2",
-  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"]}}
+  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"],
+"EvmAsm.Rv64.InstructionSpecs": ["EvmAsm.Rv64.GenericSpecs"],
+"EvmAsm.Rv64.SyscallSpecs":
+ ["EvmAsm.Rv64.InstructionSpecs", "EvmAsm.Rv64.ByteOps",
+  "EvmAsm.Rv64.HalfwordOps", "EvmAsm.Rv64.WordOps",
+  "EvmAsm.Rv64.Tactics.SpecDb"],
+"EvmAsm.Rv64.HintSpecs": ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"]}}
