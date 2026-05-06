@@ -8,6 +8,9 @@
 -- opcode Program file via Stack → Basic).
 import EvmAsm.Evm64.CodeRegion
 
+-- Accelerator C ABI bridges (zkvm_accelerators.h)
+import EvmAsm.Evm64.Accelerators.Status
+
 -- Stack operations
 import EvmAsm.Evm64.Pop
 import EvmAsm.Evm64.Push0
