@@ -40,6 +40,13 @@ theorem loopFuel_add
       · simp [InterpreterLoop.loopFuel, h_status, loopFuel_of_not_running]
       · simp [InterpreterLoop.loopFuel, h_status, loopFuel_of_not_running]
 
+theorem loopFuel_add_status
+    (handler : Handler) (nStepsA nStepsB : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel handler (nStepsA + nStepsB) state).status =
+      (InterpreterLoop.loopFuel handler nStepsB
+        (InterpreterLoop.loopFuel handler nStepsA state)).status := by
+  rw [loopFuel_add handler nStepsA nStepsB state]
+
 theorem loopFuel_one_add
     (handler : Handler) (nSteps : Nat) (state : EvmState) :
     InterpreterLoop.loopFuel handler (1 + nSteps) state =
