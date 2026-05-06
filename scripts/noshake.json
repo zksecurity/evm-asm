@@ -43,6 +43,8 @@
   ["EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Evm64.Stack"],
   "EvmAsm.Evm64.SignExtend.Compose": ["EvmAsm.Evm64.EvmWordArith.Common"],
   "EvmAsm.Evm64.EvmWordArith.Normalization": ["EvmAsm.Evm64.EvmWordArith.MulSubChain"],
+  "EvmAsm.Evm64.DivMod.AddrNorm":
+  ["EvmAsm.Rv64.AddrNorm", "EvmAsm.Evm64.DivMod.AddrNormAttr"],
   "EvmAsm.Evm64.DivMod.Spec.N1V4DivBridge":
   ["EvmAsm.Evm64.DivMod.Compose.FullPathN1RemainderV4"],
   "EvmAsm.Evm64.DivMod.Spec.N1V4ModBridge":
