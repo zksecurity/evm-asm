@@ -292,6 +292,82 @@ theorem decodeDelegateCallStack?_eq_none_iff (stack : List EvmWord) :
     · simp at h_len
       omega
 
+theorem decodeCallStack?_none_of_empty :
+    decodeCallStack? [] = none := rfl
+
+theorem decodeCallStack?_none_of_one
+    (gas : EvmWord) :
+    decodeCallStack? [gas] = none := rfl
+
+theorem decodeCallStack?_none_of_two
+    (gas to : EvmWord) :
+    decodeCallStack? [gas, to] = none := rfl
+
+theorem decodeCallStack?_none_of_three
+    (gas to value : EvmWord) :
+    decodeCallStack? [gas, to, value] = none := rfl
+
+theorem decodeCallStack?_none_of_four
+    (gas to value inputOffset : EvmWord) :
+    decodeCallStack? [gas, to, value, inputOffset] = none := rfl
+
+theorem decodeCallStack?_none_of_five
+    (gas to value inputOffset inputSize : EvmWord) :
+    decodeCallStack? [gas, to, value, inputOffset, inputSize] = none := rfl
+
+theorem decodeCallStack?_none_of_six
+    (gas to value inputOffset inputSize outputOffset : EvmWord) :
+    decodeCallStack?
+      [gas, to, value, inputOffset, inputSize, outputOffset] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_empty :
+    decodeStaticCallStack? [] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_one
+    (gas : EvmWord) :
+    decodeStaticCallStack? [gas] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_two
+    (gas to : EvmWord) :
+    decodeStaticCallStack? [gas, to] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_three
+    (gas to inputOffset : EvmWord) :
+    decodeStaticCallStack? [gas, to, inputOffset] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_four
+    (gas to inputOffset inputSize : EvmWord) :
+    decodeStaticCallStack? [gas, to, inputOffset, inputSize] = none := rfl
+
+theorem decodeStaticCallStack?_none_of_five
+    (gas to inputOffset inputSize outputOffset : EvmWord) :
+    decodeStaticCallStack?
+      [gas, to, inputOffset, inputSize, outputOffset] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_empty :
+    decodeDelegateCallStack? [] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_one
+    (gas : EvmWord) :
+    decodeDelegateCallStack? [gas] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_two
+    (gas to : EvmWord) :
+    decodeDelegateCallStack? [gas, to] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_three
+    (gas to inputOffset : EvmWord) :
+    decodeDelegateCallStack? [gas, to, inputOffset] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_four
+    (gas to inputOffset inputSize : EvmWord) :
+    decodeDelegateCallStack? [gas, to, inputOffset, inputSize] = none := rfl
+
+theorem decodeDelegateCallStack?_none_of_five
+    (gas to inputOffset inputSize outputOffset : EvmWord) :
+    decodeDelegateCallStack?
+      [gas, to, inputOffset, inputSize, outputOffset] = none := rfl
+
 end CallArgsStackDecode
 
 end EvmAsm.Evm64
