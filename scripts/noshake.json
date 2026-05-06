@@ -30,6 +30,9 @@
   "EvmAsm.Rv64.RLP.Phase2LongAcc":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.RunBlock"],
+ "EvmAsm.Rv64.RLP.Phase2LongIter":
+  ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.RLP.Phase4HintRead":
   ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
@@ -174,6 +177,10 @@
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.ZeroPath":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.AddBackFinalLoopControl":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
