@@ -67,6 +67,13 @@ theorem decodeKeccakStack?_eq_none_iff
       | nil => simp [decodeKeccakStack?]
       | cons size rest => simp [decodeKeccakStack?]
 
+theorem decodeKeccakStack?_none_of_empty :
+    decodeKeccakStack? [] = none := rfl
+
+theorem decodeKeccakStack?_none_of_one
+    (offset : EvmWord) :
+    decodeKeccakStack? [offset] = none := rfl
+
 theorem decoded_inputRange (offset size : EvmWord) :
     inputRange (keccakArgs offset size) =
       { offset := offset, size := size } := rfl
