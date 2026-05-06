@@ -127,6 +127,15 @@ theorem dispatchOpcode_some_status {table : HandlerTable} {opcode : EvmOpcode}
     (dispatchOpcode table opcode state).status = (handler state).status := by
   rw [dispatchOpcode_some h_lookup state]
 
+theorem dispatchOpcode_some_preserves_status
+    {table : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : table opcode = some handler)
+    (h_status : ∀ state : EvmState, (handler state).status = state.status)
+    (state : EvmState) :
+    (dispatchOpcode table opcode state).status = state.status := by
+  rw [dispatchOpcode_some_status h_lookup state]
+  exact h_status state
+
 theorem dispatchOpcode_none {table : HandlerTable} {opcode : EvmOpcode}
     (h_lookup : table opcode = none) (state : EvmState) :
     dispatchOpcode table opcode state = state.invalid := by
