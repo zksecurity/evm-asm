@@ -28,6 +28,7 @@ import EvmAsm.Rv64.RLP.Phase3ShortList
 import EvmAsm.Rv64.RLP.Phase3ShortString
 import EvmAsm.Rv64.RLP.Phase3SingleByte
 import EvmAsm.Rv64.RLP.Phase4HintRead
+import EvmAsm.Rv64.RLP.Phase4HintReadLoop
 import EvmAsm.Rv64.RLP.Phase4HintLen
 import EvmAsm.Rv64.RLP.Phase1Disjoint
 import EvmAsm.Rv64.RLP.Phase1CascadePrefixE2
