@@ -10,6 +10,7 @@
 
 import EvmAsm.EL.Bn254G1AddInputBridge
 import EvmAsm.EL.Bn254G1AddResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL
