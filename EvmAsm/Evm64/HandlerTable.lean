@@ -121,10 +121,22 @@ theorem dispatchOpcode_some {table : HandlerTable} {opcode : EvmOpcode}
     dispatchOpcode table opcode state = handler state := by
   simp [dispatchOpcode, dispatchOpcode?_some h_lookup]
 
+theorem dispatchOpcode_some_status {table : HandlerTable} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (h_lookup : table opcode = some handler)
+    (state : EvmState) :
+    (dispatchOpcode table opcode state).status = (handler state).status := by
+  rw [dispatchOpcode_some h_lookup state]
+
 theorem dispatchOpcode_none {table : HandlerTable} {opcode : EvmOpcode}
     (h_lookup : table opcode = none) (state : EvmState) :
     dispatchOpcode table opcode state = state.invalid := by
   simp [dispatchOpcode, dispatchOpcode?_none h_lookup]
+
+theorem dispatchOpcode_none_status {table : HandlerTable} {opcode : EvmOpcode}
+    (h_lookup : table opcode = none) (state : EvmState) :
+    (dispatchOpcode table opcode state).status = .error := by
+  rw [dispatchOpcode_none h_lookup state]
+  exact EvmState.invalid_status state
 
 end HandlerTable
 
