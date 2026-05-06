@@ -357,6 +357,14 @@ theorem dispatchOpcode_of_lookup
       handler state :=
   HandlerTable.dispatchOpcode_some h_lookup state
 
+theorem dispatchOpcode_of_lookup_status
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).status =
+      (handler state).status := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
 @[simp] theorem supportedHandlerTable_STOP :
     supportedHandlerTable .STOP =
       some TerminatingHandlers.stopHandler := by
