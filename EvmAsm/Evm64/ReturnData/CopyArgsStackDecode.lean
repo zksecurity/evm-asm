@@ -68,6 +68,17 @@ theorem decodeReturnDataCopyStack?_eq_none_iff (stack : List EvmWord) :
     · simp at h_len
       omega
 
+theorem decodeReturnDataCopyStack?_none_of_empty :
+    decodeReturnDataCopyStack? [] = none := rfl
+
+theorem decodeReturnDataCopyStack?_none_of_one
+    (destOffset : EvmWord) :
+    decodeReturnDataCopyStack? [destOffset] = none := rfl
+
+theorem decodeReturnDataCopyStack?_none_of_two
+    (destOffset dataOffset : EvmWord) :
+    decodeReturnDataCopyStack? [destOffset, dataOffset] = none := rfl
+
 theorem decodeReturnDataCopyStack?_destOffset
     (destOffset dataOffset size : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.destOffset)
