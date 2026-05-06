@@ -72,6 +72,18 @@ def dispatch (_id : Nat) : ZkvmStatus := ZkvmStatus.efail
 @[simp] theorem dispatch_isOk_false (id : Nat) :
     (dispatch id).isOk = false := rfl
 
+/-- RV64 `a0` return-register encoding for the skeletal accelerator dispatch. -/
+def dispatchWord (id : Nat) : BitVec 64 :=
+  Rv64.zkvmStatusToWord (dispatch id)
+
+@[simp] theorem dispatchWord_eq_efailWord (id : Nat) :
+    dispatchWord id = Rv64.zkvmStatusEfailWord := rfl
+
+theorem dispatchWord_ne_eokWord (id : Nat) :
+    dispatchWord id ≠ Rv64.zkvmStatusEokWord := by
+  rw [dispatchWord_eq_efailWord]
+  exact Rv64.zkvmStatusEokWord_ne_efailWord.symm
+
 /-! ## Sanity properties
 
 These confirm the framing/accelerator partition without forcing any
