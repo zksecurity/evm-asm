@@ -217,6 +217,61 @@ theorem mloadFourLimbsCode_one_limb_q1_sub
     (mloadFourLimbs_q0_disjoint_q1 addrReg byteReg accReg base)
     CodeReq.union_mono_left
 
+/-- Disjointness of the q0 and q2 one-limb byte-pack blocks within
+    `mloadFourLimbsCode`. q0 spans `base + 8 .. base + 100`, q2 spans
+    `base + 192 .. base + 284`; both are 23-instruction `mloadOneLimbProg`
+    blocks expressible as `CodeReq.ofProg`. -/
+private theorem mloadFourLimbs_q0_disjoint_q2
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    CodeReq.Disjoint
+      (mloadOneLimbCode addrReg byteReg accReg
+        24 25 26 27 28 29 30 31 0 (base + 8))
+      (mloadOneLimbCode addrReg byteReg accReg
+        8 9 10 11 12 13 14 15 16 (base + 192)) := by
+  rw [mloadOneLimbCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  refine CodeReq.ofProg_disjoint_range_len _ _ 23 _ _ 23 ?_ ?_ ?_
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · intro k1 k2 hk1 hk2; bv_omega
+
+/-- Disjointness of the q1 and q2 one-limb byte-pack blocks within
+    `mloadFourLimbsCode`. q1 spans `base + 100 .. base + 192`, q2 spans
+    `base + 192 .. base + 284`; both are 23-instruction `mloadOneLimbProg`
+    blocks expressible as `CodeReq.ofProg`. -/
+private theorem mloadFourLimbs_q1_disjoint_q2
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    CodeReq.Disjoint
+      (mloadOneLimbCode addrReg byteReg accReg
+        16 17 18 19 20 21 22 23 8 (base + 100))
+      (mloadOneLimbCode addrReg byteReg accReg
+        8 9 10 11 12 13 14 15 16 (base + 192)) := by
+  rw [mloadOneLimbCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  refine CodeReq.ofProg_disjoint_range_len _ _ 23 _ _ 23 ?_ ?_ ?_
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · unfold mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq; rfl
+  · intro k1 k2 hk1 hk2; bv_omega
+
+/-- Subsumption witness: the q2 one-limb byte-pack block, placed at
+    `base + 192 .. base + 284`, is the third union member of
+    `mloadFourLimbsCode`. Proved by stepping past q0 and q1 with
+    `mono_union_right` (using disjointness with each), then taking
+    `union_mono_left` into the leftmost position of the innermost union.
+
+    Consumer: `calldataload_window_one_limb_q2_stack_spec_within`
+    (Calldata/LoadStackCode.lean) — sister to the q0 / q1 witnesses. -/
+theorem mloadFourLimbsCode_one_limb_q2_sub
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) a = some i →
+      (mloadFourLimbsCode addrReg byteReg accReg base) a = some i := by
+  unfold mloadFourLimbsCode
+  exact CodeReq.mono_union_right
+    (mloadFourLimbs_q0_disjoint_q2 addrReg byteReg accReg base)
+    (CodeReq.mono_union_right
+      (mloadFourLimbs_q1_disjoint_q2 addrReg byteReg accReg base)
+      CodeReq.union_mono_left)
+
 theorem mload_four_limbs_stack_spec_within
     {n : Nat} {P Q : Assertion}
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
