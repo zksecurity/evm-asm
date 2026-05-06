@@ -67,6 +67,17 @@ theorem decodeCodeCopyStack?_eq_none_iff (stack : List EvmWord) :
     · simp at h_len
       omega
 
+theorem decodeCodeCopyStack?_none_of_empty :
+    decodeCodeCopyStack? [] = none := rfl
+
+theorem decodeCodeCopyStack?_none_of_one
+    (destOffset : EvmWord) :
+    decodeCodeCopyStack? [destOffset] = none := rfl
+
+theorem decodeCodeCopyStack?_none_of_two
+    (destOffset codeOffset : EvmWord) :
+    decodeCodeCopyStack? [destOffset, codeOffset] = none := rfl
+
 theorem decodeCodeCopyStack?_destOffset
     (destOffset codeOffset size : EvmWord) (rest : List EvmWord) :
     Option.map (fun args => args.destOffset)
