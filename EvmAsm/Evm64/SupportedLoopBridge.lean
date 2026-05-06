@@ -131,6 +131,15 @@ theorem loopFuel_supported_succ_running_decode
   exact HandlerLoopBridge.loopFuel_succ_running_decode
     SupportedHandlers.supportedHandlerTable nSteps h_status h_decode
 
+theorem loopFuel_supported_succ_running_decode_status
+    (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      (InterpreterLoop.loopFuel supportedLoopHandler nSteps
+        (HandlerTable.dispatchOpcode SupportedHandlers.supportedHandlerTable opcode state)).status := by
+  rw [loopFuel_supported_succ_running_decode nSteps h_status h_decode]
+
 theorem loopFuel_supported_succ_running_lookup
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_status : state.status = .running)
@@ -140,6 +149,15 @@ theorem loopFuel_supported_succ_running_lookup
       InterpreterLoop.loopFuel supportedLoopHandler nSteps (handler state) := by
   rw [loopFuel_supported_succ_running_decode nSteps h_status h_decode]
   rw [SupportedHandlers.dispatchOpcode_of_lookup h_lookup state]
+
+theorem loopFuel_supported_succ_running_lookup_status
+    (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      (InterpreterLoop.loopFuel supportedLoopHandler nSteps (handler state)).status := by
+  rw [loopFuel_supported_succ_running_lookup nSteps h_status h_decode h_lookup]
 
 theorem loopFuel_supported_succ_running_STOP
     (nSteps : Nat) {state : EvmState}
