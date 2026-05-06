@@ -72,12 +72,26 @@ theorem loopFuel_stop_fixed :
   | fuel + 1, state => by
       simp [InterpreterLoop.loopFuel]
 
+theorem loopFuel_stop_fixed_status
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel terminatingLoopHandler fuel state.stop).status =
+      .stopped := by
+  rw [loopFuel_stop_fixed fuel state]
+  exact EvmState.stop_status state
+
 theorem loopFuel_invalid_fixed :
     ∀ (fuel : Nat) (state : EvmState),
       InterpreterLoop.loopFuel terminatingLoopHandler fuel state.invalid = state.invalid
   | 0, _ => rfl
   | fuel + 1, state => by
       simp [InterpreterLoop.loopFuel]
+
+theorem loopFuel_invalid_fixed_status
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel terminatingLoopHandler fuel state.invalid).status =
+      .error := by
+  rw [loopFuel_invalid_fixed fuel state]
+  exact EvmState.invalid_status state
 
 theorem loopFuel_succ_running_STOP
     (fuel : Nat) {state : EvmState}
