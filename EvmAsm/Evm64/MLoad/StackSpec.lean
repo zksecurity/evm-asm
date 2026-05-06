@@ -181,6 +181,51 @@ theorem mloadFourLimbsCode_one_limb_q0_sub
   unfold mloadFourLimbsCode
   exact CodeReq.union_mono_left
 
+/-- Subsumption witness: the q1 (second-least) one-limb byte-pack block,
+    placed at `base + 100 .. base + 192`, is contained in
+    `mloadFourLimbsCode`. Proved by reducing both sides to `ofProg` form
+    and applying `ofProg_mono_subrange`.
+
+    Consumer: `calldataload_window_one_limb_q1_stack_spec_within`
+    (Calldata/LoadStackCode.lean) which lets callers supply a concrete
+    `mloadOneLimbCode` byte-load triple in place of an `mloadFourLimbsCode`
+    triple when wiring the four-limb byte-window read in
+    `evm_calldataload_stack_spec` (evm-asm-pgeuo / GH #104). -/
+theorem mloadFourLimbsCode_one_limb_q1_sub
+    (addrReg byteReg accReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) a = some i →
+      (mloadFourLimbsCode addrReg byteReg accReg base) a = some i := by
+  rw [mloadFourLimbsCode_eq_ofProg, mloadOneLimbCode_eq_ofProg]
+  let q1 := mloadOneLimbProg addrReg byteReg accReg
+    16 17 18 19 20 21 22 23 8
+  let pre := mloadOneLimbProg addrReg byteReg accReg
+    24 25 26 27 28 29 30 31 0
+  let suf := mloadTwoLimbsProg addrReg byteReg accReg
+    8 9 10 11 12 13 14 15 16
+    0 1 2 3 4 5 6 7 24
+  have h_eq : mloadFourLimbsProg addrReg byteReg accReg = pre ++ q1 ++ suf := by
+    show _ = pre ++ q1 ++
+      (mloadTwoLimbsProg addrReg byteReg accReg
+        8 9 10 11 12 13 14 15 16
+        0 1 2 3 4 5 6 7 24)
+    unfold mloadFourLimbsProg mloadTwoLimbsProg pre q1 seq
+    simp [List.append_assoc]
+  have h_pre_len : pre.length = 23 := by
+    unfold pre mloadOneLimbProg mloadBytePackEightProg LBU SLLI OR' SD single seq
+    rfl
+  have h_addr : (base + 100 : Word) = (base + 8) + BitVec.ofNat 64 (4 * pre.length) := by
+    rw [h_pre_len]; bv_addr
+  have h_full_len : (pre ++ q1 ++ suf).length = 92 := by
+    unfold pre q1 suf mloadOneLimbProg mloadTwoLimbsProg mloadBytePackEightProg
+      LBU SLLI OR' SD single seq
+    rfl
+  have h_bound : 4 * (pre ++ q1 ++ suf).length < 2 ^ 64 := by
+    rw [h_full_len]; decide
+  rw [h_eq, h_addr]
+  exact CodeReq.ofProg_mono_subrange (base + 8) pre q1 suf h_bound
+
 theorem mload_four_limbs_stack_spec_within
     {n : Nat} {P Q : Assertion}
     (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
