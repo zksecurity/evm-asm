@@ -215,6 +215,83 @@ theorem decodeDelegateCallStack?_eq_some_iff
       rfl, rfl⟩
     rfl
 
+theorem decodeCallStack?_eq_none_iff (stack : List EvmWord) :
+    decodeCallStack? stack = none ↔ stack.length < 7 := by
+  constructor
+  · intro h_decode
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩⟩
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp [decodeCallStack?] at h_decode
+  · intro h_len
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+theorem decodeStaticCallStack?_eq_none_iff (stack : List EvmWord) :
+    decodeStaticCallStack? stack = none ↔ stack.length < 6 := by
+  constructor
+  · intro h_decode
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp [decodeStaticCallStack?] at h_decode
+  · intro h_len
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
+theorem decodeDelegateCallStack?_eq_none_iff (stack : List EvmWord) :
+    decodeDelegateCallStack? stack = none ↔ stack.length < 6 := by
+  constructor
+  · intro h_decode
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp
+    · simp [decodeDelegateCallStack?] at h_decode
+  · intro h_len
+    rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩⟩⟩⟩
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp at h_len
+      omega
+
 end CallArgsStackDecode
 
 end EvmAsm.Evm64
