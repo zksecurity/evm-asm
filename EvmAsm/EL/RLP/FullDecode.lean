@@ -30,6 +30,33 @@ theorem decodeFully_eq_some_iff (bs : List Byte) (item : RLPItem) :
           | nil => simp
           | cons b rest => simp
 
+/--
+Complete-decode success as an existential raw-decoder fact.
+
+Distinctive token: FullDecode.decodeFully_ne_none_iff_exists_decode_empty #120.
+-/
+theorem decodeFully_ne_none_iff_exists_decode_empty (bs : List Byte) :
+    decodeFully bs ≠ none ↔ ∃ item, decode bs = some (item, []) := by
+  constructor
+  · unfold decodeFully
+    cases h_decode : decode bs with
+    | none =>
+        simp
+    | some decoded =>
+        cases decoded with
+        | mk item leftover =>
+            cases leftover with
+            | nil =>
+                intro _
+                exact ⟨item, by simp [h_decode.symm]⟩
+            | cons b rest =>
+                simp
+  · rintro ⟨item, h_decode⟩ h_none
+    have h_some : decodeFully bs = some item :=
+      (decodeFully_eq_some_iff bs item).2 h_decode
+    rw [h_some] at h_none
+    contradiction
+
 theorem decodeFully_eq_none_of_decode_none
     {bs : List Byte} (h_decode : decode bs = none) :
     decodeFully bs = none := by
