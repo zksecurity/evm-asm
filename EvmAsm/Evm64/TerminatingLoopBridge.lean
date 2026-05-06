@@ -37,6 +37,14 @@ theorem stepWithTerminatingHandler_STOP
     TerminatingHandlers.terminatingHandlerTable h_decode]
   simp
 
+theorem stepWithTerminatingHandler_STOP_status
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    (InterpreterLoop.stepWithHandler terminatingLoopHandler state).status =
+      .stopped := by
+  rw [stepWithTerminatingHandler_STOP h_decode]
+  exact EvmState.stop_status state
+
 theorem stepWithTerminatingHandler_INVALID
     {state : EvmState}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .INVALID) :
@@ -48,6 +56,14 @@ theorem stepWithTerminatingHandler_INVALID
   rw [HandlerLoopBridge.stepWithTableHandler_of_decode
     TerminatingHandlers.terminatingHandlerTable h_decode]
   simp
+
+theorem stepWithTerminatingHandler_INVALID_status
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .INVALID) :
+    (InterpreterLoop.stepWithHandler terminatingLoopHandler state).status =
+      .error := by
+  rw [stepWithTerminatingHandler_INVALID h_decode]
+  exact EvmState.invalid_status state
 
 theorem loopFuel_stop_fixed :
     ∀ (fuel : Nat) (state : EvmState),
@@ -73,6 +89,15 @@ theorem loopFuel_succ_running_STOP
   rw [stepWithTerminatingHandler_STOP h_decode]
   exact loopFuel_stop_fixed fuel state
 
+theorem loopFuel_succ_running_STOP_status
+    (fuel : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    (InterpreterLoop.loopFuel terminatingLoopHandler (fuel + 1) state).status =
+      .stopped := by
+  rw [loopFuel_succ_running_STOP fuel h_status h_decode]
+  exact EvmState.stop_status state
+
 theorem loopFuel_succ_running_INVALID
     (fuel : Nat) {state : EvmState}
     (h_status : state.status = .running)
@@ -82,6 +107,15 @@ theorem loopFuel_succ_running_INVALID
   rw [InterpreterLoop.loopFuel_succ_running terminatingLoopHandler fuel state h_status]
   rw [stepWithTerminatingHandler_INVALID h_decode]
   exact loopFuel_invalid_fixed fuel state
+
+theorem loopFuel_succ_running_INVALID_status
+    (fuel : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .INVALID) :
+    (InterpreterLoop.loopFuel terminatingLoopHandler (fuel + 1) state).status =
+      .error := by
+  rw [loopFuel_succ_running_INVALID fuel h_status h_decode]
+  exact EvmState.invalid_status state
 
 end TerminatingLoopBridge
 
