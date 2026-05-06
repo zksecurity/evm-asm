@@ -105,5 +105,62 @@ theorem dispatchByte_supported_undecoded_status
   exact HandlerTable.dispatchByte_undecoded_status
     SupportedHandlers.supportedHandlerTable b state h_decode
 
+/--
+Byte-level dispatch of any byte that decodes to STOP through the combined
+supported-handler table executes the `state.stop` step. Generalises the
+concrete `dispatchByte_supported_STOP_byte` (which is the `b = 0x00` instance).
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_STOP_of_decode #106 #107 #113.
+-/
+theorem dispatchByte_supported_STOP_of_decode
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .STOP)
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state =
+      state.stop := by
+  rw [dispatchByte_supported_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_STOP state]
+  rfl
+
+/-- Status projection of `dispatchByte_supported_STOP_of_decode`. -/
+theorem dispatchByte_supported_STOP_of_decode_status
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .STOP)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      .stopped := by
+  rw [dispatchByte_supported_STOP_of_decode h_decode state]
+  exact EvmState.stop_status state
+
+/--
+Byte-level dispatch of any byte that decodes to INVALID through the combined
+supported-handler table executes the `state.invalid` step. Generalises the
+concrete `dispatchByte_supported_INVALID_byte` (which is the `b = 0xfe`
+instance).
+
+Distinctive token:
+SupportedHandlerByte.dispatchByte_supported_INVALID_of_decode #106 #107 #113.
+-/
+theorem dispatchByte_supported_INVALID_of_decode
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .INVALID)
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state =
+      state.invalid := by
+  rw [dispatchByte_supported_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_INVALID state]
+  rfl
+
+/-- Status projection of `dispatchByte_supported_INVALID_of_decode`. -/
+theorem dispatchByte_supported_INVALID_of_decode_status
+    {b : Fin 256}
+    (h_decode : EvmOpcode.decodeByte? b.val = some .INVALID)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      .error := by
+  rw [dispatchByte_supported_INVALID_of_decode h_decode state]
+  exact EvmState.invalid_status state
+
 end SupportedHandlerByte
 end EvmAsm.Evm64
