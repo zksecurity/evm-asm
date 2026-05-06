@@ -110,6 +110,52 @@ theorem runExpStack?_eq_none_iff
               simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
                 stackRestAfterExp?, Option.bind]
 
+/--
+EXP stack execution succeeds exactly on a stack with at least two words, and
+the output is the decoded EXP result/effects plus the remaining stack tail.
+
+Distinctive token: ExpStackExecutionBridge.runExpStack?_eq_some_iff #92.
+-/
+theorem runExpStack?_eq_some_iff
+    {state : ExpStackState} {out : ExpStackResult} :
+    runExpStack? state = some out ↔
+      ∃ base exponent rest,
+        state.stack = base :: exponent :: rest ∧
+          out =
+            { effects :=
+                { stackWords := [ExpArgs.expResultFromArgs
+                    (ExpArgs.expArgs base exponent)]
+                  dynamicGas := ExpArgs.expDynamicCostFromArgs
+                    (ExpArgs.expArgs base exponent)
+                  totalGas := ExpArgs.expTotalGasFromArgs
+                    (ExpArgs.expArgs base exponent) }
+              stack := rest } := by
+  constructor
+  · cases state with
+    | mk stack =>
+        cases stack with
+        | nil =>
+            simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+              stackRestAfterExp?, Option.bind]
+        | cons base tail =>
+            cases tail with
+            | nil =>
+                simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+                  stackRestAfterExp?, Option.bind]
+            | cons exponent rest =>
+                intro h_run
+                simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?,
+                  stackRestAfterExp?, Option.bind] at h_run
+                cases h_run
+                exact ⟨base, exponent, rest, rfl, rfl⟩
+  · rintro ⟨base, exponent, rest, h_stack, h_out⟩
+    cases state with
+    | mk stack =>
+        simp at h_stack
+        subst h_stack
+        subst h_out
+        exact runExpStack?_cons base exponent rest
+
 theorem runExpStack?_stack_length
     {state : ExpStackState} {out : ExpStackResult}
     (h_run : runExpStack? state = some out) :
