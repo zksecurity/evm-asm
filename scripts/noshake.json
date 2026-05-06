@@ -198,7 +198,79 @@
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.AddBackFinalLoopControl":
   ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
-   "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.CLZ":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Denorm":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128PhaseEnd":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Phase1":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck2":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128UnProdCheck":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Epilogue":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.MulSub":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.MulSubLimb":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.MulSubSetup":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.NormA":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.NormB":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Rv64.SyscallSpecs",
+   "EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.Tactics.XSimp",
+   "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.SubCarryStoreQj":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.TrialStoreComposed":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
+   "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.TrialQuotient":
+  ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
+   "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
@@ -409,3 +481,4 @@
   "EvmAsm.Rv64.HalfwordOps", "EvmAsm.Rv64.WordOps",
   "EvmAsm.Rv64.Tactics.SpecDb"],
 "EvmAsm.Rv64.HintSpecs": ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.XSimp"]}}
+
