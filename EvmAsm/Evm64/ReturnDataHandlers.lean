@@ -73,6 +73,13 @@ theorem returnDataHandler?_eq_none_iff
       returnDataSizeHandler state := by
   simp [HandlerTable.dispatchOpcode]
 
+theorem dispatchOpcode_returnDataSizeHandlerTable_RETURNDATASIZE_status
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode returnDataSizeHandlerTable .RETURNDATASIZE state).status =
+      state.status := by
+  rw [dispatchOpcode_returnDataSizeHandlerTable_RETURNDATASIZE state]
+  exact returnDataSizeHandler_status state
+
 end ReturnDataHandlers
 
 end EvmAsm.Evm64
