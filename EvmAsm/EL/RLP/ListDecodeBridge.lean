@@ -41,6 +41,31 @@ theorem decodeListPayload_eq_some_iff
       | mk decodedItems leftover =>
           cases leftover <;> simp
 
+/--
+List-payload decode is non-failing exactly when recursive item decoding
+consumes the whole payload for some item list.
+
+Distinctive token:
+ListDecodeBridge.decodeListPayload_ne_none_iff_exists_decodeItems_empty #120.
+-/
+theorem decodeListPayload_ne_none_iff_exists_decodeItems_empty
+    (nDepth : Nat) (payload : List Byte) :
+    decodeListPayload nDepth payload ≠ none ↔
+      ∃ items, decodeItems nDepth payload = some (items, []) := by
+  constructor
+  · intro h_ne
+    cases h_decode : decodeListPayload nDepth payload with
+    | none => contradiction
+    | some items =>
+        exact ⟨items,
+          (decodeListPayload_eq_some_iff nDepth payload items).mp h_decode⟩
+  · rintro ⟨items, h_decode⟩ h_none
+    have h_some :
+        decodeListPayload nDepth payload = some items :=
+      (decodeListPayload_eq_some_iff nDepth payload items).mpr h_decode
+    rw [h_some] at h_none
+    contradiction
+
 theorem decodeListPayload_eq_none_of_decodeItems_none
     {nDepth : Nat} {payload : List Byte}
     (h_decode : decodeItems nDepth payload = none) :
