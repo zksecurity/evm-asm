@@ -43,6 +43,8 @@
   "EvmAsm.Rv64.RLP.Phase4HintRead":
   ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
+  "EvmAsm.Rv64.RLP.Phase4HintReadLoop":
+  ["EvmAsm.Rv64.Tactics.SeqFrame"],
   "EvmAsm.Rv64.RLP.Phase4HintLen":
   ["EvmAsm.Rv64.HintSpecs", "EvmAsm.Rv64.AddrNorm",
    "EvmAsm.Rv64.Tactics.XSimp"],
