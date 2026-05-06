@@ -52,6 +52,38 @@ theorem evm_calldataload_window_of_mloadStackCode_spec_within
   exact h
 
 /--
+CALLDATALOAD prologue stack spec: pop the calldata offset from the EVM stack
+slot at `x12` and resolve the source byte pointer
+`addrReg ← envPtrReg + offReg` where `envPtrReg` holds `env.callDataPtr`.
+
+This is the program-identical transport of `mload_prologue_stack_spec_within`
+through `evm_calldataload_window_of_mloadStackCode_spec_within`. It splits
+the upcoming `evm_calldataload_stack_spec` (evm-asm-pgeuo / GH #104) into a
+prologue half plus a four-limb half so subsequent slices only need to wire
+the four-limb byte-window read.
+
+Distinctive token:
+Calldata.LoadStackCode.calldataload_window_prologue_stack_spec_within #104.
+-/
+theorem calldataload_window_prologue_stack_spec_within
+    (offReg byteReg accReg addrReg envPtrReg : Reg)
+    (sp offset offOld addrOld envPtr : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (envPtrReg ↦ᵣ envPtr) ** (addrReg ↦ᵣ (envPtr + offset)) **
+       (sp ↦ₘ offset)) :=
+  evm_calldataload_window_of_mloadStackCode_spec_within
+    offReg byteReg accReg addrReg envPtrReg base (base + 8)
+    (mload_prologue_stack_spec_within offReg byteReg accReg addrReg envPtrReg
+      sp offset offOld addrOld envPtr base h_off_ne_x0 h_addr_ne_x0)
+
+/--
 The byte-level semantic word produced by the CALLDATALOAD in-bounds window,
 phrased through decoded stack arguments.
 
