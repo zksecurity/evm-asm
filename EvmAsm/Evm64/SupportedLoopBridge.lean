@@ -150,6 +150,29 @@ theorem loopFuel_supported_succ_running_STOP
   exact loopFuel_supported_succ_running_lookup nSteps h_status h_decode
     SupportedHandlers.supportedHandlerTable_STOP
 
+theorem loopFuel_supported_stop_fixed :
+    ∀ (nSteps : Nat) (state : EvmState),
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps state.stop = state.stop
+  | 0, _ => rfl
+  | nSteps + 1, state => by
+      simp [InterpreterLoop.loopFuel]
+
+theorem loopFuel_supported_stop_fixed_status
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel supportedLoopHandler nSteps state.stop).status =
+      .stopped := by
+  rw [loopFuel_supported_stop_fixed nSteps state]
+  exact EvmState.stop_status state
+
+theorem loopFuel_supported_succ_running_STOP_status
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      .stopped := by
+  rw [loopFuel_supported_succ_running_STOP nSteps h_status h_decode]
+  exact loopFuel_supported_stop_fixed_status nSteps state
+
 theorem loopFuel_supported_succ_running_INVALID
     (nSteps : Nat) {state : EvmState}
     (h_status : state.status = .running)
@@ -158,6 +181,29 @@ theorem loopFuel_supported_succ_running_INVALID
       InterpreterLoop.loopFuel supportedLoopHandler nSteps state.invalid := by
   exact loopFuel_supported_succ_running_lookup nSteps h_status h_decode
     SupportedHandlers.supportedHandlerTable_INVALID
+
+theorem loopFuel_supported_invalid_fixed :
+    ∀ (nSteps : Nat) (state : EvmState),
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps state.invalid = state.invalid
+  | 0, _ => rfl
+  | nSteps + 1, state => by
+      simp [InterpreterLoop.loopFuel]
+
+theorem loopFuel_supported_invalid_fixed_status
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel supportedLoopHandler nSteps state.invalid).status =
+      .error := by
+  rw [loopFuel_supported_invalid_fixed nSteps state]
+  exact EvmState.invalid_status state
+
+theorem loopFuel_supported_succ_running_INVALID_status
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .INVALID) :
+    (InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state).status =
+      .error := by
+  rw [loopFuel_supported_succ_running_INVALID nSteps h_status h_decode]
+  exact loopFuel_supported_invalid_fixed_status nSteps state
 
 theorem loopFuel_supported_missing_invalid
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
