@@ -96,6 +96,81 @@ theorem stackRestAfterLog?_log4
 @[simp] theorem stackRestAfterLog?_singleton (kind : LogKind) (offset : EvmWord) :
     stackRestAfterLog? kind [offset] = none := rfl
 
+theorem stackRestAfterLog?_log0_none_of_empty :
+    stackRestAfterLog? .log0 [] = none := rfl
+
+theorem stackRestAfterLog?_log0_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterLog? .log0 [offset] = none := rfl
+
+theorem stackRestAfterLog?_log1_none_of_empty :
+    stackRestAfterLog? .log1 [] = none := rfl
+
+theorem stackRestAfterLog?_log1_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterLog? .log1 [offset] = none := rfl
+
+theorem stackRestAfterLog?_log1_none_of_two
+    (offset size : EvmWord) :
+    stackRestAfterLog? .log1 [offset, size] = none := rfl
+
+theorem stackRestAfterLog?_log2_none_of_empty :
+    stackRestAfterLog? .log2 [] = none := rfl
+
+theorem stackRestAfterLog?_log2_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterLog? .log2 [offset] = none := rfl
+
+theorem stackRestAfterLog?_log2_none_of_two
+    (offset size : EvmWord) :
+    stackRestAfterLog? .log2 [offset, size] = none := rfl
+
+theorem stackRestAfterLog?_log2_none_of_three
+    (offset size topic0 : EvmWord) :
+    stackRestAfterLog? .log2 [offset, size, topic0] = none := rfl
+
+theorem stackRestAfterLog?_log3_none_of_empty :
+    stackRestAfterLog? .log3 [] = none := rfl
+
+theorem stackRestAfterLog?_log3_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterLog? .log3 [offset] = none := rfl
+
+theorem stackRestAfterLog?_log3_none_of_two
+    (offset size : EvmWord) :
+    stackRestAfterLog? .log3 [offset, size] = none := rfl
+
+theorem stackRestAfterLog?_log3_none_of_three
+    (offset size topic0 : EvmWord) :
+    stackRestAfterLog? .log3 [offset, size, topic0] = none := rfl
+
+theorem stackRestAfterLog?_log3_none_of_four
+    (offset size topic0 topic1 : EvmWord) :
+    stackRestAfterLog? .log3 [offset, size, topic0, topic1] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_empty :
+    stackRestAfterLog? .log4 [] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_one
+    (offset : EvmWord) :
+    stackRestAfterLog? .log4 [offset] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_two
+    (offset size : EvmWord) :
+    stackRestAfterLog? .log4 [offset, size] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_three
+    (offset size topic0 : EvmWord) :
+    stackRestAfterLog? .log4 [offset, size, topic0] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_four
+    (offset size topic0 topic1 : EvmWord) :
+    stackRestAfterLog? .log4 [offset, size, topic0, topic1] = none := rfl
+
+theorem stackRestAfterLog?_log4_none_of_five
+    (offset size topic0 topic1 topic2 : EvmWord) :
+    stackRestAfterLog? .log4 [offset, size, topic0, topic1, topic2] = none := rfl
+
 theorem runLogStack?_eq_none_iff
     (kind : LogKind) (emitter : Address) (readByte : MemoryReader)
     (state : LogStackState) :
@@ -172,6 +247,131 @@ theorem runLogStack?_log4
               (EvmAsm.Evm64.LogArgsStackDecode.mkArgs offset size
                 [topic0, topic1, topic2, topic3])
           stack := rest } := rfl
+
+theorem runLogStack?_log0_none_of_empty
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader) :
+    runLogStack? .log0 emitter readByte { effects := effects, stack := [] } =
+      none := rfl
+
+theorem runLogStack?_log0_none_of_one
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset : EvmWord) :
+    runLogStack? .log0 emitter readByte { effects := effects, stack := [offset] } =
+      none := rfl
+
+theorem runLogStack?_log1_none_of_empty
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader) :
+    runLogStack? .log1 emitter readByte { effects := effects, stack := [] } =
+      none := rfl
+
+theorem runLogStack?_log1_none_of_one
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset : EvmWord) :
+    runLogStack? .log1 emitter readByte { effects := effects, stack := [offset] } =
+      none := rfl
+
+theorem runLogStack?_log1_none_of_two
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size : EvmWord) :
+    runLogStack? .log1 emitter readByte
+        { effects := effects, stack := [offset, size] } =
+      none := rfl
+
+theorem runLogStack?_log2_none_of_empty
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader) :
+    runLogStack? .log2 emitter readByte { effects := effects, stack := [] } =
+      none := rfl
+
+theorem runLogStack?_log2_none_of_one
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset : EvmWord) :
+    runLogStack? .log2 emitter readByte { effects := effects, stack := [offset] } =
+      none := rfl
+
+theorem runLogStack?_log2_none_of_two
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size : EvmWord) :
+    runLogStack? .log2 emitter readByte
+        { effects := effects, stack := [offset, size] } =
+      none := rfl
+
+theorem runLogStack?_log2_none_of_three
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 : EvmWord) :
+    runLogStack? .log2 emitter readByte
+        { effects := effects, stack := [offset, size, topic0] } =
+      none := rfl
+
+theorem runLogStack?_log3_none_of_empty
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader) :
+    runLogStack? .log3 emitter readByte { effects := effects, stack := [] } =
+      none := rfl
+
+theorem runLogStack?_log3_none_of_one
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset : EvmWord) :
+    runLogStack? .log3 emitter readByte { effects := effects, stack := [offset] } =
+      none := rfl
+
+theorem runLogStack?_log3_none_of_two
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size : EvmWord) :
+    runLogStack? .log3 emitter readByte
+        { effects := effects, stack := [offset, size] } =
+      none := rfl
+
+theorem runLogStack?_log3_none_of_three
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 : EvmWord) :
+    runLogStack? .log3 emitter readByte
+        { effects := effects, stack := [offset, size, topic0] } =
+      none := rfl
+
+theorem runLogStack?_log3_none_of_four
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 topic1 : EvmWord) :
+    runLogStack? .log3 emitter readByte
+        { effects := effects, stack := [offset, size, topic0, topic1] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_empty
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader) :
+    runLogStack? .log4 emitter readByte { effects := effects, stack := [] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_one
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset : EvmWord) :
+    runLogStack? .log4 emitter readByte { effects := effects, stack := [offset] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_two
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size : EvmWord) :
+    runLogStack? .log4 emitter readByte
+        { effects := effects, stack := [offset, size] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_three
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 : EvmWord) :
+    runLogStack? .log4 emitter readByte
+        { effects := effects, stack := [offset, size, topic0] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_four
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 topic1 : EvmWord) :
+    runLogStack? .log4 emitter readByte
+        { effects := effects, stack := [offset, size, topic0, topic1] } =
+      none := rfl
+
+theorem runLogStack?_log4_none_of_five
+    (effects : CallSideEffects) (emitter : Address) (readByte : MemoryReader)
+    (offset size topic0 topic1 topic2 : EvmWord) :
+    runLogStack? .log4 emitter readByte
+        { effects := effects, stack := [offset, size, topic0, topic1, topic2] } =
+      none := rfl
 
 theorem runLogStack?_eq_some_iff
     (kind : LogKind) (emitter : Address) (readByte : MemoryReader)
