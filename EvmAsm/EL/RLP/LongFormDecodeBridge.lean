@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.EL.RLP.PrefixDecode
+import EvmAsm.EL.RLP.ListDecodeBridge
 import EvmAsm.EL.RLP.ReadLengthBridge
 
 namespace EvmAsm.EL.RLP
@@ -110,6 +111,43 @@ theorem decodeAux_long_list_lengthField
                     cases decodedItems with
                     | mk items leftover =>
                         simp [h_decode]
+
+/--
+Long list branch expressed through both the packaged length-field result and
+the list-payload decoder bridge.
+
+Distinctive token:
+LongFormDecodeBridge.decodeAux_long_list_lengthField_decodeListPayload #120.
+-/
+theorem decodeAux_long_list_lengthField_decodeListPayload
+    (fuel : Nat) (pfx : Byte) (rest : List Byte)
+    (lengthField : LengthFieldResult)
+    (h_class : classifyPrefix pfx = .longList)
+    (h_len : ReadLengthBridge.decodeLengthField? rest
+      (rlpPrefixLongListLenOfLen pfx) = some lengthField) :
+    decodeAux (fuel + 1) (pfx :: rest) =
+      if lengthField.length ≤ 55 then none
+      else
+        match takeBytes lengthField.rest lengthField.length with
+        | none => none
+        | some (payload, rest'') => (do
+            let items ← ListDecodeBridge.decodeListPayload fuel payload
+            some (.list items, rest'')) := by
+  rw [decodeAux_long_list_lengthField fuel pfx rest lengthField h_class h_len]
+  by_cases h_short : lengthField.length ≤ 55
+  · simp [h_short]
+  · simp [h_short]
+    cases h_take : takeBytes lengthField.rest lengthField.length with
+    | none => rfl
+    | some decoded =>
+        cases decoded with
+        | mk payload rest'' =>
+            cases h_decode : decodeItems fuel payload with
+            | none => simp [ListDecodeBridge.decodeListPayload, h_decode]
+            | some decodedItems =>
+                cases decodedItems with
+                | mk items leftover =>
+                    cases leftover <;> simp [ListDecodeBridge.decodeListPayload, h_decode]
 
 theorem decodeAux_long_list_lengthField_none
     (fuel : Nat) (pfx : Byte) (rest : List Byte)
