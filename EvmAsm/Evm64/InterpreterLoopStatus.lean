@@ -43,6 +43,12 @@ theorem loopFuel_nonRunning
       cases h_status : state.status <;>
         simp [InterpreterLoop.loopFuel, h_status, nonRunning] at h_nonRunning ⊢
 
+theorem loopFuel_nonRunning_status
+    (handler : Handler) (nSteps : Nat) (state : EvmState)
+    (h_nonRunning : nonRunning state) :
+    (InterpreterLoop.loopFuel handler nSteps state).status = state.status := by
+  rw [loopFuel_nonRunning handler nSteps state h_nonRunning]
+
 theorem loopFuel_stopped
     (handler : Handler) (nSteps : Nat) (state : EvmState)
     (h_status : state.status = .stopped) :
