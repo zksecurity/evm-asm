@@ -159,6 +159,16 @@ def decodeByte? : Nat → Option EvmOpcode
 def modeledByte (b : Nat) : Prop :=
   (decodeByte? b).isSome
 
+theorem modeledByte_iff_exists_decode {b : Nat} :
+    modeledByte b ↔ ∃ opcode, decodeByte? b = some opcode := by
+  unfold modeledByte
+  cases decodeByte? b <;> simp
+
+theorem not_modeledByte_iff_decode_none {b : Nat} :
+    ¬ modeledByte b ↔ decodeByte? b = none := by
+  unfold modeledByte
+  cases decodeByte? b <;> simp
+
 theorem decodeByte?_ADD : decodeByte? 0x01 = some ADD := rfl
 theorem decodeByte?_STOP : decodeByte? 0x00 = some STOP := rfl
 theorem decodeByte?_MUL : decodeByte? 0x02 = some MUL := rfl
