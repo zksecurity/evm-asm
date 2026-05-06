@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.HandlerLoopBridge
+import EvmAsm.Evm64.InterpreterLoopSimulation
 
 namespace EvmAsm.Evm64
 
@@ -49,6 +50,15 @@ theorem loopFuel_table_matchesSpec_at
     InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) nSteps state =
       InterpreterLoop.loopFuel spec nSteps state := by
   exact loopFuel_table_matchesSpec table spec h_dispatch nSteps state
+
+theorem loopResultsMatch_table_matchesSpec
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state) :
+    InterpreterLoopSimulation.LoopResultsMatch
+      (HandlerLoopBridge.toLoopHandler table) spec := by
+  exact loopFuel_table_matchesSpec table spec h_dispatch
 
 end HandlerLoopSimulationBridge
 
