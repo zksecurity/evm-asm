@@ -238,6 +238,10 @@
    "EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec",
    "EvmAsm.Evm64.DivMod.Spec.N3ModBridge",
    "EvmAsm.Evm64.DivMod.N4StackSpecWithin"],
+ "EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Full"],
+ "EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec":
+  ["EvmAsm.Evm64.DivMod.Spec.N2ModBridge"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase1E3LongStringOne": ["EvmAsm.Rv64.RLP.Phase1E3FullPath", "EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopThree": ["EvmAsm.Rv64.RLP.Phase2LongLoopTwo"],
