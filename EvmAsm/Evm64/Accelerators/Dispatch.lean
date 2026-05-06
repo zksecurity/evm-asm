@@ -94,6 +94,10 @@ theorem dispatchWord_ne_eokWord (id : Nat) :
   rw [dispatchWord_eq_efailWord]
   exact Rv64.zkvmStatusEokWord_ne_efailWord.symm
 
+theorem dispatchWord_decodes_efail (id : Nat) :
+    Rv64.zkvmStatusFromWord? (dispatchWord id) = some ZkvmStatus.efail := by
+  simp [dispatchWord]
+
 /-! ## Sanity properties
 
 These confirm the framing/accelerator partition without forcing any
