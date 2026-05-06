@@ -76,6 +76,14 @@ theorem stepWithSupportedHandler_STOP
   exact stepWithSupportedHandler_of_lookup h_decode
     SupportedHandlers.supportedHandlerTable_STOP
 
+theorem stepWithSupportedHandler_STOP_status
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .STOP) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      .stopped := by
+  rw [stepWithSupportedHandler_STOP h_decode]
+  exact EvmState.stop_status state
+
 /--
 When the combined supported loop decodes INVALID, one interpreter step enters
 the invalid/error state.
@@ -89,12 +97,29 @@ theorem stepWithSupportedHandler_INVALID
   exact stepWithSupportedHandler_of_lookup h_decode
     SupportedHandlers.supportedHandlerTable_INVALID
 
+theorem stepWithSupportedHandler_INVALID_status
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .INVALID) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      .error := by
+  rw [stepWithSupportedHandler_INVALID h_decode]
+  exact EvmState.invalid_status state
+
 theorem stepWithSupportedHandler_missing_invalid
     {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
     (h_lookup : SupportedHandlers.supportedHandlerTable opcode = none) :
     InterpreterLoop.stepWithHandler supportedLoopHandler state = state.invalid := by
   exact HandlerLoopBridge.stepWithTableHandler_missing_invalid h_decode h_lookup
+
+theorem stepWithSupportedHandler_missing_invalid_status
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = none) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      .error := by
+  rw [stepWithSupportedHandler_missing_invalid h_decode h_lookup]
+  exact EvmState.invalid_status state
 
 theorem loopFuel_supported_succ_running_decode
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
