@@ -135,6 +135,50 @@ theorem getAccount_deleteAccount_ne
     accountCodeHash? (setAccount state addr account) addr = some account.codeHash := by
   simp [accountCodeHash?]
 
+theorem accountCode?_eq_some_iff
+    {state : WorldState} {addr : Address} {code : List Byte} :
+    accountCode? state addr = some code ↔
+      ∃ account, getAccount state addr = some account ∧ code = account.code := by
+  unfold accountCode?
+  cases h_account : getAccount state addr with
+  | none =>
+      simp
+  | some account =>
+      simp only [Option.map_some, Option.some.injEq]
+      constructor
+      · intro h_code
+        exact ⟨account, rfl, h_code.symm⟩
+      · rintro ⟨account', h_account', h_code⟩
+        subst h_account'
+        exact h_code.symm
+
+theorem accountCode?_eq_none_iff {state : WorldState} {addr : Address} :
+    accountCode? state addr = none ↔ getAccount state addr = none := by
+  unfold accountCode?
+  cases getAccount state addr <;> simp
+
+theorem accountCodeHash?_eq_some_iff
+    {state : WorldState} {addr : Address} {codeHash : Hash256} :
+    accountCodeHash? state addr = some codeHash ↔
+      ∃ account, getAccount state addr = some account ∧ codeHash = account.codeHash := by
+  unfold accountCodeHash?
+  cases h_account : getAccount state addr with
+  | none =>
+      simp
+  | some account =>
+      simp only [Option.map_some, Option.some.injEq]
+      constructor
+      · intro h_codeHash
+        exact ⟨account, rfl, h_codeHash.symm⟩
+      · rintro ⟨account', h_account', h_codeHash⟩
+        subst h_account'
+        exact h_codeHash.symm
+
+theorem accountCodeHash?_eq_none_iff {state : WorldState} {addr : Address} :
+    accountCodeHash? state addr = none ↔ getAccount state addr = none := by
+  unfold accountCodeHash?
+  cases getAccount state addr <;> simp
+
 theorem accountCode?_setAccount_ne
     (state : WorldState) {addr other : Address} (account : Account)
     (h_ne : other ≠ addr) :
@@ -191,6 +235,28 @@ theorem getAccount_setAccountCode_ne
     accountBalance? (setAccount state addr account) addr = some account.balance := by
   simp [accountBalance?]
 
+theorem accountBalance?_eq_some_iff
+    {state : WorldState} {addr : Address} {balance : Word256} :
+    accountBalance? state addr = some balance ↔
+      ∃ account, getAccount state addr = some account ∧ balance = account.balance := by
+  unfold accountBalance?
+  cases h_account : getAccount state addr with
+  | none =>
+      simp
+  | some account =>
+      simp only [Option.map_some, Option.some.injEq]
+      constructor
+      · intro h_balance
+        exact ⟨account, rfl, h_balance.symm⟩
+      · rintro ⟨account', h_account', h_balance⟩
+        subst h_account'
+        exact h_balance.symm
+
+theorem accountBalance?_eq_none_iff {state : WorldState} {addr : Address} :
+    accountBalance? state addr = none ↔ getAccount state addr = none := by
+  unfold accountBalance?
+  cases getAccount state addr <;> simp
+
 theorem accountBalance?_setAccount_ne
     (state : WorldState) {addr other : Address} (account : Account)
     (h_ne : other ≠ addr) :
@@ -233,6 +299,28 @@ theorem getAccount_setAccountBalance_ne
     (state : WorldState) (addr : Address) (account : Account) :
     accountNonce? (setAccount state addr account) addr = some account.nonce := by
   simp [accountNonce?]
+
+theorem accountNonce?_eq_some_iff
+    {state : WorldState} {addr : Address} {nonce : Nat} :
+    accountNonce? state addr = some nonce ↔
+      ∃ account, getAccount state addr = some account ∧ nonce = account.nonce := by
+  unfold accountNonce?
+  cases h_account : getAccount state addr with
+  | none =>
+      simp
+  | some account =>
+      simp only [Option.map_some, Option.some.injEq]
+      constructor
+      · intro h_nonce
+        exact ⟨account, rfl, h_nonce.symm⟩
+      · rintro ⟨account', h_account', h_nonce⟩
+        subst h_account'
+        exact h_nonce.symm
+
+theorem accountNonce?_eq_none_iff {state : WorldState} {addr : Address} :
+    accountNonce? state addr = none ↔ getAccount state addr = none := by
+  unfold accountNonce?
+  cases getAccount state addr <;> simp
 
 theorem accountNonce?_setAccount_ne
     (state : WorldState) {addr other : Address} (account : Account)
