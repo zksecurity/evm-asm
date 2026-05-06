@@ -33,6 +33,23 @@ theorem toList_get? {n : Nat} (bytes : ByteArray n) (i : Nat) (h_i : i < n) :
     bytes.toList = [] := by
   simp [toList]
 
+theorem toList_injective {n : Nat} :
+    Function.Injective (@toList n) := by
+  intro a b h_list
+  cases a with
+  | mk aData =>
+    cases b with
+    | mk bData =>
+      congr
+      funext i
+      have h_get := congrArg (fun xs : List Byte => xs[i.val]?) h_list
+      simpa [toList_get? { data := aData } i.val i.isLt,
+        toList_get? { data := bData } i.val i.isLt] using h_get
+
+theorem toList_eq_iff {n : Nat} (a b : ByteArray n) :
+    a.toList = b.toList ↔ a = b :=
+  ⟨fun h_list => toList_injective h_list, fun h_eq => by rw [h_eq]⟩
+
 end ByteArray
 
 /-! ## Common byte array structs -/
