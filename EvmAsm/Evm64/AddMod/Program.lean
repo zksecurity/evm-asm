@@ -263,4 +263,83 @@ theorem evm_addmod_epilogue_byte_length :
     4 * evm_addmod_epilogue.length = 4 := by
   rw [evm_addmod_epilogue_length]
 
+-- ============================================================================
+-- Slice 3c — top-level `evm_addmod` Program assembly + length lemmas
+-- ============================================================================
+--
+-- This slice glues the four block skeletons (prologue / phase1 carry /
+-- phase2 reduce / epilogue) into the top-level `evm_addmod` Program.
+-- The phase-2 modulus-reduction call site takes a signed 21-bit byte
+-- offset `modOff` to the entry of `evm_mod_callable`; the concrete
+-- numeric value is pinned by the surrounding caller frame and is
+-- threaded through unchanged here.
+--
+-- Per the slice acceptance, this is glue only — no `cpsTriple` proofs.
+-- The eventual `evm_addmod_stack_spec` is the job of slice 3d
+-- (`evm-asm-s7v49`); it consumes the per-block byte-offset lemmas
+-- proved here to align block entries with PC values.
+--
+-- Block layout (instruction index → byte offset within `evm_addmod`):
+--
+--   prologue      : instr  0 .. 29  (length 30, bytes   0 ..119)
+--   phase1_carry  : instr 30        (length  1, byte  120)
+--   phase2_reduce : instr 31        (length  1, byte  124)
+--   epilogue      : instr 32        (length  1, byte  128)
+--   end           : instr 33        (              byte 132)
+--
+-- The phase-2 zero-path / `phase2_n_zero_test` blocks defined above
+-- are *not* part of this skeleton — the linear assembly here matches
+-- the slice description exactly. A richer assembly that wires in the
+-- `N = 0` short-circuit branch will be folded in at slice 3d when the
+-- runtime branch shape stabilises.
+
+/-- Top-level ADDMOD program: prologue ;; phase1 carry ;; phase2 reduce
+    (one near-call to `evm_mod_callable`) ;; epilogue. The `modOff`
+    parameter is the signed 21-bit byte offset from the phase-2 JAL
+    site to the entry of `evm_mod_callable`; it is pinned by the
+    surrounding dispatcher frame. -/
+def evm_addmod (modOff : BitVec 21) : Program :=
+  evm_addmod_prologue ;;
+  evm_addmod_phase1_carry ;;
+  evm_addmod_phase2_reduce modOff ;;
+  evm_addmod_epilogue
+
+theorem evm_addmod_length (modOff : BitVec 21) :
+    (evm_addmod modOff).length = 33 := by
+  show ((((evm_addmod_prologue ;; evm_addmod_phase1_carry) ;;
+            evm_addmod_phase2_reduce modOff) ;;
+          evm_addmod_epilogue) : Program).length = 33
+  simp only [seq, Program.length_append,
+    evm_addmod_prologue_length, evm_addmod_phase1_carry_length,
+    evm_addmod_phase2_reduce_length, evm_addmod_epilogue_length]
+
+theorem evm_addmod_byte_length (modOff : BitVec 21) :
+    4 * (evm_addmod modOff).length = 132 := by
+  rw [evm_addmod_length]
+
+/-- Byte offset of the prologue block within `evm_addmod`. -/
+theorem evm_addmod_prologue_byte_off : 4 * 0 = 0 := by rfl
+
+/-- Byte offset of the phase-1 carry block within `evm_addmod`. -/
+theorem evm_addmod_phase1_carry_byte_off : 4 * 30 = 120 := by rfl
+
+/-- Byte offset of the phase-2 reduce block within `evm_addmod`. -/
+theorem evm_addmod_phase2_reduce_byte_off : 4 * 31 = 124 := by rfl
+
+/-- Byte offset of the epilogue block within `evm_addmod`. -/
+theorem evm_addmod_epilogue_byte_off : 4 * 32 = 128 := by rfl
+
+/-- Byte offset immediately after the full `evm_addmod` program. -/
+theorem evm_addmod_end_byte_off : 4 * 33 = 132 := by rfl
+
+/-- Sanity check: the assembled `evm_addmod` length equals the sum of
+    its four sub-block lengths. Picks an arbitrary `modOff` since the
+    `evm_addmod_phase2_reduce` length is independent of it. -/
+example : (evm_addmod 0).length =
+    evm_addmod_prologue.length +
+    evm_addmod_phase1_carry.length +
+    (evm_addmod_phase2_reduce 0).length +
+    evm_addmod_epilogue.length := by
+  native_decide
+
 end EvmAsm.Evm64
