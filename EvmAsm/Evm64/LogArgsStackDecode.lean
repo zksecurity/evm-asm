@@ -266,6 +266,17 @@ theorem decodeLogStack?_log4_eq_none_iff
     · simp [stackArgumentCount, topicCount] at h_len
       omega
 
+theorem decodeLogStack?_eq_none_iff
+    (kind : Kind) (stack : List EvmWord) :
+    decodeLogStack? kind stack = none ↔
+      stack.length < stackArgumentCount kind := by
+  cases kind with
+  | log0 => exact decodeLogStack?_log0_eq_none_iff stack
+  | log1 => exact decodeLogStack?_log1_eq_none_iff stack
+  | log2 => exact decodeLogStack?_log2_eq_none_iff stack
+  | log3 => exact decodeLogStack?_log3_eq_none_iff stack
+  | log4 => exact decodeLogStack?_log4_eq_none_iff stack
+
 theorem decodeLogStack?_log0_topicCountOk
     (offset size : EvmWord) (_rest : List EvmWord) :
     topicCountOk .log0 (mkArgs offset size []) := rfl
