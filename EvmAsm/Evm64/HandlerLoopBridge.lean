@@ -49,12 +49,29 @@ theorem stepWithTableHandler_missing_invalid
   rw [stepWithTableHandler_of_decode table h_decode]
   exact HandlerTable.dispatchOpcode_none h_lookup state
 
+theorem stepWithTableHandler_missing_invalid_status
+    {table : HandlerTable} {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : table opcode = none) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler table) state).status =
+      .error := by
+  rw [stepWithTableHandler_missing_invalid h_decode h_lookup]
+  exact EvmState.invalid_status state
+
 theorem stepWithTableHandler_empty_of_decode
     {state : EvmState} {opcode : EvmOpcode}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
     InterpreterLoop.stepWithHandler (toLoopHandler HandlerTable.empty) state =
       state.invalid := by
   exact stepWithTableHandler_missing_invalid h_decode (HandlerTable.empty_apply opcode)
+
+theorem stepWithTableHandler_empty_of_decode_status
+    {state : EvmState} {opcode : EvmOpcode}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode) :
+    (InterpreterLoop.stepWithHandler (toLoopHandler HandlerTable.empty) state).status =
+      .error := by
+  rw [stepWithTableHandler_empty_of_decode h_decode]
+  exact EvmState.invalid_status state
 
 theorem loopFuel_succ_running_decode
     (table : HandlerTable) (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
