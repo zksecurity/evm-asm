@@ -99,6 +99,52 @@ theorem decodeCurrentOpcode?_of_eof
     decodeCurrentOpcode? state = none := by
   simp [decodeCurrentOpcode?, h_fetch]
 
+/-- Characterize when `decodeCurrentOpcode?` returns `some opcode`: exactly when the
+    current PC fetches a byte whose `decodeByte?` succeeds with that opcode.
+    Distinctive token: InterpreterLoop.decodeCurrentOpcode?_eq_some_iff. -/
+theorem decodeCurrentOpcode?_eq_some_iff
+    {state : EvmState} {opcode : EvmOpcode} :
+    decodeCurrentOpcode? state = some opcode ↔
+      ∃ byte : BitVec 8,
+        fetchOpcodeByte? state = some byte ∧
+          EvmOpcode.decodeByte? byte.toNat = some opcode := by
+  constructor
+  · intro h_eq
+    by_cases h_pc : state.pc < state.code.length
+    · have h_fetch : fetchOpcodeByte? state = some state.code[state.pc] :=
+        fetchOpcodeByte?_of_lt h_pc
+      rw [decodeCurrentOpcode?_of_fetch h_fetch] at h_eq
+      exact ⟨state.code[state.pc], h_fetch, h_eq⟩
+    · have h_le : state.code.length ≤ state.pc := Nat.le_of_not_gt h_pc
+      have h_fetch : fetchOpcodeByte? state = none := fetchOpcodeByte?_of_ge h_le
+      rw [decodeCurrentOpcode?_of_eof h_fetch] at h_eq
+      cases h_eq
+  · rintro ⟨byte, h_fetch, h_decode⟩
+    rw [decodeCurrentOpcode?_of_fetch h_fetch]
+    exact h_decode
+
+/-- Characterize when `decodeCurrentOpcode?` returns `none`: either the fetch is at
+    or past EOF, or the fetched byte does not decode to a modeled opcode.
+    Distinctive token: InterpreterLoop.decodeCurrentOpcode?_eq_none_iff. -/
+theorem decodeCurrentOpcode?_eq_none_iff {state : EvmState} :
+    decodeCurrentOpcode? state = none ↔
+      fetchOpcodeByte? state = none ∨
+        ∃ byte : BitVec 8,
+          fetchOpcodeByte? state = some byte ∧
+            EvmOpcode.decodeByte? byte.toNat = none := by
+  constructor
+  · intro h_eq
+    by_cases h_pc : state.pc < state.code.length
+    · have h_fetch : fetchOpcodeByte? state = some state.code[state.pc] :=
+        fetchOpcodeByte?_of_lt h_pc
+      rw [decodeCurrentOpcode?_of_fetch h_fetch] at h_eq
+      exact Or.inr ⟨state.code[state.pc], h_fetch, h_eq⟩
+    · have h_le : state.code.length ≤ state.pc := Nat.le_of_not_gt h_pc
+      exact Or.inl (fetchOpcodeByte?_of_ge h_le)
+  · rintro (h_none | ⟨byte, h_fetch, h_decode⟩)
+    · exact decodeCurrentOpcode?_of_eof h_none
+    · exact decodeCurrentOpcode?_of_fetch_unsupported h_fetch h_decode
+
 theorem stepWithHandler_of_decode
     (handler : Handler) {state : EvmState} {opcode : EvmOpcode}
     (h_decode : decodeCurrentOpcode? state = some opcode) :
