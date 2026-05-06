@@ -163,22 +163,40 @@ theorem decodeSelfdestructStack?_eq_none_iff (stack : List EvmWord) :
     · rfl
     · simp at h_len
 
-theorem decodeReturnStack?_none_of_empty :
-    decodeReturnStack? [] = none := rfl
+/--
+`decodeReturnStack?` returns `none` on the empty stack.
 
-theorem decodeReturnStack?_none_of_one
-    (offset : EvmWord) :
+Distinctive token: TerminatingArgsStackDecode.decodeReturnStack?_none_of_empty #113.
+-/
+theorem decodeReturnStack?_none_of_empty :
+    decodeReturnStack? ([] : List EvmWord) = none := rfl
+
+/--
+`decodeReturnStack?` returns `none` when the stack has only one element
+(RETURN consumes two: offset and size).
+-/
+theorem decodeReturnStack?_none_of_one (offset : EvmWord) :
     decodeReturnStack? [offset] = none := rfl
 
+/--
+`decodeRevertStack?` returns `none` on the empty stack.
+-/
 theorem decodeRevertStack?_none_of_empty :
-    decodeRevertStack? [] = none := rfl
+    decodeRevertStack? ([] : List EvmWord) = none := rfl
 
-theorem decodeRevertStack?_none_of_one
-    (offset : EvmWord) :
+/--
+`decodeRevertStack?` returns `none` when the stack has only one element
+(REVERT consumes two: offset and size).
+-/
+theorem decodeRevertStack?_none_of_one (offset : EvmWord) :
     decodeRevertStack? [offset] = none := rfl
 
+/--
+`decodeSelfdestructStack?` returns `none` on the empty stack
+(SELFDESTRUCT consumes one: beneficiary).
+-/
 theorem decodeSelfdestructStack?_none_of_empty :
-    decodeSelfdestructStack? [] = none := rfl
+    decodeSelfdestructStack? ([] : List EvmWord) = none := rfl
 
 theorem decodeReturnStack?_dataRange
     (offset size : EvmWord) (rest : List EvmWord) :
