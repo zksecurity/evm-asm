@@ -128,6 +128,32 @@ theorem binaryHandler_status_of_binaryStack?_none
 @[simp] theorem arithmeticHandler?_MUL :
     arithmeticHandler? .MUL = some mulHandler := rfl
 
+@[simp] theorem eq_addHandler_iff (handler : OpcodeHandler) :
+    addHandler = handler ↔ handler = addHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_subHandler_iff (handler : OpcodeHandler) :
+    subHandler = handler ↔ handler = subHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+@[simp] theorem eq_mulHandler_iff (handler : OpcodeHandler) :
+    mulHandler = handler ↔ handler = mulHandler := by
+  constructor <;> intro h_eq <;> exact h_eq.symm
+
+theorem arithmeticHandler?_eq_some_iff
+    (opcode : EvmOpcode) (handler : OpcodeHandler) :
+    arithmeticHandler? opcode = some handler ↔
+      (opcode = .ADD ∧ handler = addHandler) ∨
+        (opcode = .SUB ∧ handler = subHandler) ∨
+          (opcode = .MUL ∧ handler = mulHandler) := by
+  cases opcode <;> simp [arithmeticHandler?]
+
+theorem arithmeticHandler?_eq_none_iff
+    (opcode : EvmOpcode) :
+    arithmeticHandler? opcode = none ↔
+      opcode ≠ .ADD ∧ opcode ≠ .SUB ∧ opcode ≠ .MUL := by
+  cases opcode <;> simp [arithmeticHandler?]
+
 theorem dispatchOpcode?_arithmeticHandlerTable_ADD
     (state : EvmState) :
     HandlerTable.dispatchOpcode? arithmeticHandlerTable .ADD state =
