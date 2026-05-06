@@ -233,6 +233,49 @@ theorem exp_loop_back_spec_within (c : Word) (backOff : BitVec 13)
     (fun _ hp => hp) s1 s2_raw
 
 -- ============================================================================
+-- Section 4.5: exp_loop_pointer_advance / exp_loop_pointer_restore
+-- (each 1 instruction, slice evm-asm-133cl)
+-- ============================================================================
+--
+-- `exp_loop_pointer_advance` and `exp_loop_pointer_restore` (defined in
+-- `Exp/Program.lean`) are single-instruction ADDI blocks that adjust the EVM
+-- stack pointer `x12` by ±64 bytes between the EXP prologue and the
+-- 256-iteration square-and-multiply loop body. The full-loop composition
+-- (slice evm-asm-w5mk) wires them around the loop with `cpsTriple_seq`.
+-- Mirrors the single-instruction `ofProg → singleton` shape of
+-- `exp_square_block_spec_within`.
+
+abbrev exp_loop_pointer_advance_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base exp_loop_pointer_advance
+
+theorem exp_loop_pointer_advance_spec_within
+    (vOld : Word) (base : Word) :
+    let code := exp_loop_pointer_advance_code base
+    cpsTripleWithin 1 base (base + 4) code
+      (.x12 ↦ᵣ vOld)
+      (.x12 ↦ᵣ (vOld + signExtend12 (64 : BitVec 12))) := by
+  show cpsTripleWithin 1 base (base + 4)
+    (CodeReq.ofProg base exp_loop_pointer_advance) _ _
+  rw [show CodeReq.ofProg base exp_loop_pointer_advance =
+      CodeReq.singleton base (.ADDI .x12 .x12 64) from CodeReq.ofProg_singleton]
+  exact addi_spec_gen_same_within .x12 vOld 64 base (by nofun)
+
+abbrev exp_loop_pointer_restore_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base exp_loop_pointer_restore
+
+theorem exp_loop_pointer_restore_spec_within
+    (vOld : Word) (base : Word) :
+    let code := exp_loop_pointer_restore_code base
+    cpsTripleWithin 1 base (base + 4) code
+      (.x12 ↦ᵣ vOld)
+      (.x12 ↦ᵣ (vOld + signExtend12 ((-64) : BitVec 12))) := by
+  show cpsTripleWithin 1 base (base + 4)
+    (CodeReq.ofProg base exp_loop_pointer_restore) _ _
+  rw [show CodeReq.ofProg base exp_loop_pointer_restore =
+      CodeReq.singleton base (.ADDI .x12 .x12 (-64)) from CodeReq.ofProg_singleton]
+  exact addi_spec_gen_same_within .x12 vOld (-64) base (by nofun)
+
+-- ============================================================================
 -- Section 5: exp_prologue (6 instructions, slice 4e / evm-asm-20z6.1)
 -- ============================================================================
 
