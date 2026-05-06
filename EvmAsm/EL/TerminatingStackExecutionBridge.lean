@@ -155,6 +155,54 @@ theorem runTerminatingStack?_selfdestruct
               (EvmAsm.Evm64.TerminatingArgs.returnArgs 0 0)
           stack := rest } := rfl
 
+theorem runTerminatingStack?_eq_none_iff
+    (kind : TerminatingKind) (state : WorldState) (readByte : MemoryReader)
+    (gasRemaining : Nat) (stackState : TerminatingStackState) :
+    runTerminatingStack? kind state readByte gasRemaining stackState = none ↔
+      argsFromStack? kind stackState.stack = none ∨
+        stackRestAfterTerminating? kind stackState.stack = none := by
+  cases stackState with
+  | mk stack =>
+      simp [runTerminatingStack?]
+      cases h_args : argsFromStack? kind stack with
+      | none => simp
+      | some args =>
+          cases h_rest : stackRestAfterTerminating? kind stack with
+          | none => simp
+          | some rest => simp
+
+/--
+Distinctive token: TerminatingStackExecutionBridge.runTerminatingStack?_eq_some_iff #113 #107.
+-/
+theorem runTerminatingStack?_eq_some_iff
+    (kind : TerminatingKind) (state : WorldState) (readByte : MemoryReader)
+    (gasRemaining : Nat) (stackState : TerminatingStackState)
+    (out : TerminatingStackResult) :
+    runTerminatingStack? kind state readByte gasRemaining stackState = some out ↔
+      ∃ args rest,
+        argsFromStack? kind stackState.stack = some args ∧
+        stackRestAfterTerminating? kind stackState.stack = some rest ∧
+        out =
+          { result :=
+              TerminatingDataMemory.resultFromMemory
+                kind state readByte gasRemaining args
+            stack := rest } := by
+  cases stackState with
+  | mk stack =>
+      constructor
+      · intro h_run
+        simp [runTerminatingStack?] at h_run
+        cases h_args : argsFromStack? kind stack with
+        | none => simp [h_args] at h_run
+        | some args =>
+            cases h_rest : stackRestAfterTerminating? kind stack with
+            | none => simp [h_args, h_rest] at h_run
+            | some rest =>
+                simp [h_args, h_rest] at h_run
+                exact ⟨args, rest, rfl, rfl, h_run.symm⟩
+      · rintro ⟨args, rest, h_args, h_rest, rfl⟩
+        simp [runTerminatingStack?, h_args, h_rest]
+
 theorem runTerminatingStack?_stack_length
     {kind : TerminatingKind} {state : WorldState} {readByte : MemoryReader}
     {gasRemaining : Nat} {stackState : TerminatingStackState}

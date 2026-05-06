@@ -238,6 +238,10 @@
    "EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec",
    "EvmAsm.Evm64.DivMod.Spec.N3ModBridge",
    "EvmAsm.Evm64.DivMod.N4StackSpecWithin"],
+ "EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec":
+  ["EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Full"],
+ "EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec":
+  ["EvmAsm.Evm64.DivMod.Spec.N2ModBridge"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopTwo":   ["EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase1E3LongStringOne": ["EvmAsm.Rv64.RLP.Phase1E3FullPath", "EvmAsm.Rv64.RLP.Phase2LongLoopOne"],
  "EvmAsm.Rv64.RLP.Phase2LongLoopThree": ["EvmAsm.Rv64.RLP.Phase2LongLoopTwo"],
@@ -323,4 +327,23 @@
 "EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants":
  ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots"],
 "EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2":
- ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants"]}}
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants"],
+"EvmAsm.Evm64.Dispatch.Compose": ["EvmAsm.Evm64.Dispatch.EntryAddrBridge"],
+"EvmAsm.Evm64.DivMod.Compose.FullPath":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA", "EvmAsm.Evm64.DivMod.Compose.Epilogue",
+  "EvmAsm.Evm64.DivMod.Compose.ModEpilogue"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN1":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN2":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Compose.FullPathN3":
+ ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
+  "EvmAsm.Evm64.DivMod.Compose.NormA"],
+"EvmAsm.Evm64.DivMod.Spec.CallSkip":
+ ["EvmAsm.Evm64.EvmWordArith.Div128Shift0",
+  "EvmAsm.Evm64.EvmWordArith.AddbackBorrowExtract",
+  "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2",
+  "EvmAsm.Evm64.DivMod.Spec.CallSkipOverestimateBridge"]}}
