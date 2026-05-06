@@ -81,6 +81,23 @@ theorem loopResultsMatch_step_one_status
       (InterpreterLoop.loopFuel spec 1 state).status := by
   rw [loopResultsMatch_step_one h_match state]
 
+theorem stepWithHandler_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    InterpreterLoop.stepWithHandler impl state =
+      InterpreterLoop.stepWithHandler spec state := by
+  have h_loop := loopResultsMatch_step_one h_match state
+  rw [InterpreterLoop.loopFuel_succ_running impl 0 state h_status] at h_loop
+  rw [InterpreterLoop.loopFuel_succ_running spec 0 state h_status] at h_loop
+  exact h_loop
+
+theorem stepWithHandler_status_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).status =
+      (InterpreterLoop.stepWithHandler spec state).status := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
 end InterpreterLoopSimulation
 
 end EvmAsm.Evm64
