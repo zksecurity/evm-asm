@@ -86,6 +86,75 @@ def dupSwapHandlerTable : HandlerTable :=
     (new old : EvmWord) (tail : List EvmWord) :
     replaceAt? 0 new (old :: tail) = some (old, new :: tail) := rfl
 
+theorem dupStack?_eq_some_iff
+    (n : Nat) (stack stack' : List EvmWord) :
+    dupStack? n stack = some stack' ↔
+      ∃ word, stack[n - 1]? = some word ∧ stack' = word :: stack := by
+  constructor
+  · intro h_stack
+    cases h_word : stack[n - 1]? with
+    | none =>
+        simp [dupStack?, h_word] at h_stack
+    | some word =>
+        simp [dupStack?, h_word] at h_stack
+        exact ⟨word, rfl, h_stack.symm⟩
+  · rintro ⟨word, h_word, rfl⟩
+    simp [dupStack?, h_word]
+
+theorem dupStack?_eq_none_iff
+    (n : Nat) (stack : List EvmWord) :
+    dupStack? n stack = none ↔ stack[n - 1]? = none := by
+  cases h_word : stack[n - 1]? with
+  | none =>
+      simp [dupStack?, h_word]
+  | some word =>
+      simp [dupStack?, h_word]
+
+theorem swapStack?_eq_some_iff
+    (n : Nat) (stack stack' : List EvmWord) :
+    swapStack? n stack = some stack' ↔
+      ∃ top rest target rest',
+        stack = top :: rest ∧
+        replaceAt? (n - 1) top rest = some (target, rest') ∧
+        stack' = target :: rest' := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        simp [swapStack?] at h_stack
+    | cons top rest =>
+        cases h_replace : replaceAt? (n - 1) top rest with
+        | none =>
+            simp [swapStack?, h_replace] at h_stack
+        | some result =>
+            obtain ⟨target, rest'⟩ := result
+            simp [swapStack?, h_replace] at h_stack
+            exact ⟨top, rest, target, rest', rfl, h_replace, h_stack.symm⟩
+  · rintro ⟨top, rest, target, rest', rfl, h_replace, rfl⟩
+    simp [swapStack?, h_replace]
+
+theorem swapStack?_eq_none_iff
+    (n : Nat) (stack : List EvmWord) :
+    swapStack? n stack = none ↔
+      stack = [] ∨
+        ∃ top rest, stack = top :: rest ∧
+          replaceAt? (n - 1) top rest = none := by
+  constructor
+  · intro h_stack
+    cases stack with
+    | nil =>
+        exact Or.inl rfl
+    | cons top rest =>
+        right
+        cases h_replace : replaceAt? (n - 1) top rest with
+        | none =>
+            exact ⟨top, rest, rfl, h_replace⟩
+        | some result =>
+            simp [swapStack?, h_replace] at h_stack
+  · rintro (rfl | ⟨top, rest, rfl, h_replace⟩)
+    · simp [swapStack?]
+    · simp [swapStack?, h_replace]
+
 @[simp] theorem dupSwapHandlerTable_eq :
     dupSwapHandlerTable = dupSwapHandler? := rfl
 
