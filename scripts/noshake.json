@@ -320,6 +320,14 @@
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
 "EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers":
+ ["EvmAsm.Evm64.DivMod.SpecCall"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsHelpers"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsOvershoots"],
+"EvmAsm.Evm64.DivMod.LoopDefs.IterV4InvariantsPhase2":
+ ["EvmAsm.Evm64.DivMod.LoopDefs.IterV4Invariants"],
 "EvmAsm.Evm64.Dispatch.Compose": ["EvmAsm.Evm64.Dispatch.EntryAddrBridge"],
 "EvmAsm.Evm64.DivMod.Compose.FullPath":
  ["EvmAsm.Evm64.DivMod.Compose.PhaseAB", "EvmAsm.Evm64.DivMod.Compose.Norm",
