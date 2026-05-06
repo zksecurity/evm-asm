@@ -49,6 +49,12 @@ theorem stepWithHandler_matchesSpec
   | none => rfl
   | some opcode => exact h_match opcode state h_decode
 
+theorem stepWithHandler_matchesSpec_status
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) (state : EvmState) :
+    (InterpreterLoop.stepWithHandler impl state).status =
+      (InterpreterLoop.stepWithHandler spec state).status := by
+  rw [stepWithHandler_matchesSpec h_match state]
+
 /-- Distinctive token: InterpreterSimulation.loopFuel_matchesSpec #109. -/
 theorem loopFuel_matchesSpec
     {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) :
