@@ -23,6 +23,16 @@ theorem dispatchByte_supported_of_lookup
     SupportedHandlers.supportedHandlerTable b opcode state h_decode]
   exact SupportedHandlers.dispatchOpcode_of_lookup h_lookup state
 
+theorem dispatchByte_supported_of_lookup_status
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      (handler state).status := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
 theorem dispatchByte_supported_of_decode
     {b : Fin 256} {opcode : EvmOpcode}
     (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
@@ -32,6 +42,15 @@ theorem dispatchByte_supported_of_decode
         opcode state := by
   exact HandlerTable.dispatchByte_decoded
     SupportedHandlers.supportedHandlerTable b opcode state h_decode
+
+theorem dispatchByte_supported_of_decode_status
+    {b : Fin 256} {opcode : EvmOpcode}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      (HandlerTable.dispatchOpcode SupportedHandlers.supportedHandlerTable
+        opcode state).status := by
+  rw [dispatchByte_supported_of_decode h_decode state]
 
 /--
 Byte-level dispatch of a decoded valid PUSH opcode through the combined
