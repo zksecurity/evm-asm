@@ -78,5 +78,12 @@ theorem dispatchOpcode_calldataHandlerTable_CALLDATASIZE
   exact HandlerTable.dispatchOpcode_some
     calldataHandlerTable_CALLDATASIZE state
 
+theorem dispatchOpcode_calldataHandlerTable_CALLDATASIZE_status
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode calldataHandlerTable .CALLDATASIZE state).status =
+      state.status := by
+  rw [dispatchOpcode_calldataHandlerTable_CALLDATASIZE state]
+  exact callDataSizeHandler_status state
+
 end CalldataHandlers
 end EvmAsm.Evm64
