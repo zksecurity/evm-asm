@@ -75,6 +75,35 @@ theorem dispatchOpcode_orElse_right
       dispatchOpcode right opcode state := by
   simp [dispatchOpcode, dispatchOpcode?_orElse_right h_left state]
 
+/-- Lookup-result characterization of `orElse` returning `some`. The combined
+    table delegates to the right operand only when the left operand has no
+    entry, so a `some handler` result decomposes into "left owns it" or
+    "left misses and right owns it".
+
+    Distinctive token: `HandlerTable.orElse_eq_some_iff #107`. -/
+theorem orElse_eq_some_iff
+    {left right : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler} :
+    orElse left right opcode = some handler ↔
+      left opcode = some handler ∨
+        (left opcode = none ∧ right opcode = some handler) := by
+  unfold orElse
+  cases h_left : left opcode with
+  | none => simp
+  | some h => simp
+
+/-- Lookup-result characterization of `orElse` returning `none`. The combined
+    table is undefined at `opcode` exactly when both operands are.
+
+    Distinctive token: `HandlerTable.orElse_eq_none_iff #107`. -/
+theorem orElse_eq_none_iff
+    {left right : HandlerTable} {opcode : EvmOpcode} :
+    orElse left right opcode = none ↔
+      left opcode = none ∧ right opcode = none := by
+  unfold orElse
+  cases h_left : left opcode with
+  | none => simp
+  | some h => simp
+
 end HandlerTable
 
 end EvmAsm.Evm64
