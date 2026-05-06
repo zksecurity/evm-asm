@@ -111,6 +111,22 @@ theorem dispatchOpcode_orElse_right_preserves_status
   rw [dispatchOpcode_orElse_right_status h_left state]
   exact h_status state
 
+theorem dispatchOpcode_orElse_none
+    {left right : HandlerTable} {opcode : EvmOpcode}
+    (h_left : left opcode = none) (h_right : right opcode = none)
+    (state : EvmState) :
+    dispatchOpcode (orElse left right) opcode state = state.invalid := by
+  rw [dispatchOpcode_orElse_right h_left state]
+  exact dispatchOpcode_none h_right state
+
+theorem dispatchOpcode_orElse_none_status
+    {left right : HandlerTable} {opcode : EvmOpcode}
+    (h_left : left opcode = none) (h_right : right opcode = none)
+    (state : EvmState) :
+    (dispatchOpcode (orElse left right) opcode state).status = .error := by
+  rw [dispatchOpcode_orElse_none h_left h_right state]
+  exact EvmState.invalid_status state
+
 /-- Lookup-result characterization of `orElse` returning `some`. The combined
     table delegates to the right operand only when the left operand has no
     entry, so a `some handler` result decomposes into "left owns it" or
