@@ -4,6 +4,8 @@
   Stack-level bridge helpers for MLOAD.
 -/
 
+-- file-size-exception: MLOAD stack-spec lemmas are intentionally colocated; splitting the cluster should be a separate refactor.
+
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.MLoad.Spec
 import EvmAsm.Evm64.MLoad.UnalignedSpec
