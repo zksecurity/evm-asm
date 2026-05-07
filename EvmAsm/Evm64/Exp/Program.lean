@@ -817,7 +817,85 @@ theorem exp_loop_pointer_restore_byte_length :
     4 * exp_loop_pointer_restore.length = 4 := by
   rw [exp_loop_pointer_restore_length]
 
--- Placeholder: `evm_exp : Program` lands in slice 3 (evm-asm-ahaz).
--- See `docs/92-exp-survey.md` for the algorithm and reuse points.
+-- ----------------------------------------------------------------------------
+-- Top-level `evm_exp` Program assembly (#92 slice 3, beads evm-asm-ahaz /
+-- evm-asm-3pil2)
+-- ----------------------------------------------------------------------------
+--
+-- Composes the EXP-specific sub-blocks defined above into the full EXP
+-- Program. Layout (75 instructions, 300 bytes):
+--
+--     evm_exp mulOff skipOff backOff :=
+--       exp_prologue                                   --  6 instr (init counter + accumulator)
+--       exp_loop_pointer_advance                       --  1 instr (ADDI x12 +64)
+--       exp_iter_body_full mulOff skipOff backOff      -- 58 instr (one square+cond-mul iter + BNE)
+--       exp_loop_pointer_restore                       --  1 instr (ADDI x12 -64)
+--       exp_epilogue                                   --  9 instr (writeback + ADDI x12 +32)
+--
+-- The `exp_iter_body_full` block already contains the trailing
+-- `exp_loop_back` (counter decrement + BNE back-edge), so it is emitted
+-- **once** in the static layout — the 256 dynamic iterations come from
+-- the BNE re-entering the top of `exp_iter_body_full` until `x9` reaches
+-- zero. The three offset parameters have canonical values pinned by
+-- this layout:
+--
+--   `mulOff`  : signed 21-bit JAL byte offset from the JAL site (inside
+--               `exp_iter_body_full`) to `mul_callable`. Concrete value
+--               depends on where `mul_callable` is placed in the address
+--               space relative to `evm_exp`; left as a parameter here so
+--               the surrounding non-leaf wrapper / dispatcher can pin it
+--               once the call site is final.
+--   `skipOff` : signed 13-bit BEQ byte offset from the BEQ-skip site to
+--               the instruction immediately past `exp_cond_mul_call_block`.
+--               Canonical value: +108 (1 BEQ instr + 26-instr taken
+--               branch = 27 × 4 = 108 bytes; RISC-V BEQ offset is added
+--               to the BEQ's own PC, so the target is BEQ_pc + 108).
+--   `backOff` : signed 13-bit BNE byte offset from the BNE site at the
+--               tail of `exp_iter_body_full` back to the top of
+--               `exp_iter_body_full`. Canonical value: -228 (the BNE
+--               site sits at byte +256 within `evm_exp`, the iter-body
+--               top sits at byte +28 within `evm_exp`, so the back-edge
+--               offset is 28 - 256 = -228).
+--
+-- This slice is purely structural assembly + length lemmas. The
+-- per-iteration cpsTriple specs land in slice 4 (evm-asm-mtj3 +
+-- children) and the full-loop composition / stack-level spec land in
+-- slices 5 and 6 (evm-asm-w5mk / evm-asm-6snn).
+
+/-- Top-level EXP opcode Program: prologue ;; pointer-advance ;;
+    one statically-emitted iteration body (which contains the BNE
+    back-edge so 256 dynamic iterations re-execute it) ;; pointer-restore
+    ;; epilogue. 75 instructions, 300 bytes.
+
+    `mulOff` is the signed 21-bit JAL byte offset to `mul_callable`,
+    shared by both JAL sites inside `exp_iter_body_full`. `skipOff` is
+    the signed 13-bit BEQ byte offset that skips past the conditional
+    multiply when the current exponent bit is zero (canonical: +108).
+    `backOff` is the signed 13-bit BNE byte offset back to the top of
+    the iteration body (canonical: -228). -/
+def evm_exp (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : Program :=
+  exp_prologue ;;
+  exp_loop_pointer_advance ;;
+  exp_iter_body_full mulOff skipOff backOff ;;
+  exp_loop_pointer_restore ;;
+  exp_epilogue
+
+theorem evm_exp_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (evm_exp mulOff skipOff backOff).length = 75 := by
+  show ((((exp_prologue ;;
+            exp_loop_pointer_advance) ;;
+            exp_iter_body_full mulOff skipOff backOff) ;;
+            exp_loop_pointer_restore) ;;
+          exp_epilogue).length = 75
+  simp only [seq, Program.length_append,
+    exp_prologue_length,
+    exp_loop_pointer_advance_length,
+    exp_iter_body_full_length,
+    exp_loop_pointer_restore_length,
+    exp_epilogue_length]
+
+theorem evm_exp_byte_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    4 * (evm_exp mulOff skipOff backOff).length = 300 := by
+  rw [evm_exp_length]
 
 end EvmAsm.Evm64
