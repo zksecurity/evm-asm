@@ -787,6 +787,54 @@ theorem evm_mload_combined_one_limb_sequence_stack_spec_within
       h0 h1 h2 h3)
 
 /--
+MLOAD evm_mload_code lift of `mload_combined_four_limb_sequence_stack_spec_within`:
+the same combined prologue + four `mloadFourLimbsCode` quarter triples, transported
+from `mloadStackCode` to `evm_mload_code` via `cpsTripleWithin_evm_mload_of_stack`.
+
+Sister of `evm_mload_combined_one_limb_sequence_stack_spec_within` but at the
+coarser `mloadFourLimbsCode` granularity: callers supply each quarter triple over
+the four-limbs body program (not over the per-byte one-limb program), useful
+when the concrete byte-load triple is naturally produced at that surface (e.g.
+via `mload_four_limbs_stack_spec_within` composition with byte-window subspecs).
+
+Distinctive token: evm_mload_combined_four_limb_sequence_stack_spec_within #53.
+-/
+theorem evm_mload_combined_four_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadFourLimbsCode addrReg byteReg accReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_evm_mload_of_stack
+    offReg byteReg accReg addrReg memBaseReg base (base + 376)
+    (mload_combined_four_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+      h0 h1 h2 h3)
+
+/--
   The 256-bit value loaded by MLOAD when each output limb is assembled from
   an adjacent low/high dword pair. The four limbs are stored in EVM-stack
   little-endian order: limb 0 at `sp`, limb 3 at `sp + 24`.
