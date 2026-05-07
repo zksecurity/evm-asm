@@ -170,6 +170,27 @@ def main(argv: list[str] | None = None) -> int:
         path = Path(path_str)
         if not path.is_absolute():
             path = (Path(args.root) / path_str).resolve()
+        else:
+            # shake output may carry absolute paths from a different build
+            # host (e.g. /home/yoichi-bkp/evm-asm/EvmAsm/...). Re-anchor the
+            # `EvmAsm/...` suffix under --root so marker-file reads succeed
+            # in the local worktree. `path.exists()` may raise
+            # PermissionError when traversing the foreign prefix, so guard
+            # the existence check.
+            try:
+                local_ok = path.exists()
+            except OSError:
+                local_ok = False
+            if not local_ok:
+                parts = path.parts
+                if "EvmAsm" in parts:
+                    idx = parts.index("EvmAsm")
+                    rebased = (Path(args.root).resolve()).joinpath(*parts[idx:])
+                    try:
+                        if rebased.exists():
+                            path = rebased
+                    except OSError:
+                        pass
         hits = file_markers(path)
         if hits:
             dropped += 1

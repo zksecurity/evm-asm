@@ -321,6 +321,13 @@ This is a **prototype** demonstrating the approach. Current state:
   [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md)
   for the decision record, full design note, and per-precompile coverage /
   EVM-precompile → accelerator mapping table.
+- Host I/O C ABI (source of truth):
+  `EvmAsm/Evm64/zkvm-standards/standards/io-interface/README.md`
+  defines the canonical host-I/O surface (`read_input` / `write_output`).
+  See [`docs/zkvm-host-io-interface.md`](docs/zkvm-host-io-interface.md)
+  for the decision record, the SP1 `HINT_LEN` / `HINT_READ` / `COMMIT` →
+  zkvm-standards mapping, and the migration plan tracked under beads
+  parent `evm-asm-96ysd` (GH #114 / #116).
 - SP1 zkVM: https://github.com/succinctlabs/sp1
   The RISC-V `ECALL` framing (instruction encoding, register
   convention, return-via-`a0`) follows the same mechanism SP1 uses;

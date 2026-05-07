@@ -28,7 +28,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2
-import EvmAsm.Evm64.DivMod.LoopDefs.IterV4
+import EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck2
 
 open EvmAsm.Rv64.Tactics
 

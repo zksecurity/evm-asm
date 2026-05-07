@@ -11,6 +11,7 @@
 -/
 
 import EvmAsm.Evm64.SDiv.AddrNormAttr
+import EvmAsm.Evm64.SDiv.Layout
 import EvmAsm.Evm64.SDiv.Program
 import EvmAsm.Evm64.SDiv.LimbSpec
 import EvmAsm.Evm64.SDiv.AddrNorm

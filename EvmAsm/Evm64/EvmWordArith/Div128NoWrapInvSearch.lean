@@ -34,7 +34,7 @@
   recorded on issue #1337.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Div128NoWrapDischarge
+import EvmAsm.Evm64.EvmWordArith.Div128FinalAssembly
 
 namespace EvmAsm.Evm64
 
