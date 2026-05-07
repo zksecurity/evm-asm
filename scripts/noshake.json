@@ -277,8 +277,12 @@
   ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
    "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1":
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1b":
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail"],
   "EvmAsm.Evm64.DivMod.Compose.Offsets":
