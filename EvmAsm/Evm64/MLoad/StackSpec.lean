@@ -1231,4 +1231,83 @@ theorem mloadStackOutputPostFiveDwords_evmStackIs_fold
   rw [mloadStackOutputPostFiveDwords_unfold]
   rfl
 
+/--
+MLOAD q3 unaligned per-quarter stack spec: a fully-instantiated unaligned
+byte-load triple at `(base + 284) .. (base + 376)` over the q3 byte-pack
+program slot of `evm_mload_code`, shaped to match the `h3` hypothesis of
+`evm_mload_combined_one_limb_sequence_stack_spec_within` (above).
+
+For q3 the destination dword offset is `24`, so the stored limb lands at
+`sp + 24` — a fresh limb slot DISTINCT from the prologue-threaded
+`(sp ↦ₘ offset)` cell at `sp + 0` (now holding the q0 packed limb), the
+q1 packed-limb cell at `sp + 8`, and the q2 packed-limb cell at
+`sp + 16`. The q0/q1/q2 cells are threaded UNCHANGED through q3's
+pre/post (sitting in the right-side frame of the underlying unaligned
+spec).
+
+Sub-slice toward `evm_mload_stack_spec_within` (evm-asm-lrhou / GH #53
+follow-up): together with q0/q1/q2 siblings, feeds
+`evm_mload_combined_one_limb_sequence_stack_spec_within` to land the
+topmost stack-level MLOAD theorem.
+
+Distinctive token: evm_mload_unaligned_one_limb_q3_stack_spec_within #53.
+-/
+theorem evm_mload_unaligned_one_limb_q3_stack_spec_within
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld : Word)
+    (q0Old q1Old q2Old : Word)
+    (loAddr3 hiAddr3 loVal3 hiVal3 : Word) (start : Nat)
+    (dstOld : Word)
+    (base : Word)
+    (h_byte_ne_x0 : byteReg ≠ .x0) (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mloadLimbWindowOk (memBase + offset) loAddr3 hiAddr3 start
+                  0 1 2 3 4 5 6 7) :
+    cpsTripleWithin 23 (base + 284) (base + 376)
+      (mloadOneLimbCode addrReg byteReg accReg
+        0 1 2 3 4 5 6 7 24 (base + 284))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+       (sp ↦ₘ q0Old) **
+       (sp + 8 ↦ₘ q1Old) **
+       (sp + 16 ↦ₘ q2Old) **
+       (sp + 24 ↦ₘ dstOld) **
+       ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+        (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3)))
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+       (sp ↦ₘ q0Old) **
+       (sp + 8 ↦ₘ q1Old) **
+       (sp + 16 ↦ₘ q2Old) **
+       (sp + 24 ↦ₘ mloadPackedLimbFromDwordPair loVal3 hiVal3 start) **
+       ((byteReg ↦ᵣ
+          (mloadByteFromDwordPair loVal3 hiVal3 start 7).zeroExtend 64) **
+        (accReg ↦ᵣ mloadPackedLimbFromDwordPair loVal3 hiVal3 start) **
+        (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3))) := by
+  -- Underlying unaligned one-limb spec at the q3 slot, with dstOff = 24
+  -- and dstWordOld = dstOld stored at `sp + signExtend12 24 = sp + 24`.
+  have core := mload_one_limb_unaligned_spec_within addrReg byteReg accReg
+    (memBase + offset) accOld byteOld loVal3 hiVal3 loAddr3 hiAddr3 sp dstOld
+    0 1 2 3 4 5 6 7 (24 : BitVec 12) start (base + 284)
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  rw [mloadOneLimbUnalignedPre_unfold, mloadOneLimbUnalignedPost_unfold] at core
+  -- `signExtend12 24 = 24` so `sp + signExtend12 24 = sp + 24`.
+  have hsig : sp + signExtend12 (24 : BitVec 12) = sp + 24 := by
+    have : signExtend12 (24 : BitVec 12) = (24 : Word) := by decide
+    rw [this]
+  rw [hsig] at core
+  -- Normalize endpoint: `base + 284 + 92 = base + 376`.
+  have hpc : (base + 284 + 92 : Word) = base + 376 := by bv_omega
+  rw [hpc] at core
+  -- Frame the prologue-threaded `(offReg ↦ᵣ offset) ** (memBaseReg ↦ᵣ memBase)`
+  -- and the q0/q1/q2 packed-limb cells on the left.
+  have framed := cpsTripleWithin_frameL
+    (F := (offReg ↦ᵣ offset) ** (memBaseReg ↦ᵣ memBase) **
+          (sp ↦ₘ q0Old) ** (sp + 8 ↦ₘ q1Old) ** (sp + 16 ↦ₘ q2Old))
+    (by pcFree) core
+  -- Permute pre/post into the goal's grouping.
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
 end EvmAsm.Evm64
