@@ -12,6 +12,7 @@
 import EvmAsm.Evm64.AddMod.Program
 import EvmAsm.Evm64.Add.Spec
 import EvmAsm.Rv64.SyscallSpecs
+import EvmAsm.Rv64.Tactics.RunBlock
 
 namespace EvmAsm.Evm64
 
@@ -158,5 +159,86 @@ theorem evm_addmod_phase1_carry_spec_within
   rw [show CodeReq.ofProg base evm_addmod_phase1_carry =
       CodeReq.singleton base (.ADDI .x7 .x5 0) from CodeReq.ofProg_singleton]
   exact addi_spec_gen_within .x7 .x5 vOld v5 0 base (by nofun)
+
+-- ============================================================================
+-- evm_addmod_phase2_zero_path (4 instructions, slice evm-asm-eu2hw toward
+-- evm-asm-s7v49)
+-- ============================================================================
+--
+-- `evm_addmod_phase2_zero_path` (defined in `Evm64/AddMod/Program.lean`) is the
+-- 4-instruction `SD x12, x0, {32,40,48,56}` block that writes zeros into the
+-- four result limbs at `x12 + 32 .. 56` on the `N = 0` path. Direct analog
+-- of the SD chain at the end of `exp_prologue_spec_within`
+-- (`Exp/LimbSpec.lean §5`): four `sd_x0_spec_gen_within` applications glued
+-- by `runBlock`. Block layout:
+--
+--   instr  0 (byte  0) :  SD x12, x0, 32   -- result limb 0 := 0
+--   instr  1 (byte  4) :  SD x12, x0, 40   -- result limb 1 := 0
+--   instr  2 (byte  8) :  SD x12, x0, 48   -- result limb 2 := 0
+--   instr  3 (byte 12) :  SD x12, x0, 56   -- result limb 3 := 0
+
+abbrev evm_addmod_phase2_zero_path_code (base : Word) : CodeReq :=
+  (CodeReq.singleton base (.SD .x12 .x0 32)).union
+    ((CodeReq.singleton (base + 4) (.SD .x12 .x0 40)).union
+      ((CodeReq.singleton (base + 8) (.SD .x12 .x0 48)).union
+        (CodeReq.singleton (base + 12) (.SD .x12 .x0 56))))
+
+theorem evm_addmod_phase2_zero_path_code_eq_ofProg (base : Word) :
+    evm_addmod_phase2_zero_path_code base =
+      CodeReq.ofProg base evm_addmod_phase2_zero_path := by
+  unfold evm_addmod_phase2_zero_path_code evm_addmod_phase2_zero_path SD single seq
+  change _ = CodeReq.ofProg base
+    [.SD .x12 .x0 32, .SD .x12 .x0 40, .SD .x12 .x0 48, .SD .x12 .x0 56]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_singleton]
+  bv_addr
+
+/-- Register/memory-level zero-store spec: writes `0` into the four result
+    limbs at `x12 + 32 .. 56` via `SD x12, x0, k`. Mirrors the SD chain in
+    `exp_prologue_spec_within`. -/
+theorem evm_addmod_phase2_zero_path_spec_within
+    (sp m0 m1 m2 m3 : Word) (base : Word) :
+    let code := evm_addmod_phase2_zero_path_code base
+    cpsTripleWithin 4 base (base + 16) code
+      ((.x12 ↦ᵣ sp) **
+       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ m3))
+      ((.x12 ↦ᵣ sp) **
+       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ (0 : Word))) := by
+  unfold evm_addmod_phase2_zero_path_code
+  have hSd0 := generic_sd_x0_spec_within .x12 sp m0
+    (32 : BitVec 12) base
+  have hSd1 := generic_sd_x0_spec_within .x12 sp m1
+    (40 : BitVec 12) (base + 4)
+  have hSd2 := generic_sd_x0_spec_within .x12 sp m2
+    (48 : BitVec 12) (base + 8)
+  have hSd3 := generic_sd_x0_spec_within .x12 sp m3
+    (56 : BitVec 12) (base + 12)
+  runBlock hSd0 hSd1 hSd2 hSd3
+
+/-- `ofProg`-flavoured zero-store spec: thin lift of
+    `evm_addmod_phase2_zero_path_spec_within` through
+    `evm_addmod_phase2_zero_path_code_eq_ofProg`. -/
+theorem evm_addmod_phase2_zero_path_ofProg_spec_within
+    (sp m0 m1 m2 m3 : Word) (base : Word) :
+    cpsTripleWithin 4 base (base + 16)
+      (CodeReq.ofProg base evm_addmod_phase2_zero_path)
+      ((.x12 ↦ᵣ sp) **
+       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ m3))
+      ((.x12 ↦ᵣ sp) **
+       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ (0 : Word))) := by
+  rw [← evm_addmod_phase2_zero_path_code_eq_ofProg]
+  exact evm_addmod_phase2_zero_path_spec_within sp m0 m1 m2 m3 base
 
 end EvmAsm.Evm64
