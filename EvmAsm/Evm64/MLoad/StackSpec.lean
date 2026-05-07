@@ -361,6 +361,120 @@ theorem mload_four_limbs_stack_spec_within
       offReg byteReg accReg addrReg memBaseReg base)
 
 /--
+MLOAD q0 one-limb spec on `mloadFourLimbsCode`: transport a concrete
+`mloadOneLimbCode` byte-load triple at `base + 8 .. base + 100` (the
+leftmost one-limb byte-pack block within `mloadFourLimbsCode`) to the
+larger `mloadFourLimbsCode` surface via `mloadFourLimbsCode_one_limb_q0_sub`.
+
+Lets followup MLOAD slices instantiate `h0` of
+`mload_four_limb_sequence_spec_within` directly with a concrete byte-load
+triple, mirroring the calldata `calldataload_window_one_limb_q0_stack_spec_within`
+shape but at the `mloadFourLimbsCode` level (no prologue / `mloadStackCode`
+lift).
+
+Distinctive token: mload_one_limb_q0_spec_within #53.
+-/
+theorem mload_one_limb_q0_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) P Q) :
+    cpsTripleWithin n (base + 8) (base + 100)
+      (mloadFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mloadFourLimbsCode_one_limb_q0_sub addrReg byteReg accReg base)
+
+/-- MLOAD q1 one-limb spec on `mloadFourLimbsCode`: sister to
+`mload_one_limb_q0_spec_within` for the second one-limb byte-pack block
+at `base + 100 .. base + 192`. -/
+theorem mload_one_limb_q1_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P Q) :
+    cpsTripleWithin n (base + 100) (base + 192)
+      (mloadFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mloadFourLimbsCode_one_limb_q1_sub addrReg byteReg accReg base)
+
+/-- MLOAD q2 one-limb spec on `mloadFourLimbsCode`: sister to
+`mload_one_limb_q0/q1_spec_within` for the third one-limb byte-pack block
+at `base + 192 .. base + 284`. -/
+theorem mload_one_limb_q2_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P Q) :
+    cpsTripleWithin n (base + 192) (base + 284)
+      (mloadFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mloadFourLimbsCode_one_limb_q2_sub addrReg byteReg accReg base)
+
+/-- MLOAD q3 one-limb spec on `mloadFourLimbsCode`: sister to
+`mload_one_limb_q{0,1,2}_spec_within` for the fourth (most-significant)
+one-limb byte-pack block at `base + 284 .. base + 376`. -/
+theorem mload_one_limb_q3_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P Q) :
+    cpsTripleWithin n (base + 284) (base + 376)
+      (mloadFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mloadFourLimbsCode_one_limb_q3_sub addrReg byteReg accReg base)
+
+/--
+MLOAD one-limb sequence spec on `mloadFourLimbsCode`: compose the four
+per-quarter `mload_one_limb_q{0,1,2,3}_spec_within` transports into a
+single `cpsTripleWithin` over `(base + 8) .. (base + 376)` taking four
+concrete `mloadOneLimbCode` byte-load triples (h0, h1, h2, h3) directly.
+Mirrors `mload_four_limb_sequence_spec_within` but on the smaller
+`mloadOneLimbCode` surface — eliminates an intermediate transport step
+when wiring concrete byte-load triples for the upcoming
+`evm_mload_stack_spec_within`.
+
+Distinctive token: mload_one_limb_sequence_spec_within #53.
+-/
+theorem mload_one_limb_sequence_spec_within
+    {n0 n1 n2 n3 : Nat} {P0 P1 P2 P3 P4 : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) P0 P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P3 P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 376)
+      (mloadFourLimbsCode addrReg byteReg accReg base) P0 P4 :=
+  mload_four_limb_sequence_spec_within addrReg byteReg accReg base
+    (mload_one_limb_q0_spec_within addrReg byteReg accReg base h0)
+    (mload_one_limb_q1_spec_within addrReg byteReg accReg base h1)
+    (mload_one_limb_q2_spec_within addrReg byteReg accReg base h2)
+    (mload_one_limb_q3_spec_within addrReg byteReg accReg base h3)
+
+/--
   The 256-bit value loaded by MLOAD when each output limb is assembled from
   an adjacent low/high dword pair. The four limbs are stored in EVM-stack
   little-endian order: limb 0 at `sp`, limb 3 at `sp + 24`.
