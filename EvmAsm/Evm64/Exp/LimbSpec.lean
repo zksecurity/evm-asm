@@ -607,4 +607,111 @@ theorem exp_epilogue_word_spec_within
       xperm_hyp hq)
     (exp_epilogue_ofProg_spec_within sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 base)
 
+-- ============================================================================
+-- Section: exp_loop_marshal_factor1 (8 instructions, slice 4-marshal-factor1
+-- / evm-asm-do8x6)
+-- ============================================================================
+--
+-- `exp_loop_marshal_factor1` (defined in `Exp/Program.lean`) copies the four
+-- limbs of the running accumulator `result` from the local scratch frame at
+-- `sp + 0..+24` into the LP64 MUL factor-1 slot at `x12 + 0..+24`:
+--
+--     LD .x5 .x2 0  ;; SD .x12 .x5 0  ;;
+--     LD .x5 .x2 8  ;; SD .x12 .x5 8  ;;
+--     LD .x5 .x2 16 ;; SD .x12 .x5 16 ;;
+--     LD .x5 .x2 24 ;; SD .x12 .x5 24
+--
+-- Mirrors `exp_epilogue_spec_within`'s LD/SD chain (Section above), only
+-- without the trailing `ADDI .x12 .x12 32` and with destination offsets
+-- 0..24 rather than 32..56.
+
+def exp_loop_marshal_factor1_code (base : Word) : CodeReq :=
+  (CodeReq.singleton base (.LD .x5 .x2 0)).union
+    ((CodeReq.singleton (base + 4) (.SD .x12 .x5 0)).union
+      ((CodeReq.singleton (base + 8) (.LD .x5 .x2 8)).union
+        ((CodeReq.singleton (base + 12) (.SD .x12 .x5 8)).union
+          ((CodeReq.singleton (base + 16) (.LD .x5 .x2 16)).union
+            ((CodeReq.singleton (base + 20) (.SD .x12 .x5 16)).union
+              ((CodeReq.singleton (base + 24) (.LD .x5 .x2 24)).union
+                (CodeReq.singleton (base + 28) (.SD .x12 .x5 24))))))))
+
+theorem exp_loop_marshal_factor1_code_eq_ofProg (base : Word) :
+    exp_loop_marshal_factor1_code base =
+      CodeReq.ofProg base exp_loop_marshal_factor1 := by
+  unfold exp_loop_marshal_factor1_code exp_loop_marshal_factor1 LD SD single seq
+  change _ = CodeReq.ofProg base
+    [.LD .x5 .x2 0, .SD .x12 .x5 0, .LD .x5 .x2 8,
+     .SD .x12 .x5 8, .LD .x5 .x2 16, .SD .x12 .x5 16,
+     .LD .x5 .x2 24, .SD .x12 .x5 24]
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_singleton]
+  bv_addr
+
+theorem exp_loop_marshal_factor1_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word) (base : Word) :
+    cpsTripleWithin 8 base (base + 32) (exp_loop_marshal_factor1_code base)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3))
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3)) := by
+  unfold exp_loop_marshal_factor1_code
+  have hLd0 := ld_spec_gen_within .x5 .x2 sp tOld r0
+    (0 : BitVec 12) base (by decide)
+  have hSd0 := generic_sd_spec_within .x12 .x5 evmSp r0 d0
+    (0 : BitVec 12) (base + 4)
+  have hLd1 := ld_spec_gen_within .x5 .x2 sp r0 r1
+    (8 : BitVec 12) (base + 8) (by decide)
+  have hSd1 := generic_sd_spec_within .x12 .x5 evmSp r1 d1
+    (8 : BitVec 12) (base + 12)
+  have hLd2 := ld_spec_gen_within .x5 .x2 sp r1 r2
+    (16 : BitVec 12) (base + 16) (by decide)
+  have hSd2 := generic_sd_spec_within .x12 .x5 evmSp r2 d2
+    (16 : BitVec 12) (base + 20)
+  have hLd3 := ld_spec_gen_within .x5 .x2 sp r2 r3
+    (24 : BitVec 12) (base + 24) (by decide)
+  have hSd3 := generic_sd_spec_within .x12 .x5 evmSp r3 d3
+    (24 : BitVec 12) (base + 28)
+  runBlock hLd0 hSd0 hLd1 hSd1 hLd2 hSd2 hLd3 hSd3
+
+theorem exp_loop_marshal_factor1_ofProg_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word) (base : Word) :
+    cpsTripleWithin 8 base (base + 32)
+      (CodeReq.ofProg base exp_loop_marshal_factor1)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3))
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3)) := by
+  rw [← exp_loop_marshal_factor1_code_eq_ofProg]
+  exact exp_loop_marshal_factor1_spec_within sp evmSp tOld
+    r0 r1 r2 r3 d0 d1 d2 d3 base
+
 end EvmAsm.Evm64
