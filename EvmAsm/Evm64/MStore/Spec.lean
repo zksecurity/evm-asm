@@ -1168,6 +1168,64 @@ theorem mstore_combined_stack_spec_within
       sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0)
     h4
 
+/--
+MSTORE combined four-limb sequence stack spec: combine the prologue half
+(`mstore_prologue_stack_spec_within`) with the four byte-window quarter
+triples (composed via `mstore_four_limb_sequence_spec_within`) into a single
+triple from `base` to `base + 280` over `mstoreStackCode`.
+
+Direct MSTORE analog of
+`EvmAsm.Evm64.mload_combined_four_limb_sequence_stack_spec_within`. This is
+a one-line composition of `mstore_combined_stack_spec_within` (which takes a
+single four-limbs core triple over `mstoreStackCode`) with
+`mstore_four_limb_sequence_spec_within` (which produces that consolidated
+four-limbs triple over `mstoreFourLimbsCode`), transported to
+`mstoreStackCode` via `cpsTripleWithin_extend_code` /
+`mstoreStackCode_four_limbs_sub`.
+
+Subsequent slices instantiate each `hN` with a concrete byte-window write
+triple to land the full `evm_mstore_stack_spec_within` (evm-asm-ln8t5 /
+GH #53 follow-up) without re-doing the prologue/transport plumbing.
+
+Distinctive token: mstore_combined_four_limb_sequence_stack_spec_within #53.
+-/
+theorem mstore_combined_four_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 76)
+        (mstoreFourLimbsCode addrReg byteReg accReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 76) (base + 144)
+        (mstoreFourLimbsCode addrReg byteReg accReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 144) (base + 212)
+        (mstoreFourLimbsCode addrReg byteReg accReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 212) (base + 280)
+        (mstoreFourLimbsCode addrReg byteReg accReg base) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 280)
+      (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  mstore_combined_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+    (cpsTripleWithin_extend_code
+      (h := mstore_four_limb_sequence_spec_within
+        addrReg byteReg accReg base h0 h1 h2 h3)
+      (hmono := mstoreStackCode_four_limbs_sub
+        offReg byteReg accReg addrReg memBaseReg base))
+
 theorem mstore_prologue_evm_mstore_frame_spec_within
     (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
     (sp offset offOld addrOld memBase : Word) (base : Word)
