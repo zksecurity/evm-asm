@@ -787,6 +787,45 @@ theorem evm_mload_combined_one_limb_sequence_stack_spec_within
       h0 h1 h2 h3)
 
 /--
+MLOAD evm_mload_code lift of `mload_combined_stack_spec_within`: the same
+combined prologue + single four-limbs body triple, transported from
+`mloadStackCode` to `evm_mload_code` via `cpsTripleWithin_evm_mload_of_stack`.
+
+Coarse-granularity sibling of `evm_mload_combined_one_limb_sequence_stack_spec_within`
+and `evm_mload_combined_four_limb_sequence_stack_spec_within`: callers that
+already produce a single consolidated four-limbs triple over `mloadStackCode`
+(rather than four quarter triples) get a direct transport to `evm_mload_code`
+without bundling/unbundling the quarters.
+
+Distinctive token: evm_mload_combined_stack_spec_within #53.
+-/
+theorem evm_mload_combined_stack_spec_within
+    {n : Nat} {Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 376)
+        (mloadStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        Q) :
+    cpsTripleWithin (2 + n) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_evm_mload_of_stack
+    offReg byteReg accReg addrReg memBaseReg base (base + 376)
+    (mload_combined_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+      h4)
+
+/--
 MLOAD evm_mload_code lift of `mload_combined_four_limb_sequence_stack_spec_within`:
 the same combined prologue + four `mloadFourLimbsCode` quarter triples, transported
 from `mloadStackCode` to `evm_mload_code` via `cpsTripleWithin_evm_mload_of_stack`.
