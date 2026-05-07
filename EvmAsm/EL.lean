@@ -39,6 +39,9 @@ import EvmAsm.EL.KeccakStackExecutionBridge
 import EvmAsm.EL.Bls12MapFp2ToG2InputBridge
 import EvmAsm.EL.Bls12MapFp2ToG2ResultBridge
 import EvmAsm.EL.Bls12MapFp2ToG2EcallBridge
+import EvmAsm.EL.Secp256r1VerifyInputBridge
+import EvmAsm.EL.Secp256r1VerifyResultBridge
+import EvmAsm.EL.Secp256r1VerifyEcallBridge
 import EvmAsm.EL.Bls12G1MsmInputBridge
 import EvmAsm.EL.Bls12G1MsmResultBridge
 import EvmAsm.EL.Bls12G1MsmEcallBridge
