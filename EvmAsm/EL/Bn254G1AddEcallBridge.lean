@@ -103,6 +103,51 @@ theorem executeBn254G1AddEcall_fromMemory_outputBytes
             memory p1Start p2Start)).2 := by
   rfl
 
+/-- RV64 `a0` return-register `Word` for the accelerator status, mirroring
+`Sha256EcallBridge.statusWord`. The accelerator places the `zkvm_status`
+return code in `a0` after the ECALL; this projection extracts that word from
+a `Bn254G1AddResult` for postcondition reasoning. -/
+def statusWord (result : Bn254G1AddResult) : BitVec 64 :=
+  EvmAsm.Rv64.zkvmStatusToWord result.status
+
+theorem statusWord_eok
+    {result : Bn254G1AddResult} (h_status : result.status = .eok) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+theorem statusWord_efail
+    {result : Bn254G1AddResult} (h_status : result.status = .efail) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEfailWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+/-- The `a0` word is `ZKVM_EOK` iff the accelerator reported success. -/
+theorem statusWord_eq_eokWord_iff (result : Bn254G1AddResult) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord ↔ result.status = .eok := by
+  cases h_st : result.status with
+  | eok => simp [statusWord_eok h_st]
+  | efail =>
+    rw [statusWord_efail h_st]
+    constructor
+    · intro h; exact absurd h.symm EvmAsm.Rv64.zkvmStatusEokWord_ne_efailWord
+    · intro h; simp at h
+
+/-- The `a0` word decodes back to the original status. -/
+theorem zkvmStatusFromWord?_statusWord (result : Bn254G1AddResult) :
+    EvmAsm.Rv64.zkvmStatusFromWord? (statusWord result) = some result.status :=
+  EvmAsm.Rv64.zkvmStatusFromWord?_toWord result.status
+
+/-- Push `statusWord` through `executeBn254G1AddEcall`: the returned `a0` word is
+the accelerator-supplied status encoded via `zkvmStatusToWord`. -/
+theorem executeBn254G1AddEcall_statusWord
+    (accelerator : Bn254G1AddInputBridge.AcceleratorInput →
+      EvmAsm.Accelerators.ZkvmStatus × Bn254G1AddResultBridge.AcceleratorOutput)
+    (request : Bn254G1AddRequest) :
+    statusWord (executeBn254G1AddEcall accelerator request) =
+      EvmAsm.Rv64.zkvmStatusToWord (accelerator request.input).1 := by
+  rfl
+
 end Bn254G1AddEcallBridge
 
 end EvmAsm.EL

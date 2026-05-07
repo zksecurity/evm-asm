@@ -171,6 +171,12 @@ Pitfalls:
   is the source of truth for accelerator function signatures, argument
   layouts, and `zkvm_status` framing used by all EVM precompile and
   KECCAK256 bridges. See [`docs/zkvm-accelerators-interface.md`](docs/zkvm-accelerators-interface.md).
+- **Host I/O C ABI**: `EvmAsm/Evm64/zkvm-standards/standards/io-interface/README.md`
+  defines the canonical host-I/O surface (`read_input` / `write_output`).
+  See [`docs/zkvm-host-io-interface.md`](docs/zkvm-host-io-interface.md)
+  for the decision record and SP1 `HINT_LEN` / `HINT_READ` / `COMMIT` →
+  zkvm-standards mapping. Migration tracked under beads parent
+  `evm-asm-96ysd` (GH #114 / #116).
 - **SP1 zkVM**: https://github.com/succinctlabs/sp1 (RISC-V `ECALL`
   framing only; function set follows `zkvm_accelerators.h`)
 - **RISC-V ISA**: https://riscv.org/technical/specifications/

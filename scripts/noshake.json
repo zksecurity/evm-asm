@@ -295,6 +295,8 @@
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2v4":
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2"],
   "EvmAsm.Evm64.DivMod.Compose.Offsets":
   ["EvmAsm.Evm64.DivMod.Program"],
   "EvmAsm.Evm64.EvmWordArith.Div128CallSkipClose":

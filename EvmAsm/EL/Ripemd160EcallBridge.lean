@@ -95,6 +95,52 @@ theorem executeRipemd160Ecall_fromMemory_stackWord
           (Ripemd160InputBridge.acceleratorInputFromMemory memory start size)).2 := by
   rfl
 
+/-- RV64 `a0` return-register `Word` for the accelerator status, mirroring
+`KeccakStatusBridge.statusWord` and `Sha256EcallBridge.statusWord`. The
+accelerator places the `zkvm_status` return code in `a0` after the ECALL;
+this projection extracts that word from a `Ripemd160Result` for postcondition
+reasoning. -/
+def statusWord (result : Ripemd160Result) : BitVec 64 :=
+  EvmAsm.Rv64.zkvmStatusToWord result.status
+
+theorem statusWord_eok
+    {result : Ripemd160Result} (h_status : result.status = .eok) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+theorem statusWord_efail
+    {result : Ripemd160Result} (h_status : result.status = .efail) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEfailWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+/-- The `a0` word is `ZKVM_EOK` iff the accelerator reported success. -/
+theorem statusWord_eq_eokWord_iff (result : Ripemd160Result) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord ↔ result.status = .eok := by
+  cases h_st : result.status with
+  | eok => simp [statusWord_eok h_st]
+  | efail =>
+    rw [statusWord_efail h_st]
+    constructor
+    · intro h; exact absurd h.symm EvmAsm.Rv64.zkvmStatusEokWord_ne_efailWord
+    · intro h; simp at h
+
+/-- The `a0` word decodes back to the original status. -/
+theorem zkvmStatusFromWord?_statusWord (result : Ripemd160Result) :
+    EvmAsm.Rv64.zkvmStatusFromWord? (statusWord result) = some result.status :=
+  EvmAsm.Rv64.zkvmStatusFromWord?_toWord result.status
+
+/-- Push `statusWord` through `executeRipemd160Ecall`: the returned `a0` word
+is the accelerator-supplied status encoded via `zkvmStatusToWord`. -/
+theorem executeRipemd160Ecall_statusWord
+    (accelerator : Ripemd160InputBridge.AcceleratorInput →
+      EvmAsm.Accelerators.ZkvmStatus × Ripemd160ResultBridge.AcceleratorOutput)
+    (request : Ripemd160Request) :
+    statusWord (executeRipemd160Ecall accelerator request) =
+      EvmAsm.Rv64.zkvmStatusToWord (accelerator request.input).1 := by
+  rfl
+
 end Ripemd160EcallBridge
 
 end EvmAsm.EL

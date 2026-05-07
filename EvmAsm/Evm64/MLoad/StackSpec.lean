@@ -122,6 +122,105 @@ theorem mloadStackCode_four_limbs_sub
       offReg byteReg accReg addrReg memBaseReg base)
     (fun _ _ h => h)
 
+/-- Decompose `evm_mload` as the two-instruction address prologue followed by
+    the four output-limb byte-pack blocks (`mloadFourLimbsProg`).  This is the
+    program-level analog of `mloadStackCode = mloadPrologueCode ∪ mloadFourLimbsCode`
+    and bridges the program produced by `Program.lean` (a right-nested
+    `;;` chain of `mload_one_limb` blocks) to the bundled `mloadFourLimbsProg`
+    used by the stack-spec compositions.
+
+    Distinctive token: evm_mload_eq_prologue_append_mloadFourLimbsProg #53. -/
+theorem evm_mload_eq_prologue_append_mloadFourLimbsProg
+    (offReg byteReg accReg addrReg memBaseReg : Reg) :
+    evm_mload offReg byteReg accReg addrReg memBaseReg =
+      (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg) ++
+        mloadFourLimbsProg addrReg byteReg accReg := by
+  rfl
+
+/-- Program form of the full MLOAD stack helper: load the offset, compute the
+    target memory address, then unpack all four output limbs.  Direct MLOAD
+    analog of `mstoreStackProg`. -/
+def mloadStackProg
+    (offReg byteReg accReg addrReg memBaseReg : Reg) : Program :=
+  (LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg) ;;
+  mloadFourLimbsProg addrReg byteReg accReg
+
+/-- `mloadStackCode = ofProg base mloadStackProg`.  Direct MLOAD analog of
+    `mstoreStackCode_eq_ofProg`. -/
+theorem mloadStackCode_eq_ofProg
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    mloadStackCode offReg byteReg accReg addrReg memBaseReg base =
+      CodeReq.ofProg base
+        (mloadStackProg offReg byteReg accReg addrReg memBaseReg) := by
+  unfold mloadStackCode mloadStackProg seq
+  rw [mloadPrologueCode_eq_ofProg, mloadFourLimbsCode_eq_ofProg]
+  let p0 : List Instr := LD offReg .x12 0 ;; ADD addrReg memBaseReg offReg
+  let p1 : List Instr := mloadFourLimbsProg addrReg byteReg accReg
+  change (CodeReq.ofProg base p0).union (CodeReq.ofProg (base + 8) p1) =
+    CodeReq.ofProg base (p0 ++ p1)
+  rw [show base + 8 = base + BitVec.ofNat 64 (4 * p0.length) by
+    rw [show p0.length = 2 by
+      unfold p0 LD ADD single seq
+      rfl]
+    rfl]
+  exact (CodeReq.ofProg_append (base := base) (p1 := p0) (p2 := p1)).symm
+
+/-- The bundled `mloadStackProg` is exactly the `evm_mload` instruction
+    sequence.  Direct MLOAD analog of `mstoreStackProg_eq_evm_mstore`. -/
+theorem mloadStackProg_eq_evm_mload
+    (offReg byteReg accReg addrReg memBaseReg : Reg) :
+    mloadStackProg offReg byteReg accReg addrReg memBaseReg =
+      evm_mload offReg byteReg accReg addrReg memBaseReg :=
+  (evm_mload_eq_prologue_append_mloadFourLimbsProg
+    offReg byteReg accReg addrReg memBaseReg).symm
+
+/-- `evm_mload_code = mloadStackCode` as `CodeReq`s.  Both encode the same
+    94 instructions placed at `base..base+376`; the equality lets stack-level
+    triples proved over `mloadStackCode` (e.g.
+    `mload_combined_*_stack_spec_within`) be transported to `evm_mload_code`
+    without any manual lifting.
+
+    Distinctive token: mloadStackCode_eq_evm_mload_code #53. -/
+theorem mloadStackCode_eq_evm_mload_code
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    mloadStackCode offReg byteReg accReg addrReg memBaseReg base =
+      evm_mload_code offReg byteReg accReg addrReg memBaseReg base := by
+  rw [mloadStackCode_eq_ofProg,
+    mloadStackProg_eq_evm_mload offReg byteReg accReg addrReg memBaseReg]
+
+/-- Sub-CodeReq lift: anything `mloadStackCode` defines, `evm_mload_code` also
+    defines.  Companion to `evm_mload_code_prologue_sub` covering the entire
+    `mloadStackCode` surface in one step.
+
+    Distinctive token: evm_mload_code_stack_sub #53. -/
+theorem evm_mload_code_stack_sub
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadStackCode offReg byteReg accReg addrReg memBaseReg base) a = some i →
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  rw [mloadStackCode_eq_evm_mload_code]
+  intro _ _ h; exact h
+
+/-- Transport a `cpsTripleWithin` over `mloadStackCode` to one over
+    `evm_mload_code`.  Subsequent slices use this to land
+    `evm_mload_stack_spec_within` (evm-asm-lrhou / GH #53 follow-up) by
+    composing the existing `mload_combined_*_stack_spec_within` lemmas
+    (over `mloadStackCode`) with concrete byte-load triples.
+
+    Distinctive token: cpsTripleWithin_evm_mload_of_stack #53. -/
+theorem cpsTripleWithin_evm_mload_of_stack
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base pcEnd : Word)
+    (h :
+      cpsTripleWithin n base pcEnd
+        (mloadStackCode offReg byteReg accReg addrReg memBaseReg base) P Q) :
+    cpsTripleWithin n base pcEnd
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mload_code_stack_sub
+      offReg byteReg accReg addrReg memBaseReg base)
+
 theorem mload_prologue_stack_spec_within
     (offReg byteReg accReg addrReg memBaseReg : Reg)
     (sp offset offOld addrOld memBase : Word) (base : Word)
@@ -575,6 +674,165 @@ theorem mload_one_limb_sequence_spec_within
     (mload_one_limb_q1_spec_within addrReg byteReg accReg base h1)
     (mload_one_limb_q2_spec_within addrReg byteReg accReg base h2)
     (mload_one_limb_q3_spec_within addrReg byteReg accReg base h3)
+
+/--
+MLOAD combined one-limb sequence stack spec: combine the prologue half
+(`mload_prologue_stack_spec_within`) with the four byte-window quarter
+triples on `mloadOneLimbCode` (composed via
+`mload_one_limb_sequence_spec_within`) and lifted to `mloadStackCode`
+via `mload_four_limbs_stack_spec_within`, into a single triple from
+`base` to `base + 376` over `mloadStackCode`.
+
+Direct MLOAD analog of
+`Calldata.LoadStackCode.calldataload_window_combined_four_limb_sequence_stack_spec_within`
+but at the smaller `mloadOneLimbCode` granularity: subsequent slices
+instantiate each `hN` with a concrete byte-load triple to land the full
+`evm_mload_stack_spec_within` (evm-asm-lrhou / GH #53 follow-up) without
+re-doing the prologue + per-quarter subsumption + transport plumbing.
+
+Distinctive token: mload_combined_one_limb_sequence_stack_spec_within #53.
+-/
+theorem mload_combined_one_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8))
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (mloadStackCode offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  mload_combined_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+    (mload_four_limbs_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg base
+      (mload_one_limb_sequence_spec_within
+        addrReg byteReg accReg base h0 h1 h2 h3))
+
+/--
+MLOAD evm_mload_code lift of `mload_combined_one_limb_sequence_stack_spec_within`:
+the same combined prologue + four byte-pack one-limb triples, transported from
+`mloadStackCode` to `evm_mload_code` via `cpsTripleWithin_evm_mload_of_stack`.
+
+Subsequent slices toward `evm_mload_stack_spec_within` (evm-asm-lrhou / GH #53
+follow-up) instantiate each `hN` with a concrete five-dword byte-load triple and
+apply this helper to land a `cpsTripleWithin` over `evm_mload_code` in one step,
+without re-applying the stack-code → evm_mload_code transport at every call
+site. Direct analog of
+`Calldata.calldataload_window_combined_one_limb_sequence_stack_spec_within`,
+which already targets `evm_calldataload_window_code`.
+
+Distinctive token: evm_mload_combined_one_limb_sequence_stack_spec_within #53.
+-/
+theorem evm_mload_combined_one_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8))
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_evm_mload_of_stack
+    offReg byteReg accReg addrReg memBaseReg base (base + 376)
+    (mload_combined_one_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+      h0 h1 h2 h3)
+
+/--
+MLOAD evm_mload_code lift of `mload_combined_four_limb_sequence_stack_spec_within`:
+the same combined prologue + four `mloadFourLimbsCode` quarter triples, transported
+from `mloadStackCode` to `evm_mload_code` via `cpsTripleWithin_evm_mload_of_stack`.
+
+Sister of `evm_mload_combined_one_limb_sequence_stack_spec_within` but at the
+coarser `mloadFourLimbsCode` granularity: callers supply each quarter triple over
+the four-limbs body program (not over the per-byte one-limb program), useful
+when the concrete byte-load triple is naturally produced at that surface (e.g.
+via `mload_four_limbs_stack_spec_within` composition with byte-window subspecs).
+
+Distinctive token: evm_mload_combined_four_limb_sequence_stack_spec_within #53.
+-/
+theorem evm_mload_combined_four_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (mloadFourLimbsCode addrReg byteReg accReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (mloadFourLimbsCode addrReg byteReg accReg base) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_evm_mload_of_stack
+    offReg byteReg accReg addrReg memBaseReg base (base + 376)
+    (mload_combined_four_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+      h0 h1 h2 h3)
 
 /--
   The 256-bit value loaded by MLOAD when each output limb is assembled from
