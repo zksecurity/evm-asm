@@ -7,6 +7,7 @@
 
 import EvmAsm.EL.Sha256InputBridge
 import EvmAsm.EL.Sha256ResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL

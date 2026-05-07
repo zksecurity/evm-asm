@@ -81,6 +81,10 @@
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackMod"],
  "EvmAsm.Evm64.DivMod.Spec.CallAddbackPost1Wrappers":
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs"],
+ "EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs":
+  ["EvmAsm.Evm64.DivMod.Spec.CallAddbackPureNat",
+   "EvmAsm.Evm64.DivMod.SpecCallAddbackBeq.AlgEuclideans",
+   "EvmAsm.Evm64.DivMod.Shift0Dispatcher"],
  "EvmAsm.Evm64.DivMod.Spec.CallAddbackMod":
   ["EvmAsm.Evm64.DivMod.Spec.CallAddbackSubStubs",
    "EvmAsm.Evm64.DivMod.Spec.CallAddbackPost1Wrappers"],
@@ -118,6 +122,8 @@
   ["EvmAsm.Rv64.Basic", "Std.Tactic.BVDecide"],
  "EvmAsm.Evm64.SpAddr":
   ["EvmAsm.Rv64.Tactics.SeqFrame"],
+ "EvmAsm.Evm64.Accelerators.SyscallIds":
+  ["EvmAsm.Rv64.Basic"],
   "EvmAsm.Evm64.Dispatch.EntrySpec":
   ["EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Evm64.Stack":
@@ -277,8 +283,12 @@
   ["EvmAsm.Evm64.DivMod.Program", "EvmAsm.Evm64.DivMod.AddrNorm",
    "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.ControlFlow",
    "EvmAsm.Rv64.Tactics.XSimp", "EvmAsm.Rv64.Tactics.RunBlock"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1":
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1v2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Step1", "EvmAsm.Rv64.Tactics.DropPure"],
+  "EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1b":
+  ["EvmAsm.Evm64.DivMod.LimbSpec.Div128ProdCheck1"],
   "EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2":
   ["EvmAsm.Evm64.DivMod.LimbSpec.Div128Clamp", "EvmAsm.Evm64.DivMod.LimbSpec.Div128Tail"],
   "EvmAsm.Evm64.DivMod.Compose.Offsets":
@@ -287,6 +297,12 @@
   ["EvmAsm.Evm64.EvmWordArith.Div128KB6Composition"],
   "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.QuotientBounds":
   ["EvmAsm.Evm64.EvmWordArith.Div128KnuthLower"],
+  "EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.Un21Bridge":
+  ["EvmAsm.Evm64.EvmWordArith.CallSkipLowerBoundV2.QuotientBounds"],
+  "EvmAsm.Evm64.DivMod.Compose.ModPhaseBn3":
+  ["EvmAsm.Evm64.DivMod.Compose.ModPhaseB"],
+  "EvmAsm.Evm64.DivMod.LoopBody.TrialMax":
+  ["EvmAsm.Evm64.DivMod.LoopBody"],
   "EvmAsm.Evm64.Shift.ShlCompose":
   ["EvmAsm.Evm64.Shift.ComposeBase"],
   "EvmAsm.Evm64.Shift.SarCompose":
