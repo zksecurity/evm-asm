@@ -207,6 +207,62 @@ theorem evm_mload_combined_one_limb_sequence_stack_spec_within_threaded_frame
           addrReg byteReg accReg base h0 h1 h2 h3)))
 
 /--
+Public-code subsumption for the q0 MLOAD one-limb byte-pack block.
+
+This bridges the concrete quarter block directly to `evm_mload_code`, avoiding
+repeat composition through `mloadFourLimbsCode` and `mloadStackCode` at call
+sites that transport individual framed quarter specs.
+
+Distinctive token: evm_mload_code_one_limb_q0_sub #53.
+-/
+theorem evm_mload_code_one_limb_q0_sub
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+        24 25 26 27 28 29 30 31 0 (base + 8)) a = some i →
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mload_code_stack_sub offReg byteReg accReg addrReg memBaseReg base a i
+    (mloadStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mloadFourLimbsCode_one_limb_q0_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q1 MLOAD one-limb byte-pack block. -/
+theorem evm_mload_code_one_limb_q1_sub
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+        16 17 18 19 20 21 22 23 8 (base + 100)) a = some i →
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mload_code_stack_sub offReg byteReg accReg addrReg memBaseReg base a i
+    (mloadStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mloadFourLimbsCode_one_limb_q1_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q2 MLOAD one-limb byte-pack block. -/
+theorem evm_mload_code_one_limb_q2_sub
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+        8 9 10 11 12 13 14 15 16 (base + 192)) a = some i →
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mload_code_stack_sub offReg byteReg accReg addrReg memBaseReg base a i
+    (mloadStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mloadFourLimbsCode_one_limb_q2_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q3 MLOAD one-limb byte-pack block. -/
+theorem evm_mload_code_one_limb_q3_sub
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mloadOneLimbCode addrReg byteReg accReg
+        0 1 2 3 4 5 6 7 24 (base + 284)) a = some i →
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mload_code_stack_sub offReg byteReg accReg addrReg memBaseReg base a i
+    (mloadStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mloadFourLimbsCode_one_limb_q3_sub addrReg byteReg accReg base a i h))
+
+/--
 Sibling-framed q0 stack spec: `evm_mload_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.
 

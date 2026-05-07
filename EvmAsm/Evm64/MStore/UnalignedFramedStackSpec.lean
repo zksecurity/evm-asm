@@ -205,6 +205,62 @@ theorem evm_mstore_combined_one_limb_sequence_stack_spec_within_threaded_frame
           offReg byteReg accReg addrReg memBaseReg base)))
 
 /--
+Public-code subsumption for the q0 MSTORE one-limb byte-window write block.
+
+This bridges the concrete quarter block directly to `evm_mstore_code`, avoiding
+repeat composition through `mstoreFourLimbsCode` and `mstoreStackCode` at call
+sites that transport individual framed quarter specs.
+
+Distinctive token: evm_mstore_code_one_limb_q0_sub #53.
+-/
+theorem evm_mstore_code_one_limb_q0_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mstoreOneLimbCode addrReg byteReg accReg
+        32 24 25 26 27 28 29 30 31 (base + 8)) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mstore_code_stack_sub offReg valReg byteReg accReg addrReg memBaseReg base a i
+    (mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mstoreFourLimbsCode_limb0_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q1 MSTORE one-limb byte-window write block. -/
+theorem evm_mstore_code_one_limb_q1_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mstoreOneLimbCode addrReg byteReg accReg
+        40 16 17 18 19 20 21 22 23 (base + 76)) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mstore_code_stack_sub offReg valReg byteReg accReg addrReg memBaseReg base a i
+    (mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mstoreFourLimbsCode_limb1_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q2 MSTORE one-limb byte-window write block. -/
+theorem evm_mstore_code_one_limb_q2_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mstoreOneLimbCode addrReg byteReg accReg
+        48 8 9 10 11 12 13 14 15 (base + 144)) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mstore_code_stack_sub offReg valReg byteReg accReg addrReg memBaseReg base a i
+    (mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mstoreFourLimbsCode_limb2_sub addrReg byteReg accReg base a i h))
+
+/-- Public-code subsumption for the q3 MSTORE one-limb byte-window write block. -/
+theorem evm_mstore_code_one_limb_q3_sub
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word) :
+    ∀ a i,
+      (mstoreOneLimbCode addrReg byteReg accReg
+        56 0 1 2 3 4 5 6 7 (base + 212)) a = some i →
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) a = some i := by
+  intro a i h
+  exact evm_mstore_code_stack_sub offReg valReg byteReg accReg addrReg memBaseReg base a i
+    (mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
+      (mstoreFourLimbsCode_limb3_sub addrReg byteReg accReg base a i h))
+
+/--
 Sibling-framed q0 stack spec: `evm_mstore_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.
 
