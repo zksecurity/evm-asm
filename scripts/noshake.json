@@ -126,6 +126,10 @@
   ["Std.Tactic.BVDecide", "Mathlib.Tactic.IntervalCases"],
  "EvmAsm.Evm64.MStore.StackSpec":
   ["EvmAsm.Evm64.MStore.CombinedSequenceSpec"],
+ "EvmAsm.Evm64.MStore.UnalignedFramedStackSpec":
+  ["EvmAsm.Evm64.MStore.UnalignedStackSpec"],
+ "EvmAsm.Evm64.MLoad.UnalignedFramedStackSpec":
+  ["EvmAsm.Evm64.MLoad.UnalignedStackSpec"],
  "EvmAsm.Evm64.MLoad.ByteAlg":
   ["EvmAsm.Rv64.Basic", "Std.Tactic.BVDecide"],
  "EvmAsm.Evm64.SpAddr":
@@ -470,6 +474,8 @@
 "EvmAsm.Evm64.ExecutableSpecOpcodeBridge": ["Mathlib.Tactic.IntervalCases"],
 "EvmAsm.Evm64.InterpreterExecutableStepBridge": ["EvmAsm.Evm64.InterpreterExecutableFetchBridge"],
 "EvmAsm.EL.RLP.ListDecodeBridge": ["EvmAsm.EL.RLP.PrefixDecode"],
+"EvmAsm.EL.Secp256k1EcrecoverResultBridge": ["EvmAsm.EL.Secp256k1EcrecoverInputBridge"],
+"EvmAsm.EL.Bls12MapFp2ToG2ResultBridge": ["EvmAsm.EL.Bls12MapFp2ToG2InputBridge"],
 "EvmAsm.EL.CallOutputMemory": ["Mathlib.Data.List.GetD"],
 "EvmAsm.Evm64.Dispatch.TailSpec":
  ["EvmAsm.Rv64.ControlFlow", "EvmAsm.Rv64.SyscallSpecs", "EvmAsm.Rv64.Tactics.RunBlock"],
