@@ -37,6 +37,7 @@
 import EvmAsm.Rv64.Program
 import EvmAsm.Rv64.SepLogic
 import EvmAsm.Rv64.SyscallSpecs
+import EvmAsm.Rv64.HintSpecs
 import EvmAsm.Rv64.Tactics.SeqFrame
 
 namespace EvmAsm.Rv64.RLP
@@ -164,5 +165,45 @@ theorem rlp_phase4_hint_read_loop_addi_dec_step_lift_spec_within
     (cr' := CodeReq.ofProg base rlp_phase4_hint_read_loop_prog)
     (hmono := ?_) (h := h)
   exact CodeReq.singleton_mono (rlp_phase4_hint_read_loop_addi_dec_get base)
+
+/-- Helper: the loop CodeReq has the ECALL instruction at slot `base + 4`. -/
+theorem rlp_phase4_hint_read_loop_ecall_get (base : Word) :
+    (CodeReq.ofProg base rlp_phase4_hint_read_loop_prog) (base + 4) =
+      some .ECALL := by
+  rw [rlp_phase4_hint_read_loop_code_eq_ofProg]
+  refine CodeReq.union_skip ?_ ?_
+  · exact CodeReq.singleton_miss (a := base) (a' := base + 4)
+      (i := .LI .x5 (BitVec.ofNat 64 0xF1)) (by bv_omega)
+  exact CodeReq.union_hit (CodeReq.singleton_get (base + 4) _)
+
+/-- The ECALL HINT_READ spec at instruction offset 4 (second instruction)
+    of the multi-dword HINT_READ loop body, lifted to the full
+    5-instruction loop CodeReq.
+
+    Mirrors the `hread_ext` shape inside
+    `rlp_phase4_hint_read_one_word_spec_within` (Phase4HintRead.lean L72).
+    Combined with the LI / ADDI advance / ADDI dec step-lifts above,
+    this is the fourth and final per-instruction helper toward the
+    eventual `rlp_phase4_hint_read_loop_body_step_spec_within`
+    composition (beads `evm-asm-yccms`). -/
+theorem rlp_phase4_hint_read_loop_ecall_step_lift_spec_within
+    (buf nbytes oldWord : Word) (input : List (BitVec 8)) (base : Word)
+    (h_pos : 0 < nbytes.toNat) (h_le8 : nbytes.toNat ≤ 8)
+    (h_suff : nbytes.toNat ≤ input.length) :
+    cpsTripleWithin 1 (base + 4) ((base + 4) + 4)
+      (CodeReq.ofProg base rlp_phase4_hint_read_loop_prog)
+      ((.x10 ↦ᵣ buf) ** (.x11 ↦ᵣ nbytes) ** (buf ↦ₘ oldWord) **
+        (base + 4 ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (BitVec.ofNat 64 0xF1)) **
+        privateInputIs input)
+      ((.x10 ↦ᵣ buf) ** (.x11 ↦ᵣ nbytes) **
+        (buf ↦ₘ bytesToWordLE (input.take nbytes.toNat)) **
+        (base + 4 ↦ᵢ .ECALL) ** (.x5 ↦ᵣ (BitVec.ofNat 64 0xF1)) **
+        privateInputIs (input.drop nbytes.toNat)) := by
+  have h := ecall_hint_read_one_word_spec_gen_within
+    buf nbytes oldWord input (base + 4) h_pos h_le8 h_suff
+  apply cpsTripleWithin_extend_code
+    (cr' := CodeReq.ofProg base rlp_phase4_hint_read_loop_prog)
+    (hmono := ?_) (h := h)
+  exact CodeReq.singleton_mono (rlp_phase4_hint_read_loop_ecall_get base)
 
 end EvmAsm.Rv64.RLP
