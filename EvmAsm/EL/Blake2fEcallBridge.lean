@@ -103,6 +103,52 @@ theorem executeBlake2fEcall_fromMemory_outputBytes
             memory rounds hStart mStart tStart f)).2 := by
   rfl
 
+/-- RV64 `a0` return-register `Word` for the accelerator status, mirroring
+`KeccakStatusBridge.statusWord` and `Sha256EcallBridge.statusWord`. The
+accelerator places the `zkvm_status` return code in `a0` after the ECALL;
+this projection extracts that word from a `Blake2fResult` for postcondition
+reasoning. -/
+def statusWord (result : Blake2fResult) : BitVec 64 :=
+  EvmAsm.Rv64.zkvmStatusToWord result.status
+
+theorem statusWord_eok
+    {result : Blake2fResult} (h_status : result.status = .eok) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+theorem statusWord_efail
+    {result : Blake2fResult} (h_status : result.status = .efail) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEfailWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+/-- The `a0` word is `ZKVM_EOK` iff the accelerator reported success. -/
+theorem statusWord_eq_eokWord_iff (result : Blake2fResult) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord ↔ result.status = .eok := by
+  cases h_st : result.status with
+  | eok => simp [statusWord_eok h_st]
+  | efail =>
+    rw [statusWord_efail h_st]
+    constructor
+    · intro h; exact absurd h.symm EvmAsm.Rv64.zkvmStatusEokWord_ne_efailWord
+    · intro h; simp at h
+
+/-- The `a0` word decodes back to the original status. -/
+theorem zkvmStatusFromWord?_statusWord (result : Blake2fResult) :
+    EvmAsm.Rv64.zkvmStatusFromWord? (statusWord result) = some result.status :=
+  EvmAsm.Rv64.zkvmStatusFromWord?_toWord result.status
+
+/-- Push `statusWord` through `executeBlake2fEcall`: the returned `a0` word is
+the accelerator-supplied status encoded via `zkvmStatusToWord`. -/
+theorem executeBlake2fEcall_statusWord
+    (accelerator : Blake2fInputBridge.AcceleratorInput →
+      EvmAsm.Accelerators.ZkvmStatus × Blake2fResultBridge.AcceleratorOutput)
+    (request : Blake2fRequest) :
+    statusWord (executeBlake2fEcall accelerator request) =
+      EvmAsm.Rv64.zkvmStatusToWord (accelerator request.input).1 := by
+  rfl
+
 end Blake2fEcallBridge
 
 end EvmAsm.EL
