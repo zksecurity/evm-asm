@@ -1,23 +1,21 @@
 /-
-  EvmAsm.EL.Bls12MapFpToG1ResultBridge
+  EvmAsm.EL.Bls12G1MsmResultBridge
 
-  Bridge from the `zkvm_bls12_map_fp_to_g1` accelerator output to the executable
+  Bridge from the `zkvm_bls12_g1_msm` accelerator output to the executable
   precompile-result surface.
 -/
 
 import EvmAsm.Evm64.Accelerators.Status
-import EvmAsm.EL.WorldState
+import EvmAsm.EL.Bls12G1MsmInputBridge
 
 namespace EvmAsm.EL
 
-namespace Bls12MapFpToG1ResultBridge
+namespace Bls12G1MsmResultBridge
 
 abbrev ZkvmStatus := EvmAsm.Accelerators.ZkvmStatus
+abbrev G1PointBytes := Bls12G1MsmInputBridge.G1PointBytes
 
-/-- The result is `zkvm_bls12_381_g1_point` (96 bytes). -/
-abbrev G1PointBytes := Fin 96 → Byte
-
-/-- Accelerator output payload for `zkvm_bls12_map_fp_to_g1`. -/
+/-- Accelerator output payload for `zkvm_bls12_g1_msm`. -/
 structure AcceleratorOutput where
   point : G1PointBytes
 
@@ -43,6 +41,6 @@ theorem acceleratorOutput_point_length (output : AcceleratorOutput) :
     (g1PointBytesList output.point).length = 96 :=
   g1PointBytesList_length output.point
 
-end Bls12MapFpToG1ResultBridge
+end Bls12G1MsmResultBridge
 
 end EvmAsm.EL

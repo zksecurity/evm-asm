@@ -502,6 +502,123 @@ theorem mstore_four_limb_sequence_spec_within
       h2)
     h3
 
+/--
+MSTORE q0 one-limb spec on `mstoreFourLimbsCode`: transports a concrete
+`mstoreOneLimbCode` byte-write triple for the least-significant limb (source
+offset 32, byte offsets 24..31) into a triple over the consolidated
+`mstoreFourLimbsCode` surface via `mstoreFourLimbsCode_limb0_sub` and
+`cpsTripleWithin_extend_code`. Direct MSTORE analog of
+`EvmAsm.Evm64.MLoad.StackSpec.mload_one_limb_q0_spec_within`. Lets followup
+slices instantiate the limb-0 quarter directly with a concrete byte-write
+triple toward the full `evm_mstore_stack_spec_within` (evm-asm-ln8t5 / GH #53
+follow-up).
+
+Distinctive token: mstore_one_limb_q0_spec_within #53.
+-/
+theorem mstore_one_limb_q0_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 76)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          32 24 25 26 27 28 29 30 31 (base + 8)) P Q) :
+    cpsTripleWithin n (base + 8) (base + 76)
+      (mstoreFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mstoreFourLimbsCode_limb0_sub addrReg byteReg accReg base)
+
+/-- MSTORE q1 one-limb spec on `mstoreFourLimbsCode`: sister to
+`mstore_one_limb_q0_spec_within` for the second one-limb byte-unpack block
+at `base + 76 .. base + 144` (source offset 40, byte offsets 16..23). -/
+theorem mstore_one_limb_q1_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 76) (base + 144)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          40 16 17 18 19 20 21 22 23 (base + 76)) P Q) :
+    cpsTripleWithin n (base + 76) (base + 144)
+      (mstoreFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mstoreFourLimbsCode_limb1_sub addrReg byteReg accReg base)
+
+/-- MSTORE q2 one-limb spec on `mstoreFourLimbsCode`: sister to
+`mstore_one_limb_q{0,1}_spec_within` for the third one-limb byte-unpack
+block at `base + 144 .. base + 212` (source offset 48, byte offsets 8..15). -/
+theorem mstore_one_limb_q2_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 144) (base + 212)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          48 8 9 10 11 12 13 14 15 (base + 144)) P Q) :
+    cpsTripleWithin n (base + 144) (base + 212)
+      (mstoreFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mstoreFourLimbsCode_limb2_sub addrReg byteReg accReg base)
+
+/-- MSTORE q3 one-limb spec on `mstoreFourLimbsCode`: sister to
+`mstore_one_limb_q{0,1,2}_spec_within` for the fourth (most-significant)
+one-limb byte-unpack block at `base + 212 .. base + 280` (source offset 56,
+byte offsets 0..7). -/
+theorem mstore_one_limb_q3_spec_within
+    {n : Nat} {P Q : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 212) (base + 280)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          56 0 1 2 3 4 5 6 7 (base + 212)) P Q) :
+    cpsTripleWithin n (base + 212) (base + 280)
+      (mstoreFourLimbsCode addrReg byteReg accReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := mstoreFourLimbsCode_limb3_sub addrReg byteReg accReg base)
+
+/--
+MSTORE one-limb sequence spec on `mstoreFourLimbsCode`: compose the four
+per-quarter `mstore_one_limb_q{0,1,2,3}_spec_within` transports into a
+single `cpsTripleWithin` over `(base + 8) .. (base + 280)` taking four
+concrete `mstoreOneLimbCode` byte-write triples (h0, h1, h2, h3) directly.
+Mirrors `mstore_four_limb_sequence_spec_within` but on the smaller
+`mstoreOneLimbCode` surface — eliminates an intermediate transport step
+when wiring concrete byte-write triples toward the upcoming
+`evm_mstore_stack_spec_within`. Direct MSTORE analog of
+`EvmAsm.Evm64.MLoad.StackSpec.mload_one_limb_sequence_spec_within`.
+
+Distinctive token: mstore_one_limb_sequence_spec_within #53.
+-/
+theorem mstore_one_limb_sequence_spec_within
+    {n0 n1 n2 n3 : Nat} {P0 P1 P2 P3 P4 : Assertion}
+    (addrReg byteReg accReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 76)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          32 24 25 26 27 28 29 30 31 (base + 8)) P0 P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 76) (base + 144)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          40 16 17 18 19 20 21 22 23 (base + 76)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 144) (base + 212)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          48 8 9 10 11 12 13 14 15 (base + 144)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 212) (base + 280)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          56 0 1 2 3 4 5 6 7 (base + 212)) P3 P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 280)
+      (mstoreFourLimbsCode addrReg byteReg accReg base) P0 P4 :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_seq_same_cr
+      (cpsTripleWithin_seq_same_cr
+        (mstore_one_limb_q0_spec_within addrReg byteReg accReg base h0)
+        (mstore_one_limb_q1_spec_within addrReg byteReg accReg base h1))
+      (mstore_one_limb_q2_spec_within addrReg byteReg accReg base h2))
+    (mstore_one_limb_q3_spec_within addrReg byteReg accReg base h3)
+
 /-- Pure five-dword fold for the full 32-byte MSTORE body. The executable
     code stores source offsets 32, 40, 48, and 56 in that order, so adjacent
     dword pairs overlap and must be threaded through the fold. -/
