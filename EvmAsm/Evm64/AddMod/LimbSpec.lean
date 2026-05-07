@@ -159,4 +159,41 @@ theorem evm_addmod_phase1_carry_spec_within
       CodeReq.singleton base (.ADDI .x7 .x5 0) from CodeReq.ofProg_singleton]
   exact addi_spec_gen_within .x7 .x5 vOld v5 0 base (by nofun)
 
+-- ============================================================================
+-- evm_addmod_phase2_reduce (1 instruction, slice evm-asm-dg16y toward
+-- evm-asm-s7v49)
+-- ============================================================================
+--
+-- `evm_addmod_phase2_reduce modOff` (defined in `Evm64/AddMod/Program.lean`)
+-- is the single-instruction `JAL .x1 modOff` block that performs the
+-- modulus-reduction near-call to `evm_mod_callable`. The signed 21-bit
+-- byte offset `modOff` is the distance from this JAL site to the entry
+-- of `evm_mod_callable`; the concrete numeric value is pinned by the
+-- surrounding caller frame.
+--
+-- The cpsTriple shape is identical to `exp_square_block_spec_within`
+-- (Exp/LimbSpec.lean §2): a single `JAL .x1 mulOff` near-call. Argument
+-- marshalling and post-call result handling are *not* part of this leaf
+-- cpsTriple — they live in the surrounding compose layer in slice 3d
+-- (`evm-asm-s7v49`) once the runtime branch shape stabilises.
+
+abbrev evm_addmod_phase2_reduce_code (base : Word) (modOff : BitVec 21) :
+    CodeReq :=
+  CodeReq.ofProg base (evm_addmod_phase2_reduce modOff)
+
+/-- Register-level spec for the `evm_addmod_phase2_reduce` block: a single
+    near-`JAL` invoking `evm_mod_callable`. Mirrors
+    `exp_square_block_spec_within` (Exp/LimbSpec.lean §2). -/
+theorem evm_addmod_phase2_reduce_spec_within
+    (modOff : BitVec 21) (vOld : Word) (base : Word) :
+    let code := evm_addmod_phase2_reduce_code base modOff
+    cpsTripleWithin 1 base (base + signExtend21 modOff) code
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ (base + 4)) := by
+  show cpsTripleWithin 1 base (base + signExtend21 modOff)
+    (CodeReq.ofProg base (evm_addmod_phase2_reduce modOff)) _ _
+  rw [show CodeReq.ofProg base (evm_addmod_phase2_reduce modOff) =
+      CodeReq.singleton base (.JAL .x1 modOff) from CodeReq.ofProg_singleton]
+  exact jal_spec_within .x1 vOld modOff base (by nofun)
+
 end EvmAsm.Evm64
