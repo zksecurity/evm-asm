@@ -17,7 +17,6 @@
   Refs: GH #61, beads `evm-asm-17hg` (precursor under `evm-asm-pb40`).
 -/
 
-import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackMod
 
 namespace EvmAsm.Evm64

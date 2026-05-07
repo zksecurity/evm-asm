@@ -16,7 +16,6 @@
 -- `Byte.LimbSpec → Byte.Program → Stack → SpAddr`.
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Byte.LimbSpec
-import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.EvmWordArith.ByteOps
 import EvmAsm.Rv64.AddrNorm
 import Mathlib.Tactic.Set

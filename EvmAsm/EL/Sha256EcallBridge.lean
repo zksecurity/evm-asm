@@ -7,6 +7,7 @@
 
 import EvmAsm.EL.Sha256InputBridge
 import EvmAsm.EL.Sha256ResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL
@@ -91,6 +92,51 @@ theorem executeSha256Ecall_fromMemory_stackWord
       Sha256ResultBridge.stackWordFromAcceleratorOutput
         (accelerator
           (Sha256InputBridge.acceleratorInputFromMemory memory start size)).2 := by
+  rfl
+
+/-- RV64 `a0` return-register `Word` for the accelerator status, mirroring
+`KeccakStatusBridge.statusWord`. The accelerator places the `zkvm_status`
+return code in `a0` after the ECALL; this projection extracts that word from
+a `Sha256Result` for postcondition reasoning. -/
+def statusWord (result : Sha256Result) : BitVec 64 :=
+  EvmAsm.Rv64.zkvmStatusToWord result.status
+
+theorem statusWord_eok
+    {result : Sha256Result} (h_status : result.status = .eok) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+theorem statusWord_efail
+    {result : Sha256Result} (h_status : result.status = .efail) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEfailWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+/-- The `a0` word is `ZKVM_EOK` iff the accelerator reported success. -/
+theorem statusWord_eq_eokWord_iff (result : Sha256Result) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord ↔ result.status = .eok := by
+  cases h_st : result.status with
+  | eok => simp [statusWord_eok h_st]
+  | efail =>
+    rw [statusWord_efail h_st]
+    constructor
+    · intro h; exact absurd h.symm EvmAsm.Rv64.zkvmStatusEokWord_ne_efailWord
+    · intro h; simp at h
+
+/-- The `a0` word decodes back to the original status. -/
+theorem zkvmStatusFromWord?_statusWord (result : Sha256Result) :
+    EvmAsm.Rv64.zkvmStatusFromWord? (statusWord result) = some result.status :=
+  EvmAsm.Rv64.zkvmStatusFromWord?_toWord result.status
+
+/-- Push `statusWord` through `executeSha256Ecall`: the returned `a0` word is
+the accelerator-supplied status encoded via `zkvmStatusToWord`. -/
+theorem executeSha256Ecall_statusWord
+    (accelerator : Sha256InputBridge.AcceleratorInput →
+      EvmAsm.Accelerators.ZkvmStatus × Sha256ResultBridge.AcceleratorOutput)
+    (request : Sha256Request) :
+    statusWord (executeSha256Ecall accelerator request) =
+      EvmAsm.Rv64.zkvmStatusToWord (accelerator request.input).1 := by
   rfl
 
 end Sha256EcallBridge

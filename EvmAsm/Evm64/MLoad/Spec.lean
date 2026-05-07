@@ -12,7 +12,6 @@
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.MLoad.Program
 import EvmAsm.Evm64.MLoad.LimbSpecEight
-import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64
 
