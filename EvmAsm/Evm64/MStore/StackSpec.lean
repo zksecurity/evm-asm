@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.MStore.Spec
+import EvmAsm.Evm64.MStore.CombinedSequenceSpec
 
 namespace EvmAsm.Evm64
 
@@ -49,5 +50,59 @@ theorem cpsTripleWithin_evm_mstore_of_stack
     (h := h)
     (hmono := evm_mstore_code_stack_sub
       offReg valReg byteReg accReg addrReg memBaseReg base)
+
+/--
+MSTORE evm_mstore_code lift of `mstore_combined_one_limb_sequence_stack_spec_within`:
+the same combined prologue + four byte-window write triples, transported from
+`mstoreStackCode` to `evm_mstore_code` via `cpsTripleWithin_evm_mstore_of_stack`.
+
+Subsequent slices toward `evm_mstore_stack_spec_within` (evm-asm-ln8t5 / GH #53
+follow-up) instantiate each `hN` with a concrete byte-window write triple and
+apply this helper to land a `cpsTripleWithin` over `evm_mstore_code` in one
+step, without re-applying the stack-code → evm_mstore_code transport at every
+call site. Direct MSTORE analog of
+`evm_mload_combined_one_limb_sequence_stack_spec_within` (PR #3105,
+evm-asm-g5l79).
+
+Distinctive token: evm_mstore_combined_one_limb_sequence_stack_spec_within #53.
+-/
+theorem evm_mstore_combined_one_limb_sequence_stack_spec_within
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 76)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          32 24 25 26 27 28 29 30 31 (base + 8))
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 76) (base + 144)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          40 16 17 18 19 20 21 22 23 (base + 76)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 144) (base + 212)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          48 8 9 10 11 12 13 14 15 (base + 144)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 212) (base + 280)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          56 0 1 2 3 4 5 6 7 (base + 212)) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      Q :=
+  cpsTripleWithin_evm_mstore_of_stack
+    offReg valReg byteReg accReg addrReg memBaseReg base (base + 280)
+    (mstore_combined_one_limb_sequence_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
+      h0 h1 h2 h3)
 
 end EvmAsm.Evm64
