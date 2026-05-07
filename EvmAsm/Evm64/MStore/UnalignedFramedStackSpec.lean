@@ -630,4 +630,46 @@ theorem evm_mstore_unaligned_one_limb_q3_stack_spec_within_framed
     (fun _ hp => by sep_perm hp)
     framed
 
+/--
+Public-code q3 framed MSTORE spec: transports
+`evm_mstore_unaligned_one_limb_q3_stack_spec_within_framed` from the q3
+one-limb block to the full `evm_mstore_code` code requirement.
+
+Distinctive token:
+evm_mstore_unaligned_one_limb_q3_spec_within_framed_public_code #53.
+-/
+theorem evm_mstore_unaligned_one_limb_q3_spec_within_framed_public_code
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld limbVal : Word)
+    (loAddr hiAddr loVal hiVal : Word) (start : Nat)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mstoreLimbWindowOk (memBase + offset) loAddr hiAddr start
+                  0 1 2 3 4 5 6 7) :
+    cpsTripleWithin 17 (base + 212) (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limbVal))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        (let stored :=
+          MStore.mstoreDwordPairStoreLimb loVal hiVal limbVal start
+         (byteReg ↦ᵣ limbVal) ** (accReg ↦ᵣ limbVal) **
+         (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limbVal))) ** F) := by
+  exact cpsTripleWithin_evm_mstore_of_one_limb_q3
+    offReg valReg byteReg accReg addrReg memBaseReg base
+    (evm_mstore_unaligned_one_limb_q3_stack_spec_within_framed
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset memBase byteOld accOld limbVal
+      loAddr hiAddr loVal hiVal start base F hF
+      h_byte_ne_x0 h_acc_ne_x0 h_window)
+
 end EvmAsm.Evm64
