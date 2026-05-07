@@ -10,6 +10,7 @@
 
 import EvmAsm.EL.Secp256k1VerifyInputBridge
 import EvmAsm.EL.Secp256k1VerifyResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL

@@ -7,6 +7,7 @@
 
 import EvmAsm.EL.Ripemd160InputBridge
 import EvmAsm.EL.Ripemd160ResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL

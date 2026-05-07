@@ -153,7 +153,6 @@ import EvmAsm.Evm64.InterpreterLoopSimulation
 import EvmAsm.Evm64.InterpreterTrace
 import EvmAsm.Evm64.InterpreterTraceSimulation
 import EvmAsm.Evm64.InterpreterLoopCompose
-import EvmAsm.Evm64.ExecutableSpecOpcodeBridge
 import EvmAsm.Evm64.InterpreterExecutableFetchBridge
 import EvmAsm.Evm64.InterpreterExecutableStepBridge
 
