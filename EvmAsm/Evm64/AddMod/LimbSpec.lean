@@ -12,6 +12,10 @@
 import EvmAsm.Evm64.AddMod.Program
 import EvmAsm.Evm64.Add.Spec
 import EvmAsm.Evm64.Stack
+import EvmAsm.Rv64.SyscallSpecs
+import EvmAsm.Rv64.Tactics.RunBlock
+
+open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Evm64
 
@@ -195,5 +199,171 @@ theorem evm_addmod_phase2_reduce_spec_within
   rw [show CodeReq.ofProg base (evm_addmod_phase2_reduce modOff) =
       CodeReq.singleton base (.JAL .x1 modOff) from CodeReq.ofProg_singleton]
   exact jal_spec_within .x1 vOld modOff base (by nofun)
+
+-- ============================================================================
+-- evm_addmod_phase2_n_zero_test (8 instructions, slice evm-asm-17ns9 toward
+-- evm-asm-s7v49)
+-- ============================================================================
+--
+-- `evm_addmod_phase2_n_zero_test skipOff` (defined in
+-- `Evm64/AddMod/Program.lean`) is the 8-instruction OR-fold + BEQ block
+-- that checks whether the modulus operand `N` (the 256-bit word at
+-- `x12 + 32 .. 56`) is identically zero. Block layout:
+--
+--   instr 0 (byte  0) :  LD  x6, x12, 32   -- N limb 0 → x6
+--   instr 1 (byte  4) :  LD  x5, x12, 40   -- N limb 1 → x5
+--   instr 2 (byte  8) :  OR  x6, x6, x5    -- x6 ← N0 ∨ N1
+--   instr 3 (byte 12) :  LD  x5, x12, 48   -- N limb 2 → x5
+--   instr 4 (byte 16) :  OR  x6, x6, x5    -- x6 ← N0 ∨ N1 ∨ N2
+--   instr 5 (byte 20) :  LD  x5, x12, 56   -- N limb 3 → x5
+--   instr 6 (byte 24) :  OR  x6, x6, x5    -- x6 ← orAll
+--   instr 7 (byte 28) :  BEQ x6, x0, skipOff
+--
+-- Branches:
+--   * Taken     (`orAll = 0`): pc = `(base + 28) + signExtend13 skipOff`,
+--     dispatching to `evm_addmod_phase2_zero_path`.
+--   * Fall-through (`orAll ≠ 0`): pc = `base + 32`, continues to the
+--     modulus-reduction phase.
+--
+-- The cpsBranchWithin shape mirrors `divK_div128_phase2b_guard_spec_within`
+-- (DivMod/LimbSpec/Div128ProdCheck2.lean §Phase 2b guard).
+
+abbrev evm_addmod_phase2_n_zero_test_code (base : Word) (skipOff : BitVec 13) :
+    CodeReq :=
+  CodeReq.ofProg base (evm_addmod_phase2_n_zero_test skipOff)
+
+theorem evm_addmod_phase2_n_zero_test_code_eq_unfold
+    (base : Word) (skipOff : BitVec 13) :
+    evm_addmod_phase2_n_zero_test_code base skipOff =
+      (CodeReq.singleton base (.LD .x6 .x12 32)).union
+        ((CodeReq.singleton (base + 4) (.LD .x5 .x12 40)).union
+          ((CodeReq.singleton (base + 8) (.OR .x6 .x6 .x5)).union
+            ((CodeReq.singleton (base + 12) (.LD .x5 .x12 48)).union
+              ((CodeReq.singleton (base + 16) (.OR .x6 .x6 .x5)).union
+                ((CodeReq.singleton (base + 20) (.LD .x5 .x12 56)).union
+                  ((CodeReq.singleton (base + 24) (.OR .x6 .x6 .x5)).union
+                    (CodeReq.singleton (base + 28)
+                      (.BEQ .x6 .x0 skipOff)))))))) := by
+  unfold evm_addmod_phase2_n_zero_test_code evm_addmod_phase2_n_zero_test
+    LD OR' single seq
+  change CodeReq.ofProg base
+    [.LD .x6 .x12 32, .LD .x5 .x12 40, .OR .x6 .x6 .x5,
+     .LD .x5 .x12 48, .OR .x6 .x6 .x5,
+     .LD .x5 .x12 56, .OR .x6 .x6 .x5,
+     .BEQ .x6 .x0 skipOff] = _
+  rw [CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_cons, CodeReq.ofProg_cons,
+    CodeReq.ofProg_cons, CodeReq.ofProg_singleton]
+  bv_addr
+
+/-- Register/memory-level n-zero-test branch spec: OR-folds the four
+    `N` limbs at `x12 + 32 .. 56` into `x6`, then dispatches via `BEQ x6, x0`.
+    The `skipOff` argument is the byte offset (relative to the BEQ at
+    `base + 28`) of the `evm_addmod_phase2_zero_path` entry; the concrete
+    numeric value is pinned by the surrounding caller frame. -/
+theorem evm_addmod_phase2_n_zero_test_spec_within
+    (sp v5Old v6Old n0 n1 n2 n3 : Word)
+    (base : Word) (skipOff : BitVec 13) :
+    let orAll := n0 ||| n1 ||| n2 ||| n3
+    let code := evm_addmod_phase2_n_zero_test_code base skipOff
+    cpsBranchWithin 8 base code
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6Old) ** (.x5 ↦ᵣ v5Old) ** (.x0 ↦ᵣ 0) **
+       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3))
+      ((base + 28) + signExtend13 skipOff)
+        ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ orAll) ** (.x5 ↦ᵣ n3) ** (.x0 ↦ᵣ 0) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3) **
+         ⌜orAll = 0⌝)
+      (base + 32)
+        ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ orAll) ** (.x5 ↦ᵣ n3) ** (.x0 ↦ᵣ 0) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3) **
+         ⌜orAll ≠ 0⌝) := by
+  intro orAll code
+  -- Build the 7-instruction OR-fold prefix as a cpsTripleWithin over the
+  -- full 8-instruction cr (runBlock auto-extends each per-instr spec).
+  have hOrFold :
+      cpsTripleWithin 7 base (base + 28) code
+        ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6Old) ** (.x5 ↦ᵣ v5Old) ** (.x0 ↦ᵣ 0) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3))
+        ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ orAll) ** (.x5 ↦ᵣ n3) ** (.x0 ↦ᵣ 0) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3)) := by
+    have L0 := ld_spec_gen_within .x6 .x12 sp v6Old n0
+      (32 : BitVec 12) base (by nofun)
+    have L1 := ld_spec_gen_within .x5 .x12 sp v5Old n1
+      (40 : BitVec 12) (base + 4) (by nofun)
+    have O1 := or_spec_gen_rd_eq_rs1_within .x6 .x5 n0 n1
+      (base + 8) (by nofun)
+    have L2 := ld_spec_gen_within .x5 .x12 sp n1 n2
+      (48 : BitVec 12) (base + 12) (by nofun)
+    have O2 := or_spec_gen_rd_eq_rs1_within .x6 .x5 (n0 ||| n1) n2
+      (base + 16) (by nofun)
+    have L3 := ld_spec_gen_within .x5 .x12 sp n2 n3
+      (56 : BitVec 12) (base + 20) (by nofun)
+    have O3 := or_spec_gen_rd_eq_rs1_within .x6 .x5 (n0 ||| n1 ||| n2) n3
+      (base + 24) (by nofun)
+    runBlock L0 L1 O1 L2 O2 L3 O3
+  -- BEQ x6 x0 skipOff at base + 28
+  have hBeq_raw := beq_spec_gen_within .x6 .x0 skipOff orAll (0 : Word)
+    (base + 28)
+  have hBeq_ext : cpsBranchWithin 1 (base + 28) code
+      ((.x6 ↦ᵣ orAll) ** (.x0 ↦ᵣ 0))
+      ((base + 28) + signExtend13 skipOff)
+        ((.x6 ↦ᵣ orAll) ** (.x0 ↦ᵣ 0) ** ⌜orAll = (0 : Word)⌝)
+      ((base + 28) + 4)
+        ((.x6 ↦ᵣ orAll) ** (.x0 ↦ᵣ 0) ** ⌜orAll ≠ (0 : Word)⌝) :=
+    cpsBranchWithin_extend_code (h := hBeq_raw) (hmono := by
+      intro a i hsing
+      show code a = some i
+      rw [show code = evm_addmod_phase2_n_zero_test_code base skipOff from rfl,
+        evm_addmod_phase2_n_zero_test_code_eq_unfold]
+      simp only [CodeReq.singleton] at hsing
+      split at hsing
+      · rename_i ha
+        rw [beq_iff_eq] at ha
+        subst ha
+        simp only [CodeReq.union, CodeReq.singleton]
+        have h1 : (base + 28 : Word) ≠ base := by bv_omega
+        have h2 : (base + 28 : Word) ≠ base + 4 := by bv_omega
+        have h3 : (base + 28 : Word) ≠ base + 8 := by bv_omega
+        have h4 : (base + 28 : Word) ≠ base + 12 := by bv_omega
+        have h5 : (base + 28 : Word) ≠ base + 16 := by bv_omega
+        have h6 : (base + 28 : Word) ≠ base + 20 := by bv_omega
+        have h7 : (base + 28 : Word) ≠ base + 24 := by bv_omega
+        simp at hsing ⊢
+        exact hsing
+      · simp at hsing)
+  -- Frame the BEQ with the rest of the state (regs + four memory cells).
+  have hBeq_framed := cpsBranchWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ n3) **
+     ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ n0) **
+     ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ n1) **
+     ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ n2) **
+     ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ n3))
+    (by pcFree) hBeq_ext
+  -- Compose OR-fold (cpsTripleWithin) + BEQ (cpsBranchWithin).
+  have composed := cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
+    (fun _ hp => by xperm_hyp hp) hOrFold hBeq_framed
+  -- 7 + 1 = 8 step bound; (base + 28) + 4 = base + 32.
+  have h_addr_eq : (base + 28 : Word) + 4 = base + 32 := by bv_addr
+  rw [h_addr_eq] at composed
+  exact cpsBranchWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    composed
 
 end EvmAsm.Evm64
