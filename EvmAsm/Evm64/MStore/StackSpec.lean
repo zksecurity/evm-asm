@@ -105,4 +105,45 @@ theorem evm_mstore_combined_one_limb_sequence_stack_spec_within
       sp offset offOld addrOld memBase base h_off_ne_x0 h_addr_ne_x0
       h0 h1 h2 h3)
 
+/--
+MSTORE evm_mstore_code lift of `mstore_full_stack_spec_within`: the same
+prologue + caller-supplied four-limbs core triple + framed epilogue
+composition, transported from `mstoreStackCode` to `evm_mstore_code` via
+`cpsTripleWithin_evm_mstore_of_stack`.
+
+Subsequent slices toward `evm_mstore_stack_spec_within` (evm-asm-ln8t5 /
+GH #53 follow-up) instantiate `h4` with a concrete four-limbs byte-window
+write triple over `mstoreStackCode` and apply this helper to land the
+full `base .. base + 284` triple over `evm_mstore_code` in one step,
+without re-applying the stack-code → evm_mstore_code transport at every
+call site.
+
+Distinctive token: evm_mstore_full_stack_spec_within #53.
+-/
+theorem evm_mstore_full_stack_spec_within
+    {n : Nat} {F : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 280)
+        (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        (((.x12 : Reg) ↦ᵣ sp) ** F)) :
+    cpsTripleWithin (2 + n + 1) base (base + 284)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+       (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+       (sp ↦ₘ offset))
+      (((.x12 : Reg) ↦ᵣ (sp + 64)) ** F) :=
+  cpsTripleWithin_evm_mstore_of_stack
+    offReg valReg byteReg accReg addrReg memBaseReg base (base + 284)
+    (mstore_full_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base hF h_off_ne_x0 h_addr_ne_x0 h4)
+
 end EvmAsm.Evm64
