@@ -6,14 +6,14 @@
 -/
 
 import EvmAsm.Evm64.Accelerators.Status
-import EvmAsm.EL.Bls12G1MsmInputBridge
+import EvmAsm.EL.WorldState
 
 namespace EvmAsm.EL
 
 namespace Bls12G1MsmResultBridge
 
 abbrev ZkvmStatus := EvmAsm.Accelerators.ZkvmStatus
-abbrev G1PointBytes := Bls12G1MsmInputBridge.G1PointBytes
+abbrev G1PointBytes := Fin 96 → Byte
 
 /-- Accelerator output payload for `zkvm_bls12_g1_msm`. -/
 structure AcceleratorOutput where
