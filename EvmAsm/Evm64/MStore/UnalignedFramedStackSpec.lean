@@ -1,0 +1,214 @@
+/-
+  EvmAsm.Evm64.MStore.UnalignedFramedStackSpec
+
+  Sibling-frame variants of the per-quarter stack specs in
+  `EvmAsm/Evm64/MStore/UnalignedStackSpec.lean`. Each wrapper takes an
+  arbitrary `pcFree` assertion `F` and frames it on both pre and post.
+
+  These are the prerequisite for the four-quarter compose slice toward the
+  topmost `evm_mstore_stack_spec_within` (evm-asm-f159q / evm-asm-ln8t5 /
+  GH #53 follow-up): the compose helper
+  `evm_mstore_combined_one_limb_sequence_stack_spec_within`
+  (`EvmAsm/Evm64/MStore/StackSpec.lean`) chains four quarter triples whose
+  intermediate `Pi` are abstract. To plug the concrete q0..q3 specs from
+  `UnalignedStackSpec.lean` into that helper, each quarter's pre/post must
+  thread the *other three* quarters' byte-window cells (as future-frame for
+  not-yet-stored quarters; as already-stored cells for past quarters). The
+  generic `F` parameter lets the compose slice instantiate `F` with
+  exactly the sibling-cell sep_conj it needs at each step.
+
+  Distinctive token: evm_mstore_unaligned_one_limb_q*_stack_spec_within_framed
+  sibling-quarter cells #53.
+-/
+
+import EvmAsm.Evm64.MStore.UnalignedStackSpec
+
+namespace EvmAsm.Evm64
+
+open EvmAsm.Rv64
+
+/--
+Sibling-framed q0 stack spec: `evm_mstore_unaligned_one_limb_q0_stack_spec_within`
+with an arbitrary `pcFree` assertion `F` framed on both pre and post.
+
+Used by the compose slice `evm_mstore_unaligned_full_stack_spec_within`
+(evm-asm-f159q) to thread the not-yet-stored q1/q2/q3 byte-window cells
+through q0's triple.
+
+Distinctive token: evm_mstore_unaligned_one_limb_q0_stack_spec_within_framed
+sibling-quarter cells #53.
+-/
+theorem evm_mstore_unaligned_one_limb_q0_stack_spec_within_framed
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld limbVal : Word)
+    (loAddr hiAddr loVal hiVal : Word) (start : Nat)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mstoreLimbWindowOk (memBase + offset) loAddr hiAddr start
+                  24 25 26 27 28 29 30 31) :
+    cpsTripleWithin 17 (base + 8) (base + 76)
+      (mstoreOneLimbCode addrReg byteReg accReg
+        32 24 25 26 27 28 29 30 31 (base + 8))
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limbVal))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        (let stored :=
+          MStore.mstoreDwordPairStoreLimb loVal hiVal limbVal start
+         (byteReg ↦ᵣ limbVal) ** (accReg ↦ᵣ limbVal) **
+         (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2) **
+         ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limbVal))) ** F) := by
+  have core := evm_mstore_unaligned_one_limb_q0_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset memBase byteOld accOld limbVal
+    loAddr hiAddr loVal hiVal start base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  have framed := cpsTripleWithin_frameL (F := F) hF core
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
+/--
+Sibling-framed q1 stack spec: `evm_mstore_unaligned_one_limb_q1_stack_spec_within`
+with an arbitrary `pcFree` assertion `F` framed on both pre and post.
+
+Distinctive token: evm_mstore_unaligned_one_limb_q1_stack_spec_within_framed
+sibling-quarter cells #53.
+-/
+theorem evm_mstore_unaligned_one_limb_q1_stack_spec_within_framed
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld limbVal : Word)
+    (loAddr hiAddr loVal hiVal : Word) (start : Nat)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mstoreLimbWindowOk (memBase + offset) loAddr hiAddr start
+                  16 17 18 19 20 21 22 23) :
+    cpsTripleWithin 17 (base + 76) (base + 144)
+      (mstoreOneLimbCode addrReg byteReg accReg
+        40 16 17 18 19 20 21 22 23 (base + 76))
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limbVal))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        (let stored :=
+          MStore.mstoreDwordPairStoreLimb loVal hiVal limbVal start
+         (byteReg ↦ᵣ limbVal) ** (accReg ↦ᵣ limbVal) **
+         (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2) **
+         ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limbVal))) ** F) := by
+  have core := evm_mstore_unaligned_one_limb_q1_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset memBase byteOld accOld limbVal
+    loAddr hiAddr loVal hiVal start base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  have framed := cpsTripleWithin_frameL (F := F) hF core
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
+/--
+Sibling-framed q2 stack spec: `evm_mstore_unaligned_one_limb_q2_stack_spec_within`
+with an arbitrary `pcFree` assertion `F` framed on both pre and post.
+
+Distinctive token: evm_mstore_unaligned_one_limb_q2_stack_spec_within_framed
+sibling-quarter cells #53.
+-/
+theorem evm_mstore_unaligned_one_limb_q2_stack_spec_within_framed
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld limbVal : Word)
+    (loAddr hiAddr loVal hiVal : Word) (start : Nat)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mstoreLimbWindowOk (memBase + offset) loAddr hiAddr start
+                  8 9 10 11 12 13 14 15) :
+    cpsTripleWithin 17 (base + 144) (base + 212)
+      (mstoreOneLimbCode addrReg byteReg accReg
+        48 8 9 10 11 12 13 14 15 (base + 144))
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limbVal))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        (let stored :=
+          MStore.mstoreDwordPairStoreLimb loVal hiVal limbVal start
+         (byteReg ↦ᵣ limbVal) ** (accReg ↦ᵣ limbVal) **
+         (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2) **
+         ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limbVal))) ** F) := by
+  have core := evm_mstore_unaligned_one_limb_q2_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset memBase byteOld accOld limbVal
+    loAddr hiAddr loVal hiVal start base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  have framed := cpsTripleWithin_frameL (F := F) hF core
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
+/--
+Sibling-framed q3 stack spec: `evm_mstore_unaligned_one_limb_q3_stack_spec_within`
+with an arbitrary `pcFree` assertion `F` framed on both pre and post.
+
+Distinctive token: evm_mstore_unaligned_one_limb_q3_stack_spec_within_framed
+sibling-quarter cells #53.
+-/
+theorem evm_mstore_unaligned_one_limb_q3_stack_spec_within_framed
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld limbVal : Word)
+    (loAddr hiAddr loVal hiVal : Word) (start : Nat)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mstoreLimbWindowOk (memBase + offset) loAddr hiAddr start
+                  0 1 2 3 4 5 6 7) :
+    cpsTripleWithin 17 (base + 212) (base + 280)
+      (mstoreOneLimbCode addrReg byteReg accReg
+        56 0 1 2 3 4 5 6 7 (base + 212))
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr ↦ₘ loVal) ** (hiAddr ↦ₘ hiVal) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limbVal))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset) **
+        (let stored :=
+          MStore.mstoreDwordPairStoreLimb loVal hiVal limbVal start
+         (byteReg ↦ᵣ limbVal) ** (accReg ↦ᵣ limbVal) **
+         (loAddr ↦ₘ stored.1) ** (hiAddr ↦ₘ stored.2) **
+         ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limbVal))) ** F) := by
+  have core := evm_mstore_unaligned_one_limb_q3_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset memBase byteOld accOld limbVal
+    loAddr hiAddr loVal hiVal start base
+    h_byte_ne_x0 h_acc_ne_x0 h_window
+  have framed := cpsTripleWithin_frameL (F := F) hF core
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
+end EvmAsm.Evm64
