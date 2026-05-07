@@ -9,7 +9,7 @@
   stack word) — precompile-output framing is left to a downstream slice.
 -/
 
-import EvmAsm.EL.KeccakInputBridge
+import EvmAsm.EL.WorldState
 
 namespace EvmAsm.EL
 
