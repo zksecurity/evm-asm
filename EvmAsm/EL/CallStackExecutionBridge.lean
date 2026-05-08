@@ -512,6 +512,54 @@ theorem runCallStack?_effects_stack_length
     repeat' first | split at h_run | cases h_run | simp at h_run
     simp
 
+theorem runCallStack?_stack_length
+    {kind : CallKind} {state : WorldState} {caller callee : Address}
+    {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}
+    {executor : CallExecutor} {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? kind state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    out.stack.length + out.effects.stackWords.length +
+        EvmAsm.Evm64.CallArgs.argumentCount kind =
+      stackState.stack.length + EvmAsm.Evm64.CallArgs.resultCount kind := by
+  cases stackState with
+  | mk stack =>
+      cases kind
+      · rcases stack with
+          _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_,
+              rest⟩⟩⟩⟩⟩⟩⟩ <;>
+          simp [runCallStack?, stackRestAfterCall?,
+            EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack?,
+            EvmAsm.Evm64.CallArgs.argumentCount,
+            EvmAsm.Evm64.CallArgs.resultCount,
+            CallExecutionBridge.callVisibleEffectsFromResult,
+            CallResultEffectsBridge.callVisibleEffects,
+            CallStackBridge.callStackResult] at h_run ⊢
+        cases h_run
+        simp
+      · rcases stack with
+          _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest⟩⟩⟩⟩⟩⟩ <;>
+          simp [runCallStack?, stackRestAfterCall?,
+            EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?,
+            EvmAsm.Evm64.CallArgs.argumentCount,
+            EvmAsm.Evm64.CallArgs.resultCount,
+            CallExecutionBridge.staticCallVisibleEffectsFromResult,
+            CallResultEffectsBridge.callVisibleEffects,
+            CallStackBridge.callStackResult] at h_run ⊢
+        cases h_run
+        simp
+      · rcases stack with
+          _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest⟩⟩⟩⟩⟩⟩ <;>
+          simp [runCallStack?, stackRestAfterCall?,
+            EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?,
+            EvmAsm.Evm64.CallArgs.argumentCount,
+            EvmAsm.Evm64.CallArgs.resultCount,
+            CallExecutionBridge.delegateCallVisibleEffectsFromResult,
+            CallResultEffectsBridge.callVisibleEffects,
+            CallStackBridge.callStackResult] at h_run ⊢
+        cases h_run
+        simp
+
 end CallStackExecutionBridge
 
 end EvmAsm.EL
