@@ -64,6 +64,29 @@ def createStackVector : TestVector CreateStackInput CreateStackState :=
     expected :=
       .value { stack := [(deployedAddress.zeroExtend 256 : EvmWord), 99] } }
 
+/-- CREATE stack conformance inputs as reusable test vectors.
+    Distinctive token:
+    CreateStackExecutionConformance.createStackConformanceTestVectors #115 #125. -/
+def createStackConformanceTestVectors :
+    List (TestVector CreateStackInput CreateStackState) :=
+  [createStackVector]
+
+def createStackConformanceVectorIds : List String :=
+  createStackConformanceTestVectors.map TestVector.id
+
+theorem createStackConformanceTestVectors_length :
+    createStackConformanceTestVectors.length = 1 := rfl
+
+theorem createStackConformanceVectorIds_eq :
+    createStackConformanceVectorIds = ["create-stack-execution"] := rfl
+
+theorem createStackConformanceVectorIds_length :
+    createStackConformanceVectorIds.length = 1 := rfl
+
+theorem createStackConformanceVectorIds_nodup :
+    createStackConformanceVectorIds.Nodup := by
+  decide
+
 theorem runCreateStackVector?_create :
     runCreateStackVector?
       { kind := .create
@@ -90,11 +113,12 @@ theorem createStackVector_passed :
     Distinctive token:
     CreateStackExecutionConformance.createStackConformanceVectors #115 #125. -/
 def createStackConformanceVectors : List CheckResult :=
-  [checkVector? runCreateStackVector? createStackVector]
+  checkBatch? runCreateStackVector? createStackConformanceTestVectors
 
 theorem createStackConformanceVectors_passed :
     createStackConformanceVectors = [.passed] := by
-  simp [createStackConformanceVectors, createStackVector_passed]
+  simp [createStackConformanceVectors, createStackConformanceTestVectors,
+    createStackVector_passed]
 
 end CreateStackExecution
 end Conformance
