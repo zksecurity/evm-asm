@@ -260,6 +260,66 @@ theorem evm_mstore_code_one_limb_q3_sub
     (mstoreStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
       (mstoreFourLimbsCode_limb3_sub addrReg byteReg accReg base a i h))
 
+/-- Transport a q0 MSTORE one-limb triple to the public `evm_mstore_code`. -/
+theorem cpsTripleWithin_evm_mstore_of_one_limb_q0
+    {n : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 76)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          32 24 25 26 27 28 29 30 31 (base + 8)) P Q) :
+    cpsTripleWithin n (base + 8) (base + 76)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mstore_code_one_limb_q0_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q1 MSTORE one-limb triple to the public `evm_mstore_code`. -/
+theorem cpsTripleWithin_evm_mstore_of_one_limb_q1
+    {n : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 76) (base + 144)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          40 16 17 18 19 20 21 22 23 (base + 76)) P Q) :
+    cpsTripleWithin n (base + 76) (base + 144)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mstore_code_one_limb_q1_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q2 MSTORE one-limb triple to the public `evm_mstore_code`. -/
+theorem cpsTripleWithin_evm_mstore_of_one_limb_q2
+    {n : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 144) (base + 212)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          48 8 9 10 11 12 13 14 15 (base + 144)) P Q) :
+    cpsTripleWithin n (base + 144) (base + 212)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mstore_code_one_limb_q2_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q3 MSTORE one-limb triple to the public `evm_mstore_code`. -/
+theorem cpsTripleWithin_evm_mstore_of_one_limb_q3
+    {n : Nat} {P Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 212) (base + 280)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          56 0 1 2 3 4 5 6 7 (base + 212)) P Q) :
+    cpsTripleWithin n (base + 212) (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mstore_code_one_limb_q3_sub
+      offReg valReg byteReg accReg addrReg memBaseReg base)
+
 /--
 Sibling-framed q0 stack spec: `evm_mstore_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.

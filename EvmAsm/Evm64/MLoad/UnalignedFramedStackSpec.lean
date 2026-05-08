@@ -262,6 +262,66 @@ theorem evm_mload_code_one_limb_q3_sub
     (mloadStackCode_four_limbs_sub offReg byteReg accReg addrReg memBaseReg base a i
       (mloadFourLimbsCode_one_limb_q3_sub addrReg byteReg accReg base a i h))
 
+/-- Transport a q0 MLOAD one-limb triple to the public `evm_mload_code`. -/
+theorem cpsTripleWithin_evm_mload_of_one_limb_q0
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 8) (base + 100)
+        (mloadOneLimbCode addrReg byteReg accReg
+          24 25 26 27 28 29 30 31 0 (base + 8)) P Q) :
+    cpsTripleWithin n (base + 8) (base + 100)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mload_code_one_limb_q0_sub
+      offReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q1 MLOAD one-limb triple to the public `evm_mload_code`. -/
+theorem cpsTripleWithin_evm_mload_of_one_limb_q1
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 100) (base + 192)
+        (mloadOneLimbCode addrReg byteReg accReg
+          16 17 18 19 20 21 22 23 8 (base + 100)) P Q) :
+    cpsTripleWithin n (base + 100) (base + 192)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mload_code_one_limb_q1_sub
+      offReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q2 MLOAD one-limb triple to the public `evm_mload_code`. -/
+theorem cpsTripleWithin_evm_mload_of_one_limb_q2
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 192) (base + 284)
+        (mloadOneLimbCode addrReg byteReg accReg
+          8 9 10 11 12 13 14 15 16 (base + 192)) P Q) :
+    cpsTripleWithin n (base + 192) (base + 284)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mload_code_one_limb_q2_sub
+      offReg byteReg accReg addrReg memBaseReg base)
+
+/-- Transport a q3 MLOAD one-limb triple to the public `evm_mload_code`. -/
+theorem cpsTripleWithin_evm_mload_of_one_limb_q3
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h :
+      cpsTripleWithin n (base + 284) (base + 376)
+        (mloadOneLimbCode addrReg byteReg accReg
+          0 1 2 3 4 5 6 7 24 (base + 284)) P Q) :
+    cpsTripleWithin n (base + 284) (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P Q :=
+  cpsTripleWithin_extend_code
+    (h := h)
+    (hmono := evm_mload_code_one_limb_q3_sub
+      offReg byteReg accReg addrReg memBaseReg base)
+
 /--
 Sibling-framed q0 stack spec: `evm_mload_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.
