@@ -352,6 +352,38 @@ theorem hashPrecompileAddresses_nodup :
   rw [hashPrecompileAddresses]
   decide
 
+/-! ### secp256k1 accelerator slice -/
+
+/-- secp256k1-family accelerator C symbols tracked by `evm-asm-g8tgi`. -/
+def secp256k1AcceleratorSymbols : List String :=
+  ["zkvm_secp256k1_verify", "zkvm_secp256k1_ecrecover"]
+
+theorem secp256k1AcceleratorSymbols_subset_coverage :
+    ∀ symbol ∈ secp256k1AcceleratorSymbols,
+      symbol ∈ acceleratorCoverageSymbols := by
+  rw [secp256k1AcceleratorSymbols, acceleratorCoverageSymbols_eq]
+  decide
+
+theorem secp256k1AcceleratorSymbols_nodup :
+    secp256k1AcceleratorSymbols.Nodup := by
+  rw [secp256k1AcceleratorSymbols]
+  decide
+
+/-- EVM precompile addresses covered by the secp256k1 accelerator slice. -/
+def secp256k1PrecompileAddresses : List Nat :=
+  [0x01]
+
+theorem secp256k1PrecompileAddresses_subset_acceleratorPrecompileAddresses :
+    ∀ address ∈ secp256k1PrecompileAddresses,
+      address ∈ acceleratorPrecompileAddresses := by
+  rw [secp256k1PrecompileAddresses, acceleratorPrecompileAddresses_eq]
+  decide
+
+theorem secp256k1PrecompileAddresses_nodup :
+    secp256k1PrecompileAddresses.Nodup := by
+  rw [secp256k1PrecompileAddresses]
+  decide
+
 def acceleratorClassifiedSymbols : List String :=
   acceleratorOpcodeSymbols ++ acceleratorNonPrecompileSymbols ++
     acceleratorPrecompileSymbols
@@ -452,6 +484,30 @@ theorem hashPrecompileSelectors_are_accelerators :
 theorem hashPrecompileSelectors_nodup :
     hashPrecompileSelectors.Nodup := by
   rw [hashPrecompileSelectors]
+  decide
+
+/-- Accelerator selectors covered by the secp256k1 slice. -/
+def secp256k1AcceleratorSelectors : List Nat :=
+  [secp256k1_verify, secp256k1_ecrecover]
+
+theorem secp256k1AcceleratorSelectors_are_accelerators :
+    ∀ id ∈ secp256k1AcceleratorSelectors, isAccelerator id := by
+  rw [secp256k1AcceleratorSelectors]
+  decide
+
+theorem secp256k1AcceleratorSelectors_nodup :
+    secp256k1AcceleratorSelectors.Nodup := by
+  rw [secp256k1AcceleratorSelectors]
+  decide
+
+theorem secp256k1_verify_mem_nonPrecompileSelectors :
+    secp256k1_verify ∈ acceleratorNonPrecompileSelectors := by
+  rw [acceleratorNonPrecompileSelectors_eq]
+  decide
+
+theorem secp256k1_ecrecover_mem_precompileSelectors :
+    secp256k1_ecrecover ∈ acceleratorPrecompileSelectors := by
+  rw [acceleratorPrecompileSelectors_eq]
   decide
 
 def acceleratorClassifiedSelectors : List Nat :=
