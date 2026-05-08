@@ -522,4 +522,59 @@ theorem evm_mod_callable_code_block_subs (base : Word) :
    callable_b8_mod, callable_b9_mod, callable_b10_mod, callable_b11_mod,
    callable_b12_mod, callable_b13_mod⟩
 
+-- ============================================================================
+-- noNop ⊆ callable_code subsumptions
+--
+-- `divCode_noNop` (Compose/Base.lean) drops block 12 (the NOP at `nopOff`)
+-- from `divCode`. `evm_div_callable_code` *replaces* that NOP with `cc_ret`,
+-- but every other block is at the same offset. So every `divCode_noNop`
+-- block also occurs in `evm_div_callable_code`, and the per-block lemmas
+-- `callable_b*_div` (above) cover exactly the right blocks.
+-- ============================================================================
+
+/-- divCode_noNop ⊆ evm_div_callable_code: each block of divCode_noNop is
+    also in evm_div_callable_code. Used by evm-asm-ak8r1 (#90 prep-D) to
+    lift `evm_div_stack_spec` from divCode_noNop to evm_div_callable_code
+    via `cpsTripleWithin_extend_code`. -/
+theorem divCode_noNop_sub_div_callable_code {base : Word} :
+    ∀ a i, (divCode_noNop base) a = some i →
+           (evm_div_callable_code base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_split_mono callable_b0_div
+    (CodeReq.union_split_mono callable_b1_div
+    (CodeReq.union_split_mono callable_b2_div
+    (CodeReq.union_split_mono callable_b3_div
+    (CodeReq.union_split_mono callable_b4_div
+    (CodeReq.union_split_mono callable_b5_div
+    (CodeReq.union_split_mono callable_b6_div
+    (CodeReq.union_split_mono callable_b7_div
+    (CodeReq.union_split_mono callable_b8_div
+    (CodeReq.union_split_mono callable_b9_div
+    (CodeReq.union_split_mono callable_b10_div
+    (CodeReq.union_split_mono callable_b11_div
+    -- noNop block 12 (div128) maps to callable block 13.
+    (CodeReq.union_split_mono callable_b13_div
+    (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
+
+/-- modCode_noNop ⊆ evm_mod_callable_code. Mirror of
+    `divCode_noNop_sub_div_callable_code` for the MOD epilogue. -/
+theorem modCode_noNop_sub_mod_callable_code {base : Word} :
+    ∀ a i, (modCode_noNop base) a = some i →
+           (evm_mod_callable_code base) a = some i := by
+  unfold modCode_noNop; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_split_mono callable_b0_mod
+    (CodeReq.union_split_mono callable_b1_mod
+    (CodeReq.union_split_mono callable_b2_mod
+    (CodeReq.union_split_mono callable_b3_mod
+    (CodeReq.union_split_mono callable_b4_mod
+    (CodeReq.union_split_mono callable_b5_mod
+    (CodeReq.union_split_mono callable_b6_mod
+    (CodeReq.union_split_mono callable_b7_mod
+    (CodeReq.union_split_mono callable_b8_mod
+    (CodeReq.union_split_mono callable_b9_mod
+    (CodeReq.union_split_mono callable_b10_mod
+    (CodeReq.union_split_mono callable_b11_mod
+    (CodeReq.union_split_mono callable_b13_mod
+    (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
+
 end EvmAsm.Evm64
