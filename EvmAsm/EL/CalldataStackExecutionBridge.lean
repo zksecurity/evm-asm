@@ -182,6 +182,26 @@ theorem runCalldataStack?_load_eq_some_iff
     subst h_out
     exact runCalldataStack?_load data offset rest
 
+theorem runCalldataStack?_load_head?
+    (data : List (BitVec 8)) (offset : EvmWord) (rest : List EvmWord) :
+    (runCalldataStack? .callDataLoad { data := data, stack := offset :: rest }).map
+      (fun out => out.effects.stackWords.head?) =
+      some (some (EvmAsm.Evm64.CallDataLoadArgs.loadedWordFromArgs data
+        (EvmAsm.Evm64.CallDataLoadArgs.loadArgs offset))) := rfl
+
+theorem runCalldataStack?_load_head?_of_some
+    {data : List (BitVec 8)} {offset : EvmWord} {rest : List EvmWord}
+    {out : CalldataStackResult}
+    (h_run : runCalldataStack? .callDataLoad
+      { data := data, stack := offset :: rest } = some out) :
+    out.effects.stackWords.head? =
+      some (EvmAsm.Evm64.CallDataLoadArgs.loadedWordFromArgs data
+        (EvmAsm.Evm64.CallDataLoadArgs.loadArgs offset)) := by
+  rw [runCalldataStack?_load] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
 /--
 CALLDATASIZE stack execution is total and leaves the stack tail unchanged.
 
