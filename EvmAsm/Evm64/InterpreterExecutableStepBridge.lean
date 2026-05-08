@@ -258,6 +258,106 @@ theorem loopFuel_one_supported_execSpec_SMOD_status_of_none
   exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_none
     h_run
 
+theorem loopFuel_one_supported_execSpec_SDIV_status_empty_stack
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      { state with stack := [] }).status = .error := by
+  have h_status' :
+      ({ state with stack := [] } : EvmState).status = .running := by
+    simpa using h_status
+  have h_pc' :
+      ({ state with stack := [] } : EvmState).pc <
+        ({ state with stack := [] } : EvmState).code.length := by
+    simpa using h_pc
+  have h_code' :
+      ({ state with stack := [] } : EvmState).code[
+        ({ state with stack := [] } : EvmState).pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8) := by
+    simpa using h_code
+  rw [loopFuel_one_supported_execSpec_SDIV h_status' h_pc' h_code']
+  exact SDivStackExecutionBridge.sdivHandler_status_empty_stack state
+
+theorem loopFuel_one_supported_execSpec_SDIV_status_singleton_stack
+    {state : EvmState} (dividend : EvmWord)
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      { state with stack := [dividend] }).status = .error := by
+  have h_status' :
+      ({ state with stack := [dividend] } : EvmState).status =
+        .running := by
+    simpa using h_status
+  have h_pc' :
+      ({ state with stack := [dividend] } : EvmState).pc <
+        ({ state with stack := [dividend] } : EvmState).code.length := by
+    simpa using h_pc
+  have h_code' :
+      ({ state with stack := [dividend] } : EvmState).code[
+        ({ state with stack := [dividend] } : EvmState).pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8) := by
+    simpa using h_code
+  rw [loopFuel_one_supported_execSpec_SDIV h_status' h_pc' h_code']
+  exact SDivStackExecutionBridge.sdivHandler_status_singleton_stack
+    state dividend
+
+theorem loopFuel_one_supported_execSpec_SMOD_status_empty_stack
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      { state with stack := [] }).status = .error := by
+  have h_status' :
+      ({ state with stack := [] } : EvmState).status = .running := by
+    simpa using h_status
+  have h_pc' :
+      ({ state with stack := [] } : EvmState).pc <
+        ({ state with stack := [] } : EvmState).code.length := by
+    simpa using h_pc
+  have h_code' :
+      ({ state with stack := [] } : EvmState).code[
+        ({ state with stack := [] } : EvmState).pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8) := by
+    simpa using h_code
+  rw [loopFuel_one_supported_execSpec_SMOD h_status' h_pc' h_code']
+  exact SModStackExecutionBridge.smodHandler_status_empty_stack state
+
+theorem loopFuel_one_supported_execSpec_SMOD_status_singleton_stack
+    {state : EvmState} (dividend : EvmWord)
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      { state with stack := [dividend] }).status = .error := by
+  have h_status' :
+      ({ state with stack := [dividend] } : EvmState).status =
+        .running := by
+    simpa using h_status
+  have h_pc' :
+      ({ state with stack := [dividend] } : EvmState).pc <
+        ({ state with stack := [dividend] } : EvmState).code.length := by
+    simpa using h_pc
+  have h_code' :
+      ({ state with stack := [dividend] } : EvmState).code[
+        ({ state with stack := [dividend] } : EvmState).pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8) := by
+    simpa using h_code
+  rw [loopFuel_one_supported_execSpec_SMOD h_status' h_pc' h_code']
+  exact SModStackExecutionBridge.smodHandler_status_singleton_stack
+    state dividend
+
 theorem loopFuel_one_supported_execSpec_SDIV_stack_zero_divisor
     {state : EvmState} (dividend : EvmWord) (rest : List EvmWord)
     (h_status : state.status = .running)
