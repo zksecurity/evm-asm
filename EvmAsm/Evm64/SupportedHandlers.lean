@@ -382,6 +382,40 @@ theorem dispatchOpcode_of_lookup_status
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     StackHandlers.stackHandlerTable_PUSH0
 
+@[simp] theorem supportedHandlerTable_POP :
+    supportedHandlerTable .POP =
+      some StackHandlers.popHandler := by
+  exact lookup_of_stack
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    StackHandlers.stackHandlerTable_POP
+
+@[simp] theorem supportedHandlerTable_PC :
+    supportedHandlerTable .PC =
+      some ControlHandlers.pcHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_PC
+
+@[simp] theorem supportedHandlerTable_GAS :
+    supportedHandlerTable .GAS =
+      some ControlHandlers.gasHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_GAS
+
+@[simp] theorem supportedHandlerTable_JUMPDEST :
+    supportedHandlerTable .JUMPDEST =
+      some ControlHandlers.jumpdestHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_JUMPDEST
+
 @[simp] theorem supportedHandlerTable_RETURNDATASIZE :
     supportedHandlerTable .RETURNDATASIZE =
       some ReturnDataHandlers.returnDataSizeHandler := by
