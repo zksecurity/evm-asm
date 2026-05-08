@@ -224,6 +224,24 @@ theorem runCalldataStack?_size_eq_some_iff
     subst h_out
     exact runCalldataStack?_size data stack
 
+theorem runCalldataStack?_size_head?
+    (data : List (BitVec 8)) (stack : List EvmWord) :
+    (runCalldataStack? .callDataSize { data := data, stack := stack }).map
+      (fun out => out.effects.stackWords.head?) =
+      some (some (EvmAsm.Evm64.Calldata.callDataSizeOf data)) := rfl
+
+theorem runCalldataStack?_size_head?_of_some
+    {data : List (BitVec 8)} {stack : List EvmWord}
+    {out : CalldataStackResult}
+    (h_run : runCalldataStack? .callDataSize
+      { data := data, stack := stack } = some out) :
+    out.effects.stackWords.head? =
+      some (EvmAsm.Evm64.Calldata.callDataSizeOf data) := by
+  rw [runCalldataStack?_size] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
 /--
 CALLDATACOPY stack execution succeeds exactly when three operand words are
 available, returning no stack word and the copied byte sequence.
