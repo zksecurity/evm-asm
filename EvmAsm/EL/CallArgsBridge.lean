@@ -15,6 +15,12 @@ abbrev MemoryRange := EvmAsm.Evm64.CallArgs.MemoryRange
 abbrev CallArgs := EvmAsm.Evm64.CallArgs.Call
 abbrev StaticCallArgs := EvmAsm.Evm64.CallArgs.StaticCall
 abbrev DelegateCallArgs := EvmAsm.Evm64.CallArgs.DelegateCall
+abbrev CallArgKind := EvmAsm.Evm64.CallArgs.Kind
+
+def toCallKind : CallArgKind → CallKind
+  | .call => .call
+  | .staticcall => .staticcall
+  | .delegatecall => .delegatecall
 
 def gasNat (gas : EvmAsm.Evm64.EvmWord) : Nat :=
   gas.toNat
@@ -97,6 +103,30 @@ theorem delegateCallFrameTransferredValue
     (caller callee : Address) (apparentValue : Word256) (input : List Byte)
     (isStatic : Bool) (args : DelegateCallArgs) :
     (delegateCallFrame caller callee apparentValue input isStatic args).transferredValue = 0 := rfl
+
+theorem toCallKind_call :
+    toCallKind .call = .call := rfl
+
+theorem toCallKind_staticcall :
+    toCallKind .staticcall = .staticcall := rfl
+
+theorem toCallKind_delegatecall :
+    toCallKind .delegatecall = .delegatecall := rfl
+
+theorem toCallKind_transfersValue (kind : CallArgKind) :
+    CallKind.transfersValue (toCallKind kind) =
+      EvmAsm.Evm64.CallArgs.hasValueArgument kind := by
+  cases kind <;> rfl
+
+theorem toCallKind_preservesCallerContext (kind : CallArgKind) :
+    CallKind.preservesCallerContext (toCallKind kind) =
+      EvmAsm.Evm64.CallArgs.preservesCallerContext kind := by
+  cases kind <;> rfl
+
+theorem toCallKind_mayWriteState (kind : CallArgKind) :
+    CallKind.mayWriteState (toCallKind kind) =
+      !EvmAsm.Evm64.CallArgs.isStatic kind := by
+  cases kind <;> rfl
 
 end CallArgsBridge
 

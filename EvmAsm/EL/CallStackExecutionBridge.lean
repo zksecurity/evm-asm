@@ -198,6 +198,28 @@ theorem stackRestAfterCall?_eq_none_iff
       _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest⟩⟩⟩⟩⟩⟩ <;>
       simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount]
 
+theorem stackRestAfterCall?_length_of_some
+    {kind : CallKind} {stack rest : List EvmWord}
+    (h_rest : stackRestAfterCall? kind stack = some rest) :
+    stack.length = rest.length + EvmAsm.Evm64.CallArgs.argumentCount kind := by
+  cases kind
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_,
+          rest'⟩⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest'⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest'⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+
 theorem runCallStack?_call
     (state : WorldState) (caller callee : Address) (apparentValue : Word256)
     (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
