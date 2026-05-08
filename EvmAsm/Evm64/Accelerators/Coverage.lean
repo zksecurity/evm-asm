@@ -7,7 +7,7 @@
   selector uniqueness, and accelerator range checked by Lean.
 -/
 
-import EvmAsm.Evm64.Accelerators.SyscallIds
+import EvmAsm.Evm64.Accelerators.Dispatch
 
 namespace EvmAsm
 namespace Accelerators
@@ -109,6 +109,12 @@ theorem acceleratorCoverageSelectors_eq :
        secp256r1_verify] := by
   decide
 
+/-- The coverage table and dispatch module use the same canonical selectors. -/
+theorem acceleratorCoverageSelectors_eq_dispatch :
+    acceleratorCoverageSelectors = acceleratorSelectors := by
+  rw [acceleratorCoverageSelectors_eq]
+  rfl
+
 /-- The coverage table does not assign the same selector twice. -/
 theorem acceleratorCoverageSelectors_nodup :
     acceleratorCoverageSelectors.Nodup := by
@@ -119,6 +125,112 @@ theorem acceleratorCoverageSelectors_nodup :
 theorem acceleratorCoverageSelectors_in_range :
     ∀ id ∈ acceleratorCoverageSelectors, 0x100 ≤ id ∧ id < 0x113 := by
   rw [acceleratorCoverageSelectors_eq]
+  decide
+
+/-- C symbols projected from the coverage table. -/
+def acceleratorCoverageSymbols : List String :=
+  acceleratorCoverageTable.map (fun row => row.cSymbol)
+
+/-- Exact `zkvm_accelerators.h` C-symbol order represented by the table. -/
+theorem acceleratorCoverageSymbols_eq :
+    acceleratorCoverageSymbols =
+      ["zkvm_keccak256",
+       "zkvm_secp256k1_verify",
+       "zkvm_secp256k1_ecrecover",
+       "zkvm_sha256",
+       "zkvm_ripemd160",
+       "zkvm_modexp",
+       "zkvm_bn254_g1_add",
+       "zkvm_bn254_g1_mul",
+       "zkvm_bn254_pairing",
+       "zkvm_blake2f",
+       "zkvm_kzg_point_eval",
+       "zkvm_bls12_g1_add",
+       "zkvm_bls12_g1_msm",
+       "zkvm_bls12_g2_add",
+       "zkvm_bls12_g2_msm",
+       "zkvm_bls12_pairing",
+       "zkvm_bls12_map_fp_to_g1",
+       "zkvm_bls12_map_fp2_to_g2",
+       "zkvm_secp256r1_verify"] := by
+  decide
+
+/-- The coverage table has one C symbol for each accelerator entry point. -/
+theorem acceleratorCoverageSymbols_length :
+    acceleratorCoverageSymbols.length = 19 := by
+  rw [acceleratorCoverageSymbols_eq]
+  decide
+
+/-- The coverage table lists each `zkvm_accelerators.h` C symbol once. -/
+theorem acceleratorCoverageSymbols_nodup :
+    acceleratorCoverageSymbols.Nodup := by
+  rw [acceleratorCoverageSymbols_eq]
+  decide
+
+/-- Ethereum precompile addresses covered by accelerator-backed rows.
+
+This excludes the non-precompile KECCAK256 and secp256k1 verification
+accelerators and also excludes IDENTITY (`0x04`), which is pure memory copy
+and has no accelerator C symbol. -/
+def acceleratorPrecompileAddresses : List Nat :=
+  acceleratorCoverageTable.filterMap fun row =>
+    match row.surface with
+    | .precompile address _ => some address
+    | _ => none
+
+/-- The accelerator-backed precompile address set mirrors `zkvm_accelerators.h`.
+
+Address `0x04` is intentionally absent because IDENTITY has no accelerator. -/
+theorem acceleratorPrecompileAddresses_eq :
+    acceleratorPrecompileAddresses =
+      [0x01, 0x02, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09,
+       0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x100] := by
+  decide
+
+/-- No precompile address is assigned to more than one accelerator row. -/
+theorem acceleratorPrecompileAddresses_nodup :
+    acceleratorPrecompileAddresses.Nodup := by
+  rw [acceleratorPrecompileAddresses_eq]
+  decide
+
+/-- IDENTITY (`0x04`) is not accelerator-backed. -/
+theorem identity_not_mem_acceleratorPrecompileAddresses :
+    0x04 ∉ acceleratorPrecompileAddresses := by
+  rw [acceleratorPrecompileAddresses_eq]
+  decide
+
+/-- EVM-facing surfaces projected from the coverage table. -/
+def acceleratorCoverageSurfaces : List AcceleratorSurface :=
+  acceleratorCoverageTable.map (fun row => row.surface)
+
+/-- Exact EVM-facing surface order represented by the coverage table. -/
+theorem acceleratorCoverageSurfaces_eq :
+    acceleratorCoverageSurfaces =
+      [.opcode "KECCAK256",
+       .nonPrecompile "secp256k1 signature verify",
+       .precompile 0x01 "ECRECOVER",
+       .precompile 0x02 "SHA256",
+       .precompile 0x03 "RIPEMD160",
+       .precompile 0x05 "MODEXP",
+       .precompile 0x06 "BN254 G1 ADD",
+       .precompile 0x07 "BN254 G1 MUL",
+       .precompile 0x08 "BN254 PAIRING",
+       .precompile 0x09 "BLAKE2F",
+       .precompile 0x0a "KZG POINT EVAL",
+       .precompile 0x0b "BLS12 G1 ADD",
+       .precompile 0x0c "BLS12 G1 MSM",
+       .precompile 0x0d "BLS12 G2 ADD",
+       .precompile 0x0e "BLS12 G2 MSM",
+       .precompile 0x0f "BLS12 PAIRING",
+       .precompile 0x10 "BLS12 MAP FP TO G1",
+       .precompile 0x11 "BLS12 MAP FP2 TO G2",
+       .precompile 0x100 "secp256r1 verify"] := by
+  decide
+
+/-- Every row has a unique EVM-facing surface. -/
+theorem acceleratorCoverageSurfaces_nodup :
+    acceleratorCoverageSurfaces.Nodup := by
+  rw [acceleratorCoverageSurfaces_eq]
   decide
 
 end Accelerators
