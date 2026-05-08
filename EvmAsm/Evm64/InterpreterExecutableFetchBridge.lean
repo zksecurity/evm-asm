@@ -130,6 +130,46 @@ theorem stepWithHandler_of_execSpecLogByte
   exact InterpreterLoop.stepWithHandler_of_decode handler
     (decodeCurrentOpcode?_of_execSpecLogByte kind h_pc h_code)
 
+theorem decodeCurrentOpcode?_of_execSpec_SDIV
+    {state : EvmState}
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] = (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    InterpreterLoop.decodeCurrentOpcode? state = some EvmOpcode.SDIV := by
+  exact decodeCurrentOpcode?_of_execSpecByte h_pc h_code (by
+    simp [ExecutableSpecOpcodeBridge.Ops.SDIV, EvmOpcode.decodeByte?])
+
+theorem stepWithHandler_of_execSpec_SDIV
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState}
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] = (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    InterpreterLoop.stepWithHandler handler state =
+      handler EvmOpcode.SDIV state := by
+  exact InterpreterLoop.stepWithHandler_of_decode handler
+    (decodeCurrentOpcode?_of_execSpec_SDIV h_pc h_code)
+
+theorem decodeCurrentOpcode?_of_execSpec_SMOD
+    {state : EvmState}
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] = (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    InterpreterLoop.decodeCurrentOpcode? state = some EvmOpcode.SMOD := by
+  exact decodeCurrentOpcode?_of_execSpecByte h_pc h_code (by
+    simp [ExecutableSpecOpcodeBridge.Ops.SMOD, EvmOpcode.decodeByte?])
+
+theorem stepWithHandler_of_execSpec_SMOD
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState}
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] = (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    InterpreterLoop.stepWithHandler handler state =
+      handler EvmOpcode.SMOD state := by
+  exact InterpreterLoop.stepWithHandler_of_decode handler
+    (decodeCurrentOpcode?_of_execSpec_SMOD h_pc h_code)
+
 theorem decodeCurrentOpcode?_of_execSpec_CALL
     {state : EvmState}
     (h_pc : state.pc < state.code.length)
