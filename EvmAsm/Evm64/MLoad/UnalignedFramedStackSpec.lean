@@ -1189,4 +1189,88 @@ theorem evm_mload_unaligned_full_stack_spec_within_public_folded
       h_off_ne_x0 h_addr_ne_x0 h_byte_ne_x0 h_acc_ne_x0
       h_window0 h_window1 h_window2 h_window3)
 
+/--
+Stack-tail variant of the folded public unaligned MLOAD composition.
+
+This frames a remaining EVM stack tail around the folded postcondition and
+folds the produced word plus tail into `evmStackIs`.
+
+Distinctive token:
+evm_mload_unaligned_full_stack_spec_within_public_stack_tail #53.
+-/
+theorem evm_mload_unaligned_full_stack_spec_within_public_stack_tail
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase byteOld accOld : Word)
+    (dstOld1 dstOld2 dstOld3 : Word)
+    (loAddr0 hiAddr0 loVal0 hiVal0 : Word)
+    (loAddr1 hiAddr1 loVal1 hiVal1 : Word)
+    (loAddr2 hiAddr2 loVal2 hiVal2 : Word)
+    (loAddr3 hiAddr3 loVal3 hiVal3 : Word)
+    (start : Nat) (base : Word) (rest : List EvmWord)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window0 : mloadLimbWindowOk (memBase + offset) loAddr0 hiAddr0 start
+                  24 25 26 27 28 29 30 31)
+    (h_window1 : mloadLimbWindowOk (memBase + offset) loAddr1 hiAddr1 start
+                  16 17 18 19 20 21 22 23)
+    (h_window2 : mloadLimbWindowOk (memBase + offset) loAddr2 hiAddr2 start
+                  8 9 10 11 12 13 14 15)
+    (h_window3 : mloadLimbWindowOk (memBase + offset) loAddr3 hiAddr3 start
+                  0 1 2 3 4 5 6 7) :
+    let loaded3 := mloadPackedLimbFromDwordPair loVal3 hiVal3 start
+    cpsTripleWithin (2 + (23 + 23 + 23 + 23)) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      (((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) **
+       ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+        (sp + 8 ↦ₘ dstOld1) ** (sp + 16 ↦ₘ dstOld2) **
+        (sp + 24 ↦ₘ dstOld3) **
+        (loAddr0 ↦ₘ loVal0) ** (hiAddr0 ↦ₘ hiVal0) **
+        (loAddr1 ↦ₘ loVal1) ** (hiAddr1 ↦ₘ hiVal1) **
+        (loAddr2 ↦ₘ loVal2) ** (hiAddr2 ↦ₘ hiVal2) **
+        (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3))) **
+       evmStackIs (sp + 32) rest)
+      (evmStackIs sp
+        (mloadStackOutputWordFromDwordPairs
+          loVal0 hiVal0 start loVal1 hiVal1 start
+          loVal2 hiVal2 start loVal3 hiVal3 start :: rest) **
+       (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (byteReg ↦ᵣ
+          (mloadByteFromDwordPair loVal3 hiVal3 start 7).zeroExtend 64) **
+        (accReg ↦ᵣ loaded3) **
+        (loAddr0 ↦ₘ loVal0) ** (hiAddr0 ↦ₘ hiVal0) **
+        (loAddr1 ↦ₘ loVal1) ** (hiAddr1 ↦ₘ hiVal1) **
+        (loAddr2 ↦ₘ loVal2) ** (hiAddr2 ↦ₘ hiVal2) **
+        (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3))) := by
+  dsimp only
+  have hCore :=
+    cpsTripleWithin_frameR (evmStackIs (sp + 32) rest) (by pcFree)
+      (evm_mload_unaligned_full_stack_spec_within_public_folded
+        offReg byteReg accReg addrReg memBaseReg
+        sp offset offOld addrOld memBase byteOld accOld
+        dstOld1 dstOld2 dstOld3
+        loAddr0 hiAddr0 loVal0 hiVal0
+        loAddr1 hiAddr1 loVal1 hiVal1
+        loAddr2 hiAddr2 loVal2 hiVal2
+        loAddr3 hiAddr3 loVal3 hiVal3
+        start base
+        h_off_ne_x0 h_addr_ne_x0 h_byte_ne_x0 h_acc_ne_x0
+        h_window0 h_window1 h_window2 h_window3)
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by
+      rw [← mloadStackOutputPost_evmStackIs_fold
+        sp
+        loVal0 hiVal0 start
+        loVal1 hiVal1 start
+        loVal2 hiVal2 start
+        loVal3 hiVal3 start
+        rest]
+      sep_perm hp)
+    hCore
+
 end EvmAsm.Evm64
