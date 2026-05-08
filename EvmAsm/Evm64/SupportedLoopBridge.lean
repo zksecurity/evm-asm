@@ -177,6 +177,48 @@ theorem stepWithSupportedHandler_SMOD_stack_of_runSModStack?_some
   exact SModStackExecutionBridge.smodHandler_stack_of_runSModStack?_some
     h_run
 
+theorem stepWithSupportedHandler_SDIV_status_empty_stack
+    {state : EvmState}
+    (h_decode :
+      InterpreterLoop.decodeCurrentOpcode? { state with stack := [] } =
+        some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler
+      { state with stack := [] }).status = .error := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_status_empty_stack state
+
+theorem stepWithSupportedHandler_SDIV_status_singleton_stack
+    {state : EvmState} (dividend : EvmWord)
+    (h_decode :
+      InterpreterLoop.decodeCurrentOpcode?
+        { state with stack := [dividend] } = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler
+      { state with stack := [dividend] }).status = .error := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_status_singleton_stack
+    state dividend
+
+theorem stepWithSupportedHandler_SMOD_status_empty_stack
+    {state : EvmState}
+    (h_decode :
+      InterpreterLoop.decodeCurrentOpcode? { state with stack := [] } =
+        some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler
+      { state with stack := [] }).status = .error := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_status_empty_stack state
+
+theorem stepWithSupportedHandler_SMOD_status_singleton_stack
+    {state : EvmState} (dividend : EvmWord)
+    (h_decode :
+      InterpreterLoop.decodeCurrentOpcode?
+        { state with stack := [dividend] } = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler
+      { state with stack := [dividend] }).status = .error := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_status_singleton_stack
+    state dividend
+
 theorem stepWithSupportedHandler_SDIV_stack_zero_divisor
     {state : EvmState} (dividend : EvmWord) (rest : List EvmWord)
     (h_decode :
