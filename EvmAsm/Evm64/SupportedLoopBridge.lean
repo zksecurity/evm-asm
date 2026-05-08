@@ -147,6 +147,22 @@ theorem stepWithSupportedHandler_SMOD_pc
   rw [stepWithSupportedHandler_SMOD h_decode]
   exact SModStackExecutionBridge.smodHandler_pc state
 
+theorem stepWithSupportedHandler_SDIV_gas
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).gas =
+      state.gas := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_gas state
+
+theorem stepWithSupportedHandler_SMOD_gas
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).gas =
+      state.gas := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_gas state
+
 theorem stepWithSupportedHandler_SDIV_status_of_some
     {state : EvmState} {stack' : List EvmWord}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
