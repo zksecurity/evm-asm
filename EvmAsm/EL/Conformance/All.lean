@@ -58,6 +58,9 @@ def unexpectedConformanceFailures : List CheckResult :=
       | .failed _ => true
       | _ => false)
 
+def allConformanceNoUnexpectedFailures : Bool :=
+  unexpectedConformanceFailures.isEmpty
+
 theorem unexpectedConformanceFailures_empty :
     unexpectedConformanceFailures = [] := by
   simp [unexpectedConformanceFailures, allConformanceVectors,
@@ -75,6 +78,10 @@ theorem unexpectedConformanceFailures_empty :
     SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
     StorageStackExecution.storageStackConformanceVectors_passed,
     TerminatingStackExecution.terminatingStackConformanceVectors_passed]
+
+theorem allConformanceNoUnexpectedFailures_eq_true :
+    allConformanceNoUnexpectedFailures = true := by
+  simp [allConformanceNoUnexpectedFailures, unexpectedConformanceFailures_empty]
 
 end Conformance
 end EvmAsm.EL
