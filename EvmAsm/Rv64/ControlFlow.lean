@@ -205,6 +205,7 @@ private theorem aAnd_pure_right_of_true {P : Assertion} {prop : Prop}
     fun _ _ _ _ h2 => by simp [PartialState.empty] at h2,
     fun _ _ _ h2 => by simp [PartialState.empty] at h2,
     fun _ _ _ h2 => by simp [PartialState.empty] at h2,
+    fun _ _ _ h2 => by simp [PartialState.empty] at h2,
     fun _ _ _ h2 => by simp [PartialState.empty] at h2⟩,
     PartialState.union_empty_right, hp, rfl, hprop⟩
 
