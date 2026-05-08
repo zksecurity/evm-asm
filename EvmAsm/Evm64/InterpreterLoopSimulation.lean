@@ -182,6 +182,48 @@ theorem stepWithHandler_stack_eq_of_loopResultsMatch_running
       (InterpreterLoop.stepWithHandler spec state).stack := by
   rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
 
+theorem stepWithHandler_memoryCells_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).memoryCells =
+      (InterpreterLoop.stepWithHandler spec state).memoryCells := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_memory_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) (addr : Nat) :
+    (InterpreterLoop.stepWithHandler impl state).memory addr =
+      (InterpreterLoop.stepWithHandler spec state).memory addr := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_memSize_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).memSize =
+      (InterpreterLoop.stepWithHandler spec state).memSize := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_code_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).code =
+      (InterpreterLoop.stepWithHandler spec state).code := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_codeLen_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).codeLen =
+      (InterpreterLoop.stepWithHandler spec state).codeLen := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_env_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).env =
+      (InterpreterLoop.stepWithHandler spec state).env := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
 end InterpreterLoopSimulation
 
 end EvmAsm.Evm64
