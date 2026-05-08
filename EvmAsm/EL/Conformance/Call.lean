@@ -38,6 +38,18 @@ def callOutputClipVector : TestVector CallOutputInput (List Byte) :=
         range := mkRange 0 2 }
     expected := .value [(0xaa : Byte), 0xbb] }
 
+/-- Successful CALL with zero-size caller output range copies no bytes even
+    when the callee returned output.
+    Distinctive token: Call.callOutputZeroSizeVector #125 #114. -/
+def callOutputZeroSizeVector : TestVector CallOutputInput (List Byte) :=
+  { id := "call-output-zero-size"
+    input :=
+      { result :=
+          { status := .success, state := WorldState.empty,
+            output := [(0xaa : Byte), 0xbb, 0xcc], gasRemaining := 7 }
+        range := mkRange 5 0 }
+    expected := .value [] }
+
 /-- Failed CALL exposes no copied output, regardless of result bytes. -/
 def callOutputFailureVector : TestVector CallOutputInput (List Byte) :=
   { id := "call-output-failure-empty"
@@ -55,6 +67,14 @@ theorem runCallOutput_clip :
             output := [(0xaa : Byte), 0xbb, 0xcc], gasRemaining := 7 }
         range := mkRange 0 2 } =
       [(0xaa : Byte), 0xbb] := rfl
+
+theorem runCallOutput_zero_size :
+    runCallOutput
+      { result :=
+          { status := .success, state := WorldState.empty,
+            output := [(0xaa : Byte), 0xbb, 0xcc], gasRemaining := 7 }
+        range := mkRange 5 0 } = [] := by
+  simp [runCallOutput, EvmAsm.EL.CallOutputBridge.copiedOutputForRange, mkRange]
 
 theorem runCallOutput_failure :
     runCallOutput
@@ -76,6 +96,17 @@ theorem callOutputClipVector_passed :
     [(0xaa : Byte), 0xbb]
     runCallOutput_clip
 
+theorem callOutputZeroSizeVector_passed :
+    checkVector runCallOutput callOutputZeroSizeVector = .passed :=
+  checkVector_value_passed runCallOutput
+    "call-output-zero-size"
+    { result :=
+        { status := .success, state := WorldState.empty,
+          output := [(0xaa : Byte), 0xbb, 0xcc], gasRemaining := 7 }
+      range := mkRange 5 0 }
+    []
+    runCallOutput_zero_size
+
 theorem callOutputFailureVector_passed :
     checkVector runCallOutput callOutputFailureVector = .passed :=
   checkVector_value_passed runCallOutput
@@ -91,13 +122,14 @@ theorem callOutputFailureVector_passed :
     Distinctive token: Call.callOutputConformanceVectors #125 #114. -/
 def callOutputConformanceVectors : List CheckResult :=
   [ checkVector runCallOutput callOutputClipVector
+  , checkVector runCallOutput callOutputZeroSizeVector
   , checkVector runCallOutput callOutputFailureVector
   ]
 
 theorem callOutputConformanceVectors_passed :
-    callOutputConformanceVectors = [.passed, .passed] := by
+    callOutputConformanceVectors = [.passed, .passed, .passed] := by
   simp [callOutputConformanceVectors, callOutputClipVector_passed,
-    callOutputFailureVector_passed]
+    callOutputZeroSizeVector_passed, callOutputFailureVector_passed]
 
 end Call
 end Conformance
