@@ -127,6 +127,42 @@ theorem dispatchByte_supported_INVALID_byte
   rw [dispatchByte_supported_INVALID_byte]
   exact EvmState.invalid_status state
 
+theorem dispatchByte_supported_SDIV_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state =
+        ArithmeticHandlers.sdivHandler state := by
+  exact dispatchByte_supported_of_lookup rfl
+    SupportedHandlers.supportedHandlerTable_SDIV state
+
+theorem dispatchByte_supported_SMOD_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state =
+        ArithmeticHandlers.smodHandler state := by
+  exact dispatchByte_supported_of_lookup rfl
+    SupportedHandlers.supportedHandlerTable_SMOD state
+
+@[simp] theorem dispatchByte_supported_SDIV_byte_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack =
+      some stack') :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status = state.status := by
+  rw [dispatchByte_supported_SDIV_byte]
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
+
+@[simp] theorem dispatchByte_supported_SMOD_byte_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack =
+      some stack') :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status = state.status := by
+  rw [dispatchByte_supported_SMOD_byte]
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
+
 theorem dispatchByte_supported_undecoded
     {b : Fin 256} (h_decode : EvmOpcode.decodeByte? b.val = none)
     (state : EvmState) :
