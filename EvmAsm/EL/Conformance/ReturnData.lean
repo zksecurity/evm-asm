@@ -122,6 +122,28 @@ theorem returnDataCopyStackUnderflowVector_errored :
       stack := [(32 : EvmWord), (1 : EvmWord)] }
     runReturnDataCopyStack_underflow
 
+/-- Vector IDs for returndata executable-helper conformance coverage.
+    Distinctive token: returnDataConformanceVectorIds #125 #114. -/
+def returnDataConformanceVectorIds : List String :=
+  [ returnDataCopyZeroPadVector.id
+  , returnDataCopyStackVector.id
+  , returnDataCopyStackUnderflowVector.id
+  ]
+
+theorem returnDataConformanceVectorIds_eq :
+    returnDataConformanceVectorIds =
+      [ "returndatacopy-zero-pad"
+      , "returndatacopy-stack-decode"
+      , "returndatacopy-stack-underflow"
+      ] := rfl
+
+theorem returnDataConformanceVectorIds_length :
+    returnDataConformanceVectorIds.length = 3 := rfl
+
+theorem returnDataConformanceVectorIds_nodup :
+    returnDataConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for returndata executable helpers.
     Distinctive token: returnDataConformanceVectors #125 #114. -/
 def returnDataConformanceVectors : List CheckResult :=
