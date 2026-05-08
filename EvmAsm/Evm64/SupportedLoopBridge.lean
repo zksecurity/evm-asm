@@ -163,6 +163,54 @@ theorem stepWithSupportedHandler_SMOD_gas
   rw [stepWithSupportedHandler_SMOD h_decode]
   exact SModStackExecutionBridge.smodHandler_gas state
 
+theorem stepWithSupportedHandler_SDIV_code
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).code =
+      state.code := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_code state
+
+theorem stepWithSupportedHandler_SMOD_code
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).code =
+      state.code := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_code state
+
+theorem stepWithSupportedHandler_SDIV_codeLen
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLen =
+      state.codeLen := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_codeLen state
+
+theorem stepWithSupportedHandler_SMOD_codeLen
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLen =
+      state.codeLen := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_codeLen state
+
+theorem stepWithSupportedHandler_SDIV_env
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).env =
+      state.env := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_env state
+
+theorem stepWithSupportedHandler_SMOD_env
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).env =
+      state.env := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_env state
+
 theorem stepWithSupportedHandler_SDIV_memoryCells
     {state : EvmState}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :

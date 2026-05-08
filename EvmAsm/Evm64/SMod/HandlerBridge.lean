@@ -46,6 +46,27 @@ theorem smodHandler_memSize
     simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
       EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
 
+theorem smodHandler_code
+    (state : EvmState) :
+    (ArithmeticHandlers.smodHandler state).code = state.code := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack <;>
+    simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
+theorem smodHandler_codeLen
+    (state : EvmState) :
+    (ArithmeticHandlers.smodHandler state).codeLen = state.codeLen := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack <;>
+    simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
+theorem smodHandler_env
+    (state : EvmState) :
+    (ArithmeticHandlers.smodHandler state).env = state.env := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack <;>
+    simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
 theorem smodHandler_stack_of_runSModStack?_some
     {state : EvmState} {out : SModStackResult}
     (h_run : runSModStack? { stack := state.stack } = some out) :
