@@ -114,6 +114,44 @@ theorem decodeCreateStack?_eq_some_iff
   | create => exact decodeCreateStack?_create_eq_some_iff stack decoded
   | create2 => exact decodeCreateStack?_create2_eq_some_iff stack decoded
 
+theorem decodeCreateStack?_create_kind_of_some
+    {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeCreateStack? .create stack = some decoded) :
+    decodedKind decoded = .create := by
+  rw [decodeCreateStack?_create_eq_some_iff] at h_decode
+  rcases h_decode with ⟨value, offset, size, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  rfl
+
+theorem decodeCreateStack?_create2_kind_of_some
+    {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeCreateStack? .create2 stack = some decoded) :
+    decodedKind decoded = .create2 := by
+  rw [decodeCreateStack?_create2_eq_some_iff] at h_decode
+  rcases h_decode with ⟨value, offset, size, salt, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  rfl
+
+theorem decodeCreateStack?_kind_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeCreateStack? kind stack = some decoded) :
+    decodedKind decoded = kind := by
+  cases kind with
+  | create => exact decodeCreateStack?_create_kind_of_some h_decode
+  | create2 => exact decodeCreateStack?_create2_kind_of_some h_decode
+
+theorem decodeCreateStack?_usesSalt_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeCreateStack? kind stack = some decoded) :
+    decodedUsesSalt decoded = usesSalt kind := by
+  rw [decodedUsesSalt, decodeCreateStack?_kind_of_some h_decode]
+
+theorem decodeCreateStack?_argumentCount_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeCreateStack? kind stack = some decoded) :
+    decodedArgumentCount decoded = argumentCount kind := by
+  rw [decodedArgumentCount, decodeCreateStack?_kind_of_some h_decode]
+
 theorem decodeCreateStack?_create_eq_none_iff (stack : List EvmWord) :
     decodeCreateStack? .create stack = none ↔ stack.length < argumentCount .create := by
   constructor
