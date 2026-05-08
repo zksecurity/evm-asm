@@ -71,7 +71,7 @@ following ECALL syscalls (all selected by `t0 = x5`):
 |----------|-------------|----------------------|----------------------------|
 | `0x00`   | HALT        | `step_ecall_halt` (returns `none`)        | (no counterpart — see Open question) |
 | `0x02`   | WRITE fd=13 | append a1..a1+a2 bytes from memory to public values | `write_output(output, size)` (shape-compatible: ptr+size, concatenating) |
-| `0x10`   | COMMIT      | `s.appendCommit (a0, a1)` (word-pair commit) | conceptually subsumed by `write_output` (concatenating bytes) |
+| `0x10`   | COMMIT selector, reshaped | `s.writeOutput a0 a1` appends bytes from memory to public values | `write_output(output, size)` |
 | `0xF0`   | HINT_LEN    | returns `privateInput.length` in a0       | replaced by `read_input` (length is `*buf_size` out-parameter; no separate length call) |
 | `0xF1`   | HINT_READ   | streams `(a1)` bytes from `privateInput` into guest memory at `a0` as LE dwords | replaced by `read_input` (no streaming — input lives in a single buffer the guest indexes into) |
 
@@ -97,7 +97,8 @@ shape changes are:
 2. **ECALL handlers.** Replace the `HINT_LEN`/`HINT_READ` cases of
    `step` with a single `read_input` handler (ptr+len-out semantics).
    Reshape `COMMIT` (and/or `WRITE fd=13`) into a `write_output`
-   handler. Keep SP1 syscall IDs as the dispatch numbers for now;
+   handler. The `0x10` branch now has the `write_output(ptr, size)`
+   shape; `WRITE fd=13` remains as a compatibility spelling. Keep SP1 syscall IDs as the dispatch numbers for now;
    document that the IDs are handler-side, not ABI.
 3. **RLP wrappers.** Rewrite `Phase4HintLen.lean` and `Phase4HintRead.lean`
    to consume the `read_input` ptr+len once and index into the buffer,

@@ -328,7 +328,8 @@ theorem loadProgram_programAt {base : Word} {prog : List Instr}
     LH/LHU/SH trap on misaligned or out-of-range addresses.
     EBREAK traps (returns none).
     WRITE (t0 = 0x02) to fd 13 appends bytes from memory to public values.
-    COMMIT (t0 = 0x10) appends (a0, a1) to committed outputs.
+    write_output (t0 = 0x10) appends a1 bytes from memory at a0 to public
+    output bytes.
     Other ECALLs continue execution. -/
 def step (s : MachineState) : Option MachineState :=
   match s.code s.pc with
@@ -402,8 +403,8 @@ def step (s : MachineState) : Option MachineState :=
         some ((s.appendPublicValues bytes).setPC (s.pc + 4))
       else
         some (s.setPC (s.pc + 4))  -- other fd: continue
-    else if t0 == (0x10 : Word) then  -- COMMIT syscall
-      some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4))
+    else if t0 == (0x10 : Word) then  -- write_output syscall
+      some ((s.writeOutput (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4))
     else if t0 == (0xF0 : Word) then  -- HINT_LEN syscall
       -- SP1: returns actual byte count of input stream
       let len := BitVec.ofNat 64 s.privateInput.length
@@ -620,19 +621,27 @@ theorem step_ecall_continue {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 ≠ 0)
     (ht0_nw : s.getReg .x5 ≠ (0x02 : Word))
-    (ht0_nc : s.getReg .x5 ≠ (0x10 : Word))
+    (ht0_nwo : s.getReg .x5 ≠ (0x10 : Word))
     (ht0_nhl : s.getReg .x5 ≠ (0xF0 : Word))
     (ht0_nhr : s.getReg .x5 ≠ (0xF1 : Word)) :
     step s = some (execInstrBr s .ECALL) := by
-  simp only [step, hfetch, beq_iff_eq, ht0, ht0_nw, ht0_nc, ht0_nhl, ht0_nhr, ↓reduceIte]
+  simp only [step, hfetch, beq_iff_eq, ht0, ht0_nw, ht0_nwo, ht0_nhl, ht0_nhr, ↓reduceIte]
 
-/-- COMMIT syscall (SP1 convention: t0 = 0x10) appends (a0, a1) to committed outputs. -/
+/-- `write_output` syscall (t0 = 0x10) appends a1 bytes from memory at a0. -/
+theorem step_ecall_write_output {s : MachineState}
+    (hfetch : s.code s.pc = some .ECALL)
+    (ht0 : s.getReg .x5 = BitVec.ofNat 64 0x10) :
+    step s =
+      some ((s.writeOutput (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) := by
+  simp [step, hfetch, ht0]
+
+@[deprecated step_ecall_write_output (since := "2026-05-08")]
 theorem step_ecall_commit {s : MachineState}
     (hfetch : s.code s.pc = some .ECALL)
     (ht0 : s.getReg .x5 = BitVec.ofNat 64 0x10) :
     step s =
-      some ((s.appendCommit (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) := by
-  simp [step, hfetch, ht0]
+      some ((s.writeOutput (s.getReg .x10) (s.getReg .x11)).setPC (s.pc + 4)) :=
+  step_ecall_write_output hfetch ht0
 
 /-- WRITE syscall to FD_PUBLIC_VALUES (t0 = 0x02, fd = 13) appends bytes from memory. -/
 theorem step_ecall_write_public {s : MachineState}

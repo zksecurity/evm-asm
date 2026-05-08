@@ -16,7 +16,7 @@
   Existing reserved selector values used elsewhere in this repo:
 
       0x00  HALT       (`Rv64.Program.HALT`)
-      0x10  COMMIT
+      0x10  write_output  (`Rv64.Execution.step_ecall_write_output`)
       0xF0  HINT_LEN   (`Rv64.HintSpecs`, `Rv64.RLP.Phase4HintLen`)
       0xF1  HINT_READ  (`Rv64.RLP.Phase4HintRead`)
 
@@ -107,7 +107,7 @@ disjointness check below covers the full active selector space. -/
 /-- HALT framing selector (matches `Rv64.Program.HALT`). -/
 def halt : Nat := 0x00
 
-/-- COMMIT framing selector. -/
+/-- Host `write_output(ptr, size)` framing selector. -/
 def commit : Nat := 0x10
 
 /-- HINT_LEN framing selector (matches `Rv64.HintSpecs`). -/
@@ -256,7 +256,7 @@ def secp256r1_verify : Word := BitVec.ofNat 64 SyscallId.secp256r1_verify
 /-- HALT framing selector as RV64 `Word`. -/
 def halt : Word := BitVec.ofNat 64 SyscallId.halt
 
-/-- COMMIT framing selector as RV64 `Word`. -/
+/-- Host `write_output(ptr, size)` framing selector as RV64 `Word`. -/
 def commit : Word := BitVec.ofNat 64 SyscallId.commit
 
 /-- HINT_LEN framing selector as RV64 `Word`. -/
