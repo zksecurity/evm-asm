@@ -173,6 +173,50 @@ theorem dispatchByte_supported_SMOD_byte_gas
   rw [dispatchByte_supported_SMOD_byte]
   exact SModStackExecutionBridge.smodHandler_gas state
 
+theorem dispatchByte_supported_SDIV_byte_code
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).code = state.code := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_code state
+
+theorem dispatchByte_supported_SMOD_byte_code
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).code = state.code := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_code state
+
+theorem dispatchByte_supported_SDIV_byte_codeLen
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).codeLen =
+        state.codeLen := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_codeLen state
+
+theorem dispatchByte_supported_SMOD_byte_codeLen
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).codeLen =
+        state.codeLen := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_codeLen state
+
+theorem dispatchByte_supported_SDIV_byte_env
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).env = state.env := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_env state
+
+theorem dispatchByte_supported_SMOD_byte_env
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).env = state.env := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_env state
+
 theorem dispatchByte_supported_SDIV_byte_memoryCells
     (state : EvmState) :
     (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
