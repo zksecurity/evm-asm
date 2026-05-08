@@ -189,6 +189,16 @@ theorem runExpStack?_head?
       some (some (ExpArgs.expResultFromArgs
         (ExpArgs.expArgs base exponent))) := rfl
 
+theorem runExpStack?_head?_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.stackWords.head? =
+      some (ExpArgs.expResultFromArgs (ExpArgs.expArgs base exponent)) := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
 theorem runExpStack?_gas
     (base exponent : EvmWord) (rest : List EvmWord) :
     (runExpStack? { stack := base :: exponent :: rest }).map
