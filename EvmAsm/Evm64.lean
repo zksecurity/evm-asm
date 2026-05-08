@@ -13,6 +13,7 @@ import EvmAsm.Evm64.Accelerators.Types
 import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 import EvmAsm.Evm64.Accelerators.Dispatch
+import EvmAsm.Evm64.Accelerators.Coverage
 
 -- Stack operations
 import EvmAsm.Evm64.Pop
