@@ -83,6 +83,34 @@ theorem loopFuel_one_of_execSpecLogByte
   exact InterpreterExecutableFetchBridge.stepWithHandler_of_execSpecLogByte
     handler kind h_pc h_code
 
+theorem loopFuel_one_of_execSpec_SDIV
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    InterpreterLoop.loopFuel handler 1 state =
+      handler EvmOpcode.SDIV state := by
+  rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
+  exact InterpreterExecutableFetchBridge.stepWithHandler_of_execSpec_SDIV
+    handler h_pc h_code
+
+theorem loopFuel_one_of_execSpec_SMOD
+    (handler : InterpreterLoop.Handler)
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    InterpreterLoop.loopFuel handler 1 state =
+      handler EvmOpcode.SMOD state := by
+  rw [InterpreterLoop.loopFuel_succ_running handler 0 state h_status]
+  exact InterpreterExecutableFetchBridge.stepWithHandler_of_execSpec_SMOD
+    handler h_pc h_code
+
 theorem loopFuel_one_of_unsupported
     (handler : InterpreterLoop.Handler)
     {state : EvmState} {byte : BitVec 8}
