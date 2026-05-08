@@ -151,6 +151,46 @@ theorem evm_mload_combined_one_limb_sequence_stack_spec_within_framed
     framed
 
 /--
+Framed version of `evm_mload_combined_stack_spec_within`.
+
+This is the coarse-body counterpart of
+`evm_mload_combined_one_limb_sequence_stack_spec_within_framed`: callers that
+already produce one consolidated MLOAD body triple can preserve an arbitrary
+`pcFree` frame across the public prologue/body composition.
+
+Distinctive token: evm_mload_combined_stack_spec_within_framed #53.
+-/
+theorem evm_mload_combined_stack_spec_within_framed
+    {n : Nat} {Q : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h4 :
+      cpsTripleWithin n (base + 8) (base + 376)
+        (mloadStackCode offReg byteReg accReg addrReg memBaseReg base)
+        (((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+         (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+         (sp ↦ₘ offset))
+        Q) :
+    cpsTripleWithin (2 + n) base (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) ** F)
+      (Q ** F) := by
+  have framed := cpsTripleWithin_frameL (F := F) hF
+    (evm_mload_combined_stack_spec_within
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset offOld addrOld memBase base
+      h_off_ne_x0 h_addr_ne_x0 h4)
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
+
+/--
 Threaded-frame variant of `evm_mload_combined_one_limb_sequence_stack_spec_within`.
 
 Unlike the whole-sequence frame wrapper above, this theorem starts q0 from the
