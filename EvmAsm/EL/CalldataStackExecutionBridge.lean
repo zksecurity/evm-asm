@@ -243,6 +243,35 @@ theorem runCalldataStack?_size_head?_of_some
   rfl
 
 /--
+CALLDATALOAD and CALLDATASIZE do not expose copied bytes, and CALLDATACOPY
+does not push a stack word.
+
+Distinctive token:
+CalldataStackExecutionBridge.runCalldataStack?_empty_effects_projections #104 #107.
+-/
+theorem runCalldataStack?_load_copiedBytes
+    {data : List (BitVec 8)} {offset : EvmWord} {rest : List EvmWord}
+    {out : CalldataStackResult}
+    (h_run : runCalldataStack? .callDataLoad
+      { data := data, stack := offset :: rest } = some out) :
+    out.effects.copiedBytes = [] := by
+  rw [runCalldataStack?_load] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+theorem runCalldataStack?_size_copiedBytes
+    {data : List (BitVec 8)} {stack : List EvmWord}
+    {out : CalldataStackResult}
+    (h_run : runCalldataStack? .callDataSize
+      { data := data, stack := stack } = some out) :
+    out.effects.copiedBytes = [] := by
+  rw [runCalldataStack?_size] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+/--
 CALLDATACOPY stack execution succeeds exactly when three operand words are
 available, returning no stack word and the copied byte sequence.
 
@@ -356,6 +385,17 @@ theorem runCalldataStack?_copy_copiedBytes_length
   cases h_stack_eq
   subst h_out
   simp [EvmAsm.Evm64.CallDataCopyArgs.copyArgs]
+
+theorem runCalldataStack?_copy_stackWords
+    {data : List (BitVec 8)} {destOffset dataOffset size : EvmWord}
+    {rest : List EvmWord} {out : CalldataStackResult}
+    (h_run : runCalldataStack? .callDataCopy
+      { data := data, stack := destOffset :: dataOffset :: size :: rest } = some out) :
+    out.effects.stackWords = [] := by
+  rw [runCalldataStack?_copy] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
 
 theorem runCalldataStack?_load_underflow (data : List (BitVec 8)) :
     runCalldataStack? .callDataLoad { data := data, stack := [] } = none := rfl
