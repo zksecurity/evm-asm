@@ -84,6 +84,13 @@ theorem callVisibleEffects_stack_head_eq_one_iff
   simpa [callVisibleEffects] using
     CallStackBridge.callStackResult_head_eq_one_iff result
 
+theorem callVisibleEffects_stack_head_eq_zero_iff
+    (result : CallResult) (outputRange : MemoryRange) :
+    (callVisibleEffects result outputRange).stackWords.head? = some 0 ↔
+      result.status ≠ .success := by
+  simpa [callVisibleEffects] using
+    CallStackBridge.callStackResult_head_eq_zero_iff result
+
 end CallResultEffectsBridge
 
 end EvmAsm.EL
