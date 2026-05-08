@@ -289,6 +289,17 @@ theorem loopTrace_table_matchesSpec_at_length
       (InterpreterTrace.loopTrace spec nSteps state).length := by
   rw [loopTrace_table_matchesSpec_at table spec h_dispatch nSteps state]
 
+theorem loopTrace_table_matchesSpec_at_get?
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (nSteps : Nat) (state : EvmState) (idx : Nat) :
+    (InterpreterTrace.loopTrace
+        (HandlerLoopBridge.toLoopHandler table) nSteps state)[idx]? =
+      (InterpreterTrace.loopTrace spec nSteps state)[idx]? := by
+  rw [loopTrace_table_matchesSpec_at table spec h_dispatch nSteps state]
+
 theorem loopResultsMatch_table_matchesSpec
     (table : HandlerTable) (spec : InterpreterLoop.Handler)
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
