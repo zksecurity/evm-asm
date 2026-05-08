@@ -57,6 +57,22 @@ theorem loopFuelAndTrace_matchesSpec
     InterpreterSimulation.loopFuel_matchesSpec h_match nSteps state,
     loopTrace_matchesSpec h_match nSteps state]
 
+theorem loopFuelAndTrace_matchesSpec_state
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel impl nSteps state =
+      InterpreterLoop.loopFuel spec nSteps state := by
+  exact congrArg Prod.fst (loopFuelAndTrace_matchesSpec h_match nSteps state)
+
+theorem loopFuelAndTrace_matchesSpec_trace
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    InterpreterTrace.loopTrace impl nSteps state =
+      InterpreterTrace.loopTrace spec nSteps state := by
+  exact congrArg Prod.snd (loopFuelAndTrace_matchesSpec h_match nSteps state)
+
 theorem loopFuelAndTrace_matchesSpec_status
     {impl spec : InterpreterLoop.Handler}
     (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
@@ -65,6 +81,14 @@ theorem loopFuelAndTrace_matchesSpec_status
       (InterpreterLoop.loopFuel spec nSteps state).status := by
   exact congrArg (fun result => result.1.status)
     (loopFuelAndTrace_matchesSpec h_match nSteps state)
+
+theorem loopFuelAndTrace_matchesSpec_trace_length
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterTrace.loopTrace impl nSteps state).length =
+      (InterpreterTrace.loopTrace spec nSteps state).length := by
+  rw [loopFuelAndTrace_matchesSpec_trace h_match nSteps state]
 
 end InterpreterTraceSimulation
 
