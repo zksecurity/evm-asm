@@ -319,6 +319,8 @@
   ["EvmAsm.Evm64.DivMod.Compose.ModPhaseB"],
   "EvmAsm.Evm64.DivMod.LoopBody.TrialMax":
   ["EvmAsm.Evm64.DivMod.LoopBody"],
+  "EvmAsm.Evm64.DivMod.LoopBody":
+  ["EvmAsm.Evm64.EvmWordArith.DivN4Overestimate"],
   "EvmAsm.Evm64.Shift.ShlCompose":
   ["EvmAsm.Evm64.Shift.ComposeBase"],
   "EvmAsm.Evm64.Shift.SarCompose":
