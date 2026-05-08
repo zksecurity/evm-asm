@@ -444,6 +444,44 @@ theorem evm_mload_public_one_limb_sequence_spec_within
     h3
 
 /--
+Permutation-aware public-code MLOAD q0..q3 composition.
+
+This variant lets callers stitch concrete quarter specs whose postconditions
+match the next precondition only after rearranging or weakening separation
+conjunction atoms.
+
+Distinctive token: evm_mload_public_one_limb_sequence_spec_within_perm #53.
+-/
+theorem evm_mload_public_one_limb_sequence_spec_within_perm
+    {n0 n1 n2 n3 : Nat}
+    {P0 P1 P1' P2 P2' P3 P3' P4 : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P0 P1)
+    (h01 : ∀ s, P1 s → P1' s)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P1' P2)
+    (h12 : ∀ s, P2 s → P2' s)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P2' P3)
+    (h23 : ∀ s, P3 s → P3' s)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P3' P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P0 P4 := by
+  exact cpsTripleWithin_seq_perm_same_cr
+    h23
+    (cpsTripleWithin_seq_perm_same_cr
+      h12
+      (cpsTripleWithin_seq_perm_same_cr h01 h0 h1)
+      h2)
+    h3
+
+/--
 Compose the framed MLOAD prologue with four public-code one-limb quarter
 triples.
 
