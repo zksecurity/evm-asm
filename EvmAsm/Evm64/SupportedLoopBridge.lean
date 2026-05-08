@@ -113,6 +113,44 @@ theorem stepWithSupportedHandler_SWAP_status_of_some
   exact SupportedHandlers.dispatchOpcode_supportedHandlerTable_SWAP_of_valid_status_of_some
     h_valid h_stack
 
+theorem stepWithSupportedHandler_SDIV
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    InterpreterLoop.stepWithHandler supportedLoopHandler state =
+      ArithmeticHandlers.sdivHandler state := by
+  exact stepWithSupportedHandler_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_SDIV
+
+theorem stepWithSupportedHandler_SMOD
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    InterpreterLoop.stepWithHandler supportedLoopHandler state =
+      ArithmeticHandlers.smodHandler state := by
+  exact stepWithSupportedHandler_of_lookup h_decode
+    SupportedHandlers.supportedHandlerTable_SMOD
+
+theorem stepWithSupportedHandler_SDIV_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack =
+      some stack') :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
+
+theorem stepWithSupportedHandler_SMOD_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD)
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack =
+      some stack') :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
+
 /--
 When the combined supported loop decodes STOP, one interpreter step terminates
 successfully.
@@ -272,6 +310,26 @@ theorem loopFuel_supported_succ_running_INVALID_status
       .error := by
   rw [loopFuel_supported_succ_running_INVALID nSteps h_status h_decode]
   exact loopFuel_supported_invalid_fixed_status nSteps state
+
+theorem loopFuel_supported_succ_running_SDIV
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state =
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps
+        (ArithmeticHandlers.sdivHandler state) := by
+  exact loopFuel_supported_succ_running_lookup nSteps h_status h_decode
+    SupportedHandlers.supportedHandlerTable_SDIV
+
+theorem loopFuel_supported_succ_running_SMOD
+    (nSteps : Nat) {state : EvmState}
+    (h_status : state.status = .running)
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    InterpreterLoop.loopFuel supportedLoopHandler (nSteps + 1) state =
+      InterpreterLoop.loopFuel supportedLoopHandler nSteps
+        (ArithmeticHandlers.smodHandler state) := by
+  exact loopFuel_supported_succ_running_lookup nSteps h_status h_decode
+    SupportedHandlers.supportedHandlerTable_SMOD
 
 theorem loopFuel_supported_missing_invalid
     (nSteps : Nat) {state : EvmState} {opcode : EvmOpcode}
