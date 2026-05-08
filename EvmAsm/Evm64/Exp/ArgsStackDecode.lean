@@ -45,6 +45,33 @@ theorem decodeExpStack?_eq_some_iff
   · rintro ⟨base, exponent, rest, rfl, rfl⟩
     rfl
 
+theorem decodeExpStack?_base_of_some
+    {stack : List EvmWord} {args : ExpArgs.Args}
+    (h : decodeExpStack? stack = some args) :
+    ∃ exponent rest, stack = args.base :: exponent :: rest := by
+  obtain ⟨base, exponent, rest, h_stack, h_args⟩ :=
+    decodeExpStack?_eq_some_iff.mp h
+  subst h_args
+  exact ⟨exponent, rest, h_stack⟩
+
+theorem decodeExpStack?_exponent_of_some
+    {stack : List EvmWord} {args : ExpArgs.Args}
+    (h : decodeExpStack? stack = some args) :
+    ∃ base rest, stack = base :: args.exponent :: rest := by
+  obtain ⟨base, exponent, rest, h_stack, h_args⟩ :=
+    decodeExpStack?_eq_some_iff.mp h
+  subst h_args
+  exact ⟨base, rest, h_stack⟩
+
+theorem decodeExpStack?_base_exponent_of_some
+    {stack : List EvmWord} {args : ExpArgs.Args}
+    (h : decodeExpStack? stack = some args) :
+    ∃ rest, stack = args.base :: args.exponent :: rest := by
+  obtain ⟨base, exponent, rest, h_stack, h_args⟩ :=
+    decodeExpStack?_eq_some_iff.mp h
+  subst h_args
+  exact ⟨rest, h_stack⟩
+
 theorem decodeExpStack?_eq_none_iff
     {stack : List EvmWord} :
     decodeExpStack? stack = none ↔
