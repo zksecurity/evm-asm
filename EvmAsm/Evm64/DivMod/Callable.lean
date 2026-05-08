@@ -31,6 +31,7 @@
 
 import EvmAsm.Evm64.DivMod.Program
 import EvmAsm.Evm64.DivMod.Compose.Base
+import EvmAsm.Evm64.DivMod.Spec.Unified
 import EvmAsm.Evm64.CallingConvention
 
 namespace EvmAsm.Evm64
@@ -366,6 +367,14 @@ private theorem callable_b13_div {b : Word} :
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlockCC; exact CodeReq.union_mono_left
 
+theorem evm_div_callable_code_ret_sub {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + nopOff) (.JALR .x0 .x1 0)) a = some i →
+      (evm_div_callable_code base) a = some i := by
+  intro a i h
+  apply callable_b12_div
+  unfold cc_ret_code cc_ret
+  simpa [CodeReq.ofProg] using h
+
 /-- Bundle: every per-block subsumption for `evm_div_callable_code`. Mirrors
     `mul_callable_code_block_subs` (Multiply/Callable.lean) so downstream
     composition slices can destructure ⟨b0, b1, …, b13⟩ in one shot. -/
@@ -486,6 +495,14 @@ private theorem callable_b13_mod {b : Word} :
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlockCC; exact CodeReq.union_mono_left
 
+theorem evm_mod_callable_code_ret_sub {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + nopOff) (.JALR .x0 .x1 0)) a = some i →
+      (evm_mod_callable_code base) a = some i := by
+  intro a i h
+  apply callable_b12_mod
+  unfold cc_ret_code cc_ret
+  simpa [CodeReq.ofProg] using h
+
 /-- Bundle: every per-block subsumption for `evm_mod_callable_code`. Mirror
     of `evm_div_callable_code_block_subs`. -/
 theorem evm_mod_callable_code_block_subs (base : Word) :
@@ -576,5 +593,82 @@ theorem modCode_noNop_sub_mod_callable_code {base : Word} :
     (CodeReq.union_split_mono callable_b11_mod
     (CodeReq.union_split_mono callable_b13_mod
     (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
+
+-- ============================================================================
+-- Callable composition from no-NOP dispatcher specs
+--
+-- The remaining heavy refactor is to expose the public dispatcher stack specs
+-- over `divCode_noNop` / `modCode_noNop`. Once that is available, these
+-- helpers compose the no-NOP body with the `cc_ret` instruction that occupies
+-- the old NOP slot in the callable code requirement.
+-- ============================================================================
+
+theorem evm_div_callable_spec_from_noNop (sp base raVal : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (branch : DivStackSpecCase base a b)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+        (divModStackDispatchPre sp a b
+          branch.x1 branch.x2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (divStackDispatchPost sp a b)) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPre sp a b
+        branch.x1 branch.x2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** (.x1 ↦ᵣ raVal))
+      (divStackDispatchPost sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hpcFreePost : (divStackDispatchPost sp a b).pcFree := by
+    rw [divStackDispatchPost_unfold]
+    rw [divScratchOwnCall_unfold, divScratchOwn_unfold]
+    pcFree
+  have hStackCall :=
+    cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_div_callable_code) hStack
+  have hStackFramed :=
+    cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) hStackCall
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_div_callable_code_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL (divStackDispatchPost sp a b) hpcFreePost hRet
+  exact cpsTripleWithin_seq_same_cr hStackFramed hRetFramed
+
+theorem evm_mod_callable_spec_from_noNop (sp base raVal : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (branch : ModStackSpecCase base a b)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (modCode_noNop base)
+        (divModStackDispatchPre sp a b
+          branch.x1 branch.x2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (modStackDispatchPost sp a b)) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_mod_callable_code base)
+      (divModStackDispatchPre sp a b
+        branch.x1 branch.x2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** (.x1 ↦ᵣ raVal))
+      (modStackDispatchPost sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hpcFreePost : (modStackDispatchPost sp a b).pcFree := by
+    rw [modStackDispatchPost_unfold]
+    rw [divScratchOwnCall_unfold, divScratchOwn_unfold]
+    pcFree
+  have hStackCall :=
+    cpsTripleWithin_extend_code (hmono := modCode_noNop_sub_mod_callable_code) hStack
+  have hStackFramed :=
+    cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) hStackCall
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_mod_callable_code_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL (modStackDispatchPost sp a b) hpcFreePost hRet
+  exact cpsTripleWithin_seq_same_cr hStackFramed hRetFramed
 
 end EvmAsm.Evm64
