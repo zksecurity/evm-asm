@@ -143,6 +143,24 @@ theorem dispatchByte_supported_of_lookup_preserves_status
   rw [dispatchByte_supported_of_lookup_status h_decode h_lookup state]
   exact h_status state
 
+/--
+Decoded byte dispatch through the supported table preserves `codeLenMatches`
+whenever the looked-up handler does.
+
+Distinctive token: supportedByteLookupPreservesCodeLenMatches #107.
+-/
+theorem dispatchByte_supported_of_lookup_preserves_codeLenMatches
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).codeLenMatches := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+  exact h_codeLen state h_state
+
 theorem dispatchByte_supported_of_decode
     {b : Fin 256} {opcode : EvmOpcode}
     (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
