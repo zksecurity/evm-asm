@@ -45,6 +45,12 @@ theorem callVisibleEffects_output_length_le_range
     (callVisibleEffects result outputRange).outputBytes.length ≤ outputRange.size.toNat := by
   exact CallOutputBridge.copiedOutputForRange_length_le_range result outputRange
 
+theorem callVisibleEffects_output_length_le_output
+    (result : CallResult) (outputRange : MemoryRange) :
+    (callVisibleEffects result outputRange).outputBytes.length ≤
+      (MessageCallExecution.propagatedOutput result).length := by
+  exact CallOutputBridge.copiedOutputForRange_length_le_output result outputRange
+
 theorem callVisibleEffects_success
     (state : WorldState) (output : List Byte) (gasRemaining : Nat)
     (outputRange : MemoryRange) :
