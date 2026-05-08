@@ -17,6 +17,13 @@ theorem smodHandler_pc
     simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
       EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
 
+theorem smodHandler_gas
+    (state : EvmState) :
+    (ArithmeticHandlers.smodHandler state).gas = state.gas := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack <;>
+    simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
 theorem smodHandler_stack_of_runSModStack?_some
     {state : EvmState} {out : SModStackResult}
     (h_run : runSModStack? { stack := state.stack } = some out) :
