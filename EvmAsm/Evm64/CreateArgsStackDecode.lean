@@ -31,6 +31,14 @@ def decodedInitcode : Decoded → InitcodeRange
   | .create args => args.initcode
   | .create2 args => args.initcode
 
+def decodedValue : Decoded → EvmWord
+  | .create args => args.value
+  | .create2 args => args.value
+
+def decodedSalt? : Decoded → Option EvmWord
+  | .create _ => none
+  | .create2 args => some args.salt
+
 def decodedUsesSalt (decoded : Decoded) : Bool :=
   usesSalt (decodedKind decoded)
 
@@ -187,6 +195,18 @@ theorem decodedInitcode_create (value offset size : EvmWord) :
 theorem decodedInitcode_create2 (value offset size salt : EvmWord) :
     decodedInitcode (.create2 (mkCreate2 value offset size salt)) =
       { offset := offset, size := size } := rfl
+
+theorem decodedValue_create (value offset size : EvmWord) :
+    decodedValue (.create (mkCreate value offset size)) = value := rfl
+
+theorem decodedValue_create2 (value offset size salt : EvmWord) :
+    decodedValue (.create2 (mkCreate2 value offset size salt)) = value := rfl
+
+theorem decodedSalt?_create (value offset size : EvmWord) :
+    decodedSalt? (.create (mkCreate value offset size)) = none := rfl
+
+theorem decodedSalt?_create2 (value offset size salt : EvmWord) :
+    decodedSalt? (.create2 (mkCreate2 value offset size salt)) = some salt := rfl
 
 theorem decodedUsesSalt_create (value offset size : EvmWord) :
     decodedUsesSalt (.create (mkCreate value offset size)) = false := rfl
