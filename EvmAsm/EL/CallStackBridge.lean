@@ -62,6 +62,17 @@ theorem callStackResult_get_zero_eq_one_iff (result : CallResult) :
   simpa [callStackResult]
     using CallOutputBridge.callResultSuccessFlag_eq_one_iff result
 
+theorem callStackResult_head_eq_zero_iff (result : CallResult) :
+    (callStackResult result).head? = some 0 ↔ result.status ≠ .success := by
+  cases result with
+  | mk status state output gasRemaining =>
+      cases status <;> simp [callStackResult, CallOutputBridge.callResultSuccessFlag]
+
+theorem callStackResult_get_zero_eq_zero_iff (result : CallResult) :
+    (callStackResult result)[0]? = some 0 ↔ result.status ≠ .success := by
+  simpa [callStackResult]
+    using CallOutputBridge.callResultSuccessFlag_eq_zero_iff result
+
 end CallStackBridge
 
 end EvmAsm.EL

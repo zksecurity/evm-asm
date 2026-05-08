@@ -53,6 +53,19 @@ def storageStackSstoreVector : TestVector StorageStackInput StorageStackState :=
         stackState := { stack := [7, 42, 99] } }
     expected := .value { stack := [99] } }
 
+/-- SSTORE requires both slot and value stack operands.
+    Distinctive token: storageSstoreUnderflowConformanceVector #110 #125. -/
+def storageSstoreUnderflowConformanceVector :
+    TestVector StorageStackInput StorageStackState :=
+  { id := "storage-stack-sstore-underflow"
+    input :=
+      { kind := .sstore
+        world := WorldState.empty
+        accesses := []
+        address := 0x1234
+        stackState := { stack := [7] } }
+    expected := .error "stack-underflow" }
+
 /-- Storage stack conformance inputs as reusable test vectors.
     Distinctive token:
     StorageStackExecutionConformance.storageStackConformanceTestVectors #110 #125. -/
@@ -60,22 +73,24 @@ def storageStackConformanceTestVectors :
     List (TestVector StorageStackInput StorageStackState) :=
   [ storageStackSloadVector
   , storageStackSstoreVector
+  , storageSstoreUnderflowConformanceVector
   ]
 
 def storageStackConformanceVectorIds : List String :=
   storageStackConformanceTestVectors.map TestVector.id
 
 theorem storageStackConformanceTestVectors_length :
-    storageStackConformanceTestVectors.length = 2 := rfl
+    storageStackConformanceTestVectors.length = 3 := rfl
 
 theorem storageStackConformanceVectorIds_eq :
     storageStackConformanceVectorIds =
       [ "storage-stack-sload"
       , "storage-stack-sstore"
+      , "storage-stack-sstore-underflow"
       ] := rfl
 
 theorem storageStackConformanceVectorIds_length :
-    storageStackConformanceVectorIds.length = 2 := rfl
+    storageStackConformanceVectorIds.length = 3 := rfl
 
 theorem storageStackConformanceVectorIds_nodup :
     storageStackConformanceVectorIds.Nodup := by
@@ -98,6 +113,15 @@ theorem runStorageStack?_sstore_empty :
         address := (0x1234 : Address)
         stackState := { stack := [(7 : EvmWord), (42 : EvmWord), (99 : EvmWord)] } } =
       some { stack := [(99 : EvmWord)] } := rfl
+
+theorem runStorageStack?_sstore_underflow :
+    runStorageStack?
+      { kind := .sstore
+        world := WorldState.empty
+        accesses := []
+        address := (0x1234 : Address)
+        stackState := { stack := [(7 : EvmWord)] } } =
+      none := rfl
 
 theorem storageStackSloadVector_passed :
     checkVector? runStorageStack? storageStackSloadVector = .passed :=
@@ -124,6 +148,19 @@ theorem storageStackSstoreVector_passed :
     { stack := [(99 : EvmWord)] }
     runStorageStack?_sstore_empty
 
+theorem storageSstoreUnderflowConformanceVector_errored :
+    checkVector? runStorageStack? storageSstoreUnderflowConformanceVector =
+      .errored "storage-stack-sstore-underflow" "stack-underflow" :=
+  checkVector?_none_error runStorageStack?
+    "storage-stack-sstore-underflow"
+    "stack-underflow"
+    { kind := .sstore
+      world := WorldState.empty
+      accesses := []
+      address := (0x1234 : Address)
+      stackState := { stack := [(7 : EvmWord)] } }
+    runStorageStack?_sstore_underflow
+
 /-- Compact checked-vector batch for storage stack execution.
     Distinctive token:
     StorageStackExecutionConformance.storageStackConformanceVectors #110 #125. -/
@@ -131,9 +168,11 @@ def storageStackConformanceVectors : List CheckResult :=
   checkBatch? runStorageStack? storageStackConformanceTestVectors
 
 theorem storageStackConformanceVectors_passed :
-    storageStackConformanceVectors = [.passed, .passed] := by
+    storageStackConformanceVectors =
+      [.passed, .passed, .errored "storage-stack-sstore-underflow" "stack-underflow"] := by
   simp [storageStackConformanceVectors, storageStackConformanceTestVectors,
-    storageStackSloadVector_passed, storageStackSstoreVector_passed]
+    storageStackSloadVector_passed, storageStackSstoreVector_passed,
+    storageSstoreUnderflowConformanceVector_errored]
 
 end StorageStackExecution
 end Conformance

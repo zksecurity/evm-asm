@@ -122,6 +122,12 @@ theorem copiedOutputForRange_length_le_output (result : CallResult) (range : Mem
   rw [copiedOutputForRange_length_eq_min]
   exact Nat.min_le_left _ _
 
+theorem copiedOutputForRange_eq_output_of_length_le
+    (result : CallResult) (range : MemoryRange)
+    (h_len : (MessageCallExecution.propagatedOutput result).length ≤ range.size.toNat) :
+    copiedOutputForRange result range = MessageCallExecution.propagatedOutput result := by
+  simp [copiedOutputForRange, List.take_of_length_le h_len]
+
 end CallOutputBridge
 
 end EvmAsm.EL

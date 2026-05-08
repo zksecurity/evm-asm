@@ -365,6 +365,78 @@ theorem dispatchOpcode_of_lookup_status
       (handler state).status := by
   rw [dispatchOpcode_of_lookup h_lookup state]
 
+theorem dispatchOpcode_of_lookup_pc
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).pc =
+      (handler state).pc := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_gas
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).gas =
+      (handler state).gas := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_stack
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).stack =
+      (handler state).stack := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_memoryCells
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).memoryCells =
+      (handler state).memoryCells := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_memory
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) (addr : Nat) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).memory addr =
+      (handler state).memory addr := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_memSize
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).memSize =
+      (handler state).memSize := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_code
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).code =
+      (handler state).code := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_codeLen
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).codeLen =
+      (handler state).codeLen := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_env
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).env =
+      (handler state).env := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
 @[simp] theorem supportedHandlerTable_STOP :
     supportedHandlerTable .STOP =
       some TerminatingHandlers.stopHandler := by
@@ -381,6 +453,40 @@ theorem dispatchOpcode_of_lookup_status
   exact lookup_of_stack
     (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
     StackHandlers.stackHandlerTable_PUSH0
+
+@[simp] theorem supportedHandlerTable_POP :
+    supportedHandlerTable .POP =
+      some StackHandlers.popHandler := by
+  exact lookup_of_stack
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    StackHandlers.stackHandlerTable_POP
+
+@[simp] theorem supportedHandlerTable_PC :
+    supportedHandlerTable .PC =
+      some ControlHandlers.pcHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_PC
+
+@[simp] theorem supportedHandlerTable_GAS :
+    supportedHandlerTable .GAS =
+      some ControlHandlers.gasHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_GAS
+
+@[simp] theorem supportedHandlerTable_JUMPDEST :
+    supportedHandlerTable .JUMPDEST =
+      some ControlHandlers.jumpdestHandler := by
+  exact lookup_of_control
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    ControlHandlers.controlHandlerTable_JUMPDEST
 
 @[simp] theorem supportedHandlerTable_RETURNDATASIZE :
     supportedHandlerTable .RETURNDATASIZE =

@@ -321,6 +321,37 @@ theorem acceleratorPrecompileSymbols_subset_coverage :
   rw [acceleratorPrecompileSymbols_eq, acceleratorCoverageSymbols_eq]
   decide
 
+/-! ### Hash precompile slice -/
+
+/-- Hash-family precompile accelerator C symbols tracked by `evm-asm-yvfgi`. -/
+def hashPrecompileSymbols : List String :=
+  ["zkvm_sha256", "zkvm_ripemd160", "zkvm_blake2f"]
+
+theorem hashPrecompileSymbols_subset_precompiles :
+    ∀ symbol ∈ hashPrecompileSymbols, symbol ∈ acceleratorPrecompileSymbols := by
+  rw [hashPrecompileSymbols, acceleratorPrecompileSymbols_eq]
+  decide
+
+theorem hashPrecompileSymbols_nodup :
+    hashPrecompileSymbols.Nodup := by
+  rw [hashPrecompileSymbols]
+  decide
+
+/-- EVM precompile addresses covered by the hash-family accelerator slice. -/
+def hashPrecompileAddresses : List Nat :=
+  [0x02, 0x03, 0x09]
+
+theorem hashPrecompileAddresses_subset_acceleratorPrecompileAddresses :
+    ∀ address ∈ hashPrecompileAddresses,
+      address ∈ acceleratorPrecompileAddresses := by
+  rw [hashPrecompileAddresses, acceleratorPrecompileAddresses_eq]
+  decide
+
+theorem hashPrecompileAddresses_nodup :
+    hashPrecompileAddresses.Nodup := by
+  rw [hashPrecompileAddresses]
+  decide
+
 def acceleratorClassifiedSymbols : List String :=
   acceleratorOpcodeSymbols ++ acceleratorNonPrecompileSymbols ++
     acceleratorPrecompileSymbols
@@ -402,6 +433,25 @@ theorem acceleratorPrecompileSelectors_nodup :
 theorem acceleratorPrecompileSelectors_are_accelerators :
     ∀ id ∈ acceleratorPrecompileSelectors, isAccelerator id := by
   rw [acceleratorPrecompileSelectors_eq]
+  decide
+
+/-- Accelerator selectors covered by the hash-family precompile slice. -/
+def hashPrecompileSelectors : List Nat :=
+  [sha256, ripemd160, blake2f]
+
+theorem hashPrecompileSelectors_subset_precompiles :
+    ∀ id ∈ hashPrecompileSelectors, id ∈ acceleratorPrecompileSelectors := by
+  rw [hashPrecompileSelectors, acceleratorPrecompileSelectors_eq]
+  decide
+
+theorem hashPrecompileSelectors_are_accelerators :
+    ∀ id ∈ hashPrecompileSelectors, isAccelerator id := by
+  rw [hashPrecompileSelectors]
+  decide
+
+theorem hashPrecompileSelectors_nodup :
+    hashPrecompileSelectors.Nodup := by
+  rw [hashPrecompileSelectors]
   decide
 
 def acceleratorClassifiedSelectors : List Nat :=
