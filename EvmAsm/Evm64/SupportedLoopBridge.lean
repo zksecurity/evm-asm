@@ -131,6 +131,22 @@ theorem stepWithSupportedHandler_SMOD
   exact stepWithSupportedHandler_of_lookup h_decode
     SupportedHandlers.supportedHandlerTable_SMOD
 
+theorem stepWithSupportedHandler_SDIV_pc
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+      state.pc := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_pc state
+
+theorem stepWithSupportedHandler_SMOD_pc
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+      state.pc := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_pc state
+
 theorem stepWithSupportedHandler_SDIV_status_of_some
     {state : EvmState} {stack' : List EvmWord}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
