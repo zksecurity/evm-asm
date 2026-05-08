@@ -26,6 +26,10 @@ inductive Kind where
   | sstore
   deriving DecidableEq, Repr
 
+/-- The storage opcode kinds covered by GH #110. -/
+def allKinds : List Kind :=
+  [.sload, .sstore]
+
 inductive Decoded where
   | sload (args : SLoad)
   | sstore (args : SStore)
@@ -42,6 +46,23 @@ def resultCount : Kind → Nat
 def writesStorage : Kind → Bool
   | .sload => false
   | .sstore => true
+
+theorem allKinds_nodup :
+    allKinds.Nodup := by
+  decide
+
+theorem mem_allKinds (kind : Kind) :
+    kind ∈ allKinds := by
+  cases kind <;> decide
+
+theorem allKinds_argumentCounts :
+    allKinds.map argumentCount = [1, 2] := rfl
+
+theorem allKinds_resultCounts :
+    allKinds.map resultCount = [1, 0] := rfl
+
+theorem allKinds_writesStorage :
+    allKinds.map writesStorage = [false, true] := rfl
 
 def mkSLoad (slot : EvmWord) : SLoad :=
   { slot := slot }
