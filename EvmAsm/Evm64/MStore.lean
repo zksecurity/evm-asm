@@ -7,3 +7,4 @@ import EvmAsm.Evm64.MStore.CombinedSequenceSpec
 import EvmAsm.Evm64.MStore.FullSpec
 import EvmAsm.Evm64.MStore.UnalignedStackSpec
 import EvmAsm.Evm64.MStore.UnalignedFramedStackSpec
+import EvmAsm.Evm64.MStore.MemoryFrameSpec
