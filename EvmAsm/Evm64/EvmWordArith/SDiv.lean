@@ -61,6 +61,13 @@ theorem sdiv_intMin_neg_one : sdiv (BitVec.intMin 256) (-1) = BitVec.intMin 256 
   have h : (-1 : BitVec 256) = -1#256 := by decide
   rw [h, BitVec.intMin_sdiv_neg_one]
 
+-- Closed truncation examples used by the opcode-level edge-case suite.
+theorem sdiv_neg_one_two : sdiv (-1 : EvmWord) 2 = 0 := by
+  native_decide
+
+theorem sdiv_pos_neg_trunc : sdiv (7 : EvmWord) (-2) = (-3 : EvmWord) := by
+  native_decide
+
 -- ============================================================================
 -- Correctness vs `Int.tdiv` (the spec formula)
 -- ============================================================================

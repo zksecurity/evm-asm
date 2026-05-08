@@ -56,6 +56,16 @@ theorem zero_smod_left {b : EvmWord} : smod 0 b = 0 := by
   · rfl
   · simp [BitVec.zero_srem]
 
+-- Closed sign-of-dividend examples used by the opcode-level edge-case suite.
+theorem smod_neg_pos_sign : smod (-3 : EvmWord) 2 = (-1 : EvmWord) := by
+  native_decide
+
+theorem smod_pos_neg_sign : smod (3 : EvmWord) (-2) = (1 : EvmWord) := by
+  native_decide
+
+theorem smod_neg_neg_sign : smod (-3 : EvmWord) (-2) = (-1 : EvmWord) := by
+  native_decide
+
 -- ============================================================================
 -- Correctness vs `Int.tmod` (the spec formula)
 -- ============================================================================
