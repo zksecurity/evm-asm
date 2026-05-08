@@ -72,6 +72,9 @@ theorem exponentByteLength_256 : exponentByteLength (256 : EvmWord) = 2 := by
   unfold exponentByteLength
   native_decide
 
+theorem exponentByteLength_max : exponentByteLength (-1 : EvmWord) = 32 := by
+  native_decide
+
 theorem expDynamicCostFromExponent_zero :
     expDynamicCostFromExponent (0 : EvmWord) = 0 := by
   unfold expDynamicCostFromExponent expGasPerByte
@@ -100,6 +103,17 @@ theorem expTotalGasFromExponent_256 :
     expTotalGasFromExponent (256 : EvmWord) = 110 := by
   unfold expTotalGasFromExponent expDynamicCostFromExponent expGasPerByte
   rw [exponentByteLength_256]
+  rfl
+
+theorem expDynamicCostFromExponent_max :
+    expDynamicCostFromExponent (-1 : EvmWord) = 1600 := by
+  unfold expDynamicCostFromExponent expGasPerByte
+  rw [exponentByteLength_max]
+
+theorem expTotalGasFromExponent_max :
+    expTotalGasFromExponent (-1 : EvmWord) = 1610 := by
+  unfold expTotalGasFromExponent
+  rw [expDynamicCostFromExponent_max]
   rfl
 
 end EvmAsm.Evm64.ExpGas
