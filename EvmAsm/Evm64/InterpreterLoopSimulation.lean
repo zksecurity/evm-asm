@@ -115,6 +115,21 @@ theorem loopFuel_codeLen_eq_of_loopResultsMatch
       (InterpreterLoop.loopFuel spec fuel state).codeLen := by
   rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
 
+theorem loopFuel_codeLenMatches_iff_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).codeLenMatches ↔
+      (InterpreterLoop.loopFuel spec fuel state).codeLenMatches := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_codeLenMatches_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState)
+    (h_codeLen : (InterpreterLoop.loopFuel spec fuel state).codeLenMatches) :
+    (InterpreterLoop.loopFuel impl fuel state).codeLenMatches := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+  exact h_codeLen
+
 theorem loopFuel_env_eq_of_loopResultsMatch
     {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
     (fuel : Nat) (state : EvmState) :
