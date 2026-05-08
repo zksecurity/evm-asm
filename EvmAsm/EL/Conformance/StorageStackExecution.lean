@@ -53,6 +53,34 @@ def storageStackSstoreVector : TestVector StorageStackInput StorageStackState :=
         stackState := { stack := [7, 42, 99] } }
     expected := .value { stack := [99] } }
 
+/-- Storage stack conformance inputs as reusable test vectors.
+    Distinctive token:
+    StorageStackExecutionConformance.storageStackConformanceTestVectors #110 #125. -/
+def storageStackConformanceTestVectors :
+    List (TestVector StorageStackInput StorageStackState) :=
+  [ storageStackSloadVector
+  , storageStackSstoreVector
+  ]
+
+def storageStackConformanceVectorIds : List String :=
+  storageStackConformanceTestVectors.map TestVector.id
+
+theorem storageStackConformanceTestVectors_length :
+    storageStackConformanceTestVectors.length = 2 := rfl
+
+theorem storageStackConformanceVectorIds_eq :
+    storageStackConformanceVectorIds =
+      [ "storage-stack-sload"
+      , "storage-stack-sstore"
+      ] := rfl
+
+theorem storageStackConformanceVectorIds_length :
+    storageStackConformanceVectorIds.length = 2 := rfl
+
+theorem storageStackConformanceVectorIds_nodup :
+    storageStackConformanceVectorIds.Nodup := by
+  decide
+
 theorem runStorageStack?_sload_empty :
     runStorageStack?
       { kind := .sload
@@ -100,14 +128,12 @@ theorem storageStackSstoreVector_passed :
     Distinctive token:
     StorageStackExecutionConformance.storageStackConformanceVectors #110 #125. -/
 def storageStackConformanceVectors : List CheckResult :=
-  [ checkVector? runStorageStack? storageStackSloadVector
-  , checkVector? runStorageStack? storageStackSstoreVector
-  ]
+  checkBatch? runStorageStack? storageStackConformanceTestVectors
 
 theorem storageStackConformanceVectors_passed :
     storageStackConformanceVectors = [.passed, .passed] := by
-  simp [storageStackConformanceVectors, storageStackSloadVector_passed,
-    storageStackSstoreVector_passed]
+  simp [storageStackConformanceVectors, storageStackConformanceTestVectors,
+    storageStackSloadVector_passed, storageStackSstoreVector_passed]
 
 end StorageStackExecution
 end Conformance
