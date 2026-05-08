@@ -173,6 +173,52 @@ theorem dispatchByte_supported_SMOD_byte_gas
   rw [dispatchByte_supported_SMOD_byte]
   exact SModStackExecutionBridge.smodHandler_gas state
 
+theorem dispatchByte_supported_SDIV_byte_memoryCells
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memoryCells =
+        state.memoryCells := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memoryCells state
+
+theorem dispatchByte_supported_SDIV_byte_memory
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memory = state.memory := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memory state
+
+theorem dispatchByte_supported_SDIV_byte_memSize
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memSize =
+        state.memSize := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memSize state
+
+theorem dispatchByte_supported_SMOD_byte_memoryCells
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memoryCells =
+        state.memoryCells := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memoryCells state
+
+theorem dispatchByte_supported_SMOD_byte_memory
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memory = state.memory := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memory state
+
+theorem dispatchByte_supported_SMOD_byte_memSize
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memSize =
+        state.memSize := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memSize state
+
 theorem dispatchByte_supported_SDIV_byte_stack_zero_divisor
     (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
     (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
