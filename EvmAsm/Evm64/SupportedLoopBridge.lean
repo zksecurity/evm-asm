@@ -163,6 +163,54 @@ theorem stepWithSupportedHandler_SMOD_gas
   rw [stepWithSupportedHandler_SMOD h_decode]
   exact SModStackExecutionBridge.smodHandler_gas state
 
+theorem stepWithSupportedHandler_SDIV_memoryCells
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memoryCells =
+      state.memoryCells := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_memoryCells state
+
+theorem stepWithSupportedHandler_SDIV_memory
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memory =
+      state.memory := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_memory state
+
+theorem stepWithSupportedHandler_SDIV_memSize
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memSize =
+      state.memSize := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_memSize state
+
+theorem stepWithSupportedHandler_SMOD_memoryCells
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memoryCells =
+      state.memoryCells := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_memoryCells state
+
+theorem stepWithSupportedHandler_SMOD_memory
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memory =
+      state.memory := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_memory state
+
+theorem stepWithSupportedHandler_SMOD_memSize
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memSize =
+      state.memSize := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_memSize state
+
 theorem stepWithSupportedHandler_SDIV_status_of_some
     {state : EvmState} {stack' : List EvmWord}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
