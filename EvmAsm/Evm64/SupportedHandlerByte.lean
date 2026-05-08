@@ -6,6 +6,8 @@
 -/
 
 import EvmAsm.Evm64.HandlerTableByte
+import EvmAsm.Evm64.SDiv.HandlerBridge
+import EvmAsm.Evm64.SMod.HandlerBridge
 import EvmAsm.Evm64.SupportedHandlers
 
 namespace EvmAsm.Evm64
@@ -142,6 +144,80 @@ theorem dispatchByte_supported_SMOD_byte
         ArithmeticHandlers.smodHandler state := by
   exact dispatchByte_supported_of_lookup rfl
     SupportedHandlers.supportedHandlerTable_SMOD state
+
+theorem dispatchByte_supported_SDIV_byte_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_zero_divisor
+    state dividend rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_intMin_neg_one
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := BitVec.intMin 256 :: (-1 : EvmWord) :: rest }).stack =
+        BitVec.intMin 256 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_intMin_neg_one state rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_neg_one_two
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := (-1 : EvmWord) :: 2 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_neg_one_two state rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_pos_neg_trunc
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := (7 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-3 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_pos_neg_trunc state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_zero_divisor
+    state dividend rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_neg_pos_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (-3 : EvmWord) :: 2 :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_neg_pos_sign state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_pos_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_pos_neg_sign state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_neg_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (-3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_neg_neg_sign state rest
 
 @[simp] theorem dispatchByte_supported_SDIV_byte_status_of_some
     {state : EvmState} {stack' : List EvmWord}
