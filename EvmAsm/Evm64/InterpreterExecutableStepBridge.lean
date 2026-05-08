@@ -220,6 +220,38 @@ theorem loopFuel_one_supported_execSpec_SMOD_stack_of_runSModStack?_some
   exact SModStackExecutionBridge.smodHandler_stack_of_runSModStack?_some
     h_run
 
+theorem loopFuel_one_supported_execSpec_SDIV_status_of_runSDivStack?_some
+    {state : EvmState} {out : SDivStackExecutionBridge.SDivStackResult}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8))
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        some out) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).status = state.status := by
+  rw [loopFuel_one_supported_execSpec_SDIV h_status h_pc h_code]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_some
+    h_run
+
+theorem loopFuel_one_supported_execSpec_SMOD_status_of_runSModStack?_some
+    {state : EvmState} {out : SModStackExecutionBridge.SModStackResult}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8))
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        some out) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).status = state.status := by
+  rw [loopFuel_one_supported_execSpec_SMOD h_status h_pc h_code]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_some
+    h_run
+
 theorem loopFuel_one_supported_execSpec_SDIV_status_of_none
     {state : EvmState}
     (h_status : state.status = .running)
