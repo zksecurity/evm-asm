@@ -89,8 +89,11 @@ shape changes are:
    *streaming* model (consumer pulls bytes); for `read_input`, the
    buffer must be addressable in guest memory (or in an abstract
    read-only region the spec exposes) so that `read_input` can return a
-   pointer into it. Likely: introduce a fresh read-only region and
-   prove `read_input` returns its base address and length.
+   pointer into it. **Decided** in
+   [`docs/zkvm-host-io-input-buffer-design.md`](zkvm-host-io-input-buffer-design.md):
+   reuse `privateInput` plus a new immutable `inputBufBase : Word`
+   field carrying the guest-visible base address. Refinement to a
+   dedicated read-only memory region is deferred.
 2. **ECALL handlers.** Replace the `HINT_LEN`/`HINT_READ` cases of
    `step` with a single `read_input` handler (ptr+len-out semantics).
    Reshape `COMMIT` (and/or `WRITE fd=13`) into a `write_output`
