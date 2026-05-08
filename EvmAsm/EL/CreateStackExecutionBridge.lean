@@ -328,6 +328,19 @@ theorem runCreateStack?_head?_of_some
   subst h_out
   exact ⟨request, h_request, rfl⟩
 
+theorem runCreateStack?_result_stack_length
+    {kind : CreateKind} {creator : Address} {readByte : MemoryReader}
+    {gas : EvmWord} {executor : Executor} {state out : CreateStackState}
+    (h_run : runCreateStack? kind creator readByte gas executor state = some out) :
+    ∃ rest,
+      stackRestAfterCreate? kind state.stack = some rest ∧
+        out.stack.length = rest.length + EvmAsm.Evm64.CreateArgs.resultCount kind := by
+  rcases (runCreateStack?_eq_some_iff kind creator readByte gas executor state out).mp
+      h_run with
+    ⟨request, rest, _h_request, h_rest, h_out⟩
+  subst h_out
+  cases kind <;> simp [EvmAsm.Evm64.CreateArgs.resultCount, h_rest]
+
 theorem runCreateStack?_stack_length
     {kind : CreateKind} {creator : Address} {readByte : MemoryReader}
     {gas : EvmWord} {executor : Executor} {state out : CreateStackState}
