@@ -61,6 +61,29 @@ theorem setHandler_ne (table : HandlerTable) {opcode opcode' : EvmOpcode}
     setHandler table opcode handler opcode' = table opcode' := by
   simp [setHandler, h_ne]
 
+theorem setHandler_eq_some_iff
+    (table : HandlerTable) (opcode opcode' : EvmOpcode)
+    (handler handler' : OpcodeHandler) :
+    setHandler table opcode handler opcode' = some handler' ↔
+      (opcode' = opcode ∧ handler = handler') ∨
+        (opcode' ≠ opcode ∧ table opcode' = some handler') := by
+  unfold setHandler
+  by_cases h_eq : opcode' = opcode
+  · subst h_eq
+    simp
+  · simp [h_eq]
+
+theorem setHandler_eq_none_iff
+    (table : HandlerTable) (opcode opcode' : EvmOpcode)
+    (handler : OpcodeHandler) :
+    setHandler table opcode handler opcode' = none ↔
+      opcode' ≠ opcode ∧ table opcode' = none := by
+  unfold setHandler
+  by_cases h_eq : opcode' = opcode
+  · subst h_eq
+    simp
+  · simp [h_eq]
+
 @[simp] theorem dispatchOpcode?_setHandler_same (table : HandlerTable)
     (opcode : EvmOpcode) (handler : OpcodeHandler) (state : EvmState) :
     dispatchOpcode? (setHandler table opcode handler) opcode state =
