@@ -127,7 +127,11 @@
  "EvmAsm.Evm64.MStore.StackSpec":
   ["EvmAsm.Evm64.MStore.CombinedSequenceSpec"],
  "EvmAsm.Evm64.MStore.UnalignedFramedStackSpec":
-  ["EvmAsm.Evm64.MStore.UnalignedStackSpec"],
+  ["EvmAsm.Evm64.MStore.UnalignedStackSpec", "EvmAsm.Evm64.MStore.StackSpec"],
+ "EvmAsm.Evm64.SupportedHandlerByte":
+  ["EvmAsm.Evm64.SDiv.HandlerBridge", "EvmAsm.Evm64.SMod.HandlerBridge"],
+ "EvmAsm.Evm64.SupportedLoopBridge":
+  ["EvmAsm.Evm64.SDiv.HandlerBridge", "EvmAsm.Evm64.SMod.HandlerBridge"],
  "EvmAsm.Evm64.MLoad.UnalignedFramedStackSpec":
   ["EvmAsm.Evm64.MLoad.UnalignedStackSpec"],
  "EvmAsm.Evm64.MLoad.ByteAlg":
