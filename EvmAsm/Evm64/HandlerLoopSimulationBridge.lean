@@ -52,6 +52,66 @@ theorem stepWithTable_matchesSpec_status
       (InterpreterLoop.stepWithHandler spec state).status := by
   rw [stepWithTable_matchesSpec table spec h_dispatch state]
 
+theorem stepWithTable_matchesSpec_memoryCells
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).memoryCells =
+      (InterpreterLoop.stepWithHandler spec state).memoryCells := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_memory
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) (addr : Nat) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).memory addr =
+      (InterpreterLoop.stepWithHandler spec state).memory addr := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_memSize
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).memSize =
+      (InterpreterLoop.stepWithHandler spec state).memSize := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_code
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).code =
+      (InterpreterLoop.stepWithHandler spec state).code := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_codeLen
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).codeLen =
+      (InterpreterLoop.stepWithHandler spec state).codeLen := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_env
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler (HandlerLoopBridge.toLoopHandler table) state).env =
+      (InterpreterLoop.stepWithHandler spec state).env := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
 theorem stepWithTable_matchesSpec_pc
     (table : HandlerTable) (spec : InterpreterLoop.Handler)
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
