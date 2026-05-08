@@ -43,6 +43,14 @@ theorem loopTrace_length_matchesSpec
       (InterpreterTrace.loopTrace spec nSteps state).length := by
   rw [loopTrace_matchesSpec h_match nSteps state]
 
+theorem loopTrace_matchesSpec_get?
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) (idx : Nat) :
+    (InterpreterTrace.loopTrace impl nSteps state)[idx]? =
+      (InterpreterTrace.loopTrace spec nSteps state)[idx]? := by
+  rw [loopTrace_matchesSpec h_match nSteps state]
+
 /-- Handler agreement preserves both the final nSteps-loop state and its decoded
     trace. -/
 theorem loopFuelAndTrace_matchesSpec
@@ -88,6 +96,14 @@ theorem loopFuelAndTrace_matchesSpec_trace_length
     (nSteps : Nat) (state : EvmState) :
     (InterpreterTrace.loopTrace impl nSteps state).length =
       (InterpreterTrace.loopTrace spec nSteps state).length := by
+  rw [loopFuelAndTrace_matchesSpec_trace h_match nSteps state]
+
+theorem loopFuelAndTrace_matchesSpec_trace_get?
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) (idx : Nat) :
+    (InterpreterTrace.loopTrace impl nSteps state)[idx]? =
+      (InterpreterTrace.loopTrace spec nSteps state)[idx]? := by
   rw [loopFuelAndTrace_matchesSpec_trace h_match nSteps state]
 
 end InterpreterTraceSimulation
