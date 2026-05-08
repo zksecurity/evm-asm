@@ -61,6 +61,9 @@ def unexpectedConformanceFailures : List CheckResult :=
 def allConformanceNoUnexpectedFailures : Bool :=
   unexpectedConformanceFailures.isEmpty
 
+def unexpectedConformanceFailureCount : Nat :=
+  unexpectedConformanceFailures.length
+
 theorem unexpectedConformanceFailures_empty :
     unexpectedConformanceFailures = [] := by
   simp [unexpectedConformanceFailures, allConformanceVectors,
@@ -82,6 +85,10 @@ theorem unexpectedConformanceFailures_empty :
 theorem allConformanceNoUnexpectedFailures_eq_true :
     allConformanceNoUnexpectedFailures = true := by
   simp [allConformanceNoUnexpectedFailures, unexpectedConformanceFailures_empty]
+
+theorem unexpectedConformanceFailureCount_eq_zero :
+    unexpectedConformanceFailureCount = 0 := by
+  simp [unexpectedConformanceFailureCount, unexpectedConformanceFailures_empty]
 
 end Conformance
 end EvmAsm.EL
