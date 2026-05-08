@@ -78,6 +78,26 @@ theorem logDataZeroSizeVector_passed :
     []
     runLogData_zeroSize
 
+/-- Vector IDs for LOG data-memory conformance coverage.
+    Distinctive token: logDataConformanceVectorIds #125 #112. -/
+def logDataConformanceVectorIds : List String :=
+  [ logDataSliceVector.id
+  , logDataZeroSizeVector.id
+  ]
+
+theorem logDataConformanceVectorIds_eq :
+    logDataConformanceVectorIds =
+      [ "log-data-slice"
+      , "log-data-zero-size"
+      ] := rfl
+
+theorem logDataConformanceVectorIds_length :
+    logDataConformanceVectorIds.length = 2 := rfl
+
+theorem logDataConformanceVectorIds_nodup :
+    logDataConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for LOG data memory helpers.
     Distinctive token: Log.logDataConformanceVectors #125 #112. -/
 def logDataConformanceVectors : List CheckResult :=

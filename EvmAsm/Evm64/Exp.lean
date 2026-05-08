@@ -19,6 +19,9 @@ import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.MarshalPair
 import EvmAsm.Evm64.Exp.SquaringCall
 import EvmAsm.Evm64.Exp.SquaringCallSeq
+import EvmAsm.Evm64.Exp.SquaringMarshalPairPost
+import EvmAsm.Evm64.Exp.SquaringPairThenMulCall
+import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.CondMulCall
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base

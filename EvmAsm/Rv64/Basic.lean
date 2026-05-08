@@ -354,6 +354,9 @@ def byteOffset (addr : Word) : Nat := (addr &&& 7#64).toNat
 -- Machine State
 -- ============================================================================
 
+/-- Default guest-visible base for the abstract `read_input` buffer. -/
+def defaultInputBufBase : Word := 0x0000000080000000#64
+
 /-- The machine state: a register file, memory, code memory, and program counter.
     Memory is doubleword-addressable (8-byte aligned addresses map to 64-bit words). -/
 structure MachineState where
@@ -371,6 +374,8 @@ structure MachineState where
   publicValues : List (BitVec 8) := []
   /-- Private input stream (flat byte list, consumed by HINT_READ) -/
   privateInput : List (BitVec 8) := []
+  /-- Guest-visible base address of the abstract `read_input` buffer. -/
+  inputBufBase : Word := defaultInputBufBase
 
 namespace MachineState
 
@@ -600,11 +605,32 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 @[simp] theorem privateInput_setPC {s : MachineState} {v : Word} :
     (s.setPC v).privateInput = s.privateInput := by simp [setPC]
 
+@[simp] theorem inputBufBase_setReg {s : MachineState} {r : Reg} {v : Word} :
+    (s.setReg r v).inputBufBase = s.inputBufBase := by cases r <;> rfl
+
+@[simp] theorem inputBufBase_setMem {s : MachineState} {a : Word} {v : Word} :
+    (s.setMem a v).inputBufBase = s.inputBufBase := by simp [setMem]
+
+@[simp] theorem inputBufBase_setByte {s : MachineState} {addr : Word} {b : BitVec 8} :
+    (s.setByte addr b).inputBufBase = s.inputBufBase := by simp [setByte]
+
+@[simp] theorem inputBufBase_setHalfword {s : MachineState} {addr : Word} {h : BitVec 16} :
+    (s.setHalfword addr h).inputBufBase = s.inputBufBase := by simp [setHalfword]
+
+@[simp] theorem inputBufBase_setPC {s : MachineState} {v : Word} :
+    (s.setPC v).inputBufBase = s.inputBufBase := by simp [setPC]
+
 @[simp] theorem privateInput_appendCommit {s : MachineState} {a0 a1 : Word} :
     (s.appendCommit a0 a1).privateInput = s.privateInput := by simp [appendCommit]
 
 @[simp] theorem privateInput_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).privateInput = s.privateInput := by simp [appendPublicValues]
+
+@[simp] theorem inputBufBase_appendCommit {s : MachineState} {a0 a1 : Word} :
+    (s.appendCommit a0 a1).inputBufBase = s.inputBufBase := by simp [appendCommit]
+
+@[simp] theorem inputBufBase_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
+    (s.appendPublicValues bytes).inputBufBase = s.inputBufBase := by simp [appendPublicValues]
 
 -- appendCommit preservation lemmas
 
@@ -672,6 +698,12 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 
 @[simp] theorem privateInput_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).privateInput = s.privateInput := by
+  induction words generalizing s base with
+  | nil => rfl
+  | cons w ws ih => simp [writeWords, ih]
+
+@[simp] theorem inputBufBase_writeWords {s : MachineState} {base : Word} {words : List Word} :
+    (s.writeWords base words).inputBufBase = s.inputBufBase := by
   induction words generalizing s base with
   | nil => rfl
   | cons w ws ih => simp [writeWords, ih]
@@ -748,6 +780,17 @@ decreasing_by simp [List.length_drop]; omega
   | _ :: _ =>
     unfold writeBytesAsWords
     rw [privateInput_writeBytesAsWords]
+    simp
+termination_by bytes.length
+decreasing_by simp [List.length_drop]; omega
+
+@[simp] theorem inputBufBase_writeBytesAsWords {s : MachineState} {base : Word} {bytes : List (BitVec 8)} :
+    (s.writeBytesAsWords base bytes).inputBufBase = s.inputBufBase := by
+  match bytes with
+  | [] => unfold writeBytesAsWords; rfl
+  | _ :: _ =>
+    unfold writeBytesAsWords
+    rw [inputBufBase_writeBytesAsWords]
     simp
 termination_by bytes.length
 decreasing_by simp [List.length_drop]; omega
