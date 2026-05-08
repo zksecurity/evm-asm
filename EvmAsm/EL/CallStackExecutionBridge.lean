@@ -512,6 +512,73 @@ theorem runCallStack?_effects_stack_length
     repeat' first | split at h_run | cases h_run | simp at h_run
     simp
 
+/--
+Distinctive token:
+CallStackExecutionBridge.runCallStack?_outputBytes_length_le #114 #107.
+-/
+theorem runCallStack?_call_outputBytes_length_le
+    {state : WorldState} {caller callee : Address} {apparentValue : Word256}
+    {readByte : MemoryReader} {isStatic : Bool} {executor : CallExecutor}
+    {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? .call state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    ∃ args,
+      EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack = some args ∧
+        out.effects.outputBytes.length ≤ args.output.size.toNat := by
+  rcases (runCallStack?_call_eq_some_iff state caller callee apparentValue
+    readByte isStatic executor stackState out).mp h_run with
+    ⟨args, rest, h_decode, _h_rest, h_out⟩
+  subst h_out
+  exact ⟨args, h_decode,
+    CallExecutionBridge.callVisibleEffectsFromResult_output_length_le
+      (executor
+        (CallExecutionBridge.callInputFromMemory state caller callee readByte isStatic args))
+      args⟩
+
+theorem runCallStack?_staticcall_outputBytes_length_le
+    {state : WorldState} {caller callee : Address} {apparentValue : Word256}
+    {readByte : MemoryReader} {isStatic : Bool} {executor : CallExecutor}
+    {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? .staticcall state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    ∃ args,
+      EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack? stackState.stack =
+        some args ∧
+        out.effects.outputBytes.length ≤ args.output.size.toNat := by
+  rcases (runCallStack?_staticcall_eq_some_iff state caller callee apparentValue
+    readByte isStatic executor stackState out).mp h_run with
+    ⟨args, rest, h_decode, _h_rest, h_out⟩
+  subst h_out
+  exact ⟨args, h_decode,
+    CallExecutionBridge.staticCallVisibleEffectsFromResult_output_length_le
+      (executor
+        (CallExecutionBridge.staticCallInputFromMemory state caller callee readByte args))
+      args⟩
+
+theorem runCallStack?_delegatecall_outputBytes_length_le
+    {state : WorldState} {caller callee : Address} {apparentValue : Word256}
+    {readByte : MemoryReader} {isStatic : Bool} {executor : CallExecutor}
+    {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? .delegatecall state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    ∃ args,
+      EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack? stackState.stack =
+        some args ∧
+        out.effects.outputBytes.length ≤ args.output.size.toNat := by
+  rcases (runCallStack?_delegatecall_eq_some_iff state caller callee apparentValue
+    readByte isStatic executor stackState out).mp h_run with
+    ⟨args, rest, h_decode, _h_rest, h_out⟩
+  subst h_out
+  exact ⟨args, h_decode,
+    CallExecutionBridge.delegateCallVisibleEffectsFromResult_output_length_le
+      (executor
+        (CallExecutionBridge.delegateCallInputFromMemory state caller callee apparentValue
+          readByte isStatic args))
+      args⟩
+
 theorem runCallStack?_stack_length
     {kind : CallKind} {state : WorldState} {caller callee : Address}
     {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}
