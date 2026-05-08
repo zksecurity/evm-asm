@@ -323,6 +323,39 @@ theorem cpsTripleWithin_evm_mload_of_one_limb_q3
       offReg byteReg accReg addrReg memBaseReg base)
 
 /--
+Compose four public-code MLOAD one-limb triples into a single q0..q3 body
+triple over `evm_mload_code`.
+
+This is the public-code counterpart of `mload_one_limb_sequence_spec_within`:
+callers that already transported each quarter to `evm_mload_code` can sequence
+them without returning to the smaller `mloadFourLimbsCode` surface.
+
+Distinctive token: evm_mload_public_one_limb_sequence_spec_within #53.
+-/
+theorem evm_mload_public_one_limb_sequence_spec_within
+    {n0 n1 n2 n3 : Nat} {P0 P1 P2 P3 P4 : Assertion}
+    (offReg byteReg accReg addrReg memBaseReg : Reg) (base : Word)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 100)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P0 P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 100) (base + 192)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 192) (base + 284)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 284) (base + 376)
+        (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P3 P4) :
+    cpsTripleWithin (n0 + n1 + n2 + n3) (base + 8) (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base) P0 P4 := by
+  exact cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_seq_same_cr
+      (cpsTripleWithin_seq_same_cr h0 h1)
+      h2)
+    h3
+
+/--
 Sibling-framed q0 stack spec: `evm_mload_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.
 
