@@ -211,6 +211,22 @@ theorem stepWithSupportedHandler_SMOD_env
   rw [stepWithSupportedHandler_SMOD h_decode]
   exact SModStackExecutionBridge.smodHandler_env state
 
+theorem stepWithSupportedHandler_SDIV_codeLenMatches
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
+    (h_codeLen : state.codeLenMatches) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLenMatches := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_codeLenMatches state h_codeLen
+
+theorem stepWithSupportedHandler_SMOD_codeLenMatches
+    {state : EvmState}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD)
+    (h_codeLen : state.codeLenMatches) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLenMatches := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_codeLenMatches state h_codeLen
+
 theorem stepWithSupportedHandler_SDIV_memoryCells
     {state : EvmState}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV) :

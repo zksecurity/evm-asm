@@ -67,6 +67,13 @@ theorem smodHandler_env
     simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
       EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
 
+theorem smodHandler_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (ArithmeticHandlers.smodHandler state).codeLenMatches := by
+  unfold EvmState.codeLenMatches at h_codeLen ⊢
+  rw [smodHandler_codeLen, smodHandler_code]
+  exact h_codeLen
+
 theorem smodHandler_stack_of_runSModStack?_some
     {state : EvmState} {out : SModStackResult}
     (h_run : runSModStack? { stack := state.stack } = some out) :

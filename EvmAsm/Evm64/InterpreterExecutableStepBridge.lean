@@ -262,6 +262,32 @@ theorem loopFuel_one_supported_execSpec_SMOD_env
   rw [loopFuel_one_supported_execSpec_SMOD h_status h_pc h_code]
   exact SModStackExecutionBridge.smodHandler_env state
 
+theorem loopFuel_one_supported_execSpec_SDIV_codeLenMatches
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8))
+    (h_codeLen : state.codeLenMatches) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).codeLenMatches := by
+  rw [loopFuel_one_supported_execSpec_SDIV h_status h_pc h_code]
+  exact SDivStackExecutionBridge.sdivHandler_codeLenMatches state h_codeLen
+
+theorem loopFuel_one_supported_execSpec_SMOD_codeLenMatches
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8))
+    (h_codeLen : state.codeLenMatches) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).codeLenMatches := by
+  rw [loopFuel_one_supported_execSpec_SMOD h_status h_pc h_code]
+  exact SModStackExecutionBridge.smodHandler_codeLenMatches state h_codeLen
+
 theorem loopFuel_one_supported_execSpec_SDIV_memoryCells
     {state : EvmState}
     (h_status : state.status = .running)

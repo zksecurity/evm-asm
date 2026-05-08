@@ -67,6 +67,13 @@ theorem sdivHandler_env
     simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
       EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
 
+theorem sdivHandler_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (ArithmeticHandlers.sdivHandler state).codeLenMatches := by
+  unfold EvmState.codeLenMatches at h_codeLen ⊢
+  rw [sdivHandler_codeLen, sdivHandler_code]
+  exact h_codeLen
+
 theorem sdivHandler_stack_of_runSDivStack?_some
     {state : EvmState} {out : SDivStackResult}
     (h_run : runSDivStack? { stack := state.stack } = some out) :

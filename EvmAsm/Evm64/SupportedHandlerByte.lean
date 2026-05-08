@@ -217,6 +217,20 @@ theorem dispatchByte_supported_SMOD_byte_env
   rw [dispatchByte_supported_SMOD_byte]
   exact SModStackExecutionBridge.smodHandler_env state
 
+theorem dispatchByte_supported_SDIV_byte_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).codeLenMatches := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_codeLenMatches state h_codeLen
+
+theorem dispatchByte_supported_SMOD_byte_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).codeLenMatches := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_codeLenMatches state h_codeLen
+
 theorem dispatchByte_supported_SDIV_byte_memoryCells
     (state : EvmState) :
     (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
