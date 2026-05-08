@@ -103,6 +103,30 @@ theorem rlpLongBytesDecodeVector_passed :
     (.bytes (List.replicate 56 (0x7f : Byte)))
     runDecodeFully_longBytes
 
+/-- Vector IDs for RLP executable-decoding conformance coverage.
+    Distinctive token: rlpConformanceVectorIds #125 #120. -/
+def rlpConformanceVectorIds : List String :=
+  [ rlpNestedListDecodeVector.id
+  , rlpNoncanonicalSingletonVector.id
+  , rlpEmptyListDecodeVector.id
+  , rlpLongBytesDecodeVector.id
+  ]
+
+theorem rlpConformanceVectorIds_eq :
+    rlpConformanceVectorIds =
+      [ "rlp-nested-list-decode"
+      , "rlp-noncanonical-singleton"
+      , "rlp-empty-list-decode"
+      , "rlp-long-bytes-decode"
+      ] := rfl
+
+theorem rlpConformanceVectorIds_length :
+    rlpConformanceVectorIds.length = 4 := rfl
+
+theorem rlpConformanceVectorIds_nodup :
+    rlpConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for RLP executable decoding.
     Distinctive token: RLP.rlpConformanceVectors #125 #120. -/
 def rlpConformanceVectors : List CheckResult :=
