@@ -18,7 +18,7 @@
   See `project_un21_lt_vTop_plan.md` for the full plan.
 -/
 
-import EvmAsm.Evm64.EvmWordArith.Div128KnuthLower
+import EvmAsm.Evm64.EvmWordArith.Div128QuotientBounds
 
 namespace EvmAsm.Evm64
 
