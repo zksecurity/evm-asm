@@ -420,6 +420,36 @@ theorem dispatchOpcode_of_lookup_status
     (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
     MemoryHandlers.msizeHandlerTable_MSIZE
 
+@[simp] theorem supportedHandlerTable_SDIV :
+    supportedHandlerTable .SDIV =
+      some ArithmeticHandlers.sdivHandler := by
+  exact lookup_of_arithmetic
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
+      ReturnDataHandlers.returnDataHandler?])
+    (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    (by simp [MemoryHandlers.msizeHandlerTable, MemoryHandlers.memoryHandler?])
+    ArithmeticHandlers.arithmeticHandler?_SDIV
+
+@[simp] theorem supportedHandlerTable_SMOD :
+    supportedHandlerTable .SMOD =
+      some ArithmeticHandlers.smodHandler := by
+  exact lookup_of_arithmetic
+    (by simp [TerminatingHandlers.terminatingHandlerTable, HandlerTable.setHandler])
+    (by simp [StackHandlers.stackHandlerTable, HandlerTable.setHandler])
+    (by simp [PushHandlers.pushHandlerTable, PushHandlers.pushHandler?])
+    (by simp [ControlHandlers.controlHandlerTable, ControlHandlers.controlHandler?])
+    (by rfl)
+    (by simp [ReturnDataHandlers.returnDataSizeHandlerTable,
+      ReturnDataHandlers.returnDataHandler?])
+    (by simp [CodeHandlers.codeHandlerTable, CodeHandlers.codeHandler?])
+    (by simp [MemoryHandlers.msizeHandlerTable, MemoryHandlers.memoryHandler?])
+    ArithmeticHandlers.arithmeticHandler?_SMOD
+
 @[simp] theorem supportedHandlerTable_CALLDATASIZE :
     supportedHandlerTable .CALLDATASIZE =
       some CalldataHandlers.callDataSizeHandler := by
