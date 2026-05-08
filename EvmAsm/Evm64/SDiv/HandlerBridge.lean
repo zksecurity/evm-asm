@@ -24,6 +24,28 @@ theorem sdivHandler_gas
     simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
       EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
 
+theorem sdivHandler_memoryCells
+    (state : EvmState) :
+    (ArithmeticHandlers.sdivHandler state).memoryCells =
+      state.memoryCells := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack <;>
+    simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
+theorem sdivHandler_memory
+    (state : EvmState) :
+    (ArithmeticHandlers.sdivHandler state).memory = state.memory := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack <;>
+    simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
+theorem sdivHandler_memSize
+    (state : EvmState) :
+    (ArithmeticHandlers.sdivHandler state).memSize = state.memSize := by
+  cases h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack <;>
+    simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+      EvmState.withStack, EvmState.invalid, EvmState.withStatus, h_stack]
+
 theorem sdivHandler_stack_of_runSDivStack?_some
     {state : EvmState} {out : SDivStackResult}
     (h_run : runSDivStack? { stack := state.stack } = some out) :
