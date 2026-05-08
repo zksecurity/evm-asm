@@ -40,6 +40,13 @@ def rlpNoncanonicalSingletonVector : TestVector DecodeInput RLPItem :=
     input := { bytes := [(0x81 : Byte), 0x01] }
     expected := .error "noncanonical-singleton" }
 
+/-- Empty-list decoding covers the canonical `0xc0` list prefix.
+    Distinctive token: RLP.rlpEmptyListDecodeVector #120 #125. -/
+def rlpEmptyListDecodeVector : TestVector DecodeInput RLPItem :=
+  { id := "rlp-empty-list-decode"
+    input := { bytes := [(0xc0 : Byte)] }
+    expected := .value (.list []) }
+
 /-- Long-form byte string at the first canonical long-byte boundary.
     Distinctive token: RLP.rlpLongBytesDecodeVector #120 #125. -/
 def rlpLongBytesDecodeVector : TestVector DecodeInput RLPItem :=
@@ -53,6 +60,9 @@ theorem runDecodeFully_nestedList :
 
 theorem runDecodeFully_reject_noncanonical_singleton :
     runDecodeFully { bytes := [(0x81 : Byte), 0x01] } = none := rfl
+
+theorem runDecodeFully_emptyList :
+    runDecodeFully { bytes := [(0xc0 : Byte)] } = some (.list []) := rfl
 
 theorem runDecodeFully_longBytes :
     runDecodeFully
@@ -77,6 +87,14 @@ theorem rlpNoncanonicalSingletonVector_errored :
     { bytes := [(0x81 : Byte), 0x01] }
     runDecodeFully_reject_noncanonical_singleton
 
+theorem rlpEmptyListDecodeVector_passed :
+    checkVector? runDecodeFully rlpEmptyListDecodeVector = .passed :=
+  checkVector?_some_passed runDecodeFully
+    "rlp-empty-list-decode"
+    { bytes := [(0xc0 : Byte)] }
+    (.list [])
+    runDecodeFully_emptyList
+
 theorem rlpLongBytesDecodeVector_passed :
     checkVector? runDecodeFully rlpLongBytesDecodeVector = .passed :=
   checkVector?_some_passed runDecodeFully
@@ -90,6 +108,7 @@ theorem rlpLongBytesDecodeVector_passed :
 def rlpConformanceVectors : List CheckResult :=
   [ checkVector? runDecodeFully rlpNestedListDecodeVector
   , checkVector? runDecodeFully rlpNoncanonicalSingletonVector
+  , checkVector? runDecodeFully rlpEmptyListDecodeVector
   , checkVector? runDecodeFully rlpLongBytesDecodeVector
   ]
 
@@ -98,9 +117,11 @@ theorem rlpConformanceVectors_passed :
       [ .passed
       , .errored "rlp-noncanonical-singleton" "noncanonical-singleton"
       , .passed
+      , .passed
       ] := by
   simp [rlpConformanceVectors, rlpNestedListDecodeVector_passed,
-    rlpNoncanonicalSingletonVector_errored, rlpLongBytesDecodeVector_passed]
+    rlpNoncanonicalSingletonVector_errored, rlpEmptyListDecodeVector_passed,
+    rlpLongBytesDecodeVector_passed]
 
 end RLP
 end Conformance
