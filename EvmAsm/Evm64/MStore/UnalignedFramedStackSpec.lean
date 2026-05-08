@@ -21,11 +21,48 @@
   sibling-quarter cells #53.
 -/
 
+import EvmAsm.Evm64.MStore.Spec
 import EvmAsm.Evm64.MStore.UnalignedStackSpec
 
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+
+/--
+Sibling-framed MSTORE prologue stack spec: `mstore_prologue_stack_spec_within`
+with an arbitrary `pcFree` assertion `F` framed on both pre and post.
+
+This is the prologue counterpart to the q0..q3 sibling-framed lemmas below.
+The full unaligned MSTORE compose slice uses it to preserve the byte-window and
+source-limb frame while the initial stack offset is loaded and the absolute
+memory address is computed.
+
+Distinctive token: mstore_prologue_stack_spec_within_framed sibling-quarter
+cells #53.
+-/
+theorem mstore_prologue_stack_spec_within_framed
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0) :
+    cpsTripleWithin 2 base (base + 8)
+      (mstoreStackCode offReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ offset)) ** F) := by
+  have core := mstore_prologue_stack_spec_within
+    offReg byteReg accReg addrReg memBaseReg
+    sp offset offOld addrOld memBase base
+    h_off_ne_x0 h_addr_ne_x0
+  have framed := cpsTripleWithin_frameL (F := F) hF core
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    framed
 
 /--
 Sibling-framed q0 stack spec: `evm_mstore_unaligned_one_limb_q0_stack_spec_within`
