@@ -243,6 +243,30 @@ theorem stepWithSupportedHandler_SMOD_status_of_runSModStack?_none
   exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_none
     h_run
 
+theorem stepWithSupportedHandler_SDIV_status_of_runSDivStack?_some
+    {state : EvmState} {out : SDivStackExecutionBridge.SDivStackResult}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SDIV)
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        some out) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_SDIV h_decode]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_some
+    h_run
+
+theorem stepWithSupportedHandler_SMOD_status_of_runSModStack?_some
+    {state : EvmState} {out : SModStackExecutionBridge.SModStackResult}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some .SMOD)
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        some out) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).status =
+      state.status := by
+  rw [stepWithSupportedHandler_SMOD h_decode]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_some
+    h_run
+
 theorem stepWithSupportedHandler_SDIV_stack_zero_divisor
     {state : EvmState} (dividend : EvmWord) (rest : List EvmWord)
     (h_decode :
