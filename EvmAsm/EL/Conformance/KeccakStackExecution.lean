@@ -45,6 +45,29 @@ def keccakStackVector : TestVector KeccakStackInput (List EvmWord) :=
         stack := [(1 : EvmWord), 2, 99] }
     expected := .value [(0 : EvmWord), 99] }
 
+/-- KECCAK stack conformance inputs as reusable test vectors.
+    Distinctive token:
+    KeccakStackExecutionConformance.keccakStackConformanceTestVectors #111 #125. -/
+def keccakStackConformanceTestVectors :
+    List (TestVector KeccakStackInput (List EvmWord)) :=
+  [keccakStackVector]
+
+def keccakStackConformanceVectorIds : List String :=
+  keccakStackConformanceTestVectors.map TestVector.id
+
+theorem keccakStackConformanceTestVectors_length :
+    keccakStackConformanceTestVectors.length = 1 := rfl
+
+theorem keccakStackConformanceVectorIds_eq :
+    keccakStackConformanceVectorIds = ["keccak-stack-vector"] := rfl
+
+theorem keccakStackConformanceVectorIds_length :
+    keccakStackConformanceVectorIds.length = 1 := rfl
+
+theorem keccakStackConformanceVectorIds_nodup :
+    keccakStackConformanceVectorIds.Nodup := by
+  decide
+
 theorem runKeccakStack?_vector :
     runKeccakStack?
       { memory := [(0xaa : Byte), 0xbb, 0xcc]
@@ -65,11 +88,12 @@ theorem keccakStackVector_passed :
     Distinctive token:
     KeccakStackExecutionConformance.keccakStackConformanceVectors #111 #125. -/
 def keccakStackConformanceVectors : List CheckResult :=
-  [checkVector? runKeccakStack? keccakStackVector]
+  checkBatch? runKeccakStack? keccakStackConformanceTestVectors
 
 theorem keccakStackConformanceVectors_passed :
     keccakStackConformanceVectors = [.passed] := by
-  simp [keccakStackConformanceVectors, keccakStackVector_passed]
+  simp [keccakStackConformanceVectors, keccakStackConformanceTestVectors,
+    keccakStackVector_passed]
 
 end KeccakStackExecution
 end Conformance
