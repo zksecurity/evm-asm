@@ -288,6 +288,24 @@ theorem runKeccakStack?_length
           simp [EvmAsm.Evm64.KeccakArgs.stackArgumentCount,
             EvmAsm.Evm64.KeccakArgs.resultCount]
 
+theorem runKeccakStack?_length_eq
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    out.length + 1 = stack.length := by
+  rcases (runKeccakStack?_eq_some_iff accelerator memory stack out).mp h_run with
+    ⟨offset, size, rest, rfl, rfl⟩
+  simp
+
+theorem runKeccakStack?_tail_eq_drop
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    out.tail? = some (stack.drop 2) := by
+  rcases (runKeccakStack?_eq_some_iff accelerator memory stack out).mp h_run with
+    ⟨offset, size, rest, rfl, rfl⟩
+  simp
+
 theorem runKeccakStack?_head?
     (accelerator : Accelerator) (memory : MemoryReader)
     (offset size : EvmWord) (rest : List EvmWord) :
