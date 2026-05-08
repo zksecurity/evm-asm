@@ -58,6 +58,22 @@ def unexpectedConformanceFailures : List CheckResult :=
       | .failed _ => true
       | _ => false)
 
+def allConformanceNoUnexpectedFailures : Bool :=
+  unexpectedConformanceFailures.isEmpty
+
+def unexpectedConformanceFailureCount : Nat :=
+  unexpectedConformanceFailures.length
+
+def expectedConformanceErrors : List CheckResult :=
+  allConformanceVectors.filter
+    (fun result =>
+      match result with
+      | .errored _ _ => true
+      | _ => false)
+
+def expectedConformanceErrorCount : Nat :=
+  expectedConformanceErrors.length
+
 theorem unexpectedConformanceFailures_empty :
     unexpectedConformanceFailures = [] := by
   simp [unexpectedConformanceFailures, allConformanceVectors,
@@ -75,6 +91,18 @@ theorem unexpectedConformanceFailures_empty :
     SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
     StorageStackExecution.storageStackConformanceVectors_passed,
     TerminatingStackExecution.terminatingStackConformanceVectors_passed]
+
+theorem allConformanceNoUnexpectedFailures_eq_true :
+    allConformanceNoUnexpectedFailures = true := by
+  simp [allConformanceNoUnexpectedFailures, unexpectedConformanceFailures_empty]
+
+theorem unexpectedConformanceFailureCount_eq_zero :
+    unexpectedConformanceFailureCount = 0 := by
+  simp [unexpectedConformanceFailureCount, unexpectedConformanceFailures_empty]
+
+theorem expectedConformanceErrorCount_eq :
+    expectedConformanceErrorCount = 9 := by
+  native_decide
 
 end Conformance
 end EvmAsm.EL

@@ -136,6 +136,27 @@ theorem delegateCallVisibleEffectsFromResult_stack_head_eq_one_iff
   exact CallResultEffectsBridge.callVisibleEffects_stack_head_eq_one_iff
     result (CallArgsBridge.delegateCallOutputRange args)
 
+theorem callVisibleEffectsFromResult_stack_head_eq_zero_iff
+    (result : CallResult) (args : CallArgs) :
+    (callVisibleEffectsFromResult result args).stackWords.head? = some 0 ↔
+      result.status ≠ .success := by
+  exact CallResultEffectsBridge.callVisibleEffects_stack_head_eq_zero_iff
+    result (CallArgsBridge.callOutputRange args)
+
+theorem staticCallVisibleEffectsFromResult_stack_head_eq_zero_iff
+    (result : CallResult) (args : StaticCallArgs) :
+    (staticCallVisibleEffectsFromResult result args).stackWords.head? = some 0 ↔
+      result.status ≠ .success := by
+  exact CallResultEffectsBridge.callVisibleEffects_stack_head_eq_zero_iff
+    result (CallArgsBridge.staticCallOutputRange args)
+
+theorem delegateCallVisibleEffectsFromResult_stack_head_eq_zero_iff
+    (result : CallResult) (args : DelegateCallArgs) :
+    (delegateCallVisibleEffectsFromResult result args).stackWords.head? = some 0 ↔
+      result.status ≠ .success := by
+  exact CallResultEffectsBridge.callVisibleEffects_stack_head_eq_zero_iff
+    result (CallArgsBridge.delegateCallOutputRange args)
+
 theorem callVisibleEffectsFromResult_output_length_le
     (result : CallResult) (args : CallArgs) :
     (callVisibleEffectsFromResult result args).outputBytes.length ≤ args.output.size.toNat := by

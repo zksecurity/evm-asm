@@ -78,6 +78,28 @@ theorem expGasTwoByteThresholdVector_passed :
     110
     runExpGas_256
 
+/-- Vector IDs for EXP gas executable-helper conformance coverage.
+    Distinctive token: expGasConformanceVectorIds #125 #92. -/
+def expGasConformanceVectorIds : List String :=
+  [ expGasZeroExponentVector.id
+  , expGasOneByteExponentVector.id
+  , expGasTwoByteThresholdVector.id
+  ]
+
+theorem expGasConformanceVectorIds_eq :
+    expGasConformanceVectorIds =
+      [ "exp-gas-zero-exponent"
+      , "exp-gas-one-byte-exponent"
+      , "exp-gas-two-byte-threshold"
+      ] := rfl
+
+theorem expGasConformanceVectorIds_length :
+    expGasConformanceVectorIds.length = 3 := rfl
+
+theorem expGasConformanceVectorIds_nodup :
+    expGasConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for EXP gas executable helpers.
     Distinctive token: expGasConformanceVectors. -/
 def expGasConformanceVectors : List CheckResult :=

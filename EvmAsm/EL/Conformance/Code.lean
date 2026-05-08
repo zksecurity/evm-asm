@@ -122,6 +122,28 @@ theorem codeCopyStackUnderflowVector_errored :
       stack := [(64 : EvmWord), (1 : EvmWord)] }
     runCodeCopyStack_underflow
 
+/-- Vector IDs for code executable-helper conformance coverage.
+    Distinctive token: codeConformanceVectorIds #125 #107 #118. -/
+def codeConformanceVectorIds : List String :=
+  [ codeCopyZeroPadVector.id
+  , codeCopyStackVector.id
+  , codeCopyStackUnderflowVector.id
+  ]
+
+theorem codeConformanceVectorIds_eq :
+    codeConformanceVectorIds =
+      [ "codecopy-zero-pad"
+      , "codecopy-stack-decode"
+      , "codecopy-stack-underflow"
+      ] := rfl
+
+theorem codeConformanceVectorIds_length :
+    codeConformanceVectorIds.length = 3 := rfl
+
+theorem codeConformanceVectorIds_nodup :
+    codeConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for code executable helpers.
     Distinctive token: codeConformanceVectors #125 #107 #118. -/
 def codeConformanceVectors : List CheckResult :=

@@ -59,6 +59,79 @@ theorem stepWithSupportedHandler_of_lookup_status
       (handler state).status := by
   rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
 
+theorem stepWithSupportedHandler_of_lookup_pc
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).pc =
+      (handler state).pc := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_gas
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).gas =
+      (handler state).gas := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_stack
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).stack =
+      (handler state).stack := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_memoryCells
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memoryCells =
+      (handler state).memoryCells := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_memory
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (addr : Nat) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memory addr =
+      (handler state).memory addr := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_memSize
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).memSize =
+      (handler state).memSize := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_code
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).code =
+      (handler state).code := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_codeLen
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLen =
+      (handler state).codeLen := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
+theorem stepWithSupportedHandler_of_lookup_env
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).env =
+      (handler state).env := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+
 /--
 When the supported interpreter loop decodes a valid PUSH opcode, the one-step
 handler has the same bundled PC and stack effect as the executable PUSH bridge.
