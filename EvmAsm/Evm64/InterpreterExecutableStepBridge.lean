@@ -166,6 +166,30 @@ theorem loopFuel_one_supported_execSpec_SMOD_pc
   rw [loopFuel_one_supported_execSpec_SMOD h_status h_pc h_code]
   exact SModStackExecutionBridge.smodHandler_pc state
 
+theorem loopFuel_one_supported_execSpec_SDIV_gas
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).gas = state.gas := by
+  rw [loopFuel_one_supported_execSpec_SDIV h_status h_pc h_code]
+  exact SDivStackExecutionBridge.sdivHandler_gas state
+
+theorem loopFuel_one_supported_execSpec_SMOD_gas
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8)) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).gas = state.gas := by
+  rw [loopFuel_one_supported_execSpec_SMOD h_status h_pc h_code]
+  exact SModStackExecutionBridge.smodHandler_gas state
+
 theorem loopFuel_one_supported_execSpec_SDIV_status_of_some
     {state : EvmState} {stack' : List EvmWord}
     (h_status : state.status = .running)
