@@ -253,6 +253,28 @@ theorem dispatchByte_supported_SMOD_byte_status_singleton_stack
   exact SModStackExecutionBridge.smodHandler_status_singleton_stack
     state dividend
 
+theorem dispatchByte_supported_SDIV_byte_status_of_runSDivStack?_none
+    {state : EvmState}
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        none) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status = .error := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_none
+    h_run
+
+theorem dispatchByte_supported_SMOD_byte_status_of_runSModStack?_none
+    {state : EvmState}
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        none) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status = .error := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_none
+    h_run
+
 @[simp] theorem dispatchByte_supported_SDIV_byte_status_of_some
     {state : EvmState} {stack' : List EvmWord}
     (h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack =
