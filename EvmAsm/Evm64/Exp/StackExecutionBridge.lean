@@ -219,6 +219,15 @@ theorem runExpStack?_two_256
   rw [ExpArgs.expDynamicCostFromArgs_256_exponent]
   rw [ExpArgs.expTotalGasFromArgs_256_exponent]
 
+theorem runExpStack?_max_exponent_gas
+    (base : EvmWord) (rest : List EvmWord) :
+    (runExpStack? { stack := base :: (-1 : EvmWord) :: rest }).map
+      (fun out => (out.effects.dynamicGas, out.effects.totalGas)) =
+      some (1600, 1610) := by
+  rw [runExpStack?_gas]
+  rw [ExpArgs.expDynamicCostFromArgs_max_exponent]
+  rw [ExpArgs.expTotalGasFromArgs_max_exponent]
+
 end ExpStackExecutionBridge
 
 end EvmAsm.Evm64
