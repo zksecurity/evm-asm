@@ -35,6 +35,96 @@ theorem dispatchByte_supported_of_lookup_status
       (handler state).status := by
   rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
 
+theorem dispatchByte_supported_of_lookup_pc
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).pc =
+      (handler state).pc := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_gas
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).gas =
+      (handler state).gas := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_stack
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).stack =
+      (handler state).stack := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_memoryCells
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).memoryCells =
+      (handler state).memoryCells := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_memory
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) (addr : Nat) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).memory addr =
+      (handler state).memory addr := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_memSize
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).memSize =
+      (handler state).memSize := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_code
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).code =
+      (handler state).code := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_codeLen
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).codeLen =
+      (handler state).codeLen := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
+theorem dispatchByte_supported_of_lookup_env
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).env =
+      (handler state).env := by
+  rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
+
 /--
 Decoded byte dispatch through the supported table preserves status whenever the
 looked-up handler does.
