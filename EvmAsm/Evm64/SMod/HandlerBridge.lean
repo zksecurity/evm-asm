@@ -49,6 +49,18 @@ theorem smodHandler_status_of_runSModStack?_none
           simp [runSModStack?, SModArgsStackDecode.decodeSModStack?,
             stackRestAfterSMod?, Option.bind, h_stack, h_tail] at h_run
 
+theorem smodHandler_status_empty_stack
+    (state : EvmState) :
+    (ArithmeticHandlers.smodHandler { state with stack := [] }).status =
+      .error := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+
+theorem smodHandler_status_singleton_stack
+    (state : EvmState) (dividend : EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := [dividend] }).status = .error := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+
 theorem smodHandler_stack_zero_divisor
     (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
     (ArithmeticHandlers.smodHandler

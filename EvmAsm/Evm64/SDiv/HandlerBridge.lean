@@ -49,6 +49,18 @@ theorem sdivHandler_status_of_runSDivStack?_none
           simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
             stackRestAfterSDiv?, Option.bind, h_stack, h_tail] at h_run
 
+theorem sdivHandler_status_empty_stack
+    (state : EvmState) :
+    (ArithmeticHandlers.sdivHandler { state with stack := [] }).status =
+      .error := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+
+theorem sdivHandler_status_singleton_stack
+    (state : EvmState) (dividend : EvmWord) :
+    (ArithmeticHandlers.sdivHandler
+      { state with stack := [dividend] }).status = .error := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+
 theorem sdivHandler_stack_zero_divisor
     (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
     (ArithmeticHandlers.sdivHandler
