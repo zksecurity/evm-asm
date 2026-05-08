@@ -6,7 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Accelerators.Status
-import EvmAsm.EL.Secp256k1EcrecoverInputBridge
+import EvmAsm.EL.WorldState
 
 namespace EvmAsm.EL
 
