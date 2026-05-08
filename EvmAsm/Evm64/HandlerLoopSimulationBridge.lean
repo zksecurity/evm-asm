@@ -300,6 +300,60 @@ theorem loopTrace_table_matchesSpec_at_get?
       (InterpreterTrace.loopTrace spec nSteps state)[idx]? := by
   rw [loopTrace_table_matchesSpec_at table spec h_dispatch nSteps state]
 
+/--
+Handler-table dispatch agreement preserves the final loop state together with
+the decoded opcode trace.
+
+Distinctive token: handlerTableLoopFuelAndTraceMatchesSpec #109 #107.
+-/
+theorem loopFuelAndTrace_table_matchesSpec_at
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) nSteps state,
+      InterpreterTrace.loopTrace (HandlerLoopBridge.toLoopHandler table) nSteps state) =
+    (InterpreterLoop.loopFuel spec nSteps state,
+      InterpreterTrace.loopTrace spec nSteps state) := by
+  exact InterpreterTraceSimulation.loopFuelAndTrace_matchesSpec
+    (HandlerLoopBridge.handlerMatchesSpec_of_dispatch_eq table spec h_dispatch)
+    nSteps state
+
+theorem loopFuelAndTrace_table_matchesSpec_at_state
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (nSteps : Nat) (state : EvmState) :
+    InterpreterLoop.loopFuel (HandlerLoopBridge.toLoopHandler table) nSteps state =
+      InterpreterLoop.loopFuel spec nSteps state := by
+  exact congrArg Prod.fst
+    (loopFuelAndTrace_table_matchesSpec_at table spec h_dispatch nSteps state)
+
+theorem loopFuelAndTrace_table_matchesSpec_at_status
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel
+        (HandlerLoopBridge.toLoopHandler table) nSteps state).status =
+      (InterpreterLoop.loopFuel spec nSteps state).status := by
+  exact congrArg (fun result => result.1.status)
+    (loopFuelAndTrace_table_matchesSpec_at table spec h_dispatch nSteps state)
+
+theorem loopFuelAndTrace_table_matchesSpec_at_trace
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (nSteps : Nat) (state : EvmState) :
+    InterpreterTrace.loopTrace (HandlerLoopBridge.toLoopHandler table) nSteps state =
+      InterpreterTrace.loopTrace spec nSteps state := by
+  exact congrArg Prod.snd
+    (loopFuelAndTrace_table_matchesSpec_at table spec h_dispatch nSteps state)
+
 theorem loopResultsMatch_table_matchesSpec
     (table : HandlerTable) (spec : InterpreterLoop.Handler)
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
