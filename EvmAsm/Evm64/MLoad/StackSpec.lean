@@ -1150,6 +1150,22 @@ theorem mloadStackOutputPost_evmWordIs_fold
   rw [mloadStackOutputWordFromDwordPairs_eq_mloadLoadedWordFromDwordPairs]
   rw [mloadLoadedWordFromDwordPairs_evmWordIs_fold]
 
+theorem mloadStackOutputPost_evmStackIs_fold
+    (sp : Word)
+    (lo0 hi0 : Word) (start0 : Nat)
+    (lo1 hi1 : Word) (start1 : Nat)
+    (lo2 hi2 : Word) (start2 : Nat)
+    (lo3 hi3 : Word) (start3 : Nat)
+    (rest : List EvmWord) :
+    (mloadStackOutputPost sp
+      lo0 hi0 start0 lo1 hi1 start1 lo2 hi2 start2 lo3 hi3 start3 **
+      evmStackIs (sp + 32) rest) =
+    evmStackIs sp
+      (mloadStackOutputWordFromDwordPairs
+        lo0 hi0 start0 lo1 hi1 start1 lo2 hi2 start2 lo3 hi3 start3 :: rest) := by
+  rw [mloadStackOutputPost_unfold]
+  rfl
+
 /--
   The 256-bit value loaded by a 32-byte unaligned MLOAD window spanning five
   consecutive RV64 dwords. The single `start` byte offset applies to each
