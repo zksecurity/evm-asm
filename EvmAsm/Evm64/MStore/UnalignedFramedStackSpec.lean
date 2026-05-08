@@ -148,6 +148,63 @@ theorem evm_mstore_combined_one_limb_sequence_stack_spec_within_framed
     framed
 
 /--
+Threaded-frame variant of `evm_mstore_combined_one_limb_sequence_stack_spec_within`.
+
+Unlike the whole-sequence frame wrapper above, this theorem starts q0 from the
+prologue postcondition already combined with `F`. That matches the concrete
+q0..q3 sibling-framed MSTORE lemmas below, where the frame carries the other
+window cells through each quarter.
+
+Distinctive token:
+evm_mstore_combined_one_limb_sequence_stack_spec_within_threaded_frame #53.
+-/
+theorem evm_mstore_combined_one_limb_sequence_stack_spec_within_threaded_frame
+    {n0 n1 n2 n3 : Nat} {P1 P2 P3 Q : Assertion}
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase : Word) (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h0 :
+      cpsTripleWithin n0 (base + 8) (base + 76)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          32 24 25 26 27 28 29 30 31 (base + 8))
+        ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+          (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+          (sp ↦ₘ offset)) ** F)
+        P1)
+    (h1 :
+      cpsTripleWithin n1 (base + 76) (base + 144)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          40 16 17 18 19 20 21 22 23 (base + 76)) P1 P2)
+    (h2 :
+      cpsTripleWithin n2 (base + 144) (base + 212)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          48 8 9 10 11 12 13 14 15 (base + 144)) P2 P3)
+    (h3 :
+      cpsTripleWithin n3 (base + 212) (base + 280)
+        (mstoreOneLimbCode addrReg byteReg accReg
+          56 0 1 2 3 4 5 6 7 (base + 212)) P3 Q) :
+    cpsTripleWithin (2 + (n0 + n1 + n2 + n3)) base (base + 280)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) ** F)
+      Q := by
+  exact cpsTripleWithin_evm_mstore_of_stack
+    offReg valReg byteReg accReg addrReg memBaseReg base (base + 280)
+    (cpsTripleWithin_seq_same_cr
+      (mstore_prologue_stack_spec_within_framed
+        offReg byteReg accReg addrReg memBaseReg
+        sp offset offOld addrOld memBase base F hF
+        h_off_ne_x0 h_addr_ne_x0)
+      (cpsTripleWithin_extend_code
+        (h := mstore_one_limb_sequence_spec_within
+          addrReg byteReg accReg base h0 h1 h2 h3)
+        (hmono := mstoreStackCode_four_limbs_sub
+          offReg byteReg accReg addrReg memBaseReg base)))
+
+/--
 Sibling-framed q0 stack spec: `evm_mstore_unaligned_one_limb_q0_stack_spec_within`
 with an arbitrary `pcFree` assertion `F` framed on both pre and post.
 
