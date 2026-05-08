@@ -49,5 +49,37 @@ theorem sdivHandler_status_of_runSDivStack?_none
           simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
             stackRestAfterSDiv?, Option.bind, h_stack, h_tail] at h_run
 
+theorem sdivHandler_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (ArithmeticHandlers.sdivHandler
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.sdiv_zero_right
+
+theorem sdivHandler_stack_intMin_neg_one
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.sdivHandler
+      { state with stack := BitVec.intMin 256 :: (-1 : EvmWord) :: rest }).stack =
+        BitVec.intMin 256 :: rest := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.sdiv_intMin_neg_one
+
+theorem sdivHandler_stack_neg_one_two
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.sdivHandler
+      { state with stack := (-1 : EvmWord) :: 2 :: rest }).stack =
+        0 :: rest := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.sdiv_neg_one_two
+
+theorem sdivHandler_stack_pos_neg_trunc
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.sdivHandler
+      { state with stack := (7 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-3 : EvmWord) :: rest := by
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.sdiv_pos_neg_trunc
+
 end SDivStackExecutionBridge
 end EvmAsm.Evm64

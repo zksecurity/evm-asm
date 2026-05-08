@@ -49,5 +49,37 @@ theorem smodHandler_status_of_runSModStack?_none
           simp [runSModStack?, SModArgsStackDecode.decodeSModStack?,
             stackRestAfterSMod?, Option.bind, h_stack, h_tail] at h_run
 
+theorem smodHandler_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.smod_zero_right
+
+theorem smodHandler_stack_neg_pos_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := (-3 : EvmWord) :: 2 :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.smod_neg_pos_sign
+
+theorem smodHandler_stack_pos_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := (3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (1 : EvmWord) :: rest := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.smod_pos_neg_sign
+
+theorem smodHandler_stack_neg_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := (-3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.smod_neg_neg_sign
+
 end SModStackExecutionBridge
 end EvmAsm.Evm64
