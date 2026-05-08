@@ -35,6 +35,24 @@ theorem dispatchByte_supported_of_lookup_status
       (handler state).status := by
   rw [dispatchByte_supported_of_lookup h_decode h_lookup state]
 
+/--
+Decoded byte dispatch through the supported table preserves status whenever the
+looked-up handler does.
+
+Distinctive token: supportedByteLookupPreservesStatus #107.
+-/
+theorem dispatchByte_supported_of_lookup_preserves_status
+    {b : Fin 256} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup :
+      SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (h_status : ∀ state : EvmState, (handler state).status = state.status)
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable b state).status =
+      state.status := by
+  rw [dispatchByte_supported_of_lookup_status h_decode h_lookup state]
+  exact h_status state
+
 theorem dispatchByte_supported_of_decode
     {b : Fin 256} {opcode : EvmOpcode}
     (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
