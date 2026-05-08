@@ -319,6 +319,74 @@ theorem runTerminatingStack?_stack_length
             cases h_run
             simp [EvmAsm.Evm64.TerminatingArgs.stackArgumentCount]
 
+def resultStatusForKind : TerminatingKind -> CallStatus
+  | .stop => .success
+  | .return_ => .success
+  | .revert => .revert
+  | .invalid => .failure
+  | .selfdestruct => .success
+
+def resultOutputForKind
+    (kind : TerminatingKind) (readByte : MemoryReader) (args : TerminatingArgs) :
+    List Byte :=
+  match kind with
+  | .stop => []
+  | .return_ => TerminatingDataMemory.terminatingDataFromMemory readByte args
+  | .revert => TerminatingDataMemory.terminatingDataFromMemory readByte args
+  | .invalid => []
+  | .selfdestruct => []
+
+/--
+Distinctive token:
+TerminatingStackExecutionBridge.runTerminatingStack?_result_status_output_gas #113.
+-/
+theorem runTerminatingStack?_result_status
+    {kind : TerminatingKind} {state : WorldState} {readByte : MemoryReader}
+    {gasRemaining : Nat} {stackState : TerminatingStackState}
+    {out : TerminatingStackResult}
+    (h_run :
+      runTerminatingStack? kind state readByte gasRemaining stackState = some out) :
+    out.result.status = resultStatusForKind kind := by
+  rcases (runTerminatingStack?_eq_some_iff
+    kind state readByte gasRemaining stackState out).mp h_run with
+    ⟨args, rest, _h_args, _h_rest, h_out⟩
+  subst h_out
+  simpa [resultStatusForKind] using
+    (TerminatingDataMemory.resultFromMemory_status
+      kind state readByte gasRemaining args)
+
+theorem runTerminatingStack?_result_gasRemaining
+    {kind : TerminatingKind} {state : WorldState} {readByte : MemoryReader}
+    {gasRemaining : Nat} {stackState : TerminatingStackState}
+    {out : TerminatingStackResult}
+    (h_run :
+      runTerminatingStack? kind state readByte gasRemaining stackState = some out) :
+    out.result.gasRemaining = gasRemaining := by
+  rcases (runTerminatingStack?_eq_some_iff
+    kind state readByte gasRemaining stackState out).mp h_run with
+    ⟨args, rest, _h_args, _h_rest, h_out⟩
+  subst h_out
+  exact TerminatingDataMemory.resultFromMemory_gasRemaining
+    kind state readByte gasRemaining args
+
+theorem runTerminatingStack?_result_output
+    {kind : TerminatingKind} {state : WorldState} {readByte : MemoryReader}
+    {gasRemaining : Nat} {stackState : TerminatingStackState}
+    {out : TerminatingStackResult}
+    (h_run :
+      runTerminatingStack? kind state readByte gasRemaining stackState = some out) :
+    ∃ args,
+      argsFromStack? kind stackState.stack = some args ∧
+        out.result.output = resultOutputForKind kind readByte args := by
+  rcases (runTerminatingStack?_eq_some_iff
+    kind state readByte gasRemaining stackState out).mp h_run with
+    ⟨args, rest, h_args, _h_rest, h_out⟩
+  subst h_out
+  refine ⟨args, h_args, ?_⟩
+  simpa [resultOutputForKind] using
+    (TerminatingDataMemory.resultFromMemory_output
+      kind state readByte gasRemaining args)
+
 end TerminatingStackExecutionBridge
 
 end EvmAsm.EL
