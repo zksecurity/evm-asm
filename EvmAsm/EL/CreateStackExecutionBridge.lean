@@ -308,6 +308,26 @@ theorem runCreateStack?_eq_some_iff
       · rintro ⟨request, rest, h_request, h_rest, rfl⟩
         simp [runCreateStack?, h_request, h_rest]
 
+/--
+Kind-generic head projection for successful CREATE-family stack execution.
+
+Distinctive token:
+CreateStackExecutionBridge.runCreateStack?_head?_of_some #115 #107.
+-/
+theorem runCreateStack?_head?_of_some
+    {kind : CreateKind} {creator : Address} {readByte : MemoryReader}
+    {gas : EvmWord} {executor : Executor} {state out : CreateStackState}
+    (h_run : runCreateStack? kind creator readByte gas executor state = some out) :
+    ∃ request,
+      requestFromStack? kind creator readByte gas state.stack = some request ∧
+        out.stack.head? =
+          some (CreateResultBridge.createResultStackWord (executor request)) := by
+  rcases (runCreateStack?_eq_some_iff kind creator readByte gas executor state out).mp
+      h_run with
+    ⟨request, rest, h_request, _h_rest, h_out⟩
+  subst h_out
+  exact ⟨request, h_request, rfl⟩
+
 theorem runCreateStack?_stack_length
     {kind : CreateKind} {creator : Address} {readByte : MemoryReader}
     {gas : EvmWord} {executor : Executor} {state out : CreateStackState}
