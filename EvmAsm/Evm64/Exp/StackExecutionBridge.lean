@@ -163,6 +163,23 @@ theorem runExpStack?_eq_some_iff
         subst h_out
         exact runExpStack?_cons base exponent rest
 
+theorem runExpStack?_effects_stackWords_length
+    {state : ExpStackState} {out : ExpStackResult}
+    (h_run : runExpStack? state = some out) :
+    out.effects.stackWords.length = resultCount := by
+  cases state with
+  | mk stack =>
+      cases stack with
+      | nil =>
+          simp [runExpStack?, ExpArgsStackDecode.decodeExpStack?] at h_run
+      | cons base tail =>
+          cases tail with
+          | nil => simp [runExpStack?, stackRestAfterExp?] at h_run
+          | cons exponent rest =>
+              simp [runExpStack?, stackRestAfterExp?] at h_run
+              cases h_run
+              simp [resultCount, ExpArgs.resultCount]
+
 theorem runExpStack?_stack_length
     {state : ExpStackState} {out : ExpStackResult}
     (h_run : runExpStack? state = some out) :
