@@ -51,6 +51,37 @@ theorem decodeKeccakStack?_eq_some_iff
   · rintro ⟨offset, size, rest, rfl, rfl⟩
     rfl
 
+theorem decodeKeccakStack?_inputRange_of_some
+    {stack : List EvmWord} {decoded : Args}
+    (h_decode : decodeKeccakStack? stack = some decoded) :
+    ∃ offset size rest,
+      stack = offset :: size :: rest ∧
+        inputRange decoded = { offset := offset, size := size } := by
+  rw [decodeKeccakStack?_eq_some_iff] at h_decode
+  rcases h_decode with ⟨offset, size, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  exact ⟨offset, size, rest, h_stack, rfl⟩
+
+theorem decodeKeccakStack?_inputOffsetNat_of_some
+    {stack : List EvmWord} {decoded : Args}
+    (h_decode : decodeKeccakStack? stack = some decoded) :
+    ∃ offset size rest,
+      stack = offset :: size :: rest ∧ inputOffsetNat decoded = offset.toNat := by
+  rw [decodeKeccakStack?_eq_some_iff] at h_decode
+  rcases h_decode with ⟨offset, size, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  exact ⟨offset, size, rest, h_stack, rfl⟩
+
+theorem decodeKeccakStack?_inputSizeNat_of_some
+    {stack : List EvmWord} {decoded : Args}
+    (h_decode : decodeKeccakStack? stack = some decoded) :
+    ∃ offset size rest,
+      stack = offset :: size :: rest ∧ inputSizeNat decoded = size.toNat := by
+  rw [decodeKeccakStack?_eq_some_iff] at h_decode
+  rcases h_decode with ⟨offset, size, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  exact ⟨offset, size, rest, h_stack, rfl⟩
+
 /--
 `decodeKeccakStack?` returns `none` exactly when the stack has fewer than
 two elements.
