@@ -102,6 +102,30 @@ theorem stepWithTable_matchesSpec_codeLen
       (InterpreterLoop.stepWithHandler spec state).codeLen := by
   rw [stepWithTable_matchesSpec table spec h_dispatch state]
 
+theorem stepWithTable_matchesSpec_codeLenMatches_iff
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState) :
+    (InterpreterLoop.stepWithHandler
+      (HandlerLoopBridge.toLoopHandler table) state).codeLenMatches ↔
+      (InterpreterLoop.stepWithHandler spec state).codeLenMatches := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+
+theorem stepWithTable_matchesSpec_codeLenMatches
+    (table : HandlerTable) (spec : InterpreterLoop.Handler)
+    (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
+      InterpreterLoop.decodeCurrentOpcode? state = some opcode →
+        HandlerTable.dispatchOpcode table opcode state = spec opcode state)
+    (state : EvmState)
+    (h_codeLen :
+      (InterpreterLoop.stepWithHandler spec state).codeLenMatches) :
+    (InterpreterLoop.stepWithHandler
+      (HandlerLoopBridge.toLoopHandler table) state).codeLenMatches := by
+  rw [stepWithTable_matchesSpec table spec h_dispatch state]
+  exact h_codeLen
+
 theorem stepWithTable_matchesSpec_env
     (table : HandlerTable) (spec : InterpreterLoop.Handler)
     (h_dispatch : ∀ (opcode : EvmOpcode) (state : EvmState),
