@@ -65,6 +65,98 @@ theorem stackRestAfterSDiv?_none_of_one
     (dividend : EvmWord) :
     stackRestAfterSDiv? [dividend] = none := rfl
 
+theorem stackRestAfterSDiv?_eq_none_iff
+    {stack : List EvmWord} :
+    stackRestAfterSDiv? stack = none ↔
+      stack = [] ∨ ∃ dividend, stack = [dividend] := by
+  constructor
+  · cases stack with
+    | nil =>
+        intro _h
+        exact Or.inl rfl
+    | cons dividend tail =>
+        cases tail with
+        | nil =>
+            intro _h
+            exact Or.inr ⟨dividend, rfl⟩
+        | cons divisor rest =>
+            simp [stackRestAfterSDiv?]
+  · rintro (rfl | ⟨dividend, rfl⟩) <;> rfl
+
+theorem runSDivStack?_eq_none_iff
+    {state : SDivStackState} :
+    runSDivStack? state = none ↔
+      state.stack = [] ∨ ∃ dividend, state.stack = [dividend] := by
+  cases state with
+  | mk stack =>
+      cases stack with
+      | nil =>
+          simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+            stackRestAfterSDiv?, Option.bind]
+      | cons dividend tail =>
+          cases tail with
+          | nil =>
+              simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+                stackRestAfterSDiv?, Option.bind]
+          | cons divisor rest =>
+              simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+                stackRestAfterSDiv?, Option.bind]
+
+theorem runSDivStack?_eq_some_iff
+    {state : SDivStackState} {out : SDivStackResult} :
+    runSDivStack? state = some out ↔
+      ∃ dividend divisor rest,
+        state.stack = dividend :: divisor :: rest ∧
+          out =
+            { effects :=
+                { stackWords := [SDivArgs.sdivResultFromArgs
+                    (SDivArgs.sdivArgs dividend divisor)] }
+              stack := rest } := by
+  constructor
+  · cases state with
+    | mk stack =>
+        cases stack with
+        | nil =>
+            simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+              stackRestAfterSDiv?, Option.bind]
+        | cons dividend tail =>
+            cases tail with
+            | nil =>
+                simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+                  stackRestAfterSDiv?, Option.bind]
+            | cons divisor rest =>
+                intro h_run
+                simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?,
+                  stackRestAfterSDiv?, Option.bind] at h_run
+                cases h_run
+                exact ⟨dividend, divisor, rest, rfl, rfl⟩
+  · rintro ⟨dividend, divisor, rest, h_stack, h_out⟩
+    cases state with
+    | mk stack =>
+        simp at h_stack
+        subst h_stack
+        subst h_out
+        exact runSDivStack?_cons dividend divisor rest
+
+theorem runSDivStack?_stack_length
+    {state : SDivStackState} {out : SDivStackResult}
+    (h_run : runSDivStack? state = some out) :
+    out.stack.length + out.effects.stackWords.length + argumentCount =
+      state.stack.length + resultCount := by
+  cases state with
+  | mk stack =>
+      cases stack with
+      | nil =>
+          simp [runSDivStack?, SDivArgsStackDecode.decodeSDivStack?] at h_run
+      | cons dividend tail =>
+          cases tail with
+          | nil => simp [runSDivStack?, stackRestAfterSDiv?] at h_run
+          | cons divisor rest =>
+              simp [runSDivStack?, stackRestAfterSDiv?] at h_run
+              cases h_run
+              simp [argumentCount, resultCount, SDivArgs.stackArgumentCount,
+                SDivArgs.resultCount]
+
 theorem runSDivStack?_head?
     (dividend divisor : EvmWord) (rest : List EvmWord) :
     (runSDivStack? { stack := dividend :: divisor :: rest }).map
