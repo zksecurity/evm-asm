@@ -365,6 +365,30 @@ theorem dispatchOpcode_of_lookup_status
       (handler state).status := by
   rw [dispatchOpcode_of_lookup h_lookup state]
 
+theorem dispatchOpcode_of_lookup_pc
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).pc =
+      (handler state).pc := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_gas
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).gas =
+      (handler state).gas := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
+theorem dispatchOpcode_of_lookup_stack
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (state : EvmState) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).stack =
+      (handler state).stack := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+
 @[simp] theorem supportedHandlerTable_STOP :
     supportedHandlerTable .STOP =
       some TerminatingHandlers.stopHandler := by
