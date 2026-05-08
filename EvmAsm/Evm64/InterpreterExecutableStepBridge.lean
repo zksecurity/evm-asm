@@ -190,6 +190,44 @@ theorem loopFuel_one_supported_execSpec_SMOD_stack_of_runSModStack?_some
   exact SModStackExecutionBridge.smodHandler_stack_of_runSModStack?_some
     h_run
 
+theorem loopFuel_one_supported_execSpec_SDIV_status_of_none
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SDIV : BitVec 8))
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } = none) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).status = .error := by
+  rw [loopFuel_one_of_execSpec_SDIV SupportedLoopBridge.supportedLoopHandler
+    h_status h_pc h_code]
+  rw [SupportedLoopBridge.supportedLoopHandler_apply]
+  rw [SupportedHandlers.dispatchOpcode_of_lookup
+    SupportedHandlers.supportedHandlerTable_SDIV]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_none
+    h_run
+
+theorem loopFuel_one_supported_execSpec_SMOD_status_of_none
+    {state : EvmState}
+    (h_status : state.status = .running)
+    (h_pc : state.pc < state.code.length)
+    (h_code :
+      state.code[state.pc] =
+        (ExecutableSpecOpcodeBridge.Ops.SMOD : BitVec 8))
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } = none) :
+    (InterpreterLoop.loopFuel SupportedLoopBridge.supportedLoopHandler 1
+      state).status = .error := by
+  rw [loopFuel_one_of_execSpec_SMOD SupportedLoopBridge.supportedLoopHandler
+    h_status h_pc h_code]
+  rw [SupportedLoopBridge.supportedLoopHandler_apply]
+  rw [SupportedHandlers.dispatchOpcode_of_lookup
+    SupportedHandlers.supportedHandlerTable_SMOD]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_none
+    h_run
+
 theorem loopFuel_one_supported_execSpec_SDIV_stack_zero_divisor
     {state : EvmState} (dividend : EvmWord) (rest : List EvmWord)
     (h_status : state.status = .running)
