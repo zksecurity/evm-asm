@@ -61,6 +61,28 @@ def logStackVector : TestVector LogStackInput LogStackState :=
               touchedAccounts := [] }
           stack := [(99 : EvmWord)] } }
 
+/-- LOG stack conformance inputs as reusable test vectors.
+    Distinctive token:
+    LogStackExecutionConformance.logStackConformanceTestVectors #112 #125. -/
+def logStackConformanceTestVectors : List (TestVector LogStackInput LogStackState) :=
+  [logStackVector]
+
+def logStackConformanceVectorIds : List String :=
+  logStackConformanceTestVectors.map TestVector.id
+
+theorem logStackConformanceTestVectors_length :
+    logStackConformanceTestVectors.length = 1 := rfl
+
+theorem logStackConformanceVectorIds_eq :
+    logStackConformanceVectorIds = ["log-stack-log1"] := rfl
+
+theorem logStackConformanceVectorIds_length :
+    logStackConformanceVectorIds.length = 1 := rfl
+
+theorem logStackConformanceVectorIds_nodup :
+    logStackConformanceVectorIds.Nodup := by
+  decide
+
 theorem runLogStack?_log1_vector :
     runLogStack?
       { kind := .log1
@@ -107,11 +129,12 @@ theorem logStackVector_passed :
     Distinctive token:
     LogStackExecutionConformance.logStackConformanceVectors #112 #125. -/
 def logStackConformanceVectors : List CheckResult :=
-  [checkVector? runLogStack? logStackVector]
+  checkBatch? runLogStack? logStackConformanceTestVectors
 
 theorem logStackConformanceVectors_passed :
     logStackConformanceVectors = [.passed] := by
-  simp [logStackConformanceVectors, logStackVector_passed]
+  simp [logStackConformanceVectors, logStackConformanceTestVectors,
+    logStackVector_passed]
 
 end LogStackExecution
 end Conformance
