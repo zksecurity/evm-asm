@@ -85,6 +85,15 @@ theorem expResultFromArgs_zero_right (base : EvmWord) :
     expResultFromArgs (expArgs base 0) = 1 := by
   exact EvmWord.exp_zero_right base
 
+theorem expResultFromArgs_one_left (exponent : EvmWord) :
+    expResultFromArgs (expArgs 1 exponent) = 1 := by
+  exact EvmWord.exp_one_left exponent
+
+theorem expResultFromArgs_zero_left_of_ne_zero (exponent : EvmWord)
+    (h : exponent ≠ 0) :
+    expResultFromArgs (expArgs 0 exponent) = 0 := by
+  exact EvmWord.exp_zero_left_of_ne_zero exponent h
+
 theorem expResultFromArgs_one_right (base : EvmWord) :
     expResultFromArgs (expArgs base 1) = base := by
   exact EvmWord.exp_one_right base
@@ -100,6 +109,16 @@ theorem expResultFromArgs_two_256 :
 theorem expTotalGasFromArgs_zero_exponent (base : EvmWord) :
     expTotalGasFromArgs (expArgs base 0) = 10 := by
   exact ExpGas.expTotalGasFromExponent_zero
+
+theorem expDynamicCostFromArgs_256_exponent (base : EvmWord) :
+    expDynamicCostFromArgs (expArgs base 256) = 100 := by
+  simp only [expDynamicCostFromArgs, expArgs, ExpGas.expDynamicCostFromExponent,
+    ExpGas.expGasPerByte, ExpGas.exponentByteLength]
+  native_decide
+
+theorem expTotalGasFromArgs_256_exponent (base : EvmWord) :
+    expTotalGasFromArgs (expArgs base 256) = 110 := by
+  exact ExpGas.expTotalGasFromExponent_256
 
 end ExpArgs
 end EvmAsm.Evm64
