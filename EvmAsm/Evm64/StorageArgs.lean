@@ -162,6 +162,50 @@ theorem decodeStorageStack?_eq_some_iff
   | sload => exact decodeStorageStack?_sload_eq_some_iff stack decoded
   | sstore => exact decodeStorageStack?_sstore_eq_some_iff stack decoded
 
+theorem decodeStorageStack?_sload_kind_of_some
+    {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? .sload stack = some decoded) :
+    decodedKind decoded = .sload := by
+  rw [decodeStorageStack?_sload_eq_some_iff] at h_decode
+  rcases h_decode with ⟨slot, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  rfl
+
+theorem decodeStorageStack?_sstore_kind_of_some
+    {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? .sstore stack = some decoded) :
+    decodedKind decoded = .sstore := by
+  rw [decodeStorageStack?_sstore_eq_some_iff] at h_decode
+  rcases h_decode with ⟨slot, value, rest, h_stack, h_decoded⟩
+  subst h_decoded
+  rfl
+
+theorem decodeStorageStack?_kind_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? kind stack = some decoded) :
+    decodedKind decoded = kind := by
+  cases kind with
+  | sload => exact decodeStorageStack?_sload_kind_of_some h_decode
+  | sstore => exact decodeStorageStack?_sstore_kind_of_some h_decode
+
+theorem decodeStorageStack?_argumentCount_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? kind stack = some decoded) :
+    argumentCount (decodedKind decoded) = argumentCount kind := by
+  rw [decodeStorageStack?_kind_of_some h_decode]
+
+theorem decodeStorageStack?_resultCount_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? kind stack = some decoded) :
+    resultCount (decodedKind decoded) = resultCount kind := by
+  rw [decodeStorageStack?_kind_of_some h_decode]
+
+theorem decodeStorageStack?_writesStorage_of_some
+    {kind : Kind} {stack : List EvmWord} {decoded : Decoded}
+    (h_decode : decodeStorageStack? kind stack = some decoded) :
+    writesStorage (decodedKind decoded) = writesStorage kind := by
+  rw [decodeStorageStack?_kind_of_some h_decode]
+
 theorem decodeStorageStack?_eq_none_iff
     (kind : Kind) (stack : List EvmWord) :
     decodeStorageStack? kind stack = none ↔ stack.length < argumentCount kind := by
