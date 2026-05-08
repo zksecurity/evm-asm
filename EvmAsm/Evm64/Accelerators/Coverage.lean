@@ -404,5 +404,36 @@ theorem acceleratorPrecompileSelectors_are_accelerators :
   rw [acceleratorPrecompileSelectors_eq]
   decide
 
+def acceleratorClassifiedSelectors : List Nat :=
+  acceleratorOpcodeSelectors ++ acceleratorNonPrecompileSelectors ++
+    acceleratorPrecompileSelectors
+
+theorem acceleratorClassifiedSelectors_eq_coverage :
+    acceleratorClassifiedSelectors = acceleratorCoverageSelectors := by
+  rw [acceleratorClassifiedSelectors, acceleratorOpcodeSelectors_eq,
+    acceleratorNonPrecompileSelectors_eq, acceleratorPrecompileSelectors_eq,
+    acceleratorCoverageSelectors_eq]
+  decide
+
+def acceleratorClassifiedSelectorCount : Nat :=
+  acceleratorOpcodeSelectors.length + acceleratorNonPrecompileSelectors.length +
+    acceleratorPrecompileSelectors.length
+
+theorem acceleratorClassifiedSelectorCount_eq :
+    acceleratorClassifiedSelectorCount = 19 := by
+  rw [acceleratorClassifiedSelectorCount, acceleratorOpcodeSelectors_eq,
+    acceleratorNonPrecompileSelectors_eq, acceleratorPrecompileSelectors_length]
+  decide
+
+theorem acceleratorClassifiedSelectors_nodup :
+    acceleratorClassifiedSelectors.Nodup := by
+  rw [acceleratorClassifiedSelectors_eq_coverage]
+  exact acceleratorCoverageSelectors_nodup
+
+theorem acceleratorClassifiedSelectors_are_accelerators :
+    ∀ id ∈ acceleratorClassifiedSelectors, isAccelerator id := by
+  rw [acceleratorClassifiedSelectors_eq_coverage]
+  exact acceleratorCoverageSelectors_are_accelerators
+
 end Accelerators
 end EvmAsm
