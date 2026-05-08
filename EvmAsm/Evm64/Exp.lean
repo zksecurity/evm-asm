@@ -18,6 +18,7 @@ import EvmAsm.Evm64.Exp.ArgsStackDecode
 import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.MarshalPair
 import EvmAsm.Evm64.Exp.SquaringCall
+import EvmAsm.Evm64.Exp.SquaringCallSeq
 import EvmAsm.Evm64.Exp.CondMulCall
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base
