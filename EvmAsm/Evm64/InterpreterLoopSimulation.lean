@@ -232,6 +232,21 @@ theorem stepWithHandler_codeLen_eq_of_loopResultsMatch_running
       (InterpreterLoop.stepWithHandler spec state).codeLen := by
   rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
 
+theorem stepWithHandler_codeLenMatches_iff_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).codeLenMatches ↔
+      (InterpreterLoop.stepWithHandler spec state).codeLenMatches := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_codeLenMatches_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running)
+    (h_codeLen : (InterpreterLoop.stepWithHandler spec state).codeLenMatches) :
+    (InterpreterLoop.stepWithHandler impl state).codeLenMatches := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+  exact h_codeLen
+
 theorem stepWithHandler_env_eq_of_loopResultsMatch_running
     {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
     {state : EvmState} (h_status : state.status = .running) :
