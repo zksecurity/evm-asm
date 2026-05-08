@@ -24,7 +24,9 @@ inductive EvmOpcode where
   | MUL
   | SUB
   | DIV
+  | SDIV
   | MOD
+  | SMOD
   | EXP
   | SIGNEXTEND
   | KECCAK256
@@ -114,7 +116,9 @@ def byte? : EvmOpcode → Option Nat
   | MUL => some 0x02
   | SUB => some 0x03
   | DIV => some 0x04
+  | SDIV => some 0x05
   | MOD => some 0x06
+  | SMOD => some 0x07
   | EXP => some 0x0a
   | SIGNEXTEND => some 0x0b
   | KECCAK256 => some 0x20
@@ -188,7 +192,9 @@ def staticGasCost : EvmOpcode → Nat
   | MUL => 5
   | SUB => 3
   | DIV => 5
+  | SDIV => 5
   | MOD => 5
+  | SMOD => 5
   | EXP => 10
   | SIGNEXTEND => 5
   | KECCAK256 => 30

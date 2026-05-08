@@ -22,7 +22,9 @@ def decodeByte? : Nat → Option EvmOpcode
   | 0x02 => some MUL
   | 0x03 => some SUB
   | 0x04 => some DIV
+  | 0x05 => some SDIV
   | 0x06 => some MOD
+  | 0x07 => some SMOD
   | 0x0a => some EXP
   | 0x0b => some SIGNEXTEND
   | 0x10 => some LT
@@ -318,8 +320,12 @@ theorem byte?_roundtrip_SUB :
     byte? SUB = some 0x03 ∧ decodeByte? 0x03 = some SUB := ⟨rfl, rfl⟩
 theorem byte?_roundtrip_DIV :
     byte? DIV = some 0x04 ∧ decodeByte? 0x04 = some DIV := ⟨rfl, rfl⟩
+theorem byte?_roundtrip_SDIV :
+    byte? SDIV = some 0x05 ∧ decodeByte? 0x05 = some SDIV := ⟨rfl, rfl⟩
 theorem byte?_roundtrip_MOD :
     byte? MOD = some 0x06 ∧ decodeByte? 0x06 = some MOD := ⟨rfl, rfl⟩
+theorem byte?_roundtrip_SMOD :
+    byte? SMOD = some 0x07 ∧ decodeByte? 0x07 = some SMOD := ⟨rfl, rfl⟩
 theorem byte?_roundtrip_EXP :
     byte? EXP = some 0x0a ∧ decodeByte? 0x0a = some EXP := ⟨rfl, rfl⟩
 theorem byte?_roundtrip_SIGNEXTEND :
