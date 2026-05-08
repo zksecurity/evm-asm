@@ -6,6 +6,8 @@
 -/
 
 import EvmAsm.Evm64.HandlerTableByte
+import EvmAsm.Evm64.SDiv.HandlerBridge
+import EvmAsm.Evm64.SMod.HandlerBridge
 import EvmAsm.Evm64.SupportedHandlers
 
 namespace EvmAsm.Evm64
@@ -126,6 +128,352 @@ theorem dispatchByte_supported_INVALID_byte
       (⟨0xfe, by decide⟩ : Fin 256) state).status = .error := by
   rw [dispatchByte_supported_INVALID_byte]
   exact EvmState.invalid_status state
+
+theorem dispatchByte_supported_SDIV_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state =
+        ArithmeticHandlers.sdivHandler state := by
+  exact dispatchByte_supported_of_lookup rfl
+    SupportedHandlers.supportedHandlerTable_SDIV state
+
+theorem dispatchByte_supported_SMOD_byte
+    (state : EvmState) :
+    HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state =
+        ArithmeticHandlers.smodHandler state := by
+  exact dispatchByte_supported_of_lookup rfl
+    SupportedHandlers.supportedHandlerTable_SMOD state
+
+theorem dispatchByte_supported_SDIV_byte_pc
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).pc = state.pc := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_pc state
+
+theorem dispatchByte_supported_SMOD_byte_pc
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).pc = state.pc := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_pc state
+
+theorem dispatchByte_supported_SDIV_byte_gas
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).gas = state.gas := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_gas state
+
+theorem dispatchByte_supported_SMOD_byte_gas
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).gas = state.gas := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_gas state
+
+theorem dispatchByte_supported_SDIV_byte_code
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).code = state.code := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_code state
+
+theorem dispatchByte_supported_SMOD_byte_code
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).code = state.code := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_code state
+
+theorem dispatchByte_supported_SDIV_byte_codeLen
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).codeLen =
+        state.codeLen := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_codeLen state
+
+theorem dispatchByte_supported_SMOD_byte_codeLen
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).codeLen =
+        state.codeLen := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_codeLen state
+
+theorem dispatchByte_supported_SDIV_byte_env
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).env = state.env := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_env state
+
+theorem dispatchByte_supported_SMOD_byte_env
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).env = state.env := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_env state
+
+theorem dispatchByte_supported_SDIV_byte_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).codeLenMatches := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_codeLenMatches state h_codeLen
+
+theorem dispatchByte_supported_SMOD_byte_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).codeLenMatches := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_codeLenMatches state h_codeLen
+
+theorem dispatchByte_supported_SDIV_byte_memoryCells
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memoryCells =
+        state.memoryCells := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memoryCells state
+
+theorem dispatchByte_supported_SDIV_byte_memory
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memory = state.memory := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memory state
+
+theorem dispatchByte_supported_SDIV_byte_memSize
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).memSize =
+        state.memSize := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_memSize state
+
+theorem dispatchByte_supported_SMOD_byte_memoryCells
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memoryCells =
+        state.memoryCells := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memoryCells state
+
+theorem dispatchByte_supported_SMOD_byte_memory
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memory = state.memory := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memory state
+
+theorem dispatchByte_supported_SMOD_byte_memSize
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).memSize =
+        state.memSize := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_memSize state
+
+theorem dispatchByte_supported_SDIV_byte_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_zero_divisor
+    state dividend rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_intMin_neg_one
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := BitVec.intMin 256 :: (-1 : EvmWord) :: rest }).stack =
+        BitVec.intMin 256 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_intMin_neg_one state rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_neg_one_two
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := (-1 : EvmWord) :: 2 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_neg_one_two state rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_pos_neg_trunc
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := (7 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-3 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_pos_neg_trunc state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_zero_divisor
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := dividend :: 0 :: rest }).stack =
+        0 :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_zero_divisor
+    state dividend rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_neg_pos_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (-3 : EvmWord) :: 2 :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_neg_pos_sign state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_pos_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_pos_neg_sign state rest
+
+theorem dispatchByte_supported_SMOD_byte_stack_neg_neg_sign
+    (state : EvmState) (rest : List EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := (-3 : EvmWord) :: (-2 : EvmWord) :: rest }).stack =
+        (-1 : EvmWord) :: rest := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_neg_neg_sign state rest
+
+theorem dispatchByte_supported_SDIV_byte_stack_of_runSDivStack?_some
+    {state : EvmState} {out : SDivStackExecutionBridge.SDivStackResult}
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).stack =
+        out.effects.stackWords ++ out.stack := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_stack_of_runSDivStack?_some
+    h_run
+
+theorem dispatchByte_supported_SMOD_byte_stack_of_runSModStack?_some
+    {state : EvmState} {out : SModStackExecutionBridge.SModStackResult}
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).stack =
+        out.effects.stackWords ++ out.stack := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_stack_of_runSModStack?_some
+    h_run
+
+theorem dispatchByte_supported_SDIV_byte_status_of_runSDivStack?_some
+    {state : EvmState} {out : SDivStackExecutionBridge.SDivStackResult}
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status =
+        state.status := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_some
+    h_run
+
+theorem dispatchByte_supported_SMOD_byte_status_of_runSModStack?_some
+    {state : EvmState} {out : SModStackExecutionBridge.SModStackResult}
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status =
+        state.status := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_some
+    h_run
+
+theorem dispatchByte_supported_SDIV_byte_status_empty_stack
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := [] }).status = .error := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_empty_stack state
+
+theorem dispatchByte_supported_SDIV_byte_status_singleton_stack
+    (state : EvmState) (dividend : EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256)
+      { state with stack := [dividend] }).status = .error := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_singleton_stack
+    state dividend
+
+theorem dispatchByte_supported_SMOD_byte_status_empty_stack
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := [] }).status = .error := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_empty_stack state
+
+theorem dispatchByte_supported_SMOD_byte_status_singleton_stack
+    (state : EvmState) (dividend : EvmWord) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256)
+      { state with stack := [dividend] }).status = .error := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_singleton_stack
+    state dividend
+
+theorem dispatchByte_supported_SDIV_byte_status_of_runSDivStack?_none
+    {state : EvmState}
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        none) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status = .error := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_none
+    h_run
+
+theorem dispatchByte_supported_SMOD_byte_status_of_runSModStack?_none
+    {state : EvmState}
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        none) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status = .error := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_none
+    h_run
+
+@[simp] theorem dispatchByte_supported_SDIV_byte_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.sdiv state.stack =
+      some stack') :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status = state.status := by
+  rw [dispatchByte_supported_SDIV_byte]
+  simp [ArithmeticHandlers.sdivHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
+
+@[simp] theorem dispatchByte_supported_SMOD_byte_status_of_some
+    {state : EvmState} {stack' : List EvmWord}
+    (h_stack : ArithmeticHandlers.binaryStack? EvmWord.smod state.stack =
+      some stack') :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status = state.status := by
+  rw [dispatchByte_supported_SMOD_byte]
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler,
+    h_stack, EvmState.withStack]
 
 theorem dispatchByte_supported_undecoded
     {b : Fin 256} (h_decode : EvmOpcode.decodeByte? b.val = none)

@@ -18,6 +18,8 @@ namespace ExecutableSpecOpcodeBridge
 namespace Ops
 
 def STOP : Nat := 0x00
+def SDIV : Nat := 0x05
+def SMOD : Nat := 0x07
 def KECCAK : Nat := 0x20
 def CALLDATALOAD : Nat := 0x35
 def CALLDATASIZE : Nat := 0x36
@@ -172,6 +174,16 @@ theorem roundtrip_execSpec_STOP :
 theorem roundtrip_execSpec_KECCAK :
     EvmOpcode.byte? EvmOpcode.KECCAK256 = some Ops.KECCAK ∧
       EvmOpcode.decodeByte? Ops.KECCAK = some EvmOpcode.KECCAK256 := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_SDIV :
+    EvmOpcode.byte? EvmOpcode.SDIV = some Ops.SDIV ∧
+      EvmOpcode.decodeByte? Ops.SDIV = some EvmOpcode.SDIV := by
+  exact ⟨rfl, rfl⟩
+
+theorem roundtrip_execSpec_SMOD :
+    EvmOpcode.byte? EvmOpcode.SMOD = some Ops.SMOD ∧
+      EvmOpcode.decodeByte? Ops.SMOD = some EvmOpcode.SMOD := by
   exact ⟨rfl, rfl⟩
 
 /-- Distinctive token:
