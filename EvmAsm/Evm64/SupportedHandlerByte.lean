@@ -145,6 +145,20 @@ theorem dispatchByte_supported_SMOD_byte
   exact dispatchByte_supported_of_lookup rfl
     SupportedHandlers.supportedHandlerTable_SMOD state
 
+theorem dispatchByte_supported_SDIV_byte_pc
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).pc = state.pc := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_pc state
+
+theorem dispatchByte_supported_SMOD_byte_pc
+    (state : EvmState) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).pc = state.pc := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_pc state
+
 theorem dispatchByte_supported_SDIV_byte_stack_zero_divisor
     (state : EvmState) (dividend : EvmWord) (rest : List EvmWord) :
     (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
