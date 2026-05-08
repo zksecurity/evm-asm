@@ -23,6 +23,7 @@
 
 import EvmAsm.Evm64.MStore.StackSpec
 import EvmAsm.Evm64.MStore.UnalignedStackSpec
+import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64
 
@@ -1204,5 +1205,86 @@ theorem evm_mstore_unaligned_full_stack_spec_within_public_epilogue
     (mstore_epilogue_evm_mstore_frame_spec_within
       offReg valReg byteReg accReg addrReg memBaseReg sp base
       FPost (by pcFree))
+
+/--
+Stack-tail variant of the public unaligned MSTORE epilogue composition.
+
+This frames the remaining EVM stack tail at `sp + 64`, matching MSTORE's
+two-word stack pop after the epilogue advances `.x12`.
+
+Distinctive token:
+evm_mstore_unaligned_full_stack_spec_within_public_stack_tail #53.
+-/
+theorem evm_mstore_unaligned_full_stack_spec_within_public_stack_tail
+    (offReg valReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset offOld addrOld memBase byteOld accOld : Word)
+    (limb0 limb1 limb2 limb3 : Word)
+    (loAddr0 hiAddr0 loVal0 hiVal0 : Word)
+    (loAddr1 hiAddr1 loVal1 hiVal1 : Word)
+    (loAddr2 hiAddr2 loVal2 hiVal2 : Word)
+    (loAddr3 hiAddr3 loVal3 hiVal3 : Word)
+    (start : Nat) (base : Word) (rest : List EvmWord)
+    (h_off_ne_x0 : offReg ≠ .x0)
+    (h_addr_ne_x0 : addrReg ≠ .x0)
+    (h_byte_ne_x0 : byteReg ≠ .x0)
+    (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window0 : mstoreLimbWindowOk (memBase + offset) loAddr0 hiAddr0 start
+                  24 25 26 27 28 29 30 31)
+    (h_window1 : mstoreLimbWindowOk (memBase + offset) loAddr1 hiAddr1 start
+                  16 17 18 19 20 21 22 23)
+    (h_window2 : mstoreLimbWindowOk (memBase + offset) loAddr2 hiAddr2 start
+                  8 9 10 11 12 13 14 15)
+    (h_window3 : mstoreLimbWindowOk (memBase + offset) loAddr3 hiAddr3 start
+                  0 1 2 3 4 5 6 7) :
+    let stored0 := MStore.mstoreDwordPairStoreLimb loVal0 hiVal0 limb0 start
+    let stored1 := MStore.mstoreDwordPairStoreLimb loVal1 hiVal1 limb1 start
+    let stored2 := MStore.mstoreDwordPairStoreLimb loVal2 hiVal2 limb2 start
+    let stored3 := MStore.mstoreDwordPairStoreLimb loVal3 hiVal3 limb3 start
+    cpsTripleWithin (2 + (17 + 17 + 17 + 17) + 1) base (base + 284)
+      (evm_mstore_code offReg valReg byteReg accReg addrReg memBaseReg base)
+      (((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offOld) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ addrOld) **
+        (sp ↦ₘ offset)) **
+       ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+        (loAddr0 ↦ₘ loVal0) ** (hiAddr0 ↦ₘ hiVal0) **
+        ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limb0) **
+        (loAddr1 ↦ₘ loVal1) ** (hiAddr1 ↦ₘ hiVal1) **
+        ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limb1) **
+        (loAddr2 ↦ₘ loVal2) ** (hiAddr2 ↦ₘ hiVal2) **
+        ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limb2) **
+        (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3) **
+        ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limb3))) **
+       evmStackIs (sp + 64) rest)
+      (((.x12 : Reg) ↦ᵣ (sp + 64)) **
+       evmStackIs (sp + 64) rest **
+       ((offReg ↦ᵣ offset) ** (memBaseReg ↦ᵣ memBase) **
+        (addrReg ↦ᵣ (memBase + offset)) ** (sp ↦ₘ offset) **
+        (byteReg ↦ᵣ limb3) ** (accReg ↦ᵣ limb3) **
+        (loAddr3 ↦ₘ stored3.1) ** (hiAddr3 ↦ₘ stored3.2) **
+        ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limb3) **
+        (loAddr0 ↦ₘ stored0.1) ** (hiAddr0 ↦ₘ stored0.2) **
+        ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limb0) **
+        (loAddr1 ↦ₘ stored1.1) ** (hiAddr1 ↦ₘ stored1.2) **
+        ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limb1) **
+        (loAddr2 ↦ₘ stored2.1) ** (hiAddr2 ↦ₘ stored2.2) **
+        ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limb2))) := by
+  dsimp only
+  have hCore :=
+    cpsTripleWithin_frameR (evmStackIs (sp + 64) rest) (by pcFree)
+      (evm_mstore_unaligned_full_stack_spec_within_public_epilogue
+        offReg valReg byteReg accReg addrReg memBaseReg
+        sp offset offOld addrOld memBase byteOld accOld
+        limb0 limb1 limb2 limb3
+        loAddr0 hiAddr0 loVal0 hiVal0
+        loAddr1 hiAddr1 loVal1 hiVal1
+        loAddr2 hiAddr2 loVal2 hiVal2
+        loAddr3 hiAddr3 loVal3 hiVal3
+        start base
+        h_off_ne_x0 h_addr_ne_x0 h_byte_ne_x0 h_acc_ne_x0
+        h_window0 h_window1 h_window2 h_window3)
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by sep_perm hp)
+    (fun _ hp => by sep_perm hp)
+    hCore
 
 end EvmAsm.Evm64
