@@ -639,4 +639,51 @@ theorem evm_mload_unaligned_one_limb_q3_stack_spec_within_framed
     (fun _ hp => by sep_perm hp)
     framed
 
+/--
+Public-code q3 framed MLOAD spec: transports
+`evm_mload_unaligned_one_limb_q3_stack_spec_within_framed` from the q3
+one-limb block to the full `evm_mload_code` code requirement.
+
+Distinctive token:
+evm_mload_unaligned_one_limb_q3_spec_within_framed_public_code #53.
+-/
+theorem evm_mload_unaligned_one_limb_q3_spec_within_framed_public_code
+    (offReg byteReg accReg addrReg memBaseReg : Reg)
+    (sp offset memBase byteOld accOld : Word)
+    (q0Old q1Old q2Old : Word)
+    (loAddr3 hiAddr3 loVal3 hiVal3 : Word) (start : Nat)
+    (dstOld : Word)
+    (base : Word)
+    (F : Assertion) (hF : F.pcFree)
+    (h_byte_ne_x0 : byteReg ≠ .x0) (h_acc_ne_x0 : accReg ≠ .x0)
+    (h_window : mloadLimbWindowOk (memBase + offset) loAddr3 hiAddr3 start
+                  0 1 2 3 4 5 6 7) :
+    cpsTripleWithin 23 (base + 284) (base + 376)
+      (evm_mload_code offReg byteReg accReg addrReg memBaseReg base)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ q0Old) **
+        (sp + 8 ↦ₘ q1Old) **
+        (sp + 16 ↦ₘ q2Old) **
+        (sp + 24 ↦ₘ dstOld) **
+        ((byteReg ↦ᵣ byteOld) ** (accReg ↦ᵣ accOld) **
+         (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3))) ** F)
+      ((((.x12 : Reg) ↦ᵣ sp) ** (offReg ↦ᵣ offset) **
+        (memBaseReg ↦ᵣ memBase) ** (addrReg ↦ᵣ (memBase + offset)) **
+        (sp ↦ₘ q0Old) **
+        (sp + 8 ↦ₘ q1Old) **
+        (sp + 16 ↦ₘ q2Old) **
+        (sp + 24 ↦ₘ mloadPackedLimbFromDwordPair loVal3 hiVal3 start) **
+        ((byteReg ↦ᵣ
+           (mloadByteFromDwordPair loVal3 hiVal3 start 7).zeroExtend 64) **
+         (accReg ↦ᵣ mloadPackedLimbFromDwordPair loVal3 hiVal3 start) **
+         (loAddr3 ↦ₘ loVal3) ** (hiAddr3 ↦ₘ hiVal3))) ** F) := by
+  exact cpsTripleWithin_evm_mload_of_one_limb_q3
+    offReg byteReg accReg addrReg memBaseReg base
+    (evm_mload_unaligned_one_limb_q3_stack_spec_within_framed
+      offReg byteReg accReg addrReg memBaseReg
+      sp offset memBase byteOld accOld q0Old q1Old q2Old
+      loAddr3 hiAddr3 loVal3 hiVal3 start dstOld base F hF
+      h_byte_ne_x0 h_acc_ne_x0 h_window)
+
 end EvmAsm.Evm64
