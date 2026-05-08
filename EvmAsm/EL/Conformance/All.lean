@@ -40,6 +40,17 @@ def allConformanceVectors : List CheckResult :=
   StorageStackExecution.storageStackConformanceVectors ++
   TerminatingStackExecution.terminatingStackConformanceVectors
 
+def allConformanceVectorCount : Nat :=
+  allConformanceVectors.length
+
+theorem allConformanceVectors_length :
+    allConformanceVectors.length = 45 := by
+  native_decide
+
+theorem allConformanceVectorCount_eq :
+    allConformanceVectorCount = 45 := by
+  native_decide
+
 def unexpectedConformanceFailures : List CheckResult :=
   allConformanceVectors.filter
     (fun result =>
