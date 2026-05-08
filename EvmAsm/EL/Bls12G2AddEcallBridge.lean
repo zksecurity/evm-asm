@@ -6,6 +6,7 @@
 
 import EvmAsm.EL.Bls12G2AddInputBridge
 import EvmAsm.EL.Bls12G2AddResultBridge
+import EvmAsm.Evm64.Accelerators.Status
 import EvmAsm.Evm64.Accelerators.SyscallIds
 
 namespace EvmAsm.EL
@@ -92,6 +93,53 @@ theorem executeBls12G2AddEcall_fromMemory_outputPoint
       (accelerator
         (Bls12G2AddInputBridge.bls12G2AddInputFromMemory
           memory p1Start p2Start)).output.point := rfl
+
+/-- RV64 `a0` return-register `Word` for the accelerator status, mirroring
+`Sha256EcallBridge.statusWord`. The accelerator places the `zkvm_status`
+return code in `a0` after the ECALL; this projection extracts that word from
+a `Bls12G2AddResult` for postcondition reasoning. -/
+def statusWord (result : Bls12G2AddResult) : BitVec 64 :=
+  EvmAsm.Rv64.zkvmStatusToWord result.status
+
+theorem statusWord_eok
+    {result : Bls12G2AddResult} (h_status : result.status = .eok) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+theorem statusWord_efail
+    {result : Bls12G2AddResult} (h_status : result.status = .efail) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEfailWord := by
+  show EvmAsm.Rv64.zkvmStatusToWord result.status = _
+  rw [h_status]; rfl
+
+/-- The `a0` word is `ZKVM_EOK` iff the accelerator reported success. -/
+theorem statusWord_eq_eokWord_iff (result : Bls12G2AddResult) :
+    statusWord result = EvmAsm.Rv64.zkvmStatusEokWord ↔ result.status = .eok := by
+  cases h_st : result.status with
+  | eok => simp [statusWord_eok h_st]
+  | efail =>
+    rw [statusWord_efail h_st]
+    constructor
+    · intro h; exact absurd h.symm EvmAsm.Rv64.zkvmStatusEokWord_ne_efailWord
+    · intro h; simp at h
+
+/-- The `a0` word decodes back to the original status. -/
+theorem zkvmStatusFromWord?_statusWord (result : Bls12G2AddResult) :
+    EvmAsm.Rv64.zkvmStatusFromWord? (statusWord result) = some result.status :=
+  EvmAsm.Rv64.zkvmStatusFromWord?_toWord result.status
+
+/-- Push `statusWord` through `executeBls12G2AddEcall`: the returned `a0` word is
+the accelerator-supplied status encoded via `zkvmStatusToWord`. This bridge
+uses the `AcceleratorResult` struct shape (status as a named field), so the
+push-through reads `(accelerator request.input).status`. -/
+theorem executeBls12G2AddEcall_statusWord
+    (accelerator : Bls12G2AddInputBridge.AcceleratorInput →
+      Bls12G2AddResultBridge.AcceleratorResult)
+    (request : Bls12G2AddRequest) :
+    statusWord (executeBls12G2AddEcall accelerator request) =
+      EvmAsm.Rv64.zkvmStatusToWord (accelerator request.input).status := by
+  rfl
 
 end Bls12G2AddEcallBridge
 
