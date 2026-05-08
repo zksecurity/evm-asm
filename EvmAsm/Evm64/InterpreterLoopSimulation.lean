@@ -161,6 +161,27 @@ theorem stepWithHandler_status_eq_of_loopResultsMatch_running
       (InterpreterLoop.stepWithHandler spec state).status := by
   rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
 
+theorem stepWithHandler_pc_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).pc =
+      (InterpreterLoop.stepWithHandler spec state).pc := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_gas_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).gas =
+      (InterpreterLoop.stepWithHandler spec state).gas := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
+theorem stepWithHandler_stack_eq_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running) :
+    (InterpreterLoop.stepWithHandler impl state).stack =
+      (InterpreterLoop.stepWithHandler spec state).stack := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+
 end InterpreterLoopSimulation
 
 end EvmAsm.Evm64
