@@ -243,6 +243,30 @@ theorem dispatchByte_supported_SMOD_byte_stack_of_runSModStack?_some
   exact SModStackExecutionBridge.smodHandler_stack_of_runSModStack?_some
     h_run
 
+theorem dispatchByte_supported_SDIV_byte_status_of_runSDivStack?_some
+    {state : EvmState} {out : SDivStackExecutionBridge.SDivStackResult}
+    (h_run :
+      SDivStackExecutionBridge.runSDivStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x05, by decide⟩ : Fin 256) state).status =
+        state.status := by
+  rw [dispatchByte_supported_SDIV_byte]
+  exact SDivStackExecutionBridge.sdivHandler_status_of_runSDivStack?_some
+    h_run
+
+theorem dispatchByte_supported_SMOD_byte_status_of_runSModStack?_some
+    {state : EvmState} {out : SModStackExecutionBridge.SModStackResult}
+    (h_run :
+      SModStackExecutionBridge.runSModStack? { stack := state.stack } =
+        some out) :
+    (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
+      (⟨0x07, by decide⟩ : Fin 256) state).status =
+        state.status := by
+  rw [dispatchByte_supported_SMOD_byte]
+  exact SModStackExecutionBridge.smodHandler_status_of_runSModStack?_some
+    h_run
+
 theorem dispatchByte_supported_SDIV_byte_status_empty_stack
     (state : EvmState) :
     (HandlerTable.dispatchByte SupportedHandlers.supportedHandlerTable
