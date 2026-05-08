@@ -131,6 +131,64 @@ def signedArithmeticConformanceTestVectorCount : Nat :=
 theorem signedArithmeticConformanceTestVectorCount_eq :
     signedArithmeticConformanceTestVectorCount = 8 := rfl
 
+def sdivStackConformanceVectorIds : List String :=
+  sdivStackConformanceTestVectors.map TestVector.id
+
+def smodStackConformanceVectorIds : List String :=
+  smodStackConformanceTestVectors.map TestVector.id
+
+def signedArithmeticConformanceVectorIds : List String :=
+  sdivStackConformanceVectorIds ++ smodStackConformanceVectorIds
+
+theorem sdivStackConformanceVectorIds_eq :
+    sdivStackConformanceVectorIds =
+      [ "sdiv-stack-zero-divisor"
+      , "sdiv-stack-int-min-neg-one"
+      , "sdiv-stack-pos-neg-trunc"
+      , "sdiv-stack-underflow"
+      ] := rfl
+
+theorem smodStackConformanceVectorIds_eq :
+    smodStackConformanceVectorIds =
+      [ "smod-stack-zero-divisor"
+      , "smod-stack-neg-pos-sign"
+      , "smod-stack-pos-neg-sign"
+      , "smod-stack-underflow"
+      ] := rfl
+
+theorem signedArithmeticConformanceVectorIds_eq :
+    signedArithmeticConformanceVectorIds =
+      [ "sdiv-stack-zero-divisor"
+      , "sdiv-stack-int-min-neg-one"
+      , "sdiv-stack-pos-neg-trunc"
+      , "sdiv-stack-underflow"
+      , "smod-stack-zero-divisor"
+      , "smod-stack-neg-pos-sign"
+      , "smod-stack-pos-neg-sign"
+      , "smod-stack-underflow"
+      ] := rfl
+
+theorem sdivStackConformanceVectorIds_length :
+    sdivStackConformanceVectorIds.length = 4 := rfl
+
+theorem smodStackConformanceVectorIds_length :
+    smodStackConformanceVectorIds.length = 4 := rfl
+
+theorem signedArithmeticConformanceVectorIds_length :
+    signedArithmeticConformanceVectorIds.length = 8 := rfl
+
+theorem sdivStackConformanceVectorIds_nodup :
+    sdivStackConformanceVectorIds.Nodup := by
+  decide
+
+theorem smodStackConformanceVectorIds_nodup :
+    smodStackConformanceVectorIds.Nodup := by
+  decide
+
+theorem signedArithmeticConformanceVectorIds_nodup :
+    signedArithmeticConformanceVectorIds.Nodup := by
+  decide
+
 theorem runSDivStack?_zero_divisor_vector :
     runSDivStack? { stack := [(9 : EvmWord), 0, 42] } =
       some { effects := { stackWords := [0] }, stack := [42] } := by
