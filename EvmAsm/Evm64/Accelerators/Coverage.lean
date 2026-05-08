@@ -245,5 +245,81 @@ theorem acceleratorCoverageSurfaces_nodup :
   rw [acceleratorCoverageSurfaces_eq]
   decide
 
+/-- Accelerator C symbols used by EVM opcodes rather than precompile surfaces. -/
+def acceleratorOpcodeSymbols : List String :=
+  acceleratorCoverageTable.filterMap fun row =>
+    match row.surface with
+    | .opcode _ => some row.cSymbol
+    | _ => none
+
+/-- Accelerator C symbols used outside the precompile table. -/
+def acceleratorNonPrecompileSymbols : List String :=
+  acceleratorCoverageTable.filterMap fun row =>
+    match row.surface with
+    | .nonPrecompile _ => some row.cSymbol
+    | _ => none
+
+/-- Accelerator C symbols used by Ethereum precompile entry points. -/
+def acceleratorPrecompileSymbols : List String :=
+  acceleratorCoverageTable.filterMap fun row =>
+    match row.surface with
+    | .precompile _ _ => some row.cSymbol
+    | _ => none
+
+theorem acceleratorOpcodeSymbols_eq :
+    acceleratorOpcodeSymbols = ["zkvm_keccak256"] := by
+  decide
+
+theorem acceleratorNonPrecompileSymbols_eq :
+    acceleratorNonPrecompileSymbols = ["zkvm_secp256k1_verify"] := by
+  decide
+
+theorem acceleratorPrecompileSymbols_eq :
+    acceleratorPrecompileSymbols =
+      ["zkvm_secp256k1_ecrecover",
+       "zkvm_sha256",
+       "zkvm_ripemd160",
+       "zkvm_modexp",
+       "zkvm_bn254_g1_add",
+       "zkvm_bn254_g1_mul",
+       "zkvm_bn254_pairing",
+       "zkvm_blake2f",
+       "zkvm_kzg_point_eval",
+       "zkvm_bls12_g1_add",
+       "zkvm_bls12_g1_msm",
+       "zkvm_bls12_g2_add",
+       "zkvm_bls12_g2_msm",
+       "zkvm_bls12_pairing",
+       "zkvm_bls12_map_fp_to_g1",
+       "zkvm_bls12_map_fp2_to_g2",
+       "zkvm_secp256r1_verify"] := by
+  decide
+
+theorem acceleratorOpcodeSymbols_length :
+    acceleratorOpcodeSymbols.length = 1 := by
+  rw [acceleratorOpcodeSymbols_eq]
+  decide
+
+theorem acceleratorNonPrecompileSymbols_length :
+    acceleratorNonPrecompileSymbols.length = 1 := by
+  rw [acceleratorNonPrecompileSymbols_eq]
+  decide
+
+theorem acceleratorPrecompileSymbols_length :
+    acceleratorPrecompileSymbols.length = 17 := by
+  rw [acceleratorPrecompileSymbols_eq]
+  decide
+
+theorem acceleratorPrecompileSymbols_nodup :
+    acceleratorPrecompileSymbols.Nodup := by
+  rw [acceleratorPrecompileSymbols_eq]
+  decide
+
+theorem acceleratorPrecompileSymbols_subset_coverage :
+    ∀ symbol ∈ acceleratorPrecompileSymbols,
+      symbol ∈ acceleratorCoverageSymbols := by
+  rw [acceleratorPrecompileSymbols_eq, acceleratorCoverageSymbols_eq]
+  decide
+
 end Accelerators
 end EvmAsm
