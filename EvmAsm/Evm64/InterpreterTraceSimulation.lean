@@ -162,6 +162,23 @@ theorem loopFuelAndTrace_matchesSpec_codeLen
   exact congrArg (fun result => result.1.codeLen)
     (loopFuelAndTrace_matchesSpec h_match nSteps state)
 
+theorem loopFuelAndTrace_matchesSpec_codeLenMatches_iff
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl nSteps state).codeLenMatches ↔
+      (InterpreterLoop.loopFuel spec nSteps state).codeLenMatches := by
+  rw [loopFuelAndTrace_matchesSpec_state h_match nSteps state]
+
+theorem loopFuelAndTrace_matchesSpec_codeLenMatches
+    {impl spec : InterpreterLoop.Handler}
+    (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState)
+    (h_codeLen : (InterpreterLoop.loopFuel spec nSteps state).codeLenMatches) :
+    (InterpreterLoop.loopFuel impl nSteps state).codeLenMatches := by
+  rw [loopFuelAndTrace_matchesSpec_state h_match nSteps state]
+  exact h_codeLen
+
 theorem loopFuelAndTrace_matchesSpec_env
     {impl spec : InterpreterLoop.Handler}
     (h_match : InterpreterSimulation.HandlerMatchesSpec impl spec)

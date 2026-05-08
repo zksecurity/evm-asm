@@ -10,6 +10,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.LoopIterN3
+import EvmAsm.Rv64.Tactics.XPermChunked
 
 open EvmAsm.Rv64.Tactics
 
@@ -344,7 +345,7 @@ theorem divK_loop_n3_max_max_spec_within
       rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
           u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
       rw [sepConj_assoc'] at hp
-      xperm_hyp hp)
+      xperm_chunked hp)
     J1f J0f
   -- 5. Clean up postcondition
   exact cpsTripleWithin_weaken

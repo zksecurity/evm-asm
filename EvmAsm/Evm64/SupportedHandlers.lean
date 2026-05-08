@@ -429,6 +429,16 @@ theorem dispatchOpcode_of_lookup_codeLen
       (handler state).codeLen := by
   rw [dispatchOpcode_of_lookup h_lookup state]
 
+theorem dispatchOpcode_of_lookup_preserves_codeLenMatches
+    {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : supportedHandlerTable opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (HandlerTable.dispatchOpcode supportedHandlerTable opcode state).codeLenMatches := by
+  rw [dispatchOpcode_of_lookup h_lookup state]
+  exact h_codeLen state h_state
+
 theorem dispatchOpcode_of_lookup_env
     {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_lookup : supportedHandlerTable opcode = some handler)

@@ -118,18 +118,44 @@ theorem callOutputFailureVector_passed :
     []
     runCallOutput_failure
 
+/-- Test-vector surface for CALL output bridge helpers.
+    Distinctive token: Call.callOutputConformanceVectorIds #125 #114. -/
+def callOutputConformanceTestVectors : List (TestVector CallOutputInput (List Byte)) :=
+  [ callOutputClipVector
+  , callOutputZeroSizeVector
+  , callOutputFailureVector
+  ]
+
+def callOutputConformanceVectorIds : List String :=
+  callOutputConformanceTestVectors.map TestVector.id
+
+theorem callOutputConformanceTestVectors_length :
+    callOutputConformanceTestVectors.length = 3 := rfl
+
+theorem callOutputConformanceVectorIds_eq :
+    callOutputConformanceVectorIds =
+      [ "call-output-clip"
+      , "call-output-zero-size"
+      , "call-output-failure-empty"
+      ] := rfl
+
+theorem callOutputConformanceVectorIds_length :
+    callOutputConformanceVectorIds.length = 3 := rfl
+
+theorem callOutputConformanceVectorIds_nodup :
+    callOutputConformanceVectorIds.Nodup := by
+  decide
+
 /-- Compact checked-vector batch for CALL output bridge helpers.
     Distinctive token: Call.callOutputConformanceVectors #125 #114. -/
 def callOutputConformanceVectors : List CheckResult :=
-  [ checkVector runCallOutput callOutputClipVector
-  , checkVector runCallOutput callOutputZeroSizeVector
-  , checkVector runCallOutput callOutputFailureVector
-  ]
+  callOutputConformanceTestVectors.map (checkVector runCallOutput)
 
 theorem callOutputConformanceVectors_passed :
     callOutputConformanceVectors = [.passed, .passed, .passed] := by
-  simp [callOutputConformanceVectors, callOutputClipVector_passed,
-    callOutputZeroSizeVector_passed, callOutputFailureVector_passed]
+  simp [callOutputConformanceVectors, callOutputConformanceTestVectors,
+    callOutputClipVector_passed, callOutputZeroSizeVector_passed,
+    callOutputFailureVector_passed]
 
 end Call
 end Conformance
