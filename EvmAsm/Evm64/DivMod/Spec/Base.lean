@@ -427,6 +427,56 @@ theorem evm_div_bzero_stack_spec_within (sp base : Word)
         from by xperm) h).mp w1)
     h_raw
 
+/-- No-NOP variant of `evm_div_bzero_stack_spec_within`.
+
+    This is the stack-level zero-divisor branch over `divCode_noNop`, used by
+    the LP64-callable DIV wrapper whose return instruction replaces the old
+    NOP at `base + nopOff`. -/
+theorem evm_div_bzero_stack_spec_within_noNop (sp base : Word)
+    (a b : EvmWord) (v5 v10 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin (8 + 5) base (base + nopOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs (sp + 32) b)
+      ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x10) ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs (sp + 32) (EvmWord.div a b)) := by
+  subst hbz
+  have hg0 := EvmWord.getLimbN_zero 0
+  have hg1 := EvmWord.getLimbN_zero 1
+  have hg2 := EvmWord.getLimbN_zero 2
+  have hg3 := EvmWord.getLimbN_zero 3
+  have hlimbs_or : (0 : EvmWord).getLimbN 0 ||| (0 : EvmWord).getLimbN 1 |||
+      (0 : EvmWord).getLimbN 2 ||| (0 : EvmWord).getLimbN 3 = (0 : Word) := by decide
+  have h_raw := evm_div_bzero_spec_within_noNop sp base
+    ((0 : EvmWord).getLimbN 0) ((0 : EvmWord).getLimbN 1)
+    ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3)
+    v5 v10 hlimbs_or
+  simp only [hg0, hg1, hg2, hg3] at h_raw
+  have hr0 := EvmWord.div_getLimbN_zero_right a 0
+  have hr1 := EvmWord.div_getLimbN_zero_right a 1
+  have hr2 := EvmWord.div_getLimbN_zero_right a 2
+  have hr3 := EvmWord.div_getLimbN_zero_right a 3
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      rw [evmWordIs_sp32_limbs_eq sp 0 0 0 0 0 hg0 hg1 hg2 hg3] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      rw [evmWordIs_sp32_limbs_eq sp _ 0 0 0 0 hr0 hr1 hr2 hr3]
+      have w0 := sepConj_mono_left (regIs_implies_regOwn .x5) h
+        ((congrFun (show _ =
+          ((.x5 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ (0 : Word)) **
+           (.x12 ↦ᵣ (sp + 32)) ** (.x0 ↦ᵣ (0 : Word)) **
+           ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) **
+           ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)))
+          from by xperm) h).mp hq)
+      have w1 := sepConj_mono_right (sepConj_mono_left (regIs_implies_regOwn .x10)) h w0
+      exact (congrFun (show _ =
+        ((.x12 ↦ᵣ (sp + 32)) ** (regOwn .x5) ** (regOwn .x10) ** (.x0 ↦ᵣ (0 : Word)) **
+         ((sp + 32) ↦ₘ (0 : Word)) ** ((sp + 40) ↦ₘ (0 : Word)) **
+         ((sp + 48) ↦ₘ (0 : Word)) ** ((sp + 56) ↦ₘ (0 : Word)))
+        from by xperm) h).mp w1)
+    h_raw
+
 -- DIV n=4 call+skip full-path stack-pre wrappers live in `DivMod/SpecCall.lean`
 -- to stay under the Spec.lean file-size guardrail.
 
