@@ -59,6 +59,69 @@ theorem loopFuel_status_eq_of_loopResultsMatch
       (InterpreterLoop.loopFuel spec fuel state).status := by
   rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
 
+theorem loopFuel_pc_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).pc =
+      (InterpreterLoop.loopFuel spec fuel state).pc := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_gas_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).gas =
+      (InterpreterLoop.loopFuel spec fuel state).gas := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_stack_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).stack =
+      (InterpreterLoop.loopFuel spec fuel state).stack := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_memoryCells_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).memoryCells =
+      (InterpreterLoop.loopFuel spec fuel state).memoryCells := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_memory_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) (addr : Nat) :
+    (InterpreterLoop.loopFuel impl fuel state).memory addr =
+      (InterpreterLoop.loopFuel spec fuel state).memory addr := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_memSize_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).memSize =
+      (InterpreterLoop.loopFuel spec fuel state).memSize := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_code_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).code =
+      (InterpreterLoop.loopFuel spec fuel state).code := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_codeLen_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).codeLen =
+      (InterpreterLoop.loopFuel spec fuel state).codeLen := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
+theorem loopFuel_env_eq_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl fuel state).env =
+      (InterpreterLoop.loopFuel spec fuel state).env := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
+
 theorem loopResultsMatch_of_eq
     {impl spec : Handler}
     (h_eq : ∀ (opcode : EvmOpcode) (state : EvmState), impl opcode state = spec opcode state) :
