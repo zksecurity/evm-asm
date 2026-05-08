@@ -52,9 +52,9 @@ MachineState:
   mem  : Addr → BitVec 64      -- 64-bit addressable memory
   code : Addr → Option Instr   -- Instruction memory (immutable)
   pc   : BitVec 64             -- Program counter
-  committed : List (Word × Word)  -- COMMIT syscall outputs
-  publicValues : List (BitVec 8)  -- WRITE syscall outputs
-  privateInput : List (BitVec 8)  -- HINT_READ input stream
+  committed : List (Word × Word)  -- legacy SP1 COMMIT word-pair outputs
+  publicValues : List (BitVec 8)  -- public output bytes for write_output/WRITE
+  privateInput : List (BitVec 8)  -- legacy SP1 HINT_READ input stream
 ```
 
 EVM stack: x12 is EVM stack pointer, stack grows upward, 32 bytes per element.
@@ -715,9 +715,12 @@ prerequisites provide the pure spec and RISC-V infrastructure for that.
   - Remaining: long-string composition with Phase 2 for lenLen 2-8 and the planned
     general `n`-iteration closure,
     short/long-list error exits (`e4`/`e5`).
-- Phase 4: HINT_READ integration (load RLP input into memory buffer)
+- Phase 4: `read_input` integration (obtain RLP input pointer + length)
 - Phase 5: Recursive list decode (iterative with explicit stack)
-- Phase 6: Top-level pipeline (HINT_READ → decode → output)
+- Phase 6: Top-level pipeline (`read_input` -> decode -> `write_output`)
+- **Host I/O ABI**: See `docs/zkvm-host-io-interface.md`; SP1
+  `HINT_LEN`/`HINT_READ`/`COMMIT` are legacy handler shapes, not the target
+  C ABI.
 - **Output format**: Pointer + length (zero-copy into input buffer)
 - **Depends on**: EL.1 (spec to verify against), EL.2 (byte-level specs)
 
