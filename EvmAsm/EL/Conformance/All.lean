@@ -1,0 +1,69 @@
+/-
+  EvmAsm.EL.Conformance.All
+
+  Aggregate Lean-side conformance batch for GH #125.
+-/
+
+import EvmAsm.EL.Conformance.Call
+import EvmAsm.EL.Conformance.Calldata
+import EvmAsm.EL.Conformance.Code
+import EvmAsm.EL.Conformance.CreateStackExecution
+import EvmAsm.EL.Conformance.ExpGas
+import EvmAsm.EL.Conformance.ExpStackExecution
+import EvmAsm.EL.Conformance.KeccakStackExecution
+import EvmAsm.EL.Conformance.Log
+import EvmAsm.EL.Conformance.LogStackExecution
+import EvmAsm.EL.Conformance.RLP
+import EvmAsm.EL.Conformance.ReturnData
+import EvmAsm.EL.Conformance.SignedArithmeticStackExecution
+import EvmAsm.EL.Conformance.StorageStackExecution
+import EvmAsm.EL.Conformance.TerminatingStackExecution
+
+namespace EvmAsm.EL
+namespace Conformance
+
+/-- Aggregate checked conformance results across the current EL vector modules.
+    Distinctive token: allConformanceVectors #125. -/
+def allConformanceVectors : List CheckResult :=
+  Call.callOutputConformanceVectors ++
+  Calldata.calldataConformanceVectors ++
+  Code.codeConformanceVectors ++
+  CreateStackExecution.createStackConformanceVectors ++
+  ExpGas.expGasConformanceVectors ++
+  ExpStackExecution.expStackConformanceVectors ++
+  KeccakStackExecution.keccakStackConformanceVectors ++
+  Log.logDataConformanceVectors ++
+  LogStackExecution.logStackConformanceVectors ++
+  RLP.rlpConformanceVectors ++
+  ReturnData.returnDataConformanceVectors ++
+  SignedArithmeticStackExecution.signedArithmeticConformanceVectors ++
+  StorageStackExecution.storageStackConformanceVectors ++
+  TerminatingStackExecution.terminatingStackConformanceVectors
+
+def unexpectedConformanceFailures : List CheckResult :=
+  allConformanceVectors.filter
+    (fun result =>
+      match result with
+      | .failed _ => true
+      | _ => false)
+
+theorem unexpectedConformanceFailures_empty :
+    unexpectedConformanceFailures = [] := by
+  simp [unexpectedConformanceFailures, allConformanceVectors,
+    Call.callOutputConformanceVectors_passed,
+    Calldata.calldataConformanceVectors_passed,
+    Code.codeConformanceVectors_passed,
+    CreateStackExecution.createStackConformanceVectors_passed,
+    ExpGas.expGasConformanceVectors_passed,
+    ExpStackExecution.expStackConformanceVectors_passed,
+    KeccakStackExecution.keccakStackConformanceVectors_passed,
+    Log.logDataConformanceVectors_passed,
+    LogStackExecution.logStackConformanceVectors_passed,
+    RLP.rlpConformanceVectors_passed,
+    ReturnData.returnDataConformanceVectors_passed,
+    SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
+    StorageStackExecution.storageStackConformanceVectors_passed,
+    TerminatingStackExecution.terminatingStackConformanceVectors_passed]
+
+end Conformance
+end EvmAsm.EL
