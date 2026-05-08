@@ -121,5 +121,46 @@ theorem acceleratorCoverageSelectors_in_range :
   rw [acceleratorCoverageSelectors_eq]
   decide
 
+/-- C symbols projected from the coverage table. -/
+def acceleratorCoverageSymbols : List String :=
+  acceleratorCoverageTable.map (fun row => row.cSymbol)
+
+/-- The coverage table lists each `zkvm_accelerators.h` C symbol once. -/
+theorem acceleratorCoverageSymbols_nodup :
+    acceleratorCoverageSymbols.Nodup := by
+  decide
+
+/-- Ethereum precompile addresses covered by accelerator-backed rows.
+
+This excludes the non-precompile KECCAK256 and secp256k1 verification
+accelerators and also excludes IDENTITY (`0x04`), which is pure memory copy
+and has no accelerator C symbol. -/
+def acceleratorPrecompileAddresses : List Nat :=
+  acceleratorCoverageTable.filterMap fun row =>
+    match row.surface with
+    | .precompile address _ => some address
+    | _ => none
+
+/-- The accelerator-backed precompile address set mirrors `zkvm_accelerators.h`.
+
+Address `0x04` is intentionally absent because IDENTITY has no accelerator. -/
+theorem acceleratorPrecompileAddresses_eq :
+    acceleratorPrecompileAddresses =
+      [0x01, 0x02, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09,
+       0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x100] := by
+  decide
+
+/-- No precompile address is assigned to more than one accelerator row. -/
+theorem acceleratorPrecompileAddresses_nodup :
+    acceleratorPrecompileAddresses.Nodup := by
+  rw [acceleratorPrecompileAddresses_eq]
+  decide
+
+/-- IDENTITY (`0x04`) is not accelerator-backed. -/
+theorem identity_not_mem_acceleratorPrecompileAddresses :
+    0x04 ∉ acceleratorPrecompileAddresses := by
+  rw [acceleratorPrecompileAddresses_eq]
+  decide
+
 end Accelerators
 end EvmAsm
