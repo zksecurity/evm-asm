@@ -5,7 +5,7 @@
   keep the base composition module under the Compose file-size guardrail.
 -/
 
-import EvmAsm.Evm64.Exp.Compose.Base
+import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 
 namespace EvmAsm.Evm64.Exp.Compose
 
