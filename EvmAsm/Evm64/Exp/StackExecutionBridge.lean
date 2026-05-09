@@ -246,6 +246,17 @@ theorem runExpStack?_zero_exponent
   rw [ExpArgs.expDynamicCostFromArgs_zero_exponent]
   rw [ExpArgs.expTotalGasFromArgs_zero_exponent]
 
+theorem runExpStack?_one_exponent
+    (base : EvmWord) (rest : List EvmWord) :
+    runExpStack? { stack := base :: 1 :: rest } =
+      some
+        { effects := { stackWords := [base], dynamicGas := 50, totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_one_right]
+  rw [ExpArgs.expDynamicCostFromArgs_one_exponent]
+  rw [ExpArgs.expTotalGasFromArgs_one_exponent]
+
 theorem runExpStack?_two_256
     (rest : List EvmWord) :
     runExpStack? { stack := (2 : EvmWord) :: 256 :: rest } =
