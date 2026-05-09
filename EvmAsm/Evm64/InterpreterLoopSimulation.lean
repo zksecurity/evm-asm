@@ -130,6 +130,14 @@ theorem loopFuel_codeLenMatches_of_loopResultsMatch
   rw [loopFuel_eq_of_loopResultsMatch h_match fuel state]
   exact h_codeLen
 
+theorem loopFuel_codeLenMatches_spec_of_loopResultsMatch
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    (fuel : Nat) (state : EvmState)
+    (h_codeLen : (InterpreterLoop.loopFuel impl fuel state).codeLenMatches) :
+    (InterpreterLoop.loopFuel spec fuel state).codeLenMatches := by
+  rw [loopFuel_eq_of_loopResultsMatch h_match fuel state] at h_codeLen
+  exact h_codeLen
+
 theorem loopFuel_env_eq_of_loopResultsMatch
     {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
     (fuel : Nat) (state : EvmState) :
@@ -245,6 +253,14 @@ theorem stepWithHandler_codeLenMatches_of_loopResultsMatch_running
     (h_codeLen : (InterpreterLoop.stepWithHandler spec state).codeLenMatches) :
     (InterpreterLoop.stepWithHandler impl state).codeLenMatches := by
   rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status]
+  exact h_codeLen
+
+theorem stepWithHandler_codeLenMatches_spec_of_loopResultsMatch_running
+    {impl spec : Handler} (h_match : LoopResultsMatch impl spec)
+    {state : EvmState} (h_status : state.status = .running)
+    (h_codeLen : (InterpreterLoop.stepWithHandler impl state).codeLenMatches) :
+    (InterpreterLoop.stepWithHandler spec state).codeLenMatches := by
+  rw [stepWithHandler_eq_of_loopResultsMatch_running h_match h_status] at h_codeLen
   exact h_codeLen
 
 theorem stepWithHandler_env_eq_of_loopResultsMatch_running
