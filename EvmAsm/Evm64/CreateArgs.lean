@@ -35,6 +35,10 @@ inductive Kind where
   | create2
   deriving DecidableEq, Repr
 
+/-- The CREATE-family opcode kinds covered by GH #115. -/
+def allKinds : List Kind :=
+  [.create, .create2]
+
 def argumentCount : Kind → Nat
   | .create => 3
   | .create2 => 4
@@ -54,6 +58,17 @@ theorem createArgumentCount :
 
 theorem create2ArgumentCount :
     argumentCount .create2 = 4 := rfl
+
+theorem allKinds_nodup :
+    allKinds.Nodup := by
+  decide
+
+theorem mem_allKinds (kind : Kind) :
+    kind ∈ allKinds := by
+  cases kind <;> decide
+
+theorem allKinds_argumentCounts :
+    allKinds.map argumentCount = [3, 4] := rfl
 
 theorem resultCount_eq_one (kind : Kind) :
     resultCount kind = 1 := rfl
@@ -80,6 +95,14 @@ theorem usesSalt_iff_create2 (kind : Kind) :
 
 theorem not_usesSalt_iff_create (kind : Kind) :
     usesSalt kind = false ↔ kind = .create := by
+  cases kind <;> decide
+
+theorem argumentCount_eq_three_iff_create (kind : Kind) :
+    argumentCount kind = 3 ↔ kind = .create := by
+  cases kind <;> decide
+
+theorem argumentCount_eq_four_iff_create2 (kind : Kind) :
+    argumentCount kind = 4 ↔ kind = .create2 := by
   cases kind <;> decide
 
 theorem create2_argumentCount_eq_succ_create :

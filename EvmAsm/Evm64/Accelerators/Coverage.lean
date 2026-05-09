@@ -352,6 +352,82 @@ theorem hashPrecompileAddresses_nodup :
   rw [hashPrecompileAddresses]
   decide
 
+/-! ### secp256k1 accelerator slice -/
+
+/-- secp256k1-family accelerator C symbols tracked by `evm-asm-g8tgi`. -/
+def secp256k1AcceleratorSymbols : List String :=
+  ["zkvm_secp256k1_verify", "zkvm_secp256k1_ecrecover"]
+
+theorem secp256k1AcceleratorSymbols_subset_coverage :
+    ∀ symbol ∈ secp256k1AcceleratorSymbols,
+      symbol ∈ acceleratorCoverageSymbols := by
+  rw [secp256k1AcceleratorSymbols, acceleratorCoverageSymbols_eq]
+  decide
+
+theorem secp256k1AcceleratorSymbols_nodup :
+    secp256k1AcceleratorSymbols.Nodup := by
+  rw [secp256k1AcceleratorSymbols]
+  decide
+
+/-- EVM precompile addresses covered by the secp256k1 accelerator slice. -/
+def secp256k1PrecompileAddresses : List Nat :=
+  [0x01]
+
+theorem secp256k1PrecompileAddresses_subset_acceleratorPrecompileAddresses :
+    ∀ address ∈ secp256k1PrecompileAddresses,
+      address ∈ acceleratorPrecompileAddresses := by
+  rw [secp256k1PrecompileAddresses, acceleratorPrecompileAddresses_eq]
+  decide
+
+theorem secp256k1PrecompileAddresses_nodup :
+    secp256k1PrecompileAddresses.Nodup := by
+  rw [secp256k1PrecompileAddresses]
+  decide
+
+/-! ### Curve, pairing, KZG, and MODEXP precompile slice -/
+
+/-- Curve-arithmetic, pairing, KZG, and MODEXP accelerator C symbols tracked by
+`evm-asm-bc3sd`. -/
+def curvePrecompileSymbols : List String :=
+  ["zkvm_modexp",
+   "zkvm_bn254_g1_add",
+   "zkvm_bn254_g1_mul",
+   "zkvm_bn254_pairing",
+   "zkvm_kzg_point_eval",
+   "zkvm_bls12_g1_add",
+   "zkvm_bls12_g1_msm",
+   "zkvm_bls12_g2_add",
+   "zkvm_bls12_g2_msm",
+   "zkvm_bls12_pairing",
+   "zkvm_bls12_map_fp_to_g1",
+   "zkvm_bls12_map_fp2_to_g2"]
+
+theorem curvePrecompileSymbols_subset_precompiles :
+    ∀ symbol ∈ curvePrecompileSymbols,
+      symbol ∈ acceleratorPrecompileSymbols := by
+  rw [curvePrecompileSymbols, acceleratorPrecompileSymbols_eq]
+  decide
+
+theorem curvePrecompileSymbols_nodup :
+    curvePrecompileSymbols.Nodup := by
+  rw [curvePrecompileSymbols]
+  decide
+
+/-- EVM precompile addresses covered by the curve/pairing/KZG/MODEXP slice. -/
+def curvePrecompileAddresses : List Nat :=
+  [0x05, 0x06, 0x07, 0x08, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11]
+
+theorem curvePrecompileAddresses_subset_acceleratorPrecompileAddresses :
+    ∀ address ∈ curvePrecompileAddresses,
+      address ∈ acceleratorPrecompileAddresses := by
+  rw [curvePrecompileAddresses, acceleratorPrecompileAddresses_eq]
+  decide
+
+theorem curvePrecompileAddresses_nodup :
+    curvePrecompileAddresses.Nodup := by
+  rw [curvePrecompileAddresses]
+  decide
+
 def acceleratorClassifiedSymbols : List String :=
   acceleratorOpcodeSymbols ++ acceleratorNonPrecompileSymbols ++
     acceleratorPrecompileSymbols
@@ -452,6 +528,60 @@ theorem hashPrecompileSelectors_are_accelerators :
 theorem hashPrecompileSelectors_nodup :
     hashPrecompileSelectors.Nodup := by
   rw [hashPrecompileSelectors]
+  decide
+
+/-- Accelerator selectors covered by the secp256k1 slice. -/
+def secp256k1AcceleratorSelectors : List Nat :=
+  [secp256k1_verify, secp256k1_ecrecover]
+
+theorem secp256k1AcceleratorSelectors_are_accelerators :
+    ∀ id ∈ secp256k1AcceleratorSelectors, isAccelerator id := by
+  rw [secp256k1AcceleratorSelectors]
+  decide
+
+theorem secp256k1AcceleratorSelectors_nodup :
+    secp256k1AcceleratorSelectors.Nodup := by
+  rw [secp256k1AcceleratorSelectors]
+  decide
+
+theorem secp256k1_verify_mem_nonPrecompileSelectors :
+    secp256k1_verify ∈ acceleratorNonPrecompileSelectors := by
+  rw [acceleratorNonPrecompileSelectors_eq]
+  decide
+
+theorem secp256k1_ecrecover_mem_precompileSelectors :
+    secp256k1_ecrecover ∈ acceleratorPrecompileSelectors := by
+  rw [acceleratorPrecompileSelectors_eq]
+  decide
+
+/-- Accelerator selectors covered by the curve/pairing/KZG/MODEXP slice. -/
+def curvePrecompileSelectors : List Nat :=
+  [modexp,
+   bn254_g1_add,
+   bn254_g1_mul,
+   bn254_pairing,
+   kzg_point_eval,
+   bls12_g1_add,
+   bls12_g1_msm,
+   bls12_g2_add,
+   bls12_g2_msm,
+   bls12_pairing,
+   bls12_map_fp_to_g1,
+   bls12_map_fp2_to_g2]
+
+theorem curvePrecompileSelectors_subset_precompiles :
+    ∀ id ∈ curvePrecompileSelectors, id ∈ acceleratorPrecompileSelectors := by
+  rw [curvePrecompileSelectors, acceleratorPrecompileSelectors_eq]
+  decide
+
+theorem curvePrecompileSelectors_are_accelerators :
+    ∀ id ∈ curvePrecompileSelectors, isAccelerator id := by
+  rw [curvePrecompileSelectors]
+  decide
+
+theorem curvePrecompileSelectors_nodup :
+    curvePrecompileSelectors.Nodup := by
+  rw [curvePrecompileSelectors]
   decide
 
 def acceleratorClassifiedSelectors : List Nat :=

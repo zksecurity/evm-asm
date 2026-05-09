@@ -97,6 +97,13 @@ def callDataSizeTwoBytesVector : TestVector CallDataSizeInput EvmWord :=
     input := { data := [(0xaa : BitVec 8), (0xbb : BitVec 8)] }
     expected := .value 2 }
 
+/-- CALLDATASIZE on empty calldata returns zero.
+    Distinctive token: callDataSizeEmptyVector #104 #125. -/
+def callDataSizeEmptyVector : TestVector CallDataSizeInput EvmWord :=
+  { id := "calldatasize-empty"
+    input := { data := [] }
+    expected := .value 0 }
+
 /-- CALLDATACOPY zero-pads bytes copied past the end of calldata.
     Distinctive token: callDataCopyZeroPadVector. -/
 def callDataCopyZeroPadVector :
@@ -146,6 +153,9 @@ theorem runCallDataSize_twoBytes :
     runCallDataSize { data := [(0xaa : BitVec 8), (0xbb : BitVec 8)] } =
       (2 : EvmWord) := rfl
 
+theorem runCallDataSize_empty :
+    runCallDataSize { data := [] } = (0 : EvmWord) := rfl
+
 theorem runCallDataCopy_zeroPad :
     runCallDataCopy
       { data := [(0xaa : BitVec 8)], dataOffset := 0, size := 3 } =
@@ -193,6 +203,14 @@ theorem callDataSizeTwoBytesVector_passed :
     (2 : EvmWord)
     runCallDataSize_twoBytes
 
+theorem callDataSizeEmptyVector_passed :
+    checkVector runCallDataSize callDataSizeEmptyVector = .passed :=
+  checkVector_value_passed runCallDataSize
+    "calldatasize-empty"
+    { data := [] }
+    (0 : EvmWord)
+    runCallDataSize_empty
+
 theorem callDataCopyZeroPadVector_passed :
     checkVector runCallDataCopy callDataCopyZeroPadVector = .passed :=
   checkVector_value_passed runCallDataCopy
@@ -225,6 +243,7 @@ def calldataConformanceVectors : List CheckResult :=
   , checkVector? runCallDataLoadStack? callDataLoadStackVector
   , checkVector? runCallDataLoadStack? callDataLoadStackUnderflowVector
   , checkVector runCallDataSize callDataSizeTwoBytesVector
+  , checkVector runCallDataSize callDataSizeEmptyVector
   , checkVector runCallDataCopy callDataCopyZeroPadVector
   , checkVector? runCallDataCopyStack? callDataCopyStackVector
   , checkVector? runCallDataCopyStack? callDataCopyStackUnderflowVector
@@ -233,12 +252,13 @@ def calldataConformanceVectors : List CheckResult :=
 theorem calldataConformanceVectors_passed :
     calldataConformanceVectors =
       [.passed, .passed, .errored "calldataload-stack-underflow" "stack-underflow",
-        .passed, .passed, .passed,
+        .passed, .passed, .passed, .passed,
         .errored "calldatacopy-stack-underflow" "stack-underflow"] := by
   simp [calldataConformanceVectors, callDataLoadOutOfBoundsVector_passed,
     callDataLoadStackVector_passed, callDataLoadStackUnderflowVector_errored,
-    callDataSizeTwoBytesVector_passed, callDataCopyZeroPadVector_passed,
-    callDataCopyStackVector_passed, callDataCopyStackUnderflowVector_errored]
+    callDataSizeTwoBytesVector_passed, callDataSizeEmptyVector_passed,
+    callDataCopyZeroPadVector_passed, callDataCopyStackVector_passed,
+    callDataCopyStackUnderflowVector_errored]
 
 end Calldata
 end Conformance
