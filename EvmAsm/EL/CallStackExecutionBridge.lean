@@ -617,6 +617,44 @@ theorem runCallStack?_delegatecall_outputBytes_length_le
           readByte isStatic args))
       args⟩
 
+theorem runCallStack?_outputBytes_length_le
+    {kind : CallKind} {state : WorldState} {caller callee : Address}
+    {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}
+    {executor : CallExecutor} {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? kind state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    ∃ outputSize : Nat,
+      out.effects.outputBytes.length ≤ outputSize ∧
+        ((kind = .call ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack =
+                some args ∧
+              outputSize = args.output.size.toNat) ∨
+          (kind = .staticcall ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+                  stackState.stack = some args ∧
+              outputSize = args.output.size.toNat) ∨
+          (kind = .delegatecall ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+                  stackState.stack = some args ∧
+              outputSize = args.output.size.toNat)) := by
+  cases kind
+  · rcases runCallStack?_call_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inl ⟨rfl, args, h_decode, rfl⟩⟩
+  · rcases runCallStack?_staticcall_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inr <| Or.inl ⟨rfl, args, h_decode, rfl⟩⟩
+  · rcases runCallStack?_delegatecall_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inr <| Or.inr ⟨rfl, args, h_decode, rfl⟩⟩
+
 theorem runCallStack?_stack_length
     {kind : CallKind} {state : WorldState} {caller callee : Address}
     {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}

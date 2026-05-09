@@ -96,6 +96,25 @@ theorem dispatchByte_decoded_lookup_preserves_status
   rw [dispatchByte_decoded_lookup_status state h_decode h_lookup]
   exact h_status state
 
+/--
+If the decoded opcode byte looks up a handler that preserves
+`codeLenMatches`, byte-level dispatch preserves `codeLenMatches`.
+
+Distinctive token:
+HandlerTable.dispatchByte_decoded_lookup_preserves_codeLenMatches #106 #107.
+-/
+theorem dispatchByte_decoded_lookup_preserves_codeLenMatches
+    {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
+    {handler : OpcodeHandler}
+    (h_decode : EvmOpcode.decodeByte? b.val = some opcode)
+    (h_lookup : table opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (dispatchByte table b state).codeLenMatches := by
+  rw [dispatchByte_decoded_lookup state h_decode h_lookup]
+  exact h_codeLen state h_state
+
 theorem dispatchByte_decoded_missing
     {table : HandlerTable} {b : Fin 256} {opcode : EvmOpcode}
     (state : EvmState)

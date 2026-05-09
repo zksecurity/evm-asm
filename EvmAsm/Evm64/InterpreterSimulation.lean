@@ -62,6 +62,19 @@ theorem stepWithHandler_matchesSpec_status
       (InterpreterLoop.stepWithHandler spec state).status := by
   rw [stepWithHandler_matchesSpec h_match state]
 
+theorem stepWithHandler_matchesSpec_codeLenMatches_iff
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) (state : EvmState) :
+    (InterpreterLoop.stepWithHandler impl state).codeLenMatches ↔
+      (InterpreterLoop.stepWithHandler spec state).codeLenMatches := by
+  rw [stepWithHandler_matchesSpec h_match state]
+
+theorem stepWithHandler_matchesSpec_codeLenMatches
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) (state : EvmState)
+    (h_codeLen : (InterpreterLoop.stepWithHandler spec state).codeLenMatches) :
+    (InterpreterLoop.stepWithHandler impl state).codeLenMatches := by
+  rw [stepWithHandler_matchesSpec h_match state]
+  exact h_codeLen
+
 /-- Distinctive token: InterpreterSimulation.loopFuel_matchesSpec #109. -/
 theorem loopFuel_matchesSpec
     {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec) :
@@ -81,6 +94,21 @@ theorem loopFuel_matchesSpec_status
     (InterpreterLoop.loopFuel impl nSteps state).status =
       (InterpreterLoop.loopFuel spec nSteps state).status := by
   rw [loopFuel_matchesSpec h_match nSteps state]
+
+theorem loopFuel_matchesSpec_codeLenMatches_iff
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState) :
+    (InterpreterLoop.loopFuel impl nSteps state).codeLenMatches ↔
+      (InterpreterLoop.loopFuel spec nSteps state).codeLenMatches := by
+  rw [loopFuel_matchesSpec h_match nSteps state]
+
+theorem loopFuel_matchesSpec_codeLenMatches
+    {impl spec : Handler} (h_match : HandlerMatchesSpec impl spec)
+    (nSteps : Nat) (state : EvmState)
+    (h_codeLen : (InterpreterLoop.loopFuel spec nSteps state).codeLenMatches) :
+    (InterpreterLoop.loopFuel impl nSteps state).codeLenMatches := by
+  rw [loopFuel_matchesSpec h_match nSteps state]
+  exact h_codeLen
 
 end InterpreterSimulation
 

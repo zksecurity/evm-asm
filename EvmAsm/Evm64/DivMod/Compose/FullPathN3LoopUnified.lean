@@ -9,6 +9,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3Loop
+import EvmAsm.Rv64.Tactics.XPermChunked
 
 open EvmAsm.Rv64.Tactics
 
@@ -205,7 +206,7 @@ theorem evm_div_n3_preloop_loop_unified_spec (bltu_1 bltu_0 : Bool) (sp base : W
       simp only [n3_ub1_off0, n3_ub1_off4088, n3_ub1_off4080,
                   n3_ub1_off4072, n3_ub1_off4064, n3_ub0_off0,
                   n3_qa1, n3_qa0, se12_32, se12_40, se12_48, se12_56]
-      xperm_hyp hp) hPreF hLoopF
+      xperm_chunked hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopN3UnifiedPost; xperm_hyp hq)

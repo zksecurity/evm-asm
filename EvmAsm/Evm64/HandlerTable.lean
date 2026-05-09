@@ -177,6 +177,16 @@ theorem dispatchOpcode_some_preserves_status
   rw [dispatchOpcode_some_status h_lookup state]
   exact h_status state
 
+theorem dispatchOpcode_some_preserves_codeLenMatches
+    {table : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : table opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (dispatchOpcode table opcode state).codeLenMatches := by
+  rw [dispatchOpcode_some h_lookup state]
+  exact h_codeLen state h_state
+
 theorem dispatchOpcode_none {table : HandlerTable} {opcode : EvmOpcode}
     (h_lookup : table opcode = none) (state : EvmState) :
     dispatchOpcode table opcode state = state.invalid := by

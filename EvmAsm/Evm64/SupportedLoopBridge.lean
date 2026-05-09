@@ -124,6 +124,17 @@ theorem stepWithSupportedHandler_of_lookup_codeLen
       (handler state).codeLen := by
   rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
 
+theorem stepWithSupportedHandler_of_lookup_preserves_codeLenMatches
+    {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)
+    (h_lookup : SupportedHandlers.supportedHandlerTable opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (h_state : state.codeLenMatches) :
+    (InterpreterLoop.stepWithHandler supportedLoopHandler state).codeLenMatches := by
+  rw [stepWithSupportedHandler_of_lookup h_decode h_lookup]
+  exact h_codeLen state h_state
+
 theorem stepWithSupportedHandler_of_lookup_env
     {state : EvmState} {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_decode : InterpreterLoop.decodeCurrentOpcode? state = some opcode)

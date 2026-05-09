@@ -148,6 +148,26 @@ theorem preservesCallerContext_iff_delegatecall (kind : Kind) :
     preservesCallerContext kind = true ↔ kind = .delegatecall := by
   cases kind <;> decide
 
+theorem not_hasValueArgument_iff_not_call (kind : Kind) :
+    hasValueArgument kind = false ↔ kind ≠ .call := by
+  cases kind <;> decide
+
+theorem not_isStatic_iff_not_staticcall (kind : Kind) :
+    isStatic kind = false ↔ kind ≠ .staticcall := by
+  cases kind <;> decide
+
+theorem not_preservesCallerContext_iff_not_delegatecall (kind : Kind) :
+    preservesCallerContext kind = false ↔ kind ≠ .delegatecall := by
+  cases kind <;> decide
+
+theorem argumentCount_eq_seven_iff_call (kind : Kind) :
+    argumentCount kind = 7 ↔ kind = .call := by
+  cases kind <;> decide
+
+theorem argumentCount_eq_six_iff_not_call (kind : Kind) :
+    argumentCount kind = 6 ↔ kind ≠ .call := by
+  cases kind <;> decide
+
 theorem hasValueArgument_not_isStatic (kind : Kind)
     (h : hasValueArgument kind = true) : isStatic kind = false := by
   cases kind <;> simp_all (config := { decide := true })

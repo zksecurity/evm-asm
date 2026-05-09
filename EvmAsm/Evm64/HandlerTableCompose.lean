@@ -85,6 +85,16 @@ theorem dispatchOpcode_orElse_left_preserves_status
   rw [dispatchOpcode_orElse_left_status h_left state]
   exact h_status state
 
+theorem dispatchOpcode_orElse_left_preserves_codeLenMatches
+    {left right : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_left : left opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (dispatchOpcode (orElse left right) opcode state).codeLenMatches := by
+  rw [dispatchOpcode_orElse_left h_left state]
+  exact h_codeLen state h_state
+
 theorem dispatchOpcode_orElse_right
     {left right : HandlerTable} {opcode : EvmOpcode}
     (h_left : left opcode = none) (state : EvmState) :
@@ -110,6 +120,18 @@ theorem dispatchOpcode_orElse_right_preserves_status
       state.status := by
   rw [dispatchOpcode_orElse_right_status h_left state]
   exact h_status state
+
+theorem dispatchOpcode_orElse_right_preserves_codeLenMatches
+    {left right : HandlerTable} {opcode : EvmOpcode}
+    (h_left : left opcode = none)
+    (h_codeLen :
+      ∀ state : EvmState,
+        state.codeLenMatches →
+          (dispatchOpcode right opcode state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (dispatchOpcode (orElse left right) opcode state).codeLenMatches := by
+  rw [dispatchOpcode_orElse_right h_left state]
+  exact h_codeLen state h_state
 
 theorem dispatchOpcode_orElse_none
     {left right : HandlerTable} {opcode : EvmOpcode}
