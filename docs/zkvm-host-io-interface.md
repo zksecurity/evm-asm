@@ -69,9 +69,9 @@ following ECALL syscalls (all selected by `t0 = x5`):
 
 | t0 (hex) | SP1 syscall | Current Lean handler | zkvm-standards counterpart |
 |----------|-------------|----------------------|----------------------------|
-| `0x00`   | HALT        | `step_ecall_halt` (returns `none`)        | (no counterpart — see Open question) |
+| `0x00`   | HALT        | `step_ecall_halt` (returns `none`)        | (no zkvm-standards counterpart — see §HALT below for the local convention) |
 | `0x02`   | WRITE fd=13 | append a1..a1+a2 bytes from memory to public values | `write_output(output, size)` (shape-compatible: ptr+size, concatenating) |
-| `0x10`   | COMMIT      | `s.appendCommit (a0, a1)` (word-pair commit) | conceptually subsumed by `write_output` (concatenating bytes) |
+| `0x10`   | COMMIT selector, reshaped | `s.writeOutput a0 a1` appends bytes from memory to public values | `write_output(output, size)` |
 | `0xF0`   | HINT_LEN    | returns `privateInput.length` in a0       | replaced by `read_input` (length is `*buf_size` out-parameter; no separate length call) |
 | `0xF1`   | HINT_READ   | streams `(a1)` bytes from `privateInput` into guest memory at `a0` as LE dwords | replaced by `read_input` (no streaming — input lives in a single buffer the guest indexes into) |
 
@@ -97,7 +97,8 @@ shape changes are:
 2. **ECALL handlers.** Replace the `HINT_LEN`/`HINT_READ` cases of
    `step` with a single `read_input` handler (ptr+len-out semantics).
    Reshape `COMMIT` (and/or `WRITE fd=13`) into a `write_output`
-   handler. Keep SP1 syscall IDs as the dispatch numbers for now;
+   handler. The `0x10` branch now has the `write_output(ptr, size)`
+   shape; `WRITE fd=13` remains as a compatibility spelling. Keep SP1 syscall IDs as the dispatch numbers for now;
    document that the IDs are handler-side, not ABI.
 3. **RLP wrappers.** Rewrite `Phase4HintLen.lean` and `Phase4HintRead.lean`
    to consume the `read_input` ptr+len once and index into the buffer,
@@ -106,15 +107,41 @@ shape changes are:
    replace the "follows SP1 hint/commit conventions" wording with a
    pointer to this ADR.
 
-## Open question: HALT
+## HALT
 
-zkvm-standards' I/O interface README is silent on halt/termination. The
-current code uses SP1's `t0 = 0x00` HALT (yields `none` from `step`).
-This ADR does **not** prescribe a halt convention — it is tracked as a
-follow-up under parent `evm-asm-96ysd`. Options when that follow-up
-lands: keep SP1 t0=0 as-is, propose a halt addition to the
-zkvm-standards spec upstream, or pick a local convention and document
-it here.
+zkvm-standards' I/O interface README is silent on halt/termination, so
+HALT is not part of the canonical C ABI this ADR adopts. EVM-asm's
+local convention is to **keep SP1's `t0 = 0x00` HALT semantics** as the
+guest's termination signal:
+
+- Encoding: `ECALL` with `x5` (alias `t0`) set to `0x00`.
+- Effect: `EvmAsm/Rv64/Execution.lean :: step` returns `none`, ending
+  the verified execution. No further state transition is defined.
+- Status code: today the handler ignores any register payload. If a
+  future revision wants to surface a `zkvm_status`-style exit code, the
+  natural choice is `a0` (matching the accelerator return-code
+  convention in
+  [`docs/zkvm-accelerators-interface.md`](zkvm-accelerators-interface.md)).
+
+This is a **local** convention, not a zkvm-standards one — the same
+caveat that applies to syscall ID numbering in §"Mapping" above. We
+choose option (a) from the design follow-up (beads `evm-asm-zgd4y`):
+
+- (a) Keep SP1 `t0=0` as the local halt convention and document it
+  here. **Adopted.** Cheapest; no upstream coordination; preserves the
+  existing `step_ecall_halt` Hoare triple surface.
+- (b) Propose a `halt(zkvm_status)` addition to zkvm-standards
+  upstream. Filed as a longer-running follow-up; not blocking the
+  read_input / write_output migration under `evm-asm-96ysd`.
+- (c) Treat exhaustion of the `read_input` buffer as implicit halt.
+  Rejected — guests need to signal failure status, not just "input
+  drained."
+
+A guest that wants to return a non-zero exit status today can write a
+status word via `write_output` immediately before HALT; the verifier
+inspects committed output, not register state at halt. If/when (b) is
+adopted upstream, this section is updated and the dispatch table in
+§"Mapping" gains a `halt(zkvm_status)` row.
 
 ## Maintenance
 

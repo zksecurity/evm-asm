@@ -149,6 +149,17 @@ run isDefEq permutation on ≤ 12 atoms even at the worst sites,
 producing an estimated **5–10× speedup** at the 25–35 bucket and
 **eliminating** heartbeat pressure at the 17–24 bucket.
 
+## Slice 4 adoption status
+
+The first broad adoption pass uses the opt-in `xperm_chunked` surface at:
+
+- `Compose/FullPathN3LoopUnified.lean`: the preloop+loop compose in
+  `divK_n3_full_path_loop_unified_spec_within`. The issue originally named
+  `FullPathN3Loop.lean`, but that file now only lifts the shared loop; the
+  large compose site lives in the unified wrapper.
+- `Compose/PhaseAB.lean`: the n=4 Phase-B cascade and final weaken callbacks
+  in `evm_div_phaseB_n4_spec_within`, the largest PhaseAB site in the baseline.
+
 ## Recommendation for slice 2 (`evm-asm-hnub`)
 
 1. The partition predicate should be **structural equality (no

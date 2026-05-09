@@ -48,6 +48,10 @@ inductive Kind where
   | delegatecall
   deriving DecidableEq, Repr
 
+/-- The CALL-family opcode kinds covered by GH #114. -/
+def allKinds : List Kind :=
+  [.call, .staticcall, .delegatecall]
+
 def argumentCount : Kind → Nat
   | .call => 7
   | .staticcall => 6
@@ -80,6 +84,23 @@ theorem staticcallArgumentCount :
 
 theorem delegatecallArgumentCount :
     argumentCount .delegatecall = 6 := rfl
+
+theorem allKinds_nodup :
+    allKinds.Nodup := by
+  decide
+
+theorem mem_allKinds (kind : Kind) :
+    kind ∈ allKinds := by
+  cases kind <;> decide
+
+theorem allKinds_argumentCounts :
+    allKinds.map argumentCount = [7, 6, 6] := rfl
+
+theorem allKinds_resultCounts :
+    allKinds.map resultCount = [1, 1, 1] := rfl
+
+theorem allKinds_memoryRangeCounts :
+    allKinds.map memoryRangeCount = [2, 2, 2] := rfl
 
 theorem resultCount_eq_one (kind : Kind) :
     resultCount kind = 1 := rfl

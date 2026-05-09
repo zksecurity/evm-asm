@@ -288,6 +288,42 @@ theorem runKeccakStack?_length
           simp [EvmAsm.Evm64.KeccakArgs.stackArgumentCount,
             EvmAsm.Evm64.KeccakArgs.resultCount]
 
+theorem runKeccakStack?_length_eq
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    out.length + 1 = stack.length := by
+  rcases (runKeccakStack?_eq_some_iff accelerator memory stack out).mp h_run with
+    ⟨offset, size, rest, rfl, rfl⟩
+  simp
+
+theorem runKeccakStack?_tail_eq_drop
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    out.tail? = some (stack.drop 2) := by
+  rcases (runKeccakStack?_eq_some_iff accelerator memory stack out).mp h_run with
+    ⟨offset, size, rest, rfl, rfl⟩
+  simp
+
+theorem runKeccakStack?_head_eq_of_some
+    {accelerator : Accelerator} {memory : MemoryReader}
+    {stack out : List EvmWord}
+    (h_run : runKeccakStack? accelerator memory stack = some out) :
+    ∃ offset size rest,
+      stack = offset :: size :: rest ∧
+        out.head? =
+          some
+            (KeccakResultBridge.stackWordFromAcceleratorOutput
+              (accelerator
+                (KeccakInputBridge.acceleratorInputFromArgs memory
+                  (EvmAsm.Evm64.KeccakArgs.keccakArgs offset size)))) := by
+  rcases (runKeccakStack?_eq_some_iff accelerator memory stack out).mp h_run with
+    ⟨offset, size, rest, h_stack, h_out⟩
+  subst stack
+  subst out
+  exact ⟨offset, size, rest, rfl, rfl⟩
+
 theorem runKeccakStack?_head?
     (accelerator : Accelerator) (memory : MemoryReader)
     (offset size : EvmWord) (rest : List EvmWord) :

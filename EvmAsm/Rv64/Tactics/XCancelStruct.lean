@@ -40,6 +40,10 @@
      the registered `Std.Associative (sepConj)` and `Std.Commutative (sepConj)`
      instances and treats every non-`sepConj` sub-tree as an atom — opaque
      `@[irreducible]` bundles like `iterN3Max_da …` stay opaque.
+  3. **Fallback.** If the structural AC step fails (notably on flat,
+     large chains where `ac_rfl` can hit recursion limits), retry with
+     `xperm_hyp`. This preserves the existing proven permutation path for
+     non-structural sites while keeping `xcancel_struct` opt-in.
 
   ## Why structural
 
@@ -75,6 +79,7 @@
 
 import Lean
 import EvmAsm.Rv64.SepLogic
+import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Rv64.Tactics
 
@@ -92,12 +97,14 @@ syntax (name := xcancelStructTac) "xcancel_struct " ident
 
 macro_rules
   | `(tactic| xcancel_struct $h:ident) =>
-    `(tactic| sep_perm $h)
+    `(tactic| first | sep_perm $h | xperm_hyp $h)
   | `(tactic| xcancel_struct $h:ident with $[$eqs],*) =>
     `(tactic|
       first
       | (simp only [$[$eqs:term],*] at $h:ident; sep_perm $h)
-      | (rw [$[$eqs:term],*] at $h:ident; sep_perm $h))
+      | (simp only [$[$eqs:term],*] at $h:ident; xperm_hyp $h)
+      | (rw [$[$eqs:term],*] at $h:ident; sep_perm $h)
+      | (rw [$[$eqs:term],*] at $h:ident; xperm_hyp $h))
 
 end EvmAsm.Rv64.Tactics
 
@@ -146,6 +153,16 @@ example {A B C : Assertion} {s : PartialState} (h : (A ** B) s) : True := by
 example {A B C D E : Assertion} {s : PartialState}
     (h : (A ** B ** C ** D ** E) s) :
     (E ** D ** C ** B ** A) s := by
+  xcancel_struct h
+
+-- (e2) larger flat chains fall back to the `xperm_hyp` path if `ac_rfl`
+-- cannot structurally normalize them within the recursion budget.
+example {A B C D E F G H I J K L M N O P Q R S T U V W X Y : Assertion}
+    {s : PartialState}
+    (h : (A ** B ** C ** D ** E ** F ** G ** H ** I ** J ** K ** L ** M **
+          N ** O ** P ** Q ** R ** S ** T ** U ** V ** W ** X ** Y) s) :
+    (Y ** X ** W ** V ** U ** T ** S ** R ** Q ** P ** O ** N ** M ** L **
+      K ** J ** I ** H ** G ** F ** E ** D ** C ** B ** A) s := by
   xcancel_struct h
 
 -- (f) interaction with empAssertion: empty frames at head and tail cancel.

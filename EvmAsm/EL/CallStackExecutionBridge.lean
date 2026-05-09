@@ -182,6 +182,44 @@ theorem stackRestAfterCall?_delegatecall_none_of_five
         [gas, to, inputOffset, inputSize, outputOffset] =
       none := rfl
 
+theorem stackRestAfterCall?_eq_none_iff
+    (kind : CallKind) (stack : List EvmWord) :
+    stackRestAfterCall? kind stack = none ↔
+      stack.length < EvmAsm.Evm64.CallArgs.argumentCount kind := by
+  cases kind
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_,
+          rest⟩⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount]
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount]
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount]
+
+theorem stackRestAfterCall?_length_of_some
+    {kind : CallKind} {stack rest : List EvmWord}
+    (h_rest : stackRestAfterCall? kind stack = some rest) :
+    stack.length = rest.length + EvmAsm.Evm64.CallArgs.argumentCount kind := by
+  cases kind
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_,
+          rest'⟩⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest'⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+  · rcases stack with
+      _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, rest'⟩⟩⟩⟩⟩⟩ <;>
+      simp [stackRestAfterCall?, EvmAsm.Evm64.CallArgs.argumentCount] at h_rest ⊢
+    cases h_rest
+    simp
+
 theorem runCallStack?_call
     (state : WorldState) (caller callee : Address) (apparentValue : Word256)
     (readByte : MemoryReader) (isStatic : Bool) (executor : CallExecutor)
@@ -578,6 +616,44 @@ theorem runCallStack?_delegatecall_outputBytes_length_le
         (CallExecutionBridge.delegateCallInputFromMemory state caller callee apparentValue
           readByte isStatic args))
       args⟩
+
+theorem runCallStack?_outputBytes_length_le
+    {kind : CallKind} {state : WorldState} {caller callee : Address}
+    {apparentValue : Word256} {readByte : MemoryReader} {isStatic : Bool}
+    {executor : CallExecutor} {stackState : CallStackState} {out : CallStackResult}
+    (h_run :
+      runCallStack? kind state caller callee apparentValue readByte isStatic executor
+        stackState = some out) :
+    ∃ outputSize : Nat,
+      out.effects.outputBytes.length ≤ outputSize ∧
+        ((kind = .call ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeCallStack? stackState.stack =
+                some args ∧
+              outputSize = args.output.size.toNat) ∨
+          (kind = .staticcall ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeStaticCallStack?
+                  stackState.stack = some args ∧
+              outputSize = args.output.size.toNat) ∨
+          (kind = .delegatecall ∧
+            ∃ args,
+              EvmAsm.Evm64.CallArgsStackDecode.decodeDelegateCallStack?
+                  stackState.stack = some args ∧
+              outputSize = args.output.size.toNat)) := by
+  cases kind
+  · rcases runCallStack?_call_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inl ⟨rfl, args, h_decode, rfl⟩⟩
+  · rcases runCallStack?_staticcall_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inr <| Or.inl ⟨rfl, args, h_decode, rfl⟩⟩
+  · rcases runCallStack?_delegatecall_outputBytes_length_le h_run with
+      ⟨args, h_decode, h_le⟩
+    exact ⟨args.output.size.toNat, h_le,
+      Or.inr <| Or.inr ⟨rfl, args, h_decode, rfl⟩⟩
 
 theorem runCallStack?_stack_length
     {kind : CallKind} {state : WorldState} {caller callee : Address}

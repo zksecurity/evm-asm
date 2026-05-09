@@ -113,16 +113,16 @@ private theorem holdsFor_sepConj_privateInputIs_setPrivateInput
   rw [← hunion] at hcompat
   have hcompat_parts := (PartialState.CompatibleWith_union hd).mp hcompat
   have h2_no_private : h2.privateInput = none := by
-    rcases hd with ⟨_, _, _, _, _, hpriv⟩
+    rcases hd with ⟨_, _, _, _, _, hpriv, _⟩
     rcases hpriv with hleft | hright
     · simp [PartialState.singletonPrivateInput] at hleft
     · exact hright
   have hd' : (PartialState.singletonPrivateInput vals').Disjoint h2 := by
-    rcases hd with ⟨hr, hm, hc, hpc, hpv, _⟩
-    exact ⟨hr, hm, hc, hpc, hpv, Or.inr h2_no_private⟩
+    rcases hd with ⟨hr, hm, hc, hpc, hpv, _, hib⟩
+    exact ⟨hr, hm, hc, hpc, hpv, Or.inr h2_no_private, hib⟩
   have h2compat' : h2.CompatibleWith { s with privateInput := vals' } := by
-    rcases hcompat_parts.2 with ⟨hr, hm, hc, hpc, hpv, hpi⟩
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    rcases hcompat_parts.2 with ⟨hr, hm, hc, hpc, hpv, hpi, hib⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · intro r v hv
       simpa using hr r v hv
     · intro a v hv
@@ -136,6 +136,8 @@ private theorem holdsFor_sepConj_privateInputIs_setPrivateInput
     · intro v hv
       rw [h2_no_private] at hv
       simp at hv
+    · intro v hv
+      simpa using hib v hv
   exact ⟨_, (PartialState.CompatibleWith_union hd').mpr
     ⟨PartialState.CompatibleWith_singletonPrivateInput.mpr rfl, h2compat'⟩,
     _, _, hd', rfl, rfl, hp2⟩

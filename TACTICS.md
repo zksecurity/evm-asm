@@ -265,8 +265,10 @@ Canonical instances:
 
 - `EvmAsm/Evm64/Multiply/Layout.lean` — empty-layout pilot (Multiply has no
   internal scratch; struct defined to fix the naming convention).
-- DivMod / Byte / Shift layouts will follow the same shape under #334
-  slice 4 (beads `evm-asm-vst1`).
+- `EvmAsm/Evm64/Byte/Layout.lean` — empty-layout companion for BYTE specs.
+- `EvmAsm/Evm64/Shift/Layout.lean` — single-cell layout for shift specs.
+- New opcode subtrees such as EXP, SDIV, and SMOD carry empty layout pilots
+  from day one, then grow named fields only when internal scratch cells land.
 
 When writing a new spec that touches scratchpad cells, prefer
 `L.fieldName` over `sp + signExtend12 N` and add `(L : XxxScratchpadLayout)

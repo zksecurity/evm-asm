@@ -51,6 +51,25 @@ theorem rlpNoncanonicalSingletonVector_errored_via_decodeFully :
   rw [← checkVector?_runDecodeFully_eq_decodeFully]
   exact RLP.rlpNoncanonicalSingletonVector_errored
 
+theorem rlpLongBytesDecodeVector_passed_via_decodeFully :
+    checkVector? (fun input => EvmAsm.EL.RLP.decodeFully input.bytes)
+        RLP.rlpLongBytesDecodeVector = .passed := by
+  rw [← checkVector?_runDecodeFully_eq_decodeFully]
+  exact RLP.rlpLongBytesDecodeVector_passed
+
+/--
+Bridge the empty-list RLP decode conformance vector through the reusable
+top-level full-decode wrapper, mirroring the nested-list and
+noncanonical-singleton bridges above.
+
+Distinctive token: rlpEmptyListDecodeVector_passed_via_decodeFully #120 #125.
+-/
+theorem rlpEmptyListDecodeVector_passed_via_decodeFully :
+    checkVector? (fun input => EvmAsm.EL.RLP.decodeFully input.bytes)
+        RLP.rlpEmptyListDecodeVector = .passed := by
+  rw [← checkVector?_runDecodeFully_eq_decodeFully]
+  exact RLP.rlpEmptyListDecodeVector_passed
+
 end RLPConformanceFullDecodeBridge
 end Conformance
 end EvmAsm.EL

@@ -101,6 +101,12 @@ termination proofs needs each preservation fact as a `simp` lemma. -/
 @[simp] theorem stop_env (state : EvmState) :
     state.stop.env = state.env := rfl
 
+theorem stop_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    state.stop.codeLenMatches := by
+  unfold EvmState.codeLenMatches at h_codeLen ⊢
+  simp [h_codeLen]
+
 @[simp] theorem returnWith_gas (state : EvmState) (data : List (BitVec 8)) :
     (state.returnWith data).gas = state.gas := rfl
 
@@ -163,6 +169,12 @@ termination proofs needs each preservation fact as a `simp` lemma. -/
 
 @[simp] theorem invalid_env (state : EvmState) :
     state.invalid.env = state.env := rfl
+
+theorem invalid_codeLenMatches
+    (state : EvmState) (h_codeLen : state.codeLenMatches) :
+    state.invalid.codeLenMatches := by
+  unfold EvmState.codeLenMatches at h_codeLen ⊢
+  simp [h_codeLen]
 
 end EvmState
 end EvmAsm.Evm64

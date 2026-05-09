@@ -150,6 +150,24 @@ theorem dispatchOpcode_some_status {table : HandlerTable} {opcode : EvmOpcode}
     (dispatchOpcode table opcode state).status = (handler state).status := by
   rw [dispatchOpcode_some h_lookup state]
 
+theorem dispatchOpcode_some_pc {table : HandlerTable} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (h_lookup : table opcode = some handler)
+    (state : EvmState) :
+    (dispatchOpcode table opcode state).pc = (handler state).pc := by
+  rw [dispatchOpcode_some h_lookup state]
+
+theorem dispatchOpcode_some_gas {table : HandlerTable} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (h_lookup : table opcode = some handler)
+    (state : EvmState) :
+    (dispatchOpcode table opcode state).gas = (handler state).gas := by
+  rw [dispatchOpcode_some h_lookup state]
+
+theorem dispatchOpcode_some_stack {table : HandlerTable} {opcode : EvmOpcode}
+    {handler : OpcodeHandler} (h_lookup : table opcode = some handler)
+    (state : EvmState) :
+    (dispatchOpcode table opcode state).stack = (handler state).stack := by
+  rw [dispatchOpcode_some h_lookup state]
+
 theorem dispatchOpcode_some_preserves_status
     {table : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
     (h_lookup : table opcode = some handler)
@@ -158,6 +176,16 @@ theorem dispatchOpcode_some_preserves_status
     (dispatchOpcode table opcode state).status = state.status := by
   rw [dispatchOpcode_some_status h_lookup state]
   exact h_status state
+
+theorem dispatchOpcode_some_preserves_codeLenMatches
+    {table : HandlerTable} {opcode : EvmOpcode} {handler : OpcodeHandler}
+    (h_lookup : table opcode = some handler)
+    (h_codeLen : ∀ state : EvmState,
+      state.codeLenMatches → (handler state).codeLenMatches)
+    (state : EvmState) (h_state : state.codeLenMatches) :
+    (dispatchOpcode table opcode state).codeLenMatches := by
+  rw [dispatchOpcode_some h_lookup state]
+  exact h_codeLen state h_state
 
 theorem dispatchOpcode_none {table : HandlerTable} {opcode : EvmOpcode}
     (h_lookup : table opcode = none) (state : EvmState) :
