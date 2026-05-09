@@ -33,6 +33,136 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+/-- Code required by the squaring-call block plus the out-of-line
+    `mul_callable` body reached by the JAL inside the block. -/
+abbrev exp_squaring_call_with_mul_code
+    (base mulTarget : Word) (mulOff : BitVec 21) : CodeReq :=
+  (exp_squaring_call_block_code base mulOff).union
+    (mul_callable_code mulTarget)
+
+theorem exp_squaring_call_with_mul_code_block_sub
+    (base mulTarget : Word) (mulOff : BitVec 21) :
+    ∀ a i, (exp_squaring_call_block_code base mulOff) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i := by
+  unfold exp_squaring_call_with_mul_code
+  exact CodeReq.union_mono_left
+
+theorem exp_squaring_call_with_mul_code_mul_callable_sub
+    (base mulTarget : Word) (mulOff : BitVec 21)
+    (hd : CodeReq.Disjoint
+            (exp_squaring_call_block_code base mulOff)
+            (mul_callable_code mulTarget)) :
+    ∀ a i, (mul_callable_code mulTarget) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i := by
+  unfold exp_squaring_call_with_mul_code
+  exact CodeReq.mono_union_right hd (fun _ _ h => h)
+
+/-- Bundled sub-block witnesses for the squaring-call block plus the external
+    `mul_callable` body. This packages the code facts needed by the final
+    `exp_squaring_call_block_spec_within` composition. -/
+theorem exp_squaring_call_with_mul_code_block_subs
+    (base mulTarget : Word) (mulOff : BitVec 21)
+    (hd : CodeReq.Disjoint
+            (exp_squaring_call_block_code base mulOff)
+            (mul_callable_code mulTarget)) :
+    (∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 32)
+      exp_loop_marshal_result_to_factor2) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 64) (exp_square_block mulOff)) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 68) exp_loop_un_marshal_and_restore) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (mul_callable_code mulTarget) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) := by
+  rcases exp_squaring_call_block_code_block_subs base mulOff with
+    ⟨h_factor1, h_resultToFactor2, h_square, h_unmarshal⟩
+  exact
+    ⟨fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_factor1 a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_resultToFactor2 a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_square a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_unmarshal a i h),
+     exp_squaring_call_with_mul_code_mul_callable_sub
+        base mulTarget mulOff hd⟩
+
+/-- Bridge the post-call MUL result word at `evmSp + 32` into the
+    unmarshal/restore block, producing the same word in the local EXP scratch
+    frame at `sp`. -/
+theorem exp_loop_un_marshal_and_restore_word_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 base : Word) (w : EvmWord) :
+    cpsTripleWithin 9 base (base + 36)
+      (CodeReq.ofProg base exp_loop_un_marshal_and_restore)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ (evmSp + 32)) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       evmWordIs (evmSp + 32) w)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ w.getLimbN 3) **
+       evmWordIs sp w ** evmWordIs (evmSp + 32) w) := by
+  have h_unmarshal := exp_loop_un_marshal_and_restore_ofProg_spec_within
+    sp (evmSp + 32) tOld r0 r1 r2 r3
+    (w.getLimbN 0) (w.getLimbN 1) (w.getLimbN 2) (w.getLimbN 3) base
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      have h0 : ((evmSp + 32) + signExtend12 (0 : BitVec 12) : Word) =
+          evmSp + 32 := by
+        unfold signExtend12; bv_decide
+      have h8 : ((evmSp + 32) + signExtend12 (8 : BitVec 12) : Word) =
+          evmSp + 40 := by
+        unfold signExtend12; bv_decide
+      have h16 : ((evmSp + 32) + signExtend12 (16 : BitVec 12) : Word) =
+          evmSp + 48 := by
+        unfold signExtend12; bv_decide
+      have h24 : ((evmSp + 32) + signExtend12 (24 : BitVec 12) : Word) =
+          evmSp + 56 := by
+        unfold signExtend12; bv_decide
+      rw [h0, h8, h16, h24]
+      unfold evmWordIs at hp
+      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 := by bv_omega
+      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 := by bv_omega
+      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 := by bv_omega
+      rw [hSrc8, hSrc16, hSrc24] at hp
+      xperm_hyp hp)
+    (fun _ hp => by
+      have hRestore : ((evmSp + 32) + signExtend12 (-32 : BitVec 12) : Word) =
+          evmSp := by
+        unfold signExtend12; bv_decide
+      have h0 : ((evmSp + 32) + signExtend12 (0 : BitVec 12) : Word) =
+          evmSp + 32 := by
+        unfold signExtend12; bv_decide
+      have h8 : ((evmSp + 32) + signExtend12 (8 : BitVec 12) : Word) =
+          evmSp + 40 := by
+        unfold signExtend12; bv_decide
+      have h16 : ((evmSp + 32) + signExtend12 (16 : BitVec 12) : Word) =
+          evmSp + 48 := by
+        unfold signExtend12; bv_decide
+      have h24 : ((evmSp + 32) + signExtend12 (24 : BitVec 12) : Word) =
+          evmSp + 56 := by
+        unfold signExtend12; bv_decide
+      rw [hRestore, h0, h8, h16, h24] at hp
+      have hSp0 : (sp + signExtend12 (0 : BitVec 12) : Word) = sp := by
+        unfold signExtend12; bv_decide
+      have hSp8 : (sp + signExtend12 (8 : BitVec 12) : Word) = sp + 8 := by
+        unfold signExtend12; bv_decide
+      have hSp16 : (sp + signExtend12 (16 : BitVec 12) : Word) = sp + 16 := by
+        unfold signExtend12; bv_decide
+      have hSp24 : (sp + signExtend12 (24 : BitVec 12) : Word) = sp + 24 := by
+        unfold signExtend12; bv_decide
+      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 := by bv_omega
+      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 := by bv_omega
+      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 := by bv_omega
+      rw [hSp0, hSp8, hSp16, hSp24] at hp
+      unfold evmWordIs
+      rw [hSrc8, hSrc16, hSrc24]
+      xperm_hyp hp)
+    h_unmarshal
+
 /-- Compose the squaring marshal pair (16 instr) plus its trailing JAL
     (1 instr) with `mul_callable_spec_within` (64 instr) at the JAL target.
 
