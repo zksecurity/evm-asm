@@ -774,6 +774,46 @@ theorem decodedKind_delegatecall
         (mkDelegateCall gas to inputOffset inputSize outputOffset outputSize)) =
         .delegatecall := rfl
 
+theorem decodedInput_call
+    (gas to value inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedInput
+      (.call (mkCall gas to value inputOffset inputSize outputOffset outputSize)) =
+        { offset := inputOffset, size := inputSize } := rfl
+
+theorem decodedInput_staticcall
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedInput
+      (.staticcall
+        (mkStaticCall gas to inputOffset inputSize outputOffset outputSize)) =
+        { offset := inputOffset, size := inputSize } := rfl
+
+theorem decodedInput_delegatecall
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedInput
+      (.delegatecall
+        (mkDelegateCall gas to inputOffset inputSize outputOffset outputSize)) =
+        { offset := inputOffset, size := inputSize } := rfl
+
+theorem decodedOutput_call
+    (gas to value inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedOutput
+      (.call (mkCall gas to value inputOffset inputSize outputOffset outputSize)) =
+        { offset := outputOffset, size := outputSize } := rfl
+
+theorem decodedOutput_staticcall
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedOutput
+      (.staticcall
+        (mkStaticCall gas to inputOffset inputSize outputOffset outputSize)) =
+        { offset := outputOffset, size := outputSize } := rfl
+
+theorem decodedOutput_delegatecall
+    (gas to inputOffset inputSize outputOffset outputSize : EvmWord) :
+    decodedOutput
+      (.delegatecall
+        (mkDelegateCall gas to inputOffset inputSize outputOffset outputSize)) =
+        { offset := outputOffset, size := outputSize } := rfl
+
 theorem decodedArgumentCount_call
     (gas to value inputOffset inputSize outputOffset outputSize : EvmWord) :
     decodedArgumentCount
