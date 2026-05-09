@@ -10,6 +10,7 @@
 -/
 
 import EvmAsm.Evm64.Stack
+import EvmAsm.Evm64.Exp.CondMulCall
 import EvmAsm.Evm64.Exp.LimbSpec
 
 namespace EvmAsm.Evm64.Exp.Compose
@@ -85,6 +86,16 @@ theorem exp_squaring_call_block_len (mulOff : BitVec 21) :
 theorem exp_squaring_call_block_byte_len (mulOff : BitVec 21) :
     4 * (EvmAsm.Evm64.exp_squaring_call_block mulOff).length = 104 := by
   exact EvmAsm.Evm64.exp_squaring_call_block_byte_length mulOff
+
+theorem exp_cond_mul_call_with_skip_block_len
+    (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block mulOff skipOff).length = 27 := by
+  exact EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_length mulOff skipOff
+
+theorem exp_iter_body_full_len
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff).length = 58 := by
+  exact EvmAsm.Evm64.exp_iter_body_full_length mulOff skipOff backOff
 
 /-- Bundled byte offsets for the blocks within one EXP loop iteration. -/
 theorem exp_loop_block_byte_offsets (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
@@ -812,6 +823,143 @@ theorem expLoopCode_eq_oneIterCode (base : Word)
   rw [CodeReq.union_empty_right]
   rw [CodeReq.union_assoc]
   rw [CodeReq.union_assoc]
+
+/-- CodeReq decomposition for one full EXP square-and-multiply iteration,
+    including both MUL call blocks and the trailing loop back-edge. -/
+abbrev expIterBodyFullCode (base : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block,
+    exp_squaring_call_block_code (base + 12) mulOff,
+    EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code (base + 116) mulOff skipOff,
+    CodeReq.ofProg (base + 224) (EvmAsm.Evm64.exp_loop_back backOff)
+  ]
+
+theorem expIterBodyFullCode_eq_ofProg (base : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    expIterBodyFullCode base mulOff skipOff backOff =
+      CodeReq.ofProg base
+        (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff) := by
+  unfold expIterBodyFullCode
+  unfold EvmAsm.Evm64.exp_iter_body_full
+  simp only [EvmAsm.Rv64.seq]
+  unfold Program
+  rw [CodeReq.ofProg_append]
+  have h12 :
+      base + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_bit_test_block).length) = base + 12 := by
+    rw [EvmAsm.Evm64.exp_bit_test_block_length]
+    rfl
+  rw [h12]
+  rw [CodeReq.ofProg_append]
+  have h116 :
+      (base + 12 : Word) + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_squaring_call_block mulOff).length) =
+        base + 116 := by
+    rw [EvmAsm.Evm64.exp_squaring_call_block_length]
+    bv_addr
+  rw [h116]
+  rw [CodeReq.ofProg_append]
+  have h224 :
+      (base + 116 : Word) + BitVec.ofNat 64 (4 *
+        (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block mulOff skipOff).length) =
+        base + 224 := by
+    rw [EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_length]
+    bv_addr
+  rw [h224]
+  rw [← exp_squaring_call_block_code_eq_ofProg (base + 12) mulOff]
+  rw [← EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_eq_ofProg
+    (base + 116) mulOff skipOff]
+  simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil, CodeReq.union_empty_right]
+
+theorem expIterBodyFullCode_bit_test_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i := by
+  unfold expIterBodyFullCode
+  simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left
+
+theorem expIterBodyFullCode_squaring_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (exp_squaring_call_block_code (base + 12) mulOff) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i := by
+  rw [expIterBodyFullCode_eq_ofProg, exp_squaring_call_block_code_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 12)
+    (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
+    (EvmAsm.Evm64.exp_squaring_call_block mulOff) 3
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.exp_iter_body_full
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [exp_iter_body_full_len, exp_squaring_call_block_len]
+      omega)
+    (by
+      simp only [exp_iter_body_full_len]
+      norm_num)
+
+theorem expIterBodyFullCode_cond_mul_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code
+      (base + 116) mulOff skipOff) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i := by
+  rw [expIterBodyFullCode_eq_ofProg,
+    EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 116)
+    (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block mulOff skipOff) 29
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.exp_iter_body_full
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [exp_iter_body_full_len, exp_cond_mul_call_with_skip_block_len]
+      omega)
+    (by
+      simp only [exp_iter_body_full_len]
+      norm_num)
+
+theorem expIterBodyFullCode_loop_back_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 224)
+      (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i := by
+  rw [expIterBodyFullCode_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 224)
+    (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
+    (EvmAsm.Evm64.exp_loop_back backOff) 56
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.exp_iter_body_full
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [exp_iter_body_full_len, exp_loop_back_len]
+      omega)
+    (by
+      simp only [exp_iter_body_full_len]
+      norm_num)
+
+theorem expIterBodyFullCode_block_subs {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (exp_squaring_call_block_code (base + 12) mulOff) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code
+      (base + 116) mulOff skipOff) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 224)
+      (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
+      (expIterBodyFullCode base mulOff skipOff backOff) a = some i) := by
+  exact ⟨expIterBodyFullCode_bit_test_sub, expIterBodyFullCode_squaring_sub,
+    expIterBodyFullCode_cond_mul_sub, expIterBodyFullCode_loop_back_sub⟩
 
 theorem exp_loop_back_loop_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
