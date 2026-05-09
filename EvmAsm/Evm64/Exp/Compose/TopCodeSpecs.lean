@@ -8,6 +8,7 @@
 import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.SquaringCallSeq
+import EvmAsm.Evm64.Exp.SquaringPairThenMulCall
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -365,6 +366,28 @@ theorem exp_squaring_marshal_pair_then_square_evm_exp_spec_within
   have hret : ((base + 40 : Word) + 68) = base + 108 := by bv_omega
   rw [hret] at h
   exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_iter_squaring_sub)
+
+/-- Squaring-call unmarshal word spec lifted to the top-level EXP code bundle. -/
+theorem exp_squaring_un_marshal_word_evm_exp_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 : Word) (w : EvmWord)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word) :
+    cpsTripleWithin 9 (base + 108) (base + 144)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ (evmSp + 32)) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       evmWordIs (evmSp + 32) w)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ w.getLimbN 3) **
+       evmWordIs sp w ** evmWordIs (evmSp + 32) w) := by
+  have h := EvmAsm.Evm64.exp_loop_un_marshal_and_restore_word_spec_within
+    sp evmSp tOld r0 r1 r2 r3 (base + 108) w
+  have hnext : ((base + 108 : Word) + 36) = base + 144 := by bv_omega
+  rw [hnext] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpCode_squaring_un_marshal_and_restore_sub)
 
 /-- Conditional-multiply marshal pair lifted to the top-level EXP code bundle. -/
 theorem exp_cond_mul_marshal_pair_evm_exp_spec_within
