@@ -111,7 +111,7 @@ theorem unexpectedConformanceFailureCount_eq_zero :
   simp [unexpectedConformanceFailureCount, unexpectedConformanceFailures_empty]
 
 theorem expectedConformanceErrorCount_eq :
-    expectedConformanceErrorCount = 9 := by
+    expectedConformanceErrorCount = 10 := by
   native_decide
 
 theorem successfulConformanceResultCount_eq :
