@@ -37,6 +37,10 @@ inductive Kind where
   | selfdestruct
   deriving DecidableEq, Repr
 
+/-- The frame-terminating opcode kinds covered by GH #113. -/
+def allKinds : List Kind :=
+  [.stop, .return_, .revert, .invalid, .selfdestruct]
+
 /-- Stack arguments for RETURN/REVERT: a memory range describing the
 returned/reverted byte slice. STOP / INVALID / SELFDESTRUCT carry no
 relevant memory range here (SELFDESTRUCT pops a beneficiary address,
@@ -108,6 +112,26 @@ theorem stackArgumentCountInvalid :
 
 theorem stackArgumentCountSelfdestruct :
     stackArgumentCount .selfdestruct = 1 := rfl
+
+theorem allKinds_nodup :
+    allKinds.Nodup := by
+  decide
+
+theorem mem_allKinds (kind : Kind) :
+    kind ∈ allKinds := by
+  cases kind <;> decide
+
+theorem allKinds_stackArgumentCounts :
+    allKinds.map stackArgumentCount = [0, 2, 2, 0, 1] := rfl
+
+theorem allKinds_hasMemoryRanges :
+    allKinds.map hasMemoryRange = [false, true, true, false, false] := rfl
+
+theorem allKinds_isSuccesses :
+    allKinds.map isSuccess = [true, true, false, false, true] := rfl
+
+theorem allKinds_reverts :
+    allKinds.map reverts = [false, false, true, true, false] := rfl
 
 theorem hasMemoryRangeReturn :
     hasMemoryRange .return_ = true := rfl
@@ -184,6 +208,9 @@ def failed : Kind → Bool
 theorem failed_eq_not_isSuccess (kind : Kind) :
     failed kind = !isSuccess kind := by
   cases kind <;> rfl
+
+theorem allKinds_failed :
+    allKinds.map failed = [false, false, true, true, false] := rfl
 
 theorem isSuccess_eq_not_failed (kind : Kind) :
     isSuccess kind = !failed kind := by
