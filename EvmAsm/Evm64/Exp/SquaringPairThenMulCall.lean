@@ -33,6 +33,63 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+/-- Code required by the squaring-call block plus the out-of-line
+    `mul_callable` body reached by the JAL inside the block. -/
+abbrev exp_squaring_call_with_mul_code
+    (base mulTarget : Word) (mulOff : BitVec 21) : CodeReq :=
+  (exp_squaring_call_block_code base mulOff).union
+    (mul_callable_code mulTarget)
+
+theorem exp_squaring_call_with_mul_code_block_sub
+    (base mulTarget : Word) (mulOff : BitVec 21) :
+    ∀ a i, (exp_squaring_call_block_code base mulOff) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i := by
+  unfold exp_squaring_call_with_mul_code
+  exact CodeReq.union_mono_left
+
+theorem exp_squaring_call_with_mul_code_mul_callable_sub
+    (base mulTarget : Word) (mulOff : BitVec 21)
+    (hd : CodeReq.Disjoint
+            (exp_squaring_call_block_code base mulOff)
+            (mul_callable_code mulTarget)) :
+    ∀ a i, (mul_callable_code mulTarget) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i := by
+  unfold exp_squaring_call_with_mul_code
+  exact CodeReq.mono_union_right hd (fun _ _ h => h)
+
+/-- Bundled sub-block witnesses for the squaring-call block plus the external
+    `mul_callable` body. This packages the code facts needed by the final
+    `exp_squaring_call_block_spec_within` composition. -/
+theorem exp_squaring_call_with_mul_code_block_subs
+    (base mulTarget : Word) (mulOff : BitVec 21)
+    (hd : CodeReq.Disjoint
+            (exp_squaring_call_block_code base mulOff)
+            (mul_callable_code mulTarget)) :
+    (∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 32)
+      exp_loop_marshal_result_to_factor2) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 64) (exp_square_block mulOff)) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 68) exp_loop_un_marshal_and_restore) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) ∧
+    (∀ a i, (mul_callable_code mulTarget) a = some i →
+      (exp_squaring_call_with_mul_code base mulTarget mulOff) a = some i) := by
+  rcases exp_squaring_call_block_code_block_subs base mulOff with
+    ⟨h_factor1, h_resultToFactor2, h_square, h_unmarshal⟩
+  exact
+    ⟨fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_factor1 a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_resultToFactor2 a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_square a i h),
+     fun a i h => exp_squaring_call_with_mul_code_block_sub
+        base mulTarget mulOff a i (h_unmarshal a i h),
+     exp_squaring_call_with_mul_code_mul_callable_sub
+        base mulTarget mulOff hd⟩
+
 /-- Compose the squaring marshal pair (16 instr) plus its trailing JAL
     (1 instr) with `mul_callable_spec_within` (64 instr) at the JAL target.
 

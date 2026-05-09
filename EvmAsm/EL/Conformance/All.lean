@@ -74,6 +74,16 @@ def expectedConformanceErrors : List CheckResult :=
 def expectedConformanceErrorCount : Nat :=
   expectedConformanceErrors.length
 
+def successfulConformanceResults : List CheckResult :=
+  allConformanceVectors.filter
+    (fun result =>
+      match result with
+      | .passed => true
+      | _ => false)
+
+def successfulConformanceResultCount : Nat :=
+  successfulConformanceResults.length
+
 theorem unexpectedConformanceFailures_empty :
     unexpectedConformanceFailures = [] := by
   simp [unexpectedConformanceFailures, allConformanceVectors,
@@ -102,6 +112,10 @@ theorem unexpectedConformanceFailureCount_eq_zero :
 
 theorem expectedConformanceErrorCount_eq :
     expectedConformanceErrorCount = 9 := by
+  native_decide
+
+theorem successfulConformanceResultCount_eq :
+    successfulConformanceResultCount = 39 := by
   native_decide
 
 end Conformance
