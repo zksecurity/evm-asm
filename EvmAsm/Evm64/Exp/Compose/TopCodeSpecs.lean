@@ -429,4 +429,83 @@ theorem exp_cond_mul_marshal_pair_evm_exp_spec_within
       addr instr hcode
   exact cpsTripleWithin_extend_code (h := h) (hmono := hmono)
 
+/-- Conditional-multiply marshal prefix and JAL lifted to the top-level EXP code bundle. -/
+theorem exp_cond_mul_marshal_pair_then_square_evm_exp_spec_within
+    (sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3 e0 e1 e2 e3 : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word)
+    (hmul : ((base + 212) + signExtend21 mulOff : Word) = mulTarget) :
+    cpsTripleWithin 17 (base + 148) mulTarget
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+       (.x1 ↦ᵣ vOld))
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ a3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ a3) **
+       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+       (.x1 ↦ᵣ (base + 216))) := by
+  have hpair := exp_cond_mul_marshal_pair_evm_exp_spec_within
+    sp evmSp tOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3 e0 e1 e2 e3
+    mulOff skipOff backOff base
+  have hpairFramed := cpsTripleWithin_frameR (.x1 ↦ᵣ vOld) (by pcFree) hpair
+  have hjal := exp_cond_mul_square_evm_exp_spec_within
+    mulOff skipOff backOff vOld base mulTarget hmul
+  have hjalFramed :=
+    cpsTripleWithin_frameL
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ a3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ a3) **
+       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3))
+      (by pcFree) hjal
+  have hseq : cpsTripleWithin (16 + 1) (base + 148) mulTarget
+      (evmExpCode base mulOff skipOff backOff) _ _ :=
+    cpsTripleWithin_seq_perm_same_cr
+      (fun _ hp => by xperm_hyp hp) hpairFramed hjalFramed
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    hseq
+
 end EvmAsm.Evm64.Exp.Compose
