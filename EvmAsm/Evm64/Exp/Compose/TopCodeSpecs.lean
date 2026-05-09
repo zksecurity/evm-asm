@@ -277,4 +277,15 @@ theorem evmExpCode_cond_mul_un_marshal_and_restore_sub {base : Word}
     (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_call_sub
       (base + 144) mulOff skipOff a i hcall)
 
+/-- Conditional-multiply BEQ skip gate directly included in the top-level EXP
+    code bundle. -/
+theorem evmExpCode_cond_mul_beq_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.singleton (base + 144) (.BEQ .x10 .x0 skipOff)) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_beq_sub
+      (base + 144) mulOff skipOff a i h)
+
 end EvmAsm.Evm64.Exp.Compose
