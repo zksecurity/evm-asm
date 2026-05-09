@@ -368,9 +368,9 @@ structure MachineState where
   code : Word → Option Instr := fun _ => none
   /-- Program counter -/
   pc   : Word
-  /-- Committed public outputs (a0, a1) from COMMIT syscalls -/
+  /-- Legacy SP1 word-pair commits, retained for compatibility with old examples. -/
   committed : List (Word × Word) := []
-  /-- Accumulated public values from WRITE syscalls (flat byte stream) -/
+  /-- Accumulated public output bytes from `write_output`/WRITE syscalls. -/
   publicValues : List (BitVec 8) := []
   /-- Private input stream (flat byte list, consumed by HINT_READ) -/
   privateInput : List (BitVec 8) := []
@@ -457,6 +457,10 @@ def readBytes (s : MachineState) (base : Word) : Nat → List (BitVec 8)
   | 0 => []
   | n + 1 => s.getByte base :: readBytes s (base + 1) n
 
+/-- zkvm-standards `write_output(ptr, size)`: append bytes read from guest memory. -/
+def writeOutput (s : MachineState) (ptr size : Word) : MachineState :=
+  s.appendPublicValues (s.readBytes ptr size.toNat)
+
 end MachineState
 
 /-- Convert up to 8 bytes (little-endian) into a 64-bit word, zero-padding if fewer than 8. -/
@@ -526,6 +530,9 @@ termination_by l => l.length
 @[simp] theorem code_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).code = s.code := by simp [appendPublicValues]
 
+@[simp] theorem code_writeOutput {s : MachineState} {ptr size : Word} :
+    (s.writeOutput ptr size).code = s.code := by simp [writeOutput]
+
 @[simp] theorem code_writeWords {s : MachineState} {base : Word} {words : List Word} :
     (s.writeWords base words).code = s.code := by
   induction words generalizing s base with
@@ -572,6 +579,10 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 @[simp] theorem committed_setPC {s : MachineState} {v : Word} :
     (s.setPC v).committed = s.committed := by simp [setPC]
 
+@[simp] theorem committed_writeOutput {s : MachineState} {ptr size : Word} :
+    (s.writeOutput ptr size).committed = s.committed := by
+  simp [writeOutput, appendPublicValues]
+
 @[simp] theorem publicValues_setReg {s : MachineState} {r : Reg} {v : Word} :
     (s.setReg r v).publicValues = s.publicValues := by cases r <;> rfl
 
@@ -586,6 +597,11 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 
 @[simp] theorem publicValues_setPC {s : MachineState} {v : Word} :
     (s.setPC v).publicValues = s.publicValues := by simp [setPC]
+
+@[simp] theorem publicValues_writeOutput {s : MachineState} {ptr size : Word} :
+    (s.writeOutput ptr size).publicValues =
+      s.publicValues ++ s.readBytes ptr size.toNat := by
+  simp [writeOutput, appendPublicValues]
 
 @[simp] theorem publicValues_appendCommit {s : MachineState} {a0 a1 : Word} :
     (s.appendCommit a0 a1).publicValues = s.publicValues := by simp [appendCommit]
@@ -626,11 +642,17 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 @[simp] theorem privateInput_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).privateInput = s.privateInput := by simp [appendPublicValues]
 
+@[simp] theorem privateInput_writeOutput {s : MachineState} {ptr size : Word} :
+    (s.writeOutput ptr size).privateInput = s.privateInput := by simp [writeOutput]
+
 @[simp] theorem inputBufBase_appendCommit {s : MachineState} {a0 a1 : Word} :
     (s.appendCommit a0 a1).inputBufBase = s.inputBufBase := by simp [appendCommit]
 
 @[simp] theorem inputBufBase_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).inputBufBase = s.inputBufBase := by simp [appendPublicValues]
+
+@[simp] theorem inputBufBase_writeOutput {s : MachineState} {ptr size : Word} :
+    (s.writeOutput ptr size).inputBufBase = s.inputBufBase := by simp [writeOutput]
 
 -- appendCommit preservation lemmas
 
@@ -663,6 +685,17 @@ theorem getReg_setReg_eq {s : MachineState} {r : Reg} {v : Word}
 @[simp] theorem publicValues_appendPublicValues {s : MachineState} {bytes : List (BitVec 8)} :
     (s.appendPublicValues bytes).publicValues = s.publicValues ++ bytes := by
   simp [appendPublicValues]
+
+-- writeOutput preservation lemmas
+
+@[simp] theorem getReg_writeOutput {s : MachineState} {ptr size : Word} {r : Reg} :
+    (s.writeOutput ptr size).getReg r = s.getReg r := by cases r <;> rfl
+
+@[simp] theorem getMem_writeOutput (s : MachineState) (ptr size a : Word) :
+    (s.writeOutput ptr size).getMem a = s.getMem a := by simp [writeOutput]
+
+@[simp] theorem pc_writeOutput (s : MachineState) (ptr size : Word) :
+    (s.writeOutput ptr size).pc = s.pc := by simp [writeOutput]
 
 -- readWords / writeWords simp lemmas
 
