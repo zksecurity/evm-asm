@@ -129,4 +129,193 @@ theorem evmExpCode_iter_loop_back_sub {base : Word}
   rw [haddr] at h
   exact evmExpCode_iter_body_sub a i (expIterBodyFullCode_loop_back_sub a i h)
 
+/-- Bit-test block lifted to the top-level EXP code bundle. -/
+theorem exp_bit_test_evm_exp_spec_within
+    (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word) :
+    cpsTripleWithin 3 (base + 28) (base + 40)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ (e >>> (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
+       (.x10 ↦ᵣ (e &&& signExtend12 (1 : BitVec 12)))) := by
+  have h := EvmAsm.Evm64.exp_bit_test_block_spec_within e c v10 (base + 28)
+  have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
+  rw [hnext] at h
+  exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_iter_bit_test_sub)
+
+/-- Loop-back block lifted to the top-level EXP code bundle. -/
+theorem exp_loop_back_evm_exp_spec_within (c : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base target : Word)
+    (htarget : ((base + 252) + 4 : Word) + signExtend13 backOff = target) :
+    let cNew := c + signExtend12 ((-1 : BitVec 12))
+    cpsBranchWithin 2 (base + 252)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew ≠ 0⌝)
+      (base + 260) ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew = 0⌝) := by
+  have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 252) target htarget
+  have hnext : ((base + 252 : Word) + 8) = base + 260 := by bv_omega
+  rw [hnext] at h
+  exact cpsBranchWithin_extend_code (h := h) (hmono := evmExpCode_iter_loop_back_sub)
+
+/-- Squaring-call factor-1 marshal sub-block directly included in the
+    top-level EXP code bundle. -/
+theorem evmExpCode_squaring_marshal_factor1_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 40) EvmAsm.Evm64.exp_loop_marshal_factor1) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  exact evmExpCode_iter_squaring_sub a i
+    (exp_squaring_call_block_code_marshal_factor1_sub a i h)
+
+/-- Squaring-call factor-2 marshal sub-block directly included in the
+    top-level EXP code bundle. -/
+theorem evmExpCode_squaring_marshal_result_to_factor2_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 72)
+      EvmAsm.Evm64.exp_loop_marshal_result_to_factor2) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 72 : Word) = base + 40 + 32 := by bv_omega
+  rw [haddr] at h
+  exact evmExpCode_iter_squaring_sub a i
+    (exp_squaring_call_block_code_marshal_result_to_factor2_sub a i h)
+
+/-- Squaring-call JAL sub-block directly included in the top-level EXP code
+    bundle. -/
+theorem evmExpCode_squaring_square_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 104)
+      (EvmAsm.Evm64.exp_square_block mulOff)) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 104 : Word) = base + 40 + 64 := by bv_omega
+  rw [haddr] at h
+  exact evmExpCode_iter_squaring_sub a i
+    (exp_squaring_call_block_code_square_sub a i h)
+
+/-- Squaring-call unmarshal sub-block directly included in the top-level EXP
+    code bundle. -/
+theorem evmExpCode_squaring_un_marshal_and_restore_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 108)
+      EvmAsm.Evm64.exp_loop_un_marshal_and_restore) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 108 : Word) = base + 40 + 68 := by bv_omega
+  rw [haddr] at h
+  exact evmExpCode_iter_squaring_sub a i
+    (exp_squaring_call_block_code_un_marshal_and_restore_sub a i h)
+
+/-- Conditional-multiply factor-1 marshal sub-block directly included in the
+    top-level EXP code bundle. -/
+theorem evmExpCode_cond_mul_marshal_factor1_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 148) EvmAsm.Evm64.exp_loop_marshal_factor1) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have hcall := exp_cond_mul_call_block_code_marshal_factor1_sub
+    (base + 148) mulOff a i h
+  have hskip : (base + 148 : Word) = base + 144 + 4 := by bv_omega
+  rw [hskip] at hcall
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_call_sub
+      (base + 144) mulOff skipOff a i hcall)
+
+/-- Conditional-multiply factor-2 marshal sub-block directly included in the
+    top-level EXP code bundle. -/
+theorem evmExpCode_cond_mul_marshal_a_to_factor2_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 180)
+      EvmAsm.Evm64.exp_loop_marshal_a_to_factor2) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 180 : Word) = base + 148 + 32 := by bv_omega
+  rw [haddr] at h
+  have hcall := exp_cond_mul_call_block_code_marshal_a_to_factor2_sub
+    (base + 148) mulOff a i h
+  have hskip : (base + 148 : Word) = base + 144 + 4 := by bv_omega
+  rw [hskip] at hcall
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_call_sub
+      (base + 144) mulOff skipOff a i hcall)
+
+/-- Conditional-multiply JAL sub-block directly included in the top-level EXP
+    code bundle. -/
+theorem evmExpCode_cond_mul_square_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 212)
+      (EvmAsm.Evm64.exp_square_block mulOff)) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 212 : Word) = base + 148 + 64 := by bv_omega
+  rw [haddr] at h
+  have hcall := exp_cond_mul_call_block_code_square_sub (base + 148) mulOff a i h
+  have hskip : (base + 148 : Word) = base + 144 + 4 := by bv_omega
+  rw [hskip] at hcall
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_call_sub
+      (base + 144) mulOff skipOff a i hcall)
+
+/-- Conditional-multiply unmarshal sub-block directly included in the top-level
+    EXP code bundle. -/
+theorem evmExpCode_cond_mul_un_marshal_and_restore_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 216)
+      EvmAsm.Evm64.exp_loop_un_marshal_and_restore) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 216 : Word) = base + 148 + 68 := by bv_omega
+  rw [haddr] at h
+  have hcall := exp_cond_mul_call_block_code_un_marshal_and_restore_sub
+    (base + 148) mulOff a i h
+  have hskip : (base + 148 : Word) = base + 144 + 4 := by bv_omega
+  rw [hskip] at hcall
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_call_sub
+      (base + 144) mulOff skipOff a i hcall)
+
+/-- Conditional-multiply BEQ skip gate directly included in the top-level EXP
+    code bundle. -/
+theorem evmExpCode_cond_mul_beq_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.singleton (base + 144) (.BEQ .x10 .x0 skipOff)) a = some i →
+      (evmExpCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  exact evmExpCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_beq_sub
+      (base + 144) mulOff skipOff a i h)
+
+/-- Squaring-call JAL spec lifted to the top-level EXP code bundle. -/
+theorem exp_squaring_square_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (vOld : Word) (base mulTarget : Word)
+    (hmul : ((base + 104) + signExtend21 mulOff : Word) = mulTarget) :
+    cpsTripleWithin 1 (base + 104) mulTarget
+      (evmExpCode base mulOff skipOff backOff)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ (base + 108)) := by
+  have h := EvmAsm.Evm64.exp_square_block_spec_within mulOff vOld (base + 104)
+  rw [hmul] at h
+  have hret : ((base + 104 : Word) + 4) = base + 108 := by bv_omega
+  rw [hret] at h
+  exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_squaring_square_sub)
+
+/-- Conditional-multiply JAL spec lifted to the top-level EXP code bundle. -/
+theorem exp_cond_mul_square_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (vOld : Word) (base mulTarget : Word)
+    (hmul : ((base + 212) + signExtend21 mulOff : Word) = mulTarget) :
+    cpsTripleWithin 1 (base + 212) mulTarget
+      (evmExpCode base mulOff skipOff backOff)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ (base + 216)) := by
+  have h := EvmAsm.Evm64.exp_square_block_spec_within mulOff vOld (base + 212)
+  rw [hmul] at h
+  have hret : ((base + 212 : Word) + 4) = base + 216 := by bv_omega
+  rw [hret] at h
+  exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_cond_mul_square_sub)
+
 end EvmAsm.Evm64.Exp.Compose
