@@ -176,8 +176,20 @@ theorem hasValueArgument_not_preservesCallerContext (kind : Kind)
     (h : hasValueArgument kind = true) : preservesCallerContext kind = false := by
   cases kind <;> simp_all (config := { decide := true })
 
+theorem isStatic_not_hasValueArgument (kind : Kind)
+    (h : isStatic kind = true) : hasValueArgument kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
 theorem isStatic_not_preservesCallerContext (kind : Kind)
     (h : isStatic kind = true) : preservesCallerContext kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
+theorem preservesCallerContext_not_hasValueArgument (kind : Kind)
+    (h : preservesCallerContext kind = true) : hasValueArgument kind = false := by
+  cases kind <;> simp_all (config := { decide := true })
+
+theorem preservesCallerContext_not_isStatic (kind : Kind)
+    (h : preservesCallerContext kind = true) : isStatic kind = false := by
   cases kind <;> simp_all (config := { decide := true })
 
 end CallArgs
