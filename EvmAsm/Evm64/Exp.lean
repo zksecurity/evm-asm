@@ -25,6 +25,9 @@ import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.CondMulCall
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base
+import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
+import EvmAsm.Evm64.Exp.Compose.LoopCodeSpecs
+import EvmAsm.Evm64.Exp.Compose.TopCodeSpecs
 import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
 import EvmAsm.Evm64.Exp.StackExecutionBridge

@@ -64,6 +64,15 @@ theorem expTotalGasFromArgs_eq (args : Args) :
     expTotalGasFromArgs args =
       ExpGas.expTotalGasFromExponent args.exponent := rfl
 
+theorem expTotalGasFromArgs_eq_static_add_dynamic (args : Args) :
+    expTotalGasFromArgs args =
+      EvmOpcode.staticGasCost .EXP + expDynamicCostFromArgs args := rfl
+
+theorem expTotalGasFromArgs_eq_dynamic_add_static (args : Args) :
+    expTotalGasFromArgs args =
+      expDynamicCostFromArgs args + EvmOpcode.staticGasCost .EXP := by
+  rw [expTotalGasFromArgs_eq_static_add_dynamic, Nat.add_comm]
+
 theorem stackAfterExp_eq (args : Args) (rest : List EvmWord) :
     stackAfterExp args rest = expResultFromArgs args :: rest := rfl
 
@@ -77,10 +86,20 @@ theorem stackAfterExp_tail (args : Args) (rest : List EvmWord) :
     (stackAfterExp args rest).length = rest.length + 1 := by
   simp [stackAfterExp]
 
+theorem stackAfterExp_length_pos (args : Args) (rest : List EvmWord) :
+    0 < (stackAfterExp args rest).length := by
+  simp [stackAfterExp]
+
 theorem stackAfterExp_length_eq_counts (args : Args) (rest : List EvmWord) :
     (stackAfterExp args rest).length + stackArgumentCount =
       (args.base :: args.exponent :: rest).length + resultCount := by
   simp [stackAfterExp, stackArgumentCount, resultCount]
+
+theorem stackAfterExp_length_succ_eq_input_length
+    (args : Args) (rest : List EvmWord) :
+    (stackAfterExp args rest).length + 1 =
+      (args.base :: args.exponent :: rest).length := by
+  simp [stackAfterExp, Nat.add_comm]
 
 theorem stackAfterExp_ne_nil (args : Args) (rest : List EvmWord) :
     stackAfterExp args rest ≠ [] := by
@@ -94,6 +113,10 @@ theorem expResultFromArgs_zero_right (base : EvmWord) :
     expResultFromArgs (expArgs base 0) = 1 := by
   exact EvmWord.exp_zero_right base
 
+theorem expResultFromArgs_max_zero_right :
+    expResultFromArgs (expArgs (-1 : EvmWord) 0) = 1 := by
+  exact expResultFromArgs_zero_right (-1 : EvmWord)
+
 theorem expResultFromArgs_one_left (exponent : EvmWord) :
     expResultFromArgs (expArgs 1 exponent) = 1 := by
   exact EvmWord.exp_one_left exponent
@@ -103,13 +126,111 @@ theorem expResultFromArgs_zero_left_of_ne_zero (exponent : EvmWord)
     expResultFromArgs (expArgs 0 exponent) = 0 := by
   exact EvmWord.exp_zero_left_of_ne_zero exponent h
 
+theorem expResultFromArgs_zero_left_of_toNat_pos (exponent : EvmWord)
+    (h_pos : 0 < exponent.toNat) :
+    expResultFromArgs (expArgs 0 exponent) = 0 := by
+  exact expResultFromArgs_zero_left_of_ne_zero exponent (by
+    intro h_zero
+    rw [h_zero] at h_pos
+    simp at h_pos)
+
 theorem expResultFromArgs_one_right (base : EvmWord) :
     expResultFromArgs (expArgs base 1) = base := by
   exact EvmWord.exp_one_right base
 
+theorem expResultFromArgs_zero_one :
+    expResultFromArgs (expArgs 0 1) = 0 := by
+  exact expResultFromArgs_one_right 0
+
+theorem expResultFromArgs_two_one :
+    expResultFromArgs (expArgs 2 1) = 2 := by
+  exact EvmWord.exp_two_one
+
+theorem expResultFromArgs_max_one_right :
+    expResultFromArgs (expArgs (-1 : EvmWord) 1) = (-1 : EvmWord) := by
+  exact expResultFromArgs_one_right (-1 : EvmWord)
+
 theorem expResultFromArgs_two_256 :
     expResultFromArgs (expArgs 2 256) = 0 := by
   exact EvmWord.exp_two_256
+
+theorem expResultFromArgs_zero_left_max :
+    expResultFromArgs (expArgs 0 (-1 : EvmWord)) = 0 := by
+  exact expResultFromArgs_zero_left_of_ne_zero (-1 : EvmWord) (by decide)
+
+theorem stackAfterExp_zero_exponent (base : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs base 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_right]
+
+theorem stackAfterExp_max_zero_exponent (rest : List EvmWord) :
+    stackAfterExp (expArgs (-1 : EvmWord) 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_max_zero_right]
+
+theorem stackAfterExp_zero_zero (rest : List EvmWord) :
+    stackAfterExp (expArgs 0 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_zero]
+
+theorem stackAfterExp_zero_left_of_ne_zero
+    (exponent : EvmWord) (rest : List EvmWord) (h : exponent ≠ 0) :
+    stackAfterExp (expArgs 0 exponent) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_left_of_ne_zero exponent h]
+
+theorem stackAfterExp_zero_left_of_toNat_pos
+    (exponent : EvmWord) (rest : List EvmWord) (h_pos : 0 < exponent.toNat) :
+    stackAfterExp (expArgs 0 exponent) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_left_of_toNat_pos exponent h_pos]
+
+theorem stackAfterExp_one_left (exponent : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs 1 exponent) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_one_left]
+
+theorem stackAfterExp_one_exponent (base : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs base 1) rest = base :: rest := by
+  rw [stackAfterExp, expResultFromArgs_one_right]
+
+theorem stackAfterExp_zero_one (rest : List EvmWord) :
+    stackAfterExp (expArgs 0 1) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_one]
+
+theorem stackAfterExp_two_one (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 1) rest = 2 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_one]
+
+theorem stackAfterExp_max_one_exponent (rest : List EvmWord) :
+    stackAfterExp (expArgs (-1 : EvmWord) 1) rest = (-1 : EvmWord) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_max_one_right]
+
+theorem stackAfterExp_two_256 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 256) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_256]
+
+theorem stackAfterExp_zero_left_max (rest : List EvmWord) :
+    stackAfterExp (expArgs 0 (-1 : EvmWord)) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_left_max]
+
+theorem expDynamicCostFromArgs_one_exponent (base : EvmWord) :
+    expDynamicCostFromArgs (expArgs base 1) = 50 := by
+  unfold expDynamicCostFromArgs expArgs
+  change ExpGas.expDynamicCostFromExponent (1 : EvmWord) = 50
+  exact ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)
+
+theorem expTotalGasFromArgs_one_exponent (base : EvmWord) :
+    expTotalGasFromArgs (expArgs base 1) = 60 := by
+  unfold expTotalGasFromArgs expArgs
+  change ExpGas.expTotalGasFromExponent (1 : EvmWord) = 60
+  exact ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)
+
+theorem expTotalGasFromArgs_255_exponent (base : EvmWord) :
+    expTotalGasFromArgs (expArgs base 255) = 60 := by
+  unfold expTotalGasFromArgs expArgs
+  change ExpGas.expTotalGasFromExponent (255 : EvmWord) = 60
+  exact ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)
+
+theorem expDynamicCostFromArgs_255_exponent (base : EvmWord) :
+    expDynamicCostFromArgs (expArgs base 255) = 50 := by
+  unfold expDynamicCostFromArgs expArgs
+  change ExpGas.expDynamicCostFromExponent (255 : EvmWord) = 50
+  exact ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)
 
 @[simp] theorem expDynamicCostFromArgs_zero_exponent (base : EvmWord) :
     expDynamicCostFromArgs (expArgs base 0) = 0 := by
@@ -128,6 +249,22 @@ theorem expDynamicCostFromArgs_256_exponent (base : EvmWord) :
 theorem expTotalGasFromArgs_256_exponent (base : EvmWord) :
     expTotalGasFromArgs (expArgs base 256) = 110 := by
   exact ExpGas.expTotalGasFromExponent_256
+
+theorem expDynamicCostFromArgs_65535_exponent (base : EvmWord) :
+    expDynamicCostFromArgs (expArgs base 65535) = 100 := by
+  exact ExpGas.expDynamicCostFromExponent_65535
+
+theorem expTotalGasFromArgs_65535_exponent (base : EvmWord) :
+    expTotalGasFromArgs (expArgs base 65535) = 110 := by
+  exact ExpGas.expTotalGasFromExponent_65535
+
+theorem expDynamicCostFromArgs_65536_exponent (base : EvmWord) :
+    expDynamicCostFromArgs (expArgs base 65536) = 150 := by
+  exact ExpGas.expDynamicCostFromExponent_65536
+
+theorem expTotalGasFromArgs_65536_exponent (base : EvmWord) :
+    expTotalGasFromArgs (expArgs base 65536) = 160 := by
+  exact ExpGas.expTotalGasFromExponent_65536
 
 theorem expDynamicCostFromArgs_max_exponent (base : EvmWord) :
     expDynamicCostFromArgs (expArgs base (-1)) = 1600 := by
