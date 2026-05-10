@@ -303,6 +303,32 @@ theorem dividendSign_spec_in_sdivCode
       EvmAsm.Evm64.evm_sdivDividendTopLimbOff sp sOld dividendTop
       (base + dividendSignOff) (by decide))
 
+theorem saveRa_then_dividendSign_spec_in_sdivCode
+    (vRa vSavedOld sp sOld dividendTop : Word) (base : Word) :
+    cpsTripleWithin 3 base ((base + dividendSignOff) + 8) (sdivCode base)
+      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
+       ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sOld) **
+        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+          dividendTop)))
+      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+       ((.x12 ↦ᵣ sp) **
+        (.x8 ↦ᵣ (dividendTop >>> (63 : BitVec 6).toNat)) **
+        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+          dividendTop))) := by
+  have hSave :=
+    cpsTripleWithin_frameR
+      (((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sOld) **
+        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+          dividendTop)))
+      (by pcFree)
+      (saveRa_spec_in_sdivCode vRa vSavedOld base)
+  have hSign :=
+    cpsTripleWithin_frameL
+      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))))
+      (by pcFree)
+      (dividendSign_spec_in_sdivCode sp sOld dividendTop base)
+  exact cpsTripleWithin_seq_same_cr hSave hSign
+
 theorem divisorSign_spec_in_sdivCode
     (sp sOld divisorTop : Word) (base : Word) :
     cpsTripleWithin 2 (base + divisorSignOff) ((base + divisorSignOff) + 8)
