@@ -86,6 +86,10 @@ theorem stackAfterExp_tail (args : Args) (rest : List EvmWord) :
     (stackAfterExp args rest).length = rest.length + 1 := by
   simp [stackAfterExp]
 
+theorem stackAfterExp_length_pos (args : Args) (rest : List EvmWord) :
+    0 < (stackAfterExp args rest).length := by
+  simp [stackAfterExp]
+
 theorem stackAfterExp_length_eq_counts (args : Args) (rest : List EvmWord) :
     (stackAfterExp args rest).length + stackArgumentCount =
       (args.base :: args.exponent :: rest).length + resultCount := by
