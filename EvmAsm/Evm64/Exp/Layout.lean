@@ -70,6 +70,14 @@ structure ExpScratchpadLayout : Type where
     accumulator-limb cells (currently inlined as `sp + 0 .. sp + 24`). -/
 structure ExpScratchpadLayout.Valid (_L : ExpScratchpadLayout) : Prop where
 
+/-- Every current EXP scratchpad layout is valid.
+
+    This is a convenience wrapper for downstream specs that already take an
+    `ExpScratchpadLayout` parameter while the layout is still empty. -/
+theorem ExpScratchpadLayout.valid_any_empty
+    (L : ExpScratchpadLayout) :
+    L.Valid := {}
+
 /-- The canonical EXP scratchpad layout.
 
     Trivial: there is nothing to choose, so canonical = the unique value.
