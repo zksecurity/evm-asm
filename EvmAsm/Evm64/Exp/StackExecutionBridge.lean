@@ -216,6 +216,12 @@ theorem runExpStack?_head?_of_some
   subst h_out
   rfl
 
+theorem runExpStack?_stackAfterExp
+    (base exponent : EvmWord) (rest : List EvmWord) :
+    (runExpStack? { stack := base :: exponent :: rest }).map
+      (fun out => out.effects.stackWords ++ out.stack) =
+      some (ExpArgs.stackAfterExp (ExpArgs.expArgs base exponent) rest) := rfl
+
 theorem runExpStack?_gas
     (base exponent : EvmWord) (rest : List EvmWord) :
     (runExpStack? { stack := base :: exponent :: rest }).map
