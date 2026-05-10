@@ -30,6 +30,10 @@ theorem exp_zero_right (base : EvmWord) : exp base 0 = 1 := by
   rw [exp_correct]
   simp
 
+/-- The maximum EVM word raised to zero is one. -/
+theorem exp_max_zero_right : exp (-1 : EvmWord) 0 = 1 := by
+  exact exp_zero_right (-1 : EvmWord)
+
 /-- One raised to any exponent remains one. -/
 theorem exp_one_left (exponent : EvmWord) : exp 1 exponent = 1 := by
   apply BitVec.eq_of_toNat_eq
