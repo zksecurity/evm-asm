@@ -90,6 +90,19 @@ theorem decodeExpStack?_eq_none_iff
             simp [decodeExpStack?]
   · rintro (rfl | ⟨base, rfl⟩) <;> rfl
 
+theorem decodeExpStack?_eq_none_iff_length_lt_two
+    {stack : List EvmWord} :
+    decodeExpStack? stack = none ↔ stack.length < 2 := by
+  cases stack with
+  | nil =>
+      simp [decodeExpStack?]
+  | cons base tail =>
+      cases tail with
+      | nil =>
+          simp [decodeExpStack?]
+      | cons exponent rest =>
+          simp [decodeExpStack?]
+
 theorem decodeExpStack?_none_of_empty :
     decodeExpStack? [] = none := rfl
 
