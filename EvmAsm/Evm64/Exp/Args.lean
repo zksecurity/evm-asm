@@ -95,6 +95,12 @@ theorem stackAfterExp_length_eq_counts (args : Args) (rest : List EvmWord) :
       (args.base :: args.exponent :: rest).length + resultCount := by
   simp [stackAfterExp, stackArgumentCount, resultCount]
 
+theorem stackAfterExp_length_succ_eq_input_length
+    (args : Args) (rest : List EvmWord) :
+    (stackAfterExp args rest).length + 1 =
+      (args.base :: args.exponent :: rest).length := by
+  simp [stackAfterExp, Nat.add_comm]
+
 theorem stackAfterExp_ne_nil (args : Args) (rest : List EvmWord) :
     stackAfterExp args rest ≠ [] := by
   simp [stackAfterExp]
