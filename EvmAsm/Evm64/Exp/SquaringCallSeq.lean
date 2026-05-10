@@ -128,4 +128,45 @@ theorem exp_loop_squaring_marshal_pair_then_square_spec_within
     (fun _ hp => by xperm_hyp hp)
     hseq
 
+/-- Right-framed wrapper for
+    `exp_loop_squaring_marshal_pair_then_square_spec_within`, useful when the
+    squaring prefix is spliced into a larger composition with an untouched
+    frame. -/
+theorem exp_loop_squaring_marshal_pair_then_square_spec_within_right
+    (sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 : Word)
+    (mulOff : BitVec 21) (base : Word) (Q : Assertion) (hQ : Q.pcFree) :
+    cpsTripleWithin 17 base ((base + 64) + signExtend21 mulOff)
+      (exp_squaring_call_block_code base mulOff)
+      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+       (.x1 ↦ᵣ vOld)) ** Q)
+      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ r3) **
+       (.x1 ↦ᵣ (base + 68))) ** Q) := by
+  exact cpsTripleWithin_frameR Q hQ
+    (exp_loop_squaring_marshal_pair_then_square_spec_within
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 mulOff base)
+
 end EvmAsm.Evm64
