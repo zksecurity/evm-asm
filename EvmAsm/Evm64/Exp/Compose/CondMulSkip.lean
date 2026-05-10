@@ -39,4 +39,27 @@ theorem exp_cond_mul_beq_evm_exp_union_spec_within
         (base := base) (mulOff := mulOff) (skipOff := skipOff)
         (backOff := backOff) a i hcode))
 
+/-- Permuted-frame variant of `exp_cond_mul_beq_evm_exp_union_spec_within`,
+    matching the frame-first shape used by the following callable composition. -/
+theorem exp_cond_mul_beq_evm_exp_union_spec_within_frameL
+    (frame : Assertion) (hframe : frame.pcFree)
+    (v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base skipTarget mulTarget : Word)
+    (hskip : ((base + 144) + signExtend13 skipOff : Word) = skipTarget) :
+    cpsBranchWithin 1 (base + 144)
+      ((evmExpCode base mulOff skipOff backOff).union
+        (mul_callable_code mulTarget))
+      (frame ** ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word))))
+      skipTarget
+        (frame ** ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 = 0⌝))
+      (base + 148)
+        (frame ** ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 ≠ 0⌝)) := by
+  have h := exp_cond_mul_beq_evm_exp_union_spec_within
+    frame hframe v10 mulOff skipOff backOff base skipTarget mulTarget hskip
+  exact cpsBranchWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    h
+
 end EvmAsm.Evm64.Exp.Compose
