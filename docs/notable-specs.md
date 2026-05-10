@@ -142,6 +142,22 @@ is still being connected.
 | `StorageAccessOutcome.sloadOutcome_warms` | [`StorageAccessOutcome.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L43) | SLOAD outcomes warm the accessed key for later operations. |
 | `StorageAccessOutcome.sstoreOutcome_warms` | [`StorageAccessOutcome.lean#L59`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L59) | SSTORE outcomes warm the accessed key for later operations. |
 
+### Calldata copy program and partial specs
+
+CALLDATACOPY currently has a concrete RISC-V program plus partial preamble and
+memory-effect specs. The full destination-memory stack spec remains tied to
+the broader memory model work, but these are the #104 program/spec entry
+points already available for composition.
+
+| Declaration / Theorem | Defined at | Meaning |
+|---|---|---|
+| `evm_calldatacopy` | [`CopyProgram.lean#L107`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopyProgram.lean#L107) | Concrete 19-instruction RV64 program for CALLDATACOPY. |
+| `evm_calldatacopy_length` | [`CopyProgram.lean#L141`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopyProgram.lean#L141) | Program length fact used by code-region and byte-offset proofs. |
+| `evm_calldatacopy_preamble_spec_within` | [`CopySpec.lean#L77`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L77) | Hoare spec for the executable preamble before the byte-copy loop. |
+| `evm_calldatacopy_preamble_stack_spec_within` | [`CopySpec.lean#L156`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L156) | Stack-form lift of the CALLDATACOPY preamble spec. |
+| `evm_calldatacopy_full_code_preamble_stack_spec_within` | [`CopySpec.lean#L257`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L257) | Preamble stack spec transported to the full `evm_calldatacopy_code` region. |
+| `evm_calldatacopy_partial_memory_effect` | [`CopySpec.lean#L299`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L299) | Partial memory-effect bridge: a destination byte equals the executable calldata byte at the matching source offset. |
+
 ### CALL-family argument and returndata bridges
 
 The CALL-family surface currently exposes pure stack decoders and returndata
