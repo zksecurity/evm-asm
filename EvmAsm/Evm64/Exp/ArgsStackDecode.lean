@@ -112,6 +112,18 @@ theorem decodeExpStack?_eq_none_iff_length_lt_two
       | cons exponent rest =>
           simp [decodeExpStack?]
 
+theorem decodeExpStack?_length_lt_two_of_none
+    {stack : List EvmWord}
+    (h_none : decodeExpStack? stack = none) :
+    stack.length < 2 :=
+  decodeExpStack?_eq_none_iff_length_lt_two.mp h_none
+
+theorem decodeExpStack?_none_of_length_lt_two
+    {stack : List EvmWord}
+    (h_len : stack.length < 2) :
+    decodeExpStack? stack = none :=
+  decodeExpStack?_eq_none_iff_length_lt_two.mpr h_len
+
 theorem decodeExpStack?_isSome_iff_length_ge_two
     {stack : List EvmWord} :
     (decodeExpStack? stack).isSome ↔ 2 ≤ stack.length := by
