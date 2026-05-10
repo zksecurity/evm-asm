@@ -142,6 +142,23 @@ is still being connected.
 | `StorageAccessOutcome.sloadOutcome_warms` | [`StorageAccessOutcome.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L43) | SLOAD outcomes warm the accessed key for later operations. |
 | `StorageAccessOutcome.sstoreOutcome_warms` | [`StorageAccessOutcome.lean#L59`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L59) | SSTORE outcomes warm the accessed key for later operations. |
 
+### CALL-family argument and returndata bridges
+
+The CALL-family surface currently exposes pure stack decoders and returndata
+copy bridges used by handler/conformance proofs for CALL, STATICCALL,
+DELEGATECALL, and RETURNDATACOPY.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `CallArgs.hasValueArgument_iff_call` | [`CallArgs.lean#L139`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L139) | Only CALL carries a value-transfer stack argument. |
+| `CallArgs.isStatic_iff_staticcall` | [`CallArgs.lean#L143`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L143) | STATICCALL is exactly the static call kind. |
+| `CallArgs.preservesCallerContext_iff_delegatecall` | [`CallArgs.lean#L147`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L147) | DELEGATECALL is exactly the caller-context-preserving kind. |
+| `CallArgsStackDecode.decodeCallFamilyStack?_eq_some_iff` | [`CallArgsStackDecode.lean#L433`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgsStackDecode.lean#L433) | Successful CALL-family stack decoding is equivalent to one of the three concrete argument layouts. |
+| `CallArgsStackDecode.decodeCallFamilyStack?_eq_none_iff` | [`CallArgsStackDecode.lean#L649`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgsStackDecode.lean#L649) | Decoder failure is exactly stack underflow for that call kind. |
+| `ReturnData.copyBytes_get` | [`ReturnData/Basic.lean#L49`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/Basic.lean#L49) | RETURNDATACOPY source bytes are copied from returndata, with zero padding handled by the bounds lemmas below. |
+| `ReturnData.copyWriteByteAt_at_destination_add_of_in_bounds` | [`ReturnData/CopyMemory.lean#L101`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L101) | In-bounds RETURNDATACOPY writes the selected returndata byte at the destination address. |
+| `ReturnData.copyWriteByteAt_at_destination_add_of_out_of_bounds` | [`ReturnData/CopyMemory.lean#L110`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L110) | Out-of-bounds RETURNDATACOPY writes zero at the destination address. |
+
 ## EvmWord arithmetic correctness
 
 The pure-Lean correctness theorems that say each `EvmWord.<op>` matches the
