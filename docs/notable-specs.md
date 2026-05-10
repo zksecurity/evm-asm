@@ -123,6 +123,25 @@ states the stack pre/post over `evmStackIs`, and bounds the step count.
 > MLOAD / MSTORE stack specs are tracked under #102 / #99 and not yet
 > landed; this section will be extended as those PRs merge.
 
+### Storage argument, access, and gas bridges
+
+The SLOAD/SSTORE surface currently exposes pure stack decoders plus
+EIP-2929 warm/cold access and dynamic-gas bridges. These are the pieces used
+by the storage handler and conformance slices while the ECALL/stack-spec layer
+is still being connected.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `StorageArgs.decodeStorageStack?_eq_some_iff` | [`StorageArgs.lean#L172`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L172) | Successful SLOAD/SSTORE stack decoding is equivalent to one of the concrete stack layouts. |
+| `StorageArgs.decodeStorageStack?_eq_none_iff` | [`StorageArgs.lean#L230`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L230) | Decoder failure is exactly stack underflow for the selected storage opcode kind. |
+| `StorageArgs.decodeStorageStack?_writesStorage_of_some` | [`StorageArgs.lean#L224`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L224) | A successful decode exposes whether the opcode writes storage (`SSTORE`) or only reads (`SLOAD`). |
+| `StorageAccess.sloadDynamicCostForKey_of_warm` | [`StorageAccess.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L73) | SLOAD dynamic gas collapses to the warm-key cost when the key is already warm. |
+| `StorageAccess.sloadDynamicCostForKey_of_cold` | [`StorageAccess.lean#L78`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L78) | SLOAD dynamic gas collapses to the cold-key cost when the key is not warm. |
+| `StorageAccess.sstoreDynamicCostForKey_of_warm` | [`StorageAccess.lean#L98`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L98) | SSTORE dynamic gas uses the warm write-cost branch for already-warm keys. |
+| `StorageAccess.sstoreDynamicCostForKey_of_cold` | [`StorageAccess.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L106) | SSTORE dynamic gas adds the cold-key surcharge for first touches. |
+| `StorageAccessOutcome.sloadOutcome_warms` | [`StorageAccessOutcome.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L43) | SLOAD outcomes warm the accessed key for later operations. |
+| `StorageAccessOutcome.sstoreOutcome_warms` | [`StorageAccessOutcome.lean#L59`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L59) | SSTORE outcomes warm the accessed key for later operations. |
+
 ### CALL-family argument and returndata bridges
 
 The CALL-family surface currently exposes pure stack decoders and returndata
