@@ -267,6 +267,30 @@ theorem cpsTripleWithin_of_forall_regIs_to_regOwn_single
   obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨vOld, hv⟩, hR2⟩ := hPR
   exact h vOld R hR s hcr ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
 
+/-- Branch variant of `cpsTripleWithin_of_forall_regIs_to_regOwn`.
+    If a branch spec is available for every concrete value of an owned
+    register, the precondition may expose only ownership of that register. -/
+theorem cpsBranchWithin_of_forall_regIs_to_regOwn
+    {nSteps : Nat} {entry r P exit_t Q_t exit_f Q_f} {cr : CodeReq}
+    (h : ∀ vOld, cpsBranchWithin nSteps entry cr (P ** (r ↦ᵣ vOld))
+      exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry cr (P ** regOwn r) exit_t Q_t exit_f Q_f := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨vOld, hv4⟩⟩ := hPown1
+  exact h vOld R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
+/-- Single-atom branch variant of `cpsTripleWithin_of_forall_regIs_to_regOwn_single`. -/
+theorem cpsBranchWithin_of_forall_regIs_to_regOwn_single
+    {nSteps : Nat} {entry r exit_t Q_t exit_f Q_f} {cr : CodeReq}
+    (h : ∀ vOld, cpsBranchWithin nSteps entry cr (r ↦ᵣ vOld)
+      exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry cr (regOwn r) exit_t Q_t exit_f Q_f := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨vOld, hv⟩, hR2⟩ := hPR
+  exact h vOld R hR s hcr ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
+
 /-- Bounded variant of `cpsTriple_of_forall_memIs_to_memOwn`. The step bound is
     unchanged. -/
 theorem cpsTripleWithin_of_forall_memIs_to_memOwn
