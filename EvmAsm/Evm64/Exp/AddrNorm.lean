@@ -18,4 +18,9 @@ namespace EvmAsm.Evm64.Exp.AddrNorm
 
 open EvmAsm.Rv64
 
+attribute [exp_addr]
+  signExtend12_0 signExtend12_1 signExtend12_8 signExtend12_16
+  signExtend12_24 signExtend12_32 signExtend12_40 signExtend12_48
+  signExtend12_56 signExtend12_64
+
 end EvmAsm.Evm64.Exp.AddrNorm
