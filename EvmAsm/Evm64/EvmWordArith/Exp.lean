@@ -78,6 +78,10 @@ theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
 theorem exp_max_one_right : exp (-1 : EvmWord) 1 = (-1 : EvmWord) := by
   exact exp_one_right (-1 : EvmWord)
 
+/-- Two raised to one remains two. -/
+theorem exp_two_one : exp (2 : EvmWord) 1 = 2 := by
+  exact exp_one_right (2 : EvmWord)
+
 /-- Successor recurrence for EXP when the exponent increment does not wrap. -/
 theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
     (h : exponent.toNat + 1 < 2^256) :
