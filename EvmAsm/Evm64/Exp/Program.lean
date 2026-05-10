@@ -904,6 +904,16 @@ def canonicalExpLoopBackOff : BitVec 13 := -228
 def evm_exp_canonical (mulOff : BitVec 21) : Program :=
   evm_exp mulOff canonicalExpCondMulSkipOff canonicalExpLoopBackOff
 
+theorem canonicalExpCondMulSkipOff_eq :
+    canonicalExpCondMulSkipOff = 108 := rfl
+
+theorem canonicalExpLoopBackOff_eq :
+    canonicalExpLoopBackOff = -228 := rfl
+
+theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
+    evm_exp_canonical mulOff =
+      evm_exp mulOff canonicalExpCondMulSkipOff canonicalExpLoopBackOff := rfl
+
 theorem evm_exp_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     (evm_exp mulOff skipOff backOff).length = 75 := by
   show ((((exp_prologue ;;
