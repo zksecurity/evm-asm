@@ -300,6 +300,22 @@ theorem runExpStack?_zero_exponent
   rw [ExpArgs.expDynamicCostFromArgs_zero_exponent]
   rw [ExpArgs.expTotalGasFromArgs_zero_exponent]
 
+theorem runExpStack?_zero_zero
+    (rest : List EvmWord) :
+    runExpStack? { stack := (0 : EvmWord) :: 0 :: rest } =
+      some
+        { effects := { stackWords := [1], dynamicGas := 0, totalGas := 10 }
+          stack := rest } := by
+  exact runExpStack?_zero_exponent 0 rest
+
+theorem runExpStack?_max_zero_exponent
+    (rest : List EvmWord) :
+    runExpStack? { stack := (-1 : EvmWord) :: 0 :: rest } =
+      some
+        { effects := { stackWords := [1], dynamicGas := 0, totalGas := 10 }
+          stack := rest } := by
+  exact runExpStack?_zero_exponent (-1 : EvmWord) rest
+
 theorem runExpStack?_one_exponent
     (base : EvmWord) (rest : List EvmWord) :
     runExpStack? { stack := base :: 1 :: rest } =
@@ -310,6 +326,30 @@ theorem runExpStack?_one_exponent
   rw [ExpArgs.expResultFromArgs_one_right]
   rw [ExpArgs.expDynamicCostFromArgs_one_exponent]
   rw [ExpArgs.expTotalGasFromArgs_one_exponent]
+
+theorem runExpStack?_two_one
+    (rest : List EvmWord) :
+    runExpStack? { stack := (2 : EvmWord) :: 1 :: rest } =
+      some
+        { effects := { stackWords := [2], dynamicGas := 50, totalGas := 60 }
+          stack := rest } := by
+  exact runExpStack?_one_exponent 2 rest
+
+theorem runExpStack?_zero_one
+    (rest : List EvmWord) :
+    runExpStack? { stack := (0 : EvmWord) :: 1 :: rest } =
+      some
+        { effects := { stackWords := [0], dynamicGas := 50, totalGas := 60 }
+          stack := rest } := by
+  exact runExpStack?_one_exponent 0 rest
+
+theorem runExpStack?_max_one_exponent
+    (rest : List EvmWord) :
+    runExpStack? { stack := (-1 : EvmWord) :: 1 :: rest } =
+      some
+        { effects := { stackWords := [(-1 : EvmWord)], dynamicGas := 50, totalGas := 60 }
+          stack := rest } := by
+  exact runExpStack?_one_exponent (-1 : EvmWord) rest
 
 theorem runExpStack?_one_left
     (exponent : EvmWord) (rest : List EvmWord) :
@@ -325,6 +365,52 @@ theorem runExpStack?_one_left
   rw [runExpStack?_cons]
   rw [ExpArgs.expResultFromArgs_one_left]
 
+theorem runExpStack?_zero_left_of_ne_zero
+    (exponent : EvmWord) (h_ne : exponent ≠ 0)
+    (rest : List EvmWord) :
+    runExpStack? { stack := (0 : EvmWord) :: exponent :: rest } =
+      some
+        { effects :=
+            { stackWords := [0]
+              dynamicGas := ExpArgs.expDynamicCostFromArgs
+                (ExpArgs.expArgs 0 exponent)
+              totalGas := ExpArgs.expTotalGasFromArgs
+                (ExpArgs.expArgs 0 exponent) }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_zero_left_of_ne_zero exponent h_ne]
+
+theorem runExpStack?_zero_left_of_toNat_pos
+    (exponent : EvmWord) (h_pos : 0 < exponent.toNat)
+    (rest : List EvmWord) :
+    runExpStack? { stack := (0 : EvmWord) :: exponent :: rest } =
+      some
+        { effects :=
+            { stackWords := [0]
+              dynamicGas := ExpArgs.expDynamicCostFromArgs
+                (ExpArgs.expArgs 0 exponent)
+              totalGas := ExpArgs.expTotalGasFromArgs
+                (ExpArgs.expArgs 0 exponent) }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_zero_left_of_toNat_pos exponent h_pos]
+
+theorem runExpStack?_two_64
+    (rest : List EvmWord) :
+    runExpStack? { stack := (2 : EvmWord) :: 64 :: rest } =
+      some
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^64)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  simp only [ExpArgs.expResultFromArgs, ExpArgs.expArgs,
+    ExpArgs.expDynamicCostFromArgs, ExpArgs.expTotalGasFromArgs]
+  rw [EvmWord.exp_two_64]
+  rw [ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)]
+  rw [ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)]
+
 theorem runExpStack?_two_256
     (rest : List EvmWord) :
     runExpStack? { stack := (2 : EvmWord) :: 256 :: rest } =
@@ -335,6 +421,38 @@ theorem runExpStack?_two_256
   rw [ExpArgs.expResultFromArgs_two_256]
   rw [ExpArgs.expDynamicCostFromArgs_256_exponent]
   rw [ExpArgs.expTotalGasFromArgs_256_exponent]
+
+theorem runExpStack?_two_128
+    (rest : List EvmWord) :
+    runExpStack? { stack := (2 : EvmWord) :: 128 :: rest } =
+      some
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^128)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  simp only [ExpArgs.expResultFromArgs, ExpArgs.expArgs,
+    ExpArgs.expDynamicCostFromArgs, ExpArgs.expTotalGasFromArgs]
+  rw [EvmWord.exp_two_128]
+  rw [ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)]
+  rw [ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)]
+
+theorem runExpStack?_two_255
+    (rest : List EvmWord) :
+    runExpStack? { stack := (2 : EvmWord) :: 255 :: rest } =
+      some
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^255)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  simp only [ExpArgs.expResultFromArgs, ExpArgs.expArgs,
+    ExpArgs.expDynamicCostFromArgs, ExpArgs.expTotalGasFromArgs]
+  rw [EvmWord.exp_two_255]
+  rw [ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)]
+  rw [ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)]
 
 theorem runExpStack?_max_exponent_gas
     (base : EvmWord) (rest : List EvmWord) :
