@@ -336,6 +336,22 @@ theorem runExpStack?_two_256
   rw [ExpArgs.expDynamicCostFromArgs_256_exponent]
   rw [ExpArgs.expTotalGasFromArgs_256_exponent]
 
+theorem runExpStack?_two_128
+    (rest : List EvmWord) :
+    runExpStack? { stack := (2 : EvmWord) :: 128 :: rest } =
+      some
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^128)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  simp only [ExpArgs.expResultFromArgs, ExpArgs.expArgs,
+    ExpArgs.expDynamicCostFromArgs, ExpArgs.expTotalGasFromArgs]
+  rw [EvmWord.exp_two_128]
+  rw [ExpGas.expDynamicCostFromExponent_of_pos_lt_256 (by decide) (by decide)]
+  rw [ExpGas.expTotalGasFromExponent_of_pos_lt_256 (by decide) (by decide)]
+
 theorem runExpStack?_max_exponent_gas
     (base : EvmWord) (rest : List EvmWord) :
     (runExpStack? { stack := base :: (-1 : EvmWord) :: rest }).map
