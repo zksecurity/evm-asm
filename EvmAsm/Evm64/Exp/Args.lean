@@ -115,6 +115,15 @@ theorem stackAfterExp_zero_exponent (base : EvmWord) (rest : List EvmWord) :
     stackAfterExp (expArgs base 0) rest = 1 :: rest := by
   rw [stackAfterExp, expResultFromArgs_zero_right]
 
+theorem stackAfterExp_zero_left_of_ne_zero
+    (exponent : EvmWord) (rest : List EvmWord) (h : exponent ≠ 0) :
+    stackAfterExp (expArgs 0 exponent) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_left_of_ne_zero exponent h]
+
+theorem stackAfterExp_one_left (exponent : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs 1 exponent) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_one_left]
+
 theorem stackAfterExp_one_exponent (base : EvmWord) (rest : List EvmWord) :
     stackAfterExp (expArgs base 1) rest = base :: rest := by
   rw [stackAfterExp, expResultFromArgs_one_right]
