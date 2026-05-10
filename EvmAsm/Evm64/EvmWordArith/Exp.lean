@@ -30,6 +30,10 @@ theorem exp_zero_right (base : EvmWord) : exp base 0 = 1 := by
   rw [exp_correct]
   simp
 
+/-- The maximum EVM word raised to zero is one. -/
+theorem exp_max_zero_right : exp (-1 : EvmWord) 0 = 1 := by
+  exact exp_zero_right (-1 : EvmWord)
+
 /-- One raised to any exponent remains one. -/
 theorem exp_one_left (exponent : EvmWord) : exp 1 exponent = 1 := by
   apply BitVec.eq_of_toNat_eq
@@ -47,11 +51,36 @@ theorem exp_zero_left_of_ne_zero (exponent : EvmWord) (h : exponent ≠ 0) :
     · exact hp
   simp [Nat.zero_pow hpos]
 
+/-- Zero raised to an exponent with positive Nat value remains zero. -/
+theorem exp_zero_left_of_toNat_pos (exponent : EvmWord)
+    (h_pos : 0 < exponent.toNat) :
+    exp 0 exponent = 0 := by
+  exact exp_zero_left_of_ne_zero exponent (by
+    intro h_zero
+    rw [h_zero] at h_pos
+    simp at h_pos)
+
+/-- Zero raised to one remains zero. -/
+theorem exp_zero_one : exp (0 : EvmWord) 1 = 0 := by
+  exact exp_zero_left_of_ne_zero 1 (by decide)
+
+/-- Zero raised to the maximum EVM word exponent remains zero. -/
+theorem exp_zero_left_max : exp 0 (-1 : EvmWord) = 0 := by
+  exact exp_zero_left_of_ne_zero (-1 : EvmWord) (by decide)
+
 /-- Any base raised to the EVM word one is itself. -/
 theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
   apply BitVec.eq_of_toNat_eq
   rw [exp_correct]
   simp [Nat.mod_eq_of_lt base.isLt]
+
+/-- The maximum EVM word raised to one remains the maximum EVM word. -/
+theorem exp_max_one_right : exp (-1 : EvmWord) 1 = (-1 : EvmWord) := by
+  exact exp_one_right (-1 : EvmWord)
+
+/-- Two raised to one remains two. -/
+theorem exp_two_one : exp (2 : EvmWord) 1 = 2 := by
+  exact exp_one_right (2 : EvmWord)
 
 /-- Successor recurrence for EXP when the exponent increment does not wrap. -/
 theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
@@ -71,6 +100,11 @@ theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
   rw [Nat.mul_comm (base.toNat ^ exponent.toNat) base.toNat]
   rw [Nat.mul_mod]
   rw [Nat.mod_eq_of_lt base.isLt]
+
+/-- The GH #92 pre-wrap boundary case `EXP(2, 255)` is the high bit. -/
+theorem exp_two_255 : exp (2 : EvmWord) (255 : EvmWord) =
+    BitVec.ofNat 256 (2^255) := by
+  native_decide
 
 /-- The GH #92 boundary case `EXP(2, 256)` wraps to zero modulo `2^256`. -/
 theorem exp_two_256 : exp (2 : EvmWord) (256 : EvmWord) = 0 := by

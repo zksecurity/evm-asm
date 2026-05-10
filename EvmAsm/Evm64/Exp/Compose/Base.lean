@@ -5,8 +5,9 @@
   sub-block `CodeReq`s), subsumption helpers tying sub-block codes back to
   `expCode`, and shared length lemmas.
 
-  Skeleton placeholder for GH #92 (beads slice evm-asm-cf2c). Concrete
-  definitions will be added in the loop-composition slice (evm-asm-w5mk).
+  GH #92 composition work lands here and in sibling `Compose` modules.  This
+  file keeps the shared layout, byte-offset, and boundary/loop code facts small
+  enough for downstream top-code and semantic slices to import directly.
 -/
 
 import EvmAsm.Evm64.Stack
