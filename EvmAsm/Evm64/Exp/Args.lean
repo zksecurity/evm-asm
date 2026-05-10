@@ -128,6 +128,10 @@ theorem expResultFromArgs_one_right (base : EvmWord) :
     expResultFromArgs (expArgs base 1) = base := by
   exact EvmWord.exp_one_right base
 
+theorem expResultFromArgs_max_one_right :
+    expResultFromArgs (expArgs (-1 : EvmWord) 1) = (-1 : EvmWord) := by
+  exact expResultFromArgs_one_right (-1 : EvmWord)
+
 theorem expResultFromArgs_two_256 :
     expResultFromArgs (expArgs 2 256) = 0 := by
   exact EvmWord.exp_two_256
@@ -161,6 +165,10 @@ theorem stackAfterExp_one_left (exponent : EvmWord) (rest : List EvmWord) :
 theorem stackAfterExp_one_exponent (base : EvmWord) (rest : List EvmWord) :
     stackAfterExp (expArgs base 1) rest = base :: rest := by
   rw [stackAfterExp, expResultFromArgs_one_right]
+
+theorem stackAfterExp_max_one_exponent (rest : List EvmWord) :
+    stackAfterExp (expArgs (-1 : EvmWord) 1) rest = (-1 : EvmWord) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_max_one_right]
 
 theorem stackAfterExp_two_256 (rest : List EvmWord) :
     stackAfterExp (expArgs 2 256) rest = 0 :: rest := by
