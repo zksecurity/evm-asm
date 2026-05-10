@@ -341,6 +341,21 @@ theorem runExpStack?_one_left
   rw [runExpStack?_cons]
   rw [ExpArgs.expResultFromArgs_one_left]
 
+theorem runExpStack?_zero_left_of_ne_zero
+    (exponent : EvmWord) (h_ne : exponent ≠ 0)
+    (rest : List EvmWord) :
+    runExpStack? { stack := (0 : EvmWord) :: exponent :: rest } =
+      some
+        { effects :=
+            { stackWords := [0]
+              dynamicGas := ExpArgs.expDynamicCostFromArgs
+                (ExpArgs.expArgs 0 exponent)
+              totalGas := ExpArgs.expTotalGasFromArgs
+                (ExpArgs.expArgs 0 exponent) }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_zero_left_of_ne_zero exponent h_ne]
+
 theorem runExpStack?_two_64
     (rest : List EvmWord) :
     runExpStack? { stack := (2 : EvmWord) :: 64 :: rest } =
