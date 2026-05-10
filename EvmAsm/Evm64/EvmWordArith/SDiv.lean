@@ -68,6 +68,9 @@ theorem sdiv_neg_one_two : sdiv (-1 : EvmWord) 2 = 0 := by
 theorem sdiv_pos_neg_trunc : sdiv (7 : EvmWord) (-2) = (-3 : EvmWord) := by
   native_decide
 
+theorem sdiv_neg_pos_trunc : sdiv (-7 : EvmWord) 2 = (-3 : EvmWord) := by
+  native_decide
+
 -- ============================================================================
 -- Correctness vs `Int.tdiv` (the spec formula)
 -- ============================================================================
