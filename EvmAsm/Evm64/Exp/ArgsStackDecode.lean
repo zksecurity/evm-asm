@@ -210,6 +210,22 @@ theorem decodeExpStack?_map_exponent_eq
       | nil => rfl
       | cons exponent rest => rfl
 
+theorem decodeExpStack?_map_base_of_some
+    {stack : List EvmWord} {args : ExpArgs.Args}
+    (h : decodeExpStack? stack = some args) :
+    Option.map (fun args => args.base) (decodeExpStack? stack) =
+      some args.base := by
+  rw [h]
+  simp
+
+theorem decodeExpStack?_map_exponent_of_some
+    {stack : List EvmWord} {args : ExpArgs.Args}
+    (h : decodeExpStack? stack = some args) :
+    Option.map (fun args => args.exponent) (decodeExpStack? stack) =
+      some args.exponent := by
+  rw [h]
+  simp
+
 end ExpArgsStackDecode
 
 end EvmAsm.Evm64
