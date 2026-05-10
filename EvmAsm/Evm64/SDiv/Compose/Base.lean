@@ -316,4 +316,44 @@ theorem divisorSign_spec_in_sdivCode
       EvmAsm.Evm64.evm_sdivDivisorTopLimbOff sp sOld divisorTop
       (base + divisorSignOff) (by decide))
 
+theorem divCall_spec_in_sdivCode
+    (vOld : Word) (base : Word) :
+    cpsTripleWithin 1 (base + divCallOff)
+        ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+      (sdivCode base)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ ((base + divCallOff) + 4)) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_div_call_block_code
+          EvmAsm.Evm64.evm_sdivCallOff (base + divCallOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_divCall_sub (base := base) a i
+      (by simpa [divCallCode,
+        EvmAsm.Evm64.evm_sdiv_div_call_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_div_call_block_spec_within
+      EvmAsm.Evm64.evm_sdivCallOff vOld (base + divCallOff))
+
+theorem savedRaRet_spec_in_sdivCode
+    (vSavedRa : Word) (base : Word) :
+    cpsTripleWithin 1 (base + savedRaRetOff)
+        ((vSavedRa + signExtend12 (0 : BitVec 12)) &&& ~~~1)
+      (sdivCode base)
+      (.x18 ↦ᵣ vSavedRa)
+      (.x18 ↦ᵣ vSavedRa) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_code .x18
+          (base + savedRaRetOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_savedRaRet_sub (base := base) a i
+      (by simpa [savedRaRetCode,
+        EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_spec_within .x18
+      vSavedRa (base + savedRaRetOff))
+
 end EvmAsm.Evm64.SDiv.Compose
