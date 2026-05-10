@@ -140,6 +140,25 @@ DELEGATECALL, and RETURNDATACOPY.
 | `ReturnData.copyWriteByteAt_at_destination_add_of_in_bounds` | [`ReturnData/CopyMemory.lean#L101`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L101) | In-bounds RETURNDATACOPY writes the selected returndata byte at the destination address. |
 | `ReturnData.copyWriteByteAt_at_destination_add_of_out_of_bounds` | [`ReturnData/CopyMemory.lean#L110`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L110) | Out-of-bounds RETURNDATACOPY writes zero at the destination address. |
 
+### Handler table and supported-dispatch bridges
+
+The handler wrapper layer connects opcode-specific handlers to `HandlerTable`,
+raw-byte dispatch, and the supported interpreter loop. These are the reusable
+#107 entry points for wiring verified opcode handlers into the interpreter.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `HandlerTable.dispatchOpcode?_eq_some_iff` | [`HandlerTable.lean#L124`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L124) | Characterizes successful opcode lookup in a handler table. |
+| `HandlerTable.dispatchOpcode?_eq_none_iff` | [`HandlerTable.lean#L135`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L135) | Characterizes missing opcode lookup in a handler table. |
+| `HandlerTable.dispatchOpcode_some_preserves_status` | [`HandlerTable.lean#L171`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L171) | Lifts a handler status-preservation proof through table dispatch. |
+| `HandlerTable.dispatchOpcode_some_preserves_codeLenMatches` | [`HandlerTable.lean#L180`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L180) | Lifts handler `codeLenMatches` preservation through table dispatch. |
+| `HandlerTable.orElse_eq_some_iff` | [`HandlerTableCompose.lean#L158`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableCompose.lean#L158) | Characterizes successful lookup in composed handler tables. |
+| `HandlerTable.orElse_eq_none_iff` | [`HandlerTableCompose.lean#L172`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableCompose.lean#L172) | Characterizes missing lookup in composed handler tables. |
+| `HandlerTable.dispatchByte_decoded_lookup` | [`HandlerTableByte.lean#L64`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableByte.lean#L64) | Raw byte dispatch agrees with opcode dispatch when decoding and lookup succeed. |
+| `HandlerTable.dispatchByte_decoded_lookup_preserves_codeLenMatches` | [`HandlerTableByte.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableByte.lean#L106) | Raw byte dispatch preserves `codeLenMatches` under decoded lookup. |
+| `stepWithSupportedHandler_of_decode` | [`SupportedLoopBridge.lean#L31`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L31) | The supported loop handler agrees with supported table dispatch after byte decoding. |
+| `stepWithSupportedHandler_of_lookup` | [`SupportedLoopBridge.lean#L46`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L46) | The supported loop handler agrees with supported table dispatch after table lookup. |
+
 ## EvmWord arithmetic correctness
 
 The pure-Lean correctness theorems that say each `EvmWord.<op>` matches the
