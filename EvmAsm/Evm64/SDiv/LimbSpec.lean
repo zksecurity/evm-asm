@@ -90,6 +90,40 @@ theorem evm_sdiv_cond_negate_limb_step_spec_within
     (base + 16)
   runBlock L X A C S
 
+/-- 5-instruction conditional-negation limb step for limbs 1..3, where the
+    carry register is both the incoming carry source and the outgoing carry
+    destination. -/
+theorem evm_sdiv_cond_negate_limb_step_self_carry_spec_within
+    (addrReg maskReg valueReg carryReg : Reg) (limbOff : BitVec 12)
+    (vAddr mask valueOld carryIn limbVal : Word) (base : Word)
+    (hvalue_ne_x0 : valueReg ≠ .x0) (hcarry_ne_x0 : carryReg ≠ .x0) :
+    let mem := vAddr + signExtend12 limbOff
+    let xored := limbVal ^^^ mask
+    let sum := xored + carryIn
+    let carryOut := if BitVec.ult sum carryIn then (1 : Word) else 0
+    let code :=
+      evm_sdiv_cond_negate_limb_step_code addrReg carryReg maskReg valueReg
+        carryReg limbOff base
+    cpsTripleWithin 5 base (base + 20) code
+      ((addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
+       (valueReg ↦ᵣ valueOld) ** (carryReg ↦ᵣ carryIn) **
+       (mem ↦ₘ limbVal))
+      ((addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
+       (valueReg ↦ᵣ sum) ** (carryReg ↦ᵣ carryOut) **
+       (mem ↦ₘ sum)) := by
+  intro mem xored sum carryOut code
+  have L := ld_spec_gen_within valueReg addrReg vAddr valueOld limbVal
+    limbOff base hvalue_ne_x0
+  have X := xor_spec_gen_rd_eq_rs1_within valueReg maskReg limbVal mask
+    (base + 4) hvalue_ne_x0
+  have A := add_spec_gen_rd_eq_rs1_within valueReg carryReg xored carryIn
+    (base + 8) hvalue_ne_x0
+  have C := sltu_spec_gen_rd_eq_rs2_within carryReg valueReg sum carryIn
+    (base + 12) hcarry_ne_x0
+  have S := sd_spec_gen_within addrReg valueReg vAddr sum limbVal limbOff
+    (base + 16)
+  runBlock L X A C S
+
 /-- CodeReq for `evm_sdiv_save_ra_block` at byte offset `base`. -/
 abbrev evm_sdiv_save_ra_block_code (savedRaReg : Reg) (base : Word) : CodeReq :=
   CodeReq.ofProg base (evm_sdiv_save_ra_block savedRaReg)
