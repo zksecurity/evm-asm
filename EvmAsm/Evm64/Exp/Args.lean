@@ -128,6 +128,10 @@ theorem stackAfterExp_zero_exponent (base : EvmWord) (rest : List EvmWord) :
     stackAfterExp (expArgs base 0) rest = 1 :: rest := by
   rw [stackAfterExp, expResultFromArgs_zero_right]
 
+theorem stackAfterExp_zero_zero (rest : List EvmWord) :
+    stackAfterExp (expArgs 0 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_zero]
+
 theorem stackAfterExp_zero_left_of_ne_zero
     (exponent : EvmWord) (rest : List EvmWord) (h : exponent ≠ 0) :
     stackAfterExp (expArgs 0 exponent) rest = 0 :: rest := by
