@@ -117,4 +117,23 @@ theorem exp_squaring_marshal_pair_post_evmWordIs_right
   rw [exp_squaring_marshal_pair_post_evmWordIs]
   rw [sepConj_assoc']
 
+/-- Left-framed variant of `exp_squaring_marshal_pair_post_evmWordIs`: thread a
+    leading frame `P` so callers can fold the 8-limb sub-tree when it follows
+    already-framed registers or scratch slots. -/
+theorem exp_squaring_marshal_pair_post_evmWordIs_left
+    (evmSp r0 r1 r2 r3 : Word) (P : Assertion) :
+    (P **
+     (((evmSp + signExtend12 (0  : BitVec 12)) ↦ₘ r0) **
+      ((evmSp + signExtend12 (8  : BitVec 12)) ↦ₘ r1) **
+      ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+      ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+      ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ r0) **
+      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ r1) **
+      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ r2) **
+      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ r3))) =
+    (P **
+      (evmWordIs evmSp (expResultWord r0 r1 r2 r3) **
+        evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3))) := by
+  rw [exp_squaring_marshal_pair_post_evmWordIs]
+
 end EvmAsm.Evm64
