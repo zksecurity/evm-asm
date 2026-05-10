@@ -64,6 +64,15 @@ theorem expTotalGasFromArgs_eq (args : Args) :
     expTotalGasFromArgs args =
       ExpGas.expTotalGasFromExponent args.exponent := rfl
 
+theorem expTotalGasFromArgs_eq_static_add_dynamic (args : Args) :
+    expTotalGasFromArgs args =
+      EvmOpcode.staticGasCost .EXP + expDynamicCostFromArgs args := rfl
+
+theorem expTotalGasFromArgs_eq_dynamic_add_static (args : Args) :
+    expTotalGasFromArgs args =
+      expDynamicCostFromArgs args + EvmOpcode.staticGasCost .EXP := by
+  rw [expTotalGasFromArgs_eq_static_add_dynamic, Nat.add_comm]
+
 theorem stackAfterExp_eq (args : Args) (rest : List EvmWord) :
     stackAfterExp args rest = expResultFromArgs args :: rest := rfl
 
