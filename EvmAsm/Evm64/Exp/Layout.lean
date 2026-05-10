@@ -107,4 +107,9 @@ theorem ExpScratchpadLayout.eq_canonical
 theorem canonicalExpScratchpadLayout_valid :
     canonicalExpScratchpadLayout.Valid := {}
 
+/-- The canonical EXP scratchpad layout validity predicate is trivial. -/
+theorem canonicalExpScratchpadLayout_valid_iff_true :
+    canonicalExpScratchpadLayout.Valid ↔ True :=
+  ExpScratchpadLayout.valid_iff_true canonicalExpScratchpadLayout
+
 end EvmAsm.Evm64
