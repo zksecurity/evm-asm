@@ -70,6 +70,24 @@ structure ExpScratchpadLayout : Type where
     accumulator-limb cells (currently inlined as `sp + 0 .. sp + 24`). -/
 structure ExpScratchpadLayout.Valid (_L : ExpScratchpadLayout) : Prop where
 
+/-- Every current EXP scratchpad layout is valid.
+
+    This is a convenience wrapper for downstream specs that already take an
+    `ExpScratchpadLayout` parameter while the layout is still empty. -/
+theorem ExpScratchpadLayout.valid_any_empty
+    (L : ExpScratchpadLayout) :
+    L.Valid := {}
+
+/-- The current empty EXP scratchpad layout validity predicate is trivial. -/
+theorem ExpScratchpadLayout.valid_iff_true
+    (L : ExpScratchpadLayout) :
+    L.Valid ↔ True := by
+  constructor
+  · intro _h
+    trivial
+  · intro _h
+    exact L.valid_any_empty
+
 /-- The canonical EXP scratchpad layout.
 
     Trivial: there is nothing to choose, so canonical = the unique value.
@@ -77,9 +95,39 @@ structure ExpScratchpadLayout.Valid (_L : ExpScratchpadLayout) : Prop where
     today's hardcoded `sp + 0 .. sp + 24` accumulator cells. -/
 def canonicalExpScratchpadLayout : ExpScratchpadLayout := {}
 
+/-- Every current EXP scratchpad layout is the canonical empty layout. -/
+theorem ExpScratchpadLayout.eq_canonical
+    (L : ExpScratchpadLayout) :
+    L = canonicalExpScratchpadLayout := by
+  cases L
+  rfl
+
 /-- The canonical EXP scratchpad layout is `Valid`. Trivially discharged
     because the layout struct is empty. -/
 theorem canonicalExpScratchpadLayout_valid :
     canonicalExpScratchpadLayout.Valid := {}
+
+/-- A layout equal to the current canonical EXP scratchpad layout is valid. -/
+theorem ExpScratchpadLayout.valid_of_eq_canonical
+    {L : ExpScratchpadLayout}
+    (h_eq : L = canonicalExpScratchpadLayout) :
+    L.Valid := by
+  subst h_eq
+  exact canonicalExpScratchpadLayout_valid
+
+/-- For the current empty EXP scratchpad layout, validity is equivalent to
+    being the canonical layout. -/
+theorem ExpScratchpadLayout.valid_iff_eq_canonical
+    (L : ExpScratchpadLayout) :
+    L.Valid ↔ L = canonicalExpScratchpadLayout := by
+  constructor
+  · intro _h
+    exact L.eq_canonical
+  · exact L.valid_of_eq_canonical
+
+/-- The canonical EXP scratchpad layout validity predicate is trivial. -/
+theorem canonicalExpScratchpadLayout_valid_iff_true :
+    canonicalExpScratchpadLayout.Valid ↔ True :=
+  ExpScratchpadLayout.valid_iff_true canonicalExpScratchpadLayout
 
 end EvmAsm.Evm64

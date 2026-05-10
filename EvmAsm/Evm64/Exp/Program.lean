@@ -88,6 +88,18 @@ theorem exp_square_block_length (mulOff : BitVec 21) :
 theorem exp_cond_mul_block_length (mulOff : BitVec 21) (skipOff : BitVec 13) :
     (exp_cond_mul_block mulOff skipOff).length = 2 := rfl
 
+theorem exp_bit_test_block_byte_length :
+    4 * exp_bit_test_block.length = 12 := by
+  rw [exp_bit_test_block_length]
+
+theorem exp_square_block_byte_length (mulOff : BitVec 21) :
+    4 * (exp_square_block mulOff).length = 4 := by
+  rw [exp_square_block_length]
+
+theorem exp_cond_mul_block_byte_length (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    4 * (exp_cond_mul_block mulOff skipOff).length = 8 := by
+  rw [exp_cond_mul_block_length]
+
 -- ----------------------------------------------------------------------------
 -- Per-iteration composite: exp_iter_body (#92 slice 3b, beads evm-asm-hdov)
 -- ----------------------------------------------------------------------------
@@ -880,6 +892,28 @@ def evm_exp (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : Program :=
   exp_loop_pointer_restore ;;
   exp_epilogue
 
+/-- Canonical BEQ offset for skipping the conditional-multiply taken branch. -/
+def canonicalExpCondMulSkipOff : BitVec 13 := 108
+
+/-- Canonical BNE back-edge offset from the loop tail to the iteration top. -/
+def canonicalExpLoopBackOff : BitVec 13 := -228
+
+/-- EXP program with the internal branch offsets pinned by the canonical layout.
+    The MUL call offset remains external because it depends on the caller's
+    placement of `mul_callable`. -/
+def evm_exp_canonical (mulOff : BitVec 21) : Program :=
+  evm_exp mulOff canonicalExpCondMulSkipOff canonicalExpLoopBackOff
+
+theorem canonicalExpCondMulSkipOff_eq :
+    canonicalExpCondMulSkipOff = 108 := rfl
+
+theorem canonicalExpLoopBackOff_eq :
+    canonicalExpLoopBackOff = -228 := rfl
+
+theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
+    evm_exp_canonical mulOff =
+      evm_exp mulOff canonicalExpCondMulSkipOff canonicalExpLoopBackOff := rfl
+
 theorem evm_exp_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     (evm_exp mulOff skipOff backOff).length = 75 := by
   show ((((exp_prologue ;;
@@ -897,5 +931,14 @@ theorem evm_exp_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
 theorem evm_exp_byte_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     4 * (evm_exp mulOff skipOff backOff).length = 300 := by
   rw [evm_exp_length]
+
+theorem evm_exp_canonical_length (mulOff : BitVec 21) :
+    (evm_exp_canonical mulOff).length = 75 := by
+  unfold evm_exp_canonical
+  rw [evm_exp_length]
+
+theorem evm_exp_canonical_byte_length (mulOff : BitVec 21) :
+    4 * (evm_exp_canonical mulOff).length = 300 := by
+  rw [evm_exp_canonical_length]
 
 end EvmAsm.Evm64

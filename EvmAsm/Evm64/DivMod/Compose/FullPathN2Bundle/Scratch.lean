@@ -2,6 +2,8 @@
   EvmAsm.Evm64.DivMod.Compose.FullPathN2Bundle.Scratch
 
   One-step irreducible scratch-state transitions for n=2 full-path wrappers.
+  The field projections stay transparent; only the transition bundles need
+  opacity for composition proofs.
 -/
 
 import EvmAsm.Evm64.DivMod.LoopDefs.Iter
@@ -13,19 +15,15 @@ open EvmAsm.Rv64
 def N2ScratchState : Type :=
   Word × Word × Word × Word
 
-@[irreducible]
 def n2ScratchRet (s : N2ScratchState) : Word :=
   s.1
 
-@[irreducible]
 def n2ScratchD (s : N2ScratchState) : Word :=
   s.2.1
 
-@[irreducible]
 def n2ScratchDLo (s : N2ScratchState) : Word :=
   s.2.2.1
 
-@[irreducible]
 def n2ScratchUn0 (s : N2ScratchState) : Word :=
   s.2.2.2
 

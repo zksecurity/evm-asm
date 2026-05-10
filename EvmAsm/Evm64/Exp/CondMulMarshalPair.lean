@@ -50,6 +50,36 @@ private theorem exp_loop_cond_mul_marshal_pair_codes_disjoint (base : Word) :
     exp_loop_marshal_a_to_factor2_length] at hk1 hk2
   bv_omega
 
+/-- factor1 sub-block ⊆ cond-mul marshal-pair code. -/
+theorem exp_loop_cond_mul_marshal_pair_code_factor1_sub
+    (base : Word) :
+    ∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
+      (exp_loop_cond_mul_marshal_pair_code base) a = some i := by
+  unfold exp_loop_cond_mul_marshal_pair_code
+  exact CodeReq.union_mono_left
+
+/-- a-to-factor2 sub-block ⊆ cond-mul marshal-pair code. -/
+theorem exp_loop_cond_mul_marshal_pair_code_a_to_factor2_sub
+    (base : Word) :
+    ∀ a i, (CodeReq.ofProg (base + 32) exp_loop_marshal_a_to_factor2) a = some i →
+      (exp_loop_cond_mul_marshal_pair_code base) a = some i := by
+  unfold exp_loop_cond_mul_marshal_pair_code
+  apply CodeReq.mono_union_right
+    (exp_loop_cond_mul_marshal_pair_codes_disjoint base)
+  intro a i h
+  exact h
+
+/-- Bundled per-sub-block subsumption witnesses for the cond-mul marshal-pair
+    code prefix. -/
+theorem exp_loop_cond_mul_marshal_pair_code_block_subs
+    (base : Word) :
+    (∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
+      (exp_loop_cond_mul_marshal_pair_code base) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 32) exp_loop_marshal_a_to_factor2) a = some i →
+      (exp_loop_cond_mul_marshal_pair_code base) a = some i) := by
+  exact ⟨exp_loop_cond_mul_marshal_pair_code_factor1_sub base,
+    exp_loop_cond_mul_marshal_pair_code_a_to_factor2_sub base⟩
+
 /-- Composition of `exp_loop_marshal_factor1` followed by
     `exp_loop_marshal_a_to_factor2`. The first block copies the running
     accumulator `r0..r3` from `sp[0..24]` into the LP64 factor-1 slot
