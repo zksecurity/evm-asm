@@ -107,6 +107,10 @@ theorem expResultFromArgs_zero_right (base : EvmWord) :
     expResultFromArgs (expArgs base 0) = 1 := by
   exact EvmWord.exp_zero_right base
 
+theorem expResultFromArgs_max_zero_right :
+    expResultFromArgs (expArgs (-1 : EvmWord) 0) = 1 := by
+  exact expResultFromArgs_zero_right (-1 : EvmWord)
+
 theorem expResultFromArgs_one_left (exponent : EvmWord) :
     expResultFromArgs (expArgs 1 exponent) = 1 := by
   exact EvmWord.exp_one_left exponent
@@ -143,6 +147,10 @@ theorem expResultFromArgs_zero_left_max :
 theorem stackAfterExp_zero_exponent (base : EvmWord) (rest : List EvmWord) :
     stackAfterExp (expArgs base 0) rest = 1 :: rest := by
   rw [stackAfterExp, expResultFromArgs_zero_right]
+
+theorem stackAfterExp_max_zero_exponent (rest : List EvmWord) :
+    stackAfterExp (expArgs (-1 : EvmWord) 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_max_zero_right]
 
 theorem stackAfterExp_zero_zero (rest : List EvmWord) :
     stackAfterExp (expArgs 0 0) rest = 1 :: rest := by
