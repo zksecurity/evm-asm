@@ -107,6 +107,14 @@ theorem ExpScratchpadLayout.eq_canonical
 theorem canonicalExpScratchpadLayout_valid :
     canonicalExpScratchpadLayout.Valid := {}
 
+/-- A layout equal to the current canonical EXP scratchpad layout is valid. -/
+theorem ExpScratchpadLayout.valid_of_eq_canonical
+    {L : ExpScratchpadLayout}
+    (h_eq : L = canonicalExpScratchpadLayout) :
+    L.Valid := by
+  subst h_eq
+  exact canonicalExpScratchpadLayout_valid
+
 /-- The canonical EXP scratchpad layout validity predicate is trivial. -/
 theorem canonicalExpScratchpadLayout_valid_iff_true :
     canonicalExpScratchpadLayout.Valid ↔ True :=
