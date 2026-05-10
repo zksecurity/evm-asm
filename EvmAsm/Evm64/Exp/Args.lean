@@ -158,6 +158,10 @@ theorem expResultFromArgs_two_128 :
     expResultFromArgs (expArgs 2 128) = BitVec.ofNat 256 (2^128) := by
   exact EvmWord.exp_two_128
 
+theorem expResultFromArgs_two_255 :
+    expResultFromArgs (expArgs 2 255) = BitVec.ofNat 256 (2^255) := by
+  exact EvmWord.exp_two_255
+
 theorem expResultFromArgs_two_256 :
     expResultFromArgs (expArgs 2 256) = 0 := by
   exact EvmWord.exp_two_256
@@ -217,6 +221,11 @@ theorem stackAfterExp_two_128 (rest : List EvmWord) :
     stackAfterExp (expArgs 2 128) rest =
       BitVec.ofNat 256 (2^128) :: rest := by
   rw [stackAfterExp, expResultFromArgs_two_128]
+
+theorem stackAfterExp_two_255 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 255) rest =
+      BitVec.ofNat 256 (2^255) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_255]
 
 theorem stackAfterExp_two_256 (rest : List EvmWord) :
     stackAfterExp (expArgs 2 256) rest = 0 :: rest := by
