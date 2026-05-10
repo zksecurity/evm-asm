@@ -74,5 +74,9 @@ theorem sdivResultFromArgs_pos_neg_trunc :
     sdivResultFromArgs (sdivArgs 7 (-2)) = (-3 : EvmWord) := by
   exact EvmWord.sdiv_pos_neg_trunc
 
+theorem sdivResultFromArgs_neg_pos_trunc :
+    sdivResultFromArgs (sdivArgs (-7) 2) = (-3 : EvmWord) := by
+  exact EvmWord.sdiv_neg_pos_trunc
+
 end SDivArgs
 end EvmAsm.Evm64
