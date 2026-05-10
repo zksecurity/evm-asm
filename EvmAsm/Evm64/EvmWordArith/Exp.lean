@@ -47,6 +47,15 @@ theorem exp_zero_left_of_ne_zero (exponent : EvmWord) (h : exponent ≠ 0) :
     · exact hp
   simp [Nat.zero_pow hpos]
 
+/-- Zero raised to an exponent with positive Nat value remains zero. -/
+theorem exp_zero_left_of_toNat_pos (exponent : EvmWord)
+    (h_pos : 0 < exponent.toNat) :
+    exp 0 exponent = 0 := by
+  exact exp_zero_left_of_ne_zero exponent (by
+    intro h_zero
+    rw [h_zero] at h_pos
+    simp at h_pos)
+
 /-- Any base raised to the EVM word one is itself. -/
 theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
   apply BitVec.eq_of_toNat_eq
