@@ -35,6 +35,13 @@ def expGasOneByteExponentVector : TestVector ExpGasInput Nat :=
     input := { exponent := 1 }
     expected := .value 60 }
 
+/-- Exponent 255 is the upper end of the one-byte exponent gas range.
+    Distinctive token: exp-gas-one-byte-upper. -/
+def expGasOneByteUpperVector : TestVector ExpGasInput Nat :=
+  { id := "exp-gas-one-byte-upper"
+    input := { exponent := 255 }
+    expected := .value 60 }
+
 /-- Exponent 256 is the first two-byte threshold and charges 10 + 2 * 50. -/
 def expGasTwoByteThresholdVector : TestVector ExpGasInput Nat :=
   { id := "exp-gas-two-byte-threshold"
@@ -47,6 +54,11 @@ theorem runExpGas_zero :
 
 theorem runExpGas_one :
     runExpGas { exponent := (1 : EvmWord) } = 60 :=
+  EvmAsm.Evm64.ExpGas.expTotalGasFromExponent_of_pos_lt_256
+    (by decide) (by decide)
+
+theorem runExpGas_255 :
+    runExpGas { exponent := (255 : EvmWord) } = 60 :=
   EvmAsm.Evm64.ExpGas.expTotalGasFromExponent_of_pos_lt_256
     (by decide) (by decide)
 
@@ -70,6 +82,14 @@ theorem expGasOneByteExponentVector_passed :
     60
     runExpGas_one
 
+theorem expGasOneByteUpperVector_passed :
+    checkVector runExpGas expGasOneByteUpperVector = .passed :=
+  checkVector_value_passed runExpGas
+    "exp-gas-one-byte-upper"
+    { exponent := (255 : EvmWord) }
+    60
+    runExpGas_255
+
 theorem expGasTwoByteThresholdVector_passed :
     checkVector runExpGas expGasTwoByteThresholdVector = .passed :=
   checkVector_value_passed runExpGas
@@ -83,6 +103,7 @@ theorem expGasTwoByteThresholdVector_passed :
 def expGasConformanceVectorIds : List String :=
   [ expGasZeroExponentVector.id
   , expGasOneByteExponentVector.id
+  , expGasOneByteUpperVector.id
   , expGasTwoByteThresholdVector.id
   ]
 
@@ -90,11 +111,12 @@ theorem expGasConformanceVectorIds_eq :
     expGasConformanceVectorIds =
       [ "exp-gas-zero-exponent"
       , "exp-gas-one-byte-exponent"
+      , "exp-gas-one-byte-upper"
       , "exp-gas-two-byte-threshold"
       ] := rfl
 
 theorem expGasConformanceVectorIds_length :
-    expGasConformanceVectorIds.length = 3 := rfl
+    expGasConformanceVectorIds.length = 4 := rfl
 
 theorem expGasConformanceVectorIds_nodup :
     expGasConformanceVectorIds.Nodup := by
@@ -105,13 +127,15 @@ theorem expGasConformanceVectorIds_nodup :
 def expGasConformanceVectors : List CheckResult :=
   [ checkVector runExpGas expGasZeroExponentVector
   , checkVector runExpGas expGasOneByteExponentVector
+  , checkVector runExpGas expGasOneByteUpperVector
   , checkVector runExpGas expGasTwoByteThresholdVector
   ]
 
 theorem expGasConformanceVectors_passed :
-    expGasConformanceVectors = [.passed, .passed, .passed] := by
+    expGasConformanceVectors = [.passed, .passed, .passed, .passed] := by
   simp [expGasConformanceVectors, expGasZeroExponentVector_passed,
-    expGasOneByteExponentVector_passed, expGasTwoByteThresholdVector_passed]
+    expGasOneByteExponentVector_passed, expGasOneByteUpperVector_passed,
+    expGasTwoByteThresholdVector_passed]
 
 end ExpGas
 end Conformance
