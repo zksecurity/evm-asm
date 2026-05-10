@@ -132,4 +132,30 @@ theorem exp_loop_back_evm_exp_with_mul_spec_within (c : Word)
   cpsBranchWithin_extend_evmExpWithMulCode
     (exp_loop_back_evm_exp_spec_within c mulOff skipOff backOff base target htarget)
 
+/-- Squaring-call JAL lifted to the full-loop EXP+MUL code bundle. -/
+theorem exp_squaring_square_evm_exp_with_mul_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (vOld : Word) (base mulTarget : Word)
+    (hmul : ((base + 104) + signExtend21 mulOff : Word) = mulTarget) :
+    cpsTripleWithin 1 (base + 104) mulTarget
+      (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ (base + 108)) :=
+  cpsTripleWithin_extend_evmExpWithMulCode
+    (exp_squaring_square_evm_exp_spec_within
+      mulOff skipOff backOff vOld base mulTarget hmul)
+
+/-- Conditional-multiply JAL lifted to the full-loop EXP+MUL code bundle. -/
+theorem exp_cond_mul_square_evm_exp_with_mul_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (vOld : Word) (base mulTarget : Word)
+    (hmul : ((base + 212) + signExtend21 mulOff : Word) = mulTarget) :
+    cpsTripleWithin 1 (base + 212) mulTarget
+      (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ (base + 216)) :=
+  cpsTripleWithin_extend_evmExpWithMulCode
+    (exp_cond_mul_square_evm_exp_spec_within
+      mulOff skipOff backOff vOld base mulTarget hmul)
+
 end EvmAsm.Evm64.Exp.Compose
