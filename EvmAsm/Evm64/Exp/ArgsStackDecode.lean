@@ -112,6 +112,19 @@ theorem decodeExpStack?_eq_none_iff_length_lt_two
       | cons exponent rest =>
           simp [decodeExpStack?]
 
+theorem decodeExpStack?_isSome_iff_length_ge_two
+    {stack : List EvmWord} :
+    (decodeExpStack? stack).isSome ↔ 2 ≤ stack.length := by
+  cases stack with
+  | nil =>
+      simp [decodeExpStack?]
+  | cons base tail =>
+      cases tail with
+      | nil =>
+          simp [decodeExpStack?]
+      | cons exponent rest =>
+          simp [decodeExpStack?]
+
 theorem decodeExpStack?_none_of_empty :
     decodeExpStack? [] = none := rfl
 
