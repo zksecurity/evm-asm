@@ -230,6 +230,26 @@ theorem runExpStack?_gas
         ( ExpArgs.expDynamicCostFromArgs (ExpArgs.expArgs base exponent)
         , ExpArgs.expTotalGasFromArgs (ExpArgs.expArgs base exponent)) := rfl
 
+theorem runExpStack?_dynamicGas_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.dynamicGas =
+      ExpArgs.expDynamicCostFromArgs (ExpArgs.expArgs base exponent) := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+theorem runExpStack?_totalGas_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.totalGas =
+      ExpArgs.expTotalGasFromArgs (ExpArgs.expArgs base exponent) := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
 theorem runExpStack?_totalGas_eq_dynamicGas_add_static
     {state : ExpStackState} {out : ExpStackResult}
     (h_run : runExpStack? state = some out) :
