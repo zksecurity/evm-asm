@@ -111,6 +111,18 @@ theorem expResultFromArgs_two_256 :
     expResultFromArgs (expArgs 2 256) = 0 := by
   exact EvmWord.exp_two_256
 
+theorem stackAfterExp_zero_exponent (base : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs base 0) rest = 1 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_zero_right]
+
+theorem stackAfterExp_one_exponent (base : EvmWord) (rest : List EvmWord) :
+    stackAfterExp (expArgs base 1) rest = base :: rest := by
+  rw [stackAfterExp, expResultFromArgs_one_right]
+
+theorem stackAfterExp_two_256 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 256) rest = 0 :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_256]
+
 theorem expDynamicCostFromArgs_one_exponent (base : EvmWord) :
     expDynamicCostFromArgs (expArgs base 1) = 50 := by
   unfold expDynamicCostFromArgs expArgs
