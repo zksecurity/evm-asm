@@ -101,6 +101,11 @@ theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
   rw [Nat.mul_mod]
   rw [Nat.mod_eq_of_lt base.isLt]
 
+/-- The GH #92 cross-limb boundary case `EXP(2, 64)`. -/
+theorem exp_two_64 : exp (2 : EvmWord) (64 : EvmWord) =
+    BitVec.ofNat 256 (2^64) := by
+  native_decide
+
 /-- The GH #92 pre-wrap boundary case `EXP(2, 255)` is the high bit. -/
 theorem exp_two_255 : exp (2 : EvmWord) (255 : EvmWord) =
     BitVec.ofNat 256 (2^255) := by
