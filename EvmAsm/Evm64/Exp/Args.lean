@@ -150,6 +150,18 @@ theorem expResultFromArgs_max_one_right :
     expResultFromArgs (expArgs (-1 : EvmWord) 1) = (-1 : EvmWord) := by
   exact expResultFromArgs_one_right (-1 : EvmWord)
 
+theorem expResultFromArgs_two_64 :
+    expResultFromArgs (expArgs 2 64) = BitVec.ofNat 256 (2^64) := by
+  exact EvmWord.exp_two_64
+
+theorem expResultFromArgs_two_128 :
+    expResultFromArgs (expArgs 2 128) = BitVec.ofNat 256 (2^128) := by
+  exact EvmWord.exp_two_128
+
+theorem expResultFromArgs_two_255 :
+    expResultFromArgs (expArgs 2 255) = BitVec.ofNat 256 (2^255) := by
+  exact EvmWord.exp_two_255
+
 theorem expResultFromArgs_two_256 :
     expResultFromArgs (expArgs 2 256) = 0 := by
   exact EvmWord.exp_two_256
@@ -199,6 +211,21 @@ theorem stackAfterExp_two_one (rest : List EvmWord) :
 theorem stackAfterExp_max_one_exponent (rest : List EvmWord) :
     stackAfterExp (expArgs (-1 : EvmWord) 1) rest = (-1 : EvmWord) :: rest := by
   rw [stackAfterExp, expResultFromArgs_max_one_right]
+
+theorem stackAfterExp_two_64 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 64) rest =
+      BitVec.ofNat 256 (2^64) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_64]
+
+theorem stackAfterExp_two_128 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 128) rest =
+      BitVec.ofNat 256 (2^128) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_128]
+
+theorem stackAfterExp_two_255 (rest : List EvmWord) :
+    stackAfterExp (expArgs 2 255) rest =
+      BitVec.ofNat 256 (2^255) :: rest := by
+  rw [stackAfterExp, expResultFromArgs_two_255]
 
 theorem stackAfterExp_two_256 (rest : List EvmWord) :
     stackAfterExp (expArgs 2 256) rest = 0 :: rest := by
