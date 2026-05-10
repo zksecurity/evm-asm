@@ -105,4 +105,31 @@ theorem evmExpWithMulCode_block_subs {base mulTarget : Word}
      fun a i h => evmExpWithMulCode_exp_sub a i (h_epilogue a i h),
      evmExpWithMulCode_mul_sub hd⟩
 
+/-- Bit-test block lifted to the full-loop EXP+MUL code bundle. -/
+theorem exp_bit_test_evm_exp_with_mul_spec_within
+    (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin 3 (base + 28) (base + 40)
+      (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ (e >>> (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
+       (.x10 ↦ᵣ (e &&& signExtend12 (1 : BitVec 12)))) :=
+  cpsTripleWithin_extend_evmExpWithMulCode
+    (exp_bit_test_evm_exp_spec_within e c v10 mulOff skipOff backOff base)
+
+/-- Loop-back block lifted to the full-loop EXP+MUL code bundle. -/
+theorem exp_loop_back_evm_exp_with_mul_spec_within (c : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget target : Word)
+    (htarget : ((base + 252) + 4 : Word) + signExtend13 backOff = target) :
+    let cNew := c + signExtend12 ((-1 : BitVec 12))
+    cpsBranchWithin 2 (base + 252)
+      (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
+      ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew ≠ 0⌝)
+      (base + 260) ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew = 0⌝) :=
+  cpsBranchWithin_extend_evmExpWithMulCode
+    (exp_loop_back_evm_exp_spec_within c mulOff skipOff backOff base target htarget)
+
 end EvmAsm.Evm64.Exp.Compose
