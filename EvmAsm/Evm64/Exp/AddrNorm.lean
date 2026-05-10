@@ -18,4 +18,21 @@ namespace EvmAsm.Evm64.Exp.AddrNorm
 
 open EvmAsm.Rv64
 
+@[exp_addr, grind =] theorem exp_se13_108 :
+    signExtend13 (108 : BitVec 13) = (108 : Word) := by decide
+
+@[exp_addr, grind =] theorem exp_se13_neg228 :
+    signExtend13 ((-228 : BitVec 13)) = (18446744073709551388 : Word) := by decide
+
+attribute [exp_addr]
+  signExtend12_0 signExtend12_1 signExtend12_8 signExtend12_16
+  signExtend12_24 signExtend12_32 signExtend12_40 signExtend12_48
+  signExtend12_56 signExtend12_64
+  signExtend12_neg16
+  signExtend12_4095 signExtend12_4088 signExtend12_4080 signExtend12_4072
+  signExtend12_4064 signExtend12_4056 signExtend12_4048 signExtend12_4040
+  signExtend12_4032 signExtend12_4024 signExtend12_4016 signExtend12_4008
+  signExtend12_4000 signExtend12_3992 signExtend12_3984 signExtend12_3976
+  signExtend12_3968 signExtend12_3960 signExtend12_3952 signExtend12_3944
+
 end EvmAsm.Evm64.Exp.AddrNorm
