@@ -88,6 +88,18 @@ theorem exp_square_block_length (mulOff : BitVec 21) :
 theorem exp_cond_mul_block_length (mulOff : BitVec 21) (skipOff : BitVec 13) :
     (exp_cond_mul_block mulOff skipOff).length = 2 := rfl
 
+theorem exp_bit_test_block_byte_length :
+    4 * exp_bit_test_block.length = 12 := by
+  rw [exp_bit_test_block_length]
+
+theorem exp_square_block_byte_length (mulOff : BitVec 21) :
+    4 * (exp_square_block mulOff).length = 4 := by
+  rw [exp_square_block_length]
+
+theorem exp_cond_mul_block_byte_length (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    4 * (exp_cond_mul_block mulOff skipOff).length = 8 := by
+  rw [exp_cond_mul_block_length]
+
 -- ----------------------------------------------------------------------------
 -- Per-iteration composite: exp_iter_body (#92 slice 3b, beads evm-asm-hdov)
 -- ----------------------------------------------------------------------------
