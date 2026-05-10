@@ -8,6 +8,7 @@
   Refs: GH #92, beads `evm-asm-b4asy`.
 -/
 
+import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.SquaringCall
 import EvmAsm.Evm64.Multiply.Callable
 
@@ -131,6 +132,18 @@ theorem exp_cond_mul_call_block_code_block_subs
     exp_cond_mul_call_block_code_marshal_a_to_factor2_sub base mulOff,
     exp_cond_mul_call_block_code_square_sub base mulOff,
     exp_cond_mul_call_block_code_un_marshal_and_restore_sub base mulOff⟩
+
+/-- The two-block cond-mul marshal-pair prefix is contained in the full
+    conditional-multiply call block code. -/
+theorem exp_cond_mul_call_block_code_marshal_pair_sub
+    (base : Word) (mulOff : BitVec 21) :
+    ∀ a i, (exp_loop_cond_mul_marshal_pair_code base) a = some i →
+      (exp_cond_mul_call_block_code base mulOff) a = some i := by
+  intro a i h
+  exact CodeReq.union_sub
+    (exp_cond_mul_call_block_code_marshal_factor1_sub base mulOff)
+    (exp_cond_mul_call_block_code_marshal_a_to_factor2_sub base mulOff)
+    a i h
 
 /-- CodeReq decomposition for the conditional-multiply step with its leading
     BEQ skip gate. The BEQ lives at `base`; the taken call block starts at

@@ -180,6 +180,15 @@ theorem runExpStack?_effects_stackWords_length
               cases h_run
               simp [resultCount, ExpArgs.resultCount]
 
+theorem runExpStack?_effects_stackWords_ne_nil
+    {state : ExpStackState} {out : ExpStackResult}
+    (h_run : runExpStack? state = some out) :
+    out.effects.stackWords ≠ [] := by
+  have h_len := runExpStack?_effects_stackWords_length h_run
+  intro h_nil
+  rw [h_nil] at h_len
+  simp [resultCount, ExpArgs.resultCount] at h_len
+
 theorem runExpStack?_stack_length
     {state : ExpStackState} {out : ExpStackResult}
     (h_run : runExpStack? state = some out) :
@@ -216,6 +225,31 @@ theorem runExpStack?_head?_of_some
   subst h_out
   rfl
 
+theorem runExpStack?_stackWords_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.stackWords =
+      [ExpArgs.expResultFromArgs (ExpArgs.expArgs base exponent)] := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+theorem runExpStack?_tail_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.stack = rest := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+theorem runExpStack?_stackAfterExp
+    (base exponent : EvmWord) (rest : List EvmWord) :
+    (runExpStack? { stack := base :: exponent :: rest }).map
+      (fun out => out.effects.stackWords ++ out.stack) =
+      some (ExpArgs.stackAfterExp (ExpArgs.expArgs base exponent) rest) := rfl
+
 theorem runExpStack?_gas
     (base exponent : EvmWord) (rest : List EvmWord) :
     (runExpStack? { stack := base :: exponent :: rest }).map
@@ -223,6 +257,26 @@ theorem runExpStack?_gas
       some
         ( ExpArgs.expDynamicCostFromArgs (ExpArgs.expArgs base exponent)
         , ExpArgs.expTotalGasFromArgs (ExpArgs.expArgs base exponent)) := rfl
+
+theorem runExpStack?_dynamicGas_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.dynamicGas =
+      ExpArgs.expDynamicCostFromArgs (ExpArgs.expArgs base exponent) := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
+
+theorem runExpStack?_totalGas_of_some
+    {base exponent : EvmWord} {rest : List EvmWord} {out : ExpStackResult}
+    (h_run : runExpStack? { stack := base :: exponent :: rest } = some out) :
+    out.effects.totalGas =
+      ExpArgs.expTotalGasFromArgs (ExpArgs.expArgs base exponent) := by
+  rw [runExpStack?_cons] at h_run
+  injection h_run with h_out
+  subst h_out
+  rfl
 
 theorem runExpStack?_totalGas_eq_dynamicGas_add_static
     {state : ExpStackState} {out : ExpStackResult}
@@ -245,6 +299,31 @@ theorem runExpStack?_zero_exponent
   rw [ExpArgs.expResultFromArgs_zero_right]
   rw [ExpArgs.expDynamicCostFromArgs_zero_exponent]
   rw [ExpArgs.expTotalGasFromArgs_zero_exponent]
+
+theorem runExpStack?_one_exponent
+    (base : EvmWord) (rest : List EvmWord) :
+    runExpStack? { stack := base :: 1 :: rest } =
+      some
+        { effects := { stackWords := [base], dynamicGas := 50, totalGas := 60 }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_one_right]
+  rw [ExpArgs.expDynamicCostFromArgs_one_exponent]
+  rw [ExpArgs.expTotalGasFromArgs_one_exponent]
+
+theorem runExpStack?_one_left
+    (exponent : EvmWord) (rest : List EvmWord) :
+    runExpStack? { stack := (1 : EvmWord) :: exponent :: rest } =
+      some
+        { effects :=
+            { stackWords := [1]
+              dynamicGas := ExpArgs.expDynamicCostFromArgs
+                (ExpArgs.expArgs 1 exponent)
+              totalGas := ExpArgs.expTotalGasFromArgs
+                (ExpArgs.expArgs 1 exponent) }
+          stack := rest } := by
+  rw [runExpStack?_cons]
+  rw [ExpArgs.expResultFromArgs_one_left]
 
 theorem runExpStack?_two_256
     (rest : List EvmWord) :

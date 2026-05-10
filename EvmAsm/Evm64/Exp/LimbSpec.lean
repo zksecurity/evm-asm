@@ -530,6 +530,10 @@ theorem expResultWord_getLimbN_3 (r0 r1 r2 r3 : Word) :
   unfold expResultWord
   rw [EvmWord.getLimbN_lt _ _ (by decide), EvmWord.getLimb_fromLimbs]
 
+theorem expResultWord_getLimbN_4 (r0 r1 r2 r3 : Word) :
+    (expResultWord r0 r1 r2 r3).getLimbN 4 = 0 := by
+  simp [EvmWord.getLimbN]
+
 /-- The four limbs written by `exp_epilogue` fold to the assembled EXP result
     word in the output stack slot at `evmSp + 32`. -/
 theorem exp_epilogue_result_word
