@@ -78,6 +78,16 @@ theorem ExpScratchpadLayout.valid_any_empty
     (L : ExpScratchpadLayout) :
     L.Valid := {}
 
+/-- The current empty EXP scratchpad layout validity predicate is trivial. -/
+theorem ExpScratchpadLayout.valid_iff_true
+    (L : ExpScratchpadLayout) :
+    L.Valid ↔ True := by
+  constructor
+  · intro _h
+    trivial
+  · intro _h
+    exact L.valid_any_empty
+
 /-- The canonical EXP scratchpad layout.
 
     Trivial: there is nothing to choose, so canonical = the unique value.
