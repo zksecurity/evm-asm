@@ -42,6 +42,9 @@ theorem exponentByteLengthNat_of_pos_lt_256 {n : Nat} (h_pos : 0 < n) (h_lt : n 
 theorem exponentByteLengthNat_256 : exponentByteLengthNat 256 = 2 := by
   native_decide
 
+theorem exponentByteLengthNat_one : exponentByteLengthNat 1 = 1 := by
+  exact exponentByteLengthNat_of_pos_lt_256 (by decide) (by decide)
+
 theorem exponentByteLengthNat_255 : exponentByteLengthNat 255 = 1 := by
   exact exponentByteLengthNat_of_pos_lt_256 (by decide) (by decide)
 
