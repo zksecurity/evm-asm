@@ -48,6 +48,9 @@ theorem exponentByteLengthNat_one : exponentByteLengthNat 1 = 1 := by
 theorem exponentByteLengthNat_255 : exponentByteLengthNat 255 = 1 := by
   exact exponentByteLengthNat_of_pos_lt_256 (by decide) (by decide)
 
+theorem exponentByteLengthNat_max : exponentByteLengthNat (2^256 - 1) = 32 := by
+  native_decide
+
 /-- Number of exponent bytes seen by EXP dynamic gas accounting. -/
 def exponentByteLength (exponent : EvmWord) : Nat :=
   exponentByteLengthNat exponent.toNat
