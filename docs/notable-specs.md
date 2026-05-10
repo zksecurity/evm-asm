@@ -123,6 +123,25 @@ states the stack pre/post over `evmStackIs`, and bounds the step count.
 > MLOAD / MSTORE stack specs are tracked under #102 / #99 and not yet
 > landed; this section will be extended as those PRs merge.
 
+### Storage argument, access, and gas bridges
+
+The SLOAD/SSTORE surface currently exposes pure stack decoders plus
+EIP-2929 warm/cold access and dynamic-gas bridges. These are the pieces used
+by the storage handler and conformance slices while the ECALL/stack-spec layer
+is still being connected.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `StorageArgs.decodeStorageStack?_eq_some_iff` | [`StorageArgs.lean#L172`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L172) | Successful SLOAD/SSTORE stack decoding is equivalent to one of the concrete stack layouts. |
+| `StorageArgs.decodeStorageStack?_eq_none_iff` | [`StorageArgs.lean#L230`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L230) | Decoder failure is exactly stack underflow for the selected storage opcode kind. |
+| `StorageArgs.decodeStorageStack?_writesStorage_of_some` | [`StorageArgs.lean#L224`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L224) | A successful decode exposes whether the opcode writes storage (`SSTORE`) or only reads (`SLOAD`). |
+| `StorageAccess.sloadDynamicCostForKey_of_warm` | [`StorageAccess.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L73) | SLOAD dynamic gas collapses to the warm-key cost when the key is already warm. |
+| `StorageAccess.sloadDynamicCostForKey_of_cold` | [`StorageAccess.lean#L78`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L78) | SLOAD dynamic gas collapses to the cold-key cost when the key is not warm. |
+| `StorageAccess.sstoreDynamicCostForKey_of_warm` | [`StorageAccess.lean#L98`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L98) | SSTORE dynamic gas uses the warm write-cost branch for already-warm keys. |
+| `StorageAccess.sstoreDynamicCostForKey_of_cold` | [`StorageAccess.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L106) | SSTORE dynamic gas adds the cold-key surcharge for first touches. |
+| `StorageAccessOutcome.sloadOutcome_warms` | [`StorageAccessOutcome.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L43) | SLOAD outcomes warm the accessed key for later operations. |
+| `StorageAccessOutcome.sstoreOutcome_warms` | [`StorageAccessOutcome.lean#L59`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L59) | SSTORE outcomes warm the accessed key for later operations. |
+
 ### CALL-family argument and returndata bridges
 
 The CALL-family surface currently exposes pure stack decoders and returndata
@@ -158,6 +177,23 @@ raw-byte dispatch, and the supported interpreter loop. These are the reusable
 | `HandlerTable.dispatchByte_decoded_lookup_preserves_codeLenMatches` | [`HandlerTableByte.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableByte.lean#L106) | Raw byte dispatch preserves `codeLenMatches` under decoded lookup. |
 | `stepWithSupportedHandler_of_decode` | [`SupportedLoopBridge.lean#L31`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L31) | The supported loop handler agrees with supported table dispatch after byte decoding. |
 | `stepWithSupportedHandler_of_lookup` | [`SupportedLoopBridge.lean#L46`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L46) | The supported loop handler agrees with supported table dispatch after table lookup. |
+
+### Interpreter simulation bridges
+
+The interpreter simulation layer relates the concrete handler/interpreter loop
+to the executable-spec handler surface. These bridges are the reusable
+entry-points for per-handler proofs and whole-loop conformance reasoning.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `InterpreterSimulation.stepWithHandler_matchesSpec` | [`InterpreterSimulation.lean#L50`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterSimulation.lean#L50) | One interpreter step with matching handlers agrees with the executable-spec step. |
+| `InterpreterSimulation.loopFuel_matchesSpec` | [`InterpreterSimulation.lean#L79`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterSimulation.lean#L79) | Fuel-bounded interpreter execution agrees with the executable-spec loop. |
+| `InterpreterTraceSimulation.loopTrace_matchesSpec` | [`InterpreterTraceSimulation.lean#L20`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterTraceSimulation.lean#L20) | Interpreter traces agree with executable-spec traces under a handler match. |
+| `InterpreterTraceSimulation.loopFuelAndTrace_matchesSpec` | [`InterpreterTraceSimulation.lean#L56`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterTraceSimulation.lean#L56) | Joint fuel-loop and trace execution agree with the executable spec. |
+| `InterpreterLoopSimulation.loopFuel_eq_of_loopResultsMatch` | [`InterpreterLoopSimulation.lean#L48`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterLoopSimulation.lean#L48) | `LoopResultsMatch` transports whole loop-fuel results. |
+| `HandlerLoopSimulationBridge.loopFuel_table_matchesSpec_at` | [`HandlerLoopSimulationBridge.lean#L169`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L169) | Handler-table dispatch agrees with the executable spec for a fixed initial state and fuel. |
+| `HandlerLoopSimulationBridge.loopFuelAndTrace_table_matchesSpec_at` | [`HandlerLoopSimulationBridge.lean#L356`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L356) | Handler-table fuel+trace execution agrees with the executable spec for a fixed initial state. |
+| `HandlerLoopSimulationBridge.loopResultsMatch_table_matchesSpec` | [`HandlerLoopSimulationBridge.lean#L537`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L537) | Bundled `LoopResultsMatch` entry point for handler-table/spec agreement. |
 
 ## EvmWord arithmetic correctness
 
