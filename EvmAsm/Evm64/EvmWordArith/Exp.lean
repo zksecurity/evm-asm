@@ -66,6 +66,10 @@ theorem exp_one_right (base : EvmWord) : exp base 1 = base := by
   rw [exp_correct]
   simp [Nat.mod_eq_of_lt base.isLt]
 
+/-- The maximum EVM word raised to one remains the maximum EVM word. -/
+theorem exp_max_one_right : exp (-1 : EvmWord) 1 = (-1 : EvmWord) := by
+  exact exp_one_right (-1 : EvmWord)
+
 /-- Successor recurrence for EXP when the exponent increment does not wrap. -/
 theorem exp_succ_right_of_toNat_lt (base exponent : EvmWord)
     (h : exponent.toNat + 1 < 2^256) :
