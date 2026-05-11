@@ -329,6 +329,14 @@ private theorem divK_copyAU_code_sub_divCode {base : Word} :
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left
 
+/-- CopyAU code (block 6) is subsumed by divCode_noNop. -/
+private theorem divK_copyAU_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (divK_copyAU_code (base + copyAUOff)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop divK_copyAU_code; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left
+
 /-- Full CopyAU: copy a[0..3] to u[0..3], set u[4]=0.
     base+396 → base+432 (9 instructions). -/
 theorem divK_copyAU_full_spec_within (sp : Word)
@@ -349,6 +357,25 @@ theorem divK_copyAU_full_spec_within (sp : Word)
   have hcopy := divK_copyAU_spec_within sp (base + copyAUOff) a0 a1 a2 a3 u0 u1 u2 u3 u4 v5
   rw [show (base + copyAUOff : Word) + 36 = base + loopSetupOff from by bv_addr] at hcopy
   exact cpsTripleWithin_extend_code divK_copyAU_code_sub_divCode hcopy
+
+theorem divK_copyAU_full_spec_within_noNop (sp : Word)
+    (a0 a1 a2 a3 : Word) (u0 u1 u2 u3 u4 v5 : Word) (base : Word) :
+    cpsTripleWithin 9 (base + copyAUOff) (base + loopSetupOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) **
+       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + signExtend12 4024) ↦ₘ u4))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ a3) **
+       ((sp + signExtend12 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + signExtend12 4056) ↦ₘ a0) ** ((sp + signExtend12 4048) ↦ₘ a1) **
+       ((sp + signExtend12 4040) ↦ₘ a2) ** ((sp + signExtend12 4032) ↦ₘ a3) **
+       ((sp + signExtend12 4024) ↦ₘ (0 : Word))) := by
+  have hcopy := divK_copyAU_spec_within sp (base + copyAUOff) a0 a1 a2 a3 u0 u1 u2 u3 u4 v5
+  rw [show (base + copyAUOff : Word) + 36 = base + loopSetupOff from by bv_addr] at hcopy
+  exact cpsTripleWithin_extend_code divK_copyAU_code_sub_divCode_noNop hcopy
 
 -- ============================================================================
 -- Section 10k: LoopSetup composition (4 instructions at base+432)
