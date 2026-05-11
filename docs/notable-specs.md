@@ -123,6 +123,107 @@ states the stack pre/post over `evmStackIs`, and bounds the step count.
 > MLOAD / MSTORE stack specs are tracked under #102 / #99 and not yet
 > landed; this section will be extended as those PRs merge.
 
+### Storage argument, access, and gas bridges
+
+The SLOAD/SSTORE surface currently exposes pure stack decoders plus
+EIP-2929 warm/cold access and dynamic-gas bridges. These are the pieces used
+by the storage handler and conformance slices while the ECALL/stack-spec layer
+is still being connected.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `StorageArgs.decodeStorageStack?_eq_some_iff` | [`StorageArgs.lean#L172`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L172) | Successful SLOAD/SSTORE stack decoding is equivalent to one of the concrete stack layouts. |
+| `StorageArgs.decodeStorageStack?_eq_none_iff` | [`StorageArgs.lean#L230`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L230) | Decoder failure is exactly stack underflow for the selected storage opcode kind. |
+| `StorageArgs.decodeStorageStack?_writesStorage_of_some` | [`StorageArgs.lean#L224`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageArgs.lean#L224) | A successful decode exposes whether the opcode writes storage (`SSTORE`) or only reads (`SLOAD`). |
+| `StorageAccess.sloadDynamicCostForKey_of_warm` | [`StorageAccess.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L73) | SLOAD dynamic gas collapses to the warm-key cost when the key is already warm. |
+| `StorageAccess.sloadDynamicCostForKey_of_cold` | [`StorageAccess.lean#L78`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L78) | SLOAD dynamic gas collapses to the cold-key cost when the key is not warm. |
+| `StorageAccess.sstoreDynamicCostForKey_of_warm` | [`StorageAccess.lean#L98`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L98) | SSTORE dynamic gas uses the warm write-cost branch for already-warm keys. |
+| `StorageAccess.sstoreDynamicCostForKey_of_cold` | [`StorageAccess.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccess.lean#L106) | SSTORE dynamic gas adds the cold-key surcharge for first touches. |
+| `StorageAccessWarm.warmKey_idempotent` | [`StorageAccessWarm.lean#L14`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/StorageAccessWarm.lean#L14) | Warming an already-present access key leaves the access list unchanged. |
+| `StorageAccessWarm.sloadDynamicCostForKey_warmKey_of_isWarm` | [`StorageAccessWarm.lean#L38`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/StorageAccessWarm.lean#L38) | SLOAD cost is unchanged by a redundant warm-key operation. |
+| `StorageGas.sstoreWriteCost_set` | [`StorageGas.lean#L86`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/StorageGas.lean#L86) | SSTORE write cost is the set cost when the current value is zero and the new value is nonzero. |
+| `StorageGas.sstoreWriteCost_reset` | [`StorageGas.lean#L93`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/StorageGas.lean#L93) | SSTORE write cost is the reset cost when the current value is nonzero and the write is not a no-op. |
+| `StorageAccessOutcome.sloadOutcome_warms` | [`StorageAccessOutcome.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L43) | SLOAD outcomes warm the accessed key for later operations. |
+| `StorageAccessOutcome.sstoreOutcome_warms` | [`StorageAccessOutcome.lean#L59`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/StorageAccessOutcome.lean#L59) | SSTORE outcomes warm the accessed key for later operations. |
+
+### Calldata copy program and partial specs
+
+CALLDATACOPY currently has a concrete RISC-V program plus partial preamble and
+memory-effect specs. The full destination-memory stack spec remains tied to
+the broader memory model work, but these are the #104 program/spec entry
+points already available for composition.
+
+| Declaration / Theorem | Defined at | Meaning |
+|---|---|---|
+| `evm_calldatacopy` | [`CopyProgram.lean#L107`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopyProgram.lean#L107) | Concrete 19-instruction RV64 program for CALLDATACOPY. |
+| `evm_calldatacopy_length` | [`CopyProgram.lean#L141`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopyProgram.lean#L141) | Program length fact used by code-region and byte-offset proofs. |
+| `evm_calldatacopy_preamble_spec_within` | [`CopySpec.lean#L77`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L77) | Hoare spec for the executable preamble before the byte-copy loop. |
+| `evm_calldatacopy_preamble_stack_spec_within` | [`CopySpec.lean#L156`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L156) | Stack-form lift of the CALLDATACOPY preamble spec. |
+| `evm_calldatacopy_full_code_preamble_stack_spec_within` | [`CopySpec.lean#L257`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L257) | Preamble stack spec transported to the full `evm_calldatacopy_code` region. |
+| `evm_calldatacopy_partial_memory_effect` | [`CopySpec.lean#L299`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/Calldata/CopySpec.lean#L299) | Partial memory-effect bridge: a destination byte equals the executable calldata byte at the matching source offset. |
+
+### CALL-family argument and returndata bridges
+
+The CALL-family surface currently exposes pure stack decoders and returndata
+copy bridges used by handler/conformance proofs for CALL, STATICCALL,
+DELEGATECALL, and RETURNDATACOPY.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `CallArgs.hasValueArgument_iff_call` | [`CallArgs.lean#L139`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L139) | Only CALL carries a value-transfer stack argument. |
+| `CallArgs.isStatic_iff_staticcall` | [`CallArgs.lean#L143`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L143) | STATICCALL is exactly the static call kind. |
+| `CallArgs.preservesCallerContext_iff_delegatecall` | [`CallArgs.lean#L147`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgs.lean#L147) | DELEGATECALL is exactly the caller-context-preserving kind. |
+| `CallArgsStackDecode.decodeCallFamilyStack?_eq_some_iff` | [`CallArgsStackDecode.lean#L433`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgsStackDecode.lean#L433) | Successful CALL-family stack decoding is equivalent to one of the three concrete argument layouts. |
+| `CallArgsStackDecode.decodeCallFamilyStack?_eq_none_iff` | [`CallArgsStackDecode.lean#L649`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/CallArgsStackDecode.lean#L649) | Decoder failure is exactly stack underflow for that call kind. |
+| `ReturnData.copyBytes_get` | [`ReturnData/Basic.lean#L49`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/Basic.lean#L49) | RETURNDATACOPY source bytes are copied from returndata, with zero padding handled by the bounds lemmas below. |
+| `ReturnData.copyWriteByteAt_at_destination_add_of_in_bounds` | [`ReturnData/CopyMemory.lean#L101`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L101) | In-bounds RETURNDATACOPY writes the selected returndata byte at the destination address. |
+| `ReturnData.copyWriteByteAt_at_destination_add_of_out_of_bounds` | [`ReturnData/CopyMemory.lean#L110`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/ReturnData/CopyMemory.lean#L110) | Out-of-bounds RETURNDATACOPY writes zero at the destination address. |
+| `returnDataHandler?_eq_some_iff` | [`ReturnDataHandlers.lean#L39`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/ReturnDataHandlers.lean#L39) | Characterizes the RETURNDATASIZE handler-table lookup. |
+| `returnDataHandler?_eq_none_iff` | [`ReturnDataHandlers.lean#L45`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/ReturnDataHandlers.lean#L45) | Characterizes missing returndata-handler lookups for non-RETURNDATASIZE opcodes. |
+| `dispatchOpcode_returnDataSizeHandlerTable_RETURNDATASIZE` | [`ReturnDataHandlers.lean#L70`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/ReturnDataHandlers.lean#L70) | Dispatching RETURNDATASIZE through its handler table runs the concrete handler. |
+| `dispatchOpcode_returnDataSizeHandlerTable_RETURNDATASIZE_status` | [`ReturnDataHandlers.lean#L76`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/ReturnDataHandlers.lean#L76) | The RETURNDATASIZE table-dispatch result preserves the status field. |
+
+### Handler table and supported-dispatch bridges
+
+The handler wrapper layer connects opcode-specific handlers to `HandlerTable`,
+raw-byte dispatch, and the supported interpreter loop. These are the reusable
+#107 entry points for wiring verified opcode handlers into the interpreter.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `HandlerTable.dispatchOpcode?_eq_some_iff` | [`HandlerTable.lean#L124`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L124) | Characterizes successful opcode lookup in a handler table. |
+| `HandlerTable.dispatchOpcode?_eq_none_iff` | [`HandlerTable.lean#L135`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L135) | Characterizes missing opcode lookup in a handler table. |
+| `HandlerTable.dispatchOpcode_some_preserves_status` | [`HandlerTable.lean#L171`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L171) | Lifts a handler status-preservation proof through table dispatch. |
+| `HandlerTable.dispatchOpcode_some_preserves_codeLenMatches` | [`HandlerTable.lean#L180`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTable.lean#L180) | Lifts handler `codeLenMatches` preservation through table dispatch. |
+| `HandlerTable.orElse_eq_some_iff` | [`HandlerTableCompose.lean#L158`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableCompose.lean#L158) | Characterizes successful lookup in composed handler tables. |
+| `HandlerTable.orElse_eq_none_iff` | [`HandlerTableCompose.lean#L172`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableCompose.lean#L172) | Characterizes missing lookup in composed handler tables. |
+| `HandlerTable.dispatchByte_decoded_lookup` | [`HandlerTableByte.lean#L64`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableByte.lean#L64) | Raw byte dispatch agrees with opcode dispatch when decoding and lookup succeed. |
+| `HandlerTable.dispatchByte_decoded_lookup_preserves_codeLenMatches` | [`HandlerTableByte.lean#L106`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerTableByte.lean#L106) | Raw byte dispatch preserves `codeLenMatches` under decoded lookup. |
+| `stepWithSupportedHandler_of_decode` | [`SupportedLoopBridge.lean#L31`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L31) | The supported loop handler agrees with supported table dispatch after byte decoding. |
+| `stepWithSupportedHandler_of_lookup` | [`SupportedLoopBridge.lean#L46`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/SupportedLoopBridge.lean#L46) | The supported loop handler agrees with supported table dispatch after table lookup. |
+
+### Interpreter simulation bridges
+
+The interpreter simulation layer relates the concrete handler/interpreter loop
+to the executable-spec handler surface. These bridges are the reusable
+entry-points for per-handler proofs and whole-loop conformance reasoning.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `InterpreterSimulation.stepWithHandler_matchesSpec` | [`InterpreterSimulation.lean#L50`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterSimulation.lean#L50) | One interpreter step with matching handlers agrees with the executable-spec step. |
+| `InterpreterSimulation.loopFuel_matchesSpec` | [`InterpreterSimulation.lean#L79`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterSimulation.lean#L79) | Fuel-bounded interpreter execution agrees with the executable-spec loop. |
+| `InterpreterTraceSimulation.loopTrace_matchesSpec` | [`InterpreterTraceSimulation.lean#L20`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterTraceSimulation.lean#L20) | Interpreter traces agree with executable-spec traces under a handler match. |
+| `InterpreterTraceSimulation.loopFuelAndTrace_matchesSpec` | [`InterpreterTraceSimulation.lean#L56`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterTraceSimulation.lean#L56) | Joint fuel-loop and trace execution agree with the executable spec. |
+| `InterpreterLoopSimulation.loopFuel_eq_of_loopResultsMatch` | [`InterpreterLoopSimulation.lean#L48`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/InterpreterLoopSimulation.lean#L48) | `LoopResultsMatch` transports whole loop-fuel results. |
+| `HandlerLoopSimulationBridge.loopFuel_table_matchesSpec_at` | [`HandlerLoopSimulationBridge.lean#L169`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L169) | Handler-table dispatch agrees with the executable spec for a fixed initial state and fuel. |
+| `HandlerLoopSimulationBridge.loopFuelAndTrace_table_matchesSpec_at` | [`HandlerLoopSimulationBridge.lean#L356`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L356) | Handler-table fuel+trace execution agrees with the executable spec for a fixed initial state. |
+| `HandlerLoopSimulationBridge.loopResultsMatch_table_matchesSpec` | [`HandlerLoopSimulationBridge.lean#L537`](https://github.com/Verified-zkEVM/evm-asm/blob/d627e409ce71367bb4d6adeb6e070d1d89db62ee/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L537) | Bundled `LoopResultsMatch` entry point for handler-table/spec agreement. |
+| `InterpreterLoopSimulation.loopFuel_status_eq_of_loopResultsMatch` | [`InterpreterLoopSimulation.lean#L55`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/InterpreterLoopSimulation.lean#L55) | Projects final status equality out of a bundled `LoopResultsMatch`. |
+| `InterpreterLoopSimulation.loopFuel_codeLenMatches_of_loopResultsMatch` | [`InterpreterLoopSimulation.lean#L125`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/InterpreterLoopSimulation.lean#L125) | Transports `codeLenMatches` from the spec loop to the interpreter loop. |
+| `InterpreterTraceSimulation.loopFuelAndTrace_matchesSpec_memory` | [`InterpreterTraceSimulation.lean#L129`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/InterpreterTraceSimulation.lean#L129) | Projects final memory equality from the fuel+trace simulation theorem. |
+| `HandlerLoopSimulationBridge.loopFuel_table_matchesSpec_at_stack` | [`HandlerLoopSimulationBridge.lean#L209`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L209) | Projects final stack equality from handler-table/spec fuel-loop agreement. |
+| `HandlerLoopSimulationBridge.loopFuelAndTrace_table_matchesSpec_at_codeLenMatches` | [`HandlerLoopSimulationBridge.lean#L501`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/Evm64/HandlerLoopSimulationBridge.lean#L501) | Transports `codeLenMatches` through handler-table fuel+trace agreement. |
+
 ## EvmWord arithmetic correctness
 
 The pure-Lean correctness theorems that say each `EvmWord.<op>` matches the
@@ -281,6 +382,22 @@ specs.
 | `cc_prologue_spec_within` | [`CallingConvention.lean:109`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/CallingConvention.lean#L109) | Block spec for the 2-instruction prologue: `sp` decremented by 16, `ra` saved at `sp+8`. |
 | `cc_epilogue_spec_within` | [`CallingConvention.lean:129`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/CallingConvention.lean#L129) | Block spec for the 3-instruction epilogue: `ra` restored, `sp` incremented by 16, jumps to saved `ra`. |
 
+
+## EL / Conformance
+
+The aggregate conformance surface collects the executable-spec vector batches
+and exposes small proof obligations for CI and closeout checks: total vector
+count, expected errors, successful results, and absence of unexpected failures.
+
+| Declaration / Theorem | Defined at | Meaning |
+|---|---|---|
+| `allConformanceVectors` | [`All.lean#L27`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L27) | Concatenates every checked conformance batch currently imported by `EvmAsm.EL.Conformance.All`. |
+| `allConformanceVectorCount` | [`All.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L43) | Named count used by status and CI-facing checks. |
+| `allConformanceVectorCount_eq` | [`All.lean#L50`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L50) | Proves the aggregate currently contains 56 vector results. |
+| `allConformanceNoUnexpectedFailures_eq_true` | [`All.lean#L105`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L105) | Boolean gate proving the aggregate has no unexpected failures. |
+| `unexpectedConformanceFailureCount_eq_zero` | [`All.lean#L109`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L109) | Numeric form of the no-unexpected-failure proof. |
+| `expectedConformanceErrorCount_eq` | [`All.lean#L113`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L113) | Proves there are 10 expected-error results in the aggregate. |
+| `successfulConformanceResultCount_eq` | [`All.lean#L117`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L117) | Proves there are 46 successful results in the aggregate. |
 
 ## Maintenance
 
