@@ -247,4 +247,164 @@ theorem sdivCode_block_subs {base : Word} :
     sdivCode_divisorAbs_sub, sdivCode_signXor_sub, sdivCode_divCall_sub,
     sdivCode_resultSignFix_sub, sdivCode_savedRaRet_sub,
     sdivCode_divCallable_sub⟩
+
+theorem saveRa_spec_in_sdivCode
+    (vRa vSavedOld : Word) (base : Word) :
+    cpsTripleWithin 1 base (base + 4) (sdivCode base)
+      ((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld))
+      ((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) := by
+  have hmono :
+      ∀ a i, (EvmAsm.Evm64.evm_sdiv_save_ra_block_code .x18 base) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_saveRa_sub (base := base) a i
+      (by simpa [saveRaCode, saveRaOff,
+        EvmAsm.Evm64.evm_sdiv_save_ra_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_save_ra_block_spec_within .x18
+      vRa vSavedOld base (by decide))
+
+theorem dividendSign_spec_in_sdivCode
+    (sp sOld dividendTop : Word) (base : Word) :
+    cpsTripleWithin 2 (base + dividendSignOff) ((base + dividendSignOff) + 8)
+      (sdivCode base)
+      ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sOld) **
+       ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+         dividendTop))
+      ((.x12 ↦ᵣ sp) **
+       (.x8 ↦ᵣ (dividendTop >>> (63 : BitVec 6).toNat)) **
+       ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+         dividendTop)) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_sign_bit_block_code .x12 .x8
+          EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+          (base + dividendSignOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_dividendSign_sub (base := base) a i
+      (by simpa [dividendSignCode,
+        EvmAsm.Evm64.evm_sdiv_sign_bit_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_sign_bit_block_spec_within .x12 .x8
+      EvmAsm.Evm64.evm_sdivDividendTopLimbOff sp sOld dividendTop
+      (base + dividendSignOff) (by decide))
+
+theorem divisorSign_spec_in_sdivCode
+    (sp sOld divisorTop : Word) (base : Word) :
+    cpsTripleWithin 2 (base + divisorSignOff) ((base + divisorSignOff) + 8)
+      (sdivCode base)
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ sOld) **
+       ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) ↦ₘ
+         divisorTop))
+      ((.x12 ↦ᵣ sp) **
+       (.x9 ↦ᵣ (divisorTop >>> (63 : BitVec 6).toNat)) **
+       ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) ↦ₘ
+         divisorTop)) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_sign_bit_block_code .x12 .x9
+          EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+          (base + divisorSignOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_divisorSign_sub (base := base) a i
+      (by simpa [divisorSignCode,
+        EvmAsm.Evm64.evm_sdiv_sign_bit_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_sign_bit_block_spec_within .x12 .x9
+      EvmAsm.Evm64.evm_sdivDivisorTopLimbOff sp sOld divisorTop
+      (base + divisorSignOff) (by decide))
+
+theorem divCall_spec_in_sdivCode
+    (vOld : Word) (base : Word) :
+    cpsTripleWithin 1 (base + divCallOff)
+        ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+      (sdivCode base)
+      (.x1 ↦ᵣ vOld)
+      (.x1 ↦ᵣ ((base + divCallOff) + 4)) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_div_call_block_code
+          EvmAsm.Evm64.evm_sdivCallOff (base + divCallOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_divCall_sub (base := base) a i
+      (by simpa [divCallCode,
+        EvmAsm.Evm64.evm_sdiv_div_call_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_div_call_block_spec_within
+      EvmAsm.Evm64.evm_sdivCallOff vOld (base + divCallOff))
+
+theorem savedRaRet_spec_in_sdivCode
+    (vSavedRa : Word) (base : Word) :
+    cpsTripleWithin 1 (base + savedRaRetOff)
+        ((vSavedRa + signExtend12 (0 : BitVec 12)) &&& ~~~1)
+      (sdivCode base)
+      (.x18 ↦ᵣ vSavedRa)
+      (.x18 ↦ᵣ vSavedRa) := by
+  have hmono :
+      ∀ a i,
+        (EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_code .x18
+          (base + savedRaRetOff)) a = some i →
+        (sdivCode base) a = some i := by
+    intro a i h
+    exact sdivCode_savedRaRet_sub (base := base) a i
+      (by simpa [savedRaRetCode,
+        EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_code] using h)
+  exact cpsTripleWithin_extend_code hmono
+    (EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block_spec_within .x18
+      vSavedRa (base + savedRaRetOff))
+
+/-- Wrapper sub-region inside `sdivCode`. -/
+theorem sdivCode_wrapper_sub {base : Word} :
+    ∀ a i, (CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
+      (sdivCode base) a = some i := by
+  unfold sdivCode
+  exact CodeReq.ofProg_mono_sub base base evm_sdiv evm_sdiv_wrapper 0
+    (by bv_omega)
+    (by unfold evm_sdiv; simp only [seq, Program]; rfl)
+    (by
+      rw [evm_sdiv_length, evm_sdiv_wrapper_length]
+      norm_num)
+    (by
+      rw [evm_sdiv_length]
+      norm_num)
+
+/-- The appended unsigned DIV callable sub-region inside `sdivCode`. -/
+theorem sdivCode_div_callable_sub {base : Word} :
+    ∀ a i, (evm_div_callable_code (base + 284)) a = some i →
+      (sdivCode base) a = some i := by
+  intro a i h
+  rw [evm_div_callable_code_eq_ofProg (base + 284)] at h
+  unfold sdivCode
+  exact CodeReq.ofProg_mono_sub base (base + 284)
+    evm_sdiv evm_div_callable 71
+    (by
+      bv_omega)
+    (by
+      unfold evm_sdiv seq
+      rw [← evm_sdiv_wrapper_length]
+      have h_drop :
+          List.drop evm_sdiv_wrapper.length
+              (evm_sdiv_wrapper ++ evm_div_callable) =
+            evm_div_callable := by
+        exact List.drop_append_length
+      rw [h_drop]
+      simp only [List.take_length])
+    (by native_decide)
+    (by
+      rw [evm_sdiv_length]
+      norm_num)
+    a i h
+
+/-- Bundled top-level SDIV code subsumptions for the wrapper and appended
+    unsigned DIV callable. -/
+theorem sdivCode_top_level_subs {base : Word} :
+    (∀ a i, (CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
+      (sdivCode base) a = some i) ∧
+    (∀ a i, (evm_div_callable_code (base + 284)) a = some i →
+      (sdivCode base) a = some i) := by
+  exact ⟨sdivCode_wrapper_sub, sdivCode_div_callable_sub⟩
+
 end EvmAsm.Evm64.SDiv.Compose
