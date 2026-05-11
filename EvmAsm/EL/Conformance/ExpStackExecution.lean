@@ -466,9 +466,9 @@ theorem expStackConformanceVectors_passed :
     expStackValueVector_passed, expStackZeroZeroVector_passed,
     expStackOneExponentVector_passed, expStackOneMaxExponentVector_passed,
     expStackZeroOneVector_passed,
-    expStackTwo128Vector_passed,
     expStackMaxOneExponentVector_passed,
-    expStackTwo64Vector_passed, expStackTwo255Vector_passed,
+    expStackTwo128Vector_passed, expStackTwo64Vector_passed,
+    expStackTwo255Vector_passed,
     expStackUnderflowVector_passed]
 
 end ExpStackExecution
