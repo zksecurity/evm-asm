@@ -340,4 +340,19 @@ theorem exp_cond_mul_un_marshal_and_restore_evm_exp_with_mul_spec_within
     (exp_cond_mul_un_marshal_and_restore_evm_exp_spec_within
       mulOff skipOff backOff sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 base)
 
+/-- Conditional-multiply BEQ skip-gate lifted to the full-loop EXP+MUL code
+    bundle. -/
+theorem exp_cond_mul_beq_evm_exp_with_mul_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (v10 : Word) (base mulTarget target : Word)
+    (htarget : (base + 144 : Word) + signExtend13 skipOff = target) :
+    cpsBranchWithin 1 (base + 144)
+      (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
+      ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 = 0⌝)
+      (base + 148) ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 ≠ 0⌝) :=
+  cpsBranchWithin_extend_evmExpWithMulCode
+    (exp_cond_mul_beq_evm_exp_spec_within
+      mulOff skipOff backOff v10 base target htarget)
+
 end EvmAsm.Evm64.Exp.Compose
