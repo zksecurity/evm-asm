@@ -419,4 +419,25 @@ theorem exp_squaring_un_marshal_and_restore_evm_exp_spec_within
   exact cpsTripleWithin_extend_code (h := h)
     (hmono := evmExpCode_squaring_un_marshal_and_restore_sub)
 
+/-- Conditional-multiply BEQ skip-gate spec lifted to the top-level EXP code
+    bundle: at offset `base + 144`, branches on `x10 == 0` to the cond-mul
+    skip target `(base + 144) + signExtend13 skipOff`, otherwise falls
+    through to `base + 148` (the cond-mul JAL). -/
+theorem exp_cond_mul_beq_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (v10 : Word) (base target : Word)
+    (htarget : (base + 144 : Word) + signExtend13 skipOff = target) :
+    cpsBranchWithin 1 (base + 144)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 = 0⌝)
+      (base + 148) ((.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v10 ≠ 0⌝) := by
+  have h := EvmAsm.Rv64.beq_spec_within .x10 .x0 skipOff v10 (0 : Word)
+    (base + 144)
+  rw [htarget] at h
+  have hnext : ((base + 144 : Word) + 4) = base + 148 := by bv_omega
+  rw [hnext] at h
+  exact cpsBranchWithin_extend_code (h := h)
+    (hmono := evmExpCode_cond_mul_beq_sub)
+
 end EvmAsm.Evm64.Exp.Compose
