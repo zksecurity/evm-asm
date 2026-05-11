@@ -163,6 +163,32 @@ theorem exp_loop_un_marshal_and_restore_word_spec_within
       xperm_hyp hp)
     h_unmarshal
 
+/-- Weakened-pre variant of `exp_loop_un_marshal_and_restore_word_spec_within`:
+    consumes `regOwn .x5` in place of a concrete `(.x5 ↦ᵣ tOld)`. The
+    un_marshal block loads `w.getLimbN 3` into `.x5`, so it does not care
+    about the prior value — any old value works. This bridges the seq
+    composition with `mul_callable_spec_within`'s post (which carries
+    `regOwn .x5` via `evmMulStackPost`) and the un_marshal entry. Slice 4
+    micro evm-asm-xdmss. -/
+theorem exp_loop_un_marshal_and_restore_word_spec_within_regOwn5
+    (sp evmSp r0 r1 r2 r3 base : Word) (w : EvmWord) :
+    cpsTripleWithin 9 base (base + 36)
+      (CodeReq.ofProg base exp_loop_un_marshal_and_restore)
+      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ (evmSp + 32)) **
+        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+        evmWordIs (evmSp + 32) w) ** regOwn .x5)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ w.getLimbN 3) **
+       evmWordIs sp w ** evmWordIs (evmSp + 32) w) :=
+  cpsTripleWithin_of_forall_regIs_to_regOwn (fun tOld =>
+    cpsTripleWithin_weaken
+      (fun _ hp => by xperm_hyp hp)
+      (fun _ hp => hp)
+      (exp_loop_un_marshal_and_restore_word_spec_within sp evmSp tOld
+        r0 r1 r2 r3 base w))
+
 /-- Compose the squaring marshal pair (16 instr) plus its trailing JAL
     (1 instr) with `mul_callable_spec_within` (64 instr) at the JAL target.
 
