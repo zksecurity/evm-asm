@@ -278,7 +278,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
       divisorCarry0, divisorXored1, divisorSum1, divisorCarry1,
       divisorXored2, divisorSum2, divisorCarry2, divisorXored3, divisorSum3,
       divisorCarry3]
-    simpa [signXorOff, divCallOff, BitVec.add_assoc] using
+    simpa [signXorOff, divCallOff, BitVec.add_assoc,
+      saveRaSignsAbsThenSignXorPre_unfold,
+      saveRaSignsAbsThenSignXorPost_unfold] using
       (saveRa_signs_abs_then_signXor_spec_in_sdivCode
         vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld

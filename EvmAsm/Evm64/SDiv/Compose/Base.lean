@@ -796,6 +796,111 @@ theorem divisorAbs_spec_in_sdivCode
     EvmAsm.Evm64.condNegate256BlockPost_unfold] at hSpec
   exact cpsTripleWithin_extend_code hmono hSpec
 
+/-- Precondition for the SDIV save-ra/signs/dividendAbs/divisorAbs block
+    (entry to the wrapper, just after the saved-`ra` slot is materialized
+    in `x1`). Wrapped `@[irreducible]` so downstream proofs do not
+    re-reduce the 18-atom sepConj at each use site. -/
+@[irreducible]
+def saveRaSignsAbsThenDivisorAbsPre
+    (vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      dividendMem0 dividendMem1 dividendMem2 dividendMem3
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorMem0 divisorMem1 divisorMem2 divisorMem3
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Assertion :=
+  ((((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
+      ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) **
+       (dividendMem3 ↦ₘ dividendTop))) **
+     ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
+    (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
+      (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
+     ((dividendMem0 ↦ₘ dividendLimb0) **
+      (dividendMem1 ↦ₘ dividendLimb1) **
+      (dividendMem2 ↦ₘ dividendLimb2)))) **
+   ((divisorMem0 ↦ₘ divisorLimb0) **
+    (divisorMem1 ↦ₘ divisorLimb1) **
+    (divisorMem2 ↦ₘ divisorLimb2)))
+
+theorem saveRaSignsAbsThenDivisorAbsPre_unfold
+    {vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      dividendMem0 dividendMem1 dividendMem2 dividendMem3
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorMem0 divisorMem1 divisorMem2 divisorMem3
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
+    saveRaSignsAbsThenDivisorAbsPre vRa vSavedOld sp sDividendOld sDivisorOld
+        dividendMaskOld dividendValueOld dividendCarryOld
+        dividendMem0 dividendMem1 dividendMem2 dividendMem3
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorMem0 divisorMem1 divisorMem2 divisorMem3
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      ((((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
+          ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) **
+           (dividendMem3 ↦ₘ dividendTop))) **
+         ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
+        (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
+          (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
+         ((dividendMem0 ↦ₘ dividendLimb0) **
+          (dividendMem1 ↦ₘ dividendLimb1) **
+          (dividendMem2 ↦ₘ dividendLimb2)))) **
+       ((divisorMem0 ↦ₘ divisorLimb0) **
+        (divisorMem1 ↦ₘ divisorLimb1) **
+        (divisorMem2 ↦ₘ divisorLimb2))) := by
+  delta saveRaSignsAbsThenDivisorAbsPre
+  rfl
+
+/-- Postcondition for the SDIV save-ra/signs/dividendAbs/divisorAbs block:
+    `ra` saved to the spill slot, both signs in `x8`/`x9`, both
+    absolute-value sequences materialized in memory, with the divisor's
+    intermediate sum/carry scratch in `x10`/`x7`/`x11`. Wrapped
+    `@[irreducible]` to hide the 22-atom sepConj from downstream proofs. -/
+@[irreducible]
+def saveRaSignsAbsThenDivisorAbsPost
+    (vRa sp dividendSign divisorSign divisorMask
+      divisorSum3 divisorCarry3
+      dividendMem0 dividendMem1 dividendMem2 dividendMem3
+      dividendSum0 dividendSum1 dividendSum2 dividendSum3
+      divisorMem0 divisorMem1 divisorMem2 divisorMem3
+      divisorSum0 divisorSum1 divisorSum2 : Word) : Assertion :=
+  (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+    ((.x8 ↦ᵣ dividendSign) **
+     (dividendMem0 ↦ₘ dividendSum0) **
+     (dividendMem1 ↦ₘ dividendSum1) **
+     (dividendMem2 ↦ₘ dividendSum2) **
+     (dividendMem3 ↦ₘ dividendSum3))) **
+   ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ divisorSign) **
+    (.x10 ↦ᵣ divisorMask) ** (.x7 ↦ᵣ divisorSum3) **
+    (.x11 ↦ᵣ divisorCarry3) **
+    (divisorMem0 ↦ₘ divisorSum0) ** (divisorMem1 ↦ₘ divisorSum1) **
+    (divisorMem2 ↦ₘ divisorSum2) ** (divisorMem3 ↦ₘ divisorSum3))
+
+theorem saveRaSignsAbsThenDivisorAbsPost_unfold
+    {vRa sp dividendSign divisorSign divisorMask
+      divisorSum3 divisorCarry3
+      dividendMem0 dividendMem1 dividendMem2 dividendMem3
+      dividendSum0 dividendSum1 dividendSum2 dividendSum3
+      divisorMem0 divisorMem1 divisorMem2 divisorMem3
+      divisorSum0 divisorSum1 divisorSum2 : Word} :
+    saveRaSignsAbsThenDivisorAbsPost vRa sp dividendSign divisorSign
+        divisorMask divisorSum3 divisorCarry3
+        dividendMem0 dividendMem1 dividendMem2 dividendMem3
+        dividendSum0 dividendSum1 dividendSum2 dividendSum3
+        divisorMem0 divisorMem1 divisorMem2 divisorMem3
+        divisorSum0 divisorSum1 divisorSum2 =
+      ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+        ((.x8 ↦ᵣ dividendSign) **
+         (dividendMem0 ↦ₘ dividendSum0) **
+         (dividendMem1 ↦ₘ dividendSum1) **
+         (dividendMem2 ↦ₘ dividendSum2) **
+         (dividendMem3 ↦ₘ dividendSum3))) **
+       ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ divisorSign) **
+        (.x10 ↦ᵣ divisorMask) ** (.x7 ↦ᵣ divisorSum3) **
+        (.x11 ↦ᵣ divisorCarry3) **
+        (divisorMem0 ↦ₘ divisorSum0) ** (divisorMem1 ↦ₘ divisorSum1) **
+        (divisorMem2 ↦ₘ divisorSum2) ** (divisorMem3 ↦ₘ divisorSum3))) := by
+  delta saveRaSignsAbsThenDivisorAbsPost
+  rfl
+
 theorem saveRa_signs_abs_then_divisorAbs_spec_in_sdivCode
     (vRa vSavedOld sp sDividendOld sDivisorOld
       dividendMaskOld dividendValueOld dividendCarryOld
@@ -838,29 +943,18 @@ theorem saveRa_signs_abs_then_divisorAbs_spec_in_sdivCode
     let divisorSum3 := divisorXored3 + divisorCarry2
     let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
     cpsTripleWithin 47 base ((base + divisorAbsOff) + 84) (sdivCode base)
-      ((((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
-          ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) **
-           (dividendMem3 ↦ₘ dividendTop))) **
-         ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
-        (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
-          (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
-         ((dividendMem0 ↦ₘ dividendLimb0) **
-          (dividendMem1 ↦ₘ dividendLimb1) **
-          (dividendMem2 ↦ₘ dividendLimb2)))) **
-       ((divisorMem0 ↦ₘ divisorLimb0) **
-        (divisorMem1 ↦ₘ divisorLimb1) **
-        (divisorMem2 ↦ₘ divisorLimb2)))
-      ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
-        ((.x8 ↦ᵣ dividendSign) **
-         (dividendMem0 ↦ₘ dividendSum0) **
-         (dividendMem1 ↦ₘ dividendSum1) **
-         (dividendMem2 ↦ₘ dividendSum2) **
-         (dividendMem3 ↦ₘ dividendSum3))) **
-       ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ divisorSign) **
-        (.x10 ↦ᵣ divisorMask) ** (.x7 ↦ᵣ divisorSum3) **
-        (.x11 ↦ᵣ divisorCarry3) **
-        (divisorMem0 ↦ₘ divisorSum0) ** (divisorMem1 ↦ₘ divisorSum1) **
-        (divisorMem2 ↦ₘ divisorSum2) ** (divisorMem3 ↦ₘ divisorSum3))) := by
+      (saveRaSignsAbsThenDivisorAbsPre vRa vSavedOld sp sDividendOld sDivisorOld
+        dividendMaskOld dividendValueOld dividendCarryOld
+        dividendMem0 dividendMem1 dividendMem2 dividendMem3
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorMem0 divisorMem1 divisorMem2 divisorMem3
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+      (saveRaSignsAbsThenDivisorAbsPost vRa sp dividendSign divisorSign
+        divisorMask divisorSum3 divisorCarry3
+        dividendMem0 dividendMem1 dividendMem2 dividendMem3
+        dividendSum0 dividendSum1 dividendSum2 dividendSum3
+        divisorMem0 divisorMem1 divisorMem2 divisorMem3
+        divisorSum0 divisorSum1 divisorSum2) := by
   intro dividendSign divisorSign dividendMem0 dividendMem1 dividendMem2
     dividendMem3 divisorMem0 divisorMem1 divisorMem2 divisorMem3
     dividendMask dividendXored0 dividendSum0 dividendCarry0 dividendXored1
@@ -965,6 +1059,8 @@ theorem saveRa_signs_abs_then_divisorAbs_spec_in_sdivCode
     (fun h hp => by
       dsimp [mid, absPre, divisorLower] at hp ⊢
       xperm_hyp hp) hPrefix hAbs
+  rw [saveRaSignsAbsThenDivisorAbsPre_unfold,
+      saveRaSignsAbsThenDivisorAbsPost_unfold]
   simpa [pre, post] using hSeq
 
 theorem divCall_spec_in_sdivCode
