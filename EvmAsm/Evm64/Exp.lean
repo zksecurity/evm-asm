@@ -30,6 +30,7 @@ import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 import EvmAsm.Evm64.Exp.Compose.LoopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.TopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.CondMulSkip
+import EvmAsm.Evm64.Exp.Compose.SquaringStep
 import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
 import EvmAsm.Evm64.Exp.Semantic
