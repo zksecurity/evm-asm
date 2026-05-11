@@ -45,24 +45,35 @@ def keccakStackVector : TestVector KeccakStackInput (List EvmWord) :=
         stack := [(1 : EvmWord), 2, 99] }
     expected := .value [(0 : EvmWord), 99] }
 
+/-- KECCAK256 stack execution requires both offset and size operands.
+    Distinctive token: keccakStackUnderflowConformanceVector #111 #125. -/
+def keccakStackUnderflowConformanceVector :
+    TestVector KeccakStackInput (List EvmWord) :=
+  { id := "keccak-stack-underflow"
+    input :=
+      { memory := [(0xaa : Byte), 0xbb, 0xcc]
+        stack := [(1 : EvmWord)] }
+    expected := .error "stack-underflow" }
+
 /-- KECCAK stack conformance inputs as reusable test vectors.
     Distinctive token:
     KeccakStackExecutionConformance.keccakStackConformanceTestVectors #111 #125. -/
 def keccakStackConformanceTestVectors :
     List (TestVector KeccakStackInput (List EvmWord)) :=
-  [keccakStackVector]
+  [keccakStackVector, keccakStackUnderflowConformanceVector]
 
 def keccakStackConformanceVectorIds : List String :=
   keccakStackConformanceTestVectors.map TestVector.id
 
 theorem keccakStackConformanceTestVectors_length :
-    keccakStackConformanceTestVectors.length = 1 := rfl
+    keccakStackConformanceTestVectors.length = 2 := rfl
 
 theorem keccakStackConformanceVectorIds_eq :
-    keccakStackConformanceVectorIds = ["keccak-stack-vector"] := rfl
+    keccakStackConformanceVectorIds =
+      ["keccak-stack-vector", "keccak-stack-underflow"] := rfl
 
 theorem keccakStackConformanceVectorIds_length :
-    keccakStackConformanceVectorIds.length = 1 := rfl
+    keccakStackConformanceVectorIds.length = 2 := rfl
 
 theorem keccakStackConformanceVectorIds_nodup :
     keccakStackConformanceVectorIds.Nodup := by
@@ -75,6 +86,12 @@ theorem runKeccakStack?_vector :
       some [(0 : EvmWord), 99] := by
   native_decide
 
+theorem runKeccakStack?_underflow :
+    runKeccakStack?
+      { memory := [(0xaa : Byte), 0xbb, 0xcc]
+        stack := [(1 : EvmWord)] } =
+      none := rfl
+
 theorem keccakStackVector_passed :
     checkVector? runKeccakStack? keccakStackVector = .passed :=
   checkVector?_some_passed runKeccakStack?
@@ -84,6 +101,16 @@ theorem keccakStackVector_passed :
     [(0 : EvmWord), 99]
     runKeccakStack?_vector
 
+theorem keccakStackUnderflowConformanceVector_errored :
+    checkVector? runKeccakStack? keccakStackUnderflowConformanceVector =
+      .errored "keccak-stack-underflow" "stack-underflow" :=
+  checkVector?_none_error runKeccakStack?
+    "keccak-stack-underflow"
+    "stack-underflow"
+    { memory := [(0xaa : Byte), 0xbb, 0xcc]
+      stack := [(1 : EvmWord)] }
+    runKeccakStack?_underflow
+
 /-- Compact checked-vector batch for KECCAK stack execution.
     Distinctive token:
     KeccakStackExecutionConformance.keccakStackConformanceVectors #111 #125. -/
@@ -91,9 +118,10 @@ def keccakStackConformanceVectors : List CheckResult :=
   checkBatch? runKeccakStack? keccakStackConformanceTestVectors
 
 theorem keccakStackConformanceVectors_passed :
-    keccakStackConformanceVectors = [.passed] := by
+    keccakStackConformanceVectors =
+      [.passed, .errored "keccak-stack-underflow" "stack-underflow"] := by
   simp [keccakStackConformanceVectors, keccakStackConformanceTestVectors,
-    keccakStackVector_passed]
+    keccakStackVector_passed, keccakStackUnderflowConformanceVector_errored]
 
 end KeccakStackExecution
 end Conformance
