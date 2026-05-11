@@ -258,6 +258,8 @@ theorem evm_div_n1_to_loopSetup_spec_within_noNop (sp base : Word)
   have hNB := evm_div_phaseAB_n1_clz_c2_normB_spec_within_noNop sp base
     b0 b1 b2 b3 v5 v6 v7 v10 q0 q1 q2 q3 u5 u6 u7 nMem shiftMem
     hbnz hb3z hb2z hb1z hshift_nz
+  simp only [evmDivPhaseABN1ClzC2NormBPre_unfold,
+      evmDivPhaseABN1ClzC2NormBPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
