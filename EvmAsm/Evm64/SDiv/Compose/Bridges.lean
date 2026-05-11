@@ -81,4 +81,33 @@ theorem evmWordIs_eq_quadMem_sdivDivisor_right
   rw [← evmWordIs_eq_quadMem_sdivDivisor sp s0 s1 s2 s3]
   rw [sepConj_assoc', sepConj_assoc', sepConj_assoc']
 
+/-- Fully-explicit unfolding of `divModStackDispatchPre`: replaces the two
+    `evmWordIs` atoms (`evmWordIs sp a` and `evmWordIs (sp + 32) b`) with
+    eight raw `↦ₘ` atoms at absolute offsets `sp + 0/8/16/24` and
+    `sp + 32/40/48/56`. Composes `divModStackDispatchPre_unfold` with the
+    two `evmWordIs_sp_unfold` / `evmWordIs_sp32_unfold` lemmas. Useful for
+    callers whose post produces 4 limb-level mems at each slot (rather
+    than `evmWordIs`), so seq-composition with `evm_div_callable_spec_in_sdivCode`
+    can proceed without manual evmWordIs folding. Slice 4 helper for
+    evm-asm-j8bfz. -/
+theorem divModStackDispatchPre_unfold_explicit
+    {sp : Word} {a b : EvmWord}
+    {v1 v2 v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
+     retMem dMem dloMem scratch_un0 : Word} :
+    EvmAsm.Evm64.divModStackDispatchPre sp a b v1 v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
+      retMem dMem dloMem scratch_un0 =
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) **
+     (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x0 ↦ᵣ (0 : Word)) **
+     ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+      ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3)) **
+     (((sp + 32) ↦ₘ b.getLimbN 0) ** ((sp + 40) ↦ₘ b.getLimbN 1) **
+      ((sp + 48) ↦ₘ b.getLimbN 2) ** ((sp + 56) ↦ₘ b.getLimbN 3)) **
+     EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+       shiftMem nMem jMem retMem dMem dloMem scratch_un0) := by
+  rw [EvmAsm.Evm64.divModStackDispatchPre_unfold,
+      evmWordIs_sp_unfold, evmWordIs_sp32_unfold]
+
 end EvmAsm.Evm64.SDiv.Compose
