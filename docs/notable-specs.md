@@ -324,6 +324,38 @@ downstream RLP proofs.
 | `rlp_prefix_short_payload_len_spec_within` | [`EL/RLP/ProgramSpec.lean#L203`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ProgramSpec.lean#L203) | Decode the payload length of a short-form RLP item. |
 | `rlp_prefix_long_header_bytes_spec_within` | [`EL/RLP/ProgramSpec.lean#L404`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ProgramSpec.lean#L404) | Number of header-byte slots consumed for a long-form RLP item. |
 
+### Full-decode bridges (`FullDecode.lean`, `ListDecodeBridge.lean`, `LongFormDecodeBridge.lean`)
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `decodeFully_eq_some_iff` | [`EL/RLP/FullDecode.lean#L20`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/FullDecode.lean#L20) | Top-level wrapper succeeds exactly when `decode` succeeds and consumes the whole input. |
+| `decodeFully_eq_none_iff` | [`EL/RLP/FullDecode.lean#L81`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/FullDecode.lean#L81) | Complete-decode failure split: decoder failure or non-empty leftover. |
+| `decodeListPayload_eq_some_iff` | [`EL/RLP/ListDecodeBridge.lean#L32`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ListDecodeBridge.lean#L32) | List payload decoding succeeds exactly when `decodeItems` consumes the payload. |
+| `decodeAux_cons_shortList_eq_some_iff` | [`EL/RLP/ListDecodeBridge.lean#L140`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ListDecodeBridge.lean#L140) | Short-list branch success in terms of `decodeListPayload`. |
+| `decodeAux_cons_longList_eq_some_iff` | [`EL/RLP/ListDecodeBridge.lean#L214`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ListDecodeBridge.lean#L214) | Long-list branch success in terms of the decoded length field and payload decode. |
+| `decodeLengthField?_eq_some_iff` | [`EL/RLP/ReadLengthBridge.lean#L34`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/ReadLengthBridge.lean#L34) | Canonical long-form length field success criterion. |
+| `decodeAux_long_bytes_lengthField` | [`EL/RLP/LongFormDecodeBridge.lean#L22`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/LongFormDecodeBridge.lean#L22) | Long byte-string branch via a decoded canonical length field. |
+| `decodeAux_long_list_lengthField_success` | [`EL/RLP/LongFormDecodeBridge.lean#L175`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/EL/RLP/LongFormDecodeBridge.lean#L175) | Long-list branch success once the list payload decoder succeeds. |
+
+### Rv64 RLP decoder phase triples (`EvmAsm/Rv64/RLP/`)
+
+These are representative CPS triples for the RISC-V decoder pipeline in
+GH #120. They are phase-level entry points; individual range, disjointness,
+and postcondition-unfold lemmas stay local to their phase files.
+
+| Theorem | Defined at | Meaning |
+|---|---|---|
+| `rlp_phase1_classifier_spec_class_within` | [`Rv64/RLP/Phase1.lean#L787`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase1.lean#L787) | Phase 1 cascade classifies the prefix byte into the same class as `classifyPrefix`. |
+| `rlp_phase3_single_byte_spec_within` | [`Rv64/RLP/Phase3SingleByte.lean#L57`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase3SingleByte.lean#L57) | Single-byte item exit writes a one-byte result shape. |
+| `rlp_phase3_short_string_spec_within` | [`Rv64/RLP/Phase3ShortString.lean#L73`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase3ShortString.lean#L73) | Short byte-string exit computes payload pointer and length. |
+| `rlp_phase3_long_string_spec_within` | [`Rv64/RLP/Phase3LongString.lean#L83`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase3LongString.lean#L83) | Long byte-string exit extracts length-of-length metadata for Phase 2. |
+| `rlp_phase3_short_list_spec_within` | [`Rv64/RLP/Phase3ShortList.lean#L37`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase3ShortList.lean#L37) | Short-list exit computes payload pointer and payload length. |
+| `rlp_phase3_long_list_spec_within` | [`Rv64/RLP/Phase3LongList.lean#L37`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase3LongList.lean#L37) | Long-list exit extracts length-of-length metadata for Phase 2. |
+| `rlp_phase2_long_loop_body_spec_within` | [`Rv64/RLP/Phase2LongLoopBody.lean#L120`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase2LongLoopBody.lean#L120) | One loop body for big-endian long-form length accumulation. |
+| `rlp_phase1_e3_0xB8_one_byte_length_spec_within` | [`Rv64/RLP/Phase1E3LongStringOne.lean#L44`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase1E3LongStringOne.lean#L44) | Composed Phase 1 → long-string Phase 3 → one-byte Phase 2 path for prefix `0xB8`. |
+| `rlp_phase4_hint_len_spec_within` | [`Rv64/RLP/Phase4HintLen.lean#L32`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase4HintLen.lean#L32) | Legacy Phase 4 length query wrapper; this is expected to change under the host-I/O read_input migration. |
+| `rlp_phase4_hint_read_whole_one_word_spec_within` | [`Rv64/RLP/Phase4HintRead.lean#L95`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Rv64/RLP/Phase4HintRead.lean#L95) | Legacy one-word input streaming wrapper; also slated for read_input migration. |
+
 ## Rv64 infrastructure
 
 Generic RISC-V instruction specs and the LP64-aligned calling convention
