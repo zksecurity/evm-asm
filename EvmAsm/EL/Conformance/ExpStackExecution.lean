@@ -80,6 +80,19 @@ def expStackOneExponentVector : TestVector ExpStackState ExpStackResult :=
               totalGas := 60 }
           stack := [99] } }
 
+/-- EXP edge vector required by GH #92: `2^256 = 0 mod 2^256`.
+    Distinctive token: expStackTwo256Vector #92 #125. -/
+def expStackTwo256Vector : TestVector ExpStackState ExpStackResult :=
+  { id := "exp-stack-two-256"
+    input := { stack := [2, 256, 99] }
+    expected :=
+      .value
+        { effects :=
+            { stackWords := [0]
+              dynamicGas := 100
+              totalGas := 110 }
+          stack := [99] } }
+
 /-- EXP with base one and max exponent returns one while charging max
     exponent-byte gas.
     Distinctive token: exp-stack-one-max-exponent #92 #125. -/
@@ -175,6 +188,7 @@ def expStackConformanceTestVectors : List (TestVector ExpStackState ExpStackResu
   , expStackZeroZeroVector
   , expStackMaxZeroExponentVector
   , expStackOneExponentVector
+  , expStackTwo256Vector
   , expStackOneMaxExponentVector
   , expStackZeroOneVector
   , expStackZeroMaxExponentVector
@@ -189,7 +203,7 @@ def expStackConformanceVectorIds : List String :=
   expStackConformanceTestVectors.map TestVector.id
 
 theorem expStackConformanceTestVectors_length :
-    expStackConformanceTestVectors.length = 12 := rfl
+    expStackConformanceTestVectors.length = 13 := rfl
 
 theorem expStackConformanceVectorIds_eq :
     expStackConformanceVectorIds =
@@ -197,6 +211,7 @@ theorem expStackConformanceVectorIds_eq :
       , "exp-stack-zero-zero"
       , "exp-stack-max-zero-exponent"
       , "exp-stack-one-exponent"
+      , "exp-stack-two-256"
       , "exp-stack-one-max-exponent"
       , "exp-stack-zero-one"
       , "exp-stack-zero-max-exponent"
@@ -208,7 +223,7 @@ theorem expStackConformanceVectorIds_eq :
       ] := rfl
 
 theorem expStackConformanceVectorIds_length :
-    expStackConformanceVectorIds.length = 12 := rfl
+    expStackConformanceVectorIds.length = 13 := rfl
 
 theorem expStackConformanceVectorIds_nodup :
     expStackConformanceVectorIds.Nodup := by
@@ -219,6 +234,7 @@ def expStackValueVectorIds : List String :=
   , "exp-stack-zero-zero"
   , "exp-stack-max-zero-exponent"
   , "exp-stack-one-exponent"
+  , "exp-stack-two-256"
   , "exp-stack-one-max-exponent"
   , "exp-stack-zero-one"
   , "exp-stack-zero-max-exponent"
@@ -292,6 +308,16 @@ theorem runExpStack?_one_exponent :
               totalGas := 60 }
           stack := [(99 : EvmWord)] } := by
   native_decide
+
+theorem runExpStack?_two_256 :
+    runExpStack? { stack := [(2 : EvmWord), (256 : EvmWord), (99 : EvmWord)] } =
+      some
+        { effects :=
+            { stackWords := [(0 : EvmWord)]
+              dynamicGas := 100
+              totalGas := 110 }
+          stack := [(99 : EvmWord)] } := by
+  exact EvmAsm.Evm64.ExpStackExecutionBridge.runExpStack?_two_256 [(99 : EvmWord)]
 
 theorem runExpStack?_one_max_exponent :
     runExpStack?
@@ -438,6 +464,18 @@ theorem expStackOneExponentVector_passed :
       stack := [(99 : EvmWord)] }
     runExpStack?_one_exponent
 
+theorem expStackTwo256Vector_passed :
+    checkVector? runExpStack? expStackTwo256Vector = .passed :=
+  checkVector?_some_passed runExpStack?
+    "exp-stack-two-256"
+    { stack := [(2 : EvmWord), (256 : EvmWord), (99 : EvmWord)] }
+    { effects :=
+        { stackWords := [(0 : EvmWord)]
+          dynamicGas := 100
+          totalGas := 110 }
+      stack := [(99 : EvmWord)] }
+    runExpStack?_two_256
+
 theorem expStackOneMaxExponentVector_passed :
     checkVector? runExpStack? expStackOneMaxExponentVector = .passed :=
   checkVector?_some_passed runExpStack?
@@ -549,12 +587,14 @@ theorem expStackConformanceVectors_passed :
       , .passed
       , .passed
       , .passed
+      , .passed
       , .errored "exp-stack-underflow" "stack-underflow"
       ] := by
   simp [expStackConformanceVectors, expStackConformanceTestVectors,
     expStackValueVector_passed, expStackZeroZeroVector_passed,
     expStackMaxZeroExponentVector_passed,
     expStackOneExponentVector_passed,
+    expStackTwo256Vector_passed,
     expStackOneMaxExponentVector_passed,
     expStackZeroOneVector_passed,
     expStackZeroMaxExponentVector_passed,
