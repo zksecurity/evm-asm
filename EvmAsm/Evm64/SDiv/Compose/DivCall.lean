@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
