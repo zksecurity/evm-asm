@@ -44,12 +44,26 @@ def allConformanceVectorCount : Nat :=
   allConformanceVectors.length
 
 theorem allConformanceVectors_length :
-    allConformanceVectors.length = 54 := by
-  native_decide
+    allConformanceVectors.length = 61 := by
+  simp [allConformanceVectors,
+    Call.callOutputConformanceVectors_passed,
+    Calldata.calldataConformanceVectors_passed,
+    Code.codeConformanceVectors_passed,
+    CreateStackExecution.createStackConformanceVectors_passed,
+    ExpGas.expGasConformanceVectors_passed,
+    ExpStackExecution.expStackConformanceVectors_passed,
+    KeccakStackExecution.keccakStackConformanceVectors_passed,
+    Log.logDataConformanceVectors_passed,
+    LogStackExecution.logStackConformanceVectors_passed,
+    RLP.rlpConformanceVectors_passed,
+    ReturnData.returnDataConformanceVectors_passed,
+    SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
+    StorageStackExecution.storageStackConformanceVectors_passed,
+    TerminatingStackExecution.terminatingStackConformanceVectors_passed]
 
 theorem allConformanceVectorCount_eq :
-    allConformanceVectorCount = 54 := by
-  native_decide
+    allConformanceVectorCount = 61 := by
+  simp [allConformanceVectorCount, allConformanceVectors_length]
 
 def unexpectedConformanceFailures : List CheckResult :=
   allConformanceVectors.filter
@@ -112,11 +126,41 @@ theorem unexpectedConformanceFailureCount_eq_zero :
 
 theorem expectedConformanceErrorCount_eq :
     expectedConformanceErrorCount = 10 := by
-  native_decide
+  simp [expectedConformanceErrorCount, expectedConformanceErrors,
+    allConformanceVectors,
+    Call.callOutputConformanceVectors_passed,
+    Calldata.calldataConformanceVectors_passed,
+    Code.codeConformanceVectors_passed,
+    CreateStackExecution.createStackConformanceVectors_passed,
+    ExpGas.expGasConformanceVectors_passed,
+    ExpStackExecution.expStackConformanceVectors_passed,
+    KeccakStackExecution.keccakStackConformanceVectors_passed,
+    Log.logDataConformanceVectors_passed,
+    LogStackExecution.logStackConformanceVectors_passed,
+    RLP.rlpConformanceVectors_passed,
+    ReturnData.returnDataConformanceVectors_passed,
+    SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
+    StorageStackExecution.storageStackConformanceVectors_passed,
+    TerminatingStackExecution.terminatingStackConformanceVectors_passed]
 
 theorem successfulConformanceResultCount_eq :
-    successfulConformanceResultCount = 44 := by
-  native_decide
+    successfulConformanceResultCount = 51 := by
+  simp [successfulConformanceResultCount, successfulConformanceResults,
+    allConformanceVectors,
+    Call.callOutputConformanceVectors_passed,
+    Calldata.calldataConformanceVectors_passed,
+    Code.codeConformanceVectors_passed,
+    CreateStackExecution.createStackConformanceVectors_passed,
+    ExpGas.expGasConformanceVectors_passed,
+    ExpStackExecution.expStackConformanceVectors_passed,
+    KeccakStackExecution.keccakStackConformanceVectors_passed,
+    Log.logDataConformanceVectors_passed,
+    LogStackExecution.logStackConformanceVectors_passed,
+    RLP.rlpConformanceVectors_passed,
+    ReturnData.returnDataConformanceVectors_passed,
+    SignedArithmeticStackExecution.signedArithmeticConformanceVectors_passed,
+    StorageStackExecution.storageStackConformanceVectors_passed,
+    TerminatingStackExecution.terminatingStackConformanceVectors_passed]
 
 end Conformance
 end EvmAsm.EL

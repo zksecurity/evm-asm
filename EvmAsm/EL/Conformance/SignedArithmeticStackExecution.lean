@@ -57,6 +57,22 @@ def sdivIntMinNegOneVector : TestVector SDivStackState SDivStackResult :=
         { effects := { stackWords := [BitVec.intMin 256] }
           stack := [42] } }
 
+def sdivPosPosVector : TestVector SDivStackState SDivStackResult :=
+  { id := "sdiv-stack-pos-pos"
+    input := { stack := [9, 2, 42] }
+    expected :=
+      .value
+        { effects := { stackWords := [4] }
+          stack := [42] } }
+
+def sdivNegNegVector : TestVector SDivStackState SDivStackResult :=
+  { id := "sdiv-stack-neg-neg"
+    input := { stack := [(-9 : EvmWord), (-2 : EvmWord), 42] }
+    expected :=
+      .value
+        { effects := { stackWords := [4] }
+          stack := [42] } }
+
 def sdivPosNegTruncVector : TestVector SDivStackState SDivStackResult :=
   { id := "sdiv-stack-pos-neg-trunc"
     input := { stack := [7, (-2 : EvmWord), 42] }
@@ -105,6 +121,8 @@ def smodUnderflowVector : TestVector SModStackState SModStackResult :=
 def sdivStackConformanceTestVectors : List (TestVector SDivStackState SDivStackResult) :=
   [ sdivZeroDivisorVector
   , sdivIntMinNegOneVector
+  , sdivPosPosVector
+  , sdivNegNegVector
   , sdivPosNegTruncVector
   , sdivUnderflowVector
   ]
@@ -120,7 +138,7 @@ def smodStackConformanceTestVectors : List (TestVector SModStackState SModStackR
   ]
 
 theorem sdivStackConformanceTestVectors_length :
-    sdivStackConformanceTestVectors.length = 4 := rfl
+    sdivStackConformanceTestVectors.length = 6 := rfl
 
 theorem smodStackConformanceTestVectors_length :
     smodStackConformanceTestVectors.length = 4 := rfl
@@ -129,7 +147,7 @@ def signedArithmeticConformanceTestVectorCount : Nat :=
   sdivStackConformanceTestVectors.length + smodStackConformanceTestVectors.length
 
 theorem signedArithmeticConformanceTestVectorCount_eq :
-    signedArithmeticConformanceTestVectorCount = 8 := rfl
+    signedArithmeticConformanceTestVectorCount = 10 := rfl
 
 def sdivStackConformanceVectorIds : List String :=
   sdivStackConformanceTestVectors.map TestVector.id
@@ -144,6 +162,8 @@ theorem sdivStackConformanceVectorIds_eq :
     sdivStackConformanceVectorIds =
       [ "sdiv-stack-zero-divisor"
       , "sdiv-stack-int-min-neg-one"
+      , "sdiv-stack-pos-pos"
+      , "sdiv-stack-neg-neg"
       , "sdiv-stack-pos-neg-trunc"
       , "sdiv-stack-underflow"
       ] := rfl
@@ -160,6 +180,8 @@ theorem signedArithmeticConformanceVectorIds_eq :
     signedArithmeticConformanceVectorIds =
       [ "sdiv-stack-zero-divisor"
       , "sdiv-stack-int-min-neg-one"
+      , "sdiv-stack-pos-pos"
+      , "sdiv-stack-neg-neg"
       , "sdiv-stack-pos-neg-trunc"
       , "sdiv-stack-underflow"
       , "smod-stack-zero-divisor"
@@ -169,13 +191,13 @@ theorem signedArithmeticConformanceVectorIds_eq :
       ] := rfl
 
 theorem sdivStackConformanceVectorIds_length :
-    sdivStackConformanceVectorIds.length = 4 := rfl
+    sdivStackConformanceVectorIds.length = 6 := rfl
 
 theorem smodStackConformanceVectorIds_length :
     smodStackConformanceVectorIds.length = 4 := rfl
 
 theorem signedArithmeticConformanceVectorIds_length :
-    signedArithmeticConformanceVectorIds.length = 8 := rfl
+    signedArithmeticConformanceVectorIds.length = 10 := rfl
 
 theorem sdivStackConformanceVectorIds_nodup :
     sdivStackConformanceVectorIds.Nodup := by
@@ -192,6 +214,8 @@ theorem signedArithmeticConformanceVectorIds_nodup :
 def signedArithmeticValueVectorIds : List String :=
   [ "sdiv-stack-zero-divisor"
   , "sdiv-stack-int-min-neg-one"
+  , "sdiv-stack-pos-pos"
+  , "sdiv-stack-neg-neg"
   , "sdiv-stack-pos-neg-trunc"
   , "smod-stack-zero-divisor"
   , "smod-stack-neg-pos-sign"
@@ -204,7 +228,7 @@ def signedArithmeticErrorVectorIds : List String :=
   ]
 
 theorem signedArithmeticValueVectorIds_length :
-    signedArithmeticValueVectorIds.length = 6 := rfl
+    signedArithmeticValueVectorIds.length = 8 := rfl
 
 theorem signedArithmeticErrorVectorIds_length :
     signedArithmeticErrorVectorIds.length = 2 := rfl
@@ -245,6 +269,16 @@ theorem runSDivStack?_intMin_neg_one_vector :
   simpa using
     EvmAsm.Evm64.SDivStackExecutionBridge.runSDivStack?_intMin_neg_one
       [(42 : EvmWord)]
+
+theorem runSDivStack?_pos_pos_vector :
+    runSDivStack? { stack := [(9 : EvmWord), (2 : EvmWord), 42] } =
+      some { effects := { stackWords := [4] }, stack := [42] } := by
+  native_decide
+
+theorem runSDivStack?_neg_neg_vector :
+    runSDivStack? { stack := [(-9 : EvmWord), (-2 : EvmWord), 42] } =
+      some { effects := { stackWords := [4] }, stack := [42] } := by
+  native_decide
 
 theorem runSDivStack?_pos_neg_trunc_vector :
     runSDivStack? { stack := [(7 : EvmWord), (-2 : EvmWord), 42] } =
@@ -295,6 +329,22 @@ theorem sdivIntMinNegOneVector_passed :
     { stack := [BitVec.intMin 256, (-1 : EvmWord), 42] }
     { effects := { stackWords := [BitVec.intMin 256] }, stack := [(42 : EvmWord)] }
     runSDivStack?_intMin_neg_one_vector
+
+theorem sdivPosPosVector_passed :
+    checkVector? runSDivStack? sdivPosPosVector = .passed :=
+  checkVector?_some_passed runSDivStack?
+    "sdiv-stack-pos-pos"
+    { stack := [(9 : EvmWord), (2 : EvmWord), 42] }
+    { effects := { stackWords := [4] }, stack := [(42 : EvmWord)] }
+    runSDivStack?_pos_pos_vector
+
+theorem sdivNegNegVector_passed :
+    checkVector? runSDivStack? sdivNegNegVector = .passed :=
+  checkVector?_some_passed runSDivStack?
+    "sdiv-stack-neg-neg"
+    { stack := [(-9 : EvmWord), (-2 : EvmWord), 42] }
+    { effects := { stackWords := [4] }, stack := [(42 : EvmWord)] }
+    runSDivStack?_neg_neg_vector
 
 theorem sdivPosNegTruncVector_passed :
     checkVector? runSDivStack? sdivPosNegTruncVector = .passed :=
@@ -358,6 +408,8 @@ theorem signedArithmeticConformanceVectors_passed :
       [ .passed
       , .passed
       , .passed
+      , .passed
+      , .passed
       , .errored "sdiv-stack-underflow" "stack-underflow"
       , .passed
       , .passed
@@ -366,7 +418,8 @@ theorem signedArithmeticConformanceVectors_passed :
       ] := by
   simp [signedArithmeticConformanceVectors, sdivZeroDivisorVector_passed,
     sdivStackConformanceTestVectors, smodStackConformanceTestVectors,
-    sdivIntMinNegOneVector_passed, sdivPosNegTruncVector_passed,
+    sdivIntMinNegOneVector_passed, sdivPosPosVector_passed,
+    sdivNegNegVector_passed, sdivPosNegTruncVector_passed,
     sdivUnderflowVector_passed, smodZeroDivisorVector_passed,
     smodNegPosSignVector_passed, smodPosNegSignVector_passed,
     smodUnderflowVector_passed]
