@@ -44,7 +44,7 @@ def allConformanceVectorCount : Nat :=
   allConformanceVectors.length
 
 theorem allConformanceVectors_length :
-    allConformanceVectors.length = 61 := by
+    allConformanceVectors.length = 62 := by
   simp [allConformanceVectors,
     Call.callOutputConformanceVectors_passed,
     Calldata.calldataConformanceVectors_passed,
@@ -62,7 +62,7 @@ theorem allConformanceVectors_length :
     TerminatingStackExecution.terminatingStackConformanceVectors_passed]
 
 theorem allConformanceVectorCount_eq :
-    allConformanceVectorCount = 61 := by
+    allConformanceVectorCount = 62 := by
   simp [allConformanceVectorCount, allConformanceVectors_length]
 
 def unexpectedConformanceFailures : List CheckResult :=
@@ -144,7 +144,7 @@ theorem expectedConformanceErrorCount_eq :
     TerminatingStackExecution.terminatingStackConformanceVectors_passed]
 
 theorem successfulConformanceResultCount_eq :
-    successfulConformanceResultCount = 51 := by
+    successfulConformanceResultCount = 52 := by
   simp [successfulConformanceResultCount, successfulConformanceResults,
     allConformanceVectors,
     Call.callOutputConformanceVectors_passed,
