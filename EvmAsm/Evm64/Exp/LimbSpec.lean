@@ -52,6 +52,40 @@ theorem exp_bit_test_block_spec_within
   have AD := addi_spec_gen_same_within .x6 c (-1) (base + 8) (by nofun)
   runBlock AN SR AD
 
+/-- Corrected MSB-first bit-test atom for the square-result EXP algorithm. -/
+abbrev exp_msb_bit_test_block_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base exp_msb_bit_test_block
+
+theorem exp_msb_bit_test_block_spec_within
+    (e c v10 : Word) (base : Word) :
+    let code := exp_msb_bit_test_block_code base
+    cpsTripleWithin 3 base (base + 12) code
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
+       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+  have SR := srli_spec_gen_within .x10 .x5 v10 e 63 base (by nofun)
+  have SL := slli_spec_gen_same_within .x5 e 1 (base + 4) (by nofun)
+  have AD := addi_spec_gen_same_within .x6 c (-1) (base + 8) (by nofun)
+  runBlock SR SL AD
+
+/-- Save the tested EXP bit before the following `mul_callable` clobbers
+    caller-saved argument/result registers. -/
+abbrev exp_save_bit_block_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base exp_save_bit_block
+
+theorem exp_save_bit_block_spec_within
+    (bit v18 : Word) (base : Word) :
+    let code := exp_save_bit_block_code base
+    cpsTripleWithin 1 base (base + 4) code
+      ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ v18))
+      ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))) := by
+  show cpsTripleWithin 1 base (base + 4)
+    (CodeReq.ofProg base exp_save_bit_block) _ _
+  rw [show CodeReq.ofProg base exp_save_bit_block =
+      CodeReq.singleton base (.ADDI .x18 .x10 0) from CodeReq.ofProg_singleton]
+  exact addi_spec_gen_within .x18 .x10 v18 bit 0 base (by nofun)
+
 -- ============================================================================
 -- Section 2: exp_square_block (1 instruction, slice 4b / evm-asm-4219)
 -- ============================================================================
