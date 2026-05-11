@@ -24,6 +24,7 @@ import EvmAsm.Evm64.Exp.SquaringPairThenMulCall
 import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.CondMulCall
 import EvmAsm.Evm64.Exp.CondMulCallSeq
+import EvmAsm.Evm64.Exp.CondMulPairThenMulCall
 import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Evm64.Exp.Compose.Base
 import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
