@@ -418,11 +418,14 @@ theorem dividendAbs_spec_in_sdivCode
     exact sdivCode_dividendAbs_sub (base := base) a i
       (by simpa [dividendAbsCode,
         EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_code] using h)
-  exact cpsTripleWithin_extend_code hmono
-    (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_spec_within
+  have hSpec :=
+    EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_spec_within
       .x12 .x8 .x10 .x7 .x11 0 8 16 24
       sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3
-      (base + dividendAbsOff) (by decide) (by decide) (by decide))
+      (base + dividendAbsOff) (by decide) (by decide) (by decide)
+  rw [EvmAsm.Evm64.condNegate256BlockPre_unfold,
+    EvmAsm.Evm64.condNegate256BlockPost_unfold] at hSpec
+  exact cpsTripleWithin_extend_code hmono hSpec
 
 theorem divCall_spec_in_sdivCode
     (vOld : Word) (base : Word) :
