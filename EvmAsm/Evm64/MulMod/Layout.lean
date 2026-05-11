@@ -4,8 +4,6 @@
   Scratchpad-layout scaffold for the MULMOD opcode (GH #91).
 -/
 
-import EvmAsm.Evm64.Stack
-
 namespace EvmAsm.Evm64
 
 /-- Layout of the MULMOD routine's `sp`-relative internal scratch cells.
