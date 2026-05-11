@@ -414,8 +414,7 @@ theorem evm_div_denorm_epilogue_spec_noNop (sp base : Word)
   let u3' := u3 >>> (shift.toNat % 64)
   -- Step 1: Denorm body (base+916 → base+1008)
   have hDenorm := divK_denorm_body_spec_within_noNop sp u0 u1 u2 u3 v2 v5 v7 shift base
-
-  intro_lets at hDenorm
+  rw [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold] at hDenorm
   -- Frame denorm with x10, q[], output memory
   have hDenormF := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ v10) **

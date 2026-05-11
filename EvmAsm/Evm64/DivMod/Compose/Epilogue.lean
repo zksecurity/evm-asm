@@ -94,22 +94,74 @@ theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base
   cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
     (divK_denorm_preamble_spec_within_noNop sp shift v5 v6 v7 v2 v10 base hshift_nz)
 
-theorem divK_denorm_body_spec_within_noNop (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
-    let antiShift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
-    cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode_noNop base)
+/-- Precondition for the DIV denorm body (post-preamble): the four
+    normalized `u[]` slots, the shift held in x6, x2 holding scratch, and
+    the standard x12/x5/x7/x0 frame. Wrapped `@[irreducible]` so
+    downstream proofs do not re-reduce the 10-atom sepConj at each use
+    site. -/
+@[irreducible]
+def divKDenormBodyPre (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+  ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3)
+
+theorem divKDenormBodyPre_unfold
+    {sp u0 u1 u2 u3 v2 v5 v7 shift : Word} :
+    divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift =
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
+       ((sp + signExtend12 4056) ↦ₘ u0) **
+       ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) **
+       ((sp + signExtend12 4032) ↦ₘ u3)) := by
+  delta divKDenormBodyPre
+  rfl
+
+/-- Postcondition for the DIV denorm body: each `u[]` slot has been
+    right-shifted by `shift` and OR'd with the upper bits of its
+    successor (anti-shifted), `x5` holds the top `u3'`, `x7` holds the
+    high-bits of the original `u3`, `x2` holds `antiShift`. Wrapped
+    `@[irreducible]` to hide the four-step shift/merge let chain. -/
+@[irreducible]
+def divKDenormBodyPost (sp u0 u1 u2 u3 shift : Word) : Assertion :=
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
+  ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')
+
+theorem divKDenormBodyPost_unfold
+    {sp u0 u1 u2 u3 shift : Word} :
+    divKDenormBodyPost sp u0 u1 u2 u3 shift =
+      (let antiShift := signExtend12 (0 : BitVec 12) - shift
+       let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+       let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+       let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+       let u3' := u3 >>> (shift.toNat % 64)
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')) := by
-  intro antiShift u0' u1' u2' u3'
+       ((sp + signExtend12 4056) ↦ₘ u0') **
+       ((sp + signExtend12 4048) ↦ₘ u1') **
+       ((sp + signExtend12 4040) ↦ₘ u2') **
+       ((sp + signExtend12 4032) ↦ₘ u3')) := by
+  delta divKDenormBodyPost
+  rfl
+
+theorem divK_denorm_body_spec_within_noNop (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
+    cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode_noNop base)
+      (divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift)
+      (divKDenormBodyPost sp u0 u1 u2 u3 shift) := by
+  rw [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold]
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
   -- ADDI x2 x0 0 + SUB x2 x2 x6 (base+916 → base+924): compute antiShift
   have haddi := addi_x0_spec_gen_within .x2 v2 0 (base + denormOff + 8) (by nofun)
   rw [show (base + denormOff + 8 : Word) + 4 = base + denormOff + 12 from by bv_addr] at haddi
@@ -207,20 +259,9 @@ theorem divK_denorm_body_spec_within_noNop (sp u0 u1 u2 u3 v2 v5 v7 shift : Word
     h_all
 
 theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
-    let antiShift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')) :=
+      (divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift)
+      (divKDenormBodyPost sp u0 u1 u2 u3 shift) :=
   cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
     (divK_denorm_body_spec_within_noNop sp u0 u1 u2 u3 v2 v5 v7 shift base)
 
