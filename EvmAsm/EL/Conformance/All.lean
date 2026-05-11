@@ -44,11 +44,11 @@ def allConformanceVectorCount : Nat :=
   allConformanceVectors.length
 
 theorem allConformanceVectors_length :
-    allConformanceVectors.length = 54 := by
+    allConformanceVectors.length = 57 := by
   native_decide
 
 theorem allConformanceVectorCount_eq :
-    allConformanceVectorCount = 54 := by
+    allConformanceVectorCount = 57 := by
   native_decide
 
 def unexpectedConformanceFailures : List CheckResult :=
@@ -115,7 +115,7 @@ theorem expectedConformanceErrorCount_eq :
   native_decide
 
 theorem successfulConformanceResultCount_eq :
-    successfulConformanceResultCount = 44 := by
+    successfulConformanceResultCount = 47 := by
   native_decide
 
 end Conformance
