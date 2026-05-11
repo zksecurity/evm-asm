@@ -1,0 +1,422 @@
+/-
+  EvmAsm.Evm64.DivMod.Compose.PhaseABNoNop
+
+  No-NOP DIV Phase A/B wrappers used by callable DIV/SDIV composition.
+-/
+
+import EvmAsm.Evm64.DivMod.Compose.PhaseAB
+import EvmAsm.Rv64.Tactics.XPermChunked
+
+open EvmAsm.Rv64.Tactics
+
+namespace EvmAsm.Evm64
+
+open EvmAsm.Rv64
+open EvmAsm.Rv64.AddrNorm
+  (bv64_4mul_9 bv64_4mul_10 bv64_4mul_11 bv64_4mul_12 bv64_4mul_13
+   bv64_4mul_14 bv64_4mul_15)
+
+private theorem phB_i2_8 {base : Word} :
+    (base + phaseBInit2Off : Word) + 8 = base + phaseBStep0Off := by bv_addr
+private theorem phB_addi_4 {base : Word} :
+    (base + phaseBStep0Off : Word) + 4 = base + phaseBBneOff := by bv_addr
+private theorem phB_bne_4 {base : Word} :
+    (base + phaseBBneOff : Word) + 4 = base + phaseBStep1Off := by bv_addr
+private theorem phB_step1_4 {base : Word} :
+    (base + phaseBStep1Off : Word) + 4 = base + phaseBBne2Off := by bv_addr
+private theorem phB_step1_8 {base : Word} :
+    (base + phaseBBne2Off : Word) + 4 = base + phaseBStep2Off := by bv_addr
+private theorem phB_step2_4 {base : Word} :
+    (base + phaseBStep2Off : Word) + 4 = base + phaseBBne3Off := by bv_addr
+private theorem phB_step2_8 {base : Word} :
+    (base + phaseBBne3Off : Word) + 4 = base + phaseBStep3Off := by bv_addr
+private theorem phB_fall_4 {base : Word} :
+    (base + phaseBStep3Off : Word) + 4 = base + phaseBTailOff := by bv_addr
+private theorem phB_t_20 {base : Word} :
+    (base + phaseBTailOff : Word) + 20 = base + clzOff := by bv_addr
+private theorem divK_phaseB_n1_nm1_x8 :
+    ((1 : Word) + signExtend12 (4095 : BitVec 12)) <<< (3 : BitVec 6).toNat = (0 : Word) := by
+  decide
+private theorem phB_sp0_32 {sp : Word} : (sp + (0 : Word) + (32 : Word)) = sp + 32 := by
+  bv_addr
+
+private theorem sub_divCodeNoNop_of_phaseB_left {base : Word} {rest : CodeReq} :
+    ∀ a i,
+      CodeReq.ofProg (base + phaseBOff) divK_phaseB a = some i →
+      ((CodeReq.ofProg base (divK_phaseA 1020)).union
+        ((CodeReq.ofProg (base + phaseBOff) divK_phaseB).union rest)) a = some i :=
+  CodeReq.mono_union_right
+    (CodeReq.ofProg_disjoint_range
+      (fun k1 k2 hk1 hk2 => by
+        simp only [divK_phaseA_len, divK_phaseB_len] at hk1 hk2; bv_omega))
+    (CodeReq.union_mono_left)
+
+private theorem divK_phaseA_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (divK_phaseA_code base) a = some i → (divCode_noNop base) a = some i := by
+  unfold divCode_noNop divK_phaseA_code; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left
+
+private theorem beq_singleton_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseABeqOff) (.BEQ .x5 .x0 1020)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  exact CodeReq.union_mono_left a i
+    (CodeReq.singleton_mono (CodeReq.ofProg_lookup base (divK_phaseA 1020) 7
+      (by decide) (by decide)) a i h)
+
+private theorem divK_phaseB_init1_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (divK_phaseB_init1_code (base + phaseBOff)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have h1 := CodeReq.ofProg_mono_sub (base + phaseBOff) (base + phaseBOff) divK_phaseB
+    (divK_phaseB.take 7) 0
+    (by bv_addr) (by decide) (by decide) (by decide) a i h
+  exact sub_divCodeNoNop_of_phaseB_left a i h1
+
+private theorem divK_phaseB_init2_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (divK_phaseB_init2_code (base + phaseBInit2Off)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have h1 := CodeReq.ofProg_mono_sub (base + phaseBOff) (base + phaseBInit2Off) divK_phaseB
+    (divK_phaseB.drop 7 |>.take 2) 7
+    (by bv_addr) (by decide) (by decide) (by decide) a i h
+  exact sub_divCodeNoNop_of_phaseB_left a i h1
+
+private theorem divK_phaseB_tail_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (divK_phaseB_tail_code (base + phaseBTailOff)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have h1 := CodeReq.ofProg_mono_sub (base + phaseBOff) (base + phaseBTailOff) divK_phaseB
+    (divK_phaseB.drop 16) 16
+    (by bv_addr) (by decide) (by decide) (by decide) a i h
+  exact sub_divCodeNoNop_of_phaseB_left a i h1
+
+private theorem addi_x5_singleton_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBStep0Off) (.ADDI .x5 .x0 4)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 9
+    (by decide) (by decide)
+  rw [bv64_4mul_9,
+      show (base + phaseBOff : Word) + 36 = base + phaseBStep0Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem bne_x10_singleton_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBBneOff) (.BNE .x10 .x0 24)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 10
+    (by decide) (by decide)
+  rw [bv64_4mul_10,
+      show (base + phaseBOff : Word) + 40 = base + phaseBBneOff from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem addi_x5_3_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBStep1Off) (.ADDI .x5 .x0 3)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 11
+    (by decide) (by decide)
+  rw [bv64_4mul_11,
+      show (base + phaseBOff : Word) + 44 = base + phaseBStep1Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem bne_x7_16_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBBne2Off) (.BNE .x7 .x0 16)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 12
+    (by decide) (by decide)
+  rw [bv64_4mul_12,
+      show (base + phaseBOff : Word) + 48 = base + phaseBBne2Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem addi_x5_2_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBStep2Off) (.ADDI .x5 .x0 2)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 13
+    (by decide) (by decide)
+  rw [bv64_4mul_13,
+      show (base + phaseBOff : Word) + 52 = base + phaseBStep2Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem bne_x6_8_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBBne3Off) (.BNE .x6 .x0 8)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 14
+    (by decide) (by decide)
+  rw [bv64_4mul_14,
+      show (base + phaseBOff : Word) + 56 = base + phaseBBne3Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+private theorem addi_x5_1_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + phaseBStep3Off) (.ADDI .x5 .x0 1)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  intro a i h
+  have hlookup := CodeReq.ofProg_lookup (base + phaseBOff) divK_phaseB 15
+    (by decide) (by decide)
+  rw [bv64_4mul_15,
+      show (base + phaseBOff : Word) + 60 = base + phaseBStep3Off from by bv_addr] at hlookup
+  exact sub_divCodeNoNop_of_phaseB_left a i (CodeReq.singleton_mono hlookup a i h)
+
+theorem evm_div_phaseA_ntaken_spec_within_noNop (sp base : Word)
+    (b0 b1 b2 b3 v5 v10 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0) :
+    cpsTripleWithin 8 base (base + phaseBOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (b0 ||| b1 ||| b2 ||| b3)) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3)) := by
+  have hbody := cpsTripleWithin_extend_code divK_phaseA_code_sub_divCode_noNop
+    (divK_phaseA_body_spec_within sp base b0 b1 b2 b3 v5 v10)
+  have hbeq_raw := beq_spec_gen_within .x5 .x0 1020 (b0 ||| b1 ||| b2 ||| b3) (0 : Word) (base + phaseABeqOff)
+  rw [show (base + phaseABeqOff : Word) + signExtend13 1020 = base + zeroPathOff from by rv64_addr,
+      show (base + phaseABeqOff : Word) + 4 = base + phaseBOff from by bv_addr] at hbeq_raw
+  have hbeq_clean := cpsBranchWithin_ntakenStripPure2 hbeq_raw
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
+      exact absurd ((sepConj_pure_right _).mp h_rest).2 hbnz)
+  have hbeq := cpsTripleWithin_extend_code beq_singleton_sub_divCode_noNop hbeq_clean
+  have hbeq_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+     ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+    (by pcFree) hbeq
+  have hAB := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hbody hbeq_framed
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hAB
+
+theorem evm_div_phaseB_n1_spec_within_noNop (sp base : Word)
+    (b0 b1 b2 b3 : Word) (v5 v6 v7 : Word)
+    (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
+    (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0) :
+    cpsTripleWithin 21 (base + phaseBOff) (base + clzOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) **
+       ((sp + signExtend12 3984) ↦ₘ nMem))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 3984) ↦ₘ (1 : Word))) := by
+  have hinit1_raw := divK_phaseB_init1_spec_within sp (base + phaseBOff) q0 q1 q2 q3 u5 u6 u7
+  simp only [phB_off_28] at hinit1_raw
+  have hinit1 := cpsTripleWithin_extend_code divK_phaseB_init1_code_sub_divCode_noNop hinit1_raw
+  have hinit1f := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hinit1
+  have hinit2_raw := divK_phaseB_init2_spec_within sp (base + phaseBInit2Off) b1 b2 v6 v7
+  simp only [phB_i2_8] at hinit2_raw
+  have hinit2 := cpsTripleWithin_extend_code divK_phaseB_init2_code_sub_divCode_noNop hinit2_raw
+  have hinit2f := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hinit2
+  have h12 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hinit1f hinit2f
+  have haddi0_raw := addi_x0_spec_gen_within .x5 v5 4 (base + phaseBStep0Off) (by nofun)
+  simp only [phB_addi_4, signExtend12_4] at haddi0_raw
+  have haddi0 := cpsTripleWithin_extend_code addi_x5_singleton_sub_divCode_noNop haddi0_raw
+  have haddi0f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) haddi0
+  have h123 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h12 haddi0f
+  have hbne0_raw := bne_spec_gen_within .x10 .x0 24 b3 (0 : Word) (base + phaseBBneOff)
+  rw [show (base + phaseBBneOff : Word) + signExtend13 24 = base + phaseBTailOff from by
+        rv64_addr, phB_bne_4] at hbne0_raw
+  have hbne0_clean := cpsBranchWithin_ntakenStripPure2 hbne0_raw
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
+      exact absurd hb3z ((sepConj_pure_right _).mp h_rest).2)
+  have hbne0 := cpsTripleWithin_extend_code bne_x10_singleton_sub_divCode_noNop hbne0_clean
+  have hbne0f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (4 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hbne0
+  have h1234 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h123 hbne0f
+  have haddi1_raw := addi_x0_spec_gen_within .x5 (4 : Word) 3 (base + phaseBStep1Off) (by nofun)
+  simp only [phB_step1_4, signExtend12_3] at haddi1_raw
+  have haddi1 := cpsTripleWithin_extend_code addi_x5_3_sub_divCode_noNop haddi1_raw
+  have haddi1f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) haddi1
+  have h12345 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h1234 haddi1f
+  have hbne1_raw := bne_spec_gen_within .x7 .x0 16 b2 (0 : Word) (base + phaseBBne2Off)
+  rw [show (base + phaseBBne2Off : Word) + signExtend13 16 = base + phaseBTailOff from by
+        rv64_addr, phB_step1_8] at hbne1_raw
+  have hbne1_clean := cpsBranchWithin_ntakenStripPure2 hbne1_raw
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
+      exact absurd hb2z ((sepConj_pure_right _).mp h_rest).2)
+  have hbne1 := cpsTripleWithin_extend_code bne_x7_16_sub_divCode_noNop hbne1_clean
+  have hbne1f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (3 : Word)) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hbne1
+  have h123456 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h12345 hbne1f
+  have haddi2_raw := addi_x0_spec_gen_within .x5 (3 : Word) 2 (base + phaseBStep2Off) (by nofun)
+  simp only [phB_step2_4, signExtend12_2] at haddi2_raw
+  have haddi2 := cpsTripleWithin_extend_code addi_x5_2_sub_divCode_noNop haddi2_raw
+  have haddi2f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) ** (.x6 ↦ᵣ b1) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) haddi2
+  have h1234567 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h123456 haddi2f
+  have hbne2_raw := bne_spec_gen_within .x6 .x0 8 b1 (0 : Word) (base + phaseBBne3Off)
+  rw [show (base + phaseBBne3Off : Word) + signExtend13 8 = base + phaseBTailOff from by
+        rv64_addr, phB_step2_8] at hbne2_raw
+  have hbne2_clean := cpsBranchWithin_ntakenStripPure2 hbne2_raw
+    (fun hp hQt => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQt
+      exact absurd hb1z ((sepConj_pure_right _).mp h_rest).2)
+  have hbne2 := cpsTripleWithin_extend_code bne_x6_8_sub_divCode_noNop hbne2_clean
+  have hbne2f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (2 : Word)) ** (.x10 ↦ᵣ b3) ** (.x7 ↦ᵣ b2) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hbne2
+  have h12345678 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) h1234567 hbne2f
+  have haddi3_raw := addi_x0_spec_gen_within .x5 (2 : Word) 1 (base + phaseBStep3Off) (by nofun)
+  simp only [phB_fall_4, signExtend12_1] at haddi3_raw
+  have haddi3 := cpsTripleWithin_extend_code addi_x5_1_sub_divCode_noNop haddi3_raw
+  have haddi3f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) haddi3
+  have h123456789 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_chunked hp) h12345678 haddi3f
+  have htail_raw := divK_phaseB_tail_spec_within sp (1 : Word) b0 nMem (base + phaseBTailOff)
+  simp only [divK_phaseB_tail_pre_unfold, divK_phaseB_tail_post_unfold,
+             phB_t_20, divK_phaseB_n1_nm1_x8, signExtend12_32, phB_sp0_32] at htail_raw
+  have htail := cpsTripleWithin_extend_code divK_phaseB_tail_code_sub_divCode_noNop htail_raw
+  have htailf := cpsTripleWithin_frameR
+    ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) ** (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+     ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)))
+    (by pcFree) htail
+  have hphaseB := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_chunked hp) h123456789 htailf
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_chunked hp)
+    (fun h hq => by xperm_chunked hq)
+    hphaseB
+
+theorem evm_div_phaseAB_n1_spec_within_noNop (sp base : Word)
+    (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
+    (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0) :
+    cpsTripleWithin (8 + 21) base (base + clzOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (1 : Word))) := by
+  have hA := evm_div_phaseA_ntaken_spec_within_noNop sp base b0 b1 b2 b3 v5 v10 hbnz
+  have hAf := cpsTripleWithin_frameR
+    ((.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+     ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+     ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hA
+  have hB := evm_div_phaseB_n1_spec_within_noNop sp base b0 b1 b2 b3
+    (b0 ||| b1 ||| b2 ||| b3) v6 v7 q0 q1 q2 q3 u5 u6 u7 nMem
+    hb3z hb2z hb1z
+  have hAB := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_chunked hp) hAf hB
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_chunked hp)
+    (fun h hq => by xperm_chunked hq)
+    hAB
+
+end EvmAsm.Evm64
