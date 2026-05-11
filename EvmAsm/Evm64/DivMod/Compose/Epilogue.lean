@@ -19,19 +19,20 @@ open EvmAsm.Rv64.AddrNorm (bv64_4mul_3)
 -- LD shift, BEQ skip, ADDI+SUB anti, 3×merge + last
 -- ============================================================================
 
-/-- Denorm code (block 9) is subsumed by divCode. -/
-private theorem divK_denorm_code_sub_divCode {base : Word} :
-    ∀ a i, (CodeReq.ofProg (base + denormOff) divK_denorm) a = some i → (divCode base) a = some i := by
-  unfold divCode; simp only [CodeReq.unionAll_cons]
+/-- Denorm code (block 9) is subsumed by divCode_noNop. -/
+private theorem divK_denorm_code_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.ofProg (base + denormOff) divK_denorm) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left
 
 /-- Denorm preamble for shift≠0: LD shift from memory + BEQ not taken.
     base+908 → base+916. Bridges the gap between loop body exit and denorm body. -/
-theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
+theorem divK_denorm_preamble_spec_within_noNop (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
     (hshift_nz : shift ≠ 0) :
-    cpsTripleWithin 2 (base + denormOff) (base + denormOff + 8) (divCode base)
+    cpsTripleWithin 2 (base + denormOff) (base + denormOff + 8) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 3992) ↦ₘ shift))
@@ -42,7 +43,7 @@ theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base
   have hld := ld_spec_gen_within .x6 .x12 sp v6 shift (3992 : BitVec 12) (base + denormOff) (by nofun)
   have hlde := cpsTripleWithin_extend_code (hmono := by
     intro a i h
-    exact divK_denorm_code_sub_divCode a i
+    exact divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff) divK_denorm
         [.LD .x6 .x12 3992] 0 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hld
   -- 2. BEQ x6 x0 96 at base+912 (denorm instr [1])
@@ -51,7 +52,7 @@ theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base
       show (base + denormOff + 4 : Word) + 4 = base + denormOff + 8 from by bv_addr] at hbeq
   have hbeqe := cpsBranchWithin_extend_code (hmono := by
     intro a i h
-    exact divK_denorm_code_sub_divCode a i
+    exact divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 4) divK_denorm
         [.BEQ .x6 .x0 96] 1 (by bv_addr) (by decide) (by decide) (by decide) a i h)) hbeq
   -- 3. Eliminate taken branch: shift ≠ 0 means BEQ not taken
@@ -81,27 +82,91 @@ theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base
     (fun h hq => by xperm_hyp hq)
     full
 
-theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
-    let antiShift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
-    cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode base)
+theorem divK_denorm_preamble_spec_within (sp shift v5 v6 v7 v2 v10 : Word) (base : Word)
+    (hshift_nz : shift ≠ 0) :
+    cpsTripleWithin 2 (base + denormOff) (base + denormOff + 8) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift)) :=
+  cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
+    (divK_denorm_preamble_spec_within_noNop sp shift v5 v6 v7 v2 v10 base hshift_nz)
+
+/-- Precondition for the DIV denorm body (post-preamble): the four
+    normalized `u[]` slots, the shift held in x6, x2 holding scratch, and
+    the standard x12/x5/x7/x0 frame. Wrapped `@[irreducible]` so
+    downstream proofs do not re-reduce the 10-atom sepConj at each use
+    site. -/
+@[irreducible]
+def divKDenormBodyPre (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+  ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3)
+
+theorem divKDenormBodyPre_unfold
+    {sp u0 u1 u2 u3 v2 v5 v7 shift : Word} :
+    divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift =
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
+       ((sp + signExtend12 4056) ↦ₘ u0) **
+       ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) **
+       ((sp + signExtend12 4032) ↦ₘ u3)) := by
+  delta divKDenormBodyPre
+  rfl
+
+/-- Postcondition for the DIV denorm body: each `u[]` slot has been
+    right-shifted by `shift` and OR'd with the upper bits of its
+    successor (anti-shifted), `x5` holds the top `u3'`, `x7` holds the
+    high-bits of the original `u3`, `x2` holds `antiShift`. Wrapped
+    `@[irreducible]` to hide the four-step shift/merge let chain. -/
+@[irreducible]
+def divKDenormBodyPost (sp u0 u1 u2 u3 shift : Word) : Assertion :=
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
+  ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')
+
+theorem divKDenormBodyPost_unfold
+    {sp u0 u1 u2 u3 shift : Word} :
+    divKDenormBodyPost sp u0 u1 u2 u3 shift =
+      (let antiShift := signExtend12 (0 : BitVec 12) - shift
+       let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+       let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+       let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+       let u3' := u3 >>> (shift.toNat % 64)
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')) := by
-  intro antiShift u0' u1' u2' u3'
+       ((sp + signExtend12 4056) ↦ₘ u0') **
+       ((sp + signExtend12 4048) ↦ₘ u1') **
+       ((sp + signExtend12 4040) ↦ₘ u2') **
+       ((sp + signExtend12 4032) ↦ₘ u3')) := by
+  delta divKDenormBodyPost
+  rfl
+
+theorem divK_denorm_body_spec_within_noNop (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
+    cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode_noNop base)
+      (divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift)
+      (divKDenormBodyPost sp u0 u1 u2 u3 shift) := by
+  rw [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold]
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
   -- ADDI x2 x0 0 + SUB x2 x2 x6 (base+916 → base+924): compute antiShift
   have haddi := addi_x0_spec_gen_within .x2 v2 0 (base + denormOff + 8) (by nofun)
   rw [show (base + denormOff + 8 : Word) + 4 = base + denormOff + 12 from by bv_addr] at haddi
   have haddie := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 8) divK_denorm
         [.ADDI .x2 .x0 0] 2
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) haddi
@@ -115,7 +180,7 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
     (signExtend12 (0 : BitVec 12)) shift (base + denormOff + 12) (by nofun)
   rw [show (base + denormOff + 12 : Word) + 4 = base + denormOff + 16 from by bv_addr] at hsub
   have hsube := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.singleton_mono (by
         have hlookup := CodeReq.ofProg_lookup (base + denormOff) divK_denorm 3
           (by decide) (by decide)
@@ -133,7 +198,7 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
   have hm0 := divK_denorm_merge_spec_within 4056 4048 sp u0 u1 v5 v7 shift antiShift (base + denormOff + 16)
   rw [show (base + denormOff + 16 : Word) + 24 = base + denormOff + 40 from by bv_addr] at hm0
   have hm0e := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 16) divK_denorm
         (divK_denorm_merge_prog 4056 4048) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm0
@@ -148,7 +213,7 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
     u0' (u1 <<< (antiShift.toNat % 64)) shift antiShift (base + denormOff + 40)
   rw [show (base + denormOff + 40 : Word) + 24 = base + denormOff + 64 from by bv_addr] at hm1
   have hm1e := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 40) divK_denorm
         (divK_denorm_merge_prog 4048 4040) 10
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm1
@@ -163,7 +228,7 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
     u1' (u2 <<< (antiShift.toNat % 64)) shift antiShift (base + denormOff + 64)
   rw [show (base + denormOff + 64 : Word) + 24 = base + denormOff + 88 from by bv_addr] at hm2
   have hm2e := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 64) divK_denorm
         (divK_denorm_merge_prog 4040 4032) 16
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hm2
@@ -177,7 +242,7 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
   have hl := divK_denorm_last_spec_within 4032 sp u3 u2' shift (base + denormOff + 88)
   rw [show (base + denormOff + 88 : Word) + 12 = base + epilogueOff from by bv_addr] at hl
   have hle := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_denorm_code_sub_divCode a i
+    divK_denorm_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + denormOff) (base + denormOff + 88) divK_denorm
         (divK_denorm_last_prog 4032) 22
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hl
@@ -193,25 +258,32 @@ theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (bas
     (fun h hq => by xperm_hyp hq)
     h_all
 
+theorem divK_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
+    cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (divCode base)
+      (divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift)
+      (divKDenormBodyPost sp u0 u1 u2 u3 shift) :=
+  cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
+    (divK_denorm_body_spec_within_noNop sp u0 u1 u2 u3 v2 v5 v7 shift base)
+
 -- ============================================================================
 -- Section 10m: DIV Epilogue composition (10 instructions at base+1008)
 -- Load q[0..3], ADDI sp+32, store to output, JAL to NOP
 -- ============================================================================
 
-/-- DIV epilogue code (block 10) is subsumed by divCode. -/
-private theorem divK_divEpilogue_code_sub_divCode {base : Word} :
+/-- DIV epilogue code (block 10) is subsumed by divCode_noNop. -/
+private theorem divK_divEpilogue_code_sub_divCode_noNop {base : Word} :
     ∀ a i, (CodeReq.ofProg (base + epilogueOff) (divK_div_epilogue 24)) a = some i →
-      (divCode base) a = some i := by
-  unfold divCode; simp only [CodeReq.unionAll_cons]
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
   exact CodeReq.union_mono_left
 
 /-- Full DIV epilogue: load q[0..3] from scratch, advance sp, store to output, JAL to NOP.
     base+1008 → base+1068 (10 instructions). -/
-theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
+theorem divK_div_epilogue_spec_within_noNop (sp : Word) (base : Word)
     (q0 q1 q2 q3 v5 v6 v7 v10 m0 m8 m16 m24 : Word) :
-    cpsTripleWithin 10 (base + epilogueOff) (base + nopOff) (divCode base)
+    cpsTripleWithin 10 (base + epilogueOff) (base + nopOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
        ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
@@ -226,7 +298,7 @@ theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
   have hload := divK_epilogue_load_spec_within 4088 4080 4072 4064 sp q0 q1 q2 q3 v5 v6 v7 v10
     (base + epilogueOff)
   have hloade := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_divEpilogue_code_sub_divCode a i
+    divK_divEpilogue_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff) (divK_div_epilogue 24)
         (divK_epilogue_load_prog 4088 4080 4072 4064) 0
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hload
@@ -235,7 +307,7 @@ theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
   rw [show (base + epilogueOff + 16 : Word) + 20 + signExtend21 24 = base + nopOff from by rv64_addr]
     at hstore
   have hstoree := cpsTripleWithin_extend_code (hmono := fun a i h =>
-    divK_divEpilogue_code_sub_divCode a i
+    divK_divEpilogue_code_sub_divCode_noNop a i
       (CodeReq.ofProg_mono_sub (base + epilogueOff) (base + epilogueOff + 16) (divK_div_epilogue 24)
         (divK_epilogue_store_prog 24) 4
         (by bv_addr) (by decide) (by decide) (by decide) a i h)) hstore
@@ -254,6 +326,22 @@ theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
     h12
+
+theorem divK_div_epilogue_spec_within (sp : Word) (base : Word)
+    (q0 q1 q2 q3 v5 v6 v7 v10 m0 m8 m16 m24 : Word) :
+    cpsTripleWithin 10 (base + epilogueOff) (base + nopOff) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+      ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ q0) ** (.x6 ↦ᵣ q1) ** (.x7 ↦ᵣ q2) ** (.x10 ↦ᵣ q3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + 32) ↦ₘ q0) ** ((sp + 40) ↦ₘ q1) **
+       ((sp + 48) ↦ₘ q2) ** ((sp + 56) ↦ₘ q3)) :=
+  cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
+    (divK_div_epilogue_spec_within_noNop sp base q0 q1 q2 q3 v5 v6 v7 v10 m0 m8 m16 m24)
 
 -- ============================================================================
 -- Section 11: MOD program code infrastructure

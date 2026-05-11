@@ -111,7 +111,7 @@
   ["EvmAsm.Evm64.AddMod.LimbSpec", "EvmAsm.Evm64.AddMod.AddrNorm"],
   "EvmAsm.Evm64.MulMod.AddrNormAttr": ["Lean.Meta.Tactic.Simp.RegisterCommand"],
   "EvmAsm.Rv64.Tactics.XCancelStruct":
-  ["EvmAsm.Rv64.SepLogic"],
+  ["EvmAsm.Rv64.SepLogic", "EvmAsm.Rv64.Tactics.XSimp"],
   "EvmAsm.Rv64.Tactics.SymStep":
   ["EvmAsm.Rv64.Execution"],
   "EvmAsm.Evm64.Accelerators.Status":

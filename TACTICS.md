@@ -10,6 +10,7 @@ User guide for the frame automation tactics in `EvmAsm/Tactics/`.
 | `seqFrame` | `SeqFrame.lean` | Compose two `cpsTriple` specs with automatic framing |
 | `xcancel` | `XCancel.lean` | Match/cancel separation logic atoms, compute frame |
 | `xperm` | `XPerm.lean` | Prove `P = Q` for AC-permutations of `sepConj` chains |
+| `xperm_chunked` | `XPermChunked.lean` | Opt-in alias for large-chain permutation experiments |
 | `@[spec_gen]` | `SpecDb.lean` | Register instruction specs for auto-resolution |
 | `#spec_db` | `SpecDb.lean` | Print all registered instruction specs |
 
@@ -157,6 +158,18 @@ example : (A ** B ** C) = (C ** A ** B) := by xperm
 
 Used internally by all other tactics. Also available as `xperm_hyp` (in
 `XSimp.lean`) for rewriting hypotheses.
+
+### xperm_chunked
+
+`xperm_chunked h` is an opt-in spelling for sites that are being migrated
+under the chunked-permutation work. It has the same user-facing contract as
+`xperm_hyp h`: given `h : P s`, it closes a goal `Q s` when `P` and `Q` are
+the same `sepConj` atoms up to associativity and commutativity.
+
+The current implementation deliberately routes through the existing proved
+`xperm` path. Use it at selected large-chain sites where the proof should
+remain source-compatible as the chunk partitioning backend evolves; keep using
+plain `xperm_hyp` for ordinary small permutations.
 
 ## extract_pure
 

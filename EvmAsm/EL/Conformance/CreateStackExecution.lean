@@ -32,6 +32,7 @@ def readByteAt (memory : List Byte) (addr : Nat) : Byte :=
   memory.getD addr 0
 
 def deployedAddress : Address := 0x1234
+def create2DeployedAddress : Address := 0x5678
 
 def vectorExecutor (request : CreateRequest) : CreateResult :=
   if request.kind = .create ∧ request.initcode = [(0xbb : Byte), 0xcc] ∧
@@ -41,6 +42,13 @@ def vectorExecutor (request : CreateRequest) : CreateResult :=
       state := WorldState.empty
       returndata := []
       gasRemaining := 300 }
+  else if request.kind = .create2 ∧ request.initcode = [(0xbb : Byte), 0xcc] ∧
+      request.value = 11 ∧ request.gas = 654 ∧ request.salt? = some 0x55 then
+    { status := .deployed
+      address? := some create2DeployedAddress
+      state := WorldState.empty
+      returndata := []
+      gasRemaining := 600 }
   else
     { status := .failed
       address? := none
@@ -64,24 +72,38 @@ def createStackVector : TestVector CreateStackInput CreateStackState :=
     expected :=
       .value { stack := [(deployedAddress.zeroExtend 256 : EvmWord), 99] } }
 
+/-- CREATE2 consumes its salt operand and pushes the deployed address.
+    Distinctive token: create2StackConformanceVector #115 #125. -/
+def create2StackConformanceVector : TestVector CreateStackInput CreateStackState :=
+  { id := "create2-stack-execution"
+    input :=
+      { kind := .create2
+        creator := 0xabcd
+        memory := [(0xaa : Byte), 0xbb, 0xcc]
+        gas := 654
+        stackState := { stack := [(11 : EvmWord), 1, 2, 0x55, 88] } }
+    expected :=
+      .value { stack := [(create2DeployedAddress.zeroExtend 256 : EvmWord), 88] } }
+
 /-- CREATE stack conformance inputs as reusable test vectors.
     Distinctive token:
     CreateStackExecutionConformance.createStackConformanceTestVectors #115 #125. -/
 def createStackConformanceTestVectors :
     List (TestVector CreateStackInput CreateStackState) :=
-  [createStackVector]
+  [createStackVector, create2StackConformanceVector]
 
 def createStackConformanceVectorIds : List String :=
   createStackConformanceTestVectors.map TestVector.id
 
 theorem createStackConformanceTestVectors_length :
-    createStackConformanceTestVectors.length = 1 := rfl
+    createStackConformanceTestVectors.length = 2 := rfl
 
 theorem createStackConformanceVectorIds_eq :
-    createStackConformanceVectorIds = ["create-stack-execution"] := rfl
+    createStackConformanceVectorIds =
+      ["create-stack-execution", "create2-stack-execution"] := rfl
 
 theorem createStackConformanceVectorIds_length :
-    createStackConformanceVectorIds.length = 1 := rfl
+    createStackConformanceVectorIds.length = 2 := rfl
 
 theorem createStackConformanceVectorIds_nodup :
     createStackConformanceVectorIds.Nodup := by
@@ -109,6 +131,28 @@ theorem createStackVector_passed :
     { stack := [(deployedAddress.zeroExtend 256 : EvmWord), 99] }
     runCreateStackVector?_create
 
+theorem runCreateStackVector?_create2 :
+    runCreateStackVector?
+      { kind := .create2
+        creator := (0xabcd : Address)
+        memory := [(0xaa : Byte), 0xbb, 0xcc]
+        gas := (654 : EvmWord)
+        stackState := { stack := [(11 : EvmWord), 1, 2, 0x55, 88] } } =
+      some { stack := [(create2DeployedAddress.zeroExtend 256 : EvmWord), 88] } := by
+  native_decide
+
+theorem create2StackConformanceVector_passed :
+    checkVector? runCreateStackVector? create2StackConformanceVector = .passed :=
+  checkVector?_some_passed runCreateStackVector?
+    "create2-stack-execution"
+    { kind := .create2
+      creator := (0xabcd : Address)
+      memory := [(0xaa : Byte), 0xbb, 0xcc]
+      gas := (654 : EvmWord)
+      stackState := { stack := [(11 : EvmWord), 1, 2, 0x55, 88] } }
+    { stack := [(create2DeployedAddress.zeroExtend 256 : EvmWord), 88] }
+    runCreateStackVector?_create2
+
 /-- Compact checked-vector batch for CREATE stack execution.
     Distinctive token:
     CreateStackExecutionConformance.createStackConformanceVectors #115 #125. -/
@@ -116,9 +160,9 @@ def createStackConformanceVectors : List CheckResult :=
   checkBatch? runCreateStackVector? createStackConformanceTestVectors
 
 theorem createStackConformanceVectors_passed :
-    createStackConformanceVectors = [.passed] := by
+    createStackConformanceVectors = [.passed, .passed] := by
   simp [createStackConformanceVectors, createStackConformanceTestVectors,
-    createStackVector_passed]
+    createStackVector_passed, create2StackConformanceVector_passed]
 
 end CreateStackExecution
 end Conformance

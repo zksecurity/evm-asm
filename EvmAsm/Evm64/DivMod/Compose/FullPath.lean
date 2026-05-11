@@ -392,12 +392,12 @@ theorem evm_div_n4_shift0_to_loopSetup_spec (sp base : Word)
 -- Denormalize u[] then load q[] to output.
 -- ============================================================================
 
-/-- Post-loop chain for DIV: denormalize u[], then load q[] to output.
+/-- Post-loop chain for DIV over `divCode_noNop`: denormalize u[], then load q[] to output.
     base+916 → base+1068. Shift ≠ 0 case (denorm body executed). -/
-theorem evm_div_denorm_epilogue_spec (sp base : Word)
+theorem evm_div_denorm_epilogue_spec_noNop (sp base : Word)
     (u0 u1 u2 u3 v2 v5 v7 v10 shift : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word) :
-    cpsTripleWithin (23 + 10) (base + denormOff + 8) (base + nopOff) (divCode base)
+    cpsTripleWithin (23 + 10) (base + denormOff + 8) (base + nopOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
        (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
        ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
@@ -413,9 +413,8 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
   let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
   let u3' := u3 >>> (shift.toNat % 64)
   -- Step 1: Denorm body (base+916 → base+1008)
-  have hDenorm := divK_denorm_body_spec_within sp u0 u1 u2 u3 v2 v5 v7 shift base
-
-  intro_lets at hDenorm
+  have hDenorm := divK_denorm_body_spec_within_noNop sp u0 u1 u2 u3 v2 v5 v7 shift base
+  rw [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold] at hDenorm
   -- Frame denorm with x10, q[], output memory
   have hDenormF := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ v10) **
@@ -426,7 +425,7 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
     (by pcFree) hDenorm
   -- Step 2: DIV epilogue (base+1008 → base+1068)
   -- After denorm: x5=u3', x6=shift, x7=(u3<<<antiShift%64), x10=v10
-  have hEpi := divK_div_epilogue_spec_within sp base q0 q1 q2 q3
+  have hEpi := divK_div_epilogue_spec_within_noNop sp base q0 q1 q2 q3
     u3' shift (u3 <<< (antiShift.toNat % 64)) v10 m0 m8 m16 m24
 
   -- Frame epilogue with x2, x0, u'[]
@@ -443,13 +442,75 @@ theorem evm_div_denorm_epilogue_spec (sp base : Word)
     (fun h hq => by delta denormDivPost; xperm_hyp hq)
     hFull
 
+/-- Compatibility wrapper for the DIV denorm+epilogue tail over `divCode`. -/
+theorem evm_div_denorm_epilogue_spec (sp base : Word)
+    (u0 u1 u2 u3 v2 v5 v7 v10 shift : Word)
+    (q0 q1 q2 q3 m0 m8 m16 m24 : Word) :
+    cpsTripleWithin (23 + 10) (base + denormOff + 8) (base + nopOff) (divCode base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ v7) **
+       (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+      (denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3) :=
+  cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
+    (evm_div_denorm_epilogue_spec_noNop sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
+      q0 q1 q2 q3 m0 m8 m16 m24)
+
 -- ============================================================================
 -- Post-loop chain with preamble: Preamble → Denorm → DIV Epilogue (base+908 → base+1068)
 -- Loads shift from memory, denormalizes u[], then loads q[] to output.
 -- ============================================================================
 
-/-- Post-loop chain for DIV with preamble: loads shift, denormalizes u[], outputs q[].
+/-- Post-loop chain for DIV with preamble over `divCode_noNop`:
+    loads shift, denormalizes u[], outputs q[].
     base+908 → base+1068. Shift ≠ 0 case. -/
+theorem evm_div_preamble_denorm_epilogue_spec_noNop (sp base : Word)
+    (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
+    (q0 q1 q2 q3 m0 m8 m16 m24 : Word)
+    (hshift_nz : shift ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ v6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) **
+       ((sp + signExtend12 3992) ↦ₘ shift) **
+       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+       ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+      (denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3 **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  -- Step 1: Preamble (base+908 → base+916)
+  have hPre := divK_denorm_preamble_spec_within_noNop sp shift v5 v6 v7 v2 v10 base hshift_nz
+  -- Frame preamble with u[], q[], output memory
+  have hPreF := cpsTripleWithin_frameR
+    (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+     ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+     ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
+     ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
+    (by pcFree) hPre
+  -- Step 2: Denorm + Epilogue (base+916 → base+1068)
+  have hDE := evm_div_denorm_epilogue_spec_noNop sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
+    q0 q1 q2 q3 m0 m8 m16 m24
+  -- Frame epilogue with shiftMem
+  have hDEF := cpsTripleWithin_frameR
+    (((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hDE
+  -- Compose preamble → denorm+epilogue
+  have hFull := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hPreF hDEF
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hFull
+
+/-- Compatibility wrapper for the DIV preamble+denorm+epilogue tail over `divCode`. -/
 theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
     (u0 u1 u2 u3 shift v2 v5 v6 v7 v10 : Word)
     (q0 q1 q2 q3 m0 m8 m16 m24 : Word)
@@ -465,32 +526,10 @@ theorem evm_div_preamble_denorm_epilogue_spec (sp base : Word)
        ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
        ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
       (denormDivPost sp shift u0 u1 u2 u3 q0 q1 q2 q3 **
-       ((sp + signExtend12 3992) ↦ₘ shift)) := by
-  -- Step 1: Preamble (base+908 → base+916)
-  have hPre := divK_denorm_preamble_spec_within sp shift v5 v6 v7 v2 v10 base hshift_nz
-  -- Frame preamble with u[], q[], output memory
-  have hPreF := cpsTripleWithin_frameR
-    (((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-     ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-     ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
-     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
-     ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **
-     ((sp + 48) ↦ₘ m16) ** ((sp + 56) ↦ₘ m24))
-    (by pcFree) hPre
-  -- Step 2: Denorm + Epilogue (base+916 → base+1068)
-  have hDE := evm_div_denorm_epilogue_spec sp base u0 u1 u2 u3 v2 v5 v7 v10 shift
-    q0 q1 q2 q3 m0 m8 m16 m24
-  -- Frame epilogue with shiftMem
-  have hDEF := cpsTripleWithin_frameR
-    (((sp + signExtend12 3992) ↦ₘ shift))
-    (by pcFree) hDE
-  -- Compose preamble → denorm+epilogue
-  have hFull := cpsTripleWithin_seq_perm_same_cr
-    (fun h hp => by xperm_hyp hp) hPreF hDEF
-  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-    (fun h hp => by xperm_hyp hp)
-    (fun h hq => by xperm_hyp hq)
-    hFull
+       ((sp + signExtend12 3992) ↦ₘ shift)) :=
+  cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode)
+    (evm_div_preamble_denorm_epilogue_spec_noNop sp base u0 u1 u2 u3 shift
+      v2 v5 v6 v7 v10 q0 q1 q2 q3 m0 m8 m16 m24 hshift_nz)
 
 -- ============================================================================
 -- Denorm code subsumption for modCode (re-proved here since private in ModEpilogue)

@@ -63,25 +63,42 @@ def terminatingReturnVector :
           gasRemaining := 123
           stack := [(99 : EvmWord)] } }
 
+/-- REVERT threads memory data through while exposing reverted status.
+    Distinctive token: terminatingRevertStackConformanceVector #113 #125. -/
+def terminatingRevertStackConformanceVector :
+    TestVector TerminatingStackInput TerminatingVisibleResult :=
+  { id := "terminating-stack-revert"
+    input :=
+      { kind := .revert
+        memory := [(0xaa : Byte), 0xbb, 0xcc]
+        gasRemaining := 45
+        stackState := { stack := [(1 : EvmWord), 2, 77] } }
+    expected :=
+      .value
+        { status := .revert
+          output := [(0xbb : Byte), 0xcc]
+          gasRemaining := 45
+          stack := [(77 : EvmWord)] } }
+
 /-- Terminating stack conformance inputs as reusable test vectors.
     Distinctive token:
     TerminatingStackExecutionConformance.terminatingStackConformanceTestVectors #113 #125. -/
 def terminatingStackConformanceTestVectors :
     List (TestVector TerminatingStackInput TerminatingVisibleResult) :=
-  [terminatingReturnVector]
+  [terminatingReturnVector, terminatingRevertStackConformanceVector]
 
 def terminatingStackConformanceVectorIds : List String :=
   terminatingStackConformanceTestVectors.map TestVector.id
 
 theorem terminatingStackConformanceTestVectors_length :
-    terminatingStackConformanceTestVectors.length = 1 := rfl
+    terminatingStackConformanceTestVectors.length = 2 := rfl
 
 theorem terminatingStackConformanceVectorIds_eq :
     terminatingStackConformanceVectorIds =
-      ["terminating-stack-return"] := rfl
+      ["terminating-stack-return", "terminating-stack-revert"] := rfl
 
 theorem terminatingStackConformanceVectorIds_length :
-    terminatingStackConformanceVectorIds.length = 1 := rfl
+    terminatingStackConformanceVectorIds.length = 2 := rfl
 
 theorem terminatingStackConformanceVectorIds_nodup :
     terminatingStackConformanceVectorIds.Nodup := by
@@ -114,6 +131,34 @@ theorem terminatingReturnVector_passed :
       stack := [(99 : EvmWord)] }
     runTerminatingStackVisible?_return
 
+theorem runTerminatingStackVisible?_revert :
+    runTerminatingStackVisible?
+      { kind := .revert
+        memory := [(0xaa : Byte), 0xbb, 0xcc]
+        gasRemaining := 45
+        stackState := { stack := [(1 : EvmWord), 2, 77] } } =
+      some
+        { status := .revert
+          output := [(0xbb : Byte), 0xcc]
+          gasRemaining := 45
+          stack := [(77 : EvmWord)] } := by
+  native_decide
+
+theorem terminatingRevertStackConformanceVector_passed :
+    checkVector? runTerminatingStackVisible? terminatingRevertStackConformanceVector =
+      .passed :=
+  checkVector?_some_passed runTerminatingStackVisible?
+    "terminating-stack-revert"
+    { kind := .revert
+      memory := [(0xaa : Byte), 0xbb, 0xcc]
+      gasRemaining := 45
+      stackState := { stack := [(1 : EvmWord), 2, 77] } }
+    { status := .revert
+      output := [(0xbb : Byte), 0xcc]
+      gasRemaining := 45
+      stack := [(77 : EvmWord)] }
+    runTerminatingStackVisible?_revert
+
 /-- Compact checked-vector batch for terminating stack execution.
     Distinctive token:
     TerminatingStackExecutionConformance.terminatingStackConformanceVectors #113 #125. -/
@@ -121,9 +166,9 @@ def terminatingStackConformanceVectors : List CheckResult :=
   checkBatch? runTerminatingStackVisible? terminatingStackConformanceTestVectors
 
 theorem terminatingStackConformanceVectors_passed :
-    terminatingStackConformanceVectors = [.passed] := by
+    terminatingStackConformanceVectors = [.passed, .passed] := by
   simp [terminatingStackConformanceVectors, terminatingStackConformanceTestVectors,
-    terminatingReturnVector_passed]
+    terminatingReturnVector_passed, terminatingRevertStackConformanceVector_passed]
 
 end TerminatingStackExecution
 end Conformance
