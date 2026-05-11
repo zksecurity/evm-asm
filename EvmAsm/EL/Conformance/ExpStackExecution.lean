@@ -79,6 +79,17 @@ def expStackTwo256Vector : TestVector ExpStackState ExpStackResult :=
               totalGas := 110 }
           stack := [99] } }
 
+def expStackZeroOneVector : TestVector ExpStackState ExpStackResult :=
+  { id := "exp-stack-zero-one"
+    input := { stack := [0, 1, 99] }
+    expected :=
+      .value
+        { effects :=
+            { stackWords := [0]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := [99] } }
+
 def expStackTwo128Vector : TestVector ExpStackState ExpStackResult :=
   { id := "exp-stack-two-128"
     input := { stack := [2, 128, 99] }
@@ -114,6 +125,17 @@ def expStackTwo64Vector : TestVector ExpStackState ExpStackResult :=
               totalGas := 60 }
           stack := [99] } }
 
+def expStackTwo255Vector : TestVector ExpStackState ExpStackResult :=
+  { id := "exp-stack-two-255"
+    input := { stack := [2, 255, 99] }
+    expected :=
+      .value
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^255)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := [99] } }
+
 def expStackUnderflowVector : TestVector ExpStackState ExpStackResult :=
   { id := "exp-stack-underflow"
     input := { stack := [2] }
@@ -127,9 +149,11 @@ def expStackConformanceTestVectors : List (TestVector ExpStackState ExpStackResu
   , expStackZeroZeroVector
   , expStackOneExponentVector
   , expStackTwo256Vector
+  , expStackZeroOneVector
   , expStackTwo128Vector
   , expStackMaxOneExponentVector
   , expStackTwo64Vector
+  , expStackTwo255Vector
   , expStackUnderflowVector
   ]
 
@@ -137,7 +161,7 @@ def expStackConformanceVectorIds : List String :=
   expStackConformanceTestVectors.map TestVector.id
 
 theorem expStackConformanceTestVectors_length :
-    expStackConformanceTestVectors.length = 8 := rfl
+    expStackConformanceTestVectors.length = 10 := rfl
 
 theorem expStackConformanceVectorIds_eq :
     expStackConformanceVectorIds =
@@ -145,14 +169,16 @@ theorem expStackConformanceVectorIds_eq :
       , "exp-stack-zero-zero"
       , "exp-stack-one-exponent"
       , "exp-stack-two-256"
+      , "exp-stack-zero-one"
       , "exp-stack-two-128"
       , "exp-stack-max-one-exponent"
       , "exp-stack-two-64"
+      , "exp-stack-two-255"
       , "exp-stack-underflow"
       ] := rfl
 
 theorem expStackConformanceVectorIds_length :
-    expStackConformanceVectorIds.length = 8 := rfl
+    expStackConformanceVectorIds.length = 10 := rfl
 
 theorem expStackConformanceVectorIds_nodup :
     expStackConformanceVectorIds.Nodup := by
@@ -163,9 +189,11 @@ def expStackValueVectorIds : List String :=
   , "exp-stack-zero-zero"
   , "exp-stack-one-exponent"
   , "exp-stack-two-256"
+  , "exp-stack-zero-one"
   , "exp-stack-two-128"
   , "exp-stack-max-one-exponent"
   , "exp-stack-two-64"
+  , "exp-stack-two-255"
   ]
 
 def expStackErrorVectorIds : List String :=
@@ -223,6 +251,17 @@ theorem runExpStack?_two_256 :
           stack := [(99 : EvmWord)] } := by
   exact EvmAsm.Evm64.ExpStackExecutionBridge.runExpStack?_two_256 [(99 : EvmWord)]
 
+theorem runExpStack?_zero_one :
+    runExpStack? { stack := [(0 : EvmWord), (1 : EvmWord), (99 : EvmWord)] } =
+      some
+        { effects :=
+            { stackWords := [(0 : EvmWord)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := [(99 : EvmWord)] } := by
+  exact EvmAsm.Evm64.ExpStackExecutionBridge.runExpStack?_zero_one
+    [(99 : EvmWord)]
+
 theorem runExpStack?_two_128 :
     runExpStack? { stack := [(2 : EvmWord), (128 : EvmWord), (99 : EvmWord)] } =
       some
@@ -258,6 +297,16 @@ theorem runExpStack?_two_64 :
       some
         { effects :=
             { stackWords := [BitVec.ofNat 256 (2^64)]
+              dynamicGas := 50
+              totalGas := 60 }
+          stack := [(99 : EvmWord)] } := by
+  native_decide
+
+theorem runExpStack?_two_255 :
+    runExpStack? { stack := [(2 : EvmWord), (255 : EvmWord), (99 : EvmWord)] } =
+      some
+        { effects :=
+            { stackWords := [BitVec.ofNat 256 (2^255)]
               dynamicGas := 50
               totalGas := 60 }
           stack := [(99 : EvmWord)] } := by
@@ -314,6 +363,18 @@ theorem expStackTwo256Vector_passed :
       stack := [(99 : EvmWord)] }
     runExpStack?_two_256
 
+theorem expStackZeroOneVector_passed :
+    checkVector? runExpStack? expStackZeroOneVector = .passed :=
+  checkVector?_some_passed runExpStack?
+    "exp-stack-zero-one"
+    { stack := [(0 : EvmWord), (1 : EvmWord), (99 : EvmWord)] }
+    { effects :=
+        { stackWords := [(0 : EvmWord)]
+          dynamicGas := 50
+          totalGas := 60 }
+      stack := [(99 : EvmWord)] }
+    runExpStack?_zero_one
+
 theorem expStackTwo128Vector_passed :
     checkVector? runExpStack? expStackTwo128Vector = .passed :=
   checkVector?_some_passed runExpStack?
@@ -350,6 +411,18 @@ theorem expStackTwo64Vector_passed :
       stack := [(99 : EvmWord)] }
     runExpStack?_two_64
 
+theorem expStackTwo255Vector_passed :
+    checkVector? runExpStack? expStackTwo255Vector = .passed :=
+  checkVector?_some_passed runExpStack?
+    "exp-stack-two-255"
+    { stack := [(2 : EvmWord), (255 : EvmWord), (99 : EvmWord)] }
+    { effects :=
+        { stackWords := [BitVec.ofNat 256 (2^255)]
+          dynamicGas := 50
+          totalGas := 60 }
+      stack := [(99 : EvmWord)] }
+    runExpStack?_two_255
+
 theorem expStackUnderflowVector_passed :
     checkVector? runExpStack? expStackUnderflowVector =
       .errored "exp-stack-underflow" "stack-underflow" :=
@@ -373,14 +446,17 @@ theorem expStackConformanceVectors_passed :
       , .passed
       , .passed
       , .passed
+      , .passed
+      , .passed
       , .errored "exp-stack-underflow" "stack-underflow"
       ] := by
   simp [expStackConformanceVectors, expStackConformanceTestVectors,
     expStackValueVector_passed, expStackZeroZeroVector_passed,
     expStackOneExponentVector_passed, expStackTwo256Vector_passed,
-    expStackTwo128Vector_passed,
+    expStackZeroOneVector_passed,
     expStackMaxOneExponentVector_passed,
-    expStackTwo64Vector_passed,
+    expStackTwo128Vector_passed, expStackTwo64Vector_passed,
+    expStackTwo255Vector_passed,
     expStackUnderflowVector_passed]
 
 end ExpStackExecution
