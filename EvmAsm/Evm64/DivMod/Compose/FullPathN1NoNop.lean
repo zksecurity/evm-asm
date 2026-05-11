@@ -289,6 +289,8 @@ theorem evm_div_n1_to_loopSetup_spec_within_noNop (sp base : Word)
   have hLS := divK_loopSetup_ntaken_spec_within_noNop sp (1 : Word)
     (signExtend12 (4 : BitVec 12) - (4 : Word)) u1 base
     (by decide)
+  simp only [divKLoopSetupNtakenPreNoNop_unfold,
+      divKLoopSetupNtakenPostNoNop_unfold] at hLS
   have hLSf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ (a0 >>> (antiShift.toNat % 64))) **
      (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ u0) ** (.x2 ↦ᵣ antiShift) **
