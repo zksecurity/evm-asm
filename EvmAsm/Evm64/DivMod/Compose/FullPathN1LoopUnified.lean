@@ -495,6 +495,37 @@ theorem evm_div_n1_denorm_epilogue_bundled_spec
       xperm_hyp hq)
     h
 
+theorem evm_div_n1_denorm_epilogue_bundled_spec_noNop
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hshift_nz : fullDivN1Shift b0 ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop base)
+      (fullDivN1DenormPre bltu_3 bltu_2 bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3)
+      (fullDivN1DenormPost bltu_3 bltu_2 bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := fullDivN1Shift b0
+  let v := fullDivN1NormV b0 b1 b2 b3
+  let r3 := fullDivN1R3 bltu_3 a0 a1 a2 a3 b0 b1 b2 b3
+  let r2 := fullDivN1R2 bltu_3 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+  let r1 := fullDivN1R1 bltu_3 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let c3 := fullDivN1C3 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  have h := evm_div_preamble_denorm_epilogue_spec_noNop sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    c3 r0.1 r1.1 r2.1 r3.1
+    v.1 v.2.1 v.2.2.1 v.2.2.2 hshift_nz
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      subst shift; subst v; subst r3; subst r2; subst r1; subst r0; subst c3
+      delta fullDivN1DenormPre at hp
+      simp only [se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      subst shift; subst r3; subst r2; subst r1; subst r0
+      delta fullDivN1DenormPost
+      xperm_hyp hq)
+    h
+
 theorem fullDivN1UnifiedPost_weaken (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
     (h : PartialState)
