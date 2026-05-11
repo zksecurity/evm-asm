@@ -20,6 +20,7 @@ import EvmAsm.Evm64.SDiv.Program
 import EvmAsm.Evm64.SDiv.LimbSpec
 import EvmAsm.Evm64.SDiv.AddrNorm
 import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.SDiv.Compose.DivisorAbsSequence
 import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 import EvmAsm.Evm64.SDiv.Compose.DivCall
 import EvmAsm.Evm64.SDiv.Spec
