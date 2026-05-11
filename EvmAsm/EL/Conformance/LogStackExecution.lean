@@ -109,6 +109,32 @@ def logStackLog2Vector : TestVector LogStackInput LogStackState :=
               touchedAccounts := [] }
           stack := [(77 : EvmWord)] } }
 
+/-- LOG3 appends a log entry with three topics and consumes offset/size/topics.
+    Distinctive token: logStackLog3Vector #112 #125. -/
+def logStackLog3Vector : TestVector LogStackInput LogStackState :=
+  { id := "log-stack-log3"
+    input :=
+      { kind := .log3
+        emitter := 0x3456
+        memory := [(0xaa : Byte), 0xbb, 0xcc, 0xdd, 0xee]
+        state :=
+          { effects := EvmAsm.EL.MessageCallExecution.CallSideEffects.empty
+            stack := [(2 : EvmWord), 3, 0x111, 0x222, 0x333, 88] } }
+    expected :=
+      .value
+        { effects :=
+            { refundCounter := 0
+              logs :=
+                { entries :=
+                    [ { emitter := 0x3456
+                        topics :=
+                          [(0x111 : EvmWord), (0x222 : EvmWord),
+                           (0x333 : EvmWord)]
+                        data := [(0xcc : Byte), 0xdd, 0xee] } ] }
+              accountsToDelete := []
+              touchedAccounts := [] }
+          stack := [(88 : EvmWord)] } }
+
 def logStackLog4Vector : TestVector LogStackInput LogStackState :=
   { id := "log-stack-log4"
     input :=
@@ -141,6 +167,7 @@ def logStackConformanceTestVectors : List (TestVector LogStackInput LogStackStat
   [ log0StackConformanceVector
   , logStackVector
   , logStackLog2Vector
+  , logStackLog3Vector
   , logStackLog4Vector
   ]
 
@@ -148,14 +175,14 @@ def logStackConformanceVectorIds : List String :=
   logStackConformanceTestVectors.map TestVector.id
 
 theorem logStackConformanceTestVectors_length :
-    logStackConformanceTestVectors.length = 4 := rfl
+    logStackConformanceTestVectors.length = 5 := rfl
 
 theorem logStackConformanceVectorIds_eq :
     logStackConformanceVectorIds =
-      ["log-stack-log0", "log-stack-log1", "log-stack-log2", "log-stack-log4"] := rfl
+      ["log-stack-log0", "log-stack-log1", "log-stack-log2", "log-stack-log3", "log-stack-log4"] := rfl
 
 theorem logStackConformanceVectorIds_length :
-    logStackConformanceVectorIds.length = 4 := rfl
+    logStackConformanceVectorIds.length = 5 := rfl
 
 theorem logStackConformanceVectorIds_nodup :
     logStackConformanceVectorIds.Nodup := by
@@ -220,6 +247,28 @@ theorem runLogStack?_log2_vector :
               accountsToDelete := []
               touchedAccounts := [] }
           stack := [(77 : EvmWord)] } := rfl
+
+theorem runLogStack?_log3_vector :
+    runLogStack?
+      { kind := .log3
+        emitter := (0x3456 : Address)
+        memory := [(0xaa : Byte), 0xbb, 0xcc, 0xdd, 0xee]
+        state :=
+          { effects := EvmAsm.EL.MessageCallExecution.CallSideEffects.empty
+            stack := [(2 : EvmWord), 3, 0x111, 0x222, 0x333, 88] } } =
+      some
+        { effects :=
+            { refundCounter := 0
+              logs :=
+                { entries :=
+                    [ { emitter := (0x3456 : Address)
+                        topics :=
+                          [(0x111 : EvmWord), (0x222 : EvmWord),
+                           (0x333 : EvmWord)]
+                        data := [(0xcc : Byte), 0xdd, 0xee] } ] }
+              accountsToDelete := []
+              touchedAccounts := [] }
+          stack := [(88 : EvmWord)] } := rfl
 
 theorem runLogStack?_log4_vector :
     runLogStack?
@@ -310,6 +359,30 @@ theorem logStackLog2Vector_passed :
       stack := [(77 : EvmWord)] }
     runLogStack?_log2_vector
 
+theorem logStackLog3Vector_passed :
+    checkVector? runLogStack? logStackLog3Vector = .passed :=
+  checkVector?_some_passed runLogStack?
+    "log-stack-log3"
+    { kind := .log3
+      emitter := (0x3456 : Address)
+      memory := [(0xaa : Byte), 0xbb, 0xcc, 0xdd, 0xee]
+      state :=
+        { effects := EvmAsm.EL.MessageCallExecution.CallSideEffects.empty
+          stack := [(2 : EvmWord), 3, 0x111, 0x222, 0x333, 88] } }
+    { effects :=
+        { refundCounter := 0
+          logs :=
+            { entries :=
+                [ { emitter := (0x3456 : Address)
+                    topics :=
+                      [(0x111 : EvmWord), (0x222 : EvmWord),
+                       (0x333 : EvmWord)]
+                    data := [(0xcc : Byte), 0xdd, 0xee] } ] }
+          accountsToDelete := []
+          touchedAccounts := [] }
+      stack := [(88 : EvmWord)] }
+    runLogStack?_log3_vector
+
 theorem logStackLog4Vector_passed :
     checkVector? runLogStack? logStackLog4Vector = .passed :=
   checkVector?_some_passed runLogStack?
@@ -342,10 +415,11 @@ def logStackConformanceVectors : List CheckResult :=
   checkBatch? runLogStack? logStackConformanceTestVectors
 
 theorem logStackConformanceVectors_passed :
-    logStackConformanceVectors = [.passed, .passed, .passed, .passed] := by
+    logStackConformanceVectors = [.passed, .passed, .passed, .passed, .passed] := by
   simp [logStackConformanceVectors, logStackConformanceTestVectors,
     log0StackConformanceVector_passed, logStackVector_passed,
-    logStackLog2Vector_passed, logStackLog4Vector_passed]
+    logStackLog2Vector_passed, logStackLog3Vector_passed,
+    logStackLog4Vector_passed]
 
 end LogStackExecution
 end Conformance

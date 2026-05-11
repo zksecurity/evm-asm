@@ -383,22 +383,6 @@ specs.
 | `cc_epilogue_spec_within` | [`CallingConvention.lean:129`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/CallingConvention.lean#L129) | Block spec for the 3-instruction epilogue: `ra` restored, `sp` incremented by 16, jumps to saved `ra`. |
 
 
-## EL / Conformance
-
-The aggregate conformance surface collects the executable-spec vector batches
-and exposes small proof obligations for CI and closeout checks: total vector
-count, expected errors, successful results, and absence of unexpected failures.
-
-| Declaration / Theorem | Defined at | Meaning |
-|---|---|---|
-| `allConformanceVectors` | [`All.lean#L27`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L27) | Concatenates every checked conformance batch currently imported by `EvmAsm.EL.Conformance.All`. |
-| `allConformanceVectorCount` | [`All.lean#L43`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L43) | Named count used by status and CI-facing checks. |
-| `allConformanceVectorCount_eq` | [`All.lean#L50`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L50) | Proves the aggregate currently contains 56 vector results. |
-| `allConformanceNoUnexpectedFailures_eq_true` | [`All.lean#L105`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L105) | Boolean gate proving the aggregate has no unexpected failures. |
-| `unexpectedConformanceFailureCount_eq_zero` | [`All.lean#L109`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L109) | Numeric form of the no-unexpected-failure proof. |
-| `expectedConformanceErrorCount_eq` | [`All.lean#L113`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L113) | Proves there are 10 expected-error results in the aggregate. |
-| `successfulConformanceResultCount_eq` | [`All.lean#L117`](https://github.com/Verified-zkEVM/evm-asm/blob/d6e74a34eb5c473c927d10f30ab1d3817d4df319/EvmAsm/EL/Conformance/All.lean#L117) | Proves there are 46 successful results in the aggregate. |
-
 ## Maintenance
 
 - See parent backlog: `evm-asm-prwe` / GH issue tracking forthcoming.
