@@ -56,6 +56,32 @@ theorem evm_sdiv_sign_bit_block_byte_length
     4 * (evm_sdiv_sign_bit_block addrReg signReg topLimbOff).length = 8 := by
   rw [evm_sdiv_sign_bit_block_length]
 
+/-- One limb of the conditional 256-bit negation loop.
+
+    The caller has already materialized `maskReg = 0 - sign`. This step
+    loads one limb, xors it with the mask, adds the incoming carry, stores
+    the resulting carry in `carryReg`, and writes the limb back in place.
+    Limb 0 passes the sign register as `carryInReg`; later limbs pass
+    `carryReg` itself.
+
+    5 instructions: `LD; XOR; ADD; SLTU; SD`. -/
+def evm_sdiv_cond_negate_limb_step
+    (addrReg carryInReg maskReg valueReg carryReg : Reg)
+    (limbOff : BitVec 12) : Program :=
+  LD valueReg addrReg limbOff ;;
+  XOR' valueReg valueReg maskReg ;;
+  ADD valueReg valueReg carryInReg ;;
+  SLTU carryReg valueReg carryInReg ;;
+  SD addrReg valueReg limbOff
+
+theorem evm_sdiv_cond_negate_limb_step_length
+    (addrReg carryInReg maskReg valueReg carryReg : Reg)
+    (limbOff : BitVec 12) :
+    (evm_sdiv_cond_negate_limb_step addrReg carryInReg maskReg valueReg carryReg
+      limbOff).length = 5 := by
+  unfold evm_sdiv_cond_negate_limb_step LD XOR' ADD SLTU SD single seq Program
+  rfl
+
 /-- Conditionally negate a 256-bit word in place.
 
     `signReg` must hold `0` or `1`. The block computes
@@ -74,33 +100,18 @@ def evm_sdiv_cond_negate_256_block
     (addrReg signReg maskReg valueReg carryReg : Reg)
     (limb0Off limb1Off limb2Off limb3Off : BitVec 12) : Program :=
   SUB maskReg .x0 signReg ;;
-  LD valueReg addrReg limb0Off ;;
-  XOR' valueReg valueReg maskReg ;;
-  ADD valueReg valueReg signReg ;;
-  SLTU carryReg valueReg signReg ;;
-  SD addrReg valueReg limb0Off ;;
-  LD valueReg addrReg limb1Off ;;
-  XOR' valueReg valueReg maskReg ;;
-  ADD valueReg valueReg carryReg ;;
-  SLTU carryReg valueReg carryReg ;;
-  SD addrReg valueReg limb1Off ;;
-  LD valueReg addrReg limb2Off ;;
-  XOR' valueReg valueReg maskReg ;;
-  ADD valueReg valueReg carryReg ;;
-  SLTU carryReg valueReg carryReg ;;
-  SD addrReg valueReg limb2Off ;;
-  LD valueReg addrReg limb3Off ;;
-  XOR' valueReg valueReg maskReg ;;
-  ADD valueReg valueReg carryReg ;;
-  SLTU carryReg valueReg carryReg ;;
-  SD addrReg valueReg limb3Off
+  evm_sdiv_cond_negate_limb_step addrReg signReg maskReg valueReg carryReg limb0Off ;;
+  evm_sdiv_cond_negate_limb_step addrReg carryReg maskReg valueReg carryReg limb1Off ;;
+  evm_sdiv_cond_negate_limb_step addrReg carryReg maskReg valueReg carryReg limb2Off ;;
+  evm_sdiv_cond_negate_limb_step addrReg carryReg maskReg valueReg carryReg limb3Off
 
 theorem evm_sdiv_cond_negate_256_block_length
     (addrReg signReg maskReg valueReg carryReg : Reg)
     (limb0Off limb1Off limb2Off limb3Off : BitVec 12) :
     (evm_sdiv_cond_negate_256_block addrReg signReg maskReg valueReg carryReg
       limb0Off limb1Off limb2Off limb3Off).length = 21 := by
-  unfold evm_sdiv_cond_negate_256_block SUB LD XOR' ADD SLTU SD single seq Program
+  unfold evm_sdiv_cond_negate_256_block evm_sdiv_cond_negate_limb_step
+    SUB LD XOR' ADD SLTU SD single seq Program
   rfl
 
 theorem evm_sdiv_cond_negate_256_block_byte_length
