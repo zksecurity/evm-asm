@@ -1122,4 +1122,27 @@ theorem evmWordIs_eq_quadMem (sp : Word) (limbs : Fin 4 → Word) :
   rw [h0, h8, h16, h24]
   exact (evmWordIs_fromLimbs (addr := sp) limbs).symm
 
+/-- Divisor-slot companion to `evmWordIs_eq_quadMem`: four `↦ₘ`-memory atoms
+    at `sp + signExtend12 (32/40/48/56)` fold into a single
+    `evmWordIs (sp + 32)` atom. Bite-sized helper for slice 4 (evm-asm-j8ity):
+    the post-`abs` divisor limbs live at `sp + signExtend12 (32..56)` while
+    `evm_div_callable_spec_in_sdivCode` consumes them as
+    `evmWordIs (sp + 32) b`; this lemma bridges the two shapes. -/
+theorem evmWordIs_eq_quadMem_sp32 (sp : Word) (limbs : Fin 4 → Word) :
+    (((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limbs 0) **
+     ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limbs 1) **
+     ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limbs 2) **
+     ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limbs 3)) =
+    evmWordIs (sp + 32) (EvmWord.fromLimbs limbs) := by
+  have h32 : (sp + signExtend12 (32 : BitVec 12) : Word) = sp + 32 := by
+    unfold signExtend12; bv_decide
+  have h40 : (sp + signExtend12 (40 : BitVec 12) : Word) = (sp + 32) + 8 := by
+    unfold signExtend12; bv_decide
+  have h48 : (sp + signExtend12 (48 : BitVec 12) : Word) = (sp + 32) + 16 := by
+    unfold signExtend12; bv_decide
+  have h56 : (sp + signExtend12 (56 : BitVec 12) : Word) = (sp + 32) + 24 := by
+    unfold signExtend12; bv_decide
+  rw [h32, h40, h48, h56]
+  exact (evmWordIs_fromLimbs (addr := sp + 32) limbs).symm
+
 end EvmAsm.Evm64.SDiv.Compose
