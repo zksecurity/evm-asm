@@ -192,5 +192,12 @@ theorem runSDivStack?_pos_neg_trunc
   rw [runSDivStack?_cons]
   rw [SDivArgs.sdivResultFromArgs_pos_neg_trunc]
 
+theorem runSDivStack?_neg_pos_trunc
+    (rest : List EvmWord) :
+    runSDivStack? { stack := (-7 : EvmWord) :: 2 :: rest } =
+      some { effects := { stackWords := [(-3 : EvmWord)] }, stack := rest } := by
+  rw [runSDivStack?_cons]
+  rw [SDivArgs.sdivResultFromArgs_neg_pos_trunc]
+
 end SDivStackExecutionBridge
 end EvmAsm.Evm64
