@@ -419,4 +419,106 @@ theorem exp_squaring_un_marshal_and_restore_evm_exp_spec_within
   exact cpsTripleWithin_extend_code (h := h)
     (hmono := evmExpCode_squaring_un_marshal_and_restore_sub)
 
+/-- Conditional-multiply factor-1 marshal spec lifted to the top-level EXP
+    code bundle: at offset `base + 148`, copies result limbs from scratch to
+    factor1, exits at `base + 180`. -/
+theorem exp_cond_mul_marshal_factor1_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word) (base : Word) :
+    cpsTripleWithin 8 (base + 148) (base + 180)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3))
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3)) := by
+  have h := EvmAsm.Evm64.exp_loop_marshal_factor1_ofProg_spec_within
+    sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 (base + 148)
+  have hexit : ((base + 148 : Word) + 32) = base + 180 := by bv_omega
+  rw [hexit] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpCode_cond_mul_marshal_factor1_sub)
+
+/-- Conditional-multiply factor-2 marshal (from EVM-stack base slot) spec
+    lifted to the top-level EXP code bundle: at offset `base + 180`, copies
+    base limbs `a` from the EVM-stack window at `evmSp + -64..-40` into the
+    factor2 slot, exits at `base + 212`. -/
+theorem exp_cond_mul_marshal_a_to_factor2_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (evmSp tOld a0 a1 a2 a3 d0 d1 d2 d3 : Word) (base : Word) :
+    cpsTripleWithin 8 (base + 180) (base + 212)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3))
+      ((.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ a3) **
+       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ a0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ a1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ a2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ a3)) := by
+  have h := EvmAsm.Evm64.exp_loop_marshal_a_to_factor2_ofProg_spec_within
+    evmSp tOld a0 a1 a2 a3 d0 d1 d2 d3 (base + 180)
+  have hexit : ((base + 180 : Word) + 32) = base + 212 := by bv_omega
+  rw [hexit] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpCode_cond_mul_marshal_a_to_factor2_sub)
+
+/-- Conditional-multiply un-marshal-and-restore spec lifted to the top-level
+    EXP code bundle: at offset `base + 216`, copies factor1 limbs back to
+    scratch and decrements `x12` by 32, exits at `base + 252`. -/
+theorem exp_cond_mul_un_marshal_and_restore_evm_exp_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word) (base : Word) :
+    cpsTripleWithin 9 (base + 216) (base + 252)
+      (evmExpCode base mulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3))
+      ((.x2 ↦ᵣ sp) **
+       (.x12 ↦ᵣ (evmSp + signExtend12 (-32 : BitVec 12))) **
+       (.x5 ↦ᵣ d3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3)) := by
+  have h := EvmAsm.Evm64.exp_loop_un_marshal_and_restore_ofProg_spec_within
+    sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 (base + 216)
+  have hexit : ((base + 216 : Word) + 36) = base + 252 := by bv_omega
+  rw [hexit] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpCode_cond_mul_un_marshal_and_restore_sub)
+
 end EvmAsm.Evm64.Exp.Compose
