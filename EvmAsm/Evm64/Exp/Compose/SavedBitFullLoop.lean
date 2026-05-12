@@ -7,114 +7,12 @@
   tested bit live in `x18` across the unconditional squaring call.
 -/
 
-import EvmAsm.Evm64.Exp.Compose.FullLoop
+import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
 
 namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
-
-/-- Code required by the corrected saved-bit EXP program plus the external
-    `mul_callable` body reached by the squaring and conditional-multiply JALs. -/
-abbrev evmExpMsbSavedBitWithMulCode (base mulTarget : Word)
-    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) : CodeReq :=
-  (evmExpMsbSavedBitCode base mulOff skipOff backOff).union
-    (mul_callable_code mulTarget)
-
-/-- Corrected saved-bit EXP program with independent JAL offsets for the
-    squaring and conditional-multiply call sites, plus the external
-    `mul_callable` body both sites target. -/
-abbrev evmExpMsbSavedBitTwoMulWithMulCode (base mulTarget : Word)
-    (squaringMulOff condMulOff : BitVec 21)
-    (skipOff backOff : BitVec 13) : CodeReq :=
-  (evmExpMsbSavedBitTwoMulCode
-    base squaringMulOff condMulOff skipOff backOff).union
-    (mul_callable_code mulTarget)
-
-theorem evmExpMsbSavedBitWithMulCode_exp_sub {base mulTarget : Word}
-    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
-    ∀ a i, (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i →
-      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
-        a = some i := by
-  unfold evmExpMsbSavedBitWithMulCode
-  exact CodeReq.union_mono_left
-
-theorem evmExpMsbSavedBitTwoMulWithMulCode_exp_sub {base mulTarget : Word}
-    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
-    ∀ a i,
-      (evmExpMsbSavedBitTwoMulCode
-        base squaringMulOff condMulOff skipOff backOff) a = some i →
-      (evmExpMsbSavedBitTwoMulWithMulCode
-        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i := by
-  unfold evmExpMsbSavedBitTwoMulWithMulCode
-  exact CodeReq.union_mono_left
-
-theorem evmExpMsbSavedBitWithMulCode_mul_sub {base mulTarget : Word}
-    {mulOff : BitVec 21} {skipOff backOff : BitVec 13}
-    (hd : CodeReq.Disjoint
-      (evmExpMsbSavedBitCode base mulOff skipOff backOff)
-      (mul_callable_code mulTarget)) :
-    ∀ a i, (mul_callable_code mulTarget) a = some i →
-      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
-        a = some i := by
-  unfold evmExpMsbSavedBitWithMulCode
-  exact CodeReq.mono_union_right hd (fun _ _ h => h)
-
-theorem evmExpMsbSavedBitTwoMulWithMulCode_mul_sub {base mulTarget : Word}
-    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
-    (hd : CodeReq.Disjoint
-      (evmExpMsbSavedBitTwoMulCode
-        base squaringMulOff condMulOff skipOff backOff)
-      (mul_callable_code mulTarget)) :
-    ∀ a i, (mul_callable_code mulTarget) a = some i →
-      (evmExpMsbSavedBitTwoMulWithMulCode
-        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i := by
-  unfold evmExpMsbSavedBitTwoMulWithMulCode
-  exact CodeReq.mono_union_right hd (fun _ _ h => h)
-
-/-- Lift a corrected saved-bit top-level EXP spec into the combined EXP+MUL
-    code bundle. -/
-theorem cpsTripleWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
-    {entry exit_ base mulTarget : Word}
-    {mulOff : BitVec 21} {skipOff backOff : BitVec 13}
-    {P Q : Assertion}
-    (h : cpsTripleWithin nSteps entry exit_
-      (evmExpMsbSavedBitCode base mulOff skipOff backOff) P Q) :
-    cpsTripleWithin nSteps entry exit_
-      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff) P Q :=
-  cpsTripleWithin_extend_code
-    (hmono := evmExpMsbSavedBitWithMulCode_exp_sub) h
-
-/-- Lift a two-offset corrected saved-bit EXP spec into the combined EXP+MUL
-    code bundle. -/
-theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode {nSteps : Nat}
-    {entry exit_ base mulTarget : Word}
-    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
-    {P Q : Assertion}
-    (h : cpsTripleWithin nSteps entry exit_
-      (evmExpMsbSavedBitTwoMulCode
-        base squaringMulOff condMulOff skipOff backOff) P Q) :
-    cpsTripleWithin nSteps entry exit_
-      (evmExpMsbSavedBitTwoMulWithMulCode
-        base mulTarget squaringMulOff condMulOff skipOff backOff) P Q :=
-  cpsTripleWithin_extend_code
-    (hmono := evmExpMsbSavedBitTwoMulWithMulCode_exp_sub) h
-
-/-- Lift a corrected saved-bit top-level EXP branch spec into the combined
-    EXP+MUL code bundle. -/
-theorem cpsBranchWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
-    {entry base mulTarget : Word}
-    {mulOff : BitVec 21} {skipOff backOff : BitVec 13}
-    {P : Assertion} {exit_t : Word} {Q_t : Assertion} {exit_f : Word}
-    {Q_f : Assertion}
-    (h : cpsBranchWithin nSteps entry
-      (evmExpMsbSavedBitCode base mulOff skipOff backOff)
-      P exit_t Q_t exit_f Q_f) :
-    cpsBranchWithin nSteps entry
-      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
-      P exit_t Q_t exit_f Q_f :=
-  cpsBranchWithin_extend_code
-    (hmono := evmExpMsbSavedBitWithMulCode_exp_sub) h
 
 /-- MSB bit-test block lifted to the corrected saved-bit EXP+MUL code bundle. -/
 theorem exp_msb_bit_test_evm_exp_msb_saved_bit_with_mul_spec_within
