@@ -466,4 +466,42 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
       squaringMulOff condMulOff skipOff backOff base loopTarget
       hbase hsqmt hcondmt hd hskip hback)
 
+theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loopback_spec_within
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 mulTarget : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word)
+    (hbase : base &&& 1 = 0)
+    (hsqmt : mulTarget = ((base + 44) + 64) + signExtend21 squaringMulOff)
+    (hcondmt : mulTarget = ((base + 152) + 64) + signExtend21 condMulOff)
+    (hd : CodeReq.Disjoint
+            (evmExpMsbSavedBitTwoMulCode
+              base squaringMulOff condMulOff skipOff backOff)
+            (mul_callable_code mulTarget))
+    (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
+    (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = base + 28) :
+    let bit := e >>> (63 : BitVec 6).toNat
+    let w := expResultWord r0 r1 r2 r3
+    let aw := expResultWord a0 a1 a2 a3
+    let rw := (w * w) * aw
+    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
+    cpsBranchWithin
+      (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
+      (base + 28)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+        e0 e1 e2 e3 a0 a1 a2 a3)
+      (base + 28)
+        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+      (base + 264)
+        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
+  intro bit w aw rw iterCountNew
+  exact
+    exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 mulTarget
+      squaringMulOff condMulOff skipOff backOff base (base + 28)
+      hbase hsqmt hcondmt hd hskip hback
+
 end EvmAsm.Evm64.Exp.Compose
