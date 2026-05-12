@@ -36,6 +36,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulSkip
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCond
+import EvmAsm.Evm64.Exp.Compose.SavedBitIterPosts
 import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
 import EvmAsm.Evm64.Exp.StackExecutionBridge
