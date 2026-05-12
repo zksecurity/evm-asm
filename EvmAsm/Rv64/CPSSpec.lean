@@ -480,6 +480,29 @@ theorem cpsNBranchWithin_weaken_pre {nSteps : Nat} {entry : Word} {cr : CodeReq}
     exact ⟨hp, hcompat, sepConj_mono_left hpre hp hpq⟩
   exact h R hR s hcr hPR hpc
 
+/-- Permuting variant of `cpsNBranchWithin_of_forall_regIs_to_regOwn`.
+    This is useful when the owned register is not syntactically the final
+    atom of the precondition: prove a permutation into `P ** regOwn r`,
+    then the concrete-value family may consume `P ** (r ↦ᵣ vOld)`. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    {nSteps : Nat} {entry r P P' exits} {cr : CodeReq}
+    (hpre : ∀ h, P' h → (P ** regOwn r) h)
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (r ↦ᵣ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr P' exits :=
+  cpsNBranchWithin_weaken_pre hpre
+    (cpsNBranchWithin_of_forall_regIs_to_regOwn h)
+
+/-- Permuting variant of `cpsNBranchWithin_of_forall_memIs_to_memOwn`.
+    This is useful when the owned memory cell is not syntactically the final
+    atom of the precondition. -/
+theorem cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    {nSteps : Nat} {entry a P P' exits} {cr : CodeReq}
+    (hpre : ∀ h, P' h → (P ** memOwn a) h)
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (a ↦ₘ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr P' exits :=
+  cpsNBranchWithin_weaken_pre hpre
+    (cpsNBranchWithin_of_forall_memIs_to_memOwn h)
+
 /-- Monotonicity: expand the exit list of a bounded N-branch. The step bound
     is unchanged. -/
 theorem cpsNBranchWithin_weaken_exits {nSteps : Nat} {entry : Word} {cr : CodeReq}
