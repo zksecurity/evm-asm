@@ -116,6 +116,53 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
   cpsBranchWithin_extend_code
     (hmono := evmExpMsbSavedBitWithMulCode_exp_sub) h
 
+theorem evmExpMsbSavedBitTwoMulWithMulCode_block_subs {base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
+    (hd : CodeReq.Disjoint
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff)
+      (mul_callable_code mulTarget)) :
+    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 24)
+      EvmAsm.Evm64.exp_loop_pointer_advance) a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (expIterBodyFullMsbSavedBitTwoMulCode
+      (base + 28) squaringMulOff condMulOff skipOff backOff) a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 264)
+      EvmAsm.Evm64.exp_loop_pointer_restore) a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 268) EvmAsm.Evm64.exp_epilogue)
+      a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (mul_callable_code mulTarget) a = some i →
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i) := by
+  rcases evmExpMsbSavedBitTwoMulCode_block_subs
+      (base := base) (squaringMulOff := squaringMulOff)
+      (condMulOff := condMulOff) (skipOff := skipOff) (backOff := backOff) with
+    ⟨h_prologue, h_pointer_advance, h_iter, h_pointer_restore, h_epilogue⟩
+  exact
+    ⟨fun a i h =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i (h_prologue a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
+          (h_pointer_advance a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i (h_iter a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
+          (h_pointer_restore a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i (h_epilogue a i h),
+     evmExpMsbSavedBitTwoMulWithMulCode_mul_sub hd⟩
+
 /-- Pointer advance lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
 theorem exp_loop_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     (vOld : Word) (squaringMulOff condMulOff : BitVec 21)
