@@ -1,0 +1,62 @@
+/-
+  EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
+
+  Boundary-block sequence helpers for the corrected two-MUL saved-bit EXP
+  code bundle.
+-/
+
+import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
+
+namespace EvmAsm.Evm64.Exp.Compose
+
+open EvmAsm.Rv64.Tactics
+open EvmAsm.Rv64
+
+/-- EXP prologue followed by the pointer-advance block, lifted to the
+    two-MUL saved-bit EXP+MUL code bundle. This lands at the iteration-body
+    entry with the EVM stack pointer advanced by one operand window. -/
+theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin (6 + 1) base (base + 28)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+        (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3)) **
+       (.x12 ↦ᵣ evmSp))
+      (((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+        (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+        (.x5 ↦ᵣ ((0 : Word) + signExtend12 (1 : BitVec 12))) **
+        evmWordIs sp (1 : EvmWord)) **
+       (.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12)))) := by
+  have hPrologue :=
+    exp_prologue_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+      sp cOld tOld m0 m1 m2 m3
+      squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hPrologueFramed :=
+    cpsTripleWithin_frameR (.x12 ↦ᵣ evmSp) (by pcFree) hPrologue
+  have hPointer :=
+    exp_loop_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+      evmSp squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hPointerFramed :=
+    cpsTripleWithin_frameR
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+       (.x5 ↦ᵣ ((0 : Word) + signExtend12 (1 : BitVec 12))) **
+       evmWordIs sp (1 : EvmWord))
+      (by pcFree)
+      hPointer
+  have hSeq :=
+    cpsTripleWithin_seq_perm_same_cr
+      (fun _ hp => by xperm_hyp hp)
+      hPrologueFramed hPointerFramed
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    hSeq
+
+end EvmAsm.Evm64.Exp.Compose
