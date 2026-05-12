@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterPosts
+import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -35,7 +36,7 @@ theorem exp_two_mul_named_iter_with_continuations_spec_within
         a0 a1 a2 a3 w rw)
       R) →
     cpsTripleWithin
-      ((((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2)) + nCont)
+      (expTwoMulNamedIterStepBound + nCont)
       (base + 28)
       exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
@@ -74,8 +75,7 @@ theorem exp_two_mul_named_iter_with_continuations_max_spec_within
         a0 a1 a2 a3 w rw)
       R) →
     cpsTripleWithin
-      ((((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2)) +
-        max nLoop nExit)
+      (expTwoMulNamedIterStepBound + max nLoop nExit)
       (base + 28)
       exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
@@ -101,8 +101,7 @@ theorem exp_two_mul_named_iter_with_continuations_bounded_spec_within
     (base : Word)
     (hbase : base &&& 1 = 0)
     (hBound :
-      ((((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2)) +
-        max nLoop nExit) ≤ nBound) :
+      expTwoMulNamedIterStepBound + max nLoop nExit ≤ nBound) :
     let bit := e >>> (63 : BitVec 6).toNat
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
