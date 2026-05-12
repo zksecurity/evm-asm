@@ -213,4 +213,80 @@ theorem exp_cond_mul_call_with_skip_block_code_block_subs
   exact ⟨exp_cond_mul_call_with_skip_block_code_beq_sub base mulOff skipOff,
     exp_cond_mul_call_with_skip_block_code_call_sub base mulOff skipOff⟩
 
+/-- CodeReq decomposition for the conditional-multiply step with its leading
+    BEQ skip gate, branching on the saved bit in `x18`. The BEQ lives at
+    `base`; the taken call block starts at `base + 4` and is skipped when
+    the saved exponent bit is zero. -/
+abbrev exp_cond_mul_call_with_saved_bit_skip_block_code
+    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.singleton base (.BEQ .x18 .x0 skipOff),
+    exp_cond_mul_call_block_code (base + 4) mulOff
+  ]
+
+theorem exp_cond_mul_call_with_saved_bit_skip_block_code_eq_ofProg
+    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff =
+      CodeReq.ofProg base
+        (exp_cond_mul_call_with_saved_bit_skip_block mulOff skipOff) := by
+  unfold exp_cond_mul_call_with_saved_bit_skip_block_code
+  unfold exp_cond_mul_call_with_saved_bit_skip_block
+  simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil,
+    CodeReq.union_empty_right]
+  unfold single seq Program
+  symm
+  rw [CodeReq.ofProg_append]
+  rw [show base + BitVec.ofNat 64 (4 * [Instr.BEQ .x18 .x0 skipOff].length) =
+      base + 4 by rfl]
+  rw [CodeReq.ofProg_singleton]
+  rw [← exp_cond_mul_call_block_code_eq_ofProg (base + 4) mulOff]
+  unfold exp_cond_mul_call_block_code
+  simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil, CodeReq.union_empty_right]
+
+theorem exp_cond_mul_call_with_saved_bit_skip_block_code_beq_sub
+    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    ∀ a i, (CodeReq.singleton base (.BEQ .x18 .x0 skipOff)) a = some i →
+      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
+        a = some i := by
+  unfold exp_cond_mul_call_with_saved_bit_skip_block_code
+  simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left
+
+theorem exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
+    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    ∀ a i, (exp_cond_mul_call_block_code (base + 4) mulOff) a = some i →
+      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
+        a = some i := by
+  rw [exp_cond_mul_call_with_saved_bit_skip_block_code_eq_ofProg,
+    exp_cond_mul_call_block_code_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 4)
+    (exp_cond_mul_call_with_saved_bit_skip_block mulOff skipOff)
+    (exp_cond_mul_call_block mulOff) 1
+    (by bv_omega)
+    (by
+      unfold exp_cond_mul_call_with_saved_bit_skip_block single
+      simp only [seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [exp_cond_mul_call_with_saved_bit_skip_block_length,
+        exp_cond_mul_call_block_length]
+      omega)
+    (by
+      simp only [exp_cond_mul_call_with_saved_bit_skip_block_length]
+      norm_num)
+
+theorem exp_cond_mul_call_with_saved_bit_skip_block_code_block_subs
+    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
+    (∀ a i, (CodeReq.singleton base (.BEQ .x18 .x0 skipOff)) a = some i →
+      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
+        a = some i) ∧
+    (∀ a i, (exp_cond_mul_call_block_code (base + 4) mulOff) a = some i →
+      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
+        a = some i) := by
+  exact ⟨exp_cond_mul_call_with_saved_bit_skip_block_code_beq_sub
+      base mulOff skipOff,
+    exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
+      base mulOff skipOff⟩
+
 end EvmAsm.Evm64

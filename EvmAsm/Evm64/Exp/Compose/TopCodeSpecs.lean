@@ -5,6 +5,7 @@
   keep the base composition module under the Compose file-size guardrail.
 -/
 
+import EvmAsm.Evm64.Exp.Compose.SavedBitBase
 import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.SquaringCallSeq
@@ -120,6 +121,80 @@ theorem evmExpCode_iter_cond_mul_sub {base : Word}
   rw [haddr] at h
   exact evmExpCode_iter_body_sub a i (expIterBodyFullCode_cond_mul_sub a i h)
 
+/-- MSB bit-test sub-block directly included in the corrected saved-bit
+    top-level EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_iter_bit_test_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 28) EvmAsm.Evm64.exp_msb_bit_test_block)
+      a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  exact evmExpMsbSavedBitCode_iter_body_sub a i
+    (expIterBodyFullMsbSavedBitCode_bit_test_sub a i h)
+
+/-- Save-bit sub-block directly included in the corrected saved-bit top-level
+    EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_iter_save_bit_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 40) EvmAsm.Evm64.exp_save_bit_block)
+      a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 40 : Word) = base + 28 + 12 := by bv_omega
+  rw [haddr] at h
+  exact evmExpMsbSavedBitCode_iter_body_sub a i
+    (expIterBodyFullMsbSavedBitCode_save_bit_sub a i h)
+
+/-- Squaring-call sub-block directly included in the corrected saved-bit
+    top-level EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_iter_squaring_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (exp_squaring_call_block_code (base + 44) mulOff) a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 44 : Word) = base + 28 + 16 := by bv_omega
+  rw [haddr] at h
+  exact evmExpMsbSavedBitCode_iter_body_sub a i
+    (expIterBodyFullMsbSavedBitCode_squaring_sub a i h)
+
+/-- Saved-bit conditional-multiply sub-block directly included in the
+    corrected saved-bit top-level EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_iter_cond_mul_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (EvmAsm.Evm64.exp_cond_mul_call_with_saved_bit_skip_block_code
+      (base + 148) mulOff skipOff) a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 148 : Word) = base + 28 + 120 := by bv_omega
+  rw [haddr] at h
+  exact evmExpMsbSavedBitCode_iter_body_sub a i
+    (expIterBodyFullMsbSavedBitCode_cond_mul_sub a i h)
+
+/-- Saved-bit loop-back sub-block directly included in the corrected saved-bit
+    top-level EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_iter_loop_back_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 256)
+      (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  have haddr : (base + 256 : Word) = base + 28 + 228 := by bv_omega
+  rw [haddr] at h
+  exact evmExpMsbSavedBitCode_iter_body_sub a i
+    (expIterBodyFullMsbSavedBitCode_loop_back_sub a i h)
+
+/-- Saved-bit conditional-multiply BEQ skip-gate directly included in the
+    corrected saved-bit top-level EXP code bundle. -/
+theorem evmExpMsbSavedBitCode_cond_mul_beq_sub {base : Word}
+    {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.singleton (base + 148) (.BEQ .x18 .x0 skipOff))
+      a = some i →
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
+  intro a i h
+  exact evmExpMsbSavedBitCode_iter_cond_mul_sub a i
+    (EvmAsm.Evm64.exp_cond_mul_call_with_saved_bit_skip_block_code_beq_sub
+      (base + 148) mulOff skipOff a i h)
+
 /-- Loop-back sub-block directly included in the top-level EXP code bundle. -/
 theorem evmExpCode_iter_loop_back_sub {base : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
@@ -145,6 +220,38 @@ theorem exp_bit_test_evm_exp_spec_within
   have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
   rw [hnext] at h
   exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_iter_bit_test_sub)
+
+/-- MSB bit-test block lifted to the corrected saved-bit top-level EXP code
+    bundle. -/
+theorem exp_msb_bit_test_evm_exp_msb_saved_bit_spec_within
+    (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word) :
+    cpsTripleWithin 3 (base + 28) (base + 40)
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff)
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
+      ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
+       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+  have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
+  have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
+  rw [hnext] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpMsbSavedBitCode_iter_bit_test_sub)
+
+/-- Save-bit block lifted to the corrected saved-bit top-level EXP code
+    bundle. -/
+theorem exp_save_bit_evm_exp_msb_saved_bit_spec_within
+    (bit v18 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word) :
+    cpsTripleWithin 1 (base + 40) (base + 44)
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff)
+      ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ v18))
+      ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))) := by
+  have h := EvmAsm.Evm64.exp_save_bit_block_spec_within bit v18 (base + 40)
+  have hnext : ((base + 40 : Word) + 4) = base + 44 := by bv_omega
+  rw [hnext] at h
+  exact cpsTripleWithin_extend_code (h := h)
+    (hmono := evmExpMsbSavedBitCode_iter_save_bit_sub)
 
 /-- Loop-back block lifted to the top-level EXP code bundle. -/
 theorem exp_loop_back_evm_exp_spec_within (c : Word)
@@ -543,6 +650,27 @@ theorem exp_cond_mul_beq_evm_exp_spec_within
   rw [hnext] at h
   exact cpsBranchWithin_extend_code (h := h)
     (hmono := evmExpCode_cond_mul_beq_sub)
+
+/-- Saved-bit conditional-multiply BEQ skip-gate spec lifted to the corrected
+    saved-bit top-level EXP code bundle: at offset `base + 148`, branches on
+    `x18 == 0` to the cond-mul skip target, otherwise falls through to
+    `base + 152` (the cond-mul taken block). -/
+theorem exp_cond_mul_saved_bit_beq_evm_exp_msb_saved_bit_spec_within
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (v18 : Word) (base target : Word)
+    (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
+    cpsBranchWithin 1 (base + 148)
+      (evmExpMsbSavedBitCode base mulOff skipOff backOff)
+      ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 = 0⌝)
+      (base + 152) ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 ≠ 0⌝) := by
+  have h := EvmAsm.Rv64.beq_spec_within .x18 .x0 skipOff v18 (0 : Word)
+    (base + 148)
+  rw [htarget] at h
+  have hnext : ((base + 148 : Word) + 4) = base + 152 := by bv_omega
+  rw [hnext] at h
+  exact cpsBranchWithin_extend_code (h := h)
+    (hmono := evmExpMsbSavedBitCode_cond_mul_beq_sub)
 
 
 /-- Squaring-call marshal prefix and JAL lifted to the top-level EXP code bundle. -/
