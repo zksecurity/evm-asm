@@ -481,13 +481,9 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
          memOwn evmSp ** memOwn (evmSp + 8) **
          memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
          (.x1 ↦ᵣ ((base + 44) + 68))) :=
-  exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul_canonical_target_with_mul_spec_within
+  exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_spec_within
     e c v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
-    v7 v11 (base + 304)
-    EvmAsm.Evm64.canonicalExpSquaringMulOff
-    EvmAsm.Evm64.canonicalExpCondMulOff
-    base hbase
-    (EvmAsm.Evm64.canonicalExpSquaringMul_target base).symm
-    (evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul base)
+    v7 v11 base (base + 256) hbase
+    (EvmAsm.Evm64.canonicalExpCondMulSkip_target base)
 
 end EvmAsm.Evm64.Exp.Compose
