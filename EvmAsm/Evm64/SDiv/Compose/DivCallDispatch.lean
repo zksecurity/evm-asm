@@ -21,6 +21,45 @@ namespace EvmAsm.Evm64.SDiv.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+/-- Absolute-value word produced by the SDIV dividend sign/absolute-value
+    prefix, packaged as a named expression so downstream callable-composition
+    proofs do not duplicate the expanded `fromLimbs` term. -/
+def sdivAbsDividendWord
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop : Word) : EvmWord :=
+  let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
+  let dividendMask := (0 : Word) - dividendSign
+  let dividendSum0 := (dividendLimb0 ^^^ dividendMask) + dividendSign
+  let dividendCarry0 :=
+    if BitVec.ult dividendSum0 dividendSign then (1 : Word) else 0
+  let dividendSum1 := (dividendLimb1 ^^^ dividendMask) + dividendCarry0
+  let dividendCarry1 :=
+    if BitVec.ult dividendSum1 dividendCarry0 then (1 : Word) else 0
+  let dividendSum2 := (dividendLimb2 ^^^ dividendMask) + dividendCarry1
+  let dividendCarry2 :=
+    if BitVec.ult dividendSum2 dividendCarry1 then (1 : Word) else 0
+  let dividendSum3 := (dividendTop ^^^ dividendMask) + dividendCarry2
+  EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with
+    | 0 => dividendSum0 | 1 => dividendSum1 | 2 => dividendSum2 | 3 => dividendSum3
+
+/-- Absolute-value word produced by the SDIV divisor sign/absolute-value
+    prefix, paired with `sdivAbsDividendWord` for downstream composition
+    statements that consume `divModStackDispatchPre`. -/
+def sdivAbsDivisorWord
+    (divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : EvmWord :=
+  let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+  let divisorMask := (0 : Word) - divisorSign
+  let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
+  let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
+  let divisorSum1 := (divisorLimb1 ^^^ divisorMask) + divisorCarry0
+  let divisorCarry1 := if BitVec.ult divisorSum1 divisorCarry0 then (1 : Word) else 0
+  let divisorSum2 := (divisorLimb2 ^^^ divisorMask) + divisorCarry1
+  let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
+  let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
+  EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with
+    | 0 => divisorSum0 | 1 => divisorSum1 | 2 => divisorSum2 | 3 => divisorSum3
+
 /-- Post-shape consumed by `evm_div_callable_spec_in_sdivCode`: the
     `divModStackDispatchPre` bundle (the dispatcher's pre, which the
     callable consumes) paired with the SDIV-wrapper-private sign frame
