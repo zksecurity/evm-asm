@@ -339,7 +339,6 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let aw := expResultWord a0 a1 a2 a3
     let rw := r * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -370,12 +369,12 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       foldedPre
       [(loopTarget,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] := by
-  intro aw rw iterCountNew baseFrame rest foldedPre
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
+  intro aw rw baseFrame rest foldedPre
   let concretePre : Assertion :=
     let preCore : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r.getLimbN 3) **
@@ -403,11 +402,11 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
           base mulTarget squaringMulOff condMulOff skipOff backOff)
         concretePre
         [(loopTarget,
-            (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-             ⌜iterCountNew ≠ 0⌝) ** rest)),
+            (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+             ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
           (base + 264,
-            (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-             ⌜iterCountNew = 0⌝) ** rest))] := by
+            (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+             ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
     dsimp [concretePre, baseFrame, rest]
     simpa [expResultWord_getLimbN_self r] using
     exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_call_scratch_owned_spec_within
