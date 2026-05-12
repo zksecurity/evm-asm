@@ -66,7 +66,6 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
             (mul_callable_code mulTarget)) :
     let bit := e >>> (63 : BitVec 6).toNat
     let w := expResultWord r0 r1 r2 r3
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
@@ -107,11 +106,11 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
            (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)),
         (base + 28,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] := by
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
   have hskip :
       (base + 148 : Word) + signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff =
         base + 256 := by
@@ -121,13 +120,13 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
           signExtend13 EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff =
         base + 28 := by
     exact EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBack_target base
-  exact
-    exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+  simpa [expTwoMulIterCountNew] using
+    (exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 v7 v11 mulTarget squaringMulOff condMulOff
       EvmAsm.Evm64.canonicalExpCondMulSkipOff
       EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff
-      base (base + 28) hbase hmt hd hskip hback
+      base (base + 28) hbase hmt hd hskip hback)
 
 /-- Appended-MUL canonical-code view of the zero-bit saved-bit path through
     BEQ and loop-back. -/
@@ -138,7 +137,6 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     (hbase : base &&& 1 = 0) :
     let bit := e >>> (63 : BitVec 6).toNat
     let w := expResultWord r0 r1 r2 r3
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
@@ -178,11 +176,11 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
            (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)),
         (base + 28,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] :=
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] :=
   exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_spec_within
     e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
     e0 e1 e2 e3 v7 v11 (base + 304)
