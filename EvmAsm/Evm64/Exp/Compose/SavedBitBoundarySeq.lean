@@ -59,4 +59,48 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
     (fun _ hp => by xperm_hyp hp)
     hSeq
 
+/-- Stack-operand framed view of the two-MUL saved-bit EXP prologue followed
+    by pointer advance. This preserves the visible EVM operand windows and
+    caller-saved scratch ownership while the accumulator is initialized to one
+    and `x12` advances to the loop-facing pointer. -/
+theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_operand_frame_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word)
+    (baseWord exponentWord : EvmWord)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    let operandFrame : Assertion :=
+      evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
+      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
+    cpsTripleWithin (6 + 1) base (base + 28)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+         (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+         ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+         ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+         ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3)) **
+        (.x12 ↦ᵣ evmSp)) ** operandFrame)
+      ((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+         (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+         (.x5 ↦ᵣ ((0 : Word) + signExtend12 (1 : BitVec 12))) **
+         evmWordIs sp (1 : EvmWord)) **
+        (.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12)))) ** operandFrame) := by
+  intro operandFrame
+  have hBase :=
+    exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3
+      squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hFramed := cpsTripleWithin_frameR operandFrame (by
+    dsimp [operandFrame]
+    pcFree) hBase
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      dsimp [operandFrame] at hp ⊢
+      xperm_hyp hp)
+    (fun _ hp => by
+      dsimp [operandFrame] at hp ⊢
+      xperm_hyp hp)
+    hFramed
+
 end EvmAsm.Evm64.Exp.Compose
