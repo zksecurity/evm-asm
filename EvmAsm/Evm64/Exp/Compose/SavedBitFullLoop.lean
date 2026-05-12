@@ -116,6 +116,84 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
   cpsBranchWithin_extend_code
     (hmono := evmExpMsbSavedBitWithMulCode_exp_sub) h
 
+/-- Pointer advance lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
+theorem exp_loop_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+    (vOld : Word) (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) (base mulTarget : Word) :
+    cpsTripleWithin 1 (base + 24) (base + 28)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (.x12 ↦ᵣ vOld)
+      (.x12 ↦ᵣ (vOld + signExtend12 (64 : BitVec 12))) :=
+  cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode
+    (exp_loop_pointer_advance_evm_exp_msb_saved_bit_two_mul_spec_within
+      vOld squaringMulOff condMulOff skipOff backOff base)
+
+/-- Pointer restore lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
+theorem exp_loop_pointer_restore_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+    (vOld : Word) (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) (base mulTarget : Word) :
+    cpsTripleWithin 1 (base + 264) (base + 268)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (.x12 ↦ᵣ vOld)
+      (.x12 ↦ᵣ (vOld + signExtend12 ((-64) : BitVec 12))) :=
+  cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode
+    (exp_loop_pointer_restore_evm_exp_msb_saved_bit_two_mul_spec_within
+      vOld squaringMulOff condMulOff skipOff backOff base)
+
+/-- EXP prologue lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
+theorem exp_prologue_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+    (sp cOld tOld m0 m1 m2 m3 : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin 6 base (base + 24)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+       (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3))
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+       (.x5 ↦ᵣ ((0 : Word) + signExtend12 (1 : BitVec 12))) **
+       evmWordIs sp (1 : EvmWord)) :=
+  cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode
+    (exp_prologue_evm_exp_msb_saved_bit_two_mul_spec_within
+      sp cOld tOld m0 m1 m2 m3
+      squaringMulOff condMulOff skipOff backOff base)
+
+/-- EXP epilogue lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
+theorem exp_epilogue_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin 9 (base + 268) (base + 304)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3))
+      ((.x2 ↦ᵣ sp) **
+       (.x12 ↦ᵣ (evmSp + signExtend12 (32 : BitVec 12))) **
+       (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3)) :=
+  cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode
+    (exp_epilogue_evm_exp_msb_saved_bit_two_mul_spec_within
+      sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3
+      squaringMulOff condMulOff skipOff backOff base)
+
 /-- MSB bit-test block lifted to the corrected saved-bit EXP+MUL code bundle. -/
 theorem exp_msb_bit_test_evm_exp_msb_saved_bit_with_mul_spec_within
     (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
