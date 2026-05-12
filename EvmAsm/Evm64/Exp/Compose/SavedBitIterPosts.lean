@@ -644,10 +644,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
-      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
-        base (base + 304)
-        EvmAsm.Evm64.canonicalExpSquaringMulOff
-        EvmAsm.Evm64.canonicalExpCondMulOff)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)

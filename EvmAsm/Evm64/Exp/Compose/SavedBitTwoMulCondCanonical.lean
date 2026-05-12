@@ -177,10 +177,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24))
     cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
-      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
-        base (base + 304)
-        EvmAsm.Evm64.canonicalExpSquaringMulOff
-        EvmAsm.Evm64.canonicalExpCondMulOff)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       foldedPre
       [(base + 28,
           (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **

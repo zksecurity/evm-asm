@@ -247,10 +247,7 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_canonica
       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
       (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
     cpsTripleWithin (6 + 1) base (base + 28)
-      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
-        base (base + 304)
-        EvmAsm.Evm64.canonicalExpSquaringMulOff
-        EvmAsm.Evm64.canonicalExpCondMulOff)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
           (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
           ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
@@ -641,10 +638,7 @@ theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_m
     let exitControl : Assertion :=
       (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝
     cpsTripleWithin (1 + 9) (base + 264) (base + 304)
-      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
-        base (base + 304)
-        EvmAsm.Evm64.canonicalExpSquaringMulOff
-        EvmAsm.Evm64.canonicalExpCondMulOff)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (exitControl **
        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **

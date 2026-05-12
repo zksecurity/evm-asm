@@ -130,10 +130,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
       (.x1 ↦ᵣ ((base + 44) + 68))
     cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
-      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
-        base (base + 304)
-        EvmAsm.Evm64.canonicalExpSquaringMulOff
-        EvmAsm.Evm64.canonicalExpCondMulOff)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
