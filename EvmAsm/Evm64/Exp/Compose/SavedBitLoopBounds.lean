@@ -27,6 +27,16 @@ abbrev expTwoMulBoundarySuffixBound : Nat := 1 + 9
 abbrev expTwoMulBoundaryLoopBound (nSteps : Nat) : Nat :=
   (expTwoMulBoundaryPrefixBound + nSteps) + expTwoMulBoundarySuffixBound
 
+/-- Aggregate bound for 256 saved-bit two-MUL loop iterations, excluding the
+    prologue/pointer-advance and pointer-restore/epilogue boundary. -/
+abbrev expTwoMulFullLoopBodyBound : Nat :=
+  256 * expTwoMulNamedIterStepBound
+
+/-- Aggregate bound for the full saved-bit two-MUL loop including the
+    prologue/pointer-advance and pointer-restore/epilogue boundary. -/
+abbrev expTwoMulFullLoopBoundaryBound : Nat :=
+  expTwoMulBoundaryLoopBound expTwoMulFullLoopBodyBound
+
 theorem expTwoMulNamedIterStepBound_eq :
     expTwoMulNamedIterStepBound = 189 := by
   norm_num [expTwoMulNamedIterStepBound]
@@ -36,5 +46,14 @@ theorem expTwoMulBoundaryLoopBound_eq (nSteps : Nat) :
   unfold expTwoMulBoundaryLoopBound expTwoMulBoundaryPrefixBound
     expTwoMulBoundarySuffixBound
   omega
+
+theorem expTwoMulFullLoopBodyBound_eq :
+    expTwoMulFullLoopBodyBound = 48384 := by
+  norm_num [expTwoMulFullLoopBodyBound, expTwoMulNamedIterStepBound_eq]
+
+theorem expTwoMulFullLoopBoundaryBound_eq :
+    expTwoMulFullLoopBoundaryBound = 48401 := by
+  rw [expTwoMulFullLoopBoundaryBound, expTwoMulBoundaryLoopBound_eq,
+    expTwoMulFullLoopBodyBound_eq]
 
 end EvmAsm.Evm64.Exp.Compose
