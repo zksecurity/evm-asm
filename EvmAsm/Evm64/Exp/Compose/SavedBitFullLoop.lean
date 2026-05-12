@@ -11,6 +11,7 @@ import EvmAsm.Evm64.Exp.Compose.FullLoop
 
 namespace EvmAsm.Evm64.Exp.Compose
 
+open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Code required by the corrected saved-bit EXP program plus the external
@@ -93,6 +94,39 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
   cpsTripleWithin_extend_evmExpMsbSavedBitWithMulCode
     (exp_save_bit_evm_exp_msb_saved_bit_spec_within
       bit v18 mulOff skipOff backOff base)
+
+/-- Prefix of one corrected EXP iteration: extract the current MSB into `x10`
+    and save the same bit in callee-saved `x18` before the squaring call. -/
+theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
+    (e c v10 v18 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    let bit := e >>> (63 : BitVec 6).toNat
+    cpsTripleWithin (3 + 1) (base + 28) (base + 44)
+      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18))
+      ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
+       (.x10 ↦ᵣ bit) **
+       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))) := by
+  intro bit
+  have hBit := exp_msb_bit_test_evm_exp_msb_saved_bit_with_mul_spec_within
+    e c v10 mulOff skipOff backOff base mulTarget
+  have hBitFramed :=
+    cpsTripleWithin_frameR (.x18 ↦ᵣ v18) (by pcFree) hBit
+  have hSave := exp_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
+    bit v18 mulOff skipOff backOff base mulTarget
+  have hSaveFramed :=
+    cpsTripleWithin_frameL
+      ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
+       (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))))
+      (by pcFree) hSave
+  have hSeq :=
+    cpsTripleWithin_seq_perm_same_cr
+      (fun _ hp => by xperm_hyp hp) hBitFramed hSaveFramed
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    hSeq
 
 /-- Saved-bit conditional-multiply BEQ skip-gate lifted to the corrected
     saved-bit EXP+MUL code bundle. -/
@@ -194,6 +228,89 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
           (skipOff := skipOff) (backOff := backOff) a i h))
       (fun a i h => evmExpMsbSavedBitWithMulCode_mul_sub hd a i h))
     hbase_spec
+
+/-- Prefix plus squaring side of one corrected EXP iteration.  This carries
+    the saved bit in `x18` across the full `mul_callable` round-trip, landing
+    at the saved-bit conditional-multiply BEQ site. -/
+theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_mul_spec_within
+    (e c v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      v7 v11 mulTarget : Word)
+    (mulOff : BitVec 21) (skipOff backOff : BitVec 13) (base : Word)
+    (hbase : base &&& 1 = 0)
+    (hmt : mulTarget = ((base + 44) + 64) + signExtend21 mulOff)
+    (hd : CodeReq.Disjoint
+            (evmExpMsbSavedBitCode base mulOff skipOff backOff)
+            (mul_callable_code mulTarget)) :
+    let bit := e >>> (63 : BitVec 6).toNat
+    let w := expResultWord r0 r1 r2 r3
+    cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
+      (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
+      ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
+       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+       (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld))
+      ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
+       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+       (.x5 ↦ᵣ (w * w).getLimbN 3) **
+       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+       memOwn evmSp ** memOwn (evmSp + 8) **
+       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
+       (.x1 ↦ᵣ ((base + 44) + 68))) := by
+  intro bit w
+  have hPrefix := exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
+    e c v10 v18 mulOff skipOff backOff base mulTarget
+  have hPrefixFramed :=
+    cpsTripleWithin_frameR
+      ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+       ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+       ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+       ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+       (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld)
+      ) (by pcFree) hPrefix
+  have hSquare := exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
+    sp evmSp (e <<< (1 : BitVec 6).toNat) vOld
+    r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+    (c + signExtend12 ((-1) : BitVec 12)) v7 bit v11 mulTarget
+    mulOff skipOff backOff base hbase hmt hd
+  have hSquareFramed :=
+    cpsTripleWithin_frameL (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))
+      (by pcFree) hSquare
+  have hSeq :
+      cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) ((base + 44) + 104)
+        (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
+        _ _ :=
+    cpsTripleWithin_seq_perm_same_cr
+      (fun _ hp => by
+        dsimp only [bit] at hp ⊢
+        xperm_hyp hp)
+      hPrefixFramed hSquareFramed
+  have hexit : ((base + 44 : Word) + 104) = base + 148 := by bv_omega
+  rw [hexit] at hSeq
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by xperm_hyp hp)
+    (fun _ hp => by xperm_hyp hp)
+    hSeq
 
 /-- Conditional-multiply taken call-block lifted to the corrected saved-bit
     EXP+MUL code bundle.  The leading BEQ is handled separately; this theorem
