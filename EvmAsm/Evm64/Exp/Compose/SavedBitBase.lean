@@ -583,6 +583,114 @@ theorem evmExpMsbSavedBitTwoMulCode_iter_body_sub {base : Word}
       simp only [evm_exp_msb_saved_bit_two_mul_len]
       norm_num)
 
+theorem evmExpMsbSavedBitTwoMulCode_prologue_sub {base : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulCode
+  simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_mono_left
+
+theorem evmExpMsbSavedBitTwoMulCode_pointer_advance_sub {base : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 24)
+      EvmAsm.Evm64.exp_loop_pointer_advance) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i := by
+  rw [evmExpMsbSavedBitTwoMulCode_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 24)
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff)
+    EvmAsm.Evm64.exp_loop_pointer_advance 6
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len, exp_loop_pointer_advance_len]
+      omega)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len]
+      norm_num)
+
+theorem evmExpMsbSavedBitTwoMulCode_pointer_restore_sub {base : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 264)
+      EvmAsm.Evm64.exp_loop_pointer_restore) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i := by
+  rw [evmExpMsbSavedBitTwoMulCode_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 264)
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff)
+    EvmAsm.Evm64.exp_loop_pointer_restore 66
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len, exp_loop_pointer_restore_len]
+      omega)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len]
+      norm_num)
+
+theorem evmExpMsbSavedBitTwoMulCode_epilogue_sub {base : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    ∀ a i, (CodeReq.ofProg (base + 268) EvmAsm.Evm64.exp_epilogue)
+      a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i := by
+  rw [evmExpMsbSavedBitTwoMulCode_eq_ofProg]
+  exact CodeReq.ofProg_mono_sub base (base + 268)
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff)
+    EvmAsm.Evm64.exp_epilogue 67
+    (by bv_omega)
+    (by
+      unfold EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul
+      simp only [EvmAsm.Rv64.seq]
+      unfold Program
+      rfl)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len, exp_epilogue_len]
+      omega)
+    (by
+      simp only [evm_exp_msb_saved_bit_two_mul_len]
+      norm_num)
+
+theorem evmExpMsbSavedBitTwoMulCode_block_subs {base : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
+    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 24)
+      EvmAsm.Evm64.exp_loop_pointer_advance) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (expIterBodyFullMsbSavedBitTwoMulCode
+      (base + 28) squaringMulOff condMulOff skipOff backOff) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 264)
+      EvmAsm.Evm64.exp_loop_pointer_restore) a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 268) EvmAsm.Evm64.exp_epilogue)
+      a = some i →
+      (evmExpMsbSavedBitTwoMulCode
+        base squaringMulOff condMulOff skipOff backOff) a = some i) := by
+  exact ⟨evmExpMsbSavedBitTwoMulCode_prologue_sub,
+    evmExpMsbSavedBitTwoMulCode_pointer_advance_sub,
+    evmExpMsbSavedBitTwoMulCode_iter_body_sub,
+    evmExpMsbSavedBitTwoMulCode_pointer_restore_sub,
+    evmExpMsbSavedBitTwoMulCode_epilogue_sub⟩
+
 theorem evmExpMsbSavedBitCode_prologue_sub {base : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
     ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
