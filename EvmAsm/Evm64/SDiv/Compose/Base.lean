@@ -122,7 +122,7 @@ abbrev divCallCode (base : Word) : CodeReq :=
 abbrev resultSignFixCode (base : Word) : CodeReq :=
   CodeReq.ofProg (base + resultSignFixOff)
     (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11
-      32 40 48 56)
+      0 8 16 24)
 
 /-- Code handle for the saved-`ra` return instruction. -/
 abbrev savedRaRetCode (base : Word) : CodeReq :=
@@ -218,7 +218,7 @@ theorem sdivCode_resultSignFix_sub {base : Word} :
   exact CodeReq.ofProg_mono_sub base (base + resultSignFixOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11
-      32 40 48 56) 49
+      0 8 16 24) 49
     (by simp [resultSignFixOff])
     (by native_decide)
     (by native_decide)
@@ -906,20 +906,19 @@ theorem divCall_spec_in_sdivCode
       EvmAsm.Evm64.evm_sdivCallOff vOld (base + divCallOff))
 
 /-- Precondition for the SDIV result sign-fixup (conditional 2's-complement
-    negation) block. Mirrors `divisorAbsPre` but with the sign in `x8`
-    (post-`signXor` result sign) — same divisor memory slots `+32…+56`
-    that the result is written back to. Wrapped `@[irreducible]` so
-    downstream proofs do not re-unfold the sepConj atoms at each use
-    site. -/
+    negation) block. The unsigned DIV callable returns with `x12` advanced
+    to the quotient cell, so this block operates on offsets `0…24` from the
+    live stack pointer. Wrapped `@[irreducible]` so downstream proofs do not
+    re-unfold the sepConj atoms at each use site. -/
 @[irreducible]
 def resultSignFixPre (sp sign maskOld valueOld carryOld
     limb0 limb1 limb2 limb3 : Word) : Assertion :=
   (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
   (.x10 ↦ᵣ maskOld) ** (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld) **
-  ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limb0) **
-  ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limb1) **
-  ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limb2) **
-  ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limb3)
+  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
+  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
+  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
+  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ limb3)
 
 theorem resultSignFixPre_unfold
     {sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3 : Word} :
@@ -927,10 +926,10 @@ theorem resultSignFixPre_unfold
         limb0 limb1 limb2 limb3 =
       ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
        (.x10 ↦ᵣ maskOld) ** (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld) **
-       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ limb0) **
-       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ limb1) **
-       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ limb2) **
-       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ limb3)) := by
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ limb3)) := by
   delta resultSignFixPre
   rfl
 
@@ -950,10 +949,10 @@ def resultSignFixPost (sp sign limb0 limb1 limb2 limb3 : Word) : Assertion :=
   let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
   (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
   (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-  ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ sum0) **
-  ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ sum1) **
-  ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ sum2) **
-  ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ sum3)
+  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)
 
 theorem resultSignFixPost_unfold
     {sp sign limb0 limb1 limb2 limb3 : Word} :
@@ -969,10 +968,10 @@ theorem resultSignFixPost_unfold
        let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
        (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
        (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-       ((sp + signExtend12 (32 : BitVec 12)) ↦ₘ sum0) **
-       ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ sum1) **
-       ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ sum2) **
-       ((sp + signExtend12 (56 : BitVec 12)) ↦ₘ sum3)) := by
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)) := by
   delta resultSignFixPost
   rfl
 
@@ -988,7 +987,7 @@ theorem resultSignFix_spec_in_sdivCode
   have hmono :
       ∀ a i,
         (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_code
-          .x12 .x8 .x10 .x7 .x11 32 40 48 56
+          .x12 .x8 .x10 .x7 .x11 0 8 16 24
           (base + resultSignFixOff)) a = some i →
         (sdivCode base) a = some i := by
     intro a i h
@@ -997,7 +996,7 @@ theorem resultSignFix_spec_in_sdivCode
         EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_code] using h)
   have hSpec :=
     EvmAsm.Evm64.evm_sdiv_cond_negate_256_block_spec_within
-      .x12 .x8 .x10 .x7 .x11 32 40 48 56
+      .x12 .x8 .x10 .x7 .x11 0 8 16 24
       sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3
       (base + resultSignFixOff) (by decide) (by decide) (by decide)
   rw [EvmAsm.Evm64.condNegate256BlockPre_unfold,

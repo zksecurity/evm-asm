@@ -180,7 +180,7 @@ def evm_sdiv_wrapper : Program :=
   evm_sdiv_cond_negate_256_block .x12 .x9 .x10 .x7 .x11 32 40 48 56 ;;
   XOR' .x8 .x8 .x9 ;;
   evm_sdiv_div_call_block evm_sdivCallOff ;;
-  evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11 32 40 48 56 ;;
+  evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11 0 8 16 24 ;;
   evm_sdiv_saved_ra_ret_block .x18
 
 theorem evm_sdiv_wrapper_length : evm_sdiv_wrapper.length = 71 := by
