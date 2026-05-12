@@ -376,6 +376,35 @@ theorem saveRaDivCallBzeroCallablePost_unfold
   delta saveRaDivCallBzeroCallablePost
   rfl
 
+/-- Zero-divisor view of `saveRaDivCallBzeroCallablePost`: the unsigned DIV
+    callable's quotient word in the EVM stack result slot is concretely zero. -/
+theorem saveRaDivCallBzeroCallablePost_unfold_zero_quotient
+    {vRa sp base : Word}
+    {dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word}
+    (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
+    saveRaDivCallBzeroCallablePost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      (let dividendAbsWord :=
+         sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+       let resultSign :=
+         (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+           (divisorTop >>> (63 : BitVec 6).toNat)
+       let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+       (((.x12 ↦ᵣ (sp + 32)) ** regOwn .x2 **
+         regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+         regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
+         evmWordIs sp dividendAbsWord ** evmWordIs (sp + 32) (0 : EvmWord) **
+         EvmAsm.Evm64.divScratchOwnCall sp) **
+        (.x1 ↦ᵣ ((base + divCallOff) + 4))) **
+       ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
+        (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))) := by
+  rw [saveRaDivCallBzeroCallablePost_unfold,
+    EvmAsm.Evm64.divStackDispatchPostNoX1_unfold]
+  dsimp only
+  rw [hbz, EvmWord.div_zero_right]
+
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
     using the named postcondition consumed by later composition slices. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_named_post_spec_in_sdivCode
