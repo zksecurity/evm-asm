@@ -5,6 +5,8 @@
   composition helpers.
 -/
 
+import EvmAsm.Evm64.Exp.Compose.Base
+
 namespace EvmAsm.Evm64.Exp.Compose
 
 /-- Instruction bound for one named saved-bit two-MUL iteration, excluding
@@ -24,5 +26,15 @@ abbrev expTwoMulBoundarySuffixBound : Nat := 1 + 9
     proof with `nSteps`. -/
 abbrev expTwoMulBoundaryLoopBound (nSteps : Nat) : Nat :=
   (expTwoMulBoundaryPrefixBound + nSteps) + expTwoMulBoundarySuffixBound
+
+theorem expTwoMulNamedIterStepBound_eq :
+    expTwoMulNamedIterStepBound = 189 := by
+  norm_num [expTwoMulNamedIterStepBound]
+
+theorem expTwoMulBoundaryLoopBound_eq (nSteps : Nat) :
+    expTwoMulBoundaryLoopBound nSteps = nSteps + 17 := by
+  unfold expTwoMulBoundaryLoopBound expTwoMulBoundaryPrefixBound
+    expTwoMulBoundarySuffixBound
+  omega
 
 end EvmAsm.Evm64.Exp.Compose
