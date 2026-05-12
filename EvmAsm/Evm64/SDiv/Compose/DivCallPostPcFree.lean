@@ -12,6 +12,41 @@ namespace EvmAsm.Evm64.SDiv.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+theorem divModStackDispatchPre_pcFree
+    {sp : Word} {a b : EvmWord}
+    {v1 v2 v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word} :
+    (EvmAsm.Evm64.divModStackDispatchPre sp a b
+      v1 v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0).pcFree := by
+  rw [EvmAsm.Evm64.divModStackDispatchPre_unfold,
+    EvmAsm.Evm64.divScratchValuesCall_unfold]
+  pcFree
+
+instance pcFreeInst_divModStackDispatchPre
+    (sp : Word) (a b : EvmWord)
+    (v1 v2 v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) :
+    Assertion.PCFree
+      (EvmAsm.Evm64.divModStackDispatchPre sp a b
+        v1 v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0) :=
+  ⟨divModStackDispatchPre_pcFree⟩
+
+theorem divStackDispatchPostNoX1_pcFree {sp : Word} {a b : EvmWord} :
+    (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b).pcFree := by
+  rw [EvmAsm.Evm64.divStackDispatchPostNoX1_unfold,
+    EvmAsm.Evm64.divScratchOwnCall_unfold,
+    EvmAsm.Evm64.divScratchOwn_unfold]
+  pcFree
+
+instance pcFreeInst_divStackDispatchPostNoX1
+    (sp : Word) (a b : EvmWord) :
+    Assertion.PCFree (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b) :=
+  ⟨divStackDispatchPostNoX1_pcFree⟩
+
 theorem saveRaDivCallBzeroCallablePost_pcFree
     {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
