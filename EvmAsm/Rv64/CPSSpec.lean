@@ -588,6 +588,30 @@ theorem cpsNBranchWithin_extend_head {nSteps1 nSteps2 : Nat} {entry l l' : Word}
     exact ⟨k1, Nat.le_trans hk1 (Nat.le_add_right nSteps1 nSteps2), s1, hstep1,
            ex, List.Mem.tail _ htail, hpc1, hQF⟩
 
+/-- Extend the head exit of a bounded N-branch by composing another bounded
+    N-branch after it. The continued head paths get the summed bound; non-head
+    paths use monotonicity into the summed bound. -/
+theorem cpsNBranchWithin_extend_head_nbranch {nSteps1 nSteps2 : Nat}
+    {entry l : Word} {cr : CodeReq}
+    {P Q : Assertion}
+    {exits others : List (Word × Assertion)}
+    (hbr : cpsNBranchWithin nSteps1 entry cr P ((l, Q) :: others))
+    (hseq : cpsNBranchWithin nSteps2 l cr Q exits) :
+    cpsNBranchWithin (nSteps1 + nSteps2) entry cr P (exits ++ others) := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, hk1, s1, hstep1, ex, hmem, hpc1, hQF⟩ :=
+    hbr F hF s hcr hPF hpc
+  cases hmem with
+  | head =>
+    have hcr1 := CodeReq.SatisfiedBy_preserved hstep1 hcr
+    obtain ⟨k2, hk2, s2, hstep2, ex2, hmem2, hpc2, hRF⟩ :=
+      hseq F hF s1 hcr1 hQF hpc1
+    exact ⟨k1 + k2, Nat.add_le_add hk1 hk2, s2, stepN_add_eq hstep1 hstep2,
+      ex2, List.mem_append_left others hmem2, hpc2, hRF⟩
+  | tail _ htail =>
+    exact ⟨k1, Nat.le_trans hk1 (Nat.le_add_right nSteps1 nSteps2), s1, hstep1,
+      ex, List.mem_append_right exits htail, hpc1, hQF⟩
+
 /-- Bounded sequence with the same CodeReq: a triple followed by an N-branch. -/
 theorem cpsTripleWithin_seq_cpsNBranchWithin_same_cr {nSteps1 nSteps2 : Nat}
     {entry mid : Word} {cr : CodeReq}
