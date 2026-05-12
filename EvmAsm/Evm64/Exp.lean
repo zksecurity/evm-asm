@@ -32,6 +32,7 @@ import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 import EvmAsm.Evm64.Exp.Compose.LoopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.TopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.FullLoop
+import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
 import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
 import EvmAsm.Evm64.Exp.StackExecutionBridge
