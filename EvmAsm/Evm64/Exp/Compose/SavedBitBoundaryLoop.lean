@@ -102,4 +102,31 @@ theorem exp_two_mul_boundary_loop_epilogue_of_loop_closed_bound_spec_within
       (by simpa [expTwoMulBoundaryLoopBound_eq] using hBound)
       hLoop
 
+/-- Specialization of the named boundary composition to the 256-iteration
+    saved-bit two-MUL loop body bound. This is the outer shell expected by the
+    eventual full-loop proof once the loop proof itself is available. -/
+theorem exp_two_mul_full_loop_boundary_of_body_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hLoop :
+      cpsTripleWithin expTwoMulFullLoopBodyBound (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitPre sp evmSp iterCountNew tOld r0 r1 r2 r3
+          baseWord rest exitCond)) :
+    cpsTripleWithin expTwoMulFullLoopBoundaryBound base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  exact
+    exp_two_mul_boundary_loop_epilogue_of_loop_bounded_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 baseWord exponentWord rest exitCond base
+      (by rfl)
+      hLoop
+
 end EvmAsm.Evm64.Exp.Compose
