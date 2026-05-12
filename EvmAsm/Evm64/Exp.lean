@@ -35,7 +35,10 @@ import EvmAsm.Evm64.Exp.Compose.FullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopCanonical
+<<<<<<< HEAD
 import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
+=======
+>>>>>>> 3e40d24c (fix(exp): name saved-bit loop bounds)
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopEntry
