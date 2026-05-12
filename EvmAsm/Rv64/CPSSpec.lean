@@ -372,6 +372,41 @@ def cpsNBranchWithin (nSteps : Nat) (entry : Word) (cr : CodeReq) (P : Assertion
     ∃ k, k ≤ nSteps ∧ ∃ s', stepN k s = some s' ∧
       ∃ exit ∈ exits, s'.pc = exit.1 ∧ (exit.2 ** R).holdsFor s'
 
+/-- N-branch variant of `cpsTripleWithin_of_forall_regIs_to_regOwn`.
+    If an N-branch spec is available for every concrete value of an owned
+    register, the precondition may expose only ownership of that register. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn
+    {nSteps : Nat} {entry r P exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (r ↦ᵣ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr (P ** regOwn r) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨vOld, hv4⟩⟩ := hPown1
+  exact h vOld R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
+/-- Single-atom N-branch variant of
+    `cpsBranchWithin_of_forall_regIs_to_regOwn_single`. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn_single
+    {nSteps : Nat} {entry r exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (r ↦ᵣ vOld) exits) :
+    cpsNBranchWithin nSteps entry cr (regOwn r) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨vOld, hv⟩, hR2⟩ := hPR
+  exact h vOld R hR s hcr ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
+
+/-- N-branch variant of `cpsTripleWithin_of_forall_memIs_to_memOwn`. The step
+    bound and exit list are unchanged. -/
+theorem cpsNBranchWithin_of_forall_memIs_to_memOwn
+    {nSteps : Nat} {entry a P exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (a ↦ₘ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr (P ** memOwn a) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨vOld, hv4⟩⟩ := hPown1
+  exact h vOld R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
 theorem cpsTripleWithin_as_cpsNBranchWithin {nSteps : Nat} {entry exit_ : Word} {cr : CodeReq}
     {P Q : Assertion} (h : cpsTripleWithin nSteps entry exit_ cr P Q) :
     cpsNBranchWithin nSteps entry cr P [(exit_, Q)] := by
