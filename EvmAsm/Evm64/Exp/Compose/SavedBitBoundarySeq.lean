@@ -104,6 +104,60 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
       xperm_hyp hp)
     hFramed
 
+/-- Full visible-stack framed view of the two-MUL saved-bit EXP prologue
+    followed by pointer advance. This folds the preserved base/exponent
+    operands together with the untouched caller tail, while the accumulator is
+    initialized to one and `x12` advances to the loop-facing pointer. -/
+theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_full_stack_frame_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    let scratchFrame : Assertion :=
+      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
+    cpsTripleWithin (6 + 1) base (base + 28)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+          (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3)) **
+         (.x12 ↦ᵣ evmSp)) ** evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
+       scratchFrame)
+      (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+          (.x9 ↦ᵣ ((0 : Word) + signExtend12 (256 : BitVec 12))) **
+          (.x5 ↦ᵣ ((0 : Word) + signExtend12 (1 : BitVec 12))) **
+          evmWordIs sp (1 : EvmWord)) **
+         (.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12)))) **
+        evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
+       scratchFrame) := by
+  intro scratchFrame
+  let operandFrame : Assertion :=
+    evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
+    scratchFrame
+  have hBase :=
+    exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_operand_frame_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord
+      squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hFramed := cpsTripleWithin_frameR (evmStackIs (evmSp + 64) rest)
+    pcFree_evmStackIs hBase
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      dsimp [scratchFrame, operandFrame] at hp ⊢
+      rw [evmStackIs_cons, evmStackIs_cons] at hp
+      rw [show evmSp + 32 + 32 = evmSp + 64#64 from by bv_addr] at hp
+      rw [show evmSp + 32#64 = evmSp + (32 : Word) from rfl]
+      xperm_hyp hp)
+    (fun _ hp => by
+      dsimp [scratchFrame, operandFrame] at hp ⊢
+      rw [evmStackIs_cons, evmStackIs_cons]
+      rw [show evmSp + 32#64 = evmSp + (32 : Word) from rfl] at hp
+      rw [show evmSp + 64#64 = evmSp + 32 + 32 from by bv_addr] at hp
+      xperm_hyp hp)
+    hFramed
+
 /-- Pointer-restore followed by the EXP epilogue in the two-MUL saved-bit
     EXP+MUL code bundle. This packages the loop-exit boundary from
     `base + 264` through the final stack-facing writeback at `base + 304`. -/
