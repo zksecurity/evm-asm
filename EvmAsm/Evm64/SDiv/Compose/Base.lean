@@ -1107,4 +1107,16 @@ theorem base_add_resultSignFixOff_andn_one
   show (base + (196 : Word)) &&& ~~~(1 : Word) = base + (196 : Word)
   bv_decide
 
+/-- The return address written by the SDIV wrapper's near `divCall` is exactly
+    the result-sign-fixup entry, and masking bit 0 for the eventual `JALR`
+    keeps it there.  This is the concrete `raVal &&& ~~~1` alignment fact
+    needed when composing the wrapper prefix with `evm_div_callable`. -/
+theorem divCall_return_andn_one_eq_resultSignFixOff
+    (base : Word) (hbase : base &&& 1 = 0) :
+    (((base + divCallOff) + 4 : Word) &&& ~~~(1 : Word)) =
+      base + resultSignFixOff := by
+  show (((base + (192 : Word)) + (4 : Word)) &&& ~~~(1 : Word)) =
+      base + (196 : Word)
+  bv_decide
+
 end EvmAsm.Evm64.SDiv.Compose
