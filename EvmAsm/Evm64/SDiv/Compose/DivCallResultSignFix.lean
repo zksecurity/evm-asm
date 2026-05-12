@@ -47,6 +47,19 @@ theorem saveRaDivCallCallableReturnPost_unfold
   delta saveRaDivCallCallableReturnPost
   rfl
 
+theorem saveRaDivCallCallableReturnPost_pcFree
+    {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
+    (saveRaDivCallCallableReturnPost vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).pcFree := by
+  rw [saveRaDivCallCallableReturnPost_unfold]
+  dsimp
+  rw [resultSignFixPost_unfold, saveRaDivCallBzeroSavedRaRetFrame_unfold,
+    EvmAsm.Evm64.divScratchOwnCall_unfold,
+    EvmAsm.Evm64.divScratchOwn_unfold]
+  pcFree
+
 /-- SDIV wrapper prefix followed by any exact unsigned-DIV callable proof,
     then through result-sign-fix over the produced quotient word. -/
 theorem saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_of_callable_post_spec_in_sdivCode
