@@ -78,14 +78,6 @@ def saveRaDivCallDispatchReadyPost
   let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
   let resultSign := dividendSign ^^^ divisorSign
-  let dividendMask := (0 : Word) - dividendSign
-  let dividendSum0 := (dividendLimb0 ^^^ dividendMask) + dividendSign
-  let dividendCarry0 := if BitVec.ult dividendSum0 dividendSign then (1 : Word) else 0
-  let dividendSum1 := (dividendLimb1 ^^^ dividendMask) + dividendCarry0
-  let dividendCarry1 := if BitVec.ult dividendSum1 dividendCarry0 then (1 : Word) else 0
-  let dividendSum2 := (dividendLimb2 ^^^ dividendMask) + dividendCarry1
-  let dividendCarry2 := if BitVec.ult dividendSum2 dividendCarry1 then (1 : Word) else 0
-  let dividendSum3 := (dividendTop ^^^ dividendMask) + dividendCarry2
   let divisorMask := (0 : Word) - divisorSign
   let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
   let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
@@ -95,12 +87,10 @@ def saveRaDivCallDispatchReadyPost
   let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
   let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
   let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
-  let dividendAbsWord : EvmWord := EvmWord.fromLimbs fun i : Fin 4 =>
-    match i with
-    | 0 => dividendSum0 | 1 => dividendSum1 | 2 => dividendSum2 | 3 => dividendSum3
-  let divisorAbsWord : EvmWord := EvmWord.fromLimbs fun i : Fin 4 =>
-    match i with
-    | 0 => divisorSum0 | 1 => divisorSum1 | 2 => divisorSum2 | 3 => divisorSum3
+  let dividendAbsWord : EvmWord :=
+    sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+  let divisorAbsWord : EvmWord :=
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
       ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -123,14 +113,6 @@ theorem saveRaDivCallDispatchReadyPost_unfold
       (let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
        let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
        let resultSign := dividendSign ^^^ divisorSign
-       let dividendMask := (0 : Word) - dividendSign
-       let dividendSum0 := (dividendLimb0 ^^^ dividendMask) + dividendSign
-       let dividendCarry0 := if BitVec.ult dividendSum0 dividendSign then (1 : Word) else 0
-       let dividendSum1 := (dividendLimb1 ^^^ dividendMask) + dividendCarry0
-       let dividendCarry1 := if BitVec.ult dividendSum1 dividendCarry0 then (1 : Word) else 0
-       let dividendSum2 := (dividendLimb2 ^^^ dividendMask) + dividendCarry1
-       let dividendCarry2 := if BitVec.ult dividendSum2 dividendCarry1 then (1 : Word) else 0
-       let dividendSum3 := (dividendTop ^^^ dividendMask) + dividendCarry2
        let divisorMask := (0 : Word) - divisorSign
        let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
        let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
@@ -140,12 +122,10 @@ theorem saveRaDivCallDispatchReadyPost_unfold
        let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
        let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
        let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
-       let dividendAbsWord : EvmWord := EvmWord.fromLimbs fun i : Fin 4 =>
-         match i with
-         | 0 => dividendSum0 | 1 => dividendSum1 | 2 => dividendSum2 | 3 => dividendSum3
-       let divisorAbsWord : EvmWord := EvmWord.fromLimbs fun i : Fin 4 =>
-         match i with
-         | 0 => divisorSum0 | 1 => divisorSum1 | 2 => divisorSum2 | 3 => divisorSum3
+       let dividendAbsWord : EvmWord :=
+         sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+       let divisorAbsWord : EvmWord :=
+         sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
        EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
            ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
            q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -193,7 +173,8 @@ theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
     rw [saveRaDivCallDispatchReadyPost_unfold]
     dsimp only at hq ⊢
     rw [divModStackDispatchPre_unfold_explicit_sdiv]
-    simp [EvmWord.getLimbN, EvmWord.getLimb_fromLimbs] at hq ⊢
+    simp [sdivAbsDividendWord, sdivAbsDivisorWord, EvmWord.getLimbN,
+      EvmWord.getLimb_fromLimbs] at hq ⊢
     xperm_hyp hq) hPrefix
 
 end EvmAsm.Evm64.SDiv.Compose
