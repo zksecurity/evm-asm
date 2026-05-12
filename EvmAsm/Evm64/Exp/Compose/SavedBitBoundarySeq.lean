@@ -202,6 +202,41 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
       sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord rest
       squaringMulOff condMulOff skipOff backOff base mulTarget)
 
+/-- Canonical-code view of the full-stack prologue/pointer-advance boundary:
+    the branch offsets are fixed by `evmExpMsbSavedBitTwoMulCanonicalWithMulCode`,
+    while the two external MUL-call offsets remain caller supplied. -/
+theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_full_stack_clean_regs_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (squaringMulOff condMulOff : BitVec 21)
+    (base mulTarget : Word) :
+    let scratchFrame : Assertion :=
+      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
+    cpsTripleWithin (6 + 1) base (base + 28)
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff)
+      (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+          (.x5 ↦ᵣ tOld) ** ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3)) **
+         (.x12 ↦ᵣ evmSp)) ** evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
+       scratchFrame)
+      (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+          (.x9 ↦ᵣ (256 : Word)) ** (.x5 ↦ᵣ (1 : Word)) **
+          evmWordIs sp (1 : EvmWord)) **
+         (.x12 ↦ᵣ (evmSp + 64))) **
+        evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
+       scratchFrame) := by
+  exact
+    exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_full_stack_clean_regs_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord rest
+      squaringMulOff condMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff
+      base mulTarget
+
 /-- Pointer-restore followed by the EXP epilogue in the two-MUL saved-bit
     EXP+MUL code bundle. This packages the loop-exit boundary from
     `base + 264` through the final stack-facing writeback at `base + 304`. -/
