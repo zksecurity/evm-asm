@@ -323,4 +323,107 @@ theorem exp_cond_mul_folded_pre_to_call_scratch_owned_pre
   rw [hSp0, hSp8, hSp16, hSp24, hEvm32, hEvm40, hEvm48, hEvm56]
   xperm_hyp hp
 
+/-- Folded-word variant of the two-MUL conditional-multiply path adapter.
+    The precondition consumes the current result from `sp` and the second
+    multiplicand from `evmSp + 32` as `evmWordIs`, then delegates to the
+    concrete-limb owned-scratch adapter via
+    `exp_cond_mul_folded_pre_to_call_scratch_owned_pre`. -/
+theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_folded_owned_spec_within
+    (iterCount sp evmSp vOld a0 a1 a2 a3 mulTarget : Word) (r : EvmWord)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base loopTarget : Word)
+    (hbase : base &&& 1 = 0)
+    (hmt : mulTarget = ((base + 152) + 64) + signExtend21 condMulOff)
+    (hd : CodeReq.Disjoint
+            (evmExpMsbSavedBitTwoMulCode
+              base squaringMulOff condMulOff skipOff backOff)
+            (mul_callable_code mulTarget))
+    (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
+    let aw := expResultWord a0 a1 a2 a3
+    let rw := r * aw
+    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
+    let baseFrame : Assertion :=
+      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+    let rest : Assertion :=
+      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+      (.x5 ↦ᵣ rw.getLimbN 3) **
+      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+      evmWordIs sp rw ** evmWordIs (evmSp + 32) rw **
+      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      memOwn evmSp ** memOwn (evmSp + 8) **
+      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
+      (.x1 ↦ᵣ ((base + 152) + 68))
+    let foldedPre : Assertion :=
+      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r.getLimbN 3) **
+        evmWordIs sp r ** evmWordIs (evmSp + 32) r **
+        baseFrame ** (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) **
+        (.x0 ↦ᵣ (0 : Word))) **
+       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+       memOwn evmSp ** memOwn (evmSp + 8) **
+       memOwn (evmSp + 16) ** memOwn (evmSp + 24))
+    cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
+      (evmExpMsbSavedBitTwoMulWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      foldedPre
+      [(loopTarget,
+          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜iterCountNew ≠ 0⌝) ** rest)),
+        (base + 264,
+          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜iterCountNew = 0⌝) ** rest))] := by
+  intro aw rw iterCountNew baseFrame rest foldedPre
+  let concretePre : Assertion :=
+    let preCore : Assertion :=
+      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r.getLimbN 3) **
+      ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r.getLimbN 0) **
+      ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r.getLimbN 1) **
+      ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r.getLimbN 2) **
+      ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r.getLimbN 3) **
+      ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ r.getLimbN 0) **
+      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ r.getLimbN 1) **
+      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ r.getLimbN 2) **
+      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ r.getLimbN 3) **
+      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+      (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) **
+      (.x0 ↦ᵣ (0 : Word))
+    preCore **
+    regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+    memOwn evmSp ** memOwn (evmSp + 8) **
+    memOwn (evmSp + 16) ** memOwn (evmSp + 24)
+  have hConcrete :
+      cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
+        (evmExpMsbSavedBitTwoMulWithMulCode
+          base mulTarget squaringMulOff condMulOff skipOff backOff)
+        concretePre
+        [(loopTarget,
+            (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
+             ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (base + 264,
+            (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
+             ⌜iterCountNew = 0⌝) ** rest))] := by
+    dsimp [concretePre, baseFrame, rest]
+    simpa [expResultWord_getLimbN_self r] using
+    exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_call_scratch_owned_spec_within
+      iterCount sp evmSp (r.getLimbN 3) vOld
+      (r.getLimbN 0) (r.getLimbN 1) (r.getLimbN 2) (r.getLimbN 3)
+      a0 a1 a2 a3
+      (r.getLimbN 0) (r.getLimbN 1) (r.getLimbN 2) (r.getLimbN 3)
+      mulTarget squaringMulOff condMulOff skipOff backOff
+      base loopTarget hbase hmt hd hback
+  refine cpsNBranchWithin_weaken_pre ?_ hConcrete
+  intro h hp
+  dsimp [foldedPre] at hp
+  simpa [concretePre, baseFrame] using
+    exp_cond_mul_folded_pre_to_call_scratch_owned_pre
+      sp evmSp iterCount vOld a0 a1 a2 a3 r h hp
+
 end EvmAsm.Evm64.Exp.Compose
