@@ -13,6 +13,23 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+abbrev expTwoMulIterBit (e : Word) : Word :=
+  e >>> (63 : BitVec 6).toNat
+
+abbrev expTwoMulIterW (r0 r1 r2 r3 : Word) : EvmWord :=
+  expResultWord r0 r1 r2 r3
+
+abbrev expTwoMulIterAw (a0 a1 a2 a3 : Word) : EvmWord :=
+  expResultWord a0 a1 a2 a3
+
+abbrev expTwoMulIterRw
+    (r0 r1 r2 r3 a0 a1 a2 a3 : Word) : EvmWord :=
+  (expTwoMulIterW r0 r1 r2 r3 * expTwoMulIterW r0 r1 r2 r3) *
+    expTwoMulIterAw a0 a1 a2 a3
+
+abbrev expTwoMulIterCountNew (iterCount : Word) : Word :=
+  iterCount + signExtend12 ((-1 : BitVec 12))
+
 theorem exp_msb_bit_test_block_len :
     (EvmAsm.Evm64.exp_msb_bit_test_block).length = 3 := by
   exact EvmAsm.Evm64.exp_msb_bit_test_block_length
