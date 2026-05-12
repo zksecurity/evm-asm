@@ -15,6 +15,7 @@
 
 import EvmAsm.Evm64.SDiv.Compose.DivCall
 import EvmAsm.Evm64.SDiv.Compose.Bridges
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
@@ -404,6 +405,56 @@ theorem saveRaDivCallBzeroCallablePost_unfold_zero_quotient
     EvmAsm.Evm64.divStackDispatchPostNoX1_unfold]
   dsimp only
   rw [hbz, EvmWord.div_zero_right]
+
+/-- Frame left around the result-sign-fix precondition after the SDIV prefix
+    and zero-divisor unsigned-DIV callable have run. -/
+@[irreducible]
+def saveRaDivCallBzeroResultSignFixFrame
+    (vRa sp base divisorSign : Word) (dividendAbsWord : EvmWord) : Assertion :=
+  regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+  evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
+  (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
+  (.x9 ↦ᵣ divisorSign) **
+  (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))
+
+theorem saveRaDivCallBzeroResultSignFixFrame_unfold
+    {vRa sp base divisorSign : Word} {dividendAbsWord : EvmWord} :
+    saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord =
+      (regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+       evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
+       (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
+       (.x9 ↦ᵣ divisorSign) **
+       (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) := by
+  delta saveRaDivCallBzeroResultSignFixFrame
+  rfl
+
+/-- Zero-divisor callable post reshaped as the result-sign-fix precondition
+    over the current quotient cell plus an explicit frame. -/
+theorem saveRaDivCallBzeroCallablePost_resultSignFixPreOwnScratch
+    {vRa sp base : Word}
+    {dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word}
+    (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
+    saveRaDivCallBzeroCallablePost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      (let dividendAbsWord :=
+         sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+       let resultSign :=
+         (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+           (divisorTop >>> (63 : BitVec 6).toNat)
+       let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+       resultSignFixPreOwnScratch (sp + 32) resultSign 0 0 0 0 **
+       saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord) := by
+  rw [saveRaDivCallBzeroCallablePost_unfold_zero_quotient hbz]
+  dsimp only
+  rw [resultSignFixPreOwnScratch_unfold,
+    saveRaDivCallBzeroResultSignFixFrame_unfold, evmWordIs_zero]
+  rw [show (sp + 32 + signExtend12 (0 : BitVec 12) : Word) = sp + 32 by bv_addr]
+  rw [show (sp + 32 + signExtend12 (8 : BitVec 12) : Word) = (sp + 32) + 8 by bv_addr]
+  rw [show (sp + 32 + signExtend12 (16 : BitVec 12) : Word) = (sp + 32) + 16 by bv_addr]
+  rw [show (sp + 32 + signExtend12 (24 : BitVec 12) : Word) = (sp + 32) + 24 by bv_addr]
+  xperm
 
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
     using the named postcondition consumed by later composition slices. -/
