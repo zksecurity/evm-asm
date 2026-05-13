@@ -1031,6 +1031,14 @@ def canonicalExpLoopBackOff : BitVec 13 := -228
 /-- Canonical BNE back-edge for the corrected MSB-first saved-bit layout. -/
 def canonicalExpMsbSavedBitLoopBackOff : BitVec 13 := -232
 
+/-- Canonical JAL offset from the saved-bit squaring call site to an appended
+    `mul_callable` body immediately after the 304-byte EXP wrapper. -/
+def canonicalExpSquaringMulOff : BitVec 21 := 196
+
+/-- Canonical JAL offset from the saved-bit conditional-multiply call site to an
+    appended `mul_callable` body immediately after the 304-byte EXP wrapper. -/
+def canonicalExpCondMulOff : BitVec 21 := 88
+
 /-- EXP program with the internal branch offsets pinned by the canonical layout.
     The MUL call offset remains external because it depends on the caller's
     placement of `mul_callable`. -/
@@ -1059,6 +1067,12 @@ theorem canonicalExpLoopBackOff_eq :
 theorem canonicalExpMsbSavedBitLoopBackOff_eq :
     canonicalExpMsbSavedBitLoopBackOff = -232 := rfl
 
+theorem canonicalExpSquaringMulOff_eq :
+    canonicalExpSquaringMulOff = 196 := rfl
+
+theorem canonicalExpCondMulOff_eq :
+    canonicalExpCondMulOff = 88 := rfl
+
 theorem canonicalExpCondMulSkip_target (base : Word) :
     (base + 148 : Word) + signExtend13 canonicalExpCondMulSkipOff =
       base + 256 := by
@@ -1072,6 +1086,20 @@ theorem canonicalExpMsbSavedBitLoopBack_target (base : Word) :
       base + 28 := by
   rw [canonicalExpMsbSavedBitLoopBackOff_eq]
   unfold signExtend13
+  bv_decide
+
+theorem canonicalExpSquaringMul_target (base : Word) :
+    ((base + 44) + 64 : Word) + signExtend21 canonicalExpSquaringMulOff =
+      base + 304 := by
+  rw [canonicalExpSquaringMulOff_eq]
+  unfold signExtend21
+  bv_decide
+
+theorem canonicalExpCondMul_target (base : Word) :
+    ((base + 152) + 64 : Word) + signExtend21 canonicalExpCondMulOff =
+      base + 304 := by
+  rw [canonicalExpCondMulOff_eq]
+  unfold signExtend21
   bv_decide
 
 theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
