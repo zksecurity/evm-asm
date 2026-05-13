@@ -26,6 +26,8 @@ import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 import EvmAsm.Evm64.SDiv.Compose.DivCall
 import EvmAsm.Evm64.SDiv.Compose.SignFrame
 import EvmAsm.Evm64.SDiv.Compose.Words
+import EvmAsm.Evm64.SDiv.Compose.DispatchStackViews
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixZeroWordView
 import EvmAsm.Evm64.SDiv.Compose.DispatchViews
 import EvmAsm.Evm64.SDiv.Compose.BzeroPost
 import EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
