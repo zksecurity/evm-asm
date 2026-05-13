@@ -255,15 +255,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     let bit := expTwoMulIterBit e
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -311,7 +303,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     iterCount mulOff skipOff backOff base mulTarget loopTarget hback
   have hLoopFramed := cpsBranchWithin_frameR rest (by
     dsimp [rest]
-    pcFree) hLoop
+    exact expTwoMulSkipLoopRest_pcFree) hLoop
   have hLoopN := cpsBranchWithin_as_cpsNBranchWithin hLoopFramed
   have hSeq :
       cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
@@ -319,7 +311,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
         _ _ :=
     cpsBranchWithin_cons_cpsNBranchWithin_with_perm_same_cr
       (fun _ hp => by
-        dsimp [rest, bit] at hp ⊢
+        simp [rest, expTwoMulSkipLoopRest_unfold, bit] at hp ⊢
         xperm_hyp hp)
       hBranchSwapped hLoopN
   have hSeqPre :
