@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroHandoff
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,

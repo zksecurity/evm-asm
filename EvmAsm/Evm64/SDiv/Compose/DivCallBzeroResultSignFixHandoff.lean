@@ -9,7 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Zero-divisor SDIV path through result-sign-fix, specialized from the

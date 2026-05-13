@@ -2,7 +2,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallReturnGeneric
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Normalized return-target view of the generic SDIV callable composition.
