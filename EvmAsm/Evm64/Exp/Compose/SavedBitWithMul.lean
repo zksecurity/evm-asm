@@ -29,6 +29,14 @@ abbrev evmExpMsbSavedBitTwoMulWithMulCode (base mulTarget : Word)
     base squaringMulOff condMulOff skipOff backOff).union
     (mul_callable_code mulTarget)
 
+/-- Canonical-branch-offset two-MUL saved-bit EXP program plus the external
+    `mul_callable` body targeted by both MUL call sites. -/
+abbrev evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+    (base mulTarget : Word) (squaringMulOff condMulOff : BitVec 21) : CodeReq :=
+  (evmExpMsbSavedBitTwoMulCanonicalCode
+    base squaringMulOff condMulOff).union
+    (mul_callable_code mulTarget)
+
 theorem evmExpMsbSavedBitWithMulCode_exp_sub {base mulTarget : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
     ∀ a i, (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i →
@@ -45,6 +53,16 @@ theorem evmExpMsbSavedBitTwoMulWithMulCode_exp_sub {base mulTarget : Word}
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i := by
   unfold evmExpMsbSavedBitTwoMulWithMulCode
+  exact CodeReq.union_mono_left
+
+theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub
+    {base mulTarget : Word} {squaringMulOff condMulOff : BitVec 21} :
+    ∀ a i,
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   exact CodeReq.union_mono_left
 
 theorem evmExpMsbSavedBitWithMulCode_mul_sub {base mulTarget : Word}
@@ -68,6 +86,18 @@ theorem evmExpMsbSavedBitTwoMulWithMulCode_mul_sub {base mulTarget : Word}
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff) a = some i := by
   unfold evmExpMsbSavedBitTwoMulWithMulCode
+  exact CodeReq.mono_union_right hd (fun _ _ h => h)
+
+theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
+    {base mulTarget : Word} {squaringMulOff condMulOff : BitVec 21}
+    (hd : CodeReq.Disjoint
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff)
+      (mul_callable_code mulTarget)) :
+    ∀ a i, (mul_callable_code mulTarget) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
 /-- Lift a corrected saved-bit top-level EXP spec into the combined EXP+MUL
@@ -200,6 +230,58 @@ theorem evmExpMsbSavedBitTwoMulWithMulCode_block_subs {base mulTarget : Word}
      fun a i h =>
         evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i (h_epilogue a i h),
      evmExpMsbSavedBitTwoMulWithMulCode_mul_sub hd⟩
+
+theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_block_subs
+    {base mulTarget : Word} {squaringMulOff condMulOff : BitVec 21}
+    (hd : CodeReq.Disjoint
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff)
+      (mul_callable_code mulTarget)) :
+    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 24)
+      EvmAsm.Evm64.exp_loop_pointer_advance) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) ∧
+    (∀ a i, (expIterBodyFullMsbSavedBitTwoMulCode
+      (base + 28) squaringMulOff condMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 264)
+      EvmAsm.Evm64.exp_loop_pointer_restore) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) ∧
+    (∀ a i, (CodeReq.ofProg (base + 268) EvmAsm.Evm64.exp_epilogue)
+      a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) ∧
+    (∀ a i, (mul_callable_code mulTarget) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) a = some i) := by
+  rcases evmExpMsbSavedBitTwoMulCanonicalCode_block_subs
+      (base := base) (squaringMulOff := squaringMulOff)
+      (condMulOff := condMulOff) with
+    ⟨h_prologue, h_pointer_advance, h_iter, h_pointer_restore, h_epilogue⟩
+  exact
+    ⟨fun a i h =>
+        evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub a i
+          (h_prologue a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub a i
+          (h_pointer_advance a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub a i
+          (h_iter a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub a i
+          (h_pointer_restore a i h),
+     fun a i h =>
+        evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub a i
+          (h_epilogue a i h),
+     evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub hd⟩
 
 /-- Pointer advance lifted to the two-MUL saved-bit EXP+MUL code bundle. -/
 theorem exp_loop_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
