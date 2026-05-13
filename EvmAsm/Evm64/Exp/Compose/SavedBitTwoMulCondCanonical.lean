@@ -125,20 +125,10 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let rw := expTwoMulCondRw r a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
-    let foldedPre : Assertion :=
-      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r.getLimbN 3) **
-        evmWordIs sp r ** evmWordIs (evmSp + 32) r **
-        baseFrame ** (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) **
-        (.x0 ↦ᵣ (0 : Word))) **
-       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-       memOwn evmSp ** memOwn (evmSp + 8) **
-       memOwn (evmSp + 16) ** memOwn (evmSp + 24))
     cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
-      foldedPre
+      (expCondMulFoldedPre sp evmSp iterCount vOld a0 a1 a2 a3 r)
       [(base + 28,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
@@ -168,19 +158,9 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let rw := expTwoMulCondRw r a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
-    let foldedPre : Assertion :=
-      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ r.getLimbN 3) **
-        evmWordIs sp r ** evmWordIs (evmSp + 32) r **
-        baseFrame ** (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) **
-        (.x0 ↦ᵣ (0 : Word))) **
-       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-       memOwn evmSp ** memOwn (evmSp + 8) **
-       memOwn (evmSp + 16) ** memOwn (evmSp + 24))
     cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
-      foldedPre
+      (expCondMulFoldedPre sp evmSp iterCount vOld a0 a1 a2 a3 r)
       [(base + 28,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
