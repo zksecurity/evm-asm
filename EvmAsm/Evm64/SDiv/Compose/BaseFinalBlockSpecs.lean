@@ -5,7 +5,7 @@
   the near DIV call, result-sign XOR, and saved-`ra` return.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
+import EvmAsm.Evm64.SDiv.Compose.BaseCode
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
