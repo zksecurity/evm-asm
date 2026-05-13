@@ -16,7 +16,7 @@
 import EvmAsm.Evm64.SDiv.Compose.DivCall
 import EvmAsm.Evm64.SDiv.Compose.Bridges
 import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
-
+import EvmAsm.Evm64.SDiv.Compose.SignFrame
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
@@ -227,8 +227,7 @@ def saveRaDivCallDispatchReadyPost
       ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
-    ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-     (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
+    sdivDivCallSignFrame vRa resultSign divisorSign
 
 theorem saveRaDivCallDispatchReadyPost_unfold
     {vRa sp base : Word}
@@ -262,8 +261,7 @@ theorem saveRaDivCallDispatchReadyPost_unfold
            ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
            q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
            shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
-         ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-          (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))) := by
+         sdivDivCallSignFrame vRa resultSign divisorSign) := by
   delta saveRaDivCallDispatchReadyPost; rfl
 
 theorem saveRaDivCallDispatchReadyPost_pcFree
@@ -279,7 +277,8 @@ theorem saveRaDivCallDispatchReadyPost_pcFree
   rw [saveRaDivCallDispatchReadyPost_unfold]
   dsimp
   rw [EvmAsm.Evm64.divModStackDispatchPre_unfold,
-    EvmAsm.Evm64.divScratchValuesCall_unfold]
+    EvmAsm.Evm64.divScratchValuesCall_unfold,
+    sdivDivCallSignFrame_unfold]
   pcFree
 
 instance pcFreeInst_saveRaDivCallDispatchReadyPost
@@ -327,6 +326,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
     rw [saveRaSignsAbsSignXorThenDivCallPost_unfold] at hq
     rw [saveRaDivCallDispatchReadyPost_unfold]
     dsimp only at hq ⊢
+    rw [sdivDivCallSignFrame_unfold]
     rw [divModStackDispatchPre_unfold_explicit_sdiv]
     simp [sdivAbsDividendWord, sdivAbsDivisorWord, EvmWord.getLimbN,
       EvmWord.getLimb_fromLimbs] at hq ⊢
@@ -478,6 +478,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
       dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
         divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
         divisorSum3, divisorCarry3, resultSign, signFrame] at hp ⊢
+      rw [sdivDivCallSignFrame_unfold] at hp
       exact hp) (fun h hp => by
       dsimp [signFrame] at hp ⊢
       exact hp) hCallableFramedExit

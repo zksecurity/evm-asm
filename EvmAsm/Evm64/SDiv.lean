@@ -24,6 +24,7 @@ import EvmAsm.Evm64.SDiv.Compose.Bridges
 import EvmAsm.Evm64.SDiv.Compose.DivisorAbsSequence
 import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 import EvmAsm.Evm64.SDiv.Compose.DivCall
+import EvmAsm.Evm64.SDiv.Compose.SignFrame
 import EvmAsm.Evm64.SDiv.Compose.DivCallDispatch
 import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFix
 import EvmAsm.Evm64.SDiv.Compose.DivCallPostPcFree
