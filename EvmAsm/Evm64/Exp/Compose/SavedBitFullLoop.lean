@@ -10,7 +10,6 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopBranch
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Conditional-multiply taken call-block lifted to the corrected saved-bit
