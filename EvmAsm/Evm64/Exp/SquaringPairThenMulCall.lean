@@ -340,7 +340,7 @@ theorem exp_squaring_marshal_pair_then_mul_call_spec_within
     round-trip with `un_marshal_and_restore` to obtain a single
     `cpsTripleWithin` from `base` to `base + 104` over the disjoint union of
     `exp_squaring_call_block_code base mulOff` and `mul_callable_code
-    mul_target`. The result word `w * w` (the squaring of `expResultWord
+    mul_target`. The result word `squareW` (the squaring of `expResultWord
     r0..r3`) is delivered into the EXP-local scratch frame at `sp` and the
     LP64 frame at `evmSp + 32`. Slice 5 micro evm-asm-ifaon. -/
 theorem exp_squaring_call_block_spec_within
@@ -352,7 +352,9 @@ theorem exp_squaring_call_block_spec_within
     (hd : CodeReq.Disjoint
             (exp_squaring_call_block_code base mulOff)
             (mul_callable_code mul_target)) :
-    let w := expResultWord r0 r1 r2 r3
+    let squareW :=
+      let w := expResultWord r0 r1 r2 r3
+      w * w
     cpsTripleWithin (17 + 64 + 9) base (base + 104)
       ((exp_squaring_call_block_code base mulOff).union
         (mul_callable_code mul_target))
@@ -372,13 +374,13 @@ theorem exp_squaring_call_block_spec_within
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ (base + 68))) := by
-  intro w
+  intro squareW
   -- (1) Marshal-pair + JAL + mul_callable: 81 instrs, exit (base+68) &&& ~~~1.
   have h1 := exp_squaring_marshal_pair_then_mul_call_spec_within
     sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
@@ -386,9 +388,9 @@ theorem exp_squaring_call_block_spec_within
   -- (2) Alignment: under base &&& 1 = 0, (base+68) &&& ~~~1 = base+68.
   have halign : (base + 68 : Word) &&& ~~~(1 : Word) = base + 68 := by bv_decide
   rw [halign] at h1
-  -- (3) un_marshal_and_restore_word at offset (base+68), with w' = w*w.
+  -- (3) un_marshal_and_restore_word at offset (base+68), with w' = squareW.
   have h2_raw := exp_loop_un_marshal_and_restore_word_spec_within_regOwn5
-    sp evmSp r0 r1 r2 r3 (base + 68) (w * w)
+    sp evmSp r0 r1 r2 r3 (base + 68) squareW
   -- Lift code: ofProg (base+68) un_marshal_and_restore ⊆ union.
   have h2_lifted := cpsTripleWithin_extend_code
     (hmono := fun a i h =>
@@ -407,9 +409,11 @@ theorem exp_squaring_call_block_spec_within
   -- Exit pcs: (base+68) + 36 = base + 104.
   have hexit : (base + 68 : Word) + 36 = base + 104 := by bv_omega
   rw [hexit] at h2_framed
-  -- (4) Compose with mid-point permutation: align h1's post (which carries
-  --     `evmMulStackPost evmSp w w`) with h2_framed's pre.
-  have hpcFreeMulPost : (evmMulStackPost evmSp w w).pcFree := by
+  -- (4) Compose with mid-point permutation: align h1's post with
+  -- h2_framed's pre.
+  have hpcFreeMulPost :
+      (evmMulStackPost evmSp
+        (expResultWord r0 r1 r2 r3) (expResultWord r0 r1 r2 r3)).pcFree := by
     delta evmMulStackPost; pcFree
   have hseq : cpsTripleWithin (17 + 64 + 9) base (base + 104)
       ((exp_squaring_call_block_code base mulOff).union
