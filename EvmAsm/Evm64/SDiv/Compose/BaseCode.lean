@@ -8,12 +8,10 @@ import EvmAsm.Evm64.SDiv.Compose.CodeHandles
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 theorem sdivCode_saveRa_sub {base : Word} :
     ∀ a i, (saveRaCode base) a = some i → (sdivCode base) a = some i := by
   unfold saveRaCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + saveRaOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + saveRaOff)
     EvmAsm.Evm64.evm_sdiv (EvmAsm.Evm64.evm_sdiv_save_ra_block .x18) 0
     (by simp [saveRaOff])
     (by native_decide)
@@ -23,7 +21,7 @@ theorem sdivCode_saveRa_sub {base : Word} :
 theorem sdivCode_dividendSign_sub {base : Word} :
     ∀ a i, (dividendSignCode base) a = some i → (sdivCode base) a = some i := by
   unfold dividendSignCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + dividendSignOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + dividendSignOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_sign_bit_block .x12 .x8
       EvmAsm.Evm64.evm_sdivDividendTopLimbOff) 1
@@ -35,7 +33,7 @@ theorem sdivCode_dividendSign_sub {base : Word} :
 theorem sdivCode_divisorSign_sub {base : Word} :
     ∀ a i, (divisorSignCode base) a = some i → (sdivCode base) a = some i := by
   unfold divisorSignCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + divisorSignOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + divisorSignOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_sign_bit_block .x12 .x9
       EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) 3
@@ -47,7 +45,7 @@ theorem sdivCode_divisorSign_sub {base : Word} :
 theorem sdivCode_dividendAbs_sub {base : Word} :
     ∀ a i, (dividendAbsCode base) a = some i → (sdivCode base) a = some i := by
   unfold dividendAbsCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + dividendAbsOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + dividendAbsOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11
       0 8 16 24) 5
@@ -59,7 +57,7 @@ theorem sdivCode_dividendAbs_sub {base : Word} :
 theorem sdivCode_divisorAbs_sub {base : Word} :
     ∀ a i, (divisorAbsCode base) a = some i → (sdivCode base) a = some i := by
   unfold divisorAbsCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + divisorAbsOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + divisorAbsOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block .x12 .x9 .x10 .x7 .x11
       32 40 48 56) 26
@@ -71,7 +69,7 @@ theorem sdivCode_divisorAbs_sub {base : Word} :
 theorem sdivCode_signXor_sub {base : Word} :
     ∀ a i, (signXorCode base) a = some i → (sdivCode base) a = some i := by
   unfold signXorCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + signXorOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + signXorOff)
     EvmAsm.Evm64.evm_sdiv (EvmAsm.Rv64.XOR' .x8 .x8 .x9) 47
     (by simp [signXorOff])
     (by native_decide)
@@ -81,7 +79,7 @@ theorem sdivCode_signXor_sub {base : Word} :
 theorem sdivCode_divCall_sub {base : Word} :
     ∀ a i, (divCallCode base) a = some i → (sdivCode base) a = some i := by
   unfold divCallCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + divCallOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + divCallOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_div_call_block EvmAsm.Evm64.evm_sdivCallOff) 48
     (by simp [divCallOff])
@@ -92,7 +90,7 @@ theorem sdivCode_divCall_sub {base : Word} :
 theorem sdivCode_resultSignFix_sub {base : Word} :
     ∀ a i, (resultSignFixCode base) a = some i → (sdivCode base) a = some i := by
   unfold resultSignFixCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + resultSignFixOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + resultSignFixOff)
     EvmAsm.Evm64.evm_sdiv
     (EvmAsm.Evm64.evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11
       0 8 16 24) 49
@@ -104,7 +102,7 @@ theorem sdivCode_resultSignFix_sub {base : Word} :
 theorem sdivCode_savedRaRet_sub {base : Word} :
     ∀ a i, (savedRaRetCode base) a = some i → (sdivCode base) a = some i := by
   unfold savedRaRetCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + savedRaRetOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + savedRaRetOff)
     EvmAsm.Evm64.evm_sdiv (EvmAsm.Evm64.evm_sdiv_saved_ra_ret_block .x18) 70
     (by simp [savedRaRetOff])
     (by native_decide)
@@ -114,7 +112,7 @@ theorem sdivCode_savedRaRet_sub {base : Word} :
 theorem sdivCode_divCallable_sub {base : Word} :
     ∀ a i, (divCallableCode base) a = some i → (sdivCode base) a = some i := by
   unfold divCallableCode sdivCode
-  exact CodeReq.ofProg_mono_sub base (base + wrapperEndOff)
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + wrapperEndOff)
     EvmAsm.Evm64.evm_sdiv EvmAsm.Evm64.evm_div_callable 71
     (by simp [wrapperEndOff])
     (by native_decide)
