@@ -11,8 +11,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallFramedCallable
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- The named zero-divisor callable handoff from the SDIV dispatch-ready
     bundle to the zero-divisor callable post. This isolates the callable
     proof currently needed by the larger result-sign-fix composition. -/
@@ -25,7 +23,7 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
       (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
       (saveRaDivCallDispatchReadyPost vRa sp base
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -68,7 +66,7 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
         (by simpa [divisorAbsWord] using hbz))
       hStack
   have hCallableExit :
-      cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
         (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
@@ -80,7 +78,7 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
           saveRaDivCallSignFrame vRa resultSign divisorSign) := by
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
-  exact cpsTripleWithin_weaken (fun h hp => by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun h hp => by
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
