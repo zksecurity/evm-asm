@@ -233,7 +233,7 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
     (hd : CodeReq.Disjoint
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) (base + 44) ((base + 44) + 104)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
@@ -300,7 +300,7 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
             (evmExpMsbSavedBitTwoMulCode
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) (base + 44) ((base + 44) + 104)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -375,7 +375,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_m
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -460,7 +460,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -549,7 +549,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -644,7 +644,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mu
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -739,7 +739,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
@@ -847,7 +847,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
