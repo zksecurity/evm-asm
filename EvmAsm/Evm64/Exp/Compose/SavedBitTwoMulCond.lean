@@ -25,8 +25,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget))
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let r := expResultWord r0 r1 r2 r3
-    let rw := expTwoMulCondRw r a0 a1 a2 a3
+    let rw := expTwoMulCondRwFromLimbs r0 r1 r2 r3 a0 a1 a2 a3
     let rest : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
       (.x5 ↦ᵣ rw.getLimbN 3) **
@@ -68,7 +67,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
         (base + 264,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
-  intro r rw rest
+  intro rw rest
   have hCond :=
     exp_cond_mul_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3 e0 e1 e2 e3
@@ -92,7 +91,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
         _ loopTarget _ (base + 264) _ :=
     cpsTripleWithin_seq_cpsBranchWithin_perm_same_cr
       (fun _ hp => by
-        dsimp [rest, r, rw] at hp ⊢
+        dsimp [rest, rw] at hp ⊢
         xperm_hyp hp)
       hCondFramed hLoopFramed
   have hSeqN := cpsBranchWithin_as_cpsNBranchWithin hSeq
@@ -115,8 +114,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget))
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let r := expResultWord r0 r1 r2 r3
-    let rw := expTwoMulCondRw r a0 a1 a2 a3
+    let rw := expTwoMulCondRwFromLimbs r0 r1 r2 r3 a0 a1 a2 a3
     let rest : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
       (.x5 ↦ᵣ rw.getLimbN 3) **
@@ -157,7 +155,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
         (base + 264,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
-  intro r rw rest preCore
+  intro rw rest preCore
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
     (r := .x6)
     (P := preCore ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
@@ -405,7 +403,8 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
             (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
              ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
     dsimp [concretePre, baseFrame, rest]
-    simpa [expResultWord_getLimbN_self r] using
+    simpa [expTwoMulCondRwFromLimbs, expTwoMulIterW,
+      expResultWord_getLimbN_self r] using
     exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_call_scratch_owned_spec_within
       iterCount sp evmSp (r.getLimbN 3) vOld
       (r.getLimbN 0) (r.getLimbN 1) (r.getLimbN 2) (r.getLimbN 3)
