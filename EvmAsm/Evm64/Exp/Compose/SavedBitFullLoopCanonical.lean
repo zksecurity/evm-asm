@@ -177,7 +177,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
@@ -198,8 +198,8 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld))
       ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -218,7 +218,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -238,8 +238,8 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld))
       ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
