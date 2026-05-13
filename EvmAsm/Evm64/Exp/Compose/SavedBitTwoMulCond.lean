@@ -120,7 +120,6 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
     let r := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := r * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let rest : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
       (.x5 ↦ᵣ rw.getLimbN 3) **
@@ -156,12 +155,12 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24))
       [(loopTarget,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] := by
-  intro r aw rw iterCountNew rest preCore
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
+  intro r aw rw rest preCore
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
     (r := .x6)
     (P := preCore ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
