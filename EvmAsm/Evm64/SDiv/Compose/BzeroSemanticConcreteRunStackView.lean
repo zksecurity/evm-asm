@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroSemanticRunStackView
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Zero-divisor SDIV bzero path with the concrete successful `runSDivStack?`

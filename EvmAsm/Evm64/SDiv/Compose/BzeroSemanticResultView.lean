@@ -9,7 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallDispatch
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Caller-visible zero-divisor SDIV path with the produced stack word named
