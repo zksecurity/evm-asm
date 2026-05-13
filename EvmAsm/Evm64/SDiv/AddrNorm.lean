@@ -16,6 +16,4 @@ import EvmAsm.Evm64.SDiv.AddrNormAttr
 
 namespace EvmAsm.Evm64.SDiv.AddrNorm
 
-open EvmAsm.Rv64
-
 end EvmAsm.Evm64.SDiv.AddrNorm
