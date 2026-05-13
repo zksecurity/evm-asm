@@ -30,6 +30,7 @@ import EvmAsm.Evm64.SDiv.Compose.DispatchViews
 import EvmAsm.Evm64.SDiv.Compose.BzeroPost
 import EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
 import EvmAsm.Evm64.SDiv.Compose.DispatchPrefix
+import EvmAsm.Evm64.SDiv.Compose.BzeroCallable
 import EvmAsm.Evm64.SDiv.Compose.DivCallDispatch
 import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFix
 import EvmAsm.Evm64.SDiv.Compose.DivCallPostPcFree
