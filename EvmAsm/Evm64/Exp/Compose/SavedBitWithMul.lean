@@ -204,6 +204,19 @@ theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   cpsTripleWithin_extend_code
     (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub) h
 
+/-- Lift a canonical two-MUL saved-bit EXP spec into the named appended-MUL
+    code bundle. -/
+theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+    {nSteps : Nat} {entry exit_ base : Word} {P Q : Assertion}
+    (h : cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff) P Q) :
+    cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base) P Q :=
+  cpsTripleWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_exp_sub) h
+
 /-- Lift a corrected saved-bit top-level EXP branch spec into the combined
     EXP+MUL code bundle. -/
 theorem cpsBranchWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
@@ -256,6 +269,38 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   cpsBranchWithin_extend_code
     (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub) h
 
+/-- Lift a canonical two-MUL saved-bit EXP branch spec into the named
+    appended-MUL code bundle. -/
+theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+    {nSteps : Nat} {entry base : Word}
+    {P : Assertion} {exit_t : Word} {Q_t : Assertion} {exit_f : Word}
+    {Q_f : Assertion}
+    (h : cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff)
+      P exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      P exit_t Q_t exit_f Q_f :=
+  cpsBranchWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_exp_sub) h
+
+/-- Lift a canonical two-MUL saved-bit EXP N-branch spec into the named
+    appended-MUL code bundle. -/
+theorem cpsNBranchWithin_extend_evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+    {nSteps : Nat} {entry base : Word}
+    {P : Assertion} {exits : List (Word × Assertion)}
+    (h : cpsNBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff)
+      P exits) :
+    cpsNBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base) P exits :=
+  cpsNBranchWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_exp_sub) h
+
 /-- Lift a multiply-callable spec into the two-MUL saved-bit EXP+MUL code
     bundle. -/
 theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulWithMulCode
@@ -296,6 +341,18 @@ theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulCanonicalWithM
     (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
       (base := base) (mulTarget := mulTarget)
       (squaringMulOff := squaringMulOff) (condMulOff := condMulOff) hd)
+    h
+
+/-- Lift an appended `mul_callable` spec into the named appended-MUL code
+    bundle. -/
+theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+    {nSteps : Nat} {entry exit_ base : Word} {P Q : Assertion}
+    (h : cpsTripleWithin nSteps entry exit_
+      (mul_callable_code (base + 304)) P Q) :
+    cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base) P Q :=
+  cpsTripleWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_mul_sub)
     h
 
 theorem evmExpMsbSavedBitTwoMulWithMulCode_block_subs {base mulTarget : Word}
