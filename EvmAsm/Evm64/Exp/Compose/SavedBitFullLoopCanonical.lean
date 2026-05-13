@@ -177,7 +177,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
@@ -218,7 +218,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -269,7 +269,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
       (base + 148 : Word) + signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff =
         target) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
@@ -329,7 +329,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
@@ -385,7 +385,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
       (base + 148 : Word) + signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff =
         target) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -442,7 +442,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
+    let w := expTwoMulIterW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
