@@ -10,15 +10,14 @@ import EvmAsm.Evm64.SDiv.Compose.BaseCode
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 theorem evm_div_callable_code_sub_sdivCode {base : Word} :
     ∀ a i,
       (EvmAsm.Evm64.evm_div_callable_code (base + wrapperEndOff)) a = some i →
       (sdivCode base) a = some i := by
   intro a i h
   have hOfProg :
-      (CodeReq.ofProg (base + wrapperEndOff) EvmAsm.Evm64.evm_div_callable) a =
+      (EvmAsm.Rv64.CodeReq.ofProg
+        (base + wrapperEndOff) EvmAsm.Evm64.evm_div_callable) a =
         some i := by
     rw [← EvmAsm.Evm64.evm_div_callable_code_eq_ofProg (base + wrapperEndOff)]
     exact h
@@ -32,7 +31,7 @@ theorem evm_div_callable_spec_in_sdivCode
      nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
     (branch : EvmAsm.Evm64.DivStackSpecCase (base + wrapperEndOff) a b)
     (hStack :
-      cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
         ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
         (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
@@ -41,14 +40,14 @@ theorem evm_div_callable_spec_in_sdivCode
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0)
         (EvmAsm.Evm64.divStackDispatchPost sp a b)) :
-    cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
       (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCode base)
       (EvmAsm.Evm64.divModStackDispatchPre sp a b
         branch.x1 branch.x2 v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** (.x1 ↦ᵣ raVal))
       (EvmAsm.Evm64.divStackDispatchPost sp a b ** (.x1 ↦ᵣ raVal)) := by
-  exact cpsTripleWithin_extend_code
+  exact EvmAsm.Rv64.cpsTripleWithin_extend_code
     (hmono := evm_div_callable_code_sub_sdivCode (base := base))
     (EvmAsm.Evm64.evm_div_callable_spec_from_noNop
       sp (base + wrapperEndOff) raVal a b v5 v6 v7 v10 v11
@@ -61,7 +60,7 @@ theorem evm_div_callable_preserving_x1_spec_in_sdivCode
      nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
     (branch : EvmAsm.Evm64.DivStackSpecCase (base + wrapperEndOff) a b)
     (hStack :
-      cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
         ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
         (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
@@ -70,14 +69,14 @@ theorem evm_div_callable_preserving_x1_spec_in_sdivCode
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0)
         (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ raVal))) :
-    cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
       (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCode base)
       (EvmAsm.Evm64.divModStackDispatchPre sp a b
         branch.x1 branch.x2 v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         shiftMem nMem jMem retMem dMem dloMem scratchUn0)
       (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ raVal)) := by
-  exact cpsTripleWithin_extend_code
+  exact EvmAsm.Rv64.cpsTripleWithin_extend_code
     (hmono := evm_div_callable_code_sub_sdivCode (base := base))
     (EvmAsm.Evm64.evm_div_callable_spec_from_noNop_preserving_x1
       sp (base + wrapperEndOff) raVal a b v5 v6 v7 v10 v11
