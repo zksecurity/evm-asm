@@ -4,11 +4,10 @@
   SDIV wrapper base spec for the result sign-fixup block.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BaseDivisorAbsSequence
+import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Precondition for the SDIV result sign-fixup (conditional 2's-complement
