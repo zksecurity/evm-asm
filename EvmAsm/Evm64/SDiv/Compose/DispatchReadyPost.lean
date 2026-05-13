@@ -1,0 +1,114 @@
+/-
+  EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
+
+  Named postcondition consumed by the unsigned DIV callable after the SDIV
+  prefix has normalized signs and absolute values.
+-/
+
+import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.SDiv.Compose.SignFrame
+import EvmAsm.Evm64.SDiv.Compose.Words
+
+namespace EvmAsm.Evm64.SDiv.Compose
+
+open EvmAsm.Rv64.Tactics
+open EvmAsm.Rv64
+
+/-- Post-shape consumed by `evm_div_callable_spec_in_sdivCode`: the
+    `divModStackDispatchPre` bundle (the dispatcher's pre, which the
+    callable consumes) paired with the SDIV-wrapper-private sign frame
+    (`.x8 = resultSign`, `.x9 = divisorSign`, `.x18 = vRa + signExtend12 0`).
+    The ~30-line let-chain (signs / masks / sums / carries / fromLimbs)
+    is hidden inside this `@[irreducible]` def so callers see a flat
+    assertion. -/
+@[irreducible]
+def saveRaDivCallDispatchReadyPost
+    (vRa sp base : Word)
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word)
+    (v2 v5 v6 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) : Assertion :=
+  let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
+  let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+  let resultSign := dividendSign ^^^ divisorSign
+  let divisorMask := (0 : Word) - divisorSign
+  let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
+  let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
+  let divisorSum1 := (divisorLimb1 ^^^ divisorMask) + divisorCarry0
+  let divisorCarry1 := if BitVec.ult divisorSum1 divisorCarry0 then (1 : Word) else 0
+  let divisorSum2 := (divisorLimb2 ^^^ divisorMask) + divisorCarry1
+  let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
+  let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
+  let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
+  let dividendAbsWord : EvmWord :=
+    sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+  let divisorAbsWord : EvmWord :=
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+  EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
+      ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+    sdivDivCallSignFrame vRa resultSign divisorSign
+
+theorem saveRaDivCallDispatchReadyPost_unfold
+    {vRa sp base : Word}
+    {dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word}
+    {v2 v5 v6 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word} :
+    saveRaDivCallDispatchReadyPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+        v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 =
+      (let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
+       let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+       let resultSign := dividendSign ^^^ divisorSign
+       let divisorMask := (0 : Word) - divisorSign
+       let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
+       let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
+       let divisorSum1 := (divisorLimb1 ^^^ divisorMask) + divisorCarry0
+       let divisorCarry1 := if BitVec.ult divisorSum1 divisorCarry0 then (1 : Word) else 0
+       let divisorSum2 := (divisorLimb2 ^^^ divisorMask) + divisorCarry1
+       let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
+       let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
+       let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
+       let dividendAbsWord : EvmWord :=
+         sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+       let divisorAbsWord : EvmWord :=
+         sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+       EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
+           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
+           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+           shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+         sdivDivCallSignFrame vRa resultSign divisorSign) := by
+  delta saveRaDivCallDispatchReadyPost
+  rfl
+
+theorem saveRaDivCallDispatchReadyPost_pcFree
+    {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop v2 v5 v6
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word} :
+    (saveRaDivCallDispatchReadyPost vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+      v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0).pcFree := by
+  rw [saveRaDivCallDispatchReadyPost_unfold]
+  dsimp
+  rw [EvmAsm.Evm64.divModStackDispatchPre_unfold,
+    EvmAsm.Evm64.divScratchValuesCall_unfold,
+    sdivDivCallSignFrame_unfold]
+  pcFree
+
+instance pcFreeInst_saveRaDivCallDispatchReadyPost
+    (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0
+      divisorLimb1 divisorLimb2 divisorTop v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5
+      u6 u7 shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) :
+    Assertion.PCFree (saveRaDivCallDispatchReadyPost vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0 divisorLimb1 divisorLimb2 divisorTop v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem retMem dMem dloMem scratchUn0) :=
+  ⟨saveRaDivCallDispatchReadyPost_pcFree⟩
+
+end EvmAsm.Evm64.SDiv.Compose
