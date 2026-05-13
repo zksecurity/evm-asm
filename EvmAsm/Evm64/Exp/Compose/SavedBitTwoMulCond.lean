@@ -111,6 +111,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
   have hCondFramed := cpsNBranchWithin_frameR (F := condFrame) (by
     dsimp [condFrame]
     pcFree) hCond
+  rw [expCondMulLoopRest_unfold] at hCondFramed
   have hCondHead :
       cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
         (evmExpMsbSavedBitTwoMulWithMulCode

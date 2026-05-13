@@ -59,7 +59,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
           signExtend13 EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff =
         base + 28 := by
     exact EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBack_target base
-  simpa [expCondMulLoopRest_unfold, expTwoMulIterCountNew] using
+  simpa [expTwoMulIterCountNew] using
     (exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3
       e0 e1 e2 e3 v6 v7 v10 v11 mulTarget squaringMulOff condMulOff
