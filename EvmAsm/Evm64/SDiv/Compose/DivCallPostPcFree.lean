@@ -361,9 +361,6 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
   let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
   let resultSign :=
     (dividendTop >>> (63 : BitVec 6).toNat) ^^^ divisorSign
-  let signFrame : Assertion :=
-    ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-      (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
   have hStack :=
     EvmAsm.Evm64.evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
       sp (base + wrapperEndOff) dividendAbsWord divisorAbsWord
@@ -373,7 +370,8 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
       (by simpa [divisorAbsWord] using hbz)
   have hCallableFramed :=
     evm_div_callable_preserving_x1_framed_spec_in_sdivCode
-      (F := signFrame) sp base ((base + divCallOff) + 4)
+      (F := saveRaDivCallSignFrame vRa resultSign divisorSign)
+      sp base ((base + divCallOff) + 4)
       dividendAbsWord divisorAbsWord v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0
@@ -386,19 +384,22 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
         (EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** signFrame)
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+          saveRaDivCallSignFrame vRa resultSign divisorSign)
         ((EvmAsm.Evm64.divStackDispatchPostNoX1 sp dividendAbsWord divisorAbsWord **
-          (.x1 ↦ᵣ ((base + divCallOff) + 4))) ** signFrame) := by
+          (.x1 ↦ᵣ ((base + divCallOff) + 4))) **
+          saveRaDivCallSignFrame vRa resultSign divisorSign) := by
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
   exact cpsTripleWithin_weaken (fun h hp => by
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
-      divisorSum3, divisorCarry3, resultSign, signFrame] at hp ⊢
+      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame] at hp ⊢
     exact hp) (fun h hp => by
     rw [saveRaDivCallBzeroCallablePost_unfold]
-    dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign, signFrame] at hp ⊢
+    dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign,
+      saveRaDivCallSignFrame] at hp ⊢
     exact hp) hCallableExit
 
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
