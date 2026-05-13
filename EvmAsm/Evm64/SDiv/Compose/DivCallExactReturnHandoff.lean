@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.SDiv.Compose.DivCallExactResultSignFixHandoff
+import EvmAsm.Evm64.SDiv.Compose.DivCallReturnComposition
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
