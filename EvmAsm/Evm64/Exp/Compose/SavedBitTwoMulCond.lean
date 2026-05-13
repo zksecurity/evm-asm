@@ -699,7 +699,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -731,17 +730,17 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
     let condLoop : Assertion :=
-      (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜iterCountNew ≠ 0⌝) ** condRest) ** condFrame
+      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** condRest) ** condFrame
     let condExit : Assertion :=
-      (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜iterCountNew = 0⌝) ** condRest) ** condFrame
+      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** condRest) ** condFrame
     let skipLoop : Assertion :=
-      (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜iterCountNew ≠ 0⌝) ** skipRest) ** baseFrame
+      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
     let skipExit : Assertion :=
-      (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜iterCountNew = 0⌝) ** skipRest) ** baseFrame
+      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -765,7 +764,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
       loopTarget (fun h => condLoop h ∨ skipLoop h)
       (base + 264) (fun h => condExit h ∨ skipExit h) := by
-  intro bit w aw rw iterCountNew baseFrame skipRest condRest condFrame
+  intro bit w aw rw baseFrame skipRest condRest condFrame
     condLoop condExit skipLoop skipExit
   exact cpsNBranchWithin_as_cpsBranchWithin
     (exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
