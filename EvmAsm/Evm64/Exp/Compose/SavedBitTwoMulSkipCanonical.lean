@@ -65,13 +65,13 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ (w * w).getLimbN 3) **
-      evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+      (.x5 ↦ᵣ squareW.getLimbN 3) **
+      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
       memOwn evmSp ** memOwn (evmSp + 8) **
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -99,8 +99,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
           ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
            (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
            (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-           (.x5 ↦ᵣ (w * w).getLimbN 3) **
-           evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+           (.x5 ↦ᵣ squareW.getLimbN 3) **
+           evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
            regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
            memOwn evmSp ** memOwn (evmSp + 8) **
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -136,13 +136,13 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ (w * w).getLimbN 3) **
-      evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+      (.x5 ↦ᵣ squareW.getLimbN 3) **
+      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
       memOwn evmSp ** memOwn (evmSp + 8) **
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -169,8 +169,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
           ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
            (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
            (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-           (.x5 ↦ᵣ (w * w).getLimbN 3) **
-           evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+           (.x5 ↦ᵣ squareW.getLimbN 3) **
+           evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
            regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
            memOwn evmSp ** memOwn (evmSp + 8) **
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **

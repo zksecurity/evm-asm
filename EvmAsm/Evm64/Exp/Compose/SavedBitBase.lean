@@ -22,6 +22,10 @@ abbrev expTwoMulIterW (r0 r1 r2 r3 : Word) : EvmWord :=
 abbrev expTwoMulIterAw (a0 a1 a2 a3 : Word) : EvmWord :=
   expResultWord a0 a1 a2 a3
 
+abbrev expTwoMulSquareW (r0 r1 r2 r3 : Word) : EvmWord :=
+  let w := expTwoMulIterW r0 r1 r2 r3
+  w * w
+
 abbrev expTwoMulCondRw (r : EvmWord) (a0 a1 a2 a3 : Word) : EvmWord :=
   r * expTwoMulIterAw a0 a1 a2 a3
 
@@ -31,7 +35,7 @@ abbrev expTwoMulCondRwFromLimbs
 
 abbrev expTwoMulIterRw
     (r0 r1 r2 r3 a0 a1 a2 a3 : Word) : EvmWord :=
-  (expTwoMulIterW r0 r1 r2 r3 * expTwoMulIterW r0 r1 r2 r3) *
+  expTwoMulSquareW r0 r1 r2 r3 *
     expTwoMulIterAw a0 a1 a2 a3
 
 abbrev expTwoMulIterCountNew (iterCount : Word) : Word :=
