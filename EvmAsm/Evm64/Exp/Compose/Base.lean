@@ -19,6 +19,9 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+abbrev expIterCountNew (iterCount : Word) : Word :=
+  iterCount + signExtend12 ((-1 : BitVec 12))
+
 /-- Length of the EXP prologue block, restated in the composition namespace so
     future `skipBlock`-style subsumption proofs can use a compact simp set. -/
 theorem exp_prologue_len : (EvmAsm.Evm64.exp_prologue).length = 6 := by
