@@ -22,7 +22,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_spec_w
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) :=
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) :=
   exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     e c v10 squaringMulOff condMulOff
     EvmAsm.Evm64.canonicalExpCondMulSkipOff
@@ -37,7 +37,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_sp
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) :=
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) :=
   exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_spec_within
     e c v10 EvmAsm.Evm64.canonicalExpSquaringMulOff
     EvmAsm.Evm64.canonicalExpCondMulOff base (base + 304)
@@ -72,7 +72,7 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_spec_w
 theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_spec_within
     (e c v10 v18 : Word) (squaringMulOff condMulOff : BitVec 21)
     (base mulTarget : Word) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     cpsTripleWithin (3 + 1) (base + 28) (base + 44)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
         base mulTarget squaringMulOff condMulOff)
@@ -90,7 +90,7 @@ theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_two_mul_canonical_w
 /-- Appended-MUL canonical-code view of the bit-test plus saved-bit prefix. -/
 theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_spec_within
     (e c v10 v18 : Word) (base : Word) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     cpsTripleWithin (3 + 1) (base + 28) (base + 44)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18))
@@ -176,7 +176,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
@@ -217,7 +217,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
       v7 v11 : Word)
     (base : Word)
     (hbase : base &&& 1 = 0) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
@@ -268,7 +268,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
     (htarget :
       (base + 148 : Word) + signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff =
         target) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
@@ -328,7 +328,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
@@ -384,7 +384,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
     (htarget :
       (base + 148 : Word) + signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff =
         target) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
@@ -441,7 +441,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
       v7 v11 : Word)
     (base : Word)
     (hbase : base &&& 1 = 0) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
