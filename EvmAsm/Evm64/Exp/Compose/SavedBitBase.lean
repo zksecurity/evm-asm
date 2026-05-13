@@ -11,7 +11,7 @@ import EvmAsm.Evm64.Exp.Compose.Base
 namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq Program seq)
 
 theorem exp_msb_bit_test_block_len :
     (EvmAsm.Evm64.exp_msb_bit_test_block).length = 3 := by
