@@ -23,7 +23,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_with_mul_spec_within
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) :=
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) :=
   cpsTripleWithin_extend_evmExpMsbSavedBitWithMulCode
     (exp_msb_bit_test_evm_exp_msb_saved_bit_spec_within
       e c v10 mulOff skipOff backOff base)
@@ -38,7 +38,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) := by
   have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
   have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
   rw [hnext] at h
@@ -91,7 +91,7 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
 theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
     (e c v10 v18 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base mulTarget : Word) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     cpsTripleWithin (3 + 1) (base + 28) (base + 44)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18))
@@ -124,7 +124,7 @@ theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_with_mul_spec_withi
 theorem exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     (e c v10 v18 : Word) (squaringMulOff condMulOff : BitVec 21)
     (skipOff backOff : BitVec 13) (base mulTarget : Word) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     cpsTripleWithin (3 + 1) (base + 28) (base + 44)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -374,7 +374,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_m
     (hd : CodeReq.Disjoint
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
@@ -459,7 +459,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
             (evmExpMsbSavedBitTwoMulCode
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulWithMulCode
@@ -548,7 +548,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
@@ -643,7 +643,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mu
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
@@ -738,7 +738,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
@@ -846,7 +846,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
