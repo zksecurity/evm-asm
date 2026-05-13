@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.DividendAbsPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Precondition for the SDIV save-ra + dividend/divisor signs +

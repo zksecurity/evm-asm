@@ -9,7 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.BaseCode
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Precondition for the SDIV save-ra + dividend sign + divisor sign

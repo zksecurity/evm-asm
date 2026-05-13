@@ -10,7 +10,6 @@ import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Precondition for the SDIV save-ra/signs/dividendAbs/divisorAbs/signXor
