@@ -299,9 +299,8 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
+    let w := expTwoMulIterW r0 r1 r2 r3
+    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -336,7 +335,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
             base a0 a1 a2 a3 rw (expTwoMulIterCountNew iterCount = 0) h ∨
           expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
             base a0 a1 a2 a3 w (expTwoMulIterCountNew iterCount = 0) h) := by
-  intro bit w aw rw
+  intro bit w rw
   rw [expTwoMulIterBaseFrame_unfold]
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
