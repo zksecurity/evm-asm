@@ -45,8 +45,7 @@ abbrev expCondMulRwFromLimbs
   expCondMulRw (expResultWord r0 r1 r2 r3) a0 a1 a2 a3
 
 abbrev expSquareRw (r0 r1 r2 r3 : Word) : EvmWord :=
-  let w := expResultWord r0 r1 r2 r3
-  w * w
+  expSquaringCallSquareW r0 r1 r2 r3
 
 /-- Lift a top-level EXP-body spec into the combined EXP+MUL code bundle. -/
 theorem cpsTripleWithin_extend_evmExpWithMulCode {nSteps : Nat}
