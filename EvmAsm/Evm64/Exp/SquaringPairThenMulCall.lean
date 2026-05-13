@@ -33,6 +33,10 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 
+abbrev expSquaringCallSquareW (r0 r1 r2 r3 : Word) : EvmWord :=
+  let w := expResultWord r0 r1 r2 r3
+  w * w
+
 /-- Code required by the squaring-call block plus the out-of-line
     `mul_callable` body reached by the JAL inside the block. -/
 abbrev exp_squaring_call_with_mul_code
@@ -209,7 +213,7 @@ theorem exp_loop_un_marshal_and_restore_word_spec_within_regOwn5
       `w := expResultWord r0 r1 r2 r3` (squaring of the limb-packed
       result word): `(.x12 ↦ᵣ evmSp + 32)`, `regOwn` on the
       caller-saved scratch registers, `memOwn` on the four bytes
-      below the new LP64 sp, and `evmWordIs (evmSp + 32) (w * w)`.
+      below the new LP64 sp, and `evmWordIs (evmSp + 32) squareW`.
     * `(.x1 ↦ᵣ (base + 68))` — `mul_callable` preserves `.x1`. -/
 theorem exp_squaring_marshal_pair_then_mul_call_spec_within
     (sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
@@ -352,9 +356,7 @@ theorem exp_squaring_call_block_spec_within
     (hd : CodeReq.Disjoint
             (exp_squaring_call_block_code base mulOff)
             (mul_callable_code mul_target)) :
-    let squareW :=
-      let w := expResultWord r0 r1 r2 r3
-      w * w
+    let squareW := expSquaringCallSquareW r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) base (base + 104)
       ((exp_squaring_call_block_code base mulOff).union
         (mul_callable_code mul_target))
