@@ -349,18 +349,18 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
     sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
   let divisorAbsWord :=
     sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
-  let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-  let divisorMask := (0 : Word) - divisorSign
-  let divisorSum0 := (divisorLimb0 ^^^ divisorMask) + divisorSign
-  let divisorCarry0 := if BitVec.ult divisorSum0 divisorSign then (1 : Word) else 0
-  let divisorSum1 := (divisorLimb1 ^^^ divisorMask) + divisorCarry0
-  let divisorCarry1 := if BitVec.ult divisorSum1 divisorCarry0 then (1 : Word) else 0
-  let divisorSum2 := (divisorLimb2 ^^^ divisorMask) + divisorCarry1
-  let divisorCarry2 := if BitVec.ult divisorSum2 divisorCarry1 then (1 : Word) else 0
-  let divisorSum3 := (divisorTop ^^^ divisorMask) + divisorCarry2
-  let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
+  let divisorSign := sdivAbsSign divisorTop
+  let divisorMask := sdivAbsMask divisorTop
+  let divisorSum0 := sdivAbsSum0 divisorLimb0 divisorTop
+  let divisorCarry0 := sdivAbsCarry0 divisorLimb0 divisorTop
+  let divisorSum1 := sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop
+  let divisorCarry1 := sdivAbsCarry1 divisorLimb0 divisorLimb1 divisorTop
+  let divisorSum2 := sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+  let divisorCarry2 := sdivAbsCarry2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+  let divisorSum3 := sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+  let divisorCarry3 := sdivAbsCarry3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let resultSign :=
-    (dividendTop >>> (63 : BitVec 6).toNat) ^^^ divisorSign
+    sdivAbsSign dividendTop ^^^ divisorSign
   have hStack :=
     EvmAsm.Evm64.evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
       sp (base + wrapperEndOff) dividendAbsWord divisorAbsWord
@@ -395,11 +395,13 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
-      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame] at hp ⊢
+      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame, sdivAbsSign,
+      sdivAbsMask, sdivAbsSum0, sdivAbsCarry0, sdivAbsSum1, sdivAbsCarry1,
+      sdivAbsSum2, sdivAbsCarry2, sdivAbsSum3, sdivAbsCarry3] at hp ⊢
     exact hp) (fun h hp => by
     rw [saveRaDivCallBzeroCallablePost_unfold]
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign,
-      saveRaDivCallSignFrame] at hp ⊢
+      saveRaDivCallSignFrame, sdivAbsSign] at hp ⊢
     exact hp) hCallableExit
 
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
