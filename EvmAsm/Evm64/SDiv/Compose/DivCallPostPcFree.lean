@@ -66,4 +66,16 @@ instance pcFreeInst_saveRaDivCallBzeroSavedRaRetFrame
         sp base divisorSign dividendAbsWord) :=
   ⟨saveRaDivCallBzeroSavedRaRetFrame_pcFree⟩
 
+theorem resultSignFixPost_pcFree
+    {sp sign limb0 limb1 limb2 limb3 : Word} :
+    (resultSignFixPost sp sign limb0 limb1 limb2 limb3).pcFree := by
+  rw [resultSignFixPost_unfold]
+  dsimp
+  pcFree
+
+instance pcFreeInst_resultSignFixPost
+    (sp sign limb0 limb1 limb2 limb3 : Word) :
+    Assertion.PCFree (resultSignFixPost sp sign limb0 limb1 limb2 limb3) :=
+  ⟨resultSignFixPost_pcFree⟩
+
 end EvmAsm.Evm64.SDiv.Compose
