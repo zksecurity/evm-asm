@@ -394,11 +394,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_loop_exit
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -422,10 +417,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_loop_exit
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
        expTwoMulIterBaseFrame evmSp a0 a1 a2 a3)
       loopTarget
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
-  intro bit w aw rw iterCountNew
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
     (fun _ hp => by
@@ -434,11 +434,14 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_loop_exit
     (fun _ hp => by
       rw [expTwoMulIterExitPost_unfold]
       exact hp)
-    (exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spec_within
-      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
-      e0 e1 e2 e3 a0 a1 a2 a3 mulTarget
-      squaringMulOff condMulOff skipOff backOff base loopTarget
-      hbase hsqmt hcondmt hd hskip hback)
+    (by
+      simpa [expTwoMulIterBit, expTwoMulIterW, expTwoMulIterAw,
+        expTwoMulIterRw, expTwoMulIterCountNew] using
+        (exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spec_within
+          e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+          e0 e1 e2 e3 a0 a1 a2 a3 mulTarget
+          squaringMulOff condMulOff skipOff backOff base loopTarget
+          hbase hsqmt hcondmt hd hskip hback))
 
 theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
     (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -454,11 +457,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -467,10 +465,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       loopTarget
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
-  intro bit w aw rw iterCountNew
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact cpsBranchWithin_weaken
     (fun _ hp => by
       rw [expTwoMulIterPre_unfold] at hp
@@ -497,11 +500,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loopback_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = base + 28) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -510,10 +508,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loopback_spec_within
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
-  intro bit w aw rw iterCountNew
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -535,11 +538,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_branches_spec_wi
               EvmAsm.Evm64.canonicalExpCondMulSkipOff
               EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -550,9 +548,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_branches_spec_wi
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   have hskip :
       (base + 148 : Word) +
         signExtend13 EvmAsm.Evm64.canonicalExpCondMulSkipOff = base + 256 := by
@@ -585,11 +589,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_code_spec_within
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -600,9 +599,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_code_spec_within
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_branches_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -624,11 +629,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_with_mul_spec_wi
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -637,9 +637,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_with_mul_spec_wi
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_code_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -653,11 +659,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
       e0 e1 e2 e3 a0 a1 a2 a3 : Word)
     (base : Word)
     (hbase : base &&& 1 = 0) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -665,9 +666,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
       (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
         e0 e1 e2 e3 a0 a1 a2 a3)
       (base + 28)
-        (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
-        (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw) := by
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_with_mul_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
