@@ -64,7 +64,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
@@ -135,7 +135,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
       e0 e1 e2 e3 v7 v11 : Word)
     (base : Word)
     (hbase : base &&& 1 = 0) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
