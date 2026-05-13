@@ -69,6 +69,68 @@ instance pcFreeInst_saveRaDivCallCallableReturnPost
         divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=
   ⟨saveRaDivCallCallableReturnPost_pcFree⟩
 
+@[irreducible]
+def saveRaDivCallResultSignFixPost
+    (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Assertion :=
+  let dividendAbsWord :=
+    sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+  let divisorAbsWord :=
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+  let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+  let resultSign :=
+    (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+      (divisorTop >>> (63 : BitVec 6).toNat)
+  let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+  resultSignFixPost (sp + 32) resultSign
+    (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
+    (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
+  saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord
+
+theorem saveRaDivCallResultSignFixPost_unfold
+    {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
+    saveRaDivCallResultSignFixPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      (let dividendAbsWord :=
+         sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+       let divisorAbsWord :=
+         sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+       let resultSign :=
+         (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+           (divisorTop >>> (63 : BitVec 6).toNat)
+       let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
+       resultSignFixPost (sp + 32) resultSign
+         (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
+         (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
+       saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord) := by
+  delta saveRaDivCallResultSignFixPost
+  rfl
+
+theorem saveRaDivCallResultSignFixPost_pcFree
+    {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
+    (saveRaDivCallResultSignFixPost vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).pcFree := by
+  rw [saveRaDivCallResultSignFixPost_unfold]
+  dsimp
+  rw [resultSignFixPost_unfold, saveRaDivCallBzeroResultSignFixFrame_unfold,
+    EvmAsm.Evm64.divScratchOwnCall_unfold,
+    EvmAsm.Evm64.divScratchOwn_unfold]
+  pcFree
+
+instance pcFreeInst_saveRaDivCallResultSignFixPost
+    (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
+    Assertion.PCFree
+      (saveRaDivCallResultSignFixPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=
+  ⟨saveRaDivCallResultSignFixPost_pcFree⟩
+
 /-- SDIV wrapper prefix followed by any exact unsigned-DIV callable proof,
     then through result-sign-fix over the produced quotient word. -/
 theorem saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_of_callable_post_spec_in_sdivCode
@@ -152,6 +214,50 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_of_callable_pos
       rw [saveRaDivCallBzeroCallablePost_resultSignFixPreOwnScratch_quotient] at hp
       exact hp)
     hPrefix hFix
+
+/-- Named-post wrapper for the generic SDIV callable composition through
+    result-sign-fix, before the saved-RA return. -/
+theorem saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_named_post_of_callable_post_spec_in_sdivCode
+    {nSteps : Nat}
+    (vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+      v2 v5 v6 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (base : Word)
+    (hCallable :
+      cpsTripleWithin nSteps (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
+        (saveRaDivCallDispatchReadyPost vRa sp base
+          dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+          v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (saveRaDivCallBzeroCallablePost vRa sp base
+          dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)) :
+    cpsTripleWithin ((49 + nSteps) + 21)
+      base ((base + resultSignFixOff) + 84) (sdivCode base)
+      (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
+        dividendMaskOld dividendValueOld dividendCarryOld
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop **
+       ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
+        EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0))
+      (saveRaDivCallResultSignFixPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) := by
+  rw [saveRaDivCallResultSignFixPost_unfold]
+  exact
+    saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_of_callable_post_spec_in_sdivCode
+      vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+      v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hCallable
 
 /-- SDIV wrapper prefix followed by any exact unsigned-DIV callable proof,
     result-sign-fix over the produced quotient word, and the saved-RA return. -/
