@@ -37,6 +37,23 @@ abbrev evmExpMsbSavedBitTwoMulCanonicalWithMulCode
     base squaringMulOff condMulOff).union
     (mul_callable_code mulTarget)
 
+/-- Canonical two-MUL saved-bit EXP program plus an appended `mul_callable`
+    body placed immediately after the 304-byte EXP wrapper. -/
+abbrev evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+    (base : Word) : CodeReq :=
+  evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+    base (base + 304)
+    EvmAsm.Evm64.canonicalExpSquaringMulOff
+    EvmAsm.Evm64.canonicalExpCondMulOff
+
+theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_eq
+    (base : Word) :
+    evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base =
+      evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base (base + 304)
+        EvmAsm.Evm64.canonicalExpSquaringMulOff
+        EvmAsm.Evm64.canonicalExpCondMulOff := rfl
+
 theorem evmExpMsbSavedBitWithMulCode_exp_sub {base mulTarget : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
     ∀ a i, (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i →
@@ -64,6 +81,16 @@ theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub
         base mulTarget squaringMulOff condMulOff) a = some i := by
   unfold evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   exact CodeReq.union_mono_left
+
+theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_exp_sub
+    {base : Word} :
+    ∀ a i,
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+  exact evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub
 
 theorem evmExpMsbSavedBitWithMulCode_mul_sub {base mulTarget : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13}
@@ -126,6 +153,14 @@ theorem evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul
     EvmAsm.Evm64.mul_callable_length
     (fun k1 k2 hk1 hk2 => by
       bv_omega)
+
+theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_mul_sub
+    {base : Word} :
+    ∀ a i, (mul_callable_code (base + 304)) a = some i →
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode
+  exact evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
+    (evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul base)
 
 /-- Lift a corrected saved-bit top-level EXP spec into the combined EXP+MUL
     code bundle. -/
