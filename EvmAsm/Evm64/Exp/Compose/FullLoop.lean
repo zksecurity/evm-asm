@@ -13,7 +13,9 @@ import EvmAsm.Evm64.Multiply.Callable
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (Assertion CodeReq cpsBranchWithin
+  cpsBranchWithin_extend_code cpsTripleWithin cpsTripleWithin_extend_code
+  memOwn regOwn signExtend12 signExtend13 signExtend21)
 
 /-- Code required by the top-level EXP program plus the external
     `mul_callable` body reached by both JALs in one loop iteration. -/
