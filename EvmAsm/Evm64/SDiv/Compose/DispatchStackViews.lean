@@ -11,8 +11,6 @@ import EvmAsm.Rv64.Tactics.XSimp
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Entry assertion view for stack-level SDIV callers: when the raw limb
     parameters are instantiated from two EVM words, the operand memory atoms
     in `saveRaSignsAbsSignXorThenDivCallPre` fold into a two-word stack. -/
@@ -36,8 +34,10 @@ theorem saveRaSignsAbsSignXorThenDivCallPre_stack_pair
   rw [evmWordIs_sp_unfold, evmWordIs_sp32_unfold]
   unfold EvmAsm.Evm64.evm_sdivDividendTopLimbOff
   unfold EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
-  simp only [signExtend12_0, signExtend12_8, signExtend12_16, signExtend12_24,
-    signExtend12_32, signExtend12_40, signExtend12_48, signExtend12_56]
+  simp only [EvmAsm.Rv64.signExtend12_0, EvmAsm.Rv64.signExtend12_8,
+    EvmAsm.Rv64.signExtend12_16, EvmAsm.Rv64.signExtend12_24,
+    EvmAsm.Rv64.signExtend12_32, EvmAsm.Rv64.signExtend12_40,
+    EvmAsm.Rv64.signExtend12_48, EvmAsm.Rv64.signExtend12_56]
   rw [show (sp + 0 : Word) = sp by bv_decide]
   xperm
 
@@ -69,6 +69,6 @@ theorem saveRaSignsAbsSignXorThenDivCallPre_stack_pair_rest
     rw [evmStackIs_append sp [dividend, divisor] rest]
     rfl
   rw [h_stack]
-  rw [sepConj_assoc']
+  rw [EvmAsm.Rv64.sepConj_assoc']
 
 end EvmAsm.Evm64.SDiv.Compose
