@@ -5,13 +5,13 @@
   prefix has normalized signs and absolute values.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.DivMod.Spec.Dispatcher
+import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
 import EvmAsm.Evm64.SDiv.Compose.SignFrame
 import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Post-shape consumed by `evm_div_callable_spec_in_sdivCode`: the
