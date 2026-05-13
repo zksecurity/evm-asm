@@ -128,6 +128,20 @@ theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode {nSteps : Nat}
   cpsTripleWithin_extend_code
     (hmono := evmExpMsbSavedBitTwoMulWithMulCode_exp_sub) h
 
+/-- Lift a canonical two-offset saved-bit EXP spec into the combined EXP+MUL
+    code bundle. -/
+theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+    {nSteps : Nat} {entry exit_ base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {P Q : Assertion}
+    (h : cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff) P Q) :
+    cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) P Q :=
+  cpsTripleWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub) h
+
 /-- Lift a corrected saved-bit top-level EXP branch spec into the combined
     EXP+MUL code bundle. -/
 theorem cpsBranchWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
@@ -162,6 +176,24 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulWithMulCode {nSteps : Nat}
   cpsBranchWithin_extend_code
     (hmono := evmExpMsbSavedBitTwoMulWithMulCode_exp_sub) h
 
+/-- Lift a canonical two-offset saved-bit EXP branch spec into the combined
+    EXP+MUL code bundle. -/
+theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+    {nSteps : Nat} {entry base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21}
+    {P : Assertion} {exit_t : Word} {Q_t : Assertion} {exit_f : Word}
+    {Q_f : Assertion}
+    (h : cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff)
+      P exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff)
+      P exit_t Q_t exit_f Q_f :=
+  cpsBranchWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_exp_sub) h
+
 /-- Lift a multiply-callable spec into the two-MUL saved-bit EXP+MUL code
     bundle. -/
 theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulWithMulCode
@@ -182,6 +214,26 @@ theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulWithMulCode
       (base := base) (mulTarget := mulTarget)
       (squaringMulOff := squaringMulOff) (condMulOff := condMulOff)
       (skipOff := skipOff) (backOff := backOff) hd)
+    h
+
+/-- Lift a multiply-callable spec into the canonical two-MUL saved-bit EXP+MUL
+    code bundle. -/
+theorem cpsTripleWithin_extend_mulCallable_evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+    {nSteps : Nat} {entry exit_ base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {P Q : Assertion}
+    (hd : CodeReq.Disjoint
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base squaringMulOff condMulOff)
+      (mul_callable_code mulTarget))
+    (h : cpsTripleWithin nSteps entry exit_
+      (mul_callable_code mulTarget) P Q) :
+    cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff) P Q :=
+  cpsTripleWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
+      (base := base) (mulTarget := mulTarget)
+      (squaringMulOff := squaringMulOff) (condMulOff := condMulOff) hd)
     h
 
 theorem evmExpMsbSavedBitTwoMulWithMulCode_block_subs {base mulTarget : Word}
