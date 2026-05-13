@@ -103,11 +103,6 @@ theorem exp_two_mul_named_iter_with_continuations_bounded_spec_within
     (hbase : base &&& 1 = 0)
     (hBound :
       expTwoMulNamedIterStepBound + max nLoop nExit ≤ nBound) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     (cpsTripleWithin nLoop (base + 28) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
