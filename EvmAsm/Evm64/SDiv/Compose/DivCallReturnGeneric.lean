@@ -1,4 +1,4 @@
-import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFix
+import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
