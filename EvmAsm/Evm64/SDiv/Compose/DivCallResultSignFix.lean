@@ -315,13 +315,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_of_callable_post_spec_
       (divisorTop >>> (63 : BitVec 6).toNat)
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
   have hPrefix :=
-    saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_of_callable_post_spec_in_sdivCode
+    saveRa_signs_abs_signXor_then_divCall_then_resultSignFix_named_post_of_callable_post_spec_in_sdivCode
       vRa vSavedOld sp sDividendOld sDivisorOld
       dividendMaskOld dividendValueOld dividendCarryOld
       dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
       v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hCallable
+  rw [saveRaDivCallResultSignFixPost_unfold] at hPrefix
   have hRetFramePc :
       (resultSignFixPost (sp + 32) resultSign
         (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
