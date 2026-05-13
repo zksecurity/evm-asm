@@ -4,7 +4,7 @@
   SDIV wrapper composition through the dividend absolute-value block.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DividendAbsPost
+import EvmAsm.Evm64.SDiv.Compose.SaveRaDividendAbsPre
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
@@ -38,49 +38,6 @@ theorem dividendAbs_spec_in_sdivCode
   rw [EvmAsm.Evm64.condNegate256BlockPre_unfold,
     EvmAsm.Evm64.condNegate256BlockPost_unfold] at hSpec
   exact cpsTripleWithin_extend_code hmono hSpec
-
-/-- Precondition for the SDIV save-ra + dividend/divisor signs +
-    dividendAbs prefix. Takes only the bare wrapper inputs; the
-    `sp`-relative dividend/divisor memory addresses are computed
-    internally so the let-chain that previously lived in the theorem
-    signature stays hidden inside this `@[irreducible]` def. -/
-@[irreducible]
-def saveRaSignsThenDividendAbsPre
-    (vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
-      maskOld valueOld carryOld
-      limb0 limb1 limb2 dividendTop : Word) : Assertion :=
-  let mem0 := sp + signExtend12 (0 : BitVec 12)
-  let mem1 := sp + signExtend12 (8 : BitVec 12)
-  let mem2 := sp + signExtend12 (16 : BitVec 12)
-  let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-  let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
-  ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
-     ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) ** (mem3 ↦ₘ dividendTop))) **
-    ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
-   (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ maskOld) **
-     (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld)) **
-    ((mem0 ↦ₘ limb0) ** (mem1 ↦ₘ limb1) ** (mem2 ↦ₘ limb2)))
-
-theorem saveRaSignsThenDividendAbsPre_unfold
-    {vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
-      maskOld valueOld carryOld
-      limb0 limb1 limb2 dividendTop : Word} :
-    saveRaSignsThenDividendAbsPre vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
-        maskOld valueOld carryOld
-        limb0 limb1 limb2 dividendTop =
-      (let mem0 := sp + signExtend12 (0 : BitVec 12)
-       let mem1 := sp + signExtend12 (8 : BitVec 12)
-       let mem2 := sp + signExtend12 (16 : BitVec 12)
-       let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-       let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
-       ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
-          ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) ** (mem3 ↦ₘ dividendTop))) **
-         ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
-        (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ maskOld) **
-          (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld)) **
-         ((mem0 ↦ₘ limb0) ** (mem1 ↦ₘ limb1) ** (mem2 ↦ₘ limb2)))) := by
-  delta saveRaSignsThenDividendAbsPre
-  rfl
 
 /-- Postcondition for the SDIV save-ra/signs/dividendAbs prefix. Takes
     only the bare wrapper inputs; the sign/mask/sum/carry let-chain
