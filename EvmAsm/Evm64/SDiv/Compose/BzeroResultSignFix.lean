@@ -4,7 +4,7 @@
   SDIV zero-divisor path through result-sign fixup.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BzeroCallable
+import EvmAsm.Evm64.SDiv.Compose.BzeroCallableNamedPost
 import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
 
 namespace EvmAsm.Evm64.SDiv.Compose
