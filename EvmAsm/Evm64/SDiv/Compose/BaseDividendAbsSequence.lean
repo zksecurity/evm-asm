@@ -9,13 +9,11 @@ import EvmAsm.Evm64.SDiv.Compose.BaseDividendAbsBlockSpec
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 theorem saveRa_signs_then_dividendAbs_spec_in_sdivCode
     (vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
       maskOld valueOld carryOld limb0 limb1 limb2 dividendTop : Word)
     (base : Word) :
-    cpsTripleWithin 26 base ((base + dividendAbsOff) + 84) (sdivCode base)
+    EvmAsm.Rv64.cpsTripleWithin 26 base ((base + dividendAbsOff) + 84) (sdivCode base)
       (saveRaSignsThenDividendAbsPre vRa vSavedOld sp sDividendOld sDivisorOld
         divisorTop maskOld valueOld carryOld
         limb0 limb1 limb2 dividendTop)
@@ -27,11 +25,11 @@ theorem saveRa_signs_then_dividendAbs_spec_in_sdivCode
   -- (which references these derived names) keeps working unchanged.
   let sign := dividendTop >>> (63 : BitVec 6).toNat
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-  let mem0 := sp + signExtend12 (0 : BitVec 12)
-  let mem1 := sp + signExtend12 (8 : BitVec 12)
-  let mem2 := sp + signExtend12 (16 : BitVec 12)
-  let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-  let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+  let mem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+  let mem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+  let mem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+  let mem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+  let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
   let mask := (0 : Word) - sign
   let xored0 := limb0 ^^^ mask
   let sum0 := xored0 + sign
@@ -45,41 +43,41 @@ theorem saveRa_signs_then_dividendAbs_spec_in_sdivCode
   let xored3 := dividendTop ^^^ mask
   let sum3 := xored3 + carry2
   let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-  let extra : Assertion :=
+  let extra : EvmAsm.Rv64.Assertion :=
     (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ maskOld) **
       (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld)) **
      ((mem0 ↦ₘ limb0) ** (mem1 ↦ₘ limb1) ** (mem2 ↦ₘ limb2)))
-  let pre : Assertion :=
+  let pre : EvmAsm.Rv64.Assertion :=
     (((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
        ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) ** (mem3 ↦ₘ dividendTop))) **
       ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
      extra)
-  let mid : Assertion :=
-    (((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+  let mid : EvmAsm.Rv64.Assertion :=
+    (((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
        ((.x8 ↦ᵣ sign) ** (mem3 ↦ₘ dividendTop))) **
       ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))) **
      extra)
-  let absPre : Assertion :=
-    ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+  let absPre : EvmAsm.Rv64.Assertion :=
+    ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
       ((.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))) **
      ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
       (.x10 ↦ᵣ maskOld) ** (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld) **
       (mem0 ↦ₘ limb0) ** (mem1 ↦ₘ limb1) **
       (mem2 ↦ₘ limb2) ** (mem3 ↦ₘ dividendTop)))
-  let post : Assertion :=
-    ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+  let post : EvmAsm.Rv64.Assertion :=
+    ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
       ((.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))) **
      ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
       (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
       (mem0 ↦ₘ sum0) ** (mem1 ↦ₘ sum1) **
       (mem2 ↦ₘ sum2) ** (mem3 ↦ₘ sum3)))
-  have hPrefix : cpsTripleWithin 5 base (base + dividendAbsOff)
+  have hPrefix : EvmAsm.Rv64.cpsTripleWithin 5 base (base + dividendAbsOff)
       (sdivCode base) pre mid := by
     dsimp [pre, mid, extra, mem3, divisorMem3, sign, divisorSign]
     simpa [divisorSignOff, dividendAbsOff, BitVec.add_assoc,
       saveRaDividendSignThenDivisorSignPre_unfold,
       saveRaDividendSignThenDivisorSignPost_unfold] using
-      (cpsTripleWithin_frameR
+      (EvmAsm.Rv64.cpsTripleWithin_frameR
         (((.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ maskOld) **
           (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld)) **
          ((mem0 ↦ₘ limb0) ** (mem1 ↦ₘ limb1) ** (mem2 ↦ₘ limb2)))
@@ -87,7 +85,7 @@ theorem saveRa_signs_then_dividendAbs_spec_in_sdivCode
         (saveRa_dividendSign_then_divisorSign_spec_in_sdivCode
           vRa vSavedOld sp sDividendOld dividendTop sDivisorOld divisorTop
           base))
-  have hAbs : cpsTripleWithin 21 (base + dividendAbsOff)
+  have hAbs : EvmAsm.Rv64.cpsTripleWithin 21 (base + dividendAbsOff)
       ((base + dividendAbsOff) + 84) (sdivCode base) absPre post := by
     have hSpec := dividendAbs_spec_in_sdivCode
       sp sign maskOld valueOld carryOld limb0 limb1 limb2 dividendTop
@@ -97,13 +95,13 @@ theorem saveRa_signs_then_dividendAbs_spec_in_sdivCode
       EvmAsm.Evm64.evm_sdivDividendTopLimbOff, mask, xored0, sum0,
       carry0, xored1, sum1, carry1, xored2, sum2, carry2, xored3, sum3,
       carry3] using
-      cpsTripleWithin_frameL
+      EvmAsm.Rv64.cpsTripleWithin_frameL
         ((((.x1 ↦ᵣ vRa) **
-          (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+          (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
           ((.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))))
         (by pcFree)
         hSpec
-  have hSeq := cpsTripleWithin_seq_perm_same_cr
+  have hSeq := EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       dsimp [mid, absPre, extra] at hp ⊢
       xperm_hyp hp) hPrefix hAbs
