@@ -115,6 +115,9 @@ abbrev saveRaDivCallSignFrame
   ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
     (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
 
+abbrev sdivDivCallResultSign (dividendTop divisorTop : Word) : Word :=
+  sdivAbsSign dividendTop ^^^ sdivAbsSign divisorTop
+
 /-- Variant of the preserving-`x1` unsigned-DIV callable wrapper whose no-NOP
     body proof already has the exact caller return address in the dispatch
     precondition. This avoids tying SDIV's exact handoff to
@@ -251,8 +254,7 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
   let divisorCarry2 := sdivAbsCarry2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let divisorSum3 := sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let divisorCarry3 := sdivAbsCarry3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
-  let resultSign :=
-    sdivAbsSign dividendTop ^^^ divisorSign
+  let resultSign := sdivDivCallResultSign dividendTop divisorTop
   have hCallableFramed :=
     evm_div_callable_preserving_x1_exact_pre_framed_spec_in_sdivCode
       (F := saveRaDivCallSignFrame vRa resultSign divisorSign)
@@ -281,13 +283,14 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
-      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame, sdivAbsSign, sdivAbsMask,
-      sdivAbsSum0, sdivAbsCarry0, sdivAbsSum1, sdivAbsCarry1, sdivAbsSum2,
-      sdivAbsCarry2, sdivAbsSum3, sdivAbsCarry3] at hp ⊢
+      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame,
+      sdivDivCallResultSign, sdivAbsSign, sdivAbsMask, sdivAbsSum0, sdivAbsCarry0,
+      sdivAbsSum1, sdivAbsCarry1, sdivAbsSum2, sdivAbsCarry2, sdivAbsSum3,
+      sdivAbsCarry3] at hp ⊢
     exact hp) (fun h hp => by
     rw [saveRaDivCallBzeroCallablePost_unfold]
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign,
-      saveRaDivCallSignFrame, sdivAbsSign] at hp ⊢
+      saveRaDivCallSignFrame, sdivDivCallResultSign, sdivAbsSign] at hp ⊢
     exact hp) hCallableExit
 
 /-- Frame the preserving-`x1` unsigned-DIV callable wrapper by an arbitrary
@@ -359,8 +362,7 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
   let divisorCarry2 := sdivAbsCarry2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let divisorSum3 := sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let divisorCarry3 := sdivAbsCarry3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
-  let resultSign :=
-    sdivAbsSign dividendTop ^^^ divisorSign
+  let resultSign := sdivDivCallResultSign dividendTop divisorTop
   have hStack :=
     EvmAsm.Evm64.evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
       sp (base + wrapperEndOff) dividendAbsWord divisorAbsWord
@@ -395,13 +397,14 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
-      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame, sdivAbsSign,
-      sdivAbsMask, sdivAbsSum0, sdivAbsCarry0, sdivAbsSum1, sdivAbsCarry1,
-      sdivAbsSum2, sdivAbsCarry2, sdivAbsSum3, sdivAbsCarry3] at hp ⊢
+      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame,
+      sdivDivCallResultSign, sdivAbsSign, sdivAbsMask, sdivAbsSum0, sdivAbsCarry0,
+      sdivAbsSum1, sdivAbsCarry1, sdivAbsSum2, sdivAbsCarry2, sdivAbsSum3,
+      sdivAbsCarry3] at hp ⊢
     exact hp) (fun h hp => by
     rw [saveRaDivCallBzeroCallablePost_unfold]
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign,
-      saveRaDivCallSignFrame, sdivAbsSign] at hp ⊢
+      saveRaDivCallSignFrame, sdivDivCallResultSign, sdivAbsSign] at hp ⊢
     exact hp) hCallableExit
 
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
