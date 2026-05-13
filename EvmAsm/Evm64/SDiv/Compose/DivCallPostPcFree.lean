@@ -110,6 +110,11 @@ instance pcFreeInst_divStackDispatchPostNoX1
     Assertion.PCFree (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b) :=
   ⟨divStackDispatchPostNoX1_pcFree⟩
 
+abbrev saveRaDivCallSignFrame
+    (vRa resultSign divisorSign : Word) : Assertion :=
+  ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
+    (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
+
 /-- Variant of the preserving-`x1` unsigned-DIV callable wrapper whose no-NOP
     body proof already has the exact caller return address in the dispatch
     precondition. This avoids tying SDIV's exact handoff to
@@ -248,12 +253,10 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
   let divisorCarry3 := sdivAbsCarry3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
   let resultSign :=
     sdivAbsSign dividendTop ^^^ divisorSign
-  let signFrame : Assertion :=
-    ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-      (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
   have hCallableFramed :=
     evm_div_callable_preserving_x1_exact_pre_framed_spec_in_sdivCode
-      (F := signFrame) sp base ((base + divCallOff) + 4)
+      (F := saveRaDivCallSignFrame vRa resultSign divisorSign)
+      sp base ((base + divCallOff) + 4)
       dividendAbsWord divisorAbsWord v2 v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0
@@ -267,22 +270,24 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
         (EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** signFrame)
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+          saveRaDivCallSignFrame vRa resultSign divisorSign)
         ((EvmAsm.Evm64.divStackDispatchPostNoX1 sp dividendAbsWord divisorAbsWord **
-          (.x1 ↦ᵣ ((base + divCallOff) + 4))) ** signFrame) := by
+          (.x1 ↦ᵣ ((base + divCallOff) + 4))) **
+          saveRaDivCallSignFrame vRa resultSign divisorSign) := by
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
   exact cpsTripleWithin_weaken (fun h hp => by
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,
-      divisorSum3, divisorCarry3, resultSign, signFrame, sdivAbsSign, sdivAbsMask,
+      divisorSum3, divisorCarry3, resultSign, saveRaDivCallSignFrame, sdivAbsSign, sdivAbsMask,
       sdivAbsSum0, sdivAbsCarry0, sdivAbsSum1, sdivAbsCarry1, sdivAbsSum2,
       sdivAbsCarry2, sdivAbsSum3, sdivAbsCarry3] at hp ⊢
     exact hp) (fun h hp => by
     rw [saveRaDivCallBzeroCallablePost_unfold]
-    dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign, signFrame,
-      sdivAbsSign] at hp ⊢
+    dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign,
+      saveRaDivCallSignFrame, sdivAbsSign] at hp ⊢
     exact hp) hCallableExit
 
 /-- Frame the preserving-`x1` unsigned-DIV callable wrapper by an arbitrary
