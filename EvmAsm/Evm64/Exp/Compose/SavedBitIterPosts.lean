@@ -635,12 +635,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
     (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 : Word)
     (base : Word)
-    (hbase : base &&& 1 = 0)
-    (hd : CodeReq.Disjoint
-            (evmExpMsbSavedBitTwoMulCanonicalCode
-              base EvmAsm.Evm64.canonicalExpSquaringMulOff
-                EvmAsm.Evm64.canonicalExpCondMulOff)
-            (mul_callable_code (base + 304))) :
+    (hbase : base &&& 1 = 0) :
     let bit := e >>> (63 : BitVec 6).toNat
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
@@ -668,6 +663,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
       base hbase
       (EvmAsm.Evm64.canonicalExpSquaringMul_target base).symm
       (EvmAsm.Evm64.canonicalExpCondMul_target base).symm
-      hd
+      (evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul base)
 
 end EvmAsm.Evm64.Exp.Compose

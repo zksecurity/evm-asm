@@ -100,6 +100,33 @@ theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
   unfold evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
+/-- The canonical two-MUL saved-bit EXP wrapper is disjoint from a
+    `mul_callable` body appended immediately after the 304-byte wrapper. -/
+theorem evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul
+    (base : Word) :
+    CodeReq.Disjoint
+      (evmExpMsbSavedBitTwoMulCanonicalCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff)
+      (mul_callable_code (base + 304)) := by
+  rw [evmExpMsbSavedBitTwoMulCanonicalCode_eq_ofProg,
+    mul_callable_code_eq_ofProg]
+  exact CodeReq.ofProg_disjoint_range_len
+    base
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_canonical
+      EvmAsm.Evm64.canonicalExpSquaringMulOff
+      EvmAsm.Evm64.canonicalExpCondMulOff)
+    76
+    (base + 304)
+    EvmAsm.Evm64.mul_callable
+    64
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_canonical_length
+      EvmAsm.Evm64.canonicalExpSquaringMulOff
+      EvmAsm.Evm64.canonicalExpCondMulOff)
+    EvmAsm.Evm64.mul_callable_length
+    (fun k1 k2 hk1 hk2 => by
+      bv_omega)
+
 /-- Lift a corrected saved-bit top-level EXP spec into the combined EXP+MUL
     code bundle. -/
 theorem cpsTripleWithin_extend_evmExpMsbSavedBitWithMulCode {nSteps : Nat}
