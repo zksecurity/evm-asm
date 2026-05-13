@@ -116,4 +116,36 @@ instance pcFreeInst_resultSignFixPreOwnScratch
     Assertion.PCFree (resultSignFixPreOwnScratch sp sign limb0 limb1 limb2 limb3) :=
   ⟨resultSignFixPreOwnScratch_pcFree⟩
 
+theorem resultSignFixPost_bzeroResultSignFixFrame_pcFree
+    {vRa sp base divisorSign sign limb0 limb1 limb2 limb3 : Word}
+    {dividendAbsWord : EvmWord} :
+    (resultSignFixPost (sp + 32) sign limb0 limb1 limb2 limb3 **
+      saveRaDivCallBzeroResultSignFixFrame
+        vRa sp base divisorSign dividendAbsWord).pcFree := by
+  pcFree
+
+instance pcFreeInst_resultSignFixPost_bzeroResultSignFixFrame
+    (vRa sp base divisorSign sign limb0 limb1 limb2 limb3 : Word)
+    (dividendAbsWord : EvmWord) :
+    Assertion.PCFree
+      (resultSignFixPost (sp + 32) sign limb0 limb1 limb2 limb3 **
+        saveRaDivCallBzeroResultSignFixFrame
+          vRa sp base divisorSign dividendAbsWord) :=
+  ⟨resultSignFixPost_bzeroResultSignFixFrame_pcFree⟩
+
+theorem resultSignFixPost_savedRaRetFrame_pcFree
+    {sp base divisorSign sign limb0 limb1 limb2 limb3 : Word}
+    {dividendAbsWord : EvmWord} :
+    (resultSignFixPost (sp + 32) sign limb0 limb1 limb2 limb3 **
+      saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord).pcFree := by
+  pcFree
+
+instance pcFreeInst_resultSignFixPost_savedRaRetFrame
+    (sp base divisorSign sign limb0 limb1 limb2 limb3 : Word)
+    (dividendAbsWord : EvmWord) :
+    Assertion.PCFree
+      (resultSignFixPost (sp + 32) sign limb0 limb1 limb2 limb3 **
+        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord) :=
+  ⟨resultSignFixPost_savedRaRetFrame_pcFree⟩
+
 end EvmAsm.Evm64.SDiv.Compose
