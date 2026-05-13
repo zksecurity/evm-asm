@@ -56,7 +56,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
           expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
             base a0 a1 a2 a3 squareW (expTwoMulIterCountNew iterCount = 0) h) := by
   intro bit squareW rw
-  rw [expTwoMulIterBaseFrame_unfold]
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
     (fun _ hp => by

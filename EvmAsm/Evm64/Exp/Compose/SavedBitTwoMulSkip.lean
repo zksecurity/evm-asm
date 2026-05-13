@@ -188,10 +188,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
     let bit := expTwoMulIterBit e
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let rest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
@@ -237,9 +234,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
       backOff base loopTarget hbase hmt hd hskip hback
   have hBaseFramePcFree : baseFrame.pcFree := by
     dsimp only [baseFrame]
-    exact pcFree_sepConj pcFree_memIs
-      (pcFree_sepConj pcFree_memIs
-        (pcFree_sepConj pcFree_memIs pcFree_memIs))
+    exact expTwoMulIterBaseFrame_pcFree
   have hf := cpsNBranchWithin_frameR hBaseFramePcFree h
   simpa [rest, expTwoMulSkipLoopRest_unfold] using
     (cpsNBranchWithin_weaken_pre

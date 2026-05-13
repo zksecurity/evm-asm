@@ -34,10 +34,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let skipRest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
@@ -116,7 +113,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
               expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame)] := by
     exact cpsNBranchWithin_weaken_pre
       (fun _ hp => by
-        dsimp [condFrame, baseFrame] at hp ⊢
+        simp [condFrame, baseFrame, expTwoMulIterBaseFrame_unfold] at hp ⊢
         xperm_hyp hp) hCondFramed
   have hFull :=
     cpsNBranchWithin_extend_head_nbranch hSkip hCondHead
@@ -145,10 +142,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let skipRest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
@@ -250,10 +244,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let skipRest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
@@ -327,10 +318,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let skipRest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
@@ -500,10 +488,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
     let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
+      expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
     let skipRest : Assertion :=
       expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
