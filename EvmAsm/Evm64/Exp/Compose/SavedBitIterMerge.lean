@@ -90,4 +90,46 @@ theorem exp_two_mul_named_iter_with_continuations_max_spec_within
       (cpsTripleWithin_mono_nSteps (Nat.le_max_left nLoop nExit) hLoop)
       (cpsTripleWithin_mono_nSteps (Nat.le_max_right nLoop nExit) hExit)
 
+/-- Bounded variant of
+    `exp_two_mul_named_iter_with_continuations_max_spec_within`. This lets the
+    future 256-step induction use a closed-form loop bound while each branch
+    continuation keeps its natural local bound. -/
+theorem exp_two_mul_named_iter_with_continuations_bounded_spec_within
+    {nLoop nExit nBound : Nat} {exit_ : Word} {R : Assertion}
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 : Word)
+    (base : Word)
+    (hbase : base &&& 1 = 0)
+    (hBound :
+      ((((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2)) +
+        max nLoop nExit) ≤ nBound) :
+    let bit := e >>> (63 : BitVec 6).toNat
+    let w := expResultWord r0 r1 r2 r3
+    let aw := expResultWord a0 a1 a2 a3
+    let rw := (w * w) * aw
+    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
+    (cpsTripleWithin nLoop (base + 28) exit_
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost iterCountNew bit sp evmSp base
+        a0 a1 a2 a3 w rw)
+      R) →
+    (cpsTripleWithin nExit (base + 264) exit_
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterExitPost iterCountNew bit sp evmSp base
+        a0 a1 a2 a3 w rw)
+      R) →
+    cpsTripleWithin nBound
+      (base + 28)
+      exit_
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      R := by
+  intro bit w aw rw iterCountNew hLoop hExit
+  exact
+    cpsTripleWithin_mono_nSteps hBound
+      (exp_two_mul_named_iter_with_continuations_max_spec_within
+        e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+        e0 e1 e2 e3 a0 a1 a2 a3 base hbase hLoop hExit)
+
 end EvmAsm.Evm64.Exp.Compose
