@@ -4,8 +4,9 @@
   Stack-entry folding lemmas for the SDIV div-call dispatch composition.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCall
-import EvmAsm.Evm64.SDiv.Compose.Words
+import EvmAsm.Evm64.SDiv.Compose.DivCallPreView
+import EvmAsm.Evm64.Stack
+import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
