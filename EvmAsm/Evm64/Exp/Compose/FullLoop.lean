@@ -37,9 +37,6 @@ theorem evmExpWithMulCode_mul_sub {base mulTarget : Word}
   unfold evmExpWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
-abbrev expCondMulRw (r : EvmWord) (a0 a1 a2 a3 : Word) : EvmWord :=
-  r * expResultWord a0 a1 a2 a3
-
 abbrev expCondMulRwFromLimbs
     (r0 r1 r2 r3 a0 a1 a2 a3 : Word) : EvmWord :=
   expCondMulCallProductW r0 r1 r2 r3 a0 a1 a2 a3
