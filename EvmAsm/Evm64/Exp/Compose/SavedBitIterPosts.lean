@@ -302,7 +302,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -327,17 +326,17 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
        expTwoMulIterBaseFrame evmSp a0 a1 a2 a3)
       loopTarget
         (fun h =>
-          expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
-            (iterCountNew ≠ 0) h ∨
-          expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
-            (iterCountNew ≠ 0) h)
+          expTwoMulIterCondPost (expTwoMulIterCountNew iterCount) bit sp evmSp
+            base a0 a1 a2 a3 rw (expTwoMulIterCountNew iterCount ≠ 0) h ∨
+          expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
+            base a0 a1 a2 a3 w (expTwoMulIterCountNew iterCount ≠ 0) h)
       (base + 264)
         (fun h =>
-          expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
-            (iterCountNew = 0) h ∨
-          expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
-            (iterCountNew = 0) h) := by
-  intro bit w aw rw iterCountNew
+          expTwoMulIterCondPost (expTwoMulIterCountNew iterCount) bit sp evmSp
+            base a0 a1 a2 a3 rw (expTwoMulIterCountNew iterCount = 0) h ∨
+          expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
+            base a0 a1 a2 a3 w (expTwoMulIterCountNew iterCount = 0) h) := by
+  intro bit w aw rw
   rw [expTwoMulIterBaseFrame_unfold]
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
