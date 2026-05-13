@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroStackTailViews
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Stack-entry view of the zero-divisor SDIV return path. The operands are
     supplied as EVM words in the caller-visible stack, while the scratch and
     saved-register frame remains explicit for later top-level packaging. -/
@@ -25,7 +23,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_spec_in_sdi
     (hbz :
       sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
         (divisor.getLimbN 2) (divisor.getLimbN 3) = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
          (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **
@@ -56,8 +54,8 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_spec_in_sdi
          (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ carry3) **
          evmStackIs (sp + 32) ((0 : EvmWord) :: rest)) **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
-  exact cpsTripleWithin_weaken (fun h hp => by
-      let scratchFrame : Assertion :=
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun h hp => by
+      let scratchFrame : EvmAsm.Rv64.Assertion :=
         ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
          EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
            shiftMem nMem jMem retMem dMem dloMem scratchUn0)
