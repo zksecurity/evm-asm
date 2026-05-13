@@ -19,21 +19,25 @@ theorem exp_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base mulTarget target : Word)
     (htarget : ((base + 256) + 4 : Word) + signExtend13 backOff = target) :
-    let cNew := c + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin 2 (base + 256)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
-      target ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew ≠ 0⌝)
-      (base + 264) ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew = 0⌝) := by
+      target
+        ((.x9 ↦ᵣ expTwoMulIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) **
+          ⌜expTwoMulIterCountNew c ≠ 0⌝)
+      (base + 264)
+        ((.x9 ↦ᵣ expTwoMulIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) **
+          ⌜expTwoMulIterCountNew c = 0⌝) := by
   have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 256)
     target htarget
   have hnext : ((base + 256 : Word) + 8) = base + 264 := by bv_omega
   rw [hnext] at h
-  exact cpsBranchWithin_extend_code (h := h)
-    (hmono := fun a i hi =>
-      evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
-        (evmExpMsbSavedBitTwoMulCode_iter_loop_back_sub a i hi))
+  simpa [expTwoMulIterCountNew] using
+    (cpsBranchWithin_extend_code (h := h)
+      (hmono := fun a i hi =>
+        evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
+          (evmExpMsbSavedBitTwoMulCode_iter_loop_back_sub a i hi)))
 
 /-- Zero-bit path through the two-MUL-offset saved-bit BEQ, followed by the
     loop-back counter update.  The nonzero conditional-multiply path is left
