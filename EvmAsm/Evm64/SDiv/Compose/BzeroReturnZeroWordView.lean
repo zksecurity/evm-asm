@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroReturnNormalizedView
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Zero-divisor SDIV path through return, with the result stack word exposed

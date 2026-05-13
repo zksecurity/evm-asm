@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroReturnViews
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Framed variant of the SDIV zero-divisor return path that preserves the

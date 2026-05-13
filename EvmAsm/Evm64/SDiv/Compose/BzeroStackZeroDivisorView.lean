@@ -8,7 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroStackEntryViews
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Caller-visible zero-divisor specialization of the SDIV bzero stack-entry
