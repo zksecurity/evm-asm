@@ -150,7 +150,6 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
             (mul_callable_code mulTarget)) :
     let aw := expResultWord a0 a1 a2 a3
     let rw := r * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -181,23 +180,23 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
         base mulTarget squaringMulOff condMulOff)
       foldedPre
       [(base + 28,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] := by
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] := by
   have hback :
       ((base + 256) + 4 : Word) +
           signExtend13 EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff =
         base + 28 := by
     exact EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBack_target base
-  exact
-    exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_folded_owned_spec_within
+  simpa [expTwoMulIterCountNew] using
+    (exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_folded_owned_spec_within
       iterCount sp evmSp vOld a0 a1 a2 a3 mulTarget r
       squaringMulOff condMulOff
       EvmAsm.Evm64.canonicalExpCondMulSkipOff
       EvmAsm.Evm64.canonicalExpMsbSavedBitLoopBackOff
-      base (base + 28) hbase hmt hd hback
+      base (base + 28) hbase hmt hd hback)
 
 /-- Appended-MUL canonical-code view of the folded-word conditional-multiply
     path followed by loop-back to the saved-bit iteration entry. -/
@@ -207,7 +206,6 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
     (hbase : base &&& 1 = 0) :
     let aw := expResultWord a0 a1 a2 a3
     let rw := r * aw
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -237,11 +235,11 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       foldedPre
       [(base + 28,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest)),
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest)),
         (base + 264,
-          (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest))] :=
+          (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest))] :=
   exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_folded_owned_spec_within
     iterCount sp evmSp vOld a0 a1 a2 a3 (base + 304) r
     EvmAsm.Evm64.canonicalExpSquaringMulOff
