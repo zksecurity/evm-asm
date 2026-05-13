@@ -116,6 +116,42 @@ theorem expCondMulFoldedConcretePre_unfold
   delta expCondMulFoldedConcretePre
   rfl
 
+@[irreducible]
+def expCondMulCallScratchPre
+    (iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3
+      e0 e1 e2 e3 : Word) : Assertion :=
+  (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+  ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+  ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+  ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+  ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+  expTwoMulIterBaseFrame evmSp a0 a1 a2 a3 **
+  (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) ** (.x0 ↦ᵣ (0 : Word))
+
+theorem expCondMulCallScratchPre_unfold
+    {iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3
+      e0 e1 e2 e3 : Word} :
+    expCondMulCallScratchPre
+      iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3
+      e0 e1 e2 e3 =
+      (((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+       ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+       ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+       ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+       expTwoMulIterBaseFrame evmSp a0 a1 a2 a3 **
+       (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) ** (.x0 ↦ᵣ (0 : Word)))) := by
+  delta expCondMulCallScratchPre
+  rfl
+
 /-- Taken conditional-multiply block followed by the loop-back counter update
     under the two-MUL-offset saved-bit EXP+MUL code bundle. -/
 theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
@@ -212,25 +248,11 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
             (mul_callable_code mulTarget))
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let rw := expTwoMulCondRwFromLimbs r0 r1 r2 r3 a0 a1 a2 a3
-    let preCore : Assertion :=
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
-      ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-      ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-      ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-      ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-      ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
-      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
-      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
-      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
-      (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) ** (.x0 ↦ᵣ (0 : Word))
     cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
-      (preCore **
+      (expCondMulCallScratchPre iterCount sp evmSp tOld vOld
+       r0 r1 r2 r3 a0 a1 a2 a3 e0 e1 e2 e3 **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24))
@@ -242,7 +264,10 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount = 0⌝) **
             expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw))] := by
-  intro rw preCore
+  intro rw
+  let preCore : Assertion :=
+    expCondMulCallScratchPre iterCount sp evmSp tOld vOld
+      r0 r1 r2 r3 a0 a1 a2 a3 e0 e1 e2 e3
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
     (r := .x6)
     (P := preCore ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
@@ -306,7 +331,8 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
       base loopTarget hbase hmt hd hback
   exact cpsNBranchWithin_weaken_pre
     (fun _ hp => by
-      dsimp [preCore] at hp ⊢
+      simp [preCore, expCondMulCallScratchPre_unfold,
+        expTwoMulIterBaseFrame_unfold] at hp ⊢
       have hSp0 : (sp + signExtend12 0#12 : Word) = sp := by
         unfold signExtend12; bv_decide
       have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := by
@@ -430,7 +456,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
       (cpsNBranchWithin_weaken_pre
         (fun _ hp => by
           simp [expCondMulFoldedConcretePre_unfold,
-            expTwoMulIterBaseFrame_unfold] at hp ⊢
+            expCondMulCallScratchPre_unfold, expTwoMulIterBaseFrame_unfold] at hp ⊢
           xperm_hyp hp)
         hRaw)
   refine cpsNBranchWithin_weaken_pre ?_ hConcrete
