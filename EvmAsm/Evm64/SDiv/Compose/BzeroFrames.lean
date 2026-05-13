@@ -12,35 +12,34 @@ import EvmAsm.Evm64.Stack
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Frame left around the result-sign-fix precondition after the SDIV prefix
     and zero-divisor unsigned-DIV callable have run. -/
 @[irreducible]
 def saveRaDivCallBzeroResultSignFixFrame
-    (vRa sp base divisorSign : Word) (dividendAbsWord : EvmWord) : Assertion :=
-  regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+    (vRa sp base divisorSign : Word) (dividendAbsWord : EvmWord) : EvmAsm.Rv64.Assertion :=
+  EvmAsm.Rv64.regOwn .x2 ** EvmAsm.Rv64.regOwn .x5 ** EvmAsm.Rv64.regOwn .x6 **
   evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
   (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
   (.x9 ↦ᵣ divisorSign) **
-  (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))
+  (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))
 
 theorem saveRaDivCallBzeroResultSignFixFrame_unfold
     {vRa sp base divisorSign : Word} {dividendAbsWord : EvmWord} :
     saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord =
-      (regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+      (EvmAsm.Rv64.regOwn .x2 ** EvmAsm.Rv64.regOwn .x5 ** EvmAsm.Rv64.regOwn .x6 **
        evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
        (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
        (.x9 ↦ᵣ divisorSign) **
-       (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) := by
+       (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) := by
   delta saveRaDivCallBzeroResultSignFixFrame
   rfl
 
 /-- Frame remaining after exposing `x18` for the saved-RA return. -/
 @[irreducible]
 def saveRaDivCallBzeroSavedRaRetFrame
-    (sp base divisorSign : Word) (dividendAbsWord : EvmWord) : Assertion :=
-  regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+    (sp base divisorSign : Word) (dividendAbsWord : EvmWord) : EvmAsm.Rv64.Assertion :=
+  EvmAsm.Rv64.regOwn .x2 ** EvmAsm.Rv64.regOwn .x5 ** EvmAsm.Rv64.regOwn .x6 **
   evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
   (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
   (.x9 ↦ᵣ divisorSign)
@@ -48,7 +47,7 @@ def saveRaDivCallBzeroSavedRaRetFrame
 theorem saveRaDivCallBzeroSavedRaRetFrame_unfold
     {sp base divisorSign : Word} {dividendAbsWord : EvmWord} :
     saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord =
-      (regOwn .x2 ** regOwn .x5 ** regOwn .x6 **
+      (EvmAsm.Rv64.regOwn .x2 ** EvmAsm.Rv64.regOwn .x5 ** EvmAsm.Rv64.regOwn .x6 **
        evmWordIs sp dividendAbsWord ** EvmAsm.Evm64.divScratchOwnCall sp **
        (.x1 ↦ᵣ ((base + divCallOff) + 4)) **
        (.x9 ↦ᵣ divisorSign)) := by
@@ -60,7 +59,7 @@ theorem saveRaDivCallBzeroSavedRaRetFrame_unfold
 theorem saveRaDivCallBzeroResultSignFixFrame_to_savedRaRet
     {vRa sp base divisorSign : Word} {dividendAbsWord : EvmWord} :
     saveRaDivCallBzeroResultSignFixFrame vRa sp base divisorSign dividendAbsWord =
-      ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+      ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord) := by
   rw [saveRaDivCallBzeroResultSignFixFrame_unfold,
     saveRaDivCallBzeroSavedRaRetFrame_unfold]
