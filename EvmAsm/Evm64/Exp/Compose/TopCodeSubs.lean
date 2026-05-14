@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.Base
+import EvmAsm.Evm64.Exp.Compose.EvmExpCode
 
 namespace EvmAsm.Evm64.Exp.Compose
 
