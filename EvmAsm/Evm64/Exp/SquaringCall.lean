@@ -34,7 +34,7 @@ import EvmAsm.Evm64.Exp.LimbSpec
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq Program seq)
 
 /-- 4-block `unionAll` decomposition of `exp_squaring_call_block mulOff`. The
     four sub-blocks live at offsets 0 / 32 / 64 / 68 from `base` and total
