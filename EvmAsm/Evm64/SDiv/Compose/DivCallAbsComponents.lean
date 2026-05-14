@@ -72,6 +72,54 @@ theorem sdivAbsDivisorWord_eq_components
         | 3 => sdivAbsSum3 limb0 limb1 limb2 top := by
   rfl
 
+theorem sdivAbsDividendWord_evmWordIs_sp_components
+    (sp limb0 limb1 limb2 top : Word) :
+    evmWordIs sp (sdivAbsDividendWord limb0 limb1 limb2 top) =
+      ((sp ↦ₘ sdivAbsSum0 limb0 top) **
+       ((sp + 8) ↦ₘ sdivAbsSum1 limb0 limb1 top) **
+       ((sp + 16) ↦ₘ sdivAbsSum2 limb0 limb1 limb2 top) **
+       ((sp + 24) ↦ₘ sdivAbsSum3 limb0 limb1 limb2 top)) := by
+  rw [sdivAbsDividendWord_eq_components]
+  exact evmWordIs_sp_limbs_eq sp _ _ _ _ _
+    EvmWord.getLimbN_fromLimbs_0
+    EvmWord.getLimbN_fromLimbs_1
+    EvmWord.getLimbN_fromLimbs_2
+    EvmWord.getLimbN_fromLimbs_3
+
+theorem sdivAbsDividendWord_evmWordIs_sp_components_right
+    (sp limb0 limb1 limb2 top : Word) (Q : Assertion) :
+    ((sp ↦ₘ sdivAbsSum0 limb0 top) **
+     ((sp + 8) ↦ₘ sdivAbsSum1 limb0 limb1 top) **
+     ((sp + 16) ↦ₘ sdivAbsSum2 limb0 limb1 limb2 top) **
+     ((sp + 24) ↦ₘ sdivAbsSum3 limb0 limb1 limb2 top) ** Q) =
+      (evmWordIs sp (sdivAbsDividendWord limb0 limb1 limb2 top) ** Q) := by
+  rw [sdivAbsDividendWord_evmWordIs_sp_components]
+  rw [sepConj_assoc', sepConj_assoc', sepConj_assoc']
+
+theorem sdivAbsDivisorWord_evmWordIs_sp32_components
+    (sp limb0 limb1 limb2 top : Word) :
+    evmWordIs (sp + 32) (sdivAbsDivisorWord limb0 limb1 limb2 top) =
+      (((sp + 32) ↦ₘ sdivAbsSum0 limb0 top) **
+       ((sp + 40) ↦ₘ sdivAbsSum1 limb0 limb1 top) **
+       ((sp + 48) ↦ₘ sdivAbsSum2 limb0 limb1 limb2 top) **
+       ((sp + 56) ↦ₘ sdivAbsSum3 limb0 limb1 limb2 top)) := by
+  rw [sdivAbsDivisorWord_eq_components]
+  exact evmWordIs_sp32_limbs_eq sp _ _ _ _ _
+    EvmWord.getLimbN_fromLimbs_0
+    EvmWord.getLimbN_fromLimbs_1
+    EvmWord.getLimbN_fromLimbs_2
+    EvmWord.getLimbN_fromLimbs_3
+
+theorem sdivAbsDivisorWord_evmWordIs_sp32_components_right
+    (sp limb0 limb1 limb2 top : Word) (Q : Assertion) :
+    (((sp + 32) ↦ₘ sdivAbsSum0 limb0 top) **
+     ((sp + 40) ↦ₘ sdivAbsSum1 limb0 limb1 top) **
+     ((sp + 48) ↦ₘ sdivAbsSum2 limb0 limb1 limb2 top) **
+     ((sp + 56) ↦ₘ sdivAbsSum3 limb0 limb1 limb2 top) ** Q) =
+      (evmWordIs (sp + 32) (sdivAbsDivisorWord limb0 limb1 limb2 top) ** Q) := by
+  rw [sdivAbsDivisorWord_evmWordIs_sp32_components]
+  rw [sepConj_assoc', sepConj_assoc', sepConj_assoc']
+
 abbrev saveRaDivCallSignFrame
     (vRa resultSign divisorSign : Word) : EvmAsm.Rv64.Assertion :=
   ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
