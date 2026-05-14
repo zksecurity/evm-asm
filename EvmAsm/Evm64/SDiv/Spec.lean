@@ -201,6 +201,45 @@ theorem sdivResultSignFixedWord_eq_sdiv_of_negative_nonnegative
   · simp [hZero]
   · rw [if_neg hZero]
 
+/-- Exact-path SDIV result bridge for arbitrary operand signs.
+
+    This dispatches over the two extracted sign bits and reuses the four
+    sign-specific semantic bridges above. -/
+theorem sdivResultSignFixedWord_eq_sdiv
+    (dividend divisor : EvmWord) :
+    let dividendAbsWord :=
+      sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3)
+    let divisorAbsWord :=
+      sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3)
+    let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+    sdivResultSignFixedWord (dividend.getLimbN 3) (divisor.getLimbN 3)
+      (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
+      (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) =
+      EvmWord.sdiv dividend divisor := by
+  have hDividendSign :
+      dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word) ∨
+        dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word) := by
+    unfold EvmWord.getLimbN EvmWord.getLimb
+    bv_decide
+  have hDivisorSign :
+      divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word) ∨
+        divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word) := by
+    unfold EvmWord.getLimbN EvmWord.getLimb
+    bv_decide
+  rcases hDividendSign with hDividendSign | hDividendSign
+  · rcases hDivisorSign with hDivisorSign | hDivisorSign
+    · exact sdivResultSignFixedWord_eq_sdiv_of_nonnegative
+        dividend divisor hDividendSign hDivisorSign
+    · exact sdivResultSignFixedWord_eq_sdiv_of_nonnegative_negative
+        dividend divisor hDividendSign hDivisorSign
+  · rcases hDivisorSign with hDivisorSign | hDivisorSign
+    · exact sdivResultSignFixedWord_eq_sdiv_of_negative_nonnegative
+        dividend divisor hDividendSign hDivisorSign
+    · exact sdivResultSignFixedWord_eq_sdiv_of_negative
+        dividend divisor hDividendSign hDivisorSign
+
 /-- Top-level zero-divisor SDIV stack bridge with the concrete semantic
     zero-result stack shape.
 
