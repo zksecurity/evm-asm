@@ -9,7 +9,6 @@ import EvmAsm.Evm64.Exp.Compose.TopSquaringMarshalBlocks
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Conditional-multiply factor-1 marshal spec lifted to the top-level EXP

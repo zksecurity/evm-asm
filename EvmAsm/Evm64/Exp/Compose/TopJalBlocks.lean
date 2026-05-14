@@ -8,7 +8,6 @@ import EvmAsm.Evm64.Exp.Compose.TopCallSubs
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Squaring-call JAL spec lifted to the top-level EXP code bundle. -/

@@ -20,7 +20,6 @@ import EvmAsm.Evm64.Exp.SquaringCallSeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 end EvmAsm.Evm64.Exp.Compose

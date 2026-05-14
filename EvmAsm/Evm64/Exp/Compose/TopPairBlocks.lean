@@ -10,7 +10,6 @@ import EvmAsm.Evm64.Exp.SquaringCallSeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Squaring-call marshal prefix and JAL lifted to the top-level EXP code bundle. -/

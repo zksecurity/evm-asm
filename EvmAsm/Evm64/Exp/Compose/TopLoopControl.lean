@@ -8,7 +8,6 @@ import EvmAsm.Evm64.Exp.Compose.TopIterSubs
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Bit-test block lifted to the top-level EXP code bundle. -/

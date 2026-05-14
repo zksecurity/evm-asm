@@ -9,7 +9,6 @@ import EvmAsm.Evm64.Exp.Compose.TopLoopControl
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Squaring-call factor-1 marshal sub-block directly included in the
