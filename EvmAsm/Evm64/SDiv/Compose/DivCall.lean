@@ -9,7 +9,4 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallDispatchFrame
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 end EvmAsm.Evm64.SDiv.Compose

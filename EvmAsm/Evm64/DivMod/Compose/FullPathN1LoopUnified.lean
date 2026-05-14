@@ -182,6 +182,62 @@ private theorem evm_div_n1_loop_unified_inst
 
     hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2
 
+/-- No-NOP helper: instantiate unified n=1 loop with explicit normalized values. -/
+private theorem evm_div_n1_loop_unified_inst_noNop
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
+    (shift antiShift v0' v1' v2' v3' u0S u1S u2S u3S u4_s : Word)
+    (v10_val v11Old jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu_3 : bltu_3 = BitVec.ult u4_s v0')
+    (hbltu_2 : bltu_2 = BitVec.ult
+      (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1 v0')
+    (hbltu_1 : bltu_1 = BitVec.ult
+      (iterN1 bltu_2 v0' v1' v2' v3' u2S
+        (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+        (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
+      v0')
+    (hbltu_0 : bltu_0 = BitVec.ult
+      (iterN1 bltu_1 v0' v1' v2' v3' u1S
+        (iterN1 bltu_2 v0' v1' v2' v3' u2S
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2S
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2S
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.1
+        (iterN1 bltu_2 v0' v1' v2' v3' u2S
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.1
+          (iterN1 bltu_3 v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)).2.2.2.2.1).2.2.2.2.1).2.1
+      v0')
+    (hcarry2 : Carry2NzAll v0' v1' v2' v3') :
+    cpsTripleWithin 808 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopN1PreWithScratch sp jMem (1 : Word) shift u0S v10_val v11Old antiShift
+        v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)
+        u2S u1S u0S (0 : Word) (0 : Word) (0 : Word) (0 : Word)
+        retMem dMem dloMem scratch_un0)
+      (loopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)
+        u2S u1S u0S retMem dMem dloMem scratch_un0) :=
+  divK_loop_n1_unified_divCode_noNop bltu_3 bltu_2 bltu_1 bltu_0
+    sp jMem (1 : Word) shift u0S v10_val v11Old antiShift
+    v0' v1' v2' v3' u3S u4_s (0 : Word) (0 : Word) (0 : Word)
+    u2S u1S u0S (0 : Word) (0 : Word) (0 : Word) (0 : Word)
+    retMem dMem dloMem scratch_un0 base halign
+    hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2
+
 -- ============================================================================
 -- Double-addback unified preloop+loop composition (base → base+904)
 -- ============================================================================
@@ -288,8 +344,7 @@ theorem evm_div_n1_preloop_loop_unified_spec
     (fun h hq => by delta preloopN1UnifiedPost; xperm_hyp hq)
     hFull
 
-/-- Unified preloop+loop for n=1, using the no-NOP preloop code before extending
-    it back to `divCode` for composition with the existing unified loop. -/
+/-- Unified preloop+loop for n=1 over the no-NOP DIV code. -/
 theorem evm_div_n1_noNop_preloop_loop_unified_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old : Word)
@@ -307,7 +362,7 @@ theorem evm_div_n1_noNop_preloop_loop_unified_spec
       ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
       ((b2 <<< (((clzResult b0).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
       ((b3 <<< (((clzResult b0).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))) :
-    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 808) base (base + denormOff) (divCode base)
+    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 808) base (base + denormOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b0).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -331,21 +386,20 @@ theorem evm_div_n1_noNop_preloop_loop_unified_spec
        ((sp + signExtend12 3944) ↦ₘ scratch_un0))
       (preloopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
         retMem dMem dloMem scratch_un0) := by
-  -- 1. No-NOP pre-loop, extended back into the full `divCode` code request.
+  -- 1. No-NOP pre-loop.
   have hPreNoNop := evm_div_n1_to_loopSetup_spec_within_noNop sp base
     a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10
     q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7 nMem shiftMem
     hbnz hb3z hb2z hb1z hshift_nz
-  have hPre := cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode) hPreNoNop
   have hPreF := cpsTripleWithin_frameR
     ((.x11 ↦ᵣ v11Old) ** ((sp + signExtend12 3976) ↦ₘ jMem) **
      (sp + signExtend12 3968 ↦ₘ retMem) **
      (sp + signExtend12 3960 ↦ₘ dMem) **
      (sp + signExtend12 3952 ↦ₘ dloMem) **
      (sp + signExtend12 3944 ↦ₘ scratch_un0))
-    (by pcFree) hPre
-  -- 2. Existing unified loop: base+448 → base+904.
-  have hLoop := evm_div_n1_loop_unified_inst bltu_3 bltu_2 bltu_1 bltu_0 sp base
+    (by pcFree) hPreNoNop
+  -- 2. No-NOP unified loop: base+448 → base+904.
+  have hLoop := evm_div_n1_loop_unified_inst_noNop bltu_3 bltu_2 bltu_1 bltu_0 sp base
     (clzResult b0).1 (signExtend12 (0 : BitVec 12) - (clzResult b0).1)
     (b0 <<< (((clzResult b0).1).toNat % 64))
     ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
@@ -729,8 +783,7 @@ theorem evm_div_n1_full_unified_spec
         sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h hq)
     hFull
 
-/-- Full n=1 unified DIV path whose available no-NOP fragments are used before
-    extending back to `divCode` for the current public full-path boundary. -/
+/-- Full n=1 unified DIV path over the no-NOP DIV code. -/
 theorem evm_div_n1_noNop_full_unified_spec
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
     (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old : Word)
@@ -748,7 +801,7 @@ theorem evm_div_n1_noNop_full_unified_spec
       ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
       ((b2 <<< (((clzResult b0).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
       ((b3 <<< (((clzResult b0).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))) :
-    cpsTripleWithin 946 base (base + nopOff) (divCode base)
+    cpsTripleWithin 946 base (base + nopOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b0).2 >>> (63 : Nat)) **
        (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
@@ -781,9 +834,8 @@ theorem evm_div_n1_noNop_full_unified_spec
   have hshift_nz' : fullDivN1Shift b0 ≠ 0 := by
     rw [fullDivN1Shift_unfold]
     exact hshift_nz
-  have hBNoNop := evm_div_n1_denorm_epilogue_bundled_spec_noNop
+  have hB := evm_div_n1_denorm_epilogue_bundled_spec_noNop
     bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3 hshift_nz'
-  have hB := cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode) hBNoNop
   have hBF := cpsTripleWithin_frameR
     (fullDivN1Frame bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
       retMem dMem dloMem scratch_un0)
