@@ -8,9 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroHandoff
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
     using the sidecar dispatch-ready handoff above. This mirrors the named
     callable-post theorem in `DivCallDispatch.lean` without adding proof bulk
@@ -25,7 +22,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_named_post_from_han
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
+    EvmAsm.Rv64.cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
       base (base + resultSignFixOff) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
