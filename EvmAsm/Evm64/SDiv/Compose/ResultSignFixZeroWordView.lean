@@ -4,12 +4,11 @@
   Zero-word result-sign-fix view used by the SDIV zero-divisor path.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
+import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
 import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Postcondition view for the SDIV zero-divisor branch after result-sign
