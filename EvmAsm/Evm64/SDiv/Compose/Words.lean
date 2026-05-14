@@ -378,6 +378,48 @@ theorem sdivSignFixedWord_result_sign
     ((dividendTop >>> 63) ^^^ (divisorTop >>> 63))
     (sdivResultSign_bool dividendTop divisorTop) word
 
+/-- Same operand signs make SDIV result-sign fixup leave the unsigned
+    quotient word unchanged. -/
+theorem sdivSignFixedWord_same_sign
+    {dividendTop divisorTop : Word}
+    (h_sign :
+      dividendTop >>> (63 : BitVec 6).toNat =
+        divisorTop >>> (63 : BitVec 6).toNat)
+    (word : EvmWord) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    sdivSignFixedWord resultSign
+      (word.getLimbN 0) (word.getLimbN 1) (word.getLimbN 2) (word.getLimbN 3) =
+      word := by
+  dsimp at h_sign ⊢
+  have h_result :
+      (dividendTop >>> 63) ^^^ (divisorTop >>> 63) = 0 := by
+    bv_decide
+  rw [h_result]
+  exact sdivSignFixedWord_zero_sign word
+
+/-- Opposite operand signs make SDIV result-sign fixup compute the
+    two's-complement negation of the unsigned quotient word. -/
+theorem sdivSignFixedWord_opposite_sign
+    {dividendTop divisorTop : Word}
+    (h_sign :
+      dividendTop >>> (63 : BitVec 6).toNat ≠
+        divisorTop >>> (63 : BitVec 6).toNat)
+    (word : EvmWord) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    sdivSignFixedWord resultSign
+      (word.getLimbN 0) (word.getLimbN 1) (word.getLimbN 2) (word.getLimbN 3) =
+      ~~~word + 1 := by
+  dsimp at h_sign ⊢
+  have h_result :
+      (dividendTop >>> 63) ^^^ (divisorTop >>> 63) = 1 := by
+    bv_decide
+  rw [h_result]
+  exact sdivSignFixedWord_one_sign word
+
 /-- Equal SDIV operand sign bits make the result sign zero. -/
 theorem sdivResultSign_zero_of_eq
     {dividendTop divisorTop : Word}
