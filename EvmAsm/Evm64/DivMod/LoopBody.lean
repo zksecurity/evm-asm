@@ -1227,6 +1227,24 @@ theorem divK_beq_passthrough_within {carry : Word} (base : Word) (hne : carry �
       (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
     ntaken
 
+/-- No-NOP variant of `divK_beq_passthrough_within`. -/
+theorem divK_beq_passthrough_within_noNop {carry : Word} (base : Word) (hne : carry ≠ 0) :
+    cpsTripleWithin 1 (base + addbackBeqOff) (base + storeLoopOff) (divCode_noNop base)
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word))) := by
+  have hbeq := beq_spec_gen_within .x7 .x0 (8044 : BitVec 13) carry 0 (base + addbackBeqOff)
+  rw [lb_beq_back_ntaken] at hbeq
+  have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
+  have ntaken := cpsBranchWithin_ntakenPath hbeq_ext (fun hp hQt => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+    exact hne hpure)
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
+    ntaken
+
 private theorem lb_beq_back_taken {base : Word} :
     (base + addbackBeqOff : Word) + signExtend13 (8044 : BitVec 13) = base + addbackInitOff := by
   rv64_addr
