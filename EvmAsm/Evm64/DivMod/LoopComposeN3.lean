@@ -555,6 +555,71 @@ theorem divK_loop_n3_max_max_spec_within
       exact hp)
     (cpsTripleWithin_mono_nSteps (by decide) full)
 
+/-- No-NOP variant of `divK_loop_n3_max_max_spec_within`. -/
+theorem divK_loop_n3_max_max_spec_within_noNop
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig q1Old q0Old : Word)
+    (base : Word)
+    (hbltu_1 : ¬BitVec.ult u3 v2)
+    (hbltu_0 : ¬BitVec.ult (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.1 v2)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
+    cpsTripleWithin 304 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopN3Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig q1Old q0Old)
+      (loopN3MaxPost sp v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig) := by
+  delta loopN3Pre; simp only []
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+  have J1 := divK_loop_body_n3_max_unified_j1_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop q1Old base
+    hbltu_1
+    (hcarry2 (signExtend12 4095) u0 u1 u2 u3 uTop : isAddbackCarry2NzN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop)
+  intro_lets at J1
+  have J1f := cpsTripleWithin_frameR
+    (((u_base_0 + signExtend12 0) ↦ₘ u0Orig) ** (q_addr_0 ↦ₘ q0Old))
+    (by pcFree) J1
+  have J0 := divK_loop_body_n3_max_unified_j0_spec_within_noNop sp (1 : Word)
+    ((1 : Word) <<< (3 : BitVec 6).toNat) u_base_1 q_addr_1
+    ((mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
+    ((iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).1)
+    ((iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.1)
+    v0 v1 v2 v3
+    u0Orig
+    (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1
+    (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.1
+    (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.1
+    (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.1
+    q0Old base
+    hbltu_0
+    (hcarry2 (signExtend12 4095) u0Orig
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.1
+      (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.1)
+  intro_lets at J0
+  have J0f := cpsTripleWithin_frameR
+    (((u_base_1 + signExtend12 4064) ↦ₘ (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.2) **
+     (q_addr_1 ↦ₘ (iterN3Max v0 v1 v2 v3 u0 u1 u2 u3 uTop).1))
+    (by pcFree) J0
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by
+      delta loopIterPostN3Max loopExitPostN3 loopExitPost at hp
+      simp only [] at hp ⊢
+      have hj' := jpred_1
+      rw [hj', u_j1_0_eq_j0_4088, u_j1_4088_eq_j0_4080,
+          u_j1_4080_eq_j0_4072, u_j1_4072_eq_j0_4064] at hp
+      rw [sepConj_assoc'] at hp
+      xperm_chunked hp)
+    J1f J0f
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by
+      delta loopN3MaxPost
+      exact hp)
+    (cpsTripleWithin_mono_nSteps (by decide) full)
+
 -- ============================================================================
 -- Double-addback () two-iteration call×call composition
 -- Case-splits on j=1 borrow to use raw skip/beq specs, then composes with
