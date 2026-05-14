@@ -233,7 +233,7 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
     (hd : CodeReq.Disjoint
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) (base + 44) ((base + 44) + 104)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
@@ -252,13 +252,13 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro w
+  intro squareW
   have hbase' : (base + 44 : Word) &&& 1 = 0 := by bv_decide
   have hd_inner : CodeReq.Disjoint
       (exp_squaring_call_block_code (base + 44) mulOff)
@@ -300,7 +300,7 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
             (evmExpMsbSavedBitTwoMulCode
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) (base + 44) ((base + 44) + 104)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -320,13 +320,13 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro w
+  intro squareW
   have hbase' : (base + 44 : Word) &&& 1 = 0 := by bv_decide
   have hSquareSub : ∀ a i,
       exp_squaring_call_block_code (base + 44) squaringMulOff a = some i →
@@ -375,7 +375,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_m
             (evmExpMsbSavedBitCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -395,13 +395,13 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_m
        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld))
       ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro bit w
+  intro bit squareW
   have hPrefix := exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_with_mul_spec_within
     e c v10 v18 mulOff skipOff backOff base mulTarget
   have hPrefixFramed :=
@@ -460,7 +460,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
               base squaringMulOff condMulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsTripleWithin (3 + 1 + (17 + 64 + 9)) (base + 28) (base + 148)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -481,13 +481,13 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld))
       ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro bit w
+  intro bit squareW
   have hPrefix :=
     exp_msb_bit_test_then_save_bit_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c v10 v18 squaringMulOff condMulOff skipOff backOff base mulTarget
@@ -549,7 +549,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -573,8 +573,8 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
         ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
          (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
          (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-         (.x5 ↦ᵣ (w * w).getLimbN 3) **
-         evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+         (.x5 ↦ᵣ squareW.getLimbN 3) **
+         evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
          regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
          memOwn evmSp ** memOwn (evmSp + 8) **
          memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -583,17 +583,17 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_two_mul
         ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
          (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
          (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-         (.x5 ↦ᵣ (w * w).getLimbN 3) **
-         evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+         (.x5 ↦ᵣ squareW.getLimbN 3) **
+         evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
          regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
          memOwn evmSp ** memOwn (evmSp + 8) **
          memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
          (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro bit w
+  intro bit squareW
   let rest : Assertion :=
     (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-    (.x5 ↦ᵣ (w * w).getLimbN 3) **
-    evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+    (.x5 ↦ᵣ squareW.getLimbN 3) **
+    evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
     regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
     memOwn evmSp ** memOwn (evmSp + 8) **
     memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -644,7 +644,7 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mu
             (mul_callable_code mulTarget))
     (htarget : (base + 148 : Word) + signExtend13 skipOff = target) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     cpsBranchWithin (3 + 1 + (17 + 64 + 9) + 1) (base + 28)
       (evmExpMsbSavedBitWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10) ** (.x18 ↦ᵣ v18) **
@@ -667,8 +667,8 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mu
         ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
          (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
          (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-         (.x5 ↦ᵣ (w * w).getLimbN 3) **
-         evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+         (.x5 ↦ᵣ squareW.getLimbN 3) **
+         evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
          regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
          memOwn evmSp ** memOwn (evmSp + 8) **
          memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -677,17 +677,17 @@ theorem exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mu
         ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
          (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
          (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-         (.x5 ↦ᵣ (w * w).getLimbN 3) **
-         evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+         (.x5 ↦ᵣ squareW.getLimbN 3) **
+         evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
          regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
          memOwn evmSp ** memOwn (evmSp + 8) **
          memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
          (.x1 ↦ᵣ ((base + 44) + 68))) := by
-  intro bit w
+  intro bit squareW
   let rest : Assertion :=
     (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-    (.x5 ↦ᵣ (w * w).getLimbN 3) **
-    evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+    (.x5 ↦ᵣ squareW.getLimbN 3) **
+    evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
     regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
     memOwn evmSp ** memOwn (evmSp + 8) **
     memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -739,13 +739,13 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rest : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ (w * w).getLimbN 3) **
-      evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+      (.x5 ↦ᵣ squareW.getLimbN 3) **
+      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
       memOwn evmSp ** memOwn (evmSp + 8) **
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -772,8 +772,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
           ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
            (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
            (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-           (.x5 ↦ᵣ (w * w).getLimbN 3) **
-           evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+           (.x5 ↦ᵣ squareW.getLimbN 3) **
+           evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
            regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
            memOwn evmSp ** memOwn (evmSp + 8) **
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -784,7 +784,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_sa
         (base + 264,
           (((.x9 ↦ᵣ expIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expIterCountNew iterCount = 0⌝) ** rest))] := by
-  intro bit w rest
+  intro bit squareW rest
   have hBranch :=
     exp_msb_saved_bit_prefix_squaring_then_beq_evm_exp_msb_saved_bit_with_mul_spec_within
       e c v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
@@ -847,7 +847,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
-    let w := expTwoMulIterW r0 r1 r2 r3
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -857,8 +857,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ (w * w).getLimbN 3) **
-      evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+      (.x5 ↦ᵣ squareW.getLimbN 3) **
+      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
       memOwn evmSp ** memOwn (evmSp + 8) **
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -885,8 +885,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
           (((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
            (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
            (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-           (.x5 ↦ᵣ (w * w).getLimbN 3) **
-           evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+           (.x5 ↦ᵣ squareW.getLimbN 3) **
+           evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
            regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
            memOwn evmSp ** memOwn (evmSp + 8) **
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -897,7 +897,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
         (base + 264,
           ((((.x9 ↦ᵣ expIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expIterCountNew iterCount = 0⌝) ** rest) ** baseFrame))] := by
-  intro bit w baseFrame rest
+  intro bit squareW baseFrame rest
   have h :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
