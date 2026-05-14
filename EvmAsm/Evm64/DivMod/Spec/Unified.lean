@@ -171,6 +171,157 @@ theorem evm_div_bzero_stack_spec_within_dispatch_noNop_uni (sp base : Word)
         exact hq)
       hFramed
 
+/-- Framed zero-divisor DIV dispatcher post over `divCode_noNop`, before the
+    usual weakening to `divStackDispatchPost`. This keeps the incoming `x1`
+    value concrete for callable wrappers that need the following `ret` address
+    to remain visible. -/
+@[irreducible]
+def divBzeroDispatchPostPreservingX1Frame (sp : Word) (a b : EvmWord)
+    (v1 v2 v6 v7 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x5 ** regOwn .x10 **
+    (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+  ((.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+    (.x11 ↦ᵣ v11) ** evmWordIs sp a **
+    divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+
+theorem divBzeroDispatchPostPreservingX1Frame_unfold
+    {sp : Word} {a b : EvmWord} {v1 v2 v6 v7 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
+    divBzeroDispatchPostPreservingX1Frame sp a b v1 v2 v6 v7 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0 =
+      (((.x12 ↦ᵣ (sp + 32)) ** regOwn .x5 ** regOwn .x10 **
+        (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+       ((.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+        (.x11 ↦ᵣ v11) ** evmWordIs sp a **
+        divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratch_un0)) := by
+  delta divBzeroDispatchPostPreservingX1Frame
+  rfl
+
+theorem divStackDispatchPostNoX1_weaken_bzero_frame
+    (sp : Word) (a b : EvmWord)
+    {v1 v2 v6 v7 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
+    ∀ h,
+      (((.x12 ↦ᵣ (sp + 32)) **
+        (.x2 ↦ᵣ v2) ** regOwn .x5 ** (.x6 ↦ᵣ v6) **
+        (.x7 ↦ᵣ v7) ** regOwn .x10 ** (.x11 ↦ᵣ v11) **
+        (.x0 ↦ᵣ (0 : Word)) **
+        evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.div a b) **
+        divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratch_un0) **
+       (.x1 ↦ᵣ v1)) h →
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ v1)) h := by
+  intro h hp
+  rw [divStackDispatchPostNoX1_unfold]
+  apply sepConj_mono_left _ h hp
+  intro hLeft hpLeft
+  apply sepConj_mono_right
+  apply sepConj_mono (regIs_implies_regOwn .x2 (v := v2))
+  apply sepConj_mono_right
+  apply sepConj_mono (regIs_implies_regOwn .x6 (v := v6))
+  apply sepConj_mono (regIs_implies_regOwn .x7 (v := v7))
+  apply sepConj_mono_right
+  apply sepConj_mono (regIs_implies_regOwn .x11 (v := v11))
+  apply sepConj_mono_right
+  apply sepConj_mono_right
+  apply sepConj_mono_right
+  exact divScratchValuesCall_implies_divScratchOwnCall
+    sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
+      retMem dMem dloMem scratch_un0
+  exact hpLeft
+
+theorem divBzeroDispatchPostPreservingX1Frame_weaken_noX1
+    (sp : Word) (a b : EvmWord)
+    {v1 v2 v6 v7 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
+    ∀ h,
+      divBzeroDispatchPostPreservingX1Frame sp a b v1 v2 v6 v7 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0 h →
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ v1)) h := by
+  intro h hp
+  rw [divBzeroDispatchPostPreservingX1Frame_unfold] at hp
+  simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hp ⊢
+  exact divStackDispatchPostNoX1_weaken_bzero_frame
+    (sp := sp) (a := a) (b := b) h (by xperm_hyp hp)
+
+/-- Zero-divisor DIV dispatcher over `divCode_noNop`, preserving the exact
+    incoming `x1` value in a named framed postcondition. -/
+theorem evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_frame_uni
+    (sp base : Word)
+    (a b : EvmWord) (v1 v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPre sp a b
+        v1 v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divBzeroDispatchPostPreservingX1Frame sp a b v1 v2 v6 v7 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0) := by
+  let frame : Assertion :=
+    (.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+    (.x11 ↦ᵣ v11) ** evmWordIs sp a **
+    divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0
+  have hBzero :=
+    evm_div_bzero_stack_spec_within_noNop sp base a b v5 v10 hbz
+  have hFramed :
+      cpsTripleWithin (8 + 5) base (base + nopOff) (divCode_noNop base)
+        (((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
+          (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) b) ** frame)
+        ((((.x12 ↦ᵣ (sp + 32)) ** regOwn .x5 ** regOwn .x10 **
+          (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) ** frame)) :=
+    cpsTripleWithin_frameR frame (by
+      dsimp [frame]
+      rw [divScratchValuesCall_unfold]
+      pcFree) hBzero
+  exact cpsTripleWithin_mono_nSteps (by decide) <|
+    cpsTripleWithin_weaken
+      (fun _ hp => by
+        rw [divModStackDispatchPre_unfold] at hp
+        dsimp [frame]
+        simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢
+        exact hp)
+      (fun h hq => by
+        dsimp [frame] at hq
+        rw [divBzeroDispatchPostPreservingX1Frame_unfold]
+        simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hq ⊢
+        exact hq)
+      hFramed
+
+/-- Zero-divisor DIV dispatcher over `divCode_noNop`, preserving the exact
+    incoming `x1` value in the callable-ready post shape. -/
+theorem evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
+    (sp base : Word)
+    (a b : EvmWord) (v1 v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPre sp a b
+        v1 v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ v1)) := by
+  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun h hp =>
+    divBzeroDispatchPostPreservingX1Frame_weaken_noX1
+      (sp := sp) (a := a) (b := b) h hp)
+    (evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_frame_uni
+      sp base a b v1 v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz)
+
 theorem modStackDispatchPost_weaken_bzero_frame
     (sp : Word) (a b : EvmWord)
     {v1 v2 v6 v7 v11 : Word}

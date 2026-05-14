@@ -154,6 +154,65 @@ theorem exp_two_mul_full_loop_boundary_of_body_spec_within
       (by rfl)
       hLoop
 
+/-- Bounded-body variant of `exp_two_mul_full_loop_boundary_of_body_spec_within`.
+    This lets the future 256-iteration proof use any body proof whose bound is
+    no larger than the named full-loop body bound. -/
+theorem exp_two_mul_full_loop_boundary_of_bounded_body_spec_within
+    {nSteps : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : nSteps ≤ expTwoMulFullLoopBodyBound)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitPre sp evmSp iterCountNew tOld r0 r1 r2 r3
+          baseWord rest exitCond)) :
+    cpsTripleWithin expTwoMulFullLoopBoundaryBound base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  exact
+    exp_two_mul_full_loop_boundary_of_body_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 baseWord exponentWord rest exitCond base
+      (cpsTripleWithin_mono_nSteps hBound hLoop)
+
+/-- Closed-form bounded-body variant of
+    `exp_two_mul_full_loop_boundary_of_bounded_body_spec_within`. -/
+theorem exp_two_mul_full_loop_boundary_of_bounded_body_closed_bound_spec_within
+    {nSteps : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : nSteps ≤ 48384)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitPre sp evmSp iterCountNew tOld r0 r1 r2 r3
+          baseWord rest exitCond)) :
+    cpsTripleWithin 48401 base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hBoundNamed : nSteps ≤ expTwoMulFullLoopBodyBound := by
+    rw [expTwoMulFullLoopBodyBound_eq]
+    exact hBound
+  rw [← expTwoMulFullLoopBoundaryBound_eq]
+  exact
+    exp_two_mul_full_loop_boundary_of_bounded_body_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 baseWord exponentWord rest exitCond base
+      hBoundNamed hLoop
+
 /-- Closed-form variant of `exp_two_mul_full_loop_boundary_of_body_spec_within`.
     The future full-loop body proof can expose the concrete 256-iteration
     bound `48384`, and this wrapper packages the boundary at `48401`. -/

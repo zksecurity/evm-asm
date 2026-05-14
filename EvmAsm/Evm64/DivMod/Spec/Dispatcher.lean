@@ -67,6 +67,27 @@ theorem divStackDispatchPost_unfold {sp : Word} {a b : EvmWord} :
   delta divStackDispatchPost
   rfl
 
+/-- Final DIV stack-dispatch postcondition with `x1` omitted from the generic
+    owned-register frame. Callable wrappers use this shape when they need to
+    preserve the exact return address for the following `cc_ret`. -/
+@[irreducible]
+def divStackDispatchPostNoX1 (sp : Word) (a b : EvmWord) : Assertion :=
+  (.x12 ↦ᵣ (sp + 32)) ** regOwn .x2 **
+  regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+  regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
+  evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.div a b) **
+  divScratchOwnCall sp
+
+theorem divStackDispatchPostNoX1_unfold {sp : Word} {a b : EvmWord} :
+    divStackDispatchPostNoX1 sp a b =
+    ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x2 **
+     regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+     regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
+     evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.div a b) **
+     divScratchOwnCall sp) := by
+  delta divStackDispatchPostNoX1
+  rfl
+
 theorem divStackDispatchPost_weaken
     (sp : Word) (a b : EvmWord)
     {v1 v2 v5 v6 v7 v10 v11 : Word}

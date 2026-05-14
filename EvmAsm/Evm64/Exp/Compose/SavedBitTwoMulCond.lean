@@ -4,6 +4,7 @@
   Two-MUL-offset saved-bit EXP conditional-multiply path composition.
 -/
 
+import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulSkip
 
 namespace EvmAsm.Evm64.Exp.Compose
