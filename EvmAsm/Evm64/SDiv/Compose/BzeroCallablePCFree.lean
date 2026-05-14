@@ -4,12 +4,9 @@
   PC-free instance for the zero-divisor SDIV callable post bundle.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BzeroFramePCFree
+import EvmAsm.Evm64.SDiv.Compose.BzeroCallablePost
 
 namespace EvmAsm.Evm64.SDiv.Compose
-
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 theorem saveRaDivCallBzeroCallablePost_pcFree
     {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -27,7 +24,7 @@ theorem saveRaDivCallBzeroCallablePost_pcFree
 instance pcFreeInst_saveRaDivCallBzeroCallablePost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (saveRaDivCallBzeroCallablePost vRa sp base
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
         divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=

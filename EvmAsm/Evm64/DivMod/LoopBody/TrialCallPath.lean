@@ -109,4 +109,75 @@ theorem divK_trial_call_path_spec_within
     (fun h hq => by xperm_hyp hq)
     full
 
+/-- Trial call path over `divCode_noNop`: JAL x2 560 (instr [16]) + div128
+    subroutine. -/
+theorem divK_trial_call_path_spec_within_noNop
+    (sp j uLo uHi vTop vtopBase : Word) (base : Word)
+    (v2Old v11Old : Word)
+    (retMem dMem dloMem un0Mem : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff) :
+    cpsTripleWithin 52 (base + trialJalOff) (base + div128CallRetOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+       (.x2 ↦ᵣ v2Old) ** (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      (div128SpecPost sp (base + div128CallRetOff) vTop uLo uHi) := by
+  unfold div128SpecPost
+  let dHi := vTop >>> (32 : BitVec 6).toNat
+  let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let un1 := uLo >>> (32 : BitVec 6).toNat
+  let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu uHi dHi
+  let rhat := uHi - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let cu_rhat_un1 := (rhat' <<< (32 : BitVec 6).toNat) ||| un1
+  let cu_q1_dlo := q1' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let q0Dlo := q0c * dLo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0
+  let x7Exit := if rhat2cHi = 0 then q0Dlo else un21
+  let x1Exit := if rhat2cHi = 0 then rhat2Un0 else rhat2cHi
+  let q := (q1' <<< (32 : BitVec 6).toNat) ||| q0'
+  have J := jal_spec_within .x2 v2Old (560 : BitVec 21) (base + trialJalOff) (by nofun)
+  rw [lb_jal_target, lb_jal_ret] at J
+  have Je := cpsTripleWithin_extend_code (hmono :=
+    lb_sub_noNop 16 _ _ (by decide) (by bv_addr) (by decide)) J
+  have D := div128_spec_within_noNop sp (base + div128CallRetOff) vTop uLo uHi base
+    j vtopBase v11Old retMem dMem dloMem un0Mem
+    halign
+  unfold div128SpecPost at D
+  have Jf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+     (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) Je
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) Jf D
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
 end EvmAsm.Evm64
