@@ -321,6 +321,54 @@ theorem divK_loop_body_n2_max_unified_j0_spec_within
         rw [← loopIterPostN2Max_skip hb]; exact hp)
       (J0 hborrow)
 
+/-- No-NOP variant of `divK_loop_body_n2_max_unified_j0_spec_within`. -/
+theorem divK_loop_body_n2_max_unified_j0_spec_within_noNop
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (base : Word)
+    (hbltu : ¬BitVec.ult u2 v1)
+    (hcarry2_nz : isAddbackCarry2NzN2Max v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 152 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (2 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop) **
+       (qAddr ↦ₘ qOld))
+      (loopIterPostN2Max sp (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase qAddr
+  by_cases hb : BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+  · have hborrow : (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+                    then (1 : Word) else 0) ≠ (0 : Word) := by rw [if_pos hb]; decide
+    have J0 := divK_loop_body_n2_max_addback_j0_beq_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
+      hbltu
+      hcarry2_nz
+    intro_lets at J0
+    exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+      (fun h hp => hp)
+      (fun h hp => by
+        rw [← loopIterPostN2Max_addback hb]; exact hp)
+      (J0 hborrow)
+  · have hborrow : (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+                    then (1 : Word) else 0) = (0 : Word) := if_neg hb
+    have J0 := divK_loop_body_n2_max_skip_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
+      hbltu
+    intro_lets at J0
+    exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+      (fun h hp => hp)
+      (fun h hp => by
+        rw [← loopIterPostN2Max_skip hb]; exact hp)
+      (J0 hborrow)
+
 -- ============================================================================
 -- Double-addback () unified per-iteration call-path specs
 -- Uses _beq LoopIter specs with borrow-branching loopIterPostN2Call.
