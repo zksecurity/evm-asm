@@ -246,6 +246,51 @@ theorem exp_two_mul_iterations_body_peel_with_continuations_spec_within
       (by
         rw [Nat.max_self, expTwoMulIterationsBodyBound_succ])
 
+/-- Closed-form variant of
+    `exp_two_mul_iterations_body_peel_with_continuations_spec_within`,
+    exposing each saved-bit two-MUL iteration as `189` steps. -/
+theorem exp_two_mul_iterations_body_peel_with_continuations_closed_bound_spec_within
+    (iterations : Nat)
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0) :
+    (cpsTripleWithin (iterations * 189)
+      (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    (cpsTripleWithin (iterations * 189)
+      (base + 264) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    cpsTripleWithin ((iterations + 1) * 189)
+      (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) := by
+  intro hLoop hExit
+  rw [← expTwoMulIterationsBodyBound_eq iterations] at hLoop hExit
+  rw [← expTwoMulIterationsBodyBound_eq (iterations + 1)]
+  exact
+    exp_two_mul_iterations_body_peel_with_continuations_spec_within
+      iterations
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+      base baseWord rest exitCond hbase hLoop hExit
+
 /-- Peel one named iteration from an `(iterations + 1)`-iteration body when
     the loop-back edge is packaged under the `iterations`-iteration tail
     bound and the exit edge is discharged by a zero-step assertion bridge. -/
@@ -348,6 +393,57 @@ theorem exp_two_mul_iterations_body_peel_with_exit_cases_spec_within
         · exact hCondExit hp hCond
         · exact hSkipExit hp hSkip)
 
+/-- Closed-form variant of
+    `exp_two_mul_iterations_body_peel_with_exit_cases_spec_within`. -/
+theorem exp_two_mul_iterations_body_peel_with_exit_cases_closed_bound_spec_within
+    (iterations : Nat)
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0)
+    (hCondExit :
+      ∀ hp,
+        expTwoMulIterCondPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp)
+    (hSkipExit :
+      ∀ hp,
+        expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp) :
+    (cpsTripleWithin (iterations * 189)
+      (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    cpsTripleWithin ((iterations + 1) * 189)
+      (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) := by
+  intro hLoop
+  rw [← expTwoMulIterationsBodyBound_eq iterations] at hLoop
+  rw [← expTwoMulIterationsBodyBound_eq (iterations + 1)]
+  exact
+    exp_two_mul_iterations_body_peel_with_exit_cases_spec_within
+      iterations
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+      base baseWord rest exitCond hbase hCondExit hSkipExit hLoop
+
 /-- Peel one named iteration from the 256-iteration body when both branch
     continuations are already packaged under the named 255-iteration tail
     bound. -/
@@ -387,6 +483,68 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
       (by
         rw [Nat.max_self]
         rw [← expTwoMulFullLoopBodyBound_eq_iter_plus_tail])
+
+/-- Closed-form variant of
+    `exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within`,
+    using the normalized 255-iteration tail bound `48195` and full-body bound
+    `48384`. -/
+theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_closed_bound_spec_within
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0) :
+    (cpsTripleWithin 48195 (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    (cpsTripleWithin 48195 (base + 264) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    cpsTripleWithin 48384 (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) := by
+  intro hLoop hExit
+  have hLoopNamed :
+      cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond) := by
+    rw [expTwoMulFullLoopBodyTailBound_eq]
+    exact hLoop
+  have hExitNamed :
+      cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 264) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond) := by
+    rw [expTwoMulFullLoopBodyTailBound_eq]
+    exact hExit
+  rw [← expTwoMulFullLoopBodyBound_eq]
+  exact
+    exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+      base baseWord rest exitCond hbase hLoopNamed hExitNamed
 
 /-- Peel one named iteration from the 256-iteration body with the loop-back
     continuation packaged under the named 255-iteration tail bound, reducing
@@ -438,6 +596,63 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_exit_cases_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
       base baseWord rest exitCond hbase hCondExit hSkipExit hLoop
+
+/-- Closed-form variant of
+    `exp_two_mul_full_loop_body_peel_tail_with_exit_cases_spec_within`. -/
+theorem exp_two_mul_full_loop_body_peel_tail_with_exit_cases_closed_bound_spec_within
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0)
+    (hCondExit :
+      ∀ hp,
+        expTwoMulIterCondPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp)
+    (hSkipExit :
+      ∀ hp,
+        expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp) :
+    (cpsTripleWithin 48195 (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    cpsTripleWithin 48384 (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) := by
+  intro hLoop
+  have hLoopNamed :
+      cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond) := by
+    rw [expTwoMulFullLoopBodyTailBound_eq]
+    exact hLoop
+  rw [← expTwoMulFullLoopBodyBound_eq]
+  exact
+    exp_two_mul_full_loop_body_peel_tail_with_exit_cases_spec_within
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+      base baseWord rest exitCond hbase hCondExit hSkipExit hLoopNamed
 
 /-- Closed-form bound variant of
     `exp_two_mul_named_iter_with_continuations_bounded_spec_within`, using the
