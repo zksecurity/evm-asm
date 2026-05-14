@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
+import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEpilogueBase
 import EvmAsm.Rv64.Tactics.XCancelStruct
 
 namespace EvmAsm.Evm64.Exp.Compose
