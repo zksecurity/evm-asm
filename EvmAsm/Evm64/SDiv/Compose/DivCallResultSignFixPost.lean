@@ -1,4 +1,5 @@
-import EvmAsm.Evm64.SDiv.Compose.DivCallDispatch
+import EvmAsm.Evm64.SDiv.Compose.BzeroFrames
+import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
