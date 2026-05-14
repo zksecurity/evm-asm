@@ -117,6 +117,27 @@ theorem sdivResultSign_fixZeroLimb3
   have h := sdivResultSign_fixZeroLimbs dividendTop divisorTop
   simpa using h.2.2.2
 
+/-- Word-shaped variant of `sdivResultSign_fixZeroLimb3`, matching callers that
+    have already rewritten a quotient word to `0 : EvmWord` but not yet
+    simplified its `getLimbN` projections. -/
+theorem sdivResultSign_fixZeroWordLimb3
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    let mask := (0 : Word) - resultSign
+    let sum0 := (((0 : EvmWord).getLimbN 0) ^^^ mask) + resultSign
+    let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+    let sum1 := (((0 : EvmWord).getLimbN 1) ^^^ mask) + carry0
+    let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+    let sum2 := (((0 : EvmWord).getLimbN 2) ^^^ mask) + carry1
+    let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+    let sum3 := (((0 : EvmWord).getLimbN 3) ^^^ mask) + carry2
+    sum3 = 0 := by
+  rw [EvmWord.getLimbN_zero 0, EvmWord.getLimbN_zero 1,
+    EvmWord.getLimbN_zero 2, EvmWord.getLimbN_zero 3]
+  exact sdivResultSign_fixZeroLimb3 dividendTop divisorTop
+
 /-- If the dividend sign bit is zero, the dividend absolute-value word is just
     the original four-limb word. -/
 theorem sdivAbsDividendWord_of_sign_zero
