@@ -9,7 +9,6 @@ import EvmAsm.Evm64.Exp.Compose.Base
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 theorem exp_loop_back_loop_spec_within (c : Word)

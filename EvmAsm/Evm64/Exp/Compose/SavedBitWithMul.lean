@@ -9,7 +9,6 @@ import EvmAsm.Evm64.Exp.Compose.FullLoop
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 /-- Code required by the corrected saved-bit EXP program plus the external

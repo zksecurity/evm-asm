@@ -44,6 +44,7 @@
 
 import EvmAsm.Evm64.DivMod.Compose
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN4
+import EvmAsm.Evm64.DivMod.Compose.FullPathN4NoNop
 -- `DivLimbBridge` reached transitively via `DivN4DoubleAddback →
 -- DivN4Overestimate → DivAccumulate → DivRemainderBound →
 -- DivAddbackLimb → DivMulSubLimb → DivLimbBridge`.
@@ -377,6 +378,75 @@ theorem evm_div_n4_full_max_skip_stack_pre_spec_bundled (sp base : Word)
     (fun _ hq => hq)
     h
 
+/-- No-NOP EvmWord-level wrapper around `evm_div_n4_full_max_skip_spec_noNop`.
+    Same shape as `evm_div_n4_full_max_skip_stack_pre_spec`, but over
+    `divCode_noNop`. -/
+theorem evm_div_n4_full_max_skip_stack_pre_spec_noNop (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11Old : Word)
+    (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
+     nMem shiftMem jMem : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isMaxTrialN4Evm a b)
+    (hborrow : isSkipBorrowN4MaxEvm a b) :
+    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 76 + 2 + 23 + 10)
+      base (base + nopOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       (.x2 ↦ᵣ (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)) **
+       (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11Old) **
+       evmWordIs sp a ** evmWordIs (sp + 32) b **
+       divScratchValues sp q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old
+         u5 u6 u7 shiftMem nMem jMem)
+      (fullDivN4MaxSkipPost sp
+        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) := by
+  have hbnz' : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0 :=
+    (EvmWord.ne_zero_iff_getLimbN_or).mp hbnz
+  have hraw := evm_div_n4_full_max_skip_spec_noNop sp base
+    (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+    (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
+    v5 v6 v7 v10 v11Old
+    q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
+    nMem shiftMem jMem
+    hbnz' hb3nz hshift_nz hbltu hborrow
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ rfl rfl rfl rfl,
+          evmWordIs_sp32_limbs_eq sp b _ _ _ _ rfl rfl rfl rfl,
+          divScratchValues_unfold] at hp
+      rw [word_add_zero]
+      xperm_hyp hp)
+    (fun _ hq => hq)
+    hraw
+
+/-- Bundled version of `evm_div_n4_full_max_skip_stack_pre_spec_noNop`. -/
+theorem evm_div_n4_full_max_skip_stack_pre_spec_bundled_noNop (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isMaxTrialN4Evm a b)
+    (hborrow : isSkipBorrowN4MaxEvm a b) :
+    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 76 + 2 + 23 + 10)
+      base (base + nopOff) (divCode_noNop base)
+      (divN4StackPre sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem)
+      (fullDivN4MaxSkipPost sp
+        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)) := by
+  have h := evm_div_n4_full_max_skip_stack_pre_spec_noNop sp base a b
+    v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem hbnz hb3nz hshift_nz hbltu hborrow
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by rw [divN4StackPre_unfold] at hp; exact hp)
+    (fun _ hq => hq)
+    h
+
 /-- Stack-level DIV spec for the zero divisor path: when b = 0, result is 0.
     Uses evmWordIs for the b-operand at sp+32. The a-operand at sp is untouched. -/
 theorem evm_div_bzero_stack_spec_within (sp base : Word)
@@ -613,6 +683,50 @@ theorem evm_div_n4_max_skip_stack_spec (sp base : Word)
                   hdiv0 hdiv1 hdiv2 hdiv3]]
   rw [divScratchValues_unfold]
   -- Normalize `sp + 0` on the hypothesis side to match the goal's `sp`.
+  rw [word_add_zero] at hq
+  xperm_hyp hq
+
+/-- No-NOP variant of `evm_div_n4_max_skip_stack_spec`.
+
+    This exposes the clean `divN4StackPre → divN4MaxSkipStackPost` shape over
+    `divCode_noNop`, for callers that replace the terminal NOP with an
+    explicit return instruction. -/
+theorem evm_div_n4_max_skip_stack_spec_noNop (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (hshift_nz : (clzResult (b.getLimbN 3)).1 ≠ 0)
+    (hbltu : isMaxTrialN4Evm a b)
+    (hborrow : isSkipBorrowN4MaxEvm a b)
+    (hsem : n4MaxSkipSemanticHolds a b) :
+    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 76 + 2 + 23 + 10)
+      base (base + nopOff) (divCode_noNop base)
+      (divN4StackPre sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem)
+      (divN4MaxSkipStackPost sp a b) := by
+  have h_pre := evm_div_n4_full_max_skip_stack_pre_spec_bundled_noNop sp base a b
+    v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 nMem shiftMem jMem
+    hbnz hb3nz hshift_nz hbltu hborrow
+  obtain ⟨hdiv0, hdiv1, hdiv2, hdiv3, _, _, _, _⟩ :=
+    n4_max_skip_div_mod_getLimbN a b hb3nz hsem
+  refine cpsTripleWithin_weaken (fun _ hp => hp) ?_ h_pre
+  intro h hq
+  simp only [fullDivN4MaxSkipPost_unfold, denormDivPost_unfold] at hq
+  apply div_n4_max_skip_stack_weaken sp a b h
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a.getLimbN 0) ** ((sp + 8) ↦ₘ a.getLimbN 1) **
+       ((sp + 16) ↦ₘ a.getLimbN 2) ** ((sp + 24) ↦ₘ a.getLimbN 3))
+      from evmWordIs_sp_unfold]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
+      (((sp + 32) ↦ₘ (signExtend12 4095 : Word)) **
+       ((sp + 40) ↦ₘ (0 : Word)) **
+       ((sp + 48) ↦ₘ (0 : Word)) **
+       ((sp + 56) ↦ₘ (0 : Word)))
+      from by rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+                  hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [divScratchValues_unfold]
   rw [word_add_zero] at hq
   xperm_hyp hq
 
