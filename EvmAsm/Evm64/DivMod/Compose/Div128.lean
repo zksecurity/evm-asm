@@ -45,6 +45,32 @@ private theorem d128_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
     (CodeReq.singleton_mono
       (CodeReq.ofProg_lookup (base + div128Off) divK_div128 k hk (by decide)) a i h)
 
+/-- The `divK_div128` subroutine block is present in the DIV no-NOP code
+    surface. This is the no-NOP counterpart of
+    `divK_div128_ofProg_sub_sharedCode`, exposed for downstream compositions
+    that cannot use `sharedDivModCode` because it still contains the old NOP
+    return slot. -/
+theorem divK_div128_ofProg_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.ofProg (base + div128Off) divK_div128) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left
+
+/-- Singleton-at-index helper for `divK_div128` over the DIV no-NOP code
+    surface. Mirrors `d128_sub` for future no-NOP `div128` composition. -/
+theorem d128_sub_noNop {base : Word} (k : Nat) (addr : Word) (instr : Instr)
+    (hk : k < divK_div128.length)
+    (h_addr : addr = (base + div128Off) + BitVec.ofNat 64 (4 * k))
+    (h_instr : divK_div128.get ⟨k, hk⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i →
+      (divCode_noNop base) a = some i := by
+  subst h_addr; subst h_instr
+  exact fun a i h => divK_div128_ofProg_sub_divCode_noNop a i
+    (CodeReq.singleton_mono
+      (CodeReq.ofProg_lookup (base + div128Off) divK_div128 k hk (by decide)) a i h)
+
 -- Abbreviation for repeated `by decide` / `by bv_addr` calls
 -- Each block's subsumption uses: CodeReq.union_sub (d128_sub ...) (CodeReq.union_sub ...)
 
