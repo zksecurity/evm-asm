@@ -40,6 +40,10 @@ theorem evmExpWithMulCode_mul_sub {base mulTarget : Word}
 abbrev expCondMulRw (r : EvmWord) (a0 a1 a2 a3 : Word) : EvmWord :=
   r * expResultWord a0 a1 a2 a3
 
+abbrev expSquareRw (r0 r1 r2 r3 : Word) : EvmWord :=
+  let w := expResultWord r0 r1 r2 r3
+  w * w
+
 /-- Lift a top-level EXP-body spec into the combined EXP+MUL code bundle. -/
 theorem cpsTripleWithin_extend_evmExpWithMulCode {nSteps : Nat}
     {entry exit_ base mulTarget : Word}
@@ -452,7 +456,7 @@ theorem exp_squaring_call_block_evm_exp_with_mul_spec_within
     (hd : CodeReq.Disjoint
             (evmExpCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let w := expResultWord r0 r1 r2 r3
+    let rw := expSquareRw r0 r1 r2 r3
     cpsTripleWithin (17 + 64 + 9) (base + 40) ((base + 40) + 104)
       (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
@@ -471,13 +475,13 @@ theorem exp_squaring_call_block_evm_exp_with_mul_spec_within
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ rw.getLimbN 3) **
+       evmWordIs sp rw ** evmWordIs (evmSp + 32) rw **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 40) + 68))) := by
-  intro w
+  intro rw
   have hbase' : (base + 40 : Word) &&& 1 = 0 := by bv_decide
   have hd_inner : CodeReq.Disjoint
       (exp_squaring_call_block_code (base + 40) mulOff)
