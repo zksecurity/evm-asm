@@ -52,6 +52,7 @@ import EvmAsm.Evm64.Exp.Compose.FullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopPrefix
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopSquaring
+import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopBranch
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopCanonical
 import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
@@ -65,6 +66,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulSkipCanonical
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCondCall
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCond
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCondCanonical
+import EvmAsm.Evm64.Exp.Compose.SavedBitIterPostDefs
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterPosts
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterPostPcFree
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterMerge
