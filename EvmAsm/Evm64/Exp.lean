@@ -54,6 +54,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopPrefix
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopSquaring
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopBranch
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
+import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopCanonicalPrefix
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopCanonical
 import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
