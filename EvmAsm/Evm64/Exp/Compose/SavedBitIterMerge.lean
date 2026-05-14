@@ -204,6 +204,46 @@ theorem exp_two_mul_full_loop_body_peel_with_continuations_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 base hbase hBound
 
+/-- Peel one named iteration from the 256-iteration body when both branch
+    continuations are already packaged under the named 255-iteration tail
+    bound. -/
+theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0) :
+    (cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulSquareW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    (cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 264) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulSquareW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond)) →
+    cpsTripleWithin expTwoMulFullLoopBodyBound (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) := by
+  exact
+    exp_two_mul_full_loop_body_peel_with_continuations_spec_within
+      e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+      base baseWord rest exitCond hbase
+      (by
+        rw [Nat.max_self]
+        rw [← expTwoMulFullLoopBodyBound_eq_iter_plus_tail])
+
 /-- Closed-form bound variant of
     `exp_two_mul_named_iter_with_continuations_bounded_spec_within`, using the
     normalized one-iteration cost `189`. -/
