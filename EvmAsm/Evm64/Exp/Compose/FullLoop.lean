@@ -40,6 +40,10 @@ theorem evmExpWithMulCode_mul_sub {base mulTarget : Word}
 abbrev expCondMulRw (r : EvmWord) (a0 a1 a2 a3 : Word) : EvmWord :=
   r * expResultWord a0 a1 a2 a3
 
+abbrev expCondMulRwFromLimbs
+    (r0 r1 r2 r3 a0 a1 a2 a3 : Word) : EvmWord :=
+  expCondMulRw (expResultWord r0 r1 r2 r3) a0 a1 a2 a3
+
 abbrev expSquareRw (r0 r1 r2 r3 : Word) : EvmWord :=
   let w := expResultWord r0 r1 r2 r3
   w * w
@@ -523,8 +527,7 @@ theorem exp_cond_mul_call_block_evm_exp_with_mul_spec_within
     (hd : CodeReq.Disjoint
             (evmExpCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
-    let r := expResultWord r0 r1 r2 r3
-    let rw := expCondMulRw r a0 a1 a2 a3
+    let rw := expCondMulRwFromLimbs r0 r1 r2 r3 a0 a1 a2 a3
     cpsTripleWithin (17 + 64 + 9) (base + 148) ((base + 148) + 104)
       (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
@@ -557,7 +560,7 @@ theorem exp_cond_mul_call_block_evm_exp_with_mul_spec_within
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 148) + 68))) := by
-  intro r rw
+  intro rw
   have hbase' : (base + 148 : Word) &&& 1 = 0 := by bv_decide
   -- Sub-sub: exp_cond_mul_call_block_code (base+148) ⊆ evmExpCode base
   -- via the with-skip block at base+144.
