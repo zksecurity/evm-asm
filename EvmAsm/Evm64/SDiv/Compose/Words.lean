@@ -372,6 +372,30 @@ theorem sdivAbsDividendWord_sign_split
   unfold sdivAbsDividendWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
   bv_decide
 
+/-- Nonnegative SDIV dividends are unchanged by absolute-value normalization. -/
+theorem sdivAbsDividendWord_zero_sign
+    {dividend : EvmWord}
+    (h_sign : dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = 0) :
+    sdivAbsDividendWord
+        (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3) =
+      dividend := by
+  rw [sdivAbsDividendWord_sign_split, if_pos h_sign]
+
+/-- Negative SDIV dividends normalize to their two's-complement negation. -/
+theorem sdivAbsDividendWord_one_sign
+    {dividend : EvmWord}
+    (h_sign : dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = 1) :
+    sdivAbsDividendWord
+        (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3) =
+      ~~~dividend + 1 := by
+  have h_not_zero :
+      dividend.getLimbN 3 >>> (63 : BitVec 6).toNat ≠ 0 := by
+    rw [h_sign]
+    decide
+  rw [sdivAbsDividendWord_sign_split, if_neg h_not_zero]
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
