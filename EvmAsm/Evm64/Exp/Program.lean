@@ -16,7 +16,8 @@ import Std.Tactic.BVDecide
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64 (ADDI ANDI BEQ BNE Instr JAL LD Program SD SLLI SRLI seq single)
+open EvmAsm.Rv64 (ADDI ANDI BEQ BNE Instr JAL LD Program SD SLLI SRLI seq single
+  signExtend13 signExtend21)
 
 -- ============================================================================
 -- Iteration sub-blocks (#92 slice 3a, beads evm-asm-dl98)
@@ -1077,30 +1078,30 @@ theorem canonicalExpCondMulSkip_target (base : Word) :
     (base + 148 : Word) + signExtend13 canonicalExpCondMulSkipOff =
       base + 256 := by
   rw [canonicalExpCondMulSkipOff_eq]
-  unfold signExtend13
-  bv_decide
+  have h : signExtend13 (108 : BitVec 13) = (108 : Word) := by decide
+  simp only [h]; bv_omega
 
 theorem canonicalExpMsbSavedBitLoopBack_target (base : Word) :
     ((base + 256) + 4 : Word) +
         signExtend13 canonicalExpMsbSavedBitLoopBackOff =
       base + 28 := by
   rw [canonicalExpMsbSavedBitLoopBackOff_eq]
-  unfold signExtend13
-  bv_decide
+  have h : signExtend13 ((-232 : BitVec 13)) = (18446744073709551384 : Word) := by decide
+  simp only [h]; bv_omega
 
 theorem canonicalExpSquaringMul_target (base : Word) :
     ((base + 44) + 64 : Word) + signExtend21 canonicalExpSquaringMulOff =
       base + 304 := by
   rw [canonicalExpSquaringMulOff_eq]
-  unfold signExtend21
-  bv_decide
+  have h : signExtend21 (196 : BitVec 21) = (196 : Word) := by decide
+  simp only [h]; bv_omega
 
 theorem canonicalExpCondMul_target (base : Word) :
     ((base + 152) + 64 : Word) + signExtend21 canonicalExpCondMulOff =
       base + 304 := by
   rw [canonicalExpCondMulOff_eq]
-  unfold signExtend21
-  bv_decide
+  have h : signExtend21 (88 : BitVec 21) = (88 : Word) := by decide
+  simp only [h]; bv_omega
 
 theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
     evm_exp_canonical mulOff =
