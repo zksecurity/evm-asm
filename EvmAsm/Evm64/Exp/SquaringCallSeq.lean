@@ -25,7 +25,9 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (Assertion CodeReq cpsTripleWithin cpsTripleWithin_extend_code
+  cpsTripleWithin_frameL cpsTripleWithin_frameR cpsTripleWithin_seq_perm_same_cr
+  cpsTripleWithin_weaken signExtend12 signExtend21)
 
 /-- Composition of the squaring marshal pair (factor1 ;; result_to_factor2,
     16 instr at offsets 0..32..64) and the squaring JAL (1 instr at offset 64),

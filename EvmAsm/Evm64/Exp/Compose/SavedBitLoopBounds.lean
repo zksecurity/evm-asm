@@ -32,6 +32,11 @@ abbrev expTwoMulBoundaryLoopBound (nSteps : Nat) : Nat :=
 abbrev expTwoMulFullLoopBodyBound : Nat :=
   256 * expTwoMulNamedIterStepBound
 
+/-- Remaining body bound after peeling one iteration from the 256-iteration
+    saved-bit two-MUL loop. -/
+abbrev expTwoMulFullLoopBodyTailBound : Nat :=
+  255 * expTwoMulNamedIterStepBound
+
 /-- Aggregate bound for the full saved-bit two-MUL loop including the
     prologue/pointer-advance and pointer-restore/epilogue boundary. -/
 abbrev expTwoMulFullLoopBoundaryBound : Nat :=
@@ -50,6 +55,17 @@ theorem expTwoMulBoundaryLoopBound_eq (nSteps : Nat) :
 theorem expTwoMulFullLoopBodyBound_eq :
     expTwoMulFullLoopBodyBound = 48384 := by
   norm_num [expTwoMulFullLoopBodyBound, expTwoMulNamedIterStepBound_eq]
+
+theorem expTwoMulFullLoopBodyTailBound_eq :
+    expTwoMulFullLoopBodyTailBound = 48195 := by
+  norm_num [expTwoMulFullLoopBodyTailBound, expTwoMulNamedIterStepBound_eq]
+
+/-- Peel the first named iteration from the 256-iteration body bound. -/
+theorem expTwoMulFullLoopBodyBound_eq_iter_plus_tail :
+    expTwoMulFullLoopBodyBound =
+      expTwoMulNamedIterStepBound + expTwoMulFullLoopBodyTailBound := by
+  norm_num [expTwoMulFullLoopBodyBound, expTwoMulFullLoopBodyTailBound,
+    expTwoMulNamedIterStepBound_eq]
 
 theorem expTwoMulFullLoopBoundaryBound_eq :
     expTwoMulFullLoopBoundaryBound = 48401 := by
