@@ -9,6 +9,38 @@ import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
+/-- Postcondition view for a general SDIV result-sign-fix output: the four
+    result memory cells fold into the named result-sign-fixed EVM word, while
+    the scratch registers remain exposed explicitly. -/
+theorem resultSignFixPost_sdivResultSign_word
+    (sp dividendTop divisorTop limb0 limb1 limb2 limb3 : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    let mask := (0 : Word) - resultSign
+    let sum0 := (limb0 ^^^ mask) + resultSign
+    let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+    let sum1 := (limb1 ^^^ mask) + carry0
+    let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+    let sum2 := (limb2 ^^^ mask) + carry1
+    let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+    let sum3 := (limb3 ^^^ mask) + carry2
+    let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
+    resultSignFixPost sp resultSign limb0 limb1 limb2 limb3 =
+      ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ resultSign) **
+       (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
+       evmWordIs sp
+        (sdivResultSignFixedWord dividendTop divisorTop limb0 limb1 limb2 limb3)) := by
+  dsimp only
+  rw [resultSignFixPost_unfold, evmWordIs_sp_unfold]
+  unfold sdivResultSignFixedWord
+  dsimp only
+  simp only [EvmAsm.Rv64.signExtend12_0, EvmAsm.Rv64.signExtend12_8,
+    EvmAsm.Rv64.signExtend12_16, EvmAsm.Rv64.signExtend12_24,
+    EvmWord.getLimbN_fromLimbs_gen_0, EvmWord.getLimbN_fromLimbs_gen_1,
+    EvmWord.getLimbN_fromLimbs_gen_2, EvmWord.getLimbN_fromLimbs_gen_3]
+  rw [show (sp + 0 : Word) = sp by bv_decide]
+
 /-- Postcondition view for the SDIV zero-divisor branch after result-sign
     fixup: conditional negation of the zero quotient is still the zero EVM
     word, with the sign-fix scratch registers exposed explicitly. -/
