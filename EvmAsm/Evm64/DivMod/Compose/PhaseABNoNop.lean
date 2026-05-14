@@ -440,6 +440,49 @@ theorem evm_div_phaseB_n4_spec_within_noNop (sp base : Word)
     (fun h hq => by xperm_chunked hq)
     hinit1fhinit2haddihbnehtail
 
+theorem evm_div_phaseAB_n4_spec_within_noNop (sp base : Word)
+    (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
+    (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3nz : b3 ≠ 0) :
+    cpsTripleWithin (8 + 21) base (base + clzOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b3) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ b1) ** (.x7 ↦ᵣ b2) **
+       ((sp + 32) ↦ₘ b0) **
+       ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (4 : Word))) := by
+  have hA := evm_div_phaseA_ntaken_spec_within_noNop sp base b0 b1 b2 b3 v5 v10 hbnz
+  have hAf := cpsTripleWithin_frameR
+    ((.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+     ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+     ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hA
+  have hB := evm_div_phaseB_n4_spec_within_noNop sp base b1 b2 b3
+    (b0 ||| b1 ||| b2 ||| b3) v6 v7 q0 q1 q2 q3 u5 u6 u7 nMem
+    hb3nz
+  have hBf := cpsTripleWithin_frameR
+    (((sp + 32) ↦ₘ b0))
+    (by pcFree) hB
+  have hAB := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_chunked hp) hAf hBf
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_chunked hp)
+    (fun h hq => by xperm_chunked hq)
+    hAB
+
 theorem evm_div_phaseAB_n1_spec_within_noNop (sp base : Word)
     (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
