@@ -44,6 +44,18 @@ theorem lb_sub {base : Word} (k : Nat) (addr : Word) (instr : Instr)
     (CodeReq.singleton_mono
       (CodeReq.ofProg_lookup (base + loopBodyOff) (divK_loopBody 560 7736) k hk (by decide)) a i h)
 
+/-- Helper: singleton at index k of divK_loopBody ⊆ divCode_noNop base. -/
+theorem lb_sub_noNop {base : Word} (k : Nat) (addr : Word) (instr : Instr)
+    (hk : k < (divK_loopBody 560 7736).length)
+    (h_addr : addr = (base + loopBodyOff) + BitVec.ofNat 64 (4 * k))
+    (h_instr : (divK_loopBody 560 7736).get ⟨k, hk⟩ = instr) :
+    ∀ a i, CodeReq.singleton addr instr a = some i →
+      (divCode_noNop base) a = some i := by
+  subst h_addr; subst h_instr
+  exact fun a i h => divK_loopBody_ofProg_sub_divCode_noNop a i
+    (CodeReq.singleton_mono
+      (CodeReq.ofProg_lookup (base + loopBodyOff) (divK_loopBody 560 7736) k hk (by decide)) a i h)
+
 /-- Helper: combine two subsumption proofs over a union. -/
 -- `CodeReq.union_sub` — use `CodeReq.union_sub` from `Rv64/SepLogic.lean` (shared).
 
