@@ -9,12 +9,10 @@ import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 theorem resultSignFix_spec_in_sdivCode
     (sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3 : Word)
     (base : Word) :
-    cpsTripleWithin 21 (base + resultSignFixOff)
+    EvmAsm.Rv64.cpsTripleWithin 21 (base + resultSignFixOff)
       ((base + resultSignFixOff) + 84) (sdivCode base)
       (resultSignFixPre sp sign maskOld valueOld carryOld
         limb0 limb1 limb2 limb3)
@@ -37,6 +35,6 @@ theorem resultSignFix_spec_in_sdivCode
       (base + resultSignFixOff) (by decide) (by decide) (by decide)
   rw [EvmAsm.Evm64.condNegate256BlockPre_unfold,
     EvmAsm.Evm64.condNegate256BlockPost_unfold] at hSpec
-  exact cpsTripleWithin_extend_code hmono hSpec
+  exact EvmAsm.Rv64.cpsTripleWithin_extend_code hmono hSpec
 
 end EvmAsm.Evm64.SDiv.Compose
