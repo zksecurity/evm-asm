@@ -40,10 +40,6 @@ abbrev expSquaringCallSquareW (r0 r1 r2 r3 : Word) : EvmWord :=
   let w := expResultWord r0 r1 r2 r3
   w * w
 
-abbrev expSquaringCallSquareW (r0 r1 r2 r3 : Word) : EvmWord :=
-  let w := expResultWord r0 r1 r2 r3
-  w * w
-
 /-- Code required by the squaring-call block plus the out-of-line
     `mul_callable` body reached by the JAL inside the block. -/
 abbrev exp_squaring_call_with_mul_code
