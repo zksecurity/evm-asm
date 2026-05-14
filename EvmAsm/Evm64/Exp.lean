@@ -30,6 +30,7 @@ import EvmAsm.Evm64.Exp.Compose.Base
 import EvmAsm.Evm64.Exp.Compose.EvmExpCode
 import EvmAsm.Evm64.Exp.Compose.TopCodeSubs
 import EvmAsm.Evm64.Exp.Compose.LoopCodeSpecs
+import EvmAsm.Evm64.Exp.Compose.TopBoundaryBlocks
 import EvmAsm.Evm64.Exp.Compose.TopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.WithMulCode
 import EvmAsm.Evm64.Exp.Compose.LoopControlBlocks
