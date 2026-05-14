@@ -15,14 +15,9 @@ open EvmAsm.Rv64
 def expTwoMulLoopExitPre
     (sp evmSp iterCountNew tOld r0 r1 r2 r3 : Word)
     (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop) : Assertion :=
-  expTwoMulLoopExitControl iterCountNew exitCond **
-  ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
-   ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
-    ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-    ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-    ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-    ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3))) **
-  evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest)
+  expTwoMulLoopExitFullStackPreFrame
+    sp evmSp iterCountNew tOld r0 r1 r2 r3 r0 r1 r2 r3
+    baseWord rest exitCond
 
 theorem expTwoMulLoopExitPre_unfold
     {sp evmSp iterCountNew tOld r0 r1 r2 r3 : Word}
@@ -37,8 +32,9 @@ theorem expTwoMulLoopExitPre_unfold
          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3))) **
        evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest)) := by
-  delta expTwoMulLoopExitPre expTwoMulLoopExitControl
-  rfl
+  delta expTwoMulLoopExitPre
+  rw [expTwoMulLoopExitFullStackPreFrame_unfold,
+    expTwoMulLoopExitControl_unfold]
 
 theorem expTwoMulLoopExitPre_pcFree
     {sp evmSp iterCountNew tOld r0 r1 r2 r3 : Word}
@@ -60,13 +56,8 @@ instance pcFreeInst_expTwoMulLoopExitPre
 def expTwoMulLoopExitPost
     (sp evmSp iterCountNew r0 r1 r2 r3 : Word)
     (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop) : Assertion :=
-  expTwoMulLoopExitControl iterCountNew exitCond **
-  ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ (evmSp + 32)) ** (.x5 ↦ᵣ r3) **
-   ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-   ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-   ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-   ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-   evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))
+  expTwoMulLoopExitFullStackPostFrame
+    sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond
 
 theorem expTwoMulLoopExitPost_unfold
     {sp evmSp iterCountNew r0 r1 r2 r3 : Word}
@@ -80,8 +71,9 @@ theorem expTwoMulLoopExitPost_unfold
         ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
         ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
         evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))) := by
-  delta expTwoMulLoopExitPost expTwoMulLoopExitControl
-  rfl
+  delta expTwoMulLoopExitPost
+  rw [expTwoMulLoopExitFullStackPostFrame_unfold,
+    expTwoMulLoopExitControl_unfold]
 
 theorem expTwoMulLoopExitPost_pcFree
     {sp evmSp iterCountNew r0 r1 r2 r3 : Word}
