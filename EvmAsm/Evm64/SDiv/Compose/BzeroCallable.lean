@@ -10,8 +10,6 @@ import EvmAsm.Evm64.SDiv.Compose.DispatchPrefix
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- SDIV wrapper prefix followed by the zero-divisor branch of the unsigned DIV
     callable, stopping at the result-sign-fixup entry. The hypothesis `hbz`
     is over the already-normalized divisor word produced by the SDIV absolute
@@ -26,7 +24,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
+    EvmAsm.Rv64.cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
       base (base + resultSignFixOff) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -42,7 +40,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
        ((.x8 ↦ᵣ ((dividendTop >>> (63 : BitVec 6).toNat) ^^^
           (divisorTop >>> (63 : BitVec 6).toNat))) **
         (.x9 ↦ᵣ (divisorTop >>> (63 : BitVec 6).toNat)) **
-        (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))) := by
+        (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))))) := by
   let dividendAbsWord :=
     sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
   let divisorAbsWord :=
@@ -59,9 +57,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
   let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
   let resultSign :=
     (dividendTop >>> (63 : BitVec 6).toNat) ^^^ divisorSign
-  let signFrame : Assertion :=
+  let signFrame : EvmAsm.Rv64.Assertion :=
     ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-      (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
+      (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))))
   have hCallableRaw :=
     EvmAsm.Evm64.evm_div_callable_bzero_preserving_x1_spec
       sp (base + wrapperEndOff) ((base + divCallOff) + 4)
@@ -70,14 +68,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
       nMem shiftMem jMem retMem dMem dloMem scratchUn0
       (by simpa [divisorAbsWord] using hbz)
   have hCallableCode :=
-    cpsTripleWithin_extend_code
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
       (hmono := evm_div_callable_code_sub_sdivCode (base := base)) hCallableRaw
   have hCallableFramed :=
-    cpsTripleWithin_frameR signFrame (by
+    EvmAsm.Rv64.cpsTripleWithin_frameR signFrame (by
       dsimp [signFrame]
       pcFree) hCallableCode
   have hCallableFramedExit :
-      cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
         (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
@@ -88,7 +86,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
   have hCallable :
-      cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
         (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (saveRaDivCallDispatchReadyPost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -97,7 +95,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_spec_in_sdivCode
           shiftMem nMem jMem retMem dMem dloMem scratchUn0)
         ((EvmAsm.Evm64.divStackDispatchPostNoX1 sp dividendAbsWord divisorAbsWord **
           (.x1 ↦ᵣ ((base + divCallOff) + 4))) ** signFrame) := by
-    exact cpsTripleWithin_weaken (fun h hp => by
+    exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun h hp => by
       rw [saveRaDivCallDispatchReadyPost_unfold] at hp
       dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
         divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,

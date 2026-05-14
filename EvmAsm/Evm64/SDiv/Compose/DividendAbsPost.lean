@@ -8,15 +8,12 @@ import EvmAsm.Evm64.SDiv.Compose.DividendAbsPre
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Postcondition for the SDIV dividend-abs block: each limb is XORed
     with `mask = -sign` and the ripple-carry add of `sign` is propagated
     through the four limbs. Wrapped `@[irreducible]` to hide the let
     chain from downstream proofs. -/
 @[irreducible]
-def dividendAbsPost (sp sign limb0 limb1 limb2 limb3 : Word) : Assertion :=
+def dividendAbsPost (sp sign limb0 limb1 limb2 limb3 : Word) : EvmAsm.Rv64.Assertion :=
   let mask := (0 : Word) - sign
   let sum0 := (limb0 ^^^ mask) + sign
   let carry0 := if BitVec.ult sum0 sign then (1 : Word) else 0
@@ -28,10 +25,10 @@ def dividendAbsPost (sp sign limb0 limb1 limb2 limb3 : Word) : Assertion :=
   let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
   (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
   (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
-  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
-  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
-  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)
+  ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+  ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+  ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+  ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ sum3)
 
 theorem dividendAbsPost_unfold
     {sp sign limb0 limb1 limb2 limb3 : Word} :
@@ -47,10 +44,10 @@ theorem dividendAbsPost_unfold
        let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
        (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
        (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
-       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
-       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)) := by
+       ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+       ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+       ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+       ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ sum3)) := by
   delta dividendAbsPost
   rfl
 

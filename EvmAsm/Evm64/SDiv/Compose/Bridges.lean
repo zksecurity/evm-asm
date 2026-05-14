@@ -16,8 +16,6 @@ import EvmAsm.Evm64.SDiv.Compose.QuadMemBridges
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Fully-explicit unfolding of `divModStackDispatchPre`: replaces the two
     `evmWordIs` atoms (`evmWordIs sp a` and `evmWordIs (sp + 32) b`) with
     eight raw `↦ₘ` atoms at absolute offsets `sp + 0/8/16/24` and
@@ -62,39 +60,39 @@ theorem divModStackDispatchPre_unfold_explicit_sdiv
     ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) **
      (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
      (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x0 ↦ᵣ (0 : Word)) **
-     (((sp + signExtend12 (0 : BitVec 12)) ↦ₘ a.getLimbN 0) **
-      ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ a.getLimbN 1) **
-      ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ a.getLimbN 2) **
-      ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+     (((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ a.getLimbN 0) **
+      ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ a.getLimbN 1) **
+      ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ a.getLimbN 2) **
+      ((sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
         a.getLimbN 3)) **
-     (((sp + signExtend12 (32 : BitVec 12)) ↦ₘ b.getLimbN 0) **
-      ((sp + signExtend12 (40 : BitVec 12)) ↦ₘ b.getLimbN 1) **
-      ((sp + signExtend12 (48 : BitVec 12)) ↦ₘ b.getLimbN 2) **
-      ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) ↦ₘ
+     (((sp + EvmAsm.Rv64.signExtend12 (32 : BitVec 12)) ↦ₘ b.getLimbN 0) **
+      ((sp + EvmAsm.Rv64.signExtend12 (40 : BitVec 12)) ↦ₘ b.getLimbN 1) **
+      ((sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12)) ↦ₘ b.getLimbN 2) **
+      ((sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) ↦ₘ
         b.getLimbN 3)) **
     EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
        shiftMem nMem jMem retMem dMem dloMem scratch_un0) := by
   rw [divModStackDispatchPre_unfold_explicit]
-  rw [show (sp + signExtend12 (0 : BitVec 12)) = sp by
-    rw [show signExtend12 (0 : BitVec 12) = (0 : Word) by decide]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) = sp by
+    rw [show EvmAsm.Rv64.signExtend12 (0 : BitVec 12) = (0 : Word) by decide]
     simp]
-  rw [show (sp + signExtend12 (8 : BitVec 12)) = sp + 8 by
-    rw [show signExtend12 (8 : BitVec 12) = (8 : Word) by decide]]
-  rw [show (sp + signExtend12 (16 : BitVec 12)) = sp + 16 by
-    rw [show signExtend12 (16 : BitVec 12) = (16 : Word) by decide]]
-  rw [show (sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) =
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) = sp + 8 by
+    rw [show EvmAsm.Rv64.signExtend12 (8 : BitVec 12) = (8 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) = sp + 16 by
+    rw [show EvmAsm.Rv64.signExtend12 (16 : BitVec 12) = (16 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) =
       sp + 24 by
     unfold EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-    rw [show signExtend12 (24 : BitVec 12) = (24 : Word) by decide]]
-  rw [show (sp + signExtend12 (32 : BitVec 12)) = sp + 32 by
-    rw [show signExtend12 (32 : BitVec 12) = (32 : Word) by decide]]
-  rw [show (sp + signExtend12 (40 : BitVec 12)) = sp + 40 by
-    rw [show signExtend12 (40 : BitVec 12) = (40 : Word) by decide]]
-  rw [show (sp + signExtend12 (48 : BitVec 12)) = sp + 48 by
-    rw [show signExtend12 (48 : BitVec 12) = (48 : Word) by decide]]
-  rw [show (sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) =
+    rw [show EvmAsm.Rv64.signExtend12 (24 : BitVec 12) = (24 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (32 : BitVec 12)) = sp + 32 by
+    rw [show EvmAsm.Rv64.signExtend12 (32 : BitVec 12) = (32 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (40 : BitVec 12)) = sp + 40 by
+    rw [show EvmAsm.Rv64.signExtend12 (40 : BitVec 12) = (40 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12)) = sp + 48 by
+    rw [show EvmAsm.Rv64.signExtend12 (48 : BitVec 12) = (48 : Word) by decide]]
+  rw [show (sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) =
       sp + 56 by
     unfold EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
-    rw [show signExtend12 (56 : BitVec 12) = (56 : Word) by decide]]
+    rw [show EvmAsm.Rv64.signExtend12 (56 : BitVec 12) = (56 : Word) by decide]]
 
 end EvmAsm.Evm64.SDiv.Compose
