@@ -138,4 +138,77 @@ theorem divK_trial_max_full_spec_within
     (fun h hq => by xperm_hyp hq)
     STLfntaken_cleanTM
 
+/-- Trial quotient max path over `divCode_noNop`: save j + load + BLTU
+    not-taken + trial_max. -/
+theorem divK_trial_max_full_spec_within_noNop
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old uHi uLo vTop : Word)
+    (base : Word)
+    (hbltu : ¬BitVec.ult uHi vTop) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 16 (base + loopBodyOff) (base + div128CallRetOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop))
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) ** (.x11 ↦ᵣ signExtend12 4095) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
+  intro uAddr vtopBase
+  -- 1. Save j + trial load (base+448 → base+500)
+  have STL := divK_save_trial_load_spec_within_noNop sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop
+    base
+  dsimp only [] at STL
+  -- 2. BLTU x7 x10 12 at base + trialCallOff
+  have hbltu_raw := bltu_spec_gen_within .x7 .x10 (12 : BitVec 13) uHi vTop (base + trialCallOff)
+  rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
+  have hbltu_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
+  -- Eliminate taken path (⌜BitVec.ult uHi vTop⌝ contradicts hbltu)
+  have ntaken := cpsBranchWithin_ntakenPath hbltu_ext (fun hp hQt => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+    exact hbltu hpure)
+  -- Strip pure fact
+  have ntaken_clean := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp) ntaken
+  -- 3. Trial max (base+504 → base+516)
+  have TM := divK_trial_max_extended_noNop v11Old base
+  -- 4. Frame save_trial_load with x11 + x0, compose with BLTU ntaken
+  have STLf := cpsTripleWithin_frameR
+    ((.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word))) (by pcFree) STL
+  have ntaken_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) ntaken_clean
+  have STLfntaken_clean := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf ntaken_framed
+  -- 5. Frame BLTU ntaken result with x0 + memory, compose with trial_max
+  have TMf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) TM
+  have STLfntaken_cleanTM := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLfntaken_clean TMf
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    STLfntaken_cleanTM
+
 end EvmAsm.Evm64
