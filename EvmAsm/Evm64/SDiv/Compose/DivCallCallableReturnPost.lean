@@ -1,14 +1,14 @@
-import EvmAsm.Evm64.SDiv.Compose.DivCallDispatch
+import EvmAsm.Evm64.EvmWordArith.Div
+import EvmAsm.Evm64.SDiv.Compose.BzeroFrames
+import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
+import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
-
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 @[irreducible]
 def saveRaDivCallCallableReturnPost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
-      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Assertion :=
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : EvmAsm.Rv64.Assertion :=
   let dividendAbsWord :=
     sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
   let divisorAbsWord :=
@@ -63,7 +63,7 @@ theorem saveRaDivCallCallableReturnPost_pcFree
 instance pcFreeInst_saveRaDivCallCallableReturnPost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (saveRaDivCallCallableReturnPost vRa sp base
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
         divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=
