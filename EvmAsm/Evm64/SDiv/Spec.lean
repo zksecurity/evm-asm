@@ -911,8 +911,13 @@ theorem evm_sdiv_handler_stack_spec_within
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase hStack
 
--- Placeholder: full all-case `evm_sdiv_stack_spec_within` lands in slice 4
--- (evm-asm-01uh). The signed-division correctness lemma
--- `EvmWord.sdiv_correct` is added in slice 3 (evm-asm-kvs4).
+/-- Public all-case SDIV stack spec, conditional on the unsigned DIV
+    no-NOP stack proof used by the internal callable handoff.
+
+    This is intentionally a thin alias for `evm_sdiv_handler_stack_spec_within`:
+    it exposes the stable final theorem name while keeping the remaining DIV
+    dispatcher certificate explicit. -/
+abbrev evm_sdiv_stack_spec_within :=
+  evm_sdiv_handler_stack_spec_within
 
 end EvmAsm.Evm64
