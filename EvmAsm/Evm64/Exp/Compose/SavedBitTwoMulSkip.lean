@@ -12,6 +12,40 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+@[irreducible]
+def expTwoMulSkipLoopRest
+    (bit sp evmSp base : Word) (squareW : EvmWord) : Assertion :=
+  (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
+  ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
+  (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+  (.x5 ↦ᵣ squareW.getLimbN 3) **
+  evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
+  regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+  memOwn evmSp ** memOwn (evmSp + 8) **
+  memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
+  (.x1 ↦ᵣ ((base + 44) + 68))
+
+theorem expTwoMulSkipLoopRest_unfold
+    {bit sp evmSp base : Word} {squareW : EvmWord} :
+    expTwoMulSkipLoopRest bit sp evmSp base squareW =
+      ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
+       ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
+       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
+       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+       memOwn evmSp ** memOwn (evmSp + 8) **
+       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
+       (.x1 ↦ᵣ ((base + 44) + 68))) := by
+  delta expTwoMulSkipLoopRest
+  rfl
+
+theorem expTwoMulSkipLoopRest_pcFree
+    {bit sp evmSp base : Word} {squareW : EvmWord} :
+    (expTwoMulSkipLoopRest bit sp evmSp base squareW).pcFree := by
+  rw [expTwoMulSkipLoopRest_unfold, evmWordIs_sp_unfold, evmWordIs_sp32_unfold]
+  pcFree
+
 /-- Saved-bit loop-back block lifted to the two-MUL-offset EXP+MUL code
     bundle. -/
 theorem exp_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
