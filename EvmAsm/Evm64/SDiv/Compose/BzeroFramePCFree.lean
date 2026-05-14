@@ -4,6 +4,7 @@
   PC-free instances for zero-divisor SDIV result-sign-fix/return frames.
 -/
 
+import EvmAsm.Evm64.SDiv.Compose.BzeroFrames
 import EvmAsm.Evm64.SDiv.Compose.ResultSignFixPCFree
 
 namespace EvmAsm.Evm64.SDiv.Compose

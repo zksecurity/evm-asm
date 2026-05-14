@@ -63,6 +63,8 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallExactResultSignFixHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroResultSignFixHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallExactReturnHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroReturnHandoff
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixPCFree
+import EvmAsm.Evm64.SDiv.Compose.BzeroFramePCFree
 import EvmAsm.Evm64.SDiv.Compose.DivCallPostPcFree
 import EvmAsm.Evm64.SDiv.Compose.BzeroSemanticViews
 import EvmAsm.Evm64.SDiv.Compose.DivCallDispatchZeroDivisor

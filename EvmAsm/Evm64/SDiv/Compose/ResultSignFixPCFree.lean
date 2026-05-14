@@ -4,7 +4,7 @@
   PC-free instances for standalone SDIV result-sign-fix bundles.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroReturnHandoff
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwnPre
 
 namespace EvmAsm.Evm64.SDiv.Compose
 

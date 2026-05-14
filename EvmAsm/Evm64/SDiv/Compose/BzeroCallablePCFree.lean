@@ -4,7 +4,7 @@
   PC-free instance for the zero-divisor SDIV callable post bundle.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BzeroFramePCFree
+import EvmAsm.Evm64.SDiv.Compose.BzeroCallablePost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
