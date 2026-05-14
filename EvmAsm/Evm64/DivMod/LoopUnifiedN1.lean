@@ -865,6 +865,84 @@ theorem divK_loop_n1_call_iter10_spec_within (bltu_1 bltu_0 : Bool)
       cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
     full
 
+theorem divK_loop_n1_call_iter10_spec_within_noNop (bltu_1 bltu_0 : Bool)
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0_orig_1 u0_orig_0
+     q2Old q1Old q0Old : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu_2 : BitVec.ult u1 v0)
+    (hbltu_1 : bltu_1 = BitVec.ult (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1 v0)
+    (hbltu_0 : bltu_0 = BitVec.ult (iterN1 bltu_1 v0 v1 v2 v3 u0_orig_1
+      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1
+      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.1
+      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.1
+      (iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.2.2.2.1).2.1 v0)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
+    cpsTripleWithin 606 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopN1Iter210PreWithScratch sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0_orig_1 u0_orig_0 q2Old q1Old q0Old
+        retMem dMem dloMem scratch_un0)
+      (loopN1Iter210Post true bltu_1 bltu_0 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0_orig_1 u0_orig_0 retMem dMem dloMem scratch_un0) := by
+  let r2 := iterN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let u_base_2 := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
+  let u_base_1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_2 := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let u_base_0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+  let q_addr_0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+  -- j=2 call  spec (includes scratch)
+  have J2 := divK_loop_body_n1_call_unified_j2_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop q2Old retMem dMem dloMem scratch_un0 base halign
+
+    hbltu_2
+    (hcarry2 (div128Quot u1 u0 v0) u0 u1 u2 u3 uTop : isAddbackCarry2NzN1Call v0 v1 v2 v3 u0 u1 u2 u3 uTop)
+  intro_lets at J2
+  -- Frame j=2 with iter10 extra atoms only (scratch consumed by call)
+  have J2f := cpsTripleWithin_frameR
+    (((u_base_1 + signExtend12 0) ↦ₘ u0_orig_1) ** (q_addr_1 ↦ₘ q1Old) **
+     ((u_base_0 + signExtend12 0) ↦ₘ u0_orig_0) ** (q_addr_0 ↦ₘ q0Old))
+    (by pcFree) J2
+  -- iter10  unified spec (inputs from j=2 call  output, scratch = j=2 call values)
+  have H10 := divK_loop_n1_iter10_unified_spec_within_noNop bltu_1 bltu_0
+    sp (2 : Word) ((2 : Word) <<< (3 : BitVec 6).toNat) u_base_2 q_addr_2
+    ((mulsubN4 (div128Quot u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2)
+    r2.1 r2.2.2.2.2.1
+    v0 v1 v2 v3
+    u0_orig_1 r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+    u0_orig_0 q1Old q0Old
+    (base + div128CallRetOff) v0 (div128DLo v0) (div128Un0 u0) base halign
+
+
+    hbltu_1 hbltu_0 hcarry2
+  -- Frame iter10 with j=2 carried atoms
+  have H10f := cpsTripleWithin_frameR
+    (((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1))
+    (by pcFree) H10
+  -- Compose j=2 and iter10
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by
+      delta loopIterPostN1Call loopExitPostN1 loopExitPost at hp
+      delta loopN1Iter10PreWithScratch loopN1Iter10Pre at ⊢
+      simp only [] at hp ⊢
+      have hj' := jpred_2
+      rw [hj', u_n1_j2_0_eq_j1_4088, u_n1_j2_4088_eq_j1_4080,
+          u_n1_j2_4080_eq_j1_4072, u_n1_j2_4072_eq_j1_4064] at hp
+      rw [sepConj_assoc'] at hp
+      xperm_hyp hp)
+    J2f H10f
+  exact cpsTripleWithin_weaken
+    (fun h hp => by delta loopN1Iter210PreWithScratch loopN1Iter210Pre at hp; xperm_hyp hp)
+    (fun h hp => by
+      delta loopN1Iter210Post loopN1Iter10Post at hp ⊢
+      simp only [iterN1_true, ite_true] at hp ⊢
+      cases bltu_1 <;> cases bltu_0 <;> xperm_hyp hp)
+    full
+
 -- ============================================================================
 -- Three-iteration  unified dispatch: cases bltu_2
 -- ============================================================================
