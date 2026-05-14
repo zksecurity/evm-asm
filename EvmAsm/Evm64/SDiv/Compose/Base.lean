@@ -19,6 +19,7 @@ import EvmAsm.Evm64.SDiv.Compose.BaseSignSequence
 import EvmAsm.Evm64.SDiv.Compose.BaseDividendAbsSequence
 import EvmAsm.Evm64.SDiv.Compose.BaseDivisorAbsSequence
 import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
+import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFixBlockSpec
 import EvmAsm.Evm64.SDiv.Compose.BaseFinalBlockSpecs
 
 namespace EvmAsm.Evm64.SDiv.Compose
