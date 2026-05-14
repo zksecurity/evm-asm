@@ -35,6 +35,7 @@ import EvmAsm.Evm64.Exp.Compose.WithMulCode
 import EvmAsm.Evm64.Exp.Compose.SquaringCallPath
 import EvmAsm.Evm64.Exp.Compose.CondMulCallPath
 import EvmAsm.Evm64.Exp.Compose.SquaringCallBlock
+import EvmAsm.Evm64.Exp.Compose.CondMulCallBlock
 import EvmAsm.Evm64.Exp.Compose.FullLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
