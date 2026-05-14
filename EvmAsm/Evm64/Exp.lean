@@ -35,6 +35,7 @@ import EvmAsm.Evm64.Exp.Compose.TopIterSubs
 import EvmAsm.Evm64.Exp.Compose.TopLoopControl
 import EvmAsm.Evm64.Exp.Compose.TopCallSubs
 import EvmAsm.Evm64.Exp.Compose.TopJalBlocks
+import EvmAsm.Evm64.Exp.Compose.TopSquaringMarshalBlocks
 import EvmAsm.Evm64.Exp.Compose.TopCodeSpecs
 import EvmAsm.Evm64.Exp.Compose.WithMulCode
 import EvmAsm.Evm64.Exp.Compose.LoopControlBlocks
