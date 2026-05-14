@@ -9,7 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroReturnZeroWordRestView
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Stack-shaped postcondition for the SDIV zero-divisor return path: the
     produced zero result is folded together with the untouched tail stack. -/
@@ -24,7 +23,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_stack_zero_spec_
     (rest : List EvmWord)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
           dividendMaskOld dividendValueOld dividendCarryOld
@@ -54,7 +53,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_stack_zero_spec_
          (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ (0 : Word)) ** (.x11 ↦ᵣ carry3) **
          evmStackIs (sp + 32) ((0 : EvmWord) :: rest)) **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
-  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
       dsimp only at hp ⊢
       rw [evmStackIs_cons]
       rw [show (sp + 32 + 32 : Word) = sp + 64 by bv_addr]

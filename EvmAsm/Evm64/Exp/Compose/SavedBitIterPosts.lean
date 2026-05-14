@@ -29,24 +29,25 @@ theorem expTwoMulIterBaseFrame_pcFree
 
 @[irreducible]
 def expTwoMulIterSkipRest
-    (bit sp evmSp base : Word) (w : EvmWord) : Assertion :=
+    (bit sp evmSp base : Word) (squareW : EvmWord) : Assertion :=
   (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
   ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
   (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-  (.x5 ↦ᵣ (w * w).getLimbN 3) **
-  evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+  (.x5 ↦ᵣ squareW.getLimbN 3) **
+  evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
   regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
   memOwn evmSp ** memOwn (evmSp + 8) **
   memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
   (.x1 ↦ᵣ ((base + 44) + 68))
 
-theorem expTwoMulIterSkipRest_unfold {bit sp evmSp base : Word} {w : EvmWord} :
-    expTwoMulIterSkipRest bit sp evmSp base w =
+theorem expTwoMulIterSkipRest_unfold
+    {bit sp evmSp base : Word} {squareW : EvmWord} :
+    expTwoMulIterSkipRest bit sp evmSp base squareW =
       ((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
        ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (w * w).getLimbN 3) **
-       evmWordIs sp (w * w) ** evmWordIs (evmSp + 32) (w * w) **
+       (.x5 ↦ᵣ squareW.getLimbN 3) **
+       evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
@@ -55,8 +56,8 @@ theorem expTwoMulIterSkipRest_unfold {bit sp evmSp base : Word} {w : EvmWord} :
   rfl
 
 theorem expTwoMulIterSkipRest_pcFree
-    {bit sp evmSp base : Word} {w : EvmWord} :
-    (expTwoMulIterSkipRest bit sp evmSp base w).pcFree := by
+    {bit sp evmSp base : Word} {squareW : EvmWord} :
+    (expTwoMulIterSkipRest bit sp evmSp base squareW).pcFree := by
   rw [expTwoMulIterSkipRest_unfold, evmWordIs_sp_unfold, evmWordIs_sp32_unfold]
   pcFree
 
@@ -144,26 +145,26 @@ theorem expTwoMulIterCondPost_pcFree
 
 @[irreducible]
 def expTwoMulIterSkipPost
-    (iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word) (w : EvmWord)
+    (iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word) (squareW : EvmWord)
     (exitCond : Prop) : Assertion :=
   (((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-   ⌜exitCond⌝) ** expTwoMulIterSkipRest bit sp evmSp base w) **
+   ⌜exitCond⌝) ** expTwoMulIterSkipRest bit sp evmSp base squareW) **
   expTwoMulIterBaseFrame evmSp a0 a1 a2 a3
 
 theorem expTwoMulIterSkipPost_unfold
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w : EvmWord}
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW : EvmWord}
     {exitCond : Prop} :
-    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w exitCond =
+    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW exitCond =
       ((((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-        ⌜exitCond⌝) ** expTwoMulIterSkipRest bit sp evmSp base w) **
+        ⌜exitCond⌝) ** expTwoMulIterSkipRest bit sp evmSp base squareW) **
        expTwoMulIterBaseFrame evmSp a0 a1 a2 a3) := by
   delta expTwoMulIterSkipPost
   rfl
 
 theorem expTwoMulIterSkipPost_pcFree
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w : EvmWord}
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW : EvmWord}
     {exitCond : Prop} :
-    (expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
+    (expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW
       exitCond).pcFree := by
   rw [expTwoMulIterSkipPost_unfold, expTwoMulIterSkipRest_unfold,
     expTwoMulIterBaseFrame_unfold, evmWordIs_sp_unfold, evmWordIs_sp32_unfold]
@@ -172,27 +173,27 @@ theorem expTwoMulIterSkipPost_pcFree
 @[irreducible]
 def expTwoMulIterLoopPost
     (iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word)
-    (w rw : EvmWord) : Assertion :=
+    (squareW rw : EvmWord) : Assertion :=
   fun h =>
     expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
       (iterCountNew ≠ 0) h ∨
-    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
+    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW
       (iterCountNew ≠ 0) h
 
 theorem expTwoMulIterLoopPost_unfold
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w rw : EvmWord} :
-    expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw =
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW rw : EvmWord} :
+    expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw =
       (fun h =>
         expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
           (iterCountNew ≠ 0) h ∨
-        expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
+        expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW
           (iterCountNew ≠ 0) h) := by
   delta expTwoMulIterLoopPost
   rfl
 
 theorem expTwoMulIterLoopPost_pcFree
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w rw : EvmWord} :
-    (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw).pcFree := by
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW rw : EvmWord} :
+    (expTwoMulIterLoopPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw).pcFree := by
   rw [expTwoMulIterLoopPost_unfold]
   intro h hp
   rcases hp with hp | hp
@@ -202,27 +203,27 @@ theorem expTwoMulIterLoopPost_pcFree
 @[irreducible]
 def expTwoMulIterExitPost
     (iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word)
-    (w rw : EvmWord) : Assertion :=
+    (squareW rw : EvmWord) : Assertion :=
   fun h =>
     expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
       (iterCountNew = 0) h ∨
-    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
+    expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW
       (iterCountNew = 0) h
 
 theorem expTwoMulIterExitPost_unfold
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w rw : EvmWord} :
-    expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw =
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW rw : EvmWord} :
+    expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw =
       (fun h =>
         expTwoMulIterCondPost iterCountNew bit sp evmSp base a0 a1 a2 a3 rw
           (iterCountNew = 0) h ∨
-        expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w
+        expTwoMulIterSkipPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW
           (iterCountNew = 0) h) := by
   delta expTwoMulIterExitPost
   rfl
 
 theorem expTwoMulIterExitPost_pcFree
-    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {w rw : EvmWord} :
-    (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 w rw).pcFree := by
+    {iterCountNew bit sp evmSp base a0 a1 a2 a3 : Word} {squareW rw : EvmWord} :
+    (expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw).pcFree := by
   rw [expTwoMulIterExitPost_unfold]
   intro h hp
   rcases hp with hp | hp
@@ -298,10 +299,9 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
-    let w := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
-    let rw := (w * w) * aw
+    let bit := expTwoMulIterBit e
+    let squareW := expTwoMulSquareW r0 r1 r2 r3
+    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -329,14 +329,14 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
           expTwoMulIterCondPost (expTwoMulIterCountNew iterCount) bit sp evmSp
             base a0 a1 a2 a3 rw (expTwoMulIterCountNew iterCount ≠ 0) h ∨
           expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
-            base a0 a1 a2 a3 w (expTwoMulIterCountNew iterCount ≠ 0) h)
+            base a0 a1 a2 a3 squareW (expTwoMulIterCountNew iterCount ≠ 0) h)
       (base + 264)
         (fun h =>
           expTwoMulIterCondPost (expTwoMulIterCountNew iterCount) bit sp evmSp
             base a0 a1 a2 a3 rw (expTwoMulIterCountNew iterCount = 0) h ∨
           expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount) bit sp evmSp
-            base a0 a1 a2 a3 w (expTwoMulIterCountNew iterCount = 0) h) := by
-  intro bit w aw rw
+            base a0 a1 a2 a3 squareW (expTwoMulIterCountNew iterCount = 0) h) := by
+  intro bit squareW rw
   rw [expTwoMulIterBaseFrame_unfold]
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
@@ -401,12 +401,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_loop_exit
       loopTarget
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
@@ -449,12 +449,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
       loopTarget
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact cpsBranchWithin_weaken
     (fun _ hp => by
@@ -492,12 +492,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_loopback_spec_within
       (base + 28)
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_loop_exit_spec_within
@@ -532,12 +532,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_branches_spec_wi
       (base + 28)
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   have hskip :
       (base + 148 : Word) +
@@ -583,12 +583,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_code_spec_within
       (base + 28)
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_branches_spec_within
@@ -621,12 +621,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_with_mul_spec_wi
       (base + 28)
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_code_spec_within
@@ -650,12 +650,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_appended_mul_spe
       (base + 28)
         (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (base + 264)
         (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
           (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulSquareW r0 r1 r2 r3)
           (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) := by
   exact
     exp_msb_saved_bit_two_mul_full_iter_named_pre_canonical_with_mul_spec_within

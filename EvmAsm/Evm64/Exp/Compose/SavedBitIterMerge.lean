@@ -25,14 +25,14 @@ theorem exp_two_mul_named_iter_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nCont (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin
@@ -66,14 +66,14 @@ theorem exp_two_mul_named_iter_with_continuations_max_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nExit (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin
@@ -108,14 +108,14 @@ theorem exp_two_mul_named_iter_with_continuations_bounded_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nExit (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin nBound
@@ -144,14 +144,14 @@ theorem exp_two_mul_named_iter_with_continuations_exact_named_bound_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nExit (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin (expTwoMulNamedIterStepBound + max nLoop nExit)
@@ -181,7 +181,7 @@ theorem exp_two_mul_full_loop_body_peel_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -189,7 +189,7 @@ theorem exp_two_mul_full_loop_body_peel_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -219,7 +219,7 @@ theorem exp_two_mul_iterations_body_peel_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -228,7 +228,7 @@ theorem exp_two_mul_iterations_body_peel_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -307,7 +307,7 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -315,7 +315,7 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond)) →
@@ -348,14 +348,14 @@ theorem exp_two_mul_named_iter_with_continuations_closed_bound_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nExit (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin nBound
@@ -385,14 +385,14 @@ theorem exp_two_mul_named_iter_with_continuations_exact_closed_bound_spec_within
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     (cpsTripleWithin nExit (base + 264) exit_
       (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
       (expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
         (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
-        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulSquareW r0 r1 r2 r3)
         (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
       R) →
     cpsTripleWithin (189 + max nLoop nExit)

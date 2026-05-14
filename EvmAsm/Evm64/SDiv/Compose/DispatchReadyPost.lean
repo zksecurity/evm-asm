@@ -5,14 +5,12 @@
   prefix has normalized signs and absolute values.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.DivMod.Spec.Dispatcher
+import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
 import EvmAsm.Evm64.SDiv.Compose.SignFrame
 import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
-
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Post-shape consumed by `evm_div_callable_spec_in_sdivCode`: the
     `divModStackDispatchPre` bundle (the dispatcher's pre, which the
@@ -28,7 +26,7 @@ def saveRaDivCallDispatchReadyPost
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word)
     (v2 v5 v6 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) : Assertion :=
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) : EvmAsm.Rv64.Assertion :=
   let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
   let resultSign := dividendSign ^^^ divisorSign
@@ -108,7 +106,7 @@ instance pcFreeInst_saveRaDivCallDispatchReadyPost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0
       divisorLimb1 divisorLimb2 divisorTop v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5
       u6 u7 shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) :
-    Assertion.PCFree (saveRaDivCallDispatchReadyPost vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0 divisorLimb1 divisorLimb2 divisorTop v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem retMem dMem dloMem scratchUn0) :=
+    EvmAsm.Rv64.Assertion.PCFree (saveRaDivCallDispatchReadyPost vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0 divisorLimb1 divisorLimb2 divisorTop v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem retMem dMem dloMem scratchUn0) :=
   ⟨saveRaDivCallDispatchReadyPost_pcFree⟩
 
 end EvmAsm.Evm64.SDiv.Compose
