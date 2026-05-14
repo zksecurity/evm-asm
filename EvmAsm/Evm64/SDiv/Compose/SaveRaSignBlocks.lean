@@ -11,32 +11,30 @@ import EvmAsm.Evm64.SDiv.Compose.SaveRaSignsPost
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 theorem saveRa_then_dividendSign_spec_in_sdivCode
     (vRa vSavedOld sp sOld dividendTop : Word) (base : Word) :
-    cpsTripleWithin 3 base ((base + dividendSignOff) + 8) (sdivCode base)
+    EvmAsm.Rv64.cpsTripleWithin 3 base ((base + dividendSignOff) + 8) (sdivCode base)
       (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
        ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sOld) **
-        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+        ((sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
           dividendTop)))
-      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
        ((.x12 ↦ᵣ sp) **
         (.x8 ↦ᵣ (dividendTop >>> (63 : BitVec 6).toNat)) **
-        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+        ((sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
           dividendTop))) := by
   have hSave :=
-    cpsTripleWithin_frameR
+    EvmAsm.Rv64.cpsTripleWithin_frameR
       (((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sOld) **
-        ((sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
+        ((sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) ↦ₘ
           dividendTop)))
       (by pcFree)
       (saveRa_spec_in_sdivCode vRa vSavedOld base)
   have hSign :=
-    cpsTripleWithin_frameL
-      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))))
+    EvmAsm.Rv64.cpsTripleWithin_frameL
+      (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))))
       (by pcFree)
       (dividendSign_spec_in_sdivCode sp sOld dividendTop base)
-  exact cpsTripleWithin_seq_same_cr hSave hSign
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_same_cr hSave hSign
 
 end EvmAsm.Evm64.SDiv.Compose

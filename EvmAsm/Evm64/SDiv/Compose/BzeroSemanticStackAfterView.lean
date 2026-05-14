@@ -8,8 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroSemanticResultView
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Caller-visible zero-divisor SDIV path with the post stack named through
     the pure stack-after-SDIV helper. This packages the result/tail shape in
     the same form used by the stack-execution bridge. -/
@@ -21,7 +19,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_sta
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
          (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **

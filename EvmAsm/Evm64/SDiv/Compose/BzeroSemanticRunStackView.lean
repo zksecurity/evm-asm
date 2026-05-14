@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.StackExecutionBridge
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Zero-divisor SDIV bzero path with the post stack named by a concrete
     successful `runSDivStack?` output. This packages the result/tail stack as
     `out.effects.stackWords ++ out.stack`, matching the executable-stack
@@ -27,7 +25,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_run
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
          (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **
@@ -61,7 +59,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_run
     EvmAsm.Evm64.SDivStackExecutionBridge.runSDivStack?_zero_divisor dividend rest
   rw [h_zero] at h_run
   cases h_run
-  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
       simpa only [EvmAsm.Evm64.SDivArgs.sdivResultFromArgs_zero_divisor,
         List.singleton_append] using hp)
     (saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_result_spec_in_sdivCode

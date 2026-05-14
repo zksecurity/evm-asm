@@ -8,8 +8,6 @@ import EvmAsm.Rv64.SepLogic
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Precondition for the SDIV result sign-fixup (conditional 2's-complement
     negation) block. The unsigned DIV callable returns with `x12` advanced
     to the quotient cell, so this block operates on offsets `0…24` from the
@@ -17,13 +15,13 @@ open EvmAsm.Rv64
     re-unfold the sepConj atoms at each use site. -/
 @[irreducible]
 def resultSignFixPre (sp sign maskOld valueOld carryOld
-    limb0 limb1 limb2 limb3 : Word) : Assertion :=
+    limb0 limb1 limb2 limb3 : Word) : EvmAsm.Rv64.Assertion :=
   (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
   (.x10 ↦ᵣ maskOld) ** (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld) **
-  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
-  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
-  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
-  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ limb3)
+  ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
+  ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
+  ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
+  ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ limb3)
 
 theorem resultSignFixPre_unfold
     {sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3 : Word} :
@@ -31,10 +29,10 @@ theorem resultSignFixPre_unfold
         limb0 limb1 limb2 limb3 =
       ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
        (.x10 ↦ᵣ maskOld) ** (.x7 ↦ᵣ valueOld) ** (.x11 ↦ᵣ carryOld) **
-       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
-       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
-       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ limb3)) := by
+       ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ limb0) **
+       ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ limb1) **
+       ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ limb2) **
+       ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ limb3)) := by
   delta resultSignFixPre
   rfl
 
@@ -42,7 +40,7 @@ theorem resultSignFixPre_unfold
     `divisorAbsPost` but with the sign register `x8`. Wrapped
     `@[irreducible]` to hide the let chain from downstream proofs. -/
 @[irreducible]
-def resultSignFixPost (sp sign limb0 limb1 limb2 limb3 : Word) : Assertion :=
+def resultSignFixPost (sp sign limb0 limb1 limb2 limb3 : Word) : EvmAsm.Rv64.Assertion :=
   let mask := (0 : Word) - sign
   let sum0 := (limb0 ^^^ mask) + sign
   let carry0 := if BitVec.ult sum0 sign then (1 : Word) else 0
@@ -54,10 +52,10 @@ def resultSignFixPost (sp sign limb0 limb1 limb2 limb3 : Word) : Assertion :=
   let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
   (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
   (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-  ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
-  ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
-  ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
-  ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)
+  ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+  ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+  ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+  ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ sum3)
 
 theorem resultSignFixPost_unfold
     {sp sign limb0 limb1 limb2 limb3 : Word} :
@@ -73,10 +71,10 @@ theorem resultSignFixPost_unfold
        let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
        (.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
        (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
-       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
-       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3)) := by
+       ((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+       ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+       ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+       ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ sum3)) := by
   delta resultSignFixPost
   rfl
 

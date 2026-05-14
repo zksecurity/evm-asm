@@ -8,8 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroSemanticRunStackView
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Zero-divisor SDIV bzero path with the concrete successful `runSDivStack?`
     output inlined in the postcondition. This avoids threading an explicit
     `out` witness through callers that are already on the divisor-zero stack
@@ -22,7 +20,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_run
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
          (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **

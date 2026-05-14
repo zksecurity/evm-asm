@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallFramedCallable
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Generic exact-`x1` callable handoff from the SDIV dispatch-ready bundle.
     The branch-specific obligation is the `divCode_noNop` proof `hStack`,
     whose precondition already carries SDIV's exact return address in `x1`. -/
@@ -23,7 +21,7 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (hbase : base &&& 1 = 0)
     (hStack :
-      cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
         ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
         (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
@@ -40,7 +38,7 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
           (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
           (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) **
           (.x1 ↦ᵣ ((base + divCallOff) + 4)))) :
-    cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
       (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
       (saveRaDivCallDispatchReadyPost vRa sp base
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -77,7 +75,7 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
           divisorCarry3] at hStack ⊢
         exact hStack)
   have hCallableExit :
-      cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
         (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (EvmAsm.Evm64.divModStackDispatchPre sp dividendAbsWord divisorAbsWord
           ((base + divCallOff) + 4) v2 v5 v6 divisorSum3 divisorMask divisorCarry3
@@ -89,7 +87,7 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_spec_in_sdivCode
           saveRaDivCallSignFrame vRa resultSign divisorSign) := by
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
-  exact cpsTripleWithin_weaken (fun h hp => by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun h hp => by
     rw [saveRaDivCallDispatchReadyPost_unfold] at hp
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, divisorMask, divisorSum0,
       divisorCarry0, divisorSum1, divisorCarry1, divisorSum2, divisorCarry2,

@@ -2,8 +2,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallReturnGeneric
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Normalized return-target view of the generic SDIV callable composition.
     This hides the two `signExtend12 0` artifacts from the saved-RA move and
     final `JALR`, leaving callers with the ordinary masked return address. -/
@@ -18,7 +16,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_normalized_of_callable
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word)
     (hCallable :
-      cpsTripleWithin nSteps (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
+      EvmAsm.Rv64.cpsTripleWithin nSteps (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (saveRaDivCallDispatchReadyPost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
           divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
@@ -27,7 +25,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_normalized_of_callable
         (saveRaDivCallBzeroCallablePost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
           divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)) :
-    cpsTripleWithin (((49 + nSteps) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + nSteps) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -51,14 +49,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_normalized_of_callable
          (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
   have hExit :
-      (((vRa + signExtend12 (0 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) =
+      (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+        EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) =
         (vRa &&& ~~~(1 : Word)) := by
-    rw [signExtend12_0]
+    rw [EvmAsm.Rv64.signExtend12_0]
     bv_decide
   rw [← hExit]
-  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
-      simp only [signExtend12_0] at hp ⊢
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+      simp only [EvmAsm.Rv64.signExtend12_0] at hp ⊢
       have h_ra : (vRa + (0 : Word)) = vRa := by bv_decide
       rw [h_ra] at hp
       exact hp)

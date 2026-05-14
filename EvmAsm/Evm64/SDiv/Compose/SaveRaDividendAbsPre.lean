@@ -8,8 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.DividendAbsPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Precondition for the SDIV save-ra + dividend/divisor signs +
     dividendAbs prefix. Takes only the bare wrapper inputs; the
     `sp`-relative dividend/divisor memory addresses are computed
@@ -19,12 +17,12 @@ open EvmAsm.Rv64
 def saveRaSignsThenDividendAbsPre
     (vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
       maskOld valueOld carryOld
-      limb0 limb1 limb2 dividendTop : Word) : Assertion :=
-  let mem0 := sp + signExtend12 (0 : BitVec 12)
-  let mem1 := sp + signExtend12 (8 : BitVec 12)
-  let mem2 := sp + signExtend12 (16 : BitVec 12)
-  let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-  let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+      limb0 limb1 limb2 dividendTop : Word) : EvmAsm.Rv64.Assertion :=
+  let mem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+  let mem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+  let mem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+  let mem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+  let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
   ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
      ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) ** (mem3 ↦ₘ dividendTop))) **
     ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **
@@ -39,11 +37,11 @@ theorem saveRaSignsThenDividendAbsPre_unfold
     saveRaSignsThenDividendAbsPre vRa vSavedOld sp sDividendOld sDivisorOld divisorTop
         maskOld valueOld carryOld
         limb0 limb1 limb2 dividendTop =
-      (let mem0 := sp + signExtend12 (0 : BitVec 12)
-       let mem1 := sp + signExtend12 (8 : BitVec 12)
-       let mem2 := sp + signExtend12 (16 : BitVec 12)
-       let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-       let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+      (let mem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+       let mem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+       let mem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+       let mem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+       let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
        ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
           ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) ** (mem3 ↦ₘ dividendTop))) **
          ((.x9 ↦ᵣ sDivisorOld) ** (divisorMem3 ↦ₘ divisorTop))) **

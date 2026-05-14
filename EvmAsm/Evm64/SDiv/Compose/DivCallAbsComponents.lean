@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFix
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 abbrev sdivAbsSign (top : Word) : Word :=
   top >>> (63 : BitVec 6).toNat
 
@@ -75,9 +73,9 @@ theorem sdivAbsDivisorWord_eq_components
   rfl
 
 abbrev saveRaDivCallSignFrame
-    (vRa resultSign divisorSign : Word) : Assertion :=
+    (vRa resultSign divisorSign : Word) : EvmAsm.Rv64.Assertion :=
   ((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign) **
-    (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))))
+    (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))))
 
 abbrev sdivDivCallResultSign (dividendTop divisorTop : Word) : Word :=
   sdivAbsSign dividendTop ^^^ sdivAbsSign divisorTop

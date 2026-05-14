@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Zero-divisor SDIV path through result-sign-fix, specialized from the
     sidecar bzero callable handoff and stopping before the saved-RA return. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_resultSignFix_named_post_from_handoff_spec_in_sdivCode
@@ -23,7 +21,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_resultSignFix_named_pos
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
+    EvmAsm.Rv64.cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
       base ((base + resultSignFixOff) + 84) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld

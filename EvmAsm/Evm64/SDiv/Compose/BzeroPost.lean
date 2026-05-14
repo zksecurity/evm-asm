@@ -12,7 +12,6 @@ import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwnPre
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Zero-divisor callable post reshaped as the result-sign-fix precondition
     over the current quotient cell plus an explicit frame. -/
@@ -36,10 +35,10 @@ theorem saveRaDivCallBzeroCallablePost_resultSignFixPreOwnScratch
   dsimp only
   rw [resultSignFixPreOwnScratch_unfold,
     saveRaDivCallBzeroResultSignFixFrame_unfold, evmWordIs_zero]
-  rw [show (sp + 32 + signExtend12 (0 : BitVec 12) : Word) = sp + 32 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (8 : BitVec 12) : Word) = (sp + 32) + 8 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (16 : BitVec 12) : Word) = (sp + 32) + 16 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (24 : BitVec 12) : Word) = (sp + 32) + 24 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (0 : BitVec 12) : Word) = sp + 32 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (8 : BitVec 12) : Word) = (sp + 32) + 8 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (16 : BitVec 12) : Word) = (sp + 32) + 16 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (24 : BitVec 12) : Word) = (sp + 32) + 24 by bv_addr]
   xperm
 
 /-- Callable post reshaped as the result-sign-fix precondition over the
@@ -70,10 +69,10 @@ theorem saveRaDivCallBzeroCallablePost_resultSignFixPreOwnScratch_quotient
   dsimp only
   rw [resultSignFixPreOwnScratch_unfold,
     saveRaDivCallBzeroResultSignFixFrame_unfold, evmWordIs_sp32_unfold]
-  rw [show (sp + 32 + signExtend12 (0 : BitVec 12) : Word) = sp + 32 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (8 : BitVec 12) : Word) = sp + 40 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (16 : BitVec 12) : Word) = sp + 48 by bv_addr]
-  rw [show (sp + 32 + signExtend12 (24 : BitVec 12) : Word) = sp + 56 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (0 : BitVec 12) : Word) = sp + 32 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (8 : BitVec 12) : Word) = sp + 40 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (16 : BitVec 12) : Word) = sp + 48 by bv_addr]
+  rw [show (sp + 32 + EvmAsm.Rv64.signExtend12 (24 : BitVec 12) : Word) = sp + 56 by bv_addr]
   xperm
 
 end EvmAsm.Evm64.SDiv.Compose

@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallReturnComposition
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Zero-divisor SDIV path through result-sign-fix and the saved-RA return,
     specialized from the sidecar bzero callable handoff. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_normalized_named_post_from_handoff_spec_in_sdivCode
@@ -23,7 +21,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_normalized_named
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
