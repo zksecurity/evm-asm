@@ -342,6 +342,21 @@ theorem sdivAbsDividendWord_ne_zero_of_ne_zero
   intro h_abs_zero
   exact h_ne ((sdivAbsDividendWord_eq_zero_iff dividend).mp h_abs_zero)
 
+/-- The SDIV dividend absolute-value normalization either leaves the word
+    unchanged or computes its two's-complement negation, depending on the
+    caller-visible sign bit. -/
+theorem sdivAbsDividendWord_sign_split
+    (dividend : EvmWord) :
+    sdivAbsDividendWord
+        (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3) =
+      if dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = 0 then
+        dividend
+      else
+        ~~~dividend + 1 := by
+  unfold sdivAbsDividendWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
