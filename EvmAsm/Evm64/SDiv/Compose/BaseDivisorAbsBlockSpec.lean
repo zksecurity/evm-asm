@@ -8,12 +8,10 @@ import EvmAsm.Evm64.SDiv.Compose.BaseDivisorAbsSequence
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 theorem divisorAbs_spec_in_sdivCode
     (sp sign maskOld valueOld carryOld limb0 limb1 limb2 limb3 : Word)
     (base : Word) :
-    cpsTripleWithin 21 (base + divisorAbsOff) ((base + divisorAbsOff) + 84)
+    EvmAsm.Rv64.cpsTripleWithin 21 (base + divisorAbsOff) ((base + divisorAbsOff) + 84)
       (sdivCode base)
       (divisorAbsPre sp sign maskOld valueOld carryOld
         limb0 limb1 limb2 limb3)
@@ -36,6 +34,6 @@ theorem divisorAbs_spec_in_sdivCode
       (base + divisorAbsOff) (by decide) (by decide) (by decide)
   rw [EvmAsm.Evm64.condNegate256BlockPre_unfold,
     EvmAsm.Evm64.condNegate256BlockPost_unfold] at hSpec
-  exact cpsTripleWithin_extend_code hmono hSpec
+  exact EvmAsm.Rv64.cpsTripleWithin_extend_code hmono hSpec
 
 end EvmAsm.Evm64.SDiv.Compose
