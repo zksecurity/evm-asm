@@ -4,7 +4,7 @@
   Zero-divisor SDIV path handoff from the div-call prefix through result-sign-fix.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCallExactReturnHandoff
+import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
