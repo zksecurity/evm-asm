@@ -4,6 +4,7 @@
   Exact SDIV path handoff from the div-call prefix through result-sign-fix.
 -/
 
+import EvmAsm.Evm64.SDiv.Compose.DivCallExactHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroCallableHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
