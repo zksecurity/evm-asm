@@ -319,6 +319,51 @@ instance pcFreeInst_fullDivN4MaxSkipPost
     Assertion.PCFree (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
   ⟨pcFree_fullDivN4MaxSkipPost⟩
 
+theorem evm_div_n4_max_skip_denorm_epilogue_spec_noNop (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hshift_nz : (clzResult b3).1 ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop base)
+      (preloopMaxSkipPostN4 sp a0 a1 a2 a3 b0 b1 b2 b3)
+      (fullDivN4MaxSkipPost sp a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := (clzResult b3).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  let u3 := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  let u2 := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u1 := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u0 := a0 <<< (shift.toNat % 64)
+  let qHat : Word := signExtend12 4095
+  let ms := mulsubN4 qHat b0' b1' b2' b3' u0 u1 u2 u3
+  have hB := evm_div_preamble_denorm_epilogue_spec_noNop sp base
+    ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 shift
+    ms.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    ms.2.2.2.2 qHat 0 0 0
+    b0' b1' b2' b3'
+    hshift_nz
+  have hBF := cpsTripleWithin_frameR
+    (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+     ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+     ((sp + signExtend12 4024) ↦ₘ (a3 >>> (antiShift.toNat % 64)) - ms.2.2.2.2) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+     (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+     (.x1 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ qHat))
+    (by pcFree) hB
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      simp only [preloopMaxSkipPostN4_unfold] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      delta fullDivN4MaxSkipPost
+      rw [sepConj_assoc'] at hq
+      xperm_hyp hq)
+    hBF
+
 -- ============================================================================
 -- Full n=4 MOD path postcondition (max+skip, shift≠0)
 -- ============================================================================
