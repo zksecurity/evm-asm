@@ -238,6 +238,72 @@ theorem exp_two_mul_full_loop_boundary_of_entry_tail_exit_cases_spec_within
       r0 r1 r2 r3 baseWord exponentWord rest exitCond base
       (by simpa using hLoop)
 
+/-- Closed-form variant of
+    `exp_two_mul_full_loop_boundary_of_entry_tail_exit_cases_spec_within`.
+    This accepts a concrete `48195`-step tail continuation and packages the
+    boundary at the concrete `48401`-step bound. -/
+theorem exp_two_mul_full_loop_boundary_of_entry_tail_exit_cases_closed_bound_spec_within
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+      e iterCount r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountNew : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hbase : base &&& 1 = 0)
+    (hEntry :
+      ∀ hp,
+        expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest hp →
+        expTwoMulIterPre e iterCount v18 sp evmSp tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 hp)
+    (hCondExit :
+      ∀ hp,
+        expTwoMulIterCondPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 baseWord rest exitCond hp)
+    (hSkipExit :
+      ∀ hp,
+        expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 baseWord rest exitCond hp)
+    (hTail :
+      cpsTripleWithin 48195 (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 baseWord rest exitCond)) :
+    cpsTripleWithin 48401 base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hTailNamed :
+      cpsTripleWithin expTwoMulFullLoopBodyTailBound (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 baseWord rest exitCond) := by
+    rw [expTwoMulFullLoopBodyTailBound_eq]
+    exact hTail
+  rw [← expTwoMulFullLoopBoundaryBound_eq]
+  exact
+    exp_two_mul_full_loop_boundary_of_entry_tail_exit_cases_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+      e iterCount r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      iterCountNew baseWord exponentWord rest exitCond base hbase
+      hEntry hCondExit hSkipExit hTailNamed
+
 /-- Bounded-body variant of `exp_two_mul_full_loop_boundary_of_body_spec_within`.
     This lets the future 256-iteration proof use any body proof whose bound is
     no larger than the named full-loop body bound. -/
