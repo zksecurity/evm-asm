@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 /-- Postcondition view for the SDIV zero-divisor branch after result-sign
     fixup: conditional negation of the zero quotient is still the zero EVM
     word, with the sign-fix scratch registers exposed explicitly. -/
@@ -37,12 +35,14 @@ theorem resultSignFixPost_sdivResultSign_zero_word
   · rw [h_sign]
     rw [resultSignFixPost_unfold, evmWordIs_zero]
     dsimp only
-    simp only [signExtend12_0, signExtend12_8, signExtend12_16, signExtend12_24]
+    simp only [EvmAsm.Rv64.signExtend12_0, EvmAsm.Rv64.signExtend12_8,
+      EvmAsm.Rv64.signExtend12_16, EvmAsm.Rv64.signExtend12_24]
     simp
   · rw [h_sign]
     rw [resultSignFixPost_unfold, evmWordIs_zero]
     dsimp only
-    simp only [signExtend12_0, signExtend12_8, signExtend12_16, signExtend12_24]
+    simp only [EvmAsm.Rv64.signExtend12_0, EvmAsm.Rv64.signExtend12_8,
+      EvmAsm.Rv64.signExtend12_16, EvmAsm.Rv64.signExtend12_24]
     simp
 
 end EvmAsm.Evm64.SDiv.Compose
