@@ -5,12 +5,10 @@ import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64
-
 @[irreducible]
 def saveRaDivCallResultSignFixPost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
-      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Assertion :=
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : EvmAsm.Rv64.Assertion :=
   let dividendAbsWord :=
     sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
   let divisorAbsWord :=
@@ -63,7 +61,7 @@ theorem saveRaDivCallResultSignFixPost_pcFree
 instance pcFreeInst_saveRaDivCallResultSignFixPost
     (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (saveRaDivCallResultSignFixPost vRa sp base
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
         divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=
