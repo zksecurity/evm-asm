@@ -848,7 +848,6 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := e >>> (63 : BitVec 6).toNat
     let w := expResultWord r0 r1 r2 r3
-    let iterCountNew := iterCount + signExtend12 ((-1 : BitVec 12))
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
@@ -893,12 +892,12 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
            (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)) ** baseFrame),
         (loopTarget,
-          ((((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew ≠ 0⌝) ** rest) ** baseFrame)),
+          ((((.x9 ↦ᵣ expIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expIterCountNew iterCount ≠ 0⌝) ** rest) ** baseFrame)),
         (base + 264,
-          ((((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜iterCountNew = 0⌝) ** rest) ** baseFrame))] := by
-  intro bit w iterCountNew baseFrame rest
+          ((((.x9 ↦ᵣ expIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+           ⌜expIterCountNew iterCount = 0⌝) ** rest) ** baseFrame))] := by
+  intro bit w baseFrame rest
   have h :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
