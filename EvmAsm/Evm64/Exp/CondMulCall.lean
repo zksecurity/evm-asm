@@ -14,7 +14,7 @@ import EvmAsm.Evm64.Multiply.Callable
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq Instr Program seq single)
 
 /-- 4-block `unionAll` decomposition of `exp_cond_mul_call_block mulOff`.
     The block layout is:

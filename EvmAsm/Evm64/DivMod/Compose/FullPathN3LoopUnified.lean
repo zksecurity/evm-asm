@@ -572,6 +572,34 @@ theorem evm_div_n3_denorm_epilogue_bundled_spec (bltu_1 bltu_0 : Bool)
       xperm_hyp hq)
     h
 
+theorem evm_div_n3_denorm_epilogue_bundled_spec_noNop (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (hshift_nz : fullDivN3Shift b2 ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop base)
+      (fullDivN3DenormPre bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3)
+      (fullDivN3DenormPost bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3) := by
+  let shift := fullDivN3Shift b2
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let c3 := fullDivN3C3 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  have h := evm_div_preamble_denorm_epilogue_spec_noNop sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    c3 r0.1 r1.1 (0 : Word) (0 : Word)
+    v.1 v.2.1 v.2.2.1 v.2.2.2 hshift_nz
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      subst shift; subst v; subst r1; subst r0; subst c3
+      delta fullDivN3DenormPre at hp
+      simp only [se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      subst shift; subst r1; subst r0
+      delta fullDivN3DenormPost
+      xperm_hyp hq)
+    h
+
 theorem preloopN3UnifiedPost_to_fullDivN3DenormPre_frame_FF
     (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
     (h : PartialState)
