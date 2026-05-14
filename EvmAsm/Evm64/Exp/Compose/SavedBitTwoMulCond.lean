@@ -443,7 +443,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
@@ -571,7 +571,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
@@ -695,7 +695,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
@@ -791,7 +791,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
@@ -983,7 +983,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := e >>> (63 : BitVec 6).toNat
+    let bit := expTwoMulIterBit e
     let w := expResultWord r0 r1 r2 r3
     let aw := expResultWord a0 a1 a2 a3
     let rw := (w * w) * aw
