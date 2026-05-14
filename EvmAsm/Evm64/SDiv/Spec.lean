@@ -65,6 +65,52 @@ theorem sdivResultSignFixedWord_eq_sdiv_of_nonnegative
   · simp [hZero]
   · rw [if_neg hZero]
 
+/-- Negative/negative exact-path SDIV result bridge.
+
+    When both input signs are one, the assembly absolute-value helpers produce
+    `-dividend` and `-divisor`; the result sign is zero, so the result-sign-fix
+    helper leaves the unsigned quotient unchanged. This is the `true,true`
+    branch of `BitVec.sdiv_eq`. -/
+theorem sdivResultSignFixedWord_eq_sdiv_of_negative
+    (dividend divisor : EvmWord)
+    (hDividendSign :
+      dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word))
+    (hDivisorSign :
+      divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word)) :
+    let dividendAbsWord :=
+      sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3)
+    let divisorAbsWord :=
+      sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3)
+    let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+    sdivResultSignFixedWord (dividend.getLimbN 3) (divisor.getLimbN 3)
+      (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
+      (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) =
+      EvmWord.sdiv dividend divisor := by
+  dsimp
+  rw [sdivAbsDividendWord_eq_neg_word_of_sign_one dividend hDividendSign]
+  rw [sdivAbsDivisorWord_eq_neg_word_of_sign_one divisor hDivisorSign]
+  have hResultSign :
+      (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
+        (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat) = (0 : Word) := by
+    rw [hDividendSign, hDivisorSign]
+    bv_decide
+  rw [sdivResultSignFixedWord_eq_word_of_result_sign_zero _ _ _ hResultSign]
+  have hDividendMsb : BitVec.msb dividend = true := by
+    unfold EvmWord.getLimbN EvmWord.getLimb at hDividendSign
+    simp at hDividendSign
+    bv_decide
+  have hDivisorMsb : BitVec.msb divisor = true := by
+    unfold EvmWord.getLimbN EvmWord.getLimb at hDivisorSign
+    simp at hDivisorSign
+    bv_decide
+  unfold EvmWord.div EvmWord.sdiv
+  rw [BitVec.sdiv_eq, hDividendMsb, hDivisorMsb]
+  by_cases hZero : -divisor = 0
+  · simp [hZero]
+  · rw [if_neg hZero]
+
 /-- Top-level zero-divisor SDIV stack bridge with the concrete semantic
     zero-result stack shape.
 
