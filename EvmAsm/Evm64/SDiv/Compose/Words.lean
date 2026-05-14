@@ -78,6 +78,32 @@ theorem sdivResultSign_bool (dividendTop divisorTop : Word) :
   dsimp
   bv_decide
 
+
+/-- The SDIV result sign is zero exactly when the operand sign bits match. -/
+theorem sdivResultSign_eq_zero_iff
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    resultSign = 0 ↔
+      dividendTop >>> (63 : BitVec 6).toNat =
+        divisorTop >>> (63 : BitVec 6).toNat := by
+  dsimp
+  bv_decide
+
+/-- The SDIV result sign is one exactly when the operand sign bits differ. -/
+theorem sdivResultSign_eq_one_iff
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    resultSign = 1 ↔
+      dividendTop >>> (63 : BitVec 6).toNat ≠
+        divisorTop >>> (63 : BitVec 6).toNat := by
+  dsimp
+  bv_decide
+
+
 /-- Conditional negation by the SDIV result sign leaves the zero quotient
     limbs equal to zero. The carries may be used internally by the sign-fix
     block, but the four memory-result limbs remain zero. -/
