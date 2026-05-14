@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitBase
+import EvmAsm.Evm64.Exp.Compose.EvmExpCode
 
 namespace EvmAsm.Evm64.Exp.Compose
 
