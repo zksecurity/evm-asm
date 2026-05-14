@@ -208,6 +208,22 @@ theorem sdivResultSignFixedWord_eq_word_of_result_sign_zero
   rw [sdivResultSignFixedWord_of_result_sign_zero _ _ _ _ _ _ hSign]
   exact sdivWord_from_getLimbN quotient
 
+/-- If the SDIV result sign is one, the result-sign-fix helper returns the
+    two's-complement negation of the quotient word. -/
+theorem sdivResultSignFixedWord_eq_neg_word_of_result_sign_one
+    (dividendTop divisorTop : Word) (quotient : EvmWord)
+    (hSign :
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat) = (1 : Word)) :
+    sdivResultSignFixedWord dividendTop divisorTop
+      (quotient.getLimbN 0) (quotient.getLimbN 1)
+      (quotient.getLimbN 2) (quotient.getLimbN 3) = -quotient := by
+  unfold sdivResultSignFixedWord EvmWord.fromLimbs
+  rw [hSign]
+  unfold EvmWord.getLimbN EvmWord.getLimb
+  simp only [Neg.neg]
+  bv_decide
+
 /-- The SDIV divisor absolute-value word is zero when all divisor limbs are
     zero. This discharges the internal bzero-branch hypothesis for the
     caller-visible zero-divisor stack case. -/
