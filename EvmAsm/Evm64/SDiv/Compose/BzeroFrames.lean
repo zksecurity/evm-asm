@@ -5,8 +5,9 @@
   returns.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.BzeroCallablePost
-import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
+import EvmAsm.Evm64.DivMod.Compose.Base
+import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
+import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64.SDiv.Compose
 

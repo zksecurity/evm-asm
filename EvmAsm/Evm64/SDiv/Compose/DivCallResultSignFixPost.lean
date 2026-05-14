@@ -1,4 +1,6 @@
+import EvmAsm.Evm64.EvmWordArith.Div
 import EvmAsm.Evm64.SDiv.Compose.BzeroFrames
+import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
 import EvmAsm.Evm64.SDiv.Compose.Words
 
 namespace EvmAsm.Evm64.SDiv.Compose

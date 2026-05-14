@@ -4,7 +4,7 @@
   Pure word-level helpers shared by SDIV div-call composition files.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.Base
+import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64.SDiv.Compose
 

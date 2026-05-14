@@ -2,6 +2,7 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroPost
 import EvmAsm.Evm64.SDiv.Compose.DivCallReturnPosts
 import EvmAsm.Evm64.SDiv.Compose.DispatchPrefix
 import EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
