@@ -11,6 +11,7 @@ import EvmAsm.Evm64.Exp.Compose.TopBoundaryBlocks
 import EvmAsm.Evm64.Exp.Compose.TopIterSubs
 import EvmAsm.Evm64.Exp.Compose.TopLoopControl
 import EvmAsm.Evm64.Exp.Compose.TopCallSubs
+import EvmAsm.Evm64.Exp.Compose.TopJalBlocks
 import EvmAsm.Evm64.Exp.CondMulMarshalPair
 import EvmAsm.Evm64.Exp.SquaringCallSeq
 
@@ -18,36 +19,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
-
-/-- Squaring-call JAL spec lifted to the top-level EXP code bundle. -/
-theorem exp_squaring_square_evm_exp_spec_within
-    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
-    (vOld : Word) (base mulTarget : Word)
-    (hmul : ((base + 104) + signExtend21 mulOff : Word) = mulTarget) :
-    cpsTripleWithin 1 (base + 104) mulTarget
-      (evmExpCode base mulOff skipOff backOff)
-      (.x1 ↦ᵣ vOld)
-      (.x1 ↦ᵣ (base + 108)) := by
-  have h := EvmAsm.Evm64.exp_square_block_spec_within mulOff vOld (base + 104)
-  rw [hmul] at h
-  have hret : ((base + 104 : Word) + 4) = base + 108 := by bv_omega
-  rw [hret] at h
-  exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_squaring_square_sub)
-
-/-- Conditional-multiply JAL spec lifted to the top-level EXP code bundle. -/
-theorem exp_cond_mul_square_evm_exp_spec_within
-    (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
-    (vOld : Word) (base mulTarget : Word)
-    (hmul : ((base + 212) + signExtend21 mulOff : Word) = mulTarget) :
-    cpsTripleWithin 1 (base + 212) mulTarget
-      (evmExpCode base mulOff skipOff backOff)
-      (.x1 ↦ᵣ vOld)
-      (.x1 ↦ᵣ (base + 216)) := by
-  have h := EvmAsm.Evm64.exp_square_block_spec_within mulOff vOld (base + 212)
-  rw [hmul] at h
-  have hret : ((base + 212 : Word) + 4) = base + 216 := by bv_omega
-  rw [hret] at h
-  exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_cond_mul_square_sub)
 
 /-- Squaring-call factor-1 marshal spec lifted to the top-level EXP code
     bundle: at offset `base + 40`, copies result limbs from scratch to
