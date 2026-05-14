@@ -320,6 +320,18 @@ theorem sdivAbsDivisorWord_ne_zero_of_ne_zero
   intro h_abs_zero
   exact h_ne ((sdivAbsDivisorWord_eq_zero_iff divisor).mp h_abs_zero)
 
+/-- The SDIV dividend absolute-value word is zero exactly for the zero
+    dividend. This mirrors the divisor bridge for semantic stack views that
+    reason about wrapper-normalized operands. -/
+theorem sdivAbsDividendWord_eq_zero_iff
+    (dividend : EvmWord) :
+    sdivAbsDividendWord
+        (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3) = 0 ↔
+      dividend = 0 := by
+  unfold sdivAbsDividendWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
