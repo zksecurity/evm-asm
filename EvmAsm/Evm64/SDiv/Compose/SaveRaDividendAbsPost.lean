@@ -8,23 +8,20 @@ import EvmAsm.Evm64.SDiv.Compose.SaveRaDividendAbsPre
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Postcondition for the SDIV save-ra/signs/dividendAbs prefix. Takes
     only the bare wrapper inputs; the sign/mask/sum/carry let-chain
     (~12 derived values) is computed internally so the theorem signature
     stays flat. Wrapped `@[irreducible]`. -/
 @[irreducible]
 def saveRaSignsThenDividendAbsPost
-    (vRa sp divisorTop limb0 limb1 limb2 dividendTop : Word) : Assertion :=
+    (vRa sp divisorTop limb0 limb1 limb2 dividendTop : Word) : EvmAsm.Rv64.Assertion :=
   let sign := dividendTop >>> (63 : BitVec 6).toNat
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-  let mem0 := sp + signExtend12 (0 : BitVec 12)
-  let mem1 := sp + signExtend12 (8 : BitVec 12)
-  let mem2 := sp + signExtend12 (16 : BitVec 12)
-  let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-  let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+  let mem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+  let mem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+  let mem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+  let mem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+  let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
   let mask := (0 : Word) - sign
   let sum0 := (limb0 ^^^ mask) + sign
   let carry0 := if BitVec.ult sum0 sign then (1 : Word) else 0
@@ -34,7 +31,7 @@ def saveRaSignsThenDividendAbsPost
   let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
   let sum3 := (dividendTop ^^^ mask) + carry2
   let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-  (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+  (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
     ((.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))) **
    ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
     (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
@@ -46,11 +43,11 @@ theorem saveRaSignsThenDividendAbsPost_unfold
     saveRaSignsThenDividendAbsPost vRa sp divisorTop limb0 limb1 limb2 dividendTop =
       (let sign := dividendTop >>> (63 : BitVec 6).toNat
        let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-       let mem0 := sp + signExtend12 (0 : BitVec 12)
-       let mem1 := sp + signExtend12 (8 : BitVec 12)
-       let mem2 := sp + signExtend12 (16 : BitVec 12)
-       let mem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-       let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+       let mem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+       let mem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+       let mem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+       let mem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+       let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
        let mask := (0 : Word) - sign
        let sum0 := (limb0 ^^^ mask) + sign
        let carry0 := if BitVec.ult sum0 sign then (1 : Word) else 0
@@ -60,7 +57,7 @@ theorem saveRaSignsThenDividendAbsPost_unfold
        let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
        let sum3 := (dividendTop ^^^ mask) + carry2
        let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-       (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+       (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
          ((.x9 ↦ᵣ divisorSign) ** (divisorMem3 ↦ₘ divisorTop))) **
         ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
          (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **

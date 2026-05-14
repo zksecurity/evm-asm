@@ -10,8 +10,6 @@ import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwn
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- SDIV zero-divisor path through the final result sign-fix block. The
     unsigned DIV callable has already produced a zero quotient at the current
     stack top, so this composes the named callable post with
@@ -26,7 +24,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_resultSignFix_spec_in_s
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
+    EvmAsm.Rv64.cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
       base ((base + resultSignFixOff) + 84) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -65,13 +63,13 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_resultSignFix_spec_in_s
       EvmAsm.Evm64.divScratchOwn_unfold]
     pcFree
   have hFix :=
-    cpsTripleWithin_frameR
+    EvmAsm.Rv64.cpsTripleWithin_frameR
       (saveRaDivCallBzeroResultSignFixFrame
         vRa sp base divisorSign dividendAbsWord)
       hFramePc
       (resultSignFix_regOwn_scratch_spec_in_sdivCode
         (sp + 32) resultSign 0 0 0 0 base)
-  exact cpsTripleWithin_seq_perm_same_cr
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr
     (fun _ hp => by
       rw [saveRaDivCallBzeroCallablePost_resultSignFixPreOwnScratch hbz] at hp
       exact hp)

@@ -9,7 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallPrefix
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Frame the dispatcher-pre slots — `(.x2 ↦ᵣ v2)`, `(.x5 ↦ᵣ v5)`,
     `(.x6 ↦ᵣ v6)`, and `divScratchValuesCall` — through
@@ -29,8 +28,8 @@ theorem saveRa_signs_abs_signXor_then_divCall_framed_for_dispatch_spec_in_sdivCo
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) :
-    cpsTripleWithin 49 base
-      ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+    EvmAsm.Rv64.cpsTripleWithin 49 base
+      ((base + divCallOff) + EvmAsm.Rv64.signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
       (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -52,7 +51,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_framed_for_dispatch_spec_in_sdivCo
     rw [EvmAsm.Evm64.divScratchValuesCall_unfold]
     unfold EvmAsm.Evm64.divScratchValues
     pcFree
-  exact cpsTripleWithin_frameR _ hFramePcFree
+  exact EvmAsm.Rv64.cpsTripleWithin_frameR _ hFramePcFree
     (saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
       vRa vSavedOld sp sDividendOld sDivisorOld
       dividendMaskOld dividendValueOld dividendCarryOld

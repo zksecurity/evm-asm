@@ -9,8 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroResultSignFix
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- SDIV zero-divisor path through the saved-RA return instruction. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_spec_in_sdivCode
     (vRa vSavedOld sp sDividendOld sDivisorOld
@@ -22,9 +20,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_spec_in_sdivCode
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
-      base (((vRa + signExtend12 (0 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) (sdivCode base)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+      base (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+        EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -38,7 +36,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_spec_in_sdivCode
          (dividendTop >>> (63 : BitVec 6).toNat) ^^^
            (divisorTop >>> (63 : BitVec 6).toNat)
        let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-       (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+       (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
        (resultSignFixPost (sp + 32) resultSign 0 0 0 0 **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
   let dividendAbsWord :=
@@ -63,30 +61,30 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_spec_in_sdivCode
       EvmAsm.Evm64.divScratchOwn_unfold]
     pcFree
   have hRetFramed :=
-    cpsTripleWithin_frameR
+    EvmAsm.Rv64.cpsTripleWithin_frameR
       (resultSignFixPost (sp + 32) resultSign 0 0 0 0 **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)
       hRetFramePc
       (savedRaRet_spec_in_sdivCode
-        (vRa + signExtend12 (0 : BitVec 12)) base)
+        (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) base)
   have hFall :
       (base + resultSignFixOff) + 84 = base + savedRaRetOff := by
     simp [resultSignFixOff, savedRaRetOff]
     bv_addr
   have hRetFramed' :
-      cpsTripleWithin 1 ((base + resultSignFixOff) + 84)
-        (((vRa + signExtend12 (0 : BitVec 12)) +
-          signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word))
+      EvmAsm.Rv64.cpsTripleWithin 1 ((base + resultSignFixOff) + 84)
+        (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+          EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word))
         (sdivCode base)
-        ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+        ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
          (resultSignFixPost (sp + 32) resultSign 0 0 0 0 **
           saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord))
-        ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+        ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
          (resultSignFixPost (sp + 32) resultSign 0 0 0 0 **
           saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
     rw [hFall]
     exact hRetFramed
-  exact cpsTripleWithin_seq_perm_same_cr
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr
     (fun _ hp => by
       rw [saveRaDivCallBzeroResultSignFixFrame_to_savedRaRet] at hp
       xperm_hyp hp)

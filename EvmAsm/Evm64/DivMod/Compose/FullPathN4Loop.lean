@@ -104,6 +104,34 @@ theorem divK_loop_body_n4_max_skip_j0_divCode_within
     (cpsTripleWithin_mono_nSteps (by decide) (divK_loop_body_n4_max_skip_j0_spec_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow))
 
+/-- Extend max_skip j=0 loop body to `divCode_noNop`. -/
+theorem divK_loop_body_n4_max_skip_j0_divCode_noNop_within
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (base : Word)
+    (hbltu : ¬BitVec.ult uTop v3) :
+    let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let qHat : Word := signExtend12 4095
+    let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+    (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3) then (1 : Word) else 0) = (0 : Word) →
+    cpsTripleWithin 76 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop) **
+       (qAddr ↦ₘ qOld))
+      (loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase qHat qAddr hborrow
+  exact cpsTripleWithin_mono_nSteps (by decide)
+    (divK_loop_body_n4_max_skip_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
+
 /-- Bundled precondition for the `divK_loop_body_n4_max_skip_j0_modCode_within` /
     `_divCode` code-extended loop-body specs. Wraps the 21-atom sepConj
     chain that the `let uBase / qAddr` bindings make awkward in the
