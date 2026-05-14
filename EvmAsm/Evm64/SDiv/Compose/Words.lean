@@ -111,6 +111,25 @@ theorem sdivAbsDividendWord_of_sign_zero
   rw [hSign]
   bv_decide
 
+/-- Four concrete `getLimbN` projections assemble back to their source word. -/
+theorem sdivWord_from_getLimbN (v : EvmWord) :
+    EvmWord.fromLimbs (fun i : Fin 4 =>
+      match i with
+      | 0 => v.getLimbN 0 | 1 => v.getLimbN 1 | 2 => v.getLimbN 2 | 3 => v.getLimbN 3) =
+      v := by
+  unfold EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
+/-- Word-shaped variant of `sdivAbsDividendWord_of_sign_zero`: if the dividend
+    sign bit is zero, the SDIV absolute-value helper returns the dividend word. -/
+theorem sdivAbsDividendWord_eq_word_of_sign_zero
+    (dividend : EvmWord)
+    (hSign : dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+      (dividend.getLimbN 2) (dividend.getLimbN 3) = dividend := by
+  rw [sdivAbsDividendWord_of_sign_zero _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN dividend
+
 /-- If the divisor sign bit is zero, the divisor absolute-value word is just the
     original four-limb word. -/
 theorem sdivAbsDivisorWord_of_sign_zero
@@ -123,6 +142,16 @@ theorem sdivAbsDivisorWord_of_sign_zero
   unfold sdivAbsDivisorWord EvmWord.fromLimbs
   rw [hSign]
   bv_decide
+
+/-- Word-shaped variant of `sdivAbsDivisorWord_of_sign_zero`: if the divisor
+    sign bit is zero, the SDIV absolute-value helper returns the divisor word. -/
+theorem sdivAbsDivisorWord_eq_word_of_sign_zero
+    (divisor : EvmWord)
+    (hSign : divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+      (divisor.getLimbN 2) (divisor.getLimbN 3) = divisor := by
+  rw [sdivAbsDivisorWord_of_sign_zero _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN divisor
 
 /-- If the SDIV result sign is zero, the result-sign-fix word is just the
     unsigned quotient word assembled from its four limbs. -/
@@ -138,6 +167,20 @@ theorem sdivResultSignFixedWord_of_result_sign_zero
   unfold sdivResultSignFixedWord EvmWord.fromLimbs
   rw [hSign]
   bv_decide
+
+/-- Word-shaped variant of `sdivResultSignFixedWord_of_result_sign_zero`: if
+    the result sign is zero, the result-sign-fix helper leaves the quotient word
+    unchanged. -/
+theorem sdivResultSignFixedWord_eq_word_of_result_sign_zero
+    (dividendTop divisorTop : Word) (quotient : EvmWord)
+    (hSign :
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat) = (0 : Word)) :
+    sdivResultSignFixedWord dividendTop divisorTop
+      (quotient.getLimbN 0) (quotient.getLimbN 1)
+      (quotient.getLimbN 2) (quotient.getLimbN 3) = quotient := by
+  rw [sdivResultSignFixedWord_of_result_sign_zero _ _ _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN quotient
 
 /-- The SDIV divisor absolute-value word is zero when all divisor limbs are
     zero. This discharges the internal bzero-branch hypothesis for the
