@@ -23,7 +23,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
     let r := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
+    let aw := expTwoMulIterAw a0 a1 a2 a3
     let rw := r * aw
     let rest : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
@@ -87,7 +87,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
     (base : Word)
     (hbase : base &&& 1 = 0) :
     let r := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
+    let aw := expTwoMulIterAw a0 a1 a2 a3
     let rw := r * aw
     let rest : Assertion :=
       (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
@@ -148,7 +148,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
             (evmExpMsbSavedBitTwoMulCanonicalCode
               base squaringMulOff condMulOff)
             (mul_callable_code mulTarget)) :
-    let aw := expResultWord a0 a1 a2 a3
+    let aw := expTwoMulIterAw a0 a1 a2 a3
     let rw := r * aw
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
@@ -204,7 +204,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_canonical
     (iterCount sp evmSp vOld a0 a1 a2 a3 : Word) (r : EvmWord)
     (base : Word)
     (hbase : base &&& 1 = 0) :
-    let aw := expResultWord a0 a1 a2 a3
+    let aw := expTwoMulIterAw a0 a1 a2 a3
     let rw := r * aw
     let baseFrame : Assertion :=
       ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
