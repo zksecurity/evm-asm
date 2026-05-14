@@ -333,7 +333,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_spec_within
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) := by
   have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
   have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
   rw [hnext] at h
@@ -360,16 +360,18 @@ theorem exp_loop_back_evm_exp_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base target : Word)
     (htarget : ((base + 252) + 4 : Word) + signExtend13 backOff = target) :
-    let cNew := c + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin 2 (base + 252)
       (evmExpCode base mulOff skipOff backOff)
       ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
-      target ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew ≠ 0⌝)
-      (base + 260) ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew = 0⌝) := by
+      target
+        ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c ≠ 0⌝)
+      (base + 260)
+        ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c = 0⌝) := by
   have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 252) target htarget
   have hnext : ((base + 252 : Word) + 8) = base + 260 := by bv_omega
   rw [hnext] at h
-  exact cpsBranchWithin_extend_code (h := h) (hmono := evmExpCode_iter_loop_back_sub)
+  simpa [expIterCountNew] using
+    (cpsBranchWithin_extend_code (h := h) (hmono := evmExpCode_iter_loop_back_sub))
 
 /-- Squaring-call factor-1 marshal sub-block directly included in the
     top-level EXP code bundle. -/

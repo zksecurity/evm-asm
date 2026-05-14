@@ -8,9 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroReturnViews
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Framed variant of the SDIV zero-divisor return path that preserves the
     untouched stack tail below the two consumed operands. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_zero_word_rest_spec_in_sdivCode
@@ -24,7 +21,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_zero_word_rest_s
     (rest : List EvmWord)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       ((saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
           dividendMaskOld dividendValueOld dividendCarryOld
@@ -55,7 +52,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_zero_word_rest_s
           evmWordIs (sp + 32) (0 : EvmWord)) **
          saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) **
        evmStackIs (sp + 64) rest) := by
-  exact cpsTripleWithin_frameR (evmStackIs (sp + 64) rest) pcFree_evmStackIs
+  exact EvmAsm.Rv64.cpsTripleWithin_frameR (evmStackIs (sp + 64) rest) pcFree_evmStackIs
     (saveRa_signs_abs_signXor_then_divCall_bzero_then_return_zero_word_spec_in_sdivCode
       vRa vSavedOld sp sDividendOld sDivisorOld
       dividendMaskOld dividendValueOld dividendCarryOld

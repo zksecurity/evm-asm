@@ -9,9 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DispatchViews
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Normalized return-target view of the SDIV zero-divisor path. This hides
     the two `signExtend12 0` artifacts introduced by the saved-RA move and
     the final `JALR`, leaving downstream callers with the ordinary masked
@@ -26,7 +23,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_normalized_spec_
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
       base (vRa &&& ~~~(1 : Word)) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -45,14 +42,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_then_return_normalized_spec_
        (resultSignFixPost (sp + 32) resultSign 0 0 0 0 **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
   have hExit :
-      (((vRa + signExtend12 (0 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) =
+      (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+        EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) =
         (vRa &&& ~~~(1 : Word)) := by
-    rw [signExtend12_0]
+    rw [EvmAsm.Rv64.signExtend12_0]
     bv_decide
   rw [← hExit]
-  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
-      simp only [signExtend12_0] at hp ⊢
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+      simp only [EvmAsm.Rv64.signExtend12_0] at hp ⊢
       have hRa : (vRa + (0 : Word)) = vRa := by bv_decide
       rw [hRa] at hp
       exact hp)
