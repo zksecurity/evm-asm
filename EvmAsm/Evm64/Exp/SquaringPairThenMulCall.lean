@@ -31,7 +31,10 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (Assertion CodeReq cpsTripleWithin cpsTripleWithin_extend_code
+  cpsTripleWithin_frameL cpsTripleWithin_frameR cpsTripleWithin_of_forall_regIs_to_regOwn
+  cpsTripleWithin_seq cpsTripleWithin_seq_perm_same_cr cpsTripleWithin_weaken
+  memOwn regOwn signExtend12 signExtend21)
 
 abbrev expSquaringCallSquareW (r0 r1 r2 r3 : Word) : EvmWord :=
   let w := expResultWord r0 r1 r2 r3

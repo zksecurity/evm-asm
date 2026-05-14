@@ -403,6 +403,20 @@ theorem divCode_noNop_sub_divCode {base : Word} :
     (CodeReq.union_split_mono noNop_b12_div
     (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
 
+/-- The shared loop body block is present in `divCode_noNop`.
+
+    This public block-level inclusion is useful when rebuilding loop
+    compositions over the no-NOP code surface: unlike `sharedDivModCode`, the
+    no-NOP bundle omits the old return-slot NOP and can be used by callable
+    wrappers that preserve the caller's return address. -/
+theorem divK_loopBody_ofProg_sub_divCode_noNop {base : Word} :
+    ∀ a i, (CodeReq.ofProg (base + loopBodyOff) (divK_loopBody 560 7736)) a = some i →
+      (divCode_noNop base) a = some i := by
+  unfold divCode_noNop; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock
+  exact CodeReq.union_mono_left
+
 -- Shared no-NOP blocks as subsets of `divCode_noNop`.
 private theorem sharedNoNop_b0_div {b : Word} :
     ∀ a i, (CodeReq.ofProg b (divK_phaseA 1020)) a = some i → (divCode_noNop b) a = some i := by
