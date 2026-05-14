@@ -48,18 +48,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
       memOwn evmSp ** memOwn (evmSp + 8) **
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
       (.x1 ↦ᵣ ((base + 44) + 68))
-    let condRest : Assertion :=
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ rw.getLimbN 3) **
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
-      evmWordIs sp rw ** evmWordIs (evmSp + 32) rw **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 152) + 68))
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
@@ -86,17 +74,19 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
       [(loopTarget,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** condRest) ** condFrame),
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+            expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame),
         (base + 264,
           (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** condRest) ** condFrame),
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+            expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame),
         (loopTarget,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame)),
         (base + 264,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame))] := by
-  intro bit squareW rw baseFrame skipRest condRest condFrame
+  intro bit squareW rw baseFrame skipRest condFrame
   have hSkip :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_frame_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -111,7 +101,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
   have hCondFramed := cpsNBranchWithin_frameR (F := condFrame) (by
     dsimp [condFrame]
     pcFree) hCond
-  rw [expCondMulLoopRest_unfold] at hCondFramed
   have hCondHead :
       cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 152)
         (evmExpMsbSavedBitTwoMulWithMulCode
@@ -127,13 +116,15 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
            (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
         [(loopTarget,
             (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-             ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** condRest) ** condFrame),
+             ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+              expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame),
           (base + 264,
             (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-             ⌜expTwoMulIterCountNew iterCount = 0⌝) ** condRest) ** condFrame)] := by
+             ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+              expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame)] := by
     exact cpsNBranchWithin_weaken_pre
       (fun _ hp => by
-        dsimp [condRest, condFrame, baseFrame] at hp ⊢
+        dsimp [condFrame, baseFrame] at hp ⊢
         xperm_hyp hp) hCondFramed
   have hFull :=
     cpsNBranchWithin_extend_head_nbranch hSkip hCondHead
@@ -243,13 +234,13 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
     · simp
     · intro h hp
       left
-      simpa [condLoop, condRest, condFrame] using hp
+      simpa [condLoop, condRest, condFrame, expCondMulLoopRest_unfold] using hp
   · subst ex
     refine ⟨(base + 264, fun h => condExit h ∨ skipExit h), ?_, rfl, ?_⟩
     · simp
     · intro h hp
       left
-      simpa [condExit, condRest, condFrame] using hp
+      simpa [condExit, condRest, condFrame, expCondMulLoopRest_unfold] using hp
   · subst ex
     refine ⟨(loopTarget, fun h => condLoop h ∨ skipLoop h), ?_, rfl, ?_⟩
     · simp
