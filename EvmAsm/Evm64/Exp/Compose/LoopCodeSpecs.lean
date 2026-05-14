@@ -9,23 +9,24 @@ import EvmAsm.Evm64.Exp.Compose.Base
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 theorem exp_loop_back_loop_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base target : Word)
     (htarget : ((base + 24) + 4 : Word) + signExtend13 backOff = target) :
-    let cNew := c + signExtend12 ((-1 : BitVec 12))
     cpsBranchWithin 2 (base + 24)
       (expLoopCode base mulOff skipOff backOff)
       ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
-      target ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew ≠ 0⌝)
-      (base + 32) ((.x9 ↦ᵣ cNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜cNew = 0⌝) := by
+      target
+        ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c ≠ 0⌝)
+      (base + 32)
+        ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c = 0⌝) := by
   have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 24) target htarget
   have hnext : ((base + 24 : Word) + 8) = base + 32 := by bv_omega
   rw [hnext] at h
-  exact cpsBranchWithin_extend_code (h := h) (hmono := expLoopCode_loop_back_sub)
+  simpa [expIterCountNew] using
+    (cpsBranchWithin_extend_code (h := h) (hmono := expLoopCode_loop_back_sub))
 
 theorem exp_bit_test_loop_spec_within
     (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
