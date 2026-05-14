@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Compose.PhaseAB
+import EvmAsm.Evm64.DivMod.Compose.PhaseABNoNop
 import EvmAsm.Evm64.DivMod.Compose.CLZ
 import EvmAsm.Evm64.DivMod.Compose.Norm
 import EvmAsm.Evm64.DivMod.Compose.NormA
@@ -64,6 +65,62 @@ theorem evm_div_phaseAB_n2_clz_spec_within (sp base : Word)
     (fun h hp => by xperm_hyp hp) hAf hBf
   -- CLZ on b1
   have hCLZ := divK_clz_spec_within b1 b1 b2 base
+  have hCLZf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
+     ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+     ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+     ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+     ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (2 : Word)))
+    (by pcFree) hCLZ
+  have hABCLZ := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hAB hCLZf
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hABCLZ
+
+/-- No-NOP variant of `evm_div_phaseAB_n2_clz_spec_within`. -/
+theorem evm_div_phaseAB_n2_clz_spec_within_noNop (sp base : Word)
+    (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
+    (q0 q1 q2 q3 u5 u6 u7 nMem : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1nz : b1 ≠ 0) :
+    cpsTripleWithin (8 + 21 + 24) base (base + phaseC2Off) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ (clzResult b1).2) ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ (clzResult b1).1) ** (.x7 ↦ᵣ (clzResult b1).2 >>> (63 : Nat)) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (2 : Word))) := by
+  have hA := evm_div_phaseA_ntaken_spec_within_noNop sp base b0 b1 b2 b3 v5 v10 hbnz
+  have hAf := cpsTripleWithin_frameR
+    ((.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+     ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+     ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+     ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+     ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem))
+    (by pcFree) hA
+  have hB := evm_div_phaseB_n2_spec_within_noNop sp base b1 b2 b3
+    (b0 ||| b1 ||| b2 ||| b3) v6 v7 q0 q1 q2 q3 u5 u6 u7 nMem
+    hb3z hb2z hb1nz
+  have hBf := cpsTripleWithin_frameR
+    (((sp + 32) ↦ₘ b0))
+    (by pcFree) hB
+  have hAB := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hAf hBf
+  have hCLZ := divK_clz_spec_within_noNop b1 b1 b2 base
   have hCLZf := cpsTripleWithin_frameR
     ((.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ b3) **
      ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
