@@ -372,6 +372,41 @@ def cpsNBranchWithin (nSteps : Nat) (entry : Word) (cr : CodeReq) (P : Assertion
     ∃ k, k ≤ nSteps ∧ ∃ s', stepN k s = some s' ∧
       ∃ exit ∈ exits, s'.pc = exit.1 ∧ (exit.2 ** R).holdsFor s'
 
+/-- N-branch variant of `cpsTripleWithin_of_forall_regIs_to_regOwn`.
+    If an N-branch spec is available for every concrete value of an owned
+    register, the precondition may expose only ownership of that register. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn
+    {nSteps : Nat} {entry r P exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (r ↦ᵣ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr (P ** regOwn r) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨vOld, hv4⟩⟩ := hPown1
+  exact h vOld R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
+/-- Single-atom N-branch variant of
+    `cpsBranchWithin_of_forall_regIs_to_regOwn_single`. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn_single
+    {nSteps : Nat} {entry r exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (r ↦ᵣ vOld) exits) :
+    cpsNBranchWithin nSteps entry cr (regOwn r) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd, hunion, ⟨vOld, hv⟩, hR2⟩ := hPR
+  exact h vOld R hR s hcr ⟨hp, hcompat, h1, h2, hd, hunion, hv, hR2⟩ hpc
+
+/-- N-branch variant of `cpsTripleWithin_of_forall_memIs_to_memOwn`. The step
+    bound and exit list are unchanged. -/
+theorem cpsNBranchWithin_of_forall_memIs_to_memOwn
+    {nSteps : Nat} {entry a P exits} {cr : CodeReq}
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (a ↦ₘ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr (P ** memOwn a) exits := by
+  intro R hR s hcr hPR hpc
+  obtain ⟨hp, hcompat, h1, h2, hd12, hunion12, hPown1, hR2⟩ := hPR
+  obtain ⟨h3, h4, hd34, hunion34, hP3, ⟨vOld, hv4⟩⟩ := hPown1
+  exact h vOld R hR s hcr
+    ⟨hp, hcompat, h1, h2, hd12, hunion12, ⟨h3, h4, hd34, hunion34, hP3, hv4⟩, hR2⟩ hpc
+
 theorem cpsTripleWithin_as_cpsNBranchWithin {nSteps : Nat} {entry exit_ : Word} {cr : CodeReq}
     {P Q : Assertion} (h : cpsTripleWithin nSteps entry exit_ cr P Q) :
     cpsNBranchWithin nSteps entry cr P [(exit_, Q)] := by
@@ -444,6 +479,29 @@ theorem cpsNBranchWithin_weaken_pre {nSteps : Nat} {entry : Word} {cr : CodeReq}
     obtain ⟨hp, hcompat, hpq⟩ := hP'R
     exact ⟨hp, hcompat, sepConj_mono_left hpre hp hpq⟩
   exact h R hR s hcr hPR hpc
+
+/-- Permuting variant of `cpsNBranchWithin_of_forall_regIs_to_regOwn`.
+    This is useful when the owned register is not syntactically the final
+    atom of the precondition: prove a permutation into `P ** regOwn r`,
+    then the concrete-value family may consume `P ** (r ↦ᵣ vOld)`. -/
+theorem cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    {nSteps : Nat} {entry r P P' exits} {cr : CodeReq}
+    (hpre : ∀ h, P' h → (P ** regOwn r) h)
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (r ↦ᵣ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr P' exits :=
+  cpsNBranchWithin_weaken_pre hpre
+    (cpsNBranchWithin_of_forall_regIs_to_regOwn h)
+
+/-- Permuting variant of `cpsNBranchWithin_of_forall_memIs_to_memOwn`.
+    This is useful when the owned memory cell is not syntactically the final
+    atom of the precondition. -/
+theorem cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    {nSteps : Nat} {entry a P P' exits} {cr : CodeReq}
+    (hpre : ∀ h, P' h → (P ** memOwn a) h)
+    (h : ∀ vOld, cpsNBranchWithin nSteps entry cr (P ** (a ↦ₘ vOld)) exits) :
+    cpsNBranchWithin nSteps entry cr P' exits :=
+  cpsNBranchWithin_weaken_pre hpre
+    (cpsNBranchWithin_of_forall_memIs_to_memOwn h)
 
 /-- Monotonicity: expand the exit list of a bounded N-branch. The step bound
     is unchanged. -/
@@ -552,6 +610,30 @@ theorem cpsNBranchWithin_extend_head {nSteps1 nSteps2 : Nat} {entry l l' : Word}
   | tail _ htail =>
     exact ⟨k1, Nat.le_trans hk1 (Nat.le_add_right nSteps1 nSteps2), s1, hstep1,
            ex, List.Mem.tail _ htail, hpc1, hQF⟩
+
+/-- Extend the head exit of a bounded N-branch by composing another bounded
+    N-branch after it. The continued head paths get the summed bound; non-head
+    paths use monotonicity into the summed bound. -/
+theorem cpsNBranchWithin_extend_head_nbranch {nSteps1 nSteps2 : Nat}
+    {entry l : Word} {cr : CodeReq}
+    {P Q : Assertion}
+    {exits others : List (Word × Assertion)}
+    (hbr : cpsNBranchWithin nSteps1 entry cr P ((l, Q) :: others))
+    (hseq : cpsNBranchWithin nSteps2 l cr Q exits) :
+    cpsNBranchWithin (nSteps1 + nSteps2) entry cr P (exits ++ others) := by
+  intro F hF s hcr hPF hpc
+  obtain ⟨k1, hk1, s1, hstep1, ex, hmem, hpc1, hQF⟩ :=
+    hbr F hF s hcr hPF hpc
+  cases hmem with
+  | head =>
+    have hcr1 := CodeReq.SatisfiedBy_preserved hstep1 hcr
+    obtain ⟨k2, hk2, s2, hstep2, ex2, hmem2, hpc2, hRF⟩ :=
+      hseq F hF s1 hcr1 hQF hpc1
+    exact ⟨k1 + k2, Nat.add_le_add hk1 hk2, s2, stepN_add_eq hstep1 hstep2,
+      ex2, List.mem_append_left others hmem2, hpc2, hRF⟩
+  | tail _ htail =>
+    exact ⟨k1, Nat.le_trans hk1 (Nat.le_add_right nSteps1 nSteps2), s1, hstep1,
+      ex, List.mem_append_right exits htail, hpc1, hQF⟩
 
 /-- Bounded sequence with the same CodeReq: a triple followed by an N-branch. -/
 theorem cpsTripleWithin_seq_cpsNBranchWithin_same_cr {nSteps1 nSteps2 : Nat}
