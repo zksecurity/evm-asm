@@ -401,6 +401,78 @@ theorem evm_sdiv_zero_divisor_handler_stack_of_eq_spec_within
     q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase
 
+/-- Zero-divisor SDIV handler-stack bridge viewed through the exact-path
+    quotient/sign-fix postcondition.
+
+    This keeps the caller-facing zero-divisor split while exposing the same
+    register and stack shape as the exact path: the unsigned quotient is
+    `0 / 0 = 0`, and the result-sign-fix top limb is still zero. -/
+theorem evm_sdiv_zero_divisor_handler_stack_exact_post_of_eq_spec_within
+    (vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      v2 v5 v6 : Word)
+    (state : EvmState) (dividend divisor : EvmWord) (rest : List EvmWord)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (base : Word) (hbase : base &&& 1 = 0)
+    (hDivisorZero : divisor = 0) :
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+      base (vRa &&& ~~~(1 : Word)) (sdivCode base)
+      ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
+         (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **
+         (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
+         (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
+        evmStackIs sp (dividend :: divisor :: rest)) **
+       ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
+        EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0))
+      (let dividendAbsWord :=
+         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+           (dividend.getLimbN 2) (dividend.getLimbN 3)
+       let resultSign :=
+         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
+           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
+       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
+       let mask := (0 : Word) - resultSign
+       let divisorAbsWord :=
+         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+           (divisor.getLimbN 2) (divisor.getLimbN 3)
+       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
+       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
+       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
+       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
+       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
+       (.x18 ↦ᵣ vRa) **
+       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
+         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
+         evmStackIs (sp + 32)
+          ((ArithmeticHandlers.sdivHandler
+            { state with stack := dividend :: divisor :: rest }).stack)) **
+        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
+  subst divisor
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+      have hSum3 := sdivResultSign_fixZeroWordLimb3 (dividend.getLimbN 3) (0 : Word)
+      have hDivisorAbs :
+          sdivAbsDivisorWord ((0 : EvmWord).getLimbN 0) ((0 : EvmWord).getLimbN 1)
+            ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3) = 0 := by
+        simpa only [EvmWord.getLimbN_zero] using sdivAbsDivisorWord_zero
+      rw [hDivisorAbs, EvmWord.div_zero_right]
+      simp only [EvmWord.getLimbN_zero] at hp ⊢
+      have hSum3' := hSum3
+      simp only [EvmWord.getLimbN_zero] at hSum3'
+      rw [hSum3'] at hp ⊢
+      simpa using hp)
+    (evm_sdiv_zero_divisor_handler_stack_spec_within
+      vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      v2 v5 v6 state dividend rest
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase)
+
 /-- Top-level exact-callable SDIV stack-tail bridge.
 
     This is the caller-visible exact path through `sdivCode`, parameterized
