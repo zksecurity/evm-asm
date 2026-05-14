@@ -37,6 +37,9 @@ theorem evmExpWithMulCode_mul_sub {base mulTarget : Word}
   unfold evmExpWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
+abbrev expCondMulRw (r : EvmWord) (a0 a1 a2 a3 : Word) : EvmWord :=
+  r * expResultWord a0 a1 a2 a3
+
 /-- Lift a top-level EXP-body spec into the combined EXP+MUL code bundle. -/
 theorem cpsTripleWithin_extend_evmExpWithMulCode {nSteps : Nat}
     {entry exit_ base mulTarget : Word}
@@ -517,7 +520,7 @@ theorem exp_cond_mul_call_block_evm_exp_with_mul_spec_within
             (evmExpCode base mulOff skipOff backOff)
             (mul_callable_code mulTarget)) :
     let r := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
+    let rw := expCondMulRw r a0 a1 a2 a3
     cpsTripleWithin (17 + 64 + 9) (base + 148) ((base + 148) + 104)
       (evmExpWithMulCode base mulTarget mulOff skipOff backOff)
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
@@ -540,17 +543,17 @@ theorem exp_cond_mul_call_block_evm_exp_with_mul_spec_within
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (r * aw).getLimbN 3) **
+       (.x5 ↦ᵣ rw.getLimbN 3) **
        ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
        ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
        ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
        ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
-       evmWordIs sp (r * aw) ** evmWordIs (evmSp + 32) (r * aw) **
+       evmWordIs sp rw ** evmWordIs (evmSp + 32) rw **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 148) + 68))) := by
-  intro r aw
+  intro r rw
   have hbase' : (base + 148 : Word) &&& 1 = 0 := by bv_decide
   -- Sub-sub: exp_cond_mul_call_block_code (base+148) ⊆ evmExpCode base
   -- via the with-skip block at base+144.
