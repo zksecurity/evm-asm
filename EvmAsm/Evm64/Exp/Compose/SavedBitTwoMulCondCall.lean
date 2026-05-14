@@ -5,6 +5,7 @@
   composition.
 -/
 
+import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulSkip
 
 namespace EvmAsm.Evm64.Exp.Compose

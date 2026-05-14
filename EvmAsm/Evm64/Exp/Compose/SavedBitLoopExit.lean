@@ -15,7 +15,7 @@ open EvmAsm.Rv64
 def expTwoMulLoopExitPre
     (sp evmSp iterCountNew tOld r0 r1 r2 r3 : Word)
     (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop) : Assertion :=
-  ((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝) **
+  expTwoMulLoopExitControl iterCountNew exitCond **
   ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
    ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
     ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
@@ -37,7 +37,7 @@ theorem expTwoMulLoopExitPre_unfold
          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3))) **
        evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest)) := by
-  delta expTwoMulLoopExitPre
+  delta expTwoMulLoopExitPre expTwoMulLoopExitControl
   rfl
 
 theorem expTwoMulLoopExitPre_pcFree
@@ -60,7 +60,7 @@ instance pcFreeInst_expTwoMulLoopExitPre
 def expTwoMulLoopExitPost
     (sp evmSp iterCountNew r0 r1 r2 r3 : Word)
     (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop) : Assertion :=
-  ((.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝) **
+  expTwoMulLoopExitControl iterCountNew exitCond **
   ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ (evmSp + 32)) ** (.x5 ↦ᵣ r3) **
    ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
    ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
@@ -80,7 +80,7 @@ theorem expTwoMulLoopExitPost_unfold
         ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
         ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
         evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))) := by
-  delta expTwoMulLoopExitPost
+  delta expTwoMulLoopExitPost expTwoMulLoopExitControl
   rfl
 
 theorem expTwoMulLoopExitPost_pcFree
@@ -116,5 +116,20 @@ theorem exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_canonica
     exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_spec_within
       sp evmSp iterCountNew tOld r0 r1 r2 r3 r0 r1 r2 r3
       baseWord rest exitCond base
+
+/-- Closed-form bound variant of
+    `exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_named_loop_exit_spec_within`. -/
+theorem exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_named_loop_exit_closed_bound_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (base : Word) :
+    cpsTripleWithin 10 (base + 264) (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulLoopExitPre sp evmSp iterCountNew tOld r0 r1 r2 r3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) :=
+  exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_named_loop_exit_spec_within
+    sp evmSp iterCountNew tOld r0 r1 r2 r3 baseWord rest exitCond base
 
 end EvmAsm.Evm64.Exp.Compose
