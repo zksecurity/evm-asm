@@ -359,6 +359,38 @@ theorem sdivAbsDivisorWord_one_sign
     decide
   rw [sdivAbsDivisorWord_sign_split, if_neg h_not_zero]
 
+/-- Nonnegative raw-limb SDIV divisors are unchanged by absolute-value
+    normalization. -/
+theorem sdivAbsDivisorWord_zero_limb_sign
+    {divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word}
+    (h_sign : divisorTop >>> (63 : BitVec 6).toNat = 0) :
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      EvmWord.fromLimbs fun i : Fin 4 =>
+        match i with
+        | 0 => divisorLimb0
+        | 1 => divisorLimb1
+        | 2 => divisorLimb2
+        | 3 => divisorTop := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs
+  rw [h_sign]
+  bv_decide
+
+/-- Negative raw-limb SDIV divisors normalize to their two's-complement
+    negation. -/
+theorem sdivAbsDivisorWord_one_limb_sign
+    {divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word}
+    (h_sign : divisorTop >>> (63 : BitVec 6).toNat = 1) :
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      ~~~(EvmWord.fromLimbs fun i : Fin 4 =>
+        match i with
+        | 0 => divisorLimb0
+        | 1 => divisorLimb1
+        | 2 => divisorLimb2
+        | 3 => divisorTop) + 1 := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs
+  rw [h_sign]
+  bv_decide
+
 /-- The SDIV dividend absolute-value word is zero exactly for the zero
     dividend. This mirrors the divisor bridge for semantic stack views that
     reason about wrapper-normalized operands. -/
