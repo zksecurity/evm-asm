@@ -73,26 +73,13 @@ theorem divModStackDispatchPre_unfold_explicit_sdiv
     EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
        shiftMem nMem jMem retMem dMem dloMem scratch_un0) := by
   rw [divModStackDispatchPre_unfold_explicit]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) = sp by
-    rw [show EvmAsm.Rv64.signExtend12 (0 : BitVec 12) = (0 : Word) by decide]
-    simp]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) = sp + 8 by
-    rw [show EvmAsm.Rv64.signExtend12 (8 : BitVec 12) = (8 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) = sp + 16 by
-    rw [show EvmAsm.Rv64.signExtend12 (16 : BitVec 12) = (16 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff) =
-      sp + 24 by
-    unfold EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-    rw [show EvmAsm.Rv64.signExtend12 (24 : BitVec 12) = (24 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (32 : BitVec 12)) = sp + 32 by
-    rw [show EvmAsm.Rv64.signExtend12 (32 : BitVec 12) = (32 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (40 : BitVec 12)) = sp + 40 by
-    rw [show EvmAsm.Rv64.signExtend12 (40 : BitVec 12) = (40 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12)) = sp + 48 by
-    rw [show EvmAsm.Rv64.signExtend12 (48 : BitVec 12) = (48 : Word) by decide]]
-  rw [show (sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff) =
-      sp + 56 by
-    unfold EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
-    rw [show EvmAsm.Rv64.signExtend12 (56 : BitVec 12) = (56 : Word) by decide]]
+  rw [EvmAsm.Evm64.SDiv.AddrNorm.stackSlot0 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot8 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot16 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.dividendTopSlot sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot32 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot40 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot48 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.divisorTopSlot sp]
 
 end EvmAsm.Evm64.SDiv.Compose
