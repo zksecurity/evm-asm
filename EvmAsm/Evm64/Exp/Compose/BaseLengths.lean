@@ -8,7 +8,6 @@ import EvmAsm.Evm64.Exp.CondMulCall
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
 abbrev expIterCountNew (iterCount : Word) : Word :=
