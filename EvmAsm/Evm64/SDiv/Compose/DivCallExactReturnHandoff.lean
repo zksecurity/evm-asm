@@ -4,7 +4,7 @@
   Exact SDIV path handoff through result-sign-fix and saved-RA return.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCallExactResultSignFixHandoff
+import EvmAsm.Evm64.SDiv.Compose.DivCallExactHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallReturnComposition
 
 namespace EvmAsm.Evm64.SDiv.Compose
