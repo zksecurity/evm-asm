@@ -420,6 +420,29 @@ theorem sdivSignFixedWord_opposite_sign
   rw [h_result]
   exact sdivSignFixedWord_one_sign word
 
+/-- SDIV result-sign fixup split directly by equality of the operand sign
+    bits. This is the caller-facing branch condition used by the final stack
+    spec. -/
+theorem sdivSignFixedWord_sign_bits
+    (dividendTop divisorTop : Word) (word : EvmWord) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    sdivSignFixedWord resultSign
+      (word.getLimbN 0) (word.getLimbN 1) (word.getLimbN 2) (word.getLimbN 3) =
+      if dividendTop >>> (63 : BitVec 6).toNat =
+          divisorTop >>> (63 : BitVec 6).toNat then
+        word
+      else
+        ~~~word + 1 := by
+  by_cases h_sign :
+      dividendTop >>> (63 : BitVec 6).toNat =
+        divisorTop >>> (63 : BitVec 6).toNat
+  · rw [if_pos h_sign]
+    exact sdivSignFixedWord_same_sign h_sign word
+  · rw [if_neg h_sign]
+    exact sdivSignFixedWord_opposite_sign h_sign word
+
 /-- Equal SDIV operand sign bits make the result sign zero. -/
 theorem sdivResultSign_zero_of_eq
     {dividendTop divisorTop : Word}
