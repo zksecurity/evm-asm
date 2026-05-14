@@ -452,25 +452,11 @@ theorem exp_pointer_restore_then_epilogue_exit_control_evm_exp_msb_saved_bit_two
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       (expTwoMulLoopExitControl iterCountNew exitCond **
-       ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
-        ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
-         ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-         ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-         ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-         ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-         ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
-         ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
-         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
-         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3))))
+       expTwoMulPointerRestoreEpiloguePreFrame
+        sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3)
       (expTwoMulLoopExitControl iterCountNew exitCond **
-       ((.x2 ↦ᵣ sp) **
-        (.x12 ↦ᵣ (evmSp + signExtend12 (32 : BitVec 12))) **
-        (.x5 ↦ᵣ r3) **
-        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-        evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3))) := by
+       expTwoMulPointerRestoreEpiloguePostFrame
+        sp evmSp r0 r1 r2 r3) := by
   have hBase :=
     exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -479,10 +465,8 @@ theorem exp_pointer_restore_then_epilogue_exit_control_evm_exp_msb_saved_bit_two
     (expTwoMulLoopExitControl iterCountNew exitCond) (by pcFree) hBase
   exact cpsTripleWithin_weaken
     (fun _ hp => by
-      rw [expTwoMulPointerRestoreEpiloguePreFrame_unfold]
       xperm_hyp hp)
     (fun _ hp => by
-      rw [expTwoMulPointerRestoreEpiloguePostFrame_unfold] at hp
       xperm_hyp hp)
     hFramed
 
@@ -502,16 +486,8 @@ theorem exp_pointer_restore_then_epilogue_stack_tail_evm_exp_msb_saved_bit_two_m
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       ((expTwoMulLoopExitControl iterCountNew exitCond **
-        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
-         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
-          ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-          ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
-          ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
-          ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
-          ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))) **
+        expTwoMulPointerRestoreEpiloguePreFrame
+          sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3) **
        stackTail)
       (expTwoMulLoopExitControl iterCountNew exitCond **
        ((.x2 ↦ᵣ sp) **
@@ -537,9 +513,10 @@ theorem exp_pointer_restore_then_epilogue_stack_tail_evm_exp_msb_saved_bit_two_m
       xperm_hyp hp)
     (fun _ hp => by
       dsimp [stackTail] at hp ⊢
+      rw [expTwoMulPointerRestoreEpiloguePostFrame_unfold] at hp
       rw [evmStackIs_cons]
       rw [show evmSp + 64#64 = evmSp + 32#64 + 32#64 from by bv_addr] at hp
-      xperm_hyp hp)
+      xcancel_struct hp)
     hFramed
 
 /-- Full visible-post-stack view of pointer-restore followed by the EXP
@@ -557,16 +534,8 @@ theorem exp_pointer_restore_then_epilogue_full_post_stack_evm_exp_msb_saved_bit_
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       ((expTwoMulLoopExitControl iterCountNew exitCond **
-        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
-         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
-          ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-          ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
-          ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
-          ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
-          ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))) **
+        expTwoMulPointerRestoreEpiloguePreFrame
+          sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3) **
        stackTail)
       (expTwoMulLoopExitControl iterCountNew exitCond **
        ((.x2 ↦ᵣ sp) **
@@ -601,16 +570,8 @@ theorem exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
       ((expTwoMulLoopExitControl iterCountNew exitCond **
-        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
-         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
-          ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-          ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
-          ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
-          ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
-          ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))) **
+        expTwoMulPointerRestoreEpiloguePreFrame
+          sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3) **
        stackTail)
       (expTwoMulLoopExitControl iterCountNew exitCond **
        ((.x2 ↦ᵣ sp) **
@@ -664,6 +625,7 @@ theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_m
       rw [← exp_epilogue_result_word_right evmSp d0 d1 d2 d3
         (evmStackIs (evmSp + 32 + 32) rest)] at hp
       rw [show evmSp + 32 + 32 = evmSp + 64#64 from by bv_addr] at hp
+      rw [expTwoMulPointerRestoreEpiloguePreFrame_unfold]
       xcancel_struct hp)
     (fun _ hp => hp)
     (exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
