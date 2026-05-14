@@ -429,6 +429,42 @@ theorem exp_two_mul_iterations_body_peel_with_exit_imp_closed_bound_spec_within
       e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
       base baseWord rest exitCond hbase hExit hLoop
 
+/-- Convert the two concrete exit-branch postconditions into the unified
+    iteration-exit postcondition expected by the bounded peel helper. -/
+theorem exp_two_mul_iter_exit_post_cases_to_loop_exit_pre
+    (e iterCount sp evmSp r0 r1 r2 r3 a0 a1 a2 a3
+      iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word)
+    (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hCondExit :
+      ∀ hp,
+        expTwoMulIterCondPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp)
+    (hSkipExit :
+      ∀ hp,
+        expTwoMulIterSkipPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterW r0 r1 r2 r3)
+          (expTwoMulIterCountNew iterCount = 0) hp →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond hp) :
+    ∀ hp,
+      expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+        (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+        (expTwoMulIterW r0 r1 r2 r3)
+        (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3) hp →
+      expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond hp := by
+  intro hp hExit
+  rw [expTwoMulIterExitPost_unfold] at hExit
+  rcases hExit with hCond | hSkip
+  · exact hCondExit hp hCond
+  · exact hSkipExit hp hSkip
+
 /-- Peel one named iteration from an `(iterations + 1)`-iteration body, reducing
     the zero-step exit bridge to the two concrete branch-postcondition cases. -/
 theorem exp_two_mul_iterations_body_peel_with_exit_cases_spec_within
@@ -476,12 +512,10 @@ theorem exp_two_mul_iterations_body_peel_with_exit_cases_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
       base baseWord rest exitCond hbase
-      (by
-        intro hp hExit
-        rw [expTwoMulIterExitPost_unfold] at hExit
-        rcases hExit with hCond | hSkip
-        · exact hCondExit hp hCond
-        · exact hSkipExit hp hSkip)
+      (exp_two_mul_iter_exit_post_cases_to_loop_exit_pre
+        e iterCount sp evmSp r0 r1 r2 r3 a0 a1 a2 a3
+        iterCountFinal tOld out0 out1 out2 out3 base baseWord rest exitCond
+        hCondExit hSkipExit)
 
 /-- Closed-form variant of
     `exp_two_mul_iterations_body_peel_with_exit_cases_spec_within`. -/
