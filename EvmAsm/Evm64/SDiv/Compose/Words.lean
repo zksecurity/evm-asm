@@ -47,6 +47,26 @@ def sdivAbsDivisorWord
     match i with
     | 0 => divisorSum0 | 1 => divisorSum1 | 2 => divisorSum2 | 3 => divisorSum3
 
+/-- Word produced by conditionally negating the unsigned quotient limbs by the
+    SDIV result sign. This names the memory-result word of the result-sign
+    fixup block before connecting it to the semantic `EvmWord.sdiv` result. -/
+def sdivResultSignFixedWord
+    (dividendTop divisorTop limb0 limb1 limb2 limb3 : Word) : EvmWord :=
+  let resultSign :=
+    (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+      (divisorTop >>> (63 : BitVec 6).toNat)
+  let mask := (0 : Word) - resultSign
+  let sum0 := (limb0 ^^^ mask) + resultSign
+  let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+  let sum1 := (limb1 ^^^ mask) + carry0
+  let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+  let sum2 := (limb2 ^^^ mask) + carry1
+  let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+  let sum3 := (limb3 ^^^ mask) + carry2
+  EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with
+    | 0 => sum0 | 1 => sum1 | 2 => sum2 | 3 => sum3
+
 /-- The SDIV result sign is the XOR of two top-bit extractions, hence it is a
     Boolean word. This keeps later result-sign-fix zero-quotient rewrites from
     reasoning about arbitrary 64-bit masks. -/
