@@ -637,6 +637,64 @@ theorem evm_div_callable_spec_from_noNop (sp base raVal : Word)
     cpsTripleWithin_frameL (divStackDispatchPost sp a b) hpcFreePost hRet
   exact cpsTripleWithin_seq_same_cr hStackFramed hRetFramed
 
+theorem evm_div_callable_spec_from_noNop_preserving_x1 (sp base raVal : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (branch : DivStackSpecCase base a b)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+        (divModStackDispatchPre sp a b
+          branch.x1 branch.x2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ raVal))) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPre sp a b
+        branch.x1 branch.x2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hpcFreePost : (divStackDispatchPostNoX1 sp a b).pcFree := by
+    rw [divStackDispatchPostNoX1_unfold]
+    rw [divScratchOwnCall_unfold, divScratchOwn_unfold]
+    pcFree
+  have hStackCall :=
+    cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_div_callable_code) hStack
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_div_callable_code_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL (divStackDispatchPostNoX1 sp a b) hpcFreePost hRet
+  exact cpsTripleWithin_seq_same_cr hStackCall hRetFramed
+
+/-- Zero-divisor DIV callable wrapper that preserves the exact incoming `x1`
+    return address. This is the callable-ready specialization needed by SDIV
+    when the absolute divisor is zero. -/
+theorem evm_div_callable_bzero_preserving_x1_spec (sp base raVal : Word)
+    (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPre sp a b
+        raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hStack :=
+    evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
+      sp base a b raVal v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratchUn0 hbz
+  exact evm_div_callable_spec_from_noNop_preserving_x1
+    sp base raVal a b v5 v6 v7 v10 v11
+    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem retMem dMem dloMem scratchUn0
+    (DivStackSpecCase.bzero raVal v2 hbz) hStack
+
 theorem evm_mod_callable_spec_from_noNop (sp base raVal : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
