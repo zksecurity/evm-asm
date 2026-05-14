@@ -333,7 +333,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_spec_within
       ((.x5 ↦ᵣ e) ** (.x6 ↦ᵣ c) ** (.x10 ↦ᵣ v10))
       ((.x5 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) **
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
-       (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+       (.x10 ↦ᵣ (expTwoMulIterBit e))) := by
   have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
   have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
   rw [hnext] at h
