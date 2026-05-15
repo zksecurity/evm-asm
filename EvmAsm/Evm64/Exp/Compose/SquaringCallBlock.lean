@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SquaringCallPath
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -50,7 +51,8 @@ theorem exp_squaring_call_block_evm_exp_with_mul_spec_within
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 40) + 68))) := by
   intro rw
-  have hbase' : (base + 40 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 40 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd40Aligned base hbase
   have hd_inner : CodeReq.Disjoint
       (exp_squaring_call_block_code (base + 40) mulOff)
       (mul_callable_code mulTarget) := by

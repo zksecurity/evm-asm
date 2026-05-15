@@ -91,4 +91,20 @@ attribute [exp_addr]
     (addr + EvmAsm.Rv64.signExtend12 56#12 : Word) = addr + 56#64 := by
   unfold EvmAsm.Rv64.signExtend12; bv_decide
 
+@[exp_addr, grind =] theorem expBaseAdd40Aligned
+    (base : Word) (hbase : base &&& 1 = 0) :
+    (base + 40 : Word) &&& 1 = 0 := by bv_decide
+
+@[exp_addr, grind =] theorem expBaseAdd44Aligned
+    (base : Word) (hbase : base &&& 1 = 0) :
+    (base + 44 : Word) &&& 1 = 0 := by bv_decide
+
+@[exp_addr, grind =] theorem expBaseAdd148Aligned
+    (base : Word) (hbase : base &&& 1 = 0) :
+    (base + 148 : Word) &&& 1 = 0 := by bv_decide
+
+@[exp_addr, grind =] theorem expBaseAdd152Aligned
+    (base : Word) (hbase : base &&& 1 = 0) :
+    (base + 152 : Word) &&& 1 = 0 := by bv_decide
+
 end EvmAsm.Evm64.Exp.AddrNorm

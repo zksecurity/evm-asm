@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.CondMulCallPath
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -60,7 +61,8 @@ theorem exp_cond_mul_call_block_evm_exp_with_mul_spec_within
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 148) + 68))) := by
   intro rw
-  have hbase' : (base + 148 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 148 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd148Aligned base hbase
   have hCondSub : ∀ a i,
       exp_cond_mul_call_block_code (base + 148) mulOff a = some i →
       evmExpCode base mulOff skipOff backOff a = some i := by
