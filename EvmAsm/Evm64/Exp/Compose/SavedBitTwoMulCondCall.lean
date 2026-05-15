@@ -29,6 +29,38 @@ theorem expTwoMulCondSourceAddr24 (evmSp : Word) :
     (evmSp + 32#64 + 24 : Word) = evmSp + 56#64 := by
   bv_omega
 
+theorem expTwoMulCondAddr0 (addr : Word) :
+    (addr + signExtend12 0#12 : Word) = addr := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr8 (addr : Word) :
+    (addr + signExtend12 8#12 : Word) = addr + 8#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr16 (addr : Word) :
+    (addr + signExtend12 16#12 : Word) = addr + 16#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr24 (addr : Word) :
+    (addr + signExtend12 24#12 : Word) = addr + 24#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr32 (addr : Word) :
+    (addr + signExtend12 32#12 : Word) = addr + 32#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr40 (addr : Word) :
+    (addr + signExtend12 40#12 : Word) = addr + 40#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr48 (addr : Word) :
+    (addr + signExtend12 48#12 : Word) = addr + 48#64 := by
+  unfold signExtend12; bv_decide
+
+theorem expTwoMulCondAddr56 (addr : Word) :
+    (addr + signExtend12 56#12 : Word) = addr + 56#64 := by
+  unfold signExtend12; bv_decide
+
 @[irreducible]
 def expCondMulLoopRest
     (sp evmSp base a0 a1 a2 a3 : Word) (rw : EvmWord) : Assertion :=
@@ -257,30 +289,18 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
   exact cpsNBranchWithin_weaken_pre
     (fun _ hp => by
       dsimp [preCore] at hp ⊢
-      have hSp0 : (sp + signExtend12 0#12 : Word) = sp := by
-        unfold signExtend12; bv_decide
-      have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := by
-        unfold signExtend12; bv_decide
-      have hSp16 : (sp + signExtend12 16#12 : Word) = sp + 16 := by
-        unfold signExtend12; bv_decide
-      have hSp24 : (sp + signExtend12 24#12 : Word) = sp + 24 := by
-        unfold signExtend12; bv_decide
-      have hEvm0 : (evmSp + signExtend12 0#12 : Word) = evmSp := by
-        unfold signExtend12; bv_decide
-      have hEvm8 : (evmSp + signExtend12 8#12 : Word) = evmSp + 8#64 := by
-        unfold signExtend12; bv_decide
-      have hEvm16 : (evmSp + signExtend12 16#12 : Word) = evmSp + 16#64 := by
-        unfold signExtend12; bv_decide
-      have hEvm24 : (evmSp + signExtend12 24#12 : Word) = evmSp + 24#64 := by
-        unfold signExtend12; bv_decide
-      have hEvm32 : (evmSp + signExtend12 32#12 : Word) = evmSp + 32 := by
-        unfold signExtend12; bv_decide
-      have hEvm40 : (evmSp + signExtend12 40#12 : Word) = evmSp + 40 := by
-        unfold signExtend12; bv_decide
-      have hEvm48 : (evmSp + signExtend12 48#12 : Word) = evmSp + 48 := by
-        unfold signExtend12; bv_decide
-      have hEvm56 : (evmSp + signExtend12 56#12 : Word) = evmSp + 56 := by
-        unfold signExtend12; bv_decide
+      have hSp0 : (sp + signExtend12 0#12 : Word) = sp := expTwoMulCondAddr0 sp
+      have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := expTwoMulCondAddr8 sp
+      have hSp16 : (sp + signExtend12 16#12 : Word) = sp + 16 := expTwoMulCondAddr16 sp
+      have hSp24 : (sp + signExtend12 24#12 : Word) = sp + 24 := expTwoMulCondAddr24 sp
+      have hEvm0 : (evmSp + signExtend12 0#12 : Word) = evmSp := expTwoMulCondAddr0 evmSp
+      have hEvm8 : (evmSp + signExtend12 8#12 : Word) = evmSp + 8#64 := expTwoMulCondAddr8 evmSp
+      have hEvm16 : (evmSp + signExtend12 16#12 : Word) = evmSp + 16#64 := expTwoMulCondAddr16 evmSp
+      have hEvm24 : (evmSp + signExtend12 24#12 : Word) = evmSp + 24#64 := expTwoMulCondAddr24 evmSp
+      have hEvm32 : (evmSp + signExtend12 32#12 : Word) = evmSp + 32 := expTwoMulCondAddr32 evmSp
+      have hEvm40 : (evmSp + signExtend12 40#12 : Word) = evmSp + 40 := expTwoMulCondAddr40 evmSp
+      have hEvm48 : (evmSp + signExtend12 48#12 : Word) = evmSp + 48 := expTwoMulCondAddr48 evmSp
+      have hEvm56 : (evmSp + signExtend12 56#12 : Word) = evmSp + 56 := expTwoMulCondAddr56 evmSp
       rw [hSp0, hSp8, hSp16, hSp24, hEvm32, hEvm40, hEvm48, hEvm56] at hp ⊢
       rw [hEvm0, hEvm8, hEvm16, hEvm24]
       xperm_hyp hp)
@@ -332,22 +352,14 @@ theorem exp_cond_mul_folded_pre_to_call_scratch_owned_pre
   dsimp [foldedPre, concretePre, baseFrame] at hp ⊢
   unfold evmWordIs at hp
   rw [expTwoMulCondSourceAddr8, expTwoMulCondSourceAddr16, expTwoMulCondSourceAddr24] at hp
-  have hSp0 : (sp + signExtend12 0#12 : Word) = sp := by
-    unfold signExtend12; bv_decide
-  have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := by
-    unfold signExtend12; bv_decide
-  have hSp16 : (sp + signExtend12 16#12 : Word) = sp + 16 := by
-    unfold signExtend12; bv_decide
-  have hSp24 : (sp + signExtend12 24#12 : Word) = sp + 24 := by
-    unfold signExtend12; bv_decide
-  have hEvm32 : (evmSp + signExtend12 32#12 : Word) = evmSp + 32#64 := by
-    unfold signExtend12; bv_decide
-  have hEvm40 : (evmSp + signExtend12 40#12 : Word) = evmSp + 40#64 := by
-    unfold signExtend12; bv_decide
-  have hEvm48 : (evmSp + signExtend12 48#12 : Word) = evmSp + 48#64 := by
-    unfold signExtend12; bv_decide
-  have hEvm56 : (evmSp + signExtend12 56#12 : Word) = evmSp + 56#64 := by
-    unfold signExtend12; bv_decide
+  have hSp0 : (sp + signExtend12 0#12 : Word) = sp := expTwoMulCondAddr0 sp
+  have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := expTwoMulCondAddr8 sp
+  have hSp16 : (sp + signExtend12 16#12 : Word) = sp + 16 := expTwoMulCondAddr16 sp
+  have hSp24 : (sp + signExtend12 24#12 : Word) = sp + 24 := expTwoMulCondAddr24 sp
+  have hEvm32 : (evmSp + signExtend12 32#12 : Word) = evmSp + 32#64 := expTwoMulCondAddr32 evmSp
+  have hEvm40 : (evmSp + signExtend12 40#12 : Word) = evmSp + 40#64 := expTwoMulCondAddr40 evmSp
+  have hEvm48 : (evmSp + signExtend12 48#12 : Word) = evmSp + 48#64 := expTwoMulCondAddr48 evmSp
+  have hEvm56 : (evmSp + signExtend12 56#12 : Word) = evmSp + 56#64 := expTwoMulCondAddr56 evmSp
   rw [hSp0, hSp8, hSp16, hSp24, hEvm32, hEvm40, hEvm48, hEvm56]
   xperm_hyp hp
 
