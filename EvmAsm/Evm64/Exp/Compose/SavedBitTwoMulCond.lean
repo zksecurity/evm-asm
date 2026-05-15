@@ -37,6 +37,78 @@ theorem expTwoMulCondFrameBit_unfold {e : Word} :
        ⌜expTwoMulIterBit e + signExtend12 (0 : BitVec 12) ≠ 0⌝) := by
   delta expTwoMulCondFrameBit; rfl
 
+@[irreducible]
+def expTwoMulCondIterLoop
+    (iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word) : Assertion :=
+  (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+   ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+    expCondMulLoopRest sp evmSp base a0 a1 a2 a3
+      (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) **
+  expTwoMulCondFrameBit e
+
+theorem expTwoMulCondIterLoop_unfold
+    {iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word} :
+    expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 =
+      ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+        expCondMulLoopRest sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) **
+      expTwoMulCondFrameBit e) := by
+  delta expTwoMulCondIterLoop; rfl
+
+@[irreducible]
+def expTwoMulCondIterExit
+    (iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word) : Assertion :=
+  (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+   ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+    expCondMulLoopRest sp evmSp base a0 a1 a2 a3
+      (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) **
+  expTwoMulCondFrameBit e
+
+theorem expTwoMulCondIterExit_unfold
+    {iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word} :
+    expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 =
+      ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+        expCondMulLoopRest sp evmSp base a0 a1 a2 a3
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3)) **
+      expTwoMulCondFrameBit e) := by
+  delta expTwoMulCondIterExit; rfl
+
+@[irreducible]
+def expTwoMulSkipIterLoop
+    (iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word) : Assertion :=
+  ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+   ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+    expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+    expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+
+theorem expTwoMulSkipIterLoop_unfold
+    {iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word} :
+    expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 =
+      (((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+        expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)) := by
+  delta expTwoMulSkipIterLoop; rfl
+
+@[irreducible]
+def expTwoMulSkipIterExit
+    (iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word) : Assertion :=
+  ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+   ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+    expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+    expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+
+theorem expTwoMulSkipIterExit_unfold
+    {iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 : Word} :
+    expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 =
+      (((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+        expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)) := by
+  delta expTwoMulSkipIterExit; rfl
+
 /-- One two-MUL-offset saved-bit EXP iteration with both conditional-multiply
     outcomes and both zero-bit skip outcomes exposed as separate exits. This
     composes the skip/loop-back path with the folded-word conditional-multiply
@@ -169,33 +241,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := expTwoMulIterBit e
-    let squareW := expTwoMulSquareW r0 r1 r2 r3
-    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
-    let skipRest : Assertion :=
-      expTwoMulSkipLoopRest bit sp evmSp base squareW
-    let condFrame : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
-    let condLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let condExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let skipLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
-    let skipExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
     cpsNBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -216,47 +261,81 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
         (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld) **
-        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
-      [(loopTarget, fun h => condLoop h ∨ skipLoop h),
-        (base + 264, fun h => condExit h ∨ skipExit h)] := by
-  intro bit squareW rw baseFrame skipRest condFrame
-    condLoop condExit skipLoop skipExit
+        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+      [(loopTarget,
+          fun h => expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                   expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h),
+        (base + 264,
+          fun h => expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                   expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h)] := by
+  let bit := expTwoMulIterBit e
+  let squareW := expTwoMulSquareW r0 r1 r2 r3
+  let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
+  let baseFrame : Assertion := expTwoMulCondBaseFrame evmSp a0 a1 a2 a3
+  let skipRest : Assertion :=
+    expTwoMulSkipLoopRest bit sp evmSp base squareW
+  let condFrame : Assertion :=
+    (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
+    ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
+  let condLoop : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+      expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
+  let condExit : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+      expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
+  let skipLoop : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
+  let skipExit : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
   have hFour :=
     exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 mulTarget
       squaringMulOff condMulOff skipOff backOff base loopTarget
       hbase hsqmt hcondmt hd hskip hback
-  simp only [expTwoMulCondBaseFrame_unfold, expTwoMulCondFrameBit_unfold,
-             expTwoMulSkipIterRest_unfold] at hFour
   refine cpsNBranchWithin_weaken_posts hFour ?_
   intro ex hmem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem
   rcases hmem with hmem | hmem | hmem | hmem
   · subst ex
-    refine ⟨(loopTarget, fun h => condLoop h ∨ skipLoop h), ?_, rfl, ?_⟩
+    refine ⟨(loopTarget, fun h =>
+        expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+        expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h), ?_, rfl, ?_⟩
     · simp
     · intro h hp
       left
-      simpa [condLoop, condFrame] using hp
+      simpa [expTwoMulCondIterLoop_unfold, expTwoMulCondFrameBit_unfold, condLoop, condFrame] using hp
   · subst ex
-    refine ⟨(base + 264, fun h => condExit h ∨ skipExit h), ?_, rfl, ?_⟩
+    refine ⟨(base + 264, fun h =>
+        expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+        expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h), ?_, rfl, ?_⟩
     · simp
     · intro h hp
       left
-      simpa [condExit, condFrame] using hp
+      simpa [expTwoMulCondIterExit_unfold, expTwoMulCondFrameBit_unfold, condExit, condFrame] using hp
   · subst ex
-    refine ⟨(loopTarget, fun h => condLoop h ∨ skipLoop h), ?_, rfl, ?_⟩
+    refine ⟨(loopTarget, fun h =>
+        expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+        expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h), ?_, rfl, ?_⟩
     · simp
     · intro h hp
       right
-      simpa [skipLoop, skipRest, baseFrame] using hp
+      simpa [expTwoMulSkipIterLoop_unfold, expTwoMulCondBaseFrame_unfold,
+             expTwoMulSkipIterRest_unfold, skipLoop, skipRest, baseFrame] using hp
   · subst ex
-    refine ⟨(base + 264, fun h => condExit h ∨ skipExit h), ?_, rfl, ?_⟩
+    refine ⟨(base + 264, fun h =>
+        expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+        expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h), ?_, rfl, ?_⟩
     · simp
     · intro h hp
       right
-      simpa [skipExit, skipRest, baseFrame] using hp
+      simpa [expTwoMulSkipIterExit_unfold, expTwoMulCondBaseFrame_unfold,
+             expTwoMulSkipIterRest_unfold, skipExit, skipRest, baseFrame] using hp
 
 /-- Branch-shaped view of the merged two-MUL saved-bit one-iteration theorem.
     This is just `cpsNBranchWithin_as_cpsBranchWithin` applied to the merged
@@ -276,33 +355,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := expTwoMulIterBit e
-    let squareW := expTwoMulSquareW r0 r1 r2 r3
-    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
-    let skipRest : Assertion :=
-      expTwoMulSkipLoopRest bit sp evmSp base squareW
-    let condFrame : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
-    let condLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let condExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let skipLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
-    let skipExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -323,11 +375,14 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
         (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld) **
-        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
-      loopTarget (fun h => condLoop h ∨ skipLoop h)
-      (base + 264) (fun h => condExit h ∨ skipExit h) := by
-  intro bit squareW rw baseFrame skipRest condFrame
-    condLoop condExit skipLoop skipExit
+        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+      loopTarget
+      (fun h => expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h)
+      (base + 264)
+      (fun h => expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h) := by
   exact cpsNBranchWithin_as_cpsBranchWithin
     (exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -353,33 +408,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := expTwoMulIterBit e
-    let squareW := expTwoMulSquareW r0 r1 r2 r3
-    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
-    let skipRest : Assertion :=
-      expTwoMulSkipLoopRest bit sp evmSp base squareW
-    let condFrame : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
-    let condLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let condExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let skipLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
-    let skipExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
     cpsNBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -400,11 +428,37 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
         regOwn .x7 ** regOwn .x11 ** (.x1 ↦ᵣ vOld) **
-        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
-      [(loopTarget, fun h => condLoop h ∨ skipLoop h),
-       (base + 264, fun h => condExit h ∨ skipExit h)] := by
-  intro bit squareW rw baseFrame skipRest condFrame
-    condLoop condExit skipLoop skipExit
+        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+      [(loopTarget,
+          fun h => expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                   expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h),
+       (base + 264,
+          fun h => expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                   expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h)] := by
+  let bit := expTwoMulIterBit e
+  let squareW := expTwoMulSquareW r0 r1 r2 r3
+  let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
+  let baseFrame : Assertion := expTwoMulCondBaseFrame evmSp a0 a1 a2 a3
+  let skipRest : Assertion :=
+    expTwoMulSkipLoopRest bit sp evmSp base squareW
+  let condFrame : Assertion :=
+    (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
+    ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
+  let condLoop : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+      expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
+  let condExit : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+      expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
+  let skipLoop : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
+  let skipExit : Assertion :=
+    (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+     ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
     (r := .x6)
     (P :=
@@ -425,7 +479,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
         regOwn .x7 ** regOwn .x11 ** (.x1 ↦ᵣ vOld) **
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame))
     (hpre := fun _ hp => by
-      dsimp [baseFrame] at hp ⊢
+      dsimp [baseFrame, expTwoMulCondBaseFrame_unfold] at hp ⊢
       xperm_hyp hp) ?_
   intro c
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
@@ -448,7 +502,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
         regOwn .x7 ** regOwn .x11 ** (.x1 ↦ᵣ vOld) **
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame))
     (hpre := fun _ hp => by
-      dsimp [baseFrame] at hp ⊢
+      dsimp [baseFrame, expTwoMulCondBaseFrame_unfold] at hp ⊢
       xperm_hyp hp) ?_
   intro v10
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
@@ -471,7 +525,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
         regOwn .x11 ** (.x1 ↦ᵣ vOld) **
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame))
     (hpre := fun _ hp => by
-      dsimp [baseFrame] at hp ⊢
+      dsimp [baseFrame, expTwoMulCondBaseFrame_unfold] at hp ⊢
       xperm_hyp hp) ?_
   intro v7
   refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
@@ -494,12 +548,12 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
         (.x7 ↦ᵣ v7) ** (.x1 ↦ᵣ vOld) **
         (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame))
     (hpre := fun _ hp => by
-      dsimp [baseFrame] at hp ⊢
+      dsimp [baseFrame, expTwoMulCondBaseFrame_unfold] at hp ⊢
       xperm_hyp hp) ?_
   intro v11
   exact cpsNBranchWithin_weaken_pre
     (fun _ hp => by
-      dsimp [baseFrame] at hp ⊢
+      dsimp [baseFrame, expTwoMulCondBaseFrame_unfold] at hp ⊢
       xperm_hyp hp)
     (cpsBranchWithin_as_cpsNBranchWithin
       (exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
@@ -526,33 +580,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := expTwoMulIterBit e
-    let squareW := expTwoMulSquareW r0 r1 r2 r3
-    let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
-    let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
-    let skipRest : Assertion :=
-      expTwoMulSkipLoopRest bit sp evmSp base squareW
-    let condFrame : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
-    let condLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let condExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) **
-        expCondMulLoopRest sp evmSp base a0 a1 a2 a3 rw) ** condFrame
-    let skipLoop : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** skipRest) ** baseFrame
-    let skipExit : Assertion :=
-      (((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-       ⌜expTwoMulIterCountNew iterCount = 0⌝) ** skipRest) ** baseFrame
     cpsBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
       (base + 28)
@@ -573,11 +600,14 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
         regOwn .x7 ** regOwn .x11 ** (.x1 ↦ᵣ vOld) **
-        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
-      loopTarget (fun h => condLoop h ∨ skipLoop h)
-      (base + 264) (fun h => condExit h ∨ skipExit h) := by
-  intro bit squareW rw baseFrame skipRest condFrame
-    condLoop condExit skipLoop skipExit
+        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
+        expTwoMulCondBaseFrame evmSp a0 a1 a2 a3)
+      loopTarget
+      (fun h => expTwoMulCondIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                expTwoMulSkipIterLoop iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h)
+      (base + 264)
+      (fun h => expTwoMulCondIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h ∨
+                expTwoMulSkipIterExit iterCount e sp evmSp base r0 r1 r2 r3 a0 a1 a2 a3 h) := by
   exact cpsNBranchWithin_as_cpsBranchWithin
     (exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3

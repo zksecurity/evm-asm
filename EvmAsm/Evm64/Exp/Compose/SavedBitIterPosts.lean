@@ -60,25 +60,31 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
             (expTwoMulIterBit e) sp evmSp
             base a0 a1 a2 a3 (expTwoMulSquareW r0 r1 r2 r3)
             (expTwoMulIterCountNew iterCount = 0) h) := by
-  rw [expTwoMulIterBaseFrame_unfold]
+  rw [expTwoMulIterBaseFrame_unfold, ← expTwoMulCondBaseFrame_unfold]
   exact cpsBranchWithin_weaken
     (fun _ hp => hp)
     (fun _ hp => by
+      simp only [expTwoMulCondIterLoop_unfold, expTwoMulSkipIterLoop_unfold] at hp
       rcases hp with hp | hp
       · left
         simpa [expTwoMulIterCondPost_unfold, expTwoMulIterCondRest_unfold,
-          expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold] using hp
+          expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold,
+          expTwoMulCondFrameBit_unfold] using hp
       · right
         simpa [expTwoMulIterSkipPost_unfold, expTwoMulIterSkipRest_unfold,
-          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold] using hp)
+          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold,
+          expTwoMulCondBaseFrame_unfold, expTwoMulSkipIterRest_unfold] using hp)
     (fun _ hp => by
+      simp only [expTwoMulCondIterExit_unfold, expTwoMulSkipIterExit_unfold] at hp
       rcases hp with hp | hp
       · left
         simpa [expTwoMulIterCondPost_unfold, expTwoMulIterCondRest_unfold,
-          expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold] using hp
+          expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold,
+          expTwoMulCondFrameBit_unfold] using hp
       · right
         simpa [expTwoMulIterSkipPost_unfold, expTwoMulIterSkipRest_unfold,
-          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold] using hp)
+          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold,
+          expTwoMulCondBaseFrame_unfold, expTwoMulSkipIterRest_unfold] using hp)
     (exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 mulTarget
