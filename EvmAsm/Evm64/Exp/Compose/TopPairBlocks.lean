@@ -16,6 +16,10 @@ theorem expTopSquaringMarshalPairReturnPc (base : Word) :
     ((base + 40 : Word) + 68) = base + 108 := by
   bv_omega
 
+theorem expTopSquaringMarshalPairTargetPc (base : Word) :
+    ((base + 40 : Word) + 64) = base + 104 := by
+  bv_omega
+
 /-- Squaring-call marshal prefix and JAL lifted to the top-level EXP code bundle. -/
 theorem exp_squaring_marshal_pair_then_square_evm_exp_spec_within
     (sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 : Word)
@@ -55,7 +59,7 @@ theorem exp_squaring_marshal_pair_then_square_evm_exp_spec_within
   have h := EvmAsm.Evm64.exp_loop_squaring_marshal_pair_then_square_spec_within
     sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 mulOff (base + 40)
   have htarget : (((base + 40) + 64 : Word) + signExtend21 mulOff) = mulTarget := by
-    rw [show ((base + 40 : Word) + 64) = base + 104 by bv_omega]
+    rw [expTopSquaringMarshalPairTargetPc]
     exact hmul
   rw [htarget] at h
   rw [expTopSquaringMarshalPairReturnPc] at h
