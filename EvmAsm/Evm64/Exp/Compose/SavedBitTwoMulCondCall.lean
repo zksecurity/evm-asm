@@ -17,6 +17,18 @@ theorem expTwoMulCondMulCallExitPc (base : Word) :
     ((base + 152 : Word) + 104) = base + 256 := by
   bv_omega
 
+theorem expTwoMulCondSourceAddr8 (evmSp : Word) :
+    (evmSp + 32#64 + 8 : Word) = evmSp + 40#64 := by
+  bv_omega
+
+theorem expTwoMulCondSourceAddr16 (evmSp : Word) :
+    (evmSp + 32#64 + 16 : Word) = evmSp + 48#64 := by
+  bv_omega
+
+theorem expTwoMulCondSourceAddr24 (evmSp : Word) :
+    (evmSp + 32#64 + 24 : Word) = evmSp + 56#64 := by
+  bv_omega
+
 @[irreducible]
 def expCondMulLoopRest
     (sp evmSp base a0 a1 a2 a3 : Word) (rw : EvmWord) : Assertion :=
@@ -319,10 +331,7 @@ theorem exp_cond_mul_folded_pre_to_call_scratch_owned_pre
   intro baseFrame foldedPre concretePre h hp
   dsimp [foldedPre, concretePre, baseFrame] at hp ⊢
   unfold evmWordIs at hp
-  have hSrc8 : (evmSp + 32#64 + 8 : Word) = evmSp + 40#64 := by bv_omega
-  have hSrc16 : (evmSp + 32#64 + 16 : Word) = evmSp + 48#64 := by bv_omega
-  have hSrc24 : (evmSp + 32#64 + 24 : Word) = evmSp + 56#64 := by bv_omega
-  rw [hSrc8, hSrc16, hSrc24] at hp
+  rw [expTwoMulCondSourceAddr8, expTwoMulCondSourceAddr16, expTwoMulCondSourceAddr24] at hp
   have hSp0 : (sp + signExtend12 0#12 : Word) = sp := by
     unfold signExtend12; bv_decide
   have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := by
