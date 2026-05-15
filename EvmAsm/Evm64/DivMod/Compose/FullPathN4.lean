@@ -109,6 +109,7 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
 
     hbltu hborrow
+  rw [loopBodyN4SkipJ0Pre_unfold] at raw
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
              u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
@@ -137,6 +138,7 @@ theorem divK_loop_body_n4_max_skip_j0_norm_noNop (sp base : Word)
   have raw := divK_loop_body_n4_max_skip_j0_divCode_noNop_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
     hbltu hborrow
+  rw [loopBodyN4SkipJ0Pre_unfold] at raw
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
              u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
