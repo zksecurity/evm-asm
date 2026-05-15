@@ -169,8 +169,6 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
       ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
-    let rest : Assertion :=
-      expTwoMulSkipLoopRest bit sp evmSp base squareW
     cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -202,11 +200,13 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
            (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)) ** baseFrame),
         (loopTarget,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest) ** baseFrame)),
+           ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
+            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) ** baseFrame)),
         (base + 264,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
-           ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest) ** baseFrame))] := by
-  intro bit squareW baseFrame rest
+           ⌜expTwoMulIterCountNew iterCount = 0⌝) **
+            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) ** baseFrame))] := by
+  intro bit squareW baseFrame
   have h :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
@@ -218,7 +218,7 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
       (pcFree_sepConj pcFree_memIs
         (pcFree_sepConj pcFree_memIs pcFree_memIs))
   have hf := cpsNBranchWithin_frameR hBaseFramePcFree h
-  simpa [rest, expTwoMulSkipLoopRest_unfold, expTwoMulSkipIterRest_unfold] using
+  simpa [expTwoMulSkipIterRest_unfold, expTwoMulSkipLoopRest_unfold] using
     (cpsNBranchWithin_weaken_pre
       (fun _ hp => by simpa using hp) hf)
 
