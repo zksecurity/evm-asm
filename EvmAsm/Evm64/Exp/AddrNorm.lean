@@ -243,6 +243,14 @@ attribute [exp_addr]
     ((base + 216 : Word) + 36) = base + 252 := by
   bv_decide
 
+@[exp_addr, grind =] theorem expTopSquaringMarshalPairReturnPc (base : Word) :
+    ((base + 40 : Word) + 68) = base + 108 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expTopSquaringMarshalPairTargetPc (base : Word) :
+    ((base + 40 : Word) + 64) = base + 104 := by
+  bv_decide
+
 @[exp_addr, grind =] theorem expBaseAdd40Aligned
     (base : Word) (hbase : base &&& 1 = 0) :
     (base + 40 : Word) &&& 1 = 0 := by bv_decide
