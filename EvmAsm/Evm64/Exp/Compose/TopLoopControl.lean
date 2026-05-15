@@ -21,8 +21,7 @@ theorem exp_bit_test_evm_exp_spec_within
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
        (.x10 ↦ᵣ (e &&& signExtend12 (1 : BitVec 12)))) := by
   have h := EvmAsm.Evm64.exp_bit_test_block_spec_within e c v10 (base + 28)
-  have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
-  rw [hnext] at h
+  rw [expTopIterBitTestNextPc] at h
   exact cpsTripleWithin_extend_code (h := h) (hmono := evmExpCode_iter_bit_test_sub)
 
 /-- MSB bit-test block lifted to the corrected saved-bit top-level EXP code
@@ -37,8 +36,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_spec_within
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
        (.x10 ↦ᵣ (expTwoMulIterBit e))) := by
   have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
-  have hnext : ((base + 28 : Word) + 12) = base + 40 := by bv_omega
-  rw [hnext] at h
+  rw [expTopIterBitTestNextPc] at h
   exact cpsTripleWithin_extend_code (h := h)
     (hmono := evmExpMsbSavedBitCode_iter_bit_test_sub)
 
@@ -52,8 +50,7 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_spec_within
       ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ v18))
       ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))) := by
   have h := EvmAsm.Evm64.exp_save_bit_block_spec_within bit v18 (base + 40)
-  have hnext : ((base + 40 : Word) + 4) = base + 44 := by bv_omega
-  rw [hnext] at h
+  rw [expTopSavedBitSaveNextPc] at h
   exact cpsTripleWithin_extend_code (h := h)
     (hmono := evmExpMsbSavedBitCode_iter_save_bit_sub)
 
@@ -70,8 +67,7 @@ theorem exp_loop_back_evm_exp_spec_within (c : Word)
       (base + 260)
         ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c = 0⌝) := by
   have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 252) target htarget
-  have hnext : ((base + 252 : Word) + 8) = base + 260 := by bv_omega
-  rw [hnext] at h
+  rw [expTopLoopBackNextPc] at h
   simpa [expIterCountNew] using
     (cpsBranchWithin_extend_code (h := h) (hmono := evmExpCode_iter_loop_back_sub))
 

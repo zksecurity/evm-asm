@@ -101,8 +101,7 @@ theorem exp_cond_mul_marshal_pair_evm_exp_spec_within
        ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)) := by
   have h := EvmAsm.Evm64.exp_loop_cond_mul_marshal_pair_spec_within
     sp evmSp tOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3 e0 e1 e2 e3 (base + 148)
-  have hnext : ((base + 148 : Word) + 64) = base + 212 := by bv_omega
-  rw [hnext] at h
+  rw [expTopCondMulMarshalPairNextPc] at h
   have hmono :
       ∀ addr instr, EvmAsm.Evm64.exp_loop_cond_mul_marshal_pair_code
           (base + 148) addr = some instr →

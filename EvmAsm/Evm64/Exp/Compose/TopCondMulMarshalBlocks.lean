@@ -128,8 +128,7 @@ theorem exp_cond_mul_beq_evm_exp_spec_within
   have h := EvmAsm.Rv64.beq_spec_within .x10 .x0 skipOff v10 (0 : Word)
     (base + 144)
   rw [htarget] at h
-  have hnext : ((base + 144 : Word) + 4) = base + 148 := by bv_omega
-  rw [hnext] at h
+  rw [expTopCondMulBeqNextPc] at h
   exact cpsBranchWithin_extend_code (h := h)
     (hmono := evmExpCode_cond_mul_beq_sub)
 
@@ -149,8 +148,7 @@ theorem exp_cond_mul_saved_bit_beq_evm_exp_msb_saved_bit_spec_within
   have h := EvmAsm.Rv64.beq_spec_within .x18 .x0 skipOff v18 (0 : Word)
     (base + 148)
   rw [htarget] at h
-  have hnext : ((base + 148 : Word) + 4) = base + 152 := by bv_omega
-  rw [hnext] at h
+  rw [expTopSavedBitCondMulBeqNextPc] at h
   exact cpsBranchWithin_extend_code (h := h)
     (hmono := evmExpMsbSavedBitCode_cond_mul_beq_sub)
 

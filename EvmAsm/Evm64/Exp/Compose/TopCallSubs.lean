@@ -161,4 +161,16 @@ theorem evmExpCode_cond_mul_beq_sub {base : Word}
     (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block_code_beq_sub
       (base + 144) mulOff skipOff a i h)
 
+theorem expTopCondMulBeqNextPc (base : Word) :
+    ((base + 144 : Word) + 4) = base + 148 := by
+  bv_omega
+
+theorem expTopSavedBitCondMulBeqNextPc (base : Word) :
+    ((base + 148 : Word) + 4) = base + 152 := by
+  bv_omega
+
+theorem expTopCondMulMarshalPairNextPc (base : Word) :
+    ((base + 148 : Word) + 64) = base + 212 := by
+  bv_omega
+
 end EvmAsm.Evm64.Exp.Compose
