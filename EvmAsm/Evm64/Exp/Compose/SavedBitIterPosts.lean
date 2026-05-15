@@ -66,7 +66,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
           expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold] using hp
       · right
         simpa [expTwoMulIterSkipPost_unfold, expTwoMulIterSkipRest_unfold,
-          expTwoMulIterBaseFrame_unfold] using hp)
+          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold] using hp)
     (fun _ hp => by
       rcases hp with hp | hp
       · left
@@ -74,7 +74,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_named_posts_spe
           expTwoMulIterCondFrame_unfold, expCondMulLoopRest_unfold] using hp
       · right
         simpa [expTwoMulIterSkipPost_unfold, expTwoMulIterSkipRest_unfold,
-          expTwoMulIterBaseFrame_unfold] using hp)
+          expTwoMulSkipLoopRest_unfold, expTwoMulIterBaseFrame_unfold] using hp)
     (exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 mulTarget
