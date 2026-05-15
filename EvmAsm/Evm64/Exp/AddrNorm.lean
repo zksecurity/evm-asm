@@ -135,6 +135,38 @@ attribute [exp_addr]
     ((base + 16 : Word) + 8) = base + 24 := by
   bv_decide
 
+@[exp_addr, grind =] theorem expSavedBitSquaringPrefixExitPc (base : Word) :
+    ((base + 44 : Word) + 104) = base + 148 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitBitTestNextPc (base : Word) :
+    ((base + 28 : Word) + 12) = base + 40 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitSaveNextPc (base : Word) :
+    ((base + 40 : Word) + 4) = base + 44 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitCondMulBeqNextPc (base : Word) :
+    ((base + 148 : Word) + 4) = base + 152 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitLoopBackNextPc (base : Word) :
+    ((base + 256 : Word) + 8) = base + 264 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitSaveEntryAddr (base : Word) :
+    (base + 40 : Word) = (base + 28) + 12 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitCondMulBeqEntryAddr (base : Word) :
+    (base + 148 : Word) = (base + 28) + 120 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expSavedBitSquaringEntryAddr (base : Word) :
+    (base + 44 : Word) = (base + 28) + 16 := by
+  bv_decide
+
 @[exp_addr, grind =] theorem expBaseAdd40Aligned
     (base : Word) (hbase : base &&& 1 = 0) :
     (base + 40 : Word) &&& 1 = 0 := by bv_decide
