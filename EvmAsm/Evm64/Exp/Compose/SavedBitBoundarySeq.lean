@@ -768,13 +768,15 @@ theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_m
   exact cpsTripleWithin_weaken
     (fun _ hp => by
       rw [expTwoMulLoopExitFullStackPreFrame_unfold] at hp
+      rw [expTwoMulLoopExitControl_unfold] at hp
       rw [evmStackIs_cons, evmStackIs_cons] at hp
       rw [← exp_epilogue_result_word_right evmSp d0 d1 d2 d3
         (evmStackIs (evmSp + 32 + 32) rest)] at hp
-      rw [show evmSp + 32 + 32 = evmSp + 64#64 from by bv_addr] at hp
+      rw [show evmSp + 32 + 32 = evmSp + 64 from by bv_addr] at hp
       xcancel_struct hp)
     (fun _ hp => by
       rw [expTwoMulLoopExitFullStackPostFrame_unfold]
+      rw [expTwoMulLoopExitControl_unfold]
       exact hp)
     (exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
