@@ -56,8 +56,6 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
             (mul_callable_code mulTarget))
     (hskip : (base + 148 : Word) + signExtend13 skipOff = base + 256)
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
-    let bit := expTwoMulIterBit e
-    let squareW := expTwoMulSquareW r0 r1 r2 r3
     let rw := expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3
     cpsNBranchWithin
       (((3 + 1 + (17 + 64 + 9) + 1) + 2) + ((17 + 64 + 9) + 2))
@@ -101,7 +99,9 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
            ⌜expTwoMulIterCountNew iterCount = 0⌝) **
             expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
             expTwoMulCondBaseFrame evmSp a0 a1 a2 a3))] := by
-  intro bit squareW rw
+  intro rw
+  let bit := expTwoMulIterBit e
+  let squareW := expTwoMulSquareW r0 r1 r2 r3
   have hSkip :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_frame_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
