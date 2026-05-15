@@ -568,6 +568,14 @@ theorem expResultWord_getLimbN_4 (r0 r1 r2 r3 : Word) :
     (expResultWord r0 r1 r2 r3).getLimbN 4 = 0 := by
   simp [EvmWord.getLimbN]
 
+/-- Repacking the four concrete limbs of an EVM word with `expResultWord`
+    returns the original word. -/
+theorem expResultWord_getLimbN_self (r : EvmWord) :
+    expResultWord (r.getLimbN 0) (r.getLimbN 1) (r.getLimbN 2) (r.getLimbN 3) = r := by
+  apply EvmWord.eq_iff_limbs.mpr
+  intro i
+  fin_cases i <;> unfold expResultWord <;> rw [EvmWord.getLimb_fromLimbs] <;> rfl
+
 /-- The four limbs written by `exp_epilogue` fold to the assembled EXP result
     word in the output stack slot at `evmSp + 32`. -/
 theorem exp_epilogue_result_word

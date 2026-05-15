@@ -12,10 +12,12 @@
 -/
 
 import EvmAsm.Rv64.Program
+import Std.Tactic.BVDecide
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64 (ADDI ANDI BEQ BNE Instr JAL LD Program SD SLLI SRLI seq single)
+open EvmAsm.Rv64 (ADDI ANDI BEQ BNE Instr JAL LD Program SD SLLI SRLI seq single
+  signExtend13 signExtend21)
 
 -- ============================================================================
 -- Iteration sub-blocks (#92 slice 3a, beads evm-asm-dl98)
@@ -812,6 +814,19 @@ def exp_iter_body_full_msb_saved_bit
   exp_cond_mul_call_with_saved_bit_skip_block mulOff skipOff ;;
   exp_loop_back backOff
 
+/-- Corrected EXP iteration body with independent MUL-call offsets for the
+    unconditional squaring call and the conditional-multiply call.  The two
+    call sites sit at different PCs, so a single encoded JAL offset cannot
+    target one shared `mul_callable` body from both sites. -/
+def exp_iter_body_full_msb_saved_bit_two_mul
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) : Program :=
+  exp_msb_bit_test_block ;;
+  exp_save_bit_block ;;
+  exp_squaring_call_block squaringMulOff ;;
+  exp_cond_mul_call_with_saved_bit_skip_block condMulOff skipOff ;;
+  exp_loop_back backOff
+
 theorem exp_iter_body_full_length
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     (exp_iter_body_full mulOff skipOff backOff).length = 58 := by
@@ -849,6 +864,28 @@ theorem exp_iter_body_full_msb_saved_bit_byte_length
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
     4 * (exp_iter_body_full_msb_saved_bit mulOff skipOff backOff).length = 236 := by
   rw [exp_iter_body_full_msb_saved_bit_length]
+
+theorem exp_iter_body_full_msb_saved_bit_two_mul_length
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (exp_iter_body_full_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff).length = 59 := by
+  show ((((exp_msb_bit_test_block ;;
+          exp_save_bit_block) ;;
+          exp_squaring_call_block squaringMulOff) ;;
+         exp_cond_mul_call_with_saved_bit_skip_block condMulOff skipOff) ;;
+        exp_loop_back backOff).length = 59
+  simp only [seq, Program.length_append,
+    exp_msb_bit_test_block_length,
+    exp_save_bit_block_length,
+    exp_squaring_call_block_length,
+    exp_cond_mul_call_with_saved_bit_skip_block_length,
+    exp_loop_back_length]
+
+theorem exp_iter_body_full_msb_saved_bit_two_mul_byte_length
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    4 * (exp_iter_body_full_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff).length = 236 := by
+  rw [exp_iter_body_full_msb_saved_bit_two_mul_length]
 
 
 -- ----------------------------------------------------------------------------
@@ -974,6 +1011,18 @@ def evm_exp_msb_saved_bit
   exp_loop_pointer_restore ;;
   exp_epilogue
 
+/-- Corrected EXP opcode Program with independent MUL-call offsets for the
+    squaring and conditional-multiply JAL sites. -/
+def evm_exp_msb_saved_bit_two_mul
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) : Program :=
+  exp_prologue ;;
+  exp_loop_pointer_advance ;;
+  exp_iter_body_full_msb_saved_bit_two_mul
+    squaringMulOff condMulOff skipOff backOff ;;
+  exp_loop_pointer_restore ;;
+  exp_epilogue
+
 /-- Canonical BEQ offset for skipping the conditional-multiply taken branch. -/
 def canonicalExpCondMulSkipOff : BitVec 13 := 108
 
@@ -982,6 +1031,14 @@ def canonicalExpLoopBackOff : BitVec 13 := -228
 
 /-- Canonical BNE back-edge for the corrected MSB-first saved-bit layout. -/
 def canonicalExpMsbSavedBitLoopBackOff : BitVec 13 := -232
+
+/-- Canonical JAL offset from the saved-bit squaring call site to an appended
+    `mul_callable` body immediately after the 304-byte EXP wrapper. -/
+def canonicalExpSquaringMulOff : BitVec 21 := 196
+
+/-- Canonical JAL offset from the saved-bit conditional-multiply call site to an
+    appended `mul_callable` body immediately after the 304-byte EXP wrapper. -/
+def canonicalExpCondMulOff : BitVec 21 := 88
 
 /-- EXP program with the internal branch offsets pinned by the canonical layout.
     The MUL call offset remains external because it depends on the caller's
@@ -995,6 +1052,13 @@ def evm_exp_msb_saved_bit_canonical (mulOff : BitVec 21) : Program :=
   evm_exp_msb_saved_bit mulOff
     canonicalExpCondMulSkipOff canonicalExpMsbSavedBitLoopBackOff
 
+/-- Corrected EXP program with canonical internal branch offsets and separate
+    external MUL-call offsets for the two JAL sites. -/
+def evm_exp_msb_saved_bit_two_mul_canonical
+    (squaringMulOff condMulOff : BitVec 21) : Program :=
+  evm_exp_msb_saved_bit_two_mul squaringMulOff condMulOff
+    canonicalExpCondMulSkipOff canonicalExpMsbSavedBitLoopBackOff
+
 theorem canonicalExpCondMulSkipOff_eq :
     canonicalExpCondMulSkipOff = 108 := rfl
 
@@ -1004,6 +1068,41 @@ theorem canonicalExpLoopBackOff_eq :
 theorem canonicalExpMsbSavedBitLoopBackOff_eq :
     canonicalExpMsbSavedBitLoopBackOff = -232 := rfl
 
+theorem canonicalExpSquaringMulOff_eq :
+    canonicalExpSquaringMulOff = 196 := rfl
+
+theorem canonicalExpCondMulOff_eq :
+    canonicalExpCondMulOff = 88 := rfl
+
+theorem canonicalExpCondMulSkip_target (base : Word) :
+    (base + 148 : Word) + signExtend13 canonicalExpCondMulSkipOff =
+      base + 256 := by
+  rw [canonicalExpCondMulSkipOff_eq]
+  have h : signExtend13 (108 : BitVec 13) = (108 : Word) := by decide
+  simp only [h]; bv_omega
+
+theorem canonicalExpMsbSavedBitLoopBack_target (base : Word) :
+    ((base + 256) + 4 : Word) +
+        signExtend13 canonicalExpMsbSavedBitLoopBackOff =
+      base + 28 := by
+  rw [canonicalExpMsbSavedBitLoopBackOff_eq]
+  have h : signExtend13 ((-232 : BitVec 13)) = (18446744073709551384 : Word) := by decide
+  simp only [h]; bv_omega
+
+theorem canonicalExpSquaringMul_target (base : Word) :
+    ((base + 44) + 64 : Word) + signExtend21 canonicalExpSquaringMulOff =
+      base + 304 := by
+  rw [canonicalExpSquaringMulOff_eq]
+  have h : signExtend21 (196 : BitVec 21) = (196 : Word) := by decide
+  simp only [h]; bv_omega
+
+theorem canonicalExpCondMul_target (base : Word) :
+    ((base + 152) + 64 : Word) + signExtend21 canonicalExpCondMulOff =
+      base + 304 := by
+  rw [canonicalExpCondMulOff_eq]
+  have h : signExtend21 (88 : BitVec 21) = (88 : Word) := by decide
+  simp only [h]; bv_omega
+
 theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
     evm_exp_canonical mulOff =
       evm_exp mulOff canonicalExpCondMulSkipOff canonicalExpLoopBackOff := rfl
@@ -1011,6 +1110,12 @@ theorem evm_exp_canonical_eq (mulOff : BitVec 21) :
 theorem evm_exp_msb_saved_bit_canonical_eq (mulOff : BitVec 21) :
     evm_exp_msb_saved_bit_canonical mulOff =
       evm_exp_msb_saved_bit mulOff
+        canonicalExpCondMulSkipOff canonicalExpMsbSavedBitLoopBackOff := rfl
+
+theorem evm_exp_msb_saved_bit_two_mul_canonical_eq
+    (squaringMulOff condMulOff : BitVec 21) :
+    evm_exp_msb_saved_bit_two_mul_canonical squaringMulOff condMulOff =
+      evm_exp_msb_saved_bit_two_mul squaringMulOff condMulOff
         canonicalExpCondMulSkipOff canonicalExpMsbSavedBitLoopBackOff := rfl
 
 theorem evm_exp_length (mulOff : BitVec 21) (skipOff backOff : BitVec 13) :
@@ -1051,6 +1156,29 @@ theorem evm_exp_msb_saved_bit_byte_length
     4 * (evm_exp_msb_saved_bit mulOff skipOff backOff).length = 304 := by
   rw [evm_exp_msb_saved_bit_length]
 
+theorem evm_exp_msb_saved_bit_two_mul_length
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    (evm_exp_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff).length = 76 := by
+  show ((((exp_prologue ;;
+            exp_loop_pointer_advance) ;;
+            exp_iter_body_full_msb_saved_bit_two_mul
+              squaringMulOff condMulOff skipOff backOff) ;;
+            exp_loop_pointer_restore) ;;
+          exp_epilogue).length = 76
+  simp only [seq, Program.length_append,
+    exp_prologue_length,
+    exp_loop_pointer_advance_length,
+    exp_iter_body_full_msb_saved_bit_two_mul_length,
+    exp_loop_pointer_restore_length,
+    exp_epilogue_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_byte_length
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13) :
+    4 * (evm_exp_msb_saved_bit_two_mul
+      squaringMulOff condMulOff skipOff backOff).length = 304 := by
+  rw [evm_exp_msb_saved_bit_two_mul_length]
+
 theorem evm_exp_canonical_length (mulOff : BitVec 21) :
     (evm_exp_canonical mulOff).length = 75 := by
   unfold evm_exp_canonical
@@ -1068,5 +1196,18 @@ theorem evm_exp_msb_saved_bit_canonical_length (mulOff : BitVec 21) :
 theorem evm_exp_msb_saved_bit_canonical_byte_length (mulOff : BitVec 21) :
     4 * (evm_exp_msb_saved_bit_canonical mulOff).length = 304 := by
   rw [evm_exp_msb_saved_bit_canonical_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_canonical_length
+    (squaringMulOff condMulOff : BitVec 21) :
+    (evm_exp_msb_saved_bit_two_mul_canonical
+      squaringMulOff condMulOff).length = 76 := by
+  unfold evm_exp_msb_saved_bit_two_mul_canonical
+  rw [evm_exp_msb_saved_bit_two_mul_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_canonical_byte_length
+    (squaringMulOff condMulOff : BitVec 21) :
+    4 * (evm_exp_msb_saved_bit_two_mul_canonical
+      squaringMulOff condMulOff).length = 304 := by
+  rw [evm_exp_msb_saved_bit_two_mul_canonical_length]
 
 end EvmAsm.Evm64
