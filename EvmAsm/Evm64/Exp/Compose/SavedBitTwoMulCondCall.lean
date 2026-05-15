@@ -13,6 +13,10 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+theorem expTwoMulCondMulCallExitPc (base : Word) :
+    ((base + 152 : Word) + 104) = base + 256 := by
+  bv_omega
+
 @[irreducible]
 def expCondMulLoopRest
     (sp evmSp base a0 a1 a2 a3 : Word) (rw : EvmWord) : Assertion :=
@@ -106,8 +110,7 @@ theorem exp_cond_mul_call_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_
   have hCondFramed :=
     cpsTripleWithin_frameR
       ((.x9 ↦ᵣ iterCount) ** (.x0 ↦ᵣ (0 : Word))) (by pcFree) hCond
-  have hcondExit : ((base + 152 : Word) + 104) = base + 256 := by bv_omega
-  rw [hcondExit] at hCondFramed
+  rw [expTwoMulCondMulCallExitPc] at hCondFramed
   have hLoop := exp_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     iterCount squaringMulOff condMulOff skipOff backOff base mulTarget
     loopTarget hback
