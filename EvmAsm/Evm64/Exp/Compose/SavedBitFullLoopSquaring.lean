@@ -13,6 +13,10 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+theorem expSavedBitSquaringPrefixExitPc (base : Word) :
+    ((base + 44 : Word) + 104) = base + 148 := by
+  bv_omega
+
 /-- Squaring-side full call-block lifted to the corrected saved-bit EXP+MUL
     code bundle.  The block starts after the saved-bit instruction, at
     `base + 44`, and exits at the saved-bit BEQ site `base + 148`. -/
@@ -230,8 +234,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_with_m
         dsimp only [bit] at hp ⊢
         xperm_hyp hp)
       hPrefixFramed hSquareFramed
-  have hexit : ((base + 44 : Word) + 104) = base + 148 := by bv_omega
-  rw [hexit] at hSeq
+  rw [expSavedBitSquaringPrefixExitPc] at hSeq
   exact cpsTripleWithin_weaken
     (fun _ hp => by xperm_hyp hp)
     (fun _ hp => by xperm_hyp hp)
@@ -318,8 +321,7 @@ theorem exp_msb_saved_bit_prefix_then_squaring_call_evm_exp_msb_saved_bit_two_mu
         dsimp only [bit] at hp ⊢
         xperm_hyp hp)
       hPrefixFramed hSquareFramed
-  have hexit : ((base + 44 : Word) + 104) = base + 148 := by bv_omega
-  rw [hexit] at hSeq
+  rw [expSavedBitSquaringPrefixExitPc] at hSeq
   exact cpsTripleWithin_weaken
     (fun _ hp => by xperm_hyp hp)
     (fun _ hp => by xperm_hyp hp)
