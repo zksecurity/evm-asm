@@ -70,6 +70,29 @@ theorem expTwoMulIterationsBodyBound_succ (iterations : Nat) :
   unfold expTwoMulIterationsBodyBound
   rw [Nat.add_one, Nat.succ_mul, Nat.add_comm]
 
+theorem expTwoMulNamedIterStepBound_add_iterationsBodyBound_le_succ
+    (iterations : Nat) :
+    expTwoMulNamedIterStepBound + expTwoMulIterationsBodyBound iterations ≤
+      expTwoMulIterationsBodyBound (iterations + 1) := by
+  rw [expTwoMulIterationsBodyBound_succ]
+
+theorem expTwoMulNamedIterStepBound_add_max_iterationsBodyBound_le_succ
+    (iterations : Nat) :
+    expTwoMulNamedIterStepBound +
+        max (expTwoMulIterationsBodyBound iterations)
+          (expTwoMulIterationsBodyBound iterations) ≤
+      expTwoMulIterationsBodyBound (iterations + 1) := by
+  rw [Nat.max_self]
+  exact expTwoMulNamedIterStepBound_add_iterationsBodyBound_le_succ iterations
+
+theorem expTwoMulNamedIterStepBound_add_max_iterationsBodyBound_zero_le_succ
+    (iterations : Nat) :
+    expTwoMulNamedIterStepBound +
+        max (expTwoMulIterationsBodyBound iterations) 0 ≤
+      expTwoMulIterationsBodyBound (iterations + 1) := by
+  rw [Nat.max_eq_left (Nat.zero_le _)]
+  exact expTwoMulNamedIterStepBound_add_iterationsBodyBound_le_succ iterations
+
 theorem expTwoMulIterationsBodyBound_mono {iterations iterations' : Nat}
     (h : iterations ≤ iterations') :
     expTwoMulIterationsBodyBound iterations ≤

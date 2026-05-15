@@ -290,8 +290,8 @@ theorem exp_two_mul_iterations_body_peel_with_continuations_spec_within
     exp_two_mul_named_iter_with_continuations_bounded_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 base hbase
-      (by
-        rw [Nat.max_self, expTwoMulIterationsBodyBound_succ])
+      (expTwoMulNamedIterStepBound_add_max_iterationsBodyBound_le_succ
+        iterations)
 
 /-- Closed-form variant of
     `exp_two_mul_iterations_body_peel_with_continuations_spec_within`,
@@ -377,8 +377,8 @@ theorem exp_two_mul_iterations_body_peel_with_exit_imp_spec_within
     exp_two_mul_named_iter_with_continuations_bounded_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 base hbase
-      (by
-        rw [Nat.max_eq_left (Nat.zero_le _), expTwoMulIterationsBodyBound_succ])
+      (expTwoMulNamedIterStepBound_add_max_iterationsBodyBound_zero_le_succ
+        iterations)
       hLoop
       (cpsTripleWithin_extend_code
         (hmono := by
