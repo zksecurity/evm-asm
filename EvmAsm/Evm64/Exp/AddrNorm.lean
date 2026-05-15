@@ -13,6 +13,7 @@
 
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Evm64.Exp.AddrNormAttr
+import Std.Tactic.BVDecide
 
 namespace EvmAsm.Evm64.Exp.AddrNorm
 
@@ -37,6 +38,9 @@ namespace EvmAsm.Evm64.Exp.AddrNorm
 @[exp_addr, grind =] theorem exp_se12_neg32 :
     EvmAsm.Rv64.signExtend12 ((-32 : BitVec 12)) = (18446744073709551584 : Word) := by decide
 
+@[exp_addr, grind =] theorem exp_se12_256 :
+    EvmAsm.Rv64.signExtend12 (256 : BitVec 12) = (256 : Word) := by decide
+
 attribute [exp_addr]
   EvmAsm.Rv64.signExtend12_0 EvmAsm.Rv64.signExtend12_1
   EvmAsm.Rv64.signExtend12_8 EvmAsm.Rv64.signExtend12_16
@@ -54,5 +58,37 @@ attribute [exp_addr]
   EvmAsm.Rv64.signExtend12_3984 EvmAsm.Rv64.signExtend12_3976
   EvmAsm.Rv64.signExtend12_3968 EvmAsm.Rv64.signExtend12_3960
   EvmAsm.Rv64.signExtend12_3952 EvmAsm.Rv64.signExtend12_3944
+
+@[exp_addr, grind =] theorem expAddr0 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 0#12 : Word) = addr := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr8 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 8#12 : Word) = addr + 8#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr16 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 16#12 : Word) = addr + 16#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr24 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 24#12 : Word) = addr + 24#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr32 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 32#12 : Word) = addr + 32#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr40 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 40#12 : Word) = addr + 40#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr48 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 48#12 : Word) = addr + 48#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
+
+@[exp_addr, grind =] theorem expAddr56 (addr : Word) :
+    (addr + EvmAsm.Rv64.signExtend12 56#12 : Word) = addr + 56#64 := by
+  unfold EvmAsm.Rv64.signExtend12; bv_decide
 
 end EvmAsm.Evm64.Exp.AddrNorm

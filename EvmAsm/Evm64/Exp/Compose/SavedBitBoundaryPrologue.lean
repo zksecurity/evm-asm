@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitWithMul
+import EvmAsm.Evm64.Exp.AddrNorm
 import EvmAsm.Rv64.Tactics.XCancelStruct
 
 namespace EvmAsm.Evm64.Exp.Compose
@@ -63,7 +64,7 @@ instance pcFreeInst_expTwoMulOperandFrame
 
 theorem expTwoMulBoundaryCounterInitWord :
     ((0 : Word) + signExtend12 (256 : BitVec 12)) = (256 : Word) := by
-  unfold signExtend12
+  rw [EvmAsm.Evm64.Exp.AddrNorm.exp_se12_256]
   bv_decide
 
 theorem expTwoMulBoundaryAccumulatorInitWord :
