@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitCondMulCall
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulSkip
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -30,36 +31,36 @@ theorem expTwoMulCondSourceAddr24 (evmSp : Word) :
   bv_omega
 
 theorem expTwoMulCondAddr0 (addr : Word) :
-    (addr + signExtend12 0#12 : Word) = addr := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 0#12 : Word) = addr :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr0 addr
 
 theorem expTwoMulCondAddr8 (addr : Word) :
-    (addr + signExtend12 8#12 : Word) = addr + 8#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 8#12 : Word) = addr + 8#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr8 addr
 
 theorem expTwoMulCondAddr16 (addr : Word) :
-    (addr + signExtend12 16#12 : Word) = addr + 16#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 16#12 : Word) = addr + 16#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr16 addr
 
 theorem expTwoMulCondAddr24 (addr : Word) :
-    (addr + signExtend12 24#12 : Word) = addr + 24#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 24#12 : Word) = addr + 24#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr24 addr
 
 theorem expTwoMulCondAddr32 (addr : Word) :
-    (addr + signExtend12 32#12 : Word) = addr + 32#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 32#12 : Word) = addr + 32#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr32 addr
 
 theorem expTwoMulCondAddr40 (addr : Word) :
-    (addr + signExtend12 40#12 : Word) = addr + 40#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 40#12 : Word) = addr + 40#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr40 addr
 
 theorem expTwoMulCondAddr48 (addr : Word) :
-    (addr + signExtend12 48#12 : Word) = addr + 48#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 48#12 : Word) = addr + 48#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr48 addr
 
 theorem expTwoMulCondAddr56 (addr : Word) :
-    (addr + signExtend12 56#12 : Word) = addr + 56#64 := by
-  unfold signExtend12; bv_decide
+    (addr + signExtend12 56#12 : Word) = addr + 56#64 :=
+  EvmAsm.Evm64.Exp.AddrNorm.expAddr56 addr
 
 @[irreducible]
 def expCondMulLoopRest
