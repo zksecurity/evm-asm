@@ -14,14 +14,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
-theorem expSavedBitCondMulTakenAddr (base : Word) :
-    (base + 152 : Word) = base + 148 + 4 := by
-  bv_omega
-
-theorem expSavedBitTwoMulCondMulTakenAddr (base : Word) :
-    (base + 152 : Word) = (base + 28) + 120 + 4 := by
-  bv_omega
-
 /-- Conditional-multiply taken call-block lifted to the corrected saved-bit
     EXP+MUL code bundle.  The leading BEQ is handled separately; this theorem
     starts at the taken block `base + 152` and exits at `base + 256`. -/
@@ -75,7 +67,7 @@ theorem exp_cond_mul_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
       exp_cond_mul_call_block_code (base + 152) mulOff a = some i →
       evmExpMsbSavedBitCode base mulOff skipOff backOff a = some i := by
     intro a i h
-    rw [expSavedBitCondMulTakenAddr] at h
+    rw [EvmAsm.Evm64.Exp.AddrNorm.expSavedBitCondMulTakenAddr] at h
     exact evmExpMsbSavedBitCode_iter_cond_mul_sub a i
       (EvmAsm.Evm64.exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
         (base + 148) mulOff skipOff a i h)
@@ -157,7 +149,7 @@ theorem exp_cond_mul_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
       evmExpMsbSavedBitTwoMulCode
         base squaringMulOff condMulOff skipOff backOff a = some i := by
     intro a i h
-    rw [expSavedBitTwoMulCondMulTakenAddr] at h
+    rw [EvmAsm.Evm64.Exp.AddrNorm.expSavedBitTwoMulCondMulTakenAddr] at h
     exact evmExpMsbSavedBitTwoMulCode_iter_body_sub
       (base := base) (squaringMulOff := squaringMulOff)
       (condMulOff := condMulOff) (skipOff := skipOff) (backOff := backOff)
