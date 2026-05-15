@@ -101,6 +101,22 @@ theorem expTwoMulFullLoopBodyBound_eq_tail_succ :
   rw [expTwoMulFullLoopBodyBound_eq_iter_plus_tail,
     expTwoMulIterationsBodyBound_succ]
 
+/-- The peeled named iteration plus the 255-iteration tail fits in the
+    256-iteration full-body budget. -/
+theorem expTwoMulNamedIterStepBound_add_fullTail_le_full :
+    expTwoMulNamedIterStepBound + expTwoMulFullLoopBodyTailBound ≤
+      expTwoMulFullLoopBodyBound := by
+  rw [← expTwoMulFullLoopBodyBound_eq_iter_plus_tail]
+
+/-- Same budget fact with the duplicated tail bound shape produced by the
+    continuation-composition rule. -/
+theorem expTwoMulNamedIterStepBound_add_max_fullTail_le_full :
+    expTwoMulNamedIterStepBound +
+        max expTwoMulFullLoopBodyTailBound expTwoMulFullLoopBodyTailBound ≤
+      expTwoMulFullLoopBodyBound := by
+  rw [Nat.max_self]
+  exact expTwoMulNamedIterStepBound_add_fullTail_le_full
+
 theorem expTwoMulFullLoopBoundaryBound_eq :
     expTwoMulFullLoopBoundaryBound = 48401 := by
   rw [expTwoMulFullLoopBoundaryBound, expTwoMulBoundaryLoopBound_eq,

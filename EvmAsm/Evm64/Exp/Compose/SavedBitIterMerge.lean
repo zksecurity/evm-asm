@@ -570,9 +570,7 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
       base baseWord rest exitCond hbase
-      (by
-        rw [Nat.max_self]
-        rw [← expTwoMulFullLoopBodyBound_eq_iter_plus_tail])
+      expTwoMulNamedIterStepBound_add_max_fullTail_le_full
 
 /-- Closed-form variant of
     `exp_two_mul_full_loop_body_peel_tail_with_continuations_spec_within`,
