@@ -417,6 +417,64 @@ theorem divK_loop_body_n3_call_unified_j0_spec_within
         unfold mulsubN4_c3 at hb; simp only [if_neg hb] at hp ⊢; exact hp)
       (cpsTripleWithin_mono_nSteps (by decide) J0)
 
+/-- No-NOP variant of `divK_loop_body_n3_call_unified_j0_spec_within`. -/
+theorem divK_loop_body_n3_call_unified_j0_spec_within_noNop
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult u3 v2)
+    (hcarry2_nz : isAddbackCarry2NzN3Call v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 202 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (3 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop) **
+       (qAddr ↦ₘ qOld) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ scratch_un0))
+      (loopIterPostN3Call sp base (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase qAddr
+  by_cases hb : BitVec.ult uTop (mulsubN4_c3 (div128Quot u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3)
+  · have hborrow : isAddbackBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+      delta isAddbackBorrowN3Call; simp only []; rw [if_pos hb]; decide
+    have J0 := divK_loop_body_n3_call_addback_beq_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign
+      hbltu hborrow hcarry2_nz
+    intro_lets at J0
+    exact cpsTripleWithin_weaken
+      (fun h hp => hp)
+      (fun h hp => by
+        rw [loopBodyN3CallAddbackBeqPost_eq_J] at hp
+        rw [← loopIterPostN3Call_addback hb]; exact hp)
+      (cpsTripleWithin_mono_nSteps (by decide) J0)
+  · have hborrow : isSkipBorrowN3Call v0 v1 v2 v3 u0 u1 u2 u3 uTop := if_neg hb
+    have J0 := divK_loop_body_n3_call_skip_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign
+      hbltu hborrow
+    intro_lets at J0
+    exact cpsTripleWithin_weaken
+      (fun h hp => hp)
+      (fun h hp => by
+        delta loopIterPostN3Call iterN3Call iterWithDoubleAddback
+              loopBodyN3CallSkipPost loopBodyN3SkipPost loopBodySkipPost
+              loopExitPostN3 loopExitPost at hp ⊢
+        unfold mulsubN4_c3 at hb; simp only [if_neg hb] at hp ⊢; exact hp)
+      (cpsTripleWithin_mono_nSteps (by decide) J0)
+
 -- ============================================================================
 -- Double-addback () two-iteration max×max composition
 -- Case-splits on j=1 borrow to use raw skip/beq specs, then composes with
