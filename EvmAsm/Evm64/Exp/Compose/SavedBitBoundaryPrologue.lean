@@ -61,6 +61,20 @@ instance pcFreeInst_expTwoMulOperandFrame
       (expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord) :=
   ⟨expTwoMulOperandFrame_pcFree⟩
 
+theorem expTwoMulBoundaryCounterInitWord :
+    ((0 : Word) + signExtend12 (256 : BitVec 12)) = (256 : Word) := by
+  unfold signExtend12
+  bv_decide
+
+theorem expTwoMulBoundaryAccumulatorInitWord :
+    ((0 : Word) + signExtend12 (1 : BitVec 12)) = (1 : Word) := by
+  rw [signExtend12_1]
+  bv_decide
+
+theorem expTwoMulBoundaryAdvancedEvmSpWord (evmSp : Word) :
+    evmSp + signExtend12 (64 : BitVec 12) = evmSp + 64 := by
+  rw [signExtend12_64]
+
 /-- EXP prologue followed by the pointer-advance block, lifted to the
     two-MUL saved-bit EXP+MUL code bundle. This lands at the iteration-body
     entry with the EVM stack pointer advanced by one operand window. -/
@@ -234,14 +248,9 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
   exact cpsTripleWithin_weaken
     (fun _ hp => hp)
     (fun _ hp => by
-      rw [show ((0 : Word) + signExtend12 (256 : BitVec 12)) = (256 : Word) from by
-        unfold signExtend12
-        bv_decide] at hp
-      rw [show ((0 : Word) + signExtend12 (1 : BitVec 12)) = (1 : Word) from by
-        rw [signExtend12_1]
-        bv_decide] at hp
-      rw [show evmSp + signExtend12 (64 : BitVec 12) = evmSp + 64 from by
-        rw [signExtend12_64]] at hp
+      rw [expTwoMulBoundaryCounterInitWord] at hp
+      rw [expTwoMulBoundaryAccumulatorInitWord] at hp
+      rw [expTwoMulBoundaryAdvancedEvmSpWord] at hp
       exact hp)
     (exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_full_stack_frame_spec_within
       sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord rest
