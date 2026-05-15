@@ -13,6 +13,7 @@
 
 import EvmAsm.Rv64.AddrNorm
 import EvmAsm.Evm64.Exp.AddrNormAttr
+import EvmAsm.Evm64.Exp.Program
 import Std.Tactic.BVDecide
 
 namespace EvmAsm.Evm64.Exp.AddrNorm
@@ -305,6 +306,16 @@ attribute [exp_addr]
 
 @[exp_addr, grind =] theorem expTopCondMulRestoreAddr (base : Word) :
     (base + 216 : Word) = base + 148 + 68 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expBoundaryEpilogueExitPc (base : Word) :
+    (base + 24 : Word) + 36 = base + 60 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expBoundaryProgramEpilogueAddr (base : Word) :
+    (base + 24 : Word) =
+      base + BitVec.ofNat 64 (4 * EvmAsm.Evm64.exp_prologue.length) := by
+  rw [EvmAsm.Evm64.exp_prologue_length]
   bv_decide
 
 @[exp_addr, grind =] theorem expBaseAdd40Aligned

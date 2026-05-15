@@ -7,6 +7,7 @@
 import EvmAsm.Evm64.Stack
 import EvmAsm.Evm64.Exp.LimbSpec
 import EvmAsm.Evm64.Exp.Compose.BaseLengths
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -58,17 +59,6 @@ theorem expBoundaryProgram_len : expBoundaryProgram.length = 15 := by
 theorem expBoundaryProgram_byte_len : 4 * expBoundaryProgram.length = 60 := by
   rw [expBoundaryProgram_len]
 
-theorem expBoundaryEpilogueExitPc (base : Word) :
-    (base + 24 : Word) + 36 = base + 60 := by
-  bv_omega
-
-/-- The EXP boundary-program epilogue starts immediately after the prologue. -/
-theorem expBoundaryProgramEpilogueAddr (base : Word) :
-    (base + 24 : Word) =
-      base + BitVec.ofNat 64 (4 * EvmAsm.Evm64.exp_prologue.length) := by
-  rw [exp_prologue_len]
-  bv_omega
-
 /-- Concrete `CodeReq.ofProg` handle for `expBoundaryProgram`. -/
 abbrev expBoundaryProgramCode (base : Word) : CodeReq :=
   CodeReq.ofProg base expBoundaryProgram
@@ -80,7 +70,7 @@ theorem expBoundaryCode_eq_programCode (base : Word) :
   unfold expBoundaryCode expBoundaryProgramCode expBoundaryProgram
   simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil,
     CodeReq.union_empty_right, EvmAsm.Rv64.seq]
-  rw [expBoundaryProgramEpilogueAddr base]
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expBoundaryProgramEpilogueAddr base]
   rw [← CodeReq.ofProg_append]
   rfl
 
@@ -171,7 +161,7 @@ theorem expBoundaryProgram_spec_within
       ((0 : Word) + signExtend12 (1 : BitVec 12))
       ((0 : Word) + signExtend12 (1 : BitVec 12))
       (0 : Word) (0 : Word) (0 : Word) d0 d1 d2 d3 (base + 24)
-  rw [expBoundaryEpilogueExitPc] at hEpi
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expBoundaryEpilogueExitPc] at hEpi
   have hProFramed : cpsTripleWithin 6 base (base + 24)
       (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue)
       ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
