@@ -97,7 +97,7 @@ theorem evm_mod_denorm_epilogue_spec_within (sp base : Word)
   let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
   let u3' := u3 >>> (shift.toNat % 64)
   have hDenorm := mod_denorm_body_spec_within sp u0 u1 u2 u3 v2 v5 v7 shift base
-  intro_lets at hDenorm
+  simp only [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold] at hDenorm
   have hDenormF := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ v10) **
      ((sp + 32) ↦ₘ m0) ** ((sp + 40) ↦ₘ m8) **

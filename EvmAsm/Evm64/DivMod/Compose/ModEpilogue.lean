@@ -6,7 +6,7 @@
   Block 9 (denorm at base+904) is identical between divCode and modCode.
 -/
 
-import EvmAsm.Evm64.DivMod.Compose.Base
+import EvmAsm.Evm64.DivMod.Compose.Epilogue
 
 open EvmAsm.Rv64.Tactics
 
@@ -32,21 +32,15 @@ private theorem divK_denorm_code_sub_modCode {base : Word} :
     Used when shift≠0. The BEQ and LD are handled separately.
     Mirror of divK_denorm_body_spec_within from Epilogue.lean with modCode. -/
 theorem mod_denorm_body_spec_within (sp u0 u1 u2 u3 v2 v5 v7 shift : Word) (base : Word) :
-    let antiShift := signExtend12 (0 : BitVec 12) - shift
-    let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
-    let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
-    let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
-    let u3' := u3 >>> (shift.toNat % 64)
     cpsTripleWithin 23 (base + denormOff + 8) (base + epilogueOff) (modCode base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + signExtend12 4040) ↦ₘ u2) ** ((sp + signExtend12 4032) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ u3') ** (.x7 ↦ᵣ (u3 <<< (antiShift.toNat % 64))) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 4056) ↦ₘ u0') ** ((sp + signExtend12 4048) ↦ₘ u1') **
-       ((sp + signExtend12 4040) ↦ₘ u2') ** ((sp + signExtend12 4032) ↦ₘ u3')) := by
-  intro antiShift u0' u1' u2' u3'
+      (divKDenormBodyPre sp u0 u1 u2 u3 v2 v5 v7 shift)
+      (divKDenormBodyPost sp u0 u1 u2 u3 shift) := by
+  rw [divKDenormBodyPre_unfold, divKDenormBodyPost_unfold]
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let u0' := (u0 >>> (shift.toNat % 64)) ||| (u1 <<< (antiShift.toNat % 64))
+  let u1' := (u1 >>> (shift.toNat % 64)) ||| (u2 <<< (antiShift.toNat % 64))
+  let u2' := (u2 >>> (shift.toNat % 64)) ||| (u3 <<< (antiShift.toNat % 64))
+  let u3' := u3 >>> (shift.toNat % 64)
   -- ADDI x2 x0 0 + SUB x2 x2 x6 (base+916 → base+924): compute antiShift
   have haddi := addi_x0_spec_gen_within .x2 v2 0 (base + denormOff + 8) (by nofun)
   rw [show (base + denormOff + 8 : Word) + 4 = base + denormOff + 12 from by bv_addr] at haddi
