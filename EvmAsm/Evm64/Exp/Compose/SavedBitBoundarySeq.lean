@@ -13,18 +13,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
-theorem expTwoMulBoundaryResultEvmSpWord (evmSp : Word) :
-    evmSp + signExtend12 (32 : BitVec 12) = evmSp + 32 := by
-  rw [signExtend12_32]
-
-theorem expTwoMulBoundaryResultTailWord (evmSp : Word) :
-    evmSp + 32 + 32 = evmSp + 64#64 := by
-  bv_addr
-
-theorem expTwoMulBoundaryResultTailWord_symm (evmSp : Word) :
-    evmSp + 64 = evmSp + 32#64 + 32#64 := by
-  bv_addr
-
 @[irreducible]
 def expTwoMulLoopExitControl (iterCountNew : Word) (exitCond : Prop) : Assertion :=
   (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝

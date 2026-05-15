@@ -84,6 +84,22 @@ theorem expTwoMulPointerRestoreBackToEvmSp (evmSp : Word) :
   rw [signExtend12_64, hNeg64]
   bv_decide
 
+theorem expTwoMulBoundaryResultEvmSpWord (evmSp : Word) :
+    evmSp + signExtend12 (32 : BitVec 12) = evmSp + 32 := by
+  rw [signExtend12_32]
+
+theorem expTwoMulBoundaryResultTailWord (evmSp : Word) :
+    evmSp + 32 + 32 = evmSp + 64#64 := by
+  bv_addr
+
+theorem expTwoMulBoundaryResultTailWord_symm (evmSp : Word) :
+    evmSp + 64 = evmSp + 32#64 + 32#64 := by
+  bv_addr
+
+theorem expTwoMulBoundaryResultTailWord_symm_word (evmSp : Word) :
+    evmSp + 64#64 = evmSp + 32 + 32 := by
+  bv_addr
+
 @[irreducible]
 def expTwoMulLoopExitStackTailFrame
     (evmSp : Word) (baseWord : EvmWord) (rest : List EvmWord) :
@@ -241,14 +257,14 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
       rw [expTwoMulOperandFrame_unfold]
       rw [expTwoMulScratchFrame_unfold] at hp ⊢
       rw [evmStackIs_cons, evmStackIs_cons] at hp
-      rw [show evmSp + 32 + 32 = evmSp + 64#64 from by bv_addr] at hp
+      rw [expTwoMulBoundaryResultTailWord] at hp
       xperm_hyp hp)
     (fun _ hp => by
       dsimp [scratchFrame, operandFrame] at hp ⊢
       rw [expTwoMulOperandFrame_unfold] at hp
       rw [expTwoMulScratchFrame_unfold] at hp ⊢
       rw [evmStackIs_cons, evmStackIs_cons]
-      rw [show evmSp + 64#64 = evmSp + 32 + 32 from by bv_addr] at hp
+      rw [expTwoMulBoundaryResultTailWord_symm_word] at hp
       xperm_hyp hp)
     hFramed
 
