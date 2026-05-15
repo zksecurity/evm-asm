@@ -164,11 +164,6 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
     (hback : ((base + 256) + 4 : Word) + signExtend13 backOff = loopTarget) :
     let bit := expTwoMulIterBit e
     let squareW := expTwoMulSquareW r0 r1 r2 r3
-    let baseFrame : Assertion :=
-      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
-      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
-      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
-      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     cpsNBranchWithin ((3 + 1 + (17 + 64 + 9) + 1) + 2) (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -187,7 +182,8 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
         ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
         ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
         (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld) **
-        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) ** baseFrame)
+        (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ iterCount)) **
+        expTwoMulBaseFrame evmSp a0 a1 a2 a3)
       [((base + 152),
           (((.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
            (.x0 ↦ᵣ (0 : Word)) ** ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
@@ -197,29 +193,29 @@ theorem exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_with_base_fram
            regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
            memOwn evmSp ** memOwn (evmSp + 8) **
            memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-           (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)) ** baseFrame),
+           (.x1 ↦ᵣ ((base + 44) + 68))) ** (.x9 ↦ᵣ iterCount)) **
+          expTwoMulBaseFrame evmSp a0 a1 a2 a3),
         (loopTarget,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) **
-            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) ** baseFrame)),
+            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+            expTwoMulBaseFrame evmSp a0 a1 a2 a3)),
         (base + 264,
           ((((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
            ⌜expTwoMulIterCountNew iterCount = 0⌝) **
-            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) ** baseFrame))] := by
-  intro bit squareW baseFrame
+            expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3) **
+            expTwoMulBaseFrame evmSp a0 a1 a2 a3))] := by
+  intro bit squareW
   have h :=
     exp_msb_saved_bit_prefix_squaring_beq_skip_then_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       e c iterCount v10 v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 v7 v11 mulTarget squaringMulOff condMulOff skipOff
       backOff base loopTarget hbase hmt hd hskip hback
-  have hBaseFramePcFree : baseFrame.pcFree := by
-    dsimp only [baseFrame]
-    exact pcFree_sepConj pcFree_memIs
-      (pcFree_sepConj pcFree_memIs
-        (pcFree_sepConj pcFree_memIs pcFree_memIs))
-  have hf := cpsNBranchWithin_frameR hBaseFramePcFree h
-  simpa [expTwoMulSkipIterRest_unfold, expTwoMulSkipLoopRest_unfold] using
+  have hf := cpsNBranchWithin_frameR (F := expTwoMulBaseFrame evmSp a0 a1 a2 a3)
+    expTwoMulBaseFrame_pcFree h
+  simpa [expTwoMulBaseFrame_unfold, expTwoMulSkipIterRest_unfold,
+         expTwoMulSkipLoopRest_unfold] using
     (cpsNBranchWithin_weaken_pre
-      (fun _ hp => by simpa using hp) hf)
+      (fun _ hp => by simpa [expTwoMulBaseFrame_unfold] using hp) hf)
 
 end EvmAsm.Evm64.Exp.Compose

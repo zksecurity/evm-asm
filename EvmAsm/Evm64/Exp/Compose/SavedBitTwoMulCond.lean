@@ -217,6 +217,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
         simp only [expCondMulFoldedPre_unfold, expTwoMulCondFrameBit_unfold,
                    expTwoMulCondBaseFrame_unfold] at hp ⊢
         xperm_hyp hp) hCondFramed
+  simp only [expTwoMulBaseFrame_unfold] at hSkip
   simp only [expTwoMulCondBaseFrame_unfold, expTwoMulCondFrameBit_unfold] at hCondHead
   have hFull :=
     cpsNBranchWithin_extend_head_nbranch hSkip hCondHead
