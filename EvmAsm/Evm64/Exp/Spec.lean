@@ -18,7 +18,9 @@ import EvmAsm.Rv64.Tactics.XSimp
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (Assertion cpsTripleWithin cpsTripleWithin_frameR
+  cpsTripleWithin_weaken signExtend12 signExtend12_1 signExtend12_32
+  signExtend12_40 signExtend12_48 signExtend12_56)
 open EvmAsm.Evm64.Exp.Compose
 
 /-- Stack-shaped bridge for the current EXP boundary mini-program.
