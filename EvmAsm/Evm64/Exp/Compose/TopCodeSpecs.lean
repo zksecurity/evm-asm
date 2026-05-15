@@ -20,6 +20,9 @@ import EvmAsm.Evm64.Exp.SquaringCallSeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64.Tactics
+open EvmAsm.Rv64 (CodeReq cpsBranchWithin cpsBranchWithin_extend_code
+  cpsTripleWithin cpsTripleWithin_extend_code signExtend12 signExtend13
+  signExtend21)
 
 end EvmAsm.Evm64.Exp.Compose
