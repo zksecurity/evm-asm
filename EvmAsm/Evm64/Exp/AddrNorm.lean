@@ -25,6 +25,18 @@ namespace EvmAsm.Evm64.Exp.AddrNorm
 @[exp_addr, grind =] theorem exp_se12_neg64 :
     EvmAsm.Rv64.signExtend12 ((-64 : BitVec 12)) = (18446744073709551552 : Word) := by decide
 
+@[exp_addr, grind =] theorem exp_se12_neg56 :
+    EvmAsm.Rv64.signExtend12 ((-56 : BitVec 12)) = (18446744073709551560 : Word) := by decide
+
+@[exp_addr, grind =] theorem exp_se12_neg48 :
+    EvmAsm.Rv64.signExtend12 ((-48 : BitVec 12)) = (18446744073709551568 : Word) := by decide
+
+@[exp_addr, grind =] theorem exp_se12_neg40 :
+    EvmAsm.Rv64.signExtend12 ((-40 : BitVec 12)) = (18446744073709551576 : Word) := by decide
+
+@[exp_addr, grind =] theorem exp_se12_neg32 :
+    EvmAsm.Rv64.signExtend12 ((-32 : BitVec 12)) = (18446744073709551584 : Word) := by decide
+
 attribute [exp_addr]
   EvmAsm.Rv64.signExtend12_0 EvmAsm.Rv64.signExtend12_1
   EvmAsm.Rv64.signExtend12_8 EvmAsm.Rv64.signExtend12_16
