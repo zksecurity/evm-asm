@@ -12,21 +12,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
-/-- Bundles `expTwoMulSkipLoopRest` with the `bit` and `squareW` computations
-    so the skip specs need only two statement lets instead of three. -/
-@[irreducible]
-def expTwoMulSkipIterRest
-    (e sp evmSp base r0 r1 r2 r3 : Word) : Assertion :=
-  expTwoMulSkipLoopRest
-    (expTwoMulIterBit e) sp evmSp base (expTwoMulSquareW r0 r1 r2 r3)
-
-theorem expTwoMulSkipIterRest_unfold
-    {e sp evmSp base r0 r1 r2 r3 : Word} :
-    expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3 =
-      expTwoMulSkipLoopRest
-        (expTwoMulIterBit e) sp evmSp base (expTwoMulSquareW r0 r1 r2 r3) := by
-  delta expTwoMulSkipIterRest; rfl
-
 /-- Saved-bit loop-back block lifted to the two-MUL-offset EXP+MUL code
     bundle. -/
 theorem exp_loop_back_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
