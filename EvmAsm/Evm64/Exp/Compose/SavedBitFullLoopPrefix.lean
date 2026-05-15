@@ -14,6 +14,14 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+theorem expSavedBitSaveEntryAddr (base : Word) :
+    (base + 40 : Word) = (base + 28) + 12 := by
+  bv_omega
+
+theorem expSavedBitCondMulBeqEntryAddr (base : Word) :
+    (base + 148 : Word) = (base + 28) + 120 := by
+  bv_omega
+
 /-- MSB bit-test block lifted to the corrected saved-bit EXP+MUL code bundle. -/
 theorem exp_msb_bit_test_evm_exp_msb_saved_bit_with_mul_spec_within
     (e c v10 : Word) (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
@@ -76,8 +84,7 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
   exact cpsTripleWithin_extend_code
     (h := h)
     (hmono := fun a i hi => by
-      have hentry : (base + 40 : Word) = (base + 28) + 12 := by bv_omega
-      rw [hentry] at hi
+      rw [expSavedBitSaveEntryAddr] at hi
       exact evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
         (evmExpMsbSavedBitTwoMulCode_iter_body_sub
           (base := base) (squaringMulOff := squaringMulOff)
@@ -185,8 +192,7 @@ theorem exp_cond_mul_saved_bit_beq_evm_exp_msb_saved_bit_two_mul_with_mul_spec_w
   exact cpsBranchWithin_extend_code
     (h := h)
     (hmono := fun a i hi => by
-      have hentry : (base + 148 : Word) = (base + 28) + 120 := by bv_omega
-      rw [hentry] at hi
+      rw [expSavedBitCondMulBeqEntryAddr] at hi
       exact evmExpMsbSavedBitTwoMulWithMulCode_exp_sub a i
         (evmExpMsbSavedBitTwoMulCode_iter_body_sub
           (base := base) (squaringMulOff := squaringMulOff)
