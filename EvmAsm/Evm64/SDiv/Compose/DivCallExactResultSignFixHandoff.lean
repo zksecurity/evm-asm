@@ -4,13 +4,10 @@
   Exact SDIV path handoff from the div-call prefix through result-sign-fix.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroCallableHandoff
+import EvmAsm.Evm64.SDiv.Compose.DivCallExactHandoff
 import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
-
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- Exact SDIV path through result-sign-fix, specialized from the sidecar
     exact callable handoff and stopping before the saved-RA return. -/
@@ -24,7 +21,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_exact_then_resultSignFix_named_pos
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hStack :
-      cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
         ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
         (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
@@ -41,7 +38,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_exact_then_resultSignFix_named_pos
           (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
           (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) **
           (.x1 ↦ᵣ ((base + divCallOff) + 4)))) :
-    cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
+    EvmAsm.Rv64.cpsTripleWithin ((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21)
       base ((base + resultSignFixOff) + 84) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld

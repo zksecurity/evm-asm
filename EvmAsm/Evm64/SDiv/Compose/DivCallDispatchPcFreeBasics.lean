@@ -9,9 +9,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFix
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 theorem divModStackDispatchPre_pcFree
     {sp : Word} {a b : EvmWord}
     {v1 v2 v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -28,7 +25,7 @@ instance pcFreeInst_divModStackDispatchPre
     (sp : Word) (a b : EvmWord)
     (v1 v2 v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (EvmAsm.Evm64.divModStackDispatchPre sp a b
         v1 v2 v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -44,7 +41,7 @@ theorem divStackDispatchPostNoX1_pcFree {sp : Word} {a b : EvmWord} :
 
 instance pcFreeInst_divStackDispatchPostNoX1
     (sp : Word) (a b : EvmWord) :
-    Assertion.PCFree (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b) :=
+    EvmAsm.Rv64.Assertion.PCFree (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b) :=
   ⟨divStackDispatchPostNoX1_pcFree⟩
 
 end EvmAsm.Evm64.SDiv.Compose

@@ -11,7 +11,7 @@ import EvmAsm.Evm64.Exp.Compose.EvmExpCode
 namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq Program)
 
 theorem evmExpCode_epilogue_sub {base : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :

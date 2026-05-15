@@ -3,7 +3,6 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallResultSignFixNamedPost
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 /-- SDIV wrapper prefix followed by any exact unsigned-DIV callable proof,
     result-sign-fix over the produced quotient word, and the saved-RA return. -/
@@ -18,7 +17,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_of_callable_post_spec_
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word)
     (hCallable :
-      cpsTripleWithin nSteps (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
+      EvmAsm.Rv64.cpsTripleWithin nSteps (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
         (saveRaDivCallDispatchReadyPost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
           divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
@@ -27,9 +26,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_of_callable_post_spec_
         (saveRaDivCallBzeroCallablePost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
           divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)) :
-    cpsTripleWithin (((49 + nSteps) + 21) + 1)
-      base (((vRa + signExtend12 (0 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) (sdivCode base)
+    EvmAsm.Rv64.cpsTripleWithin (((49 + nSteps) + 21) + 1)
+      base (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+        EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word)) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -46,7 +45,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_of_callable_post_spec_
          (dividendTop >>> (63 : BitVec 6).toNat) ^^^
            (divisorTop >>> (63 : BitVec 6).toNat)
        let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
-       (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+       (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
        (resultSignFixPost (sp + 32) resultSign
          (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
          (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
@@ -79,36 +78,36 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_return_of_callable_post_spec_
       EvmAsm.Evm64.divScratchOwn_unfold]
     pcFree
   have hRetFramed :=
-    cpsTripleWithin_frameR
+    EvmAsm.Rv64.cpsTripleWithin_frameR
       (resultSignFixPost (sp + 32) resultSign
         (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
         (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
         saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)
       hRetFramePc
       (savedRaRet_spec_in_sdivCode
-        (vRa + signExtend12 (0 : BitVec 12)) base)
+        (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) base)
   have hFall :
       (base + resultSignFixOff) + 84 = base + savedRaRetOff := by
     simp [resultSignFixOff, savedRaRetOff]
     bv_addr
   have hRetFramed' :
-      cpsTripleWithin 1 ((base + resultSignFixOff) + 84)
-        (((vRa + signExtend12 (0 : BitVec 12)) +
-          signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word))
+      EvmAsm.Rv64.cpsTripleWithin 1 ((base + resultSignFixOff) + 84)
+        (((vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) +
+          EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word))
         (sdivCode base)
-        ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+        ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
          (resultSignFixPost (sp + 32) resultSign
           (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
           (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
           saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord))
-        ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+        ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
          (resultSignFixPost (sp + 32) resultSign
           (quotientWord.getLimbN 0) (quotientWord.getLimbN 1)
           (quotientWord.getLimbN 2) (quotientWord.getLimbN 3) **
           saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
     rw [hFall]
     exact hRetFramed
-  exact cpsTripleWithin_seq_perm_same_cr
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr
     (fun _ hp => by
       rw [saveRaDivCallBzeroResultSignFixFrame_to_savedRaRet] at hp
       xperm_hyp hp)

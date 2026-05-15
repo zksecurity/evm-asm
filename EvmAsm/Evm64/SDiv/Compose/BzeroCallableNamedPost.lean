@@ -8,9 +8,6 @@ import EvmAsm.Evm64.SDiv.Compose.BzeroCallable
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- SDIV wrapper prefix followed by the zero-divisor unsigned-DIV callable,
     using the named postcondition consumed by later composition slices. -/
 theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_named_post_spec_in_sdivCode
@@ -23,7 +20,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_bzero_callable_named_post_spec_in_
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) (hbase : base &&& 1 = 0)
     (hbz : sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0) :
-    cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
+    EvmAsm.Rv64.cpsTripleWithin (49 + (EvmAsm.Evm64.unifiedDivBound + 1))
       base (base + resultSignFixOff) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld

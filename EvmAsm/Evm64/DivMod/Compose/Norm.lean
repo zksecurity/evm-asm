@@ -156,6 +156,33 @@ theorem divK_phaseC2_taken_spec_within (sp shift v2 shiftMem : Word) (base : Wor
     (fun h hq => by xperm_hyp hq)
     hC2
 
+theorem divK_phaseC2_taken_spec_within_noNop (sp shift v2 shiftMem : Word) (base : Word)
+    (hshift_z : shift = 0) :
+    cpsTripleWithin 4 (base + phaseC2Off) (base + copyAUOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ v2) ** (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 3992) ↦ₘ shiftMem))
+      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+       (.x0 ↦ᵣ (0 : Word)) ** ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  have hbody := divK_phaseC2_body_divCode_noNop_within sp shift v2 shiftMem base
+  have hbeq_raw := beq_spec_gen_within .x6 .x0 172 shift (0 : Word) (base + phaseC2Off + 12)
+  rw [show (base + phaseC2Off + 12 : Word) + signExtend13 172 = base + copyAUOff from by rv64_addr,
+      show (base + phaseC2Off + 12 : Word) + 4 = base + normBOff from by bv_addr] at hbeq_raw
+  have hbeq_clean := cpsBranchWithin_takenStripPure2 hbeq_raw
+    (fun hp hQf => by
+      obtain ⟨_, _, _, _, _, h_rest⟩ := hQf
+      exact absurd hshift_z ((sepConj_pure_right _).mp h_rest).2)
+  have hbeq := cpsTripleWithin_extend_code beq_shift_sub_divCode_noNop hbeq_clean
+  have hbeqf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ (signExtend12 (0 : BitVec 12) - shift)) **
+     ((sp + signExtend12 3992) ↦ₘ shift))
+    (by pcFree) hbeq
+  have hC2 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) hbody hbeqf
+  exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    hC2
+
 -- ============================================================================
 -- Section 10h: NormB composition (normalize divisor, 21 instructions)
 -- base+228: 3 merge blocks (6 instrs each) + 1 last block (3 instrs)
