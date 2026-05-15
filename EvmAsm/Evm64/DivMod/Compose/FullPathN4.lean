@@ -89,8 +89,7 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
     (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (hbltu : ¬BitVec.ult uTop v3) :
-    let qHat : Word := signExtend12 4095
-    (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3)
+    (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
     cpsTripleWithin 76 (base + loopBodyOff) (base + denormOff) (divCode base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
@@ -104,8 +103,8 @@ theorem divK_loop_body_n4_max_skip_j0_norm (sp base : Word)
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + signExtend12 4024) ↦ₘ uTop) **
        ((sp + signExtend12 4088) ↦ₘ qOld))
-      (loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  intro qHat hborrow
+      (loopBodyN4SkipPost sp (0 : Word) (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro hborrow
   have raw := divK_loop_body_n4_max_skip_j0_divCode_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
 
@@ -119,8 +118,7 @@ theorem divK_loop_body_n4_max_skip_j0_norm_noNop (sp base : Word)
     (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (hbltu : ¬BitVec.ult uTop v3) :
-    let qHat : Word := signExtend12 4095
-    (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3)
+    (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
     cpsTripleWithin 76 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
@@ -134,8 +132,8 @@ theorem divK_loop_body_n4_max_skip_j0_norm_noNop (sp base : Word)
        ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
        ((sp + signExtend12 4024) ↦ₘ uTop) **
        ((sp + signExtend12 4088) ↦ₘ qOld))
-      (loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  intro qHat hborrow
+      (loopBodyN4SkipPost sp (0 : Word) (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro hborrow
   have raw := divK_loop_body_n4_max_skip_j0_divCode_noNop_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
     hbltu hborrow
