@@ -94,6 +94,13 @@ theorem expTwoMulFullLoopBodyBound_eq_iter_plus_tail :
   norm_num [expTwoMulFullLoopBodyBound, expTwoMulFullLoopBodyTailBound,
     expTwoMulNamedIterStepBound_eq]
 
+/-- View the 256-iteration full-body bound as one peeled iteration followed by
+    the 255-iteration tail. -/
+theorem expTwoMulFullLoopBodyBound_eq_tail_succ :
+    expTwoMulFullLoopBodyBound = expTwoMulIterationsBodyBound (255 + 1) := by
+  rw [expTwoMulFullLoopBodyBound_eq_iter_plus_tail,
+    expTwoMulIterationsBodyBound_succ]
+
 theorem expTwoMulFullLoopBoundaryBound_eq :
     expTwoMulFullLoopBoundaryBound = 48401 := by
   rw [expTwoMulFullLoopBoundaryBound, expTwoMulBoundaryLoopBound_eq,

@@ -676,10 +676,7 @@ theorem exp_two_mul_full_loop_body_peel_tail_with_exit_cases_spec_within
       (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
         baseWord rest exitCond) := by
   intro hLoop
-  rw [show expTwoMulFullLoopBodyBound =
-        expTwoMulIterationsBodyBound (255 + 1) by
-      rw [expTwoMulFullLoopBodyBound_eq_iter_plus_tail,
-        expTwoMulIterationsBodyBound_succ]]
+  rw [expTwoMulFullLoopBodyBound_eq_tail_succ]
   exact
     exp_two_mul_iterations_body_peel_with_exit_cases_spec_within
       255
