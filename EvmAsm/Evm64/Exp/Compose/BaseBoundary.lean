@@ -62,6 +62,13 @@ theorem expBoundaryEpilogueExitPc (base : Word) :
     (base + 24 : Word) + 36 = base + 60 := by
   bv_omega
 
+/-- The EXP boundary-program epilogue starts immediately after the prologue. -/
+theorem expBoundaryProgramEpilogueAddr (base : Word) :
+    (base + 24 : Word) =
+      base + BitVec.ofNat 64 (4 * EvmAsm.Evm64.exp_prologue.length) := by
+  rw [exp_prologue_len]
+  bv_omega
+
 /-- Concrete `CodeReq.ofProg` handle for `expBoundaryProgram`. -/
 abbrev expBoundaryProgramCode (base : Word) : CodeReq :=
   CodeReq.ofProg base expBoundaryProgram
@@ -73,10 +80,7 @@ theorem expBoundaryCode_eq_programCode (base : Word) :
   unfold expBoundaryCode expBoundaryProgramCode expBoundaryProgram
   simp only [CodeReq.unionAll_cons, CodeReq.unionAll_nil,
     CodeReq.union_empty_right, EvmAsm.Rv64.seq]
-  rw [show (base + 24 : Word) =
-      base + BitVec.ofNat 64 (4 * EvmAsm.Evm64.exp_prologue.length) by
-    rw [exp_prologue_len]
-    bv_omega]
+  rw [expBoundaryProgramEpilogueAddr base]
   rw [← CodeReq.ofProg_append]
   rfl
 
