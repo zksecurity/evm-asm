@@ -9,7 +9,9 @@ import EvmAsm.Evm64.Exp.Compose.Base
 
 namespace EvmAsm.Evm64.Exp.Compose
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64.Tactics
+open EvmAsm.Rv64 (cpsBranchWithin cpsBranchWithin_extend_code cpsTripleWithin
+  cpsTripleWithin_extend_code signExtend12 signExtend13 signExtend21)
 
 theorem exp_loop_back_loop_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
