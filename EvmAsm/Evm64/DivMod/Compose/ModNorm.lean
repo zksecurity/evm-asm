@@ -220,20 +220,17 @@ private theorem mod_normB_half2 (sp b0 b1 b2' b3' shift antiShift : Word) (base 
     base+228 -> base+312 (21 instructions).
     MOD mirror of divK_normB_full_spec_within. -/
 theorem mod_normB_full_spec_within (sp b0 b1 b2 b3 v5 v7 shift antiShift : Word) (base : Word) :
-    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
-    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
-    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
-    let b0' := b0 <<< (shift.toNat % 64)
     cpsTripleWithin 21 (base + normBOff) (base + normAOff) (modCode base)
       ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x7 ↦ᵣ v7) **
        (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
        ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
        ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (antiShift.toNat % 64))) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
-       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
-  intro b3' b2' b1' b0'
+      (normBFullPost sp b0 b1 b2 b3 shift antiShift) := by
+  rw [normBFullPost_unfold]
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
   have h1 := mod_normB_half1 sp b0 b1 b2 b3 v5 v7 shift antiShift base
   have h2 := mod_normB_half2 sp b0 b1 b2' b3' shift antiShift base
   exact cpsTripleWithin_weaken

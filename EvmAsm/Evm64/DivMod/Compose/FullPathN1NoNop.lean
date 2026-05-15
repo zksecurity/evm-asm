@@ -205,7 +205,7 @@ theorem evm_div_phaseAB_n1_clz_c2_normB_spec_within_noNop (sp base : Word)
   have hNB := divK_normB_full_spec_within_noNop sp b0 b1 b2 b3
     (clzResult b0).2 ((clzResult b0).2 >>> (63 : Nat))
     shift antiShift base
-  intro_lets at hNB
+  simp only [normBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
