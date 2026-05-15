@@ -152,7 +152,7 @@ theorem evm_mod_n4_to_normB_spec_within (sp base : Word)
   have hNB := mod_normB_full_spec_within sp b0 b1 b2 b3
     (clzResult b3).2 ((clzResult b3).2 >>> (63 : Nat))
     shift antiShift base
-  intro_lets at hNB
+  simp only [normBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **

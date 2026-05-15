@@ -1001,6 +1001,37 @@ instance pcFreeInst_normBPost (sp nVal shift b0 b1 b2 b3 : Word) :
   ⟨pcFree_normBPost⟩
 
 -- ============================================================================
+-- Postcondition bundle for normB full spec (without extra normBPost atoms).
+-- Used by divK_normB_full_spec_within, divK_normB_full_spec_within_noNop, and
+-- mod_normB_full_spec_within to avoid statement let-chains in callers.
+-- ============================================================================
+
+/-- Postcondition after the NormB block (21 instructions): shift, antiShift,
+    and the four normalized limbs b'[0..3] written to memory. -/
+@[irreducible]
+def normBFullPost (sp b0 b1 b2 b3 shift antiShift : Word) : Assertion :=
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (antiShift.toNat % 64))) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
+  ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+  ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')
+
+theorem normBFullPost_unfold {sp b0 b1 b2 b3 shift antiShift : Word} :
+    normBFullPost sp b0 b1 b2 b3 shift antiShift =
+      (let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+       let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+       let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+       let b0' := b0 <<< (shift.toNat % 64)
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x7 ↦ᵣ (b0 >>> (antiShift.toNat % 64))) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
+       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3')) := by
+  delta normBFullPost; rfl
+
+-- ============================================================================
 -- `se12_32`/`se12_40`/`se12_48`/`se12_56` were deleted by issue #493 / #494:
 -- they now live canonically in `Rv64/AddrNorm.lean` as part of the
 -- `rv64_addr` grindset. Consumers should `open EvmAsm.Rv64.AddrNorm

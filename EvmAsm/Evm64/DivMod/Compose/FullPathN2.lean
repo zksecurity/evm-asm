@@ -181,7 +181,7 @@ theorem evm_div_n2_to_normB_spec_within_noNop (sp base : Word)
   have hNB := divK_normB_full_spec_within_noNop sp b0 b1 b2 b3
     (clzResult b1).2 ((clzResult b1).2 >>> (63 : Nat))
     shift antiShift base
-  intro_lets at hNB
+  simp only [normBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
@@ -360,7 +360,7 @@ theorem evm_div_n2_to_loopSetup_spec_within (sp base : Word)
   have hNB := divK_normB_full_spec_within sp b0 b1 b2 b3
     (clzResult b1).2 ((clzResult b1).2 >>> (63 : Nat))
     shift antiShift base
-  intro_lets at hNB
+  simp only [normBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **

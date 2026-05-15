@@ -161,7 +161,7 @@ theorem evm_mod_n3_to_loopSetup_spec_within (sp base : Word)
   have hNB := mod_normB_full_spec_within sp b0 b1 b2 b3
     (clzResult b2).2 ((clzResult b2).2 >>> (63 : Nat))
     shift antiShift base
-  intro_lets at hNB
+  simp only [normBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
      (.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
