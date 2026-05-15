@@ -22,6 +22,9 @@ namespace EvmAsm.Evm64.Exp.AddrNorm
 @[exp_addr, grind =] theorem exp_se13_neg228 :
     EvmAsm.Rv64.signExtend13 ((-228 : BitVec 13)) = (18446744073709551388 : Word) := by decide
 
+@[exp_addr, grind =] theorem exp_se12_neg64 :
+    EvmAsm.Rv64.signExtend12 ((-64 : BitVec 12)) = (18446744073709551552 : Word) := by decide
+
 attribute [exp_addr]
   EvmAsm.Rv64.signExtend12_0 EvmAsm.Rv64.signExtend12_1
   EvmAsm.Rv64.signExtend12_8 EvmAsm.Rv64.signExtend12_16
