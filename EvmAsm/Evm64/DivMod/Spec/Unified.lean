@@ -594,6 +594,33 @@ theorem evm_div_n4_stack_spec_within_dispatch_uni (sp base : Word)
       nMem shiftMem jMem retMem dMem dloMem scratch_un0
       hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
 
+/-- Unified-bound wrapper for `evm_div_n4_stack_spec_within_dispatch_noNop`. -/
+theorem evm_div_n4_stack_spec_within_dispatch_noNop_uni (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz_addback :
+      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
+    (hsem_addback :
+      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPre sp a b
+        (signExtend12 (4 : BitVec 12) - (4 : Word))
+        ((clzResult (b.getLimbN 3)).2 >>> (63 : Nat))
+        v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divStackDispatchPost sp a b) :=
+  cpsTripleWithin_mono_nSteps (by decide)
+    (evm_div_n4_stack_spec_within_dispatch_noNop sp base a b v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0
+      hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
+
 /-! ### Single DIV dispatcher theorem -/
 
 /-- Branch certificate for the single public DIV stack spec.
