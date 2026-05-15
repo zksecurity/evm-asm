@@ -116,13 +116,46 @@ theorem divK_double_addback_beq_spec_within_noNop
     (fun h hp => by xperm_hyp hp)
     full
 
-/-- Named-postcondition no-NOP wrapper for `divK_double_addback_beq_spec_within_noNop`. -/
+/-- Bundled postcondition for the no-NOP named double-addback BEQ spec.
+    Hides `ab'` (the `addbackN4` result tuple) and `qHat''` (the bumped
+    trial quotient) so the spec statement is flat. -/
+@[irreducible]
+def n4DoubleAddbackNamedPost
+    (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word) : Assertion :=
+  let ab'   := addbackN4 aun0 aun1 aun2 aun3 aun4 v0 v1 v2 v3
+  let qHat'' := qHat' + signExtend12 4095
+  (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
+  (.x7 ↦ᵣ addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3) **
+  (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ ab'.2.2.2.2) ** (.x2 ↦ᵣ ab'.2.2.2.1) **
+  (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ ab'.1) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ ab'.2.1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ ab'.2.2.1) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ab'.2.2.2.1) **
+  ((uBase + signExtend12 4064) ↦ₘ ab'.2.2.2.2)
+
+theorem n4DoubleAddbackNamedPost_unfold
+    {sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word} :
+    n4DoubleAddbackNamedPost sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 =
+      (let ab'   := addbackN4 aun0 aun1 aun2 aun3 aun4 v0 v1 v2 v3
+       let qHat'' := qHat' + signExtend12 4095
+       (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
+       (.x7 ↦ᵣ addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3) **
+       (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ ab'.2.2.2.2) ** (.x2 ↦ᵣ ab'.2.2.2.1) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ ab'.1) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ ab'.2.1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ ab'.2.2.1) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ab'.2.2.2.1) **
+       ((uBase + signExtend12 4064) ↦ₘ ab'.2.2.2.2)) := by
+  delta n4DoubleAddbackNamedPost; rfl
+
+/-- Named-postcondition no-NOP wrapper for `divK_double_addback_beq_spec_within_noNop`.
+    The statement is flat: `ab'` and `qHat''` are hidden in `n4DoubleAddbackNamedPost`. -/
 theorem divK_double_addback_beq_named_spec_within_noNop
     (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word)
     (base : Word)
     (hcarry2_nz : addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3 ≠ 0) :
-    let ab' := addbackN4 aun0 aun1 aun2 aun3 aun4 v0 v1 v2 v3
-    let qHat'' := qHat' + signExtend12 4095
     cpsTripleWithin 39 (base + addbackBeqOff) (base + storeLoopOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ (0 : Word)) **
        (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) ** (.x0 ↦ᵣ (0 : Word)) **
@@ -131,16 +164,11 @@ theorem divK_double_addback_beq_named_spec_within_noNop
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
        ((uBase + signExtend12 4064) ↦ₘ aun4))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
-       (.x7 ↦ᵣ addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3) **
-       (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ ab'.2.2.2.2) ** (.x2 ↦ᵣ ab'.2.2.2.1) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ ab'.1) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ ab'.2.1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ ab'.2.2.1) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ab'.2.2.2.1) **
-       ((uBase + signExtend12 4064) ↦ₘ ab'.2.2.2.2)) := by
-  intro ab' qHat''
-  exact divK_double_addback_beq_spec_within_noNop sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
-    base hcarry2_nz
+      (n4DoubleAddbackNamedPost sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4) := by
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [n4DoubleAddbackNamedPost_unfold]; exact hp)
+    (divK_double_addback_beq_spec_within_noNop sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
+      base hcarry2_nz)
 
 end EvmAsm.Evm64

@@ -213,6 +213,7 @@ theorem divK_mulsub_correction_addback_beq_spec_within_noNop
       (qHat + signExtend12 4095) v0 v1 v2 v3
       ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 ab.2.2.2.2
       base hcarry2
+    rw [n4DoubleAddbackNamedPost_unfold] at DA
     -- Frame DA with extra atoms from MCA_N postcondition
     have DAf := cpsTripleWithin_frameR
       ((.x1 ↦ᵣ j) ** (.x10 ↦ᵣ c3) **
