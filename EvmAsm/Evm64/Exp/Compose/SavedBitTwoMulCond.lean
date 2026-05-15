@@ -39,15 +39,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_four_exit_spec_within
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     let skipRest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
@@ -158,15 +150,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_merged_exit_spec_within
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     let skipRest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
@@ -271,15 +255,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_spec_within
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     let skipRest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
@@ -356,15 +332,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_branch_owned_scratch_spec_within
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     let skipRest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
@@ -537,15 +505,7 @@ theorem exp_msb_saved_bit_two_mul_full_iter_owned_scratch_branch_spec_within
       ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
       ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3)
     let skipRest : Assertion :=
-      (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
-      ⌜bit + signExtend12 (0 : BitVec 12) = 0⌝ **
-      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-      (.x5 ↦ᵣ squareW.getLimbN 3) **
-      evmWordIs sp squareW ** evmWordIs (evmSp + 32) squareW **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      memOwn evmSp ** memOwn (evmSp + 8) **
-      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
-      (.x1 ↦ᵣ ((base + 44) + 68))
+      expTwoMulSkipLoopRest bit sp evmSp base squareW
     let condFrame : Assertion :=
       (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12))) **
       ⌜bit + signExtend12 (0 : BitVec 12) ≠ 0⌝
