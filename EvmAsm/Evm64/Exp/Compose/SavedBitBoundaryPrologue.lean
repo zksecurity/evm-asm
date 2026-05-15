@@ -138,9 +138,7 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
     exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       sp evmSp cOld tOld m0 m1 m2 m3
       squaringMulOff condMulOff skipOff backOff base mulTarget
-  have hFramed := cpsTripleWithin_frameR operandFrame (by
-    dsimp [operandFrame]
-    pcFree) hBase
+  have hFramed := cpsTripleWithin_frameR operandFrame (by pcFree) hBase
   exact cpsTripleWithin_weaken
     (fun _ hp => by
       dsimp [operandFrame] at hp ⊢
