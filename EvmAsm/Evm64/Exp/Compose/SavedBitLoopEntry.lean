@@ -12,27 +12,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64
 
 @[irreducible]
-def expTwoMulScratchFrame (vOld v18 : Word) : Assertion :=
-  regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-  (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
-
-theorem expTwoMulScratchFrame_unfold {vOld v18 : Word} :
-    expTwoMulScratchFrame vOld v18 =
-      (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-       (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)) := by
-  delta expTwoMulScratchFrame
-  rfl
-
-theorem expTwoMulScratchFrame_pcFree {vOld v18 : Word} :
-    (expTwoMulScratchFrame vOld v18).pcFree := by
-  rw [expTwoMulScratchFrame_unfold]
-  pcFree
-
-instance pcFreeInst_expTwoMulScratchFrame (vOld v18 : Word) :
-    Assertion.PCFree (expTwoMulScratchFrame vOld v18) :=
-  ⟨expTwoMulScratchFrame_pcFree⟩
-
-@[irreducible]
 def expTwoMulBoundaryPre
     (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word)
     (baseWord exponentWord : EvmWord) (rest : List EvmWord) : Assertion :=
@@ -42,8 +21,7 @@ def expTwoMulBoundaryPre
       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3)) **
      (.x12 ↦ᵣ evmSp)) ** evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
-   (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-    (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)))
+   expTwoMulScratchFrame vOld v18)
 
 theorem expTwoMulBoundaryPre_unfold
     {sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word}
@@ -59,7 +37,7 @@ theorem expTwoMulBoundaryPre_unfold
        (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
         (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18))) := by
   delta expTwoMulBoundaryPre
-  rfl
+  rw [expTwoMulScratchFrame_unfold]
 
 theorem expTwoMulBoundaryPre_pcFree
     {sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word}
@@ -86,8 +64,7 @@ def expTwoMulLoopEntryPost
       evmWordIs sp (1 : EvmWord)) **
      (.x12 ↦ᵣ (evmSp + 64))) **
    evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
-   (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-    (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)))
+   expTwoMulScratchFrame vOld v18)
 
 theorem expTwoMulLoopEntryPost_unfold
     {sp evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord}
@@ -101,7 +78,7 @@ theorem expTwoMulLoopEntryPost_unfold
        (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
         (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18))) := by
   delta expTwoMulLoopEntryPost
-  rfl
+  rw [expTwoMulScratchFrame_unfold]
 
 theorem expTwoMulLoopEntryPost_pcFree
     {sp evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord}
@@ -133,8 +110,7 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_canonica
          (.x12 ↦ᵣ evmSp)) ** evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
        expTwoMulScratchFrame vOld v18)
       (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest) := by
-  rw [expTwoMulScratchFrame_unfold]
-  rw [expTwoMulLoopEntryPost_unfold]
+  unfold expTwoMulLoopEntryPost
   exact
     exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_full_stack_clean_regs_spec_within
       sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord rest base
