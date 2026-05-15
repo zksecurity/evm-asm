@@ -5,7 +5,7 @@
   bridges from `Compose/Base.lean`.
 -/
 
-import EvmAsm.Evm64.SDiv.Program
+import EvmAsm.Evm64.SDiv.AddrNorm
 import EvmAsm.Evm64.Stack
 
 namespace EvmAsm.Evm64.SDiv.Compose
@@ -19,15 +19,10 @@ theorem evmWordIs_eq_quadMem (sp : Word) (limbs : Fin 4 → Word) :
      ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ limbs 2) **
      ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ limbs 3)) =
     evmWordIs sp (EvmWord.fromLimbs limbs) := by
-  have h0 : (sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12) : Word) = sp := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h8 : (sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12) : Word) = sp + 8 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h16 : (sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12) : Word) = sp + 16 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h24 : (sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12) : Word) = sp + 24 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  rw [h0, h8, h16, h24]
+  rw [EvmAsm.Evm64.SDiv.AddrNorm.stackSlot0 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot8 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot16 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.stackSlot24 sp]
   exact (evmWordIs_fromLimbs (addr := sp) limbs).symm
 
 /-- Divisor-slot companion to `evmWordIs_eq_quadMem`: four `↦ₘ`-memory atoms
@@ -39,15 +34,10 @@ theorem evmWordIs_eq_quadMem_sp32 (sp : Word) (limbs : Fin 4 → Word) :
      ((sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12)) ↦ₘ limbs 2) **
      ((sp + EvmAsm.Rv64.signExtend12 (56 : BitVec 12)) ↦ₘ limbs 3)) =
     evmWordIs (sp + 32) (EvmWord.fromLimbs limbs) := by
-  have h32 : (sp + EvmAsm.Rv64.signExtend12 (32 : BitVec 12) : Word) = sp + 32 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h40 : (sp + EvmAsm.Rv64.signExtend12 (40 : BitVec 12) : Word) = (sp + 32) + 8 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h48 : (sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12) : Word) = (sp + 32) + 16 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  have h56 : (sp + EvmAsm.Rv64.signExtend12 (56 : BitVec 12) : Word) = (sp + 32) + 24 := by
-    unfold EvmAsm.Rv64.signExtend12; bv_decide
-  rw [h32, h40, h48, h56]
+  rw [EvmAsm.Evm64.SDiv.AddrNorm.divisorBaseSlot0 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.divisorBaseSlot8 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.divisorBaseSlot16 sp,
+    EvmAsm.Evm64.SDiv.AddrNorm.divisorBaseSlot24 sp]
   exact (evmWordIs_fromLimbs (addr := sp + 32) limbs).symm
 
 /-- Named-arguments specialization of `evmWordIs_eq_quadMem`. -/

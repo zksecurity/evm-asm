@@ -47,6 +47,26 @@ def sdivAbsDivisorWord
     match i with
     | 0 => divisorSum0 | 1 => divisorSum1 | 2 => divisorSum2 | 3 => divisorSum3
 
+/-- Word produced by conditionally negating the unsigned quotient limbs by the
+    SDIV result sign. This names the memory-result word of the result-sign
+    fixup block before connecting it to the semantic `EvmWord.sdiv` result. -/
+def sdivResultSignFixedWord
+    (dividendTop divisorTop limb0 limb1 limb2 limb3 : Word) : EvmWord :=
+  let resultSign :=
+    (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+      (divisorTop >>> (63 : BitVec 6).toNat)
+  let mask := (0 : Word) - resultSign
+  let sum0 := (limb0 ^^^ mask) + resultSign
+  let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+  let sum1 := (limb1 ^^^ mask) + carry0
+  let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+  let sum2 := (limb2 ^^^ mask) + carry1
+  let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+  let sum3 := (limb3 ^^^ mask) + carry2
+  EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with
+    | 0 => sum0 | 1 => sum1 | 2 => sum2 | 3 => sum3
+
 /-- The SDIV result sign is the XOR of two top-bit extractions, hence it is a
     Boolean word. This keeps later result-sign-fix zero-quotient rewrites from
     reasoning about arbitrary 64-bit masks. -/
@@ -76,6 +96,172 @@ theorem sdivResultSign_fixZeroLimbs
     let sum3 := ((0 : Word) ^^^ mask) + carry2
     sum0 = 0 ∧ sum1 = 0 ∧ sum2 = 0 ∧ sum3 = 0 := by
   dsimp
+  bv_decide
+
+/-- Top output limb of result-sign-fix is zero when the unsigned quotient is
+    zero. -/
+theorem sdivResultSign_fixZeroLimb3
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    let mask := (0 : Word) - resultSign
+    let sum0 := ((0 : Word) ^^^ mask) + resultSign
+    let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+    let sum1 := ((0 : Word) ^^^ mask) + carry0
+    let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+    let sum2 := ((0 : Word) ^^^ mask) + carry1
+    let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+    let sum3 := ((0 : Word) ^^^ mask) + carry2
+    sum3 = 0 := by
+  have h := sdivResultSign_fixZeroLimbs dividendTop divisorTop
+  simpa using h.2.2.2
+
+/-- Word-shaped variant of `sdivResultSign_fixZeroLimb3`, matching callers that
+    have already rewritten a quotient word to `0 : EvmWord` but not yet
+    simplified its `getLimbN` projections. -/
+theorem sdivResultSign_fixZeroWordLimb3
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    let mask := (0 : Word) - resultSign
+    let sum0 := (((0 : EvmWord).getLimbN 0) ^^^ mask) + resultSign
+    let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+    let sum1 := (((0 : EvmWord).getLimbN 1) ^^^ mask) + carry0
+    let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+    let sum2 := (((0 : EvmWord).getLimbN 2) ^^^ mask) + carry1
+    let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+    let sum3 := (((0 : EvmWord).getLimbN 3) ^^^ mask) + carry2
+    sum3 = 0 := by
+  rw [EvmWord.getLimbN_zero 0, EvmWord.getLimbN_zero 1,
+    EvmWord.getLimbN_zero 2, EvmWord.getLimbN_zero 3]
+  exact sdivResultSign_fixZeroLimb3 dividendTop divisorTop
+
+/-- If the dividend sign bit is zero, the dividend absolute-value word is just
+    the original four-limb word. -/
+theorem sdivAbsDividendWord_of_sign_zero
+    (limb0 limb1 limb2 top : Word)
+    (hSign : top >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDividendWord limb0 limb1 limb2 top =
+      EvmWord.fromLimbs fun i : Fin 4 =>
+        match i with
+        | 0 => limb0 | 1 => limb1 | 2 => limb2 | 3 => top := by
+  unfold sdivAbsDividendWord EvmWord.fromLimbs
+  rw [hSign]
+  bv_decide
+
+/-- Four concrete `getLimbN` projections assemble back to their source word. -/
+theorem sdivWord_from_getLimbN (v : EvmWord) :
+    EvmWord.fromLimbs (fun i : Fin 4 =>
+      match i with
+      | 0 => v.getLimbN 0 | 1 => v.getLimbN 1 | 2 => v.getLimbN 2 | 3 => v.getLimbN 3) =
+      v := by
+  unfold EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
+/-- Word-shaped variant of `sdivAbsDividendWord_of_sign_zero`: if the dividend
+    sign bit is zero, the SDIV absolute-value helper returns the dividend word. -/
+theorem sdivAbsDividendWord_eq_word_of_sign_zero
+    (dividend : EvmWord)
+    (hSign : dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+      (dividend.getLimbN 2) (dividend.getLimbN 3) = dividend := by
+  rw [sdivAbsDividendWord_of_sign_zero _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN dividend
+
+/-- If the dividend sign bit is one, the SDIV absolute-value helper returns the
+    two's-complement negation of the dividend word. -/
+theorem sdivAbsDividendWord_eq_neg_word_of_sign_one
+    (dividend : EvmWord)
+    (hSign : dividend.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word)) :
+    sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+      (dividend.getLimbN 2) (dividend.getLimbN 3) = -dividend := by
+  unfold sdivAbsDividendWord EvmWord.fromLimbs
+  rw [hSign]
+  unfold EvmWord.getLimbN EvmWord.getLimb at hSign ⊢
+  simp only [Neg.neg]
+  bv_decide
+
+/-- If the divisor sign bit is zero, the divisor absolute-value word is just the
+    original four-limb word. -/
+theorem sdivAbsDivisorWord_of_sign_zero
+    (limb0 limb1 limb2 top : Word)
+    (hSign : top >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDivisorWord limb0 limb1 limb2 top =
+      EvmWord.fromLimbs fun i : Fin 4 =>
+        match i with
+        | 0 => limb0 | 1 => limb1 | 2 => limb2 | 3 => top := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs
+  rw [hSign]
+  bv_decide
+
+/-- Word-shaped variant of `sdivAbsDivisorWord_of_sign_zero`: if the divisor
+    sign bit is zero, the SDIV absolute-value helper returns the divisor word. -/
+theorem sdivAbsDivisorWord_eq_word_of_sign_zero
+    (divisor : EvmWord)
+    (hSign : divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (0 : Word)) :
+    sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+      (divisor.getLimbN 2) (divisor.getLimbN 3) = divisor := by
+  rw [sdivAbsDivisorWord_of_sign_zero _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN divisor
+
+/-- If the divisor sign bit is one, the SDIV absolute-value helper returns the
+    two's-complement negation of the divisor word. -/
+theorem sdivAbsDivisorWord_eq_neg_word_of_sign_one
+    (divisor : EvmWord)
+    (hSign : divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = (1 : Word)) :
+    sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+      (divisor.getLimbN 2) (divisor.getLimbN 3) = -divisor := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs
+  rw [hSign]
+  unfold EvmWord.getLimbN EvmWord.getLimb at hSign ⊢
+  simp only [Neg.neg]
+  bv_decide
+
+/-- If the SDIV result sign is zero, the result-sign-fix word is just the
+    unsigned quotient word assembled from its four limbs. -/
+theorem sdivResultSignFixedWord_of_result_sign_zero
+    (dividendTop divisorTop limb0 limb1 limb2 limb3 : Word)
+    (hSign :
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat) = (0 : Word)) :
+    sdivResultSignFixedWord dividendTop divisorTop limb0 limb1 limb2 limb3 =
+      EvmWord.fromLimbs fun i : Fin 4 =>
+        match i with
+        | 0 => limb0 | 1 => limb1 | 2 => limb2 | 3 => limb3 := by
+  unfold sdivResultSignFixedWord EvmWord.fromLimbs
+  rw [hSign]
+  bv_decide
+
+/-- Word-shaped variant of `sdivResultSignFixedWord_of_result_sign_zero`: if
+    the result sign is zero, the result-sign-fix helper leaves the quotient word
+    unchanged. -/
+theorem sdivResultSignFixedWord_eq_word_of_result_sign_zero
+    (dividendTop divisorTop : Word) (quotient : EvmWord)
+    (hSign :
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat) = (0 : Word)) :
+    sdivResultSignFixedWord dividendTop divisorTop
+      (quotient.getLimbN 0) (quotient.getLimbN 1)
+      (quotient.getLimbN 2) (quotient.getLimbN 3) = quotient := by
+  rw [sdivResultSignFixedWord_of_result_sign_zero _ _ _ _ _ _ hSign]
+  exact sdivWord_from_getLimbN quotient
+
+/-- If the SDIV result sign is one, the result-sign-fix helper returns the
+    two's-complement negation of the quotient word. -/
+theorem sdivResultSignFixedWord_eq_neg_word_of_result_sign_one
+    (dividendTop divisorTop : Word) (quotient : EvmWord)
+    (hSign :
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat) = (1 : Word)) :
+    sdivResultSignFixedWord dividendTop divisorTop
+      (quotient.getLimbN 0) (quotient.getLimbN 1)
+      (quotient.getLimbN 2) (quotient.getLimbN 3) = -quotient := by
+  unfold sdivResultSignFixedWord EvmWord.fromLimbs
+  rw [hSign]
+  unfold EvmWord.getLimbN EvmWord.getLimb
+  simp only [Neg.neg]
   bv_decide
 
 /-- The SDIV divisor absolute-value word is zero when all divisor limbs are
