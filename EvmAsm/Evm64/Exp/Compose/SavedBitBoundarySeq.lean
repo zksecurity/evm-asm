@@ -13,6 +13,18 @@ namespace EvmAsm.Evm64.Exp.Compose
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64
 
+theorem expTwoMulBoundaryResultEvmSpWord (evmSp : Word) :
+    evmSp + signExtend12 (32 : BitVec 12) = evmSp + 32 := by
+  rw [signExtend12_32]
+
+theorem expTwoMulBoundaryResultTailWord (evmSp : Word) :
+    evmSp + 32 + 32 = evmSp + 64#64 := by
+  bv_addr
+
+theorem expTwoMulBoundaryResultTailWord_symm (evmSp : Word) :
+    evmSp + 64 = evmSp + 32#64 + 32#64 := by
+  bv_addr
+
 @[irreducible]
 def expTwoMulLoopExitControl (iterCountNew : Word) (exitCond : Prop) : Assertion :=
   (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝
@@ -390,7 +402,7 @@ theorem exp_pointer_restore_then_epilogue_stack_tail_evm_exp_msb_saved_bit_two_m
       dsimp [exitControl, stackTail] at hp ⊢
       rw [expTwoMulLoopExitStackTailFrame_unfold] at hp
       rw [evmStackIs_cons]
-      rw [show evmSp + 64 = evmSp + 32#64 + 32#64 from by bv_addr] at hp
+      rw [expTwoMulBoundaryResultTailWord_symm] at hp
       xcancel_struct hp)
     hFramed
 
@@ -481,8 +493,7 @@ theorem exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_
         ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
         evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))) := by
   intro exitControl stackTail
-  rw [← show evmSp + signExtend12 (32 : BitVec 12) = evmSp + 32 from by
-    rw [signExtend12_32]]
+  rw [← expTwoMulBoundaryResultEvmSpWord]
   exact exp_pointer_restore_then_epilogue_full_post_stack_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
     sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
     squaringMulOff condMulOff skipOff backOff base mulTarget
@@ -512,7 +523,7 @@ theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_m
       rw [evmStackIs_cons, evmStackIs_cons] at hp
       rw [← exp_epilogue_result_word_right evmSp d0 d1 d2 d3
         (evmStackIs (evmSp + 32 + 32) rest)] at hp
-      rw [show evmSp + 32 + 32 = evmSp + 64 from by bv_addr] at hp
+      rw [expTwoMulBoundaryResultTailWord] at hp
       rw [expTwoMulLoopExitStackTailFrame_unfold]
       xcancel_struct hp)
     (fun _ hp => by
