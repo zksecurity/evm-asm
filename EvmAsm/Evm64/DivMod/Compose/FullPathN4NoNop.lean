@@ -66,15 +66,15 @@ theorem divK_loop_body_n4_call_skip_j0_norm_noNop (sp base : Word)
       (n4CallSkipJ0NormPost sp base v3 u3 uTop v0 v1 v2 u0 u1 u2) := by
   intro qHat hborrow
   have raw := divK_loop_body_n4_call_skip_j0_divCode_noNop_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu
-  have raw' := raw hborrow
-  simp only [se12_32, se12_40, se12_48, se12_56,
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu hborrow
+  simp only [loopBodyN4CallSkipJ0Pre_unfold, loopBodyN4CallSkipJ0Post_unfold,
+             se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
-             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
+             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
   exact cpsTripleWithin_weaken
     (fun h hp => hp)
     (fun h hp => by simp only [n4CallSkipJ0NormPost_unfold]; exact hp)
-    (cpsTripleWithin_mono_nSteps (by decide) raw')
+    (cpsTripleWithin_mono_nSteps (by decide) raw)
 
 /-- n=4 pre-loop + call+skip loop body over `divCode_noNop`: base → base+904
     (shift ≠ 0). -/

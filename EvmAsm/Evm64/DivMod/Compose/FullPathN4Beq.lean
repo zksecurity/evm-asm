@@ -60,12 +60,12 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm (sp base : Word)
        (sp + signExtend12 3944 ↦ₘ div_un0)) := by
   intro qHat dLo div_un0 hborrow
   have raw := divK_loop_body_n4_call_addback_j0_beq_divCode_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu hcarry2_nz
-  have raw' := raw hborrow
-  simp only [se12_32, se12_40, se12_48, se12_56,
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu hcarry2_nz hborrow
+  simp only [loopBodyN4CallSkipJ0Pre_unfold, loopBodyN4CallAddbackBeqJ0Post_unfold,
+             se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
-             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
-  exact cpsTripleWithin_mono_nSteps (by decide) raw'
+             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
+  exact cpsTripleWithin_mono_nSteps (by decide) raw
 
 /-- No-NOP variant of `divK_loop_body_n4_call_addback_j0_beq_norm`. -/
 theorem divK_loop_body_n4_call_addback_j0_beq_norm_noNop (sp base : Word)
