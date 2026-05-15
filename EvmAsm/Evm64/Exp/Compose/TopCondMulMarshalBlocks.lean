@@ -40,7 +40,7 @@ theorem exp_cond_mul_marshal_factor1_evm_exp_spec_within
        ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ r3)) := by
   have h := EvmAsm.Evm64.exp_loop_marshal_factor1_ofProg_spec_within
     sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 (base + 148)
-  rw [expTopCondMulFactor2Addr_symm] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopCondMulFactor2Addr_symm] at h
   exact cpsTripleWithin_extend_code (h := h)
     (hmono := evmExpCode_cond_mul_marshal_factor1_sub)
 
