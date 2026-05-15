@@ -110,6 +110,30 @@ private theorem evm_div_n3_loop_unified_inst
     retMem dMem dloMem scratch_un0 base halign
     hbltu_1 hbltu_0 hcarry2
 
+/-- No-NOP variant of `evm_div_n3_loop_unified_inst`. -/
+private theorem evm_div_n3_loop_unified_inst_noNop
+    (bltu_1 bltu_0 : Bool) (sp base : Word)
+    (shift antiShift b0' b1' b2' b3' u0 u1 u2 u3 u4 : Word)
+    (v10Old v11Old jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu_1 : bltu_1 = BitVec.ult u4 b2')
+    (hbltu_0 : bltu_0 = BitVec.ult
+      (iterN3 bltu_1 b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word)).2.2.2.1 b2')
+    (hcarry2 : Carry2NzAll b0' b1' b2' b3') :
+    cpsTripleWithin 404 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopN3PreWithScratch sp jMem (3 : Word) shift u0 v10Old v11Old antiShift
+        b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word) u0 (0 : Word) (0 : Word)
+        retMem dMem dloMem scratch_un0)
+      (loopN3UnifiedPost bltu_1 bltu_0 sp base
+        b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word) u0
+        retMem dMem dloMem scratch_un0) :=
+  divK_loop_n3_unified_divCode_noNop bltu_1 bltu_0
+    sp jMem (3 : Word) shift u0 v10Old v11Old antiShift
+    b0' b1' b2' b3' u1 u2 u3 u4 (0 : Word) u0 (0 : Word) (0 : Word)
+    retMem dMem dloMem scratch_un0 base halign
+    hbltu_1 hbltu_0 hcarry2
+
 -- ============================================================================
 -- Double-addback unified preloop+loop composition (base → base+908)
 -- ============================================================================
