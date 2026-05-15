@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.TopSquaringMarshalBlocks
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -138,7 +139,7 @@ theorem exp_cond_mul_beq_evm_exp_spec_within
   have h := EvmAsm.Rv64.beq_spec_within .x10 .x0 skipOff v10 (0 : Word)
     (base + 144)
   rw [htarget] at h
-  rw [expTopCondMulBeqNextPc] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopCondMulBeqNextPc] at h
   exact cpsBranchWithin_extend_code (h := h)
     (hmono := evmExpCode_cond_mul_beq_sub)
 
@@ -158,7 +159,7 @@ theorem exp_cond_mul_saved_bit_beq_evm_exp_msb_saved_bit_spec_within
   have h := EvmAsm.Rv64.beq_spec_within .x18 .x0 skipOff v18 (0 : Word)
     (base + 148)
   rw [htarget] at h
-  rw [expTopSavedBitCondMulBeqNextPc] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopSavedBitCondMulBeqNextPc] at h
   exact cpsBranchWithin_extend_code (h := h)
     (hmono := evmExpMsbSavedBitCode_cond_mul_beq_sub)
 

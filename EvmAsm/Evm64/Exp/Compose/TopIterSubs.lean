@@ -35,17 +35,6 @@ theorem expTopIterLoopBackAddr (base : Word) :
     (base + 252 : Word) = base + 28 + 224 := by
   bv_omega
 
-theorem expTopIterBitTestNextPc (base : Word) :
-    ((base + 28 : Word) + 12) = base + 40 := by
-  bv_omega
-
-theorem expTopSavedBitSaveNextPc (base : Word) :
-    ((base + 40 : Word) + 4) = base + 44 := by
-  bv_omega
-
-theorem expTopLoopBackNextPc (base : Word) :
-    ((base + 252 : Word) + 8) = base + 260 := by
-  bv_omega
 
 theorem expTopSavedBitLoopBackNextPc (base : Word) :
     ((base + 256 : Word) + 8) = base + 264 := by

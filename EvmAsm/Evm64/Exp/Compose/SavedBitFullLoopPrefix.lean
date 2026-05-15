@@ -41,7 +41,7 @@ theorem exp_msb_bit_test_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
        (.x6 ↦ᵣ (c + signExtend12 ((-1) : BitVec 12))) **
        (.x10 ↦ᵣ (expTwoMulIterBit e))) := by
   have h := EvmAsm.Evm64.exp_msb_bit_test_block_spec_within e c v10 (base + 28)
-  rw [expTopIterBitTestNextPc] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopIterBitTestNextPc] at h
   exact cpsTripleWithin_extend_code
     (h := h)
     (hmono := fun a i hi =>
@@ -73,7 +73,7 @@ theorem exp_save_bit_evm_exp_msb_saved_bit_two_mul_with_mul_spec_within
       ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ v18))
       ((.x10 ↦ᵣ bit) ** (.x18 ↦ᵣ (bit + signExtend12 (0 : BitVec 12)))) := by
   have h := EvmAsm.Evm64.exp_save_bit_block_spec_within bit v18 (base + 40)
-  rw [expTopSavedBitSaveNextPc] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopSavedBitSaveNextPc] at h
   exact cpsTripleWithin_extend_code
     (h := h)
     (hmono := fun a i hi => by
@@ -181,7 +181,7 @@ theorem exp_cond_mul_saved_bit_beq_evm_exp_msb_saved_bit_two_mul_with_mul_spec_w
   have h := EvmAsm.Rv64.beq_spec_within .x18 .x0 skipOff v18 (0 : Word)
     (base + 148)
   rw [htarget] at h
-  rw [expTopSavedBitCondMulBeqNextPc] at h
+  rw [EvmAsm.Evm64.Exp.AddrNorm.expTopSavedBitCondMulBeqNextPc] at h
   exact cpsBranchWithin_extend_code
     (h := h)
     (hmono := fun a i hi => by
