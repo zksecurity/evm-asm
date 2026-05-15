@@ -11,6 +11,30 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
+theorem expTopIterSquaringAddr (base : Word) :
+    (base + 40 : Word) = base + 28 + 12 := by
+  bv_omega
+
+theorem expTopIterCondMulAddr (base : Word) :
+    (base + 144 : Word) = base + 28 + 116 := by
+  bv_omega
+
+theorem expTopIterSavedBitSquaringAddr (base : Word) :
+    (base + 44 : Word) = base + 28 + 16 := by
+  bv_omega
+
+theorem expTopIterSavedBitCondMulAddr (base : Word) :
+    (base + 148 : Word) = base + 28 + 120 := by
+  bv_omega
+
+theorem expTopIterSavedBitLoopBackAddr (base : Word) :
+    (base + 256 : Word) = base + 28 + 228 := by
+  bv_omega
+
+theorem expTopIterLoopBackAddr (base : Word) :
+    (base + 252 : Word) = base + 28 + 224 := by
+  bv_omega
+
 /-- Bit-test sub-block directly included in the top-level EXP code bundle. -/
 theorem evmExpCode_iter_bit_test_sub {base : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
@@ -25,8 +49,7 @@ theorem evmExpCode_iter_squaring_sub {base : Word}
     ∀ a i, (exp_squaring_call_block_code (base + 40) mulOff) a = some i →
       (evmExpCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 40 : Word) = base + 28 + 12 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSquaringAddr] at h
   exact evmExpCode_iter_body_sub a i (expIterBodyFullCode_squaring_sub a i h)
 
 /-- Conditional-multiply sub-block directly included in the top-level EXP code
@@ -37,8 +60,7 @@ theorem evmExpCode_iter_cond_mul_sub {base : Word}
       (base + 144) mulOff skipOff) a = some i →
       (evmExpCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 144 : Word) = base + 28 + 116 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterCondMulAddr] at h
   exact evmExpCode_iter_body_sub a i (expIterBodyFullCode_cond_mul_sub a i h)
 
 /-- MSB bit-test sub-block directly included in the corrected saved-bit
@@ -60,8 +82,7 @@ theorem evmExpMsbSavedBitCode_iter_save_bit_sub {base : Word}
       a = some i →
       (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 40 : Word) = base + 28 + 12 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSquaringAddr] at h
   exact evmExpMsbSavedBitCode_iter_body_sub a i
     (expIterBodyFullMsbSavedBitCode_save_bit_sub a i h)
 
@@ -72,8 +93,7 @@ theorem evmExpMsbSavedBitCode_iter_squaring_sub {base : Word}
     ∀ a i, (exp_squaring_call_block_code (base + 44) mulOff) a = some i →
       (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 44 : Word) = base + 28 + 16 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSavedBitSquaringAddr] at h
   exact evmExpMsbSavedBitCode_iter_body_sub a i
     (expIterBodyFullMsbSavedBitCode_squaring_sub a i h)
 
@@ -85,8 +105,7 @@ theorem evmExpMsbSavedBitCode_iter_cond_mul_sub {base : Word}
       (base + 148) mulOff skipOff) a = some i →
       (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 148 : Word) = base + 28 + 120 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSavedBitCondMulAddr] at h
   exact evmExpMsbSavedBitCode_iter_body_sub a i
     (expIterBodyFullMsbSavedBitCode_cond_mul_sub a i h)
 
@@ -98,8 +117,7 @@ theorem evmExpMsbSavedBitCode_iter_loop_back_sub {base : Word}
       (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
       (evmExpMsbSavedBitCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 256 : Word) = base + 28 + 228 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSavedBitLoopBackAddr] at h
   exact evmExpMsbSavedBitCode_iter_body_sub a i
     (expIterBodyFullMsbSavedBitCode_loop_back_sub a i h)
 
@@ -110,8 +128,7 @@ theorem evmExpMsbSavedBitTwoMulCode_iter_loop_back_sub {base : Word}
       (evmExpMsbSavedBitTwoMulCode
         base squaringMulOff condMulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 256 : Word) = base + 28 + 228 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterSavedBitLoopBackAddr] at h
   exact evmExpMsbSavedBitTwoMulCode_iter_body_sub a i
     (expIterBodyFullMsbSavedBitTwoMulCode_loop_back_sub a i h)
 
@@ -134,8 +151,7 @@ theorem evmExpCode_iter_loop_back_sub {base : Word}
       (EvmAsm.Evm64.exp_loop_back backOff)) a = some i →
       (evmExpCode base mulOff skipOff backOff) a = some i := by
   intro a i h
-  have haddr : (base + 252 : Word) = base + 28 + 224 := by bv_omega
-  rw [haddr] at h
+  rw [expTopIterLoopBackAddr] at h
   exact evmExpCode_iter_body_sub a i (expIterBodyFullCode_loop_back_sub a i h)
 
 end EvmAsm.Evm64.Exp.Compose
