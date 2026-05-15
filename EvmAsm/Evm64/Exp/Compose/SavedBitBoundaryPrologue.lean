@@ -84,6 +84,31 @@ theorem expTwoMulPointerRestoreBackToEvmSp (evmSp : Word) :
   rw [signExtend12_64, hNeg64]
   bv_decide
 
+@[irreducible]
+def expTwoMulLoopExitStackTailFrame
+    (evmSp : Word) (baseWord : EvmWord) (rest : List EvmWord) :
+    Assertion :=
+  evmWordIs evmSp baseWord ** evmStackIs (evmSp + 64) rest
+
+theorem expTwoMulLoopExitStackTailFrame_unfold
+    {evmSp : Word} {baseWord : EvmWord} {rest : List EvmWord} :
+    expTwoMulLoopExitStackTailFrame evmSp baseWord rest =
+      (evmWordIs evmSp baseWord ** evmStackIs (evmSp + 64) rest) := by
+  delta expTwoMulLoopExitStackTailFrame
+  rfl
+
+theorem expTwoMulLoopExitStackTailFrame_pcFree
+    {evmSp : Word} {baseWord : EvmWord} {rest : List EvmWord} :
+    (expTwoMulLoopExitStackTailFrame evmSp baseWord rest).pcFree := by
+  rw [expTwoMulLoopExitStackTailFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulLoopExitStackTailFrame
+    (evmSp : Word) (baseWord : EvmWord) (rest : List EvmWord) :
+    Assertion.PCFree
+      (expTwoMulLoopExitStackTailFrame evmSp baseWord rest) :=
+  ⟨expTwoMulLoopExitStackTailFrame_pcFree⟩
+
 /-- EXP prologue followed by the pointer-advance block, lifted to the
     two-MUL saved-bit EXP+MUL code bundle. This lands at the iteration-body
     entry with the EVM stack pointer advanced by one operand window. -/
