@@ -549,9 +549,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec (sp base : Word)
     v11Old (signExtend12 (0 : BitVec 12) - (clzResult b3).1)
     b0 b1 b2 b3 a0 a1 a2 a3 (0 : Word) (0 : Word)
     retMem dMem dloMem scratch_un0 halign
-    hbltu hcarry2_nz
-  intro_lets at hLoop
-  have hLoop' := hLoop hborrow
+    hbltu hcarry2_nz hborrow
   -- Frame loop body with a[], q[1-3]=0, padding, shift=0
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
@@ -563,7 +561,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec (sp base : Word)
      ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ (clzResult b3).1))
-    (by pcFree) hLoop'
+    (by pcFree) hLoop
   -- Compose preloop → loop body
   have hFull := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
@@ -572,6 +570,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec (sp base : Word)
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
+      simp only [loopBodyN4CallAddbackBeqJ0Post_unfold] at hq
       delta preloopShift0CallAddbackBeqPostN4
       simp only [hshift_z] at hq
       xperm_hyp hq)
@@ -626,9 +625,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec_noNop (sp base : Word)
     v11Old (signExtend12 (0 : BitVec 12) - (clzResult b3).1)
     b0 b1 b2 b3 a0 a1 a2 a3 (0 : Word) (0 : Word)
     retMem dMem dloMem scratch_un0 halign
-    hbltu hcarry2_nz
-  intro_lets at hLoop
-  have hLoop' := hLoop hborrow
+    hbltu hcarry2_nz hborrow
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -639,7 +636,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec_noNop (sp base : Word)
      ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ (clzResult b3).1))
-    (by pcFree) hLoop'
+    (by pcFree) hLoop
   have hFull := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       simp only [x1_val_n4] at hp
@@ -647,6 +644,7 @@ theorem evm_div_n4_preloop_shift0_call_addback_beq_spec_noNop (sp base : Word)
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
+      simp only [loopBodyN4CallAddbackBeqJ0Post_unfold] at hq
       delta preloopShift0CallAddbackBeqPostN4
       simp only [hshift_z] at hq
       xperm_hyp hq)
