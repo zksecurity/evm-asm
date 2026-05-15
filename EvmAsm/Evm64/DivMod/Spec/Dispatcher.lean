@@ -1020,6 +1020,71 @@ theorem fullDivN3UnifiedPost_to_divStackDispatchPost
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+theorem fullDivN3UnifiedPost_to_divStackDispatchPostNoX1
+    (bltu_1 bltu_0 : Bool)
+    (sp base : Word) (a b : EvmWord)
+    (a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hdiv0 : (EvmWord.div a b).getLimbN 0 =
+      (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv1 : (EvmWord.div a b).getLimbN 1 =
+      (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv2 : (EvmWord.div a b).getLimbN 2 = (0 : Word))
+    (hdiv3 : (EvmWord.div a b).getLimbN 3 = (0 : Word)) :
+    ∀ h,
+      fullDivN3UnifiedPost bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (divStackDispatchPostNoX1 sp a b **
+        (.x1 ↦ᵣ (signExtend12 4095 : Word))) h := by
+  intro h hq
+  let shift := fullDivN3Shift b2
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let u0' := (r0.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.1 <<< (antiShift.toNat % 64))
+  let u1' := (r0.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u2' := (r0.2.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u3' := r0.2.2.2.2.1 >>> (shift.toNat % 64)
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  let scratch_ret1 := if bltu_1 then (base + div128CallRetOff) else retMem
+  let scratch_d1 := if bltu_1 then v.2.2.1 else dMem
+  let scratch_dlo1 := if bltu_1 then div128DLo v.2.2.1 else dloMem
+  let scratch_un01 := if bltu_1 then div128Un0 u.2.2.2.1 else scratch_un0
+  refine divStackDispatchPostNoX1_weaken (sp := sp) (a := a) (b := b)
+    (v1 := signExtend12 4095) (v2 := antiShift)
+    (v5 := r0.1) (v6 := r1.1) (v7 := (0 : Word))
+    (v10 := (0 : Word)) (v11 := r0.1)
+    (q0 := r0.1) (q1 := r1.1) (q2 := (0 : Word)) (q3 := (0 : Word))
+    (u0 := u0') (u1 := u1') (u2 := u2') (u3 := u3')
+    (u4 := r0.2.2.2.2.2) (u5 := r1.2.2.2.2.2)
+    (u6 := (0 : Word)) (u7 := (0 : Word))
+    (shiftMem := shift) (nMem := 3) (jMem := 0)
+    (retMem := if bltu_0 then (base + div128CallRetOff) else scratch_ret1)
+    (dMem := if bltu_0 then v.2.2.1 else scratch_d1)
+    (dloMem := if bltu_0 then div128DLo v.2.2.1 else scratch_dlo1)
+    (scratch_un0 := if bltu_0 then div128Un0 r1.2.2.1 else scratch_un01) h ?_
+  delta fullDivN3UnifiedPost fullDivN3DenormPost fullDivN3Frame fullDivN3Scratch at hq
+  simp only [denormDivPost_unfold] at hq
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+      from by rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ ha0 ha1 ha2 ha3]]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
+      (((sp + 32) ↦ₘ
+          (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 40) ↦ₘ
+          (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 48) ↦ₘ (0 : Word)) **
+       ((sp + 56) ↦ₘ (0 : Word)))
+      from by
+        rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+          hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [divScratchValuesCall_unfold, divScratchValues_unfold]
+  rw [word_add_zero] at hq
+  xperm_hyp hq
+
 /-- N=3 DIV stack-level entry point: mirrors `evm_div_n1_stack_spec_within`. -/
 theorem evm_div_n3_stack_spec_within
     (bltu_1 bltu_0 : Bool) (sp base : Word)
