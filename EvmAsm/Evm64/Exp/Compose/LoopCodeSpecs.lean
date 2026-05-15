@@ -13,6 +13,18 @@ open EvmAsm.Rv64.Tactics
 open EvmAsm.Rv64 (cpsBranchWithin cpsBranchWithin_extend_code cpsTripleWithin
   cpsTripleWithin_extend_code signExtend12 signExtend13 signExtend21)
 
+theorem expLoopBackNextPc (base : Word) :
+    ((base + 24 : Word) + 8) = base + 32 := by
+  bv_omega
+
+theorem expLoopSquareReturnPc (base : Word) :
+    ((base + 12 : Word) + 4) = base + 16 := by
+  bv_omega
+
+theorem expLoopCondMulReturnPc (base : Word) :
+    ((base + 16 : Word) + 8) = base + 24 := by
+  bv_omega
+
 theorem exp_loop_back_loop_spec_within (c : Word)
     (mulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base target : Word)
@@ -25,8 +37,7 @@ theorem exp_loop_back_loop_spec_within (c : Word)
       (base + 32)
         ((.x9 ↦ᵣ expIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜expIterCountNew c = 0⌝) := by
   have h := EvmAsm.Evm64.exp_loop_back_spec_within c backOff (base + 24) target htarget
-  have hnext : ((base + 24 : Word) + 8) = base + 32 := by bv_omega
-  rw [hnext] at h
+  rw [expLoopBackNextPc] at h
   simpa [expIterCountNew] using
     (cpsBranchWithin_extend_code (h := h) (hmono := expLoopCode_loop_back_sub))
 
@@ -51,8 +62,7 @@ theorem exp_square_loop_spec_within
       (.x1 ↦ᵣ (base + 16)) := by
   have h := EvmAsm.Evm64.exp_square_block_spec_within mulOff vOld (base + 12)
   rw [hmul] at h
-  have hret : ((base + 12 : Word) + 4) = base + 16 := by bv_omega
-  rw [hret] at h
+  rw [expLoopSquareReturnPc] at h
   exact cpsTripleWithin_extend_code (h := h) (hmono := expLoopCode_square_sub)
 
 theorem exp_cond_mul_loop_spec_within
@@ -71,8 +81,7 @@ theorem exp_cond_mul_loop_spec_within
   have h := EvmAsm.Evm64.exp_cond_mul_block_spec_within
     mulOff skipOff v10 vOld (base + 16)
   rw [hskip, hmul] at h
-  have hret : ((base + 16 : Word) + 8) = base + 24 := by bv_omega
-  rw [hret] at h
+  rw [expLoopCondMulReturnPc] at h
   exact cpsBranchWithin_extend_code (h := h) (hmono := expLoopCode_cond_mul_sub)
 
 end EvmAsm.Evm64.Exp.Compose
