@@ -18,7 +18,15 @@ import EvmAsm.Rv64.Tactics.RunBlock
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (ADDI Assertion CodeReq LD SD addi_spec_gen_same_within
+  addi_spec_gen_within andi_spec_gen_within beq_spec_within bne_spec_gen_within
+  cpsBranchWithin cpsBranchWithin_extend_code cpsBranchWithin_frameR
+  cpsBranchWithin_seq_cpsTripleWithin_with_perm_same_cr cpsBranchWithin_weaken
+  cpsTripleWithin cpsTripleWithin_extend_code cpsTripleWithin_frameR
+  cpsTripleWithin_seq_cpsBranchWithin_with_perm cpsTripleWithin_weaken
+  generic_sd_spec_within jal_spec_within ld_spec_gen_within seq signExtend12
+  signExtend13 signExtend21 single slli_spec_gen_same_within
+  srli_spec_gen_same_within srli_spec_gen_within)
 
 -- ============================================================================
 -- Section 1: exp_bit_test_block (3 instructions, slice 4a / evm-asm-w5of)

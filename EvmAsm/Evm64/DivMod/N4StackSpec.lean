@@ -18,6 +18,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Spec.CallAddbackMod
+import EvmAsm.Evm64.DivMod.Spec.CallAddbackNoNop
 
 namespace EvmAsm.Evm64
 
@@ -62,6 +63,35 @@ theorem evm_div_n4_stack_spec (sp base : Word)
         nMem shiftMem jMem retMem dMem dloMem scratch_un0
         hbnz hb3nz hshift halign
   · exact evm_div_n4_call_stack_spec sp base a b
+      v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0
+      hbnz hb3nz hshift halign hbltu hcarry2_nz_addback hsem_addback
+
+/-- No-NOP variant of `evm_div_n4_stack_spec`. -/
+theorem evm_div_n4_stack_spec_noNop (sp base : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbnz : b ≠ 0)
+    (hb3nz : b.getLimbN 3 ≠ 0)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : isCallTrialN4Evm a b)
+    (hcarry2_nz_addback :
+      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
+    (hsem_addback :
+      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
+    cpsTripleWithin 340 base (base + nopOff) (divCode_noNop base)
+      (divN4StackPreCall sp a b v5 v6 v7 v10 v11
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divN4CallSkipStackPost sp a b) := by
+  by_cases hshift : (clzResult (b.getLimbN 3)).1 = 0
+  · exact cpsTripleWithin_mono_nSteps (by decide) <|
+      evm_div_n4_shift0_stack_spec_noNop sp base a b
+        v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratch_un0
+        hbnz hb3nz hshift halign
+  · exact evm_div_n4_call_stack_spec_noNop sp base a b
       v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratch_un0
       hbnz hb3nz hshift halign hbltu hcarry2_nz_addback hsem_addback

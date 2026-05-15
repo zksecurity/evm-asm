@@ -30,7 +30,15 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq cpsTripleWithin cpsTripleWithin_extend_code
+  cpsTripleWithin_frameL cpsTripleWithin_frameR cpsTripleWithin_seq
+  cpsTripleWithin_seq_perm_same_cr cpsTripleWithin_weaken memOwn regOwn
+  signExtend12 signExtend21)
+
+/-- Result word produced by the EXP conditional-multiply call block. -/
+abbrev expCondMulCallProductW
+    (r0 r1 r2 r3 a0 a1 a2 a3 : Word) : EvmWord :=
+  expResultWord r0 r1 r2 r3 * expResultWord a0 a1 a2 a3
 
 /-- Compose the cond-mul marshal pair plus its trailing JAL (17 instr) with
     `mul_callable_spec_within` (64 instr) at the JAL target.
@@ -202,8 +210,7 @@ theorem exp_cond_mul_call_block_spec_within
     (hd : CodeReq.Disjoint
             (exp_cond_mul_call_block_code base mulOff)
             (mul_callable_code mul_target)) :
-    let r := expResultWord r0 r1 r2 r3
-    let aw := expResultWord a0 a1 a2 a3
+    let productW := expCondMulCallProductW r0 r1 r2 r3 a0 a1 a2 a3
     cpsTripleWithin (17 + 64 + 9) base (base + 104)
       ((exp_cond_mul_call_block_code base mulOff).union
         (mul_callable_code mul_target))
@@ -227,17 +234,19 @@ theorem exp_cond_mul_call_block_spec_within
        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
        (.x1 ↦ᵣ vOld))
       ((.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
-       (.x5 ↦ᵣ (r * aw).getLimbN 3) **
+       (.x5 ↦ᵣ productW.getLimbN 3) **
        ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
        ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
        ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
        ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
-       evmWordIs sp (r * aw) ** evmWordIs (evmSp + 32) (r * aw) **
+       evmWordIs sp productW ** evmWordIs (evmSp + 32) productW **
        regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
        memOwn evmSp ** memOwn (evmSp + 8) **
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ (base + 68))) := by
-  intro r aw
+  intro productW
+  let r := expResultWord r0 r1 r2 r3
+  let aw := expResultWord a0 a1 a2 a3
   -- (1) Marshal-pair + JAL + mul_callable: 81 instrs, exit (base+68) &&& ~~~1.
   have h1 := exp_cond_mul_marshal_pair_then_mul_call_spec_within
     sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3 e0 e1 e2 e3

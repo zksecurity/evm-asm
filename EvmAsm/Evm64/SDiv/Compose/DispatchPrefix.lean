@@ -4,15 +4,14 @@
   Generic SDIV prefix sequencing into the unsigned DIV callable handoff shape.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCall
+import EvmAsm.Evm64.SDiv.Compose.Base
 import EvmAsm.Evm64.SDiv.Compose.Bridges
+import EvmAsm.Evm64.SDiv.Compose.DivCallDispatchFrame
 import EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
-
 /-- Prefix through the SDIV `divCall`, weakened to the exact dispatch-ready
     postcondition consumed by `evm_div_callable_spec_in_sdivCode`. -/
 theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
@@ -24,8 +23,8 @@ theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base : Word) :
-    cpsTripleWithin 49 base
-      ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+    EvmAsm.Rv64.cpsTripleWithin 49 base
+      ((base + divCallOff) + EvmAsm.Rv64.signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
       (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -47,7 +46,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
       v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 base
-  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun h hq => by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun h hq => by
     rw [saveRaSignsAbsSignXorThenDivCallPost_unfold] at hq
     rw [saveRaDivCallDispatchReadyPost_unfold]
     dsimp only at hq ⊢
@@ -62,7 +61,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_dispatchReady_spec_in_sdivCode
     alignment; a later slice can supply the stronger callable proof for this
     exact `x1` handoff shape. -/
 theorem saveRa_signs_abs_signXor_then_divCall_then_exact_callable_spec_in_sdivCode
-    {nSteps : Nat} {callPost : Assertion}
+    {nSteps : Nat} {callPost : EvmAsm.Rv64.Assertion}
     (vRa vSavedOld sp sDividendOld sDivisorOld
       dividendMaskOld dividendValueOld dividendCarryOld
       dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -72,14 +71,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_exact_callable_spec_in_sdivCo
      shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
     (base callableExit : Word)
     (hCallable :
-      cpsTripleWithin nSteps (base + wrapperEndOff) callableExit (sdivCode base)
+      EvmAsm.Rv64.cpsTripleWithin nSteps (base + wrapperEndOff) callableExit (sdivCode base)
         (saveRaDivCallDispatchReadyPost vRa sp base
           dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
           divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
           v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0)
         callPost) :
-    cpsTripleWithin (49 + nSteps) base callableExit (sdivCode base)
+    EvmAsm.Rv64.cpsTripleWithin (49 + nSteps) base callableExit (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -96,7 +95,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_exact_callable_spec_in_sdivCo
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
       v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       shiftMem nMem jMem retMem dMem dloMem scratchUn0 base
-  have hPrefix : cpsTripleWithin 49 base (base + wrapperEndOff) (sdivCode base)
+  have hPrefix : EvmAsm.Rv64.cpsTripleWithin 49 base (base + wrapperEndOff) (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
@@ -111,6 +110,6 @@ theorem saveRa_signs_abs_signXor_then_divCall_then_exact_callable_spec_in_sdivCo
         shiftMem nMem jMem retMem dMem dloMem scratchUn0) := by
     rw [← divCall_target_eq_wrapperEndOff base]
     exact hPrefixRaw
-  exact cpsTripleWithin_seq_same_cr hPrefix hCallable
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_same_cr hPrefix hCallable
 
 end EvmAsm.Evm64.SDiv.Compose

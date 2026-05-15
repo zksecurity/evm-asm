@@ -4,12 +4,10 @@
   PC-free instances for standalone SDIV result-sign-fix bundles.
 -/
 
-import EvmAsm.Evm64.SDiv.Compose.DivCallBzeroReturnHandoff
+import EvmAsm.Evm64.SDiv.Compose.BaseResultSignFix
+import EvmAsm.Evm64.SDiv.Compose.ResultSignFixOwnPre
 
 namespace EvmAsm.Evm64.SDiv.Compose
-
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 theorem resultSignFixPost_pcFree
     {sp sign limb0 limb1 limb2 limb3 : Word} :
@@ -20,7 +18,7 @@ theorem resultSignFixPost_pcFree
 
 instance pcFreeInst_resultSignFixPost
     (sp sign limb0 limb1 limb2 limb3 : Word) :
-    Assertion.PCFree (resultSignFixPost sp sign limb0 limb1 limb2 limb3) :=
+    EvmAsm.Rv64.Assertion.PCFree (resultSignFixPost sp sign limb0 limb1 limb2 limb3) :=
   ⟨resultSignFixPost_pcFree⟩
 
 theorem resultSignFixPreOwnX10_pcFree
@@ -32,7 +30,7 @@ theorem resultSignFixPreOwnX10_pcFree
 
 instance pcFreeInst_resultSignFixPreOwnX10
     (sp sign valueOld carryOld limb0 limb1 limb2 limb3 : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (resultSignFixPreOwnX10
         sp sign valueOld carryOld limb0 limb1 limb2 limb3) :=
   ⟨resultSignFixPreOwnX10_pcFree⟩
@@ -46,7 +44,7 @@ theorem resultSignFixPreOwnX10X7_pcFree
 
 instance pcFreeInst_resultSignFixPreOwnX10X7
     (sp sign carryOld limb0 limb1 limb2 limb3 : Word) :
-    Assertion.PCFree
+    EvmAsm.Rv64.Assertion.PCFree
       (resultSignFixPreOwnX10X7 sp sign carryOld limb0 limb1 limb2 limb3) :=
   ⟨resultSignFixPreOwnX10X7_pcFree⟩
 
@@ -58,7 +56,7 @@ theorem resultSignFixPreOwnScratch_pcFree
 
 instance pcFreeInst_resultSignFixPreOwnScratch
     (sp sign limb0 limb1 limb2 limb3 : Word) :
-    Assertion.PCFree (resultSignFixPreOwnScratch sp sign limb0 limb1 limb2 limb3) :=
+    EvmAsm.Rv64.Assertion.PCFree (resultSignFixPreOwnScratch sp sign limb0 limb1 limb2 limb3) :=
   ⟨resultSignFixPreOwnScratch_pcFree⟩
 
 end EvmAsm.Evm64.SDiv.Compose

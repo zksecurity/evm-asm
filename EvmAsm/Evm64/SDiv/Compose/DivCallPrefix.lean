@@ -11,7 +11,6 @@ import EvmAsm.Evm64.SDiv.Compose.SignXorSequence
 namespace EvmAsm.Evm64.SDiv.Compose
 
 open EvmAsm.Rv64.Tactics
-open EvmAsm.Rv64
 
 theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
     (vRa vSavedOld sp sDividendOld sDivisorOld
@@ -19,8 +18,8 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
       dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word)
     (base : Word) :
-    cpsTripleWithin 49 base
-      ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+    EvmAsm.Rv64.cpsTripleWithin 49 base
+      ((base + divCallOff) + EvmAsm.Rv64.signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
       (sdivCode base)
       (saveRaSignsAbsSignXorThenDivCallPre vRa vSavedOld sp sDividendOld sDivisorOld
         dividendMaskOld dividendValueOld dividendCarryOld
@@ -36,14 +35,14 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
   let dividendSign := dividendTop >>> (63 : BitVec 6).toNat
   let divisorSign := divisorTop >>> (63 : BitVec 6).toNat
   let resultSign := dividendSign ^^^ divisorSign
-  let dividendMem0 := sp + signExtend12 (0 : BitVec 12)
-  let dividendMem1 := sp + signExtend12 (8 : BitVec 12)
-  let dividendMem2 := sp + signExtend12 (16 : BitVec 12)
-  let dividendMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
-  let divisorMem0 := sp + signExtend12 (32 : BitVec 12)
-  let divisorMem1 := sp + signExtend12 (40 : BitVec 12)
-  let divisorMem2 := sp + signExtend12 (48 : BitVec 12)
-  let divisorMem3 := sp + signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
+  let dividendMem0 := sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)
+  let dividendMem1 := sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)
+  let dividendMem2 := sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)
+  let dividendMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDividendTopLimbOff
+  let divisorMem0 := sp + EvmAsm.Rv64.signExtend12 (32 : BitVec 12)
+  let divisorMem1 := sp + EvmAsm.Rv64.signExtend12 (40 : BitVec 12)
+  let divisorMem2 := sp + EvmAsm.Rv64.signExtend12 (48 : BitVec 12)
+  let divisorMem3 := sp + EvmAsm.Rv64.signExtend12 EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
   let dividendMask := (0 : Word) - dividendSign
   let dividendXored0 := dividendLimb0 ^^^ dividendMask
   let dividendSum0 := dividendXored0 + dividendSign
@@ -69,7 +68,7 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
   let divisorXored3 := divisorTop ^^^ divisorMask
   let divisorSum3 := divisorXored3 + divisorCarry2
   let divisorCarry3 := if BitVec.ult divisorSum3 divisorCarry2 then (1 : Word) else 0
-  let pre : Assertion :=
+  let pre : EvmAsm.Rv64.Assertion :=
     ((((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld)) **
         ((.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sDividendOld) **
          (dividendMem3 ↦ₘ dividendTop))) **
@@ -82,9 +81,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
      ((divisorMem0 ↦ₘ divisorLimb0) **
       (divisorMem1 ↦ₘ divisorLimb1) **
       (divisorMem2 ↦ₘ divisorLimb2)))
-  let signPost : Assertion :=
+  let signPost : EvmAsm.Rv64.Assertion :=
     (((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign)) **
-     (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12)))) **
+     (((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)))) **
       ((dividendMem0 ↦ₘ dividendSum0) **
        (dividendMem1 ↦ₘ dividendSum1) **
        (dividendMem2 ↦ₘ dividendSum2) **
@@ -94,9 +93,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
        (.x11 ↦ᵣ divisorCarry3) **
        (divisorMem0 ↦ₘ divisorSum0) ** (divisorMem1 ↦ₘ divisorSum1) **
        (divisorMem2 ↦ₘ divisorSum2) ** (divisorMem3 ↦ₘ divisorSum3))))
-  let callFrame : Assertion :=
+  let callFrame : EvmAsm.Rv64.Assertion :=
     (((.x8 ↦ᵣ resultSign) ** (.x9 ↦ᵣ divisorSign)) **
-     ((.x18 ↦ᵣ (vRa + signExtend12 (0 : BitVec 12))) **
+     ((.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))) **
       ((dividendMem0 ↦ₘ dividendSum0) **
        (dividendMem1 ↦ₘ dividendSum1) **
        (dividendMem2 ↦ₘ dividendSum2) **
@@ -106,9 +105,9 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
        (.x11 ↦ᵣ divisorCarry3) **
        (divisorMem0 ↦ₘ divisorSum0) ** (divisorMem1 ↦ₘ divisorSum1) **
        (divisorMem2 ↦ₘ divisorSum2) ** (divisorMem3 ↦ₘ divisorSum3))))
-  let callPre : Assertion := (.x1 ↦ᵣ vRa) ** callFrame
-  let post : Assertion := (.x1 ↦ᵣ ((base + divCallOff) + 4)) ** callFrame
-  have hPrefix : cpsTripleWithin 48 base (base + divCallOff)
+  let callPre : EvmAsm.Rv64.Assertion := (.x1 ↦ᵣ vRa) ** callFrame
+  let post : EvmAsm.Rv64.Assertion := (.x1 ↦ᵣ ((base + divCallOff) + 4)) ** callFrame
+  have hPrefix : EvmAsm.Rv64.cpsTripleWithin 48 base (base + divCallOff)
       (sdivCode base) pre signPost := by
     dsimp [pre, signPost, dividendSign, divisorSign, resultSign, dividendMem0,
       dividendMem1, dividendMem2, dividendMem3, divisorMem0, divisorMem1,
@@ -128,13 +127,13 @@ theorem saveRa_signs_abs_signXor_then_divCall_spec_in_sdivCode
         dividendMaskOld dividendValueOld dividendCarryOld
         dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
         divisorLimb0 divisorLimb1 divisorLimb2 divisorTop base)
-  have hCall : cpsTripleWithin 1 (base + divCallOff)
-      ((base + divCallOff) + signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
+  have hCall : EvmAsm.Rv64.cpsTripleWithin 1 (base + divCallOff)
+      ((base + divCallOff) + EvmAsm.Rv64.signExtend21 EvmAsm.Evm64.evm_sdivCallOff)
       (sdivCode base) callPre post := by
     dsimp [callPre, post]
-    exact cpsTripleWithin_frameR callFrame (by pcFree)
+    exact EvmAsm.Rv64.cpsTripleWithin_frameR callFrame (by pcFree)
       (divCall_spec_in_sdivCode vRa base)
-  have hSeq := cpsTripleWithin_seq_perm_same_cr
+  have hSeq := EvmAsm.Rv64.cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       dsimp [signPost, callPre, callFrame] at hp ⊢
       xperm_hyp hp) hPrefix hCall
