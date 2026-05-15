@@ -26,7 +26,8 @@ open EvmAsm.Rv64.Tactics
 
 namespace EvmAsm.Evm64
 
-open EvmAsm.Rv64
+open EvmAsm.Rv64 (CodeReq cpsTripleWithin cpsTripleWithin_frameL cpsTripleWithin_frameR
+  cpsTripleWithin_seq_with_perm cpsTripleWithin_weaken signExtend12)
 
 /-- Code requirement for the two-block squaring marshal prefix: the union
     of `factor1` at `base..(base+32)` and `result_to_factor2` at
