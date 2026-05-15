@@ -291,9 +291,7 @@ theorem evm_mod_n4_preloop_call_skip_spec_within (sp base : Word)
     jMem (4 : Word) shift u0 (a0 >>> (antiShift.toNat % 64)) v11Old antiShift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
     retMem dMem dloMem scratch_un0 halign
-    hbltu
-  intro_lets at hLoop
-  have hLoop' := hLoop hborrow
+    hbltu hborrow
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
@@ -304,7 +302,7 @@ theorem evm_mod_n4_preloop_call_skip_spec_within (sp base : Word)
      ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
-    (by pcFree) hLoop'
+    (by pcFree) hLoop
   have hFull := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       delta loopSetupPost at hp
@@ -312,7 +310,10 @@ theorem evm_mod_n4_preloop_call_skip_spec_within (sp base : Word)
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta preloopCallSkipPostN4; xperm_hyp hq)
+    (fun h hq => by
+      simp only [loopBodyN4CallSkipJ0Post_unfold] at hq
+      delta preloopCallSkipPostN4
+      xperm_hyp hq)
     hFull
 
 -- ============================================================================
@@ -568,16 +569,14 @@ theorem evm_mod_n4_preloop_call_addback_beq_spec_within (sp base : Word)
     jMem (4 : Word) shift u0 (a0 >>> (antiShift.toNat % 64)) v11Old antiShift
     b0' b1' b2' b3' u0 u1 u2 u3 u4 (0 : Word)
     retMem dMem dloMem scratch_un0
-    halign hbltu hcarry2_nz
-  intro_lets at hLoop
-  have hLoop' := hLoop hborrow
+    halign hbltu hcarry2_nz hborrow
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
      ((sp + signExtend12 4080) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4072) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4064) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4016) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 4008) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
      ((sp + signExtend12 3992) ↦ₘ shift))
-    (by pcFree) hLoop'
+    (by pcFree) hLoop
   have hFull := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       delta loopSetupPost at hp
@@ -585,7 +584,10 @@ theorem evm_mod_n4_preloop_call_addback_beq_spec_within (sp base : Word)
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
-    (fun h hq => by delta preloopCallAddbackBeqPostN4; xperm_hyp hq)
+    (fun h hq => by
+      simp only [loopBodyN4CallAddbackBeqJ0Post_unfold] at hq
+      delta preloopCallAddbackBeqPostN4
+      xperm_hyp hq)
     hFull
 
 -- ============================================================================
