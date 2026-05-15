@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoop
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -68,7 +69,8 @@ theorem exp_cond_mul_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 152) + 68))) := by
   intro r aw
-  have hbase' : (base + 152 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 152 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd152Aligned base hbase
   have hCondSub : ∀ a i,
       exp_cond_mul_call_block_code (base + 152) mulOff a = some i →
       evmExpMsbSavedBitCode base mulOff skipOff backOff a = some i := by
@@ -148,7 +150,8 @@ theorem exp_cond_mul_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 152) + 68))) := by
   intro r aw
-  have hbase' : (base + 152 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 152 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd152Aligned base hbase
   have hCondSub : ∀ a i,
       exp_cond_mul_call_block_code (base + 152) condMulOff a = some i →
       evmExpMsbSavedBitTwoMulCode

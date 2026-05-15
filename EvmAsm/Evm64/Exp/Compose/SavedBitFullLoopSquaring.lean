@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFullLoopPrefix
+import EvmAsm.Evm64.Exp.AddrNorm
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -59,7 +60,8 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_with_mul_spec_within
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
   intro squareW
-  have hbase' : (base + 44 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 44 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd44Aligned base hbase
   have hd_inner : CodeReq.Disjoint
       (exp_squaring_call_block_code (base + 44) mulOff)
       (mul_callable_code mulTarget) := by
@@ -127,7 +129,8 @@ theorem exp_squaring_call_block_evm_exp_msb_saved_bit_two_mul_with_mul_spec_with
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ ((base + 44) + 68))) := by
   intro squareW
-  have hbase' : (base + 44 : Word) &&& 1 = 0 := by bv_decide
+  have hbase' : (base + 44 : Word) &&& 1 = 0 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expBaseAdd44Aligned base hbase
   have hSquareSub : ∀ a i,
       exp_squaring_call_block_code (base + 44) squaringMulOff a = some i →
       evmExpMsbSavedBitTwoMulCode
