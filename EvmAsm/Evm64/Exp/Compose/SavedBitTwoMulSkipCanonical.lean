@@ -10,21 +10,6 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
-/-- Bundles `expTwoMulSkipLoopRest` with the `bit` and `squareW` computations
-    so the skip canonical specs need only one let instead of three. -/
-@[irreducible]
-def expTwoMulSkipIterRest
-    (e sp evmSp base r0 r1 r2 r3 : Word) : Assertion :=
-  expTwoMulSkipLoopRest
-    (expTwoMulIterBit e) sp evmSp base (expTwoMulSquareW r0 r1 r2 r3)
-
-theorem expTwoMulSkipIterRest_unfold
-    {e sp evmSp base r0 r1 r2 r3 : Word} :
-    expTwoMulSkipIterRest e sp evmSp base r0 r1 r2 r3 =
-      expTwoMulSkipLoopRest
-        (expTwoMulIterBit e) sp evmSp base (expTwoMulSquareW r0 r1 r2 r3) := by
-  delta expTwoMulSkipIterRest; rfl
-
 /-- Canonical-code view of the saved-bit loop-back block. -/
 theorem exp_loop_back_evm_exp_msb_saved_bit_two_mul_canonical_with_mul_spec_within
     (c : Word) (squaringMulOff condMulOff : BitVec 21)
