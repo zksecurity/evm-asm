@@ -25,6 +25,10 @@ theorem expTwoMulBoundaryResultTailWord_symm (evmSp : Word) :
     evmSp + 64 = evmSp + 32#64 + 32#64 := by
   bv_addr
 
+theorem expTwoMulBoundaryResultTailWord_symm_word (evmSp : Word) :
+    evmSp + 64#64 = evmSp + 32 + 32 := by
+  bv_addr
+
 @[irreducible]
 def expTwoMulLoopExitControl (iterCountNew : Word) (exitCond : Prop) : Assertion :=
   (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝
