@@ -34,6 +34,33 @@ instance pcFreeInst_expTwoMulScratchFrame (vOld v18 : Word) :
     Assertion.PCFree (expTwoMulScratchFrame vOld v18) :=
   ⟨expTwoMulScratchFrame_pcFree⟩
 
+@[irreducible]
+def expTwoMulOperandFrame
+    (evmSp vOld v18 : Word) (baseWord exponentWord : EvmWord) :
+    Assertion :=
+  evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
+  expTwoMulScratchFrame vOld v18
+
+theorem expTwoMulOperandFrame_unfold
+    {evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord} :
+    expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord =
+      (evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
+       expTwoMulScratchFrame vOld v18) := by
+  delta expTwoMulOperandFrame
+  rfl
+
+theorem expTwoMulOperandFrame_pcFree
+    {evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord} :
+    (expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord).pcFree := by
+  rw [expTwoMulOperandFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulOperandFrame
+    (evmSp vOld v18 : Word) (baseWord exponentWord : EvmWord) :
+    Assertion.PCFree
+      (expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord) :=
+  ⟨expTwoMulOperandFrame_pcFree⟩
+
 /-- EXP prologue followed by the pointer-advance block, lifted to the
     two-MUL saved-bit EXP+MUL code bundle. This lands at the iteration-body
     entry with the EVM stack pointer advanced by one operand window. -/
@@ -91,9 +118,7 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
     (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
     (base mulTarget : Word) :
     let operandFrame : Assertion :=
-      evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
-      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
-      (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)
+      expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord
     cpsTripleWithin (6 + 1) base (base + 28)
       (evmExpMsbSavedBitTwoMulWithMulCode
         base mulTarget squaringMulOff condMulOff skipOff backOff)
@@ -119,9 +144,11 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
   exact cpsTripleWithin_weaken
     (fun _ hp => by
       dsimp [operandFrame] at hp ⊢
+      rw [expTwoMulOperandFrame_unfold, expTwoMulScratchFrame_unfold] at hp ⊢
       xperm_hyp hp)
     (fun _ hp => by
       dsimp [operandFrame] at hp ⊢
+      rw [expTwoMulOperandFrame_unfold, expTwoMulScratchFrame_unfold] at hp ⊢
       xperm_hyp hp)
     hFramed
 
@@ -155,8 +182,7 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
        scratchFrame) := by
   intro scratchFrame
   let operandFrame : Assertion :=
-    evmWordIs evmSp baseWord ** evmWordIs (evmSp + 32) exponentWord **
-    scratchFrame
+    expTwoMulOperandFrame evmSp vOld v18 baseWord exponentWord
   have hBase :=
     exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul_operand_frame_spec_within
       sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord
@@ -166,16 +192,16 @@ theorem exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_with_mul
   exact cpsTripleWithin_weaken
     (fun _ hp => by
       dsimp [scratchFrame, operandFrame] at hp ⊢
-      rw [expTwoMulScratchFrame_unfold] at hp
+      rw [expTwoMulOperandFrame_unfold]
+      rw [expTwoMulScratchFrame_unfold] at hp ⊢
       rw [evmStackIs_cons, evmStackIs_cons] at hp
       rw [show evmSp + 32 + 32 = evmSp + 64#64 from by bv_addr] at hp
-      rw [show evmSp + 32#64 = evmSp + (32 : Word) from rfl]
       xperm_hyp hp)
     (fun _ hp => by
       dsimp [scratchFrame, operandFrame] at hp ⊢
-      rw [expTwoMulScratchFrame_unfold]
+      rw [expTwoMulOperandFrame_unfold] at hp
+      rw [expTwoMulScratchFrame_unfold] at hp ⊢
       rw [evmStackIs_cons, evmStackIs_cons]
-      rw [show evmSp + 32#64 = evmSp + (32 : Word) from rfl] at hp
       rw [show evmSp + 64#64 = evmSp + 32 + 32 from by bv_addr] at hp
       xperm_hyp hp)
     hFramed
