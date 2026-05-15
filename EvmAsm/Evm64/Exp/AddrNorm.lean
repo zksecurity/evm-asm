@@ -123,6 +123,18 @@ attribute [exp_addr]
     ((base + 152 : Word) + 104) = base + 256 := by
   bv_decide
 
+@[exp_addr, grind =] theorem expLoopBackNextPc (base : Word) :
+    ((base + 24 : Word) + 8) = base + 32 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expLoopSquareReturnPc (base : Word) :
+    ((base + 12 : Word) + 4) = base + 16 := by
+  bv_decide
+
+@[exp_addr, grind =] theorem expLoopCondMulReturnPc (base : Word) :
+    ((base + 16 : Word) + 8) = base + 24 := by
+  bv_decide
+
 @[exp_addr, grind =] theorem expBaseAdd40Aligned
     (base : Word) (hbase : base &&& 1 = 0) :
     (base + 40 : Word) &&& 1 = 0 := by bv_decide
