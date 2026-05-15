@@ -175,4 +175,75 @@ theorem divK_mulsub_correction_skip_spec_within_noNop
     (fun h hq => by xperm_hyp hq)
     MSCS
 
+/-- Bundled postcondition for the named skip wrapper.  Hides `uBase`, `ms`,
+    `c3`, and `u4_new` so the named spec statement exposes only 1 let (`c3`
+    for the borrow hypothesis) rather than 30+. -/
+@[irreducible]
+def n4McaNamedSkipPost
+    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
+  let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+  let ms    := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+  let c3    := ms.2.2.2.2
+  let u4_new := uTop - c3
+  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+  (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_new) ** (.x6 ↦ᵣ uBase) **
+  (.x7 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ ms.2.2.2.1) **
+  (.x0 ↦ᵣ 0) **
+  (sp + signExtend12 3976 ↦ₘ j) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ ms.1) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ ms.2.1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ ms.2.2.1) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ms.2.2.2.1) **
+  ((uBase + signExtend12 4064) ↦ₘ u4_new)
+
+theorem n4McaNamedSkipPost_unfold
+    {sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word} :
+    n4McaNamedSkipPost sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+      (let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+       let ms    := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+       let c3    := ms.2.2.2.2
+       let u4_new := uTop - c3
+       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+       (.x1 ↦ᵣ j) ** (.x5 ↦ᵣ u4_new) ** (.x6 ↦ᵣ uBase) **
+       (.x7 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ c3) ** (.x2 ↦ᵣ ms.2.2.2.1) **
+       (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3976 ↦ₘ j) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ ms.1) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ ms.2.1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ ms.2.2.1) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ ms.2.2.2.1) **
+       ((uBase + signExtend12 4064) ↦ₘ u4_new)) := by
+  delta n4McaNamedSkipPost; rfl
+
+/-- Named-postcondition no-NOP wrapper for
+    `divK_mulsub_correction_skip_spec_within_noNop`. Exposes only 1 statement
+    let (`c3 := (mulsubN4 ...).2.2.2.2`) for the borrow hypothesis; all other
+    mulsub intermediates are hidden inside `n4McaNamedSkipPost`. -/
+theorem divK_mulsub_correction_skip_named_spec_within_noNop
+    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
+    (base : Word) :
+    let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+    let c3 := (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+    -- Hypothesis: mulsub borrow = 0
+    (if BitVec.ult uTop c3 then (1 : Word) else 0) = (0 : Word) →
+    cpsTripleWithin 54 (base + div128CallRetOff) (base + storeLoopOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+       (.x1 ↦ᵣ v1Old) ** (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x2 ↦ᵣ v2Old) **
+       (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3976 ↦ₘ j) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
+      (n4McaNamedSkipPost sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase c3 hborrow
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [n4McaNamedSkipPost_unfold]; exact hp)
+    (divK_mulsub_correction_skip_spec_within_noNop sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      v1Old v5Old v6Old v7Old v10Old v2Old base hborrow)
+
 end EvmAsm.Evm64
