@@ -179,26 +179,56 @@ theorem evmDivPhaseABN1ClzC2NormBPost_unfold
   delta evmDivPhaseABN1ClzC2NormBPost
   rfl
 
+/-- Full postcondition for phaseAB + CLZ + phaseC2 + NormB, bundling all 6
+    derived values (shift, antiShift, b0'..b3') from just the input b-limbs.
+    Eliminates statement `let`-chains from callers. -/
+@[irreducible]
+def evmDivPhaseABN1ClzC2NormBFullPost (sp b0 b1 b2 b3 : Word) : Assertion :=
+  let shift := (clzResult b0).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
+  evmDivPhaseABN1ClzC2NormBPost sp b0 b3 shift antiShift b0' b1' b2' b3'
+
+theorem evmDivPhaseABN1ClzC2NormBFullPost_unfold {sp b0 b1 b2 b3 : Word} :
+    evmDivPhaseABN1ClzC2NormBFullPost sp b0 b1 b2 b3 =
+      (let shift := (clzResult b0).1
+       let antiShift := signExtend12 (0 : BitVec 12) - shift
+       let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+       let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+       let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+       let b0' := b0 <<< (shift.toNat % 64)
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0') ** (.x10 ↦ᵣ b3) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ shift) ** (.x7 ↦ᵣ (b0 >>> (antiShift.toNat % 64))) ** (.x2 ↦ᵣ antiShift) **
+       ((sp + 32) ↦ₘ b0') ** ((sp + 40) ↦ₘ b1') **
+       ((sp + 48) ↦ₘ b2') ** ((sp + 56) ↦ₘ b3') **
+       ((sp + signExtend12 4088) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4080) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4072) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4064) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4016) ↦ₘ (0 : Word)) ** ((sp + signExtend12 4008) ↦ₘ (0 : Word)) **
+       ((sp + signExtend12 4000) ↦ₘ (0 : Word)) ** ((sp + signExtend12 3984) ↦ₘ (1 : Word)) **
+       ((sp + signExtend12 3992) ↦ₘ shift)) := by
+  delta evmDivPhaseABN1ClzC2NormBFullPost evmDivPhaseABN1ClzC2NormBPost; rfl
+
 theorem evm_div_phaseAB_n1_clz_c2_normB_spec_within_noNop (sp base : Word)
     (b0 b1 b2 b3 v5 v6 v7 v10 : Word)
     (q0 q1 q2 q3 u5 u6 u7 nMem shiftMem : Word)
     (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
     (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0)
     (hshift_nz : (clzResult b0).1 ≠ 0) :
-    let shift := (clzResult b0).1
-    let antiShift := signExtend12 (0 : BitVec 12) - shift
-    let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
-    let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
-    let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
-    let b0' := b0 <<< (shift.toNat % 64)
     cpsTripleWithin (8 + 21 + 24 + 4 + 21) base (base + normAOff) (divCode_noNop base)
       (evmDivPhaseABN1ClzC2NormBPre sp v5 v6 v7 v10 b0 b1 b2 b3
         q0 q1 q2 q3 u5 u6 u7 nMem shiftMem)
-      (evmDivPhaseABN1ClzC2NormBPost sp b0 b3 shift antiShift
-        b0' b1' b2' b3') := by
-  intro shift antiShift b3' b2' b1' b0'
-  rw [evmDivPhaseABN1ClzC2NormBPre_unfold,
-      evmDivPhaseABN1ClzC2NormBPost_unfold]
+      (evmDivPhaseABN1ClzC2NormBFullPost sp b0 b1 b2 b3) := by
+  simp only [evmDivPhaseABN1ClzC2NormBPre_unfold,
+             evmDivPhaseABN1ClzC2NormBFullPost_unfold]
+  let shift := (clzResult b0).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let b3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let b2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let b1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let b0' := b0 <<< (shift.toNat % 64)
   have hC2 := evm_div_phaseAB_n1_clz_c2_spec_within_noNop sp base
     b0 b1 b2 b3 v5 v6 v7 v10 q0 q1 q2 q3 u5 u6 u7 nMem shiftMem
     hbnz hb3z hb2z hb1z hshift_nz
@@ -259,7 +289,7 @@ theorem evm_div_n1_to_loopSetup_spec_within_noNop (sp base : Word)
     b0 b1 b2 b3 v5 v6 v7 v10 q0 q1 q2 q3 u5 u6 u7 nMem shiftMem
     hbnz hb3z hb2z hb1z hshift_nz
   simp only [evmDivPhaseABN1ClzC2NormBPre_unfold,
-      evmDivPhaseABN1ClzC2NormBPost_unfold] at hNB
+      evmDivPhaseABN1ClzC2NormBFullPost_unfold] at hNB
   have hNBf := cpsTripleWithin_frameR
     ((.x1 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
      ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
