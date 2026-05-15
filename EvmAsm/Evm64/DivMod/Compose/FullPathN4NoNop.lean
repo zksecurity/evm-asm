@@ -13,6 +13,30 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 open EvmAsm.Rv64.AddrNorm (se12_32 se12_40 se12_48 se12_56)
 
+/-- Bundled postcondition for `divK_loop_body_n4_call_skip_j0_norm_noNop`.
+    Hides `dLo` and `div_un0` (divisor-half-word scratch values computed
+    from `v3` and `u3`) so the spec statement has a single `let qHat` rather
+    than three statement-level lets. -/
+@[irreducible]
+def n4CallSkipJ0NormPost (sp base v3 u3 uTop v0 v1 v2 u0 u1 u2 : Word) : Assertion :=
+  loopBodyN4SkipPost sp (0 : Word) (div128Quot uTop u3 v3)
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v3) **
+  (sp + signExtend12 3952 ↦ₘ (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat) **
+  (sp + signExtend12 3944 ↦ₘ (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)
+
+theorem n4CallSkipJ0NormPost_unfold
+    {sp base v3 u3 uTop v0 v1 v2 u0 u1 u2 : Word} :
+    n4CallSkipJ0NormPost sp base v3 u3 uTop v0 v1 v2 u0 u1 u2 =
+      (loopBodyN4SkipPost sp (0 : Word) (div128Quot uTop u3 v3)
+         v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+       (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+       (sp + signExtend12 3960 ↦ₘ v3) **
+       (sp + signExtend12 3952 ↦ₘ (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat) **
+       (sp + signExtend12 3944 ↦ₘ (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat)) := by
+  delta n4CallSkipJ0NormPost; rfl
+
 /-- Loop body n=4, call+skip, j=0 with sp-relative addresses over `divCode_noNop`. -/
 theorem divK_loop_body_n4_call_skip_j0_norm_noNop (sp base : Word)
     (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
@@ -21,8 +45,6 @@ theorem divK_loop_body_n4_call_skip_j0_norm_noNop (sp base : Word)
     (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
     (hbltu : BitVec.ult uTop v3) :
     let qHat := div128Quot uTop u3 v3
-    let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-    let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
     (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3)
      then (1 : Word) else 0) = (0 : Word) →
     cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
@@ -41,19 +63,18 @@ theorem divK_loop_body_n4_call_skip_j0_norm_noNop (sp base : Word)
        (sp + signExtend12 3960 ↦ₘ dMem) **
        (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
-      (loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
-       (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
-       (sp + signExtend12 3960 ↦ₘ v3) **
-       (sp + signExtend12 3952 ↦ₘ dLo) **
-       (sp + signExtend12 3944 ↦ₘ div_un0)) := by
-  intro qHat dLo div_un0 hborrow
+      (n4CallSkipJ0NormPost sp base v3 u3 uTop v0 v1 v2 u0 u1 u2) := by
+  intro qHat hborrow
   have raw := divK_loop_body_n4_call_skip_j0_divCode_noNop_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu
   have raw' := raw hborrow
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
              u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
-  exact cpsTripleWithin_mono_nSteps (by decide) raw'
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [n4CallSkipJ0NormPost_unfold]; exact hp)
+    (cpsTripleWithin_mono_nSteps (by decide) raw')
 
 /-- n=4 pre-loop + call+skip loop body over `divCode_noNop`: base → base+904
     (shift ≠ 0). -/
@@ -118,6 +139,7 @@ theorem evm_div_n4_preloop_call_skip_spec_noNop (sp base : Word)
     hbltu
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
+  rw [n4CallSkipJ0NormPost_unfold] at hLoop'
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **

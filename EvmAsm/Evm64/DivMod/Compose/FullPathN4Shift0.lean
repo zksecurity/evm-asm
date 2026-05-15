@@ -199,6 +199,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec_noNop (sp base : Word)
     hbltu
   intro_lets at hLoop
   have hLoop' := hLoop hborrow
+  rw [n4CallSkipJ0NormPost_unfold] at hLoop'
   have hLoopF := cpsTripleWithin_frameR
     (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
      ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
