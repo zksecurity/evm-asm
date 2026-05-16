@@ -304,4 +304,15 @@ theorem sdivSignFixedWord_zero_sign (word : EvmWord) :
   simp only [hzero, hxor, hult0, if_neg hbool, hadd0]
   exact sdivWord_from_getLimbN word
 
+/-- Conditional result-sign fixup maps a zero quotient to the zero word. -/
+theorem sdivSignFixedWord_zero_quotient
+    (dividendTop divisorTop : Word) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    sdivSignFixedWord resultSign 0 0 0 0 = 0 := by
+  dsimp
+  unfold sdivSignFixedWord EvmWord.fromLimbs
+  bv_decide
+
 end EvmAsm.Evm64.SDiv.Compose
