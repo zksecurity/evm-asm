@@ -140,6 +140,28 @@ theorem saveRaDivCallCallableReturnSignFixedWordPost_unfold
   delta saveRaDivCallCallableReturnSignFixedWordPost
   rfl
 
+theorem saveRaDivCallCallableReturnSignFixedWordPost_pcFree
+    {vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word} :
+    (saveRaDivCallCallableReturnSignFixedWordPost vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).pcFree := by
+  rw [saveRaDivCallCallableReturnSignFixedWordPost_unfold]
+  dsimp
+  rw [saveRaDivCallBzeroSavedRaRetFrame_unfold,
+    EvmAsm.Evm64.divScratchOwnCall_unfold,
+    EvmAsm.Evm64.divScratchOwn_unfold]
+  pcFree
+
+instance pcFreeInst_saveRaDivCallCallableReturnSignFixedWordPost
+    (vRa sp base dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
+    EvmAsm.Rv64.Assertion.PCFree
+      (saveRaDivCallCallableReturnSignFixedWordPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :=
+  ⟨saveRaDivCallCallableReturnSignFixedWordPost_pcFree⟩
+
 /-- Exact-callable return postcondition view with the result slot folded as the
     named sign-fixed SDIV word. -/
 theorem saveRaDivCallCallableReturnPost_evmWordIs
