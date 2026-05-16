@@ -127,6 +127,63 @@ theorem evm_lt_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
+/-- Bundled postcondition for `evm_lt_spec_within` (register/memory level).
+    Hides 14 borrow-chain lets. -/
+@[irreducible]
+def evmLtLimbPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
+  let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
+  let temp1 := a1 - b1
+  let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+  let borrow1 := borrow1a ||| borrow1b
+  let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
+  let temp2 := a2 - b2
+  let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+  let borrow2 := borrow2a ||| borrow2b
+  let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
+  let temp3 := a3 - b3
+  let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
+  let borrow3 := borrow3a ||| borrow3b
+  (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ temp3) ** (.x6 ↦ᵣ borrow3b) **
+  (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
+  (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + 32) ↦ₘ borrow3) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)
+
+theorem evmLtLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    evmLtLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
+      (let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
+       let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
+       let temp1 := a1 - b1
+       let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+       let borrow1 := borrow1a ||| borrow1b
+       let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
+       let temp2 := a2 - b2
+       let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+       let borrow2 := borrow2a ||| borrow2b
+       let borrow3a := if BitVec.ult a3 b3 then (1 : Word) else 0
+       let temp3 := a3 - b3
+       let borrow3b := if BitVec.ult temp3 borrow2 then (1 : Word) else 0
+       let borrow3 := borrow3a ||| borrow3b
+       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ temp3) ** (.x6 ↦ᵣ borrow3b) **
+       (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ borrow3) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
+  delta evmLtLimbPost; rfl
+
+/-- Named-postcondition wrapper for `evm_lt_spec_within`.
+    0 statement-level lets; postcondition is opaque `evmLtLimbPost`. -/
+theorem evm_lt_named_spec_within (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
+    cpsTripleWithin 26 base (base + 104) (evm_lt_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      (evmLtLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmLtLimbPost_unfold]; exact hp)
+    (evm_lt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
+
 /-- Bundled postcondition for `evm_lt_stack_spec_within` (EvmWord level).
     Hides all 18 limb-extraction and borrow-chain lets. -/
 @[irreducible]
