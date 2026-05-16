@@ -107,7 +107,7 @@ theorem expIterBodyFullMsbSavedBitTwoMulCode_save_bit_sub {base : Word}
     (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       squaringMulOff condMulOff skipOff backOff)
     EvmAsm.Evm64.exp_save_bit_block 3
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expLoopSquareProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       simp only [EvmAsm.Rv64.seq]
@@ -133,7 +133,7 @@ theorem expIterBodyFullMsbSavedBitTwoMulCode_squaring_sub {base : Word}
     (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       squaringMulOff condMulOff skipOff backOff)
     (EvmAsm.Evm64.exp_squaring_call_block squaringMulOff) 4
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expLoopCondMulProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       simp only [EvmAsm.Rv64.seq]
@@ -160,7 +160,7 @@ theorem expIterBodyFullMsbSavedBitTwoMulCode_cond_mul_sub {base : Word}
       squaringMulOff condMulOff skipOff backOff)
     (EvmAsm.Evm64.exp_cond_mul_call_with_saved_bit_skip_block
       condMulOff skipOff) 30
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expSavedBitCondMulProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       simp only [EvmAsm.Rv64.seq]
@@ -185,7 +185,7 @@ theorem expIterBodyFullMsbSavedBitTwoMulCode_loop_back_sub {base : Word}
     (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       squaringMulOff condMulOff skipOff backOff)
     (EvmAsm.Evm64.exp_loop_back backOff) 57
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expSavedBitLoopBackProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       simp only [EvmAsm.Rv64.seq]
