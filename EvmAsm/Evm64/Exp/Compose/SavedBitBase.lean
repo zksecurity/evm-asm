@@ -84,7 +84,7 @@ theorem evmExpMsbSavedBitCode_pointer_advance_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 24)
     (EvmAsm.Evm64.evm_exp_msb_saved_bit mulOff skipOff backOff)
     EvmAsm.Evm64.exp_loop_pointer_advance 6
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expTopPointerAdvanceProgramAddr base)
     (by
       unfold EvmAsm.Evm64.evm_exp_msb_saved_bit
       simp only [EvmAsm.Rv64.seq]
@@ -107,7 +107,7 @@ theorem evmExpMsbSavedBitCode_iter_body_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 28)
     (EvmAsm.Evm64.evm_exp_msb_saved_bit mulOff skipOff backOff)
     (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit mulOff skipOff backOff) 7
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expTopIterBodyProgramAddr base)
     (by
       unfold EvmAsm.Evm64.evm_exp_msb_saved_bit
       simp only [EvmAsm.Rv64.seq]
@@ -130,7 +130,7 @@ theorem evmExpMsbSavedBitCode_pointer_restore_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 264)
     (EvmAsm.Evm64.evm_exp_msb_saved_bit mulOff skipOff backOff)
     EvmAsm.Evm64.exp_loop_pointer_restore 66
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expTopEpilogueProgramAddr base)
     (by
       unfold EvmAsm.Evm64.evm_exp_msb_saved_bit
       simp only [EvmAsm.Rv64.seq]
@@ -152,7 +152,7 @@ theorem evmExpMsbSavedBitCode_epilogue_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 268)
     (EvmAsm.Evm64.evm_exp_msb_saved_bit mulOff skipOff backOff)
     EvmAsm.Evm64.exp_epilogue 67
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expSavedBitEpilogueProgramAddr base)
     (by
       unfold EvmAsm.Evm64.evm_exp_msb_saved_bit
       simp only [EvmAsm.Rv64.seq]
