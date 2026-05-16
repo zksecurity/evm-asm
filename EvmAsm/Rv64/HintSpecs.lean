@@ -337,7 +337,7 @@ theorem ecall_read_input_spec_gen_within
   refine ⟨1, Nat.le_refl 1, s2.setPC (s.pc + 4),
     ?_, by simp [MachineState.setPC, s2, s1], ?_⟩
   · show (step s).bind (stepN 0) = some _
-    simp only [hstep, s1, s2, hx10, hx11, hbase, hpi, stepN, Option.bind_some]
+    simp only [hstep, s1, s2, hx10, hx11, stepN, Option.bind_some]
   · -- POST: build using two successive setMem updates then setPC.
     -- Permute PRE to have (a0 ↦ₘ old_ptr) first
     have hPR' : ((ptr_a0 ↦ₘ old_ptr) **
