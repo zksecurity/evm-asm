@@ -322,6 +322,44 @@ theorem shl_first_limb_named_spec_within (dst_off : BitVec 12)
     (fun _ hp => hp) (fun _ hp => hp)
     (shl_first_limb_spec_within dst_off sp src dstOld v5 bit_shift base)
 
+/-- Bundled postcondition for `shl_merge_limb_spec_within`. Hides shiftedSrc/Prev/result. -/
+@[irreducible]
+def shlMergeLimbPost (sp : Word) (src_off prev_off dst_off : BitVec 12)
+    (src prev bit_shift antiShift mask : Word) : Assertion :=
+  let shiftedSrc := src <<< (bit_shift.toNat % 64)
+  let shiftedPrev := (prev >>> (antiShift.toNat % 64)) &&& mask
+  let result := shiftedSrc ||| shiftedPrev
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+  (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedPrev) ** (.x11 ↦ᵣ mask) **
+  ((sp + signExtend12 src_off) ↦ₘ src) ** ((sp + signExtend12 prev_off) ↦ₘ prev) **
+  ((sp + signExtend12 dst_off) ↦ₘ result)
+
+theorem shlMergeLimbPost_unfold (sp : Word) (src_off prev_off dst_off : BitVec 12)
+    (src prev bit_shift antiShift mask : Word) :
+    shlMergeLimbPost sp src_off prev_off dst_off src prev bit_shift antiShift mask =
+      (let shiftedSrc := src <<< (bit_shift.toNat % 64)
+       let shiftedPrev := (prev >>> (antiShift.toNat % 64)) &&& mask
+       let result := shiftedSrc ||| shiftedPrev
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedPrev) ** (.x11 ↦ᵣ mask) **
+       ((sp + signExtend12 src_off) ↦ₘ src) ** ((sp + signExtend12 prev_off) ↦ₘ prev) **
+       ((sp + signExtend12 dst_off) ↦ₘ result)) := by
+  delta shlMergeLimbPost; rfl
+
+/-- Named wrapper for `shl_merge_limb_spec_within`. 0 statement lets. -/
+theorem shl_merge_limb_named_spec_within (src_off prev_off dst_off : BitVec 12)
+    (sp src prev dstOld v5 v10 bit_shift antiShift mask : Word) (base : Word) :
+    cpsTripleWithin 7 base (base + 28) (shl_merge_limb_code base src_off prev_off dst_off)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ mask) **
+       ((sp + signExtend12 src_off) ↦ₘ src) ** ((sp + signExtend12 prev_off) ↦ₘ prev) **
+       ((sp + signExtend12 dst_off) ↦ₘ dstOld))
+      (shlMergeLimbPost sp src_off prev_off dst_off src prev bit_shift antiShift mask) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [shlMergeLimbPost_unfold]; exact hp)
+    (shl_merge_limb_spec_within src_off prev_off dst_off sp src prev dstOld v5 v10 bit_shift antiShift mask base)
+
 /-- Bundled postcondition for `shl_merge_limb_inplace_spec_within`. -/
 @[irreducible]
 def shlMergeInplaceLimbPost (sp : Word) (off prev_off : BitVec 12)
@@ -356,5 +394,4 @@ theorem shl_merge_limb_inplace_named_spec_within (off prev_off : BitVec 12)
     (fun _ hp => hp)
     (fun _ hp => by simp only [shlMergeInplaceLimbPost_unfold]; exact hp)
     (shl_merge_limb_inplace_spec_within off prev_off sp src prev v5 v10 bit_shift antiShift mask base)
-
 end EvmAsm.Evm64
