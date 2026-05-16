@@ -335,6 +335,30 @@ theorem sdivAbsDivisorWord_sign_split
   unfold sdivAbsDivisorWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
   bv_decide
 
+/-- Nonnegative SDIV divisors are unchanged by absolute-value normalization. -/
+theorem sdivAbsDivisorWord_zero_sign
+    {divisor : EvmWord}
+    (h_sign : divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = 0) :
+    sdivAbsDivisorWord
+        (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3) =
+      divisor := by
+  rw [sdivAbsDivisorWord_sign_split, if_pos h_sign]
+
+/-- Negative SDIV divisors normalize to their two's-complement negation. -/
+theorem sdivAbsDivisorWord_one_sign
+    {divisor : EvmWord}
+    (h_sign : divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = 1) :
+    sdivAbsDivisorWord
+        (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3) =
+      ~~~divisor + 1 := by
+  have h_not_zero :
+      divisor.getLimbN 3 >>> (63 : BitVec 6).toNat ≠ 0 := by
+    rw [h_sign]
+    decide
+  rw [sdivAbsDivisorWord_sign_split, if_neg h_not_zero]
+
 /-- The SDIV dividend absolute-value word is zero exactly for the zero
     dividend. This mirrors the divisor bridge for semantic stack views that
     reason about wrapper-normalized operands. -/
