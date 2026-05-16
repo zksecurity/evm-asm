@@ -110,11 +110,14 @@ def halt : Nat := 0x00
 /-- Host `write_output(ptr, size)` framing selector. -/
 def commit : Nat := 0x10
 
-/-- HINT_LEN framing selector (matches `Rv64.HintSpecs`). -/
+/-- HINT_LEN framing selector (matches `Rv64.HintSpecs`). Deprecated: use `readInput` (0xF2) instead. -/
 def hintLen : Nat := 0xF0
 
-/-- HINT_READ framing selector (matches `Rv64.RLP.Phase4HintRead`). -/
+/-- HINT_READ framing selector (matches `Rv64.RLP.Phase4HintRead`). Deprecated. -/
 def hintRead : Nat := 0xF1
+
+/-- `read_input` framing selector (zkvm-standards C ABI, matches `Rv64.HintSpecs.ecall_read_input_spec_gen_within`). -/
+def readInput : Nat := 0xF2
 
 /-! ## Sanity properties
 
