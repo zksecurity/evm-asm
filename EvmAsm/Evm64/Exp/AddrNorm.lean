@@ -394,6 +394,50 @@ theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_disjoint_addr
       base + 304 + BitVec.ofNat 64 (4 * k2) := by
   bv_omega
 
+theorem expCallBlock_factor1_factor2_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 8) (hk2 : k2 < 8) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 32 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_factor1_square_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 8) (hk2 : k2 < 1) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 64 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_factor2_square_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 8) (hk2 : k2 < 1) :
+    base + 32 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 64 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_factor1_restore_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 8) (hk2 : k2 < 9) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 68 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_factor2_restore_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 8) (hk2 : k2 < 9) :
+    base + 32 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 68 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_square_restore_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 1) (hk2 : k2 < 9) :
+    base + 64 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 68 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expCallBlock_factor2_end_addr (base : Word) :
+    (base + 32 : Word) + BitVec.ofNat 64 (4 * 8) = base + 64 := by
+  bv_omega
+
+theorem expCallBlock_square_end_addr (base : Word) :
+    (base + 64 : Word) + BitVec.ofNat 64 (4 * 1) = base + 68 := by
+  bv_omega
+
 @[exp_addr, grind =] theorem expSavedBitCondMulProgramAddr (base : Word) :
     (base + 120 : Word) = base + BitVec.ofNat 64 (4 * 30) := by
   bv_decide
