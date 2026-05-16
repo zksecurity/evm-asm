@@ -23,12 +23,6 @@ abbrev expBoundaryCode (base : Word) : CodeReq :=
     CodeReq.ofProg (base + 24) EvmAsm.Evm64.exp_epilogue
   ]
 
-theorem expBoundaryCode_prologue_epilogue_disjoint_addr
-    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 6) (hk2 : k2 < 9) :
-    base + BitVec.ofNat 64 (4 * k1) ≠
-      base + 24 + BitVec.ofNat 64 (4 * k2) := by
-  bv_omega
-
 theorem expBoundaryCode_prologue_sub {base : Word} :
     ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_prologue) a = some i →
       (expBoundaryCode base) a = some i := by
@@ -44,7 +38,8 @@ theorem expBoundaryCode_epilogue_sub {base : Word} :
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_prologue_len, exp_epilogue_len] at hk1 hk2
-      exact expBoundaryCode_prologue_epilogue_disjoint_addr base hk1 hk2))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expBoundaryCode_prologue_epilogue_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expBoundaryCode_block_subs {base : Word} :
