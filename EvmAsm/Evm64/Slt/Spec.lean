@@ -109,6 +109,65 @@ theorem evm_slt_spec_within (sp : Word) (base : Word)
     have S3 := sd_x0_spec_gen_within .x12 (sp + 32) b3 24 (base + 96)
     runBlock M B S J A S0 S1 S2 S3
 
+/-- Bundled postcondition for `evm_slt_spec_within` (register/memory level).
+    Hides 12 borrow-chain and signed-compare lets.
+    `v11` is needed since it appears conditionally in the postcondition. -/
+@[irreducible]
+def evmSltLimbPost (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
+  let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
+  let temp1 := a1 - b1
+  let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+  let borrow1 := borrow1a ||| borrow1b
+  let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
+  let temp2 := a2 - b2
+  let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+  let borrow2 := borrow2a ||| borrow2b
+  let sltMsb := if BitVec.slt a3 b3 then (1 : Word) else 0
+  let result := if a3 = b3 then borrow2 else sltMsb
+  (.x12 ↦ᵣ (sp + 32)) **
+  (.x7 ↦ᵣ (if a3 = b3 then temp2 else a3)) **
+  (.x6 ↦ᵣ (if a3 = b3 then borrow2b else b3)) **
+  (.x5 ↦ᵣ result) **
+  (.x11 ↦ᵣ (if a3 = b3 then borrow2a else v11)) **
+  (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)
+
+theorem evmSltLimbPost_unfold (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    evmSltLimbPost sp v11 a0 a1 a2 a3 b0 b1 b2 b3 =
+      (let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
+       let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
+       let temp1 := a1 - b1
+       let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+       let borrow1 := borrow1a ||| borrow1b
+       let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
+       let temp2 := a2 - b2
+       let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+       let borrow2 := borrow2a ||| borrow2b
+       let sltMsb := if BitVec.slt a3 b3 then (1 : Word) else 0
+       let result := if a3 = b3 then borrow2 else sltMsb
+       (.x12 ↦ᵣ (sp + 32)) **
+       (.x7 ↦ᵣ (if a3 = b3 then temp2 else a3)) **
+       (.x6 ↦ᵣ (if a3 = b3 then borrow2b else b3)) **
+       (.x5 ↦ᵣ result) **
+       (.x11 ↦ᵣ (if a3 = b3 then borrow2a else v11)) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
+  delta evmSltLimbPost; rfl
+
+/-- Named-postcondition wrapper for `evm_slt_spec_within`.
+    0 statement-level lets; postcondition is opaque `evmSltLimbPost`. -/
+theorem evm_slt_named_spec_within (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
+    cpsTripleWithin 25 base (base + 100) (evm_slt_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      (evmSltLimbPost sp v11 a0 a1 a2 a3 b0 b1 b2 b3) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmSltLimbPost_unfold]; exact hp)
+    (evm_slt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
 
 -- ============================================================================
 -- Stack-level SLT spec
