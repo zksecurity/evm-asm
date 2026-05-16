@@ -30,7 +30,7 @@ theorem sdivCode_wrapper_sub {base : Word} :
       (sdivCode base) a = some i := by
   unfold sdivCode
   exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base base evm_sdiv evm_sdiv_wrapper 0
-    (by bv_omega)
+    (EvmAsm.Evm64.SDiv.AddrNorm.wrapperStart_addr base)
     (by unfold evm_sdiv; simp only [EvmAsm.Rv64.seq, EvmAsm.Rv64.Program]; rfl)
     (by
       rw [evm_sdiv_length, evm_sdiv_wrapper_length]
@@ -48,8 +48,7 @@ theorem sdivCode_div_callable_sub {base : Word} :
   unfold sdivCode
   exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + 284)
     evm_sdiv evm_div_callable 71
-    (by
-      bv_omega)
+    (EvmAsm.Evm64.SDiv.AddrNorm.divCallableStart_addr base)
     (by
       unfold evm_sdiv EvmAsm.Rv64.seq
       rw [← evm_sdiv_wrapper_length]

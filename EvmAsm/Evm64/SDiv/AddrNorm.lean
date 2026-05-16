@@ -88,4 +88,18 @@ attribute [sdiv_addr]
   unfold EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
   exact stackSlot56 sp
 
+/-- The wrapper starts at the enclosing SDIV program base. -/
+@[sdiv_addr]
+theorem wrapperStart_addr (base : Word) :
+    base = base + BitVec.ofNat 64 (4 * 0) := by
+  bv_decide
+
+/-- The appended unsigned DIV callable starts after the 71-instruction wrapper,
+    at byte offset 284 from the enclosing SDIV program base. -/
+@[sdiv_addr]
+theorem divCallableStart_addr (base : Word) :
+    base + (284 : Word) =
+      base + BitVec.ofNat 64 (4 * 71) := by
+  bv_decide
+
 end EvmAsm.Evm64.SDiv.AddrNorm
