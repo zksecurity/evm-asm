@@ -35,5 +35,23 @@ theorem and_limb_spec_within (offA offB : BitVec 12)
   have S := sd_spec_gen_within .x12 .x7 sp (aLimb &&& bLimb) bLimb offB (base + 12)
   runBlock L0 L1 A S
 
+/-- Code requirement for `and_limb_spec_within`. -/
+abbrev andLimbCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
+  CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
+  (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
+  (CodeReq.union (CodeReq.singleton (base + 8) (.AND .x7 .x7 .x6))
+   (CodeReq.singleton (base + 12) (.SD .x12 .x7 offB))))
+
+/-- Named-postcondition wrapper for `and_limb_spec_within`. 0 statement lets. -/
+theorem and_limb_named_spec_within (offA offB : BitVec 12)
+    (sp aLimb bLimb v7 v6 : Word) (base : Word) :
+    cpsTripleWithin 4 base (base + 16) (andLimbCode offA offB base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
+       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb))
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (aLimb &&& bLimb)) ** (.x6 ↦ᵣ bLimb) **
+       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ (aLimb &&& bLimb))) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp) (fun _ hp => hp)
+    (and_limb_spec_within offA offB sp aLimb bLimb v7 v6 base)
 
 end EvmAsm.Evm64
