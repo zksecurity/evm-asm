@@ -354,6 +354,10 @@ attribute [exp_addr]
     (base + 228 : Word) = base + BitVec.ofNat 64 (4 * 57) := by
   bv_decide
 
+@[exp_addr, grind =] theorem expSavedBitEpilogueProgramAddr (base : Word) :
+    (base + 268 : Word) = base + BitVec.ofNat 64 (4 * 67) := by
+  bv_decide
+
 @[exp_addr, grind =] theorem expBaseAdd40Aligned
     (base : Word) (hbase : base &&& 1 = 0) :
     (base + 40 : Word) &&& 1 = 0 := by bv_decide
