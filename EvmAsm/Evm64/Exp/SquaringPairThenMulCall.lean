@@ -131,9 +131,12 @@ theorem exp_loop_un_marshal_and_restore_word_spec_within
         unfold signExtend12; bv_decide
       rw [h0, h8, h16, h24]
       unfold evmWordIs at hp
-      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 := by bv_omega
-      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 := by bv_omega
-      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 := by bv_omega
+      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add8 evmSp
+      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add16 evmSp
+      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add24 evmSp
       rw [hSrc8, hSrc16, hSrc24] at hp
       xperm_hyp hp)
     (fun _ hp => by
@@ -161,9 +164,12 @@ theorem exp_loop_un_marshal_and_restore_word_spec_within
         unfold signExtend12; bv_decide
       have hSp24 : (sp + signExtend12 (24 : BitVec 12) : Word) = sp + 24 := by
         unfold signExtend12; bv_decide
-      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 := by bv_omega
-      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 := by bv_omega
-      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 := by bv_omega
+      have hSrc8 : ((evmSp + 32) + 8 : Word) = evmSp + 40 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add8 evmSp
+      have hSrc16 : ((evmSp + 32) + 16 : Word) = evmSp + 48 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add16 evmSp
+      have hSrc24 : ((evmSp + 32) + 24 : Word) = evmSp + 56 :=
+        EvmAsm.Evm64.Exp.AddrNorm.expAdd32Add24 evmSp
       rw [hSp0, hSp8, hSp16, hSp24] at hp
       unfold evmWordIs
       rw [hSrc8, hSrc16, hSrc24]
@@ -412,7 +418,8 @@ theorem exp_squaring_call_block_spec_within
        (.x1 ↦ᵣ (base + 68)))
       (by pcFree) h2_lifted
   -- Exit pcs: (base+68) + 36 = base + 104.
-  have hexit : (base + 68 : Word) + 36 = base + 104 := by bv_omega
+  have hexit : (base + 68 : Word) + 36 = base + 104 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expCallBlockRestoreExitPc base
   rw [hexit] at h2_framed
   -- (4) Compose with mid-point permutation: align h1's post with
   -- h2_framed's pre.
