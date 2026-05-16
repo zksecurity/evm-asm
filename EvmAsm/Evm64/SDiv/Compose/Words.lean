@@ -337,4 +337,19 @@ theorem sdivSignFixedWord_bool_sign
   · rw [h_one, sdivSignFixedWord_one_sign]
     simp
 
+/-- Specialized boolean-sign split for the SDIV result sign derived from the
+    operand top limbs. -/
+theorem sdivSignFixedWord_result_sign
+    (dividendTop divisorTop : Word) (word : EvmWord) :
+    let resultSign :=
+      (dividendTop >>> (63 : BitVec 6).toNat) ^^^
+        (divisorTop >>> (63 : BitVec 6).toNat)
+    sdivSignFixedWord resultSign
+      (word.getLimbN 0) (word.getLimbN 1) (word.getLimbN 2) (word.getLimbN 3) =
+      if resultSign = 0 then word else ~~~word + 1 := by
+  dsimp
+  exact sdivSignFixedWord_bool_sign
+    ((dividendTop >>> 63) ^^^ (divisorTop >>> 63))
+    (sdivResultSign_bool dividendTop divisorTop) word
+
 end EvmAsm.Evm64.SDiv.Compose
