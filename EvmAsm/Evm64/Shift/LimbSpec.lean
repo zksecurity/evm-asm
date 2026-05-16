@@ -1022,4 +1022,37 @@ theorem shr_merge_limb_named_spec_within (src_off next_off dst_off : BitVec 12)
     (fun _ hp => by simp only [shrMergeLimbPost_unfold]; exact hp)
     (shr_merge_limb_spec_within src_off next_off dst_off sp src next dstOld v5 v10 bit_shift antiShift mask base)
 
+/-- Bundled postcondition for `shr_phase_b_spec_within`. Hides 5 computation lets. -/
+@[irreducible]
+def shrPhaseBPost (sp shift0 : Word) : Assertion :=
+  let bit_shift := shift0 &&& signExtend12 63
+  let limb_shift := shift0 >>> (6 : BitVec 6).toNat
+  let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
+  let mask := (0 : Word) - cond
+  let antiShift := (64 : Word) - bit_shift
+  (.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
+  (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))
+
+theorem shrPhaseBPost_unfold (sp shift0 : Word) :
+    shrPhaseBPost sp shift0 =
+      (let bit_shift := shift0 &&& signExtend12 63
+       let limb_shift := shift0 >>> (6 : BitVec 6).toNat
+       let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
+       let mask := (0 : Word) - cond
+       let antiShift := (64 : Word) - bit_shift
+       (.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) := by
+  delta shrPhaseBPost; rfl
+
+/-- Named wrapper for `shr_phase_b_spec_within`. 0 statement lets. -/
+theorem shr_phase_b_named_spec_within (shift0 sp r6 r7 r11 : Word) (base : Word) :
+    cpsTripleWithin 7 base (base + 28) (shr_phase_b_code base)
+      ((.x5 ↦ᵣ shift0) ** (.x6 ↦ᵣ r6) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x11 ↦ᵣ r11) ** (.x7 ↦ᵣ r7) ** (.x12 ↦ᵣ sp))
+      (shrPhaseBPost sp shift0) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [shrPhaseBPost_unfold]; exact hp)
+    (shr_phase_b_spec_within shift0 sp r6 r7 r11 base)
+
 end EvmAsm.Evm64
