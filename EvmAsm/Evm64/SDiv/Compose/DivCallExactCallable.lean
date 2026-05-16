@@ -91,10 +91,12 @@ theorem evm_div_callable_preserving_branch_return_x1_spec_in_sdivCode
         shiftMem nMem jMem retMem dMem dloMem scratchUn0)
       (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b **
         (.x1 ↦ᵣ branch.returnX1)) := by
-  exact evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode
-    sp base branch.returnX1 a b branch.x2 v5 v6 v7 v10 v11
-    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-    nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack
+  exact EvmAsm.Rv64.cpsTripleWithin_extend_code
+    (hmono := evm_div_callable_code_sub_sdivCode (base := base))
+    (EvmAsm.Evm64.evm_div_callable_spec_from_noNop_branch_return_x1
+      sp (base + wrapperEndOff) a b v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratchUn0 branch hStack)
 
 /-- Framed variant of
     `evm_div_callable_preserving_branch_return_x1_spec_in_sdivCode`. -/
