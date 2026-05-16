@@ -375,4 +375,17 @@ theorem sarBody3Post_unfold (sp bit_shift antiShift mask v3 : Word) :
        (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ signExt) ** ((sp + 16) ↦ₘ signExt) ** ((sp + 24) ↦ₘ signExt)) := by
   delta sarBody3Post; rfl
 
+/-- Named wrapper for `sar_last_limb_inplace_spec_within`. 0 statement lets.
+    Inlines mem = sp+24, result = sshiftRight src (bit_shift % 64). -/
+theorem sar_last_limb_inplace_named_spec_within
+    (sp src v5 bit_shift : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12) (sar_last_limb_inplace_code base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ src))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ BitVec.sshiftRight src (bit_shift.toNat % 64)) ** (.x6 ↦ᵣ bit_shift) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ BitVec.sshiftRight src (bit_shift.toNat % 64))) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp) (fun _ hp => hp)
+    (sar_last_limb_inplace_spec_within sp src v5 bit_shift base)
+
 end EvmAsm.Evm64

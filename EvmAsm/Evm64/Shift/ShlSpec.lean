@@ -455,4 +455,17 @@ theorem shlBody1Post_unfold (sp bit_shift antiShift mask v0 v1 v2 : Word) :
        (sp ↦ₘ 0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) := by
   delta shlBody1Post; rfl
 
+/-- Named wrapper for `shl_first_limb_inplace_spec_within`. 0 statement lets.
+    Inlines mem = sp+0, result = src <<< (bit_shift % 64). -/
+theorem shl_first_limb_inplace_named_spec_within
+    (sp src v5 bit_shift : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12) (shl_first_limb_inplace_code base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ src))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ src <<< (bit_shift.toNat % 64)) ** (.x6 ↦ᵣ bit_shift) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ src <<< (bit_shift.toNat % 64))) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp) (fun _ hp => hp)
+    (shl_first_limb_inplace_spec_within sp src v5 bit_shift base)
+
 end EvmAsm.Evm64
