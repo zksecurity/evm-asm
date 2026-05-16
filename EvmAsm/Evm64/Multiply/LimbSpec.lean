@@ -515,8 +515,100 @@ theorem evm_mul_spec_within (sp : Word) (base : Word)
   have S23EP := evm_mul_cols23ep_spec_within sp base a0 a1 b2 b3 c1_r2 c1_r3p b1 c0_r3p c1_cr2 c1_r3p
   runBlock S01 S23EP
 
+/-- Bundled postcondition for `evm_mul_spec_within`.
+    Hides 31 intermediate let-bindings so named-wrapper callers need 0 lets. -/
+@[irreducible]
+def evmMulLimbPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
+  let c0_r0 := a0 * b0
+  let c0_hi_a0b0 := rv64_mulhu a0 b0
+  let c0_lo_a1b0 := a1 * b0
+  let c0_hi_a1b0 := rv64_mulhu a1 b0
+  let c0_r1 := c0_hi_a0b0 + c0_lo_a1b0
+  let c0_c1 := if BitVec.ult c0_r1 c0_lo_a1b0 then (1 : Word) else 0
+  let c0_lo_a2b0 := a2 * b0
+  let c0_hi_a2b0 := rv64_mulhu a2 b0
+  let c0_r2 := c0_hi_a1b0 + c0_c1 + c0_lo_a2b0
+  let c0_c2 := if BitVec.ult c0_r2 c0_lo_a2b0 then (1 : Word) else 0
+  let c0_r3p := c0_hi_a2b0 + c0_c2 + a3 * b0
+  let c1_lo := a0 * b1
+  let c1_hi := rv64_mulhu a0 b1
+  let c1_r1 := c0_r1 + c1_lo
+  let c1_c1 := if BitVec.ult c1_r1 c1_lo then (1 : Word) else 0
+  let c1_rc := c1_hi + c1_c1
+  let c1_r2a := c0_r2 + c1_rc
+  let c1_cr1 := if BitVec.ult c1_r2a c1_rc then (1 : Word) else 0
+  let c1_lo2 := a1 * b1
+  let c1_hi2 := rv64_mulhu a1 b1
+  let c1_r2 := c1_r2a + c1_lo2
+  let c1_cr2 := if BitVec.ult c1_r2 c1_lo2 then (1 : Word) else 0
+  let c1_rc2 := c1_hi2 + c1_cr2
+  let c1_r3p := c1_cr1 + c1_rc2 + a2 * b1 + c0_r3p
+  let c2_lo := a0 * b2
+  let c2_hi := rv64_mulhu a0 b2
+  let c2_r2 := c1_r2 + c2_lo
+  let c2_c := if BitVec.ult c2_r2 c2_lo then (1 : Word) else 0
+  let c2_rc := c2_hi + c2_c + a1 * b2
+  let c2_r3 := c1_r3p + c2_rc
+  let r3_final := c2_r3 + a0 * b3
+  (.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ b3) ** (.x6 ↦ᵣ a0 * b3) ** (.x7 ↦ᵣ a1 * b2) **
+  (.x10 ↦ᵣ r3_final) ** (.x11 ↦ᵣ c2_r2) **
+  (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ c1_r3p) ** ((sp + 24) ↦ₘ c0_r3p) **
+  ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1) ** ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)
 
+theorem evmMulLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    evmMulLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
+      (let c0_r0 := a0 * b0
+       let c0_hi_a0b0 := rv64_mulhu a0 b0
+       let c0_lo_a1b0 := a1 * b0
+       let c0_hi_a1b0 := rv64_mulhu a1 b0
+       let c0_r1 := c0_hi_a0b0 + c0_lo_a1b0
+       let c0_c1 := if BitVec.ult c0_r1 c0_lo_a1b0 then (1 : Word) else 0
+       let c0_lo_a2b0 := a2 * b0
+       let c0_hi_a2b0 := rv64_mulhu a2 b0
+       let c0_r2 := c0_hi_a1b0 + c0_c1 + c0_lo_a2b0
+       let c0_c2 := if BitVec.ult c0_r2 c0_lo_a2b0 then (1 : Word) else 0
+       let c0_r3p := c0_hi_a2b0 + c0_c2 + a3 * b0
+       let c1_lo := a0 * b1
+       let c1_hi := rv64_mulhu a0 b1
+       let c1_r1 := c0_r1 + c1_lo
+       let c1_c1 := if BitVec.ult c1_r1 c1_lo then (1 : Word) else 0
+       let c1_rc := c1_hi + c1_c1
+       let c1_r2a := c0_r2 + c1_rc
+       let c1_cr1 := if BitVec.ult c1_r2a c1_rc then (1 : Word) else 0
+       let c1_lo2 := a1 * b1
+       let c1_hi2 := rv64_mulhu a1 b1
+       let c1_r2 := c1_r2a + c1_lo2
+       let c1_cr2 := if BitVec.ult c1_r2 c1_lo2 then (1 : Word) else 0
+       let c1_rc2 := c1_hi2 + c1_cr2
+       let c1_r3p := c1_cr1 + c1_rc2 + a2 * b1 + c0_r3p
+       let c2_lo := a0 * b2
+       let c2_hi := rv64_mulhu a0 b2
+       let c2_r2 := c1_r2 + c2_lo
+       let c2_c := if BitVec.ult c2_r2 c2_lo then (1 : Word) else 0
+       let c2_rc := c2_hi + c2_c + a1 * b2
+       let c2_r3 := c1_r3p + c2_rc
+       let r3_final := c2_r3 + a0 * b3
+       (.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ b3) ** (.x6 ↦ᵣ a0 * b3) ** (.x7 ↦ᵣ a1 * b2) **
+       (.x10 ↦ᵣ r3_final) ** (.x11 ↦ᵣ c2_r2) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ c1_r3p) ** ((sp + 24) ↦ₘ c0_r3p) **
+       ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1) ** ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)) := by
+  delta evmMulLimbPost; rfl
 
+/-- Named-postcondition wrapper for `evm_mul_spec_within`.
+    0 statement-level lets; postcondition is opaque `evmMulLimbPost`. -/
+theorem evm_mul_named_spec_within (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (v5 v6 v7 v10 v11 : Word) :
+    cpsTripleWithin 63 base (base + 252) (evm_mul_code base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      (evmMulLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmMulLimbPost_unfold]; exact hp)
+    (evm_mul_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11)
 
 
 
