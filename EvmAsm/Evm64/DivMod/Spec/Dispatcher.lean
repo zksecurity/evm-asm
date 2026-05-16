@@ -114,6 +114,40 @@ theorem divStackDispatchPost_weaken
     sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
       retMem dMem dloMem scratch_un0
 
+theorem divStackDispatchPostNoX1_weaken_frame
+    (sp : Word) (a b : EvmWord)
+    {v1 v2 v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
+    ∀ h,
+      (((.x12 ↦ᵣ (sp + 32)) **
+        (.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
+        (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
+        (.x0 ↦ᵣ (0 : Word)) **
+        evmWordIs sp a ** evmWordIs (sp + 32) (EvmWord.div a b) **
+        divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratch_un0) **
+       (.x1 ↦ᵣ v1)) h →
+      (divStackDispatchPostNoX1 sp a b ** (.x1 ↦ᵣ v1)) h := by
+  intro h hp
+  rw [divStackDispatchPostNoX1_unfold]
+  apply sepConj_mono_left _ h hp
+  intro hLeft hpLeft
+  apply sepConj_mono_right
+  apply sepConj_mono (regIs_implies_regOwn .x2 (v := v2))
+  apply sepConj_mono (regIs_implies_regOwn .x5 (v := v5))
+  apply sepConj_mono (regIs_implies_regOwn .x6 (v := v6))
+  apply sepConj_mono (regIs_implies_regOwn .x7 (v := v7))
+  apply sepConj_mono (regIs_implies_regOwn .x10 (v := v10))
+  apply sepConj_mono (regIs_implies_regOwn .x11 (v := v11))
+  apply sepConj_mono_right
+  apply sepConj_mono_right
+  apply sepConj_mono_right
+  exact divScratchValuesCall_implies_divScratchOwnCall
+    sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
+      retMem dMem dloMem scratch_un0
+  exact hpLeft
+
 /-- Final MOD stack-dispatch postcondition. -/
 @[irreducible]
 def modStackDispatchPost (sp : Word) (a b : EvmWord) : Assertion :=
