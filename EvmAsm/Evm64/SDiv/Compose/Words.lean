@@ -332,6 +332,16 @@ theorem sdivAbsDividendWord_eq_zero_iff
   unfold sdivAbsDividendWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
   bv_decide
 
+/-- Nonzero caller-visible dividends stay nonzero after the SDIV
+    absolute-value normalization. -/
+theorem sdivAbsDividendWord_ne_zero_of_ne_zero
+    {dividend : EvmWord} (h_ne : dividend ≠ 0) :
+    sdivAbsDividendWord
+        (dividend.getLimbN 0) (dividend.getLimbN 1)
+        (dividend.getLimbN 2) (dividend.getLimbN 3) ≠ 0 := by
+  intro h_abs_zero
+  exact h_ne ((sdivAbsDividendWord_eq_zero_iff dividend).mp h_abs_zero)
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
