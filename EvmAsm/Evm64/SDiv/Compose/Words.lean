@@ -272,4 +272,21 @@ theorem sdivAbsDivisorWord_zero :
   unfold sdivAbsDivisorWord EvmWord.fromLimbs
   bv_decide
 
+/-- Word produced by conditionally negating four quotient limbs with the SDIV
+    result sign. This names the post-result-sign-fix `fromLimbs` term so
+    stack-level views can fold the four memory atoms into one `evmWordIs`. -/
+def sdivSignFixedWord
+    (sign limb0 limb1 limb2 limb3 : Word) : EvmWord :=
+  let mask := (0 : Word) - sign
+  let sum0 := (limb0 ^^^ mask) + sign
+  let carry0 := if BitVec.ult sum0 sign then (1 : Word) else 0
+  let sum1 := (limb1 ^^^ mask) + carry0
+  let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+  let sum2 := (limb2 ^^^ mask) + carry1
+  let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+  let sum3 := (limb3 ^^^ mask) + carry2
+  EvmWord.fromLimbs fun i : Fin 4 =>
+    match i with
+    | 0 => sum0 | 1 => sum1 | 2 => sum2 | 3 => sum3
+
 end EvmAsm.Evm64.SDiv.Compose
