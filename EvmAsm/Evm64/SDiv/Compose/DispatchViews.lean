@@ -43,10 +43,10 @@ theorem resultSignFixPost_evmWordIs
   change
     (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
       (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-      (((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
-       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
-       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ sum3))) =
+      (((sp + EvmAsm.Rv64.signExtend12 (0 : BitVec 12)) ↦ₘ sum0) **
+       ((sp + EvmAsm.Rv64.signExtend12 (8 : BitVec 12)) ↦ₘ sum1) **
+       ((sp + EvmAsm.Rv64.signExtend12 (16 : BitVec 12)) ↦ₘ sum2) **
+       ((sp + EvmAsm.Rv64.signExtend12 (24 : BitVec 12)) ↦ₘ sum3))) =
      ((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x8 ↦ᵣ sign) **
       (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
       evmWordIs sp (EvmWord.fromLimbs fun i : Fin 4 =>
