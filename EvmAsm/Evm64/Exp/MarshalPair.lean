@@ -21,6 +21,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.LimbSpec
+import EvmAsm.Evm64.Exp.AddrNorm
 
 open EvmAsm.Rv64.Tactics
 
@@ -43,7 +44,8 @@ private theorem exp_loop_squaring_marshal_pair_codes_disjoint (base : Word) :
   intro k1 k2 hk1 hk2
   simp only [exp_loop_marshal_factor1_length,
     exp_loop_marshal_result_to_factor2_length] at hk1 hk2
-  bv_omega
+  exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor1_factor2_disjoint_addr
+    base hk1 hk2
 
 /-- factor1 sub-block ⊆ squaring marshal-pair code. -/
 theorem exp_loop_squaring_marshal_pair_code_factor1_sub
@@ -148,7 +150,8 @@ theorem exp_loop_squaring_marshal_pair_spec_within
   have hseq := cpsTripleWithin_seq_with_perm hd
     (fun _ hp => by xperm_hyp hp) h1Frame h2Frame
   -- Normalize the exit address (base + 32) + 32 → base + 64.
-  have hexit : (base + 32 : Word) + 32 = base + 64 := by bv_omega
+  have hexit : (base + 32 : Word) + 32 = base + 64 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expMarshalPairExitPc base
   rw [hexit] at hseq
   -- Permute pre and post into the natural shape.
   exact cpsTripleWithin_weaken
