@@ -133,4 +133,39 @@ theorem divK_trial_max_spec_within (v11Old : Word) (base : Word) :
   rw [ha] at I1
   runBlock I0 I1
 
+/-- Bundled postcondition for `divK_trial_load_u_spec_within`.
+    Hides the intermediate `jpn`, `jpnX8`, `u0_base`, and `uAddr` address
+    computations so callers can reason about the postcondition opaquely. -/
+@[irreducible]
+def divKTrialLoadUPost (sp j n uHi uLo : Word) : Assertion :=
+  let uAddr := sp + signExtend12 4056 - ((j + n) <<< (3 : BitVec 6).toNat)
+  (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+  (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
+  (sp + signExtend12 3984 ↦ₘ n) **
+  (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo)
+
+theorem divKTrialLoadUPost_unfold (sp j n uHi uLo : Word) :
+    divKTrialLoadUPost sp j n uHi uLo =
+      (let uAddr := sp + signExtend12 4056 - ((j + n) <<< (3 : BitVec 6).toNat)
+       (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo)) := by
+  delta divKTrialLoadUPost; rfl
+
+/-- Bundled postcondition for `divK_trial_load_vtop_spec_within`.
+    Hides the `nm1`, `nm1X8`, and `vtopBase` address intermediates. -/
+@[irreducible]
+def divKTrialLoadVTopPost (sp n vTop : Word) : Assertion :=
+  let vtopBase := sp + ((n + signExtend12 4095) <<< (3 : BitVec 6).toNat)
+  (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ vtopBase) ** (.x10 ↦ᵣ vTop) **
+  (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ vTop)
+
+theorem divKTrialLoadVTopPost_unfold (sp n vTop : Word) :
+    divKTrialLoadVTopPost sp n vTop =
+      (let vtopBase := sp + ((n + signExtend12 4095) <<< (3 : BitVec 6).toNat)
+       (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ vtopBase) ** (.x10 ↦ᵣ vTop) **
+       (sp + signExtend12 3984 ↦ₘ n) ** (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
+  delta divKTrialLoadVTopPost; rfl
+
 end EvmAsm.Evm64
