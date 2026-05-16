@@ -962,4 +962,43 @@ theorem divK_div128_step2_v4_spec
     (fun h hq => by xperm_hyp hq)
     (cpsBranchWithin_merge_same_cr composed_AB h_taken h_notTaken)
 
+/-- Bundled postcondition for `divK_div128_step2_v4_phase_E_merged_spec`.
+    Hides 7 lets (rhat2cHi, rhat2'Hi, q0Dlo2, rhat2'Un0, q0'', x7Exit, x1Exit, x11Exit).
+    The pure fact `⌜rhat2cHi = 0⌝` is baked in since `rhat2cHi` is derived from `rhat2c`.
+    Note: `rhat2Un0` (Phase-D output) does not appear in the postcondition. -/
+@[irreducible]
+def divKDiv128Step2V4PhaseEPost
+    (sp dHi q0' rhat2' q0Dlo1 dlo un0 rhat2c : Word) : Assertion :=
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+  let q0Dlo2 := q0' * dlo
+  let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+  let q0'' := div128Quot_phase2b_q0' q0' rhat2' dlo un0
+  let x7Exit := if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2
+  let x1Exit := if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0
+  let x11Exit := if rhat2'Hi ≠ 0 then rhat2' else un0
+  (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+  (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
+
+theorem divKDiv128Step2V4PhaseEPost_unfold
+    (sp dHi q0' rhat2' q0Dlo1 dlo un0 rhat2c : Word) :
+    divKDiv128Step2V4PhaseEPost sp dHi q0' rhat2' q0Dlo1 dlo un0 rhat2c =
+      (let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+       let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+       let q0Dlo2 := q0' * dlo
+       let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0
+       let q0'' := div128Quot_phase2b_q0' q0' rhat2' dlo un0
+       let x7Exit := if rhat2'Hi ≠ 0 then q0Dlo1 else q0Dlo2
+       let x1Exit := if rhat2'Hi ≠ 0 then rhat2'Hi else rhat2'Un0
+       let x11Exit := if rhat2'Hi ≠ 0 then rhat2' else un0
+       (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) ** (.x7 ↦ᵣ x7Exit) **
+       (.x1 ↦ᵣ x1Exit) ** (.x11 ↦ᵣ x11Exit) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  delta divKDiv128Step2V4PhaseEPost; rfl
+
 end EvmAsm.Evm64
