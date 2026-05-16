@@ -434,6 +434,10 @@ theorem expCallBlock_factor2_end_addr (base : Word) :
     (base + 32 : Word) + BitVec.ofNat 64 (4 * 8) = base + 64 := by
   bv_omega
 
+@[exp_addr, grind =] theorem expMarshalPairExitPc (base : Word) :
+    ((base + 32 : Word) + 32) = base + 64 := by
+  bv_decide
+
 theorem expCallBlock_square_end_addr (base : Word) :
     (base + 64 : Word) + BitVec.ofNat 64 (4 * 1) = base + 68 := by
   bv_omega
