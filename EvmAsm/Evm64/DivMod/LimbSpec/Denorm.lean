@@ -95,4 +95,29 @@ theorem divK_denorm_last_spec_within (off : BitVec 12)
   have I2 := sd_spec_gen_within .x12 .x5 sp result val off (base + 8)
   runBlock I0 I1 I2
 
+/-- Bundled postcondition for `divK_denorm_merge_spec_within`.
+    Hides `shiftedCurr`, `shiftedNext`, and `result`; x5 holds the result. -/
+@[irreducible]
+def divKDenormMergePost (sp : Word) (curr_off next_off : BitVec 12)
+    (curr next shift antiShift : Word) : Assertion :=
+  let shiftedCurr := curr >>> (shift.toNat % 64)
+  let shiftedNext := next <<< (antiShift.toNat % 64)
+  let result := shiftedCurr ||| shiftedNext
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x7 ↦ᵣ shiftedNext) **
+  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
+  ((sp + signExtend12 curr_off) ↦ₘ result) **
+  ((sp + signExtend12 next_off) ↦ₘ next)
+
+theorem divKDenormMergePost_unfold (sp : Word) (curr_off next_off : BitVec 12)
+    (curr next shift antiShift : Word) :
+    divKDenormMergePost sp curr_off next_off curr next shift antiShift =
+      (let shiftedCurr := curr >>> (shift.toNat % 64)
+       let shiftedNext := next <<< (antiShift.toNat % 64)
+       let result := shiftedCurr ||| shiftedNext
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x7 ↦ᵣ shiftedNext) **
+       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
+       ((sp + signExtend12 curr_off) ↦ₘ result) **
+       ((sp + signExtend12 next_off) ↦ₘ next)) := by
+  delta divKDenormMergePost; rfl
+
 end EvmAsm.Evm64
