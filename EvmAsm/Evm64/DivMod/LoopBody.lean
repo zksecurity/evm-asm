@@ -237,42 +237,82 @@ private theorem divK_mulsub_4limbs_spec_within_of_sub
     (fun h hq => by xperm_hyp hq)
     L0fL1eL2eL3e
 
+/-- Postcondition bundle for the 4-limb mulsub: bundles the 32-let chain
+    so callers avoid statement-level let chains. -/
+@[irreducible]
+def mulsub4LimbsPost (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word) :
+    EvmAsm.Rv64.Assertion :=
+  let p0_lo := qHat * v0; let p0_hi := rv64_mulhu qHat v0
+  let fs0 := p0_lo + (signExtend12 0 : Word)
+  let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let pc0 := ba0 + p0_hi
+  let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+  let un0 := u0 - fs0; let c0 := pc0 + bs0
+  let p1_lo := qHat * v1; let p1_hi := rv64_mulhu qHat v1
+  let fs1 := p1_lo + c0
+  let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+  let pc1 := ba1 + p1_hi
+  let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+  let un1 := u1 - fs1; let c1 := pc1 + bs1
+  let p2_lo := qHat * v2; let p2_hi := rv64_mulhu qHat v2
+  let fs2 := p2_lo + c1
+  let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+  let pc2 := ba2 + p2_hi
+  let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+  let un2 := u2 - fs2; let c2 := pc2 + bs2
+  let p3_lo := qHat * v3; let p3_hi := rv64_mulhu qHat v3
+  let fs3 := p3_lo + c2
+  let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+  let pc3 := ba3 + p3_hi
+  let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+  let un3 := u3 - fs3; let c3 := pc3 + bs3
+  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
+  (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
+  (.x2 ↦ᵣ un3) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)
+
+theorem mulsub4LimbsPost_unfold {sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word} :
+    mulsub4LimbsPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 =
+      (let p0_lo := qHat * v0; let p0_hi := rv64_mulhu qHat v0
+       let fs0 := p0_lo + (signExtend12 0 : Word)
+       let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+       let pc0 := ba0 + p0_hi
+       let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+       let un0 := u0 - fs0; let c0 := pc0 + bs0
+       let p1_lo := qHat * v1; let p1_hi := rv64_mulhu qHat v1
+       let fs1 := p1_lo + c0
+       let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+       let pc1 := ba1 + p1_hi
+       let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+       let un1 := u1 - fs1; let c1 := pc1 + bs1
+       let p2_lo := qHat * v2; let p2_hi := rv64_mulhu qHat v2
+       let fs2 := p2_lo + c1
+       let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+       let pc2 := ba2 + p2_hi
+       let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+       let un2 := u2 - fs2; let c2 := pc2 + bs2
+       let p3_lo := qHat * v3; let p3_hi := rv64_mulhu qHat v3
+       let fs3 := p3_lo + c2
+       let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+       let pc3 := ba3 + p3_hi
+       let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+       let un3 := u3 - fs3; let c3 := pc3 + bs3
+       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
+       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
+       (.x2 ↦ᵣ un3) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)) := by
+  delta mulsub4LimbsPost; rfl
+
 theorem divK_mulsub_4limbs_spec_within
     (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word)
     (v5_init v7_init v2_init : Word)
     (base : Word) :
-    let p0_lo := qHat * v0
-    let p0_hi := rv64_mulhu qHat v0
-    let fs0 := p0_lo + (signExtend12 0 : Word)
-    let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
-    let pc0 := ba0 + p0_hi
-    let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
-    let un0 := u0 - fs0
-    let c0 := pc0 + bs0
-    let p1_lo := qHat * v1
-    let p1_hi := rv64_mulhu qHat v1
-    let fs1 := p1_lo + c0
-    let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
-    let pc1 := ba1 + p1_hi
-    let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
-    let un1 := u1 - fs1
-    let c1 := pc1 + bs1
-    let p2_lo := qHat * v2
-    let p2_hi := rv64_mulhu qHat v2
-    let fs2 := p2_lo + c1
-    let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
-    let pc2 := ba2 + p2_hi
-    let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
-    let un2 := u2 - fs2
-    let c2 := pc2 + bs2
-    let p3_lo := qHat * v3
-    let p3_hi := rv64_mulhu qHat v3
-    let fs3 := p3_lo + c2
-    let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
-    let pc3 := ba3 + p3_hi
-    let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
-    let un3 := u3 - fs3
-    let c3 := pc3 + bs3
     cpsTripleWithin 44 (base + mulsubOff) (base + correctionAddbackOff) (sharedDivModCode base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
        (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
@@ -281,14 +321,9 @@ theorem divK_mulsub_4limbs_spec_within
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
-       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
-       (.x2 ↦ᵣ un3) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)) :=
-  divK_mulsub_4limbs_spec_within_of_sub sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
+      (mulsub4LimbsPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3) := by
+  rw [mulsub4LimbsPost_unfold]
+  exact divK_mulsub_4limbs_spec_within_of_sub sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
     v5_init v7_init v2_init base (sharedDivModCode base) lb_sub
 
 /-- `divK_mulsub_4limbs_spec_within` replayed over the DIV no-NOP code surface. -/
@@ -296,38 +331,6 @@ theorem divK_mulsub_4limbs_spec_within_noNop
     (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word)
     (v5_init v7_init v2_init : Word)
     (base : Word) :
-    let p0_lo := qHat * v0
-    let p0_hi := rv64_mulhu qHat v0
-    let fs0 := p0_lo + (signExtend12 0 : Word)
-    let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
-    let pc0 := ba0 + p0_hi
-    let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
-    let un0 := u0 - fs0
-    let c0 := pc0 + bs0
-    let p1_lo := qHat * v1
-    let p1_hi := rv64_mulhu qHat v1
-    let fs1 := p1_lo + c0
-    let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
-    let pc1 := ba1 + p1_hi
-    let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
-    let un1 := u1 - fs1
-    let c1 := pc1 + bs1
-    let p2_lo := qHat * v2
-    let p2_hi := rv64_mulhu qHat v2
-    let fs2 := p2_lo + c1
-    let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
-    let pc2 := ba2 + p2_hi
-    let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
-    let un2 := u2 - fs2
-    let c2 := pc2 + bs2
-    let p3_lo := qHat * v3
-    let p3_hi := rv64_mulhu qHat v3
-    let fs3 := p3_lo + c2
-    let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
-    let pc3 := ba3 + p3_hi
-    let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
-    let un3 := u3 - fs3
-    let c3 := pc3 + bs3
     cpsTripleWithin 44 (base + mulsubOff) (base + correctionAddbackOff) (divCode_noNop base)
       ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
        (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
@@ -336,14 +339,9 @@ theorem divK_mulsub_4limbs_spec_within_noNop
        ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
        ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
        ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
-       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
-       (.x2 ↦ᵣ un3) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)) :=
-  divK_mulsub_4limbs_spec_within_of_sub sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
+      (mulsub4LimbsPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3) := by
+  rw [mulsub4LimbsPost_unfold]
+  exact divK_mulsub_4limbs_spec_within_of_sub sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
     v5_init v7_init v2_init base (divCode_noNop base) lb_sub_noNop
 
 private theorem lb_ab0 {base : Word} : (base + addbackInitOff : Word) + 4 = base + addbackLimb0Off := by bv_addr
