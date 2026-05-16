@@ -310,6 +310,16 @@ theorem sdivAbsDivisorWord_eq_zero_iff
   unfold sdivAbsDivisorWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
   bv_decide
 
+/-- Nonzero caller-visible divisors stay nonzero after the SDIV absolute-value
+    normalization used by the unsigned-DIV dispatch. -/
+theorem sdivAbsDivisorWord_ne_zero_of_ne_zero
+    {divisor : EvmWord} (h_ne : divisor ≠ 0) :
+    sdivAbsDivisorWord
+        (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3) ≠ 0 := by
+  intro h_abs_zero
+  exact h_ne ((sdivAbsDivisorWord_eq_zero_iff divisor).mp h_abs_zero)
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
