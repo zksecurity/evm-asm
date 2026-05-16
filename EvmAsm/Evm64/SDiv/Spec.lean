@@ -240,6 +240,67 @@ theorem sdivResultSignFixedWord_eq_sdiv
     · exact sdivResultSignFixedWord_eq_sdiv_of_negative
         dividend divisor hDividendSign hDivisorSign
 
+/-- Postcondition bundle for the exact (non-zero divisor) SDIV handler path.
+    Bundles the result-sign/mask/carry chain, leaving the EVM stack as a parameter. -/
+@[irreducible]
+def sdivExactHandlerPost (sp vRa base : Word) (dividend divisor : EvmWord)
+    (stackResult : List EvmWord) : EvmAsm.Rv64.Assertion :=
+  let dividendAbsWord :=
+    sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+      (dividend.getLimbN 2) (dividend.getLimbN 3)
+  let resultSign :=
+    (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
+      (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
+  let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
+  let mask := (0 : Word) - resultSign
+  let divisorAbsWord :=
+    sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+      (divisor.getLimbN 2) (divisor.getLimbN 3)
+  let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+  let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
+  let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+  let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
+  let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+  let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
+  let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+  let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
+  let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
+  (.x18 ↦ᵣ vRa) **
+  (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
+    (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
+    evmStackIs (sp + 32) stackResult) **
+   saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)
+
+theorem sdivExactHandlerPost_unfold {sp vRa base : Word} {dividend divisor : EvmWord}
+    {stackResult : List EvmWord} :
+    sdivExactHandlerPost sp vRa base dividend divisor stackResult =
+      (let dividendAbsWord :=
+         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
+           (dividend.getLimbN 2) (dividend.getLimbN 3)
+       let resultSign :=
+         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
+           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
+       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
+       let mask := (0 : Word) - resultSign
+       let divisorAbsWord :=
+         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
+           (divisor.getLimbN 2) (divisor.getLimbN 3)
+       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
+       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
+       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
+       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
+       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
+       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
+       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
+       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
+       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
+       (.x18 ↦ᵣ vRa) **
+       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
+         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
+         evmStackIs (sp + 32) stackResult) **
+        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
+  delta sdivExactHandlerPost; rfl
+
 /-- Postcondition bundle for zero-divisor SDIV handler path.
     Bundles the result-sign/mask/carry computation and the saved-RA frame,
     leaving the EVM stack result as a parameter. -/
@@ -423,46 +484,22 @@ theorem evm_sdiv_zero_divisor_handler_stack_exact_post_of_eq_spec_within
        ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
         EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0))
-      (let dividendAbsWord :=
-         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
-           (dividend.getLimbN 2) (dividend.getLimbN 3)
-       let resultSign :=
-         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
-           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
-       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
-       let mask := (0 : Word) - resultSign
-       let divisorAbsWord :=
-         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
-           (divisor.getLimbN 2) (divisor.getLimbN 3)
-       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
-       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
-       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
-       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
-       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
-       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
-       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
-       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
-       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-       (.x18 ↦ᵣ vRa) **
-       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
-         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-         evmStackIs (sp + 32)
-          ((ArithmeticHandlers.sdivHandler
-            { state with stack := dividend :: divisor :: rest }).stack)) **
-        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
+      (sdivExactHandlerPost sp vRa base dividend divisor
+        (ArithmeticHandlers.sdivHandler
+          { state with stack := dividend :: divisor :: rest }).stack) := by
   subst divisor
   exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
+      rw [sdivExactHandlerPost_unfold]
       rw [sdivZeroDivisorPost_unfold] at hp
-      have hSum3 := sdivResultSign_fixZeroWordLimb3 (dividend.getLimbN 3) (0 : Word)
+      simp only [EvmWord.getLimbN_zero] at hp ⊢
       have hDivisorAbs :
-          sdivAbsDivisorWord ((0 : EvmWord).getLimbN 0) ((0 : EvmWord).getLimbN 1)
-            ((0 : EvmWord).getLimbN 2) ((0 : EvmWord).getLimbN 3) = 0 := by
-        simpa only [EvmWord.getLimbN_zero] using sdivAbsDivisorWord_zero
+          sdivAbsDivisorWord (0 : Word) (0 : Word) (0 : Word) (0 : Word) = 0 := by
+        exact sdivAbsDivisorWord_zero
       rw [hDivisorAbs, EvmWord.div_zero_right]
       simp only [EvmWord.getLimbN_zero] at hp ⊢
-      have hSum3' := hSum3
-      simp only [EvmWord.getLimbN_zero] at hSum3'
-      rw [hSum3'] at hp ⊢
+      have hSum3 := sdivResultSign_fixZeroWordLimb3 (dividend.getLimbN 3) (0 : Word)
+      simp only [EvmWord.getLimbN_zero] at hSum3
+      rw [hSum3] at hp ⊢
       simpa using hp)
     (evm_sdiv_zero_divisor_handler_stack_spec_within
       vRa vSavedOld sp sDividendOld sDivisorOld
@@ -705,35 +742,12 @@ theorem evm_sdiv_exact_return_handler_stack_of_result_eq_spec_within
        ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
         EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0))
-      (let dividendAbsWord :=
-         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
-           (dividend.getLimbN 2) (dividend.getLimbN 3)
-       let resultSign :=
-         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
-           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
-       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
-       let mask := (0 : Word) - resultSign
-       let divisorAbsWord :=
-         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
-           (divisor.getLimbN 2) (divisor.getLimbN 3)
-       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
-       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
-       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
-       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
-       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
-       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
-       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
-       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
-       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-       (.x18 ↦ᵣ vRa) **
-       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
-         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-         evmStackIs (sp + 32)
-          ((ArithmeticHandlers.sdivHandler
-            { state with stack := dividend :: divisor :: rest }).stack)) **
-        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
+      (sdivExactHandlerPost sp vRa base dividend divisor
+        (ArithmeticHandlers.sdivHandler
+          { state with stack := dividend :: divisor :: rest }).stack) := by
   exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by
       rw [hResult] at hp
+      rw [sdivExactHandlerPost_unfold]
       simpa using hp)
     (evm_sdiv_exact_return_result_stack_spec_within
       vRa vSavedOld sp sDividendOld sDivisorOld
@@ -786,33 +800,9 @@ theorem evm_sdiv_exact_return_handler_stack_spec_within
        ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
         EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0))
-      (let dividendAbsWord :=
-         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
-           (dividend.getLimbN 2) (dividend.getLimbN 3)
-       let resultSign :=
-         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
-           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
-       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
-       let mask := (0 : Word) - resultSign
-       let divisorAbsWord :=
-         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
-           (divisor.getLimbN 2) (divisor.getLimbN 3)
-       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
-       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
-       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
-       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
-       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
-       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
-       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
-       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
-       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-       (.x18 ↦ᵣ vRa) **
-       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
-         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-         evmStackIs (sp + 32)
-          ((ArithmeticHandlers.sdivHandler
-            { state with stack := dividend :: divisor :: rest }).stack)) **
-        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) :=
+      (sdivExactHandlerPost sp vRa base dividend divisor
+        (ArithmeticHandlers.sdivHandler
+          { state with stack := dividend :: divisor :: rest }).stack) :=
   evm_sdiv_exact_return_handler_stack_of_result_eq_spec_within
     vRa vSavedOld sp sDividendOld sDivisorOld
     dividendMaskOld dividendValueOld dividendCarryOld
@@ -868,33 +858,9 @@ theorem evm_sdiv_handler_stack_spec_within
        ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
         EvmAsm.Evm64.divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0))
-      (let dividendAbsWord :=
-         sdivAbsDividendWord (dividend.getLimbN 0) (dividend.getLimbN 1)
-           (dividend.getLimbN 2) (dividend.getLimbN 3)
-       let resultSign :=
-         (dividend.getLimbN 3 >>> (63 : BitVec 6).toNat) ^^^
-           (divisor.getLimbN 3 >>> (63 : BitVec 6).toNat)
-       let divisorSign := divisor.getLimbN 3 >>> (63 : BitVec 6).toNat
-       let mask := (0 : Word) - resultSign
-       let divisorAbsWord :=
-         sdivAbsDivisorWord (divisor.getLimbN 0) (divisor.getLimbN 1)
-           (divisor.getLimbN 2) (divisor.getLimbN 3)
-       let quotientWord := EvmWord.div dividendAbsWord divisorAbsWord
-       let sum0 := ((quotientWord.getLimbN 0) ^^^ mask) + resultSign
-       let carry0 := if BitVec.ult sum0 resultSign then (1 : Word) else 0
-       let sum1 := ((quotientWord.getLimbN 1) ^^^ mask) + carry0
-       let carry1 := if BitVec.ult sum1 carry0 then (1 : Word) else 0
-       let sum2 := ((quotientWord.getLimbN 2) ^^^ mask) + carry1
-       let carry2 := if BitVec.ult sum2 carry1 then (1 : Word) else 0
-       let sum3 := ((quotientWord.getLimbN 3) ^^^ mask) + carry2
-       let carry3 := if BitVec.ult sum3 carry2 then (1 : Word) else 0
-       (.x18 ↦ᵣ vRa) **
-       (((.x0 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ (sp + 32)) ** (.x8 ↦ᵣ resultSign) **
-         (.x10 ↦ᵣ mask) ** (.x7 ↦ᵣ sum3) ** (.x11 ↦ᵣ carry3) **
-         evmStackIs (sp + 32)
-          ((ArithmeticHandlers.sdivHandler
-            { state with stack := dividend :: divisor :: rest }).stack)) **
-        saveRaDivCallBzeroSavedRaRetFrame sp base divisorSign dividendAbsWord)) := by
+      (sdivExactHandlerPost sp vRa base dividend divisor
+        (ArithmeticHandlers.sdivHandler
+          { state with stack := dividend :: divisor :: rest }).stack) := by
   by_cases hDivisorZero : divisor = 0
   · exact evm_sdiv_zero_divisor_handler_stack_exact_post_of_eq_spec_within
       vRa vSavedOld sp sDividendOld sDivisorOld
