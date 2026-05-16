@@ -89,4 +89,92 @@ theorem divK_mulsub_partB_spec_within (uBase partialCarry prodHi fullSub v2Old u
   have I4 := sd_spec_gen_within .x6 .x2 uBase uNew u_i u_off (base + 16)
   runBlock I0 I1 I2 I3 I4
 
+/-- Code requirement for `divK_mulsub_partA_spec_within`. -/
+abbrev divKMulsubPartACode (v_off : BitVec 12) (base : Word) : CodeReq :=
+  CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 v_off))
+  (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x7 .x11 .x5))
+  (CodeReq.union (CodeReq.singleton (base + 8) (.MULHU .x5 .x11 .x5))
+  (CodeReq.union (CodeReq.singleton (base + 12) (.ADD .x7 .x7 .x10))
+  (CodeReq.union (CodeReq.singleton (base + 16) (.SLTU .x10 .x7 .x10))
+   (CodeReq.singleton (base + 20) (.ADD .x10 .x10 .x5))))))
+
+/-- Bundled postcondition for `divK_mulsub_partA_spec_within`. Hides 5 computation lets. -/
+@[irreducible]
+def divKMulsubPartAPost (sp qHat carryIn v_i : Word) (v_off : BitVec 12) : Assertion :=
+  let prodLo := qHat * v_i
+  let prodHi := rv64_mulhu qHat v_i
+  let fullSub := prodLo + carryIn
+  let borrowAdd := if BitVec.ult fullSub carryIn then (1 : Word) else 0
+  let partialCarry := borrowAdd + prodHi
+  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ partialCarry) **
+  (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) **
+  ((sp + signExtend12 v_off) ↦ₘ v_i)
+
+theorem divKMulsubPartAPost_unfold (sp qHat carryIn v_i : Word) (v_off : BitVec 12) :
+    divKMulsubPartAPost sp qHat carryIn v_i v_off =
+      (let prodLo := qHat * v_i
+       let prodHi := rv64_mulhu qHat v_i
+       let fullSub := prodLo + carryIn
+       let borrowAdd := if BitVec.ult fullSub carryIn then (1 : Word) else 0
+       let partialCarry := borrowAdd + prodHi
+       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ partialCarry) **
+       (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i)) := by
+  delta divKMulsubPartAPost; rfl
+
+/-- Named-postcondition wrapper for `divK_mulsub_partA_spec_within`. 0 statement lets. -/
+theorem divK_mulsub_partA_named_spec_within (sp qHat carryIn v5Old v7Old v_i : Word)
+    (v_off : BitVec 12) (base : Word) :
+    cpsTripleWithin 6 base (base + 24) (divKMulsubPartACode v_off base)
+      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ carryIn) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) **
+       ((sp + signExtend12 v_off) ↦ₘ v_i))
+      (divKMulsubPartAPost sp qHat carryIn v_i v_off) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [divKMulsubPartAPost_unfold]; exact hp)
+    (divK_mulsub_partA_spec_within sp qHat carryIn v5Old v7Old v_i v_off base)
+
+/-- Code requirement for `divK_mulsub_partB_spec_within`. -/
+abbrev divKMulsubPartBCode (u_off : BitVec 12) (base : Word) : CodeReq :=
+  CodeReq.union (CodeReq.singleton base (.LD .x2 .x6 u_off))
+  (CodeReq.union (CodeReq.singleton (base + 4) (.SLTU .x5 .x2 .x7))
+  (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x2 .x2 .x7))
+  (CodeReq.union (CodeReq.singleton (base + 12) (.ADD .x10 .x10 .x5))
+   (CodeReq.singleton (base + 16) (.SD .x6 .x2 u_off)))))
+
+/-- Bundled postcondition for `divK_mulsub_partB_spec_within`. Hides 3 computation lets.
+    `prodHi` is not in the postcondition so it's not a bundle parameter. -/
+@[irreducible]
+def divKMulsubPartBPost (uBase partialCarry fullSub u_i : Word) (u_off : BitVec 12) : Assertion :=
+  let borrowSub := if BitVec.ult u_i fullSub then (1 : Word) else 0
+  let uNew := u_i - fullSub
+  let carryOut := partialCarry + borrowSub
+  (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryOut) **
+  (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ uNew) **
+  ((uBase + signExtend12 u_off) ↦ₘ uNew)
+
+theorem divKMulsubPartBPost_unfold (uBase partialCarry fullSub u_i : Word) (u_off : BitVec 12) :
+    divKMulsubPartBPost uBase partialCarry fullSub u_i u_off =
+      (let borrowSub := if BitVec.ult u_i fullSub then (1 : Word) else 0
+       let uNew := u_i - fullSub
+       let carryOut := partialCarry + borrowSub
+       (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryOut) **
+       (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ uNew) **
+       ((uBase + signExtend12 u_off) ↦ₘ uNew)) := by
+  delta divKMulsubPartBPost; rfl
+
+/-- Named-postcondition wrapper for `divK_mulsub_partB_spec_within`. 0 statement lets. -/
+theorem divK_mulsub_partB_named_spec_within (uBase partialCarry prodHi fullSub v2Old u_i : Word)
+    (u_off : BitVec 12) (base : Word) :
+    cpsTripleWithin 5 base (base + 20) (divKMulsubPartBCode u_off base)
+      ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ partialCarry) **
+       (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ v2Old) **
+       ((uBase + signExtend12 u_off) ↦ₘ u_i))
+      (divKMulsubPartBPost uBase partialCarry fullSub u_i u_off) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [divKMulsubPartBPost_unfold]; exact hp)
+    (divK_mulsub_partB_spec_within uBase partialCarry prodHi fullSub v2Old u_i u_off base)
+
 end EvmAsm.Evm64
