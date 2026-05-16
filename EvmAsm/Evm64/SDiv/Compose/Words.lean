@@ -298,6 +298,18 @@ theorem sdivAbsDivisorWord_zero :
   unfold sdivAbsDivisorWord EvmWord.fromLimbs
   bv_decide
 
+/-- The SDIV divisor absolute-value word is zero exactly for the zero
+    divisor. This lets stack-level branch proofs switch between the
+    caller-visible divisor and the unsigned-DIV dispatch divisor. -/
+theorem sdivAbsDivisorWord_eq_zero_iff
+    (divisor : EvmWord) :
+    sdivAbsDivisorWord
+        (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3) = 0 ↔
+      divisor = 0 := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
     result sign. This names the post-result-sign-fix `fromLimbs` term so
     stack-level views can fold the four memory atoms into one `evmWordIs`. -/
