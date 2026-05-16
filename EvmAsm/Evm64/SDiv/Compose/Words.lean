@@ -391,6 +391,28 @@ theorem sdivAbsDivisorWord_one_limb_sign
   rw [h_sign]
   bv_decide
 
+/-- Raw-limb SDIV divisor absolute-value normalization split by the
+    caller-visible sign bit. -/
+theorem sdivAbsDivisorWord_limb_sign_split
+    (divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
+    sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop =
+      if divisorTop >>> (63 : BitVec 6).toNat = 0 then
+        EvmWord.fromLimbs fun i : Fin 4 =>
+          match i with
+          | 0 => divisorLimb0
+          | 1 => divisorLimb1
+          | 2 => divisorLimb2
+          | 3 => divisorTop
+      else
+        ~~~(EvmWord.fromLimbs fun i : Fin 4 =>
+          match i with
+          | 0 => divisorLimb0
+          | 1 => divisorLimb1
+          | 2 => divisorLimb2
+          | 3 => divisorTop) + 1 := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs
+  bv_decide
+
 /-- The SDIV dividend absolute-value word is zero exactly for the zero
     dividend. This mirrors the divisor bridge for semantic stack views that
     reason about wrapper-normalized operands. -/
@@ -482,6 +504,28 @@ theorem sdivAbsDividendWord_one_limb_sign
         | 3 => dividendTop) + 1 := by
   unfold sdivAbsDividendWord EvmWord.fromLimbs
   rw [h_sign]
+  bv_decide
+
+/-- Raw-limb SDIV dividend absolute-value normalization split by the
+    caller-visible sign bit. -/
+theorem sdivAbsDividendWord_limb_sign_split
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop : Word) :
+    sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop =
+      if dividendTop >>> (63 : BitVec 6).toNat = 0 then
+        EvmWord.fromLimbs fun i : Fin 4 =>
+          match i with
+          | 0 => dividendLimb0
+          | 1 => dividendLimb1
+          | 2 => dividendLimb2
+          | 3 => dividendTop
+      else
+        ~~~(EvmWord.fromLimbs fun i : Fin 4 =>
+          match i with
+          | 0 => dividendLimb0
+          | 1 => dividendLimb1
+          | 2 => dividendLimb2
+          | 3 => dividendTop) + 1 := by
+  unfold sdivAbsDividendWord EvmWord.fromLimbs
   bv_decide
 
 /-- Word produced by conditionally negating four quotient limbs with the SDIV
