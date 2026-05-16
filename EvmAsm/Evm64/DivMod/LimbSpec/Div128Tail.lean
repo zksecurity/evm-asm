@@ -194,3 +194,31 @@ theorem divKDiv128CombineQPost_unfold (q1 q0 : Word) :
       (let q := (q1 <<< (32 : BitVec 6).toNat) ||| q0
        (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q)) := by
   delta divKDiv128CombineQPost; rfl
+
+/-- 0-let named wrapper for `divK_div128_step2_init_spec_within`. -/
+theorem divK_div128_step2_init_named_spec_within
+    (un21 dHi v1Old v5Old v11Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.union (CodeReq.singleton base (.DIVU .x5 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x1 .x5 .x6))
+       (CodeReq.singleton (base + 8) (.SUB .x11 .x7 .x1))))
+      ((.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) **
+       (.x5 ↦ᵣ v5Old) ** (.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old))
+      (divKDiv128Step2InitPost un21 dHi) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128Step2InitPost_unfold]; exact hp)
+    (divK_div128_step2_init_spec_within un21 dHi v1Old v5Old v11Old base)
+
+/-- 0-let named wrapper for `divK_div128_combine_q_spec_within`. -/
+theorem divK_div128_combine_q_named_spec_within
+    (q1 q0 v11Old : Word) (base : Word) :
+    cpsTripleWithin 2 base (base + 8)
+      (CodeReq.union (CodeReq.singleton base (.SLLI .x11 .x10 32))
+       (CodeReq.singleton (base + 4) (.OR .x11 .x11 .x5)))
+      ((.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ v11Old))
+      (divKDiv128CombineQPost q1 q0) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128CombineQPost_unfold]; exact hp)
+    (divK_div128_combine_q_spec_within q1 q0 v11Old base)
