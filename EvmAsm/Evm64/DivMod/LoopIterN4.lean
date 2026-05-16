@@ -214,7 +214,7 @@ theorem divK_loop_body_n4_max_skip_j0_spec_within_noNop
 set_option maxRecDepth 4096 in
 /-- Loop body cpsTripleWithin for n=4, call+skip, j=0.
     Since j=0, the BGE loop-back is not taken, giving a cpsTripleWithin to base+904. -/
-theorem divK_loop_body_n4_call_skip_j0_spec_within
+private theorem divK_loop_body_n4_call_skip_j0_spec_within
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
@@ -351,7 +351,7 @@ theorem divK_loop_body_n4_call_skip_j0_spec_within
     full
 
 /-- No-NOP variant of `divK_loop_body_n4_call_skip_j0_spec_within`. -/
-theorem divK_loop_body_n4_call_skip_j0_spec_within_noNop
+private theorem divK_loop_body_n4_call_skip_j0_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
@@ -487,7 +487,7 @@ set_option maxRecDepth 4096 in
 /-- Loop body cpsTripleWithin for n=4, call+addback (beq variant), j=0.
     Uses the beq_spec which handles both carry=0 and carry≠0 internally,
     eliminating the sorry for aco3 ≠ 0. -/
-theorem divK_loop_body_n4_call_addback_j0_beq_spec_within
+private theorem divK_loop_body_n4_call_addback_j0_beq_spec_within
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
@@ -622,7 +622,7 @@ theorem divK_loop_body_n4_call_addback_j0_beq_spec_within
     full
 
 /-- No-NOP variant of `divK_loop_body_n4_call_addback_j0_beq_spec_within`. -/
-theorem divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop
+private theorem divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
@@ -745,5 +745,220 @@ theorem divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop
     (fun h hp => by delta loopBodyN4AddbackBeqPost loopBodyAddbackBeqPost loopExitPostN4 loopExitPost; rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
 
+
+-- ============================================================================
+-- Bundled pre/post for call-path j=0 specs
+-- (Defined here so public wrappers below and FullPathN4Loop can share them.)
+-- ============================================================================
+
+/-- Bundled precondition for the call_skip / call_addback j=0 loop body.
+    Wraps the 25-atom sepConj chain (registers + scratch memory cells) plus
+    the `let`-bound `uBase` and `qAddr` offsets. Marked `@[irreducible]` so
+    the offsets don't pollute callers' types. -/
+@[irreducible]
+def loopBodyN4CallSkipJ0Pre
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+     retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+  (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+  (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+  (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+  (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+  ((uBase + signExtend12 4064) ↦ₘ uTop) **
+  (qAddr ↦ₘ qOld) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
+  (sp + signExtend12 3960 ↦ₘ dMem) **
+  (sp + signExtend12 3952 ↦ₘ dloMem) **
+  (sp + signExtend12 3944 ↦ₘ scratch_un0)
+
+/-- Named unfold for `loopBodyN4CallSkipJ0Pre`. -/
+theorem loopBodyN4CallSkipJ0Pre_unfold
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+     retMem dMem dloMem scratch_un0 : Word) :
+    loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 =
+    (let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+     let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+     (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ (0 : Word)) **
+     (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+     (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+     ((uBase + signExtend12 4064) ↦ₘ uTop) **
+     (qAddr ↦ₘ qOld) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ scratch_un0)) := by
+  delta loopBodyN4CallSkipJ0Pre; rfl
+
+/-- Bundled postcondition for the call_skip j=0 loop body. -/
+@[irreducible]
+def loopBodyN4CallSkipJ0Post (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    Assertion :=
+  let qHat := div128Quot uTop u3 v3
+  let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v3) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ div_un0)
+
+/-- Named unfold for `loopBodyN4CallSkipJ0Post`. -/
+theorem loopBodyN4CallSkipJ0Post_unfold
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    loopBodyN4CallSkipJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    (let qHat := div128Quot uTop u3 v3
+     let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     loopBodyN4SkipPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+     (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+     (sp + signExtend12 3960 ↦ₘ v3) **
+     (sp + signExtend12 3952 ↦ₘ dLo) **
+     (sp + signExtend12 3944 ↦ₘ div_un0)) := by
+  delta loopBodyN4CallSkipJ0Post; rfl
+
+/-- Bundled postcondition for the call_addback (BEQ) j=0 loop body. -/
+@[irreducible]
+def loopBodyN4CallAddbackBeqJ0Post
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
+  let qHat := div128Quot uTop u3 v3
+  let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  loopBodyN4AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v3) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ div_un0)
+
+/-- Named unfold for `loopBodyN4CallAddbackBeqJ0Post`. -/
+theorem loopBodyN4CallAddbackBeqJ0Post_unfold
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop =
+    (let qHat := div128Quot uTop u3 v3
+     let dLo := (v3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     let div_un0 := (u3 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+     loopBodyN4AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+     (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+     (sp + signExtend12 3960 ↦ₘ v3) **
+     (sp + signExtend12 3952 ↦ₘ dLo) **
+     (sp + signExtend12 3944 ↦ₘ div_un0)) := by
+  delta loopBodyN4CallAddbackBeqJ0Post; rfl
+
+-- ============================================================================
+-- Public bundle-using wrappers for the 4 call-path j=0 specs
+-- These have 0 statement-level let bindings.
+-- ============================================================================
+
+set_option maxRecDepth 4096 in
+/-- Bundled-pre/post version of `divK_loop_body_n4_call_skip_j0_spec_within`.
+    0 statement-level let bindings. -/
+theorem divK_loop_body_n4_call_skip_j0_spec_within_bundled
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uTop v3)
+    (hborrow : (if BitVec.ult uTop
+                  (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
+                then (1 : Word) else 0) = (0 : Word)) :
+    cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
+      (loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
+      (loopBodyN4CallSkipJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => by rw [loopBodyN4CallSkipJ0Pre_unfold] at hp; exact hp)
+    (fun _ hq => by rw [loopBodyN4CallSkipJ0Post_unfold]; exact hq)
+    (divK_loop_body_n4_call_skip_j0_spec_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign hbltu hborrow)
+
+set_option maxRecDepth 4096 in
+/-- Bundled-pre/post version of `divK_loop_body_n4_call_skip_j0_spec_within_noNop`.
+    0 statement-level let bindings. -/
+theorem divK_loop_body_n4_call_skip_j0_spec_within_noNop_bundled
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uTop v3)
+    (hborrow : (if BitVec.ult uTop
+                  (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
+                then (1 : Word) else 0) = (0 : Word)) :
+    cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
+      (loopBodyN4CallSkipJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => by rw [loopBodyN4CallSkipJ0Pre_unfold] at hp; exact hp)
+    (fun _ hq => by rw [loopBodyN4CallSkipJ0Post_unfold]; exact hq)
+    (divK_loop_body_n4_call_skip_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign hbltu hborrow)
+
+set_option maxRecDepth 4096 in
+/-- Bundled-pre/post version of `divK_loop_body_n4_call_addback_j0_beq_spec_within`.
+    0 statement-level let bindings. -/
+theorem divK_loop_body_n4_call_addback_j0_beq_spec_within_bundled
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uTop v3)
+    (hcarry2_nz : isAddbackCarry2NzN4Call v0 v1 v2 v3 u0 u1 u2 u3 uTop)
+    (hborrow : (if BitVec.ult uTop
+                  (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
+                then (1 : Word) else 0) ≠ (0 : Word)) :
+    cpsTripleWithin 202 (base + loopBodyOff) (base + denormOff) (sharedDivModCode base)
+      (loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
+      (loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => by rw [loopBodyN4CallSkipJ0Pre_unfold] at hp; exact hp)
+    (fun _ hq => by rw [loopBodyN4CallAddbackBeqJ0Post_unfold]; exact hq)
+    (divK_loop_body_n4_call_addback_j0_beq_spec_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign hbltu hcarry2_nz hborrow)
+
+set_option maxRecDepth 4096 in
+/-- Bundled-pre/post version of `divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop`.
+    0 statement-level let bindings. -/
+theorem divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop_bundled
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uTop v3)
+    (hcarry2_nz : isAddbackCarry2NzN4Call v0 v1 v2 v3 u0 u1 u2 u3 uTop)
+    (hborrow : (if BitVec.ult uTop
+                  (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
+                then (1 : Word) else 0) ≠ (0 : Word)) :
+    cpsTripleWithin 202 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
+      (loopBodyN4CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
+      (loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => by rw [loopBodyN4CallSkipJ0Pre_unfold] at hp; exact hp)
+    (fun _ hq => by rw [loopBodyN4CallAddbackBeqJ0Post_unfold]; exact hq)
+    (divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+      halign hbltu hcarry2_nz hborrow)
 
 end EvmAsm.Evm64

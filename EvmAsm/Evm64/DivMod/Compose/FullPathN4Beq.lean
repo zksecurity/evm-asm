@@ -88,17 +88,18 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm_noNop (sp base : Word)
        (sp + signExtend12 3952 ↦ₘ dloMem) **
        (sp + signExtend12 3944 ↦ₘ scratch_un0))
       (loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  have raw := divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop
-    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
-    base halign hbltu hcarry2_nz
-  have raw' := raw hborrow
-  simp only [se12_32, se12_40, se12_48, se12_56,
-             u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
-             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
-  exact cpsTripleWithin_weaken (fun _ hp => hp)
-    (fun _ hq => by rw [loopBodyN4CallAddbackBeqJ0Post_unfold]; exact hq)
-    (cpsTripleWithin_mono_nSteps (by decide) raw')
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      rw [loopBodyN4CallSkipJ0Pre_unfold]
+      simp only [se12_32, se12_40, se12_48, se12_56,
+                 u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
+                 u_base_off4072_j0, u_base_off4064_j0, q_addr_j0]
+      exact hp)
+    (fun _ hq => hq)
+    (cpsTripleWithin_mono_nSteps (by decide)
+      (divK_loop_body_n4_call_addback_j0_beq_spec_within_noNop_bundled sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0
+        base halign hbltu hcarry2_nz hborrow))
 
 /-- Addback condition at n=4 with max trial quotient: borrow ≠ 0. Complement
     of `isSkipBorrowN4Max` — the mulsub underflowed so the algorithm needs
