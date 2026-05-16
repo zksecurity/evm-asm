@@ -118,6 +118,7 @@ theorem sdivAbsDividendWord_evmWordIs_sp_components_sdivOffsets
     unfold EvmAsm.Evm64.evm_sdivDividendTopLimbOff
     rw [show signExtend12 (24 : BitVec 12) = (24 : Word) by decide]]
 
+open EvmAsm.Rv64 in
 theorem sdivAbsDividendWord_evmWordIs_sp_components_sdivOffsets_right
     (sp limb0 limb1 limb2 top : Word) (Q : Assertion) :
     (((sp + signExtend12 (0 : BitVec 12)) ↦ₘ sdivAbsSum0 limb0 top) **
@@ -174,6 +175,7 @@ theorem sdivAbsDivisorWord_evmWordIs_sp32_components_sdivOffsets
     unfold EvmAsm.Evm64.evm_sdivDivisorTopLimbOff
     rw [show signExtend12 (56 : BitVec 12) = (56 : Word) by decide]]
 
+open EvmAsm.Rv64 in
 theorem sdivAbsDivisorWord_evmWordIs_sp32_components_sdivOffsets_right
     (sp limb0 limb1 limb2 top : Word) (Q : Assertion) :
     (((sp + signExtend12 (32 : BitVec 12)) ↦ₘ sdivAbsSum0 limb0 top) **
