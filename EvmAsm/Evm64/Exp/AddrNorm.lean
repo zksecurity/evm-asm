@@ -346,6 +346,24 @@ attribute [exp_addr]
     (base + 24 : Word) = base + BitVec.ofNat 64 (4 * 6) := by
   bv_decide
 
+theorem expIterBodyCode_bit_test_square_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 3) (hk2 : k2 < 1) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 12 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expIterBodyCode_bit_test_cond_mul_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 3) (hk2 : k2 < 2) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 16 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expIterBodyCode_square_cond_mul_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 1) (hk2 : k2 < 2) :
+    base + 12 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 16 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
 @[exp_addr, grind =] theorem expSavedBitCondMulProgramAddr (base : Word) :
     (base + 120 : Word) = base + BitVec.ofNat 64 (4 * 30) := by
   bv_decide

@@ -23,24 +23,6 @@ abbrev expIterBodyCode (base : Word)
     CodeReq.ofProg (base + 16) (EvmAsm.Evm64.exp_cond_mul_block mulOff skipOff)
   ]
 
-theorem expIterBodyCode_bit_test_square_disjoint_addr
-    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 3) (hk2 : k2 < 1) :
-    base + BitVec.ofNat 64 (4 * k1) ≠
-      base + 12 + BitVec.ofNat 64 (4 * k2) := by
-  bv_omega
-
-theorem expIterBodyCode_bit_test_cond_mul_disjoint_addr
-    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 3) (hk2 : k2 < 2) :
-    base + BitVec.ofNat 64 (4 * k1) ≠
-      base + 16 + BitVec.ofNat 64 (4 * k2) := by
-  bv_omega
-
-theorem expIterBodyCode_square_cond_mul_disjoint_addr
-    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 1) (hk2 : k2 < 2) :
-    base + 12 + BitVec.ofNat 64 (4 * k1) ≠
-      base + 16 + BitVec.ofNat 64 (4 * k2) := by
-  bv_omega
-
 theorem expIterBodyCode_bit_test_sub {base : Word}
     {mulOff : BitVec 21} {skipOff : BitVec 13} :
     ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block) a = some i →
@@ -59,7 +41,8 @@ theorem expIterBodyCode_square_sub {base : Word}
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_bit_test_block_len, exp_square_block_len] at hk1 hk2
-      exact expIterBodyCode_bit_test_square_disjoint_addr base hk1 hk2))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expIterBodyCode_bit_test_square_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expIterBodyCode_cond_mul_sub {base : Word}
@@ -72,11 +55,13 @@ theorem expIterBodyCode_cond_mul_sub {base : Word}
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_bit_test_block_len, exp_cond_mul_block_len] at hk1 hk2
-      exact expIterBodyCode_bit_test_cond_mul_disjoint_addr base hk1 hk2))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expIterBodyCode_bit_test_cond_mul_disjoint_addr
+        base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_square_block_len, exp_cond_mul_block_len] at hk1 hk2
-      exact expIterBodyCode_square_cond_mul_disjoint_addr base hk1 hk2))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expIterBodyCode_square_cond_mul_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expIterBodyCode_block_subs {base : Word}
