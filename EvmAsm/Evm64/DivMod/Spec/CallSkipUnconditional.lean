@@ -115,6 +115,7 @@ theorem evm_div_n4_call_skip_stack_spec_unconditional_noNop (sp base : Word)
     hbnz hb3nz hshift_nz halign hbltu hborrow
     (n4CallSkipSemanticHolds_of_call_trial a b hb3nz hshift_nz hbltu)
 
+
 theorem evm_div_n4_call_skip_stack_spec_unconditional_exact_x1 (sp base : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
