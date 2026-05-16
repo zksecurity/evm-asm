@@ -48,11 +48,13 @@ theorem exp_cond_mul_call_block_code_eq_ofProg (base : Word) (mulOff : BitVec 21
   rw [show (base + 32) +
         BitVec.ofNat 64 (4 * exp_loop_marshal_a_to_factor2.length) =
         base + 64 by
-    rw [exp_loop_marshal_a_to_factor2_length]; bv_omega]
+    rw [exp_loop_marshal_a_to_factor2_length]
+    exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor2_end_addr base]
   rw [CodeReq.ofProg_append]
   rw [show (base + 64) + BitVec.ofNat 64 (4 * (exp_square_block mulOff).length) =
         base + 68 by
-    rw [exp_square_block_length]; bv_omega]
+    rw [exp_square_block_length]
+    exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_square_end_addr base]
 
 theorem exp_cond_mul_call_block_code_marshal_factor1_sub
     (base : Word) (mulOff : BitVec 21) :
@@ -73,7 +75,8 @@ theorem exp_cond_mul_call_block_code_marshal_a_to_factor2_sub
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_loop_marshal_factor1_length,
         exp_loop_marshal_a_to_factor2_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor1_factor2_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem exp_cond_mul_call_block_code_square_sub
@@ -86,12 +89,14 @@ theorem exp_cond_mul_call_block_code_square_sub
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_loop_marshal_factor1_length,
         exp_square_block_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor1_square_disjoint_addr
+        base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_loop_marshal_a_to_factor2_length,
         exp_square_block_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor2_square_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem exp_cond_mul_call_block_code_un_marshal_and_restore_sub
@@ -104,17 +109,20 @@ theorem exp_cond_mul_call_block_code_un_marshal_and_restore_sub
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_loop_marshal_factor1_length,
         exp_loop_un_marshal_and_restore_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor1_restore_disjoint_addr
+        base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_loop_marshal_a_to_factor2_length,
         exp_loop_un_marshal_and_restore_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_factor2_restore_disjoint_addr
+        base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_square_block_length,
         exp_loop_un_marshal_and_restore_length] at hk1 hk2
-      bv_omega))
+      exact EvmAsm.Evm64.Exp.AddrNorm.expCallBlock_square_restore_disjoint_addr
+        base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem exp_cond_mul_call_block_code_block_subs
@@ -190,7 +198,7 @@ theorem exp_cond_mul_call_with_skip_block_code_call_sub
   exact CodeReq.ofProg_mono_sub base (base + 4)
     (exp_cond_mul_call_with_skip_block mulOff skipOff)
     (exp_cond_mul_call_block mulOff) 1
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expCondMulCallSkipCallProgramAddr base)
     (by
       unfold exp_cond_mul_call_with_skip_block single
       simp only [seq]
@@ -262,7 +270,7 @@ theorem exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
   exact CodeReq.ofProg_mono_sub base (base + 4)
     (exp_cond_mul_call_with_saved_bit_skip_block mulOff skipOff)
     (exp_cond_mul_call_block mulOff) 1
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expCondMulCallSkipCallProgramAddr base)
     (by
       unfold exp_cond_mul_call_with_saved_bit_skip_block single
       simp only [seq]
