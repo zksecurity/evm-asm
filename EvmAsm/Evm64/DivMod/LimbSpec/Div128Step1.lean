@@ -198,4 +198,38 @@ theorem divKDiv128Step1Post_unfold (sp uHi dHi dlo un1 : Word) :
        (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)) := by
   delta divKDiv128Step1Post; rfl
 
+/-- Bundled CodeReq for `divK_div128_step1_spec_within` (instrs [10]-[24], 15 singletons). -/
+@[irreducible]
+def divKDiv128Step1Code (base : Word) : CodeReq :=
+  CodeReq.union (CodeReq.singleton base (.DIVU .x10 .x7 .x6))
+  (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x5 .x10 .x6))
+  (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))
+  (CodeReq.union (CodeReq.singleton (base + 12) (.SRLI .x5 .x10 32))
+  (CodeReq.union (CodeReq.singleton (base + 16) (.BEQ .x5 .x0 12))
+  (CodeReq.union (CodeReq.singleton (base + 20) (.ADDI .x10 .x10 4095))
+  (CodeReq.union (CodeReq.singleton (base + 24) (.ADD .x7 .x7 .x6))
+  (CodeReq.union (CodeReq.singleton (base + 28) (.LD .x1 .x12 3952))
+  (CodeReq.union (CodeReq.singleton (base + 32) (.MUL .x5 .x10 .x1))
+  (CodeReq.union (CodeReq.singleton (base + 36) (.SLLI .x1 .x7 32))
+  (CodeReq.union (CodeReq.singleton (base + 40) (.OR .x1 .x1 .x11))
+  (CodeReq.union (CodeReq.singleton (base + 44) (.BLTU .x1 .x5 8))
+  (CodeReq.union (CodeReq.singleton (base + 48) (.JAL .x0 12))
+  (CodeReq.union (CodeReq.singleton (base + 52) (.ADDI .x10 .x10 4095))
+   (CodeReq.singleton (base + 56) (.ADD .x7 .x7 .x6)))))))))))))))
+
+/-- 0-let named-postcondition wrapper for `divK_div128_step1_spec_within`. -/
+theorem divK_div128_step1_named_spec_within
+    (sp uHi dHi un1 v1Old v5Old v10Old dlo : Word) (base : Word) :
+    cpsTripleWithin 15 base (base + 60) (divKDiv128Step1Code base)
+      ((.x7 ↦ᵣ uHi) ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ v10Old) **
+       (.x5 ↦ᵣ v5Old) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ v1Old) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo))
+      (divKDiv128Step1Post sp uHi dHi dlo un1) := by
+  have h := divK_div128_step1_spec_within sp uHi dHi un1 v1Old v5Old v10Old dlo base
+  simp only [divKDiv128Step1Code]
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128Step1Post_unfold]; exact hp)
+    h
+
 end EvmAsm.Evm64
