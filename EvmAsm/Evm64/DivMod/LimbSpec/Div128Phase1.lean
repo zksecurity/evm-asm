@@ -159,4 +159,56 @@ theorem divKDiv128Step1InitPost_unfold (uHi dHi : Word) :
        (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q1 * dHi)) := by
   delta divKDiv128Step1InitPost; rfl
 
+/-- 0-let named wrapper for `divK_div128_save_split_d_spec_within`. -/
+theorem divK_div128_save_split_d_named_spec_within
+    (sp retAddr d v1Old v6Old retMem dMem dloMem : Word) (base : Word) :
+    cpsTripleWithin 6 base (base + 24)
+      (CodeReq.union (CodeReq.singleton base (.SD .x12 .x2 3968))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.SD .x12 .x10 3960))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SRLI .x6 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.SLLI .x1 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.SRLI .x1 .x1 32))
+       (CodeReq.singleton (base + 20) (.SD .x12 .x1 3952)))))))
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem))
+      (divKDiv128SaveSplitDPost sp retAddr d) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128SaveSplitDPost_unfold]; exact hp)
+    (divK_div128_save_split_d_spec_within sp retAddr d v1Old v6Old retMem dMem dloMem base)
+
+/-- 0-let named wrapper for `divK_div128_split_ulo_spec_within`. -/
+theorem divK_div128_split_ulo_named_spec_within
+    (sp uLo v11Old un0Mem : Word) (base : Word) :
+    cpsTripleWithin 4 base (base + 16)
+      (CodeReq.union (CodeReq.singleton base (.SRLI .x11 .x5 32))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.SLLI .x5 .x5 32))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SRLI .x5 .x5 32))
+       (CodeReq.singleton (base + 12) (.SD .x12 .x5 3944)))))
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ uLo) ** (.x11 ↦ᵣ v11Old) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      (divKDiv128SplitUloPost sp uLo) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128SplitUloPost_unfold]; exact hp)
+    (divK_div128_split_ulo_spec_within sp uLo v11Old un0Mem base)
+
+/-- 0-let named wrapper for `divK_div128_step1_init_spec_within`. -/
+theorem divK_div128_step1_init_named_spec_within
+    (uHi dHi v5Old v10Old : Word) (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.union (CodeReq.singleton base (.DIVU .x10 .x7 .x6))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.MUL .x5 .x10 .x6))
+       (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))))
+      ((.x7 ↦ᵣ uHi) ** (.x6 ↦ᵣ dHi) **
+       (.x10 ↦ᵣ v10Old) ** (.x5 ↦ᵣ v5Old))
+      (divKDiv128Step1InitPost uHi dHi) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128Step1InitPost_unfold]; exact hp)
+    (divK_div128_step1_init_spec_within uHi dHi v5Old v10Old base)
+
 end EvmAsm.Evm64

@@ -115,4 +115,20 @@ theorem divKAddbackFinalPost_unfold (uBase carry qHat uTop : Word) (u_off : BitV
        (.x5 ↦ᵣ uNew) ** (uBase + signExtend12 u_off ↦ₘ uNew)) := by
   delta divKAddbackFinalPost; rfl
 
+/-- 0-let named wrapper for `divK_addback_final_spec_within`. -/
+theorem divK_addback_final_named_spec_within
+    (uBase carry qHat v5Old uTop : Word) (u_off : BitVec 12) (base : Word) :
+    cpsTripleWithin 4 base (base + 16)
+      (CodeReq.union (CodeReq.singleton base (.LD .x5 .x6 u_off))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.ADD .x5 .x5 .x7))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SD .x6 .x5 u_off))
+       (CodeReq.singleton (base + 12) (.ADDI .x11 .x11 4095)))))
+      ((.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ carry) ** (.x11 ↦ᵣ qHat) **
+       (.x5 ↦ᵣ v5Old) ** (uBase + signExtend12 u_off ↦ₘ uTop))
+      (divKAddbackFinalPost uBase carry qHat uTop u_off) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKAddbackFinalPost_unfold]; exact hp)
+    (divK_addback_final_spec_within uBase carry qHat v5Old uTop u_off base)
+
 end EvmAsm.Evm64
