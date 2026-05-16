@@ -353,7 +353,7 @@ theorem expIterBodyFullCode_squaring_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 12)
     (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
     (EvmAsm.Evm64.exp_squaring_call_block mulOff) 3
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expLoopSquareProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full
       simp only [EvmAsm.Rv64.seq]
@@ -376,7 +376,7 @@ theorem expIterBodyFullCode_cond_mul_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 116)
     (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
     (EvmAsm.Evm64.exp_cond_mul_call_with_skip_block mulOff skipOff) 29
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expFullIterCondMulProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full
       simp only [EvmAsm.Rv64.seq]
@@ -398,7 +398,7 @@ theorem expIterBodyFullCode_loop_back_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base (base + 224)
     (EvmAsm.Evm64.exp_iter_body_full mulOff skipOff backOff)
     (EvmAsm.Evm64.exp_loop_back backOff) 56
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expFullIterLoopBackProgramAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full
       simp only [EvmAsm.Rv64.seq]
