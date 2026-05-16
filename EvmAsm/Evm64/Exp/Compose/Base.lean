@@ -36,6 +36,24 @@ abbrev expOneIterCode (base : Word)
     CodeReq.ofProg (base + 24) (EvmAsm.Evm64.exp_loop_back backOff)
   ]
 
+theorem expOneIterCode_bit_test_loop_back_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 3) (hk2 : k2 < 2) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 24 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expOneIterCode_square_loop_back_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 1) (hk2 : k2 < 2) :
+    base + 12 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 24 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
+theorem expOneIterCode_cond_mul_loop_back_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 2) (hk2 : k2 < 2) :
+    base + 16 + BitVec.ofNat 64 (4 * k1) ≠
+      base + 24 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
 theorem expOneIterCode_bit_test_sub {base : Word}
     {mulOff : BitVec 21} {skipOff backOff : BitVec 13} :
     ∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_bit_test_block) a = some i →
@@ -54,7 +72,7 @@ theorem expOneIterCode_square_sub {base : Word}
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_bit_test_block_len, exp_square_block_len] at hk1 hk2
-      bv_omega))
+      exact expIterBodyCode_bit_test_square_disjoint_addr base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expOneIterCode_cond_mul_sub {base : Word}
@@ -67,11 +85,11 @@ theorem expOneIterCode_cond_mul_sub {base : Word}
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_bit_test_block_len, exp_cond_mul_block_len] at hk1 hk2
-      bv_omega))
+      exact expIterBodyCode_bit_test_cond_mul_disjoint_addr base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_square_block_len, exp_cond_mul_block_len] at hk1 hk2
-      bv_omega))
+      exact expIterBodyCode_square_cond_mul_disjoint_addr base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expOneIterCode_loop_back_sub {base : Word}
@@ -84,15 +102,15 @@ theorem expOneIterCode_loop_back_sub {base : Word}
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_bit_test_block_len, exp_loop_back_len] at hk1 hk2
-      bv_omega))
+      exact expOneIterCode_bit_test_loop_back_disjoint_addr base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_square_block_len, exp_loop_back_len] at hk1 hk2
-      bv_omega))
+      exact expOneIterCode_square_loop_back_disjoint_addr base hk1 hk2))
   apply CodeReq.mono_union_right
     (CodeReq.ofProg_disjoint_range (fun k1 k2 hk1 hk2 => by
       simp only [exp_cond_mul_block_len, exp_loop_back_len] at hk1 hk2
-      bv_omega))
+      exact expOneIterCode_cond_mul_loop_back_disjoint_addr base hk1 hk2))
   exact CodeReq.union_mono_left
 
 theorem expOneIterCode_block_subs {base : Word}
