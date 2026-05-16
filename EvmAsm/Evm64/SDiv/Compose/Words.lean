@@ -320,6 +320,21 @@ theorem sdivAbsDivisorWord_ne_zero_of_ne_zero
   intro h_abs_zero
   exact h_ne ((sdivAbsDivisorWord_eq_zero_iff divisor).mp h_abs_zero)
 
+/-- The SDIV divisor absolute-value normalization either leaves the word
+    unchanged or computes its two's-complement negation, depending on the
+    caller-visible sign bit. -/
+theorem sdivAbsDivisorWord_sign_split
+    (divisor : EvmWord) :
+    sdivAbsDivisorWord
+        (divisor.getLimbN 0) (divisor.getLimbN 1)
+        (divisor.getLimbN 2) (divisor.getLimbN 3) =
+      if divisor.getLimbN 3 >>> (63 : BitVec 6).toNat = 0 then
+        divisor
+      else
+        ~~~divisor + 1 := by
+  unfold sdivAbsDivisorWord EvmWord.fromLimbs EvmWord.getLimbN EvmWord.getLimb
+  bv_decide
+
 /-- The SDIV dividend absolute-value word is zero exactly for the zero
     dividend. This mirrors the divisor bridge for semantic stack views that
     reason about wrapper-normalized operands. -/
