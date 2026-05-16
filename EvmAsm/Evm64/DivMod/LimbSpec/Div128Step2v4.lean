@@ -1037,4 +1037,20 @@ theorem divKDiv128Step2V4PhaseEPost_unfold
        (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
   delta divKDiv128Step2V4PhaseEPost; rfl
 
+/-- 0-let named wrapper for `divK_div128_step2_v4_phase_D_merged_spec`.
+    Inlines rhat2cHi, q0Dlo1, rhat2Un0 in precondition. -/
+theorem divK_div128_step2_v4_phase_D_named_spec
+    (sp dHi q0c rhat2c dlo un0 : Word) (base : Word) :
+    cpsTripleWithin 4 (base + 60) (base + 84) (divKDiv128Step2V4Code base)
+      ((.x7 ↦ᵣ q0c * dlo) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
+       (.x11 ↦ᵣ un0) ** (.x1 ↦ᵣ (rhat2c <<< (32 : BitVec 6).toNat) ||| un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2c >>> (32 : BitVec 6).toNat = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c))
+      (divKDiv128Step2V4PhaseDPost sp dHi q0c rhat2c dlo un0) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128Step2V4PhaseDPost_unfold]; exact hp)
+    (divK_div128_step2_v4_phase_D_merged_spec sp dHi q0c rhat2c dlo un0 base)
+
 end EvmAsm.Evm64
