@@ -7,6 +7,7 @@
 import EvmAsm.Evm64.SDiv.Compose.BzeroCallablePost
 import EvmAsm.Evm64.SDiv.Compose.DispatchReadyPost
 import EvmAsm.Evm64.SDiv.Compose.DivCallAbsComponents
+import EvmAsm.Evm64.SDiv.Compose.DivCallExactCallable
 import EvmAsm.Evm64.SDiv.Compose.DivCallFramedCallable
 
 namespace EvmAsm.Evm64.SDiv.Compose
@@ -55,16 +56,20 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0
       (by simpa [divisorAbsWord] using hbz)
+  let branch : EvmAsm.Evm64.DivStackSpecCase (base + wrapperEndOff)
+      dividendAbsWord divisorAbsWord :=
+    EvmAsm.Evm64.DivStackSpecCase.bzero ((base + divCallOff) + 4) v2
+      (by simpa [divisorAbsWord] using hbz)
   have hCallableFramed :=
-    evm_div_callable_preserving_x1_framed_spec_in_sdivCode
+    evm_div_callable_preserving_branch_return_x1_framed_spec_in_sdivCode
       (F := saveRaDivCallSignFrame vRa resultSign divisorSign)
-      sp base ((base + divCallOff) + 4)
-      dividendAbsWord divisorAbsWord v5 v6 divisorSum3 divisorMask divisorCarry3
+      sp base dividendAbsWord divisorAbsWord v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0
-      (EvmAsm.Evm64.DivStackSpecCase.bzero ((base + divCallOff) + 4) v2
-        (by simpa [divisorAbsWord] using hbz))
-      hStack
+      branch
+      (by
+        dsimp [branch]
+        exact hStack)
   have hCallableExit :
       EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
         (base + wrapperEndOff) (base + resultSignFixOff) (sdivCode base)
