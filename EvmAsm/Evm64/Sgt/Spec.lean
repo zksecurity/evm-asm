@@ -167,5 +167,60 @@ theorem evm_sgt_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
+/-- Bundled postcondition for `evm_sgt_stack_spec_within`.
+    Hides 12 borrow-chain and signed-compare lets. -/
+@[irreducible]
+def evmSgtStackPost (sp v11 : Word) (a b : EvmWord) : Assertion :=
+  let borrow0 := if BitVec.ult (b.getLimbN 0) (a.getLimbN 0) then (1 : Word) else 0
+  let borrow1a := if BitVec.ult (b.getLimbN 1) (a.getLimbN 1) then (1 : Word) else 0
+  let temp1 := b.getLimbN 1 - a.getLimbN 1
+  let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+  let borrow1 := borrow1a ||| borrow1b
+  let borrow2a := if BitVec.ult (b.getLimbN 2) (a.getLimbN 2) then (1 : Word) else 0
+  let temp2 := b.getLimbN 2 - a.getLimbN 2
+  let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+  let borrow2 := borrow2a ||| borrow2b
+  let sgtMsb := if BitVec.slt (b.getLimbN 3) (a.getLimbN 3) then (1 : Word) else 0
+  let result := if b.getLimbN 3 = a.getLimbN 3 then borrow2 else sgtMsb
+  (.x12 ↦ᵣ (sp + 32)) **
+  (.x7 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then temp2 else b.getLimbN 3)) **
+  (.x6 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2b else a.getLimbN 3)) **
+  (.x5 ↦ᵣ result) **
+  (.x11 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2a else v11)) **
+  evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt b a then 1 else 0)
+
+theorem evmSgtStackPost_unfold (sp v11 : Word) (a b : EvmWord) :
+    evmSgtStackPost sp v11 a b =
+      (let borrow0 := if BitVec.ult (b.getLimbN 0) (a.getLimbN 0) then (1 : Word) else 0
+       let borrow1a := if BitVec.ult (b.getLimbN 1) (a.getLimbN 1) then (1 : Word) else 0
+       let temp1 := b.getLimbN 1 - a.getLimbN 1
+       let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
+       let borrow1 := borrow1a ||| borrow1b
+       let borrow2a := if BitVec.ult (b.getLimbN 2) (a.getLimbN 2) then (1 : Word) else 0
+       let temp2 := b.getLimbN 2 - a.getLimbN 2
+       let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
+       let borrow2 := borrow2a ||| borrow2b
+       let sgtMsb := if BitVec.slt (b.getLimbN 3) (a.getLimbN 3) then (1 : Word) else 0
+       let result := if b.getLimbN 3 = a.getLimbN 3 then borrow2 else sgtMsb
+       (.x12 ↦ᵣ (sp + 32)) **
+       (.x7 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then temp2 else b.getLimbN 3)) **
+       (.x6 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2b else a.getLimbN 3)) **
+       (.x5 ↦ᵣ result) **
+       (.x11 ↦ᵣ (if b.getLimbN 3 = a.getLimbN 3 then borrow2a else v11)) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt b a then 1 else 0)) := by
+  delta evmSgtStackPost; rfl
+
+/-- Named-postcondition wrapper for `evm_sgt_stack_spec_within`.
+    0 statement-level lets; postcondition is opaque `evmSgtStackPost`. -/
+theorem evm_sgt_stack_named_spec_within (sp base : Word)
+    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
+    cpsTripleWithin 25 base (base + 100) (evm_sgt_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       evmWordIs sp a ** evmWordIs (sp + 32) b)
+      (evmSgtStackPost sp v11 a b) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmSgtStackPost_unfold]; exact hp)
+    (evm_sgt_stack_spec_within sp base a b v7 v6 v5 v11)
 
 end EvmAsm.Evm64
