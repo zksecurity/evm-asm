@@ -134,4 +134,23 @@ theorem divKDiv128ComputeUn21Post_unfold (sp q1 rhat un1 dloMem : Word) :
        (sp + signExtend12 3952 ↦ₘ dloMem)) := by
   delta divKDiv128ComputeUn21Post; rfl
 
+/-- Bundled postcondition for `divK_div128_prodcheck_body_spec_within`.
+    Hides `qDlo`, `rhatHi`, `rhatUn1` lets. -/
+@[irreducible]
+def divKDiv128ProdCheckBodyPost (sp q rhat un1 dlo : Word) : Assertion :=
+  let qDlo := q * dlo
+  let rhatHi := rhat <<< (32 : BitVec 6).toNat
+  let rhatUn1 := rhatHi ||| un1
+  (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+  (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1) ** (sp + signExtend12 3952 ↦ₘ dlo)
+
+theorem divKDiv128ProdCheckBodyPost_unfold (sp q rhat un1 dlo : Word) :
+    divKDiv128ProdCheckBodyPost sp q rhat un1 dlo =
+      (let qDlo := q * dlo
+       let rhatHi := rhat <<< (32 : BitVec 6).toNat
+       let rhatUn1 := rhatHi ||| un1
+       (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q) ** (.x7 ↦ᵣ rhat) ** (.x11 ↦ᵣ un1) **
+       (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1) ** (sp + signExtend12 3952 ↦ₘ dlo)) := by
+  delta divKDiv128ProdCheckBodyPost; rfl
+
 end EvmAsm.Evm64
