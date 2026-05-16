@@ -206,4 +206,38 @@ theorem sub_limb_carry_named_spec_within (offA offB : BitVec 12)
     (fun h hp => by simp only [subLimbCarryPost_unfold]; exact hp)
     (sub_limb_carry_spec_within offA offB sp aLimb bLimb v7 v6 borrowIn v11 base)
 
+/-- Bundled postcondition for `sub_limb_carry_spec_phase1_within`. -/
+@[irreducible]
+def subLimbCarryPhase1Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Assertion :=
+  let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
+  let temp := aLimb - bLimb
+  (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ borrow1) **
+  ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
+
+theorem subLimbCarryPhase1Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
+    subLimbCarryPhase1Post sp offA offB aLimb bLimb =
+      (let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
+       let temp := aLimb - bLimb
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ borrow1) **
+       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
+  delta subLimbCarryPhase1Post; rfl
+
+/-- Bundled postcondition for `sub_limb_carry_spec_phase2_within`. -/
+@[irreducible]
+def subLimbCarryPhase2Post (sp : Word) (offB : BitVec 12) (temp borrowIn borrow1 aLimb : Word) (memA : Word) : Assertion :=
+  let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
+  let result := temp - borrowIn
+  let borrowOut := borrow1 ||| borrow2
+  (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
+  (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)
+
+theorem subLimbCarryPhase2Post_unfold (sp : Word) (offB : BitVec 12) (temp borrowIn borrow1 aLimb : Word) (memA : Word) :
+    subLimbCarryPhase2Post sp offB temp borrowIn borrow1 aLimb memA =
+      (let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
+       let result := temp - borrowIn
+       let borrowOut := borrow1 ||| borrow2
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
+       (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)) := by
+  delta subLimbCarryPhase2Post; rfl
+
 end EvmAsm.Evm64
