@@ -109,6 +109,33 @@ theorem condNegateLimbStepPost_unfold
   delta condNegateLimbStepPost
   rfl
 
+/-- Postcondition for the self-carry variant: carry-in register is the same
+    as carry-out, so no separate carryInReg ownership atom appears. -/
+@[irreducible]
+def condNegateLimbStepSelfCarryPost
+    (addrReg maskReg valueReg carryReg : EvmAsm.Rv64.Reg)
+    (limbOff : BitVec 12)
+    (vAddr carryIn mask limbVal : Word) : EvmAsm.Rv64.Assertion :=
+  let sum := (limbVal ^^^ mask) + carryIn
+  let carryOut := if BitVec.ult sum carryIn then (1 : Word) else 0
+  (addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
+  (valueReg ↦ᵣ sum) ** (carryReg ↦ᵣ carryOut) **
+  ((vAddr + EvmAsm.Rv64.signExtend12 limbOff) ↦ₘ sum)
+
+theorem condNegateLimbStepSelfCarryPost_unfold
+    {addrReg maskReg valueReg carryReg : EvmAsm.Rv64.Reg}
+    {limbOff : BitVec 12}
+    {vAddr carryIn mask limbVal : Word} :
+    condNegateLimbStepSelfCarryPost addrReg maskReg valueReg carryReg
+        limbOff vAddr carryIn mask limbVal =
+      (let sum := (limbVal ^^^ mask) + carryIn
+       let carryOut := if BitVec.ult sum carryIn then (1 : Word) else 0
+       (addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
+       (valueReg ↦ᵣ sum) ** (carryReg ↦ᵣ carryOut) **
+       ((vAddr + EvmAsm.Rv64.signExtend12 limbOff) ↦ₘ sum)) := by
+  delta condNegateLimbStepSelfCarryPost
+  rfl
+
 /-- 5-instruction conditional-negation limb step with the incoming carry
     held in a separate register: `LD; XOR; ADD; SLTU; SD`. This is the
     leaf used for limb 0 of the 256-bit SDIV conditional-negation block,
@@ -151,21 +178,21 @@ theorem evm_sdiv_cond_negate_limb_step_self_carry_spec_within
     (addrReg maskReg valueReg carryReg : EvmAsm.Rv64.Reg) (limbOff : BitVec 12)
     (vAddr mask valueOld carryIn limbVal : Word) (base : Word)
     (hvalue_ne_x0 : valueReg ≠ .x0) (hcarry_ne_x0 : carryReg ≠ .x0) :
-    let mem := vAddr + EvmAsm.Rv64.signExtend12 limbOff
-    let xored := limbVal ^^^ mask
-    let sum := xored + carryIn
-    let carryOut := if BitVec.ult sum carryIn then (1 : Word) else 0
     let code :=
       evm_sdiv_cond_negate_limb_step_code addrReg carryReg maskReg valueReg
         carryReg limbOff base
     EvmAsm.Rv64.cpsTripleWithin 5 base (base + 20) code
       ((addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
        (valueReg ↦ᵣ valueOld) ** (carryReg ↦ᵣ carryIn) **
-       (mem ↦ₘ limbVal))
-      ((addrReg ↦ᵣ vAddr) ** (maskReg ↦ᵣ mask) **
-       (valueReg ↦ᵣ sum) ** (carryReg ↦ᵣ carryOut) **
-       (mem ↦ₘ sum)) := by
-  intro mem xored sum carryOut code
+       ((vAddr + EvmAsm.Rv64.signExtend12 limbOff) ↦ₘ limbVal))
+      (condNegateLimbStepSelfCarryPost addrReg maskReg valueReg carryReg
+        limbOff vAddr carryIn mask limbVal) := by
+  intro code
+  rw [condNegateLimbStepSelfCarryPost_unfold]
+  let mem := vAddr + EvmAsm.Rv64.signExtend12 limbOff
+  let xored := limbVal ^^^ mask
+  let sum := xored + carryIn
+  let carryOut := if BitVec.ult sum carryIn then (1 : Word) else 0
   have L := EvmAsm.Rv64.ld_spec_gen_within valueReg addrReg vAddr valueOld limbVal
     limbOff base hvalue_ne_x0
   have X := EvmAsm.Rv64.xor_spec_gen_rd_eq_rs1_within valueReg maskReg limbVal mask
