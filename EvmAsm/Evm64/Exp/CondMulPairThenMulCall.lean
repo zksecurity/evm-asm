@@ -279,7 +279,8 @@ theorem exp_cond_mul_call_block_spec_within
        memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
        (.x1 ↦ᵣ (base + 68)))
       (by pcFree) h2_lifted
-  have hexit : (base + 68 : Word) + 36 = base + 104 := by bv_omega
+  have hexit : (base + 68 : Word) + 36 = base + 104 :=
+    EvmAsm.Evm64.Exp.AddrNorm.expCallBlockRestoreExitPc base
   rw [hexit] at h2_framed
   -- (4) Compose with mid-point permutation.
   have hseq : cpsTripleWithin (17 + 64 + 9) base (base + 104)
