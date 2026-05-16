@@ -848,8 +848,57 @@ theorem evm_mul_cols23ep_named_spec_within (sp base : Word)
     (fun h hp => by simp only [mulCols23epPost_unfold]; exact hp)
     (evm_mul_cols23ep_spec_within sp base a0 a1 b2 b3 r2_in r3p_in v5 v6 v7 v10)
 
+/-- Bundled postcondition for `mul_col0_spec_within`. Hides 11 computation lets. -/
+@[irreducible]
+def mulCol0Post (sp a0 a1 a2 a3 b0 : Word) : Assertion :=
+  let r0 := a0 * b0
+  let hi_a0b0 := rv64_mulhu a0 b0
+  let lo_a1b0 := a1 * b0
+  let hi_a1b0 := rv64_mulhu a1 b0
+  let r1_acc := hi_a0b0 + lo_a1b0
+  let carry_r1 := if BitVec.ult r1_acc lo_a1b0 then (1 : Word) else 0
+  let lo_a2b0 := a2 * b0
+  let hi_a2b0 := rv64_mulhu a2 b0
+  let r2_acc := hi_a1b0 + carry_r1 + lo_a2b0
+  let carry_r2 := if BitVec.ult r2_acc lo_a2b0 then (1 : Word) else 0
+  let r3p := hi_a2b0 + carry_r2 + a3 * b0
+  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x6 ↦ᵣ r3p) ** (.x7 ↦ᵣ a3 * b0) **
+  (.x10 ↦ᵣ r1_acc) ** (.x11 ↦ᵣ r2_acc) **
+  (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
+  ((sp + 24) ↦ₘ r3p) ** ((sp + 32) ↦ₘ r0)
 
+theorem mulCol0Post_unfold (sp a0 a1 a2 a3 b0 : Word) :
+    mulCol0Post sp a0 a1 a2 a3 b0 =
+      (let r0 := a0 * b0
+       let hi_a0b0 := rv64_mulhu a0 b0
+       let lo_a1b0 := a1 * b0
+       let hi_a1b0 := rv64_mulhu a1 b0
+       let r1_acc := hi_a0b0 + lo_a1b0
+       let carry_r1 := if BitVec.ult r1_acc lo_a1b0 then (1 : Word) else 0
+       let lo_a2b0 := a2 * b0
+       let hi_a2b0 := rv64_mulhu a2 b0
+       let r2_acc := hi_a1b0 + carry_r1 + lo_a2b0
+       let carry_r2 := if BitVec.ult r2_acc lo_a2b0 then (1 : Word) else 0
+       let r3p := hi_a2b0 + carry_r2 + a3 * b0
+       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x6 ↦ᵣ r3p) ** (.x7 ↦ᵣ a3 * b0) **
+       (.x10 ↦ᵣ r1_acc) ** (.x11 ↦ᵣ r2_acc) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
+       ((sp + 24) ↦ₘ r3p) ** ((sp + 32) ↦ₘ r0)) := by
+  delta mulCol0Post; rfl
 
+/-- Named-postcondition wrapper for `mul_col0_spec_within`. 0 statement lets. -/
+theorem mul_col0_named_spec_within (sp base : Word)
+    (a0 a1 a2 a3 b0 v5 v6 v7 v10 v11 : Word) :
+    cpsTripleWithin 21 base (base + 84) (mul_col0_code base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
+       ((sp + 24) ↦ₘ a3) ** ((sp + 32) ↦ₘ b0))
+      (mulCol0Post sp a0 a1 a2 a3 b0) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [mulCol0Post_unfold]; exact hp)
+    (mul_col0_spec_within sp base a0 a1 a2 a3 b0 v5 v6 v7 v10 v11)
 
 
 
