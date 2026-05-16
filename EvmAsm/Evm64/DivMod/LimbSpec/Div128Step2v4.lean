@@ -983,6 +983,42 @@ def divKDiv128Step2V4PhaseEPost
   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
   (sp + signExtend12 3936 ↦ₘ rhat2c)
 
+/-- Bundled postcondition for `divK_div128_step2_v4_phase_D_merged_spec`.
+    Hides 5 lets: rhat2cHi, q0Dlo1, rhat2Un0, q0', rhat2'.
+    Bakes in `⌜rhat2cHi = 0⌝` (derived from rhat2c). -/
+@[irreducible]
+def divKDiv128Step2V4PhaseDPost
+    (sp dHi q0c rhat2c dlo un0 : Word) : Assertion :=
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0Dlo1 := q0c * dlo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dlo un0
+  let rhat2' := if rhat2cHi = 0 then
+                  if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+                else rhat2c
+  (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+  (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+  (sp + signExtend12 3936 ↦ₘ rhat2c)
+
+theorem divKDiv128Step2V4PhaseDPost_unfold
+    (sp dHi q0c rhat2c dlo un0 : Word) :
+    divKDiv128Step2V4PhaseDPost sp dHi q0c rhat2c dlo un0 =
+      (let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+       let q0Dlo1 := q0c * dlo
+       let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
+       let q0' := div128Quot_phase2b_q0' q0c rhat2c dlo un0
+       let rhat2' := if rhat2cHi = 0 then
+                       if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+                     else rhat2c
+       (.x7 ↦ᵣ q0Dlo1) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0') **
+       (.x11 ↦ᵣ rhat2') ** (.x1 ↦ᵣ rhat2Un0) **
+       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** ⌜rhat2cHi = 0⌝ **
+       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0) **
+       (sp + signExtend12 3936 ↦ₘ rhat2c)) := by
+  delta divKDiv128Step2V4PhaseDPost; rfl
+
 theorem divKDiv128Step2V4PhaseEPost_unfold
     (sp dHi q0' rhat2' q0Dlo1 dlo un0 rhat2c : Word) :
     divKDiv128Step2V4PhaseEPost sp dHi q0' rhat2' q0Dlo1 dlo un0 rhat2c =
