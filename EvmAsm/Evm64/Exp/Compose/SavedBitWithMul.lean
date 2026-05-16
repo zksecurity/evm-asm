@@ -126,6 +126,12 @@ theorem evmExpMsbSavedBitTwoMulCanonicalWithMulCode_mul_sub
   unfold evmExpMsbSavedBitTwoMulCanonicalWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
+theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 76) (hk2 : k2 < 64) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 304 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
 /-- The canonical two-MUL saved-bit EXP wrapper is disjoint from a
     `mul_callable` body appended immediately after the 304-byte wrapper. -/
 theorem evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul
@@ -150,8 +156,9 @@ theorem evmExpMsbSavedBitTwoMulCanonicalCode_disjoint_appended_mul
       EvmAsm.Evm64.canonicalExpSquaringMulOff
       EvmAsm.Evm64.canonicalExpCondMulOff)
     EvmAsm.Evm64.mul_callable_length
-    (fun k1 k2 hk1 hk2 => by
-      bv_omega)
+    (fun k1 k2 hk1 hk2 =>
+      evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_disjoint_addr
+        base hk1 hk2)
 
 theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_mul_sub
     {base : Word} :
