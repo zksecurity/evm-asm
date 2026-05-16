@@ -82,7 +82,7 @@ theorem expIterBodyFullMsbSavedBitTwoMulCode_bit_test_sub {base : Word}
     (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       squaringMulOff condMulOff skipOff backOff)
     EvmAsm.Evm64.exp_msb_bit_test_block 0
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expProgramStartAddr base)
     (by
       unfold EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul
       simp only [EvmAsm.Rv64.seq]

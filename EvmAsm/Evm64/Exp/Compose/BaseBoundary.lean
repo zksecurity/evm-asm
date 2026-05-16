@@ -79,7 +79,7 @@ theorem expBoundaryProgramCode_prologue_sub {base : Word} :
       (expBoundaryProgramCode base) a = some i := by
   unfold expBoundaryProgramCode
   exact CodeReq.ofProg_mono_sub base base expBoundaryProgram EvmAsm.Evm64.exp_prologue 0
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expProgramStartAddr base)
     (by unfold expBoundaryProgram; simp only [EvmAsm.Rv64.seq]; rfl)
     (by
       rw [expBoundaryProgram_len, exp_prologue_len]

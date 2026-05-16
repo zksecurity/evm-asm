@@ -64,7 +64,7 @@ theorem exp_squaring_call_block_code_marshal_factor1_sub {base : Word}
   exact CodeReq.ofProg_mono_sub base base
     (EvmAsm.Evm64.exp_squaring_call_block mulOff)
     EvmAsm.Evm64.exp_loop_marshal_factor1 0
-    (by bv_omega)
+    (EvmAsm.Evm64.Exp.AddrNorm.expProgramStartAddr base)
     (by
       unfold EvmAsm.Evm64.exp_squaring_call_block
       simp only [EvmAsm.Rv64.seq]
