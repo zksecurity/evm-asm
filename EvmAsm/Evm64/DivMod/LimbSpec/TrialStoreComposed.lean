@@ -155,4 +155,22 @@ theorem divKStoreQjPost_unfold (sp j qHat : Word) :
        (qAddr ↦ₘ qHat)) := by
   delta divKStoreQjPost; rfl
 
+/-- 0-let named wrapper for `divK_store_qj_spec_within`.
+    Inlines qAddr in precondition; postcondition uses divKStoreQjPost. -/
+theorem divK_store_qj_named_spec_within (sp j qHat v5Old v7Old qOld : Word)
+    (base : Word) :
+    cpsTripleWithin 4 base (base + 16)
+      (CodeReq.union (CodeReq.singleton base (.SLLI .x5 .x1 3))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.ADDI .x7 .x12 4088))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))
+       (CodeReq.singleton (base + 12) (.SD .x7 .x11 0)))))
+      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) **
+       ((sp + signExtend12 4088 - (j <<< (3 : BitVec 6).toNat)) ↦ₘ qOld))
+      (divKStoreQjPost sp j qHat) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKStoreQjPost_unfold]; exact hp)
+    (divK_store_qj_spec_within sp j qHat v5Old v7Old qOld base)
+
 end EvmAsm.Evm64
