@@ -125,4 +125,36 @@ theorem divKStoreQjAddrPost_unfold (sp j : Word) :
        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr)) := by
   delta divKStoreQjAddrPost; rfl
 
+/-- 0-let named wrapper for `divK_sub_carry_spec_within`. -/
+theorem divK_sub_carry_named_spec_within (uBase carryIn v5Old v7Old uTop : Word)
+    (u_off : BitVec 12) (base : Word) :
+    cpsTripleWithin 4 base (base + 16)
+      (CodeReq.union (CodeReq.singleton base (.LD .x5 .x6 u_off))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.SLTU .x7 .x5 .x10))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x5 .x5 .x10))
+       (CodeReq.singleton (base + 12) (.SD .x6 .x5 u_off)))))
+      ((.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryIn) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) **
+       ((uBase + signExtend12 u_off) ↦ₘ uTop))
+      (divKSubCarryPost uBase carryIn uTop u_off) := by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKSubCarryPost_unfold]; exact hp)
+    (divK_sub_carry_spec_within uBase carryIn v5Old v7Old uTop u_off base)
+
+/-- 0-let named wrapper for `divK_store_qj_addr_spec_within`. -/
+theorem divK_store_qj_addr_named_spec_within (sp j v5Old v7Old : Word)
+    (base : Word) :
+    cpsTripleWithin 3 base (base + 12)
+      (CodeReq.union (CodeReq.singleton base (.SLLI .x5 .x1 3))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.ADDI .x7 .x12 4088))
+       (CodeReq.singleton (base + 8) (.SUB .x7 .x7 .x5))))
+      ((.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) **
+       (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old))
+      (divKStoreQjAddrPost sp j) := by
+  exact EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKStoreQjAddrPost_unfold]; exact hp)
+    (divK_store_qj_addr_spec_within sp j v5Old v7Old base)
+
 end EvmAsm.Evm64
