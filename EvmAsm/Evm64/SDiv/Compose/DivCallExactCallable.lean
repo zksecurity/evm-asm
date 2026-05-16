@@ -73,7 +73,7 @@ theorem evm_div_callable_preserving_branch_return_x1_spec_in_sdivCode
      nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
     (branch : EvmAsm.Evm64.DivStackSpecCase (base + wrapperEndOff) a b)
     (hStack :
-      cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
         ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
         (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
@@ -83,7 +83,7 @@ theorem evm_div_callable_preserving_branch_return_x1_spec_in_sdivCode
           shiftMem nMem jMem retMem dMem dloMem scratchUn0)
         (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b **
           (.x1 ↦ᵣ branch.returnX1))) :
-    cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
       (base + wrapperEndOff) (branch.returnX1 &&& ~~~1) (sdivCode base)
       (EvmAsm.Evm64.divModStackDispatchPre sp a b
         branch.returnX1 branch.x2 v5 v6 v7 v10 v11
