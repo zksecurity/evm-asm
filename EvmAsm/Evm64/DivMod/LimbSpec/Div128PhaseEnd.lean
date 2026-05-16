@@ -133,4 +133,32 @@ theorem divKDiv128Phase1Post_unfold (sp d uLo uHi retAddr : Word) :
        (sp + signExtend12 3944 ↦ₘ un0)) := by
   delta divKDiv128Phase1Post; rfl
 
+/-- 0-let named-postcondition wrapper for `divK_div128_phase1_spec_within`. -/
+theorem divK_div128_phase1_named_spec_within
+    (sp retAddr d uLo uHi v1Old v6Old v11Old
+     retMem dMem dloMem un0Mem : Word) (base : Word) :
+    cpsTripleWithin 10 base (base + 40)
+      (CodeReq.union (CodeReq.singleton base (.SD .x12 .x2 3968))
+      (CodeReq.union (CodeReq.singleton (base + 4) (.SD .x12 .x10 3960))
+      (CodeReq.union (CodeReq.singleton (base + 8) (.SRLI .x6 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 12) (.SLLI .x1 .x10 32))
+      (CodeReq.union (CodeReq.singleton (base + 16) (.SRLI .x1 .x1 32))
+      (CodeReq.union (CodeReq.singleton (base + 20) (.SD .x12 .x1 3952))
+      (CodeReq.union (CodeReq.singleton (base + 24) (.SRLI .x11 .x5 32))
+      (CodeReq.union (CodeReq.singleton (base + 28) (.SLLI .x5 .x5 32))
+      (CodeReq.union (CodeReq.singleton (base + 32) (.SRLI .x5 .x5 32))
+       (CodeReq.singleton (base + 36) (.SD .x12 .x5 3944)))))))))))
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x6 ↦ᵣ v6Old) ** (.x1 ↦ᵣ v1Old) ** (.x5 ↦ᵣ uLo) **
+       (.x11 ↦ᵣ v11Old) ** (.x7 ↦ᵣ uHi) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem))
+      (divKDiv128Phase1Post sp d uLo uHi retAddr) :=
+  EvmAsm.Rv64.cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [divKDiv128Phase1Post_unfold]; exact hp)
+    (divK_div128_phase1_spec_within sp retAddr d uLo uHi v1Old v6Old v11Old retMem dMem dloMem un0Mem base)
+
 end EvmAsm.Evm64
