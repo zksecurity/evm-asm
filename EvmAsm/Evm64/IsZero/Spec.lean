@@ -95,5 +95,60 @@ theorem evm_iszero_stack_spec_within (sp base : Word)
       xperm_hyp hq)
     h_main
 
+/-- Bundled postcondition for `evm_iszero_spec_within`. Hides `orAll` and `result` lets. -/
+@[irreducible]
+def evmIsZeroPost (sp a0 a1 a2 a3 : Word) : Assertion :=
+  let orAll := a0 ||| a1 ||| a2 ||| a3
+  let result := if BitVec.ult orAll (1 : Word) then (1 : Word) else 0
+  (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
+  (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)
+
+theorem evmIsZeroPost_unfold (sp a0 a1 a2 a3 : Word) :
+    evmIsZeroPost sp a0 a1 a2 a3 =
+      (let orAll := a0 ||| a1 ||| a2 ||| a3
+       let result := if BitVec.ult orAll (1 : Word) then (1 : Word) else 0
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
+       (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) := by
+  delta evmIsZeroPost; rfl
+
+/-- Named-postcondition wrapper for `evm_iszero_spec_within`. 0 statement lets. -/
+theorem evm_iszero_named_spec_within (sp base : Word)
+    (a0 a1 a2 a3 v7 v6 : Word) :
+    cpsTripleWithin 12 base (base + 48) (evm_iszero_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+      (evmIsZeroPost sp a0 a1 a2 a3) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [evmIsZeroPost_unfold]; exact hp)
+    (evm_iszero_spec_within sp base a0 a1 a2 a3 v7 v6)
+
+/-- Bundled postcondition for `evm_iszero_stack_spec_within` (EvmWord level). -/
+@[irreducible]
+def evmIsZeroStackPost (sp : Word) (a : EvmWord) : Assertion :=
+  let orAll := a.getLimbN 0 ||| a.getLimbN 1 ||| a.getLimbN 2 ||| a.getLimbN 3
+  let result := if BitVec.ult orAll 1 then (1 : Word) else 0
+  (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
+  evmWordIs sp (if a = 0 then 1 else 0)
+
+theorem evmIsZeroStackPost_unfold (sp : Word) (a : EvmWord) :
+    evmIsZeroStackPost sp a =
+      (let orAll := a.getLimbN 0 ||| a.getLimbN 1 ||| a.getLimbN 2 ||| a.getLimbN 3
+       let result := if BitVec.ult orAll 1 then (1 : Word) else 0
+       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
+       evmWordIs sp (if a = 0 then 1 else 0)) := by
+  delta evmIsZeroStackPost; rfl
+
+/-- Named-postcondition wrapper for `evm_iszero_stack_spec_within`. 0 statement lets. -/
+theorem evm_iszero_stack_named_spec_within (sp base : Word)
+    (a : EvmWord) (v7 v6 : Word) :
+    cpsTripleWithin 12 base (base + 48) (evm_iszero_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
+       evmWordIs sp a)
+      (evmIsZeroStackPost sp a) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by simp only [evmIsZeroStackPost_unfold]; exact hp)
+    (evm_iszero_stack_spec_within sp base a v7 v6)
 
 end EvmAsm.Evm64
