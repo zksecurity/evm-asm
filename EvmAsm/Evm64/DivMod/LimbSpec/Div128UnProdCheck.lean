@@ -111,4 +111,27 @@ theorem divK_div128_correct_q0_spec_within (q0 rhat2 dHi : Word) (base : Word) :
   have I1 := add_spec_gen_rd_eq_rs1_within .x11 .x6 rhat2 dHi (base + 4) (by nofun)
   runBlock I0 I1
 
+/-- Bundled postcondition for `divK_div128_compute_un21_spec_within`.
+    Hides rhatHi, rhatUn1, q1Dlo, un21 lets. -/
+@[irreducible]
+def divKDiv128ComputeUn21Post (sp q1 rhat un1 dloMem : Word) : Assertion :=
+  let rhatHi := rhat <<< (32 : BitVec 6).toNat
+  let rhatUn1 := rhatHi ||| un1
+  let q1Dlo := q1 * dloMem
+  let un21 := rhatUn1 - q1Dlo
+  (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ un21) **
+  (.x11 ↦ᵣ un1) ** (.x5 ↦ᵣ rhatUn1) ** (.x1 ↦ᵣ q1Dlo) **
+  (sp + signExtend12 3952 ↦ₘ dloMem)
+
+theorem divKDiv128ComputeUn21Post_unfold (sp q1 rhat un1 dloMem : Word) :
+    divKDiv128ComputeUn21Post sp q1 rhat un1 dloMem =
+      (let rhatHi := rhat <<< (32 : BitVec 6).toNat
+       let rhatUn1 := rhatHi ||| un1
+       let q1Dlo := q1 * dloMem
+       let un21 := rhatUn1 - q1Dlo
+       (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1) ** (.x7 ↦ᵣ un21) **
+       (.x11 ↦ᵣ un1) ** (.x5 ↦ᵣ rhatUn1) ** (.x1 ↦ᵣ q1Dlo) **
+       (sp + signExtend12 3952 ↦ₘ dloMem)) := by
+  delta divKDiv128ComputeUn21Post; rfl
+
 end EvmAsm.Evm64
