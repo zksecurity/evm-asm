@@ -388,6 +388,12 @@ theorem expBoundaryCode_prologue_epilogue_disjoint_addr
       base + 24 + BitVec.ofNat 64 (4 * k2) := by
   bv_omega
 
+theorem evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode_disjoint_addr
+    (base : Word) {k1 k2 : Nat} (hk1 : k1 < 76) (hk2 : k2 < 64) :
+    base + BitVec.ofNat 64 (4 * k1) ≠
+      base + 304 + BitVec.ofNat 64 (4 * k2) := by
+  bv_omega
+
 @[exp_addr, grind =] theorem expSavedBitCondMulProgramAddr (base : Word) :
     (base + 120 : Word) = base + BitVec.ofNat 64 (4 * 30) := by
   bv_decide
