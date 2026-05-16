@@ -5,10 +5,15 @@
   bridging the limb-level composition to a single `evmWordIs` pre/post
   pair.
 
-  Skeleton placeholder for GH #90 (beads slice evm-asm-kyp6). The
-  actual `evm_sdiv_stack_spec_within` theorem lands in slice
-  evm-asm-01uh and is composed from the verified shared bridge with
-  the boundary blocks.
+  The exported theorem is `evm_sdiv_stack_spec_within` (an alias for
+  `evm_sdiv_handler_stack_spec_within`). It takes the EVM stack-level
+  precondition `evmStackIs sp (dividend :: divisor :: rest)` and produces
+  `sdivExactHandlerPost` describing the signed quotient. For the
+  `divisor = 0` branch no additional hypothesis is required. For nonzero
+  divisors the caller must supply `hStack` witnessing termination of the
+  embedded `divCode_noNop` body with the correct `x1` post-value.
+
+  GH #90 (beads parent evm-asm-34sg, slice evm-asm-01uh).
 -/
 -- file-size-exception: SDIV top-level spec bundles sign-dispatch, stack adaptation, and boundary theorems that cannot be split without introducing circular imports across the SDiv.Compose hierarchy
 
@@ -1027,6 +1032,18 @@ theorem evm_sdiv_handler_stack_spec_within
 /-- Public all-case SDIV stack spec, conditional on the unsigned DIV
     no-NOP stack proof used by the internal callable handoff.
 
+    Pre: `evmStackIs sp (dividend :: divisor :: rest)` with scratch registers
+    and `divScratchValuesCall` for the embedded div body.
+    Post: `sdivExactHandlerPost` describing the signed quotient on the stack
+    and the caller's return address restored via the saved-`x18` convention.
+
+    The `hStack` hypothesis witnesses that the `divCode_noNop` body at
+    `base + wrapperEndOff` terminates with the exact post-call `x1` value.
+    For `divisor = 0` this is discharged unconditionally via
+    `evm_sdiv_zero_divisor_handler_stack_exact_post_of_eq_spec_within`.
+    For the nonzero path the `divCode_noNop` specs expose this as an
+    explicit parameter; the caller supplies the relevant branch certificate.
+
     This is intentionally a thin alias for `evm_sdiv_handler_stack_spec_within`:
     it exposes the stable final theorem name while keeping the remaining DIV
     dispatcher certificate explicit. -/
@@ -1616,9 +1633,5 @@ theorem evm_sdiv_exact_callable_return_opposite_sign_stack_spec_within
     q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase
     (sdivResultSign_one_of_ne hSign) hStack
-
--- Placeholder: full all-case `evm_sdiv_stack_spec_within` lands in slice 4
--- (evm-asm-01uh). The signed-division correctness lemma
--- `EvmWord.sdiv_correct` is added in slice 3 (evm-asm-kvs4).
 
 end EvmAsm.Evm64
