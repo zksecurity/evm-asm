@@ -7,10 +7,11 @@
   combines `divK_mulsub_full_spec_within` with `divK_correction_addback_spec_within`,
   with optional BEQ passthrough for the single-addback case.
 
-  Three theorems (all public):
-  - `divK_mulsub_correction_addback_880_spec_within` — base+516 → base+880
-  - `divK_mulsub_correction_addback_named_880_spec_within` — same with named pre/post
+  Public theorems:
+  - `divK_mulsub_correction_addback_named_880_spec_within` — base+516 → base+880 (named pre/post, 0 lets)
   - `divK_mulsub_correction_addback_spec_within` — base+516 → base+884 (with BEQ)
+  Private (implementation details):
+  - `divK_mulsub_correction_addback_880_spec_within` — base+516 → base+880 (48-let raw form)
 
   Uses public helpers from `LoopBody.lean`:
   - `divK_mulsub_full_spec_within`
@@ -70,7 +71,7 @@ theorem divK_beq_passthrough_spec_within_noNop {carry : Word} (base : Word) (hne
       (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
     ntaken
 
-theorem divK_mulsub_correction_addback_880_spec_within
+private theorem divK_mulsub_correction_addback_880_spec_within
     (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
     (base : Word) :
@@ -174,7 +175,7 @@ theorem divK_mulsub_correction_addback_880_spec_within
     MSCA
 
 /-- No-NOP variant of `divK_mulsub_correction_addback_880_spec_within`. -/
-theorem divK_mulsub_correction_addback_880_spec_within_noNop
+private theorem divK_mulsub_correction_addback_880_spec_within_noNop
     (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
     (base : Word) :
