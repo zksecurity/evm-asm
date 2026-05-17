@@ -319,4 +319,21 @@ theorem expTwoMulIterLoopPost_to_iterPre
            squareW.getLimbN 0, squareW.getLimbN 1, squareW.getLimbN 2, squareW.getLimbN 3,
            hpre⟩
 
+-- The abstract n-step loop-body spec from loopPost(n) is blocked by Lean 4 elaboration
+-- depth when using exp_two_mul_iterations_body_peel_with_exit_imp_closed_bound_spec_within
+-- directly in a Nat.rec induction (the peel theorem + succ_step combination produces a term
+-- too large for the elaborator at the final `exact` step).
+--
+-- PROOF SKETCH (see bead evm-asm-w5mk notes):
+-- By Nat.rec on n:
+--   Base (n=0): exp_loop_body_zero_step_vacuous (vacuous, loopPost(0)=False)
+--   Step (k+1): apply expTwoMulIterLoopPost_to_iterPre bridge → iterPre,
+--               then apply exp_two_mul_iterations_body_peel_with_exit_imp_closed_bound_spec_within
+--               with hExit = vacuous (k≠0) or hExitFinal (k=0), hLoop = IH instantiated at
+--               the post-iteration state values (expTwoMulIterBit e', squarW', rwW').
+--
+-- This would give: cpsTripleWithin (n * 189) ... (loopPost n ...) loopExitPre
+-- Combined with hEntry (loopEntryPost → iterPre) and exp_two_mul_full_loop_boundary_of_entry_body_spec_within,
+-- this closes the full 256-iteration loop body spec.
+
 end EvmAsm.Evm64.Exp.Compose
