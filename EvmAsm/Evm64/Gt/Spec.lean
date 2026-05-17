@@ -118,20 +118,6 @@ theorem evmGtLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 32) ↦ₘ borrow3) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
   delta evmGtLimbPost; rfl
 
-/-- Named-postcondition wrapper for `evm_gt_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmGtLimbPost`. -/
-theorem evm_gt_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 26 base (base + 104) (evm_gt_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmGtLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmGtLimbPost_unfold]; exact hp)
-    (evm_gt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
-
 -- ============================================================================
 
 /-- Stack-level 256-bit EVM GT: operates on two EvmWords via evmWordIs.
@@ -224,18 +210,5 @@ theorem evmGtStackPost_unfold (sp : Word) (a b : EvmWord) :
        (.x5 ↦ᵣ borrow3) ** (.x11 ↦ᵣ borrow3a) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.ult b a then 1 else 0)) := by
   delta evmGtStackPost; rfl
-
-/-- Named-postcondition wrapper for `evm_gt_stack_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmGtStackPost`. -/
-theorem evm_gt_stack_named_spec_within (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 26 base (base + 104) (evm_gt_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (evmGtStackPost sp a b) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmGtStackPost_unfold]; exact hp)
-    (evm_gt_stack_spec_within sp base a b v7 v6 v5 v11)
 
 end EvmAsm.Evm64

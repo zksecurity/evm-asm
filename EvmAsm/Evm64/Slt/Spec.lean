@@ -155,20 +155,6 @@ theorem evmSltLimbPost_unfold (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
   delta evmSltLimbPost; rfl
 
-/-- Named-postcondition wrapper for `evm_slt_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmSltLimbPost`. -/
-theorem evm_slt_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 25 base (base + 100) (evm_slt_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmSltLimbPost sp v11 a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmSltLimbPost_unfold]; exact hp)
-    (evm_slt_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
-
 -- ============================================================================
 -- Stack-level SLT spec
 -- ============================================================================
@@ -266,18 +252,5 @@ theorem evmSltStackPost_unfold (sp v11 : Word) (a b : EvmWord) :
        (.x11 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2a else v11)) **
        evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt a b then 1 else 0)) := by
   delta evmSltStackPost; rfl
-
-/-- Named-postcondition wrapper for `evm_slt_stack_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmSltStackPost`. -/
-theorem evm_slt_stack_named_spec_within (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 25 base (base + 100) (evm_slt_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (evmSltStackPost sp v11 a b) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmSltStackPost_unfold]; exact hp)
-    (evm_slt_stack_spec_within sp base a b v7 v6 v5 v11)
 
 end EvmAsm.Evm64

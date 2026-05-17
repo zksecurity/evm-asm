@@ -594,22 +594,6 @@ theorem evmMulLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1) ** ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)) := by
   delta evmMulLimbPost; rfl
 
-/-- Named-postcondition wrapper for `evm_mul_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmMulLimbPost`. -/
-theorem evm_mul_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v5 v6 v7 v10 v11 : Word) :
-    cpsTripleWithin 63 base (base + 252) (evm_mul_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmMulLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmMulLimbPost_unfold]; exact hp)
-    (evm_mul_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11)
-
 /-- Bundled postcondition for `mul_col2_spec_within`. Hides 6 computation lets. -/
 @[irreducible]
 def mulCol2Post (sp a0 a1 b2 r2_in r3p : Word) : Assertion :=
@@ -635,19 +619,6 @@ theorem mulCol2Post_unfold (sp a0 a1 b2 r2_in r3p : Word) :
        (.x10 ↦ᵣ r3_out) ** (.x11 ↦ᵣ r2_out) **
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p) ** ((sp + 48) ↦ₘ r2_out)) := by
   delta mulCol2Post; rfl
-
-/-- Named-postcondition wrapper for `mul_col2_spec_within`. 0 statement lets. -/
-theorem mul_col2_named_spec_within (sp base : Word)
-    (a0 a1 b2 r2_in r3p v5 v6 v7 v10 : Word) :
-    cpsTripleWithin 13 base (base + 52) (mul_col2_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ r2_in) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p) ** ((sp + 48) ↦ₘ b2))
-      (mulCol2Post sp a0 a1 b2 r2_in r3p) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol2Post_unfold]; exact hp)
-    (mul_col2_spec_within sp base a0 a1 b2 r2_in r3p v5 v6 v7 v10)
 
 /-- Bundled postcondition for `mul_col1_partA_spec_within`. Hides 7 computation lets. -/
 @[irreducible]
@@ -677,19 +648,6 @@ theorem mulCol1PartAPost_unfold (sp a0 b1 r1_in r2_in : Word) :
        (sp ↦ₘ a0) ** ((sp + 40) ↦ₘ r1_out)) := by
   delta mulCol1PartAPost; rfl
 
-/-- Named-postcondition wrapper for `mul_col1_partA_spec_within`. 0 statement lets. -/
-theorem mul_col1_partA_named_spec_within (sp base : Word)
-    (a0 b1 r1_in r2_in v5 v6 v7 : Word) :
-    cpsTripleWithin 10 base (base + 40) (mul_col1_partA_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ r1_in) ** (.x11 ↦ᵣ r2_in) **
-       (sp ↦ₘ a0) ** ((sp + 40) ↦ₘ b1))
-      (mulCol1PartAPost sp a0 b1 r1_in r2_in) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol1PartAPost_unfold]; exact hp)
-    (mul_col1_partA_spec_within sp base a0 b1 r1_in r2_in v5 v6 v7)
-
 /-- Bundled postcondition for `mul_col1_partB_spec_within`. Hides 6 computation lets. -/
 @[irreducible]
 def mulCol1PartBPost (sp a1 a2 b1 r3p0 carry_r2_1 r2_acc1 : Word) : Assertion :=
@@ -716,18 +674,6 @@ theorem mulCol1PartBPost_unfold (sp a1 a2 b1 r3p0 carry_r2_1 r2_acc1 : Word) :
        ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3_spill) ** ((sp + 24) ↦ₘ r3p0)) := by
   delta mulCol1PartBPost; rfl
 
-/-- Named-postcondition wrapper for `mul_col1_partB_spec_within`. 0 statement lets. -/
-theorem mul_col1_partB_named_spec_within (sp base : Word)
-    (a1 a2 b1 r3p0 v6 v7 carry_r2_1 r2_acc1 : Word) :
-    cpsTripleWithin 13 (base + 40) (base + 92) (mul_col1_partB_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b1) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ carry_r2_1) ** (.x11 ↦ᵣ r2_acc1) **
-       ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ r3p0))
-      (mulCol1PartBPost sp a1 a2 b1 r3p0 carry_r2_1 r2_acc1) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol1PartBPost_unfold]; exact hp)
-    (mul_col1_partB_spec_within sp base a1 a2 b1 r3p0 v6 v7 carry_r2_1 r2_acc1)
 /-- Bundled postcondition for `mul_col0_partA_spec_within`. Hides 6 computation lets. -/
 @[irreducible]
 def mulCol0PartAPost (sp a0 a1 b0 : Word) : Assertion :=
@@ -754,19 +700,6 @@ theorem mulCol0PartAPost_unfold (sp a0 a1 b0 : Word) :
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 32) ↦ₘ r0)) := by
   delta mulCol0PartAPost; rfl
 
-/-- Named-postcondition wrapper for `mul_col0_partA_spec_within`. 0 statement lets. -/
-theorem mul_col0_partA_named_spec_within (sp base : Word)
-    (a0 a1 b0 v5 v6 v7 v10 v11 : Word) :
-    cpsTripleWithin 11 base (base + 44) (mul_col0_partA_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 32) ↦ₘ b0))
-      (mulCol0PartAPost sp a0 a1 b0) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol0PartAPost_unfold]; exact hp)
-    (mul_col0_partA_spec_within sp base a0 a1 b0 v5 v6 v7 v10 v11)
-
 /-- Bundled postcondition for `mul_col0_partB_spec_within`. Hides 5 computation lets. -/
 @[irreducible]
 def mulCol0PartBPost (sp a2 a3 b0 r2_partial : Word) : Assertion :=
@@ -790,19 +723,6 @@ theorem mulCol0PartBPost_unfold (sp a2 a3 b0 r2_partial : Word) :
        (.x11 ↦ᵣ r2_acc) **
        ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ r3p)) := by
   delta mulCol0PartBPost; rfl
-
-/-- Named-postcondition wrapper for `mul_col0_partB_spec_within`. 0 statement lets. -/
-theorem mul_col0_partB_named_spec_within (sp base : Word)
-    (a2 a3 b0 v6 v7 r2_partial : Word) :
-    cpsTripleWithin 10 (base + 44) (base + 84) (mul_col0_partB_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ b0) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x11 ↦ᵣ r2_partial) **
-       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
-      (mulCol0PartBPost sp a2 a3 b0 r2_partial) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol0PartBPost_unfold]; exact hp)
-    (mul_col0_partB_spec_within sp base a2 a3 b0 v6 v7 r2_partial)
 
 /-- Bundled postcondition for `evm_mul_cols23ep_spec_within`. Hides 7 computation lets. -/
 @[irreducible]
@@ -833,20 +753,6 @@ theorem mulCols23epPost_unfold (sp a0 a1 b2 b3 r2_in r3p_in : Word) :
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p_in) **
        ((sp + 48) ↦ₘ c2_r2) ** ((sp + 56) ↦ₘ r3_final)) := by
   delta mulCols23epPost; rfl
-
-/-- Named-postcondition wrapper for `evm_mul_cols23ep_spec_within`. 0 statement lets. -/
-theorem evm_mul_cols23ep_named_spec_within (sp base : Word)
-    (a0 a1 b2 b3 r2_in r3p_in v5 v6 v7 v10 : Word) :
-    cpsTripleWithin 19 (base + 176) (base + 252) (evm_mul_cols23ep_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ r2_in) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3p_in) **
-       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (mulCols23epPost sp a0 a1 b2 b3 r2_in r3p_in) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCols23epPost_unfold]; exact hp)
-    (evm_mul_cols23ep_spec_within sp base a0 a1 b2 b3 r2_in r3p_in v5 v6 v7 v10)
 
 /-- Bundled postcondition for `mul_col0_spec_within`. Hides 11 computation lets. -/
 @[irreducible]
@@ -885,20 +791,6 @@ theorem mulCol0Post_unfold (sp a0 a1 a2 a3 b0 : Word) :
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
        ((sp + 24) ↦ₘ r3p) ** ((sp + 32) ↦ₘ r0)) := by
   delta mulCol0Post; rfl
-
-/-- Named-postcondition wrapper for `mul_col0_spec_within`. 0 statement lets. -/
-theorem mul_col0_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 v5 v6 v7 v10 v11 : Word) :
-    cpsTripleWithin 21 base (base + 84) (mul_col0_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
-       ((sp + 24) ↦ₘ a3) ** ((sp + 32) ↦ₘ b0))
-      (mulCol0Post sp a0 a1 a2 a3 b0) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol0Post_unfold]; exact hp)
-    (mul_col0_spec_within sp base a0 a1 a2 a3 b0 v5 v6 v7 v10 v11)
 
 /-- Bundled postcondition for `evm_mul_cols01_spec_within`. Hides 24 computation lets. -/
 @[irreducible]
@@ -964,19 +856,6 @@ theorem mulCols01Post_unfold (sp a0 a1 a2 a3 b0 b1 : Word) :
        ((sp + 24) ↦ₘ c0_r3p) ** ((sp + 32) ↦ₘ c0_r0) ** ((sp + 40) ↦ₘ c1_r1)) := by
   delta mulCols01Post; rfl
 
-/-- Named-postcondition wrapper for `evm_mul_cols01_spec_within`. 0 statement lets. -/
-theorem evm_mul_cols01_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 : Word) (v5 v6 v7 v10 v11 : Word) :
-    cpsTripleWithin 44 base (base + 176) (evm_mul_code01 base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
-       ((sp + 24) ↦ₘ a3) ** ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1))
-      (mulCols01Post sp a0 a1 a2 a3 b0 b1) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCols01Post_unfold]; exact hp)
-    (evm_mul_cols01_spec_within sp base a0 a1 a2 a3 b0 b1 v5 v6 v7 v10 v11)
 /-- Bundled postcondition for `mul_col1_spec_within`. Hides 13 computation lets. -/
 @[irreducible]
 def mulCol1Post (sp a0 a1 a2 b1 r1_in r2_in r3p0 : Word) : Assertion :=
@@ -1018,19 +897,5 @@ theorem mulCol1Post_unfold (sp a0 a1 a2 b1 r1_in r2_in r3p0 : Word) :
        (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ r3_spill) **
        ((sp + 24) ↦ₘ r3p0) ** ((sp + 40) ↦ₘ r1_out)) := by
   delta mulCol1Post; rfl
-
-/-- Named-postcondition wrapper for `mul_col1_spec_within`. 0 statement lets. -/
-theorem mul_col1_named_spec_within (sp base : Word)
-    (a0 a1 a2 b1 r1_in r2_in r3p0 v5 v6 v7 : Word) :
-    cpsTripleWithin 23 base (base + 92) (mul_col1_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
-       (.x10 ↦ᵣ r1_in) ** (.x11 ↦ᵣ r2_in) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) **
-       ((sp + 24) ↦ₘ r3p0) ** ((sp + 40) ↦ₘ b1))
-      (mulCol1Post sp a0 a1 a2 b1 r1_in r2_in r3p0) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [mulCol1Post_unfold]; exact hp)
-    (mul_col1_spec_within sp base a0 a1 a2 b1 r1_in r2_in r3p0 v5 v6 v7)
 
 end EvmAsm.Evm64

@@ -173,21 +173,6 @@ theorem evmAddLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) ** ((sp + 56) ↦ₘ result3)) := by
   delta evmAddLimbPost; rfl
 
-/-- Named-postcondition wrapper for `evm_add_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmAddLimbPost`. -/
-theorem evm_add_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
-    (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 30 base (base + 120) (evm_add_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmAddLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddLimbPost_unfold]; exact hp)
-    (evm_add_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
-
 /-- Bundled postcondition for `evm_add_stack_spec_within` (EvmWord level).
     Hides all 22 limb-extraction and carry-chain lets. -/
 @[irreducible]
@@ -244,18 +229,5 @@ theorem evmAddStackPost_unfold (sp : Word) (a b : EvmWord) :
        (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
   delta evmAddStackPost; rfl
-
-/-- Named-postcondition wrapper for `evm_add_stack_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmAddStackPost`. -/
-theorem evm_add_stack_named_spec_within (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 30 base (base + 120) (evm_add_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (evmAddStackPost sp a b) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddStackPost_unfold]; exact hp)
-    (evm_add_stack_spec_within sp base a b v7 v6 v5 v11)
 
 end EvmAsm.Evm64

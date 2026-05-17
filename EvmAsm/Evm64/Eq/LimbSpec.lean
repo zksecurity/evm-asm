@@ -61,20 +61,6 @@ abbrev eqLimb0Code (offA offB : BitVec 12) (base : Word) : CodeReq :=
   (CodeReq.union (CodeReq.singleton (base + 4) (.LD .x6 .x12 offB))
    (CodeReq.singleton (base + 8) (.XOR .x7 .x7 .x6)))
 
-/-- Named-postcondition wrapper for `eq_limb0_spec_within`. 0 statement lets.
-    Postcondition has no let-bound values; addresses are inlined directly. -/
-theorem eq_limb0_named_spec_within (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 : Word) (base : Word) :
-    cpsTripleWithin 3 base (base + 12) (eqLimb0Code offA offB base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb))
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (aLimb ^^^ bLimb)) ** (.x6 ↦ᵣ bLimb) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) :=
-  cpsTripleWithin_weaken
-    (fun _ hp => hp)
-    (fun _ hp => hp)
-    (eq_limb0_spec_within offA offB sp aLimb bLimb v7 v6 base)
-
 /-- Code requirement for `eq_or_limb_spec_within`. -/
 abbrev eqOrLimbCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x6 .x12 offA))
@@ -95,17 +81,5 @@ theorem eqOrLimbPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb acc
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| xorK)) ** (.x6 ↦ᵣ xorK) ** (.x5 ↦ᵣ bLimb) **
        ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
   delta eqOrLimbPost; rfl
-
-/-- Named-postcondition wrapper for `eq_or_limb_spec_within`. 0 statement lets. -/
-theorem eq_or_limb_named_spec_within (offA offB : BitVec 12)
-    (sp aLimb bLimb v6 v5 acc : Word) (base : Word) :
-    cpsTripleWithin 4 base (base + 16) (eqOrLimbCode offA offB base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ acc) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb))
-      (eqOrLimbPost sp offA offB aLimb bLimb acc) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [eqOrLimbPost_unfold]; exact hp)
-    (eq_or_limb_spec_within offA offB sp aLimb bLimb v6 v5 acc base)
 
 end EvmAsm.Evm64

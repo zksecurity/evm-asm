@@ -122,20 +122,6 @@ theorem evmAddModPrologueLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 56) ↦ₘ result3)) := by
   delta evmAddModPrologueLimbPost; rfl
 
-/-- Named-postcondition wrapper for `evm_addmod_prologue_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmAddModPrologueLimbPost`. -/
-theorem evm_addmod_prologue_named_spec_within (sp base : Word)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 30 base (base + 120) (evm_addmod_prologue_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmAddModPrologueLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddModPrologueLimbPost_unfold]; exact hp)
-    (evm_addmod_prologue_spec_within sp base a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
-
 /-- Stack-level prologue spec on `evmWordIs` surface: thin lift of
     `evm_add_stack_spec_within`. -/
 theorem evm_addmod_prologue_stack_spec_within (sp base : Word)
@@ -227,19 +213,6 @@ theorem evmAddModPrologueStackPost_unfold (sp : Word) (a b : EvmWord) :
        (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
        evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
   delta evmAddModPrologueStackPost; rfl
-
-/-- Named-postcondition wrapper for `evm_addmod_prologue_stack_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmAddModPrologueStackPost`. -/
-theorem evm_addmod_prologue_stack_named_spec_within (sp base : Word)
-    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 30 base (base + 120) (evm_addmod_prologue_code base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) b)
-      (evmAddModPrologueStackPost sp a b) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddModPrologueStackPost_unfold]; exact hp)
-    (evm_addmod_prologue_stack_spec_within sp base a b v7 v6 v5 v11)
 
 -- ============================================================================
 -- evm_addmod_epilogue (1 instruction, slice evm-asm-hsybl toward evm-asm-s7v49)
