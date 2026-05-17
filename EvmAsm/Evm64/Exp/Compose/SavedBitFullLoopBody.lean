@@ -17,16 +17,19 @@
 
   Architecture:
   - `expFullLoopBodyNSpec`: structural peel wrapper (sorry-free)
-  - `expFullLoopBodySpec`: full 256-iter boundary using the direct loop interface
-    `exp_two_mul_full_loop_boundary_of_bounded_body_spec_within` which takes:
-      hLoop : expTwoMulLoopEntryPost → expTwoMulLoopExitPre
-    directly, without needing the IterPre bridge.
+  - `expTwoMulLoopBodyCorrect`: named sorry for the 256-iteration invariant
+  - `expFullLoopBodySpec`: full boundary spec, proved using the above
 
-  The remaining `sorry` is the loop invariant proof in `hLoop`:
-  - Start: r = 1, iterCount = 256
-  - After k iterations: r = base^(top k bits of exponent), iterCount = 256-k
-  - End: r = base^exponent, iterCount = 0
-  This requires 256 applications of the single-iteration spec.
+  The single `sorry` in `expTwoMulLoopBodyCorrect` encapsulates the
+  MSB-first square-and-multiply algorithm correctness:
+    ∀ baseWord exponentWord, the 256-iteration loop starting from r=1
+    produces r = EvmWord.exp baseWord exponentWord.
+  This is a semantic proof obligation separate from the structural
+  composition (which is `expFullLoopBodySpec`).
+
+  Note: `expResultWord r.getLimbN 0..3 = r` holds by
+  `expResultWord_getLimbN_self`, so the exitCond in expFullLoopBodySpec
+  is a tautology — the loop needs only to produce the correct r values.
 
   Refs: GH #92, parent evm-asm-20z6, bead evm-asm-w5mk.
   Authored by @pirapira; implemented by Claude Code.
@@ -38,6 +41,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitIterMerge
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterPosts
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCond
 import EvmAsm.Evm64.EvmWordArith.Exp
+import EvmAsm.Evm64.Exp.LimbSpec
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -97,29 +101,55 @@ theorem expFullLoopBodyNSpec
     base baseWord rest exitCond hbase hCondExit hSkipExit hTail
 
 -- ============================================================================
+-- Key semantic correctness lemma (sorry)
+-- ============================================================================
+
+/-- The 256-iteration MSB-first square-and-multiply loop body is correct:
+    starting from `expTwoMulLoopEntryPost` (r = 1, iterCount = 256),
+    the loop terminates with `expTwoMulLoopExitPre` (r = base^exp, iterCount = 0).
+
+    This is the ONLY sorry in `expFullLoopBodySpec`. Its proof requires:
+    1. An invariant: after k iterations, r = baseWord^(exponentWord >> (256-k)).
+    2. 256 applications of `expFullLoopBodyNSpec` threading this invariant.
+    3. Connection: the MSB-first bit processing of `exponentWord` gives base^exp.
+
+    The invariant proof is the core of the EXP algorithm correctness.
+    Steps 1-2 are purely structural (RISC-V operational).
+    Step 3 is mathematical (binary square-and-multiply is correct).
+
+    Note: `tOld` is the x5 value at loop exit (determined by the loop).
+    `expResultWord_getLimbN_self` ensures exitCond is trivially True. -/
+theorem expTwoMulLoopBodyCorrect
+    (sp evmSp vOld tOld v18 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (base : Word) (hbase : base &&& 1 = 0) :
+    let result := EvmWord.exp baseWord exponentWord
+    cpsTripleWithin expTwoMulFullLoopBodyBound (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+      (expTwoMulLoopExitPre sp evmSp 0 tOld
+        (result.getLimbN 0) (result.getLimbN 1) (result.getLimbN 2) (result.getLimbN 3)
+        baseWord rest
+        (expResultWord (result.getLimbN 0) (result.getLimbN 1)
+          (result.getLimbN 2) (result.getLimbN 3) = result)) := by
+  intro result
+  -- exitCond = expResultWord result.getLimbN 0..3 = result = True (by getLimbN_self)
+  -- The loop maintains r = base^(top k bits of exp) after k iterations.
+  -- After 256 iterations: r = base^exp, stored in scratch at sp+0..sp+24.
+  sorry
+
+-- ============================================================================
 -- Full 256-iteration boundary spec
 -- ============================================================================
 
 /-- The full 256-iteration EXP boundary spec (bead evm-asm-w5mk, GH #92).
 
-    Pre:  `expTwoMulBoundaryPre sp evmSp cOld tOld m0..m3 vOld v18 baseWord exponentWord rest`
-    Post: `expTwoMulLoopExitPost sp evmSp 0 r0..r3 baseWord rest exitCond`
-          where `exitCond = expResultWord r0..r3 = EvmWord.exp baseWord exponentWord`.
+    Reduces to `expTwoMulLoopBodyCorrect` (the semantic loop correctness)
+    via `exp_two_mul_full_loop_boundary_of_bounded_body_spec_within`.
 
-    Proof structure: `exp_two_mul_full_loop_boundary_of_bounded_body_spec_within`
-    wraps boundary prologue/epilogue around `hLoop`. The `hLoop` hypothesis proves:
-      expTwoMulLoopEntryPost → expTwoMulLoopExitPre
-    in ≤ 48384 steps, which is the key semantic obligation.
-
-    The `hLoop` proof requires the 256-iteration invariant:
-    - Initial: r = 1, iterCount = 256
-    - Step k: r = baseWord^(top k bits of exponentWord)
-    - Final: r = EvmWord.exp baseWord exponentWord, iterCount = 0
-
-    Each iteration applies `expFullLoopBodyNSpec` (via the peel lemma).
-
-    This `sorry` is the only remaining obligation: proving the 256-iteration
-    loop body invariant. -/
+    Key facts used:
+    - `expResultWord_getLimbN_self`: exitCond is a tautology.
+    - The boundary framework wraps prologue/epilogue around hLoop. -/
 theorem expFullLoopBodySpec
     (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 : Word)
     (baseWord exponentWord : EvmWord) (rest : List EvmWord)
@@ -136,23 +166,18 @@ theorem expFullLoopBodySpec
       (expTwoMulLoopExitPost sp evmSp 0 r0 r1 r2 r3
         baseWord rest (expResultWord r0 r1 r2 r3 = result)) := by
   intro result
-  let r0 := result.getLimbN 0
-  let r1 := result.getLimbN 1
-  let r2 := result.getLimbN 2
-  let r3 := result.getLimbN 3
-  -- Use the bounded-body boundary wrapper.
-  -- The key obligation is `hLoop`: 256 iterations from LoopEntryPost to LoopExitPre.
-  apply exp_two_mul_full_loop_boundary_of_bounded_body_spec_within
-      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 0 r0 r1 r2 r3
-      baseWord exponentWord rest
-      (expResultWord r0 r1 r2 r3 = result) base
-  -- Bound: expTwoMulFullLoopBodyBound = 48384
-  · exact le_refl _
-  -- hLoop: 256-iteration body proof
-  -- Start: expTwoMulLoopEntryPost (r=1, iterCount=256)
-  -- End: expTwoMulLoopExitPre (r=base^exp, iterCount=0)
-  -- Built by 256 applications of expFullLoopBodyNSpec via the peel lemma,
-  -- threading the semantic invariant at each step.
-  · sorry
+  -- Use expTwoMulLoopBodyCorrect with tOld = tOld (outer parameter)
+  -- to get hLoop with matching tOld in BoundaryPre and LoopExitPre.
+  have hLoop := expTwoMulLoopBodyCorrect sp evmSp vOld tOld v18
+    baseWord exponentWord rest base hbase
+  -- Apply the boundary wrapper
+  exact exp_two_mul_full_loop_boundary_of_bounded_body_spec_within
+    sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 0
+    (result.getLimbN 0) (result.getLimbN 1)
+    (result.getLimbN 2) (result.getLimbN 3)
+    baseWord exponentWord rest
+    (expResultWord (result.getLimbN 0) (result.getLimbN 1)
+       (result.getLimbN 2) (result.getLimbN 3) = result)
+    base (le_refl _) hLoop
 
 end EvmAsm.Evm64.Exp.Compose
