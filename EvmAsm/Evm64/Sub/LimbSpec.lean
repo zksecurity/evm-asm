@@ -141,14 +141,6 @@ def subLimb0Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Asse
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ diff) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ diff)
 
-theorem subLimb0Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
-    subLimb0Post sp offA offB aLimb bLimb =
-      (let borrow := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-       let diff := aLimb - bLimb
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ diff) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ diff)) := by
-  delta subLimb0Post; rfl
-
 /-- Code requirement for `sub_limb_carry_spec_within`. -/
 abbrev subLimbCarryCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
@@ -171,17 +163,6 @@ def subLimbCarryPost (sp : Word) (offA offB : BitVec 12) (aLimb bLimb borrowIn :
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)
 
-theorem subLimbCarryPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb borrowIn : Word) :
-    subLimbCarryPost sp offA offB aLimb bLimb borrowIn =
-      (let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-       let temp := aLimb - bLimb
-       let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
-       let result := temp - borrowIn
-       let borrowOut := borrow1 ||| borrow2
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)) := by
-  delta subLimbCarryPost; rfl
-
 /-- Bundled postcondition for `sub_limb_carry_spec_phase1_within`. -/
 @[irreducible]
 def subLimbCarryPhase1Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Assertion :=
@@ -189,14 +170,6 @@ def subLimbCarryPhase1Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Wo
   let temp := aLimb - bLimb
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ borrow1) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
-
-theorem subLimbCarryPhase1Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
-    subLimbCarryPhase1Post sp offA offB aLimb bLimb =
-      (let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-       let temp := aLimb - bLimb
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ borrow1) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
-  delta subLimbCarryPhase1Post; rfl
 
 /-- Bundled postcondition for `sub_limb_carry_spec_phase2_within`. -/
 @[irreducible]
@@ -206,14 +179,5 @@ def subLimbCarryPhase2Post (sp : Word) (offB : BitVec 12) (temp borrowIn borrow1
   let borrowOut := borrow1 ||| borrow2
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
   (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)
-
-theorem subLimbCarryPhase2Post_unfold (sp : Word) (offB : BitVec 12) (temp borrowIn borrow1 aLimb : Word) (memA : Word) :
-    subLimbCarryPhase2Post sp offB temp borrowIn borrow1 aLimb memA =
-      (let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
-       let result := temp - borrowIn
-       let borrowOut := borrow1 ||| borrow2
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
-       (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)) := by
-  delta subLimbCarryPhase2Post; rfl
 
 end EvmAsm.Evm64

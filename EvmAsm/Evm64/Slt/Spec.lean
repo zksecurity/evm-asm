@@ -133,28 +133,6 @@ def evmSltLimbPost (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
   ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)
 
-theorem evmSltLimbPost_unfold (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    evmSltLimbPost sp v11 a0 a1 a2 a3 b0 b1 b2 b3 =
-      (let borrow0 := if BitVec.ult a0 b0 then (1 : Word) else 0
-       let borrow1a := if BitVec.ult a1 b1 then (1 : Word) else 0
-       let temp1 := a1 - b1
-       let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-       let borrow1 := borrow1a ||| borrow1b
-       let borrow2a := if BitVec.ult a2 b2 then (1 : Word) else 0
-       let temp2 := a2 - b2
-       let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-       let borrow2 := borrow2a ||| borrow2b
-       let sltMsb := if BitVec.slt a3 b3 then (1 : Word) else 0
-       let result := if a3 = b3 then borrow2 else sltMsb
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ (if a3 = b3 then temp2 else a3)) **
-       (.x6 ↦ᵣ (if a3 = b3 then borrow2b else b3)) **
-       (.x5 ↦ᵣ result) **
-       (.x11 ↦ᵣ (if a3 = b3 then borrow2a else v11)) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ result) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
-  delta evmSltLimbPost; rfl
-
 -- ============================================================================
 -- Stack-level SLT spec
 -- ============================================================================
@@ -231,26 +209,5 @@ def evmSltStackPost (sp v11 : Word) (a b : EvmWord) : Assertion :=
   (.x5 ↦ᵣ result) **
   (.x11 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2a else v11)) **
   evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt a b then 1 else 0)
-
-theorem evmSltStackPost_unfold (sp v11 : Word) (a b : EvmWord) :
-    evmSltStackPost sp v11 a b =
-      (let borrow0 := if BitVec.ult (a.getLimbN 0) (b.getLimbN 0) then (1 : Word) else 0
-       let borrow1a := if BitVec.ult (a.getLimbN 1) (b.getLimbN 1) then (1 : Word) else 0
-       let temp1 := a.getLimbN 1 - b.getLimbN 1
-       let borrow1b := if BitVec.ult temp1 borrow0 then (1 : Word) else 0
-       let borrow1 := borrow1a ||| borrow1b
-       let borrow2a := if BitVec.ult (a.getLimbN 2) (b.getLimbN 2) then (1 : Word) else 0
-       let temp2 := a.getLimbN 2 - b.getLimbN 2
-       let borrow2b := if BitVec.ult temp2 borrow1 then (1 : Word) else 0
-       let borrow2 := borrow2a ||| borrow2b
-       let sltMsb := if BitVec.slt (a.getLimbN 3) (b.getLimbN 3) then (1 : Word) else 0
-       let result := if a.getLimbN 3 = b.getLimbN 3 then borrow2 else sltMsb
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then temp2 else a.getLimbN 3)) **
-       (.x6 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2b else b.getLimbN 3)) **
-       (.x5 ↦ᵣ result) **
-       (.x11 ↦ᵣ (if a.getLimbN 3 = b.getLimbN 3 then borrow2a else v11)) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (if BitVec.slt a b then 1 else 0)) := by
-  delta evmSltStackPost; rfl
 
 end EvmAsm.Evm64

@@ -131,19 +131,6 @@ def evmEqLimbPost (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
   ((sp + 32) ↦ₘ eqResult) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)
 
-theorem evmEqLimbPost_unfold (sp v11 a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
-    evmEqLimbPost sp v11 a0 a1 a2 a3 b0 b1 b2 b3 =
-      (let acc0 := a0 ^^^ b0
-       let acc1 := acc0 ||| (a1 ^^^ b1)
-       let acc2 := acc1 ||| (a2 ^^^ b2)
-       let acc3 := acc2 ||| (a3 ^^^ b3)
-       let eqResult := if BitVec.ult acc3 (1 : Word) then (1 : Word) else 0
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ eqResult) ** (.x6 ↦ᵣ (a3 ^^^ b3)) ** (.x5 ↦ᵣ b3) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ eqResult) ** ((sp + 40) ↦ₘ 0) ** ((sp + 48) ↦ₘ 0) ** ((sp + 56) ↦ₘ 0)) := by
-  delta evmEqLimbPost; rfl
-
 /-- Bundled postcondition for `evm_eq_stack_spec_within` (EvmWord level).
     Hides 5 XOR-OR accumulation lets; `v11` param preserves unchanged .x11. -/
 @[irreducible]
@@ -157,18 +144,5 @@ def evmEqStackPost (sp v11 : Word) (a b : EvmWord) : Assertion :=
   (.x7 ↦ᵣ eqResult) ** (.x6 ↦ᵣ (a.getLimbN 3 ^^^ b.getLimbN 3)) **
   (.x5 ↦ᵣ b.getLimbN 3) ** (.x11 ↦ᵣ v11) **
   evmWordIs sp a ** evmWordIs (sp + 32) (if a = b then 1 else 0)
-
-theorem evmEqStackPost_unfold (sp v11 : Word) (a b : EvmWord) :
-    evmEqStackPost sp v11 a b =
-      (let acc0 := a.getLimbN 0 ^^^ b.getLimbN 0
-       let acc1 := acc0 ||| (a.getLimbN 1 ^^^ b.getLimbN 1)
-       let acc2 := acc1 ||| (a.getLimbN 2 ^^^ b.getLimbN 2)
-       let acc3 := acc2 ||| (a.getLimbN 3 ^^^ b.getLimbN 3)
-       let eqResult := if BitVec.ult acc3 (1 : Word) then (1 : Word) else 0
-       (.x12 ↦ᵣ (sp + 32)) **
-       (.x7 ↦ᵣ eqResult) ** (.x6 ↦ᵣ (a.getLimbN 3 ^^^ b.getLimbN 3)) **
-       (.x5 ↦ᵣ b.getLimbN 3) ** (.x11 ↦ᵣ v11) **
-       evmWordIs sp a ** evmWordIs (sp + 32) (if a = b then 1 else 0)) := by
-  delta evmEqStackPost; rfl
 
 end EvmAsm.Evm64

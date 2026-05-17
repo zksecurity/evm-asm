@@ -103,14 +103,6 @@ def evmIsZeroPost (sp a0 a1 a2 a3 : Word) : Assertion :=
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
   (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)
 
-theorem evmIsZeroPost_unfold (sp a0 a1 a2 a3 : Word) :
-    evmIsZeroPost sp a0 a1 a2 a3 =
-      (let orAll := a0 ||| a1 ||| a2 ||| a3
-       let result := if BitVec.ult orAll (1 : Word) then (1 : Word) else 0
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a3) **
-       (sp ↦ₘ result) ** ((sp + 8) ↦ₘ 0) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) := by
-  delta evmIsZeroPost; rfl
-
 /-- Bundled postcondition for `evm_iszero_stack_spec_within` (EvmWord level). -/
 @[irreducible]
 def evmIsZeroStackPost (sp : Word) (a : EvmWord) : Assertion :=
@@ -118,13 +110,5 @@ def evmIsZeroStackPost (sp : Word) (a : EvmWord) : Assertion :=
   let result := if BitVec.ult orAll 1 then (1 : Word) else 0
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
   evmWordIs sp (if a = 0 then 1 else 0)
-
-theorem evmIsZeroStackPost_unfold (sp : Word) (a : EvmWord) :
-    evmIsZeroStackPost sp a =
-      (let orAll := a.getLimbN 0 ||| a.getLimbN 1 ||| a.getLimbN 2 ||| a.getLimbN 3
-       let result := if BitVec.ult orAll 1 then (1 : Word) else 0
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ a.getLimbN 3) **
-       evmWordIs sp (if a = 0 then 1 else 0)) := by
-  delta evmIsZeroStackPost; rfl
 
 end EvmAsm.Evm64

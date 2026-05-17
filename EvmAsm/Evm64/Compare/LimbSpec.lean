@@ -167,13 +167,6 @@ def ltLimb0Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Asser
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ aLimb) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
 
-theorem ltLimb0Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
-    ltLimb0Post sp offA offB aLimb bLimb =
-      (let borrow := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ aLimb) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ borrow) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
-  delta ltLimb0Post; rfl
-
 /-- Code requirement for `lt_limb_carry_spec_within`. -/
 abbrev ltLimbCarryCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
@@ -192,15 +185,5 @@ def ltLimbCarryPost (sp : Word) (offA offB : BitVec 12) (aLimb bLimb borrowIn : 
   let borrowOut := borrow1 ||| borrow2
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
-
-theorem ltLimbCarryPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb borrowIn : Word) :
-    ltLimbCarryPost sp offA offB aLimb bLimb borrowIn =
-      (let borrow1 := if BitVec.ult aLimb bLimb then (1 : Word) else 0
-       let temp := aLimb - bLimb
-       let borrow2 := if BitVec.ult temp borrowIn then (1 : Word) else 0
-       let borrowOut := borrow1 ||| borrow2
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
-  delta ltLimbCarryPost; rfl
 
 end EvmAsm.Evm64

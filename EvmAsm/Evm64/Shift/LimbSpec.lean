@@ -982,18 +982,6 @@ def shrMergeLimbPost (sp : Word) (src_off next_off dst_off : BitVec 12)
   ((sp + signExtend12 src_off) ↦ₘ src) ** ((sp + signExtend12 next_off) ↦ₘ next) **
   ((sp + signExtend12 dst_off) ↦ₘ result)
 
-theorem shrMergeLimbPost_unfold (sp : Word) (src_off next_off dst_off : BitVec 12)
-    (src next bit_shift antiShift mask : Word) :
-    shrMergeLimbPost sp src_off next_off dst_off src next bit_shift antiShift mask =
-      (let shiftedSrc := src >>> (bit_shift.toNat % 64)
-       let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
-       let result := shiftedSrc ||| shiftedNext
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       ((sp + signExtend12 src_off) ↦ₘ src) ** ((sp + signExtend12 next_off) ↦ₘ next) **
-       ((sp + signExtend12 dst_off) ↦ₘ result)) := by
-  delta shrMergeLimbPost; rfl
-
 /-- Bundled postcondition for `shr_merge_limb_inplace_spec_within`. -/
 @[irreducible]
 def shrMergeInplaceLimbPost (sp : Word) (off next_off : BitVec 12)
@@ -1004,17 +992,6 @@ def shrMergeInplaceLimbPost (sp : Word) (off next_off : BitVec 12)
   (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
   (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
   ((sp + signExtend12 off) ↦ₘ result) ** ((sp + signExtend12 next_off) ↦ₘ next)
-
-theorem shrMergeInplaceLimbPost_unfold (sp : Word) (off next_off : BitVec 12)
-    (src next bit_shift antiShift mask : Word) :
-    shrMergeInplaceLimbPost sp off next_off src next bit_shift antiShift mask =
-      (let shiftedSrc := src >>> (bit_shift.toNat % 64)
-       let shiftedNext := (next <<< (antiShift.toNat % 64)) &&& mask
-       let result := shiftedSrc ||| shiftedNext
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ shiftedNext) ** (.x11 ↦ᵣ mask) **
-       ((sp + signExtend12 off) ↦ₘ result) ** ((sp + signExtend12 next_off) ↦ₘ next)) := by
-  delta shrMergeInplaceLimbPost; rfl
 
 /-- Bundled postcondition for `shr_phase_b_spec_within`. Hides 5 computation lets. -/
 @[irreducible]
@@ -1027,17 +1004,6 @@ def shrPhaseBPost (sp shift0 : Word) : Assertion :=
   (.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
   (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))
 
-theorem shrPhaseBPost_unfold (sp shift0 : Word) :
-    shrPhaseBPost sp shift0 =
-      (let bit_shift := shift0 &&& signExtend12 63
-       let limb_shift := shift0 >>> (6 : BitVec 6).toNat
-       let cond := if BitVec.ult (0 : Word) bit_shift then (1 : Word) else 0
-       let mask := (0 : Word) - cond
-       let antiShift := (64 : Word) - bit_shift
-       (.x5 ↦ᵣ limb_shift) ** (.x6 ↦ᵣ bit_shift) ** (.x0 ↦ᵣ (0 : Word)) **
-       (.x11 ↦ᵣ mask) ** (.x7 ↦ᵣ antiShift) ** (.x12 ↦ᵣ (sp + signExtend12 32))) := by
-  delta shrPhaseBPost; rfl
-
 /-- Bundled postcondition for `shr_body_0_spec_within`. Hides result0-3. -/
 @[irreducible]
 def shrBody0Post (sp bit_shift antiShift mask v0 v1 v2 v3 : Word) : Assertion :=
@@ -1049,17 +1015,6 @@ def shrBody0Post (sp bit_shift antiShift mask v0 v1 v2 v3 : Word) : Assertion :=
   (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
   (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)
 
-theorem shrBody0Post_unfold (sp bit_shift antiShift mask v0 v1 v2 v3 : Word) :
-    shrBody0Post sp bit_shift antiShift mask v0 v1 v2 v3 =
-      (let result0 := (v0 >>> (bit_shift.toNat % 64)) ||| ((v1 <<< (antiShift.toNat % 64)) &&& mask)
-       let result1 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-       let result2 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-       let result3 := v3 >>> (bit_shift.toNat % 64)
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result3) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ result3)) := by
-  delta shrBody0Post; rfl
-
 /-- Bundled postcondition for `shr_body_2_spec_within`. -/
 @[irreducible]
 def shrBody2Post (sp bit_shift antiShift mask v2 v3 : Word) : Assertion :=
@@ -1068,15 +1023,6 @@ def shrBody2Post (sp bit_shift antiShift mask v2 v3 : Word) : Assertion :=
   (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
   (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
   (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)
-
-theorem shrBody2Post_unfold (sp bit_shift antiShift mask v2 v3 : Word) :
-    shrBody2Post sp bit_shift antiShift mask v2 v3 =
-      (let result0 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-       let result1 := v3 >>> (bit_shift.toNat % 64)
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result1) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ 0) ** ((sp + 24) ↦ₘ 0)) := by
-  delta shrBody2Post; rfl
 
 /-- Bundled postcondition for `shr_body_1_spec_within`. -/
 @[irreducible]
@@ -1087,15 +1033,5 @@ def shrBody1Post (sp bit_shift antiShift mask v1 v2 v3 : Word) : Assertion :=
   (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
   (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
   (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ 0)
-
-theorem shrBody1Post_unfold (sp bit_shift antiShift mask v1 v2 v3 : Word) :
-    shrBody1Post sp bit_shift antiShift mask v1 v2 v3 =
-      (let result0 := (v1 >>> (bit_shift.toNat % 64)) ||| ((v2 <<< (antiShift.toNat % 64)) &&& mask)
-       let result1 := (v2 >>> (bit_shift.toNat % 64)) ||| ((v3 <<< (antiShift.toNat % 64)) &&& mask)
-       let result2 := v3 >>> (bit_shift.toNat % 64)
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result2) ** (.x6 ↦ᵣ bit_shift) **
-       (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ ((v3 <<< (antiShift.toNat % 64)) &&& mask)) ** (.x11 ↦ᵣ mask) **
-       (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ result1) ** ((sp + 16) ↦ₘ result2) ** ((sp + 24) ↦ₘ 0)) := by
-  delta shrBody1Post; rfl
 
 end EvmAsm.Evm64

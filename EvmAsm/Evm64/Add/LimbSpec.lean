@@ -141,14 +141,6 @@ def addLimb0Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Asse
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ sum) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ carry) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ sum)
 
-theorem addLimb0Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
-    addLimb0Post sp offA offB aLimb bLimb =
-      (let sum := aLimb + bLimb
-       let carry := if BitVec.ult sum bLimb then (1 : Word) else 0
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ sum) ** (.x6 ↦ᵣ bLimb) ** (.x5 ↦ᵣ carry) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ sum)) := by
-  delta addLimb0Post; rfl
-
 /-- Code requirement for `add_limb_carry_spec_within`. -/
 abbrev addLimbCarryCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
@@ -171,17 +163,6 @@ def addLimbCarryPost (sp : Word) (offA offB : BitVec 12) (aLimb bLimb carryIn : 
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carryOut) ** (.x11 ↦ᵣ carry1) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)
 
-theorem addLimbCarryPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb carryIn : Word) :
-    addLimbCarryPost sp offA offB aLimb bLimb carryIn =
-      (let psum := aLimb + bLimb
-       let carry1 := if BitVec.ult psum bLimb then (1 : Word) else 0
-       let result := psum + carryIn
-       let carry2 := if BitVec.ult result carryIn then (1 : Word) else 0
-       let carryOut := carry1 ||| carry2
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carryOut) ** (.x11 ↦ᵣ carry1) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)) := by
-  delta addLimbCarryPost; rfl
-
 /-- Bundled postcondition for `add_limb_carry_spec_phase1_within`. -/
 @[irreducible]
 def addLimbCarryPhase1Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) : Assertion :=
@@ -189,14 +170,6 @@ def addLimbCarryPhase1Post (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Wo
   let carry1 := if BitVec.ult psum bLimb then (1 : Word) else 0
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ psum) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ carry1) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
-
-theorem addLimbCarryPhase1Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Word) :
-    addLimbCarryPhase1Post sp offA offB aLimb bLimb =
-      (let psum := aLimb + bLimb
-       let carry1 := if BitVec.ult psum bLimb then (1 : Word) else 0
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ psum) ** (.x6 ↦ᵣ bLimb) ** (.x11 ↦ᵣ carry1) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
-  delta addLimbCarryPhase1Post; rfl
 
 /-- Bundled postcondition for `add_limb_carry_spec_phase2_within`. -/
 @[irreducible]
@@ -206,14 +179,5 @@ def addLimbCarryPhase2Post (sp : Word) (offB : BitVec 12) (psum carryIn carry1 a
   let carryOut := carry1 ||| carry2
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carryOut) ** (.x11 ↦ᵣ carry1) **
   (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)
-
-theorem addLimbCarryPhase2Post_unfold (sp : Word) (offB : BitVec 12) (psum carryIn carry1 aLimb : Word) (memA : Word) :
-    addLimbCarryPhase2Post sp offB psum carryIn carry1 aLimb memA =
-      (let result := psum + carryIn
-       let carry2 := if BitVec.ult result carryIn then (1 : Word) else 0
-       let carryOut := carry1 ||| carry2
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ result) ** (.x6 ↦ᵣ carry2) ** (.x5 ↦ᵣ carryOut) ** (.x11 ↦ᵣ carry1) **
-       (memA ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ result)) := by
-  delta addLimbCarryPhase2Post; rfl
 
 end EvmAsm.Evm64

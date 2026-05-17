@@ -75,11 +75,4 @@ def eqOrLimbPost (sp : Word) (offA offB : BitVec 12) (aLimb bLimb acc : Word) : 
   (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| xorK)) ** (.x6 ↦ᵣ xorK) ** (.x5 ↦ᵣ bLimb) **
   ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)
 
-theorem eqOrLimbPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb acc : Word) :
-    eqOrLimbPost sp offA offB aLimb bLimb acc =
-      (let xorK := aLimb ^^^ bLimb
-       (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ (acc ||| xorK)) ** (.x6 ↦ᵣ xorK) ** (.x5 ↦ᵣ bLimb) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
-  delta eqOrLimbPost; rfl
-
 end EvmAsm.Evm64
