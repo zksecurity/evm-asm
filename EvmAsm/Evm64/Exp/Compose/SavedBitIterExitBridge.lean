@@ -30,9 +30,9 @@ open EvmAsm.Rv64
 
 -- Address arithmetic: evmSp - 64 + N expressed as evmSp + M for concrete N
 -- Used in goal normalization after rw [show evmSp - 64 = evmSp + 18446744073709551552]
-private theorem addr_stack_neg64_add64 (evmSp : Word) :
+private theorem addr_stack_neg64_add64 (_ : Word) :
     (18446744073709551552 : Word) + 64 = 0 := by decide
-private theorem addr_stack_neg32_add32 (evmSp : Word) :
+private theorem addr_stack_neg32_add32 (_ : Word) :
     (18446744073709551584 : Word) + 32 = 0 := by decide
 
 theorem expTwoMulIterCondExitPost_to_FullStackPreFrame
@@ -131,7 +131,7 @@ theorem expTwoMulIterCondExitPost_to_FullStackPreFrame
              show (32:Word) + 16 = 48 from by decide,
              show (32:Word) + 24 = 56 from by decide]
   rw [pure_true_eq_emp]
-  simp only [sepConj_emp_right', signExtend12_0, EvmAsm.Rv64.AddrNorm.word_add_zero]
+  simp only [sepConj_emp_right']
   -- h_full mirrors the ps decomposition tree:
   -- outer: (cond_atoms @ ps_cond) ** (exponent_atoms @ ps_ef)
   -- cond: ((body_atoms @ ps_body) ** (x18 @ ps_x18))
@@ -282,7 +282,7 @@ theorem expTwoMulIterSkipExitPost_to_FullStackPreFrame
              show (32:Word) + 16 = 48 from by decide,
              show (32:Word) + 24 = 56 from by decide]
   rw [pure_true_eq_emp]
-  simp only [sepConj_emp_right', signExtend12_0, EvmAsm.Rv64.AddrNorm.word_add_zero]
+  simp only [sepConj_emp_right']
   -- h_full mirrors the ps decomposition tree:
   -- outermost: (skip_atoms @ ps_skip) ** (exponent_atoms @ ps_ef)
   -- skip: ((inner_atoms @ ps_outer) ** (base_atoms @ ps_bf))
