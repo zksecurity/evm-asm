@@ -75,6 +75,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitIterPosts
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterPostPcFree
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterMerge
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterBridges
+import EvmAsm.Evm64.Exp.Compose.SavedBitIterExitBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBodyInd
 import EvmAsm.Evm64.Exp.Layout
 import EvmAsm.Evm64.Exp.Spec
