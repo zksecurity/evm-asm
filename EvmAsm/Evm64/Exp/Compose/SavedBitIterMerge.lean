@@ -883,4 +883,75 @@ theorem exp_loop_body_zero_step_vacuous
   obtain ⟨_, _, h_looppost⟩ := hP
   exact expTwoMulIterLoopPost_zero_count_false h_looppost
 
+/-- `expTwoMulIterExitPost k ...` is unsatisfiable when `k ≠ 0`: it embeds
+    `⌜k = 0⌝` (loop-exit guard), so no PartialState can satisfy it when `k ≠ 0`. -/
+theorem expTwoMulIterExitPost_nonzero_count_false
+    {iterCountNew : Word} (h : iterCountNew ≠ 0)
+    {bit sp evmSp base a0 a1 a2 a3 : Word}
+    {squareW rw : EvmWord} {ps : PartialState} :
+    ¬ expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw ps := by
+  rw [expTwoMulIterExitPost_unfold]
+  rintro (hCond | hSkip)
+  · rw [expTwoMulIterCondPost_unfold] at hCond
+    obtain ⟨_, _, _, _, h_tcr, _⟩ := hCond
+    obtain ⟨_, _, _, _, h_triple, _⟩ := h_tcr
+    obtain ⟨_, _, _, _, _, h_x0pure⟩ := h_triple
+    obtain ⟨_, _, _, _, _, h_pure⟩ := h_x0pure
+    exact absurd h_pure.2 h
+  · rw [expTwoMulIterSkipPost_unfold] at hSkip
+    obtain ⟨_, _, _, _, h_tsr, _⟩ := hSkip
+    obtain ⟨_, _, _, _, h_triple, _⟩ := h_tsr
+    obtain ⟨_, _, _, _, _, h_x0pure⟩ := h_triple
+    obtain ⟨_, _, _, _, _, h_pure⟩ := h_x0pure
+    exact absurd h_pure.2 h
+
+/-- When `iterCountNew ≠ 0`, the exit post is unsatisfiable, so any implication
+    `exitPost → Q` holds vacuously. This is the exit bridge for all non-final
+    loop iterations in the 256-step induction. -/
+theorem exp_loop_exit_vacuous_bridge
+    {iterCountNew : Word} (h : iterCountNew ≠ 0)
+    {bit sp evmSp base a0 a1 a2 a3 : Word} {squareW rw : EvmWord}
+    {Q : PartialState → Prop} :
+    ∀ ps, expTwoMulIterExitPost iterCountNew bit sp evmSp base a0 a1 a2 a3 squareW rw ps → Q ps :=
+  fun _ hExit => absurd hExit (expTwoMulIterExitPost_nonzero_count_false h)
+
+/-- Abstract n-iteration loop body spec: given any exit bridge for the current
+    step's exit condition and any n-step loop-back continuation, the (n+1)-step
+    body spec holds from `expTwoMulIterPre`.
+
+    This is a thin wrapper around
+    `exp_two_mul_iterations_body_peel_with_exit_imp_closed_bound_spec_within`
+    that makes the "inductive step" shape explicit. -/
+theorem exp_loop_body_succ_step
+    (n : Nat)
+    (e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3 : Word)
+    (base : Word) (baseWord : EvmWord) (rest : List EvmWord) (exitCond : Prop)
+    (hbase : base &&& 1 = 0)
+    (hExit : ∀ ps,
+        expTwoMulIterExitPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulSquareW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3) ps →
+        expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond ps)
+    (hLoop : cpsTripleWithin (n * 189) (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulIterLoopPost (expTwoMulIterCountNew iterCount)
+          (expTwoMulIterBit e) sp evmSp base a0 a1 a2 a3
+          (expTwoMulSquareW r0 r1 r2 r3)
+          (expTwoMulIterRw r0 r1 r2 r3 a0 a1 a2 a3))
+        (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+          baseWord rest exitCond)) :
+    cpsTripleWithin ((n + 1) * 189) (base + 28) (base + 264)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulIterPre e iterCount v18 sp evmSp vOld r0 r1 r2 r3
+        d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3)
+      (expTwoMulLoopExitPre sp evmSp iterCountFinal tOld out0 out1 out2 out3
+        baseWord rest exitCond) :=
+  exp_two_mul_iterations_body_peel_with_exit_imp_closed_bound_spec_within
+    n e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
+    e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
+    base baseWord rest exitCond hbase hExit hLoop
+
 end EvmAsm.Evm64.Exp.Compose
