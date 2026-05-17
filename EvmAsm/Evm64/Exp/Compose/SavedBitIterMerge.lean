@@ -846,4 +846,41 @@ theorem exp_two_mul_named_iter_with_continuations_exact_closed_bound_spec_within
       e iterCount v18 sp evmSp vOld r0 r1 r2 r3 d0 d1 d2 d3
       e0 e1 e2 e3 a0 a1 a2 a3 base hbase (by rfl)
 
+/-- `expTwoMulIterLoopPost 0 ...` is unsatisfiable: it embeds `⌜0 ≠ 0⌝`
+    (loop-back guard), so no PartialState can satisfy it. -/
+theorem expTwoMulIterLoopPost_zero_count_false
+    {bit sp evmSp base a0 a1 a2 a3 : Word}
+    {squareW rw : EvmWord} {ps : PartialState} :
+    ¬ expTwoMulIterLoopPost 0 bit sp evmSp base a0 a1 a2 a3 squareW rw ps := by
+  rw [expTwoMulIterLoopPost_unfold]
+  rintro (hCond | hSkip)
+  · rw [expTwoMulIterCondPost_unfold] at hCond
+    obtain ⟨_, _, _, _, h_tcr, _⟩ := hCond
+    obtain ⟨_, _, _, _, h_triple, _⟩ := h_tcr
+    obtain ⟨_, _, _, _, _, h_x0pure⟩ := h_triple
+    obtain ⟨_, _, _, _, _, h_pure⟩ := h_x0pure
+    exact absurd h_pure.2 (by decide)
+  · rw [expTwoMulIterSkipPost_unfold] at hSkip
+    obtain ⟨_, _, _, _, h_tsr, _⟩ := hSkip
+    obtain ⟨_, _, _, _, h_triple, _⟩ := h_tsr
+    obtain ⟨_, _, _, _, _, h_x0pure⟩ := h_triple
+    obtain ⟨_, _, _, _, _, h_pure⟩ := h_x0pure
+    exact absurd h_pure.2 (by decide)
+
+/-- 0-step body spec from `expTwoMulIterLoopPost 0 ...` to anything is
+    vacuously true: the precondition is unsatisfiable. -/
+theorem exp_loop_body_zero_step_vacuous
+    {bit sp evmSp base a0 a1 a2 a3 : Word}
+    {squareW rw : EvmWord}
+    {Q : Assertion} {base_ : Word}
+    {code : CodeReq} :
+    cpsTripleWithin 0 (base_ + 28) (base_ + 264) code
+      (expTwoMulIterLoopPost 0 bit sp evmSp base a0 a1 a2 a3 squareW rw)
+      Q := by
+  intro R _ s _ hPR _
+  exfalso
+  have hP := holdsFor_sepConj_elim_left hPR
+  obtain ⟨_, _, h_looppost⟩ := hP
+  exact expTwoMulIterLoopPost_zero_count_false h_looppost
+
 end EvmAsm.Evm64.Exp.Compose
