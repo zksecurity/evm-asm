@@ -164,24 +164,6 @@ theorem divK_div128_step1_spec_within
     (fun h hp => by xperm_hyp hp)
     h123
 
-/-- Bundled postcondition for `divK_div128_step1_spec_within`.
-    Hides all 10 let-intermediates (q1, rhat, hi, q1c, rhatc, qDlo,
-    rhatUn1, q1', rhat') leaving only the input parameters visible. -/
-@[irreducible]
-def divKDiv128Step1Post (sp uHi dHi dlo un1 : Word) : Assertion :=
-  let q1 := rv64_divu uHi dHi
-  let rhat := uHi - q1 * dHi
-  let hi := q1 >>> (32 : BitVec 6).toNat
-  let q1c := if hi = 0 then q1 else q1 + signExtend12 4095
-  let rhatc := if hi = 0 then rhat else rhat + dHi
-  let qDlo := q1c * dlo
-  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
-  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
-  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
-  (.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) ** (.x10 ↦ᵣ q1') **
-  (.x5 ↦ᵣ qDlo) ** (.x11 ↦ᵣ un1) ** (.x1 ↦ᵣ rhatUn1) **
-  (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ 0) ** (sp + signExtend12 3952 ↦ₘ dlo)
-
 /-- Bundled CodeReq for `divK_div128_step1_spec_within` (instrs [10]-[24], 15 singletons). -/
 @[irreducible]
 def divKDiv128Step1Code (base : Word) : CodeReq :=

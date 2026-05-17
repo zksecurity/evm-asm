@@ -95,16 +95,4 @@ theorem divK_normB_last_spec_within (off : BitVec 12)
   have I2 := sd_spec_gen_within .x12 .x5 sp result val off (base + 8)
   runBlock I0 I1 I2
 
-/-- Bundled postcondition for `divK_normB_merge_spec_within`. -/
-@[irreducible]
-def divKNormBMergePost (sp : Word) (high_off low_off : BitVec 12)
-    (high low shift antiShift : Word) : Assertion :=
-  let shiftedHigh := high <<< (shift.toNat % 64)
-  let shiftedLow := low >>> (antiShift.toNat % 64)
-  let result := shiftedHigh ||| shiftedLow
-  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x7 ↦ᵣ shiftedLow) **
-  (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-  ((sp + signExtend12 high_off) ↦ₘ result) **
-  ((sp + signExtend12 low_off) ↦ₘ low)
-
 end EvmAsm.Evm64

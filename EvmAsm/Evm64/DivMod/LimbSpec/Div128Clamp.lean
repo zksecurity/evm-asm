@@ -209,14 +209,4 @@ def divKDiv128ClampQ1Post (q1 rhat dHi : Word) : Assertion :=
   (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x6 ↦ᵣ dHi) **
   (.x5 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word))
 
-/-- Bundled postcondition for `divK_div128_clamp_q0_merged_spec_within`.
-    Mirrors `divKDiv128ClampQ1Post` but for `q0` on x5/x11/x1. -/
-@[irreducible]
-def divKDiv128ClampQ0Post (q0 rhat2 dHi : Word) : Assertion :=
-  let hi := q0 >>> (32 : BitVec 6).toNat
-  let q0' := if hi = 0 then q0 else q0 + signExtend12 4095
-  let rhat2' := if hi = 0 then rhat2 else rhat2 + dHi
-  (.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ rhat2') ** (.x6 ↦ᵣ dHi) **
-  (.x1 ↦ᵣ hi) ** (.x0 ↦ᵣ (0 : Word))
-
 end EvmAsm.Evm64

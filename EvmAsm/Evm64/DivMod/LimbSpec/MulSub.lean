@@ -98,18 +98,6 @@ abbrev divKMulsubPartACode (v_off : BitVec 12) (base : Word) : CodeReq :=
   (CodeReq.union (CodeReq.singleton (base + 16) (.SLTU .x10 .x7 .x10))
    (CodeReq.singleton (base + 20) (.ADD .x10 .x10 .x5))))))
 
-/-- Bundled postcondition for `divK_mulsub_partA_spec_within`. Hides 5 computation lets. -/
-@[irreducible]
-def divKMulsubPartAPost (sp qHat carryIn v_i : Word) (v_off : BitVec 12) : Assertion :=
-  let prodLo := qHat * v_i
-  let prodHi := rv64_mulhu qHat v_i
-  let fullSub := prodLo + carryIn
-  let borrowAdd := if BitVec.ult fullSub carryIn then (1 : Word) else 0
-  let partialCarry := borrowAdd + prodHi
-  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ partialCarry) **
-  (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) **
-  ((sp + signExtend12 v_off) ↦ₘ v_i)
-
 /-- Code requirement for `divK_mulsub_partB_spec_within`. -/
 abbrev divKMulsubPartBCode (u_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x2 .x6 u_off))
@@ -117,16 +105,5 @@ abbrev divKMulsubPartBCode (u_off : BitVec 12) (base : Word) : CodeReq :=
   (CodeReq.union (CodeReq.singleton (base + 8) (.SUB .x2 .x2 .x7))
   (CodeReq.union (CodeReq.singleton (base + 12) (.ADD .x10 .x10 .x5))
    (CodeReq.singleton (base + 16) (.SD .x6 .x2 u_off)))))
-
-/-- Bundled postcondition for `divK_mulsub_partB_spec_within`. Hides 3 computation lets.
-    `prodHi` is not in the postcondition so it's not a bundle parameter. -/
-@[irreducible]
-def divKMulsubPartBPost (uBase partialCarry fullSub u_i : Word) (u_off : BitVec 12) : Assertion :=
-  let borrowSub := if BitVec.ult u_i fullSub then (1 : Word) else 0
-  let uNew := u_i - fullSub
-  let carryOut := partialCarry + borrowSub
-  (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryOut) **
-  (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ uNew) **
-  ((uBase + signExtend12 u_off) ↦ₘ uNew)
 
 end EvmAsm.Evm64

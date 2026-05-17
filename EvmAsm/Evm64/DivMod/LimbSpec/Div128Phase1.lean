@@ -102,34 +102,4 @@ theorem divK_div128_step1_init_spec_within (uHi dHi v5Old v10Old : Word) (base :
   have I2 := sub_spec_gen_rd_eq_rs1_within .x7 .x5 uHi (q1 * dHi) (base + 8) (by nofun)
   runBlock I0 I1 I2
 
-/-- Bundled postcondition for `divK_div128_save_split_d_spec_within`.
-    Hides `dHi` and `dLo` split intermediates. -/
-@[irreducible]
-def divKDiv128SaveSplitDPost (sp retAddr d : Word) : Assertion :=
-  let dHi := d >>> (32 : BitVec 6).toNat
-  let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-  (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
-  (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ dLo) **
-  (sp + signExtend12 3968 ↦ₘ retAddr) **
-  (sp + signExtend12 3960 ↦ₘ d) **
-  (sp + signExtend12 3952 ↦ₘ dLo)
-
-/-- Bundled postcondition for `divK_div128_split_ulo_spec_within`.
-    Hides `un1` and `un0` split intermediates. -/
-@[irreducible]
-def divKDiv128SplitUloPost (sp uLo : Word) : Assertion :=
-  let un1 := uLo >>> (32 : BitVec 6).toNat
-  let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ un0) ** (.x11 ↦ᵣ un1) **
-  (sp + signExtend12 3944 ↦ₘ un0)
-
-/-- Bundled postcondition for `divK_div128_step1_init_spec_within`.
-    Hides `q1` and `rhat` DIVU/SUB intermediates. -/
-@[irreducible]
-def divKDiv128Step1InitPost (uHi dHi : Word) : Assertion :=
-  let q1 := rv64_divu uHi dHi
-  let rhat := uHi - q1 * dHi
-  (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ dHi) **
-  (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q1 * dHi)
-
 end EvmAsm.Evm64

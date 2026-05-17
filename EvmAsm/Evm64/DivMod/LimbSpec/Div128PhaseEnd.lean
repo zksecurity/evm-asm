@@ -103,19 +103,4 @@ theorem divK_div128_end_spec_within
   rw [halign] at I3
   runBlock I0 I1 I2 I3
 
-/-- Bundled postcondition for `divK_div128_phase1_spec_within`. Hides 4 computation lets. -/
-@[irreducible]
-def divKDiv128Phase1Post (sp d uLo uHi retAddr : Word) : Assertion :=
-  let dHi := d >>> (32 : BitVec 6).toNat
-  let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-  let un1 := uLo >>> (32 : BitVec 6).toNat
-  let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-  (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
-  (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ dLo) ** (.x5 ↦ᵣ un0) **
-  (.x11 ↦ᵣ un1) ** (.x7 ↦ᵣ uHi) **
-  (sp + signExtend12 3968 ↦ₘ retAddr) **
-  (sp + signExtend12 3960 ↦ₘ d) **
-  (sp + signExtend12 3952 ↦ₘ dLo) **
-  (sp + signExtend12 3944 ↦ₘ un0)
-
 end EvmAsm.Evm64

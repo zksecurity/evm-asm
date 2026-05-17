@@ -89,23 +89,4 @@ theorem divK_store_qj_write_spec_within (qAddr qHat qOld : Word) (base : Word) :
   rw [haddr] at I0
   runBlock I0
 
-/-- Bundled postcondition for `divK_sub_carry_spec_within`.
-    Hides the `borrow` and `uNew` let-intermediates. -/
-@[irreducible]
-def divKSubCarryPost (uBase carryIn uTop : Word) (u_off : BitVec 12) : Assertion :=
-  let borrow := if BitVec.ult uTop carryIn then (1 : Word) else 0
-  let uNew := uTop - carryIn
-  (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryIn) **
-  (.x5 ↦ᵣ uNew) ** (.x7 ↦ᵣ borrow) **
-  ((uBase + signExtend12 u_off) ↦ₘ uNew)
-
-/-- Bundled postcondition for `divK_store_qj_addr_spec_within`.
-    Hides `jX8`, `sp_m8`, and `qAddr` address intermediates. -/
-@[irreducible]
-def divKStoreQjAddrPost (sp j : Word) : Assertion :=
-  let jX8 := j <<< (3 : BitVec 6).toNat
-  let qAddr := sp + signExtend12 4088 - jX8
-  (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) **
-  (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr)
-
 end EvmAsm.Evm64

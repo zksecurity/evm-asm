@@ -111,27 +111,4 @@ theorem divK_store_qj_spec_within (sp j qHat v5Old v7Old qOld : Word)
   rw [haddr] at I3
   runBlock I0 I1 I2 I3
 
-/-- Bundled postcondition for `divK_trial_load_spec_within`.
-    Hides `uAddr` and `vtopBase` address computations. -/
-@[irreducible]
-def divKTrialLoadPost (sp j n uHi uLo vTop : Word) : Assertion :=
-  let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
-  let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
-  (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-  (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
-  (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
-  (sp + signExtend12 3984 ↦ₘ n) **
-  (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
-  (vtopBase + signExtend12 32 ↦ₘ vTop)
-
-/-- Bundled postcondition for `divK_store_qj_spec_within`.
-    Hides `jX8` and `qAddr` address intermediates. -/
-@[irreducible]
-def divKStoreQjPost (sp j qHat : Word) : Assertion :=
-  let jX8 := j <<< (3 : BitVec 6).toNat
-  let qAddr := sp + signExtend12 4088 - jX8
-  (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-  (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **
-  (qAddr ↦ₘ qHat)
-
 end EvmAsm.Evm64

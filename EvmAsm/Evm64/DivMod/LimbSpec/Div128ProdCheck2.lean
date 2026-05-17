@@ -275,15 +275,4 @@ theorem divK_div128_prodcheck2_merged_spec_within
         (fun _ hp => hp)
         ntaken_clean hjal_framed)
 
-/-- Bundled postcondition for `divK_div128_prodcheck2_merged_spec_within`.
-    Hides `q0Dlo`, `rhat2Un0`, and `q0'` product-check-2 intermediates. -/
-@[irreducible]
-def divKDiv128ProdCheck2MergedPost (sp q0 rhat2 dlo un0 : Word) : Assertion :=
-  let q0Dlo := q0 * dlo
-  let rhat2Un0 := (rhat2 <<< (32 : BitVec 6).toNat) ||| un0
-  let q0' := if BitVec.ult rhat2Un0 q0Dlo then q0 + signExtend12 4095 else q0
-  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0') ** (.x11 ↦ᵣ un0) **
-  (.x7 ↦ᵣ q0Dlo) ** (.x1 ↦ᵣ rhat2Un0) **
-  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
-
 end EvmAsm.Evm64

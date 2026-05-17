@@ -145,28 +145,3 @@ theorem divK_div128_restore_return_spec_within (sp v2Old retAddr : Word) (base :
   rw [halign] at I1
   runBlock I0 I1
 
-/-- Bundled postcondition for `divK_div128_prodcheck2_body_spec_within`. -/
-@[irreducible]
-def divKDiv128ProdCheck2BodyPost (sp q0 rhat2 dlo un0 : Word) : Assertion :=
-  let q0Dlo := q0 * dlo
-  let rhat2_hi := rhat2 <<< (32 : BitVec 6).toNat
-  let rhat2Un0 := rhat2_hi ||| un0
-  (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
-  (.x7 ↦ᵣ q0Dlo) ** (.x1 ↦ᵣ rhat2Un0) **
-  (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
-
-/-- Bundled postcondition for `divK_div128_step2_init_spec_within`.
-    Hides `q0` and `rhat2` DIVU/MUL/SUB step-2-init intermediates. -/
-@[irreducible]
-def divKDiv128Step2InitPost (un21 dHi : Word) : Assertion :=
-  let q0 := rv64_divu un21 dHi
-  let rhat2 := un21 - q0 * dHi
-  (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) **
-  (.x5 ↦ᵣ q0) ** (.x1 ↦ᵣ q0 * dHi) ** (.x11 ↦ᵣ rhat2)
-
-/-- Bundled postcondition for `divK_div128_combine_q_spec_within`.
-    Hides `q1Hi` and `q = q1Hi ||| q0` intermediates. -/
-@[irreducible]
-def divKDiv128CombineQPost (q1 q0 : Word) : Assertion :=
-  let q := (q1 <<< (32 : BitVec 6).toNat) ||| q0
-  (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q)
