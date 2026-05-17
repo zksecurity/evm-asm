@@ -100,13 +100,6 @@ theorem mul_callable_code_ret_sub (base : Word) :
   intro a i h
   exact h
 
-theorem mul_callable_code_block_subs (base : Word) :
-    (∀ a i, (evm_mul_code base) a = some i →
-      (mul_callable_code base) a = some i) ∧
-    (∀ a i, (cc_ret_code (base + 252)) a = some i →
-      (mul_callable_code base) a = some i) := by
-  exact ⟨mul_callable_code_mul_sub base, mul_callable_code_ret_sub base⟩
-
 -- ============================================================================
 -- Callable spec
 -- ============================================================================
