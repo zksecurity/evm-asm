@@ -286,4 +286,36 @@ theorem expTwoMulIterCondPost_to_iterPre
     exact ⟨ps_d3, ps_x1, hd_d3, hu_d3, h_d3, h_x1⟩
   sep_perm h_d3_full
 
+/-- Combined `loopPost → iterPre` bridge: covers both skip (bit = 0) and
+    cond (bit ≠ 0) branches of `expTwoMulIterLoopPost`.
+
+    This is the key ingredient for the 256-iteration loop body induction:
+    each application of the peel theorem needs to transition from the
+    loop-back post-state to the next iteration's pre-state. -/
+theorem expTwoMulIterLoopPost_to_iterPre
+    {k bit sp evmSp base a0 a1 a2 a3 : Word}
+    {squareW rw : EvmWord} {ps : PartialState} (hk : k ≠ 0)
+    (h : expTwoMulIterLoopPost k bit sp evmSp base a0 a1 a2 a3 squareW rw ps) :
+    ∃ e' v18' vOld' r0' r1' r2' r3' d0 d1 d2 d3 e0' e1' e2' e3',
+      expTwoMulIterPre e' k v18' sp evmSp vOld'
+        r0' r1' r2' r3' d0 d1 d2 d3 e0' e1' e2' e3' a0 a1 a2 a3 ps := by
+  rw [expTwoMulIterLoopPost_unfold] at h
+  rcases h with hCond | hSkip
+  · -- Cond path (bit ≠ 0)
+    obtain ⟨d0, d1, d2, d3, hpre⟩ :=
+      expTwoMulIterCondPost_to_iterPre hk hCond
+    exact ⟨rw.getLimbN 3, bit + signExtend12 0, (base + 152) + 68,
+           rw.getLimbN 0, rw.getLimbN 1, rw.getLimbN 2, rw.getLimbN 3,
+           d0, d1, d2, d3,
+           rw.getLimbN 0, rw.getLimbN 1, rw.getLimbN 2, rw.getLimbN 3,
+           hpre⟩
+  · -- Skip path (bit = 0)
+    obtain ⟨d0, d1, d2, d3, hpre⟩ :=
+      expTwoMulIterSkipPost_to_iterPre hk hSkip
+    exact ⟨squareW.getLimbN 3, bit + signExtend12 0, (base + 44) + 68,
+           squareW.getLimbN 0, squareW.getLimbN 1, squareW.getLimbN 2, squareW.getLimbN 3,
+           d0, d1, d2, d3,
+           squareW.getLimbN 0, squareW.getLimbN 1, squareW.getLimbN 2, squareW.getLimbN 3,
+           hpre⟩
+
 end EvmAsm.Evm64.Exp.Compose
