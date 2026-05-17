@@ -246,34 +246,4 @@ theorem divK_mulsub_correction_skip_named_spec_within_noNop
     (divK_mulsub_correction_skip_spec_within_noNop sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
       v1Old v5Old v6Old v7Old v10Old v2Old base hborrow)
 
-/-- Named-postcondition sharedDivModCode wrapper for `divK_mulsub_correction_skip_spec_within`.
-    The statement keeps two lets (`uBase`, `c3`); mulsub intermediates are hidden
-    inside `n4McaNamedSkipPost`. Mirror of `divK_mulsub_correction_skip_named_spec_within_noNop`. -/
-theorem divK_mulsub_correction_skip_named_spec_within
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :
-    let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
-    let c3 := (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
-    -- Hypothesis: mulsub borrow = 0
-    (if BitVec.ult uTop c3 then (1 : Word) else 0) = (0 : Word) →
-    cpsTripleWithin 54 (base + div128CallRetOff) (base + storeLoopOff) (sharedDivModCode base)
-      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x1 ↦ᵣ v1Old) ** (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x2 ↦ᵣ v2Old) **
-       (.x0 ↦ᵣ 0) **
-       (sp + signExtend12 3976 ↦ₘ j) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ uTop))
-      (n4McaNamedSkipPost sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
-  intro uBase c3 hborrow
-  exact cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [n4McaNamedSkipPost_unfold]; exact hp)
-    (divK_mulsub_correction_skip_spec_within sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-      v1Old v5Old v6Old v7Old v10Old v2Old base hborrow)
-
 end EvmAsm.Evm64

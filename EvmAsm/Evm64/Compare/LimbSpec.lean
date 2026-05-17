@@ -174,18 +174,6 @@ theorem ltLimb0Post_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb : Wo
        ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
   delta ltLimb0Post; rfl
 
-/-- Named-postcondition wrapper for `lt_limb0_spec_within`. 0 statement lets. -/
-theorem lt_limb0_named_spec_within (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 v5 : Word) (base : Word) :
-    cpsTripleWithin 3 base (base + 12) (ltLimb0Code offA offB base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb))
-      (ltLimb0Post sp offA offB aLimb bLimb) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [ltLimb0Post_unfold]; exact hp)
-    (lt_limb0_spec_within offA offB sp aLimb bLimb v7 v6 v5 base)
-
 /-- Code requirement for `lt_limb_carry_spec_within`. -/
 abbrev ltLimbCarryCode (offA offB : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x7 .x12 offA))
@@ -214,17 +202,5 @@ theorem ltLimbCarryPost_unfold (sp : Word) (offA offB : BitVec 12) (aLimb bLimb 
        (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ temp) ** (.x6 ↦ᵣ borrow2) ** (.x5 ↦ᵣ borrowOut) ** (.x11 ↦ᵣ borrow1) **
        ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb)) := by
   delta ltLimbCarryPost; rfl
-
-/-- Named-postcondition wrapper for `lt_limb_carry_spec_within`. 0 statement lets. -/
-theorem lt_limb_carry_named_spec_within (offA offB : BitVec 12)
-    (sp aLimb bLimb v7 v6 borrowIn v11 : Word) (base : Word) :
-    cpsTripleWithin 6 base (base + 24) (ltLimbCarryCode offA offB base)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ borrowIn) ** (.x11 ↦ᵣ v11) **
-       ((sp + signExtend12 offA) ↦ₘ aLimb) ** ((sp + signExtend12 offB) ↦ₘ bLimb))
-      (ltLimbCarryPost sp offA offB aLimb bLimb borrowIn) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [ltLimbCarryPost_unfold]; exact hp)
-    (lt_limb_carry_spec_within offA offB sp aLimb bLimb v7 v6 borrowIn v11 base)
 
 end EvmAsm.Evm64

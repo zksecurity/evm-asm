@@ -389,21 +389,6 @@ theorem evm_addmod_prologue_phase1_phase2_reduce_spec_within
   -- `(prologue_phase1_post) ** (.x1 ↦ᵣ v1)`).
   exact cpsTripleWithin_seq_same_cr h1f h2f
 
-/-- Named-postcondition wrapper for `evm_addmod_prologue_evm_addmod_spec_within`.
-    0 statement-level lets; reuses `evmAddModPrologueLimbPost` from LimbSpec. -/
-theorem evm_addmod_prologue_evm_addmod_named_spec_within
-    (sp : Word) (base : Word) (modOff : BitVec 21)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin 30 base (base + 120) (evm_addmod_program_code base modOff)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmAddModPrologueLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddModPrologueLimbPost_unfold]; exact hp)
-    (evm_addmod_prologue_evm_addmod_spec_within sp base modOff a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
-
 /-- Bundled postcondition for `evm_addmod_prologue_phase1_spec_within`.
     Hides 17 carry-chain lets; `.x7` holds `carry3 + signExtend12 0`. -/
 @[irreducible]
@@ -458,21 +443,6 @@ theorem evmAddModPhase1LimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
        ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) **
        ((sp + 48) ↦ₘ result2) ** ((sp + 56) ↦ₘ result3)) := by
   delta evmAddModPhase1LimbPost; rfl
-
-/-- Named-postcondition wrapper for `evm_addmod_prologue_phase1_spec_within`.
-    0 statement-level lets; postcondition is opaque `evmAddModPhase1LimbPost`. -/
-theorem evm_addmod_prologue_phase1_named_spec_within
-    (sp : Word) (base : Word) (modOff : BitVec 21)
-    (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (v7 v6 v5 v11 : Word) :
-    cpsTripleWithin (30 + 1) base (base + 124) (evm_addmod_program_code base modOff)
-      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
-       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
-      (evmAddModPhase1LimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
-  cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [evmAddModPhase1LimbPost_unfold]; exact hp)
-    (evm_addmod_prologue_phase1_spec_within sp base modOff a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
 
 @[irreducible]
 def evmAddModPhase1Phase2LimbPost (base sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=

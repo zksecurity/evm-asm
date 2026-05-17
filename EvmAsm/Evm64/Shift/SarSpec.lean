@@ -279,20 +279,6 @@ theorem sar_sign_fill_path_spec_within (sp : Word)
   have S3 := sd_spec_gen_within .x12 .x5 (sp + 32) (BitVec.sshiftRight v3 63) v3 24 (base + 24)
   runBlock LD0 SR AD S0 S1 S2 S3
 
-/-- Named-postcondition wrapper for `sar_last_limb_spec_within`. 0 statement lets.
-    Inlines memSrc = sp+24, memDst = sp+dst_off, result = sshiftRight src (bit_shift % 64). -/
-theorem sar_last_limb_named_spec_within (dst_off : BitVec 12)
-    (sp src dstOld v5 bit_shift : Word) (base : Word) :
-    cpsTripleWithin 3 base (base + 12) (sar_last_limb_code base dst_off)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ src) ** ((sp + signExtend12 dst_off) ↦ₘ dstOld))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ BitVec.sshiftRight src (bit_shift.toNat % 64)) ** (.x6 ↦ᵣ bit_shift) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ src) **
-       ((sp + signExtend12 dst_off) ↦ₘ BitVec.sshiftRight src (bit_shift.toNat % 64))) :=
-  cpsTripleWithin_weaken
-    (fun _ hp => hp) (fun _ hp => hp)
-    (sar_last_limb_spec_within dst_off sp src dstOld v5 bit_shift base)
-
 /-- Bundled postcondition for `sar_body_1_spec_within`. Hides result0-2 and signExt. -/
 @[irreducible]
 def sarBody1Post (sp bit_shift antiShift mask v1 v2 v3 : Word) : Assertion :=
@@ -374,18 +360,5 @@ theorem sarBody3Post_unfold (sp bit_shift antiShift mask v3 : Word) :
        (.x7 ↦ᵣ antiShift) ** (.x10 ↦ᵣ signExt) ** (.x11 ↦ᵣ mask) **
        (sp ↦ₘ result0) ** ((sp + 8) ↦ₘ signExt) ** ((sp + 16) ↦ₘ signExt) ** ((sp + 24) ↦ₘ signExt)) := by
   delta sarBody3Post; rfl
-
-/-- Named wrapper for `sar_last_limb_inplace_spec_within`. 0 statement lets.
-    Inlines mem = sp+24, result = sshiftRight src (bit_shift % 64). -/
-theorem sar_last_limb_inplace_named_spec_within
-    (sp src v5 bit_shift : Word) (base : Word) :
-    cpsTripleWithin 3 base (base + 12) (sar_last_limb_inplace_code base)
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ bit_shift) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ src))
-      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ BitVec.sshiftRight src (bit_shift.toNat % 64)) ** (.x6 ↦ᵣ bit_shift) **
-       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ BitVec.sshiftRight src (bit_shift.toNat % 64))) :=
-  cpsTripleWithin_weaken
-    (fun _ hp => hp) (fun _ hp => hp)
-    (sar_last_limb_inplace_spec_within sp src v5 bit_shift base)
 
 end EvmAsm.Evm64
