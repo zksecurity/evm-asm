@@ -281,30 +281,8 @@ theorem byte?_SWAP_of_valid {n : Nat} (h : validSwapIndex n = true) :
     byte? (SWAP n) = some (0x8f + n) := by
   simp [byte?, h]
 
-theorem byte?_PUSH0 : byte? PUSH0 = some 0x5f := rfl
-
-theorem byte?_STOP : byte? STOP = some 0x00 := rfl
-
-theorem byte?_RETURN : byte? RETURN = some 0xf3 := rfl
-
-theorem byte?_REVERT : byte? REVERT = some 0xfd := rfl
-
-theorem byte?_SELFDESTRUCT : byte? SELFDESTRUCT = some 0xff := rfl
-
-theorem byte?_INVALID : byte? INVALID = some 0xfe := rfl
-
-theorem byte?_ADDRESS : byte? ADDRESS = some 0x30 := rfl
-
-theorem byte?_BASEFEE : byte? BASEFEE = some 0x48 := rfl
-
-theorem byte?_KECCAK256 : byte? KECCAK256 = some 0x20 := rfl
-
 theorem byte?_LOG (kind : LogArgs.Kind) :
     byte? (LOG kind) = some (0xa0 + LogArgs.topicCount kind) := rfl
-
-theorem byte?_LOG0 : byte? (LOG .log0) = some 0xa0 := rfl
-
-theorem byte?_LOG4 : byte? (LOG .log4) = some 0xa4 := rfl
 
 def ofCallKind : CallArgs.Kind → EvmOpcode
   | .call => CALL
@@ -414,18 +392,6 @@ theorem byte?_ofBlockBlobKind (kind : BlockBlobKind) :
       | .blobbasefee => some 0x4a := by
   cases kind <;> rfl
 
-theorem staticGasCost_stop : staticGasCost STOP = 0 := rfl
-
-theorem staticGasCost_push0 : staticGasCost PUSH0 = 2 := rfl
-
-theorem staticGasCost_msize : staticGasCost MSIZE = 2 := rfl
-
-theorem staticGasCost_calldataLoad : staticGasCost CALLDATALOAD = 3 := rfl
-
-theorem staticGasCost_calldataSize : staticGasCost CALLDATASIZE = 2 := rfl
-
-theorem staticGasCost_calldataCopyBase : staticGasCost CALLDATACOPY = 3 := rfl
-
 theorem staticGasCost_ofControlFlowKind (kind : ControlFlowKind) :
     staticGasCost (ofControlFlowKind kind) =
       match kind with
@@ -452,18 +418,8 @@ theorem staticGasCost_ofCopyLikeKind (kind : CopyLikeKind) :
     staticGasCost (ofCopyLikeKind kind) = 3 := by
   cases kind <;> rfl
 
-theorem staticGasCost_address : staticGasCost ADDRESS = 2 := rfl
-
-theorem staticGasCost_basefee : staticGasCost BASEFEE = 2 := rfl
-
-theorem staticGasCost_selfbalance : staticGasCost SELFBALANCE = 5 := rfl
-
 theorem staticGasCost_LOG (kind : LogArgs.Kind) :
     staticGasCost (LOG kind) = 375 := rfl
-
-theorem staticGasCost_log0Base : staticGasCost (LOG .log0) = 375 := rfl
-
-theorem staticGasCost_log4Base : staticGasCost (LOG .log4) = 375 := rfl
 
 theorem staticGasCost_ofCallKind (kind : CallArgs.Kind) :
     staticGasCost (ofCallKind kind) = 700 := by
@@ -472,18 +428,6 @@ theorem staticGasCost_ofCallKind (kind : CallArgs.Kind) :
 theorem staticGasCost_ofCreateKind (kind : CreateKind) :
     staticGasCost (ofCreateKind kind) = 32000 := by
   cases kind <;> rfl
-
-theorem staticGasCost_returnBase : staticGasCost RETURN = 0 := rfl
-
-theorem staticGasCost_revertBase : staticGasCost REVERT = 0 := rfl
-
-theorem staticGasCost_selfdestructBase : staticGasCost SELFDESTRUCT = 5000 := rfl
-
-theorem staticGasCost_invalidBase : staticGasCost INVALID = 0 := rfl
-
-theorem staticGasCost_expBase : staticGasCost EXP = 10 := rfl
-
-theorem staticGasCost_keccak256Base : staticGasCost KECCAK256 = 30 := rfl
 
 end EvmOpcode
 

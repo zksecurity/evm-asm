@@ -170,16 +170,4 @@ theorem exp_squaring_call_block_code_block_subs
     exp_squaring_call_block_code_square_sub base mulOff,
     exp_squaring_call_block_code_un_marshal_and_restore_sub base mulOff⟩
 
-/-- The two-block squaring marshal-pair prefix is contained in the full
-    squaring call block code. -/
-theorem exp_squaring_call_block_code_marshal_pair_sub
-    (base : Word) (mulOff : BitVec 21) :
-    ∀ a i, (exp_loop_squaring_marshal_pair_code base) a = some i →
-      (exp_squaring_call_block_code base mulOff) a = some i := by
-  intro a i h
-  exact CodeReq.union_sub
-    (exp_squaring_call_block_code_marshal_factor1_sub base mulOff)
-    (exp_squaring_call_block_code_marshal_result_to_factor2_sub base mulOff)
-    a i h
-
 end EvmAsm.Evm64
