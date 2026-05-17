@@ -155,16 +155,6 @@ def divKDiv128ProdCheck2BodyPost (sp q0 rhat2 dlo un0 : Word) : Assertion :=
   (.x7 ↦ᵣ q0Dlo) ** (.x1 ↦ᵣ rhat2Un0) **
   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
 
-theorem divKDiv128ProdCheck2BodyPost_unfold (sp q0 rhat2 dlo un0 : Word) :
-    divKDiv128ProdCheck2BodyPost sp q0 rhat2 dlo un0 =
-      (let q0Dlo := q0 * dlo
-       let rhat2_hi := rhat2 <<< (32 : BitVec 6).toNat
-       let rhat2Un0 := rhat2_hi ||| un0
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ un0) **
-       (.x7 ↦ᵣ q0Dlo) ** (.x1 ↦ᵣ rhat2Un0) **
-       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  delta divKDiv128ProdCheck2BodyPost; rfl
-
 /-- Bundled postcondition for `divK_div128_step2_init_spec_within`.
     Hides `q0` and `rhat2` DIVU/MUL/SUB step-2-init intermediates. -/
 @[irreducible]
@@ -174,23 +164,9 @@ def divKDiv128Step2InitPost (un21 dHi : Word) : Assertion :=
   (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) **
   (.x5 ↦ᵣ q0) ** (.x1 ↦ᵣ q0 * dHi) ** (.x11 ↦ᵣ rhat2)
 
-theorem divKDiv128Step2InitPost_unfold (un21 dHi : Word) :
-    divKDiv128Step2InitPost un21 dHi =
-      (let q0 := rv64_divu un21 dHi
-       let rhat2 := un21 - q0 * dHi
-       (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) **
-       (.x5 ↦ᵣ q0) ** (.x1 ↦ᵣ q0 * dHi) ** (.x11 ↦ᵣ rhat2)) := by
-  delta divKDiv128Step2InitPost; rfl
-
 /-- Bundled postcondition for `divK_div128_combine_q_spec_within`.
     Hides `q1Hi` and `q = q1Hi ||| q0` intermediates. -/
 @[irreducible]
 def divKDiv128CombineQPost (q1 q0 : Word) : Assertion :=
   let q := (q1 <<< (32 : BitVec 6).toNat) ||| q0
   (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q)
-
-theorem divKDiv128CombineQPost_unfold (q1 q0 : Word) :
-    divKDiv128CombineQPost q1 q0 =
-      (let q := (q1 <<< (32 : BitVec 6).toNat) ||| q0
-       (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q0) ** (.x11 ↦ᵣ q)) := by
-  delta divKDiv128CombineQPost; rfl

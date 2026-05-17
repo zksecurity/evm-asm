@@ -107,12 +107,4 @@ def divKAddbackFinalPost (uBase carry qHat uTop : Word) (u_off : BitVec 12) : As
   (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ carry) ** (.x11 ↦ᵣ qHat') **
   (.x5 ↦ᵣ uNew) ** (uBase + signExtend12 u_off ↦ₘ uNew)
 
-theorem divKAddbackFinalPost_unfold (uBase carry qHat uTop : Word) (u_off : BitVec 12) :
-    divKAddbackFinalPost uBase carry qHat uTop u_off =
-      (let uNew := uTop + carry
-       let qHat' := qHat + signExtend12 4095
-       (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ carry) ** (.x11 ↦ᵣ qHat') **
-       (.x5 ↦ᵣ uNew) ** (uBase + signExtend12 u_off ↦ₘ uNew)) := by
-  delta divKAddbackFinalPost; rfl
-
 end EvmAsm.Evm64

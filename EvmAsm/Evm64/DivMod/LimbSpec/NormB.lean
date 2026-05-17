@@ -107,16 +107,4 @@ def divKNormBMergePost (sp : Word) (high_off low_off : BitVec 12)
   ((sp + signExtend12 high_off) ↦ₘ result) **
   ((sp + signExtend12 low_off) ↦ₘ low)
 
-theorem divKNormBMergePost_unfold (sp : Word) (high_off low_off : BitVec 12)
-    (high low shift antiShift : Word) :
-    divKNormBMergePost sp high_off low_off high low shift antiShift =
-      (let shiftedHigh := high <<< (shift.toNat % 64)
-       let shiftedLow := low >>> (antiShift.toNat % 64)
-       let result := shiftedHigh ||| shiftedLow
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x7 ↦ᵣ shiftedLow) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + signExtend12 high_off) ↦ₘ result) **
-       ((sp + signExtend12 low_off) ↦ₘ low)) := by
-  delta divKNormBMergePost; rfl
-
 end EvmAsm.Evm64

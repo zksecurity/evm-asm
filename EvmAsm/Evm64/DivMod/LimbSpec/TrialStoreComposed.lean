@@ -124,18 +124,6 @@ def divKTrialLoadPost (sp j n uHi uLo vTop : Word) : Assertion :=
   (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
   (vtopBase + signExtend12 32 ↦ₘ vTop)
 
-theorem divKTrialLoadPost_unfold (sp j n uHi uLo vTop : Word) :
-    divKTrialLoadPost sp j n uHi uLo vTop =
-      (let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
-       let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
-       (.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ j) **
-       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
-       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
-       (sp + signExtend12 3984 ↦ₘ n) **
-       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
-       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
-  delta divKTrialLoadPost; rfl
-
 /-- Bundled postcondition for `divK_store_qj_spec_within`.
     Hides `jX8` and `qAddr` address intermediates. -/
 @[irreducible]
@@ -145,14 +133,5 @@ def divKStoreQjPost (sp j qHat : Word) : Assertion :=
   (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
   (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **
   (qAddr ↦ₘ qHat)
-
-theorem divKStoreQjPost_unfold (sp j qHat : Word) :
-    divKStoreQjPost sp j qHat =
-      (let jX8 := j <<< (3 : BitVec 6).toNat
-       let qAddr := sp + signExtend12 4088 - jX8
-       (.x1 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
-       (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) **
-       (qAddr ↦ₘ qHat)) := by
-  delta divKStoreQjPost; rfl
 
 end EvmAsm.Evm64

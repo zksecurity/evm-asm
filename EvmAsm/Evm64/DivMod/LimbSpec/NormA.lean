@@ -171,18 +171,6 @@ def divKNormAMergeAPost (sp : Word) (next_off dst_off : BitVec 12)
   ((sp + signExtend12 next_off) ↦ₘ next) **
   ((sp + signExtend12 dst_off) ↦ₘ result)
 
-theorem divKNormAMergeAPost_unfold (sp : Word) (next_off dst_off : BitVec 12)
-    (current next shift antiShift : Word) :
-    divKNormAMergeAPost sp next_off dst_off current next shift antiShift =
-      (let shiftedCurr := current <<< (shift.toNat % 64)
-       let shiftedNext := next >>> (antiShift.toNat % 64)
-       let result := shiftedCurr ||| shiftedNext
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ result) ** (.x7 ↦ᵣ next) ** (.x10 ↦ᵣ shiftedNext) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + signExtend12 next_off) ↦ₘ next) **
-       ((sp + signExtend12 dst_off) ↦ₘ result)) := by
-  delta divKNormAMergeAPost; rfl
-
 /-- Bundled postcondition for `divK_normA_mergeB_spec_within`.
     Hides `shiftedCurr`, `shiftedNext`, and `result`; x7 holds the result. -/
 @[irreducible]
@@ -195,17 +183,5 @@ def divKNormAMergeBPost (sp : Word) (next_off dst_off : BitVec 12)
   (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
   ((sp + signExtend12 next_off) ↦ₘ next) **
   ((sp + signExtend12 dst_off) ↦ₘ result)
-
-theorem divKNormAMergeBPost_unfold (sp : Word) (next_off dst_off : BitVec 12)
-    (current next shift antiShift : Word) :
-    divKNormAMergeBPost sp next_off dst_off current next shift antiShift =
-      (let shiftedCurr := current <<< (shift.toNat % 64)
-       let shiftedNext := next >>> (antiShift.toNat % 64)
-       let result := shiftedCurr ||| shiftedNext
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ next) ** (.x7 ↦ᵣ result) ** (.x10 ↦ᵣ shiftedNext) **
-       (.x6 ↦ᵣ shift) ** (.x2 ↦ᵣ antiShift) **
-       ((sp + signExtend12 next_off) ↦ₘ next) **
-       ((sp + signExtend12 dst_off) ↦ₘ result)) := by
-  delta divKNormAMergeBPost; rfl
 
 end EvmAsm.Evm64

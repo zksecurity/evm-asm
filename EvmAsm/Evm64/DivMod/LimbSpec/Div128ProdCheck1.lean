@@ -183,15 +183,4 @@ def divKDiv128ProdCheck1Post (sp q1 rhat dHi un1 dlo : Word) : Assertion :=
   (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1) ** (.x6 ↦ᵣ dHi) **
   (sp + signExtend12 3952 ↦ₘ dlo)
 
-theorem divKDiv128ProdCheck1Post_unfold (sp q1 rhat dHi un1 dlo : Word) :
-    divKDiv128ProdCheck1Post sp q1 rhat dHi un1 dlo =
-      (let qDlo := q1 * dlo
-       let rhatUn1 := (rhat <<< (32 : BitVec 6).toNat) ||| un1
-       let q1' := if BitVec.ult rhatUn1 qDlo then q1 + signExtend12 4095 else q1
-       let rhat' := if BitVec.ult rhatUn1 qDlo then rhat + dHi else rhat
-       (.x12 ↦ᵣ sp) ** (.x10 ↦ᵣ q1') ** (.x7 ↦ᵣ rhat') ** (.x11 ↦ᵣ un1) **
-       (.x5 ↦ᵣ qDlo) ** (.x1 ↦ᵣ rhatUn1) ** (.x6 ↦ᵣ dHi) **
-       (sp + signExtend12 3952 ↦ₘ dlo)) := by
-  delta divKDiv128ProdCheck1Post; rfl
-
 end EvmAsm.Evm64

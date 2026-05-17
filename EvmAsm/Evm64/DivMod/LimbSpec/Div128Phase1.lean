@@ -114,17 +114,6 @@ def divKDiv128SaveSplitDPost (sp retAddr d : Word) : Assertion :=
   (sp + signExtend12 3960 ↦ₘ d) **
   (sp + signExtend12 3952 ↦ₘ dLo)
 
-theorem divKDiv128SaveSplitDPost_unfold (sp retAddr d : Word) :
-    divKDiv128SaveSplitDPost sp retAddr d =
-      (let dHi := d >>> (32 : BitVec 6).toNat
-       let dLo := (d <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-       (.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
-       (.x6 ↦ᵣ dHi) ** (.x1 ↦ᵣ dLo) **
-       (sp + signExtend12 3968 ↦ₘ retAddr) **
-       (sp + signExtend12 3960 ↦ₘ d) **
-       (sp + signExtend12 3952 ↦ₘ dLo)) := by
-  delta divKDiv128SaveSplitDPost; rfl
-
 /-- Bundled postcondition for `divK_div128_split_ulo_spec_within`.
     Hides `un1` and `un0` split intermediates. -/
 @[irreducible]
@@ -134,14 +123,6 @@ def divKDiv128SplitUloPost (sp uLo : Word) : Assertion :=
   (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ un0) ** (.x11 ↦ᵣ un1) **
   (sp + signExtend12 3944 ↦ₘ un0)
 
-theorem divKDiv128SplitUloPost_unfold (sp uLo : Word) :
-    divKDiv128SplitUloPost sp uLo =
-      (let un1 := uLo >>> (32 : BitVec 6).toNat
-       let un0 := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
-       (.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ un0) ** (.x11 ↦ᵣ un1) **
-       (sp + signExtend12 3944 ↦ₘ un0)) := by
-  delta divKDiv128SplitUloPost; rfl
-
 /-- Bundled postcondition for `divK_div128_step1_init_spec_within`.
     Hides `q1` and `rhat` DIVU/SUB intermediates. -/
 @[irreducible]
@@ -150,13 +131,5 @@ def divKDiv128Step1InitPost (uHi dHi : Word) : Assertion :=
   let rhat := uHi - q1 * dHi
   (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ dHi) **
   (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q1 * dHi)
-
-theorem divKDiv128Step1InitPost_unfold (uHi dHi : Word) :
-    divKDiv128Step1InitPost uHi dHi =
-      (let q1 := rv64_divu uHi dHi
-       let rhat := uHi - q1 * dHi
-       (.x7 ↦ᵣ rhat) ** (.x6 ↦ᵣ dHi) **
-       (.x10 ↦ᵣ q1) ** (.x5 ↦ᵣ q1 * dHi)) := by
-  delta divKDiv128Step1InitPost; rfl
 
 end EvmAsm.Evm64

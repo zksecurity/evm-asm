@@ -557,20 +557,6 @@ def divKDiv128Step2ThruGuardPost (sp un21 dHi dlo un0 : Word) : Assertion :=
   (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
 
-theorem divKDiv128Step2ThruGuardPost_unfold (sp un21 dHi dlo un0 : Word) :
-    divKDiv128Step2ThruGuardPost sp un21 dHi dlo un0 =
-      (let q0 := rv64_divu un21 dHi
-       let rhat2 := un21 - q0 * dHi
-       let hi := q0 >>> (32 : BitVec 6).toNat
-       let q0c := if hi = 0 then q0 else q0 + signExtend12 4095
-       let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
-       let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
-       (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
-       (.x1 ↦ᵣ rhat2cHi) ** (.x11 ↦ᵣ rhat2c) **
-       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  delta divKDiv128Step2ThruGuardPost; rfl
-
 /-- Bundled postcondition for `divK_div128_step2_upto_guard_spec_within`.
     Hides 5 computation lets (q0, rhat2, hi, q0c, rhat2c). -/
 @[irreducible]
@@ -584,19 +570,6 @@ def divKDiv128Step2UptoGuardPost (sp un21 dHi dlo un0 : Word) : Assertion :=
   (.x1 ↦ᵣ hi) ** (.x11 ↦ᵣ rhat2c) **
   (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
-
-theorem divKDiv128Step2UptoGuardPost_unfold (sp un21 dHi dlo un0 : Word) :
-    divKDiv128Step2UptoGuardPost sp un21 dHi dlo un0 =
-      (let q0 := rv64_divu un21 dHi
-       let rhat2 := un21 - q0 * dHi
-       let hi := q0 >>> (32 : BitVec 6).toNat
-       let q0c := if hi = 0 then q0 else q0 + signExtend12 4095
-       let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
-       (.x7 ↦ᵣ un21) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0c) **
-       (.x1 ↦ᵣ hi) ** (.x11 ↦ᵣ rhat2c) **
-       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  delta divKDiv128Step2UptoGuardPost; rfl
 
 /-- Bundled 9-instruction code for `divK_div128_step2_thru_guard_spec_within`. -/
 @[irreducible]
@@ -635,21 +608,5 @@ def divKDiv128Step2ProdCheck2Post (sp un21 dHi dlo un0 : Word) : Assertion :=
   (.x1 ↦ᵣ rhat2Un0) ** (.x11 ↦ᵣ un0) **
   (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
   (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)
-
-theorem divKDiv128Step2ProdCheck2Post_unfold (sp un21 dHi dlo un0 : Word) :
-    divKDiv128Step2ProdCheck2Post sp un21 dHi dlo un0 =
-      (let q0 := rv64_divu un21 dHi
-       let rhat2 := un21 - q0 * dHi
-       let hi := q0 >>> (32 : BitVec 6).toNat
-       let q0c := if hi = 0 then q0 else q0 + signExtend12 4095
-       let rhat2c := if hi = 0 then rhat2 else rhat2 + dHi
-       let q0Dlo := q0c * dlo
-       let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0
-       let q0'Unguarded := if BitVec.ult rhat2Un0 q0Dlo then q0c + signExtend12 4095 else q0c
-       (.x7 ↦ᵣ q0Dlo) ** (.x6 ↦ᵣ dHi) ** (.x5 ↦ᵣ q0'Unguarded) **
-       (.x1 ↦ᵣ rhat2Un0) ** (.x11 ↦ᵣ un0) **
-       (.x12 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3952 ↦ₘ dlo) ** (sp + signExtend12 3944 ↦ₘ un0)) := by
-  delta divKDiv128Step2ProdCheck2Post; rfl
 
 end EvmAsm.Evm64

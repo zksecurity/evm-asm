@@ -150,23 +150,6 @@ def divKMulsubLimbPost (sp qHat carryIn uBase v_i u_i : Word) (v_off u_off : Bit
   ((sp + signExtend12 v_off) ↦ₘ v_i) **
   ((uBase + signExtend12 u_off) ↦ₘ uNew)
 
-theorem divKMulsubLimbPost_unfold (sp qHat carryIn uBase v_i u_i : Word) (v_off u_off : BitVec 12) :
-    divKMulsubLimbPost sp qHat carryIn uBase v_i u_i v_off u_off =
-      (let prodLo := qHat * v_i
-       let prodHi := rv64_mulhu qHat v_i
-       let fullSub := prodLo + carryIn
-       let borrowAdd := if BitVec.ult fullSub carryIn then (1 : Word) else 0
-       let partialCarry := borrowAdd + prodHi
-       let borrowSub := if BitVec.ult u_i fullSub then (1 : Word) else 0
-       let uNew := u_i - fullSub
-       let carryOut := partialCarry + borrowSub
-       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ carryOut) **
-       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) **
-       (.x2 ↦ᵣ uNew) **
-       ((sp + signExtend12 v_off) ↦ₘ v_i) **
-       ((uBase + signExtend12 u_off) ↦ₘ uNew)) := by
-  delta divKMulsubLimbPost; rfl
-
 /-- Code requirement for `divK_addback_limb_spec_within`. -/
 abbrev divKAddbackLimbCode (v_off u_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x5 .x12 v_off))
@@ -190,18 +173,5 @@ def divKAddbackLimbPost (sp uBase carryIn v_i u_i : Word) (v_off u_off : BitVec 
   (.x5 ↦ᵣ carry2) ** (.x2 ↦ᵣ uNew) **
   ((sp + signExtend12 v_off) ↦ₘ v_i) **
   ((uBase + signExtend12 u_off) ↦ₘ uNew)
-
-theorem divKAddbackLimbPost_unfold (sp uBase carryIn v_i u_i : Word) (v_off u_off : BitVec 12) :
-    divKAddbackLimbPost sp uBase carryIn v_i u_i v_off u_off =
-      (let uPlusCarry := u_i + carryIn
-       let carry1 := if BitVec.ult uPlusCarry carryIn then (1 : Word) else 0
-       let uNew := uPlusCarry + v_i
-       let carry2 := if BitVec.ult uNew v_i then (1 : Word) else 0
-       let carryOut := carry1 ||| carry2
-       (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ carryOut) **
-       (.x5 ↦ᵣ carry2) ** (.x2 ↦ᵣ uNew) **
-       ((sp + signExtend12 v_off) ↦ₘ v_i) **
-       ((uBase + signExtend12 u_off) ↦ₘ uNew)) := by
-  delta divKAddbackLimbPost; rfl
 
 end EvmAsm.Evm64

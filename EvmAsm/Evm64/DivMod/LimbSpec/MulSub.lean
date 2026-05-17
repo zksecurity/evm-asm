@@ -110,18 +110,6 @@ def divKMulsubPartAPost (sp qHat carryIn v_i : Word) (v_off : BitVec 12) : Asser
   (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) **
   ((sp + signExtend12 v_off) ↦ₘ v_i)
 
-theorem divKMulsubPartAPost_unfold (sp qHat carryIn v_i : Word) (v_off : BitVec 12) :
-    divKMulsubPartAPost sp qHat carryIn v_i v_off =
-      (let prodLo := qHat * v_i
-       let prodHi := rv64_mulhu qHat v_i
-       let fullSub := prodLo + carryIn
-       let borrowAdd := if BitVec.ult fullSub carryIn then (1 : Word) else 0
-       let partialCarry := borrowAdd + prodHi
-       (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ partialCarry) **
-       (.x5 ↦ᵣ prodHi) ** (.x7 ↦ᵣ fullSub) **
-       ((sp + signExtend12 v_off) ↦ₘ v_i)) := by
-  delta divKMulsubPartAPost; rfl
-
 /-- Code requirement for `divK_mulsub_partB_spec_within`. -/
 abbrev divKMulsubPartBCode (u_off : BitVec 12) (base : Word) : CodeReq :=
   CodeReq.union (CodeReq.singleton base (.LD .x2 .x6 u_off))
@@ -140,15 +128,5 @@ def divKMulsubPartBPost (uBase partialCarry fullSub u_i : Word) (u_off : BitVec 
   (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryOut) **
   (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ uNew) **
   ((uBase + signExtend12 u_off) ↦ₘ uNew)
-
-theorem divKMulsubPartBPost_unfold (uBase partialCarry fullSub u_i : Word) (u_off : BitVec 12) :
-    divKMulsubPartBPost uBase partialCarry fullSub u_i u_off =
-      (let borrowSub := if BitVec.ult u_i fullSub then (1 : Word) else 0
-       let uNew := u_i - fullSub
-       let carryOut := partialCarry + borrowSub
-       (.x6 ↦ᵣ uBase) ** (.x10 ↦ᵣ carryOut) **
-       (.x5 ↦ᵣ borrowSub) ** (.x7 ↦ᵣ fullSub) ** (.x2 ↦ᵣ uNew) **
-       ((uBase + signExtend12 u_off) ↦ₘ uNew)) := by
-  delta divKMulsubPartBPost; rfl
 
 end EvmAsm.Evm64
