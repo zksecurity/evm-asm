@@ -118,25 +118,6 @@ theorem evm_addmod_program_code_epilogue_sub
   · rw [evm_addmod_length, evm_addmod_epilogue_length]
   · rw [evm_addmod_length]; decide
 
-/-- Bundled per-block subsumptions for `evm_addmod_program_code`, used by
-    slice 3d (`evm-asm-s7v49`) when wiring per-block cpsTriple specs into
-    the full `evm_addmod_stack_spec_within` composition. -/
-theorem evm_addmod_program_code_block_subs
-    {base : Word} {modOff : BitVec 21} :
-    (∀ a i, (CodeReq.ofProg base evm_addmod_prologue) a = some i →
-      (evm_addmod_program_code base modOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 120) evm_addmod_phase1_carry) a = some i →
-      (evm_addmod_program_code base modOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 124)
-        (evm_addmod_phase2_reduce modOff)) a = some i →
-      (evm_addmod_program_code base modOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 128) evm_addmod_epilogue) a = some i →
-      (evm_addmod_program_code base modOff) a = some i) :=
-  ⟨evm_addmod_program_code_prologue_sub,
-    evm_addmod_program_code_phase1_carry_sub,
-    evm_addmod_program_code_phase2_reduce_sub,
-    evm_addmod_program_code_epilogue_sub⟩
-
 -- ============================================================================
 -- Per-block leaf specs lifted onto `evm_addmod_program_code`
 -- ============================================================================

@@ -146,22 +146,4 @@ theorem exp_squaring_call_block_code_un_marshal_and_restore_sub {base : Word}
       simp only [exp_squaring_call_block_len]
       norm_num)
 
-theorem exp_squaring_call_block_code_block_subs {base : Word}
-    {mulOff : BitVec 21} :
-    (∀ a i, (CodeReq.ofProg base EvmAsm.Evm64.exp_loop_marshal_factor1) a = some i →
-      (exp_squaring_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 32)
-      EvmAsm.Evm64.exp_loop_marshal_result_to_factor2) a = some i →
-      (exp_squaring_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 64)
-      (EvmAsm.Evm64.exp_square_block mulOff)) a = some i →
-      (exp_squaring_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 68)
-      EvmAsm.Evm64.exp_loop_un_marshal_and_restore) a = some i →
-      (exp_squaring_call_block_code base mulOff) a = some i) := by
-  exact ⟨exp_squaring_call_block_code_marshal_factor1_sub,
-    exp_squaring_call_block_code_marshal_result_to_factor2_sub,
-    exp_squaring_call_block_code_square_sub,
-    exp_squaring_call_block_code_un_marshal_and_restore_sub⟩
-
 end EvmAsm.Evm64.Exp.Compose

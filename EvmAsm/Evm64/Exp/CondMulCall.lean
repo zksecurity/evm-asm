@@ -125,22 +125,6 @@ theorem exp_cond_mul_call_block_code_un_marshal_and_restore_sub
         base hk1 hk2))
   exact CodeReq.union_mono_left
 
-theorem exp_cond_mul_call_block_code_block_subs
-    (base : Word) (mulOff : BitVec 21) :
-    (∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
-      (exp_cond_mul_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 32)
-      exp_loop_marshal_a_to_factor2) a = some i →
-      (exp_cond_mul_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 64) (exp_square_block mulOff)) a = some i →
-      (exp_cond_mul_call_block_code base mulOff) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 68) exp_loop_un_marshal_and_restore) a = some i →
-      (exp_cond_mul_call_block_code base mulOff) a = some i) := by
-  exact ⟨exp_cond_mul_call_block_code_marshal_factor1_sub base mulOff,
-    exp_cond_mul_call_block_code_marshal_a_to_factor2_sub base mulOff,
-    exp_cond_mul_call_block_code_square_sub base mulOff,
-    exp_cond_mul_call_block_code_un_marshal_and_restore_sub base mulOff⟩
-
 /-- The two-block cond-mul marshal-pair prefix is contained in the full
     conditional-multiply call block code. -/
 theorem exp_cond_mul_call_block_code_marshal_pair_sub
@@ -212,15 +196,6 @@ theorem exp_cond_mul_call_with_skip_block_code_call_sub
       simp only [exp_cond_mul_call_with_skip_block_length]
       norm_num)
 
-theorem exp_cond_mul_call_with_skip_block_code_block_subs
-    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
-    (∀ a i, (CodeReq.singleton base (.BEQ .x10 .x0 skipOff)) a = some i →
-      (exp_cond_mul_call_with_skip_block_code base mulOff skipOff) a = some i) ∧
-    (∀ a i, (exp_cond_mul_call_block_code (base + 4) mulOff) a = some i →
-      (exp_cond_mul_call_with_skip_block_code base mulOff skipOff) a = some i) := by
-  exact ⟨exp_cond_mul_call_with_skip_block_code_beq_sub base mulOff skipOff,
-    exp_cond_mul_call_with_skip_block_code_call_sub base mulOff skipOff⟩
-
 /-- CodeReq decomposition for the conditional-multiply step with its leading
     BEQ skip gate, branching on the saved bit in `x18`. The BEQ lives at
     `base`; the taken call block starts at `base + 4` and is skipped when
@@ -283,18 +258,5 @@ theorem exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
     (by
       simp only [exp_cond_mul_call_with_saved_bit_skip_block_length]
       norm_num)
-
-theorem exp_cond_mul_call_with_saved_bit_skip_block_code_block_subs
-    (base : Word) (mulOff : BitVec 21) (skipOff : BitVec 13) :
-    (∀ a i, (CodeReq.singleton base (.BEQ .x18 .x0 skipOff)) a = some i →
-      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
-        a = some i) ∧
-    (∀ a i, (exp_cond_mul_call_block_code (base + 4) mulOff) a = some i →
-      (exp_cond_mul_call_with_saved_bit_skip_block_code base mulOff skipOff)
-        a = some i) := by
-  exact ⟨exp_cond_mul_call_with_saved_bit_skip_block_code_beq_sub
-      base mulOff skipOff,
-    exp_cond_mul_call_with_saved_bit_skip_block_code_call_sub
-      base mulOff skipOff⟩
 
 end EvmAsm.Evm64

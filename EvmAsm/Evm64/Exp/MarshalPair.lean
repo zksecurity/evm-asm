@@ -67,18 +67,6 @@ theorem exp_loop_squaring_marshal_pair_code_result_to_factor2_sub
   intro a i h
   exact h
 
-/-- Bundled per-sub-block subsumption witnesses for the squaring marshal-pair
-    code prefix. -/
-theorem exp_loop_squaring_marshal_pair_code_block_subs
-    (base : Word) :
-    (∀ a i, (CodeReq.ofProg base exp_loop_marshal_factor1) a = some i →
-      (exp_loop_squaring_marshal_pair_code base) a = some i) ∧
-    (∀ a i, (CodeReq.ofProg (base + 32)
-      exp_loop_marshal_result_to_factor2) a = some i →
-      (exp_loop_squaring_marshal_pair_code base) a = some i) := by
-  exact ⟨exp_loop_squaring_marshal_pair_code_factor1_sub base,
-    exp_loop_squaring_marshal_pair_code_result_to_factor2_sub base⟩
-
 /-- Composition of `exp_loop_marshal_factor1` followed by
     `exp_loop_marshal_result_to_factor2`. Both blocks read the four limbs
     of the accumulator from `sp[0..24]`; `factor1` writes them into
