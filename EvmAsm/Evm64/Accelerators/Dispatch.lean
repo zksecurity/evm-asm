@@ -12,15 +12,17 @@
 
   Design notes:
 
-  * The dispatch is a separate, pure `Nat → ZkvmStatus` function so existing
-    ECALL specs (`HALT`, `COMMIT`, `HINT_LEN`, `HINT_READ` in
-    `EvmAsm/Rv64/SyscallSpecs.lean`, `EvmAsm/Rv64/HintSpecs.lean`,
-    `EvmAsm/Rv64/RLP/Phase4Hint*`) continue to type-check unchanged. We do
-    NOT touch `EvmAsm/Rv64/Execution.lean`'s `execInstrBr` semantics here.
+  * The dispatch is a separate, pure `Nat → ZkvmStatus` function that does
+    not overlap with the active ECALL handlers in `execInstrBr`. Active
+    handlers: `HALT` (0x00), `write_output` (0x10), `read_input` (0xF2).
+    Note: `HINT_LEN` (0xF0) and `HINT_READ` (0xF1) have been retired;
+    their handler branches and specs were removed from `Execution.lean` and
+    `HintSpecs.lean`.
 
   * `isAccelerator` distinguishes accelerator selectors (the 19 IDs from
-    `EvmAsm/Evm64/Accelerators/SyscallIds.lean`) from the four reserved
-    framing selectors (HALT/COMMIT/HINT_LEN/HINT_READ). It is decidable so
+    `EvmAsm/Evm64/Accelerators/SyscallIds.lean`) from the framing selectors
+    (HALT/COMMIT/HINT_LEN/HINT_READ — the latter two are deprecated but
+    retained as named constants for disjointness proofs). It is decidable so
     later slices can `decide` membership and `cases` on it.
 
   * `dispatch` returns `.efail` everywhere for now. As each concrete bridge
