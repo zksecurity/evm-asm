@@ -221,10 +221,83 @@ theorem exp_prologue_fixed_then_pointer_advance_spec_within
     (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp)
     (cpsTripleWithin_seq_perm_same_cr (fun _ hp => by xperm_hyp hp) hPrologueF hAdvanceF)
 
--- Note: A full-stack version of this spec (with `evmStackIs evmSp (base::exp::rest)`
--- in the PRE and `expTwoMulLoopEntryPostFixed` in the POST) will be added in a
--- subsequent slice. It requires framing `exp_prologue_fixed_then_pointer_advance_spec_within`
--- with the remaining stack atoms and then folding with `evmStackIs_cons` and
--- `exp_prologue_result_word_one`. See bead evm-asm-w5mk.
+-- ============================================================================
+-- Full-stack boundary prologue spec (with evmStackIs and expTwoMulLoopEntryPostFixed)
+-- ============================================================================
+
+/-- Full-stack combined prologue + pointer-advance spec for the fixed EXP algorithm.
+    The PRE includes `evmStackIs evmSp (baseWord :: exponentWord :: rest)` and the
+    POST is `expTwoMulLoopEntryPostFixed`, establishing the correct loop entry state
+    with x19 = exponentWord.getLimbN 3, x6 = 64, x16 = evmSp+48.
+
+    Proof: frame `exp_prologue_fixed_then_pointer_advance_spec_within` with all
+    evmStackIs atoms except the MSB exponent limb (evmSp+56), then fold. -/
+theorem exp_prologue_fixed_then_pointer_advance_full_stack_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word) :
+    cpsTripleWithin (10 + 1) base (base + 44)
+      (expMsbSavedBitTwoMulFixedCode base squaringMulOff condMulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+       (.x5 ↦ᵣ tOld) ** (.x12 ↦ᵣ evmSp) **
+       (.x6 ↦ᵣ c6Old) ** (.x16 ↦ᵣ c16Old) ** (.x19 ↦ᵣ c19Old) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3) **
+       expTwoMulScratchFrame vOld v18 **
+       evmStackIs evmSp (baseWord :: exponentWord :: rest))
+      (expTwoMulLoopEntryPostFixed sp evmSp vOld v18 baseWord exponentWord rest) := by
+  -- Address identity: evmSp + signExtend12 56 = (evmSp+32) + 24
+  have h56 : (evmSp + signExtend12 (56 : BitVec 12) : Word) =
+             (evmSp + 32) + 24 := by unfold signExtend12; bv_decide
+  -- Frame the raw spec with remaining stack atoms (base word, exp limbs 0-2, rest)
+  let expLimb3 := exponentWord.getLimbN 3
+  have hRaw_framed := cpsTripleWithin_frameR
+    ((evmSp ↦ₘ baseWord.getLimbN 0) **
+     ((evmSp + 8) ↦ₘ baseWord.getLimbN 1) **
+     ((evmSp + 16) ↦ₘ baseWord.getLimbN 2) **
+     ((evmSp + 24) ↦ₘ baseWord.getLimbN 3) **
+     (((evmSp + 32) + 0) ↦ₘ exponentWord.getLimbN 0) **
+     (((evmSp + 32) + 8) ↦ₘ exponentWord.getLimbN 1) **
+     (((evmSp + 32) + 16) ↦ₘ exponentWord.getLimbN 2) **
+     evmStackIs (evmSp + 64) rest)
+    (by pcFree)
+    (exp_prologue_fixed_then_pointer_advance_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      squaringMulOff condMulOff skipOff backOff base expLimb3)
+  -- Key address identities
+  have h64 : (evmSp + 32 + 32 : Word) = evmSp + 64 := by bv_addr
+  have h32_0 : ((evmSp + 32) + 0 : Word) = evmSp + 32 := by bv_addr
+  -- Register value normalizations needed for POST-weaken
+  have hx9 : (0:Word) + signExtend12 (256:BitVec 12) = (256:Word) := by unfold signExtend12; bv_decide
+  have hx5 : (0:Word) + signExtend12 (1:BitVec 12) = (1:Word) := by unfold signExtend12; bv_decide
+  -- Weaken: PRE uses evmStackIs, POST uses expTwoMulLoopEntryPostFixed
+  exact cpsTripleWithin_weaken
+    -- PRE-weaken: expand evmStackIs/evmWordIs → match hRaw_framed.PRE atoms
+    (fun _ hp => by
+      simp only [evmStackIs_cons, evmWordIs] at hp
+      rw [h64] at hp  -- normalize hp: evmSp+32+32 → evmSp+64
+      rw [h56, h32_0]  -- goal: evmSp+se56→evmSp+32+24; evmSp+32+0→evmSp+32
+      -- inline expLimb3 let-binding for xperm matching
+      simp only [show expLimb3 = exponentWord.getLimbN 3 from rfl]
+      xperm_hyp hp)
+    -- POST-weaken: fold atoms back into expTwoMulLoopEntryPostFixed
+    (fun _ hp => by
+      rw [expTwoMulLoopEntryPostFixed_unfold]
+      -- Inline expLimb3 let-binding in hp and normalize exp.l0 address
+      simp only [show expLimb3 = exponentWord.getLimbN 3 from rfl] at hp
+      rw [h32_0] at hp
+      -- Normalize goal: x9=256→0+se256, x5=1→0+se1 to match raw-spec hp forms
+      rw [← hx9, ← hx5]
+      -- Unfold evmWordIs sp 1 in goal BEFORE simp (must be before simp expands it wrong)
+      rw [← exp_prologue_result_word_one sp]
+      -- Expand evmStackIs/evmWordIs in goal (accumulator atoms already expanded)
+      simp only [evmStackIs_cons, evmWordIs]
+      -- Normalize goal addresses: evmSp+32+32→evmSp+64, evmSp+32+24→evmSp+se56
+      rw [h64, ← h56]
+      xperm_hyp hp)
+    hRaw_framed
 
 end EvmAsm.Evm64.Exp.Compose
