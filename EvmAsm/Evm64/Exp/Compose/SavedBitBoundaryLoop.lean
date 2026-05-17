@@ -9,6 +9,7 @@
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopExit
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitIterMerge
+import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -484,5 +485,57 @@ theorem exp_two_mul_full_loop_boundary_of_body_closed_bound_spec_within
     exp_two_mul_full_loop_boundary_of_body_spec_within
       sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
       r0 r1 r2 r3 baseWord exponentWord rest exitCond base hLoopNamed
+
+/-- Generalised boundary composition that accepts the full-stack loop-exit
+    pre-frame directly, with `d0..d3` as a separate parameters (not forced to
+    equal `r0..r3`).
+
+    This is the correct target for the 256-iteration loop body proof because
+    at the loop exit PC the memory at `evmSp + 32..56` still holds the
+    original exponent bytes (the epilogue overwrites them with the result
+    `r0..r3`).  The caller must provide `d0..d3` = the values that are
+    actually there at exit time.
+
+    The standard `exp_two_mul_boundary_loop_epilogue_of_loop_spec_within`
+    restricts to `d = r`, but the epilogue already supports arbitrary `d`:
+    `exp_pointer_restore_then_epilogue_full_stack_..._canonical_appended_mul_spec_within`
+    takes d0..d3 and r0..r3 as independent. -/
+theorem exp_two_mul_boundary_loop_epilogue_of_loop_general_spec_within
+    {nSteps : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin (expTwoMulBoundaryLoopBound nSteps) base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hBoundary :=
+    exp_prologue_then_pointer_advance_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_named_boundary_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 baseWord exponentWord rest base
+  have hPrefix := cpsTripleWithin_seq_same_cr hBoundary hLoop
+  -- The full-stack epilogue with arbitrary d0..d3 produces FullStackPostFrame = loopExitPost.
+  have hEpilogue :
+      cpsTripleWithin (1 + 9) (base + 264) (base + 304)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)
+        (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+          baseWord rest exitCond) := by
+    unfold expTwoMulLoopExitPost
+    exact exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_canonical_appended_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond base
+  exact cpsTripleWithin_mono_nSteps
+    (by unfold expTwoMulBoundaryLoopBound expTwoMulBoundaryPrefixBound
+            expTwoMulBoundarySuffixBound; omega)
+    (cpsTripleWithin_seq_same_cr hPrefix hEpilogue)
 
 end EvmAsm.Evm64.Exp.Compose
