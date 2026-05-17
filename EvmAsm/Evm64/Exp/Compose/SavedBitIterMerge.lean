@@ -954,4 +954,26 @@ theorem exp_loop_body_succ_step
     e0 e1 e2 e3 a0 a1 a2 a3 iterCountFinal tOld out0 out1 out2 out3
     base baseWord rest exitCond hbase hExit hLoop
 
+-- Key insight for the 256-iteration loop body proof: the `loopPost` assertion
+-- embeds ALL the atoms needed by the NEXT iteration's `iterPre`, except for
+-- `d0..d3` which come from `memOwn` atoms (algorithmically irrelevant scratch).
+--
+-- For the SKIP path (bit = 0):
+--   x5' = squareW.getLimbN 3  (next exponent cursor, from skipRest)
+--   r0'..r3' = squareW.getLimbN 0..3  (from evmWordIs sp squareW)
+--   e0'..e3' = squareW.getLimbN 0..3  (from evmWordIs (evmSp+32) squareW)
+--   v18' = bit + signExtend12 0  (from skipRest's x18)
+--   vOld' = (base+44)+68  (from skipRest's x1)
+--   d0'..d3' = WHATEVER is at evmSp..evmSp+24  (from memOwn atoms)
+--
+-- For the COND path (bit = 1):
+--   x5' = rw.getLimbN 3,  r0'..r3' = rw.getLimbN 0..3
+--   e0'..e3' = rw.getLimbN 0..3 (from evmWordIs (evmSp+32) rw)
+--   v18' = bit+signExtend12 0, vOld' = (base+152)+68
+--   d0'..d3' = WHATEVER is at evmSp..evmSp+24 (from memOwn atoms)
+--
+-- Proving this existential bridge (expTwoMulIterLoopPost_to_iterPre_exists)
+-- requires extracting d0..d3 from memOwn via Classical.choose and reassembling
+-- the sepConj — see bead evm-asm-w5mk notes for the proof sketch.
+
 end EvmAsm.Evm64.Exp.Compose
