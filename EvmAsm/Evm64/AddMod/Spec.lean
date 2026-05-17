@@ -112,7 +112,189 @@ private theorem evm_addmod_n0_dispatch_bridge
   -- All atoms match between hpre and the goal
   xperm_hyp hpre
 
--- Placeholder: full `evm_addmod_stack_spec_within` lands in slice evm-asm-sord.
--- The N=0 case (dispatch-bridge proved above) is tracked in bead evm-asm-a32mz.
+/-! ## Alignment helpers -/
+
+private theorem addmod_and_not_one_eq (base : BitVec 64) (hbase : base &&& 1 = 0) :
+    base &&& ~~~1 = base := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_not, decide_eq_true hi, Bool.true_and]
+  have hbase0 : base.getLsbD 0 = false := by
+    have h := congr_arg (·.getLsbD 0) hbase
+    simp only [BitVec.getLsbD_and, show (BitVec.getLsbD (1 : Word) 0) = true from by simp,
+               Bool.and_true] at h
+    exact h
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · rw [show (BitVec.getLsbD (1 : Word) 0) = true from by simp, Bool.not_true, Bool.and_false,
+        hbase0]
+  · have h1i : (BitVec.getLsbD (1 : Word) i) = false := by
+      simp only [show (1 : Word) = BitVec.ofNat 64 1 from rfl]
+      rw [BitVec.getLsbD_ofNat, decide_eq_true hi, Bool.true_and, Nat.testBit_lt_two_pow]
+      exact (Nat.pow_lt_pow_right (by norm_num) hi0).trans_le le_rfl
+    rw [h1i, Bool.not_false, Bool.and_true]
+
+private theorem addmod_even_and_one_eq_zero (base : BitVec 64) (hbase : base &&& 1 = 0) :
+    (base + 128 : BitVec 64) &&& 1 = 0 := by
+  have hbase0 : base.getLsbD 0 = false := by
+    have h := congr_arg (·.getLsbD 0) hbase
+    simp only [BitVec.getLsbD_and, show (BitVec.getLsbD (1 : Word) 0) = true from by simp,
+               Bool.and_true] at h
+    exact h
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_and]
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · rw [show (BitVec.getLsbD (1 : Word) 0) = true from by simp, Bool.and_true]
+    rw [BitVec.getLsbD_add (by omega : 0 < 64)]
+    have hc : BitVec.carry 0 base (128 : Word) false = false := by
+      simp [BitVec.carry, Nat.mod_one]
+    have h128 : (BitVec.getLsbD (128 : Word) 0) = false := by simp
+    rw [h128, hc, Bool.false_xor, Bool.xor_false, hbase0]
+    simp
+  · have h1i : (BitVec.getLsbD (1 : Word) i) = false := by
+      simp only [show (1 : Word) = BitVec.ofNat 64 1 from rfl]
+      rw [BitVec.getLsbD_ofNat, decide_eq_true hi, Bool.true_and, Nat.testBit_lt_two_pow]
+      exact (Nat.pow_lt_pow_right (by norm_num) hi0).trans_le le_rfl
+    rw [h1i, Bool.and_false]
+    simp [BitVec.getLsbD_zero]
+
+/-! ## ADDMOD N=0 end-to-end spec
+
+ADDMOD(a, 0, 0) = 0: when second operand b=0 AND modulus N=0,
+the result is 0 (the mod callable zeroPath stores zeros and preserves x1).
+Combined code region: `evm_addmod_program_code base modOff ∪ evm_mod_callable_code callable_base`.
+-/
+
+/-- ADDMOD(a, 0, 0) = 0 end-to-end spec (bead evm-asm-a32mz).
+
+    PRE:  x12=sp, a at sp, b=0 at sp+32, N=0 at sp+64; registers; divScratch at (sp+32)+.
+    POST: x12=sp+64 (ADDMOD result 0 at sp+64); a preserved at sp; registers weakened.
+
+    Hypothesis `hdisjoint` ensures the addmod program code and mod callable are at
+    disjoint addresses (required because they are composed via CodeReq.union). -/
+theorem evm_addmod_b0_n0_spec_within
+    (sp base callable_base : Word)
+    (a : EvmWord) (a0 a1 a2 a3 v1 v2 v5 v6 v7 v10 v11 : Word)
+    (modOff : BitVec 21)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hcallable : callable_base = (base + 124) + signExtend21 modOff)
+    (hbase : base &&& 1 = 0)
+    (hdisjoint : (evm_addmod_program_code base modOff).Disjoint
+                   (evm_mod_callable_code callable_base)) :
+    -- The callable's bzero path advances x12 from sp+32 to sp+64 (via divK_zeroPath),
+    -- so the spec exits at base+128 (where cc_ret returns) without the epilogue.
+    cpsTripleWithin ((31 + 1) + (unifiedDivBound + 1))
+      base (base + 128)
+      ((evm_addmod_program_code base modOff).union (evm_mod_callable_code callable_base))
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) **
+       (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (0 : EvmWord) **
+       evmWordIs (sp + 64) (0 : EvmWord) **
+       divScratchValuesCall (sp + 32) q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      ((.x12 ↦ᵣ (sp + 64)) **
+       (.x1 ↦ᵣ ((base + 124) + 4)) **
+       regOwn .x2 ** regOwn .x5 ** regOwn .x6 ** regOwn .x7 **
+       regOwn .x10 ** regOwn .x11 ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs sp a ** evmWordIs (sp + 32) a **
+       evmWordIs (sp + 64) (0 : EvmWord) **
+       divScratchOwnCall (sp + 32)) := by
+  subst hcallable
+  -- Code-region monotonicity helpers
+  have hmono_prog : ∀ ad i,
+      (evm_addmod_program_code base modOff) ad = some i →
+      ((evm_addmod_program_code base modOff).union
+        (evm_mod_callable_code ((base + 124) + signExtend21 modOff))) ad = some i :=
+    fun ad i h => CodeReq.union_mono_left ad i h
+  have hmono_call : ∀ ad i,
+      (evm_mod_callable_code ((base + 124) + signExtend21 modOff)) ad = some i →
+      ((evm_addmod_program_code base modOff).union
+        (evm_mod_callable_code ((base + 124) + signExtend21 modOff))) ad = some i :=
+    CodeReq.mono_union_right hdisjoint (fun _ _ h => h)
+  -- raVal = (base+124)+4 = base+128. With base aligned (base &&& 1 = 0), base+128 is also aligned.
+  have hraVal_eq : (base + 124 : Word) + 4 = base + 128 := by bv_omega
+  -- ((base+128) &&& ~~~1) = base+128 since base+128 is even (base even + 128 even)
+  have hraVal_align : ((base + 124) + 4 : Word) &&& ~~~1 = base + 128 := by
+    rw [show (base + 124 : Word) + 4 = base + 128 from by bv_omega]
+    exact addmod_and_not_one_eq _ (addmod_even_and_one_eq_zero base hbase)
+  -- Step 1: Prologue framed + POST weaken to callable PRE
+  have hprologue_to_call : cpsTripleWithin (31 + 1) base ((base + 124) + signExtend21 modOff)
+      ((evm_addmod_program_code base modOff).union
+        (evm_mod_callable_code ((base + 124) + signExtend21 modOff)))
+      ((.x12 ↦ᵣ sp) ** (.x1 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) **
+       (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+       (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (.x0 ↦ᵣ (0 : Word)) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (0 : EvmWord) **
+       evmWordIs (sp + 64) (0 : EvmWord) **
+       divScratchValuesCall (sp + 32) q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      (divModStackDispatchPre (sp + 32) a (0 : EvmWord) ((base + 124) + 4)
+         v2 0 0 0 v10 0
+         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+         shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3)) := by
+    apply cpsTripleWithin_weaken _ _ (cpsTripleWithin_extend_code (hmono := hmono_prog)
+      (cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => hp)
+        (cpsTripleWithin_frameR
+          ((.x2 ↦ᵣ v2) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+           ((sp + 64) ↦ₘ (0 : Word)) ** ((sp + 72) ↦ₘ (0 : Word)) **
+           ((sp + 80) ↦ₘ (0 : Word)) ** ((sp + 88) ↦ₘ (0 : Word)) **
+           divScratchValuesCall (sp + 32) q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+             shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+          (by rw [divScratchValuesCall_unfold]; pcFree)
+          (evm_addmod_prologue_phase1_phase2_reduce_named_spec_within
+            sp base modOff a0 a1 a2 a3 0 0 0 0 v7 v6 v5 v11 v1))))
+    · -- PRE weaken: expand evmWordIs atoms to match framed prologue PRE
+      intro _ hp
+      rw [evmWordIs_sp_limbs_eq sp a a0 a1 a2 a3 ha0 ha1 ha2 ha3,
+          evmWordIs_sp32_limbs_eq sp (0 : EvmWord) 0 0 0 0
+            (EvmWord.getLimbN_zero 0) (EvmWord.getLimbN_zero 1)
+            (EvmWord.getLimbN_zero 2) (EvmWord.getLimbN_zero 3),
+          evmWordIs_sp64_limbs_eq sp (0 : EvmWord) 0 0 0 0
+            (EvmWord.getLimbN_zero 0) (EvmWord.getLimbN_zero 1)
+            (EvmWord.getLimbN_zero 2) (EvmWord.getLimbN_zero 3)] at hp
+      xperm_hyp hp
+    · -- POST weaken: framed prologue POST → callable PRE via dispatch bridge
+      intro s hpost
+      exact evm_addmod_n0_dispatch_bridge sp base a a0 a1 a2 a3 v2 v10
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0
+        ha0 ha1 ha2 ha3 s hpost
+  -- Step 2: Callable spec (N=0 bzero) framed with original-a atoms
+  -- The callable exits at raVal &&& ~~~1 = (base+124+4) &&& ~~~1 = base+128.
+  have hcall_raw :=
+    evm_mod_callable_bzero_preserving_x1_spec
+      (sp + 32) ((base + 124) + signExtend21 modOff) ((base + 124) + 4)
+      a (0 : EvmWord) v2 0 0 0 v10 0
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratchUn0 rfl
+  -- Rewrite exit PC: raVal &&& ~~~1 = base + 128
+  rw [hraVal_align] at hcall_raw
+  have hcall :=
+    cpsTripleWithin_extend_code (hmono := hmono_call)
+      (cpsTripleWithin_frameR
+        ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+        (by pcFree)
+        hcall_raw)
+  -- Compose prologue + callable; POST weaken to final form.
+  exact cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun s hpost => by
+      rw [modStackDispatchPostNoX1_unfold, EvmWord.mod_zero_right] at hpost
+      rw [divScratchOwnCall_unfold, divScratchOwn_unfold] at hpost
+      rw [evmWordIs_sp_limbs_eq sp a a0 a1 a2 a3 ha0 ha1 ha2 ha3]
+      rw [divScratchOwnCall_unfold, divScratchOwn_unfold]
+      simp only [BitVec.add_assoc] at hpost ⊢
+      simp only [show (32 : Word) + 32 = 64 from by bv_omega,
+        show (124 : Word) + 4 = 128 from by bv_omega] at hpost ⊢
+      xperm_hyp hpost)
+    (cpsTripleWithin_seq_same_cr hprologue_to_call hcall)
+
+-- Placeholder: full general `evm_addmod_stack_spec_within` lands in slice evm-asm-sord.
 
 end EvmAsm.Evm64
