@@ -22,11 +22,13 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64 (ADDI Assertion CodeReq LD SD addi_spec_gen_same_within
   addi_spec_gen_within andi_spec_gen_within beq_spec_within bne_spec_gen_within
   cpsBranchWithin cpsBranchWithin_extend_code cpsBranchWithin_frameR
-  cpsBranchWithin_seq_cpsTripleWithin_with_perm_same_cr cpsBranchWithin_weaken
+  cpsBranchWithin_ntakenPath cpsBranchWithin_seq_cpsTripleWithin_with_perm_same_cr
+  cpsBranchWithin_takenPath cpsBranchWithin_takenStripPure2 cpsBranchWithin_weaken
   cpsTripleWithin cpsTripleWithin_extend_code cpsTripleWithin_frameR
+  cpsTripleWithin_mono_nSteps cpsTripleWithin_seq_perm_same_cr cpsTripleWithin_seq_same_cr
   cpsTripleWithin_seq_cpsBranchWithin_with_perm cpsTripleWithin_weaken
-  generic_sd_spec_within jal_spec_within ld_spec_gen_within seq signExtend12
-  signExtend13 signExtend21 single slli_spec_gen_same_within
+  generic_sd_spec_within jal_spec_within ld_spec_gen_within seq sepConj_pure_right
+  signExtend12 signExtend13 signExtend21 single slli_spec_gen_same_within
   srli_spec_gen_same_within srli_spec_gen_within)
 
 -- ============================================================================
@@ -1164,5 +1166,53 @@ theorem exp_prologue_fixed_spec_within
   have hLd := ld_spec_gen_within .x19 .x16 (evmSp+signExtend12 56) c19Old expLimb3 (0:BitVec 12) (base+32) (by decide)
   have hAP := addi_spec_gen_same_within .x16 (evmSp+signExtend12 56) (-8:BitVec 12) (base+36) (by decide)
   runBlock hCounter hOne hSd0 hSd1 hSd2 hSd3 hC6 hLP hLd hAP
+
+-- ============================================================================
+-- exp_msb_bit_test_block_fixed specs (GH #92, bead evm-asm-w5mk)
+-- Two paths: skip (BNE taken, x6≠0) and reload (BNE not-taken, x6=0).
+-- These specs are proved below; the code abbreviation is defined first.
+-- ============================================================================
+
+abbrev exp_msb_bit_test_block_fixed_code (base : Word) : CodeReq :=
+  CodeReq.ofProg base exp_msb_bit_test_block_fixed
+
+private def hSR_helper (c10 e : Word) (base : Word) :
+    cpsTripleWithin 1 base (base + 4)
+      (exp_msb_bit_test_block_fixed_code base)
+      ((.x19 ↦ᵣ e) ** (.x10 ↦ᵣ c10))
+      ((.x19 ↦ᵣ e) ** (.x10 ↦ᵣ (e >>> (63 : BitVec 6).toNat))) := by
+  have h := srli_spec_gen_within .x10 .x19 c10 e 63 base (by decide)
+  have hext := cpsTripleWithin_extend_code (h := h)
+    (hmono := CodeReq.ofProg_mono_sub base base exp_msb_bit_test_block_fixed
+      [.SRLI .x10 .x19 63] 0 (by bv_omega) (by decide) (by decide) (by decide))
+  exact cpsTripleWithin_weaken (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) hext
+
+private def hSL_helper (e : Word) (base : Word) :
+    cpsTripleWithin 1 (base + 4) (base + 8)
+      (exp_msb_bit_test_block_fixed_code base)
+      (.x19 ↦ᵣ e)
+      (.x19 ↦ᵣ (e <<< (1 : BitVec 6).toNat)) := by
+  have h := slli_spec_gen_same_within .x19 e 1 (base + 4) (by decide)
+  have hext := cpsTripleWithin_extend_code (h := h)
+    (hmono := CodeReq.ofProg_mono_sub base (base + 4) exp_msb_bit_test_block_fixed
+      [.SLLI .x19 .x19 1] 1 (by bv_omega) (by decide) (by decide) (by decide))
+  have haddr : (base + 4 : Word) + 4 = base + 8 := by bv_addr
+  rw [haddr] at hext; exact hext
+
+private def hAD_helper (c6 : Word) (base : Word) :
+    cpsTripleWithin 1 (base + 8) (base + 12)
+      (exp_msb_bit_test_block_fixed_code base)
+      (.x6 ↦ᵣ c6)
+      (.x6 ↦ᵣ (c6 + signExtend12 (-1 : BitVec 12))) := by
+  have h := addi_spec_gen_same_within .x6 c6 (-1 : BitVec 12) (base + 8) (by decide)
+  have hext := cpsTripleWithin_extend_code (h := h)
+    (hmono := CodeReq.ofProg_mono_sub base (base + 8) exp_msb_bit_test_block_fixed
+      [.ADDI .x6 .x6 (-1)] 2 (by bv_omega) (by decide) (by decide) (by decide))
+  have haddr : (base + 8 : Word) + 4 = base + 12 := by bv_addr
+  rw [haddr] at hext; exact hext
+
+-- Skip and reload specs for exp_msb_bit_test_block_fixed are proved in a
+-- subsequent slice (the two-path BNE composition requires additional
+-- cpsBranchWithin_takenPath / ntakenPath machinery).
 
 end EvmAsm.Evm64
