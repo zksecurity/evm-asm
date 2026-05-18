@@ -298,6 +298,69 @@ theorem expTwoMulFixedAccumulatorInvariant_succ_of_condRw_true
           expTwoMulFixedAccumulatorStep_true_eq_condRw hBase])
       hSemanticStep
 
+theorem expTwoMulFixedAccumulatorInvariant_succ_of_squareW_branch
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {e r0 r1 r2 r3 : Word}
+    (hk : k < 256)
+    (hBitWord :
+      e >>> (63 : BitVec 6).toNat =
+        expTwoMulFixedProcessedBitWord exponentWord k)
+    (hBitZero : e >>> (63 : BitVec 6).toNat +
+        signExtend12 (0 : BitVec 12) = 0)
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + 1)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 0)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 1)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 2)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 3) := by
+  have hProcessedFalse :
+      expTwoMulFixedProcessedBit exponentWord k = false := by
+    rw [hBitWord] at hBitZero
+    exact
+      (expTwoMulFixedProcessedBitWord_add_zero_eq_zero_iff
+        exponentWord k).1 hBitZero
+  refine
+    expTwoMulFixedAccumulatorInvariant_succ_of_squareW_false
+      hInv ?_
+  rw [← hProcessedFalse]
+  exact expTwoMulFixedAccumulatorStep_eq_target_succ baseWord exponentWord hk
+
+theorem expTwoMulFixedAccumulatorInvariant_succ_of_condRw_branch
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {e a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hBitWord :
+      e >>> (63 : BitVec 6).toNat =
+        expTwoMulFixedProcessedBitWord exponentWord k)
+    (hBitNe : e >>> (63 : BitVec 6).toNat +
+        signExtend12 (0 : BitVec 12) ≠ 0)
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + 1)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 0)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 1)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 2)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 3) := by
+  have hProcessedTrue :
+      expTwoMulFixedProcessedBit exponentWord k = true := by
+    rw [hBitWord] at hBitNe
+    exact
+      (expTwoMulFixedProcessedBitWord_add_zero_ne_zero_iff
+        exponentWord k).1 hBitNe
+  refine
+    expTwoMulFixedAccumulatorInvariant_succ_of_condRw_true
+      hBase hInv ?_
+  rw [← hProcessedTrue]
+  exact expTwoMulFixedAccumulatorStep_eq_target_succ baseWord exponentWord hk
+
 /-- Semantic accumulator obtained by running `n` generic fixed-loop updates
     starting from the target at iteration `k`.
 
