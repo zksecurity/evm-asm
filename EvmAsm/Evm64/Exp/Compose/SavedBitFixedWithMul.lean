@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryPrologueFixed
 import EvmAsm.Evm64.Exp.Compose.SavedBitBaseTwoMulFixedIterMerged
+import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -431,6 +432,39 @@ theorem exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_
   exact exp_pointer_restore_then_epilogue_full_post_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
     sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
     squaringMulOff condMulOff skipOff backOff base mulTarget
+
+/-- Full visible-stack view of the fixed pointer-restore/epilogue sequence. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) := by
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      rw [expTwoMulLoopExitFullStackPreFrame_unfold] at hp
+      rw [expTwoMulLoopExitControl_unfold] at hp
+      rw [evmStackIs_cons, evmStackIs_cons] at hp
+      rw [← exp_epilogue_result_word_right evmSp d0 d1 d2 d3
+        (evmStackIs (evmSp + 32 + 32) rest)] at hp
+      rw [expTwoMulBoundaryResultTailWord] at hp
+      rw [expTwoMulLoopExitStackTailFrame_unfold]
+      xcancel_struct hp)
+    (fun _ hp => by
+      rw [expTwoMulLoopExitFullStackPostFrame_unfold]
+      rw [expTwoMulLoopExitControl_unfold]
+      exact hp)
+    (exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+      squaringMulOff condMulOff skipOff backOff base mulTarget)
 
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
     {base mulTarget : Word}
