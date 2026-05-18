@@ -10,6 +10,41 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
+abbrev expTwoMulFixedIterScratchOwn (evmSp : Word) : Assertion :=
+  regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+  memOwn evmSp ** memOwn (evmSp + 8) **
+  memOwn (evmSp + 16) ** memOwn (evmSp + 24)
+
+abbrev expTwoMulFixedIterScratchIs
+    (evmSp v6 v7 v10 v11 d0 d1 d2 d3 : Word) : Assertion :=
+  (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+  (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
+  (evmSp ↦ₘ d0) ** (evmSp + 8 ↦ₘ d1) **
+  (evmSp + 16 ↦ₘ d2) ** (evmSp + 24 ↦ₘ d3)
+
+theorem expTwoMulFixedIterScratchOwn_pcFree {evmSp : Word} :
+    (expTwoMulFixedIterScratchOwn evmSp).pcFree := by
+  unfold expTwoMulFixedIterScratchOwn
+  pcFree
+
+theorem expTwoMulFixedIterScratchIs_pcFree
+    {evmSp v6 v7 v10 v11 d0 d1 d2 d3 : Word} :
+    (expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11
+      d0 d1 d2 d3).pcFree := by
+  unfold expTwoMulFixedIterScratchIs
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedIterScratchOwn (evmSp : Word) :
+    Assertion.PCFree (expTwoMulFixedIterScratchOwn evmSp) :=
+  ⟨expTwoMulFixedIterScratchOwn_pcFree⟩
+
+instance pcFreeInst_expTwoMulFixedIterScratchIs
+    (evmSp v6 v7 v10 v11 d0 d1 d2 d3 : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11
+        d0 d1 d2 d3) :=
+  ⟨expTwoMulFixedIterScratchIs_pcFree⟩
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
