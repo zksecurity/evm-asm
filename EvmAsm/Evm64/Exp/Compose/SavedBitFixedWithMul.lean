@@ -22,30 +22,6 @@ abbrev evmExpMsbSavedBitTwoMulFixedWithMulCode (base mulTarget : Word)
     base squaringMulOff condMulOff skipOff backOff).union
     (mul_callable_code mulTarget)
 
-theorem expMsbSavedBitTwoMulFixedCode_iter_body_sub {base : Word}
-    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
-    ∀ a i, (expIterBodyFullMsbSavedBitTwoMulFixedCode
-      (base + 44) squaringMulOff condMulOff skipOff backOff) a = some i →
-      (expMsbSavedBitTwoMulFixedCode
-        base squaringMulOff condMulOff skipOff backOff) a = some i := by
-  rw [expIterBodyFullMsbSavedBitTwoMulFixedCode_eq_ofProg]
-  unfold expMsbSavedBitTwoMulFixedCode
-  exact CodeReq.ofProg_mono_sub base (base + 44)
-    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed
-      squaringMulOff condMulOff skipOff backOff)
-    (EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul_fixed
-      squaringMulOff condMulOff skipOff backOff) 11
-    (by bv_omega)
-    (by
-      unfold EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed
-      simp only [EvmAsm.Rv64.seq]
-      unfold Program
-      rfl)
-    (by
-      simp [EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed_length,
-        EvmAsm.Evm64.exp_iter_body_full_msb_saved_bit_two_mul_fixed_length])
-    (by simp [EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed_length])
-
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub {base mulTarget : Word}
     {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13} :
     ∀ a i, (expMsbSavedBitTwoMulFixedCode
@@ -82,7 +58,9 @@ theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
   exact CodeReq.union_sub
     (fun a i h =>
       evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub a i
-        (expMsbSavedBitTwoMulFixedCode_iter_body_sub a i h))
+        (expMsbSavedBitTwoMulFixedCode_iter_body_sub a i
+          (expIterBodyFullMsbSavedBitTwoMulFixedCode_eq_ofProg
+            (base + 44) squaringMulOff condMulOff skipOff backOff ▸ h)))
     (evmExpMsbSavedBitTwoMulFixedWithMulCode_mul_sub hd)
 
 theorem expIterBodyFullMsbSavedBitTwoMulFixedCode_disjoint_mul_of_fixed_disjoint
@@ -104,7 +82,9 @@ theorem expIterBodyFullMsbSavedBitTwoMulFixedCode_disjoint_mul_of_fixed_disjoint
           (base + 44) squaringMulOff condMulOff skipOff backOff) a with
     | none => rfl
     | some i =>
-        have h_sub := expMsbSavedBitTwoMulFixedCode_iter_body_sub a i h_body
+        have h_sub := expMsbSavedBitTwoMulFixedCode_iter_body_sub a i
+          (expIterBodyFullMsbSavedBitTwoMulFixedCode_eq_ofProg
+            (base + 44) squaringMulOff condMulOff skipOff backOff ▸ h_body)
         rw [h_fixed] at h_sub
         contradiction
   · right
