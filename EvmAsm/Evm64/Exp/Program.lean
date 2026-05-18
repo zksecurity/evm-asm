@@ -1306,6 +1306,13 @@ theorem exp_iter_body_full_msb_saved_bit_two_mul_fixed_length
     exp_cond_mul_call_with_saved_bit_skip_block_length,
     exp_loop_back_length]
 
+theorem exp_iter_body_full_msb_saved_bit_two_mul_fixed_byte_length
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) :
+    4 * (exp_iter_body_full_msb_saved_bit_two_mul_fixed
+      squaringMulOff condMulOff skipOff backOff).length = 252 := by
+  rw [exp_iter_body_full_msb_saved_bit_two_mul_fixed_length]
+
 /-- Fixed EXP program with corrected prologue and bit-test block.
     The MUL call offsets and internal branch offsets are caller-supplied.
     NOTE: All internal branch offsets (skipOff, backOff) change relative
@@ -1338,5 +1345,36 @@ theorem evm_exp_msb_saved_bit_two_mul_fixed_length
     exp_iter_body_full_msb_saved_bit_two_mul_fixed_length,
     exp_loop_pointer_restore_length,
     exp_epilogue_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_fixed_byte_length
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) :
+    4 * (evm_exp_msb_saved_bit_two_mul_fixed
+      squaringMulOff condMulOff skipOff backOff).length = 336 := by
+  rw [evm_exp_msb_saved_bit_two_mul_fixed_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_fixed_loop_entry_byte_offset :
+    4 * (exp_prologue_fixed.length + exp_loop_pointer_advance.length) = 44 := by
+  rw [exp_prologue_fixed_length, exp_loop_pointer_advance_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_fixed_loop_body_end_byte_offset
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) :
+    4 * (exp_prologue_fixed.length + exp_loop_pointer_advance.length +
+      (exp_iter_body_full_msb_saved_bit_two_mul_fixed
+        squaringMulOff condMulOff skipOff backOff).length) = 296 := by
+  rw [exp_prologue_fixed_length, exp_loop_pointer_advance_length,
+    exp_iter_body_full_msb_saved_bit_two_mul_fixed_length]
+
+theorem evm_exp_msb_saved_bit_two_mul_fixed_epilogue_byte_offset
+    (squaringMulOff condMulOff : BitVec 21)
+    (skipOff backOff : BitVec 13) :
+    4 * (exp_prologue_fixed.length + exp_loop_pointer_advance.length +
+      (exp_iter_body_full_msb_saved_bit_two_mul_fixed
+        squaringMulOff condMulOff skipOff backOff).length +
+      exp_loop_pointer_restore.length) = 300 := by
+  rw [exp_prologue_fixed_length, exp_loop_pointer_advance_length,
+    exp_iter_body_full_msb_saved_bit_two_mul_fixed_length,
+    exp_loop_pointer_restore_length]
 
 end EvmAsm.Evm64
