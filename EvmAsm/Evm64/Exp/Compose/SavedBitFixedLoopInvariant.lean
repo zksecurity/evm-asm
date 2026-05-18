@@ -33,6 +33,16 @@ theorem expTwoMulFixedAccumulatorTarget_full
       EvmWord.exp baseWord exponentWord := by
   simp [expTwoMulFixedAccumulatorTarget, expTwoMulFixedProcessedExponent_full]
 
+/-- One Bool-unified semantic accumulator update for the fixed loop.
+
+    Every iteration squares the current accumulator. The conditional multiply
+    path additionally multiplies by the original base when the consumed bit is
+    one. -/
+def expTwoMulFixedAccumulatorStep
+    (baseWord accWord : EvmWord) (bit : Bool) : EvmWord :=
+  let squared := accWord * accWord
+  if bit then baseWord * squared else squared
+
 /-- Pure semantic invariant carried by the fixed-loop induction path. -/
 def expTwoMulFixedAccumulatorInvariant
     (baseWord exponentWord : EvmWord) (k : Nat)
@@ -67,6 +77,30 @@ instance pcFreeInst_expTwoMulFixedSemanticInvariant
     Assertion.PCFree
       (expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3) :=
   ⟨expTwoMulFixedSemanticInvariant_pcFree⟩
+
+/-- Generic Bool-unified successor rule for the semantic accumulator invariant.
+
+    The CPS one-step proof should discharge `hStep` from the concrete
+    squaring/conditional-multiply case and `hSemanticStep` from the exponent
+    bit algebra, then use this lemma for both branch outcomes. -/
+theorem expTwoMulFixedAccumulatorInvariant_succ_of_step
+    {baseWord exponentWord : EvmWord} {k : Nat} {bit : Bool}
+    {r0 r1 r2 r3 r0' r1' r2' r3' : Word}
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (hStep :
+      expResultWord r0' r1' r2' r3' =
+        expTwoMulFixedAccumulatorStep baseWord
+          (expResultWord r0 r1 r2 r3) bit)
+    (hSemanticStep :
+      expTwoMulFixedAccumulatorStep baseWord
+        (expTwoMulFixedAccumulatorTarget baseWord exponentWord k) bit =
+          expTwoMulFixedAccumulatorTarget baseWord exponentWord (k + 1)) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + 1)
+      r0' r1' r2' r3' := by
+  unfold expTwoMulFixedAccumulatorInvariant at *
+  rw [hStep, hInv, hSemanticStep]
 
 /-- The fixed iteration precondition indexed by the semantic iteration count.
 
