@@ -695,10 +695,69 @@ inductive DivStackSpecCase (base : Word) (a b : EvmWord) where
         ((b.getLimbN 3 <<< (((clzResult (b.getLimbN 0)).1).toNat % 64)) |||
           (b.getLimbN 2 >>> ((signExtend12 (0 : BitVec 12) -
             (clzResult (b.getLimbN 0)).1).toNat % 64))))
-      (hdivWord : fullDivN1QuotientWord bltu_3 bltu_2 bltu_1 bltu_0
-        (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
-        (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
-          EvmWord.div a b)
+      (hmulsub :
+        EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+            (a.getLimbN 2) (a.getLimbN 3) =
+          (((fullDivN1R3 bltu_3
+                (a.getLimbN 0) (a.getLimbN 1)
+                (a.getLimbN 2) (a.getLimbN 3)
+                (b.getLimbN 0) (b.getLimbN 1)
+                (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^192 +
+            ((fullDivN1R2 bltu_3 bltu_2
+                (a.getLimbN 0) (a.getLimbN 1)
+                (a.getLimbN 2) (a.getLimbN 3)
+                (b.getLimbN 0) (b.getLimbN 1)
+                (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^128 +
+            ((fullDivN1R1 bltu_3 bltu_2 bltu_1
+                (a.getLimbN 0) (a.getLimbN 1)
+                (a.getLimbN 2) (a.getLimbN 3)
+                (b.getLimbN 0) (b.getLimbN 1)
+                (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^64 +
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+                (a.getLimbN 0) (a.getLimbN 1)
+                (a.getLimbN 2) (a.getLimbN 3)
+                (b.getLimbN 0) (b.getLimbN 1)
+                (b.getLimbN 2) (b.getLimbN 3)).1).toNat) *
+            EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3) +
+          EvmWord.val256
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).2.1)
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).2.2.1)
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).2.2.2.1)
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).2.2.2.2.1))
+      (hge :
+        EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+            (a.getLimbN 2) (a.getLimbN 3) /
+          EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+            (b.getLimbN 2) (b.getLimbN 3) ≤
+          ((fullDivN1R3 bltu_3
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+            (b.getLimbN 3)).1).toNat * 2^192 +
+            ((fullDivN1R2 bltu_3 bltu_2
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).1).toNat * 2^128 +
+            ((fullDivN1R1 bltu_3 bltu_2 bltu_1
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).1).toNat * 2^64 +
+            ((fullDivN1R0 bltu_3 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+              (b.getLimbN 3)).1).toNat)
   | n2Full (bltu_2 bltu_1 bltu_0 : Bool)
       (hbnz : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0)
       (hb3z : b.getLimbN 3 = 0) (hb2z : b.getLimbN 2 = 0)
@@ -889,7 +948,10 @@ theorem evm_div_stack_spec (sp base : Word) (a b : EvmWord)
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz
   | n1Full bltu_3 bltu_2 bltu_1 bltu_0 hbnz hb3z hb2z hb1z hshift_nz halign
-      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hdivWord =>
+      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hmulsub hge =>
+      have hdivWord :=
+        fullDivN1QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
+          bltu_3 bltu_2 bltu_1 bltu_0 hbnz hmulsub hge
       exact evm_div_n1_stack_spec_within_word_uni
         bltu_3 bltu_2 bltu_1 bltu_0 sp base a b
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
@@ -950,7 +1012,10 @@ theorem evm_div_stack_spec_exact_x1 (sp base : Word) (a b : EvmWord)
         nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz
       exact cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_divCode) hStack
   | n1Full bltu_3 bltu_2 bltu_1 bltu_0 hbnz hb3z hb2z hb1z hshift_nz halign
-      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hdivWord =>
+      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hmulsub hge =>
+      have hdivWord :=
+        fullDivN1QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
+          bltu_3 bltu_2 bltu_1 bltu_0 hbnz hmulsub hge
       exact evm_div_n1_stack_spec_within_word_exact_x1_uni
         bltu_3 bltu_2 bltu_1 bltu_0 sp base a b
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
@@ -1008,7 +1073,10 @@ theorem evm_div_stack_spec_noNop (sp base : Word) (a b : EvmWord)
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz
   | n1Full bltu_3 bltu_2 bltu_1 bltu_0 hbnz hb3z hb2z hb1z hshift_nz halign
-      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hdivWord =>
+      hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2 hmulsub hge =>
+      have hdivWord :=
+        fullDivN1QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
+          bltu_3 bltu_2 bltu_1 bltu_0 hbnz hmulsub hge
       exact evm_div_n1_stack_spec_within_word_noNop_uni
         bltu_3 bltu_2 bltu_1 bltu_0 sp base a b
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
