@@ -33,6 +33,38 @@ theorem expTwoMulFixedBranchResult_true
         a0 a1 a2 a3 := by
   rfl
 
+theorem expTwoMulFixedBranchResult_decide_highBit_eq_squareW_of_zero
+    {e a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    (hBitZero : (e >>> (63 : BitVec 6).toNat) +
+        signExtend12 (0 : BitVec 12) = 0) :
+    expTwoMulFixedBranchResult
+        (decide ((e >>> (63 : BitVec 6).toNat) +
+          signExtend12 (0 : BitVec 12) ≠ 0))
+        a0 a1 a2 a3 r0 r1 r2 r3 =
+      expSquaringCallSquareW r0 r1 r2 r3 := by
+  have hDecide :
+      decide ((e >>> (63 : BitVec 6).toNat) +
+        signExtend12 (0 : BitVec 12) ≠ 0) = false := by
+    rw [hBitZero]
+    decide
+  rw [hDecide, expTwoMulFixedBranchResult_false]
+
+theorem expTwoMulFixedBranchResult_decide_highBit_eq_condRw_of_ne_zero
+    {e a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    (hBitNe : (e >>> (63 : BitVec 6).toNat) +
+        signExtend12 (0 : BitVec 12) ≠ 0) :
+    expTwoMulFixedBranchResult
+        (decide ((e >>> (63 : BitVec 6).toNat) +
+          signExtend12 (0 : BitVec 12) ≠ 0))
+        a0 a1 a2 a3 r0 r1 r2 r3 =
+      expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3 := by
+  have hDecide :
+      decide ((e >>> (63 : BitVec 6).toNat) +
+        signExtend12 (0 : BitVec 12) ≠ 0) = true := by
+    exact decide_eq_true hBitNe
+  rw [hDecide, expTwoMulFixedBranchResult_true]
+
 theorem expTwoMulFixedAccumulatorStep_eq_branchResult
     {baseWord : EvmWord} {bit : Bool}
     {a0 a1 a2 a3 r0 r1 r2 r3 : Word}
