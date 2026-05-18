@@ -8,8 +8,8 @@
   case-split branches produce triples with incompatible `nSteps`.
 
   The n=4 stack-surface path is intentionally absent while the call-addback
-  algorithm is being repaired; the old n=4 wrappers depended on the false
-  `n4CallAddbackBeqSemanticHolds` premise.
+  algorithm is being repaired; the old n=4 wrappers depended on a false
+  semantic premise.
 
   This file imports `unifiedDivBound : Nat := 946` (the maximum across n=1..4)
   from `UnifiedBzero` and defines `_uni` wrappers for each per-`n`

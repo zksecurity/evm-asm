@@ -18,6 +18,7 @@ import EvmAsm.Evm64.DivMod.Spec
 -- file contained only 2 unused private Phase-2 overshoot lemmas, 464 LOC).
 
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
+import EvmAsm.Evm64.DivMod.SpecCall
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin
 import EvmAsm.Evm64.DivMod.LoopBody.DoubleAddbackBeq
