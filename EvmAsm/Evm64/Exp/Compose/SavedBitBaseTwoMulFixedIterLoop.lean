@@ -7,6 +7,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitBaseTwoMulFixedIter
+import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitTwoMulCondCall
 
 namespace EvmAsm.Evm64.Exp.Compose
@@ -704,7 +705,7 @@ theorem exp_msb_bit_test_fixed_skip_full_iter_four_exit_expIterBodyFullMsbSavedB
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
       (.x1 ↦ᵣ ((base + 140) + 68))
     cpsNBranchWithin
-      (((((4 + 1) + (17 + 64 + 9)) + 1) + 2) + ((17 + 64 + 9) + 2))
+      expTwoMulFixedSkipIterStepBound
       base
       ((expIterBodyFullMsbSavedBitTwoMulFixedCode
         base squaringMulOff condMulOff skipOff backOff).union
@@ -849,7 +850,7 @@ theorem exp_msb_bit_test_fixed_reload_full_iter_four_exit_expIterBodyFullMsbSave
       memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
       (.x1 ↦ᵣ ((base + 140) + 68))
     cpsNBranchWithin
-      (((((7 + 1) + (17 + 64 + 9)) + 1) + 2) + ((17 + 64 + 9) + 2))
+      expTwoMulFixedReloadIterStepBound
       base
       ((expIterBodyFullMsbSavedBitTwoMulFixedCode
         base squaringMulOff condMulOff skipOff backOff).union
