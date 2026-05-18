@@ -10,6 +10,12 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
+theorem expTwoMulFixedIterPointerPost_eq_pointerFrame
+    {ptr nextLimb : Word} :
+    expTwoMulFixedIterPointerPost ptr nextLimb =
+      expTwoMulFixedIterPointerFrame ptr nextLimb := by
+  rw [expTwoMulFixedIterPointerFrame_unfold]
+
 theorem expTwoMulFixedIterCaseExitPost_scratch_cases_frame
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
