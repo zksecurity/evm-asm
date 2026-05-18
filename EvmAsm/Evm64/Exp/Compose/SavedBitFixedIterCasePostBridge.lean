@@ -30,6 +30,97 @@ theorem expTwoMulFixedIterMergedExitPost_eq_caseExitPost
       r0 r1 r2 r3 a0 a1 a2 a3 base := by
   rfl
 
+abbrev expTwoMulFixedIterCaseExits
+    (iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 : Word) (base : Word) :
+    List (Word × Assertion) :=
+  [((base + 44),
+      expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base),
+   ((base + 296),
+      expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)]
+
+theorem expTwoMulFixedIterMergedExits_eq_caseExits
+    {e c6 iterCount ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} :
+    expTwoMulFixedIterMergedExits e c6 iterCount ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base =
+    expTwoMulFixedIterCaseExits iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base := by
+  rfl
+
+/-- Named-exit-list view of one fixed x19 merged iteration, stated directly
+    with case-post loop and exit assertions. -/
+theorem exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    cpsNBranchWithin
+      expTwoMulFixedReloadIterStepBound
+      (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      (expTwoMulFixedIterCaseExits iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base) := by
+  rw [← expTwoMulFixedIterMergedExits_eq_caseExits]
+  exact
+    exp_msb_bit_test_fixed_full_iter_merged_named_exits_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base hbase
+
+/-- Closed-form bound variant of the case-post named-exit-list fixed x19
+    iteration spec. -/
+theorem exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_closed_bound_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    cpsNBranchWithin
+      193
+      (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      (expTwoMulFixedIterCaseExits iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base) := by
+  rw [← expTwoMulFixedReloadIterStepBound_eq]
+  exact
+    exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base hbase
+
+/-- Bounded variant of the case-post named-exit-list fixed x19 iteration spec. -/
+theorem exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_bounded_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    {nBound : Nat} (hBound : 193 ≤ nBound) :
+    cpsNBranchWithin
+      nBound
+      (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      (expTwoMulFixedIterCaseExits iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base) :=
+  cpsNBranchWithin_mono_nSteps hBound
+    (exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_closed_bound_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base hbase)
+
 /-- Branch view of one fixed x19 merged iteration, stated directly with the
     named case-post loop and exit assertions. -/
 theorem exp_msb_bit_test_fixed_full_iter_case_posts_branch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
