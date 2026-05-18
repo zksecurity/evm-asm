@@ -117,6 +117,41 @@ theorem expTwoMulFixedFirstIterPre_unfold_words
   apply propext
   constructor <;> intro h <;> sep_perm h
 
+/-- Residual resources from the fixed entry post after the first fixed-iteration
+    precondition consumes the accumulator, base word, the first two rest words,
+    and the live exponent cursor cell at `evmSp + 48`. -/
+@[irreducible]
+def expTwoMulFixedFirstIterEntryResidual
+    (evmSp : Word) (exponentWord : EvmWord) (rest : List EvmWord) : Assertion :=
+  ((evmSp + 32) ↦ₘ exponentWord.getLimbN 0) **
+  ((evmSp + 40) ↦ₘ exponentWord.getLimbN 1) **
+  ((evmSp + 56) ↦ₘ exponentWord.getLimbN 3) **
+  evmStackIs (evmSp + 128) rest **
+  regOwn .x6
+
+theorem expTwoMulFixedFirstIterEntryResidual_unfold
+    {evmSp : Word} {exponentWord : EvmWord} {rest : List EvmWord} :
+    expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest =
+      (((evmSp + 32) ↦ₘ exponentWord.getLimbN 0) **
+       ((evmSp + 40) ↦ₘ exponentWord.getLimbN 1) **
+       ((evmSp + 56) ↦ₘ exponentWord.getLimbN 3) **
+       evmStackIs (evmSp + 128) rest **
+       regOwn .x6) := by
+  delta expTwoMulFixedFirstIterEntryResidual
+  rfl
+
+theorem expTwoMulFixedFirstIterEntryResidual_pcFree
+    {evmSp : Word} {exponentWord : EvmWord} {rest : List EvmWord} :
+    (expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest).pcFree := by
+  rw [expTwoMulFixedFirstIterEntryResidual_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedFirstIterEntryResidual
+    (evmSp : Word) (exponentWord : EvmWord) (rest : List EvmWord) :
+    Assertion.PCFree
+      (expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) :=
+  ⟨expTwoMulFixedFirstIterEntryResidual_pcFree⟩
+
 theorem expTwoMulFixedFirstIterPre_pcFree
     {sp evmSp v10 v18 vOld v7 v11 : Word}
     {baseWord exponentWord dWord eWord : EvmWord} :
