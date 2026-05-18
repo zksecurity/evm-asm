@@ -196,6 +196,63 @@ theorem expTwoMulFixedAccumulatorStep_eq_target_succ
   expTwoMulFixedAccumulatorStep_eq_target_of_processedExponent_succ
     (expTwoMulFixedProcessedExponent_succ_toNat exponentWord hk)
 
+/-- Semantic accumulator obtained by running `n` generic fixed-loop updates
+    starting from the target at iteration `k`.
+
+    This is intentionally indexed by `n`, not by concrete iteration names, so
+    the loop proof can recurse over this family instead of peeling 256 named
+    pre/post pairs. -/
+def expTwoMulFixedAccumulatorAfter
+    (baseWord exponentWord : EvmWord) (k : Nat) : Nat → EvmWord
+  | 0 => expTwoMulFixedAccumulatorTarget baseWord exponentWord k
+  | n + 1 =>
+      expTwoMulFixedAccumulatorStep baseWord
+        (expTwoMulFixedAccumulatorAfter baseWord exponentWord k n)
+        (expTwoMulFixedProcessedBit exponentWord (k + n))
+
+theorem expTwoMulFixedAccumulatorAfter_zero
+    (baseWord exponentWord : EvmWord) (k : Nat) :
+    expTwoMulFixedAccumulatorAfter baseWord exponentWord k 0 =
+      expTwoMulFixedAccumulatorTarget baseWord exponentWord k := by
+  rfl
+
+theorem expTwoMulFixedAccumulatorAfter_succ
+    (baseWord exponentWord : EvmWord) (k n : Nat) :
+    expTwoMulFixedAccumulatorAfter baseWord exponentWord k (n + 1) =
+      expTwoMulFixedAccumulatorStep baseWord
+        (expTwoMulFixedAccumulatorAfter baseWord exponentWord k n)
+        (expTwoMulFixedProcessedBit exponentWord (k + n)) := by
+  rfl
+
+theorem expTwoMulFixedAccumulatorAfter_eq_target_add
+    (baseWord exponentWord : EvmWord) (k n : Nat) (hBound : k + n ≤ 256) :
+    expTwoMulFixedAccumulatorAfter baseWord exponentWord k n =
+      expTwoMulFixedAccumulatorTarget baseWord exponentWord (k + n) := by
+  induction n with
+  | zero =>
+      simp [expTwoMulFixedAccumulatorAfter]
+  | succ n ih =>
+      rw [expTwoMulFixedAccumulatorAfter_succ]
+      have hPrev : k + n ≤ 256 := by omega
+      have hStep : k + n < 256 := by omega
+      rw [ih hPrev]
+      simpa [Nat.add_assoc] using
+        expTwoMulFixedAccumulatorStep_eq_target_succ
+          baseWord exponentWord (k := k + n) hStep
+
+theorem expTwoMulFixedAccumulatorInvariant_of_after
+    {baseWord exponentWord : EvmWord} {k n : Nat}
+    {r0' r1' r2' r3' : Word}
+    (hBound : k + n ≤ 256)
+    (hRun :
+      expResultWord r0' r1' r2' r3' =
+        expTwoMulFixedAccumulatorAfter baseWord exponentWord k n) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + n)
+      r0' r1' r2' r3' := by
+  unfold expTwoMulFixedAccumulatorInvariant at *
+  rw [hRun, expTwoMulFixedAccumulatorAfter_eq_target_add
+    baseWord exponentWord k n hBound]
+
 /-- Expected fixed-loop `x19` exponent cursor at the start of iteration `k`.
 
     The loop starts from limb 3, shifts the current limb left once per bit, and
