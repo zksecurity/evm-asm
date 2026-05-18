@@ -1475,6 +1475,15 @@ theorem sepConj_choose_memOwn {a : Word} {B : Assertion} {ps : PartialState}
   obtain ⟨ps1, ps2, hd, hu, ⟨v, hv⟩, hB⟩ := h
   exact ⟨v, ps1, ps2, hd, hu, hv, hB⟩
 
+/-- Choose a concrete value from `regOwn` in a leading `regOwn ** B` chain.
+    This is the register analogue of `sepConj_choose_memOwn`: peeling the
+    existential ownership atom yields a concrete `regIs` plus the rest of
+    the separating-conjunction chain. -/
+theorem sepConj_choose_regOwn {r : Reg} {B : Assertion} {ps : PartialState}
+    (h : (regOwn r ** B) ps) : ∃ v, (regIs r v ** B) ps := by
+  obtain ⟨ps1, ps2, hd, hu, ⟨v, hv⟩, hB⟩ := h
+  exact ⟨v, ps1, ps2, hd, hu, hv, hB⟩
+
 /-- Push the outer atom of a 4-chain left-associated `(3-chain) ** D`
     into the right-associated 4-chain — the inverse of the tree shape
     `cpsBranch_frameR` produces when framing a 3-atom pre with a
