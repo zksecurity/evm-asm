@@ -665,6 +665,82 @@ theorem exp_two_mul_fixed_full_loop_body_peel_tail_with_continuations_closed_bou
       r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
       v7 v11 base exit_ R hbase hLoop hExit
 
+/-- Peel one fixed x19 merged iteration from the conservative 256-iteration
+    body, reducing the exit edge to a zero-step assertion bridge. -/
+theorem exp_two_mul_fixed_full_loop_body_peel_tail_with_exit_imp_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    (cpsTripleWithin expTwoMulFixedFullLoopBodyTailBound
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin expTwoMulFixedFullLoopBodyBound
+      (base + 44)
+      (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop
+  exact
+    exp_two_mul_fixed_full_loop_body_peel_tail_with_continuations_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base (base + 296) R hbase hLoop
+      (cpsTripleWithin_mono_nSteps (Nat.zero_le _)
+        (cpsTripleWithin_extend_code
+          (hmono := by
+            intro a i h
+            cases h)
+          (cpsTripleWithin_refl hExit)))
+
+/-- Closed-form variant of
+    `exp_two_mul_fixed_full_loop_body_peel_tail_with_exit_imp_spec_within`. -/
+theorem exp_two_mul_fixed_full_loop_body_peel_tail_with_exit_imp_closed_bound_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    (cpsTripleWithin 49215
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin 49408
+      (base + 44)
+      (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop
+  rw [← expTwoMulFixedFullLoopBodyTailBound_eq] at hLoop
+  rw [← expTwoMulFixedFullLoopBodyBound_eq]
+  exact
+    exp_two_mul_fixed_full_loop_body_peel_tail_with_exit_imp_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base R hbase hExit hLoop
+
 /-- Branch view of the canonical-appended whole-code fixed x19 merged
     full-iteration spec with named loop/exit postconditions. -/
 theorem exp_msb_bit_test_fixed_full_iter_merged_named_branch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
