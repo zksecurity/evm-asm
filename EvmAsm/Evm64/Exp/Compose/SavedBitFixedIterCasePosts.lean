@@ -171,4 +171,22 @@ abbrev expTwoMulFixedIterReloadExitPost
       r0 r1 r2 r3 a0 a1 a2 a3 base
       (expTwoMulIterCountNew iterCount = 0) ps
 
+abbrev expTwoMulFixedIterCaseLoopPost
+    (iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word) : Assertion :=
+  fun ps =>
+    expTwoMulFixedIterSkipLoopPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base ps ∨
+    expTwoMulFixedIterReloadLoopPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base ps
+
+abbrev expTwoMulFixedIterCaseExitPost
+    (iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word) : Assertion :=
+  fun ps =>
+    expTwoMulFixedIterSkipExitPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base ps ∨
+    expTwoMulFixedIterReloadExitPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base ps
+
 end EvmAsm.Evm64.Exp.Compose
