@@ -535,6 +535,12 @@ def expTwoMulFixedCursorInvariant
     (exponentWord : EvmWord) (k : Nat) (e : Word) : Prop :=
   e = expTwoMulFixedCursorWord exponentWord k
 
+theorem expTwoMulFixedCursorInvariant_zero (exponentWord : EvmWord) :
+    expTwoMulFixedCursorInvariant exponentWord 0
+      (exponentWord.getLimbN 3) := by
+  unfold expTwoMulFixedCursorInvariant expTwoMulFixedCursorWord
+  simp
+
 def expTwoMulFixedControlInvariant
     (exponentWord : EvmWord) (k : Nat)
     (c6 _ptr nextLimb _evmSp : Word) : Prop :=
@@ -547,6 +553,17 @@ theorem expTwoMulFixedControlInvariant_zero
       64 ptr (exponentWord.getLimbN 2) evmSp := by
   unfold expTwoMulFixedControlInvariant
   simp
+
+theorem expTwoMulFixedInitialInvariants
+    (baseWord exponentWord : EvmWord) (ptr evmSp : Word) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord 0 1 0 0 0 ∧
+    expTwoMulFixedCursorInvariant exponentWord 0
+      (exponentWord.getLimbN 3) ∧
+    expTwoMulFixedControlInvariant exponentWord 0
+      64 ptr (exponentWord.getLimbN 2) evmSp :=
+  ⟨expTwoMulFixedAccumulatorInvariant_zero_one baseWord exponentWord,
+    expTwoMulFixedCursorInvariant_zero exponentWord,
+    expTwoMulFixedControlInvariant_zero exponentWord ptr evmSp⟩
 
 private theorem signExtend12_neg1_toNat :
     (signExtend12 (-1 : BitVec 12)).toNat = 2^64 - 1 := by
