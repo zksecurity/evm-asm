@@ -66,6 +66,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitBaseTwoMulFixedIterMerged
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedWithMul
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePosts
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterExits
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryLoopFixed
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEpilogueBase
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
