@@ -38,6 +38,80 @@ open EvmAsm.Rv64
 
 /-! ### DIV `_uni` wrappers -/
 
+/-- n=3 quotient bridge specialized to branch constructors that store
+    `a`/`b` as `EvmWord`s and refer to their limbs directly. -/
+theorem fullDivN3QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
+    (bltu_1 bltu_0 : Bool) {a b : EvmWord}
+    (hbnz : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0)
+    (hmulsub :
+      EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+          (a.getLimbN 2) (a.getLimbN 3) =
+        (((fullDivN3R1 bltu_1 (a.getLimbN 0) (a.getLimbN 1)
+              (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^64 +
+          ((fullDivN3R0 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1)
+              (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3)).1).toNat) *
+          EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+            (b.getLimbN 2) (b.getLimbN 3) +
+        EvmWord.val256
+          ((fullDivN3R0 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.1)
+          ((fullDivN3R0 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.1)
+          ((fullDivN3R0 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.2.1)
+          ((fullDivN3R0 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.2.2.1))
+    (hge :
+      EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+          (a.getLimbN 2) (a.getLimbN 3) /
+        EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+          (b.getLimbN 2) (b.getLimbN 3) ≤
+        ((fullDivN3R1 bltu_1
+          (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+          (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).1).toNat *
+            2^64 +
+          ((fullDivN3R0 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+            (b.getLimbN 3)).1).toNat) :
+    fullDivN3QuotientWord bltu_1 bltu_0
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
+        EvmWord.div a b := by
+  have hraw :=
+    fullDivN3QuotientWord_eq_div_of_mulsub_overestimate
+      bltu_1 bltu_0 hbnz hmulsub hge
+  change
+    fullDivN3QuotientWord bltu_1 bltu_0
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
+        EvmWord.div
+          (EvmWord.fromLimbs fun i : Fin 4 =>
+            match i with
+            | 0 => a.getLimbN 0
+            | 1 => a.getLimbN 1
+            | 2 => a.getLimbN 2
+            | 3 => a.getLimbN 3)
+          (EvmWord.fromLimbs fun i : Fin 4 =>
+            match i with
+            | 0 => b.getLimbN 0
+            | 1 => b.getLimbN 1
+            | 2 => b.getLimbN 2
+            | 3 => b.getLimbN 3) at hraw
+  exact hraw.trans (by
+    congr
+    · exact EvmWord.fromLimbs_match_getLimbN_id a
+    · exact EvmWord.fromLimbs_match_getLimbN_id b)
+
 /-- Unified-bound wrapper for `evm_div_n1_stack_spec_within_word`. -/
 theorem evm_div_n1_stack_spec_within_word_uni
     (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
