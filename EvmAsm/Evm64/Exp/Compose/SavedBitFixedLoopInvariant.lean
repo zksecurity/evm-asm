@@ -253,6 +253,76 @@ theorem expTwoMulFixedAccumulatorInvariant_of_after
   rw [hRun, expTwoMulFixedAccumulatorAfter_eq_target_add
     baseWord exponentWord k n hBound]
 
+/-- Semantic accumulator obtained by running `n` generic fixed-loop updates
+    from an arbitrary current accumulator word.
+
+    This is the form the CPS loop composition should expose: the machine proof
+    establishes the concrete post-iteration result is this run, while the
+    invariant theorem below connects that run back to the mathematical target. -/
+def expTwoMulFixedAccumulatorRun
+    (baseWord exponentWord accWord : EvmWord) (k : Nat) : Nat → EvmWord
+  | 0 => accWord
+  | n + 1 =>
+      expTwoMulFixedAccumulatorStep baseWord
+        (expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k n)
+        (expTwoMulFixedProcessedBit exponentWord (k + n))
+
+theorem expTwoMulFixedAccumulatorRun_zero
+    (baseWord exponentWord accWord : EvmWord) (k : Nat) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k 0 =
+      accWord := by
+  rfl
+
+theorem expTwoMulFixedAccumulatorRun_succ
+    (baseWord exponentWord accWord : EvmWord) (k n : Nat) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k (n + 1) =
+      expTwoMulFixedAccumulatorStep baseWord
+        (expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k n)
+        (expTwoMulFixedProcessedBit exponentWord (k + n)) := by
+  rfl
+
+theorem expTwoMulFixedAccumulatorRun_eq_after_of_start
+    {baseWord exponentWord accWord : EvmWord} {k n : Nat}
+    (hStart :
+      accWord = expTwoMulFixedAccumulatorTarget baseWord exponentWord k) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k n =
+      expTwoMulFixedAccumulatorAfter baseWord exponentWord k n := by
+  induction n with
+  | zero =>
+      simp [expTwoMulFixedAccumulatorRun, expTwoMulFixedAccumulatorAfter,
+        hStart]
+  | succ n ih =>
+      rw [expTwoMulFixedAccumulatorRun_succ,
+        expTwoMulFixedAccumulatorAfter_succ, ih]
+
+theorem expTwoMulFixedAccumulatorRun_eq_target_add
+    {baseWord exponentWord accWord : EvmWord} {k n : Nat}
+    (hBound : k + n ≤ 256)
+    (hStart :
+      accWord = expTwoMulFixedAccumulatorTarget baseWord exponentWord k) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord accWord k n =
+      expTwoMulFixedAccumulatorTarget baseWord exponentWord (k + n) := by
+  rw [expTwoMulFixedAccumulatorRun_eq_after_of_start hStart]
+  exact expTwoMulFixedAccumulatorAfter_eq_target_add
+    baseWord exponentWord k n hBound
+
+theorem expTwoMulFixedAccumulatorInvariant_of_run
+    {baseWord exponentWord : EvmWord} {k n : Nat}
+    {r0 r1 r2 r3 r0' r1' r2' r3' : Word}
+    (hBound : k + n ≤ 256)
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (hRun :
+      expResultWord r0' r1' r2' r3' =
+        expTwoMulFixedAccumulatorRun baseWord exponentWord
+          (expResultWord r0 r1 r2 r3) k n) :
+    expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + n)
+      r0' r1' r2' r3' := by
+  unfold expTwoMulFixedAccumulatorInvariant at *
+  rw [hRun, expTwoMulFixedAccumulatorRun_eq_target_add
+    hBound hInv]
+
 /-- Expected fixed-loop `x19` exponent cursor at the start of iteration `k`.
 
     The loop starts from limb 3, shifts the current limb left once per bit, and
