@@ -135,6 +135,15 @@ theorem expTwoMulFixedAccumulatorInvariant_zero_one
   rw [expResultWord_one_zero_zero_zero,
     expTwoMulFixedAccumulatorTarget_zero]
 
+theorem expTwoMulFixedAccumulatorInvariant_full
+    {baseWord exponentWord : EvmWord} {r0 r1 r2 r3 : Word}
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord 256
+        r0 r1 r2 r3) :
+    expResultWord r0 r1 r2 r3 = EvmWord.exp baseWord exponentWord := by
+  unfold expTwoMulFixedAccumulatorInvariant at hInv
+  rw [hInv, expTwoMulFixedAccumulatorTarget_full]
+
 @[irreducible]
 def expTwoMulFixedSemanticInvariant
     (baseWord exponentWord : EvmWord) (k : Nat)
