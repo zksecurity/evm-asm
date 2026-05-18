@@ -716,6 +716,28 @@ theorem expTwoMulFixedCursorInvariant_succ_reload
   rw [hmod]
   simp
 
+theorem expTwoMulFixedCursorInvariant_succ_of_control_no_reload
+    {exponentWord : EvmWord} {k : Nat} {e c6 ptr nextLimb evmSp : Word}
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0) :
+    expTwoMulFixedCursorInvariant exponentWord (k + 1)
+      (e <<< (1 : BitVec 6).toNat) :=
+  expTwoMulFixedCursorInvariant_succ_no_reload hCursor
+    (expTwoMulFixedControlInvariant_no_reload_mod hControl hC6)
+
+theorem expTwoMulFixedCursorInvariant_succ_of_control_reload
+    {exponentWord : EvmWord} {k : Nat} {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) = 0) :
+    expTwoMulFixedCursorInvariant exponentWord (k + 1) nextLimb := by
+  have hMod :=
+    expTwoMulFixedControlInvariant_reload_mod hControl hC6
+  exact expTwoMulFixedCursorInvariant_succ_reload hMod
+    (expTwoMulFixedControlInvariant_nextLimb_reload hControl hMod)
+
 private theorem expTwoMulFixedCursorWord_highBit_eq_processedBitWord_aux
     (exponentWord : EvmWord) (q r : Nat)
     (hq : q < 4) (hr : r < 64) :
