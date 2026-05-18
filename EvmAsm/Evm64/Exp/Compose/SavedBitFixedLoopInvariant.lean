@@ -674,7 +674,8 @@ def expTwoMulFixedIterPreN
       v7 v11 : Word) : Assertion :=
   expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
     vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
-  expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3
+  expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3 **
+  expTwoMulFixedCursorAssertion exponentWord k e
 
 theorem expTwoMulFixedIterPreN_unfold
     {k : Nat} {baseWord exponentWord : EvmWord}
@@ -686,7 +687,8 @@ theorem expTwoMulFixedIterPreN_unfold
       r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 =
       (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
         vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
-      expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3) := by
+      expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3 **
+      expTwoMulFixedCursorAssertion exponentWord k e) := by
   delta expTwoMulFixedIterPreN
   rfl
 
