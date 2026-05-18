@@ -550,6 +550,46 @@ theorem exp_two_mul_fixed_iterations_body_peel_with_continuations_closed_bound_s
       r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
       v7 v11 base exit_ R hbase hLoop hExit
 
+/-- Fixed merged-loop induction step: given any exit bridge for the current
+    step's exit condition and any `n`-iteration loop-back continuation, the
+    `(n + 1)`-iteration body spec holds from `expTwoMulFixedIterPre`. -/
+theorem exp_fixed_loop_body_succ_step
+    (n : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps)
+    (hLoop :
+      cpsTripleWithin (n * 193) (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        R) :
+    cpsTripleWithin ((n + 1) * 193) (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  exact
+    exp_two_mul_fixed_iterations_body_peel_with_continuations_closed_bound_spec_within
+      n
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base (base + 296) R hbase hLoop
+      (cpsTripleWithin_mono_nSteps (Nat.zero_le _)
+        (cpsTripleWithin_extend_code
+          (hmono := by
+            intro a i h
+            cases h)
+          (cpsTripleWithin_refl hExit)))
+
 /-- Peel one fixed x19 merged iteration from the conservative 256-iteration
     body when both branch continuations are packaged under the named
     255-iteration tail bound. -/
