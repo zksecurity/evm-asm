@@ -323,6 +323,30 @@ theorem expTwoMulFixedAccumulatorInvariant_of_run
   rw [hRun, expTwoMulFixedAccumulatorRun_eq_target_add
     hBound hInv]
 
+theorem expTwoMulFixedAccumulatorRun_eq_exp_of_start_zero
+    {baseWord exponentWord accWord : EvmWord}
+    (hStart :
+      accWord = expTwoMulFixedAccumulatorTarget baseWord exponentWord 0) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord accWord 0 256 =
+      EvmWord.exp baseWord exponentWord := by
+  rw [expTwoMulFixedAccumulatorRun_eq_target_add (hBound := by decide) hStart]
+  exact expTwoMulFixedAccumulatorTarget_full baseWord exponentWord
+
+theorem expTwoMulFixedAccumulatorInvariant_full_of_run
+    {baseWord exponentWord : EvmWord}
+    {r0 r1 r2 r3 r0' r1' r2' r3' : Word}
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord 0
+        r0 r1 r2 r3)
+    (hRun :
+      expResultWord r0' r1' r2' r3' =
+        expTwoMulFixedAccumulatorRun baseWord exponentWord
+          (expResultWord r0 r1 r2 r3) 0 256) :
+    expResultWord r0' r1' r2' r3' =
+      EvmWord.exp baseWord exponentWord := by
+  unfold expTwoMulFixedAccumulatorInvariant at hInv
+  rw [hRun, expTwoMulFixedAccumulatorRun_eq_exp_of_start_zero hInv]
+
 /-- Expected fixed-loop `x19` exponent cursor at the start of iteration `k`.
 
     The loop starts from limb 3, shifts the current limb left once per bit, and
