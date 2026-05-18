@@ -174,6 +174,80 @@ instance pcFreeInst_expTwoMulFixedFirstIterPreOwned
         baseWord exponentWord dWord eWord) :=
   ⟨expTwoMulFixedFirstIterPreOwned_pcFree⟩
 
+abbrev expTwoMulFixedFirstIterScratchOwn : Assertion :=
+  regOwn .x10 ** (regOwn .x7 ** regOwn .x11)
+
+abbrev expTwoMulFixedFirstIterScratchIs
+    (v10 v7 v11 : Word) : Assertion :=
+  (.x10 ↦ᵣ v10) ** ((.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11))
+
+theorem expTwoMulFixedFirstIterScratchOwn_choose_frame
+    {frame : Assertion} {ps : PartialState}
+    (h : (expTwoMulFixedFirstIterScratchOwn ** frame) ps) :
+    ∃ v10 v7 v11,
+      (expTwoMulFixedFirstIterScratchIs v10 v7 v11 ** frame) ps := by
+  have h_front :
+      (regOwn .x10 ** (regOwn .x7 ** (regOwn .x11 ** frame))) ps := by
+    unfold expTwoMulFixedFirstIterScratchOwn at h
+    sep_perm h
+  obtain ⟨v10, h_v10_chain⟩ := sepConj_choose_regOwn h_front
+  obtain ⟨ps_v10, ps_rest1, h_disjoint_v10, h_union_v10, h_v10, h_rest1⟩ :=
+    h_v10_chain
+  obtain ⟨v7, h_v7_chain⟩ := sepConj_choose_regOwn h_rest1
+  obtain ⟨ps_v7, ps_rest2, h_disjoint_v7, h_union_v7, h_v7, h_rest2⟩ :=
+    h_v7_chain
+  obtain ⟨v11, h_v11_chain⟩ := sepConj_choose_regOwn h_rest2
+  obtain ⟨ps_v11, ps_rest3, h_disjoint_v11, h_union_v11, h_v11, h_rest3⟩ :=
+    h_v11_chain
+  refine ⟨v10, v7, v11, ?_⟩
+  have h_chosen :
+      ((.x10 ↦ᵣ v10) ** ((.x7 ↦ᵣ v7) ** ((.x11 ↦ᵣ v11) ** frame))) ps := by
+    refine ⟨ps_v10, ps_rest1, h_disjoint_v10, h_union_v10, h_v10, ?_⟩
+    refine ⟨ps_v7, ps_rest2, h_disjoint_v7, h_union_v7, h_v7, ?_⟩
+    exact ⟨ps_v11, ps_rest3, h_disjoint_v11, h_union_v11, h_v11, h_rest3⟩
+  unfold expTwoMulFixedFirstIterScratchIs
+  sep_perm h_chosen
+
+theorem expTwoMulFixedFirstIterPreOwned_choose_frame
+    {sp evmSp v18 vOld : Word}
+    {baseWord exponentWord dWord eWord : EvmWord} {frame : Assertion}
+    {ps : PartialState}
+    (h : (expTwoMulFixedFirstIterPreOwned sp evmSp v18 vOld
+      baseWord exponentWord dWord eWord ** frame) ps) :
+    ∃ v10 v7 v11,
+      (expTwoMulFixedFirstIterPre sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord ** frame) ps := by
+  rw [expTwoMulFixedFirstIterPreOwned_unfold] at h
+  let restFrame : Assertion :=
+    frame **
+    expTwoMulFixedIterPointerFrame
+      (evmSp + signExtend12 (56 : BitVec 12) + signExtend12 (-8 : BitVec 12))
+      (exponentWord.getLimbN 2) **
+    evmWordIs sp (1 : EvmWord) **
+    evmWordIs evmSp baseWord **
+    evmWordIs (evmSp + 64) dWord **
+    evmWordIs (evmSp + 96) eWord **
+    (.x0 ↦ᵣ (0 : Word)) **
+    (.x1 ↦ᵣ vOld) **
+    (.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
+    (.x18 ↦ᵣ v18) **
+    (.x19 ↦ᵣ exponentWord.getLimbN 3) **
+    (.x2 ↦ᵣ sp) **
+    (.x5 ↦ᵣ (1 : Word)) **
+    (.x6 ↦ᵣ ((0 : Word) + signExtend12 (64 : BitVec 12))) **
+    (.x9 ↦ᵣ (256 : Word))
+  have h_front : (expTwoMulFixedFirstIterScratchOwn ** restFrame) ps := by
+    unfold expTwoMulFixedFirstIterScratchOwn
+    dsimp [restFrame]
+    sep_perm h
+  obtain ⟨v10, v7, v11, h_scratch⟩ :=
+    expTwoMulFixedFirstIterScratchOwn_choose_frame h_front
+  refine ⟨v10, v7, v11, ?_⟩
+  rw [expTwoMulFixedFirstIterPre_unfold_words]
+  unfold expTwoMulFixedFirstIterScratchIs at h_scratch
+  dsimp [restFrame] at h_scratch
+  sep_perm h_scratch
+
 /-- Residual resources from the fixed entry post after the first fixed-iteration
     precondition consumes the accumulator, base word, the first two rest words,
     and the live exponent cursor cell at `evmSp + 48`. -/
@@ -241,6 +315,19 @@ theorem expTwoMulLoopEntryPostFixed_to_firstIterPreOwned_frame
     show (96 : Word) + 24 = 120 from by decide,
     BitVec.add_assoc] at h ⊢
   sep_perm h
+
+theorem expTwoMulLoopEntryPostFixed_to_firstIterPre_frame
+    {sp evmSp vOld v18 : Word}
+    {baseWord exponentWord dWord eWord : EvmWord} {rest : List EvmWord}
+    {ps : PartialState}
+    (h : expTwoMulLoopEntryPostFixed sp evmSp vOld v18
+      baseWord exponentWord (dWord :: eWord :: rest) ps) :
+    ∃ v10 v7 v11,
+      (expTwoMulFixedFirstIterPre sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord **
+       expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) ps := by
+  exact expTwoMulFixedFirstIterPreOwned_choose_frame
+    (expTwoMulLoopEntryPostFixed_to_firstIterPreOwned_frame h)
 
 theorem expTwoMulFixedFirstIterPre_pcFree
     {sp evmSp v10 v18 vOld v7 v11 : Word}
