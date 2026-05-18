@@ -195,6 +195,19 @@ theorem expTwoMulFixedIterReloadSkipRest_scratch_decomp
     expTwoMulFixedIterReloadSkipRestScratchSuffix at *
   sep_perm h
 
+theorem expTwoMulFixedIterSkipCondRest_choose_scratch
+    {sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterSkipCondRest sp evmSp r0 r1 r2 r3
+        a0 a1 a2 a3 base ps) :
+    ∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCondRestScratchPrefix sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterSkipCondRestScratchSuffix base) ps := by
+  have hDecomp := expTwoMulFixedIterSkipCondRest_scratch_decomp h
+  exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
