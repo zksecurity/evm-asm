@@ -64,9 +64,8 @@ def main (args : List String) : IO UInt32 := do
           IO.eprintln s!"codegen: unknown program: {opts.program}"
           IO.eprintln usage
           return 1
-      | some prog => do
-          let body := emitProgram prog
-          let text := emitTextUnit opts.halt body
+      | some unit => do
+          let text := emitBuildUnit opts.halt unit
           let asmPath : System.FilePath := opts.outBase.toString ++ ".s"
           writeAsmFile asmPath text
           IO.println s!"wrote {asmPath}"

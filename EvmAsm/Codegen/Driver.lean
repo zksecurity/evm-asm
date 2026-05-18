@@ -63,8 +63,13 @@ def writeAsmFile (asmPath : System.FilePath) (text : String) : IO Unit := do
   IO.FS.writeFile asmPath text
 
 /-- Assemble + link an emitted `.s` to a `.elf`, with `.o` as the intermediate.
-    Returns the produced `(objPath, elfPath)`. Uses absolute `-Ttext=0x80000000`
-    to match Zisk's default entry point. -/
+    Returns the produced `(objPath, elfPath)`.
+
+    Memory layout: `.text` at `0x80000000` (Zisk's default entry point),
+    `.data` at `0xa0000000` (Zisk requires writable sections to live in RAM
+    at `0xa0000000-0xc0000000`; placing `.data` adjacent to `.text` makes
+    the loader refuse the ELF with "writable data section ... outside RAM
+    bounds"). -/
 def assembleAndLink (asmPath : System.FilePath) :
     IO (System.FilePath × System.FilePath) := do
   let asProgram ← resolveTool "RISCV_AS" asCandidates
@@ -74,7 +79,8 @@ def assembleAndLink (asmPath : System.FilePath) :
   runOrFail asProgram
     #["-march=rv64imac", "-mno-relax", "-o", objPath.toString, asmPath.toString]
   runOrFail ldProgram
-    #["-Ttext=0x80000000", "-nostdlib", "--no-relax",
+    #["-Ttext=0x80000000", "-Tdata=0xa0000000",
+      "-nostdlib", "--no-relax",
       "-o", elfPath.toString, objPath.toString]
   return (objPath, elfPath)
 

@@ -29,8 +29,9 @@ open EvmAsm.Rv64
 /-- Render a register as the canonical `xNN` mnemonic. -/
 def emitReg (r : Reg) : String := toString r
 
-/-- Render a `Nat` as a lowercase hex string, no `0x` prefix, no padding. -/
-private partial def natToHex : Nat → String
+/-- Render a `Nat` as a lowercase hex string, no `0x` prefix, no padding.
+    Exposed (not `private`) so `Layout` can format `.dword 0x…` literals. -/
+partial def natToHex : Nat → String
   | 0 => "0"
   | n =>
     let digit (d : Nat) : Char :=

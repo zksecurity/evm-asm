@@ -101,21 +101,47 @@ Make `emitInstr` total for every constructor in `EvmAsm/Rv64/Basic.lean:113-237`
 `riscv64-unknown-elf-as -march=rv64imac` accepts cleanly; round-trip tests
 pass under `lake build`.
 
-### M2 — End-to-end `evm_add` (M)
+### M2 — End-to-end `evm_add` (M) — **DONE (2026-05-18)**
 
 Wire enough memory and registers so the verified `evm_add` program
 (`EvmAsm/Evm64/Add/Program.lean`) computes a 256-bit sum on `ziskemu`.
 
-- Emit a `.data` section seeding two 256-bit operands as eight LE doublewords
-  inside `[MEM_START, MEM_END) = [0x20, 0x78000000)` (`EvmAsm/Rv64/Basic.lean:244,247`).
-- Prologue: `li sp, <stack_top>` ; `li x12, <evm_sp>` pointing into the seeded region.
-- Epilogue: copy the destination limbs to `a0`–`a3` (or via `write_output`,
-  deferred to M4) before halting.
+**Delivered:**
+- `BuildUnit` struct in `EvmAsm/Codegen/Layout.lean`: a verified
+  `Program` body alongside optional raw-asm prologue, epilogue, and
+  `.data` section. `emitBuildUnit` composes them into the full `.s`.
+- `evm_add` wrapping in `EvmAsm/Codegen/Programs.lean`:
+  - `.data` section with two 256-bit operands as eight LE doublewords.
+  - Prologue (raw text, because `la` is a GNU-as pseudo not in our
+    `Instr`): `la x12, operands`.
+  - Body: `EvmAsm.Evm64.evm_add ++ evmAddEpilogue` where the 9-instr
+    epilogue is itself a verified `Program` — every instruction lives
+    in `Instr` and goes through the same totalized `emitInstr` and
+    `#guard` round-trip tests as the body.
+- `Driver.lean` adds `-Tdata=0xa0000000` to the link step so writable
+  `.data` lands in `ziskemu`'s RAM region (`0xa0000000–0xc0000000`);
+  without this, the emulator refuses the ELF with
+  *"writable data section … outside RAM bounds"*.
+- `scripts/codegen-evm_add-check.sh` builds, emits, links, runs, and
+  diffs the first 32 bytes of `ziskemu`'s `-o` output against the
+  expected 4-limb sum. **PASSES** with the M2 test case
+  `A = 2^64-1, B = 1 → sum LE = [0, 1, 0, 0]`.
 
-**Exit criteria.**
-`ziskemu -e gen-out/evm_add.elf` halts and the post-state limbs equal the
-`Word`-level sum computed via `#eval` in Lean.
-`scripts/codegen-evm_add-check.sh` codifies the comparison.
+**Empirical surprise — `write_output` is memory-mapped, not an ecall.**
+ziskemu does NOT honor the zkvm-standards `ecall + t0=0x10` write_output
+syscall (the verified `step` semantics in
+`EvmAsm/Rv64/Execution.lean:411` do). Instead, the public-output region
+is memory-mapped at `OUTPUT_ADDR = 0xa001_0000` (constant from
+`zisk/ziskos/entrypoint/src/ziskos_definitions.rs`). Guest writes u32
+slots there directly; ziskemu's `-o <file>` dumps the full 256-byte
+region. `MAX_OUTPUT = 0x1_0000` (64 KB) per the same file but the
+default dump is `64 × 4 = 256` bytes. This mirrors the SP1/linux93
+halt-convention split — the verified semantics target a different host
+than ziskemu — and is now folded into M4's scope.
+
+**Exit criteria (met).**
+`ziskemu -e gen-out/evm_add.elf` halts and the post-state limbs equal
+the `Word`-level sum. `scripts/codegen-evm_add-check.sh` exits 0.
 
 ### M3 — Labels (deferred)
 
@@ -140,6 +166,17 @@ Match the verified `Execution.lean` syscall handlers:
 - `t0 = 0xF2` → `read_input` (writes `(inputBufBase, privateInput.length)` to
   `[a0]`/`[a1]`). See `EvmAsm/Rv64/Execution.lean` ~line 416.
 - `t0 = 0x10` → `write_output` (concatenating). See ~line 411.
+
+**M4 must reconcile the syscall ABI with ziskemu's memory-mapped IO**
+(see M2's empirical finding). Concretely: the verified `step` halts on
+`t0 = 0x10` and appends to `publicValues`, but ziskemu reads its
+public-output region at `OUTPUT_ADDR = 0xa001_0000` via plain stores
+and ignores the syscall. A small adapter — either (a) a
+`write_output_mm` Program in Lean that lowers the syscall to the
+memory-mapped equivalent, or (b) a ziskemu-side shim that recognizes
+`t0 = 0x10` — closes the gap. Input is presumably similar:
+`INPUT_ADDR = 0x4000_0000`, with `MAX_INPUT = 0x2000` (8 KB), per
+`zisk/ziskos/entrypoint/src/ziskos_definitions.rs`.
 
 The `read_input` buffer carries **both** real public input **and**
 prover-supplied non-deterministic hints — under the zkvm-standards I/O
@@ -239,8 +276,9 @@ M5 makes label-free emission unreadable. M4 unblocks M5.
 - **M1.** `lake build` passes (includes `RoundTripTests.lean`);
   `lake exe codegen --program evm_add --asm-only | riscv64-unknown-elf-as -march=rv64imac -o /dev/null -`
   returns 0.
-- **M2.** `scripts/codegen-evm_add-check.sh` exits 0 against the `#eval`-derived
-  expected limbs.
+- **M2.** ✅ `scripts/codegen-evm_add-check.sh` exits 0 (validated
+  2026-05-18). Test case `A = 2^64-1, B = 1 → sum LE = [0, 1, 0, 0]`
+  exercises the limb-0→limb-1 carry.
 - **M3.** `diff <(codegen --no-labels … | as | objdump -d) <(codegen … | as | objdump -d)`
   shows only label-noise differences.
 - **M4.** End-to-end `read_input → write_output` test: prover input file in,
