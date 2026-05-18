@@ -538,6 +538,87 @@ theorem exp_two_mul_boundary_loop_epilogue_of_loop_general_spec_within
             expTwoMulBoundarySuffixBound; omega)
     (cpsTripleWithin_seq_same_cr hPrefix hEpilogue)
 
+/-- Bounded variant of
+    `exp_two_mul_boundary_loop_epilogue_of_loop_general_spec_within`. -/
+theorem exp_two_mul_boundary_loop_epilogue_of_loop_general_bounded_spec_within
+    {nSteps nBound : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : expTwoMulBoundaryLoopBound nSteps ≤ nBound)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin nBound base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  exact
+    cpsTripleWithin_mono_nSteps hBound
+      (exp_two_mul_boundary_loop_epilogue_of_loop_general_spec_within
+        sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+        r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest exitCond base hLoop)
+
+/-- Closed-form bound variant of
+    `exp_two_mul_boundary_loop_epilogue_of_loop_general_bounded_spec_within`,
+    using the normalized boundary cost `nSteps + 17`. -/
+theorem exp_two_mul_boundary_loop_epilogue_of_loop_general_closed_bound_spec_within
+    {nSteps nBound : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : nSteps + 17 ≤ nBound)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin nBound base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  exact
+    exp_two_mul_boundary_loop_epilogue_of_loop_general_bounded_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest exitCond base
+      (by simpa [expTwoMulBoundaryLoopBound_eq] using hBound)
+      hLoop
+
+/-- Exact closed-form bound variant of
+    `exp_two_mul_boundary_loop_epilogue_of_loop_general_spec_within`. -/
+theorem exp_two_mul_boundary_loop_epilogue_of_loop_general_exact_closed_bound_spec_within
+    {nSteps : Nat}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hLoop :
+      cpsTripleWithin nSteps (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin (nSteps + 17) base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  exact
+    exp_two_mul_boundary_loop_epilogue_of_loop_general_closed_bound_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest exitCond base (by rfl) hLoop
+
 /-- Full-loop boundary wrapper for the generalized loop-exit pre-frame.
 
     This is the named-bound version of
