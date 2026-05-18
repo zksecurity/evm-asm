@@ -12,6 +12,71 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
+@[irreducible]
+def expTwoMulFixedFirstIterCaseLoopPostWithResidual
+    (sp evmSp : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (base : Word) : Assertion :=
+  expTwoMulFixedIterCaseLoopPost
+    (256 : Word)
+    (exponentWord.getLimbN 3)
+    ((0 : Word) + signExtend12 (64 : BitVec 12))
+    (evmSp + signExtend12 (56 : BitVec 12) +
+      signExtend12 (-8 : BitVec 12))
+    (exponentWord.getLimbN 2)
+    sp (evmSp + signExtend12 (64 : BitVec 12))
+    ((1 : EvmWord).getLimbN 0)
+    ((1 : EvmWord).getLimbN 1)
+    ((1 : EvmWord).getLimbN 2)
+    ((1 : EvmWord).getLimbN 3)
+    (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+    (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+    base **
+  expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest
+
+theorem expTwoMulFixedFirstIterCaseLoopPostWithResidual_unfold
+    {sp evmSp : Word}
+    {baseWord exponentWord : EvmWord} {rest : List EvmWord}
+    {base : Word} :
+    expTwoMulFixedFirstIterCaseLoopPostWithResidual
+      sp evmSp baseWord exponentWord rest base =
+      (expTwoMulFixedIterCaseLoopPost
+        (256 : Word)
+        (exponentWord.getLimbN 3)
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (evmSp + signExtend12 (56 : BitVec 12) +
+          signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+        base **
+       expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) := by
+  delta expTwoMulFixedFirstIterCaseLoopPostWithResidual
+  rfl
+
+theorem expTwoMulFixedFirstIterCaseLoopPostWithResidual_pcFree
+    {sp evmSp : Word}
+    {baseWord exponentWord : EvmWord} {rest : List EvmWord}
+    {base : Word} :
+    (expTwoMulFixedFirstIterCaseLoopPostWithResidual
+      sp evmSp baseWord exponentWord rest base).pcFree := by
+  rw [expTwoMulFixedFirstIterCaseLoopPostWithResidual_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedFirstIterCaseLoopPostWithResidual
+    (sp evmSp : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (base : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedFirstIterCaseLoopPostWithResidual
+        sp evmSp baseWord exponentWord rest base) :=
+  ⟨expTwoMulFixedFirstIterCaseLoopPostWithResidual_pcFree⟩
+
 /-- Fixed full-loop boundary wrapper whose loop body starts from the named
     existential first-iteration precondition produced by the fixed loop entry
     post. This is the surface needed before destructing the chosen
