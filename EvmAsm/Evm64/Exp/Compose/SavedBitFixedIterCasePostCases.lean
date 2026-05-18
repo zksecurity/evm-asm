@@ -233,6 +233,45 @@ theorem expTwoMulFixedIterReloadSkipRest_choose_scratch
   have hDecomp := expTwoMulFixedIterReloadSkipRest_scratch_decomp h
   exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
 
+abbrev expTwoMulFixedIterSkipCondCountPostScratchPrefix
+    (iterCount sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 : Word)
+    (exitCond : Prop) : Assertion :=
+  ((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+    ⌜exitCond⌝) **
+    expTwoMulFixedIterSkipCondRestScratchPrefix sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3
+
+abbrev expTwoMulFixedIterSkipCondCountPostScratchSuffix
+    (e c6 base : Word) : Assertion :=
+  expTwoMulFixedIterSkipCondRestScratchSuffix base **
+    expTwoMulFixedIterSkipCondFrame e c6
+
+theorem expTwoMulFixedIterSkipCondCountPost_choose_scratch
+    {iterCount e c6 sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterSkipCondCountPost iterCount e c6 sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base exitCond ps) :
+    ∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base) ps := by
+  have hDecomp :
+      (expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchOwn evmSp **
+        expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base) ps := by
+    unfold expTwoMulFixedIterSkipCondCountPost
+      expTwoMulFixedIterSkipCondRest
+      expTwoMulFixedIterSkipCondCountPostScratchPrefix
+      expTwoMulFixedIterSkipCondRestScratchPrefix
+      expTwoMulFixedIterScratchOwn
+      expTwoMulFixedIterSkipCondCountPostScratchSuffix
+      expTwoMulFixedIterSkipCondRestScratchSuffix at *
+    sep_perm h
+  exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
