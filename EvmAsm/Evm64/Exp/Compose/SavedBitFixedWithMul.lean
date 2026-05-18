@@ -629,4 +629,99 @@ theorem cpsNBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedWith
         (squaringMulOff := squaringMulOff) (condMulOff := condMulOff)
         (skipOff := skipOff) (backOff := backOff) hd)
 
+/-- The fixed canonical saved-bit EXP wrapper is disjoint from a `mul_callable`
+    body appended immediately after the 336-byte wrapper. -/
+theorem expMsbSavedBitTwoMulFixedCanonicalCode_disjoint_appended_mul
+    (base : Word) :
+    CodeReq.Disjoint
+      (expMsbSavedBitTwoMulFixedCode
+        base EvmAsm.Evm64.canonicalExpSquaringMulOff
+          EvmAsm.Evm64.canonicalExpCondMulOff
+          EvmAsm.Evm64.canonicalExpCondMulSkipOff
+          EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff)
+      (mul_callable_code (base + 336)) := by
+  unfold expMsbSavedBitTwoMulFixedCode
+  rw [mul_callable_code_eq_ofProg]
+  exact CodeReq.ofProg_disjoint_range_len
+    base
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed
+      EvmAsm.Evm64.canonicalExpSquaringMulOff
+      EvmAsm.Evm64.canonicalExpCondMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff)
+    84
+    (base + 336)
+    EvmAsm.Evm64.mul_callable
+    64
+    (EvmAsm.Evm64.evm_exp_msb_saved_bit_two_mul_fixed_length
+      EvmAsm.Evm64.canonicalExpSquaringMulOff
+      EvmAsm.Evm64.canonicalExpCondMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff)
+    EvmAsm.Evm64.mul_callable_length
+    (fun _ _ hk1 hk2 => by bv_omega)
+
+theorem evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_mul_sub
+    {base : Word} :
+    ∀ a i, (mul_callable_code (base + 336)) a = some i →
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base) a = some i := by
+  unfold evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
+    evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+    evmExpMsbSavedBitTwoMulFixedWithMulCode
+  exact CodeReq.mono_union_right
+    (expMsbSavedBitTwoMulFixedCanonicalCode_disjoint_appended_mul base)
+    (fun _ _ h => h)
+
+/-- Lift a fixed canonical iteration-body branch spec plus appended
+    `mul_callable` into the whole fixed canonical appended EXP+MUL code. -/
+theorem cpsBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
+    {nSteps : Nat} {entry exit_t exit_f base : Word}
+    {P Q_t Q_f : Assertion}
+    (h : cpsBranchWithin nSteps entry
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        (base + 44)
+        EvmAsm.Evm64.canonicalExpSquaringMulOff
+        EvmAsm.Evm64.canonicalExpCondMulOff
+        EvmAsm.Evm64.canonicalExpCondMulSkipOff
+        EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff).union
+        (mul_callable_code (base + 336)))
+      P exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      P exit_t Q_t exit_f Q_f :=
+  cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    (base := base) (mulTarget := base + 336)
+    (squaringMulOff := EvmAsm.Evm64.canonicalExpSquaringMulOff)
+    (condMulOff := EvmAsm.Evm64.canonicalExpCondMulOff)
+    (skipOff := EvmAsm.Evm64.canonicalExpCondMulSkipOff)
+    (backOff := EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff)
+    (expMsbSavedBitTwoMulFixedCanonicalCode_disjoint_appended_mul base)
+    h
+
+/-- Lift a fixed canonical iteration-body N-branch spec plus appended
+    `mul_callable` into the whole fixed canonical appended EXP+MUL code. -/
+theorem cpsNBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
+    {nSteps : Nat} {entry base : Word}
+    {P : Assertion} {exits : List (Word × Assertion)}
+    (h : cpsNBranchWithin nSteps entry
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        (base + 44)
+        EvmAsm.Evm64.canonicalExpSquaringMulOff
+        EvmAsm.Evm64.canonicalExpCondMulOff
+        EvmAsm.Evm64.canonicalExpCondMulSkipOff
+        EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff).union
+        (mul_callable_code (base + 336)))
+      P exits) :
+    cpsNBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      P exits :=
+  cpsNBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    (base := base) (mulTarget := base + 336)
+    (squaringMulOff := EvmAsm.Evm64.canonicalExpSquaringMulOff)
+    (condMulOff := EvmAsm.Evm64.canonicalExpCondMulOff)
+    (skipOff := EvmAsm.Evm64.canonicalExpCondMulSkipOff)
+    (backOff := EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff)
+    (expMsbSavedBitTwoMulFixedCanonicalCode_disjoint_appended_mul base)
+    h
+
 end EvmAsm.Evm64.Exp.Compose
