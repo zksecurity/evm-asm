@@ -38,6 +38,90 @@ open EvmAsm.Rv64
 
 /-! ### DIV `_uni` wrappers -/
 
+/-- n=2 quotient bridge specialized to branch constructors that store
+    `a`/`b` as `EvmWord`s and refer to their limbs directly. -/
+theorem fullDivN2QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
+    (bltu_2 bltu_1 bltu_0 : Bool) {a b : EvmWord}
+    (hbnz : b.getLimbN 0 ||| b.getLimbN 1 ||| b.getLimbN 2 ||| b.getLimbN 3 ≠ 0)
+    (hmulsub :
+      EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+          (a.getLimbN 2) (a.getLimbN 3) =
+        (((fullDivN2R2 bltu_2
+              (a.getLimbN 0) (a.getLimbN 1)
+              (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^128 +
+          ((fullDivN2R1 bltu_2 bltu_1
+              (a.getLimbN 0) (a.getLimbN 1)
+              (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3)).1).toNat * 2^64 +
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+              (a.getLimbN 0) (a.getLimbN 1)
+              (a.getLimbN 2) (a.getLimbN 3)
+              (b.getLimbN 0) (b.getLimbN 1)
+              (b.getLimbN 2) (b.getLimbN 3)).1).toNat) *
+          EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+            (b.getLimbN 2) (b.getLimbN 3) +
+        EvmWord.val256
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.1)
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.1)
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.2.1)
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)).2.2.2.2.1))
+    (hge :
+      EvmWord.val256 (a.getLimbN 0) (a.getLimbN 1)
+          (a.getLimbN 2) (a.getLimbN 3) /
+        EvmWord.val256 (b.getLimbN 0) (b.getLimbN 1)
+          (b.getLimbN 2) (b.getLimbN 3) ≤
+        ((fullDivN2R2 bltu_2
+          (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+          (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+          (b.getLimbN 3)).1).toNat * 2^128 +
+          ((fullDivN2R1 bltu_2 bltu_1
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+            (b.getLimbN 3)).1).toNat * 2^64 +
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0
+            (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+            (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2)
+            (b.getLimbN 3)).1).toNat) :
+    fullDivN2QuotientWord bltu_2 bltu_1 bltu_0
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
+        EvmWord.div a b := by
+  have hraw :=
+    fullDivN2QuotientWord_eq_div_of_mulsub_overestimate
+      bltu_2 bltu_1 bltu_0 hbnz hmulsub hge
+  change
+    fullDivN2QuotientWord bltu_2 bltu_1 bltu_0
+      (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
+      (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
+        EvmWord.div
+          (EvmWord.fromLimbs fun i : Fin 4 =>
+            match i with
+            | 0 => a.getLimbN 0
+            | 1 => a.getLimbN 1
+            | 2 => a.getLimbN 2
+            | 3 => a.getLimbN 3)
+          (EvmWord.fromLimbs fun i : Fin 4 =>
+            match i with
+            | 0 => b.getLimbN 0
+            | 1 => b.getLimbN 1
+            | 2 => b.getLimbN 2
+            | 3 => b.getLimbN 3) at hraw
+  exact hraw.trans (by
+    congr
+    · exact EvmWord.fromLimbs_match_getLimbN_id a
+    · exact EvmWord.fromLimbs_match_getLimbN_id b)
+
 /-- n=3 quotient bridge specialized to branch constructors that store
     `a`/`b` as `EvmWord`s and refer to their limbs directly. -/
 theorem fullDivN3QuotientWord_eq_div_of_getLimbN_mulsub_overestimate
