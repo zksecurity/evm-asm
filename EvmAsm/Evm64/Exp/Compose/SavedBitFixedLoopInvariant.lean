@@ -1095,4 +1095,62 @@ instance pcFreeInst_expTwoMulFixedIterPreN
         r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11) :=
   ⟨expTwoMulFixedIterPreN_pcFree⟩
 
+/-- Framed fixed iteration precondition indexed by the semantic iteration
+    count. Loop-induction wrappers should use this instead of creating a fresh
+    numbered residual precondition for each concrete iteration. -/
+@[irreducible]
+def expTwoMulFixedIterPreNWithFrame
+    (k : Nat) (baseWord exponentWord : EvmWord)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (frame : Assertion) : Assertion :=
+  expTwoMulFixedIterPreN k baseWord exponentWord
+    e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+    r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
+  frame
+
+theorem expTwoMulFixedIterPreNWithFrame_unfold
+    {k : Nat} {baseWord exponentWord : EvmWord}
+    {e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word}
+    {frame : Assertion} :
+    expTwoMulFixedIterPreNWithFrame k baseWord exponentWord
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+      frame =
+      (expTwoMulFixedIterPreN k baseWord exponentWord
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
+       frame) := by
+  delta expTwoMulFixedIterPreNWithFrame
+  rfl
+
+theorem expTwoMulFixedIterPreNWithFrame_pcFree
+    {k : Nat} {baseWord exponentWord : EvmWord}
+    {e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word}
+    {frame : Assertion} [Assertion.PCFree frame] :
+    (expTwoMulFixedIterPreNWithFrame k baseWord exponentWord
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+      frame).pcFree := by
+  rw [expTwoMulFixedIterPreNWithFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedIterPreNWithFrame
+    (k : Nat) (baseWord exponentWord : EvmWord)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (frame : Assertion) [Assertion.PCFree frame] :
+    Assertion.PCFree
+      (expTwoMulFixedIterPreNWithFrame k baseWord exponentWord
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+        frame) :=
+  ⟨expTwoMulFixedIterPreNWithFrame_pcFree⟩
+
 end EvmAsm.Evm64.Exp.Compose

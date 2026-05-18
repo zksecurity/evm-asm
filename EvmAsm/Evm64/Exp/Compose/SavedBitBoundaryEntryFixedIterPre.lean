@@ -501,9 +501,28 @@ def expTwoMulFixedFirstIterPreNWithResidual
     (rest : List EvmWord) : Assertion :=
   fun ps =>
     ∃ v10 v7 v11,
-      (expTwoMulFixedFirstIterPreN sp evmSp v10 v18 vOld v7 v11
-        baseWord exponentWord dWord eWord **
-       expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) ps
+      expTwoMulFixedIterPreNWithFrame 0 baseWord exponentWord
+        (exponentWord.getLimbN 3)
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (256 : Word)
+        v10 v18
+        (evmSp + signExtend12 (56 : BitVec 12) +
+          signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (1 : Word) vOld
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3)
+        (dWord.getLimbN 0) (dWord.getLimbN 1)
+        (dWord.getLimbN 2) (dWord.getLimbN 3)
+        (eWord.getLimbN 0) (eWord.getLimbN 1)
+        (eWord.getLimbN 2) (eWord.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+        v7 v11
+        (expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) ps
 
 theorem expTwoMulFixedFirstIterPreNWithResidual_pcFree
     {sp evmSp v18 vOld : Word}
@@ -514,8 +533,7 @@ theorem expTwoMulFixedFirstIterPreNWithResidual_pcFree
   rw [expTwoMulFixedFirstIterPreNWithResidual] at h_pre
   obtain ⟨v10, v7, v11, h_pre_frame⟩ := h_pre
   exact
-    pcFree_sepConj expTwoMulFixedFirstIterPreN_pcFree
-      expTwoMulFixedFirstIterEntryResidual_pcFree hpc h_pre_frame
+    expTwoMulFixedIterPreNWithFrame_pcFree hpc h_pre_frame
 
 instance pcFreeInst_expTwoMulFixedFirstIterPreNWithResidual
     (sp evmSp v18 vOld : Word)
@@ -538,7 +556,9 @@ theorem expTwoMulFixedFirstIterPreWithResidual_to_firstIterPreNWithResidual
   obtain ⟨v10, v7, v11, h_frame⟩ := h
   rw [expTwoMulFixedFirstIterPreNWithResidual]
   refine ⟨v10, v7, v11, ?_⟩
-  rw [expTwoMulFixedFirstIterPreN_unfold_invariants,
+  rw [expTwoMulFixedIterPreNWithFrame_unfold,
+    ← expTwoMulFixedFirstIterPreN_unfold,
+    expTwoMulFixedFirstIterPreN_unfold_invariants,
     expTwoMulFixedSemanticInvariant_unfold,
     expTwoMulFixedCursorAssertion_unfold,
     expTwoMulFixedControlAssertion_unfold]
@@ -673,6 +693,8 @@ theorem cpsTripleWithin_expTwoMulFixedFirstIterPreNWithResidual
   obtain ⟨hp, hcompat, psPre, psR, hdisj, hunion, h_pre, hRps⟩ := h_pre_R
   rw [expTwoMulFixedFirstIterPreNWithResidual] at h_pre
   obtain ⟨v10, v7, v11, h_concrete_pre⟩ := h_pre
+  rw [expTwoMulFixedIterPreNWithFrame_unfold,
+    ← expTwoMulFixedFirstIterPreN_unfold] at h_concrete_pre
   exact hBody v10 v7 v11 R hR s hcr
     ⟨hp, hcompat, psPre, psR, hdisj, hunion, h_concrete_pre, hRps⟩ hpc
 
