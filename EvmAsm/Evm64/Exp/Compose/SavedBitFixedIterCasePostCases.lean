@@ -110,4 +110,42 @@ theorem expTwoMulFixedIterReloadExitPost_cases
       (expTwoMulIterCountNew iterCount = 0) ps :=
   expTwoMulFixedIterReloadExitPost_iff.mp h
 
+theorem expTwoMulFixedIterSkipLoopPost_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterSkipLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulFixedIterSkipCondCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    (expTwoMulFixedIterSkipCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps := by
+  obtain ⟨psLeft, psRight, hDisjoint, hUnion, hCases, hPtr⟩ := h
+  rcases hCases with hCond | hSkip
+  · exact Or.inl ⟨psLeft, psRight, hDisjoint, hUnion, hCond, hPtr⟩
+  · exact Or.inr ⟨psLeft, psRight, hDisjoint, hUnion, hSkip, hPtr⟩
+
+theorem expTwoMulFixedIterSkipExitPost_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterSkipExitPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulFixedIterSkipCondCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    (expTwoMulFixedIterSkipCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps := by
+  obtain ⟨psLeft, psRight, hDisjoint, hUnion, hCases, hPtr⟩ := h
+  rcases hCases with hCond | hSkip
+  · exact Or.inl ⟨psLeft, psRight, hDisjoint, hUnion, hCond, hPtr⟩
+  · exact Or.inr ⟨psLeft, psRight, hDisjoint, hUnion, hSkip, hPtr⟩
+
 end EvmAsm.Evm64.Exp.Compose
