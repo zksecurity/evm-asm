@@ -86,4 +86,68 @@ theorem exp_two_mul_fixed_full_loop_boundary_of_entry_exists_body_general_closed
       r0 r1 r2 r3 d0 d1 d2 d3
       baseWord exponentWord dWord eWord rest exitCond base hBodyNamed
 
+/-- Fixed full-loop boundary wrapper whose body proof is supplied for every
+    concrete choice of the first-iteration scratch registers. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBody :
+      ∀ v10 v7 v11,
+        cpsTripleWithin expTwoMulFixedFullLoopBodyBound
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expTwoMulFixedFirstIterPre sp evmSp v10 v18 vOld v7 v11
+            baseWord exponentWord dWord eWord **
+           expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest)
+          (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+            r0 r1 r2 r3 d0 d1 d2 d3 baseWord (dWord :: eWord :: rest)
+            exitCond)) :
+    cpsTripleWithin expTwoMulFixedFullLoopBoundaryBound base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord (dWord :: eWord :: rest))
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord (dWord :: eWord :: rest) exitCond) :=
+  exp_two_mul_fixed_full_loop_boundary_of_entry_exists_body_general_spec_within
+    sp evmSp cOld tOld c6Old c16Old c19Old
+    m0 m1 m2 m3 vOld v18 iterCountNew
+    r0 r1 r2 r3 d0 d1 d2 d3
+    baseWord exponentWord dWord eWord rest exitCond base
+    (cpsTripleWithin_expTwoMulFixedFirstIterPreWithResidual hBody)
+
+/-- Closed-bound variant of
+    `exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_spec_within`. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_closed_bound_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBody :
+      ∀ v10 v7 v11,
+        cpsTripleWithin 49408
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expTwoMulFixedFirstIterPre sp evmSp v10 v18 vOld v7 v11
+            baseWord exponentWord dWord eWord **
+           expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest)
+          (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+            r0 r1 r2 r3 d0 d1 d2 d3 baseWord (dWord :: eWord :: rest)
+            exitCond)) :
+    cpsTripleWithin 49429 base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord (dWord :: eWord :: rest))
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord (dWord :: eWord :: rest) exitCond) :=
+  exp_two_mul_fixed_full_loop_boundary_of_entry_exists_body_general_closed_bound_spec_within
+    sp evmSp cOld tOld c6Old c16Old c19Old
+    m0 m1 m2 m3 vOld v18 iterCountNew
+    r0 r1 r2 r3 d0 d1 d2 d3
+    baseWord exponentWord dWord eWord rest exitCond base
+    (cpsTripleWithin_expTwoMulFixedFirstIterPreWithResidual hBody)
+
 end EvmAsm.Evm64.Exp.Compose
