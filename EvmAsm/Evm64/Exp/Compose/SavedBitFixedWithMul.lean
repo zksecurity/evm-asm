@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryPrologueFixed
+import EvmAsm.Evm64.Exp.Compose.SavedBitIterPostDefs
 import EvmAsm.Evm64.Exp.Compose.SavedBitBaseTwoMulFixedIterMerged
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 
@@ -582,6 +583,96 @@ theorem expIterBodyFullMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_eq
         EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff).union
         (mul_callable_code (base + 336)) := rfl
 
+@[irreducible]
+def expTwoMulFixedIterPointerFrame (ptr nextLimb : Word) : Assertion :=
+  (.x16 ↦ᵣ ptr) ** ((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb)
+
+theorem expTwoMulFixedIterPointerFrame_unfold {ptr nextLimb : Word} :
+    expTwoMulFixedIterPointerFrame ptr nextLimb =
+      ((.x16 ↦ᵣ ptr) **
+       ((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb)) := by
+  delta expTwoMulFixedIterPointerFrame
+  rfl
+
+theorem expTwoMulFixedIterPointerFrame_pcFree {ptr nextLimb : Word} :
+    (expTwoMulFixedIterPointerFrame ptr nextLimb).pcFree := by
+  rw [expTwoMulFixedIterPointerFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedIterPointerFrame (ptr nextLimb : Word) :
+    Assertion.PCFree (expTwoMulFixedIterPointerFrame ptr nextLimb) :=
+  ⟨expTwoMulFixedIterPointerFrame_pcFree⟩
+
+@[irreducible]
+def expTwoMulFixedIterPre
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word) : Assertion :=
+  ((((((.x19 ↦ᵣ e) ** (.x6 ↦ᵣ c6) ** (.x10 ↦ᵣ v10) **
+    (.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) **
+    (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+    ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+    ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+    ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+    ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+    ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+    ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+    ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+    ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+    ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+    ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+    ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+    ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+    (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld)) **
+    (.x9 ↦ᵣ iterCount)) ** expTwoMulIterBaseFrame evmSp a0 a1 a2 a3)) **
+    expTwoMulFixedIterPointerFrame ptr nextLimb)
+
+theorem expTwoMulFixedIterPre_unfold
+    {e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word} :
+    expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
+      vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 =
+      ((((((.x19 ↦ᵣ e) ** (.x6 ↦ᵣ c6) ** (.x10 ↦ᵣ v10) **
+        (.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) **
+        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+        ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
+        ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
+        ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
+        ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
+        ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+        ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+        ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+        ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld)) **
+        (.x9 ↦ᵣ iterCount)) ** expTwoMulIterBaseFrame evmSp a0 a1 a2 a3)) **
+        expTwoMulFixedIterPointerFrame ptr nextLimb) := by
+  delta expTwoMulFixedIterPre
+  rfl
+
+theorem expTwoMulFixedIterPre_pcFree
+    {e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word} :
+    (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
+      vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11).pcFree := by
+  rw [expTwoMulFixedIterPre_unfold, expTwoMulIterBaseFrame_unfold,
+    expTwoMulFixedIterPointerFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedIterPre
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
+        vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11) :=
+  ⟨expTwoMulFixedIterPre_pcFree⟩
+
 /-- Canonical-code view of the fixed loop-exit boundary: pointer restore
     followed by EXP epilogue over fixed EXP+MUL code. -/
 theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_with_mul_spec_within
@@ -854,23 +945,9 @@ theorem exp_msb_bit_test_fixed_full_iter_merged_exit_branch_evmExpMsbSavedBitTwo
       expTwoMulFixedReloadIterStepBound
       (base + 44)
       (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
-      ((((((.x19 ↦ᵣ e) ** (.x6 ↦ᵣ c6) ** (.x10 ↦ᵣ v10) **
-        (.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) **
-        (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
-        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
-        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
-        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
-        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
-        ((evmSp + signExtend12 (0 : BitVec 12)) ↦ₘ d0) **
-        ((evmSp + signExtend12 (8 : BitVec 12)) ↦ₘ d1) **
-        ((evmSp + signExtend12 (16 : BitVec 12)) ↦ₘ d2) **
-        ((evmSp + signExtend12 (24 : BitVec 12)) ↦ₘ d3) **
-        ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
-        ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
-        ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
-        ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
-        (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) ** (.x1 ↦ᵣ vOld)) **
-        (.x9 ↦ᵣ iterCount)) ** baseFrame)) ** ptrFrame)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
       (base + 44)
       (fun h => skipLoopPost h ∨ reloadLoopPost h)
       (base + 296)
@@ -896,6 +973,8 @@ theorem exp_msb_bit_test_fixed_full_iter_merged_exit_branch_evmExpMsbSavedBitTwo
       (expIterBodyFullMsbSavedBitTwoMulFixedCanonicalCode_disjoint_appended_mul base)
   rw [hExit] at h
   rw [← expIterBodyFullMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_eq base] at h
+  rw [expTwoMulFixedIterPre_unfold, expTwoMulIterBaseFrame_unfold,
+    expTwoMulFixedIterPointerFrame_unfold]
   exact
     cpsBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
       h
