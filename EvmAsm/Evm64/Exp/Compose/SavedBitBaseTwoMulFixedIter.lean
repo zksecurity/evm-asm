@@ -488,6 +488,52 @@ theorem exp_cond_mul_call_block_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_w
     (h := h)
     (hmono := CodeReq.union_sub h_cond_sub_union h_mul_sub_union)
 
+/-- Saved-bit conditional-multiply BEQ skip-gate lifted to the decomposed
+    fixed iteration body. The nonzero branch falls through to the taken
+    conditional-multiply call block at `base + 140`. -/
+theorem exp_cond_mul_saved_bit_beq_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (v18 : Word) (base target : Word)
+    (htarget : (base + 136 : Word) + signExtend13 skipOff = target) :
+    cpsBranchWithin 1 (base + 136)
+      (expIterBodyFullMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff)
+      ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 = 0⌝)
+      (base + 140) ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 ≠ 0⌝) := by
+  have h := EvmAsm.Rv64.beq_spec_within .x18 .x0 skipOff v18 (0 : Word)
+    (base + 136)
+  rw [htarget] at h
+  have hnext : (base + 136 : Word) + 4 = base + 140 := by bv_addr
+  rw [hnext] at h
+  exact cpsBranchWithin_extend_code
+    (h := h)
+    (hmono := fun a i hi =>
+      expIterBodyFullMsbSavedBitTwoMulFixedCode_cond_mul_sub
+        (base := base) (squaringMulOff := squaringMulOff)
+        (condMulOff := condMulOff) (skipOff := skipOff) (backOff := backOff)
+        a i (EvmAsm.Evm64.exp_cond_mul_call_with_saved_bit_skip_block_code_beq_sub
+          (base + 136) condMulOff skipOff a i hi))
+
+/-- Saved-bit conditional-multiply BEQ skip-gate lifted to the decomposed
+    fixed iteration body plus the external `mul_callable` code. -/
+theorem exp_cond_mul_saved_bit_beq_expIterBodyFullMsbSavedBitTwoMulFixedCode_union_mul_spec_within
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (v18 base target mulTarget : Word)
+    (htarget : (base + 136 : Word) + signExtend13 skipOff = target) :
+    cpsBranchWithin 1 (base + 136)
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff).union
+        (mul_callable_code mulTarget))
+      ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)))
+      target ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 = 0⌝)
+      (base + 140) ((.x18 ↦ᵣ v18) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜v18 ≠ 0⌝) := by
+  exact cpsBranchWithin_extend_code
+    (h := exp_cond_mul_saved_bit_beq_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
+      squaringMulOff condMulOff skipOff backOff v18 base target htarget)
+    (hmono := fun a i hi => by
+      simp only [CodeReq.union, hi])
+
 /-- Loop-back block lifted to the decomposed fixed iteration body. -/
 theorem exp_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
     (c : Word)
@@ -516,5 +562,29 @@ theorem exp_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
   rw [haddr] at h_lifted
   simpa [expTwoMulIterCountNew] using
     h_lifted
+
+/-- Loop-back block lifted to the decomposed fixed iteration body plus the
+    external `mul_callable` code. -/
+theorem exp_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_union_mul_spec_within
+    (c : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base target mulTarget : Word)
+    (htarget : ((base + 244) + 4 : Word) + signExtend13 backOff = target) :
+    cpsBranchWithin 2 (base + 244)
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff).union
+        (mul_callable_code mulTarget))
+      ((.x9 ↦ᵣ c) ** (.x0 ↦ᵣ (0 : Word)))
+      target
+        ((.x9 ↦ᵣ expTwoMulIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) **
+          ⌜expTwoMulIterCountNew c ≠ 0⌝)
+      (base + 252)
+        ((.x9 ↦ᵣ expTwoMulIterCountNew c) ** (.x0 ↦ᵣ (0 : Word)) **
+          ⌜expTwoMulIterCountNew c = 0⌝) := by
+  exact cpsBranchWithin_extend_code
+    (h := exp_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
+      c squaringMulOff condMulOff skipOff backOff base target htarget)
+    (hmono := fun a i hi => by
+      simp only [CodeReq.union, hi])
 
 end EvmAsm.Evm64.Exp.Compose
