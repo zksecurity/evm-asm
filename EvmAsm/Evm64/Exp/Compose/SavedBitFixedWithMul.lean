@@ -111,6 +111,32 @@ theorem cpsNBranchWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
   cpsNBranchWithin_extend_code
     (hmono := evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub) h
 
+/-- Fixed full-stack prologue + pointer advance lifted into the fixed EXP+MUL
+    code bundle used by loop-body proofs. -/
+theorem exp_prologue_fixed_then_pointer_advance_full_stack_evmExpMsbSavedBitTwoMulFixedWithMulCode_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin (10 + 1) base (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+       (.x5 ↦ᵣ tOld) ** (.x12 ↦ᵣ evmSp) **
+       (.x6 ↦ᵣ c6Old) ** (.x16 ↦ᵣ c16Old) ** (.x19 ↦ᵣ c19Old) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3) **
+       expTwoMulScratchFrame vOld v18 **
+       evmStackIs evmSp (baseWord :: exponentWord :: rest))
+      (expTwoMulLoopEntryPostFixed sp evmSp vOld v18 baseWord exponentWord rest) :=
+  cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    (mulTarget := mulTarget)
+    (exp_prologue_fixed_then_pointer_advance_full_stack_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      baseWord exponentWord rest squaringMulOff condMulOff skipOff backOff base)
+
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
     {base mulTarget : Word}
     {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
