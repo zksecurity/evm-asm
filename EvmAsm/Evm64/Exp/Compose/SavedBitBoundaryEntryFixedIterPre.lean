@@ -6,7 +6,7 @@
   iteration sees the first two `rest` words at the advanced stack pointer.
 -/
 
-import EvmAsm.Evm64.Exp.Compose.SavedBitFixedWithMul
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedLoopInvariant
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -91,6 +91,99 @@ theorem expTwoMulFixedFirstIterPre_unfold
         v7 v11 := by
   delta expTwoMulFixedFirstIterPre
   rfl
+
+/-- Canonical first-iteration precondition carrying the semantic fixed-loop
+    invariant package at `k = 0`. -/
+@[irreducible]
+def expTwoMulFixedFirstIterPreN
+    (sp evmSp v10 v18 vOld v7 v11 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) : Assertion :=
+  expTwoMulFixedIterPreN 0 baseWord exponentWord
+    (exponentWord.getLimbN 3)
+    ((0 : Word) + signExtend12 (64 : BitVec 12))
+    (256 : Word)
+    v10 v18
+    (evmSp + signExtend12 (56 : BitVec 12) + signExtend12 (-8 : BitVec 12))
+    (exponentWord.getLimbN 2)
+    sp (evmSp + signExtend12 (64 : BitVec 12))
+    (1 : Word) vOld
+    ((1 : EvmWord).getLimbN 0)
+    ((1 : EvmWord).getLimbN 1)
+    ((1 : EvmWord).getLimbN 2)
+    ((1 : EvmWord).getLimbN 3)
+    (dWord.getLimbN 0) (dWord.getLimbN 1)
+    (dWord.getLimbN 2) (dWord.getLimbN 3)
+    (eWord.getLimbN 0) (eWord.getLimbN 1)
+    (eWord.getLimbN 2) (eWord.getLimbN 3)
+    (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+    (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+    v7 v11
+
+theorem expTwoMulFixedFirstIterPreN_unfold
+    {sp evmSp v10 v18 vOld v7 v11 : Word}
+    {baseWord exponentWord dWord eWord : EvmWord} :
+    expTwoMulFixedFirstIterPreN sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord =
+      expTwoMulFixedIterPreN 0 baseWord exponentWord
+        (exponentWord.getLimbN 3)
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (256 : Word)
+        v10 v18
+        (evmSp + signExtend12 (56 : BitVec 12) + signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (1 : Word) vOld
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3)
+        (dWord.getLimbN 0) (dWord.getLimbN 1)
+        (dWord.getLimbN 2) (dWord.getLimbN 3)
+        (eWord.getLimbN 0) (eWord.getLimbN 1)
+        (eWord.getLimbN 2) (eWord.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+        v7 v11 := by
+  delta expTwoMulFixedFirstIterPreN
+  rfl
+
+theorem expTwoMulFixedFirstIterPreN_unfold_invariants
+    {sp evmSp v10 v18 vOld v7 v11 : Word}
+    {baseWord exponentWord dWord eWord : EvmWord} :
+    expTwoMulFixedFirstIterPreN sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord =
+      (expTwoMulFixedFirstIterPre sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord **
+      expTwoMulFixedSemanticInvariant baseWord exponentWord 0
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3) **
+      expTwoMulFixedCursorAssertion exponentWord 0
+        (exponentWord.getLimbN 3) **
+      expTwoMulFixedControlAssertion exponentWord 0
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (evmSp + signExtend12 (56 : BitVec 12) + signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        (evmSp + signExtend12 (64 : BitVec 12))) := by
+  rw [expTwoMulFixedFirstIterPreN_unfold, expTwoMulFixedIterPreN_unfold,
+    expTwoMulFixedFirstIterPre_unfold]
+
+theorem expTwoMulFixedFirstIterPreN_pcFree
+    {sp evmSp v10 v18 vOld v7 v11 : Word}
+    {baseWord exponentWord dWord eWord : EvmWord} :
+    (expTwoMulFixedFirstIterPreN sp evmSp v10 v18 vOld v7 v11
+      baseWord exponentWord dWord eWord).pcFree := by
+  rw [expTwoMulFixedFirstIterPreN_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedFirstIterPreN
+    (sp evmSp v10 v18 vOld v7 v11 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) :
+    Assertion.PCFree
+      (expTwoMulFixedFirstIterPreN sp evmSp v10 v18 vOld v7 v11
+        baseWord exponentWord dWord eWord) :=
+  ⟨expTwoMulFixedFirstIterPreN_pcFree⟩
 
 /-- Folded-memory view of `expTwoMulFixedFirstIterPre`. This matches the
     `evmWordIs` vocabulary used by the fixed entry-post stack unfold. -/
