@@ -288,4 +288,45 @@ theorem expTwoMulFixedIterReloadCondCountPost_pures
   obtain ⟨_, hBit⟩ := hBitPure
   exact ⟨hExit, hC6, hBit⟩
 
+theorem expTwoMulFixedIterReloadSkipCountPost_pures
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterReloadSkipCountPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base exitCond ps) :
+    exitCond ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 := by
+  unfold expTwoMulFixedIterReloadSkipCountPost
+    expTwoMulFixedIterReloadSkipRest at h
+  obtain ⟨_, _, _, _, hMain, _hBaseFrame⟩ := h
+  obtain ⟨_, _, _, _, hCount, hRest⟩ := hMain
+  obtain ⟨_, _, _, _, _, hCountTail⟩ := hCount
+  have hExit : exitCond := ((sepConj_pure_right _).1 hCountTail).2
+  obtain ⟨_, _, _, _, _, hRest1⟩ := hRest
+  obtain ⟨_, _, _, _, _, hRest2⟩ := hRest1
+  obtain ⟨_, _, _, _, _, hRest3⟩ := hRest2
+  obtain ⟨_, _, _, _, _, hRest4⟩ := hRest3
+  obtain ⟨_, _, _, _, _, hRest5⟩ := hRest4
+  obtain ⟨_, _, _, _, _, hRest6⟩ := hRest5
+  obtain ⟨_, _, _, _, _, hRest7⟩ := hRest6
+  obtain ⟨_, _, _, _, _, hRest8⟩ := hRest7
+  obtain ⟨_, _, _, _, _, hRest9⟩ := hRest8
+  obtain ⟨_, _, _, _, _, hRest10⟩ := hRest9
+  obtain ⟨_, _, _, _, _, hRest11⟩ := hRest10
+  obtain ⟨_, _, _, _, _, hRest12⟩ := hRest11
+  obtain ⟨_, _, _, _, _, hRest13⟩ := hRest12
+  obtain ⟨_, _, _, _, _, hRest14⟩ := hRest13
+  obtain ⟨_, _, _, _, _, hRest15⟩ := hRest14
+  obtain ⟨_, _, _, _, _, hRest16⟩ := hRest15
+  have hC6 : c6 + signExtend12 (-1 : BitVec 12) = 0 :=
+    ((sepConj_pure_left _).1 hRest16).1
+  have hAfterC6 := ((sepConj_pure_left _).1 hRest16).2
+  obtain ⟨_, _, _, _, _, hRest17⟩ := hAfterC6
+  have hBit :
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 :=
+    ((sepConj_pure_right _).1 hRest17).2
+  exact ⟨hExit, hC6, hBit⟩
+
 end EvmAsm.Evm64.Exp.Compose
