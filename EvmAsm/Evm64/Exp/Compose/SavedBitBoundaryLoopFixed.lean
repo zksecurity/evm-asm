@@ -75,19 +75,10 @@ theorem expTwoMulFixedBoundaryLoopBound_eq (nSteps : Nat) :
     expTwoMulBoundarySuffixBound
   omega
 
-/-- Conservative bound for 256 fixed-x19 saved-bit two-MUL loop iterations,
-    using the reload-path bound for every iteration. -/
-abbrev expTwoMulFixedFullLoopBodyBound : Nat :=
-  256 * expTwoMulFixedReloadIterStepBound
-
 /-- Conservative bound for the fixed-x19 full boundary, including prologue and
     pointer-restore/epilogue. -/
 abbrev expTwoMulFixedFullLoopBoundaryBound : Nat :=
   expTwoMulFixedBoundaryLoopBound expTwoMulFixedFullLoopBodyBound
-
-theorem expTwoMulFixedFullLoopBodyBound_eq :
-    expTwoMulFixedFullLoopBodyBound = 49408 := by
-  norm_num [expTwoMulFixedFullLoopBodyBound, expTwoMulFixedReloadIterStepBound_eq]
 
 theorem expTwoMulFixedFullLoopBoundaryBound_eq :
     expTwoMulFixedFullLoopBoundaryBound = 49429 := by
