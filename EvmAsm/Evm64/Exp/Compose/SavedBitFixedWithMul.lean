@@ -540,4 +540,66 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
         (squaringMulOff := squaringMulOff) (condMulOff := condMulOff)
         (skipOff := skipOff) (backOff := backOff) hd)
 
+/-- Fixed saved-bit EXP with canonical internal branch offsets plus an external
+    `mul_callable` target. -/
+abbrev evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+    (base mulTarget : Word)
+    (squaringMulOff condMulOff : BitVec 21) : CodeReq :=
+  evmExpMsbSavedBitTwoMulFixedWithMulCode
+    base mulTarget squaringMulOff condMulOff
+    EvmAsm.Evm64.canonicalExpCondMulSkipOff
+    EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff
+
+/-- Fixed saved-bit EXP with canonical internal branches and appended
+    `mul_callable` immediately after the 336-byte fixed EXP wrapper. -/
+abbrev evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
+    (base : Word) : CodeReq :=
+  evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+    base (base + 336)
+    EvmAsm.Evm64.canonicalExpSquaringMulOff
+    EvmAsm.Evm64.canonicalExpCondMulOff
+
+/-- Canonical-code view of the fixed loop-exit boundary: pointer restore
+    followed by EXP epilogue over fixed EXP+MUL code. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21)
+    (base mulTarget : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) := by
+  exact
+    exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+      squaringMulOff condMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff
+      base mulTarget
+
+/-- Appended-MUL canonical-code view of the fixed loop-exit boundary. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_appended_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (base : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) :=
+  exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_with_mul_spec_within
+    sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+    EvmAsm.Evm64.canonicalExpSquaringMulOff
+    EvmAsm.Evm64.canonicalExpCondMulOff
+    base (base + 336)
+
 end EvmAsm.Evm64.Exp.Compose
