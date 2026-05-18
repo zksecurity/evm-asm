@@ -43,6 +43,50 @@ theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_mul_sub {base mulTarget : Word}
   unfold evmExpMsbSavedBitTwoMulFixedWithMulCode
   exact CodeReq.mono_union_right hd (fun _ _ h => h)
 
+/-- Lift a whole fixed-EXP triple spec into the fixed EXP+MUL code bundle. -/
+theorem cpsTripleWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    {nSteps : Nat} {entry exit_ base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
+    {P Q : Assertion}
+    (h : cpsTripleWithin nSteps entry exit_
+      (expMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff) P Q) :
+    cpsTripleWithin nSteps entry exit_
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) P Q :=
+  cpsTripleWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub) h
+
+/-- Lift a whole fixed-EXP branch spec into the fixed EXP+MUL code bundle. -/
+theorem cpsBranchWithin_extend_fixedCode_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    {nSteps : Nat} {entry exit_t exit_f base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
+    {P Q_t Q_f : Assertion}
+    (h : cpsBranchWithin nSteps entry
+      (expMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff)
+      P exit_t Q_t exit_f Q_f) :
+    cpsBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      P exit_t Q_t exit_f Q_f :=
+  cpsBranchWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub) h
+
+/-- Lift a whole fixed-EXP N-branch spec into the fixed EXP+MUL code bundle. -/
+theorem cpsNBranchWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    {nSteps : Nat} {entry base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
+    {P : Assertion} {exits : List (Word × Assertion)}
+    (h : cpsNBranchWithin nSteps entry
+      (expMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff) P exits) :
+    cpsNBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff) P exits :=
+  cpsNBranchWithin_extend_code
+    (hmono := evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub) h
+
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
     {base mulTarget : Word}
     {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
