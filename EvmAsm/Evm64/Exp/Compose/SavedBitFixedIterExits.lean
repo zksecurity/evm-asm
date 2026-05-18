@@ -550,6 +550,85 @@ theorem exp_two_mul_fixed_iterations_body_peel_with_continuations_closed_bound_s
       r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
       v7 v11 base exit_ R hbase hLoop hExit
 
+/-- Fixed x19 256-iteration loop-body wrapper.
+
+    This is the single concrete 256 instantiation of the parameterized fixed
+    loop-body theorem.  The proof delegates to the generic `(n + 1)` body
+    composition at `n = 255`; it does not introduce another named
+    per-iteration peel. -/
+theorem exp_two_mul_256iter_loop_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base exit_ : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin (expTwoMulFixedIterationsBodyBound 255)
+      (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin (expTwoMulFixedIterationsBodyBound 255)
+      (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound 256)
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  simpa using
+    exp_two_mul_fixed_iterations_body_peel_with_continuations_spec_within
+      255
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base exit_ R hbase
+
+/-- Closed-bound form of `exp_two_mul_256iter_loop_spec_within`. -/
+theorem exp_two_mul_256iter_loop_closed_bound_spec_within
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base exit_ : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin 49215
+      (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin 49215
+      (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin 49408
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop hExit
+  have hTail : expTwoMulFixedIterationsBodyBound 255 = 49215 := by
+    rw [expTwoMulFixedIterationsBodyBound_eq]
+  have hFull : expTwoMulFixedIterationsBodyBound 256 = 49408 := by
+    rw [expTwoMulFixedIterationsBodyBound_eq]
+  rw [← hTail] at hLoop hExit
+  rw [← hFull]
+  exact
+    exp_two_mul_256iter_loop_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base exit_ R hbase hLoop hExit
+
 /-- Fixed merged-loop induction step: given any exit bridge for the current
     step's exit condition and any `n`-iteration loop-back continuation, the
     `(n + 1)`-iteration body spec holds from `expTwoMulFixedIterPre`. -/
