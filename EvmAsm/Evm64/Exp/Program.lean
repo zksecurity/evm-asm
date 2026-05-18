@@ -1032,6 +1032,9 @@ def canonicalExpLoopBackOff : BitVec 13 := -228
 /-- Canonical BNE back-edge for the corrected MSB-first saved-bit layout. -/
 def canonicalExpMsbSavedBitLoopBackOff : BitVec 13 := -232
 
+/-- Canonical BNE back-edge for the fixed x19 saved-bit layout. -/
+def canonicalExpMsbSavedBitFixedLoopBackOff : BitVec 13 := -248
+
 /-- Canonical JAL offset from the saved-bit squaring call site to an appended
     `mul_callable` body immediately after the 304-byte EXP wrapper. -/
 def canonicalExpSquaringMulOff : BitVec 21 := 196
@@ -1068,6 +1071,9 @@ theorem canonicalExpLoopBackOff_eq :
 theorem canonicalExpMsbSavedBitLoopBackOff_eq :
     canonicalExpMsbSavedBitLoopBackOff = -232 := rfl
 
+theorem canonicalExpMsbSavedBitFixedLoopBackOff_eq :
+    canonicalExpMsbSavedBitFixedLoopBackOff = -248 := rfl
+
 theorem canonicalExpSquaringMulOff_eq :
     canonicalExpSquaringMulOff = 196 := rfl
 
@@ -1089,6 +1095,14 @@ theorem canonicalExpMsbSavedBitLoopBack_target (base : Word) :
   have h : signExtend13 ((-232 : BitVec 13)) = (18446744073709551384 : Word) := by decide
   simp only [h]; bv_omega
 
+theorem canonicalExpMsbSavedBitFixedLoopBack_target (base : Word) :
+    (((base + 44) + 244) + 4 : Word) +
+        signExtend13 canonicalExpMsbSavedBitFixedLoopBackOff =
+      base + 44 := by
+  rw [canonicalExpMsbSavedBitFixedLoopBackOff_eq]
+  have h : signExtend13 ((-248 : BitVec 13)) = (18446744073709551368 : Word) := by decide
+  simp only [h]; bv_omega
+
 theorem canonicalExpSquaringMul_target (base : Word) :
     ((base + 44) + 64 : Word) + signExtend21 canonicalExpSquaringMulOff =
       base + 304 := by
@@ -1096,9 +1110,25 @@ theorem canonicalExpSquaringMul_target (base : Word) :
   have h : signExtend21 (196 : BitVec 21) = (196 : Word) := by decide
   simp only [h]; bv_omega
 
+theorem canonicalExpFixedSquaringMul_target (base : Word) :
+    (((base + 44) + 32) + 64 : Word) +
+        signExtend21 canonicalExpSquaringMulOff =
+      base + 336 := by
+  rw [canonicalExpSquaringMulOff_eq]
+  have h : signExtend21 (196 : BitVec 21) = (196 : Word) := by decide
+  simp only [h]; bv_omega
+
 theorem canonicalExpCondMul_target (base : Word) :
     ((base + 152) + 64 : Word) + signExtend21 canonicalExpCondMulOff =
       base + 304 := by
+  rw [canonicalExpCondMulOff_eq]
+  have h : signExtend21 (88 : BitVec 21) = (88 : Word) := by decide
+  simp only [h]; bv_omega
+
+theorem canonicalExpFixedCondMul_target (base : Word) :
+    (((base + 44) + 140) + 64 : Word) +
+        signExtend21 canonicalExpCondMulOff =
+      base + 336 := by
   rw [canonicalExpCondMulOff_eq]
   have h : signExtend21 (88 : BitVec 21) = (88 : Word) := by decide
   simp only [h]; bv_omega
@@ -1327,6 +1357,19 @@ def evm_exp_msb_saved_bit_two_mul_fixed
     squaringMulOff condMulOff skipOff backOff ;;
   exp_loop_pointer_restore ;;
   exp_epilogue
+
+/-- Fixed x19 EXP program with canonical internal branch offsets and separate
+    external MUL-call offsets for the two JAL sites. -/
+def evm_exp_msb_saved_bit_two_mul_fixed_canonical
+    (squaringMulOff condMulOff : BitVec 21) : Program :=
+  evm_exp_msb_saved_bit_two_mul_fixed squaringMulOff condMulOff
+    canonicalExpCondMulSkipOff canonicalExpMsbSavedBitFixedLoopBackOff
+
+theorem evm_exp_msb_saved_bit_two_mul_fixed_canonical_eq
+    (squaringMulOff condMulOff : BitVec 21) :
+    evm_exp_msb_saved_bit_two_mul_fixed_canonical squaringMulOff condMulOff =
+      evm_exp_msb_saved_bit_two_mul_fixed squaringMulOff condMulOff
+        canonicalExpCondMulSkipOff canonicalExpMsbSavedBitFixedLoopBackOff := rfl
 
 theorem evm_exp_msb_saved_bit_two_mul_fixed_length
     (squaringMulOff condMulOff : BitVec 21)

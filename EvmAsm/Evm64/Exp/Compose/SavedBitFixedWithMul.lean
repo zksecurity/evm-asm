@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryPrologueFixed
 import EvmAsm.Evm64.Exp.Compose.SavedBitBaseTwoMulFixedIterMerged
+import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -342,6 +343,129 @@ theorem exp_pointer_restore_then_epilogue_stack_tail_evm_exp_msb_saved_bit_two_m
       xperm_hyp hp)
     hFramed
 
+/-- Fixed pointer-restore/epilogue view with the visible post stack folded. -/
+theorem exp_pointer_restore_then_epilogue_full_post_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    let exitControl : Assertion :=
+      (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝
+    let stackTail : Assertion :=
+      expTwoMulLoopExitStackTailFrame evmSp baseWord rest
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((exitControl **
+        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
+         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
+          ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+          ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+          ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+          ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+          ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))) **
+       stackTail)
+      (exitControl **
+       ((.x2 ↦ᵣ sp) **
+        (.x12 ↦ᵣ (evmSp + signExtend12 (32 : BitVec 12))) **
+        (.x5 ↦ᵣ r3) **
+        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+        evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))) := by
+  intro exitControl stackTail
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      dsimp [exitControl, stackTail] at hp ⊢
+      exact hp)
+    (fun _ hp => by
+      dsimp [exitControl, stackTail] at hp ⊢
+      rw [evmStackIs_cons]
+      xperm_hyp hp)
+    (exp_pointer_restore_then_epilogue_stack_tail_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+      squaringMulOff condMulOff skipOff backOff base mulTarget)
+
+/-- Fixed full visible-post-stack view with the final EVM stack pointer exposed
+    in plain consumer-facing form. -/
+theorem exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    let exitControl : Assertion :=
+      (.x9 ↦ᵣ iterCountNew) ** (.x0 ↦ᵣ (0 : Word)) ** ⌜exitCond⌝
+    let stackTail : Assertion :=
+      expTwoMulLoopExitStackTailFrame evmSp baseWord rest
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((exitControl **
+        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
+         ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
+          ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+          ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+          ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+          ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+          ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+          ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+          ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+          ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))) **
+       stackTail)
+      (exitControl **
+       ((.x2 ↦ᵣ sp) **
+        (.x12 ↦ᵣ (evmSp + 32)) **
+        (.x5 ↦ᵣ r3) **
+        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+        evmStackIs evmSp (baseWord :: expResultWord r0 r1 r2 r3 :: rest))) := by
+  intro exitControl stackTail
+  rw [← expTwoMulBoundaryResultEvmSpWord]
+  exact exp_pointer_restore_then_epilogue_full_post_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+    squaringMulOff condMulOff skipOff backOff base mulTarget
+
+/-- Full visible-stack view of the fixed pointer-restore/epilogue sequence. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) := by
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      rw [expTwoMulLoopExitFullStackPreFrame_unfold] at hp
+      rw [expTwoMulLoopExitControl_unfold] at hp
+      rw [evmStackIs_cons, evmStackIs_cons] at hp
+      rw [← exp_epilogue_result_word_right evmSp d0 d1 d2 d3
+        (evmStackIs (evmSp + 32 + 32) rest)] at hp
+      rw [expTwoMulBoundaryResultTailWord] at hp
+      rw [expTwoMulLoopExitStackTailFrame_unfold]
+      xcancel_struct hp)
+    (fun _ hp => by
+      rw [expTwoMulLoopExitFullStackPostFrame_unfold]
+      rw [expTwoMulLoopExitControl_unfold]
+      exact hp)
+    (exp_pointer_restore_then_epilogue_full_post_stack_clean_pointer_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+      squaringMulOff condMulOff skipOff backOff base mulTarget)
+
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
     {base mulTarget : Word}
     {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
@@ -415,5 +539,67 @@ theorem cpsBranchWithin_extend_evmExpMsbSavedBitTwoMulFixedWithMulCode
         (base := base) (mulTarget := mulTarget)
         (squaringMulOff := squaringMulOff) (condMulOff := condMulOff)
         (skipOff := skipOff) (backOff := backOff) hd)
+
+/-- Fixed saved-bit EXP with canonical internal branch offsets plus an external
+    `mul_callable` target. -/
+abbrev evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+    (base mulTarget : Word)
+    (squaringMulOff condMulOff : BitVec 21) : CodeReq :=
+  evmExpMsbSavedBitTwoMulFixedWithMulCode
+    base mulTarget squaringMulOff condMulOff
+    EvmAsm.Evm64.canonicalExpCondMulSkipOff
+    EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff
+
+/-- Fixed saved-bit EXP with canonical internal branches and appended
+    `mul_callable` immediately after the 336-byte fixed EXP wrapper. -/
+abbrev evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode
+    (base : Word) : CodeReq :=
+  evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+    base (base + 336)
+    EvmAsm.Evm64.canonicalExpSquaringMulOff
+    EvmAsm.Evm64.canonicalExpCondMulOff
+
+/-- Canonical-code view of the fixed loop-exit boundary: pointer restore
+    followed by EXP epilogue over fixed EXP+MUL code. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_with_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (squaringMulOff condMulOff : BitVec 21)
+    (base mulTarget : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalWithMulCode
+        base mulTarget squaringMulOff condMulOff)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) := by
+  exact
+    exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+      squaringMulOff condMulOff
+      EvmAsm.Evm64.canonicalExpCondMulSkipOff
+      EvmAsm.Evm64.canonicalExpMsbSavedBitFixedLoopBackOff
+      base mulTarget
+
+/-- Appended-MUL canonical-code view of the fixed loop-exit boundary. -/
+theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_appended_mul_spec_within
+    (sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop)
+    (base : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulLoopExitFullStackPreFrame
+        sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3
+        baseWord rest exitCond)
+      (expTwoMulLoopExitFullStackPostFrame
+        sp evmSp iterCountNew r0 r1 r2 r3 baseWord rest exitCond) :=
+  exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_mul_fixed_canonical_with_mul_spec_within
+    sp evmSp iterCountNew tOld r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond
+    EvmAsm.Evm64.canonicalExpSquaringMulOff
+    EvmAsm.Evm64.canonicalExpCondMulOff
+    base (base + 336)
 
 end EvmAsm.Evm64.Exp.Compose
