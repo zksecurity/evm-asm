@@ -535,6 +535,46 @@ def expTwoMulFixedCursorInvariant
     (exponentWord : EvmWord) (k : Nat) (e : Word) : Prop :=
   e = expTwoMulFixedCursorWord exponentWord k
 
+private theorem word_shiftLeft_succ (x : Word) (n : Nat) :
+    (x <<< n) <<< 1 = x <<< (n + 1) := by
+  ext i hi
+  simp [BitVec.getElem_shiftLeft]
+  by_cases hin : i < n + 1
+  · by_cases hi1 : i = n
+    · subst i
+      by_cases hn0 : n = 0
+      · subst n
+        simp
+      · simp [hn0]
+    · have hlt : i < n := by omega
+      simp [hin]
+      have hltPred : i - 1 < n := by omega
+      have hsub : i - 1 - n = i - (n + 1) := by omega
+      simp [hltPred, hsub]
+  · have hnot : ¬i < n := by omega
+    simp [hin]
+    have hi0 : ¬i = 0 := by omega
+    have hnotPred : ¬i - 1 < n := by omega
+    have hsub : i - 1 - n = i - (n + 1) := by omega
+    simp [hi0, hnotPred, hsub]
+
+theorem expTwoMulFixedCursorInvariant_succ_no_reload
+    {exponentWord : EvmWord} {k : Nat} {e : Word}
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hMod : k % 64 < 63) :
+    expTwoMulFixedCursorInvariant exponentWord (k + 1)
+      (e <<< (1 : BitVec 6).toNat) := by
+  unfold expTwoMulFixedCursorInvariant expTwoMulFixedCursorWord at *
+  rw [hCursor]
+  have hdiv : (k + 1) / 64 = k / 64 := by
+    omega
+  have hmod : (k + 1) % 64 = k % 64 + 1 := by
+    omega
+  rw [hdiv, hmod]
+  change (exponentWord.getLimbN (3 - k / 64) <<< (k % 64)) <<< 1 =
+    exponentWord.getLimbN (3 - k / 64) <<< (k % 64 + 1)
+  exact word_shiftLeft_succ _ _
+
 private theorem expTwoMulFixedCursorWord_highBit_eq_processedBitWord_aux
     (exponentWord : EvmWord) (q r : Nat)
     (hq : q < 4) (hr : r < 64) :
