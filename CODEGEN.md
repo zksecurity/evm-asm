@@ -160,23 +160,60 @@ A `Program` containing a backward branch builds with `Lk`-style labels;
 `riscv64-elf-objdump -d` shows the same encoded offsets as the
 `--no-labels` build.
 
-### M4 — `read_input` / `write_output` plumbing, including hint inputs (M/L)
+### M4 — `read_input` / `write_output` plumbing, including hint inputs (M) — **DONE (2026-05-18)**
 
-Match the verified `Execution.lean` syscall handlers:
-- `t0 = 0xF2` → `read_input` (writes `(inputBufBase, privateInput.length)` to
-  `[a0]`/`[a1]`). See `EvmAsm/Rv64/Execution.lean` ~line 416.
-- `t0 = 0x10` → `write_output` (concatenating). See ~line 411.
+The original M4 plan expected `read_input` (`t0 = 0xF2`) and
+`write_output` (`t0 = 0x10`) to be ECALL syscalls (per the verified
+`step` semantics in `EvmAsm/Rv64/Execution.lean:411,416`). M2 already
+showed ziskemu uses memory-mapped output instead; M4 confirmed the
+same for input. Both ECALL paths are ignored by ziskemu — everything
+is memory-mapped.
 
-**M4 must reconcile the syscall ABI with ziskemu's memory-mapped IO**
-(see M2's empirical finding). Concretely: the verified `step` halts on
-`t0 = 0x10` and appends to `publicValues`, but ziskemu reads its
-public-output region at `OUTPUT_ADDR = 0xa001_0000` via plain stores
-and ignores the syscall. A small adapter — either (a) a
-`write_output_mm` Program in Lean that lowers the syscall to the
-memory-mapped equivalent, or (b) a ziskemu-side shim that recognizes
-`t0 = 0x10` — closes the gap. Input is presumably similar:
-`INPUT_ADDR = 0x4000_0000`, with `MAX_INPUT = 0x2000` (8 KB), per
-`zisk/ziskos/entrypoint/src/ziskos_definitions.rs`.
+**Empirical input layout** (determined by `input_echo` + a
+known-pattern `ziskemu -i <file>`):
+```
+INPUT_ADDR + 0..8   = 8 bytes of ziskemu-side metadata (currently zero)
+INPUT_ADDR + 8..16  = LE u64 length of the first record
+                      (matches the first 8 bytes of the `-i` file)
+INPUT_ADDR + 16..   = first record's data, packed verbatim from the
+                      `-i` file after the length prefix
+```
+This matches `INPUT_INITIAL_OFFSET = 8` in the SDK
+(`zisk/ziskos/entrypoint/src/lib.rs`).
+`INPUT_DATA_OFFSET = 16` is captured as a constant in
+`EvmAsm/Codegen/Programs.lean`.
+
+**Delivered:**
+- `input_echo` program: minimal probe that copies 32 bytes from
+  `INPUT_ADDR + 0..32` to `OUTPUT_ADDR`, used to determine the layout
+  above and as a permanent regression check.
+- `copy64` Program helper (eight LE-dword load/store pairs).
+- `evm_add_from_input`: same wrapping as `evm_add` but loads both
+  256-bit operands at runtime from
+  `INPUT_ADDR + INPUT_DATA_OFFSET`, copies them to a writable
+  `.data` scratch region (`operands_ram`), runs the verified
+  `evm_add` body, then writes the result via the existing
+  `evmAddEpilogue`. Reuses everything from M2 — pure additive M4 work.
+- `scripts/codegen-evm_add-from-input-check.sh`: builds, packs a
+  72-byte input file (`8 B length || 32 B A || 32 B B`), runs
+  `ziskemu -e ... -i ... -o ...`, diffs the first 32 bytes of public
+  output against the expected `A + B` LE limbs. **PASSES** with the
+  same test case as M2 (`A = 2^64-1, B = 1 → [0, 1, 0, 0]`),
+  exercising the limb-0→limb-1 carry through the prover-input path.
+
+**Hint inputs.** The mechanism is the *same* — both real public input
+and prover-supplied non-deterministic hints share the single
+`INPUT_ADDR` region; the convention is just that the prover packs
+auxiliary witnesses (e.g. `(q, r)` for `DIV`) into the same
+length-prefixed record after the public inputs. A full hint-driven
+example will come when `evm_div` is wired into the registry; M4
+infrastructure is in place to support it without further codegen
+changes.
+
+**Exit criteria (met).**
+A `read_input → use → write_output → HALT` program consumes a
+host-supplied input file and emits the expected bytes through
+`ziskemu`'s output channel.
 
 The `read_input` buffer carries **both** real public input **and**
 prover-supplied non-deterministic hints — under the zkvm-standards I/O
@@ -228,8 +265,8 @@ reference oracle in Lean or Python diffs the expected stack against
 
 ### Sequencing
 
-M0 → M1 → M2 → M4 → M5. M3 is deferred (see above); revisit only if
-M5 makes label-free emission unreadable. M4 unblocks M5.
+M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5 (next). M3 is deferred; revisit only
+if M5 makes label-free emission unreadable. M4 unblocks M5.
 
 ## Tricky bits / open questions
 
@@ -281,8 +318,9 @@ M5 makes label-free emission unreadable. M4 unblocks M5.
   exercises the limb-0→limb-1 carry.
 - **M3.** `diff <(codegen --no-labels … | as | objdump -d) <(codegen … | as | objdump -d)`
   shows only label-noise differences.
-- **M4.** End-to-end `read_input → write_output` test: prover input file in,
-  expected bytes out via `ziskemu`.
+- **M4.** ✅ `scripts/codegen-evm_add-from-input-check.sh` exits 0
+  (validated 2026-05-18). Same operands and expected sum as M2, but
+  loaded at runtime from `ziskemu -i <file>` instead of `.data`.
 - **M5.** Per-bytecode regression script under `scripts/`; each test compares
   `ziskemu`'s `write_output` against the reference oracle.
 
