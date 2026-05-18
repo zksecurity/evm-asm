@@ -166,6 +166,79 @@ theorem exp_epilogue_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
       evmExpMsbSavedBitTwoMulFixedWithMulCode_exp_sub a i
         (expMsbSavedBitTwoMulFixedCode_epilogue_sub a i h))
 
+/-- Fixed pointer restore followed by the EXP epilogue over the fixed EXP+MUL
+    code bundle. -/
+theorem exp_pointer_restore_then_epilogue_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+    (sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base mulTarget : Word) :
+    cpsTripleWithin (1 + 9) (base + 296) (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) **
+       ((.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
+        ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+        ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+        ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+        ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+        ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+        ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+        ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+        ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)))
+      ((.x2 ↦ᵣ sp) **
+       (.x12 ↦ᵣ (evmSp + signExtend12 (32 : BitVec 12))) **
+       (.x5 ↦ᵣ r3) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+       evmWordIs (evmSp + 32) (expResultWord r0 r1 r2 r3)) := by
+  let epilogueFrame : Assertion :=
+    (.x2 ↦ᵣ sp) ** (.x5 ↦ᵣ tOld) **
+    ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+    ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+    ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+    ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+    ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ d0) **
+    ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ d1) **
+    ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ d2) **
+    ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ d3)
+  have hRestore :=
+    exp_loop_pointer_restore_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      (evmSp + signExtend12 (64 : BitVec 12))
+      squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hRestoreFramed := cpsTripleWithin_frameR epilogueFrame (by
+    dsimp [epilogueFrame]
+    pcFree) hRestore
+  have hPtr : (evmSp + signExtend12 (64 : BitVec 12)) +
+      signExtend12 ((-64) : BitVec 12) = evmSp := by
+    rw [signExtend12_64, EvmAsm.Evm64.Exp.AddrNorm.exp_se12_neg64]
+    bv_decide
+  have hRestoreFramed' :
+      cpsTripleWithin 1 (base + 296) (base + 300)
+        (evmExpMsbSavedBitTwoMulFixedWithMulCode
+          base mulTarget squaringMulOff condMulOff skipOff backOff)
+        ((.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12))) ** epilogueFrame)
+        ((.x12 ↦ᵣ evmSp) ** epilogueFrame) := by
+    rw [hPtr] at hRestoreFramed
+    exact hRestoreFramed
+  have hEpilogue :=
+    exp_epilogue_evm_exp_msb_saved_bit_two_mul_fixed_with_mul_spec_within
+      sp evmSp tOld r0 r1 r2 r3 d0 d1 d2 d3
+      squaringMulOff condMulOff skipOff backOff base mulTarget
+  have hSeq :=
+    cpsTripleWithin_seq_perm_same_cr
+      (fun _ hp => by
+        dsimp [epilogueFrame] at hp ⊢
+        xperm_hyp hp)
+      hRestoreFramed' hEpilogue
+  exact cpsTripleWithin_weaken
+    (fun _ hp => by
+      dsimp [epilogueFrame] at hp ⊢
+      xperm_hyp hp)
+    (fun _ hp => hp)
+    hSeq
+
 theorem evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
     {base mulTarget : Word}
     {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
