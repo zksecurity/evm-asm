@@ -71,9 +71,18 @@ assemble, link, run on `ziskemu`.
 
 **Exit criteria.**
 `lake exe codegen --program smoke --halt linux93 -o gen-out/smoke` produces
-`gen-out/smoke.elf`; `ziskemu -e gen-out/smoke.elf` exits 0 and reports
-`a2 = 100`. Test both halt modes; *record which signals are honored by
-`ziskemu`* — this answers a real open question (see §Tricky bits).
+`gen-out/smoke.elf`; `ziskemu -e gen-out/smoke.elf` exits 0. Direct
+verification that `a2 = 100` is deferred to M2 when `write_output` is wired
+— for M0 we only validate that the toolchain (emitter → `as` → `ld` →
+`ziskemu`) round-trips and that the halt convention works.
+
+**Status (2026-05-18, resolved).** Toolchain validated end-to-end on
+macOS 26 with Homebrew `riscv64-elf-binutils` and ZisK v0.18.0. The
+SP1-vs-`ziskemu` halt experiment §Tricky bits #5 below is answered:
+**`ziskemu` honors `linux93` (`ecall` + `a7 = 93`) and ignores `sp1`
+(`ecall` + `t0 = 0`)**. `--halt linux93` is therefore the default for
+generated ELFs; `--halt sp1` remains correct against the verified `step`
+semantics but produces an ELF that runs to `--max-steps` on `ziskemu`.
 
 ### M1 — Total coverage of `Instr` (S/M)
 
@@ -108,30 +117,66 @@ Wire enough memory and registers so the verified `evm_add` program
 `Word`-level sum computed via `#eval` in Lean.
 `scripts/codegen-evm_add-check.sh` codifies the comparison.
 
-### M3 — Labels (S)
+### M3 — Labels (deferred)
 
-Two-pass emission replaces numeric branch/jal offsets with `Lk`-style labels.
-Keep numeric mode behind `--no-labels` so we can cross-check the eventual
-binary encoder against `as`'s output.
+Originally planned as two-pass emission rewriting numeric branch/jal offsets
+into `Lk`-style labels. **Deferred**: the verified `Program`s in this repo
+already carry branch/JAL offsets as explicit `BitVec 13` / `BitVec 21` byte
+counts (see e.g. `EvmAsm/Rv64/Program.lean:104-110`); there are no symbolic
+labels to resolve at codegen time, so emitting numeric offsets is exact and
+readable enough through M2. Pick this milestone back up only if (a) a
+verified Program starts using a symbolic branch target we'd otherwise have
+to hand-compute, or (b) the M5 interpreter emission becomes unreadable
+without labels.
 
-**Exit criteria.**
-A loop program (hand-rolled `BNE` countdown) builds with labels; `objdump -d`
-shows the same encoded offsets as the `--no-labels` build.
+**Exit criteria (if revisited).**
+A `Program` containing a backward branch builds with `Lk`-style labels;
+`riscv64-elf-objdump -d` shows the same encoded offsets as the
+`--no-labels` build.
 
-### M4 — `read_input` / `write_output` plumbing (M)
+### M4 — `read_input` / `write_output` plumbing, including hint inputs (M/L)
 
 Match the verified `Execution.lean` syscall handlers:
 - `t0 = 0xF2` → `read_input` (writes `(inputBufBase, privateInput.length)` to
   `[a0]`/`[a1]`). See `EvmAsm/Rv64/Execution.lean` ~line 416.
 - `t0 = 0x10` → `write_output` (concatenating). See ~line 411.
 
-Codegen reserves `__input_buf` in a `.bss`/`.data` region exposed via an
-emitted linker script template. The driver writes a Zisk prover-input file
-(`--input gen-out/<prog>.input.bin`) when the program needs one.
+The `read_input` buffer carries **both** real public input **and**
+prover-supplied non-deterministic hints — under the zkvm-standards I/O
+ABI there is only one input channel; the host concatenates everything the
+guest will need into a single buffer, and the guest decodes a structured
+header (lengths, offsets) to find each section. This is the same channel
+through which the prover supplies precomputed witnesses for expensive
+operations: e.g. for `DIV` the prover supplies `(q, r)` and the guest
+verifies `q · d + r = n ∧ r < d` instead of running long division.
+
+M4 therefore covers three closely related concerns that share the same
+syscall surface:
+
+1. **Reading prover input** — `read_input` syscall, ELF reserves
+   `__input_buf` in `.bss`/`.data` at `inputBufBase`, exposed via an
+   emitted linker script template. Codegen accepts `--input <file>` and
+   passes it through to `ziskemu -i <file>`.
+2. **Hint inputs** — a small Lean-side helper that lets a `Program`
+   declare "I expect a hint at offset N of size M (e.g. the `(q, r)` pair
+   for DIV)". Codegen lays out the buffer; the host-side companion (a
+   Python or Rust script under `scripts/`) packs the hints in the right
+   order. Tracks the zkvm-standards hint conventions documented in
+   `docs/zkvm-host-io-input-buffer-design.md`.
+3. **Writing public output** — `write_output` syscall, used both by the
+   smoke smoke-test (writing `a2`) and by the EVM interpreter (writing
+   the final stack top / return data).
+
+Cross-reference: the SP1-legacy streaming surface
+(`HINT_LEN`/`HINT_READ`/`COMMIT`) has been retired from the Lean code; we
+target only the zkvm-standards single-buffer shape.
 
 **Exit criteria.**
-A `read_input → use → write_output → HALT` program consumes a host-supplied
-input file and emits the expected bytes through `ziskemu`'s output channel.
+- `evm_div` (when implemented) consumes a prover-supplied `(q, r)` hint
+  from `read_input` and writes the verified quotient via `write_output`.
+- An end-to-end `scripts/codegen-div-check.sh` packs an input, runs
+  `ziskemu -i ...`, and diffs the public output against the expected
+  value computed in Lean.
 
 ### M5 — Tiny EVM interpreter (L)
 
@@ -146,7 +191,8 @@ reference oracle in Lean or Python diffs the expected stack against
 
 ### Sequencing
 
-M0 → M1 → (M2 ‖ M3) → M4 → M5. M2/M3 are independent; M4 unblocks M5.
+M0 → M1 → M2 → M4 → M5. M3 is deferred (see above); revisit only if
+M5 makes label-free emission unreadable. M4 unblocks M5.
 
 ## Tricky bits / open questions
 
@@ -162,12 +208,15 @@ M0 → M1 → (M2 ‖ M3) → M4 → M5. M2/M3 are independent; M4 unblocks M5.
 4. **`.option norvc`** at every unit head — keeps `as` from emitting 2-byte
    compressed encodings. Required for predictable PC layout and for the future
    binary encoder.
-5. **SP1 `t0=0` vs `ziskemu` HALT.** The verified `step` halts on `t0=0`
-   (`EvmAsm/Rv64/Execution.lean:611-615`), but `ziskemu`'s stock examples use
-   `a7=93`. M0 is the experiment that empirically answers whether `ziskemu`
-   honors `t0=0`. If it doesn't, `linux93` is the default for `ziskemu` while
-   `sp1` remains correct against the verified semantics. Either way
-   `docs/host-io-halt-convention.md` is not pre-empted.
+5. **SP1 `t0=0` vs `ziskemu` HALT — RESOLVED (2026-05-18).** The verified
+   `step` halts on `t0=0` (`EvmAsm/Rv64/Execution.lean:611-615`), but
+   `ziskemu`'s stock examples use `a7=93`. M0 ran the experiment with
+   ZisK v0.18.0 on macOS 26: **`ziskemu` halts cleanly on `linux93`
+   (`ecall` + `a7=93`) and ignores `sp1` (`ecall` + `t0=0`)** — the SP1
+   variant runs to `--max-steps` and errors with `EmulationNoCompleted`.
+   `--halt linux93` is the codegen default; `--halt sp1` is kept for
+   anyone proving against the SP1 step semantics directly.
+   `docs/host-io-halt-convention.md` remains the canonical ADR.
 6. **Memory bounds.** Emitted ELFs must respect
    `MEM_START=0x20` / `MEM_END=0x78000000`. Codify in `Codegen/Layout.lean` so
    the constants can't drift from `EvmAsm/Rv64/Basic.lean:244,247`.
@@ -183,9 +232,10 @@ M0 → M1 → (M2 ‖ M3) → M4 → M5. M2/M3 are independent; M4 unblocks M5.
 
 ## Verification (per milestone)
 
-- **M0.** `ziskemu -e gen-out/smoke.elf` exits 0; `a2` reads 100. Both halt
-  modes exercised; result of the SP1/`ziskemu` experiment recorded in
-  §Tricky bits above.
+- **M0.** `ziskemu -e gen-out/smoke.elf` exits 0 (validated 2026-05-18 with
+  ZisK v0.18.0). Both halt modes exercised; result of the SP1/`ziskemu`
+  experiment recorded in §Tricky bits #5 above. Direct `a2 = 100`
+  verification is deferred to M2 (needs `write_output` wiring).
 - **M1.** `lake build` passes (includes `RoundTripTests.lean`);
   `lake exe codegen --program evm_add --asm-only | riscv64-unknown-elf-as -march=rv64imac -o /dev/null -`
   returns 0.
