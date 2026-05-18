@@ -380,4 +380,70 @@ theorem expTwoMulFixedIterReloadSkipScratchFrame_pures
     hBitPure.2
   exact ⟨h_exit, h_c6, h_bit⟩
 
+theorem expTwoMulFixedIterSkipCondScratchFrame_to_iterPre_frame
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base **
+          expTwoMulFixedIterPointerFrame ptr nextLimb)) **
+        frame) ps) :
+    let squareW := expSquaringCallSquareW r0 r1 r2 r3
+    let rw := expTwoMulCondRw squareW a0 a1 a2 a3
+    ((expTwoMulFixedIterPre
+      (e <<< (1 : BitVec 6).toNat)
+      v6
+      (expTwoMulIterCountNew iterCount)
+      v10
+      ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+      ptr nextLimb sp evmSp
+      (rw.getLimbN 3)
+      (((base + 44) + 140) + 68)
+      (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2) (rw.getLimbN 3)
+      d0 d1 d2 d3
+      (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2) (rw.getLimbN 3)
+      a0 a1 a2 a3 v7 v11) **
+      frame) ps := by
+  intro squareW rw
+  have h_pures := expTwoMulFixedIterSkipCondScratchFrame_pures h
+  rcases h_pures with ⟨h_exit, h_c6, h_bit⟩
+  unfold expTwoMulFixedIterSkipCondCountPostScratchPrefix
+    expTwoMulFixedIterSkipCondRestScratchPrefix
+    expTwoMulFixedIterScratchIs
+    expTwoMulFixedIterSkipCondCountPostScratchSuffix
+    expTwoMulFixedIterSkipCondRestScratchSuffix
+    expTwoMulFixedIterSkipCondFrame at h
+  rw [show (⌜exitCond⌝ : Assertion) = empAssertion from
+      funext fun ps' => propext ⟨fun h' => h'.1, fun h' => ⟨h', h_exit⟩⟩] at h
+  simp only [sepConj_emp_right'] at h
+  rw [show (⌜c6 + signExtend12 (-1 : BitVec 12) ≠ 0⌝ : Assertion) =
+      empAssertion from
+      funext fun ps' => propext ⟨fun h' => h'.1, fun h' => ⟨h', h_c6⟩⟩] at h
+  rw [show
+      (⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0⌝ :
+        Assertion) =
+      empAssertion from
+      funext fun ps' => propext ⟨fun h' => h'.1, fun h' => ⟨h', h_bit⟩⟩] at h
+  simp only [sepConj_emp_right'] at h
+  rw [expTwoMulFixedIterPointerFrame_unfold] at h
+  rw [expTwoMulFixedIterPre_unfold, expTwoMulIterBaseFrame_unfold,
+    expTwoMulFixedIterPointerFrame_unfold]
+  simp only [evmWordIs, signExtend12_0, signExtend12_8, signExtend12_16,
+    signExtend12_24, signExtend12_32, signExtend12_40, signExtend12_48,
+    signExtend12_56,
+    EvmAsm.Evm64.Exp.AddrNorm.exp_se12_neg64,
+    EvmAsm.Evm64.Exp.AddrNorm.exp_se12_neg56,
+    EvmAsm.Evm64.Exp.AddrNorm.exp_se12_neg48,
+    EvmAsm.Evm64.Exp.AddrNorm.exp_se12_neg40,
+    EvmAsm.Rv64.AddrNorm.word_add_zero,
+    show (32 : Word) + 8 = 40 from by decide,
+    show (32 : Word) + 16 = 48 from by decide,
+    show (32 : Word) + 24 = 56 from by decide,
+    BitVec.add_assoc] at h ⊢
+  sep_perm h
+
 end EvmAsm.Evm64.Exp.Compose
