@@ -153,6 +153,99 @@ theorem expTwoMulFixedIterCaseLoopPost_scratch_cases_pointerFrame
         exact Or.inr (Or.inr (Or.inr
           ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩))
 
+theorem expTwoMulFixedIterCaseLoopPost_scratch_cases_reloadPointerFrame
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base **
+        frame) ps) :
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base **
+          expTwoMulFixedIterPointerFrame ptr nextLimb)) **
+        frame) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCountPostScratchSuffix e c6 evmSp
+          a0 a1 a2 a3 base **
+          expTwoMulFixedIterPointerFrame ptr nextLimb)) **
+        frame) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+          e c6 ptr nextLimb base) **
+        frame) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        frame) ps) := by
+  rcases expTwoMulFixedIterCaseLoopPost_scratch_cases_pointerFrame h with
+    hSkipCond | hRest
+  · exact Or.inl hSkipCond
+  · rcases hRest with hSkip | hRest
+    · exact Or.inr (Or.inl hSkip)
+    · rcases hRest with hReloadCond | hReloadSkip
+      · rcases hReloadCond with
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩
+        obtain ⟨psMain, psFrame, hDisjoint, hUnion, hMain, hFrame⟩ :=
+          hScratch
+        obtain ⟨psPrefix, psTail, hDisjointPrefix, hUnionPrefix,
+          hPrefix, hTail⟩ := hMain
+        obtain ⟨psScratch, psSuffix, hDisjointScratch, hUnionScratch,
+          hScratchIs, hSuffix⟩ := hTail
+        have hSuffixFrame :=
+          expTwoMulFixedIterReloadCondCountPostScratchSuffix_frame hSuffix
+        have hMainFrame :
+            (expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+              r0 r1 r2 r3 a0 a1 a2 a3
+              (expTwoMulIterCountNew iterCount ≠ 0) **
+              expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+              expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+                e c6 ptr nextLimb base) psMain :=
+          ⟨psPrefix, psTail, hDisjointPrefix, hUnionPrefix, hPrefix,
+            psScratch, psSuffix, hDisjointScratch, hUnionScratch,
+            hScratchIs, hSuffixFrame⟩
+        exact Or.inr (Or.inr (Or.inl
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3,
+            psMain, psFrame, hDisjoint, hUnion, hMainFrame, hFrame⟩))
+      · rcases hReloadSkip with
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩
+        obtain ⟨psMain, psFrame, hDisjoint, hUnion, hMain, hFrame⟩ :=
+          hScratch
+        obtain ⟨psPrefix, psTail, hDisjointPrefix, hUnionPrefix,
+          hPrefix, hTail⟩ := hMain
+        obtain ⟨psScratch, psSuffix, hDisjointScratch, hUnionScratch,
+          hScratchIs, hSuffix⟩ := hTail
+        have hSuffixFrame :=
+          expTwoMulFixedIterReloadSkipCountPostScratchSuffix_frame hSuffix
+        have hMainFrame :
+            (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+              r0 r1 r2 r3 (expTwoMulIterCountNew iterCount ≠ 0) **
+              expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+              expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+                e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) psMain :=
+          ⟨psPrefix, psTail, hDisjointPrefix, hUnionPrefix, hPrefix,
+            psScratch, psSuffix, hDisjointScratch, hUnionScratch,
+            hScratchIs, hSuffixFrame⟩
+        exact Or.inr (Or.inr (Or.inr
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3,
+            psMain, psFrame, hDisjoint, hUnion, hMainFrame, hFrame⟩))
+
 theorem expTwoMulFixedIterCaseExitPost_scratch_cases_frame
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
