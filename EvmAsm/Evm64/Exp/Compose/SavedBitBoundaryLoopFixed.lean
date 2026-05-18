@@ -277,6 +277,35 @@ theorem exp_two_mul_fixed_full_loop_boundary_of_body_general_spec_within
     iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
     exitCond base hLoop
 
+/-- Bounded fixed full-loop boundary wrapper over a caller-supplied
+    256-iteration loop proof. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_body_general_bounded_spec_within
+    {nBound : Nat}
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : expTwoMulFixedFullLoopBoundaryBound ≤ nBound)
+    (hLoop :
+      cpsTripleWithin expTwoMulFixedFullLoopBodyBound (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPostFixed sp evmSp vOld v18
+          baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin nBound base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) :=
+  cpsTripleWithin_mono_nSteps hBound
+    (exp_two_mul_fixed_full_loop_boundary_of_body_general_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
+      exitCond base hLoop)
+
 /-- Closed-form fixed full-loop boundary wrapper for a 49408-step loop proof. -/
 theorem exp_two_mul_fixed_full_loop_boundary_of_body_general_closed_bound_spec_within
     (sp evmSp cOld tOld c6Old c16Old c19Old
@@ -311,5 +340,34 @@ theorem exp_two_mul_fixed_full_loop_boundary_of_body_general_closed_bound_spec_w
       sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
       iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
       exitCond base hLoopNamed
+
+/-- Bounded closed-form fixed full-loop boundary wrapper for a 49408-step
+    loop proof. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_body_general_closed_bounded_spec_within
+    {nBound : Nat}
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBound : 49429 ≤ nBound)
+    (hLoop :
+      cpsTripleWithin 49408 (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulLoopEntryPostFixed sp evmSp vOld v18
+          baseWord exponentWord rest)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin nBound base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) :=
+  cpsTripleWithin_mono_nSteps hBound
+    (exp_two_mul_fixed_full_loop_boundary_of_body_general_closed_bound_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
+      exitCond base hLoop)
 
 end EvmAsm.Evm64.Exp.Compose
