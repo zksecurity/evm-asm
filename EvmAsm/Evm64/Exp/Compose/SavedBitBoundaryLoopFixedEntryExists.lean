@@ -666,6 +666,179 @@ theorem cpsTripleWithin_expTwoMulFixedFirstCase_to_secondIterPreWithResidual
       expTwoMulFixedFirstCase_to_secondIterPreWithResidual h_pre, hRps⟩
     hpc
 
+theorem exp_two_mul_fixed_first_iter_to_secondIterPreWithResidual_spec_within
+    {Q : Assertion}
+    (sp evmSp v18 vOld v10 v7 v11 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) (rest : List EvmWord)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hTail :
+      cpsTripleWithin expTwoMulFixedFullLoopBodyTailBound
+        (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedSecondIterPreWithResidual
+          sp evmSp baseWord exponentWord rest base)
+        Q) :
+    cpsTripleWithin expTwoMulFixedFullLoopBodyBound
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre
+        (exponentWord.getLimbN 3)
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (256 : Word)
+        v10 v18
+        (evmSp + signExtend12 (56 : BitVec 12) +
+          signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (1 : Word) vOld
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3)
+        (dWord.getLimbN 0) (dWord.getLimbN 1)
+        (dWord.getLimbN 2) (dWord.getLimbN 3)
+        (eWord.getLimbN 0) (eWord.getLimbN 1)
+        (eWord.getLimbN 2) (eWord.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+        v7 v11 **
+       expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest)
+      Q := by
+  let residual := expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest
+  let code := evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base
+  have hStep :
+      cpsNBranchWithin expTwoMulFixedReloadIterStepBound
+        (base + 44)
+        code
+        (expTwoMulFixedIterPre
+          (exponentWord.getLimbN 3)
+          ((0 : Word) + signExtend12 (64 : BitVec 12))
+          (256 : Word)
+          v10 v18
+          (evmSp + signExtend12 (56 : BitVec 12) +
+            signExtend12 (-8 : BitVec 12))
+          (exponentWord.getLimbN 2)
+          sp (evmSp + signExtend12 (64 : BitVec 12))
+          (1 : Word) vOld
+          ((1 : EvmWord).getLimbN 0)
+          ((1 : EvmWord).getLimbN 1)
+          ((1 : EvmWord).getLimbN 2)
+          ((1 : EvmWord).getLimbN 3)
+          (dWord.getLimbN 0) (dWord.getLimbN 1)
+          (dWord.getLimbN 2) (dWord.getLimbN 3)
+          (eWord.getLimbN 0) (eWord.getLimbN 1)
+          (eWord.getLimbN 2) (eWord.getLimbN 3)
+          (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+          (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+          v7 v11)
+        (expTwoMulFixedIterCaseExits
+          (256 : Word)
+          (exponentWord.getLimbN 3)
+          ((0 : Word) + signExtend12 (64 : BitVec 12))
+          (evmSp + signExtend12 (56 : BitVec 12) +
+            signExtend12 (-8 : BitVec 12))
+          (exponentWord.getLimbN 2)
+          sp (evmSp + signExtend12 (64 : BitVec 12))
+          ((1 : EvmWord).getLimbN 0)
+          ((1 : EvmWord).getLimbN 1)
+          ((1 : EvmWord).getLimbN 2)
+          ((1 : EvmWord).getLimbN 3)
+          (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+          (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+          base) := by
+    exact
+      exp_msb_bit_test_fixed_full_iter_case_posts_nbranch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+        (exponentWord.getLimbN 3)
+        ((0 : Word) + signExtend12 (64 : BitVec 12))
+        (256 : Word)
+        v10 v18
+        (evmSp + signExtend12 (56 : BitVec 12) +
+          signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (1 : Word) vOld
+        ((1 : EvmWord).getLimbN 0)
+        ((1 : EvmWord).getLimbN 1)
+        ((1 : EvmWord).getLimbN 2)
+        ((1 : EvmWord).getLimbN 3)
+        (dWord.getLimbN 0) (dWord.getLimbN 1)
+        (dWord.getLimbN 2) (dWord.getLimbN 3)
+        (eWord.getLimbN 0) (eWord.getLimbN 1)
+        (eWord.getLimbN 2) (eWord.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+        v7 v11 base hbase
+  have hStepFramed :=
+    cpsNBranchWithin_frameR
+      (F := residual)
+      (by
+        dsimp [residual]
+        exact expTwoMulFixedFirstIterEntryResidual_pcFree)
+      hStep
+  have hMerged :
+      cpsTripleWithin
+        (expTwoMulFixedReloadIterStepBound + expTwoMulFixedFullLoopBodyTailBound)
+        (base + 44) (base + 296) code
+        (expTwoMulFixedIterPre
+          (exponentWord.getLimbN 3)
+          ((0 : Word) + signExtend12 (64 : BitVec 12))
+          (256 : Word)
+          v10 v18
+          (evmSp + signExtend12 (56 : BitVec 12) +
+            signExtend12 (-8 : BitVec 12))
+          (exponentWord.getLimbN 2)
+          sp (evmSp + signExtend12 (64 : BitVec 12))
+          (1 : Word) vOld
+          ((1 : EvmWord).getLimbN 0)
+          ((1 : EvmWord).getLimbN 1)
+          ((1 : EvmWord).getLimbN 2)
+          ((1 : EvmWord).getLimbN 3)
+          (dWord.getLimbN 0) (dWord.getLimbN 1)
+          (dWord.getLimbN 2) (dWord.getLimbN 3)
+          (eWord.getLimbN 0) (eWord.getLimbN 1)
+          (eWord.getLimbN 2) (eWord.getLimbN 3)
+          (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+          (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+          v7 v11 ** residual)
+        Q := by
+    refine cpsNBranchWithin_merge hStepFramed ?_
+    intro exit hmem
+    cases hmem with
+    | head =>
+      dsimp [expTwoMulFixedIterCaseExits, residual, code]
+      simpa [expTwoMulFixedFirstIterCaseLoopPostWithResidual_unfold] using
+        cpsTripleWithin_expTwoMulFixedFirstCase_to_secondIterPreWithResidual
+          (sp := sp) (evmSp := evmSp) (baseWord := baseWord)
+          (exponentWord := exponentWord) (rest := rest) (base := base)
+          hTail
+    | tail _ hmem =>
+      cases hmem with
+      | head =>
+        dsimp [expTwoMulFixedIterCaseExits, residual, code]
+        refine
+          cpsTripleWithin_mono_nSteps
+            (Nat.zero_le expTwoMulFixedFullLoopBodyTailBound)
+            (cpsTripleWithin_extend_code
+              (cr := CodeReq.empty) (cr' := code) ?_ ?_)
+        · intro a i h
+          simp [CodeReq.empty] at h
+        · refine cpsTripleWithin_refl ?_
+          intro ps h_pre
+          exfalso
+          obtain ⟨_, _, _, _, h_exit, _⟩ := h_pre
+          exact
+            expTwoMulFixedIterCaseExitPost_nonzero_count_false
+              expTwoMulFixedFirstIterCountNew_ne_zero h_exit
+      | tail _ hmem =>
+        cases hmem
+  exact
+    cpsTripleWithin_mono_nSteps
+      expTwoMulFixedReloadIterStepBound_add_fullTail_le_full
+      (by
+        dsimp [residual, code] at hMerged
+        exact hMerged)
+
 /-- Fixed full-loop boundary wrapper whose loop body starts from the named
     existential first-iteration precondition produced by the fixed loop entry
     post. This is the surface needed before destructing the chosen
