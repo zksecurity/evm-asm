@@ -84,6 +84,17 @@ theorem expTwoMulFixedIterScratchOwn_choose
   refine ⟨ps_d2, ps_rest7, h_disjoint_d2, h_union_d2, h_d2, ?_⟩
   exact h_d3
 
+theorem expTwoMulFixedIterScratchOwn_choose_frame
+    {evmSp : Word} {B : Assertion} {ps : PartialState}
+    (h : (expTwoMulFixedIterScratchOwn evmSp ** B) ps) :
+    ∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 ** B) ps := by
+  obtain ⟨psScratch, psRest, h_disjoint, h_union, hScratch, hRest⟩ := h
+  obtain ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratchIs⟩ :=
+    expTwoMulFixedIterScratchOwn_choose hScratch
+  exact ⟨v6, v7, v10, v11, d0, d1, d2, d3,
+    psScratch, psRest, h_disjoint, h_union, hScratchIs, hRest⟩
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
