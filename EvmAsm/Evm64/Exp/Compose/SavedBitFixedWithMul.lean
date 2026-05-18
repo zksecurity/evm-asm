@@ -602,4 +602,31 @@ theorem exp_pointer_restore_then_epilogue_full_stack_evm_exp_msb_saved_bit_two_m
     EvmAsm.Evm64.canonicalExpCondMulOff
     base (base + 336)
 
+/-- Lift a fixed iteration-body N-branch spec into the whole fixed EXP+MUL
+    code bundle. -/
+theorem cpsNBranchWithin_extend_iter_body_union_evmExpMsbSavedBitTwoMulFixedWithMulCode
+    {nSteps : Nat} {entry base mulTarget : Word}
+    {squaringMulOff condMulOff : BitVec 21} {skipOff backOff : BitVec 13}
+    {P : Assertion} {exits : List (Word × Assertion)}
+    (hd : CodeReq.Disjoint
+      (expMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff)
+      (mul_callable_code mulTarget))
+    (h : cpsNBranchWithin nSteps entry
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        (base + 44) squaringMulOff condMulOff skipOff backOff).union
+        (mul_callable_code mulTarget))
+      P exits) :
+    cpsNBranchWithin nSteps entry
+      (evmExpMsbSavedBitTwoMulFixedWithMulCode
+        base mulTarget squaringMulOff condMulOff skipOff backOff)
+      P exits :=
+  cpsNBranchWithin_extend_code
+    (h := h)
+    (hmono :=
+      evmExpMsbSavedBitTwoMulFixedWithMulCode_iter_body_union_mul_sub
+        (base := base) (mulTarget := mulTarget)
+        (squaringMulOff := squaringMulOff) (condMulOff := condMulOff)
+        (skipOff := skipOff) (backOff := backOff) hd)
+
 end EvmAsm.Evm64.Exp.Compose
