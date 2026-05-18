@@ -590,6 +590,59 @@ theorem exp_fixed_loop_body_succ_step
             cases h)
           (cpsTripleWithin_refl hExit)))
 
+/-- Non-final fixed merged-loop induction step: the current exit edge is
+    impossible, so only the `n`-iteration loop-back continuation is needed. -/
+theorem exp_fixed_loop_body_nonfinal_succ_step
+    (n : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hLoop :
+      cpsTripleWithin (n * 193) (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        R) :
+    cpsTripleWithin ((n + 1) * 193) (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R :=
+  exp_fixed_loop_body_succ_step
+    n e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+    r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+    base R hbase (exp_fixed_iter_merged_exit_vacuous_bridge hne) hLoop
+
+/-- Final fixed merged-loop induction step: the loop-back edge is impossible,
+    so only an exit bridge is needed. -/
+theorem exp_fixed_loop_body_final_succ_step
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hzero : expTwoMulIterCountNew iterCount = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    cpsTripleWithin ((0 + 1) * 193) (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R :=
+  exp_fixed_loop_body_succ_step
+    0 e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+    r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+    base R hbase hExit
+    (exp_fixed_iter_merged_loop_zero_step_vacuous hzero)
+
 /-- Peel one fixed x19 merged iteration from the conservative 256-iteration
     body when both branch continuations are packaged under the named
     255-iteration tail bound. -/
