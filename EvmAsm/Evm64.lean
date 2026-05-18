@@ -32,8 +32,7 @@ import EvmAsm.Evm64.Not
 import EvmAsm.Evm64.Add
 import EvmAsm.Evm64.Sub
 
--- EvmWordArith umbrella — pulls in helpers (AddbackPinning,
--- Div128NoWrapDischarge → Div128PhaseNoWrap) used by DivMod V4.
+-- EvmWordArith umbrella — pulls in helpers used by DivMod V4.
 -- Most leaves are already transitively reached via Add/DivMod; this
 -- import wires the remaining stragglers so they participate in the
 -- visible module graph.
