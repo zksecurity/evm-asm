@@ -548,6 +548,106 @@ theorem expTwoMulFixedControlInvariant_zero
   unfold expTwoMulFixedControlInvariant
   simp
 
+private theorem signExtend12_neg1_toNat :
+    (signExtend12 (-1 : BitVec 12)).toNat = 2^64 - 1 := by
+  decide
+
+private theorem word_add_neg1_toNat {w : Word} (hPos : 1 ≤ w.toNat) :
+    (w + signExtend12 (-1 : BitVec 12)).toNat = w.toNat - 1 := by
+  rw [BitVec.toNat_add, signExtend12_neg1_toNat]
+  rw [show w.toNat + (2^64 - 1) = (w.toNat - 1) + 2^64 from by
+    have := w.isLt
+    omega]
+  rw [Nat.add_mod_right]
+  exact Nat.mod_eq_of_lt (by have := w.isLt; omega)
+
+theorem expTwoMulFixedControlInvariant_reload_mod
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) = 0) :
+    k % 64 = 63 := by
+  unfold expTwoMulFixedControlInvariant at hControl
+  rcases hControl with ⟨hNat, _⟩
+  have hPos : 1 ≤ c6.toNat := by
+    have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+    omega
+  have hDec := word_add_neg1_toNat (w := c6) hPos
+  have hZero : (c6 + signExtend12 (-1 : BitVec 12)).toNat = 0 := by
+    rw [hC6]
+    rfl
+  rw [hDec, hNat] at hZero
+  have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+  omega
+
+theorem expTwoMulFixedControlInvariant_no_reload_mod
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0) :
+    k % 64 < 63 := by
+  by_contra hNot
+  have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+  have hMod : k % 64 = 63 := by omega
+  unfold expTwoMulFixedControlInvariant at hControl
+  rcases hControl with ⟨hNat, _⟩
+  have hPos : 1 ≤ c6.toNat := by
+    rw [hNat]
+    omega
+  have hDec := word_add_neg1_toNat (w := c6) hPos
+  have hZero : c6 + signExtend12 (-1 : BitVec 12) = 0 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [hDec, hNat, hMod]
+    rfl
+  exact hC6 hZero
+
+theorem expTwoMulFixedControlInvariant_succ_no_reload
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0) :
+    expTwoMulFixedControlInvariant exponentWord (k + 1)
+      (c6 + signExtend12 (-1 : BitVec 12)) ptr nextLimb evmSp := by
+  have hMod :=
+    expTwoMulFixedControlInvariant_no_reload_mod hControl hC6
+  unfold expTwoMulFixedControlInvariant at *
+  rcases hControl with ⟨hNat, hNext⟩
+  constructor
+  · have hPos : 1 ≤ c6.toNat := by
+      have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+      omega
+    rw [word_add_neg1_toNat (w := c6) hPos, hNat]
+    have hmod : (k + 1) % 64 = k % 64 + 1 := by
+      omega
+    rw [hmod]
+    omega
+  · rw [hNext]
+    have hdiv : (k + 1) / 64 = k / 64 := by
+      omega
+    rw [hdiv]
+
+theorem expTwoMulFixedControlInvariant_succ_reload
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextNextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextNextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) = 0)
+    (hNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64)) :
+    expTwoMulFixedControlInvariant exponentWord (k + 1)
+      64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp := by
+  have hMod :=
+    expTwoMulFixedControlInvariant_reload_mod hControl hC6
+  unfold expTwoMulFixedControlInvariant
+  constructor
+  · have hmod : (k + 1) % 64 = 0 := by
+      omega
+    simp [hmod]
+  · exact hNext
+
 theorem expTwoMulFixedControlInvariant_nextLimb_reload
     {exponentWord : EvmWord} {k : Nat}
     {c6 ptr nextLimb evmSp : Word}
