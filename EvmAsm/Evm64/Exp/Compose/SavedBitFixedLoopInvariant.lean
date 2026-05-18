@@ -575,6 +575,18 @@ theorem expTwoMulFixedCursorInvariant_succ_no_reload
     exponentWord.getLimbN (3 - k / 64) <<< (k % 64 + 1)
   exact word_shiftLeft_succ _ _
 
+theorem expTwoMulFixedCursorInvariant_succ_reload
+    {exponentWord : EvmWord} {k : Nat} {nextLimb : Word}
+    (hMod : k % 64 = 63)
+    (hNext : nextLimb = exponentWord.getLimbN (3 - (k + 1) / 64)) :
+    expTwoMulFixedCursorInvariant exponentWord (k + 1) nextLimb := by
+  unfold expTwoMulFixedCursorInvariant expTwoMulFixedCursorWord
+  rw [hNext]
+  have hmod : (k + 1) % 64 = 0 := by
+    omega
+  rw [hmod]
+  simp
+
 private theorem expTwoMulFixedCursorWord_highBit_eq_processedBitWord_aux
     (exponentWord : EvmWord) (q r : Nat)
     (hq : q < 4) (hr : r < 64) :
