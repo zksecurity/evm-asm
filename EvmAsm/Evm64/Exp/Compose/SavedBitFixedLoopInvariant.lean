@@ -229,6 +229,24 @@ theorem expTwoMulFixedAccumulatorStep_eq_target_succ
   expTwoMulFixedAccumulatorStep_eq_target_of_processedExponent_succ
     (expTwoMulFixedProcessedExponent_succ_toNat exponentWord hk)
 
+theorem expTwoMulFixedAccumulatorStep_false_eq_squareW
+    (baseWord : EvmWord) (r0 r1 r2 r3 : Word) :
+    expTwoMulFixedAccumulatorStep baseWord
+        (expResultWord r0 r1 r2 r3) false =
+      expSquaringCallSquareW r0 r1 r2 r3 := by
+  rfl
+
+theorem expTwoMulFixedAccumulatorStep_true_eq_condRw
+    {baseWord : EvmWord} {a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    (hBase : baseWord = expResultWord a0 a1 a2 a3) :
+    expTwoMulFixedAccumulatorStep baseWord
+        (expResultWord r0 r1 r2 r3) true =
+      expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3) a0 a1 a2 a3 := by
+  subst hBase
+  simp [expTwoMulFixedAccumulatorStep, expTwoMulCondRw,
+    expSquaringCallSquareW, expTwoMulIterAw]
+  ac_rfl
+
 /-- Semantic accumulator obtained by running `n` generic fixed-loop updates
     starting from the target at iteration `k`.
 
