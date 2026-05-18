@@ -620,6 +620,45 @@ theorem exp_two_mul_full_loop_boundary_of_entry_body_general_spec_within
       (by simpa using hLoop)
 
 /-- Closed-form variant of
+    `exp_two_mul_full_loop_boundary_of_entry_body_general_spec_within`. -/
+theorem exp_two_mul_full_loop_boundary_of_entry_body_general_closed_bound_spec_within
+    {P : Assertion}
+    (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hEntry :
+      ∀ hp,
+        expTwoMulLoopEntryPost sp evmSp vOld v18 baseWord exponentWord rest hp →
+        P hp)
+    (hBody :
+      cpsTripleWithin 48384 (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        P
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin 48401 base (base + 304)
+      (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPre sp evmSp cOld tOld m0 m1 m2 m3 vOld v18
+        baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hBodyNamed :
+      cpsTripleWithin expTwoMulFullLoopBodyBound (base + 28) (base + 264)
+        (evmExpMsbSavedBitTwoMulCanonicalAppendedMulCode base)
+        P
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond) := by
+    rw [expTwoMulFullLoopBodyBound_eq]
+    exact hBody
+  rw [← expTwoMulFullLoopBoundaryBound_eq]
+  exact
+    exp_two_mul_full_loop_boundary_of_entry_body_general_spec_within
+      sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest exitCond base
+      hEntry hBodyNamed
+
+/-- Closed-form variant of
     `exp_two_mul_full_loop_boundary_of_body_general_spec_within`. -/
 theorem exp_two_mul_full_loop_boundary_of_body_general_closed_bound_spec_within
     (sp evmSp cOld tOld m0 m1 m2 m3 vOld v18 iterCountNew
