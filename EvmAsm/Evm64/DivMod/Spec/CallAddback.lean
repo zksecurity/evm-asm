@@ -4,9 +4,9 @@
   Call+addback BEQ semantic predicate marker (n=4, shift ≠ 0).
 
   Contents:
-  - `n4CallAddbackBeqSemanticHolds` predicate, retained only as the Phase 2a
-    algorithm-fix target marker.
-  - `n4CallAddbackBeqSemanticHolds_def`, the rfl unfolding theorem.
+  - the predicate below, retained only as the Phase 2a algorithm-fix target
+    marker.
+  - a small rfl unfolding theorem.
 
   The former stack specs, qHat sub-stubs, and Word-level Euclideans were
   deleted after they were found to depend transitively on the false n=4 addback
@@ -59,9 +59,8 @@ open EvmAsm.Rv64.Tactics
     still ~2^32 too large.
 
     **Implication**: the algorithm is genuinely buggy on this input
-    class. The `n4CallAddbackBeqSemanticHolds` predicate is provably
-    FALSE on runtime-reachable inputs. Closure
-    (`n4CallAddbackBeqSemanticHolds_of_*`) cannot be proven; the
+    class. This predicate is provably FALSE on runtime-reachable inputs.
+    Closure theorems for it cannot be proven; the
     user-facing `evm_div_n4_full_call_addback_beq_stack_pre_spec` and
     its relatives are vacuous on this input class.
 
@@ -108,7 +107,7 @@ def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
       val256 (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3)
 
 -- The v1 counterexample, v2 fix-verification, v2-buggy-confirmation and
--- the v2 mirror predicate `n4CallAddbackBeqSemanticHolds_v2` (plus its
+-- the v2 mirror predicate (plus its
 -- sanity check on the v1 counterexample input) live in
 -- `EvmAsm/Evm64/DivMod/Spec/CallAddbackCounterexamples.lean` (extracted
 -- 2026 toward the #1078 file-size cap; see beads evm-asm-b5i).
@@ -116,7 +115,7 @@ def n4CallAddbackBeqSemanticHolds (a b : EvmWord) : Prop :=
 
 
 
-theorem n4CallAddbackBeqSemanticHolds_def {a b : EvmWord} :
+theorem n4CallAddbackBeqSemantic_unfold {a b : EvmWord} :
     n4CallAddbackBeqSemanticHolds a b =
     (let shift := (clzResult (b.getLimbN 3)).1.toNat % 64
      let antiShift :=

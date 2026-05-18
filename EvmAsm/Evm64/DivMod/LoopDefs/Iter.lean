@@ -268,8 +268,8 @@ def div128Un0 (uLo : Word) : Word :=
 -- does only 1 Phase 1b correction, which under hshift_nz allows val256-level
 -- qHat overshoot up to ~2^33 (combining per-digit Knuth-B applied to q1' and
 -- q0' independently). On such inputs `iterWithDoubleAddback` exits with the
--- wrong q_out (off by ~2^32 from q_true), making
--- `n4CallAddbackBeqSemanticHolds` provably FALSE.
+-- wrong q_out (off by ~2^32 from q_true), falsifying the n=4
+-- call-addback semantic target.
 --
 -- See `memory/project_n4callbeq_addback_overshoot_2pow32.md` for the
 -- counterexample (a3 = 2^63+2^33, b3 = 1, b2 = 2^33-1) and

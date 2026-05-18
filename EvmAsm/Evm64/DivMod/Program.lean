@@ -129,10 +129,9 @@ def divK_div128 : Program :=
     4.3.1). The 2nd correction has the `rhat < B` guard, mirroring the
     existing Phase 2b guard at lines 107-108.
 
-    This fixes the algorithm correctness bug — see
-    `n4CallAddbackBeqSemanticHolds_counterexample` (in
-    `EvmAsm/Evm64/DivMod/SpecCallAddbackBeq.lean`) and the matching
-    Lean abstraction `div128Quot_v2` (in `LoopDefs/Iter.lean`).
+    This fixes the algorithm correctness bug; see the deleted
+    SpecCallAddbackBeq counterexample scaffolding and the matching Lean
+    abstraction `div128Quot_v2` (in `LoopDefs/Iter.lean`).
 
     **Layout**:
     - [0..24]: same as `divK_div128` (initial split + Phase 1a + 1st D3).
@@ -232,8 +231,9 @@ def divK_div128_v2 : Program :=
 
     With Phase 2b 2-correction, the trial quotient `qHat` equals
     `q*_full = ⌊(uHi*2^64 + uLo) / vTop⌋` exactly (no per-phase
-    overshoot). Closes `n4CallAddbackBeqSemanticHolds_v4`
-    (proven in PR #1418, Layer 2a fwd/back + c3 sub-stub all closed).
+    overshoot). This was the v4 closure route for the n=4 call-addback
+    semantic target (proven in PR #1418, Layer 2a fwd/back + c3 sub-stub
+    all closed).
 
     **Layout** (75 instructions total):
     - [0..46]: identical to `divK_div128_v2` (setup + Phase 1a + Phase
