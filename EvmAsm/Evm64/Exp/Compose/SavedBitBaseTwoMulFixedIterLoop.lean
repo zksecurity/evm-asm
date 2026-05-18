@@ -308,4 +308,147 @@ theorem exp_cond_mul_call_then_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCo
   exact cpsNBranchWithin_weaken_pre
     (fun _ hp => by xperm_hyp hp) hSeqN
 
+/-- Owned-scratch variant of the fixed conditional-multiply call plus
+    loop-back continuation. The value limbs stay concrete; only call-clobbered
+    scratch registers and memory cells are existentially owned. -/
+theorem exp_cond_mul_call_then_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_call_scratch_owned_spec_within
+    (iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3
+      e0 e1 e2 e3 mulTarget loopTarget : Word)
+    (squaringMulOff condMulOff : BitVec 21) (skipOff backOff : BitVec 13)
+    (base : Word)
+    (hbase : base &&& 1 = 0)
+    (hmt : mulTarget = ((base + 140) + 64) + signExtend21 condMulOff)
+    (hback : ((base + 244) + 4 : Word) + signExtend13 backOff = loopTarget)
+    (hd : CodeReq.Disjoint
+            (expIterBodyFullMsbSavedBitTwoMulFixedCode
+              base squaringMulOff condMulOff skipOff backOff)
+            (mul_callable_code mulTarget)) :
+    let r := expResultWord r0 r1 r2 r3
+    let aw := expResultWord a0 a1 a2 a3
+    let rw := r * aw
+    let preCore : Assertion :=
+      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) ** (.x5 ↦ᵣ tOld) **
+      ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ r0) **
+      ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ r1) **
+      ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ r2) **
+      ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ r3) **
+      ((evmSp + signExtend12 (32 : BitVec 12)) ↦ₘ e0) **
+      ((evmSp + signExtend12 (40 : BitVec 12)) ↦ₘ e1) **
+      ((evmSp + signExtend12 (48 : BitVec 12)) ↦ₘ e2) **
+      ((evmSp + signExtend12 (56 : BitVec 12)) ↦ₘ e3) **
+      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+      (.x1 ↦ᵣ vOld) ** (.x9 ↦ᵣ iterCount) ** (.x0 ↦ᵣ (0 : Word))
+    let rest : Assertion :=
+      (.x2 ↦ᵣ sp) ** (.x12 ↦ᵣ evmSp) **
+      (.x5 ↦ᵣ rw.getLimbN 3) **
+      ((evmSp + signExtend12 ((-64) : BitVec 12)) ↦ₘ a0) **
+      ((evmSp + signExtend12 ((-56) : BitVec 12)) ↦ₘ a1) **
+      ((evmSp + signExtend12 ((-48) : BitVec 12)) ↦ₘ a2) **
+      ((evmSp + signExtend12 ((-40) : BitVec 12)) ↦ₘ a3) **
+      evmWordIs sp rw ** evmWordIs (evmSp + 32) rw **
+      regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      memOwn evmSp ** memOwn (evmSp + 8) **
+      memOwn (evmSp + 16) ** memOwn (evmSp + 24) **
+      (.x1 ↦ᵣ ((base + 140) + 68))
+    let exits : List (Word × Assertion) :=
+      [(loopTarget,
+          ((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝) ** rest),
+        (base + 252,
+          ((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+            ⌜expTwoMulIterCountNew iterCount = 0⌝) ** rest)]
+    cpsNBranchWithin ((17 + 64 + 9) + 2) (base + 140)
+      ((expIterBodyFullMsbSavedBitTwoMulFixedCode
+        base squaringMulOff condMulOff skipOff backOff).union
+        (mul_callable_code mulTarget))
+      (preCore **
+       regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+       memOwn evmSp ** memOwn (evmSp + 8) **
+       memOwn (evmSp + 16) ** memOwn (evmSp + 24))
+      exits := by
+  intro r aw rw preCore rest exits
+  refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    (r := .x6)
+    (P := preCore ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+      memOwn evmSp ** memOwn (evmSp + 8) ** memOwn (evmSp + 16) **
+      memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro v6
+  refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    (r := .x7)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** regOwn .x10 ** regOwn .x11 **
+      memOwn evmSp ** memOwn (evmSp + 8) ** memOwn (evmSp + 16) **
+      memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro v7
+  refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    (r := .x10)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** regOwn .x11 **
+      memOwn evmSp ** memOwn (evmSp + 8) ** memOwn (evmSp + 16) **
+      memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro v10
+  refine cpsNBranchWithin_of_forall_regIs_to_regOwn_perm
+    (r := .x11)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x10 ↦ᵣ v10) **
+      memOwn evmSp ** memOwn (evmSp + 8) ** memOwn (evmSp + 16) **
+      memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro v11
+  refine cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    (a := evmSp)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+      (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) **
+      memOwn (evmSp + 8) ** memOwn (evmSp + 16) ** memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro d0
+  refine cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    (a := evmSp + 8)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+      (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (evmSp ↦ₘ d0) **
+      memOwn (evmSp + 16) ** memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro d1
+  refine cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    (a := evmSp + 16)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+      (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (evmSp ↦ₘ d0) **
+      ((evmSp + 8) ↦ₘ d1) ** memOwn (evmSp + 24))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro d2
+  refine cpsNBranchWithin_of_forall_memIs_to_memOwn_perm
+    (a := evmSp + 24)
+    (P := preCore ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+      (.x10 ↦ᵣ v10) ** (.x11 ↦ᵣ v11) ** (evmSp ↦ₘ d0) **
+      ((evmSp + 8) ↦ₘ d1) ** ((evmSp + 16) ↦ₘ d2))
+    (hpre := fun _ hp => by xperm_hyp hp) ?_
+  intro d3
+  have hConcrete :=
+    exp_cond_mul_call_then_loop_back_expIterBodyFullMsbSavedBitTwoMulFixedCode_spec_within
+      iterCount sp evmSp tOld vOld r0 r1 r2 r3 a0 a1 a2 a3 d0 d1 d2 d3
+      e0 e1 e2 e3 v6 v7 v10 v11 mulTarget loopTarget
+      squaringMulOff condMulOff skipOff backOff base hbase hmt hback hd
+  exact cpsNBranchWithin_weaken_pre
+    (fun _ hp => by
+      dsimp [preCore] at hp ⊢
+      have hSp0 : (sp + signExtend12 0#12 : Word) = sp := EvmAsm.Evm64.Exp.AddrNorm.expAddr0 sp
+      have hSp8 : (sp + signExtend12 8#12 : Word) = sp + 8 := EvmAsm.Evm64.Exp.AddrNorm.expAddr8 sp
+      have hSp16 : (sp + signExtend12 16#12 : Word) = sp + 16 := EvmAsm.Evm64.Exp.AddrNorm.expAddr16 sp
+      have hSp24 : (sp + signExtend12 24#12 : Word) = sp + 24 := EvmAsm.Evm64.Exp.AddrNorm.expAddr24 sp
+      have hEvm0 : (evmSp + signExtend12 0#12 : Word) = evmSp := EvmAsm.Evm64.Exp.AddrNorm.expAddr0 evmSp
+      have hEvm8 : (evmSp + signExtend12 8#12 : Word) = evmSp + 8#64 := EvmAsm.Evm64.Exp.AddrNorm.expAddr8 evmSp
+      have hEvm16 : (evmSp + signExtend12 16#12 : Word) = evmSp + 16#64 := EvmAsm.Evm64.Exp.AddrNorm.expAddr16 evmSp
+      have hEvm24 : (evmSp + signExtend12 24#12 : Word) = evmSp + 24#64 := EvmAsm.Evm64.Exp.AddrNorm.expAddr24 evmSp
+      have hEvm32 : (evmSp + signExtend12 32#12 : Word) = evmSp + 32 := EvmAsm.Evm64.Exp.AddrNorm.expAddr32 evmSp
+      have hEvm40 : (evmSp + signExtend12 40#12 : Word) = evmSp + 40 := EvmAsm.Evm64.Exp.AddrNorm.expAddr40 evmSp
+      have hEvm48 : (evmSp + signExtend12 48#12 : Word) = evmSp + 48 := EvmAsm.Evm64.Exp.AddrNorm.expAddr48 evmSp
+      have hEvm56 : (evmSp + signExtend12 56#12 : Word) = evmSp + 56 := EvmAsm.Evm64.Exp.AddrNorm.expAddr56 evmSp
+      rw [hSp0, hSp8, hSp16, hSp24, hEvm32, hEvm40, hEvm48, hEvm56] at hp ⊢
+      rw [hEvm0, hEvm8, hEvm16, hEvm24]
+      xperm_hyp hp)
+    hConcrete
+
 end EvmAsm.Evm64.Exp.Compose
