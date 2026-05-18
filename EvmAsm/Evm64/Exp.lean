@@ -70,6 +70,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostTailBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostCases
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostFramedCases
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterReloadPointerPures
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryLoopFixed
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEpilogueBase
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
