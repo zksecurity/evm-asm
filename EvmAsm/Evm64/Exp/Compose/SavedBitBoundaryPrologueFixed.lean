@@ -61,6 +61,22 @@ theorem expTwoMulLoopEntryPostFixed_unfold
        expTwoMulScratchFrame vOld v18) := by
   delta expTwoMulLoopEntryPostFixed; rfl
 
+theorem expTwoMulLoopEntryPostFixed_unfold_scratch
+    {sp evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord}
+    {rest : List EvmWord} :
+    expTwoMulLoopEntryPostFixed sp evmSp vOld v18 baseWord exponentWord rest =
+      (((((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) **
+          (.x9 ↦ᵣ (256 : Word)) ** (.x5 ↦ᵣ (1 : Word)) **
+          (.x6 ↦ᵣ ((0 : Word) + signExtend12 (64 : BitVec 12))) **
+          (.x16 ↦ᵣ (evmSp + signExtend12 (56 : BitVec 12) + signExtend12 (-8 : BitVec 12))) **
+          (.x19 ↦ᵣ exponentWord.getLimbN 3) **
+          evmWordIs sp (1 : EvmWord)) **
+         (.x12 ↦ᵣ (evmSp + signExtend12 (64 : BitVec 12)))) **
+        evmStackIs evmSp (baseWord :: exponentWord :: rest)) **
+       (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+        (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18))) := by
+  rw [expTwoMulLoopEntryPostFixed_unfold, expTwoMulScratchFrame_unfold]
+
 theorem expTwoMulLoopEntryPostFixed_pcFree
     {sp evmSp vOld v18 : Word} {baseWord exponentWord : EvmWord}
     {rest : List EvmWord} :

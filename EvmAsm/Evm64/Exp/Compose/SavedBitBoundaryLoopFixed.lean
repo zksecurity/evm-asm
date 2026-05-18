@@ -46,6 +46,23 @@ theorem expTwoMulBoundaryPreFixed_unfold
   delta expTwoMulBoundaryPreFixed
   rfl
 
+theorem expTwoMulBoundaryPreFixed_unfold_scratch
+    {sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18 : Word}
+    {baseWord exponentWord : EvmWord} {rest : List EvmWord} :
+    expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 baseWord exponentWord rest =
+      ((.x2 ↦ᵣ sp) ** (.x0 ↦ᵣ (0 : Word)) ** (.x9 ↦ᵣ cOld) **
+       (.x5 ↦ᵣ tOld) ** (.x12 ↦ᵣ evmSp) **
+       (.x6 ↦ᵣ c6Old) ** (.x16 ↦ᵣ c16Old) ** (.x19 ↦ᵣ c19Old) **
+       ((sp + signExtend12 (0 : BitVec 12)) ↦ₘ m0) **
+       ((sp + signExtend12 (8 : BitVec 12)) ↦ₘ m1) **
+       ((sp + signExtend12 (16 : BitVec 12)) ↦ₘ m2) **
+       ((sp + signExtend12 (24 : BitVec 12)) ↦ₘ m3) **
+       (regOwn .x6 ** regOwn .x7 ** regOwn .x10 ** regOwn .x11 **
+        (.x1 ↦ᵣ vOld) ** (.x18 ↦ᵣ v18)) **
+       evmStackIs evmSp (baseWord :: exponentWord :: rest)) := by
+  rw [expTwoMulBoundaryPreFixed_unfold, expTwoMulScratchFrame_unfold]
+
 theorem expTwoMulBoundaryPreFixed_pcFree
     {sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18 : Word}
     {baseWord exponentWord : EvmWord} {rest : List EvmWord} :
