@@ -148,4 +148,60 @@ theorem expTwoMulFixedIterSkipExitPost_cases
   · exact Or.inl ⟨psLeft, psRight, hDisjoint, hUnion, hCond, hPtr⟩
   · exact Or.inr ⟨psLeft, psRight, hDisjoint, hUnion, hSkip, hPtr⟩
 
+theorem expTwoMulFixedIterCaseLoopPost_count_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulFixedIterSkipCondCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    (expTwoMulFixedIterSkipCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    expTwoMulFixedIterReloadCondCountPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) ps ∨
+    expTwoMulFixedIterReloadSkipCountPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount ≠ 0) ps := by
+  rcases expTwoMulFixedIterCaseLoopPost_cases h with hSkip | hReload
+  · rcases expTwoMulFixedIterSkipLoopPost_cases hSkip with hCond | hSkipCount
+    · exact Or.inl hCond
+    · exact Or.inr (Or.inl hSkipCount)
+  · rcases expTwoMulFixedIterReloadLoopPost_cases hReload with hCond | hSkipCount
+    · exact Or.inr (Or.inr (Or.inl hCond))
+    · exact Or.inr (Or.inr (Or.inr hSkipCount))
+
+theorem expTwoMulFixedIterCaseExitPost_count_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulFixedIterSkipCondCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    (expTwoMulFixedIterSkipCountPost iterCount e c6 sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) **
+      expTwoMulFixedIterPointerPost ptr nextLimb) ps ∨
+    expTwoMulFixedIterReloadCondCountPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) ps ∨
+    expTwoMulFixedIterReloadSkipCountPost iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      (expTwoMulIterCountNew iterCount = 0) ps := by
+  rcases expTwoMulFixedIterCaseExitPost_cases h with hSkip | hReload
+  · rcases expTwoMulFixedIterSkipExitPost_cases hSkip with hCond | hSkipCount
+    · exact Or.inl hCond
+    · exact Or.inr (Or.inl hSkipCount)
+  · rcases expTwoMulFixedIterReloadExitPost_cases hReload with hCond | hSkipCount
+    · exact Or.inr (Or.inr (Or.inl hCond))
+    · exact Or.inr (Or.inr (Or.inr hSkipCount))
+
 end EvmAsm.Evm64.Exp.Compose
