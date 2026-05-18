@@ -5,6 +5,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedWithMul
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopExit
 
@@ -370,6 +371,125 @@ theorem exp_two_mul_fixed_full_loop_boundary_of_entry_body_general_closed_bound_
       sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
       iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
       exitCond base hEntry hBodyNamed
+
+/-- Boundary-level wrapper for the first fixed full-loop body iteration. It
+    leaves the fixed loop-entry bridge and the case-post exit bridge as
+    caller-supplied assertion implications, and consumes the named case-post
+    loop-back tail continuation. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_tail_case_posts_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18
+      e c6 iterCount v10 ptr nextLimb
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 iterCountNew : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hEntry :
+      ∀ hp,
+        expTwoMulLoopEntryPostFixed sp evmSp vOld v18
+          baseWord exponentWord rest hp →
+        expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+          tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+          v7 v11 hp)
+    (hExit :
+      ∀ hp,
+        expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base hp →
+        expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond hp)
+    (hTail :
+      cpsTripleWithin expTwoMulFixedFullLoopBodyTailBound
+        (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin expTwoMulFixedFullLoopBoundaryBound base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hBody :
+      cpsTripleWithin expTwoMulFixedFullLoopBodyBound
+        (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+          tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+          v7 v11)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond) :=
+    exp_two_mul_fixed_full_loop_body_peel_tail_with_case_exit_imp_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base
+      (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+        r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)
+      hbase hExit hTail
+  exact
+    exp_two_mul_fixed_full_loop_boundary_of_entry_body_general_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      iterCountNew r0 r1 r2 r3 d0 d1 d2 d3 baseWord exponentWord rest
+      exitCond base hEntry hBody
+
+/-- Closed-form variant of
+    `exp_two_mul_fixed_full_loop_boundary_of_entry_tail_case_posts_spec_within`. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_tail_case_posts_closed_bound_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18
+      e c6 iterCount v10 ptr nextLimb
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 iterCountNew : Word)
+    (baseWord exponentWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hEntry :
+      ∀ hp,
+        expTwoMulLoopEntryPostFixed sp evmSp vOld v18
+          baseWord exponentWord rest hp →
+        expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+          tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+          v7 v11 hp)
+    (hExit :
+      ∀ hp,
+        expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base hp →
+        expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond hp)
+    (hTail :
+      cpsTripleWithin 49215
+        (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond)) :
+    cpsTripleWithin 49429 base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord rest)
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord rest exitCond) := by
+  have hTailNamed :
+      cpsTripleWithin expTwoMulFixedFullLoopBodyTailBound
+        (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+          r0 r1 r2 r3 d0 d1 d2 d3 baseWord rest exitCond) := by
+    rw [expTwoMulFixedFullLoopBodyTailBound_eq]
+    exact hTail
+  rw [← expTwoMulFixedFullLoopBoundaryBound_eq]
+  exact
+    exp_two_mul_fixed_full_loop_boundary_of_entry_tail_case_posts_spec_within
+      sp evmSp cOld tOld c6Old c16Old c19Old m0 m1 m2 m3 vOld v18
+      e c6 iterCount v10 ptr nextLimb
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 iterCountNew baseWord exponentWord rest exitCond base hbase
+      hEntry hExit hTailNamed
 
 /-- Fixed boundary wrapper that accepts any body proof bounded by the named
     conservative fixed full-loop body bound. -/
