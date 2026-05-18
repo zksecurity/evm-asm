@@ -346,6 +346,40 @@ theorem expTwoMulFixedIterReloadCondCountPost_choose_scratch
     sep_perm h
   exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
 
+abbrev expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+    (e c6 ptr nextLimb evmSp a0 a1 a2 a3 base : Word) : Assertion :=
+  expTwoMulFixedIterReloadSkipRestScratchSuffix e c6 ptr nextLimb base **
+    expTwoMulFixedIterBaseFrame evmSp a0 a1 a2 a3
+
+theorem expTwoMulFixedIterReloadSkipCountPost_choose_scratch
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterReloadSkipCountPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base exitCond ps) :
+    ∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) ps := by
+  have hDecomp :
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchOwn evmSp **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) ps := by
+    unfold expTwoMulFixedIterReloadSkipCountPost
+      expTwoMulFixedIterReloadSkipRest
+      expTwoMulFixedIterSkipCountPostScratchPrefix
+      expTwoMulFixedIterSkipRestScratchPrefix
+      expTwoMulFixedIterScratchOwn
+      expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+      expTwoMulFixedIterReloadSkipRestScratchSuffix at *
+    sep_perm h
+  exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
