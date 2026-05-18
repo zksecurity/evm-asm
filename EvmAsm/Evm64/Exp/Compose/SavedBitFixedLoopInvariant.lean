@@ -535,6 +535,60 @@ def expTwoMulFixedCursorInvariant
     (exponentWord : EvmWord) (k : Nat) (e : Word) : Prop :=
   e = expTwoMulFixedCursorWord exponentWord k
 
+private theorem expTwoMulFixedCursorWord_highBit_eq_processedBitWord_aux
+    (exponentWord : EvmWord) (q r : Nat)
+    (hq : q < 4) (hr : r < 64) :
+    ((exponentWord.getLimbN (3 - q) <<< r) >>> 63) =
+      (if decide
+          (((exponentWord >>> ((3 - q) * 64 + (63 - r))).toNat % 2) = 1)
+        then (1 : Word) else 0) := by
+  have hbit :
+      decide
+          (((exponentWord >>> ((3 - q) * 64 + (63 - r))).toNat % 2) = 1) =
+        exponentWord.getLsbD ((3 - q) * 64 + (63 - r)) := by
+    rw [← Nat.testBit_zero, BitVec.toNat_ushiftRight, Nat.testBit_shiftRight]
+    exact BitVec.testBit_toNat exponentWord
+  ext i hi
+  rw [BitVec.getElem_ushiftRight]
+  simp only [EvmWord.getLimbN, EvmWord.getLimb]
+  rw [hbit]
+  by_cases hi0 : i = 0
+  · subst i
+    have hnot : ¬63 < r := by omega
+    have hidx : 3 - q < 4 := by omega
+    simp [BitVec.getElem_extractLsb', hnot, hidx]
+    cases exponentWord.getLsbD ((3 - q) * 64 + (63 - r)) <;>
+      simp [BitVec.getElem_zero, BitVec.getElem_one]
+  · have h64 : ¬63 + i < 64 := by omega
+    simp [BitVec.getLsbD_shiftLeft, h64]
+    cases exponentWord.getLsbD ((3 - q) * 64 + (63 - r)) <;>
+      simp [BitVec.getElem_zero, BitVec.getElem_one, hi0]
+
+theorem expTwoMulFixedCursorWord_highBit_eq_processedBitWord
+    (exponentWord : EvmWord) {k : Nat} (hk : k < 256) :
+    (expTwoMulFixedCursorWord exponentWord k >>> 63) =
+      expTwoMulFixedProcessedBitWord exponentWord k := by
+  unfold expTwoMulFixedCursorWord expTwoMulFixedProcessedBitWord
+    expTwoMulFixedProcessedBit
+  have hq : k / 64 < 4 := by omega
+  have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+  have hshift : (3 - k / 64) * 64 + (63 - k % 64) = 255 - k := by
+    have hdecomp : k = 64 * (k / 64) + k % 64 :=
+      (Nat.div_add_mod k 64).symm
+    omega
+  rw [expTwoMulFixedCursorWord_highBit_eq_processedBitWord_aux
+    exponentWord (k / 64) (k % 64) hq hr]
+  rw [hshift]
+
+theorem expTwoMulFixedCursorInvariant_highBit_eq_processedBitWord
+    {exponentWord : EvmWord} {k : Nat} {e : Word}
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hk : k < 256) :
+    (e >>> 63) = expTwoMulFixedProcessedBitWord exponentWord k := by
+  unfold expTwoMulFixedCursorInvariant at hCursor
+  rw [hCursor]
+  exact expTwoMulFixedCursorWord_highBit_eq_processedBitWord exponentWord hk
+
 @[irreducible]
 def expTwoMulFixedCursorAssertion
     (exponentWord : EvmWord) (k : Nat) (e : Word) : Assertion :=
