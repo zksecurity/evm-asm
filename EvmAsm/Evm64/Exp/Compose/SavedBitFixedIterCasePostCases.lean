@@ -681,6 +681,53 @@ theorem expTwoMulFixedIterCaseLoopPost_scratch_cases
       · exact Or.inr (Or.inr (Or.inr
           (expTwoMulFixedIterReloadSkipCountPost_choose_scratch hReloadSkip)))
 
+theorem expTwoMulFixedIterCaseExitPost_scratch_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount = 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base **
+          expTwoMulFixedIterPointerPost ptr nextLimb)) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount = 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCountPostScratchSuffix e c6 evmSp
+          a0 a1 a2 a3 base **
+          expTwoMulFixedIterPointerPost ptr nextLimb)) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount = 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffix
+          e c6 ptr nextLimb base) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount = 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) ps) := by
+  rcases expTwoMulFixedIterCaseExitPost_count_cases h with hSkipCond | hRest
+  · exact Or.inl
+      (expTwoMulFixedIterSkipCondCountPost_choose_scratch_frame hSkipCond)
+  · rcases hRest with hSkip | hRest
+    · exact Or.inr (Or.inl
+        (expTwoMulFixedIterSkipCountPost_choose_scratch_frame hSkip))
+    · rcases hRest with hReloadCond | hReloadSkip
+      · exact Or.inr (Or.inr (Or.inl
+          (expTwoMulFixedIterReloadCondCountPost_choose_scratch hReloadCond)))
+      · exact Or.inr (Or.inr (Or.inr
+          (expTwoMulFixedIterReloadSkipCountPost_choose_scratch hReloadSkip)))
+
 theorem expTwoMulFixedIterSkipCondCountPost_pures
     {iterCount e c6 sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
     {exitCond : Prop} {ps : PartialState}
