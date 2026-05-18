@@ -617,6 +617,34 @@ theorem exp_fixed_loop_body_nonfinal_succ_step
     r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
     base R hbase (exp_fixed_iter_merged_exit_vacuous_bridge hne) hLoop
 
+/-- Bounded non-final fixed merged-loop induction step. -/
+theorem exp_fixed_loop_body_nonfinal_succ_step_bounded
+    (n nBound : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hBound : (n + 1) * 193 ≤ nBound)
+    (hLoop :
+      cpsTripleWithin (n * 193) (base + 44) (base + 296)
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base)
+        R) :
+    cpsTripleWithin nBound (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R :=
+  cpsTripleWithin_mono_nSteps hBound
+    (exp_fixed_loop_body_nonfinal_succ_step
+      n e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+      base R hbase hne hLoop)
+
 /-- Final fixed merged-loop induction step: the loop-back edge is impossible,
     so only an exit bridge is needed. -/
 theorem exp_fixed_loop_body_final_succ_step
@@ -642,6 +670,58 @@ theorem exp_fixed_loop_body_final_succ_step
     r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
     base R hbase hExit
     (exp_fixed_iter_merged_loop_zero_step_vacuous hzero)
+
+/-- Closed 193-step variant of `exp_fixed_loop_body_final_succ_step`. -/
+theorem exp_fixed_loop_body_final_succ_step_closed_bound
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hzero : expTwoMulIterCountNew iterCount = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    cpsTripleWithin 193 (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  simpa using
+    exp_fixed_loop_body_final_succ_step
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+      base R hbase hzero hExit
+
+/-- Bounded final fixed merged-loop induction step. -/
+theorem exp_fixed_loop_body_final_succ_step_bounded
+    (nBound : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hzero : expTwoMulIterCountNew iterCount = 0)
+    (hBound : 193 ≤ nBound)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    cpsTripleWithin nBound (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R :=
+  cpsTripleWithin_mono_nSteps hBound
+    (exp_fixed_loop_body_final_succ_step_closed_bound
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+      base R hbase hzero hExit)
 
 /-- Peel one fixed x19 merged iteration from the conservative 256-iteration
     body when both branch continuations are packaged under the named
