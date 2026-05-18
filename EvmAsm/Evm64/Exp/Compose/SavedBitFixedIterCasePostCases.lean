@@ -329,4 +329,76 @@ theorem expTwoMulFixedIterReloadSkipCountPost_pures
     ((sepConj_pure_right _).1 hRest17).2
   exact ⟨hExit, hC6, hBit⟩
 
+theorem expTwoMulFixedIterCaseLoopPost_pure_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulIterCountNew iterCount ≠ 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0) ∨
+    (expTwoMulIterCountNew iterCount ≠ 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0) ∨
+    (expTwoMulIterCountNew iterCount ≠ 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0) ∨
+    (expTwoMulIterCountNew iterCount ≠ 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0) := by
+  rcases expTwoMulFixedIterCaseLoopPost_count_cases h with hSkipCond | hRest
+  · obtain ⟨_, _, _, _, hSkipCondPost, _⟩ := hSkipCond
+    obtain ⟨hExit, hC6, hBit⟩ :=
+      expTwoMulFixedIterSkipCondCountPost_pures hSkipCondPost
+    exact Or.inl ⟨hExit, hC6, hBit⟩
+  · rcases hRest with hSkip | hRest
+    · obtain ⟨_, _, _, _, hSkipPost, _⟩ := hSkip
+      obtain ⟨hExit, hC6, hBit⟩ :=
+        expTwoMulFixedIterSkipCountPost_pures hSkipPost
+      exact Or.inr (Or.inl ⟨hExit, hC6, hBit⟩)
+    · rcases hRest with hReloadCond | hReloadSkip
+      · obtain ⟨hExit, hC6, hBit⟩ :=
+          expTwoMulFixedIterReloadCondCountPost_pures hReloadCond
+        exact Or.inr (Or.inr (Or.inl ⟨hExit, hC6, hBit⟩))
+      · obtain ⟨hExit, hC6, hBit⟩ :=
+          expTwoMulFixedIterReloadSkipCountPost_pures hReloadSkip
+        exact Or.inr (Or.inr (Or.inr ⟨hExit, hC6, hBit⟩))
+
+theorem expTwoMulFixedIterCaseExitPost_pure_cases
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base ps) :
+    (expTwoMulIterCountNew iterCount = 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0) ∨
+    (expTwoMulIterCountNew iterCount = 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0) ∨
+    (expTwoMulIterCountNew iterCount = 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0) ∨
+    (expTwoMulIterCountNew iterCount = 0 ∧
+      c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0) := by
+  rcases expTwoMulFixedIterCaseExitPost_count_cases h with hSkipCond | hRest
+  · obtain ⟨_, _, _, _, hSkipCondPost, _⟩ := hSkipCond
+    obtain ⟨hExit, hC6, hBit⟩ :=
+      expTwoMulFixedIterSkipCondCountPost_pures hSkipCondPost
+    exact Or.inl ⟨hExit, hC6, hBit⟩
+  · rcases hRest with hSkip | hRest
+    · obtain ⟨_, _, _, _, hSkipPost, _⟩ := hSkip
+      obtain ⟨hExit, hC6, hBit⟩ :=
+        expTwoMulFixedIterSkipCountPost_pures hSkipPost
+      exact Or.inr (Or.inl ⟨hExit, hC6, hBit⟩)
+    · rcases hRest with hReloadCond | hReloadSkip
+      · obtain ⟨hExit, hC6, hBit⟩ :=
+          expTwoMulFixedIterReloadCondCountPost_pures hReloadCond
+        exact Or.inr (Or.inr (Or.inl ⟨hExit, hC6, hBit⟩))
+      · obtain ⟨hExit, hC6, hBit⟩ :=
+          expTwoMulFixedIterReloadSkipCountPost_pures hReloadSkip
+        exact Or.inr (Or.inr (Or.inr ⟨hExit, hC6, hBit⟩))
+
 end EvmAsm.Evm64.Exp.Compose
