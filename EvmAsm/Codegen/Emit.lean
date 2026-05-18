@@ -29,17 +29,7 @@ open EvmAsm.Rv64
 /-- Render a register as the canonical `xNN` mnemonic. -/
 def emitReg (r : Reg) : String := toString r
 
-/-- Render a `Nat` as a lowercase hex string, no `0x` prefix, no padding.
-    Exposed (not `private`) so `Layout` can format `.dword 0x…` literals. -/
-partial def natToHex : Nat → String
-  | 0 => "0"
-  | n =>
-    let digit (d : Nat) : Char :=
-      if d < 10 then Char.ofNat (d + 0x30) else Char.ofNat (d - 10 + 0x61)
-    let rec go : Nat → String → String
-      | 0, acc => acc
-      | k, acc => go (k / 16) (String.singleton (digit (k % 16)) ++ acc)
-    go n ""
+def natToHex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 
 /-- Render a single RV64IM instruction as one GNU-as line. -/
 def emitInstr : Instr → String
