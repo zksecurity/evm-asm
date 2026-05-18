@@ -196,6 +196,40 @@ theorem expTwoMulFixedAccumulatorStep_eq_target_succ
   expTwoMulFixedAccumulatorStep_eq_target_of_processedExponent_succ
     (expTwoMulFixedProcessedExponent_succ_toNat exponentWord hk)
 
+/-- Expected fixed-loop `x19` exponent cursor at the start of iteration `k`.
+
+    The loop starts from limb 3, shifts the current limb left once per bit, and
+    reloads the next lower limb every 64 iterations. -/
+def expTwoMulFixedCursorWord (exponentWord : EvmWord) (k : Nat) : Word :=
+  exponentWord.getLimbN (3 - k / 64) <<< (k % 64)
+
+def expTwoMulFixedCursorInvariant
+    (exponentWord : EvmWord) (k : Nat) (e : Word) : Prop :=
+  e = expTwoMulFixedCursorWord exponentWord k
+
+@[irreducible]
+def expTwoMulFixedCursorAssertion
+    (exponentWord : EvmWord) (k : Nat) (e : Word) : Assertion :=
+  ⌜expTwoMulFixedCursorInvariant exponentWord k e⌝
+
+theorem expTwoMulFixedCursorAssertion_unfold
+    {exponentWord : EvmWord} {k : Nat} {e : Word} :
+    expTwoMulFixedCursorAssertion exponentWord k e =
+      ⌜expTwoMulFixedCursorInvariant exponentWord k e⌝ := by
+  delta expTwoMulFixedCursorAssertion
+  rfl
+
+theorem expTwoMulFixedCursorAssertion_pcFree
+    {exponentWord : EvmWord} {k : Nat} {e : Word} :
+    (expTwoMulFixedCursorAssertion exponentWord k e).pcFree := by
+  rw [expTwoMulFixedCursorAssertion_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedCursorAssertion
+    (exponentWord : EvmWord) (k : Nat) (e : Word) :
+    Assertion.PCFree (expTwoMulFixedCursorAssertion exponentWord k e) :=
+  ⟨expTwoMulFixedCursorAssertion_pcFree⟩
+
 /-- The fixed iteration precondition indexed by the semantic iteration count.
 
     This is the precondition family future fixed-loop induction should recurse
