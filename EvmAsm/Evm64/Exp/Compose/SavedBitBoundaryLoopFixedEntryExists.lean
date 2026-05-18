@@ -386,6 +386,78 @@ theorem expTwoMulFixedFirstIterCaseLoopPostWithResidual_no_reload
         rw [expTwoMulFixedFirstIterC6_decrement_eq] at h_c6
         contradiction
 
+theorem expTwoMulFixedFirstIterCaseLoopPostWithResidual_no_reload_norm
+    {sp evmSp : Word}
+    {baseWord exponentWord : EvmWord} {rest : List EvmWord}
+    {base : Word} {ps : PartialState}
+    (h : expTwoMulFixedFirstIterCaseLoopPostWithResidual
+      sp evmSp baseWord exponentWord rest base ps) :
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let squareW :=
+        expSquaringCallSquareW
+          ((1 : EvmWord).getLimbN 0)
+          ((1 : EvmWord).getLimbN 1)
+          ((1 : EvmWord).getLimbN 2)
+          ((1 : EvmWord).getLimbN 3)
+      let rw := expTwoMulCondRw squareW
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+      ((expTwoMulFixedIterPre
+        (exponentWord.getLimbN 3 <<< (1 : BitVec 6).toNat)
+        v6
+        (255 : Word)
+        v10
+        ((exponentWord.getLimbN 3 >>> (63 : BitVec 6).toNat) +
+          signExtend12 (0 : BitVec 12))
+        (evmSp + 48)
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (rw.getLimbN 3)
+        (((base + 44) + 140) + 68)
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2) (rw.getLimbN 3)
+        d0 d1 d2 d3
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2) (rw.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3) v7 v11) **
+        expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let squareW :=
+        expSquaringCallSquareW
+          ((1 : EvmWord).getLimbN 0)
+          ((1 : EvmWord).getLimbN 1)
+          ((1 : EvmWord).getLimbN 2)
+          ((1 : EvmWord).getLimbN 3)
+      ((expTwoMulFixedIterPre
+        (exponentWord.getLimbN 3 <<< (1 : BitVec 6).toNat)
+        v6
+        (255 : Word)
+        v10
+        ((exponentWord.getLimbN 3 >>> (63 : BitVec 6).toNat) +
+          signExtend12 (0 : BitVec 12))
+        (evmSp + 48)
+        (exponentWord.getLimbN 2)
+        sp (evmSp + signExtend12 (64 : BitVec 12))
+        (squareW.getLimbN 3)
+        (((base + 44) + 32) + 68)
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        d0 d1 d2 d3
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+        (baseWord.getLimbN 2) (baseWord.getLimbN 3) v7 v11) **
+        expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest) ps) := by
+  rcases expTwoMulFixedFirstIterCaseLoopPostWithResidual_no_reload h with
+    hCond | hSkip
+  · rcases hCond with ⟨v6, v7, v10, v11, d0, d1, d2, d3, hPre⟩
+    refine Or.inl ⟨v6, v7, v10, v11, d0, d1, d2, d3, ?_⟩
+    rwa [expTwoMulFixedFirstIterCountNew_eq,
+      expTwoMulFixedFirstIterPointer_eq] at hPre
+  · rcases hSkip with ⟨v6, v7, v10, v11, d0, d1, d2, d3, hPre⟩
+    refine Or.inr ⟨v6, v7, v10, v11, d0, d1, d2, d3, ?_⟩
+    rwa [expTwoMulFixedFirstIterCountNew_eq,
+      expTwoMulFixedFirstIterPointer_eq] at hPre
+
 /-- Fixed full-loop boundary wrapper whose loop body starts from the named
     existential first-iteration precondition produced by the fixed loop entry
     post. This is the surface needed before destructing the chosen
