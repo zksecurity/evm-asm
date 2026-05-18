@@ -535,6 +535,35 @@ def expTwoMulFixedCursorInvariant
     (exponentWord : EvmWord) (k : Nat) (e : Word) : Prop :=
   e = expTwoMulFixedCursorWord exponentWord k
 
+def expTwoMulFixedControlInvariant
+    (exponentWord : EvmWord) (k : Nat)
+    (c6 _ptr nextLimb _evmSp : Word) : Prop :=
+  c6.toNat = 64 - k % 64 ∧
+  nextLimb = exponentWord.getLimbN (2 - k / 64)
+
+theorem expTwoMulFixedControlInvariant_zero
+    (exponentWord : EvmWord) (ptr evmSp : Word) :
+    expTwoMulFixedControlInvariant exponentWord 0
+      64 ptr (exponentWord.getLimbN 2) evmSp := by
+  unfold expTwoMulFixedControlInvariant
+  simp
+
+theorem expTwoMulFixedControlInvariant_nextLimb_reload
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hMod : k % 64 = 63) :
+    nextLimb = exponentWord.getLimbN (3 - (k + 1) / 64) := by
+  unfold expTwoMulFixedControlInvariant at hControl
+  rcases hControl with ⟨_, hNext⟩
+  rw [hNext]
+  have hdiv : (k + 1) / 64 = k / 64 + 1 := by
+    omega
+  rw [hdiv]
+  congr 1
+  omega
+
 private theorem word_shiftLeft_succ (x : Word) (n : Nat) :
     (x <<< n) <<< 1 = x <<< (n + 1) := by
   ext i hi
@@ -714,6 +743,36 @@ instance pcFreeInst_expTwoMulFixedCursorAssertion
     Assertion.PCFree (expTwoMulFixedCursorAssertion exponentWord k e) :=
   ⟨expTwoMulFixedCursorAssertion_pcFree⟩
 
+@[irreducible]
+def expTwoMulFixedControlAssertion
+    (exponentWord : EvmWord) (k : Nat)
+    (c6 ptr nextLimb evmSp : Word) : Assertion :=
+  ⌜expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp⌝
+
+theorem expTwoMulFixedControlAssertion_unfold
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word} :
+    expTwoMulFixedControlAssertion exponentWord k c6 ptr nextLimb evmSp =
+      ⌜expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp⌝ := by
+  delta expTwoMulFixedControlAssertion
+  rfl
+
+theorem expTwoMulFixedControlAssertion_pcFree
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word} :
+    (expTwoMulFixedControlAssertion
+      exponentWord k c6 ptr nextLimb evmSp).pcFree := by
+  rw [expTwoMulFixedControlAssertion_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedControlAssertion
+    (exponentWord : EvmWord) (k : Nat)
+    (c6 ptr nextLimb evmSp : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedControlAssertion
+        exponentWord k c6 ptr nextLimb evmSp) :=
+  ⟨expTwoMulFixedControlAssertion_pcFree⟩
+
 /-- The fixed iteration precondition indexed by the semantic iteration count.
 
     This is the precondition family future fixed-loop induction should recurse
@@ -727,7 +786,8 @@ def expTwoMulFixedIterPreN
   expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
     vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
   expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3 **
-  expTwoMulFixedCursorAssertion exponentWord k e
+  expTwoMulFixedCursorAssertion exponentWord k e **
+  expTwoMulFixedControlAssertion exponentWord k c6 ptr nextLimb evmSp
 
 theorem expTwoMulFixedIterPreN_unfold
     {k : Nat} {baseWord exponentWord : EvmWord}
@@ -740,7 +800,8 @@ theorem expTwoMulFixedIterPreN_unfold
       (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld
         vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 **
       expTwoMulFixedSemanticInvariant baseWord exponentWord k r0 r1 r2 r3 **
-      expTwoMulFixedCursorAssertion exponentWord k e) := by
+      expTwoMulFixedCursorAssertion exponentWord k e **
+      expTwoMulFixedControlAssertion exponentWord k c6 ptr nextLimb evmSp) := by
   delta expTwoMulFixedIterPreN
   rfl
 
