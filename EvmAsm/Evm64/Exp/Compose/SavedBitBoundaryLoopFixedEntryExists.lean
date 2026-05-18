@@ -150,4 +150,110 @@ theorem exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_clos
     baseWord exponentWord dWord eWord rest exitCond base
     (cpsTripleWithin_expTwoMulFixedFirstIterPreWithResidual hBody)
 
+/-- Fixed full-loop boundary wrapper whose body proof is phrased directly over
+    the canonical `expTwoMulFixedIterPre` arguments for the first iteration. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_iterpre_body_general_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBody :
+      ∀ v10 v7 v11,
+        cpsTripleWithin expTwoMulFixedFullLoopBodyBound
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expTwoMulFixedIterPre
+            (exponentWord.getLimbN 3)
+            ((0 : Word) + signExtend12 (64 : BitVec 12))
+            (256 : Word)
+            v10 v18
+            (evmSp + signExtend12 (56 : BitVec 12) +
+              signExtend12 (-8 : BitVec 12))
+            (exponentWord.getLimbN 2)
+            sp (evmSp + signExtend12 (64 : BitVec 12))
+            (1 : Word) vOld
+            ((1 : EvmWord).getLimbN 0)
+            ((1 : EvmWord).getLimbN 1)
+            ((1 : EvmWord).getLimbN 2)
+            ((1 : EvmWord).getLimbN 3)
+            (dWord.getLimbN 0) (dWord.getLimbN 1)
+            (dWord.getLimbN 2) (dWord.getLimbN 3)
+            (eWord.getLimbN 0) (eWord.getLimbN 1)
+            (eWord.getLimbN 2) (eWord.getLimbN 3)
+            (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+            (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+            v7 v11 **
+           expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest)
+          (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+            r0 r1 r2 r3 d0 d1 d2 d3 baseWord (dWord :: eWord :: rest)
+            exitCond)) :
+    cpsTripleWithin expTwoMulFixedFullLoopBoundaryBound base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord (dWord :: eWord :: rest))
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord (dWord :: eWord :: rest) exitCond) :=
+  exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_spec_within
+    sp evmSp cOld tOld c6Old c16Old c19Old
+    m0 m1 m2 m3 vOld v18 iterCountNew
+    r0 r1 r2 r3 d0 d1 d2 d3
+    baseWord exponentWord dWord eWord rest exitCond base
+    (fun v10 v7 v11 => by
+      rw [expTwoMulFixedFirstIterPre_unfold]
+      exact hBody v10 v7 v11)
+
+/-- Closed-bound variant of
+    `exp_two_mul_fixed_full_loop_boundary_of_entry_iterpre_body_general_spec_within`. -/
+theorem exp_two_mul_fixed_full_loop_boundary_of_entry_iterpre_body_general_closed_bound_spec_within
+    (sp evmSp cOld tOld c6Old c16Old c19Old
+      m0 m1 m2 m3 vOld v18 iterCountNew
+      r0 r1 r2 r3 d0 d1 d2 d3 : Word)
+    (baseWord exponentWord dWord eWord : EvmWord) (rest : List EvmWord)
+    (exitCond : Prop) (base : Word)
+    (hBody :
+      ∀ v10 v7 v11,
+        cpsTripleWithin 49408
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expTwoMulFixedIterPre
+            (exponentWord.getLimbN 3)
+            ((0 : Word) + signExtend12 (64 : BitVec 12))
+            (256 : Word)
+            v10 v18
+            (evmSp + signExtend12 (56 : BitVec 12) +
+              signExtend12 (-8 : BitVec 12))
+            (exponentWord.getLimbN 2)
+            sp (evmSp + signExtend12 (64 : BitVec 12))
+            (1 : Word) vOld
+            ((1 : EvmWord).getLimbN 0)
+            ((1 : EvmWord).getLimbN 1)
+            ((1 : EvmWord).getLimbN 2)
+            ((1 : EvmWord).getLimbN 3)
+            (dWord.getLimbN 0) (dWord.getLimbN 1)
+            (dWord.getLimbN 2) (dWord.getLimbN 3)
+            (eWord.getLimbN 0) (eWord.getLimbN 1)
+            (eWord.getLimbN 2) (eWord.getLimbN 3)
+            (baseWord.getLimbN 0) (baseWord.getLimbN 1)
+            (baseWord.getLimbN 2) (baseWord.getLimbN 3)
+            v7 v11 **
+           expTwoMulFixedFirstIterEntryResidual evmSp exponentWord rest)
+          (expTwoMulLoopExitFullStackPreFrame sp evmSp iterCountNew tOld
+            r0 r1 r2 r3 d0 d1 d2 d3 baseWord (dWord :: eWord :: rest)
+            exitCond)) :
+    cpsTripleWithin 49429 base (base + 336)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulBoundaryPreFixed sp evmSp cOld tOld c6Old c16Old c19Old
+        m0 m1 m2 m3 vOld v18 baseWord exponentWord (dWord :: eWord :: rest))
+      (expTwoMulLoopExitPost sp evmSp iterCountNew r0 r1 r2 r3
+        baseWord (dWord :: eWord :: rest) exitCond) :=
+  exp_two_mul_fixed_full_loop_boundary_of_entry_concrete_body_general_closed_bound_spec_within
+    sp evmSp cOld tOld c6Old c16Old c19Old
+    m0 m1 m2 m3 vOld v18 iterCountNew
+    r0 r1 r2 r3 d0 d1 d2 d3
+    baseWord exponentWord dWord eWord rest exitCond base
+    (fun v10 v7 v11 => by
+      rw [expTwoMulFixedFirstIterPre_unfold]
+      exact hBody v10 v7 v11)
+
 end EvmAsm.Evm64.Exp.Compose
