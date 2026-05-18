@@ -208,4 +208,176 @@ theorem expTwoMulFixedIterCaseExitPost_scratch_cases_pointerFrame
         exact Or.inr (Or.inr (Or.inr
           ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩))
 
+theorem expTwoMulFixedIterSkipCondScratchFrame_pures
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCondCountPostScratchSuffix e c6 base **
+          expTwoMulFixedIterPointerFrame ptr nextLimb)) **
+        frame) ps) :
+    exitCond ∧
+    c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0 := by
+  unfold expTwoMulFixedIterSkipCondCountPostScratchPrefix
+    expTwoMulFixedIterSkipCondCountPostScratchSuffix
+    expTwoMulFixedIterSkipCondFrame at h
+  obtain ⟨psMain, _psFrame, _hDisjoint, _hUnion, hMain, _hFrame⟩ := h
+  obtain ⟨psPrefix, _psTail, _hDisjointPrefix, _hUnionPrefix, hPrefix, hTail⟩ :=
+    hMain
+  obtain ⟨psCount, _psRest, _hDisjointCount, _hUnionCount, hCount, _hRest⟩ :=
+    hPrefix
+  obtain ⟨_psX9, _psX0Exit, _hDisjointX9, _hUnionX9, _hX9, hX0Exit⟩ :=
+    hCount
+  obtain ⟨_psX0, _psExit, _hDisjointX0, _hUnionX0, _hX0, hExit⟩ :=
+    hX0Exit
+  have h_exit : exitCond := hExit.2
+  obtain ⟨_psScratch, _psSuffixPtr, _hDisjointScratch, _hUnionScratch,
+    _hScratch, hSuffixPtr⟩ := hTail
+  obtain ⟨_psSuffix, _psPtr, _hDisjointSuffix, _hUnionSuffix,
+    hSuffix, _hPtr⟩ := hSuffixPtr
+  obtain ⟨_psRet, _psSkipCondFrame, _hDisjointRet, _hUnionRet,
+    _hRet, hSkipCondFrame⟩ := hSuffix
+  obtain ⟨_, _, _, _, _, hFrameTail⟩ := hSkipCondFrame
+  obtain ⟨_, _, _, _, _, hPureTail⟩ := hFrameTail
+  have h_c6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0 :=
+    ((sepConj_pure_left _).1 hPureTail).1
+  obtain ⟨_, h_bit⟩ := ((sepConj_pure_left _).1 hPureTail).2
+  exact ⟨h_exit, h_c6, h_bit⟩
+
+theorem expTwoMulFixedIterSkipScratchFrame_pures
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        (expTwoMulFixedIterSkipCountPostScratchSuffix e c6 evmSp
+          a0 a1 a2 a3 base **
+          expTwoMulFixedIterPointerFrame ptr nextLimb)) **
+        frame) ps) :
+    exitCond ∧
+    c6 + signExtend12 (-1 : BitVec 12) ≠ 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 := by
+  unfold expTwoMulFixedIterSkipCountPostScratchPrefix
+    expTwoMulFixedIterSkipCountPostScratchSuffix
+    expTwoMulFixedIterSkipRestScratchSuffix at h
+  obtain ⟨psMain, _psFrame, _hDisjoint, _hUnion, hMain, _hFrame⟩ := h
+  obtain ⟨psPrefix, _psTail, _hDisjointPrefix, _hUnionPrefix, hPrefix, hTail⟩ :=
+    hMain
+  obtain ⟨psCount, _psRest, _hDisjointCount, _hUnionCount, hCount, _hRest⟩ :=
+    hPrefix
+  obtain ⟨_psX9, _psX0Exit, _hDisjointX9, _hUnionX9, _hX9, hX0Exit⟩ :=
+    hCount
+  obtain ⟨_psX0, _psExit, _hDisjointX0, _hUnionX0, _hX0, hExit⟩ :=
+    hX0Exit
+  have h_exit : exitCond := hExit.2
+  obtain ⟨_psScratch, _psSuffixPtr, _hDisjointScratch, _hUnionScratch,
+    _hScratch, hSuffixPtr⟩ := hTail
+  obtain ⟨_psSuffix, _psPtr, _hDisjointSuffix, _hUnionSuffix,
+    hSuffix, _hPtr⟩ := hSuffixPtr
+  obtain ⟨_psSkipRest, _psBaseFrame, _hDisjointSkipRest, _hUnionSkipRest,
+    hSkipRest, _hBaseFrame⟩ := hSuffix
+  obtain ⟨_, _, _, _, _, hSkipRestTail⟩ := hSkipRest
+  obtain ⟨_, _, _, _, _, hX18Tail⟩ := hSkipRestTail
+  obtain ⟨_, _, _, _, _, hPureTail⟩ := hX18Tail
+  have h_c6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0 :=
+    ((sepConj_pure_left _).1 hPureTail).1
+  obtain ⟨_, h_bit⟩ := ((sepConj_pure_left _).1 hPureTail).2
+  exact ⟨h_exit, h_c6, h_bit⟩
+
+theorem expTwoMulFixedIterReloadCondScratchFrame_pures
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffix
+          e c6 ptr nextLimb base) **
+        frame) ps) :
+    exitCond ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0 := by
+  unfold expTwoMulFixedIterSkipCondCountPostScratchPrefix
+    expTwoMulFixedIterReloadCondCountPostScratchSuffix
+    expTwoMulFixedIterReloadCondFrame at h
+  obtain ⟨psMain, _psFrame, _hDisjoint, _hUnion, hMain, _hFrame⟩ := h
+  obtain ⟨psPrefix, _psTail, _hDisjointPrefix, _hUnionPrefix, hPrefix, hTail⟩ :=
+    hMain
+  obtain ⟨psCount, _psRest, _hDisjointCount, _hUnionCount, hCount, _hRest⟩ :=
+    hPrefix
+  obtain ⟨_psX9, _psX0Exit, _hDisjointX9, _hUnionX9, _hX9, hX0Exit⟩ :=
+    hCount
+  obtain ⟨_psX0, _psExit, _hDisjointX0, _hUnionX0, _hX0, hExit⟩ :=
+    hX0Exit
+  have h_exit : exitCond := hExit.2
+  obtain ⟨_psScratch, _psSuffix, _hDisjointScratch, _hUnionScratch,
+    _hScratch, hSuffix⟩ := hTail
+  obtain ⟨_psRet, _psReloadCondFrame, _hDisjointRet, _hUnionRet,
+    _hRet, hReloadCondFrame⟩ := hSuffix
+  obtain ⟨_, _, _, _, _, hReloadCondTail⟩ := hReloadCondFrame
+  obtain ⟨_, _, _, _, _, hPureTail⟩ := hReloadCondTail
+  have hC6Tail := ((sepConj_pure_left _).1 hPureTail)
+  have h_c6 : c6 + signExtend12 (-1 : BitVec 12) = 0 := hC6Tail.1
+  obtain ⟨_, _, _, _, _, hMemBit⟩ := hC6Tail.2
+  obtain ⟨_, _, _, _, _, hBitPure⟩ := hMemBit
+  have h_bit :
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0 :=
+    hBitPure.2
+  exact ⟨h_exit, h_c6, h_bit⟩
+
+theorem expTwoMulFixedIterReloadSkipScratchFrame_pures
+    {iterCount e c6 ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        frame) ps) :
+    exitCond ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 := by
+  unfold expTwoMulFixedIterSkipCountPostScratchPrefix
+    expTwoMulFixedIterReloadSkipCountPostScratchSuffix
+    expTwoMulFixedIterReloadSkipRestScratchSuffix at h
+  obtain ⟨psMain, _psFrame, _hDisjoint, _hUnion, hMain, _hFrame⟩ := h
+  obtain ⟨psPrefix, _psTail, _hDisjointPrefix, _hUnionPrefix, hPrefix, hTail⟩ :=
+    hMain
+  obtain ⟨psCount, _psRest, _hDisjointCount, _hUnionCount, hCount, _hRest⟩ :=
+    hPrefix
+  obtain ⟨_psX9, _psX0Exit, _hDisjointX9, _hUnionX9, _hX9, hX0Exit⟩ :=
+    hCount
+  obtain ⟨_psX0, _psExit, _hDisjointX0, _hUnionX0, _hX0, hExit⟩ :=
+    hX0Exit
+  have h_exit : exitCond := hExit.2
+  obtain ⟨_psScratch, _psSuffix, _hDisjointScratch, _hUnionScratch,
+    _hScratch, hSuffix⟩ := hTail
+  obtain ⟨_psReloadSkip, _psBaseFrame, _hDisjointReloadSkip, _hUnionReloadSkip,
+    hReloadSkip, _hBaseFrame⟩ := hSuffix
+  obtain ⟨_, _, _, _, _, hReloadSkipTail1⟩ := hReloadSkip
+  obtain ⟨_, _, _, _, _, hReloadSkipTail2⟩ := hReloadSkipTail1
+  obtain ⟨_, _, _, _, _, hReloadSkipTail3⟩ := hReloadSkipTail2
+  obtain ⟨_, _, _, _, hC6Pure, hPtrMemBit⟩ := hReloadSkipTail3
+  have h_c6 : c6 + signExtend12 (-1 : BitVec 12) = 0 :=
+    hC6Pure.2
+  obtain ⟨_, _, _, _, _, hMemBit⟩ := hPtrMemBit
+  obtain ⟨_, _, _, _, _, hBitPure⟩ := hMemBit
+  have h_bit :
+      (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 :=
+    hBitPure.2
+  exact ⟨h_exit, h_c6, h_bit⟩
+
 end EvmAsm.Evm64.Exp.Compose
