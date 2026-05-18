@@ -250,6 +250,206 @@ theorem exp_msb_bit_test_fixed_full_iter_merged_named_exits_bounded_evmExpMsbSav
       r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
       v7 v11 base hbase)
 
+/-- Merge one fixed x19 canonical appended-MUL EXP iteration with externally
+    supplied continuations for the loop-back and loop-exit edges. -/
+theorem exp_two_mul_fixed_iter_merged_with_continuations_spec_within
+    {nCont : Nat} {exit_ : Word} {R : Assertion}
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin nCont (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin nCont (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin
+      (expTwoMulFixedReloadIterStepBound + nCont)
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop hExit
+  refine
+    cpsNBranchWithin_merge
+      (exp_msb_bit_test_fixed_full_iter_merged_named_exits_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11 base hbase) ?_
+  intro ex hmem
+  rw [expTwoMulFixedIterMergedExits] at hmem
+  cases hmem with
+  | head =>
+      exact hLoop
+  | tail _ htail =>
+      cases htail with
+      | head =>
+          exact hExit
+      | tail _ hnil =>
+          cases hnil
+
+/-- Variant of `exp_two_mul_fixed_iter_merged_with_continuations_spec_within`
+    that permits different bounds for the loop-back and loop-exit
+    continuations. -/
+theorem exp_two_mul_fixed_iter_merged_with_continuations_max_spec_within
+    {nLoop nExit : Nat} {exit_ : Word} {R : Assertion}
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin nLoop (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin nExit (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin
+      (expTwoMulFixedReloadIterStepBound + max nLoop nExit)
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop hExit
+  exact
+    exp_two_mul_fixed_iter_merged_with_continuations_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base hbase
+      (cpsTripleWithin_mono_nSteps (Nat.le_max_left nLoop nExit) hLoop)
+      (cpsTripleWithin_mono_nSteps (Nat.le_max_right nLoop nExit) hExit)
+
+/-- Bounded variant of
+    `exp_two_mul_fixed_iter_merged_with_continuations_max_spec_within`. -/
+theorem exp_two_mul_fixed_iter_merged_with_continuations_bounded_spec_within
+    {nLoop nExit nBound : Nat} {exit_ : Word} {R : Assertion}
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hBound :
+      expTwoMulFixedReloadIterStepBound + max nLoop nExit ≤ nBound) :
+    (cpsTripleWithin nLoop (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin nExit (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin nBound
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop hExit
+  exact
+    cpsTripleWithin_mono_nSteps hBound
+      (exp_two_mul_fixed_iter_merged_with_continuations_max_spec_within
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11 base hbase hLoop hExit)
+
+/-- Peel one fixed x19 merged iteration from an `(iterations + 1)`-iteration
+    body when both branch continuations are packaged under the
+    `iterations`-iteration tail bound. -/
+theorem exp_two_mul_fixed_iterations_body_peel_with_continuations_spec_within
+    (iterations : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base exit_ : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+      (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+      (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  exact
+    exp_two_mul_fixed_iter_merged_with_continuations_bounded_spec_within
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base hbase
+      (expTwoMulFixedReloadIterStepBound_add_max_fixedIterationsBodyBound_le_succ
+        iterations)
+
+/-- Closed-form variant of
+    `exp_two_mul_fixed_iterations_body_peel_with_continuations_spec_within`,
+    exposing each fixed x19 iteration as `193` steps. -/
+theorem exp_two_mul_fixed_iterations_body_peel_with_continuations_closed_bound_spec_within
+    (iterations : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base exit_ : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0) :
+    (cpsTripleWithin (iterations * 193)
+      (base + 44) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedLoopPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    (cpsTripleWithin (iterations * 193)
+      (base + 296) exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterMergedExitPost e c6 iterCount ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin ((iterations + 1) * 193)
+      (base + 44)
+      exit_
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop hExit
+  rw [← expTwoMulFixedIterationsBodyBound_eq iterations] at hLoop hExit
+  rw [← expTwoMulFixedIterationsBodyBound_eq (iterations + 1)]
+  exact
+    exp_two_mul_fixed_iterations_body_peel_with_continuations_spec_within
+      iterations
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base exit_ R hbase hLoop hExit
+
 /-- Branch view of the canonical-appended whole-code fixed x19 merged
     full-iteration spec with named loop/exit postconditions. -/
 theorem exp_msb_bit_test_fixed_full_iter_merged_named_branch_evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode_spec_within
