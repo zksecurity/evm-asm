@@ -1118,6 +1118,14 @@ theorem canonicalExpFixedSquaringMul_target (base : Word) :
   have h : signExtend21 (196 : BitVec 21) = (196 : Word) := by decide
   simp only [h]; bv_omega
 
+theorem canonicalExpFixedCondMulSkip_target (base : Word) :
+    ((base + 44) + 136 : Word) +
+        signExtend13 canonicalExpCondMulSkipOff =
+      (base + 44) + 244 := by
+  rw [canonicalExpCondMulSkipOff_eq]
+  have h : signExtend13 (108 : BitVec 13) = (108 : Word) := by decide
+  simp only [h]; bv_omega
+
 theorem canonicalExpCondMul_target (base : Word) :
     ((base + 152) + 64 : Word) + signExtend21 canonicalExpCondMulOff =
       base + 304 := by
