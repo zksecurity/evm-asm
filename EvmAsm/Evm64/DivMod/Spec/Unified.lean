@@ -1,12 +1,15 @@
 /-
   EvmAsm.Evm64.DivMod.Spec.Unified
 
-  Unified-bound DIV/MOD stack-spec wrappers. The four per-`n` dispatcher-surface
-  specs (n=1, n=2, n=3, n=4) all have different `cpsTripleWithin` step bounds
-  (n=1: 946, n=2: 744, n=3: 542, n=4: 340). Before they can be combined into a
-  single `evm_div_stack_spec` / `evm_mod_stack_spec` (slice 4keh / 3muq under
-  parent #61) via case-split, all four need a shared bound — otherwise the
+  Unified-bound DIV/MOD stack-spec wrappers. The valid n=1, n=2, and n=3
+  dispatcher-surface specs all have different `cpsTripleWithin` step bounds.
+  Before they can be combined into a single `evm_div_stack_spec` /
+  `evm_mod_stack_spec` via case-split, they need a shared bound — otherwise the
   case-split branches produce triples with incompatible `nSteps`.
+
+  The n=4 stack-surface path is intentionally absent while the call-addback
+  algorithm is being repaired; the old n=4 wrappers depended on a false
+  semantic premise.
 
   This file imports `unifiedDivBound : Nat := 946` (the maximum across n=1..4)
   from `UnifiedBzero` and defines `_uni` wrappers for each per-`n`
@@ -28,7 +31,6 @@ import EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3ModBridge
-import EvmAsm.Evm64.DivMod.N4StackSpecWithin
 
 namespace EvmAsm.Evm64
 
@@ -402,89 +404,6 @@ theorem evm_div_n3_stack_spec_within_word_noNop_uni
       ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hbnz hb3z hb2nz
       hshift_nz halign hbltu_1 hbltu_0 hcarry2 hdivWord)
 
-/-- Unified-bound wrapper for `evm_div_n4_stack_spec_within_dispatch`. -/
-theorem evm_div_n4_stack_spec_within_dispatch_uni (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
-    (hbltu : isCallTrialN4Evm a b)
-    (hcarry2_nz_addback :
-      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-    (hsem_addback :
-      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
-    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode base)
-      (divModStackDispatchPre sp a b
-        (signExtend12 (4 : BitVec 12) - (4 : Word))
-        ((clzResult (b.getLimbN 3)).2 >>> (63 : Nat))
-        v5 v6 v7 v10 v11
-        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
-      (divStackDispatchPost sp a b) :=
-  cpsTripleWithin_mono_nSteps (by decide)
-    (evm_div_n4_stack_spec_within_dispatch sp base a b v5 v6 v7 v10 v11
-      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      nMem shiftMem jMem retMem dMem dloMem scratch_un0
-      hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
-
-/-- Unified-bound wrapper for
-    `evm_div_n4_stack_spec_within_dispatch_exact_x1`. -/
-theorem evm_div_n4_stack_spec_within_dispatch_exact_x1_uni (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
-    (hbltu : isCallTrialN4Evm a b)
-    (hcarry2_nz_addback :
-      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-    (hsem_addback :
-      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
-    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode base)
-      (divModStackDispatchPre sp a b
-        (signExtend12 (4 : BitVec 12) - (4 : Word))
-        ((clzResult (b.getLimbN 3)).2 >>> (63 : Nat))
-        v5 v6 v7 v10 v11
-        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
-      (divStackDispatchPostNoX1 sp a b **
-        (.x9 ↦ᵣ signExtend12 (4095 : BitVec 12))) :=
-  cpsTripleWithin_mono_nSteps (by decide)
-    (evm_div_n4_stack_spec_within_dispatch_exact_x1 sp base a b v5 v6 v7 v10 v11
-      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      nMem shiftMem jMem retMem dMem dloMem scratch_un0
-      hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
-
-/-- Unified-bound wrapper for `evm_div_n4_stack_spec_within_dispatch_noNop`. -/
-theorem evm_div_n4_stack_spec_within_dispatch_noNop_uni (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
-    (hbltu : isCallTrialN4Evm a b)
-    (hcarry2_nz_addback :
-      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-    (hsem_addback :
-      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
-    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
-      (divModStackDispatchPre sp a b
-        (signExtend12 (4 : BitVec 12) - (4 : Word))
-        ((clzResult (b.getLimbN 3)).2 >>> (63 : Nat))
-        v5 v6 v7 v10 v11
-        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
-      (divStackDispatchPost sp a b) :=
-  cpsTripleWithin_mono_nSteps (by decide)
-    (evm_div_n4_stack_spec_within_dispatch_noNop sp base a b v5 v6 v7 v10 v11
-      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      nMem shiftMem jMem retMem dMem dloMem scratch_un0
-      hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
-
 /-! ### Single DIV dispatcher theorem -/
 
 /-- Branch certificate for the single public DIV stack spec.
@@ -584,16 +503,6 @@ inductive DivStackSpecCase (base : Word) (a b : EvmWord) where
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
           EvmWord.div a b)
-  | n4Full
-      (hbnz : b ≠ 0)
-      (hb3nz : b.getLimbN 3 ≠ 0)
-      (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&&
-        ~~~(1 : Word) = base + div128CallRetOff)
-      (hbltu : isCallTrialN4Evm a b)
-      (hcarry2_nz_addback :
-        isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-      (hsem_addback :
-        isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b)
 
 namespace DivStackSpecCase
 
@@ -609,7 +518,6 @@ def x2 {base : Word} {a b : EvmWord} : DivStackSpecCase base a b → Word
   | .n1Full .. => (clzResult (b.getLimbN 0)).2 >>> (63 : Nat)
   | .n2Full .. => (clzResult (b.getLimbN 1)).2 >>> (63 : Nat)
   | .n3Full .. => (clzResult (b.getLimbN 2)).2 >>> (63 : Nat)
-  | .n4Full .. => (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)
 
 def returnX1 {base : Word} {a b : EvmWord} : DivStackSpecCase base a b → Word
   | .bzero v1 _ _ => v1
@@ -671,11 +579,6 @@ theorem evm_div_stack_spec (sp base : Word) (a b : EvmWord)
         rfl rfl rfl rfl rfl rfl rfl rfl
         hbnz hb3z hb2nz hshift_nz halign
         hbltu_1 hbltu_0 hcarry2 hdivWord
-  | n4Full hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback =>
-      exact evm_div_n4_stack_spec_within_dispatch_uni sp base a b
-        v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        nMem shiftMem jMem retMem dMem dloMem scratch_un0
-        hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback
 
 /-- Single named DIV stack spec that preserves the caller-owned `x1` atom
     through the dispatcher surface. -/
@@ -731,11 +634,6 @@ theorem evm_div_stack_spec_exact_x1 (sp base : Word) (a b : EvmWord)
         rfl rfl rfl rfl rfl rfl rfl rfl
         hbnz hb3z hb2nz hshift_nz halign
         hbltu_1 hbltu_0 hcarry2 hdivWord
-  | n4Full hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback =>
-      exact evm_div_n4_stack_spec_within_dispatch_exact_x1_uni sp base a b
-        v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        nMem shiftMem jMem retMem dMem dloMem scratch_un0
-        hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback
 
 /-- Single named DIV stack spec over `divCode_noNop`. -/
 theorem evm_div_stack_spec_noNop (sp base : Word) (a b : EvmWord)
@@ -788,11 +686,6 @@ theorem evm_div_stack_spec_noNop (sp base : Word) (a b : EvmWord)
         rfl rfl rfl rfl rfl rfl rfl rfl
         hbnz hb3z hb2nz hshift_nz halign
         hbltu_1 hbltu_0 hcarry2 hdivWord
-  | n4Full hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback =>
-      exact evm_div_n4_stack_spec_within_dispatch_noNop_uni sp base a b
-        v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        nMem shiftMem jMem retMem dMem dloMem scratch_un0
-        hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback
 
 /-! ### MOD `_uni` wrappers -/
 
@@ -916,33 +809,6 @@ theorem evm_mod_n3_stack_spec_within_word_uni
       ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hbnz hb3z hb2nz
       hshift_nz halign hbltu_1 hbltu_0 hcarry2 hmodWord)
 
-/-- Unified-bound wrapper for `evm_mod_n4_stack_spec_within_dispatch`. -/
-theorem evm_mod_n4_stack_spec_within_dispatch_uni (sp base : Word)
-    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
-    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
-    (hbnz : b ≠ 0)
-    (hb3nz : b.getLimbN 3 ≠ 0)
-    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
-    (hbltu : isCallTrialN4Evm a b)
-    (hcarry2_nz_addback :
-      isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-    (hsem_addback :
-      isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b) :
-    cpsTripleWithin unifiedDivBound base (base + nopOff) (modCode base)
-      (divModStackDispatchPre sp a b
-        (signExtend12 (4 : BitVec 12) - (4 : Word))
-        ((clzResult (b.getLimbN 3)).2 >>> (63 : Nat))
-        v5 v6 v7 v10 v11
-        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
-      (modStackDispatchPost sp a b) :=
-  cpsTripleWithin_mono_nSteps (by decide)
-    (evm_mod_n4_stack_spec_within_dispatch sp base a b v5 v6 v7 v10 v11
-      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-      nMem shiftMem jMem retMem dMem dloMem scratch_un0
-      hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback)
-
 /-! ### Single MOD dispatcher theorem -/
 
 /-- Branch certificate for the single public MOD stack spec.
@@ -1042,16 +908,6 @@ inductive ModStackSpecCase (base : Word) (a b : EvmWord) where
         (a.getLimbN 0) (a.getLimbN 1) (a.getLimbN 2) (a.getLimbN 3)
         (b.getLimbN 0) (b.getLimbN 1) (b.getLimbN 2) (b.getLimbN 3) =
           EvmWord.mod a b)
-  | n4Full
-      (hbnz : b ≠ 0)
-      (hb3nz : b.getLimbN 3 ≠ 0)
-      (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&&
-        ~~~(1 : Word) = base + div128CallRetOff)
-      (hbltu : isCallTrialN4Evm a b)
-      (hcarry2_nz_addback :
-        isAddbackBorrowN4CallEvm a b → isAddbackCarry2NzN4CallEvm a b)
-      (hsem_addback :
-        isAddbackBorrowN4CallEvm a b → n4CallAddbackBeqSemanticHolds a b)
 
 namespace ModStackSpecCase
 
@@ -1067,7 +923,6 @@ def x2 {base : Word} {a b : EvmWord} : ModStackSpecCase base a b → Word
   | .n1Full .. => (clzResult (b.getLimbN 0)).2 >>> (63 : Nat)
   | .n2Full .. => (clzResult (b.getLimbN 1)).2 >>> (63 : Nat)
   | .n3Full .. => (clzResult (b.getLimbN 2)).2 >>> (63 : Nat)
-  | .n4Full .. => (clzResult (b.getLimbN 3)).2 >>> (63 : Nat)
 
 end ModStackSpecCase
 
@@ -1122,10 +977,5 @@ theorem evm_mod_stack_spec (sp base : Word) (a b : EvmWord)
         rfl rfl rfl rfl rfl rfl rfl rfl
         hbnz hb3z hb2nz hshift_nz halign
         hbltu_1 hbltu_0 hcarry2 hmodWord
-  | n4Full hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback =>
-      exact evm_mod_n4_stack_spec_within_dispatch_uni sp base a b
-        v5 v6 v7 v10 v11 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
-        nMem shiftMem jMem retMem dMem dloMem scratch_un0
-        hbnz hb3nz halign hbltu hcarry2_nz_addback hsem_addback
 
 end EvmAsm.Evm64

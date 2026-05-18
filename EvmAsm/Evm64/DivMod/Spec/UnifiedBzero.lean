@@ -1,12 +1,10 @@
 /-
   EvmAsm.Evm64.DivMod.Spec.UnifiedBzero
 
-  Unified-bound zero-divisor DIV/MOD dispatcher wrappers. The four per-`n` dispatcher-surface
-  specs (n=1, n=2, n=3, n=4) all have different `cpsTripleWithin` step bounds
-  (n=1: 946, n=2: 744, n=3: 542, n=4: 340). Before they can be combined into a
-  single `evm_div_stack_spec` / `evm_mod_stack_spec` (slice 4keh / 3muq under
-  parent #61) via case-split, all four need a shared bound — otherwise the
-  case-split branches produce triples with incompatible `nSteps`.
+  Unified-bound zero-divisor DIV/MOD dispatcher wrappers. This file owns the
+  shared bound used by the valid n=1, n=2, and n=3 dispatcher-surface specs.
+  The n=4 stack-surface path is intentionally absent while the call-addback
+  algorithm is being repaired.
 
   This file owns `unifiedDivBound : Nat := 946` and the zero-divisor dispatcher wrappers shared by the unified stack specs.
 
@@ -24,7 +22,6 @@ import EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3ModBridge
-import EvmAsm.Evm64.DivMod.N4StackSpecWithin
 
 namespace EvmAsm.Evm64
 
