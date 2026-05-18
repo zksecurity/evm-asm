@@ -272,6 +272,46 @@ theorem expTwoMulFixedIterSkipCondCountPost_choose_scratch
     sep_perm h
   exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
 
+abbrev expTwoMulFixedIterSkipCountPostScratchPrefix
+    (iterCount sp evmSp r0 r1 r2 r3 : Word)
+    (exitCond : Prop) : Assertion :=
+  ((.x9 ↦ᵣ expTwoMulIterCountNew iterCount) ** (.x0 ↦ᵣ (0 : Word)) **
+    ⌜exitCond⌝) **
+    expTwoMulFixedIterSkipRestScratchPrefix sp evmSp r0 r1 r2 r3
+
+abbrev expTwoMulFixedIterSkipCountPostScratchSuffix
+    (e c6 evmSp a0 a1 a2 a3 base : Word) : Assertion :=
+  expTwoMulFixedIterSkipRestScratchSuffix e c6 base **
+    expTwoMulFixedIterBaseFrame evmSp a0 a1 a2 a3
+
+theorem expTwoMulFixedIterSkipCountPost_choose_scratch
+    {iterCount e c6 sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {ps : PartialState}
+    (h :
+      expTwoMulFixedIterSkipCountPost iterCount e c6 sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base exitCond ps) :
+    ∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterSkipCountPostScratchSuffix e c6 evmSp
+          a0 a1 a2 a3 base) ps := by
+  have hDecomp :
+      (expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchOwn evmSp **
+        expTwoMulFixedIterSkipCountPostScratchSuffix e c6 evmSp
+          a0 a1 a2 a3 base) ps := by
+    unfold expTwoMulFixedIterSkipCountPost
+      expTwoMulFixedIterSkipRest
+      expTwoMulFixedIterSkipCountPostScratchPrefix
+      expTwoMulFixedIterSkipRestScratchPrefix
+      expTwoMulFixedIterScratchOwn
+      expTwoMulFixedIterSkipCountPostScratchSuffix
+      expTwoMulFixedIterSkipRestScratchSuffix at *
+    sep_perm h
+  exact expTwoMulFixedIterScratchOwn_choose_two_frame hDecomp
+
 theorem expTwoMulFixedIterCaseLoopPost_iff
     {iterCount e c6 ptr nextLimb sp evmSp
       r0 r1 r2 r3 a0 a1 a2 a3 base : Word} {ps : PartialState} :
