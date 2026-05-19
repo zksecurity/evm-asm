@@ -685,25 +685,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_branchState_elim
       ∀ (bit : Bool)
         (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
         cpsTripleWithin nSteps addr exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6
-            (expTwoMulIterCountNew iterCount)
-            v10
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0 d1 d2 d3
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7 v11
-            frame)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6 v7 v10 v11 d0 d1 d2 d3 base frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -726,9 +711,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_branchState_elim
         addr frame hk hBase hState.2.1 hState.2.2.1 hNextNext hState.1)
       (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_branchState_elim
         hk hState.2.2.2
-        (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
-          simpa only [expTwoMulFixedStateStepBranchPre] using
-            hBranch bit v6 v7 v10 v11 d0 d1 d2 d3)
+        hBranch
         hReload)
 
 /-- CPS case-loop bridge with both recursive edge shapes carrying the
@@ -750,25 +733,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_state_elim
       ∀ (bit : Bool)
         (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
         cpsTripleWithin nSteps addr exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6
-            (expTwoMulIterCountNew iterCount)
-            v10
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0 d1 d2 d3
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7 v11
-            frame)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6 v7 v10 v11 d0 d1 d2 d3 base frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -791,9 +759,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_state_elim
         addr frame hk hBase hState.2.1 hState.2.2.1 hNextNext hState.1)
       (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
         hk hState.2.2.2
-        (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
-          simpa only [expTwoMulFixedStateStepBranchPre] using
-            hBranch bit v6 v7 v10 v11 d0 d1 d2 d3)
+        hBranch
         hReload)
 
 /-- Bounded one-step wrapper whose nonzero decremented-count premise comes
@@ -858,25 +824,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step
       ∀ (bit : Bool)
         (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
         cpsTripleWithin nSteps (base + 44) exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6'
-            (expTwoMulIterCountNew iterCount)
-            v10'
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0' d1' d2' d3'
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7' v11'
-            frame)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6' v7' v10' v11' d0' d1' d2' d3' base frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -903,9 +854,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step
       hk hCount hBase hNextNext hBound)
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
       (by omega) hCount
-      (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
-        simpa only [expTwoMulFixedStateStepBranchPre] using
-          hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+      hBranch
       hReload)
 
 /-- Unframed variant of
@@ -932,25 +881,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithState_state_step
       ∀ (bit : Bool)
         (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
         cpsTripleWithin nSteps (base + 44) exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6'
-            (expTwoMulIterCountNew iterCount)
-            v10'
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0' d1' d2' d3'
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7' v11'
-            empAssertion)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6' v7' v10' v11' d0' d1' d2' d3' base empAssertion)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -1041,25 +975,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_stepPost_elim_of_co
         (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
         cpsTripleWithin nSteps (base + 44) exit
           (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6'
-            (expTwoMulIterCountNew iterCount)
-            v10'
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0' d1' d2' d3'
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7' v11'
-            frame)
+          (expTwoMulFixedStepPostBranchPre k baseWord exponentWord
+            iterCount e controlC6 ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 base bit
+            v6' v7' v10' v11' d0' d1' d2' d3' frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -1083,7 +1002,11 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_stepPost_elim_of_co
     sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
     a0 a1 a2 a3 v7 v11 base hFrame hbase hControlMachine
     (expTwoMulFixedIterCountInvariant_succ_ne_zero_of_lt_255 hk hCount)
-    (by omega) hBase hNextNext hBound hBranch hReload
+    (by omega) hBase hNextNext hBound
+    (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
+      simpa only [expTwoMulFixedStepPostBranchPre] using
+        hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+    hReload
 
 /-- Unframed variant of
     `cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_stepPost_elim_of_count_bounded`. -/
@@ -1107,25 +1030,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithState_stepPost_elim_of_count_b
         (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
         cpsTripleWithin nSteps (base + 44) exit
           (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6'
-            (expTwoMulIterCountNew iterCount)
-            v10'
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0' d1' d2' d3'
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7' v11'
-            empAssertion)
+          (expTwoMulFixedStepPostBranchPre k baseWord exponentWord
+            iterCount e controlC6 ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 base bit
+            v6' v7' v10' v11' d0' d1' d2' d3' empAssertion)
           Q)
     (hReload :
       ∀ (bit : Bool)
