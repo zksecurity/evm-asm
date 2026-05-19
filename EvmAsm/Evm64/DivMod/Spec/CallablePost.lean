@@ -45,6 +45,18 @@ theorem divConcretePostNoX1Frame_unfold
   delta divConcretePostNoX1Frame
   rfl
 
+theorem divConcretePostNoX1Frame_pcFree
+    (sp : Word) (a b : EvmWord)
+    (x9Val raVal v2 v6 v7 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) :
+    (divConcretePostNoX1Frame sp a b x9Val raVal v2 v6 v7 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0).pcFree := by
+  rw [divConcretePostNoX1Frame_unfold, divScratchValuesCallNoX1_unfold,
+    divScratchValues_unfold]
+  pcFree
+
 /-- Weaken the concrete no-NOP DIV callable post bundle to the public
     callable postcondition plus the caller-framed exact `x1` and `x9` atoms. -/
 theorem divConcretePostNoX1_weaken_callable_frame
@@ -114,6 +126,18 @@ theorem modConcretePostNoX1Frame_unfold
         shiftMem nMem jMem retMem dMem dloMem scratch_un0)) := by
   delta modConcretePostNoX1Frame
   rfl
+
+theorem modConcretePostNoX1Frame_pcFree
+    (sp : Word) (a b : EvmWord)
+    (x9Val raVal v2 v6 v7 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) :
+    (modConcretePostNoX1Frame sp a b x9Val raVal v2 v6 v7 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0).pcFree := by
+  rw [modConcretePostNoX1Frame_unfold, divScratchValuesCallNoX1_unfold,
+    divScratchValues_unfold]
+  pcFree
 
 /-- MOD counterpart of `divConcretePostNoX1_weaken_callable_frame`. -/
 theorem modConcretePostNoX1_weaken_callable_frame
