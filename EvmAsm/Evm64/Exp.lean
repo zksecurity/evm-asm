@@ -68,6 +68,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEntryFixedIterPre
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePosts
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterExits
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostBridge
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostCountBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostTailBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostCases
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostFramedCases
