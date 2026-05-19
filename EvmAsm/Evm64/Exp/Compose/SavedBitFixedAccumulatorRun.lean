@@ -38,6 +38,20 @@ theorem expTwoMulFixedAccumulatorRun_suffix_eq_exp_of_start
   have hAdd : k + (256 - k) = 256 := by omega
   rw [hAdd, expTwoMulFixedAccumulatorTarget_full]
 
+/-- Direct suffix form from the four-limb accumulator invariant. -/
+theorem expTwoMulFixedAccumulatorRun_suffix_eq_exp_of_invariant
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {r0 r1 r2 r3 : Word}
+    (hk : k ≤ 256)
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3) :
+    expTwoMulFixedAccumulatorRun baseWord exponentWord
+        (expResultWord r0 r1 r2 r3) k (256 - k) =
+      EvmWord.exp baseWord exponentWord := by
+  unfold expTwoMulFixedAccumulatorInvariant at hInv
+  exact expTwoMulFixedAccumulatorRun_suffix_eq_exp_of_start hk hInv
+
 /-- The remaining fixed-loop suffix preserves the full semantic invariant. -/
 theorem expTwoMulFixedAccumulatorInvariant_full_of_suffix_run
     {baseWord exponentWord : EvmWord} {k : Nat}
