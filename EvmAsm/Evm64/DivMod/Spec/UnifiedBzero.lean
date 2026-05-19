@@ -22,6 +22,7 @@ import EvmAsm.Evm64.DivMod.Spec.N2DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N2ModStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3DivStackSpec
 import EvmAsm.Evm64.DivMod.Spec.N3ModBridge
+import EvmAsm.Evm64.DivMod.Spec.CallablePost
 
 namespace EvmAsm.Evm64
 
@@ -317,10 +318,9 @@ theorem evm_div_bzero_stack_spec_within_dispatch_noNop_preserving_x1_uni
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz)
 
-/-- Zero-divisor DIV dispatcher over `divCode_noNop` in the callable-only
-    surface: exact `x1` is preserved for `cc_ret`, and exact `x9` is framed
-    separately from the DIV loop-counter ownership surface. -/
-theorem evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
+/-- Zero-divisor DIV dispatcher over `divCode_noNop` in the concrete callable
+    post shape shared by bzero and branch-local dispatcher proofs. -/
+theorem evm_div_bzero_stack_spec_within_dispatch_noNop_concrete_callable_uni
     (sp base : Word)
     (a b : EvmWord) (x9Val raVal v2 v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -331,8 +331,9 @@ theorem evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
         x9Val raVal v2 v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         shiftMem nMem jMem retMem dMem dloMem scratch_un0)
-      ((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
-        (.x9 ↦ᵣ x9Val)) := by
+      (divConcretePostNoX1Frame sp a b x9Val raVal v2 v6 v7 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0) := by
   let frame : Assertion :=
     (.x9 ↦ᵣ x9Val) ** (.x1 ↦ᵣ raVal) ** (.x2 ↦ᵣ v2) **
     (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) **
@@ -359,30 +360,32 @@ theorem evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
         simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢
         exact hp)
       (fun h hq => by
-        dsimp [frame] at hq
-        rw [divStackDispatchPostCallable_unfold]
-        simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hq ⊢
-        have hqOwn :
-            (divScratchOwnCallNoX1 sp ** evmWordIs sp a ** (.x0 ↦ᵣ (0 : Word)) **
-              (.x1 ↦ᵣ raVal) ** regOwn .x11 ** (.x12 ↦ᵣ (sp + 32)) **
-              regOwn .x2 ** regOwn .x6 ** regOwn .x7 ** (.x9 ↦ᵣ x9Val) **
-              regOwn .x10 ** regOwn .x5 ** evmWordIs (sp + 32) (EvmWord.div a b)) h := by
-          refine sepConj_mono ?_ ?_ h hq
-          · intro hLeft hpLeft
-            exact divScratchValuesCallNoX1_implies_divScratchOwnCallNoX1
-              sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7 shiftMem nMem jMem
-                retMem dMem dloMem scratch_un0 hLeft hpLeft
-          · apply sepConj_mono_right
-            apply sepConj_mono_right
-            apply sepConj_mono_right
-            apply sepConj_mono (regIs_implies_regOwn .x11 (v := v11))
-            apply sepConj_mono_right
-            apply sepConj_mono (regIs_implies_regOwn .x2 (v := v2))
-            apply sepConj_mono (regIs_implies_regOwn .x6 (v := v6))
-            apply sepConj_mono (regIs_implies_regOwn .x7 (v := v7))
-            exact fun _ hp => hp
-        exact by xperm_hyp hqOwn)
+        simpa [frame, divConcretePostNoX1Frame_unfold,
+          sepConj_assoc', sepConj_comm', sepConj_left_comm'] using hq)
       hFramed
+
+/-- Zero-divisor DIV dispatcher over `divCode_noNop` in the callable-only
+    surface: exact `x1` is preserved for `cc_ret`, and exact `x9` is framed
+    separately from the DIV loop-counter ownership surface. -/
+theorem evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
+    (sp base : Word)
+    (a b : EvmWord) (x9Val raVal v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      ((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) := by
+  exact cpsTripleWithin_weaken (fun _ hp => hp)
+    (divConcretePostNoX1_weaken_callable_frame sp a b)
+    (evm_div_bzero_stack_spec_within_dispatch_noNop_concrete_callable_uni
+      sp base a b x9Val raVal v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz)
 
 theorem modStackDispatchPost_weaken_bzero_frame
     (sp : Word) (a b : EvmWord)
