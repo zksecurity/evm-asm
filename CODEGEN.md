@@ -254,19 +254,123 @@ target only the zkvm-standards single-buffer shape.
 
 ### M5 — Tiny EVM interpreter (L)
 
-Codegen `EvmAsm/Evm64/InterpreterLoop.lean` + `EvmAsm/Evm64/Dispatch.lean` and
-run small bytecodes (`PUSH1 a; PUSH1 b; ADD; STOP`, a two-op branch, …). A
-reference oracle in Lean or Python diffs the expected stack against
-`ziskemu`'s public output.
+Split into two slices. **M5a** unrolls verified opcode `Program`s as a
+linear chain (no runtime dispatch) to validate that the handlers
+compose under `++` honoring the `x10` code-pointer convention.
+**M5b** codegens the actual fetch/decode/dispatch loop from
+`EvmAsm/Evm64/InterpreterLoop.lean` + `EvmAsm/Evm64/Dispatch.lean`.
 
-**Exit criteria.**
-2–3 hand-picked bytecodes round-trip end-to-end against an oracle; smoke +
-`evm_add` + tiny-interp all in a single CI-runnable script.
+#### M5a — Unrolled tiny interpreter (S) — **DONE (2026-05-19)**
+
+Chain verified opcode `Program`s end-to-end for two hand-picked
+bytecodes, no runtime dispatch. Each opcode handler reads its
+operands from the conventional registers (`x10` = EVM code pointer,
+`x12` = EVM stack pointer); a one-instruction `advancePc` between
+handlers does the dispatcher's PC-update job inline.
+
+**Delivered:**
+- `advancePc (off : Nat) : Program` helper in
+  `EvmAsm/Codegen/Programs.lean` — a single `ADDI .x10 .x10 off`
+  emitted between unrolled opcode handlers. Stays in the verified
+  `Program` world, so the existing `RoundTripTests.lean` already
+  covers it.
+- `tinyInterpAdd` / `tinyInterpAdd2` `Program`s composing
+  `EvmAsm.Evm64.evm_push 1`, `EvmAsm.Evm64.evm_add`, and `advancePc`
+  via `++`. STOP is handled by fall-through to the halt stub — no
+  RISC-V `Program` body needed in the unrolled chain.
+- `tinyInterpPrologue` + `tinyInterpDataSection` lay out the EVM
+  bytecode bytes as `.byte` directives under label `evm_code`,
+  followed by 256 bytes of writable scratch ending at label
+  `evm_stack_top`. Prologue initializes `x10 = &evm_code` and
+  `x12 = &evm_stack_top`.
+- Two `BuildUnit`s (`tinyInterpAddUnit`, `tinyInterpAdd2Unit`)
+  registered in `lookupProgram` and `knownProgramNames`. Both reuse
+  the existing `evmAddEpilogue` for the result-to-`OUTPUT_ADDR` copy.
+- `scripts/codegen-tiny-interp-check.sh`: builds, emits, links, runs
+  both ELFs on `ziskemu`, and diffs the first 32 bytes of public
+  output against the expected LE limbs. **PASSES** for both test
+  programs.
+
+**Test cases.**
+- `tiny_interp_add`: `PUSH1 0xFF; PUSH1 0x01; ADD; STOP`
+  → expected `[0x100, 0, 0, 0]` (first 8 bytes `00 01 00 00 00 00 00 00`).
+- `tiny_interp_add2`: `PUSH1 0x10; PUSH1 0x20; ADD; PUSH1 0x30; ADD; STOP`
+  → expected `[0x60, 0, 0, 0]` (first 8 bytes `60 00 00 00 00 00 00 00`).
+  Exercises chained ADDs and a stack pointer that walks back up after
+  each `evm_add`.
+
+**Exit criteria (met).**
+`scripts/codegen-tiny-interp-check.sh` exits 0; `riscv64-elf-objdump
+-d` shows the inline `addi a0, a0, N` advances between unrolled opcode
+handler bodies.
+
+#### M5b — Runtime fetch/decode/dispatch loop (M) — **DONE (2026-05-19)**
+
+A real fetch/decode/dispatch loop in RISC-V, with verified opcode
+`Program`s wrapped one-by-one in subroutines. Per §Tricky bits #9
+("Codegen is not verified") the loop scaffold lives as raw asm; only
+the opcode bodies remain verified.
+
+**Delivered:**
+- `opcodeHandlerLabel : Nat → String` + `emitOpcodeHandlerTable`
+  in `EvmAsm/Codegen/Programs.lean`: render a 256-entry jump table
+  in `.data` mapping each opcode byte to a handler label. Unhandled
+  bytes route to `h_invalid`.
+- `tinyInterpDispatchPrologue` — `_start` init (`la x10, evm_code`,
+  `la x12, evm_stack_top`) followed by `.dispatch_loop:`:
+    ```
+    lbu  x5, 0(x10)              # fetch opcode byte
+    la   x6, opcode_handlers
+    slli x5, x5, 3               # opcode * 8 (entry stride)
+    add  x6, x6, x5
+    ld   x7, 0(x6)               # load handler address
+    jalr x1, x7, 0               # call handler
+    j    .dispatch_loop
+    ```
+- `tinyInterpDispatchEpilogue` — handler subroutines + exit path:
+  - `h_PUSH1`: `<emitProgram (evm_push 1)>` + `addi x10, x10, 2` + `ret`
+  - `h_ADD`:   `<emitProgram evm_add>`     + `addi x10, x10, 1` + `ret`
+  - `h_STOP`:  `j .exit_label` (no return to dispatcher)
+  - `h_invalid`: `j .exit_label` (same exit path as STOP for this slice)
+  - `.exit_label`: `<emitProgram evmAddEpilogue>` — falls through to
+    the linux93 halt stub appended by `emitBuildUnit`.
+- Two `BuildUnit`s (`tinyInterpDispatchAddUnit`,
+  `tinyInterpDispatchAdd2Unit`) registered in `lookupProgram` and
+  `knownProgramNames`. They reuse `tinyInterpAddBytecode` /
+  `tinyInterpAdd2Bytecode` verbatim, so M5a and M5b run on identical
+  inputs and produce identical expected outputs — any regression is
+  isolated to the dispatcher.
+- `scripts/codegen-tiny-interp-dispatch-check.sh` mirrors the M5a
+  script and runs both dispatch units. **PASSES** for both bytecodes
+  with `-n 200000` step budget.
+
+**Calling convention (informal).** `x10` (EVM code pointer) is
+preserved across handler calls; each handler wrapper advances it by
+the opcode's byte width before returning. `x12` (EVM stack pointer)
+is updated freely by handlers and persists across the loop. `x1` is
+the standard return address. The dispatcher reloads its scratch
+(`x5`, `x6`, `x7`) from `x10` and the jump-table base every
+iteration, so the fact that verified handlers clobber them
+(`evm_add` uses `x5`/`x6`/`x7`/`x11`) is by design.
+
+**Layout note.** `evm_stack_top` and `opcode_handlers` end up at
+the same address (no `.balign` padding needed since the stack
+region already lands on an 8-byte boundary). Safe at the worst-case
+depth of 2 (= 64 bytes) for both test programs, but worth flagging
+if M5c expands to deeper bytecodes — give the stack its own
+explicit reserved tail before the jump table.
+
+**Exit criteria (met).**
+`scripts/codegen-tiny-interp-dispatch-check.sh` exits 0; both M5a
+and M5b produce identical bytes through `ziskemu`'s public output.
 
 ### Sequencing
 
-M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5 (next). M3 is deferred; revisit only
-if M5 makes label-free emission unreadable. M4 unblocks M5.
+M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅. M3 is deferred;
+revisit only if a future milestone (full opcode coverage, JUMP/JUMPI,
+or the binary encoder) makes label-free emission unreadable. M4
+unblocked M5; M5a pinned down the `x10`/`x12` calling convention that
+M5b's dispatcher relies on.
 
 ## Tricky bits / open questions
 
@@ -321,8 +425,16 @@ if M5 makes label-free emission unreadable. M4 unblocks M5.
 - **M4.** ✅ `scripts/codegen-evm_add-from-input-check.sh` exits 0
   (validated 2026-05-18). Same operands and expected sum as M2, but
   loaded at runtime from `ziskemu -i <file>` instead of `.data`.
-- **M5.** Per-bytecode regression script under `scripts/`; each test compares
-  `ziskemu`'s `write_output` against the reference oracle.
+- **M5a.** ✅ `scripts/codegen-tiny-interp-check.sh` exits 0
+  (validated 2026-05-19). Two unrolled bytecodes
+  (`PUSH1; PUSH1; ADD; STOP` and `PUSH1; PUSH1; ADD; PUSH1; ADD; STOP`)
+  round-trip through verified opcode `Program`s chained with
+  `advancePc`.
+- **M5b.** ✅ `scripts/codegen-tiny-interp-dispatch-check.sh` exits 0
+  (validated 2026-05-19). Same two bytecodes as M5a, but routed
+  through a 256-entry jump table + handler subroutines (`jalr ra,
+  …`) instead of an unrolled chain. Output bytes match M5a's, which
+  cross-checks the dispatcher against the unrolled reference.
 
 ## Future work (post-M5)
 
