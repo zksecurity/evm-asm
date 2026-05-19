@@ -58,18 +58,52 @@ theorem expTwoMulFixedSavedNextLimbFrameN_eq_of_nextNext
       expTwoMulFixedSavedNextLimbFrameN exponentWord k ptr := by
   rw [expTwoMulFixedSavedNextLimbFrameN_unfold, hNextNext]
 
-theorem expTwoMulFixedSavedNextLimbFrameN_succ_no_reload
+@[irreducible]
+def expTwoMulFixedReloadLimbFrameN
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) : Assertion :=
+  expTwoMulFixedSavedNextLimbFrame ptr
+    (exponentWord.getLimbN (1 - k / 64))
+
+theorem expTwoMulFixedReloadLimbFrameN_unfold
+    {exponentWord : EvmWord} {k : Nat} {ptr : Word} :
+    expTwoMulFixedReloadLimbFrameN exponentWord k ptr =
+      expTwoMulFixedSavedNextLimbFrame ptr
+        (exponentWord.getLimbN (1 - k / 64)) := by
+  delta expTwoMulFixedReloadLimbFrameN
+  rfl
+
+theorem expTwoMulFixedReloadLimbFrameN_succ_no_reload
     {exponentWord : EvmWord} {k : Nat} {ptr : Word}
-    (hMod : k % 64 < 62) :
-    expTwoMulFixedSavedNextLimbFrameN exponentWord k ptr =
-      expTwoMulFixedSavedNextLimbFrameN exponentWord (k + 1) ptr := by
-  rw [expTwoMulFixedSavedNextLimbFrameN_unfold,
-    expTwoMulFixedSavedNextLimbFrameN_unfold]
+    (hMod : k % 64 < 63) :
+    expTwoMulFixedReloadLimbFrameN exponentWord k ptr =
+      expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr := by
+  rw [expTwoMulFixedReloadLimbFrameN_unfold,
+    expTwoMulFixedReloadLimbFrameN_unfold]
   congr 1
   congr 1
-  have hdiv : (k + 2) / 64 = (k + 1) / 64 := by
+  have hdiv : (k + 1) / 64 = k / 64 := by
     omega
-  rw [show (k + 1 + 1) / 64 = (k + 2) / 64 by omega, hdiv]
+  rw [hdiv]
+
+theorem expTwoMulFixedReloadLimbFrameN_eq_of_reload_nextNext
+    {exponentWord : EvmWord} {k : Nat} {ptr nextNextLimb : Word}
+    (hMod : k % 64 = 63)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64)) :
+    expTwoMulFixedSavedNextLimbFrame ptr nextNextLimb =
+      expTwoMulFixedReloadLimbFrameN exponentWord k ptr := by
+  rw [expTwoMulFixedReloadLimbFrameN_unfold, hNextNext]
+  congr 1
+  have hdiv : (k + 1) / 64 = k / 64 + 1 := by
+    omega
+  rw [hdiv]
+  have hCases : k / 64 = 0 ∨ k / 64 = 1 ∨ 2 ≤ k / 64 := by
+    omega
+  rcases hCases with hZero | hOne | hGe
+  · rw [hZero]
+  · rw [hOne]
+  · rw [Nat.sub_eq_zero_of_le (by omega : 2 ≤ k / 64 + 1),
+      Nat.sub_eq_zero_of_le (by omega : 1 ≤ k / 64)]
 
 theorem expTwoMulFixedControlInvariant_nextLimb
     {exponentWord : EvmWord} {k : Nat}
