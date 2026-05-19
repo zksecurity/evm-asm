@@ -85,6 +85,17 @@ theorem expTwoMulFixedReloadLimbFrameN_succ_no_reload
     omega
   rw [hdiv]
 
+theorem expTwoMulFixedReloadLimbFrameN_succ_of_control_no_reload
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0) :
+    expTwoMulFixedReloadLimbFrameN exponentWord k ptr =
+      expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr :=
+  expTwoMulFixedReloadLimbFrameN_succ_no_reload
+    (expTwoMulFixedControlInvariant_no_reload_mod hControl hC6)
+
 theorem expTwoMulFixedReloadLimbFrameN_eq_of_reload_nextNext
     {exponentWord : EvmWord} {k : Nat} {ptr nextNextLimb : Word}
     (hMod : k % 64 = 63)
