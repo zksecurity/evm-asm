@@ -523,7 +523,7 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within
       hcarry2_nz
     intro_lets at J2
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; rw [loopBodyN2CallJgt0Pre_unfold]; exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_addback hb]; exact hp)
       J2
@@ -539,7 +539,7 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
       (fun _ hp => by
         rw [loopBodyN2J2CallPre_unfold] at hp
-        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        rw [loopBodyN2CallJgt0Pre_unfold]
         exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
@@ -570,7 +570,7 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within_noNop
       hcarry2_nz
     intro_lets at J2
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; rw [loopBodyN2CallJgt0Pre_unfold]; exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_addback hb]; exact hp)
       J2
@@ -585,7 +585,7 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within_noNop
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
       (fun _ hp => by
         rw [loopBodyN2J2CallPre_unfold] at hp
-        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        rw [loopBodyN2CallJgt0Pre_unfold]
         exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
@@ -665,7 +665,7 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within
       hcarry2_nz
     intro_lets at J1
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; rw [loopBodyN2CallJgt0Pre_unfold]; exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_addback hb]; exact hp)
       J1
@@ -681,7 +681,7 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
       (fun _ hp => by
         rw [loopBodyN2J1CallPre_unfold] at hp
-        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        rw [loopBodyN2CallJgt0Pre_unfold]
         exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
@@ -712,7 +712,7 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within_noNop
       hcarry2_nz
     intro_lets at J1
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; rw [loopBodyN2CallJgt0Pre_unfold]; exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_addback hb]; exact hp)
       J1
@@ -727,7 +727,7 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within_noNop
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
       (fun _ hp => by
         rw [loopBodyN2J1CallPre_unfold] at hp
-        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        rw [loopBodyN2CallJgt0Pre_unfold]
         exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
