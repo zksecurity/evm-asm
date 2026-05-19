@@ -216,6 +216,126 @@ theorem expTwoMulFixedIterStepPostNWithControlFrame_reload
   rw [expTwoMulFixedIterStepPostNWithControlFrame_unfold]
   exact Or.inr ⟨bit, v6, v7, v10, v11, d0, d1, d2, d3, h⟩
 
+theorem expTwoMulFixedIterStepPostNWithControlFrame_branch_true
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3
+      expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+        (c6 + signExtend12 (-1 : BitVec 12))
+        (e <<< (1 : BitVec 6).toNat)
+        v6
+        (expTwoMulIterCountNew iterCount)
+        v10
+        ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+        ptr nextLimb sp evmSp
+        (rw.getLimbN 3)
+        (((base + 44) + 140) + 68)
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+        (rw.getLimbN 3)
+        d0 d1 d2 d3
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+        (rw.getLimbN 3)
+        a0 a1 a2 a3 v7 v11
+        frame ps) :
+    expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+      iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base frame ps := by
+  apply expTwoMulFixedIterStepPostNWithControlFrame_branch (bit := true)
+  simpa [expTwoMulFixedBranchResult_true,
+    expTwoMulFixedBranchReturnPc_true] using h
+
+theorem expTwoMulFixedIterStepPostNWithControlFrame_branch_false
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      let squareW := expSquaringCallSquareW r0 r1 r2 r3
+      expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+        (c6 + signExtend12 (-1 : BitVec 12))
+        (e <<< (1 : BitVec 6).toNat)
+        v6
+        (expTwoMulIterCountNew iterCount)
+        v10
+        ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+        ptr nextLimb sp evmSp
+        (squareW.getLimbN 3)
+        (((base + 44) + 32) + 68)
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        d0 d1 d2 d3
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        a0 a1 a2 a3 v7 v11
+        frame ps) :
+    expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+      iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base frame ps := by
+  apply expTwoMulFixedIterStepPostNWithControlFrame_branch (bit := false)
+  simpa [expTwoMulFixedBranchResult_false,
+    expTwoMulFixedBranchReturnPc_false] using h
+
+theorem expTwoMulFixedIterStepPostNWithControlFrame_reload_true
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3
+      (((((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+          e c6 ptr nextLimb base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+          (rw.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps) :
+    expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+      iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base frame ps := by
+  apply expTwoMulFixedIterStepPostNWithControlFrame_reload (bit := true)
+  simpa [expTwoMulFixedReloadBranchResidualWithControlFrame_true] using h
+
+theorem expTwoMulFixedIterStepPostNWithControlFrame_reload_false
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      let squareW := expSquaringCallSquareW r0 r1 r2 r3
+      (((((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (squareW.getLimbN 0) (squareW.getLimbN 1)
+          (squareW.getLimbN 2) (squareW.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps) :
+    expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+      iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base frame ps := by
+  apply expTwoMulFixedIterStepPostNWithControlFrame_reload (bit := false)
+  simpa [expTwoMulFixedReloadBranchResidualWithControlFrame_false] using h
+
 theorem expTwoMulFixedIterStepPostNWithControlFrame_cases
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
