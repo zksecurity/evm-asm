@@ -422,6 +422,73 @@ theorem expTwoMulFixedIterStepPostNWithControlFrame_elim
       ⟨bit, v6, v7, v10, v11, d0, d1, d2, d3, hResidual⟩
     exact hReload bit v6 v7 v10 v11 d0 d1 d2 d3 hResidual
 
+theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
+    {nSteps : Nat} {addr exit : Word} {cr : CodeReq}
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame Q : Assertion}
+    (hBranch :
+      ∀ (bit : Bool)
+        (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (let outW := expTwoMulFixedBranchResult bit
+            a0 a1 a2 a3 r0 r1 r2 r3
+          expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+            (c6 + signExtend12 (-1 : BitVec 12))
+            (e <<< (1 : BitVec 6).toNat)
+            v6
+            (expTwoMulIterCountNew iterCount)
+            v10
+            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+            ptr nextLimb sp evmSp
+            (outW.getLimbN 3)
+            (expTwoMulFixedBranchReturnPc bit base)
+            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+            (outW.getLimbN 3)
+            d0 d1 d2 d3
+            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+            (outW.getLimbN 3)
+            a0 a1 a2 a3 v7 v11
+            frame)
+          Q)
+    (hReload :
+      ∀ (bit : Bool)
+        (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (expTwoMulFixedReloadBranchResidualWithControlFrame bit (k := k)
+            baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+            sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+            v6 v7 v10 v11 d0 d1 d2 d3 frame)
+          Q) :
+    cpsTripleWithin nSteps addr exit cr
+      (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base frame)
+      Q := by
+  intro R hR s hcr hStepR hpc
+  obtain ⟨hp, hcompat, hsep⟩ := hStepR
+  obtain ⟨hStep, hFrame, hdisj, hunion, hStepPost, hFramePart⟩ := hsep
+  exact
+    expTwoMulFixedIterStepPostNWithControlFrame_elim
+      (Q := fun _ =>
+        ∃ kExec, kExec ≤ nSteps ∧ ∃ s',
+          stepN kExec s = some s' ∧ s'.pc = exit ∧
+            (Q ** R).holdsFor s')
+      (fun bit v6 v7 v10 v11 d0 d1 d2 d3 hNext =>
+        hBranch bit v6 v7 v10 v11 d0 d1 d2 d3
+          R hR s hcr
+          ⟨hp, hcompat,
+            ⟨hStep, hFrame, hdisj, hunion, hNext, hFramePart⟩⟩
+          hpc)
+      (fun bit v6 v7 v10 v11 d0 d1 d2 d3 hResidual =>
+        hReload bit v6 v7 v10 v11 d0 d1 d2 d3
+          R hR s hcr
+          ⟨hp, hcompat,
+            ⟨hStep, hFrame, hdisj, hunion, hResidual, hFramePart⟩⟩
+          hpc)
+      hStepPost
+
 theorem expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
