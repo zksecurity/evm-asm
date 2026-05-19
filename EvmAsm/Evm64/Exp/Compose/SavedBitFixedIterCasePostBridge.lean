@@ -903,6 +903,84 @@ theorem exp_two_mul_fixed_iterations_body_peel_with_case_continuations_spec_with
     (expTwoMulFixedReloadIterStepBound_add_max_fixedIterationsBodyBound_le_succ
       iterations)
 
+/-- Non-final variant of the arbitrary-iteration fixed-body peel.  The exit
+    branch is impossible, so the caller only supplies the recursive loop
+    continuation. -/
+theorem exp_two_mul_fixed_iterations_body_peel_case_nonfinal_spec_within
+    (iterations : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0) :
+    (cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base)
+      R) →
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
+      (base + 44)
+      (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  intro hLoop
+  exact
+    exp_two_mul_fixed_iterations_body_peel_with_case_continuations_spec_within
+      iterations
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base (base + 296) R hbase hLoop
+      (cpsTripleWithin_mono_nSteps (Nat.zero_le _)
+        (cpsTripleWithin_extend_code
+          (hmono := by
+            intro a i h
+            cases h)
+          (cpsTripleWithin_refl
+            (exp_fixed_iter_case_exit_vacuous_bridge hne))))
+
+/-- Final variant of the arbitrary-iteration fixed-body peel.  The loop branch
+    is impossible, so the caller only supplies the exit bridge. -/
+theorem exp_two_mul_fixed_iterations_body_peel_case_final_spec_within
+    (iterations : Nat)
+    (e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 : Word)
+    (base : Word) (R : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hzero : expTwoMulIterCountNew iterCount = 0)
+    (hExit :
+      ∀ ps,
+        expTwoMulFixedIterCaseExitPost iterCount e c6 ptr nextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        R ps) :
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
+      (base + 44)
+      (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+        v7 v11)
+      R := by
+  exact
+    exp_two_mul_fixed_iterations_body_peel_with_case_continuations_spec_within
+      iterations
+      e c6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+      r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3
+      v7 v11 base (base + 296) R hbase
+      (cpsTripleWithin_mono_nSteps (Nat.zero_le _)
+        (exp_fixed_iter_case_loop_zero_step_vacuous hzero))
+      (cpsTripleWithin_mono_nSteps (Nat.zero_le _)
+        (cpsTripleWithin_extend_code
+          (hmono := by
+            intro a i h
+            cases h)
+          (cpsTripleWithin_refl hExit)))
+
 /-- Closed-form variant of
     `exp_two_mul_fixed_iterations_body_peel_with_case_continuations_spec_within`. -/
 theorem exp_two_mul_fixed_iterations_body_peel_with_case_continuations_closed_bound_spec_within
