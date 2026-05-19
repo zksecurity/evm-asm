@@ -206,6 +206,43 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_to_stepPost_of_co
       hControlMachineInv hNextNext hInv
   simpa [← hControlMachine] using hSpec R hR s hcr hPR' hpc
 
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_seq_stepPost_of_control_eq_machine
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {nSteps : Nat} {exit : Word} {frame Q : Assertion}
+    (controlC6 e machineC6 iterCount v10 v18 ptr nextLimb
+      nextNextLimb sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (hFrame : frame.pcFree)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hControlMachine : controlC6 = machineC6)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hStepPost :
+      cpsTripleWithin nSteps (base + 44) exit
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+          iterCount e controlC6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base frame)
+        Q) :
+    cpsTripleWithin (193 + nSteps) (base + 44) exit
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithControlFrame k baseWord exponentWord
+        controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11 frame)
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_to_stepPost_of_control_eq_machine
+      controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base frame hFrame hbase hControlMachine hne
+      hk hBase hNextNext)
+    hStepPost
+
 theorem cpsTripleWithin_expTwoMulFixedIterPre_seq_stepPostNWithControl
     {baseWord exponentWord : EvmWord} {k : Nat}
     {nSteps : Nat} {exit : Word} {Q : Assertion}
