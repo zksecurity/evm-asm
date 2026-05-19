@@ -21,6 +21,33 @@ private theorem pure_assertion_eq_emp_of_true {p : Prop} (hp : p) :
   · intro h
     exact ⟨h.1, hp⟩
 
+@[irreducible]
+def expTwoMulFixedStateStepBranchPre
+    (k : Nat) (baseWord exponentWord : EvmWord)
+    (controlC6 e iterCount ptr nextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 : Word)
+    (bit : Bool)
+    (v6 v7 v10 v11 d0 d1 d2 d3 : Word)
+    (base : Word) (frame : Assertion) : Assertion :=
+  let outW := expTwoMulFixedBranchResult bit
+    a0 a1 a2 a3 r0 r1 r2 r3
+  expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
+    (controlC6 + signExtend12 (-1 : BitVec 12))
+    (e <<< (1 : BitVec 6).toNat)
+    v6
+    (expTwoMulIterCountNew iterCount)
+    v10
+    ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+    ptr nextLimb sp evmSp
+    (outW.getLimbN 3)
+    (expTwoMulFixedBranchReturnPc bit base)
+    (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+    (outW.getLimbN 3)
+    d0 d1 d2 d3
+    (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+    (outW.getLimbN 3)
+    a0 a1 a2 a3 v7 v11 frame
+
 /-- Reload-pointer residual with the successor iteration state bundled as a
     single pure state assertion.  This is the reload-side analogue of
     `expTwoMulFixedIterPreNWithStateFrame` for the fixed-loop induction. -/
@@ -562,25 +589,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_branchState_
       ∀ (bit : Bool)
         (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
         cpsTripleWithin nSteps addr exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6
-            (expTwoMulIterCountNew iterCount)
-            v10
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0 d1 d2 d3
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7 v11
-            frame)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6 v7 v10 v11 d0 d1 d2 d3 base frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -603,7 +615,9 @@ theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_branchState_
           expTwoMulFixedIterPreNWithControlFrame_to_iterPreNWithStateFrame
             (expTwoMulFixedIterCountInvariant_succ hk hCount) h)
         (fun _ h => h)
-        (hBranch bit v6 v7 v10 v11 d0 d1 d2 d3))
+        (by
+          simpa only [expTwoMulFixedStateStepBranchPre] using
+            hBranch bit v6 v7 v10 v11 d0 d1 d2 d3))
     hReload
 
 /-- CPS eliminator whose ordinary and reload continuations are both stated
@@ -620,25 +634,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
       ∀ (bit : Bool)
         (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
         cpsTripleWithin nSteps addr exit cr
-          (let outW := expTwoMulFixedBranchResult bit
-            a0 a1 a2 a3 r0 r1 r2 r3
-          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-            (controlC6 + signExtend12 (-1 : BitVec 12))
-            (e <<< (1 : BitVec 6).toNat)
-            v6
-            (expTwoMulIterCountNew iterCount)
-            v10
-            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-            ptr nextLimb sp evmSp
-            (outW.getLimbN 3)
-            (expTwoMulFixedBranchReturnPc bit base)
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            d0 d1 d2 d3
-            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
-            (outW.getLimbN 3)
-            a0 a1 a2 a3 v7 v11
-            frame)
+          (expTwoMulFixedStateStepBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3 bit
+            v6 v7 v10 v11 d0 d1 d2 d3 base frame)
           Q)
     (hReload :
       ∀ (bit : Bool)
@@ -724,7 +723,11 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_branchState_elim
       (cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
         addr frame hk hBase hState.2.1 hState.2.2.1 hNextNext hState.1)
       (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_branchState_elim
-        hk hState.2.2.2 hBranch hReload)
+        hk hState.2.2.2
+        (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
+          simpa only [expTwoMulFixedStateStepBranchPre] using
+            hBranch bit v6 v7 v10 v11 d0 d1 d2 d3)
+        hReload)
 
 /-- CPS case-loop bridge with both recursive edge shapes carrying the
     successor iteration state. -/
@@ -785,7 +788,11 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_state_elim
       (cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
         addr frame hk hBase hState.2.1 hState.2.2.1 hNextNext hState.1)
       (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
-        hk hState.2.2.2 hBranch hReload)
+        hk hState.2.2.2
+        (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
+          simpa only [expTwoMulFixedStateStepBranchPre] using
+            hBranch bit v6 v7 v10 v11 d0 d1 d2 d3)
+        hReload)
 
 /-- Bounded one-step wrapper whose nonzero decremented-count premise comes
     from the bundled fixed-loop count invariant. -/
@@ -893,7 +900,11 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step
       a0 a1 a2 a3 v7 v11 base frame hFrame hbase hControlMachine
       hk hCount hBase hNextNext hBound)
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
-      (by omega) hCount hBranch hReload)
+      (by omega) hCount
+      (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStateStepBranchPre] using
+          hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+      hReload)
 
 /-- Unframed variant of
     `cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step`. -/
