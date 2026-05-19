@@ -373,7 +373,10 @@ theorem divK_loop_body_n2_max_unified_j0_spec_within
       hbltu
     intro_lets at J0
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J0Pre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J0Pre_unfold] at hp
+        rw [loopBodyN2MaxSkipJ0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Max_skip hb]; exact hp)
       (J0 hborrow)
@@ -409,7 +412,10 @@ theorem divK_loop_body_n2_max_unified_j0_spec_within_noNop
       hbltu
     intro_lets at J0
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J0Pre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J0Pre_unfold] at hp
+        rw [loopBodyN2MaxSkipJ0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Max_skip hb]; exact hp)
       (J0 hborrow)
