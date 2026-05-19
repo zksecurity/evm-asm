@@ -18,7 +18,8 @@
   - `divK_correction_addback_spec_within`
 -/
 
-import EvmAsm.Evm64.DivMod.LoopBody
+import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddback
+import EvmAsm.Evm64.DivMod.LoopBody.MulsubCorrectionSkip
 
 open EvmAsm.Rv64.Tactics
 
@@ -417,6 +418,80 @@ theorem divK_mulsub_correction_addback_named_880_spec_within_noNop
     (fun h hp => by simp only [n4McaNamed880Post_unfold]; exact hp)
     ((divK_mulsub_correction_addback_880_spec_within_noNop sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
        v1Old v5Old v6Old v7Old v10Old v2Old base) hborrow)
+
+/-- No-NOP v4 variant of `divK_mulsub_correction_addback_named_880_spec_within`. -/
+theorem divK_mulsub_correction_addback_named_880_v4_spec_within_noNop
+    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (v1Old v5Old v6Old v7Old v10Old v2Old : Word)
+    (base : Word) :
+    let uBase := sp + signExtend12 4056 - j <<< (3 : BitVec 6).toNat
+    -- Hypothesis: borrow ≠ 0
+    (if BitVec.ult uTop (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2 then (1 : Word) else 0) ≠
+      (0 : Word) →
+    cpsTripleWithin 91 (base + div128CallRetOff) (base + addbackBeqOff) (sharedDivModCodeNoNop_v4 base)
+      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+       (.x9 ↦ᵣ v1Old) ** (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x2 ↦ᵣ v2Old) **
+       (.x0 ↦ᵣ 0) **
+       (sp + signExtend12 3976 ↦ₘ j) **
+       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+       ((uBase + signExtend12 4064) ↦ₘ uTop))
+      (n4McaNamed880Post sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro uBase hborrow
+  have MS := divK_mulsub_full_v4_spec_within_noNop sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    v1Old v5Old v6Old v7Old v10Old v2Old base
+  unfold divKMulsubFullPre divKMulsubFullPost at MS
+  unfold mulsubN4 at hborrow
+  dsimp only [] at MS hborrow
+  let p0_lo := qHat * v0
+  let p0_hi := rv64_mulhu qHat v0
+  let fs0 := p0_lo + (signExtend12 0 : Word)
+  let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let pc0 := ba0 + p0_hi
+  let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+  let un0 := u0 - fs0
+  let c0 := pc0 + bs0
+  let p1_lo := qHat * v1
+  let p1_hi := rv64_mulhu qHat v1
+  let fs1 := p1_lo + c0
+  let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+  let pc1 := ba1 + p1_hi
+  let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+  let un1 := u1 - fs1
+  let c1 := pc1 + bs1
+  let p2_lo := qHat * v2
+  let p2_hi := rv64_mulhu qHat v2
+  let fs2 := p2_lo + c1
+  let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+  let pc2 := ba2 + p2_hi
+  let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+  let un2 := u2 - fs2
+  let c2 := pc2 + bs2
+  let p3_lo := qHat * v3
+  let p3_hi := rv64_mulhu qHat v3
+  let fs3 := p3_lo + c2
+  let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+  let pc3 := ba3 + p3_hi
+  let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+  let un3 := u3 - fs3
+  let c3 := pc3 + bs3
+  let u4_new := uTop - c3
+  have CA := divK_correction_addback_named_v4_spec_within_noNop sp uBase
+    (if BitVec.ult uTop c3 then (1 : Word) else 0)
+    qHat v0 v1 v2 v3 un0 un1 un2 un3 u4_new
+    u4_new un3 base hborrow
+  seqFrame MS CA
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by
+      rw [addbackFullPost_unfold] at hq
+      simp only [n4McaNamed880Post_unfold]
+      unfold mulsubN4 addbackN4 addbackN4_carry
+      xperm_hyp hq)
+    MSCA
 
 /-- Mulsub + correction addback + BEQ passthrough: when mulsub produces borrow≠0,
     run addback, then BEQ falls through (carry ≠ 0).
