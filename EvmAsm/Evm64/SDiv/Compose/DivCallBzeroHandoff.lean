@@ -53,7 +53,7 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
     ((.x8 ↦ᵣ resultSign) **
       (.x18 ↦ᵣ (vRa + EvmAsm.Rv64.signExtend12 (0 : BitVec 12))))
   have hCallableRaw :=
-    EvmAsm.Evm64.evm_div_callable_bzero_preserving_x1_spec
+    EvmAsm.Evm64.evm_div_callable_bzero_concrete_preserving_x1_spec
       sp (base + wrapperEndOff) divisorSign ((base + divCallOff) + 4)
       dividendAbsWord divisorAbsWord v2 v5 v6 divisorSum3 divisorMask divisorCarry3
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -74,9 +74,10 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
           shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
           signFrameNoX9)
-        (((EvmAsm.Evm64.divStackDispatchPostCallable sp dividendAbsWord divisorAbsWord **
-          (.x1 ↦ᵣ ((base + divCallOff) + 4))) **
-          (.x9 ↦ᵣ divisorSign)) ** signFrameNoX9) := by
+        (EvmAsm.Evm64.divConcretePostNoX1Frame sp dividendAbsWord divisorAbsWord
+          divisorSign ((base + divCallOff) + 4) v2 v6 divisorSum3 divisorCarry3
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** signFrameNoX9) := by
     rw [← divCall_return_andn_one_eq_resultSignFixOff base hbase]
     exact hCallableFramed
   exact EvmAsm.Rv64.cpsTripleWithin_weaken (fun h hp => by
@@ -89,10 +90,19 @@ theorem saveRaDivCallDispatchReadyPost_bzero_callable_spec_in_sdivCode
       sdivAbsCarry3] at hp ⊢
     dsimp [signFrameNoX9] at hp ⊢
     exact hp) (fun h hp => by
+    have hPublic :
+        ((((EvmAsm.Evm64.divStackDispatchPostCallable sp dividendAbsWord divisorAbsWord **
+          (.x1 ↦ᵣ ((base + divCallOff) + 4))) **
+          (.x9 ↦ᵣ divisorSign)) ** signFrameNoX9) h) := by
+      refine EvmAsm.Rv64.sepConj_mono ?_ ?_ h hp
+      · intro hLeft hpLeft
+        exact EvmAsm.Evm64.divConcretePostNoX1_weaken_callable_frame
+          sp dividendAbsWord divisorAbsWord hLeft hpLeft
+      · intro hRight hpRight
+        exact hpRight
     rw [saveRaDivCallBzeroCallablePost_unfold]
     dsimp [dividendAbsWord, divisorAbsWord, divisorSign, resultSign, signFrameNoX9,
-      saveRaDivCallSignFrame, sdivDivCallResultSign, sdivAbsSign] at hp ⊢
-    simpa only [EvmAsm.Rv64.sepConj_assoc', EvmAsm.Rv64.sepConj_comm',
-      EvmAsm.Rv64.sepConj_left_comm'] using hp) hCallableExit
+      saveRaDivCallSignFrame, sdivDivCallResultSign, sdivAbsSign] at hp hPublic ⊢
+    xperm_hyp hPublic) hCallableExit
 
 end EvmAsm.Evm64.SDiv.Compose
