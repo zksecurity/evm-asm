@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedBoolStep
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostFramedCases
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterReloadPointerPures
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedLoopInvariantWithControl
 
 namespace EvmAsm.Evm64.Exp.Compose
@@ -498,5 +499,133 @@ theorem expTwoMulFixedIterCaseLoopPost_iterPreNWithControl_or_reloadPointerFrame
     · rcases hRest with hReloadCond | hReloadSkip
       · exact Or.inr (Or.inr (Or.inl hReloadCond))
       · exact Or.inr (Or.inr (Or.inr hReloadSkip))
+
+theorem expTwoMulFixedIterReloadCondScratchFrame_withControl_frame
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (h :
+      ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+          e c6 ptr nextLimb base) **
+        frame) ps) :
+    let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+      a0 a1 a2 a3
+    (((((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+          e c6 ptr nextLimb base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+          (rw.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps := by
+  intro rw
+  obtain ⟨_hExit, hC6, hBitNe⟩ :=
+    expTwoMulFixedIterReloadCondPointerScratchFrame_pures h
+  have hStep :=
+    expTwoMulFixedReloadInvariants_succ_of_condRw
+      hk hBase hCursor hControl hC6 hNextNext hBitNe hInv
+  have h_acc :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + 1)
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+        (rw.getLimbN 3) := by
+    dsimp [rw]
+    exact hStep.1
+  have h_cursor :
+      expTwoMulFixedCursorInvariant exponentWord (k + 1) nextLimb :=
+    hStep.2.1
+  have h_control :
+      expTwoMulFixedControlInvariant exponentWord (k + 1)
+        64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp :=
+    hStep.2.2
+  rw [expTwoMulFixedSemanticInvariant_unfold,
+    expTwoMulFixedCursorAssertion_unfold,
+    expTwoMulFixedControlAssertion_unfold]
+  rw [pure_assertion_eq_emp_of_true h_acc,
+    pure_assertion_eq_emp_of_true h_cursor,
+    pure_assertion_eq_emp_of_true h_control]
+  simp only [sepConj_emp_right']
+  sep_perm h
+
+theorem expTwoMulFixedIterReloadSkipScratchFrame_withControl_frame
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {exitCond : Prop} {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (hk : k < 256)
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (h :
+      ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        frame) ps) :
+    let squareW := expSquaringCallSquareW r0 r1 r2 r3
+    (((((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 exitCond **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (squareW.getLimbN 0) (squareW.getLimbN 1)
+          (squareW.getLimbN 2) (squareW.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps := by
+  intro squareW
+  obtain ⟨_hExit, hC6, hBitZero⟩ :=
+    expTwoMulFixedIterReloadSkipPointerScratchFrame_pures h
+  have hStep :=
+    expTwoMulFixedReloadInvariants_succ_of_squareW
+      hk hCursor hControl hC6 hNextNext hBitZero hInv
+  have h_acc :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord (k + 1)
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3) := by
+    dsimp [squareW]
+    exact hStep.1
+  have h_cursor :
+      expTwoMulFixedCursorInvariant exponentWord (k + 1) nextLimb :=
+    hStep.2.1
+  have h_control :
+      expTwoMulFixedControlInvariant exponentWord (k + 1)
+        64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp :=
+    hStep.2.2
+  rw [expTwoMulFixedSemanticInvariant_unfold,
+    expTwoMulFixedCursorAssertion_unfold,
+    expTwoMulFixedControlAssertion_unfold]
+  rw [pure_assertion_eq_emp_of_true h_acc,
+    pure_assertion_eq_emp_of_true h_cursor,
+    pure_assertion_eq_emp_of_true h_control]
+  simp only [sepConj_emp_right']
+  sep_perm h
 
 end EvmAsm.Evm64.Exp.Compose
