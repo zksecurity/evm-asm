@@ -243,6 +243,75 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_seq_stepPost_of_c
       hk hBase hNextNext)
     hStepPost
 
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithFrame_to_stepPost
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    (e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (frame : Assertion)
+    (hFrame : frame.pcFree)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64)) :
+    cpsTripleWithin 193 (base + 44) (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithFrame k baseWord exponentWord
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11 frame)
+      (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base frame) :=
+  cpsTripleWithin_weaken
+    (fun _ h =>
+      expTwoMulFixedIterPreNWithFrame_to_iterPreNWithControlFrame h)
+    (fun _ h => h)
+    (cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_to_stepPost_of_control_eq_machine
+      c6 e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base frame hFrame hbase rfl hne hk hBase
+      hNextNext)
+
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithFrame_seq_stepPost
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {nSteps : Nat} {exit : Word} {frame Q : Assertion}
+    (e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (hFrame : frame.pcFree)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hStepPost :
+      cpsTripleWithin nSteps (base + 44) exit
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+          iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base frame)
+        Q) :
+    cpsTripleWithin (193 + nSteps) (base + 44) exit
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithFrame k baseWord exponentWord
+        e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11 frame)
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_expTwoMulFixedIterPreNWithFrame_to_stepPost
+      e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base frame hFrame hbase hne hk hBase
+      hNextNext)
+    hStepPost
+
 theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_stepPost_elim_of_control_eq_machine
     {baseWord exponentWord : EvmWord} {k : Nat}
     {nSteps : Nat} {exit : Word} {frame Q : Assertion}
