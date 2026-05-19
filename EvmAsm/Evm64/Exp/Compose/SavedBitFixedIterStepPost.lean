@@ -402,6 +402,50 @@ theorem expTwoMulFixedReloadBranchResidualWithControlFrame_pures
     rcases h_pures with ⟨h_exit, h_c6, h_bit⟩
     exact ⟨h_exit, h_c6, Or.inl ⟨rfl, h_bit⟩⟩
 
+theorem expTwoMulFixedReloadBranchResidualWithControlFrame_true_pures
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithControlFrame true (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    expTwoMulIterCountNew iterCount ≠ 0 ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0 := by
+  rcases
+    expTwoMulFixedReloadBranchResidualWithControlFrame_pures
+      (bit := true) h with
+    ⟨h_exit, h_c6, h_bit_cases⟩
+  rcases h_bit_cases with h_bit | h_bit
+  · exact ⟨h_exit, h_c6, h_bit.2⟩
+  · cases h_bit.1
+
+theorem expTwoMulFixedReloadBranchResidualWithControlFrame_false_pures
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithControlFrame false (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    expTwoMulIterCountNew iterCount ≠ 0 ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0 := by
+  rcases
+    expTwoMulFixedReloadBranchResidualWithControlFrame_pures
+      (bit := false) h with
+    ⟨h_exit, h_c6, h_bit_cases⟩
+  rcases h_bit_cases with h_bit | h_bit
+  · cases h_bit.1
+  · exact ⟨h_exit, h_c6, h_bit.2⟩
+
 theorem expTwoMulFixedIterStepPostNWithControlFrame_cases
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
