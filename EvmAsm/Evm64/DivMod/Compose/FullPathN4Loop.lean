@@ -142,10 +142,14 @@ theorem divK_loop_body_n4_max_skip_j0_divCode_within
   have h := cpsTripleWithin_extend_code (hmono := sharedDivModCode_sub_divCode)
     (divK_loop_body_n4_max_skip_j0_spec_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
-  refine cpsTripleWithin_weaken ?_ (fun _ hq => hq) h
+  refine cpsTripleWithin_weaken ?_ ?_ h
   intro _ hp
   rw [loopBodyN4SkipJ0Pre_unfold] at hp
+  rw [loopBodyN4MaxSkipJ0Pre_unfold]
   exact hp
+  intro _ hq
+  rw [loopBodyN4MaxSkipJ0Post_unfold] at hq
+  exact hq
 
 /-- Extend max_skip j=0 loop body to `divCode_noNop`.
     Uses `loopBodyN4SkipJ0Pre` so no `let`-bindings appear in the statement. -/
@@ -169,10 +173,14 @@ theorem divK_loop_body_n4_max_skip_j0_divCode_noNop_within
         v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
     have raw := divK_loop_body_n4_max_skip_j0_spec_within_noNop sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow
-    refine cpsTripleWithin_weaken ?_ (fun _ hq => hq) (cpsTripleWithin_mono_nSteps (by decide) raw)
+    refine cpsTripleWithin_weaken ?_ ?_ (cpsTripleWithin_mono_nSteps (by decide) raw)
     intro _ hp
     rw [loopBodyN4SkipJ0Pre_unfold] at hp
+    rw [loopBodyN4MaxSkipJ0Pre_unfold]
     exact hp
+    intro _ hq
+    rw [loopBodyN4MaxSkipJ0Post_unfold] at hq
+    exact hq
   exact h
 
 /-- Extend max_skip j=0 loop body from sharedDivModCode to modCode.
@@ -197,10 +205,14 @@ theorem divK_loop_body_n4_max_skip_j0_modCode_within
   have h := cpsTripleWithin_extend_code (hmono := sharedDivModCode_sub_modCode)
     (divK_loop_body_n4_max_skip_j0_spec_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow)
-  refine cpsTripleWithin_weaken ?_ (fun _ hq => hq) h
+  refine cpsTripleWithin_weaken ?_ ?_ h
   intro _ hp
   rw [loopBodyN4SkipJ0Pre_unfold] at hp
+  rw [loopBodyN4MaxSkipJ0Pre_unfold]
   exact hp
+  intro _ hq
+  rw [loopBodyN4MaxSkipJ0Post_unfold] at hq
+  exact hq
 
 /-- Max_skip j=0 loop body against modCode with sp-relative addresses in the
     precondition. Mirror of the DIV `divK_loop_body_n4_max_skip_j0_norm`
