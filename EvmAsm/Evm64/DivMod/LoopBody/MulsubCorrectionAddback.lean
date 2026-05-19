@@ -53,6 +53,24 @@ theorem divK_beq_passthrough_spec_within {carry : Word} (base : Word) (hne : car
       (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
     ntaken
 
+/-- v4 variant of `divK_beq_passthrough_spec_within`. -/
+theorem divK_beq_passthrough_v4_spec_within {carry : Word} (base : Word) (hne : carry ≠ 0) :
+    cpsTripleWithin 1 (base + addbackBeqOff) (base + storeLoopOff) (sharedDivModCode_v4 base)
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word))) := by
+  have hbeq := beq_spec_gen_within .x7 .x0 (8044 : BitVec 13) carry 0 (base + addbackBeqOff)
+  rw [lb_beq_back_ntaken_local] at hbeq
+  have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_v4 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
+  have ntaken := cpsBranchWithin_ntakenPath hbeq_ext (fun hp hQt => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+    exact hne hpure)
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
+    ntaken
+
 /-- No-NOP variant of `divK_beq_passthrough_spec_within`. -/
 theorem divK_beq_passthrough_spec_within_noNop {carry : Word} (base : Word) (hne : carry ≠ 0) :
     cpsTripleWithin 1 (base + addbackBeqOff) (base + storeLoopOff) (divCode_noNop base)
@@ -62,6 +80,24 @@ theorem divK_beq_passthrough_spec_within_noNop {carry : Word} (base : Word) (hne
   rw [lb_beq_back_ntaken_local] at hbeq
   have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
     lb_sub_noNop 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
+  have ntaken := cpsBranchWithin_ntakenPath hbeq_ext (fun hp hQt => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+    exact hne hpure)
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
+    ntaken
+
+/-- v4 no-NOP variant of `divK_beq_passthrough_spec_within`. -/
+theorem divK_beq_passthrough_v4_spec_within_noNop {carry : Word} (base : Word) (hne : carry ≠ 0) :
+    cpsTripleWithin 1 (base + addbackBeqOff) (base + storeLoopOff) (sharedDivModCodeNoNop_v4 base)
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word)))
+      ((.x7 ↦ᵣ carry) ** (.x0 ↦ᵣ (0 : Word))) := by
+  have hbeq := beq_spec_gen_within .x7 .x0 (8044 : BitVec 13) carry 0 (base + addbackBeqOff)
+  rw [lb_beq_back_ntaken_local] at hbeq
+  have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
   have ntaken := cpsBranchWithin_ntakenPath hbeq_ext (fun hp hQt => by
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
     exact hne hpure)
