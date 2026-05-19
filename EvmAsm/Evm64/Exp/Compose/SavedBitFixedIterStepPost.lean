@@ -373,6 +373,55 @@ theorem expTwoMulFixedIterStepPostNWithControlFrame_cases
   rw [expTwoMulFixedIterStepPostNWithControlFrame_unfold] at h
   exact h
 
+theorem expTwoMulFixedIterStepPostNWithControlFrame_elim
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame Q : Assertion} {ps : PartialState}
+    (hBranch :
+      ∀ (bit : Bool)
+        (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        (let outW := expTwoMulFixedBranchResult bit
+          a0 a1 a2 a3 r0 r1 r2 r3
+        expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+          (c6 + signExtend12 (-1 : BitVec 12))
+          (e <<< (1 : BitVec 6).toNat)
+          v6
+          (expTwoMulIterCountNew iterCount)
+          v10
+          ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+          ptr nextLimb sp evmSp
+          (outW.getLimbN 3)
+          (expTwoMulFixedBranchReturnPc bit base)
+          (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+          (outW.getLimbN 3)
+          d0 d1 d2 d3
+          (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+          (outW.getLimbN 3)
+          a0 a1 a2 a3 v7 v11
+          frame ps) →
+        Q ps)
+    (hReload :
+      ∀ (bit : Bool)
+        (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        expTwoMulFixedReloadBranchResidualWithControlFrame bit (k := k)
+          baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+          sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+          v6 v7 v10 v11 d0 d1 d2 d3 frame ps →
+        Q ps)
+    (h :
+      expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base frame ps) :
+    Q ps := by
+  rcases expTwoMulFixedIterStepPostNWithControlFrame_cases h with
+    hNext | hReloadCase
+  · rcases hNext with ⟨bit, v6, v7, v10, v11, d0, d1, d2, d3, hNext⟩
+    exact hBranch bit v6 v7 v10 v11 d0 d1 d2 d3 hNext
+  · rcases hReloadCase with
+      ⟨bit, v6, v7, v10, v11, d0, d1, d2, d3, hResidual⟩
+    exact hReload bit v6 v7 v10 v11 d0 d1 d2 d3 hResidual
+
 theorem expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
