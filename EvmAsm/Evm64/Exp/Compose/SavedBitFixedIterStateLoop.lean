@@ -543,4 +543,93 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_iterationsBoun
         a0 a1 a2 a3 v7 v11 base frame Q hFrame hbase
         hControlMachine hState (hExit rfl)
 
+/-- Head step wrapper that extracts the bundled state invariant from the
+    `WithStateFrame` precondition itself.
+
+    This is the form recursive callers usually need: the state invariant is
+    part of the assertion surface, so the caller supplies only the arithmetic
+    and semantic side conditions. -/
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_iterationsBound_sameCode_from_pre
+    {baseWord exponentWord : EvmWord} {k iterations : Nat}
+    (controlC6 e machineC6 iterCount v10 v18 ptr nextLimb
+      nextNextLimb sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (frame Q : Assertion)
+    (hFrame : frame.pcFree)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hControlMachine : controlC6 = machineC6)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hBranch :
+      k < 255 →
+      ∀ (bit : Bool)
+        (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
+        cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (let outW := expTwoMulFixedBranchResult bit
+            a0 a1 a2 a3 r0 r1 r2 r3
+          expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
+            (controlC6 + signExtend12 (-1 : BitVec 12))
+            (e <<< (1 : BitVec 6).toNat)
+            v6'
+            (expTwoMulIterCountNew iterCount)
+            v10'
+            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+            ptr nextLimb sp evmSp
+            (outW.getLimbN 3)
+            (expTwoMulFixedBranchReturnPc bit base)
+            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+            (outW.getLimbN 3)
+            d0' d1' d2' d3'
+            (outW.getLimbN 0) (outW.getLimbN 1) (outW.getLimbN 2)
+            (outW.getLimbN 3)
+            a0 a1 a2 a3 v7' v11'
+            frame)
+          (Q ** frame))
+    (hReload :
+      k < 255 →
+      ∀ (bit : Bool)
+        (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
+        cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expTwoMulFixedReloadBranchResidualWithStateFrame bit (k := k)
+            baseWord exponentWord iterCount e controlC6 ptr nextLimb
+            nextNextLimb sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+            v6' v7' v10' v11' d0' d1' d2' d3' frame)
+          (Q ** frame))
+    (hExit :
+      k = 255 →
+      ∀ ps,
+        expTwoMulFixedIterCaseExitPost iterCount e machineC6 ptr nextLimb
+          sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        Q ps) :
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithStateFrame k baseWord exponentWord
+        controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11 frame)
+      (Q ** frame) := by
+  intro R hR s hcr hPreR hpc
+  obtain ⟨hp, hcompat, psPre, psR, hdisj, hunion, hPre, hRps⟩ := hPreR
+  have hState :
+      expTwoMulFixedIterStateInvariant baseWord exponentWord k
+        iterCount e controlC6 ptr nextLimb evmSp r0 r1 r2 r3 :=
+    expTwoMulFixedIterPreNWithStateFrame_pure hPre
+  exact
+    cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_iterationsBound_sameCode
+      controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base frame Q hFrame hbase hControlMachine
+      hk hState hBase hNextNext hBranch hReload hExit
+      R hR s hcr
+      ⟨hp, hcompat, psPre, psR, hdisj, hunion, hPre, hRps⟩
+      hpc
+
 end EvmAsm.Evm64.Exp.Compose
