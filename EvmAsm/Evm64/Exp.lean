@@ -90,6 +90,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStep
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStepBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateStep
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateResidualPures
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateResidualBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEpilogueBase
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
