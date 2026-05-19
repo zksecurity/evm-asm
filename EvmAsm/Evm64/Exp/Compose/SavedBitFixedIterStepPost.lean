@@ -246,4 +246,32 @@ theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControl
       expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControl
         hk hBase hCursor hControl hNextNext hInv h)
 
+theorem cpsTripleWithin_expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
+    (addr : Word)
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    (frame : Assertion)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3) :
+    cpsTripleWithin 0 addr addr CodeReq.empty
+      (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base **
+        frame)
+      (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base frame) :=
+  cpsTripleWithin_refl
+    (fun _hp h =>
+      expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
+        hk hBase hCursor hControl hNextNext hInv h)
+
 end EvmAsm.Evm64.Exp.Compose
