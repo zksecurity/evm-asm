@@ -681,23 +681,23 @@ def divK_zeroPath : Program :=
 --   normA:       21  [78..98]    bytes 312..392
 --   copyAU:      9   [99..107]   bytes 396..428
 --   loopSetup:   4   [108..111]  bytes 432..444
---   loopBody:    114 [112..225]  bytes 448..900
---   denorm:      25  [226..250]  bytes 904..1000
---   epilogue:    10  [251..260]  bytes 1004..1040
---   zeroPath:    5   [261..265]  bytes 1044..1060
---   NOP:         1   [266]       byte 1064 (exit PC)
---   subroutine:  49  [267..315]  bytes 1068..1260
--- Total: 316 instructions. Exit PC = 1064.
+--   loopBody:    115 [112..226]  bytes 448..904
+--   denorm:      25  [227..251]  bytes 908..1004
+--   epilogue:    10  [252..261]  bytes 1008..1044
+--   zeroPath:    5   [262..266]  bytes 1048..1064
+--   NOP:         1   [267]       byte 1068 (exit PC)
+--   subroutine:  75  [268..342]  bytes 1072..1368
+-- Total: 343 instructions. Exit PC = 1068.
 --
 -- Branch offsets:
--- 1. phaseA BEQ [7] → zeroPath [261]: (261-7)*4 = 1016
+-- 1. phaseA BEQ [7] → zeroPath [262]: (262-7)*4 = 1020
 -- 2. phaseC2 BEQ [56] → copyAU [99]: (99-56)*4 = 172
 -- 3. normA JAL [98] → loopSetup [108]: (108-98)*4 = 40
--- 4. loopSetup BLT [111] → denorm [226]: (226-111)*4 = 460
--- 5. loopBody sub JAL [16 in body = 128 abs] → subr [267]: (267-128)*4 = 556
--- 6. loopBody BGE [113 in body = 225 abs] → loop [112]: (112-225)*4 = -452 = 7740
--- 7. epilogue JAL [260] → exit [266]: (266-260)*4 = 24
--- 8. denorm BEQ [1 in denorm = 227] → after denorm [251]: (251-227)*4 = 96
+-- 4. loopSetup BLT [111] → denorm [227]: (227-111)*4 = 464
+-- 5. loopBody sub JAL [16 in body = 128 abs] → subr [268]: (268-128)*4 = 560
+-- 6. loopBody BGE [114 in body = 226 abs] → loop [112]: (112-226)*4 = -456 = 7736
+-- 7. epilogue JAL [261] → exit [267]: (267-261)*4 = 24
+-- 8. denorm BEQ [1 in denorm = 228] → after denorm [252]: (252-228)*4 = 96
 
 /-- 256-bit EVM DIV: Knuth Algorithm D. -/
 def evm_div : Program :=
@@ -714,7 +714,7 @@ def evm_div : Program :=
   divK_div_epilogue 24 ;;
   divK_zeroPath ;;
   ADDI .x0 .x0 0 ;;  -- NOP: separates exit PC from subroutine
-  divK_div128
+  divK_div128_v4
 
 /-- 256-bit EVM MOD: Knuth Algorithm D, outputs remainder. -/
 def evm_mod : Program :=
@@ -731,7 +731,7 @@ def evm_mod : Program :=
   divK_mod_epilogue 24 ;;
   divK_zeroPath ;;
   ADDI .x0 .x0 0 ;;  -- NOP: separates exit PC from subroutine
-  divK_div128
+  divK_div128_v4
 
 -- ============================================================================
 -- Instruction count verification
