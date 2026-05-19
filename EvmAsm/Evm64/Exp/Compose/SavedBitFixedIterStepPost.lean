@@ -336,6 +336,72 @@ theorem expTwoMulFixedIterStepPostNWithControlFrame_reload_false
   apply expTwoMulFixedIterStepPostNWithControlFrame_reload (bit := false)
   simpa [expTwoMulFixedReloadBranchResidualWithControlFrame_false] using h
 
+theorem expTwoMulFixedReloadBranchResidualWithControlFrame_pures
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    (bit : Bool) {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithControlFrame bit (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    expTwoMulIterCountNew iterCount ≠ 0 ∧
+    c6 + signExtend12 (-1 : BitVec 12) = 0 ∧
+    ((bit = true ∧
+        (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0) ∨
+      (bit = false ∧
+        (e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0)) := by
+  cases bit
+  · rw [expTwoMulFixedReloadBranchResidualWithControlFrame_false] at h
+    obtain ⟨psControl, _psFrame, _hDisjointControl, _hUnionControl,
+      hControlFrame, _hFrame⟩ := h
+    obtain ⟨psCursor, _psControl, _hDisjointCursor, _hUnionCursor,
+      hCursorFrame, _hControl⟩ := hControlFrame
+    obtain ⟨psSemantic, _psCursor, _hDisjointSemantic, _hUnionSemantic,
+      hSemanticFrame, _hCursor⟩ := hCursorFrame
+    obtain ⟨psScratch, _psSemantic, _hDisjointScratch, _hUnionScratch,
+      hScratch, _hSemantic⟩ := hSemanticFrame
+    have hScratchFrame :
+        (let squareW := expSquaringCallSquareW r0 r1 r2 r3
+        ((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+          r0 r1 r2 r3
+          (expTwoMulIterCountNew iterCount ≠ 0) **
+          expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+          expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+            e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+          empAssertion) psScratch) := by
+      simpa [sepConj_emp_right'] using hScratch
+    have h_pures :=
+      expTwoMulFixedIterReloadSkipPointerScratchFrame_pures hScratchFrame
+    rcases h_pures with ⟨h_exit, h_c6, h_bit⟩
+    exact ⟨h_exit, h_c6, Or.inr ⟨rfl, h_bit⟩⟩
+  · rw [expTwoMulFixedReloadBranchResidualWithControlFrame_true] at h
+    obtain ⟨psControl, _psFrame, _hDisjointControl, _hUnionControl,
+      hControlFrame, _hFrame⟩ := h
+    obtain ⟨psCursor, _psControl, _hDisjointCursor, _hUnionCursor,
+      hCursorFrame, _hControl⟩ := hControlFrame
+    obtain ⟨psSemantic, _psCursor, _hDisjointSemantic, _hUnionSemantic,
+      hSemanticFrame, _hCursor⟩ := hCursorFrame
+    obtain ⟨psScratch, _psSemantic, _hDisjointScratch, _hUnionScratch,
+      hScratch, _hSemantic⟩ := hSemanticFrame
+    have hScratchFrame :
+        (let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+          a0 a1 a2 a3
+        ((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3
+          (expTwoMulIterCountNew iterCount ≠ 0) **
+          expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+          expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+            e c6 ptr nextLimb base) **
+          empAssertion) psScratch) := by
+      simpa [sepConj_emp_right'] using hScratch
+    have h_pures :=
+      expTwoMulFixedIterReloadCondPointerScratchFrame_pures hScratchFrame
+    rcases h_pures with ⟨h_exit, h_c6, h_bit⟩
+    exact ⟨h_exit, h_c6, Or.inl ⟨rfl, h_bit⟩⟩
+
 theorem expTwoMulFixedIterStepPostNWithControlFrame_cases
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
