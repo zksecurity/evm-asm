@@ -27,6 +27,11 @@ open EvmAsm.Rv64
 
 private theorem lb_trial_max_end {base : Word} :
     (base + trialMaxOff : Word) + 12 = base + div128CallRetOff := by bv_addr
+private theorem tm_lb_save_j {base : Word} :
+    (base + loopBodyOff : Word) + 4 = base + (loopBodyOff + 4) := by
+  simp [BitVec.add_assoc]
+private theorem tm_lb_trial_load {base : Word} :
+    (base + (loopBodyOff + 4) : Word) + 48 = base + trialCallOff := by bv_addr
 -- ============================================================================
 -- Trial quotient MAX path (Section 8a) — extended to sharedDivModCode
 -- Used only by `divK_trial_max_full_spec_within` below.
@@ -204,6 +209,104 @@ theorem divK_trial_max_full_spec_within_noNop
      (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
      (vtopBase + signExtend12 32 ↦ₘ vTop))
     (by pcFree) TM
+  have STLfntaken_cleanTM := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLfntaken_clean TMf
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    STLfntaken_cleanTM
+
+/-- Trial quotient max path over `sharedDivModCodeNoNop_v4`: save j + load +
+    BLTU not-taken + trial_max. This path does not enter div128, but uses the
+    v4/no-NOP shared code surface for downstream loop-body composition. -/
+theorem divK_trial_max_full_v4_spec_within_noNop
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old uHi uLo vTop : Word)
+    (base : Word)
+    (hbltu : ¬BitVec.ult uHi vTop) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 16 (base + loopBodyOff) (base + div128CallRetOff) (sharedDivModCodeNoNop_v4 base)
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop))
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) ** (.x11 ↦ᵣ signExtend12 4095) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
+  intro uAddr vtopBase
+  have SJ := divK_save_j_spec_within sp j jOld (base + loopBodyOff)
+  rw [tm_lb_save_j] at SJ
+  have SJe := cpsTripleWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 0 _ _ (by decide) (by bv_addr) (by decide)) SJ
+  have SJf := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) SJe
+  have TL := divK_trial_load_spec_within sp j n v5Old v6Old v7Old v10Old uHi uLo vTop
+    (base + (loopBodyOff + 4))
+  dsimp only [] at TL
+  rw [tm_lb_trial_load] at TL
+  have TLe := cpsTripleWithin_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_noNop_v4 1 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 2 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 3 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 4 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 5 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 6 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 7 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 8 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 9 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 10 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 11 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_noNop_v4 12 _ _ (by decide) (by bv_addr) (by decide))))))))))))) TL
+  seqFrame SJf TLe
+  have hbltu_raw := bltu_spec_gen_within .x7 .x10 (12 : BitVec 13) uHi vTop (base + trialCallOff)
+  rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
+  have hbltu_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
+  have ntaken := cpsBranchWithin_ntakenPath hbltu_ext (fun hp hQt => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQt
+    exact hbltu hpure)
+  have ntaken_clean := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp) ntaken
+  have TM := divK_trial_max_spec_within v11Old (base + trialMaxOff)
+  dsimp only [] at TM
+  rw [lb_trial_max_end] at TM
+  have TMe := cpsTripleWithin_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_noNop_v4 14 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_noNop_v4 15 _ _ (by decide) (by bv_addr) (by decide))) TM
+  have STLf := cpsTripleWithin_frameR
+    ((.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word))) (by pcFree) SJfTLe
+  have ntaken_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x11 ↦ᵣ v11Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) ntaken_clean
+  have STLfntaken_clean := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf ntaken_framed
+  have TMf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+     (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) TMe
   have STLfntaken_cleanTM := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) STLfntaken_clean TMf
   exact cpsTripleWithin_weaken
