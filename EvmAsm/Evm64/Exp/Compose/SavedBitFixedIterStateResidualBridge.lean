@@ -11,6 +11,57 @@ namespace EvmAsm.Evm64.Exp.Compose
 
 open EvmAsm.Rv64
 
+@[irreducible]
+def expTwoMulFixedReloadResidualFalseNextPre
+    (k : Nat) (baseWord exponentWord : EvmWord)
+    (iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word)
+    (frame : Assertion) : Assertion :=
+  let squareW := expSquaringCallSquareW r0 r1 r2 r3
+  expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
+    64 nextLimb v6 (expTwoMulIterCountNew iterCount) v10
+    ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+    (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb sp evmSp
+    (squareW.getLimbN 3) (((base + 44) + 32) + 68)
+    (squareW.getLimbN 0) (squareW.getLimbN 1)
+    (squareW.getLimbN 2) (squareW.getLimbN 3)
+    d0 d1 d2 d3
+    (squareW.getLimbN 0) (squareW.getLimbN 1)
+    (squareW.getLimbN 2) (squareW.getLimbN 3)
+    a0 a1 a2 a3 v7 v11
+    (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
+      ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
+      ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
+      ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0⌝ **
+      frame)
+
+@[irreducible]
+def expTwoMulFixedReloadResidualTrueNextPre
+    (k : Nat) (baseWord exponentWord : EvmWord)
+    (iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word)
+    (frame : Assertion) : Assertion :=
+  let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+    a0 a1 a2 a3
+  expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
+    64 nextLimb v6 (expTwoMulIterCountNew iterCount) v10
+    ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+    (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb sp evmSp
+    (rw.getLimbN 3) (((base + 44) + 140) + 68)
+    (rw.getLimbN 0) (rw.getLimbN 1)
+    (rw.getLimbN 2) (rw.getLimbN 3)
+    d0 d1 d2 d3
+    (rw.getLimbN 0) (rw.getLimbN 1)
+    (rw.getLimbN 2) (rw.getLimbN 3)
+    a0 a1 a2 a3 v7 v11
+    (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
+      ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
+      ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
+      ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
+      frame)
+
 /-- A false-bit reload residual can re-enter the next state-carrying fixed
     iteration precondition once the remaining frame supplies the following
     pointer cell. -/
@@ -73,25 +124,11 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_t
       v6 v7 v10 v11 d0 d1 d2 d3 : Word}
     {frame Q : Assertion}
     (hNext :
-      let squareW := expSquaringCallSquareW r0 r1 r2 r3
       cpsTripleWithin nSteps entry exit cr
-        (expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-          64 nextLimb v6 (expTwoMulIterCountNew iterCount) v10
-          ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-          (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb sp evmSp
-          (squareW.getLimbN 3) (((base + 44) + 32) + 68)
-          (squareW.getLimbN 0) (squareW.getLimbN 1)
-          (squareW.getLimbN 2) (squareW.getLimbN 3)
-          d0 d1 d2 d3
-          (squareW.getLimbN 0) (squareW.getLimbN 1)
-          (squareW.getLimbN 2) (squareW.getLimbN 3)
-          a0 a1 a2 a3 v7 v11
-          (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-            ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-            ⌜(e >>> (63 : BitVec 6).toNat) +
-              signExtend12 (0 : BitVec 12) = 0⌝ **
-            frame))
+        (expTwoMulFixedReloadResidualFalseNextPre k baseWord exponentWord
+          iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base
+          v6 v7 v10 v11 d0 d1 d2 d3 frame)
         Q) :
     cpsTripleWithin nSteps entry exit cr
       (expTwoMulFixedReloadBranchResidualWithStateFrame false (k := k)
@@ -103,8 +140,10 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_t
       Q :=
   cpsTripleWithin_weaken
     (fun _ h =>
-      expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
-        h)
+      by
+        simpa only [expTwoMulFixedReloadResidualFalseNextPre] using
+          expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
+            h)
     (fun _ h => h)
     hNext
 
@@ -171,26 +210,11 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to
       v6 v7 v10 v11 d0 d1 d2 d3 : Word}
     {frame Q : Assertion}
     (hNext :
-      let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
-        a0 a1 a2 a3
       cpsTripleWithin nSteps entry exit cr
-        (expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
-          64 nextLimb v6 (expTwoMulIterCountNew iterCount) v10
-          ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
-          (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb sp evmSp
-          (rw.getLimbN 3) (((base + 44) + 140) + 68)
-          (rw.getLimbN 0) (rw.getLimbN 1)
-          (rw.getLimbN 2) (rw.getLimbN 3)
-          d0 d1 d2 d3
-          (rw.getLimbN 0) (rw.getLimbN 1)
-          (rw.getLimbN 2) (rw.getLimbN 3)
-          a0 a1 a2 a3 v7 v11
-          (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-            ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-            ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-            ⌜(e >>> (63 : BitVec 6).toNat) +
-              signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-            frame))
+        (expTwoMulFixedReloadResidualTrueNextPre k baseWord exponentWord
+          iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base
+          v6 v7 v10 v11 d0 d1 d2 d3 frame)
         Q) :
     cpsTripleWithin nSteps entry exit cr
       (expTwoMulFixedReloadBranchResidualWithStateFrame true (k := k)
@@ -202,8 +226,10 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to
       Q :=
   cpsTripleWithin_weaken
     (fun _ h =>
-      expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
-        h)
+      by
+        simpa only [expTwoMulFixedReloadResidualTrueNextPre] using
+          expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
+            h)
     (fun _ h => h)
     hNext
 
