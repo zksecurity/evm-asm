@@ -215,6 +215,7 @@ theorem evm_div_n4_preloop_shift0_call_skip_spec_noNop (sp base : Word)
   have hFull := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by
       simp only [x1_val_n4] at hp
+      rw [loopBodyN4CallJ0NormPre_unfold]
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
