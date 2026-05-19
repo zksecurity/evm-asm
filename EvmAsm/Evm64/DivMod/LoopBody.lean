@@ -120,6 +120,61 @@ private theorem lb_ms_end {base : Word} : (base + (correctionSkipOff + 44) : Wor
 -- Composes 4 × divK_mulsub_limb_spec using seqFrame for automatic framing.
 -- ============================================================================
 
+@[irreducible]
+private def divKMulsub4LimbsPre
+    (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word)
+    (v5Init v7Init v2Init : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
+  (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5Init) ** (.x7 ↦ᵣ v7Init) **
+  (.x2 ↦ᵣ v2Init) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3)
+
+@[irreducible]
+private def divKMulsub4LimbsPost
+    (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 : Word) : Assertion :=
+  let p0_lo := qHat * v0
+  let p0_hi := rv64_mulhu qHat v0
+  let fs0 := p0_lo + (signExtend12 0 : Word)
+  let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let pc0 := ba0 + p0_hi
+  let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+  let un0 := u0 - fs0
+  let c0 := pc0 + bs0
+  let p1_lo := qHat * v1
+  let p1_hi := rv64_mulhu qHat v1
+  let fs1 := p1_lo + c0
+  let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+  let pc1 := ba1 + p1_hi
+  let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+  let un1 := u1 - fs1
+  let c1 := pc1 + bs1
+  let p2_lo := qHat * v2
+  let p2_hi := rv64_mulhu qHat v2
+  let fs2 := p2_lo + c1
+  let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+  let pc2 := ba2 + p2_hi
+  let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+  let un2 := u2 - fs2
+  let c2 := pc2 + bs2
+  let p3_lo := qHat * v3
+  let p3_hi := rv64_mulhu qHat v3
+  let fs3 := p3_lo + c2
+  let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+  let pc3 := ba3 + p3_hi
+  let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+  let un3 := u3 - fs3
+  let c3 := pc3 + bs3
+  (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
+  (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
+  (.x2 ↦ᵣ un3) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)
+
 set_option maxRecDepth 4096 in
 /-- Multiply-subtract all 4 limbs: u[j+k] -= qHat * v[k] for k=0..3 with carry chain.
     44 instructions, loop body indices [22]-[65].
@@ -134,61 +189,43 @@ private theorem divK_mulsub_4limbs_spec_within_of_sub
         (_h_addr : addr = (base + loopBodyOff) + BitVec.ofNat 64 (4 * k))
         (_h_instr : (divK_loopBody 560 7736).get ⟨k, hk⟩ = instr),
         ∀ a i, CodeReq.singleton addr instr a = some i → code a = some i) :
-    -- Limb 0 intermediates
-    let p0_lo := qHat * v0
-    let p0_hi := rv64_mulhu qHat v0
-    let fs0 := p0_lo + (signExtend12 0 : Word)
-    let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
-    let pc0 := ba0 + p0_hi
-    let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
-    let un0 := u0 - fs0
-    let c0 := pc0 + bs0
-    -- Limb 1 intermediates
-    let p1_lo := qHat * v1
-    let p1_hi := rv64_mulhu qHat v1
-    let fs1 := p1_lo + c0
-    let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
-    let pc1 := ba1 + p1_hi
-    let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
-    let un1 := u1 - fs1
-    let c1 := pc1 + bs1
-    -- Limb 2 intermediates
-    let p2_lo := qHat * v2
-    let p2_hi := rv64_mulhu qHat v2
-    let fs2 := p2_lo + c1
-    let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
-    let pc2 := ba2 + p2_hi
-    let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
-    let un2 := u2 - fs2
-    let c2 := pc2 + bs2
-    -- Limb 3 intermediates
-    let p3_lo := qHat * v3
-    let p3_hi := rv64_mulhu qHat v3
-    let fs3 := p3_lo + c2
-    let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
-    let pc3 := ba3 + p3_hi
-    let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
-    let un3 := u3 - fs3
-    let c3 := pc3 + bs3
     cpsTripleWithin 44 (base + mulsubOff) (base + correctionAddbackOff) code
-      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ (signExtend12 0 : Word)) **
-       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ v5_init) ** (.x7 ↦ᵣ v7_init) **
-       (.x2 ↦ᵣ v2_init) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3))
-      ((.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) ** (.x10 ↦ᵣ c3) **
-       (.x6 ↦ᵣ uBase) ** (.x5 ↦ᵣ bs3) ** (.x7 ↦ᵣ fs3) **
-       (.x2 ↦ᵣ un3) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ un0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ un1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ un2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3)) := by
-  intro p0_lo p0_hi fs0 ba0 pc0 bs0 un0 c0
-        p1_lo p1_hi fs1 ba1 pc1 bs1 un1 c1
-        p2_lo p2_hi fs2 ba2 pc2 bs2 un2 c2
-        p3_lo p3_hi fs3 ba3 pc3 bs3 un3 c3
+      (divKMulsub4LimbsPre sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
+        v5_init v7_init v2_init)
+      (divKMulsub4LimbsPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3) := by
+  unfold divKMulsub4LimbsPre divKMulsub4LimbsPost
+  let p0_lo := qHat * v0
+  let p0_hi := rv64_mulhu qHat v0
+  let fs0 := p0_lo + (signExtend12 0 : Word)
+  let ba0 := if BitVec.ult fs0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let pc0 := ba0 + p0_hi
+  let bs0 := if BitVec.ult u0 fs0 then (1 : Word) else 0
+  let un0 := u0 - fs0
+  let c0 := pc0 + bs0
+  let p1_lo := qHat * v1
+  let p1_hi := rv64_mulhu qHat v1
+  let fs1 := p1_lo + c0
+  let ba1 := if BitVec.ult fs1 c0 then (1 : Word) else 0
+  let pc1 := ba1 + p1_hi
+  let bs1 := if BitVec.ult u1 fs1 then (1 : Word) else 0
+  let un1 := u1 - fs1
+  let c1 := pc1 + bs1
+  let p2_lo := qHat * v2
+  let p2_hi := rv64_mulhu qHat v2
+  let fs2 := p2_lo + c1
+  let ba2 := if BitVec.ult fs2 c1 then (1 : Word) else 0
+  let pc2 := ba2 + p2_hi
+  let bs2 := if BitVec.ult u2 fs2 then (1 : Word) else 0
+  let un2 := u2 - fs2
+  let c2 := pc2 + bs2
+  let p3_lo := qHat * v3
+  let p3_hi := rv64_mulhu qHat v3
+  let fs3 := p3_lo + c2
+  let ba3 := if BitVec.ult fs3 c2 then (1 : Word) else 0
+  let pc3 := ba3 + p3_hi
+  let bs3 := if BitVec.ult u3 fs3 then (1 : Word) else 0
+  let un3 := u3 - fs3
+  let c3 := pc3 + bs3
   -- Limb 0: instrs [22]-[32] at base+536
   have L0 := divK_mulsub_limb_spec_within sp uBase qHat (signExtend12 0 : Word)
     v5_init v7_init v2_init v0 u0 32 0 (base + mulsubOff)
@@ -286,6 +323,18 @@ private theorem lb_ab2_end {base : Word} : (base + addbackLimb2Off : Word) + 32 
 private theorem lb_ab3_end {base : Word} : (base + addbackLimb3Off : Word) + 32 = base + addbackFinalOff := by bv_addr
 private theorem lb_abf_end {base : Word} : (base + addbackFinalOff : Word) + 16 = base + addbackBeqOff := by bv_addr
 
+@[irreducible]
+private def addbackFullPre
+    (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4 : Word)
+    (v7Init v5Init v2Init : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ v7Init) **
+  (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5Init) ** (.x2 ↦ᵣ v2Init) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+  ((uBase + signExtend12 4064) ↦ₘ u4)
+
 /-- Postcondition bundle for the full addback: bundles the 22-let chain
     so callers see a flat postcondition. -/
 @[irreducible]
@@ -346,53 +395,33 @@ private theorem divK_addback_full_spec_within
     (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4 : Word)
     (v7_init v5_init v2_init : Word)
     (base : Word) :
-    -- Limb 0 addback intermediates
-    let upc0 := u0 + (signExtend12 0 : Word)
-    let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
-    let aun0 := upc0 + v0
-    let ac2_0 := if BitVec.ult aun0 v0 then (1 : Word) else 0
-    let aco0 := ac1_0 ||| ac2_0
-    -- Limb 1 addback intermediates
-    let upc1 := u1 + aco0
-    let ac1_1 := if BitVec.ult upc1 aco0 then (1 : Word) else 0
-    let aun1 := upc1 + v1
-    let ac2_1 := if BitVec.ult aun1 v1 then (1 : Word) else 0
-    let aco1 := ac1_1 ||| ac2_1
-    -- Limb 2 addback intermediates
-    let upc2 := u2 + aco1
-    let ac1_2 := if BitVec.ult upc2 aco1 then (1 : Word) else 0
-    let aun2 := upc2 + v2
-    let ac2_2 := if BitVec.ult aun2 v2 then (1 : Word) else 0
-    let aco2 := ac1_2 ||| ac2_2
-    -- Limb 3 addback intermediates
-    let upc3 := u3 + aco2
-    let ac1_3 := if BitVec.ult upc3 aco2 then (1 : Word) else 0
-    let aun3 := upc3 + v3
-    let ac2_3 := if BitVec.ult aun3 v3 then (1 : Word) else 0
-    let aco3 := ac1_3 ||| ac2_3
-    -- Final: u4 + carry, qHat--
-    let aun4 := u4 + aco3
-    let qHat' := qHat + signExtend12 4095
     cpsTripleWithin 37 (base + addbackInitOff) (base + addbackBeqOff) (sharedDivModCode base)
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ v7_init) **
-       (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5_init) ** (.x2 ↦ᵣ v2_init) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u4))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ aco3) **
-       (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
-       ((uBase + signExtend12 4064) ↦ₘ aun4)) := by
-  intro upc0 ac1_0 aun0 ac2_0 aco0
-        upc1 ac1_1 aun1 ac2_1 aco1
-        upc2 ac1_2 aun2 ac2_2 aco2
-        upc3 ac1_3 aun3 ac2_3 aco3
-        aun4 qHat'
+      (addbackFullPre sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4
+        v7_init v5_init v2_init)
+      (addbackFullPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4) := by
+  unfold addbackFullPre addbackFullPost
+  let upc0 := u0 + (signExtend12 0 : Word)
+  let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let aun0 := upc0 + v0
+  let ac2_0 := if BitVec.ult aun0 v0 then (1 : Word) else 0
+  let aco0 := ac1_0 ||| ac2_0
+  let upc1 := u1 + aco0
+  let ac1_1 := if BitVec.ult upc1 aco0 then (1 : Word) else 0
+  let aun1 := upc1 + v1
+  let ac2_1 := if BitVec.ult aun1 v1 then (1 : Word) else 0
+  let aco1 := ac1_1 ||| ac2_1
+  let upc2 := u2 + aco1
+  let ac1_2 := if BitVec.ult upc2 aco1 then (1 : Word) else 0
+  let aun2 := upc2 + v2
+  let ac2_2 := if BitVec.ult aun2 v2 then (1 : Word) else 0
+  let aco2 := ac1_2 ||| ac2_2
+  let upc3 := u3 + aco2
+  let ac1_3 := if BitVec.ult upc3 aco2 then (1 : Word) else 0
+  let aun3 := upc3 + v3
+  let ac2_3 := if BitVec.ult aun3 v3 then (1 : Word) else 0
+  let aco3 := ac1_3 ||| ac2_3
+  let aun4 := u4 + aco3
+  let qHat' := qHat + signExtend12 4095
   -- Init: instr [71] at base+732
   have I := divK_addback_init_spec_within v7_init (base + addbackInitOff)
   rw [lb_ab0] at I
@@ -490,53 +519,33 @@ private theorem divK_addback_full_spec_within_noNop
     (sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4 : Word)
     (v7_init v5_init v2_init : Word)
     (base : Word) :
-    -- Limb 0 addback intermediates
-    let upc0 := u0 + (signExtend12 0 : Word)
-    let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
-    let aun0 := upc0 + v0
-    let ac2_0 := if BitVec.ult aun0 v0 then (1 : Word) else 0
-    let aco0 := ac1_0 ||| ac2_0
-    -- Limb 1 addback intermediates
-    let upc1 := u1 + aco0
-    let ac1_1 := if BitVec.ult upc1 aco0 then (1 : Word) else 0
-    let aun1 := upc1 + v1
-    let ac2_1 := if BitVec.ult aun1 v1 then (1 : Word) else 0
-    let aco1 := ac1_1 ||| ac2_1
-    -- Limb 2 addback intermediates
-    let upc2 := u2 + aco1
-    let ac1_2 := if BitVec.ult upc2 aco1 then (1 : Word) else 0
-    let aun2 := upc2 + v2
-    let ac2_2 := if BitVec.ult aun2 v2 then (1 : Word) else 0
-    let aco2 := ac1_2 ||| ac2_2
-    -- Limb 3 addback intermediates
-    let upc3 := u3 + aco2
-    let ac1_3 := if BitVec.ult upc3 aco2 then (1 : Word) else 0
-    let aun3 := upc3 + v3
-    let ac2_3 := if BitVec.ult aun3 v3 then (1 : Word) else 0
-    let aco3 := ac1_3 ||| ac2_3
-    -- Final: u4 + carry, qHat--
-    let aun4 := u4 + aco3
-    let qHat' := qHat + signExtend12 4095
     cpsTripleWithin 37 (base + addbackInitOff) (base + addbackBeqOff) (divCode_noNop base)
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ v7_init) **
-       (.x11 ↦ᵣ qHat) ** (.x5 ↦ᵣ v5_init) ** (.x2 ↦ᵣ v2_init) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
-       ((uBase + signExtend12 4064) ↦ₘ u4))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ aco3) **
-       (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
-       ((uBase + signExtend12 4064) ↦ₘ aun4)) := by
-  intro upc0 ac1_0 aun0 ac2_0 aco0
-        upc1 ac1_1 aun1 ac2_1 aco1
-        upc2 ac1_2 aun2 ac2_2 aco2
-        upc3 ac1_3 aun3 ac2_3 aco3
-        aun4 qHat'
+      (addbackFullPre sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4
+        v7_init v5_init v2_init)
+      (addbackFullPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4) := by
+  unfold addbackFullPre addbackFullPost
+  let upc0 := u0 + (signExtend12 0 : Word)
+  let ac1_0 := if BitVec.ult upc0 (signExtend12 0 : Word) then (1 : Word) else 0
+  let aun0 := upc0 + v0
+  let ac2_0 := if BitVec.ult aun0 v0 then (1 : Word) else 0
+  let aco0 := ac1_0 ||| ac2_0
+  let upc1 := u1 + aco0
+  let ac1_1 := if BitVec.ult upc1 aco0 then (1 : Word) else 0
+  let aun1 := upc1 + v1
+  let ac2_1 := if BitVec.ult aun1 v1 then (1 : Word) else 0
+  let aco1 := ac1_1 ||| ac2_1
+  let upc2 := u2 + aco1
+  let ac1_2 := if BitVec.ult upc2 aco1 then (1 : Word) else 0
+  let aun2 := upc2 + v2
+  let ac2_2 := if BitVec.ult aun2 v2 then (1 : Word) else 0
+  let aco2 := ac1_2 ||| ac2_2
+  let upc3 := u3 + aco2
+  let ac1_3 := if BitVec.ult upc3 aco2 then (1 : Word) else 0
+  let aun3 := upc3 + v3
+  let ac2_3 := if BitVec.ult aun3 v3 then (1 : Word) else 0
+  let aco3 := ac1_3 ||| ac2_3
+  let aun4 := u4 + aco3
+  let qHat' := qHat + signExtend12 4095
   -- Init: instr [71] at base+732
   have I := divK_addback_init_spec_within v7_init (base + addbackInitOff)
   rw [lb_ab0] at I
@@ -645,8 +654,8 @@ theorem divK_addback_full_named_spec_within_noNop
        ((uBase + signExtend12 4064) ↦ₘ u4))
       (addbackFullPost sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4) :=
   cpsTripleWithin_weaken
+    (fun h hp => by unfold addbackFullPre; exact hp)
     (fun h hp => hp)
-    (fun h hp => by simp only [addbackFullPost_unfold]; exact hp)
     (divK_addback_full_spec_within_noNop sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4 v7_init v5_init v2_init base)
 
 private theorem lb_ms_setup {base : Word} : (base + div128CallRetOff : Word) + 20 = base + mulsubOff := by bv_addr
@@ -753,7 +762,7 @@ private theorem divK_mulsub_full_spec_within_of_sub
   -- 2. Mulsub 4 limbs: instrs [22]-[65] at base+536
   have M := divK_mulsub_4limbs_spec_within_of_sub sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3
     (j <<< (3 : BitVec 6).toNat) v7Old v2Old base code hsub
-  intro_lets at M
+  unfold divKMulsub4LimbsPre divKMulsub4LimbsPost at M
   -- Compose setup + mulsub
   seqFrame Sf M
   -- 3. Sub-carry: instrs [66]-[69] at base+712
@@ -1059,6 +1068,7 @@ theorem divK_correction_addback_spec_within
   -- Compose with addback_full (base+732 → base+880)
   have AB := divK_addback_full_spec_within sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4
     borrow v5Old v2Old base
+  unfold addbackFullPre addbackFullPost at AB
   seqFrame ntaken_framed AB
   exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
@@ -1141,6 +1151,7 @@ theorem divK_correction_addback_spec_within_noNop
   -- Compose with addback_full (base+732 → base+880)
   have AB := divK_addback_full_spec_within_noNop sp uBase qHat v0 v1 v2 v3 u0 u1 u2 u3 u4
     borrow v5Old v2Old base
+  unfold addbackFullPre addbackFullPost at AB
   seqFrame ntaken_framed AB
   exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
@@ -1333,115 +1344,17 @@ private theorem lb_beq_back_taken {base : Word} :
     (base + addbackBeqOff : Word) + signExtend13 (8044 : BitVec 13) = base + addbackInitOff := by
   rv64_addr
 
-/-- Double-addback path at [108]: when first addback carry (x7) = 0, BEQ jumps back to [71]
-    for a second addback pass. The second addback always produces carry ≠ 0, so BEQ at [108]
-    then falls through to base+884.
-    Entry: base+880 (after first addback), x7 = 0.
-    Exit: base+884 (store entry), with double-addback results. -/
-private theorem divK_double_addback_beq_spec_within
-    (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word)
-    (base : Word)
-    (hcarry2_nz : addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3 ≠ 0) :
-    -- Second addback intermediates (same chain as addbackN4 applied to first addback results)
-    let upc0' := aun0 + (signExtend12 0 : Word)
-    let ac1_0' := if BitVec.ult upc0' (signExtend12 0 : Word) then (1 : Word) else 0
-    let aun0' := upc0' + v0
-    let ac2_0' := if BitVec.ult aun0' v0 then (1 : Word) else 0
-    let aco0' := ac1_0' ||| ac2_0'
-    let upc1' := aun1 + aco0'
-    let ac1_1' := if BitVec.ult upc1' aco0' then (1 : Word) else 0
-    let aun1' := upc1' + v1
-    let ac2_1' := if BitVec.ult aun1' v1 then (1 : Word) else 0
-    let aco1' := ac1_1' ||| ac2_1'
-    let upc2' := aun2 + aco1'
-    let ac1_2' := if BitVec.ult upc2' aco1' then (1 : Word) else 0
-    let aun2' := upc2' + v2
-    let ac2_2' := if BitVec.ult aun2' v2 then (1 : Word) else 0
-    let aco2' := ac1_2' ||| ac2_2'
-    let upc3' := aun3 + aco2'
-    let ac1_3' := if BitVec.ult upc3' aco2' then (1 : Word) else 0
-    let aun3' := upc3' + v3
-    let ac2_3' := if BitVec.ult aun3' v3 then (1 : Word) else 0
-    let aco3' := ac1_3' ||| ac2_3'
-    let aun4' := aun4 + aco3'
-    let qHat'' := qHat' + signExtend12 4095
-    cpsTripleWithin 39 (base + addbackBeqOff) (base + storeLoopOff) (sharedDivModCode base)
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ (0 : Word)) **
-       (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
-       ((uBase + signExtend12 4064) ↦ₘ aun4))
-      ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ aco3') **
-       (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ aun4') ** (.x2 ↦ᵣ aun3') ** (.x0 ↦ᵣ (0 : Word)) **
-       ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0') **
-       ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1') **
-       ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2') **
-       ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3') **
-       ((uBase + signExtend12 4064) ↦ₘ aun4')) := by
-  intro upc0' ac1_0' aun0' ac2_0' aco0' upc1' ac1_1' aun1' ac2_1' aco1'
-        upc2' ac1_2' aun2' ac2_2' aco2' upc3' ac1_3' aun3' ac2_3' aco3' aun4' qHat''
-  -- 1. BEQ at [108] taken (carry = 0, x7 = 0 = x0) → base+732
-  have hbeq := beq_spec_gen_within .x7 .x0 (8044 : BitVec 13) (0 : Word) 0 (base + addbackBeqOff)
-  rw [lb_beq_back_taken, lb_beq_back_ntaken] at hbeq
-  have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
-    lb_sub 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
-  -- Eliminate not-taken path (⌜0 ≠ 0⌝ is absurd)
-  have beq_taken := cpsBranchWithin_takenPath hbeq_ext (fun hp hQf => by
-    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
-    exact hpure rfl)
-  -- Strip pure fact from taken postcondition
-  have beq_taken' := cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => sepConj_mono_right
-      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
-    beq_taken
-  -- 2. Second addback (base+732 → base+880)
-  have AB2 := divK_addback_full_spec_within sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
-    (0 : Word) aun4 aun3 base
+@[irreducible]
+private def n4DoubleAddbackPre
+    (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) ** (.x7 ↦ᵣ (0 : Word)) **
+  (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) ** (.x0 ↦ᵣ (0 : Word)) **
+  ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
+  ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
+  ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
+  ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
+  ((uBase + signExtend12 4064) ↦ₘ aun4)
 
-  intro_lets at AB2
-  -- 3. BEQ at [108] not taken (carry2 ≠ 0) → base+884
-  have haco3_nz : aco3' ≠ 0 := by
-    unfold addbackN4_carry at hcarry2_nz
-    simp only [] at hcarry2_nz
-    exact hcarry2_nz
-  have BPT := divK_beq_passthrough_within base haco3_nz
-  -- 4. Compose: BEQ taken (→732) + addback2 (732→880) + BEQ ntaken (880→884)
-  -- Frame BEQ with addback atoms
-  have beq_f := cpsTripleWithin_frameR
-    ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
-     (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
-     ((uBase + signExtend12 4064) ↦ₘ aun4))
-    (by pcFree) beq_taken'
-  -- Compose BEQ → addback2
-  have beq_ab2 := cpsTripleWithin_seq_perm_same_cr
-    (fun h hp => by xperm_hyp hp) beq_f AB2
-  -- Frame BEQ passthrough with addback2 postcondition atoms
-  have BPTf := cpsTripleWithin_frameR
-    ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
-     (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ aun4') ** (.x2 ↦ᵣ aun3') **
-     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0') **
-     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1') **
-     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2') **
-     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3') **
-     ((uBase + signExtend12 4064) ↦ₘ aun4'))
-    (by pcFree) BPT
-  -- Compose (BEQ+addback2) → BEQ passthrough
-  have full := cpsTripleWithin_seq_perm_same_cr
-    (fun h hp => by xperm_hyp hp) beq_ab2 BPTf
-  exact cpsTripleWithin_weaken
-    (fun h hp => by xperm_hyp hp)
-    (fun h hp => by xperm_hyp hp)
-    full
-
-/-- Bundled postcondition for `divK_double_addback_beq_named_spec_within`.
-    Hides `ab'` and `qHat''` so the spec statement is flat. -/
 @[irreducible]
 def n4DoubleAddbackNamedPost
     (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word) : Assertion :=
@@ -1473,6 +1386,97 @@ theorem n4DoubleAddbackNamedPost_unfold
        ((uBase + signExtend12 4064) ↦ₘ ab'.2.2.2.2)) := by
   delta n4DoubleAddbackNamedPost; rfl
 
+/-- Double-addback path at [108]: when first addback carry (x7) = 0, BEQ jumps back to [71]
+    for a second addback pass. The second addback always produces carry ≠ 0, so BEQ at [108]
+    then falls through to base+884.
+    Entry: base+880 (after first addback), x7 = 0.
+    Exit: base+884 (store entry), with double-addback results. -/
+private theorem divK_double_addback_beq_spec_within
+    (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word)
+    (base : Word)
+    (hcarry2_nz : addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3 ≠ 0) :
+    cpsTripleWithin 39 (base + addbackBeqOff) (base + storeLoopOff) (sharedDivModCode base)
+      (n4DoubleAddbackPre sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4)
+      (n4DoubleAddbackNamedPost sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4) := by
+  unfold n4DoubleAddbackPre n4DoubleAddbackNamedPost addbackN4
+  let upc0' := aun0 + (signExtend12 0 : Word)
+  let ac1_0' := if BitVec.ult upc0' (signExtend12 0 : Word) then (1 : Word) else 0
+  let aun0' := upc0' + v0
+  let ac2_0' := if BitVec.ult aun0' v0 then (1 : Word) else 0
+  let aco0' := ac1_0' ||| ac2_0'
+  let upc1' := aun1 + aco0'
+  let ac1_1' := if BitVec.ult upc1' aco0' then (1 : Word) else 0
+  let aun1' := upc1' + v1
+  let ac2_1' := if BitVec.ult aun1' v1 then (1 : Word) else 0
+  let aco1' := ac1_1' ||| ac2_1'
+  let upc2' := aun2 + aco1'
+  let ac1_2' := if BitVec.ult upc2' aco1' then (1 : Word) else 0
+  let aun2' := upc2' + v2
+  let ac2_2' := if BitVec.ult aun2' v2 then (1 : Word) else 0
+  let aco2' := ac1_2' ||| ac2_2'
+  let upc3' := aun3 + aco2'
+  let ac1_3' := if BitVec.ult upc3' aco2' then (1 : Word) else 0
+  let aun3' := upc3' + v3
+  let ac2_3' := if BitVec.ult aun3' v3 then (1 : Word) else 0
+  let aco3' := ac1_3' ||| ac2_3'
+  let aun4' := aun4 + aco3'
+  let qHat'' := qHat' + signExtend12 4095
+  -- 1. BEQ at [108] taken (carry = 0, x7 = 0 = x0) → base+732
+  have hbeq := beq_spec_gen_within .x7 .x0 (8044 : BitVec 13) (0 : Word) 0 (base + addbackBeqOff)
+  rw [lb_beq_back_taken, lb_beq_back_ntaken] at hbeq
+  have hbeq_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub 108 _ _ (by decide) (by bv_addr) (by decide)) hbeq
+  -- Eliminate not-taken path (⌜0 ≠ 0⌝ is absurd)
+  have beq_taken := cpsBranchWithin_takenPath hbeq_ext (fun hp hQf => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
+    exact hpure rfl)
+  -- Strip pure fact from taken postcondition
+  have beq_taken' := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp)
+    beq_taken
+  have AB2 := divK_addback_full_spec_within sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
+    (0 : Word) aun4 aun3 base
+  unfold addbackFullPre addbackFullPost at AB2
+  -- 3. BEQ at [108] not taken (carry2 ≠ 0) → base+884
+  have haco3_nz : aco3' ≠ 0 := by
+    unfold addbackN4_carry at hcarry2_nz
+    simp only [] at hcarry2_nz
+    exact hcarry2_nz
+  have BPT := divK_beq_passthrough_within base haco3_nz
+  -- 4. Compose: BEQ taken (→732) + addback2 (732→880) + BEQ ntaken (880→884)
+  -- Frame BEQ with addback atoms
+  have beq_f := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
+     (.x11 ↦ᵣ qHat') ** (.x5 ↦ᵣ aun4) ** (.x2 ↦ᵣ aun3) **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0) **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1) **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2) **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3) **
+     ((uBase + signExtend12 4064) ↦ₘ aun4))
+    (by pcFree) beq_taken'
+  have beq_ab2 := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) beq_f AB2
+  -- Frame BEQ passthrough with addback2 postcondition atoms
+  have BPTf := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ uBase) **
+     (.x11 ↦ᵣ qHat'') ** (.x5 ↦ᵣ aun4') ** (.x2 ↦ᵣ aun3') **
+     ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ aun0') **
+     ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ aun1') **
+     ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ aun2') **
+     ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ aun3') **
+     ((uBase + signExtend12 4064) ↦ₘ aun4'))
+    (by pcFree) BPT
+  -- Compose (BEQ+addback2) → BEQ passthrough
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) beq_ab2 BPTf
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by
+      unfold addbackN4_carry
+      xperm_hyp hp)
+    full
 theorem divK_double_addback_beq_named_spec_within
     (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word)
     (base : Word)
@@ -1487,8 +1491,8 @@ theorem divK_double_addback_beq_named_spec_within
        ((uBase + signExtend12 4064) ↦ₘ aun4))
       (n4DoubleAddbackNamedPost sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4) := by
   exact cpsTripleWithin_weaken
+    (fun h hp => by unfold n4DoubleAddbackPre; exact hp)
     (fun h hp => hp)
-    (fun h hp => by simp only [n4DoubleAddbackNamedPost_unfold]; exact hp)
     (divK_double_addback_beq_spec_within sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4
       base hcarry2_nz)
 
