@@ -149,7 +149,8 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_fixedBou
     hControlMachine hk hCount hBase hNextNext
     (by rw [expTwoMulFixedReloadIterStepBound_eq])
     (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
-      simpa only [expTwoMulFixedStateBranchPre] using
+      simpa only [expTwoMulFixedStateBranchPre,
+        expTwoMulFixedStateStepBranchPre] using
         hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
     hReload
 
@@ -213,7 +214,8 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_sameCode
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_state_elim
       (by omega) hCount
       (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
-        simpa only [expTwoMulFixedStateBranchPre] using
+        simpa only [expTwoMulFixedStateBranchPre,
+          expTwoMulFixedStateStepBranchPre] using
           hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
       hReload)
 
@@ -485,12 +487,16 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
         · exact
             cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
               (by
-                simpa only [expTwoMulFixedStateReloadFalsePre] using
+                simpa only [
+                  expTwoMulFixedReloadResidualFalseNextPre,
+                  expTwoMulFixedStateReloadFalsePre] using
                   hReloadFalse v6' v7' v10' v11' d0' d1' d2' d3')
         · exact
             cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
               (by
-                simpa only [expTwoMulFixedStateReloadTruePre] using
+                simpa only [
+                  expTwoMulFixedReloadResidualTrueNextPre,
+                  expTwoMulFixedStateReloadTruePre] using
                   hReloadTrue v6' v7' v10' v11' d0' d1' d2' d3'))
 
 /-- Final fixed-loop state-frame wrapper.

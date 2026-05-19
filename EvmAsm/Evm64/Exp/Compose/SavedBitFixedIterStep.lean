@@ -443,7 +443,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_stepPost_elim_of_
     a0 a1 a2 a3 v7 v11 base hFrame hbase hControlMachine hne hk
     hBase hNextNext
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
-      hBranch hReload)
+      (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre] using
+          hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+      hReload)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_stepPost_bit_elim_of_control_eq_machine
     {baseWord exponentWord : EvmWord} {k : Nat}
@@ -538,7 +541,17 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_stepPost_bit_elim
     a0 a1 a2 a3 v7 v11 base hFrame hbase hControlMachine hne hk
     hBase hNextNext
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_bit_elim
-      hBranchTrue hBranchFalse hReloadTrue hReloadFalse)
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_true,
+          expTwoMulFixedBranchReturnPc_true] using
+          hBranchTrue v6' v7' v10' v11' d0' d1' d2' d3')
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_false,
+          expTwoMulFixedBranchReturnPc_false] using
+          hBranchFalse v6' v7' v10' v11' d0' d1' d2' d3')
+      hReloadTrue hReloadFalse)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPreNWithFrame_stepPost_elim
     {baseWord exponentWord : EvmWord} {k : Nat}
@@ -850,7 +863,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControl_elim
     a0 a1 a2 a3 v7 v11 base hbase hne hk hBase hCursor hControl
     hNextNext hInv
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
-      hBranch hReload)
+      (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre] using
+          hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+      hReload)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControlFrame_elim
     {baseWord exponentWord : EvmWord} {k : Nat}
@@ -920,7 +936,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControlFrame_elim
     a0 a1 a2 a3 v7 v11 base hFrame hbase hne hk hBase hCursor
     hControl hNextNext hInv
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
-      hBranch hReload)
+      (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre] using
+          hBranch bit v6' v7' v10' v11' d0' d1' d2' d3')
+      hReload)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControl_bit_elim
     {baseWord exponentWord : EvmWord} {k : Nat}
@@ -1018,7 +1037,17 @@ theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControl_bit_elim
     a0 a1 a2 a3 v7 v11 base hbase hne hk hBase hCursor hControl
     hNextNext hInv
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_bit_elim
-      hBranchTrue hBranchFalse hReloadTrue hReloadFalse)
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_true,
+          expTwoMulFixedBranchReturnPc_true] using
+          hBranchTrue v6' v7' v10' v11' d0' d1' d2' d3')
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_false,
+          expTwoMulFixedBranchReturnPc_false] using
+          hBranchFalse v6' v7' v10' v11' d0' d1' d2' d3')
+      hReloadTrue hReloadFalse)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControlFrame_bit_elim
     {baseWord exponentWord : EvmWord} {k : Nat}
@@ -1118,6 +1147,16 @@ theorem cpsTripleWithin_expTwoMulFixedIterPre_stepPostNWithControlFrame_bit_elim
     a0 a1 a2 a3 v7 v11 base hFrame hbase hne hk hBase hCursor
     hControl hNextNext hInv
     (cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_bit_elim
-      hBranchTrue hBranchFalse hReloadTrue hReloadFalse)
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_true,
+          expTwoMulFixedBranchReturnPc_true] using
+          hBranchTrue v6' v7' v10' v11' d0' d1' d2' d3')
+      (fun v6' v7' v10' v11' d0' d1' d2' d3' => by
+        simpa only [expTwoMulFixedStepPostBranchPre,
+          expTwoMulFixedBranchResult_false,
+          expTwoMulFixedBranchReturnPc_false] using
+          hBranchFalse v6' v7' v10' v11' d0' d1' d2' d3')
+      hReloadTrue hReloadFalse)
 
 end EvmAsm.Evm64.Exp.Compose

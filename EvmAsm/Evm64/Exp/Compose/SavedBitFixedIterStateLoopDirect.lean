@@ -189,12 +189,16 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_f
         · exact
             cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
               (by
-                simpa only [expReloadDirectFalsePre] using
+                simpa only [
+                  expTwoMulFixedReloadResidualFalseNextPre,
+                  expReloadDirectFalsePre] using
                   hReloadFalse hk_lt v6' v7' v10' v11' d0' d1' d2' d3')
         · exact
             cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
               (by
-                simpa only [expReloadDirectTruePre] using
+                simpa only [
+                  expTwoMulFixedReloadResidualTrueNextPre,
+                  expReloadDirectTruePre] using
                   hReloadTrue hk_lt v6' v7' v10' v11' d0' d1' d2' d3'))
       hExit
 
