@@ -94,4 +94,44 @@ theorem cpsTripleWithin_expTwoMulFixedIterPre_to_stepPostNWithControl
         exact hExit)
   simpa [Nat.add_zero] using hMerged
 
+theorem cpsTripleWithin_expTwoMulFixedIterPre_seq_stepPostNWithControl
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {nSteps : Nat} {exit : Word} {Q : Assertion}
+    (e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (hStepPost :
+      cpsTripleWithin nSteps (base + 44) exit
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+          iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base empAssertion)
+        Q) :
+    cpsTripleWithin (193 + nSteps) (base + 44) exit
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPre e c6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11)
+      Q :=
+  cpsTripleWithin_seq_same_cr
+    (cpsTripleWithin_expTwoMulFixedIterPre_to_stepPostNWithControl
+      e c6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base hbase hne hk hBase hCursor hControl
+      hNextNext hInv)
+    hStepPost
+
 end EvmAsm.Evm64.Exp.Compose
