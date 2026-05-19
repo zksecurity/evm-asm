@@ -520,12 +520,15 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within
     have J2 := divK_loop_body_n2_call_skip_jgt0_spec_within (2 : Word)
       EvmAsm.Evm64.DivMod.AddrNorm.slt_jpos_2
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
-      halign
-      hbltu hborrow
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+        halign
+        hbltu hborrow
     intro_lets at J2
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J2CallPre_unfold] at hp
+        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
       J2
@@ -563,12 +566,15 @@ theorem divK_loop_body_n2_call_unified_j2_spec_within_noNop
     have J2 := divK_loop_body_n2_call_skip_jgt0_spec_within_noNop (2 : Word)
       EvmAsm.Evm64.DivMod.AddrNorm.slt_jpos_2
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
-      halign
-      hbltu hborrow
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+        halign
+        hbltu hborrow
     intro_lets at J2
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J2CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J2CallPre_unfold] at hp
+        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
       J2
@@ -656,12 +662,15 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within
     have J1 := divK_loop_body_n2_call_skip_jgt0_spec_within (1 : Word)
       EvmAsm.Evm64.DivMod.AddrNorm.slt_jpos_1
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
-      halign
-      hbltu hborrow
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+        halign
+        hbltu hborrow
     intro_lets at J1
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J1CallPre_unfold] at hp
+        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
       J1
@@ -699,12 +708,15 @@ theorem divK_loop_body_n2_call_unified_j1_spec_within_noNop
     have J1 := divK_loop_body_n2_call_skip_jgt0_spec_within_noNop (1 : Word)
       EvmAsm.Evm64.DivMod.AddrNorm.slt_jpos_1
       sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
-      halign
-      hbltu hborrow
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base
+        halign
+        hbltu hborrow
     intro_lets at J1
     exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
-      (fun _ hp => by rw [loopBodyN2J1CallPre_unfold] at hp; exact hp)
+      (fun _ hp => by
+        rw [loopBodyN2J1CallPre_unfold] at hp
+        rw [loopBodyN2CallSkipJgt0Pre_unfold]
+        exact hp)
       (fun h hp => by
         rw [← loopIterPostN2Call_skip hb]; exact hp)
       J1
