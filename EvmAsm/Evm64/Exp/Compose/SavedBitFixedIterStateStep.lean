@@ -613,7 +613,9 @@ theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_branchState_
       cpsTripleWithin_weaken
         (fun _ h =>
           expTwoMulFixedIterPreNWithControlFrame_to_iterPreNWithStateFrame
-            (expTwoMulFixedIterCountInvariant_succ hk hCount) h)
+            (expTwoMulFixedIterCountInvariant_succ hk hCount)
+            (by
+              simpa only [expTwoMulFixedStepPostBranchPre] using h))
         (fun _ h => h)
         (by
           simpa only [expTwoMulFixedStateStepBranchPre] using
