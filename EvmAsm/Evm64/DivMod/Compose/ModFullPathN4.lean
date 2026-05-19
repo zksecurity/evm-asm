@@ -223,6 +223,7 @@ theorem evm_mod_n4_preloop_max_skip_spec_within (sp base : Word)
     (fun h hp => by
       delta loopSetupPost at hp
       simp only [x1_val_n4] at hp
+      rw [loopBodyN4SkipJ0NormPre_unfold]
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
@@ -307,6 +308,7 @@ theorem evm_mod_n4_preloop_call_skip_spec_within (sp base : Word)
     (fun h hp => by
       delta loopSetupPost at hp
       simp only [x1_val_n4] at hp
+      rw [loopBodyN4CallJ0NormPre_unfold]
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
@@ -581,6 +583,7 @@ theorem evm_mod_n4_preloop_call_addback_beq_spec_within (sp base : Word)
     (fun h hp => by
       delta loopSetupPost at hp
       rw [x1_val_n4] at hp
+      rw [loopBodyN4CallJ0NormPre_unfold]
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
@@ -694,4 +697,3 @@ theorem evm_mod_n4_full_call_addback_beq_spec_within (sp base : Word)
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta fullModN4CallAddbackBeqPost; rw [sepConj_assoc'] at hq; xperm_hyp hq)
     hFull
-

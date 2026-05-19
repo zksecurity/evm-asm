@@ -119,6 +119,44 @@ theorem loopBodyN4SkipJ0Pre_unfold
      (qAddr ↦ₘ qOld)) := by
   delta loopBodyN4SkipJ0Pre; rfl
 
+/-- Sp-relative normalized precondition for the j=0 max-skip path. This is the
+    public surface used by the normalized modCode wrapper; keep the long atom
+    chain out of theorem statements. -/
+@[irreducible]
+def loopBodyN4SkipJ0NormPre
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
+  (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+  (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+  (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+  ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
+  ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+  ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
+  ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+  ((sp + signExtend12 4024) ↦ₘ uTop) **
+  ((sp + signExtend12 4088) ↦ₘ qOld)
+
+/-- Named unfold for `loopBodyN4SkipJ0NormPre`. -/
+theorem loopBodyN4SkipJ0NormPre_unfold
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word) :
+    loopBodyN4SkipJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld =
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
+     (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+     (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+     ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
+     ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+     ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
+     ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+     ((sp + signExtend12 4024) ↦ₘ uTop) **
+     ((sp + signExtend12 4088) ↦ₘ qOld)) := by
+  delta loopBodyN4SkipJ0NormPre; rfl
+
 -- ============================================================================
 -- Loop body j=0 extended to divCode / divCode_noNop (from sharedDivModCode)
 -- Uses loopBodyN4SkipJ0Pre so no let-bindings appear in the statement.
@@ -226,23 +264,15 @@ theorem divK_loop_body_n4_max_skip_j0_norm_modCode_within (sp base : Word)
                   (mulsubN4_c3 (signExtend12 4095) v0 v1 v2 v3 u0 u1 u2 u3)
                 then (1 : Word) else 0) = (0 : Word)) :
     cpsTripleWithin 76 (base + loopBodyOff) (base + denormOff) (modCode base)
-      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
-       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
-       ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
-       ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ uTop) **
-       ((sp + signExtend12 4088) ↦ₘ qOld))
+      (loopBodyN4SkipJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld)
       (loopBodyN4SkipPost sp (0 : Word) (signExtend12 4095)
         v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   have raw := divK_loop_body_n4_max_skip_j0_modCode_within sp jOld v5Old v6Old v7Old
     v10Old v11Old v2Old v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base hbltu hborrow
   refine cpsTripleWithin_weaken ?_ (fun _ hq => hq) raw
   intro _ hp
+  rw [loopBodyN4SkipJ0NormPre_unfold] at hp
   delta loopBodyN4SkipJ0Pre
   simp only [se12_32, se12_40, se12_48, se12_56,
              u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
@@ -254,6 +284,53 @@ theorem divK_loop_body_n4_max_skip_j0_norm_modCode_within (sp base : Word)
 -- (loopBodyN4CallSkipJ0Pre, loopBodyN4CallSkipJ0Post, and
 --  loopBodyN4CallAddbackBeqJ0Post are defined in LoopIterN4, available
 --  here via the import.)
+
+/-- Sp-relative normalized precondition for the j=0 div128 call path. Shared
+    by call-skip and BEQ addback normalized wrappers. -/
+@[irreducible]
+def loopBodyN4CallJ0NormPre
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
+  (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+  (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+  (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+  ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
+  ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+  ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
+  ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+  ((sp + signExtend12 4024) ↦ₘ uTop) **
+  ((sp + signExtend12 4088) ↦ₘ qOld) **
+  (sp + signExtend12 3968 ↦ₘ retMem) **
+  (sp + signExtend12 3960 ↦ₘ dMem) **
+  (sp + signExtend12 3952 ↦ₘ dloMem) **
+  (sp + signExtend12 3944 ↦ₘ scratch_un0) ** regOwn .x1
+
+/-- Named unfold for `loopBodyN4CallJ0NormPre`. -/
+theorem loopBodyN4CallJ0NormPre_unfold
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratch_un0 : Word) :
+    loopBodyN4CallJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 =
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
+     (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+     (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
+     ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
+     ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
+     ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
+     ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
+     ((sp + signExtend12 4024) ↦ₘ uTop) **
+     ((sp + signExtend12 4088) ↦ₘ qOld) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ scratch_un0) ** regOwn .x1) := by
+  delta loopBodyN4CallJ0NormPre; rfl
 
 -- ============================================================================
 -- Call path: Loop body j=0 extended to divCode (from sharedDivModCode)
@@ -372,27 +449,15 @@ theorem divK_loop_body_n4_call_skip_j0_norm_modCode_within (sp base : Word)
                   (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
                 then (1 : Word) else 0) = (0 : Word)) :
     cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (modCode base)
-      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
-       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
-       ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
-       ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ uTop) **
-       ((sp + signExtend12 4088) ↦ₘ qOld) **
-       (sp + signExtend12 3968 ↦ₘ retMem) **
-       (sp + signExtend12 3960 ↦ₘ dMem) **
-       (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ scratch_un0) ** regOwn .x1)
+      (loopBodyN4CallJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
       (loopBodyN4CallSkipJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   have raw := divK_loop_body_n4_call_skip_j0_modCode_within sp jOld v5Old v6Old v7Old
     v10Old v11Old v2Old v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
     retMem dMem dloMem scratch_un0 base halign hbltu hborrow
   refine cpsTripleWithin_weaken ?_ ?_ raw
   · intro _ hp
+    rw [loopBodyN4CallJ0NormPre_unfold] at hp
     delta loopBodyN4CallSkipJ0Pre
     simp only [se12_32, se12_40, se12_48, se12_56,
                u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
@@ -446,27 +511,15 @@ theorem divK_loop_body_n4_call_addback_j0_beq_norm_modCode_within (sp base : Wor
                   (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
                 then (1 : Word) else 0) ≠ (0 : Word)) :
     cpsTripleWithin 202 (base + loopBodyOff) (base + denormOff) (modCode base)
-      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
-       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
-       ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
-       ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ uTop) **
-       ((sp + signExtend12 4088) ↦ₘ qOld) **
-       (sp + signExtend12 3968 ↦ₘ retMem) **
-       (sp + signExtend12 3960 ↦ₘ dMem) **
-       (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ scratch_un0) ** regOwn .x1)
+      (loopBodyN4CallJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
       (loopBodyN4CallAddbackBeqJ0Post sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   have raw := divK_loop_body_n4_call_addback_j0_beq_modCode_within sp jOld
     v5Old v6Old v7Old v10Old v11Old v2Old v0 v1 v2 v3 u0 u1 u2 u3 uTop
     qOld retMem dMem dloMem scratch_un0 base halign hbltu hcarry2_nz hborrow
   refine cpsTripleWithin_weaken ?_ ?_ raw
   · intro _ hp
+    rw [loopBodyN4CallJ0NormPre_unfold] at hp
     rw [loopBodyN4CallSkipJ0Pre_unfold]
     simp only [se12_32, se12_40, se12_48, se12_56,
                u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
