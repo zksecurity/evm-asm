@@ -766,6 +766,34 @@ theorem evm_div_callable_bzero_preserving_x1_spec (sp base x9Val raVal : Word)
   exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by xperm_hyp hp)
     (cpsTripleWithin_seq_same_cr hStackForRet hRetFramed)
 
+/-- Zero-divisor DIV callable wrapper with exact `x1` and no `x9` frame. -/
+theorem evm_div_callable_bzero_preserving_x1_noX9_spec (sp base raVal : Word)
+    (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPreCallable sp a b
+        raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      (divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hStack :=
+    evm_div_bzero_stack_spec_within_dispatch_noNop_callable_x1_uni
+      sp base a b raVal v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratchUn0 hbz
+  have hStackCall :=
+    cpsTripleWithin_extend_code (hmono := divCode_noNop_sub_div_callable_code) hStack
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_div_callable_code_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL (divStackDispatchPostCallable sp a b)
+      (divStackDispatchPostCallable_pcFree sp a b) hRet
+  exact cpsTripleWithin_seq_same_cr hStackCall hRetFramed
+
 /-- Generic callable DIV wrapper for no-NOP body proofs that already use the
     callable-ready precondition and preserve exact caller-framed `x1`/`x9`.
 
