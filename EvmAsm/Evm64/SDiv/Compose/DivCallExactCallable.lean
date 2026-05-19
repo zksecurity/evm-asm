@@ -61,6 +61,39 @@ theorem evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode
       hRet
   exact EvmAsm.Rv64.cpsTripleWithin_seq_same_cr hStackCall hRetFramed
 
+/-- Stronger exact-pre wrapper that keeps SDIV's caller-framed `x9` explicit
+    across the embedded unsigned-DIV callable. -/
+theorem evm_div_callable_preserving_x1_x9_exact_pre_spec_in_sdivCode
+    (sp base x9Val raVal : Word) (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+        (base + wrapperEndOff)
+        ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
+        (EvmAsm.Evm64.divCode_noNop (base + wrapperEndOff))
+        (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+          x9Val raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        ((EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+          (.x9 ↦ᵣ x9Val))) :
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCode base)
+      (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      ((EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) := by
+  exact
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := evm_div_callable_code_sub_sdivCode (base := base))
+      (EvmAsm.Evm64.evm_div_callable_spec_from_noNop_preserving_x1_x9
+        sp (base + wrapperEndOff) x9Val raVal a b v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
+
 /-- Branch-certificate specialization of
     `evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode`.
 
