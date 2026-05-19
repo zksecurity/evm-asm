@@ -79,6 +79,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryLoopFixedIterSpBounds
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedLoopInvariant
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCount
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedBoolStep
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterState
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterPreNPost
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStepPost
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStep
