@@ -49,6 +49,9 @@ jobs:
       - name: No-warnings guard (EvmAsm/ source paths)
         run: scripts/check-no-warnings.sh build.log
 
+      - name: Progress-report drift check
+        run: scripts/check-progress.sh
+
       # Only push to main / merge_group / workflow_dispatch save the cache, so
       # PR runs cannot churn the quota and evict the main-branch cache.
       - name: Save lake cache

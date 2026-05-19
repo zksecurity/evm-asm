@@ -20,3 +20,8 @@ name = "EvmAsm"
 name = "codegen"
 root = "Main"
 supportInterpreter = true
+
+[[lean_exe]]
+name = "progress-report"
+root = "MainProgress"
+supportInterpreter = true

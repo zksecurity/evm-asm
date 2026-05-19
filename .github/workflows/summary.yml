@@ -17,6 +17,56 @@ jobs:
   summarize:
     runs-on: ubuntu-latest
     steps:
+      # Pre-steps: own checkout so we can compute the deterministic
+      # PROGRESS.md base↔head delta before the summary action runs its
+      # own checkout. Files written to /tmp survive the action's
+      # checkout (which only touches the workspace).
+      - name: Checkout (full history for base diff)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Compute deterministic progress delta
+        id: progress_delta
+        run: |
+          # Parses PROGRESS.md at base + head, emits structured Markdown
+          # (count deltas + per-opcode tier transitions). Pure git+awk;
+          # no LLM. Output is consumed below as part of the augmented
+          # instructions file passed to the summary action.
+          scripts/progress-delta.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            > /tmp/progress-delta.md
+          echo "Generated /tmp/progress-delta.md ($(wc -l < /tmp/progress-delta.md) lines)"
+
+      - name: Build augmented instructions file
+        run: |
+          # Concatenate (in order):
+          #   1. CONTRIBUTING.md       — existing style guidance
+          #   2. progress-delta.md     — PR-specific deterministic facts
+          #   3. pr-summary-progress-prompt.md — LLM output-shape rules
+          #
+          # The LLM consumes this as its analysis-time context.
+          # Sections are separated by horizontal rules so the model
+          # can tell them apart in the synthesis prompt.
+          {
+            echo "# Deployment-supplied instructions for evm-asm"
+            echo
+            echo "## Style guidance (from CONTRIBUTING.md)"
+            echo
+            cat CONTRIBUTING.md
+            echo
+            echo "---"
+            echo
+            cat /tmp/progress-delta.md
+            echo
+            echo "---"
+            echo
+            cat docs/pr-summary-progress-prompt.md
+          } > /tmp/augmented-instructions.md
+          echo "Built /tmp/augmented-instructions.md ($(wc -l < /tmp/augmented-instructions.md) lines)"
+
       - name: Generate PR Summary
         uses: alexanderlhicks/lean-summary-workflow@main
         with:
@@ -26,7 +76,9 @@ jobs:
           model: gemini-3-flash-preview  # or: claude-sonnet-4-6, gpt-5.4-mini
           github_repository: ${{ github.repository }}
           pr_number: ${{ github.event.pull_request.number }}
-          # Optional:
-          style_guide_path: 'CONTRIBUTING.md'
+          # NOTE: input name change pending — see lean-summary-workflow PR
+          # that renames `style_guide_path` → `additional_instructions_path`.
+          # When that lands, swap the line below and drop this NOTE.
+          additional_instructions_path: '/tmp/augmented-instructions.md'
           validate_title: 'true'
           # upstream_path: 'ToMathlib/'
