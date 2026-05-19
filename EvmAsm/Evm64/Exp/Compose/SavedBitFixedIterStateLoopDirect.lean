@@ -182,7 +182,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_f
         signExtend12 (0 : BitVec 12) ↦ₘ nextNextLimb) ** frame)
       Q hFrameCurrent hbase hControlMachine hk hBase hNextNext
       (fun hk_lt bit v6' v7' v10' v11' d0' d1' d2' d3' => by
-        simpa only [expReloadDirectBranchPre] using
+        simpa only [expReloadDirectBranchPre, expTwoMulFixedStateBranchPre] using
           hBranch hk_lt bit v6' v7' v10' v11' d0' d1' d2' d3')
       (fun hk_lt bit v6' v7' v10' v11' d0' d1' d2' d3' => by
         cases bit
