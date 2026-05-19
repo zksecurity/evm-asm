@@ -43,37 +43,28 @@ theorem divK_loop_body_n4_call_skip_j0_norm_noNop (sp base : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 : Word)
     (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
-    (hbltu : BitVec.ult uTop v3) :
-    let qHat := div128Quot uTop u3 v3
-    (if BitVec.ult uTop (mulsubN4_c3 qHat v0 v1 v2 v3 u0 u1 u2 u3)
-     then (1 : Word) else 0) = (0 : Word) →
+    (hbltu : BitVec.ult uTop v3)
+    (hborrow : (if BitVec.ult uTop
+                   (mulsubN4_c3 (div128Quot uTop u3 v3) v0 v1 v2 v3 u0 u1 u2 u3)
+                 then (1 : Word) else 0) = (0 : Word)) :
     cpsTripleWithin 126 (base + loopBodyOff) (base + denormOff) (divCode_noNop base)
-      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (0 : Word)) **
-       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
-       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
-       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
-       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (4 : Word)) **
-       ((sp + 32) ↦ₘ v0) ** ((sp + signExtend12 4056) ↦ₘ u0) **
-       ((sp + 40) ↦ₘ v1) ** ((sp + signExtend12 4048) ↦ₘ u1) **
-       ((sp + 48) ↦ₘ v2) ** ((sp + signExtend12 4040) ↦ₘ u2) **
-       ((sp + 56) ↦ₘ v3) ** ((sp + signExtend12 4032) ↦ₘ u3) **
-       ((sp + signExtend12 4024) ↦ₘ uTop) **
-       ((sp + signExtend12 4088) ↦ₘ qOld) **
-       (sp + signExtend12 3968 ↦ₘ retMem) **
-       (sp + signExtend12 3960 ↦ₘ dMem) **
-       (sp + signExtend12 3952 ↦ₘ dloMem) **
-       (sp + signExtend12 3944 ↦ₘ scratch_un0) ** regOwn .x1)
+      (loopBodyN4CallJ0NormPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0)
       (n4CallSkipJ0NormPost sp base v3 u3 uTop v0 v1 v2 u0 u1 u2) := by
-  intro qHat hborrow
   have raw := divK_loop_body_n4_call_skip_j0_divCode_noNop_within sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 base halign hbltu hborrow
-  simp only [loopBodyN4CallSkipJ0Pre_unfold, loopBodyN4CallSkipJ0Post_unfold,
-             se12_32, se12_40, se12_48, se12_56,
-             u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
-             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
   exact cpsTripleWithin_weaken
-    (fun h hp => hp)
-    (fun h hp => by simp only [n4CallSkipJ0NormPost_unfold]; exact hp)
+    (fun _ hp => by
+      rw [loopBodyN4CallJ0NormPre_unfold] at hp
+      rw [loopBodyN4CallSkipJ0Pre_unfold]
+      simp only [se12_32, se12_40, se12_48, se12_56,
+                 u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
+                 u_base_off4072_j0, u_base_off4064_j0, q_addr_j0]
+      exact hp)
+    (fun _ hp => by
+      rw [loopBodyN4CallSkipJ0Post_unfold] at hp
+      rw [n4CallSkipJ0NormPost_unfold]
+      exact hp)
     (cpsTripleWithin_mono_nSteps (by decide) raw)
 
 /-- n=4 pre-loop + call+skip loop body over `divCode_noNop`: base → base+904
@@ -155,6 +146,7 @@ theorem evm_div_n4_preloop_call_skip_spec_noNop (sp base : Word)
     (fun h hp => by
       delta loopSetupPost at hp
       simp only [x1_val_n4] at hp
+      rw [loopBodyN4CallJ0NormPre_unfold]
       xperm_hyp hp) hPreF hLoopF
   exact cpsTripleWithin_mono_nSteps (by decide) <| cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
