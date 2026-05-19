@@ -37,13 +37,13 @@ untouched. Generated artifacts go in `gen-out/` (gitignored).
 |---|---|
 | `EvmAsm/Codegen.lean` | Top-level umbrella (mirrors `EvmAsm/Rv64.lean`, `EvmAsm/Evm64.lean`). |
 | `EvmAsm/Codegen/Emit.lean` | Pure `emitReg`, `emitInstr`, `emitProgram` — `Instr → String`. No `IO`. |
-| `EvmAsm/Codegen/Layout.lean` | `HaltConv` enum, halt stub, `_start`, `.option norvc`, `MEM_START`/`MEM_END` constants. |
-| `EvmAsm/Codegen/Programs.lean` | Registry: `"smoke"`, `"evm_add"`, `"interp_tiny"`, … → `Program`. |
+| `EvmAsm/Codegen/Layout.lean` | `HaltConv` enum, halt stubs, `_start` preamble, `.option norvc`, `MEM_START`/`MEM_END` constants, `BuildUnit` struct + `emitBuildUnit`/`emitDataLabel` helpers. |
+| `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `input_echo`, `evm_add_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`). Also hosts the M5b dispatcher scaffold (prologue/epilogue + 256-entry jump table generator) and shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`). |
 | `EvmAsm/Codegen/Cli.lean` | Argument parsing (`--program`, `--halt`, `--out`, `--asm-only`). |
 | `EvmAsm/Codegen/Driver.lean` | `IO`: shells out to `as`/`ld` if available; `--asm-only` for CI without the cross toolchain. |
 | `Main.lean` | Already exists as `import EvmAsm`; extend to call `EvmAsm.Codegen.Cli.main`. |
 | `lakefile.toml` | Add `[[lean_exe]] name = "codegen"; root = "Main"; supportInterpreter = true`. |
-| `scripts/codegen-smoke.sh` | One-liner driving the M0 round-trip. |
+| `scripts/codegen-*.sh` | Per-milestone round-trip checks: `codegen-smoke.sh` (M0), `codegen-evm_add-check.sh` (M2), `codegen-evm_add-from-input-check.sh` (M4), `codegen-tiny-interp-check.sh` (M5a), `codegen-tiny-interp-dispatch-check.sh` (M5b). |
 | `gen-out/` | Generated `.s`/`.elf`/`.input`; gitignored. |
 
 ## Milestones
@@ -252,7 +252,7 @@ target only the zkvm-standards single-buffer shape.
   `ziskemu -i ...`, and diffs the public output against the expected
   value computed in Lean.
 
-### M5 — Tiny EVM interpreter (L)
+### M5 — Tiny EVM interpreter (L) — **DONE (2026-05-19)**
 
 Split into two slices. **M5a** unrolls verified opcode `Program`s as a
 linear chain (no runtime dispatch) to validate that the handlers
@@ -438,15 +438,34 @@ M5b's dispatcher relies on.
 
 ## Future work (post-M5)
 
-- Lean-native binary encoder (`Instr → BitVec 32` + ELF writer) to drop the
-  GNU binutils dependency. Cross-check the encoded bytes against the verified
-  `step` semantics.
-- STF integration: consume RLP-decoded transactions via `read_input` and drive
-  the full interpreter loop.
-- Precompile stubs aligned with
+Near-term (builds directly on M5b's dispatcher; no new design surface):
+
+- **Broaden opcode coverage.** Wire more verified handlers into the M5b
+  dispatch loop — `evm_push n` generically (PUSH2..32), stack ops
+  (`POP`, `DUP1`, `SWAP1`), and additional arithmetic (`SUB`, `MUL`) as
+  the corresponding verified `Program`s land. Pure registry expansion
+  against the existing jump table + handler-wrapper pattern.
+- **Hint-input demo via `evm_div`.** Closes the loop on M4's prover-hint
+  infrastructure once `evm_div` is a verified `Program` in the registry.
+  Guest reads `(q, r)` from `INPUT_ADDR + INPUT_DATA_OFFSET`, verifies
+  `q · d + r = n ∧ r < d`, writes `q` to `OUTPUT_ADDR`.
+
+Longer-term (genuine new design surface):
+
+- **JUMP / JUMPI + JUMPDEST table.** Real control flow. Handlers must
+  write `x10` directly (the wrapper baking in a fixed advance no longer
+  works) and JUMP/JUMPI need to consult a JUMPDEST validity table built
+  from the bytecode at codegen time.
+- **Lean-native binary encoder** (`Instr → BitVec 32` + ELF writer) to
+  drop the GNU binutils dependency. Cross-check the encoded bytes
+  against the verified `step` semantics.
+- **STF integration**: consume RLP-decoded transactions via `read_input`
+  and drive the full interpreter loop.
+- **Precompile stubs** aligned with
   `EvmAsm/Evm64/zkvm-standards/standards/c-interface-accelerators`.
-- Cross-zkVM testing (SP1, RISC0) to validate the halt-convention ADR closure
-  described in [`docs/host-io-halt-convention.md`](docs/host-io-halt-convention.md).
+- **Cross-zkVM testing** (SP1, RISC0) to validate the halt-convention
+  ADR closure described in
+  [`docs/host-io-halt-convention.md`](docs/host-io-halt-convention.md).
 
 ## References
 
