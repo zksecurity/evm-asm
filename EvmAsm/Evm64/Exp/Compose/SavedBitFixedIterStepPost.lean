@@ -599,6 +599,92 @@ theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
           hpc)
       hStepPost
 
+theorem cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_bit_elim
+    {nSteps : Nat} {addr exit : Word} {cr : CodeReq}
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame Q : Assertion}
+    (hBranchTrue :
+      ∀ (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+            a0 a1 a2 a3
+          expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+            (c6 + signExtend12 (-1 : BitVec 12))
+            (e <<< (1 : BitVec 6).toNat)
+            v6
+            (expTwoMulIterCountNew iterCount)
+            v10
+            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+            ptr nextLimb sp evmSp
+            (rw.getLimbN 3)
+            (((base + 44) + 140) + 68)
+            (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+            (rw.getLimbN 3)
+            d0 d1 d2 d3
+            (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+            (rw.getLimbN 3)
+            a0 a1 a2 a3 v7 v11
+            frame)
+          Q)
+    (hBranchFalse :
+      ∀ (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (let squareW := expSquaringCallSquareW r0 r1 r2 r3
+          expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+            (c6 + signExtend12 (-1 : BitVec 12))
+            (e <<< (1 : BitVec 6).toNat)
+            v6
+            (expTwoMulIterCountNew iterCount)
+            v10
+            ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+            ptr nextLimb sp evmSp
+            (squareW.getLimbN 3)
+            (((base + 44) + 32) + 68)
+            (squareW.getLimbN 0) (squareW.getLimbN 1)
+            (squareW.getLimbN 2) (squareW.getLimbN 3)
+            d0 d1 d2 d3
+            (squareW.getLimbN 0) (squareW.getLimbN 1)
+            (squareW.getLimbN 2) (squareW.getLimbN 3)
+            a0 a1 a2 a3 v7 v11
+            frame)
+          Q)
+    (hReloadTrue :
+      ∀ (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (expTwoMulFixedReloadBranchResidualWithControlFrame true (k := k)
+            baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+            sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+            v6 v7 v10 v11 d0 d1 d2 d3 frame)
+          Q)
+    (hReloadFalse :
+      ∀ (v6 v7 v10 v11 d0 d1 d2 d3 : Word),
+        cpsTripleWithin nSteps addr exit cr
+          (expTwoMulFixedReloadBranchResidualWithControlFrame false (k := k)
+            baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+            sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+            v6 v7 v10 v11 d0 d1 d2 d3 frame)
+          Q) :
+    cpsTripleWithin nSteps addr exit cr
+      (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base frame)
+      Q :=
+  cpsTripleWithin_expTwoMulFixedIterStepPostNWithControlFrame_elim
+    (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
+      cases bit
+      · simpa [expTwoMulFixedBranchResult_false,
+          expTwoMulFixedBranchReturnPc_false] using
+          hBranchFalse v6 v7 v10 v11 d0 d1 d2 d3
+      · simpa [expTwoMulFixedBranchResult_true,
+          expTwoMulFixedBranchReturnPc_true] using
+          hBranchTrue v6 v7 v10 v11 d0 d1 d2 d3)
+    (fun bit v6 v7 v10 v11 d0 d1 d2 d3 => by
+      cases bit
+      · exact hReloadFalse v6 v7 v10 v11 d0 d1 d2 d3
+      · exact hReloadTrue v6 v7 v10 v11 d0 d1 d2 d3)
+
 theorem expTwoMulFixedIterCaseLoopPost_to_stepPostNWithControlFrame
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
