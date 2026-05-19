@@ -225,6 +225,69 @@ theorem expTwoMulFixedIterPreNWithState_succ_reload
   expTwoMulFixedIterStateInvariant_succ_reload
     hk hBase hBit hC6 hNextNext (expTwoMulFixedIterPreNWithState_pure h)
 
+theorem expTwoMulFixedIterPreNWithStateFrame_succ_no_reload
+    {baseWord exponentWord : EvmWord} {k : Nat} {bit : Bool}
+    {controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hBit : bit = expTwoMulFixedProcessedBit exponentWord k)
+    (hC6 : controlC6 + signExtend12 (-1 : BitVec 12) ≠ 0)
+    (h :
+      expTwoMulFixedIterPreNWithStateFrame k baseWord exponentWord controlC6
+        e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+        frame ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount)
+      (e <<< (1 : BitVec 6).toNat)
+      (controlC6 + signExtend12 (-1 : BitVec 12)) ptr nextLimb evmSp
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 0)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 1)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 2)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 3) :=
+  expTwoMulFixedIterStateInvariant_succ_no_reload
+    hk hBase hBit hC6 (expTwoMulFixedIterPreNWithStateFrame_pure h)
+
+theorem expTwoMulFixedIterPreNWithStateFrame_succ_reload
+    {baseWord exponentWord : EvmWord} {k : Nat} {bit : Bool}
+    {controlC6 machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb sp evmSp
+      tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hBit : bit = expTwoMulFixedProcessedBit exponentWord k)
+    (hC6 : controlC6 + signExtend12 (-1 : BitVec 12) = 0)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (h :
+      expTwoMulFixedIterPreNWithStateFrame k baseWord exponentWord controlC6
+        nextLimb machineC6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
+        r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3 a0 a1 a2 a3 v7 v11
+        frame ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount)
+      nextLimb 64 (ptr + signExtend12 (-8 : BitVec 12))
+      nextNextLimb evmSp
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 0)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 1)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 2)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 3) :=
+  expTwoMulFixedIterStateInvariant_succ_reload
+    hk hBase hBit hC6 hNextNext
+      (expTwoMulFixedIterPreNWithStateFrame_pure h)
+
 theorem expTwoMulFixedIterPreNWithStateFrame_pures
     {k : Nat} {baseWord exponentWord : EvmWord} {controlC6 : Word}
     {e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp tOld vOld
