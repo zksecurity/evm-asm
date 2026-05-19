@@ -5,15 +5,19 @@ permalinks to the exact theorem statements at a pinned commit. Use this page to
 find a spec without grepping; refresh the permalinks when files move.
 
 > **Permalinks pinned to commit `59692ad6e22d2eacbb72b471fd7142a23b8947e4` on
-> 2026-05-05.** Refresh whenever a major surface lands (e.g. each closure of a
-> #61-class umbrella issue) or quarterly, whichever comes first. To refresh,
-> re-run `git rev-parse origin/main` and `grep -n` for each declaration name,
-> then update the line numbers below.
+> 2026-05-05; DivMod stack-spec section repinned to `138f6008a` on 2026-05-19.**
+> Refresh whenever a major surface lands (e.g. each closure of a #61-class
+> umbrella issue) or quarterly, whichever comes first. To refresh, re-run
+> `git rev-parse origin/main` and `grep -n` for each declaration name, then
+> update the line numbers below.
 
 This index is split by area. Slice 1 landed the page skeleton plus the DivMod
 stack-spec surface. Slice 2 (this update) adds the non-DivMod Evm64 opcode
 stack specs and the `EvmWord` arithmetic correctness theorems, alongside the
-already-populated EL/RLP and Rv64 infrastructure sections.
+already-populated EL/RLP and Rv64 infrastructure sections. Slice 3 (2026-05-19)
+repins the DivMod section, removes stale `n4` aliases that were never proved,
+and documents the partial-domain caveat tracked by bead `evm-asm-9iqmw` and
+gh-61.
 
 ---
 
@@ -22,10 +26,27 @@ already-populated EL/RLP and Rv64 infrastructure sections.
 The path-specific stack-level Hoare triples for `DIV` and `MOD` and their
 dispatcher-surface aliases. These are the consumer-facing entry points for
 downstream verifiers — when proving a higher-level property, prefer the alias
-over the underlying `_word_uni` / `_dispatch_uni` theorem so a future bound
-relaxation propagates automatically.
+over the underlying `_word_uni` theorem so a future bound relaxation propagates
+automatically.
 
-### Unified case-split specs (single theorem per opcode)
+> **Partial-domain caveat (2026-05-19).** The unified case-split specs below
+> are parametric over `DivStackSpecCase` / `ModStackSpecCase` whose
+> constructors collectively require `b.getLimbN 3 = 0` — the divisor's top
+> limb must be zero. Inputs with `b3 ≠ 0` (the full 4-limb Knuth-D path, n=4)
+> are not in the domain. This is a spec-level coverage gap, not an executable
+> bug: the buggy v1 Phase-1b-1-correction subroutine `divK_div128` was
+> superseded by the closed v4 implementation `divK_div128_v4` (full Knuth
+> Algorithm D, 2-correction in both Phase 1b and Phase 2b), and the
+> executable `evm_div` / `evm_mod` Programs were switched to v4 by
+> [PR #4992](https://github.com/Verified-zkEVM/evm-asm/pull/4992)
+> (2026-05-19). The remaining spec-layer migration — extending
+> `divCode` / `modCode` to v4 and adding full-domain
+> `evm_div_stack_spec_unconditional` / `evm_mod_stack_spec_unconditional`
+> theorems — is tracked by bead `evm-asm-9iqmw` (epic "SDIV + unconditional
+> DIV/MOD stack specs (gh-61)") and the reopened
+> [GitHub issue #61](https://github.com/Verified-zkEVM/evm-asm/issues/61).
+
+### Unified case-split specs (single theorem per opcode, b3 = 0 only)
 
 The monolithic stack specs that case-split internally on the dispatcher
 branch certificate (`DivStackSpecCase` / `ModStackSpecCase`). Prefer these
@@ -34,31 +55,29 @@ specific path — the dispatcher branch is hidden behind the certificate.
 
 | Theorem | Defined at | Pre / Post (plain English) |
 |---|---|---|
-| [`evm_div_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L482) | `Spec/Unified.lean:482` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : DivStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.div a b` under `evmWordIs`, all framed memory and registers preserved per `divStackDispatchPost`. |
-| [`evm_mod_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L813) | `Spec/Unified.lean:813` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : ModStackSpecCase base a b`. Post: stack-level `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with the top of stack equal to `EvmWord.mod a b` under `evmWordIs`, all framed memory and registers preserved per `modStackDispatchPost`. |
+| [`evm_div_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L998) | `Spec/Unified.lean:998` | Pre: stack at `sp` holds two `EvmWord`s `a, b` (top = `b`), the DivMod scratch buffer at `base + ...` is in a recognized branch state given by `branch : DivStackSpecCase base a b` (b = 0, or n=1/2/3 with `b3 = 0`). Post: `cpsTripleWithin unifiedDivBound` lands at `base + nopOff` with top of stack equal to `EvmWord.div a b` under `evmWordIs`, all framed memory and registers preserved per `divStackDispatchPost`. |
+| [`evm_mod_stack_spec`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L1396) | `Spec/Unified.lean:1396` | Pre/post mirror of DIV, with `EvmWord.mod a b` and `modStackDispatchPost`, parametric over `branch : ModStackSpecCase base a b`. Same partial-domain caveat. |
 
-### Per-branch path-specific theorems
+### Per-branch path-specific theorems (b3 = 0 only)
 
-The previous consolidated `Spec/StackDispatcher.lean` shim (which exposed
-`evm_div_stack_spec_within_bzero` / `…_n1Full` / `…_n2Full` / `…_n3Full` /
-`…_n4Full` aliases and the matching MOD aliases) has been removed. The
-underlying proof-bearing theorems below are the canonical entry points; use
-the unified case-split specs above when possible.
-
-### Underlying proof-bearing theorems
+`DivStackSpecCase` / `ModStackSpecCase` have exactly four constructors:
+`bzero` (divisor = 0), `n1Full` / `n2Full` / `n3Full` (non-zero divisor with
+`b3 = 0`). There is no `n4Full` constructor — the n=4 path has no proven
+stack-level dispatcher theorem yet. The previous notable-specs entries
+naming `evm_div_n4_stack_spec_within_dispatch_uni` /
+`evm_mod_n4_stack_spec_within_dispatch_uni` referenced theorems that were
+never landed; they are removed in this refresh.
 
 | Theorem | Defined at |
 |---|---|
-| `evm_div_bzero_stack_spec_within` | [`Spec/Base.lean:382`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Base.lean#L382) |
-| `evm_div_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:210`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L210) |
-| `evm_div_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:251`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L251) |
-| `evm_div_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:291`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L291) |
-| `evm_div_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:330`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L330) |
-| `evm_mod_bzero_stack_spec_within` | [`Spec/Base.lean:439`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Base.lean#L439) |
-| `evm_mod_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:541`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L541) |
-| `evm_mod_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:582`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L582) |
-| `evm_mod_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:622`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L622) |
-| `evm_mod_n4_stack_spec_within_dispatch_uni` | [`Spec/Unified.lean:661`](https://github.com/Verified-zkEVM/evm-asm/blob/59692ad6e22d2eacbb72b471fd7142a23b8947e4/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L661) |
+| `evm_div_bzero_stack_spec_within` | [`Spec/Base.lean:383`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Base.lean#L383) |
+| `evm_div_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:119`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L119) |
+| `evm_div_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:334`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L334) |
+| `evm_div_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:534`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L534) |
+| `evm_mod_bzero_stack_spec_within` | [`Spec/Base.lean:490`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Base.lean#L490) |
+| `evm_mod_n1_stack_spec_within_word_uni` | [`Spec/Unified.lean:1159`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L1159) |
+| `evm_mod_n2_stack_spec_within_word_uni` | [`Spec/Unified.lean:1200`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L1200) |
+| `evm_mod_n3_stack_spec_within_word_uni` | [`Spec/Unified.lean:1240`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/DivMod/Spec/Unified.lean#L1240) |
 
 ### Dispatcher registries
 
@@ -68,6 +87,28 @@ The previous registries `evm_div_stack_spec_within` and
 unified — all non-`bzero` branches share the single `unifiedDivBound`
 (`Spec/Unified.lean`) and the `bzero` branches keep their constant-time
 short-circuit (`Spec/Base.lean`).
+
+### Closure roadmap (bead `evm-asm-9iqmw`)
+
+The full-domain unconditional public specs (covering the n=4 path) land via:
+
+1. **Phase 0a** (`evm-asm-9iqmw.2`) — partial-domain dispatch wrapper
+   `evm_div_stack_spec_unconditional_noNop` covering bzero + n1/n2/n3 + the
+   already-closed n4-call-skip branch. In flight.
+2. **Phase 2a** (`evm-asm-9iqmw.4`) — migrate `divCode` / `modCode` /
+   `divCode_noNop` / `sharedDivModCode` from `divK_div128` (v1) to
+   `divK_div128_v4` (executable already migrated by
+   [PR #4992](https://github.com/Verified-zkEVM/evm-asm/pull/4992); spec
+   layer still pending in `.4.2`–`.4.6`).
+3. **Phase 0b** (`evm-asm-9iqmw.7`) — full-domain
+   `evm_div_stack_spec_unconditional` / `evm_mod_stack_spec_unconditional`
+   retiring `DivStackSpecCase`. Blocks gh-61 closure.
+
+### SDIV (signed division) — conditional stack spec
+
+| Theorem | Defined at | Status |
+|---|---|---|
+| [`evm_sdiv_stack_spec_within`](https://github.com/Verified-zkEVM/evm-asm/blob/138f6008a1d2a16c621a27beae6501f9beee58ef/EvmAsm/Evm64/SDiv/Spec.lean#L1061) | `SDiv/Spec.lean:1061` (alias for `evm_sdiv_handler_stack_spec_within`) | **Conditional**: takes an `hStack` premise that discharges unconditionally for `divisor = 0`. For nonzero divisors `hStack` is a `cpsTripleWithin` over `divCode_noNop` that callers supply per branch — unblocked for bzero / n1 / n2 / n3 / n4-call-skip, pending v4 migration for the n4-call-addback path. Closure tracked by bead `evm-asm-9iqmw.5` (Phase 3). |
 
 ---
 

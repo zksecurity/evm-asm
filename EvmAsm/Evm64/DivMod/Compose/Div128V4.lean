@@ -16,6 +16,7 @@
 -/
 
 import EvmAsm.Evm64.DivMod.Compose.Div128
+import EvmAsm.Evm64.DivMod.Compose.V4NoNop
 import EvmAsm.Evm64.DivMod.LimbSpec.Div128Step2v4
 import EvmAsm.Evm64.DivMod.LoopDefs.IterV4
 
@@ -355,6 +356,26 @@ theorem div128_v4_spec_shared (sp retAddr d uLo uHi : Word) (base : Word)
        (sp + signExtend12 3936 ↦ₘ scratchMem))
       (div128V4SpecPost sp retAddr d uLo uHi scratchMem) :=
   cpsTripleWithin_extend_code (hmono := shared_b12_div128_v4_sub)
+    (div128_v4_spec sp retAddr d uLo uHi base v9Old v6Old v11Old
+      retMem dMem dloMem un0Mem scratchMem halign)
+
+/-- Lifted `div128_v4_spec` over `sharedDivModCodeNoNop_v4 base`. -/
+theorem div128_v4_spec_shared_noNop (sp retAddr d uLo uHi : Word) (base : Word)
+    (v9Old v6Old v11Old : Word)
+    (retMem dMem dloMem un0Mem scratchMem : Word)
+    (halign : (retAddr + signExtend12 0) &&& ~~~1 = retAddr) :
+    cpsTripleWithin 73 (base + div128Off) retAddr (sharedDivModCodeNoNop_v4 base)
+      ((.x12 ↦ᵣ sp) ** (.x2 ↦ᵣ retAddr) ** (.x10 ↦ᵣ d) **
+       (.x5 ↦ᵣ uLo) ** (.x7 ↦ᵣ uHi) **
+       (.x6 ↦ᵣ v6Old) ** (.x9 ↦ᵣ v9Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem))
+      (div128V4SpecPost sp retAddr d uLo uHi scratchMem) :=
+  cpsTripleWithin_extend_code (hmono := sharedNoNop_b11_div128_v4_sub)
     (div128_v4_spec sp retAddr d uLo uHi base v9Old v6Old v11Old
       retMem dMem dloMem un0Mem scratchMem halign)
 

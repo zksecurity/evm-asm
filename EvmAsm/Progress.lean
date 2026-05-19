@@ -93,11 +93,20 @@ def registry : List OpcodeEntry := [
   ⟨"ADD", .proven, some "evm_add_stack_spec_within", "N=30"⟩,
   ⟨"MUL", .proven, some "evm_mul_stack_spec_within", "N=63"⟩,
   ⟨"SUB", .proven, some "evm_sub_stack_spec_within", "N=30"⟩,
-  ⟨"DIV", .proven, some "evm_div_stack_spec",
-      "N=946 unified (n=1..4 × shift0/nz × skip/addback)"⟩,
+  ⟨"DIV", .partly, some "evm_div_stack_spec",
+      "stack spec parametric over DivStackSpecCase (bzero / n=1,2,3, all " ++
+      "require b.getLimbN 3 = 0); n=4 path not covered. Executable evm_div " ++
+      "uses divK_div128_v4 (PR #4992, full Knuth Alg D). Full-domain " ++
+      "unconditional closure tracked by bead evm-asm-9iqmw / gh-61"⟩,
   ⟨"SDIV", .partly, some "evm_sdiv_exact_callable_return_stack_spec_within",
-      "callable+dispatch shim; no top-level evm_sdiv_stack_spec yet"⟩,
-  ⟨"MOD", .proven, some "evm_mod_stack_spec", "N=946 unified"⟩,
+      "callable+dispatch shim; evm_sdiv_stack_spec_within conditional on " ++
+      "hStack (discharged for divisor=0 and n=1/2/3/n4-call-skip); blocked " ++
+      "on DIV/MOD spec-layer migration (bead evm-asm-9iqmw)"⟩,
+  ⟨"MOD", .partly, some "evm_mod_stack_spec",
+      "stack spec parametric over ModStackSpecCase (bzero / n=1,2,3, all " ++
+      "require b.getLimbN 3 = 0); n=4 path not covered. Executable evm_mod " ++
+      "uses divK_div128_v4 (PR #4992). Full-domain unconditional closure " ++
+      "tracked by bead evm-asm-9iqmw / gh-61"⟩,
   ⟨"SMOD", .partly, none, "smod_correct proven; no top-level Hoare triple"⟩,
   ⟨"ADDMOD", .partly, some "evm_addmod_b0_n0_spec_within",
       "addmod_correct proven; only b=0 stack-spec done"⟩,
@@ -224,8 +233,8 @@ def execSpecCount   : Nat := countTier .execSpec
 def notStartedCount : Nat := countTier .notStarted
 def totalEntries    : Nat := registry.length
 
-theorem provenCount_eq     : provenCount     = 43 := by decide
-theorem partialCount_eq    : partialCount    = 7  := by decide
+theorem provenCount_eq     : provenCount     = 41 := by decide
+theorem partialCount_eq    : partialCount    = 9  := by decide
 theorem execSpecCount_eq   : execSpecCount   = 32 := by decide
 theorem notStartedCount_eq : notStartedCount = 3  := by decide
 theorem totalEntries_eq    : totalEntries    = 85 := by decide
@@ -255,8 +264,8 @@ def execSpecBytes   : Nat := byteCountTier .execSpec
 def notStartedBytes : Nat := byteCountTier .notStarted
 def totalBytes      : Nat := provenBytes + partialBytes + execSpecBytes + notStartedBytes
 
-theorem provenBytes_eq     : provenBytes     = 73  := by decide
-theorem partialBytes_eq    : partialBytes    = 37  := by decide
+theorem provenBytes_eq     : provenBytes     = 71  := by decide
+theorem partialBytes_eq    : partialBytes    = 39  := by decide
 theorem execSpecBytes_eq   : execSpecBytes   = 36  := by decide
 theorem notStartedBytes_eq : notStartedBytes = 3   := by decide
 theorem totalBytes_eq      : totalBytes      = 149 := by decide

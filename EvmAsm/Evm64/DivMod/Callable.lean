@@ -825,6 +825,35 @@ theorem evm_div_callable_spec_from_noNop_preserving_x1_noX9
       (divStackDispatchPostCallable_pcFree sp a b) hRet
   exact cpsTripleWithin_seq_same_cr hStackCall hRetFramed
 
+/-- Framed variant of
+    `evm_div_callable_spec_from_noNop_preserving_x1_noX9`. -/
+theorem evm_div_callable_spec_from_noNop_preserving_x1_noX9_framed
+    {F : Assertion} [Assertion.PCFree F]
+    (sp base raVal : Word) (a b : EvmWord)
+    (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+        (divModStackDispatchPreCallable sp a b
+          raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal))) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPreCallable sp a b
+        raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+      ((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) ** F) := by
+  exact
+    cpsTripleWithin_frameR F (by pcFree)
+      (evm_div_callable_spec_from_noNop_preserving_x1_noX9
+        sp base raVal a b v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
+
 /-- Generic callable DIV wrapper for no-NOP body proofs that already use the
     callable-ready precondition and preserve exact caller-framed `x1`/`x9`.
 

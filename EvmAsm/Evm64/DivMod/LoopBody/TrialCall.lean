@@ -82,6 +82,193 @@ def divKTrialCallFullPost (sp j n uHi uLo vTop base : Word) : Assertion :=
   (sp + signExtend12 3952 ↦ₘ dLo) **
   (sp + signExtend12 3944 ↦ₘ un0Div)
 
+/-- Bundled postcondition for the v4 trial-call path. This mirrors
+    `divKTrialCallFullPost`, but tracks the extra v4 scratch cell and the
+    second D3 correction values from `div128V4SpecPost`. -/
+@[irreducible]
+def divKTrialCallFullPostV4 (sp j n uHi uLo vTop base scratchMem : Word) : Assertion :=
+  let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+  let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+  let dHi := vTop >>> (32 : BitVec 6).toNat
+  let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let un1 := uLo >>> (32 : BitVec 6).toNat
+  let un0Div := (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu uHi dHi
+  let rhat := uHi - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+  let qDlo2 := q1' * dLo
+  let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| un1
+  let q1'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+              then q1' + signExtend12 4095 else q1'
+  let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                then rhat' + dHi else rhat'
+  let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| un1
+  let cu_q1_dlo := q1'' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let q0c := if hi2 = 0 then q0 else q0 + signExtend12 4095
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let q0' := div128Quot_phase2b_q0' q0c rhat2c dLo un0Div
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  let q0Dlo1 := q0c * dLo
+  let rhat2Un0 := (rhat2c <<< (32 : BitVec 6).toNat) ||| un0Div
+  let rhat2' :=
+    if rhat2cHi = 0 then
+      if BitVec.ult rhat2Un0 q0Dlo1 then rhat2c + dHi else rhat2c
+    else rhat2c
+  let rhat2'Hi := rhat2' >>> (32 : BitVec 6).toNat
+  let q0Dlo2 := q0' * dLo
+  let rhat2'Un0 := (rhat2' <<< (32 : BitVec 6).toNat) ||| un0Div
+  let q0'' := div128Quot_phase2b_q0' q0' rhat2' dLo un0Div
+  let x7Exit := if rhat2cHi ≠ 0 then un21
+                else if rhat2'Hi ≠ 0 then q0Dlo1
+                else q0Dlo2
+  let x9Exit := if rhat2cHi ≠ 0 then rhat2cHi
+                else if rhat2'Hi ≠ 0 then rhat2'Hi
+                else rhat2'Un0
+  let q := (q1'' <<< (32 : BitVec 6).toNat) ||| q0''
+  (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ x9Exit) ** regOwn .x1 **
+  (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) **
+  (.x7 ↦ᵣ x7Exit) ** (.x10 ↦ᵣ q1'') ** (.x11 ↦ᵣ q) **
+  (.x2 ↦ᵣ (base + div128CallRetOff)) ** (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+  (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+  (vtopBase + signExtend12 32 ↦ₘ vTop) **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ vTop) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ un0Div) **
+  (sp + signExtend12 3936 ↦ₘ (if rhat2cHi ≠ 0 then scratchMem else rhat2c))
+
+private theorem tc_lb_save_j {base : Word} :
+    (base + loopBodyOff : Word) + 4 = base + (loopBodyOff + 4) := by
+  simp [BitVec.add_assoc]
+private theorem tc_lb_trial_load {base : Word} :
+    (base + (loopBodyOff + 4) : Word) + 48 = base + trialCallOff := by bv_addr
+
+/-- Save j + trial load over `sharedDivModCode_v4`: save j to memory, then
+    load uHi, uLo, vTop for trial quotient. -/
+private theorem divK_save_trial_load_v4_spec_within
+    (sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop : Word)
+    (base : Word) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 13 (base + loopBodyOff) (base + trialCallOff) (sharedDivModCode_v4 base)
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
+       (sp + signExtend12 3976 ↦ₘ jOld) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop))
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+       (sp + signExtend12 3976 ↦ₘ j) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
+  intro uAddr vtopBase
+  have SJ := divK_save_j_spec_within sp j jOld (base + loopBodyOff)
+  rw [tc_lb_save_j] at SJ
+  have SJe := cpsTripleWithin_extend_code (hmono :=
+    lb_sub_v4 0 _ _ (by decide) (by bv_addr) (by decide)) SJ
+  have SJf := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) SJe
+  have TL := divK_trial_load_spec_within sp j n v5Old v6Old v7Old v10Old uHi uLo vTop
+    (base + (loopBodyOff + 4))
+  dsimp only [] at TL
+  rw [tc_lb_trial_load] at TL
+  have TLe := cpsTripleWithin_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_v4 1 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 2 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 3 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 4 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 5 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 6 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 7 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 8 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 9 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 10 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_v4 11 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_v4 12 _ _ (by decide) (by bv_addr) (by decide))))))))))))) TL
+  seqFrame SJf TLe
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    SJfTLe
+
+/-- Save j + trial load over `sharedDivModCodeNoNop_v4`: save j to memory,
+    then load uHi, uLo, vTop for trial quotient. -/
+private theorem divK_save_trial_load_v4_spec_within_noNop
+    (sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop : Word)
+    (base : Word) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 13 (base + loopBodyOff) (base + trialCallOff) (sharedDivModCodeNoNop_v4 base)
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
+       (sp + signExtend12 3976 ↦ₘ jOld) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop))
+      ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+       (.x7 ↦ᵣ uHi) ** (.x10 ↦ᵣ vTop) **
+       (sp + signExtend12 3976 ↦ₘ j) **
+       (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop)) := by
+  intro uAddr vtopBase
+  have SJ := divK_save_j_spec_within sp j jOld (base + loopBodyOff)
+  rw [tc_lb_save_j] at SJ
+  have SJe := cpsTripleWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 0 _ _ (by decide) (by bv_addr) (by decide)) SJ
+  have SJf := cpsTripleWithin_frameR
+    ((.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+     (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) SJe
+  have TL := divK_trial_load_spec_within sp j n v5Old v6Old v7Old v10Old uHi uLo vTop
+    (base + (loopBodyOff + 4))
+  dsimp only [] at TL
+  rw [tc_lb_trial_load] at TL
+  have TLe := cpsTripleWithin_extend_code (hmono := by
+    exact CodeReq.union_sub (lb_sub_noNop_v4 1 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 2 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 3 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 4 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 5 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 6 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 7 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 8 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 9 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 10 _ _ (by decide) (by bv_addr) (by decide))
+     (CodeReq.union_sub (lb_sub_noNop_v4 11 _ _ (by decide) (by bv_addr) (by decide))
+      (lb_sub_noNop_v4 12 _ _ (by decide) (by bv_addr) (by decide))))))))))))) TL
+  seqFrame SJf TLe
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    SJfTLe
+
 /-- Trial quotient call path: save j + load + BLTU taken + JAL + div128.
     When uHi < vTop, computes qHat = div128(uHi, uLo, vTop).
     Entry: base+448, Exit: base+516, CodeReq: sharedDivModCode base. -/
@@ -205,6 +392,90 @@ theorem divK_trial_call_full_spec_within
     (fun h hq => by xperm_hyp hq)
     full
 
+/-- Trial quotient call path over `sharedDivModCode_v4`: save j + load +
+    BLTU taken + JAL + `divK_div128_v4`. -/
+theorem divK_trial_call_full_v4_spec_within
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old v2Old uHi uLo vTop : Word)
+    (retMem dMem dloMem un0Mem scratchMem : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uHi vTop) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 88 (base + loopBodyOff) (base + div128CallRetOff) (sharedDivModCode_v4 base)
+      (((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem)) ** regOwn .x1)
+      (divKTrialCallFullPostV4 sp j n uHi uLo vTop base scratchMem) := by
+  intro uAddr vtopBase
+  apply cpsTripleWithin_of_forall_regIs_to_regOwn
+  intro v1Old
+  have STL := divK_save_trial_load_v4_spec_within sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop
+    base
+  dsimp only [] at STL
+  have hbltu_raw := bltu_spec_gen_within .x7 .x10 (12 : BitVec 13) uHi vTop (base + trialCallOff)
+  rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
+  have hbltu_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_v4 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
+  have taken := cpsBranchWithin_takenPath hbltu_ext (fun hp hQf => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
+    exact hpure hbltu)
+  have taken_clean := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp) taken
+  have TCP := divK_trial_call_path_v4_spec_within_exact_x1 sp j uLo uHi vTop vtopBase base
+    v1Old v2Old v11Old retMem dMem dloMem un0Mem scratchMem
+    halign
+  unfold div128V4SpecPost at TCP
+  have STLf := cpsTripleWithin_frameR
+    ((.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) STL
+  have taken_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) ** (.x1 ↦ᵣ v1Old) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) taken_clean
+  have TCPf := cpsTripleWithin_frameR
+    ((sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) TCP
+  have STLf_taken_clean := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf taken_framed
+  have STLf_taken_scratch := cpsTripleWithin_frameR
+    (sp + signExtend12 3936 ↦ₘ scratchMem)
+    (by pcFree) STLf_taken_clean
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf_taken_scratch TCPf
+  unfold divKTrialCallFullPostV4
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
 /-- Trial quotient call path over `divCode_noNop`: save j + load + BLTU
     taken + JAL + div128. -/
 theorem divK_trial_call_full_spec_within_noNop
@@ -308,6 +579,90 @@ theorem divK_trial_call_full_spec_within_noNop
   have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) STLf_taken_clean TCPf
   unfold divKTrialCallFullPost
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by xperm_hyp hq)
+    full
+
+/-- Trial quotient call path over `sharedDivModCodeNoNop_v4`: save j +
+    load + BLTU taken + JAL + `divK_div128_v4`. -/
+theorem divK_trial_call_full_v4_spec_within_noNop
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old v2Old uHi uLo vTop : Word)
+    (retMem dMem dloMem un0Mem scratchMem : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uHi vTop) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 88 (base + loopBodyOff) (base + div128CallRetOff) (sharedDivModCodeNoNop_v4 base)
+      (((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem)) ** regOwn .x1)
+      (divKTrialCallFullPostV4 sp j n uHi uLo vTop base scratchMem) := by
+  intro uAddr vtopBase
+  apply cpsTripleWithin_of_forall_regIs_to_regOwn
+  intro v1Old
+  have STL := divK_save_trial_load_v4_spec_within_noNop
+    sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop base
+  dsimp only [] at STL
+  have hbltu_raw := bltu_spec_gen_within .x7 .x10 (12 : BitVec 13) uHi vTop (base + trialCallOff)
+  rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
+  have hbltu_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
+  have taken := cpsBranchWithin_takenPath hbltu_ext (fun hp hQf => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
+    exact hpure hbltu)
+  have taken_clean := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp) taken
+  have TCP := divK_trial_call_path_v4_spec_within_noNop_exact_x1
+    sp j uLo uHi vTop vtopBase base v1Old v2Old v11Old
+    retMem dMem dloMem un0Mem scratchMem halign
+  unfold div128V4SpecPost at TCP
+  have STLf := cpsTripleWithin_frameR
+    ((.x1 ↦ᵣ v1Old) ** (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) STL
+  have taken_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) ** (.x1 ↦ᵣ v1Old) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) taken_clean
+  have TCPf := cpsTripleWithin_frameR
+    ((sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) TCP
+  have STLf_taken_clean := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf taken_framed
+  have STLf_taken_scratch := cpsTripleWithin_frameR
+    (sp + signExtend12 3936 ↦ₘ scratchMem)
+    (by pcFree) STLf_taken_clean
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf_taken_scratch TCPf
+  unfold divKTrialCallFullPostV4
   exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by xperm_hyp hq)
