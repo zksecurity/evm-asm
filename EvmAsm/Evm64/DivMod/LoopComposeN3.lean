@@ -178,6 +178,7 @@ theorem divK_loop_body_n3_max_unified_j1_spec_within
     exact cpsTripleWithin_weaken
       (fun h hp => by
         rw [loopBodyN3MaxUnifiedPre_unfold] at hp
+        rw [loopBodyN3MaxSkipPre_unfold]
         exact hp)
       (fun h hp => by rw [← loopIterPostN3Max_skip hb]; exact hp)
       (cpsTripleWithin_mono_nSteps (by decide) (J1 hborrow))
@@ -217,6 +218,7 @@ theorem divK_loop_body_n3_max_unified_j1_spec_within_noNop
     exact cpsTripleWithin_weaken
       (fun h hp => by
         rw [loopBodyN3MaxUnifiedPre_unfold] at hp
+        rw [loopBodyN3MaxSkipPre_unfold]
         exact hp)
       (fun h hp => by rw [← loopIterPostN3Max_skip hb]; exact hp)
       (cpsTripleWithin_mono_nSteps (by decide) (J1 hborrow))
@@ -262,7 +264,7 @@ theorem divK_loop_body_n3_max_unified_j0_spec_within
     exact cpsTripleWithin_weaken
       (fun h hp => by
         rw [loopBodyN3MaxUnifiedPre_unfold] at hp
-        rw [loopBodyN3MaxSkipJ0Pre_unfold]
+        rw [loopBodyN3MaxSkipPre_unfold]
         exact hp)
       (fun h hp => by rw [← loopIterPostN3Max_skip hb]; exact hp)
       (cpsTripleWithin_mono_nSteps (by decide) (J0 hborrow))
@@ -302,7 +304,7 @@ theorem divK_loop_body_n3_max_unified_j0_spec_within_noNop
     exact cpsTripleWithin_weaken
       (fun h hp => by
         rw [loopBodyN3MaxUnifiedPre_unfold] at hp
-        rw [loopBodyN3MaxSkipJ0Pre_unfold]
+        rw [loopBodyN3MaxSkipPre_unfold]
         exact hp)
       (fun h hp => by rw [← loopIterPostN3Max_skip hb]; exact hp)
       (cpsTripleWithin_mono_nSteps (by decide) (J0 hborrow))
