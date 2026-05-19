@@ -115,6 +115,93 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_true
   rw [expTwoMulFixedReloadBranchResidualWithStateFrame]
   rfl
 
+/-- Pure successor-state payload carried by a state-framed reload residual. -/
+theorem expTwoMulFixedReloadBranchResidualWithStateFrame_pure
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    (bit : Bool) {v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithStateFrame bit (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    let outW := expTwoMulFixedBranchResult bit
+      a0 a1 a2 a3 r0 r1 r2 r3
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount) nextLimb 64
+      (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp
+      (outW.getLimbN 0) (outW.getLimbN 1)
+      (outW.getLimbN 2) (outW.getLimbN 3) := by
+  cases bit
+  · rw [expTwoMulFixedReloadBranchResidualWithStateFrame_false] at h
+    obtain ⟨psHead, _psFrame, _hDisjointFrame, _hUnionFrame,
+      _hHead, hStateFrame⟩ := h
+    obtain ⟨_psState, _psFrameTail, _hDisjointStateFrame,
+      _hUnionStateFrame, hState, _hFrameTail⟩ := hStateFrame
+    rw [expTwoMulFixedIterStateAssertion_unfold] at hState
+    simpa [expTwoMulFixedBranchResult_false] using hState.2
+  · rw [expTwoMulFixedReloadBranchResidualWithStateFrame_true] at h
+    obtain ⟨psHead, _psFrame, _hDisjointFrame, _hUnionFrame,
+      _hHead, hStateFrame⟩ := h
+    obtain ⟨_psState, _psFrameTail, _hDisjointStateFrame,
+      _hUnionStateFrame, hState, _hFrameTail⟩ := hStateFrame
+    rw [expTwoMulFixedIterStateAssertion_unfold] at hState
+    simpa [expTwoMulFixedBranchResult_true] using hState.2
+
+/-- Named false-bit specialization of
+    `expTwoMulFixedReloadBranchResidualWithStateFrame_pure`. -/
+theorem expTwoMulFixedReloadBranchResidualWithStateFrame_false_pure
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithStateFrame false (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount) nextLimb 64
+      (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 0)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 1)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 2)
+      ((expSquaringCallSquareW r0 r1 r2 r3).getLimbN 3) := by
+  simpa [expTwoMulFixedBranchResult_false] using
+    expTwoMulFixedReloadBranchResidualWithStateFrame_pure
+      (bit := false) h
+
+/-- Named true-bit specialization of
+    `expTwoMulFixedReloadBranchResidualWithStateFrame_pure`. -/
+theorem expTwoMulFixedReloadBranchResidualWithStateFrame_true_pure
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} {ps : PartialState}
+    (h :
+      expTwoMulFixedReloadBranchResidualWithStateFrame true (k := k)
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount) nextLimb 64
+      (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 0)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 1)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 2)
+      ((expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3).getLimbN 3) := by
+  simpa [expTwoMulFixedBranchResult_true] using
+    expTwoMulFixedReloadBranchResidualWithStateFrame_pure
+      (bit := true) h
+
 theorem expTwoMulFixedReloadBranchResidualWithControlFrame_state_pure
     {baseWord exponentWord : EvmWord} {k : Nat}
     {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
