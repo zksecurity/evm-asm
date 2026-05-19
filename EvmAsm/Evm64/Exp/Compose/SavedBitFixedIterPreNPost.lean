@@ -628,4 +628,114 @@ theorem expTwoMulFixedIterReloadSkipScratchFrame_withControl_frame
   simp only [sepConj_emp_right']
   sep_perm h
 
+theorem expTwoMulFixedIterCaseLoopPost_iterPreNWithControl_or_reloadWithControlFrame
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base : Word}
+    {frame : Assertion} {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hCursor : expTwoMulFixedCursorInvariant exponentWord k e)
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hInv :
+      expTwoMulFixedAccumulatorInvariant baseWord exponentWord k
+        r0 r1 r2 r3)
+    (h :
+      (expTwoMulFixedIterCaseLoopPost iterCount e c6 ptr nextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base **
+        frame) ps) :
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3
+      expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+        (c6 + signExtend12 (-1 : BitVec 12))
+        (e <<< (1 : BitVec 6).toNat)
+        v6
+        (expTwoMulIterCountNew iterCount)
+        v10
+        ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+        ptr nextLimb sp evmSp
+        (rw.getLimbN 3)
+        (((base + 44) + 140) + 68)
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+        (rw.getLimbN 3)
+        d0 d1 d2 d3
+        (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+        (rw.getLimbN 3)
+        a0 a1 a2 a3 v7 v11
+        frame ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let squareW := expSquaringCallSquareW r0 r1 r2 r3
+      expTwoMulFixedIterPreNWithControlFrame (k + 1) baseWord exponentWord
+        (c6 + signExtend12 (-1 : BitVec 12))
+        (e <<< (1 : BitVec 6).toNat)
+        v6
+        (expTwoMulIterCountNew iterCount)
+        v10
+        ((e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12))
+        ptr nextLimb sp evmSp
+        (squareW.getLimbN 3)
+        (((base + 44) + 32) + 68)
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        d0 d1 d2 d3
+        (squareW.getLimbN 0) (squareW.getLimbN 1)
+        (squareW.getLimbN 2) (squareW.getLimbN 3)
+        a0 a1 a2 a3 v7 v11
+        frame ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
+        a0 a1 a2 a3
+      (((((expTwoMulFixedIterSkipCondCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame
+          e c6 ptr nextLimb base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (rw.getLimbN 0) (rw.getLimbN 1) (rw.getLimbN 2)
+          (rw.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps) ∨
+    (∃ v6 v7 v10 v11 d0 d1 d2 d3,
+      let squareW := expSquaringCallSquareW r0 r1 r2 r3
+      (((((expTwoMulFixedIterSkipCountPostScratchPrefix iterCount sp evmSp
+        r0 r1 r2 r3
+        (expTwoMulIterCountNew iterCount ≠ 0) **
+        expTwoMulFixedIterScratchIs evmSp v6 v7 v10 v11 d0 d1 d2 d3 **
+        expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame
+          e c6 ptr nextLimb evmSp a0 a1 a2 a3 base) **
+        expTwoMulFixedSemanticInvariant baseWord exponentWord (k + 1)
+          (squareW.getLimbN 0) (squareW.getLimbN 1)
+          (squareW.getLimbN 2) (squareW.getLimbN 3)) **
+        expTwoMulFixedCursorAssertion exponentWord (k + 1) nextLimb) **
+        expTwoMulFixedControlAssertion exponentWord (k + 1)
+          64 (ptr + signExtend12 (-8 : BitVec 12)) nextNextLimb evmSp) **
+        frame) ps) := by
+  rcases
+      expTwoMulFixedIterCaseLoopPost_iterPreNWithControl_or_reloadPointerFrame
+        hk hBase hCursor hControl hInv h with
+    hCond | hRest
+  · exact Or.inl hCond
+  · rcases hRest with hSkip | hRest
+    · exact Or.inr (Or.inl hSkip)
+    · rcases hRest with hReloadCond | hReloadSkip
+      · rcases hReloadCond with
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩
+        exact Or.inr (Or.inr (Or.inl
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3,
+            expTwoMulFixedIterReloadCondScratchFrame_withControl_frame
+              hk hBase hCursor hControl hNextNext hInv hScratch⟩))
+      · rcases hReloadSkip with
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3, hScratch⟩
+        exact Or.inr (Or.inr (Or.inr
+          ⟨v6, v7, v10, v11, d0, d1, d2, d3,
+            expTwoMulFixedIterReloadSkipScratchFrame_withControl_frame
+              hk hCursor hControl hNextNext hInv hScratch⟩))
+
 end EvmAsm.Evm64.Exp.Compose
