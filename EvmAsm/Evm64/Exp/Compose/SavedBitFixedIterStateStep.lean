@@ -115,6 +115,37 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_true
   rw [expTwoMulFixedReloadBranchResidualWithStateFrame]
   rfl
 
+theorem expTwoMulFixedReloadBranchResidualWithStateFrame_pcFree
+    {bit : Bool} {baseWord exponentWord : EvmWord} {k : Nat}
+    {iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word}
+    {frame : Assertion} [Assertion.PCFree frame] :
+    (expTwoMulFixedReloadBranchResidualWithStateFrame bit k
+      baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+      sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 frame).pcFree := by
+  cases bit
+  · rw [expTwoMulFixedReloadBranchResidualWithStateFrame_false]
+    dsimp
+    pcFree
+  · rw [expTwoMulFixedReloadBranchResidualWithStateFrame_true]
+    dsimp
+    pcFree
+
+instance pcFreeInst_expTwoMulFixedReloadBranchResidualWithStateFrame
+    (bit : Bool) (baseWord exponentWord : EvmWord) (k : Nat)
+    (iterCount e c6 ptr nextLimb nextNextLimb sp evmSp
+      r0 r1 r2 r3 a0 a1 a2 a3 base
+      v6 v7 v10 v11 d0 d1 d2 d3 : Word)
+    (frame : Assertion) [Assertion.PCFree frame] :
+    Assertion.PCFree
+      (expTwoMulFixedReloadBranchResidualWithStateFrame bit k
+        baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
+        sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
+        v6 v7 v10 v11 d0 d1 d2 d3 frame) :=
+  ⟨expTwoMulFixedReloadBranchResidualWithStateFrame_pcFree⟩
+
 /-- Pure successor-state payload carried by a state-framed reload residual. -/
 theorem expTwoMulFixedReloadBranchResidualWithStateFrame_pure
     {baseWord exponentWord : EvmWord} {k : Nat}
