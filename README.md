@@ -299,36 +299,39 @@ This is a **prototype** demonstrating the approach. Current state:
   triples, and automated tactics (`xperm`, `xcancel`, `seqFrame`, `liftSpec`,
   `runBlock` with `@[spec_gen]` auto-resolution).
 - **Evm64 (0 sorry)** — targets `riscv64im_zicclsm-unknown-none-elf`,
-  4x64-bit limbs, 24 opcodes with stack-level specs:
-  AND, OR, XOR, NOT, ADD, SUB, MUL, DIV*, MOD*, SIGNEXTEND,
+  4x64-bit limbs, 22 opcodes with full-domain stack-level specs:
+  AND, OR, XOR, NOT, ADD, SUB, MUL, SIGNEXTEND,
   SHR, SHL, SAR, BYTE,
   LT, GT, EQ, ISZERO, SLT, SGT,
   POP, PUSH0, DUP1-16, SWAP1-16
 - **0 sorry across the entire codebase** (`lake build` clean).
-- **\*DIV / MOD spec coverage caveat (2026-05-19).** The public stack specs
-  `evm_div_stack_spec` / `evm_mod_stack_spec` are currently parametric over
-  `DivStackSpecCase` / `ModStackSpecCase`, whose constructors require
-  `b.getLimbN 3 = 0` — the divisor's top limb must be zero. The executable
-  Programs `evm_div` / `evm_mod` are full-domain and correct as of
-  [PR #4992](https://github.com/Verified-zkEVM/evm-asm/pull/4992), which
-  switched the underlying 128/64 division subroutine to `divK_div128_v4`
-  (full Knuth Algorithm D, 2-correction in both Phase 1b and Phase 2b).
-  The spec-layer migration to full-domain unconditional theorems
-  (`evm_div_stack_spec_unconditional` / `evm_mod_stack_spec_unconditional`)
-  is tracked by bead `evm-asm-9iqmw` and the reopened
-  [issue #61](https://github.com/Verified-zkEVM/evm-asm/issues/61).
-  See [docs/notable-specs.md](docs/notable-specs.md#divmod-stack-spec-surface)
-  for the full closure roadmap.
 - **Codegen**: `EvmAsm.Codegen` emits verified `Program`s to runnable
   RV64 ELFs on `ziskemu`. M0–M4 of [CODEGEN.md](CODEGEN.md) shipped:
   toolchain validation, `Instr` coverage, `evm_add` round-trip from
   `.data` and from prover input. M5 (tiny EVM interpreter) planned next.
-- **In flight**: SDIV (executable + per-branch stack specs landed;
-  unconditional closure conditional on the DIV/MOD migration above —
-  `evm_sdiv_stack_spec_within` currently takes an `hStack` premise that
-  discharges unconditionally for `divisor = 0` and for n=1/2/3/n4-call-skip,
-  pending v4 for n4-call-addback), EXP (256-iteration loop induction
-  scaffolding, slices `evm-asm-w5mk` / `evm-asm-6snn`).
+- **In flight**:
+  - **DIV / MOD** — executable Programs `evm_div` / `evm_mod` are
+    full-domain and correct as of
+    [PR #4992](https://github.com/Verified-zkEVM/evm-asm/pull/4992), which
+    switched the underlying 128/64 division subroutine to `divK_div128_v4`
+    (full Knuth Algorithm D, 2-correction in both Phase 1b and Phase 2b).
+    The public stack specs `evm_div_stack_spec` / `evm_mod_stack_spec` are
+    currently parametric over `DivStackSpecCase` / `ModStackSpecCase`
+    whose constructors require `b.getLimbN 3 = 0` — the divisor's top limb
+    must be zero. The spec-layer migration to full-domain unconditional
+    theorems (`evm_div_stack_spec_unconditional` /
+    `evm_mod_stack_spec_unconditional`) is tracked by bead `evm-asm-9iqmw`
+    and the reopened
+    [issue #61](https://github.com/Verified-zkEVM/evm-asm/issues/61). See
+    [docs/notable-specs.md](docs/notable-specs.md#divmod-stack-spec-surface)
+    for the full closure roadmap.
+  - **SDIV** — executable and per-branch stack specs landed;
+    `evm_sdiv_stack_spec_within` currently takes an `hStack` premise that
+    discharges unconditionally for `divisor = 0` and for n=1/2/3/n4-call-skip,
+    pending v4 for n4-call-addback. Unconditional closure blocked on the
+    DIV / MOD spec-layer migration above.
+  - **EXP** — 256-iteration loop induction scaffolding, slices
+    `evm-asm-w5mk` / `evm-asm-6snn`.
 - **TODO**: SMOD, ADDMOD, MULMOD,
   MLOAD, MSTORE, interpreter loop (M5 of [CODEGEN.md](CODEGEN.md)),
   state transition function, connect to sail-riscv-lean for RISC-V
