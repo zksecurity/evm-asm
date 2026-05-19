@@ -80,6 +80,7 @@ import EvmAsm.Evm64.Exp.Compose.SavedBitFixedLoopInvariant
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedBoolStep
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterPreNPost
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStepPost
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStep
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundaryEpilogueBase
 import EvmAsm.Evm64.Exp.Compose.SavedBitBoundarySeq
 import EvmAsm.Evm64.Exp.Compose.SavedBitLoopEntry
