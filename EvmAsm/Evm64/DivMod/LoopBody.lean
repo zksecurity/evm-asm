@@ -667,7 +667,7 @@ set_option maxRecDepth 4096 in
 /-- Mulsub full: setup + 4-limb multiply-subtract + carry subtraction from u[j+4].
     53 instructions, loop body indices [17]-[69].
     Entry: base+516, Exit: base+728, CodeReq: sharedDivModCode base. -/
-private theorem divK_mulsub_full_spec_within_of_sub
+theorem divK_mulsub_full_spec_within_of_sub
     (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
     (v9Old v5Old v6Old v7Old v10Old v2Old : Word)
     (base : Word)
@@ -911,14 +911,10 @@ def divKMulsubFullPost
   ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ un3) **
   ((uBase + signExtend12 4064) ↦ₘ u4_new)
 
-/-- `divK_mulsub_full_spec_within` replayed over `sharedDivModCode_v4`. -/
 theorem divK_mulsub_full_v4_spec_within
-    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
-    (v9Old v5Old v6Old v7Old v10Old v2Old : Word)
-    (base : Word) :
+    (sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) (v9Old v5Old v6Old v7Old v10Old v2Old : Word) (base : Word) :
     cpsTripleWithin 53 (base + div128CallRetOff) (base + correctionSkipBeqOff) (sharedDivModCode_v4 base)
-      (divKMulsubFullPre sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
-        v9Old v5Old v6Old v7Old v10Old v2Old)
+      (divKMulsubFullPre sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop v9Old v5Old v6Old v7Old v10Old v2Old)
       (divKMulsubFullPost sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
   unfold divKMulsubFullPre divKMulsubFullPost
   exact divK_mulsub_full_spec_within_of_sub sp qHat j v0 v1 v2 v3 u0 u1 u2 u3 uTop
