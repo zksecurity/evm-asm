@@ -516,6 +516,30 @@ theorem evm_div_callable_spec_from_noNop (sp base raVal : Word)
     cpsTripleWithin_frameL (divStackDispatchPost sp a b) hpcFreePost hRet
   exact cpsTripleWithin_seq_same_cr hStackFramed hRetFramed
 
+/-- Callable DIV wrapper with the no-NOP dispatcher proof discharged by the
+    branch certificate. This packages the existing bzero/n1/n2/n3 closed
+    cases without reopening the n4 addback path. -/
+theorem evm_div_callable_spec_from_branch_noNop (sp base raVal : Word)
+    (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (branch : DivStackSpecCase base a b) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code base)
+      (divModStackDispatchPre sp a b
+        branch.x1 branch.x2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** (.x1 ↦ᵣ raVal))
+      (divStackDispatchPost sp a b ** (.x1 ↦ᵣ raVal)) :=
+  evm_div_callable_spec_from_noNop
+    sp base raVal a b v5 v6 v7 v10 v11
+    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem retMem dMem dloMem scratchUn0 branch
+    (evm_div_stack_spec_noNop
+      sp base a b v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratchUn0 branch)
+
 theorem evm_div_callable_spec_from_noNop_preserving_x1 (sp base raVal : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
