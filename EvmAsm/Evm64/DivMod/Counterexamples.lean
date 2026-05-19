@@ -70,6 +70,31 @@ theorem div128Quot_v4_counterexampleA_within_two_addbacks :
     (div128Quot_v4 ceA_u4 ceA_u3 ceA_b3Norm).toNat ≤ ceA_qTrue + 2 := by
   decide
 
+/-- Per-counterexample regression pin: the executable DIV body is on the v4
+    path, and the normalized trial quotient for counterexample A has the v4
+    bounded-overshoot shape. -/
+theorem evm_div_counterexampleA_v4_regression_pin :
+    evm_div =
+      (divK_phaseA 1020 ;;
+      divK_phaseB ;;
+      divK_clz ;;
+      divK_phaseC2 172 ;;
+      divK_normB ;;
+      divK_normA 40 ;;
+      divK_copyAU ;;
+      divK_loopSetup 464 ;;
+      divK_loopBody 560 7736 ;;
+      divK_denorm ;;
+      divK_div_epilogue 24 ;;
+      divK_zeroPath ;;
+      single (.ADDI .x0 .x0 0) ;;
+      divK_div128_v4) ∧
+    div128Quot_v4 ceA_u4 ceA_u3 ceA_b3Norm = ceA_qHatV4 ∧
+    (div128Quot_v4 ceA_u4 ceA_u3 ceA_b3Norm).toNat ≤ ceA_qTrue + 2 := by
+  constructor
+  · exact evm_div_uses_div128_v4
+  constructor <;> decide
+
 -- Counterexample B:
 --   a3 = 2^64 - 2, a2 = a1 = a0 = 0
 --   b3 = 1, b2 = 2^64 - 2, b1 = b0 = 0
@@ -90,6 +115,31 @@ theorem div128Quot_v4_counterexampleB_exact :
 theorem div128Quot_v4_counterexampleB_within_two_addbacks :
     (div128Quot_v4 ceB_u4 ceB_u3 ceB_b3Norm).toNat ≤ ceB_qTrue + 2 := by
   decide
+
+/-- Per-counterexample regression pin: the executable DIV body is on the v4
+    path, and the normalized trial quotient for counterexample B has the v4
+    exact quotient shape. -/
+theorem evm_div_counterexampleB_v4_regression_pin :
+    evm_div =
+      (divK_phaseA 1020 ;;
+      divK_phaseB ;;
+      divK_clz ;;
+      divK_phaseC2 172 ;;
+      divK_normB ;;
+      divK_normA 40 ;;
+      divK_copyAU ;;
+      divK_loopSetup 464 ;;
+      divK_loopBody 560 7736 ;;
+      divK_denorm ;;
+      divK_div_epilogue 24 ;;
+      divK_zeroPath ;;
+      single (.ADDI .x0 .x0 0) ;;
+      divK_div128_v4) ∧
+    div128Quot_v4 ceB_u4 ceB_u3 ceB_b3Norm = ceB_qHatV4 ∧
+    (div128Quot_v4 ceB_u4 ceB_u3 ceB_b3Norm).toNat ≤ ceB_qTrue + 2 := by
+  constructor
+  · exact evm_div_uses_div128_v4
+  constructor <;> decide
 
 end DivModCounterexamples
 
