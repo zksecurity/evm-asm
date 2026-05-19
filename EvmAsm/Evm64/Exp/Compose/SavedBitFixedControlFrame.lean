@@ -130,6 +130,85 @@ theorem expTwoMulFixedReloadLimbFrameN_eq_of_control_reload_nextNext
     (expTwoMulFixedControlInvariant_reload_mod hControl hC6)
     hNextNext
 
+@[irreducible]
+def expTwoMulFixedReloadTailFrameN
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) : Assertion :=
+  expTwoMulFixedReloadLimbFrameN exponentWord k ptr **
+  expTwoMulFixedSavedNextLimbFrame (ptr + signExtend12 (-8 : BitVec 12))
+    (exponentWord.getLimbN (0 - k / 64))
+
+theorem expTwoMulFixedReloadTailFrameN_unfold
+    {exponentWord : EvmWord} {k : Nat} {ptr : Word} :
+    expTwoMulFixedReloadTailFrameN exponentWord k ptr =
+      (expTwoMulFixedReloadLimbFrameN exponentWord k ptr **
+      expTwoMulFixedSavedNextLimbFrame
+        (ptr + signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN (0 - k / 64))) := by
+  delta expTwoMulFixedReloadTailFrameN
+  rfl
+
+theorem expTwoMulFixedReloadTailFrameN_pcFree
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) :
+    (expTwoMulFixedReloadTailFrameN exponentWord k ptr).pcFree := by
+  rw [expTwoMulFixedReloadTailFrameN_unfold,
+    expTwoMulFixedReloadLimbFrameN_unfold,
+    expTwoMulFixedSavedNextLimbFrame_unfold,
+    expTwoMulFixedSavedNextLimbFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedReloadTailFrameN
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedReloadTailFrameN exponentWord k ptr) :=
+  ⟨expTwoMulFixedReloadTailFrameN_pcFree exponentWord k ptr⟩
+
+theorem expTwoMulFixedReloadTailFrameN_succ_no_reload
+    {exponentWord : EvmWord} {k : Nat} {ptr : Word}
+    (hMod : k % 64 < 63) :
+    expTwoMulFixedReloadTailFrameN exponentWord k ptr =
+      expTwoMulFixedReloadTailFrameN exponentWord (k + 1) ptr := by
+  rw [expTwoMulFixedReloadTailFrameN_unfold,
+    expTwoMulFixedReloadTailFrameN_unfold,
+    expTwoMulFixedReloadLimbFrameN_succ_no_reload hMod]
+  congr 1
+  rw [expTwoMulFixedSavedNextLimbFrame_unfold,
+    expTwoMulFixedSavedNextLimbFrame_unfold]
+  congr 1
+  have hdiv : (k + 1) / 64 = k / 64 := by
+    omega
+  rw [hdiv]
+
+theorem expTwoMulFixedReloadTailFrameN_succ_of_control_no_reload
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0) :
+    expTwoMulFixedReloadTailFrameN exponentWord k ptr =
+      expTwoMulFixedReloadTailFrameN exponentWord (k + 1) ptr :=
+  expTwoMulFixedReloadTailFrameN_succ_no_reload
+    (expTwoMulFixedControlInvariant_no_reload_mod hControl hC6)
+
+theorem expTwoMulFixedReloadTailFrameN_second_eq_succ_reload_limb
+    {exponentWord : EvmWord} {k : Nat} {ptr : Word}
+    (hMod : k % 64 = 63) :
+    expTwoMulFixedSavedNextLimbFrame
+        (ptr + signExtend12 (-8 : BitVec 12))
+        (exponentWord.getLimbN (0 - k / 64)) =
+      expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+        (ptr + signExtend12 (-8 : BitVec 12)) := by
+  rw [expTwoMulFixedReloadLimbFrameN_unfold]
+  congr 1
+  have hdiv : (k + 1) / 64 = k / 64 + 1 := by
+    omega
+  rw [hdiv]
+  have hCases : k / 64 = 0 ∨ 1 ≤ k / 64 := by
+    omega
+  rcases hCases with hZero | hGe
+  · rw [hZero]
+  · rw [Nat.sub_eq_zero_of_le (Nat.zero_le (k / 64)),
+      Nat.sub_eq_zero_of_le (by omega : 1 ≤ k / 64 + 1)]
+
 theorem expTwoMulFixedControlInvariant_nextLimb
     {exponentWord : EvmWord} {k : Nat}
     {c6 ptr nextLimb evmSp : Word}
