@@ -163,4 +163,60 @@ theorem expTwoMulFixedIterStateAssertion_pure
   rw [expTwoMulFixedIterStateAssertion_unfold] at h
   exact h.2
 
+theorem expTwoMulFixedIterStateAssertion_succ_no_reload
+    {baseWord exponentWord : EvmWord} {k : Nat} {bit : Bool}
+    {iterCount e controlC6 ptr nextLimb evmSp
+      a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hBit : bit = expTwoMulFixedProcessedBit exponentWord k)
+    (hC6 : controlC6 + signExtend12 (-1 : BitVec 12) ≠ 0)
+    (h :
+      expTwoMulFixedIterStateAssertion baseWord exponentWord k
+        iterCount e controlC6 ptr nextLimb evmSp r0 r1 r2 r3 ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount)
+      (e <<< (1 : BitVec 6).toNat)
+      (controlC6 + signExtend12 (-1 : BitVec 12)) ptr nextLimb evmSp
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 0)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 1)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 2)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 3) :=
+  expTwoMulFixedIterStateInvariant_succ_no_reload
+    hk hBase hBit hC6 (expTwoMulFixedIterStateAssertion_pure h)
+
+theorem expTwoMulFixedIterStateAssertion_succ_reload
+    {baseWord exponentWord : EvmWord} {k : Nat} {bit : Bool}
+    {iterCount controlC6 ptr nextLimb nextNextLimb evmSp
+      a0 a1 a2 a3 r0 r1 r2 r3 : Word}
+    {ps : PartialState}
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hBit : bit = expTwoMulFixedProcessedBit exponentWord k)
+    (hC6 : controlC6 + signExtend12 (-1 : BitVec 12) = 0)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (h :
+      expTwoMulFixedIterStateAssertion baseWord exponentWord k
+        iterCount nextLimb controlC6 ptr nextLimb evmSp r0 r1 r2 r3 ps) :
+    expTwoMulFixedIterStateInvariant baseWord exponentWord (k + 1)
+      (expTwoMulIterCountNew iterCount)
+      nextLimb 64 (ptr + signExtend12 (-8 : BitVec 12))
+      nextNextLimb evmSp
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 0)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 1)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 2)
+      ((expTwoMulFixedBranchResult bit
+        a0 a1 a2 a3 r0 r1 r2 r3).getLimbN 3) :=
+  expTwoMulFixedIterStateInvariant_succ_reload
+    hk hBase hBit hC6 hNextNext (expTwoMulFixedIterStateAssertion_pure h)
+
 end EvmAsm.Evm64.Exp.Compose
