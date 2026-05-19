@@ -117,6 +117,41 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_to_stepPost_bounded
       a0 a1 a2 a3 v7 v11 base frame hFrame hbase hControlMachine hne
       hk hBase hNextNext hBound)
 
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithState_to_stepPost_bounded
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {nBound : Nat}
+    (controlC6 e machineC6 iterCount v10 v18 ptr nextLimb
+      nextNextLimb sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hControlMachine : controlC6 = machineC6)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hBound : 193 ≤ nBound) :
+    cpsTripleWithin nBound (base + 44) (base + 44)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithState k baseWord exponentWord
+        controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11)
+      (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+        iterCount e controlC6 ptr nextLimb nextNextLimb sp evmSp
+        r0 r1 r2 r3 a0 a1 a2 a3 base empAssertion) :=
+  cpsTripleWithin_weaken
+    (fun _ h => by
+      rw [expTwoMulFixedIterPreNWithStateFrame_unfold, sepConj_emp_right']
+      exact h)
+    (fun _ h => h)
+    (cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_to_stepPost_bounded
+      controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base empAssertion (by pcFree) hbase
+      hControlMachine hne hk hBase hNextNext hBound)
+
 theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_seq_stepPost_bounded
     {baseWord exponentWord : EvmWord} {k : Nat}
     {nSteps nBound : Nat} {exit : Word} {frame Q : Assertion}
@@ -155,6 +190,46 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_seq_stepPost_bounde
       controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
       sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
       a0 a1 a2 a3 v7 v11 base hFrame hbase hControlMachine hne
+      hk hBase hNextNext hBound hStepPost)
+
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithState_seq_stepPost_bounded
+    {baseWord exponentWord : EvmWord} {k : Nat}
+    {nSteps nBound : Nat} {exit : Word} {Q : Assertion}
+    (controlC6 e machineC6 iterCount v10 v18 ptr nextLimb
+      nextNextLimb sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hControlMachine : controlC6 = machineC6)
+    (hne : expTwoMulIterCountNew iterCount ≠ 0)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hBound : 193 + nSteps ≤ nBound)
+    (hStepPost :
+      cpsTripleWithin nSteps (base + 44) exit
+        (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+        (expTwoMulFixedIterStepPostNWithControlFrame k baseWord exponentWord
+          iterCount e controlC6 ptr nextLimb nextNextLimb sp evmSp
+          r0 r1 r2 r3 a0 a1 a2 a3 base empAssertion)
+        Q) :
+    cpsTripleWithin nBound (base + 44) exit
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithState k baseWord exponentWord
+        controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11)
+      Q :=
+  cpsTripleWithin_weaken
+    (fun _ h => by
+      rw [expTwoMulFixedIterPreNWithStateFrame_unfold, sepConj_emp_right']
+      exact h)
+    (fun _ h => h)
+    (cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_seq_stepPost_bounded
+      controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base (by pcFree) hbase hControlMachine hne
       hk hBase hNextNext hBound hStepPost)
 
 theorem cpsTripleWithin_expTwoMulFixedIterPreNWithControlFrame_stepPost_elim_bounded
