@@ -25,6 +25,21 @@ theorem evm_div_callable_code_sub_sdivCode {base : Word} :
     (by
       simpa [divCallableCode] using hOfProg)
 
+theorem evm_div_callable_code_v4_sub_sdivCodeV4 {base : Word} :
+    ∀ a i,
+      (EvmAsm.Evm64.evm_div_callable_code_v4 (base + wrapperEndOff)) a = some i →
+      (sdivCodeV4 base) a = some i := by
+  intro a i h
+  have hOfProg :
+      (EvmAsm.Rv64.CodeReq.ofProg
+        (base + wrapperEndOff) EvmAsm.Evm64.evm_div_callable_v4) a =
+        some i := by
+    rw [← EvmAsm.Evm64.evm_div_callable_code_v4_eq_ofProg (base + wrapperEndOff)]
+    exact h
+  exact sdivCodeV4_divCallable_sub (base := base) a i
+    (by
+      simpa [divCallableCodeV4] using hOfProg)
+
 theorem evm_div_callable_spec_in_sdivCode
     (sp base raVal : Word) (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
