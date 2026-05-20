@@ -714,18 +714,10 @@ def evmModFromInputUnit : BuildUnit := {
   dataAsm     := evmModFromInputDataSection
 }
 
-/-! ## stateless_guest — PR2 SSZ-output stub
+/-! ## stateless_guest — PR2 SSZ output + PR-K5 keccak hash field
 
-    Renders the stub `StatelessValidationResult(root = 0,
-    valid = false, chain_id = 1)` as 41 SSZ bytes at `OUTPUT_ADDR`,
-    then falls through to the codegen halt stub.
-
-    Body lives in `EvmAsm/Stateless/Entry.lean`. No prologue, no
-    `.data`, no epilogue -- the encoder owns the entire post-`_start`
-    sequence. -/
-def statelessGuestUnit : BuildUnit := {
-  body := EvmAsm.Stateless.run_stateless_guest
-}
+    See the definition of `statelessGuestUnit` below
+    (after `zkvmKeccak256Function`, which the epilogue inlines). -/
 
 /-! ## zisk_keccak_probe — PR-K1 ziskemu Keccak-f[1600] intrinsic probe
 
@@ -1132,6 +1124,141 @@ def ziskZkvmKeccak256ProbeUnit : BuildUnit := {
   dataAsm     := ziskZkvmKeccak256DataSection
 }
 
+/-! ## zisk_keccak256_from_input — PR-K4 host-supplied input
+
+    First real-shape consumer of the parameterised
+    `zkvm_keccak256` from PR-K3: hash an arbitrary byte buffer
+    that the host streamed in via `ziskemu -i <file>`. ziskemu
+    places file bytes 0..8 (the u64 LE length prefix) at
+    `INPUT_ADDR + 8..16` and file bytes 8.. (the data) at
+    `INPUT_ADDR + 16..`. The probe reads the length, points at
+    the data, calls `zkvm_keccak256`, writes the 32-byte digest
+    at OUTPUT_ADDR.
+
+    Designed to test header-shaped inputs (typical Ethereum
+    header RLP is ~530-540 bytes), but accepts any byte stream.
+    The Python harness (`scripts/keccak256-gen-input.py`)
+    SSZ/RLP-encodes a real Header dataclass and emits the
+    ziskemu-formatted input file. The test script runs ziskemu,
+    diffs the OUTPUT digest against the Python-computed
+    reference hash. -/
+def ziskKeccak256FromInputPrologue : String :=
+  "  # set up stack\n" ++
+  "  li sp, 0xa0050000\n" ++
+  "  # read length and data ptr from ziskemu input region\n" ++
+  "  li a3, 0x40000000           # INPUT_ADDR\n" ++
+  "  ld a1, 8(a3)                # a1 = length (u64 LE at INPUT_ADDR + 8)\n" ++
+  "  addi a0, a3, 16             # a0 = data ptr (INPUT_ADDR + 16)\n" ++
+  "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  j .Lzk4_done\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  ".Lzk4_done:"
+
+/-- `.data` for the from-input probe: 200-byte state buffer used
+    by `zkvm_keccak256`. Input data lives in the
+    `INPUT_ADDR` region (host-supplied via `ziskemu -i`), not in
+    `.data`. -/
+def ziskKeccak256FromInputDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def ziskKeccak256FromInputProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskKeccak256FromInputPrologue
+  dataAsm     := ziskKeccak256FromInputDataSection
+}
+
+/-! ## stateless_guest body — PR-K5 keccak hash field
+
+    Replaces the zero-stub `new_payload_request_root` field in
+    `Stateless.Entry.run_stateless_guest`'s SSZ output with the
+    keccak256 of the entire SSZ-input byte string the host
+    streamed in via `ziskemu -i`. Concretely:
+
+    - Body: the unchanged `Stateless.Entry.run_stateless_guest`
+      Program. It writes:
+        bytes  0..32 : zero hash (placeholder)
+        byte      32 : successful_validation (PR4/PR5 derived)
+        bytes 33..41 : chain_id (PR3 from-decode)
+        bytes 41..48 : zero gap
+        bytes 48..56 : header_count diagnostic (PR6 from-decode)
+    - Epilogue (raw asm): set up sp, load (data ptr, len) from
+      INPUT_ADDR + (16, 8), set output = OUTPUT_ADDR + 0, and
+      `jal ra, zkvm_keccak256`. The function overwrites
+      OUTPUT[0..32] with keccak256(input bytes), clobbering the
+      zero stub.
+
+    The host-side `compute_new_payload_request_root` per the spec
+    is SSZ `hash_tree_root` (SHA-256), not Keccak. PR-K5 stamps a
+    *content-dependent* hash there so the test harness has a
+    non-trivial value to verify and the keccak bridge is wired
+    into the encoder pipeline end-to-end. Once PR-S series lands,
+    the SHA-256 hash_tree_root replaces this keccak. -/
+def statelessGuestEpilogue : String :=
+  "  # PR-K7: overwrite OUTPUT[0..32] with keccak256 of the FIRST\n" ++
+  "  # element of witness.headers (witness.headers[0]) if the list\n" ++
+  "  # is non-empty; else keccak256(empty).\n" ++
+  "  # \n" ++
+  "  # Navigation:\n" ++
+  "  #   ssz_start  = INPUT_ADDR + 16\n" ++
+  "  #   offset_1   = LWU @ ssz_start +  4   (witness offset)\n" ++
+  "  #   witness    = ssz_start + offset_1\n" ++
+  "  #   inner_off2 = LWU @ witness  +  8   (headers offset)\n" ++
+  "  #   hdrs_start = witness + inner_off2\n" ++
+  "  #   offset_3   = LWU @ ssz_start + 16  (witness end)\n" ++
+  "  #   hdrs_end   = ssz_start + offset_3\n" ++
+  "  #   hdrs_len   = hdrs_end - hdrs_start\n" ++
+  "  #   if hdrs_len > 0:\n" ++
+  "  #     first_off  = LWU @ hdrs_start    (inner offset[0] = 4 * N)\n" ++
+  "  #     el0_start  = hdrs_start + first_off\n" ++
+  "  #     if first_off == 4 (N == 1):\n" ++
+  "  #       el0_end  = hdrs_end\n" ++
+  "  #     else (N >= 2):\n" ++
+  "  #       el0_end  = hdrs_start + LWU @ hdrs_start + 4 (inner offset[1])\n" ++
+  "  #     el0_len    = el0_end - el0_start\n" ++
+  "  #   else:\n" ++
+  "  #     hash empty (el0_len = 0)\n" ++
+  "  li sp, 0xa0050000\n" ++
+  "  li t3, 0x40000000\n" ++
+  "  addi t3, t3, 16             # t3 = ssz_start\n" ++
+  "  lwu t4, 4(t3)               # outer offset_1\n" ++
+  "  add t5, t3, t4              # t5 = witness_addr\n" ++
+  "  lwu t6, 8(t5)               # inner offset_2 (headers offset)\n" ++
+  "  add a0, t5, t6              # a0 = hdrs_start (tentative data ptr)\n" ++
+  "  lwu t6, 16(t3)              # outer offset_3 (witness end)\n" ++
+  "  add t6, t3, t6              # t6 = hdrs_end\n" ++
+  "  sub a1, t6, a0              # a1 = hdrs_len (tentative len)\n" ++
+  "  beqz a1, .Lsg_call_keccak   # empty headers: hash empty\n" ++
+  "  # Non-empty headers: read first inner offset to find element 0\n" ++
+  "  lwu t4, 0(a0)               # t4 = first_inner_offset = 4 * N\n" ++
+  "  add t5, a0, t4              # t5 = el0_start\n" ++
+  "  li t3, 4\n" ++
+  "  beq t4, t3, .Lsg_one_elem   # N == 1 → el0_end = hdrs_end (t6 already)\n" ++
+  "  lwu t4, 4(a0)               # t4 = second_inner_offset\n" ++
+  "  add t6, a0, t4              # t6 = el0_end (override)\n" ++
+  ".Lsg_one_elem:\n" ++
+  "  sub a1, t6, t5              # a1 = el0_len\n" ++
+  "  mv a0, t5                   # a0 = el0_start\n" ++
+  ".Lsg_call_keccak:\n" ++
+  "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR (hash field)\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  j .Lsg_done\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  ".Lsg_done:"
+
+def statelessGuestDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def statelessGuestUnit : BuildUnit := {
+  body        := EvmAsm.Stateless.run_stateless_guest
+  epilogueAsm := statelessGuestEpilogue
+  dataAsm     := statelessGuestDataSection
+}
+
 /-! ## registry -/
 
 /-- Look up a program by name. Returns `none` for unknown names so the CLI
@@ -1156,6 +1283,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_keccak256_abc"        => some ziskKeccak256AbcProbeUnit
   | "zisk_zkvm_keccak256"       => some ziskZkvmKeccak256ProbeUnit
   | "zisk_sha256_probe_le"      => some ziskSha256ProbeLeUnit
+  | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -1170,6 +1298,7 @@ def knownProgramNames : List String :=
    "zisk_keccak256_empty",
    "zisk_keccak256_abc",
    "zisk_zkvm_keccak256",
-   "zisk_sha256_probe_le"]
+   "zisk_sha256_probe_le",
+   "zisk_keccak256_from_input"]
 
 end EvmAsm.Codegen

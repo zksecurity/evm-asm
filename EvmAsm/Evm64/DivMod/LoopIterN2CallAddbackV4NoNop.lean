@@ -37,6 +37,7 @@ def loopBodyN2CallAddbackBeqJgt0PostV4
   (sp + signExtend12 3936 ↦ₘ scratchOut) **
   regOwn .x1
 
+/-- No-NOP/v4 loop body cpsTripleWithin for n=2, call+addback, j=0. -/
 private theorem divK_loop_body_n2_call_addback_j0_beq_v4_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
