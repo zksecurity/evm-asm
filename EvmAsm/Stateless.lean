@@ -16,6 +16,9 @@ import EvmAsm.Stateless.Unimplemented
 import EvmAsm.Stateless.Constants
 import EvmAsm.Stateless.SSZ.Decode.Program
 import EvmAsm.Stateless.SSZ.Encode.Program
+import EvmAsm.Stateless.SSZ.HashTreeRoot.Program
+import EvmAsm.Stateless.SSZ.HashTreeRoot.ZeroHashes
+import EvmAsm.Stateless.SSZ.HashTreeRoot.Merkleize
 import EvmAsm.Stateless.VM
 import EvmAsm.Stateless.Bridges
 import EvmAsm.Stateless.ExecutionEngine

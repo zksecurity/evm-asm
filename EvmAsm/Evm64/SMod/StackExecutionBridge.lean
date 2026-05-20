@@ -171,6 +171,13 @@ theorem runSModStack?_zero_divisor
   rw [runSModStack?_cons]
   rw [SModArgs.smodResultFromArgs_zero_divisor]
 
+theorem runSModStack?_intMin_neg_one
+    (rest : List EvmWord) :
+    runSModStack? { stack := BitVec.intMin 256 :: (-1 : EvmWord) :: rest } =
+      some { effects := { stackWords := [0] }, stack := rest } := by
+  rw [runSModStack?_cons]
+  rw [SModArgs.smodResultFromArgs_intMin_neg_one]
+
 theorem runSModStack?_neg_pos_sign
     (rest : List EvmWord) :
     runSModStack? { stack := (-3 : EvmWord) :: 2 :: rest } =

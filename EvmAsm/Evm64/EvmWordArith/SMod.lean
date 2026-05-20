@@ -66,6 +66,9 @@ theorem smod_pos_neg_sign : smod (3 : EvmWord) (-2) = (1 : EvmWord) := by
 theorem smod_neg_neg_sign : smod (-3 : EvmWord) (-2) = (-1 : EvmWord) := by
   native_decide
 
+theorem smod_intMin_neg_one : smod (BitVec.intMin 256) (-1) = 0 := by
+  native_decide
+
 -- ============================================================================
 -- Correctness vs `Int.tmod` (the spec formula)
 -- ============================================================================
