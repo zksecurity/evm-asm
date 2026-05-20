@@ -4,7 +4,7 @@
   Opaque continuation-frame definitions for reload-tail direct adapters.
 -/
 
-import EvmAsm.Evm64.Exp.Compose.SavedBitFixedControlFrame
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoopReloadLimbFrames
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -14,9 +14,8 @@ open EvmAsm.Rv64
 def expReloadTailDirectTailFrameN
     (exponentWord : EvmWord) (k : Nat) (ptr nextNextLimb : Word) :
     Assertion :=
-  ((((ptr + signExtend12 (-8 : BitVec 12)) +
-    signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+  expReloadDirectTailFrame ptr nextNextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
       (ptr + signExtend12 (-8 : BitVec 12)))
 
 theorem expReloadTailDirectTailFrameN_unfold
@@ -26,19 +25,14 @@ theorem expReloadTailDirectTailFrameN_unfold
         signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
           (ptr + signExtend12 (-8 : BitVec 12)))) := by
-  delta expReloadTailDirectTailFrameN
-  rfl
+  rw [expReloadTailDirectTailFrameN, expReloadDirectTailFrame_unfold]
 
 @[irreducible]
 def expReloadTailDirectFalseFrameN
     (exponentWord : EvmWord) (k : Nat)
     (controlC6 e iterCount ptr nextLimb : Word) : Assertion :=
-  (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-    ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-    ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-    ⌜(e >>> (63 : BitVec 6).toNat) +
-      signExtend12 (0 : BitVec 12) = 0⌝ **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+  expReloadDirectFalseFrame controlC6 e iterCount ptr nextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
       (ptr + signExtend12 (-8 : BitVec 12)))
 
 theorem expReloadTailDirectFalseFrameN_unfold
@@ -53,19 +47,14 @@ theorem expReloadTailDirectFalseFrameN_unfold
           signExtend12 (0 : BitVec 12) = 0⌝ **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
           (ptr + signExtend12 (-8 : BitVec 12))) := by
-  delta expReloadTailDirectFalseFrameN
-  rfl
+  rw [expReloadTailDirectFalseFrameN, expReloadDirectFalseFrame_unfold]
 
 @[irreducible]
 def expReloadTailDirectTrueFrameN
     (exponentWord : EvmWord) (k : Nat)
     (controlC6 e iterCount ptr nextLimb : Word) : Assertion :=
-  (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-    ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-    ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-    ⌜(e >>> (63 : BitVec 6).toNat) +
-      signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+  expReloadDirectTrueFrame controlC6 e iterCount ptr nextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
       (ptr + signExtend12 (-8 : BitVec 12)))
 
 theorem expReloadTailDirectTrueFrameN_unfold
@@ -80,7 +69,6 @@ theorem expReloadTailDirectTrueFrameN_unfold
           signExtend12 (0 : BitVec 12) ≠ 0⌝ **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
           (ptr + signExtend12 (-8 : BitVec 12))) := by
-  delta expReloadTailDirectTrueFrameN
-  rfl
+  rw [expReloadTailDirectTrueFrameN, expReloadDirectTrueFrame_unfold]
 
 end EvmAsm.Evm64.Exp.Compose
