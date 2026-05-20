@@ -122,4 +122,26 @@ theorem evm_div_callable_bzero_v4_preserving_x1_spec (sp base x9Val raVal : Word
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0 hbz)
 
+/-- Framed variant of `evm_div_callable_bzero_v4_preserving_x1_spec`. -/
+theorem evm_div_callable_bzero_v4_preserving_x1_framed_spec
+    {F : Assertion} [Assertion.PCFree F] (sp base x9Val raVal : Word)
+    (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code_v4 base)
+      (divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+      (((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) ** F) := by
+  exact
+    cpsTripleWithin_frameR F (by pcFree)
+      (evm_div_callable_bzero_v4_preserving_x1_spec
+        sp base x9Val raVal a b v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0 hbz)
+
 end EvmAsm.Evm64
