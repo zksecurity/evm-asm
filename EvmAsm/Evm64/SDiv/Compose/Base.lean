@@ -13,6 +13,7 @@
 
 import EvmAsm.Evm64.SDiv.LimbSpec
 import EvmAsm.Evm64.SDiv.AddrNorm
+import EvmAsm.Evm64.DivMod.CallableV1Legacy
 import EvmAsm.Evm64.DivMod.CallableV4Div
 import EvmAsm.Evm64.SDiv.Compose.BaseCode
 import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
@@ -55,11 +56,12 @@ theorem sdivCodeV4_wrapper_sub {base : Word} :
       rw [evm_sdiv_v4_length]
       norm_num)
 
-/-- The appended unsigned DIV callable sub-region inside `sdivCode`. -/
-theorem sdivCode_div_callable_sub {base : Word} :
-    ∀ a i, (evm_div_callable_code (base + 284)) a = some i →
+/-- The appended legacy v1 unsigned DIV callable sub-region inside `sdivCode`. -/
+theorem sdivCode_div_callable_v1_sub {base : Word} :
+    ∀ a i, (evm_div_callable_code_v1 (base + 284)) a = some i →
       (sdivCode base) a = some i := by
   intro a i h
+  rw [evm_div_callable_code_v1_eq_current (base + 284)] at h
   rw [evm_div_callable_code_eq_ofProg (base + 284)] at h
   unfold sdivCode
   exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + 284)
@@ -112,9 +114,9 @@ theorem sdivCodeV4_div_callable_sub {base : Word} :
 theorem sdivCode_top_level_subs {base : Word} :
     (∀ a i, (EvmAsm.Rv64.CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
       (sdivCode base) a = some i) ∧
-    (∀ a i, (evm_div_callable_code (base + 284)) a = some i →
+    (∀ a i, (evm_div_callable_code_v1 (base + 284)) a = some i →
       (sdivCode base) a = some i) := by
-  exact ⟨sdivCode_wrapper_sub, sdivCode_div_callable_sub⟩
+  exact ⟨sdivCode_wrapper_sub, sdivCode_div_callable_v1_sub⟩
 
 /-- Bundled top-level SDIV v4 code subsumptions for the wrapper and appended
     v4 unsigned DIV callable. -/
