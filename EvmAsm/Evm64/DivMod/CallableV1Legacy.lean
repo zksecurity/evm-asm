@@ -95,4 +95,28 @@ theorem evm_mod_callable_code_v1_eq_current (base : Word) :
     evm_mod_callable_code_v1 base = evm_mod_callable_code base := by
   rfl
 
+theorem divCode_noNop_sub_div_callable_code_v1 {base : Word} :
+    ∀ a i, (divCode_noNop base) a = some i →
+           (evm_div_callable_code_v1 base) a = some i := by
+  simpa [evm_div_callable_code_v1_eq_current]
+    using divCode_noNop_sub_div_callable_code (base := base)
+
+theorem modCode_noNop_sub_mod_callable_code_v1 {base : Word} :
+    ∀ a i, (modCode_noNop base) a = some i →
+           (evm_mod_callable_code_v1 base) a = some i := by
+  simpa [evm_mod_callable_code_v1_eq_current]
+    using modCode_noNop_sub_mod_callable_code (base := base)
+
+theorem evm_div_callable_code_v1_ret_sub {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + nopOff) (.JALR .x0 .x1 0)) a = some i →
+      (evm_div_callable_code_v1 base) a = some i := by
+  simpa [evm_div_callable_code_v1_eq_current]
+    using evm_div_callable_code_ret_sub (base := base)
+
+theorem evm_mod_callable_code_v1_ret_sub {base : Word} :
+    ∀ a i, (CodeReq.singleton (base + nopOff) (.JALR .x0 .x1 0)) a = some i →
+      (evm_mod_callable_code_v1 base) a = some i := by
+  simpa [evm_mod_callable_code_v1_eq_current]
+    using evm_mod_callable_code_ret_sub (base := base)
+
 end EvmAsm.Evm64
