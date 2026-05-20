@@ -6,6 +6,7 @@
 
 import EvmAsm.Evm64.DivMod.LoopIterN4CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeq
+import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 
 open EvmAsm.Rv64.Tactics
 
