@@ -774,6 +774,57 @@ theorem divK_loop_body_n1_call_addback_jgt0_beq_v4_spec_within_noNop_exact_x1_sc
       v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal
       retMem dMem dloMem scratch_un0 scratchMem base halign hbltu hborrow hcarry2_nz)
 
+/-- No-NOP/v4 n=1 call+addback j>0 exact-`x1` spec lifted to the
+    scratch-parameterized loop-iteration post. -/
+theorem divK_loop_body_n1_call_addback_jgt0_beq_v4_spec_within_noNop_exact_x1_loopIterScratch (j : Word)
+    (hpos : BitVec.slt (j + signExtend12 4095) 0 = false)
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal : Word)
+    (retMem dMem dloMem scratch_un0 scratchMem : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult u1 v0)
+    (hborrow : (if BitVec.ult uTop
+        (mulsubN4 (divKTrialCallV4QHat u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+      then (1 : Word) else 0) ≠ (0 : Word))
+    (hcarry2_nz :
+      let qHat := divKTrialCallV4QHat u1 u0 v0
+      let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+      let c3 := ms.2.2.2.2
+      let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
+      let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
+      carry = 0 → addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) :
+    cpsTripleWithin 224 (base + loopBodyOff) (base + loopBodyOff) (sharedDivModCodeNoNop_v4 base)
+      (loopBodyN1CallSkipJgt0PreV4NoX1 sp j jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 scratchMem **
+        (.x1 ↦ᵣ raVal))
+      (loopIterPostN1CallScratchNoX1 sp base j
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+        (.x1 ↦ᵣ raVal)) := by
+  have hb :
+      BitVec.ult uTop
+        (mulsubN4_c3 (divKTrialCallV4QHat u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3) := by
+    by_cases h_lt :
+        BitVec.ult uTop
+          (mulsubN4_c3 (divKTrialCallV4QHat u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)
+    · exact h_lt
+    · unfold mulsubN4_c3 at h_lt
+      rw [if_neg h_lt] at hborrow
+      exact False.elim (hborrow rfl)
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by
+      rw [loopIterPostN1CallScratchNoX1_addback hb] at hp
+      exact hp)
+    (divK_loop_body_n1_call_addback_jgt0_beq_v4_spec_within_noNop_exact_x1_scratch j hpos
+      sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal
+      retMem dMem dloMem scratch_un0 scratchMem base halign hbltu hborrow hcarry2_nz)
+
 /-- No-NOP/v4 n=1 call+addback j>0 spec with the call frame split so future
     callers can keep `x1` outside the loop-body assertion. -/
 theorem divK_loop_body_n1_call_addback_jgt0_beq_v4_spec_within_noNop_noX1 (j : Word)
