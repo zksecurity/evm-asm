@@ -522,6 +522,84 @@ def evmDivFromInputUnit : BuildUnit := {
   dataAsm     := evmDivFromInputDataSection
 }
 
+/-! ## evm_mod — M2 first MOD end-to-end through ziskemu
+
+    Same calling convention and scratch layout as `evm_div`. `evm_mod`
+    differs only in the epilogue: `divK_mod_epilogue` copies `u[0..3]`
+    (the de-normalized remainder) to `sp+32..64` instead of `q[0..3]`.
+    The body structure (NOP "exit PC" at index 267 followed by the
+    75-instruction `divK_div128_v4` subroutine) is identical, so the
+    same NOP-splice fix applies. Like `evm_div`, `evm_mod` is not yet
+    proven correct in Lean — the scripts under `scripts/codegen-evm_mod*`
+    provide empirical confirmation by running on ziskemu. -/
+
+/-- `EvmAsm.Evm64.evm_mod` with the NOP "exit PC" at index 267 replaced
+    by a forward JAL skipping the 75-instruction subroutine to land at
+    `evmAddEpilogue`. Same +304 byte offset as `evmDivPatched` because
+    the MOD body has the identical 343-instruction layout. -/
+def evmModPatched : Program :=
+  (EvmAsm.Evm64.evm_mod : List Instr).take 267 ++
+  [Instr.JAL .x0 (304 : BitVec 21)] ++
+  (EvmAsm.Evm64.evm_mod : List Instr).drop 268
+
+/-- Dividend as four LE limbs. 2^64, exercises the phase-B n=1 cascade
+    on the divisor (b=3, limb 0 only) plus the loop body. -/
+def evmModDividend : List UInt64 := [0, 1, 0, 0]
+
+/-- Divisor as four LE limbs. 3. -/
+def evmModDivisor : List UInt64 := [3, 0, 0, 0]
+
+/-- Expected remainder = 2^64 mod 3 = 1 (since 2^64 = 3·6148914691236517205 + 1). -/
+def evmModExpectedRemainder : List UInt64 := [1, 0, 0, 0]
+
+def evmModPrologue : String :=
+  "  la x12, operands"
+
+def evmModDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "div_scratch:\n" ++
+  "  .zero 256\n" ++
+  ".balign 8\n" ++
+  "operands:\n" ++
+  String.intercalate "\n"
+    ((evmModDividend ++ evmModDivisor).map emitDword)
+
+def evmModUnit : BuildUnit := {
+  body        := evmModPatched ++ evmAddEpilogue
+  prologueAsm := evmModPrologue
+  dataAsm     := evmModDataSection
+}
+
+/-! ## evm_mod_from_input — M4 prover-supplied MOD operands
+
+    Same wrapping as `evmModUnit`, but operands arrive at runtime from
+    the ziskemu `-i` input region (mirrors `evm_div_from_input`). -/
+
+def evm_mod_from_input : Program :=
+  LI .x5 (INPUT_ADDR + (BitVec.ofNat 64 INPUT_DATA_OFFSET)) ;;
+  copy64 .x12 .x5 .x6 ++
+  evmModPatched ++
+  evmAddEpilogue
+
+def evmModFromInputPrologue : String :=
+  "  la x12, operands_ram"
+
+def evmModFromInputDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "div_scratch:\n" ++
+  "  .zero 256\n" ++
+  ".balign 8\n" ++
+  "operands_ram:\n" ++
+  "  .zero 64"
+
+def evmModFromInputUnit : BuildUnit := {
+  body        := evm_mod_from_input
+  prologueAsm := evmModFromInputPrologue
+  dataAsm     := evmModFromInputDataSection
+}
+
 /-! ## registry -/
 
 /-- Look up a program by name. Returns `none` for unknown names so the CLI
@@ -531,6 +609,8 @@ def lookupProgram : String → Option BuildUnit
   | "evm_add"                   => some evmAddUnit
   | "evm_div"                   => some evmDivUnit
   | "evm_div_from_input"        => some evmDivFromInputUnit
+  | "evm_mod"                   => some evmModUnit
+  | "evm_mod_from_input"        => some evmModFromInputUnit
   | "input_echo"                => some inputEchoUnit
   | "evm_add_from_input"        => some evmAddFromInputUnit
   | "tiny_interp_add"           => some tinyInterpAddUnit
@@ -541,8 +621,8 @@ def lookupProgram : String → Option BuildUnit
 
 /-- List of known program names, for use in CLI usage strings. -/
 def knownProgramNames : List String :=
-  ["smoke", "evm_add", "evm_div", "input_echo",
-   "evm_add_from_input", "evm_div_from_input",
+  ["smoke", "evm_add", "evm_div", "evm_mod", "input_echo",
+   "evm_add_from_input", "evm_div_from_input", "evm_mod_from_input",
    "tiny_interp_add", "tiny_interp_add2",
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2"]
 
