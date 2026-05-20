@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codegen-stateless-roundtrip-check.sh -- Stateless guest PR5 verification.
+# codegen-stateless-roundtrip-check.sh -- Stateless guest PR6 verification.
 #
 # Builds the `stateless_guest` program through codegen -> as -> ld,
 # generates SSZ-encoded `SszStatelessInput`s (via the
@@ -16,17 +16,19 @@
 #     outer SSZ → witness → headers offset chain and sets `x11 = 1`
 #     iff the `witness.headers` list section is empty (regardless of
 #     what's in `state` or `codes`).
-#   * `Stateless.SSZ.Encode.serialize_stateless_output` -- packs both
-#     into the 41-byte SSZ result at OUTPUT_ADDR.
+#   * `Stateless.SSZ.Decode.decode_header_count` -- reads first u32
+#     of the headers list (`= 4 * count`) and divides by 4, leaving
+#     `header_count` in `x16` (or 0 if list empty).
+#   * `Stateless.SSZ.Encode.serialize_stateless_output` -- packs
+#     all three into a 56-byte tail: 41-byte SSZ result + 7 zero
+#     bytes + 8-byte LE u64 header_count diagnostic.
 #
-# Fixtures (the 4th one distinguishes PR5 from PR4 -- under PR4 it
-# would have flipped to bool=0 because the witness body is non-empty,
-# but under PR5 it stays at bool=1 because the headers list itself
-# is still empty):
-#   1. chain_id = 1,                  empty witness        -> bool=1
-#   2. chain_id = 0x1234567890ABCDEF, empty witness        -> bool=1
-#   3. chain_id = 0xDEADBEEF,         one empty header     -> bool=0
-#   4. chain_id = 0xC0FFEE,           one empty state node -> bool=1
+# Fixtures:
+#   1. chain_id = 1,                  empty witness        -> bool=1, count=0
+#   2. chain_id = 0x1234567890ABCDEF, empty witness        -> bool=1, count=0
+#   3. chain_id = 0xDEADBEEF,         one empty header     -> bool=0, count=1
+#   4. chain_id = 0xC0FFEE,           one empty state node -> bool=1, count=0
+#   5. chain_id = 0xBEEF,             two empty headers    -> bool=0, count=2
 #
 # Exit:
 #   0 -- all fixtures match expected
@@ -69,21 +71,25 @@ print(c.to_bytes(8, 'little').hex())
 " "$1"
 }
 
-# Build the 82-hex-char expected output for a given chain_id + bool:
-#   32 zero bytes (hash) | 1 byte bool | 8 LE bytes of chain_id
+# Build the 112-hex-char expected output (= 56 bytes):
+#   32 zero bytes (hash) | 1 byte bool | 8 LE bytes chain_id
+# | 7 zero bytes (gap)   | 8 LE bytes header_count (PR6 diagnostic)
 expected_hex_for() {
   local cid="$1"
-  local bool_hex="$2"  # "00" or "01"
-  local low8
-  low8="$(chain_id_le_hex "$cid")"
-  echo "$(printf '00%.0s' $(seq 1 32))${bool_hex}${low8}"
+  local bool_hex="$2"      # "00" or "01"
+  local count_dec="$3"     # decimal header_count
+  local chain_le hcount_le
+  chain_le="$(chain_id_le_hex "$cid")"
+  hcount_le="$(python3 -c "print(int('$count_dec').to_bytes(8, 'little').hex())")"
+  echo "$(printf '00%.0s' $(seq 1 32))${bool_hex}${chain_le}$(printf '00%.0s' $(seq 1 7))${hcount_le}"
 }
 
 run_fixture() {
   local label="$1"
   local cid="$2"
   local bool_hex="$3"
-  shift 3
+  local count_dec="$4"
+  shift 4
   local extra_args=("$@")
 
   local safe_label="${label//[^0-9A-Za-z_]/_}"
@@ -100,8 +106,8 @@ run_fixture() {
     -o "$output_file" -n 100000 >"$log_file" 2>&1
 
   local actual expected
-  actual="$(xxd -p -l 41 "$output_file" | tr -d '\n')"
-  expected="$(expected_hex_for "$cid" "$bool_hex")"
+  actual="$(xxd -p -l 56 "$output_file" | tr -d '\n')"
+  expected="$(expected_hex_for "$cid" "$bool_hex" "$count_dec")"
 
   echo "    expected: $expected"
   echo "    actual:   $actual"
@@ -116,12 +122,14 @@ run_fixture() {
 }
 
 fail=0
-run_fixture "empty_witness_chain1" 1 "01"                          || fail=1
-run_fixture "empty_witness_chain_big" 0x1234567890ABCDEF "01"      || fail=1
-run_fixture "one_empty_header_chain_dead" 0xDEADBEEF "00" \
+run_fixture "empty_witness_chain1" 1 "01" 0                        || fail=1
+run_fixture "empty_witness_chain_big" 0x1234567890ABCDEF "01" 0    || fail=1
+run_fixture "one_empty_header_chain_dead" 0xDEADBEEF "00" 1 \
             --with-empty-header                                    || fail=1
-run_fixture "one_empty_state_node_chain_coffee" 0xC0FFEE "01" \
+run_fixture "one_empty_state_node_chain_coffee" 0xC0FFEE "01" 0 \
             --with-empty-state-node                                || fail=1
+run_fixture "two_empty_headers_chain_beef" 0xBEEF "00" 2 \
+            --with-two-empty-headers                               || fail=1
 
 if [[ "$fail" -eq 0 ]]; then
   echo "==> PASS: all stateless_guest fixtures match expected SSZ output"

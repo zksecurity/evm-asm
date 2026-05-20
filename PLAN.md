@@ -1003,6 +1003,12 @@ through ECALL bridges (extending `EvmAsm/EL/Keccak*EcallBridge.lean`).
   sets `x11 = 1` iff `witness.headers` is empty regardless of
   state/codes. Fourth fixture (`--with-empty-state-node`) keeps
   bool=1 under PR5 vs. 0 under PR4 -- confirms the deeper walk.
+- ✅ PR6 header_count surfacing: `decode_header_count` reads the
+  first u32 of the headers list (with a BEQ guard for the empty
+  case) and divides by 4, leaving the count in `x16`. Encoder
+  writes it as a u64 at `OUTPUT_ADDR + 48` (diagnostic field past
+  the 41-byte SSZ result). Fifth fixture (`--with-two-empty-headers`)
+  verifies count=2.
 
 ### Cross-references
 
