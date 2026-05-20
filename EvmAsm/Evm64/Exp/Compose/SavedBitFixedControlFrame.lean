@@ -142,6 +142,28 @@ theorem expTwoMulFixedControlInvariant_pre_reload_mod
   have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
   omega
 
+theorem expTwoMulFixedControlInvariant_ordinary_no_reload_mod
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : c6 + signExtend12 (-1 : BitVec 12) ≠ 0)
+    (hNotPre :
+      (c6 + signExtend12 (-1 : BitVec 12)).toNat ≠ 1) :
+    k % 64 < 62 := by
+  have hNoReload :=
+    expTwoMulFixedControlInvariant_no_reload_mod hControl hC6
+  by_contra hNot
+  have hMod : k % 64 = 62 := by omega
+  unfold expTwoMulFixedControlInvariant at hControl
+  rcases hControl with ⟨hNat, _⟩
+  have hPos : 1 ≤ c6.toNat := by
+    rw [hNat]
+    omega
+  have hDec := controlFrame_word_add_neg1_toNat (w := c6) hPos
+  apply hNotPre
+  rw [hDec, hNat, hMod]
+
 theorem expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_pre_reload
     {exponentWord : EvmWord} {k : Nat} {ptr : Word}
     (hMod : k % 64 = 62) :
