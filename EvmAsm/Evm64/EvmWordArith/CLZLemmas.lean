@@ -124,23 +124,23 @@ theorem clzPipeline_fst_le (val : Word) : (clzPipeline val).1.toNat ≤ 62 := by
 -- Overflow lemmas for backward pass (derived from bounds)
 -- ============================================================================
 
-private theorem clzS3_no_overflow (val : Word) :
+theorem clzS3_no_overflow (val : Word) :
     (clzS3 val).1.toNat + (signExtend12 (2 : BitVec 12)).toNat < 2^64 := by
   have := clzS3_bound val; have := se_2; omega
 
-private theorem clzS2_no_overflow (val : Word) :
+theorem clzS2_no_overflow (val : Word) :
     (clzS2 val).1.toNat + (signExtend12 (4 : BitVec 12)).toNat < 2^64 := by
   have := clzS2_bound val; have := se_4; omega
 
-private theorem clzS1_no_overflow (val : Word) :
+theorem clzS1_no_overflow (val : Word) :
     (clzS1 val).1.toNat + (signExtend12 (8 : BitVec 12)).toNat < 2^64 := by
   have := clzS1_bound val; have := se_8; omega
 
-private theorem clzS0_no_overflow (val : Word) :
+theorem clzS0_no_overflow (val : Word) :
     (clzS0 val).1.toNat + (signExtend12 (16 : BitVec 12)).toNat < 2^64 := by
   have := clzS0_bound val; have := se_16; omega
 
-private theorem clzInit_no_overflow (val : Word) :
+theorem clzInit_no_overflow (val : Word) :
     ((0 : Word), val).1.toNat + (signExtend12 (32 : BitVec 12)).toNat < 2^64 := by
   have h1 : ((0 : Word), val).1.toNat = 0 := by simp
   have := se_32; omega
