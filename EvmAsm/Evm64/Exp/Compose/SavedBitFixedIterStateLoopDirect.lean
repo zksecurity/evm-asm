@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoop
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedControlFrame
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoopReloadTailFrames
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -872,14 +873,9 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             controlC6 e iterCount ptr nextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             bit v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((((ptr + signExtend12 (-8 : BitVec 12)) +
-              signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12)))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectTailFrameN exponentWord k ptr nextNextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hReloadFalse :
       k < 255 →
       ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
@@ -890,17 +886,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) = 0⌝ **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectFalseFrameN exponentWord k controlC6 e
+              iterCount ptr nextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hReloadTrue :
       k < 255 →
       ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
@@ -911,17 +900,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectTrueFrameN exponentWord k controlC6 e
+              iterCount ptr nextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hExit :
       k = 255 →
       ∀ ps,
@@ -970,13 +952,18 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
           pcFree)
         hbase hControlMachine hk hBase hNextNext
         (fun hk_lt bit v6' v7' v10' v11' d0' d1' d2' d3' => by
-          simpa only [expReloadDirectBranchPre] using
+          simpa only [expReloadDirectBranchPre,
+            expReloadTailDirectTailFrameN_unfold] using
             hBranch hk_lt bit v6' v7' v10' v11' d0' d1' d2' d3')
         (fun hk_lt v6' v7' v10' v11' d0' d1' d2' d3' => by
-          simpa only [expReloadDirectFalsePre] using
+          simpa only [expReloadDirectFalsePre,
+            expReloadTailDirectFalseFrameN_unfold,
+            expReloadTailDirectTailFrameN_unfold] using
             hReloadFalse hk_lt v6' v7' v10' v11' d0' d1' d2' d3')
       (fun hk_lt v6' v7' v10' v11' d0' d1' d2' d3' => by
-          simpa only [expReloadDirectTruePre] using
+          simpa only [expReloadDirectTruePre,
+            expReloadTailDirectTrueFrameN_unfold,
+            expReloadTailDirectTailFrameN_unfold] using
             hReloadTrue hk_lt v6' v7' v10' v11' d0' d1' d2' d3')
         hExit)
 
@@ -1012,14 +999,9 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             controlC6 e iterCount ptr nextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             bit v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((((ptr + signExtend12 (-8 : BitVec 12)) +
-              signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12)))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectTailFrameN exponentWord k ptr nextNextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hReloadFalse :
       k < 255 →
       ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
@@ -1030,17 +1012,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) = 0⌝ **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectFalseFrameN exponentWord k controlC6 e
+              iterCount ptr nextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hReloadTrue :
       k < 255 →
       ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
@@ -1051,17 +1026,10 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-                (ptr + signExtend12 (-8 : BitVec 12))))
-          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
-              (ptr + signExtend12 (-8 : BitVec 12))))))
+            (expReloadTailDirectTrueFrameN exponentWord k controlC6 e
+              iterCount ptr nextLimb))
+          (Q ** expReloadTailDirectTailFrameN exponentWord k ptr
+            nextNextLimb))
     (hExit :
       k = 255 →
       ∀ ps,
