@@ -14,9 +14,8 @@ open EvmAsm.Rv64
 def expPreReloadDirectTailFrameN
     (exponentWord : EvmWord) (k : Nat) (ptr nextNextLimb : Word) :
     Assertion :=
-  ((((ptr + signExtend12 (-8 : BitVec 12)) +
-    signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
+  expReloadDirectTailFrame ptr nextNextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
 
 theorem expPreReloadDirectTailFrameN_unfold
     {exponentWord : EvmWord} {k : Nat} {ptr nextNextLimb : Word} :
@@ -24,19 +23,14 @@ theorem expPreReloadDirectTailFrameN_unfold
       (((((ptr + signExtend12 (-8 : BitVec 12)) +
         signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)) := by
-  delta expPreReloadDirectTailFrameN
-  rfl
+  rw [expPreReloadDirectTailFrameN, expReloadDirectTailFrame_unfold]
 
 @[irreducible]
 def expPreReloadDirectFalseFrameN
     (exponentWord : EvmWord) (k : Nat)
     (controlC6 e iterCount ptr nextLimb : Word) : Assertion :=
-  (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-    ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-    ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-    ⌜(e >>> (63 : BitVec 6).toNat) +
-      signExtend12 (0 : BitVec 12) = 0⌝ **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
+  expReloadDirectFalseFrame controlC6 e iterCount ptr nextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
 
 theorem expPreReloadDirectFalseFrameN_unfold
     {exponentWord : EvmWord} {k : Nat}
@@ -49,19 +43,14 @@ theorem expPreReloadDirectFalseFrameN_unfold
         ⌜(e >>> (63 : BitVec 6).toNat) +
           signExtend12 (0 : BitVec 12) = 0⌝ **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr) := by
-  delta expPreReloadDirectFalseFrameN
-  rfl
+  rw [expPreReloadDirectFalseFrameN, expReloadDirectFalseFrame_unfold]
 
 @[irreducible]
 def expPreReloadDirectTrueFrameN
     (exponentWord : EvmWord) (k : Nat)
     (controlC6 e iterCount ptr nextLimb : Word) : Assertion :=
-  (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-    ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-    ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-    ⌜(e >>> (63 : BitVec 6).toNat) +
-      signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-    expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
+  expReloadDirectTrueFrame controlC6 e iterCount ptr nextLimb
+    (expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr)
 
 theorem expPreReloadDirectTrueFrameN_unfold
     {exponentWord : EvmWord} {k : Nat}
@@ -74,8 +63,7 @@ theorem expPreReloadDirectTrueFrameN_unfold
         ⌜(e >>> (63 : BitVec 6).toNat) +
           signExtend12 (0 : BitVec 12) ≠ 0⌝ **
         expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr) := by
-  delta expPreReloadDirectTrueFrameN
-  rfl
+  rw [expPreReloadDirectTrueFrameN, expReloadDirectTrueFrame_unfold]
 
 /-- Pre-reload direct head step over the two-cell lookahead frame.
 
