@@ -896,6 +896,79 @@ def ziskKeccak256AbcProbeUnit : BuildUnit := {
   dataAsm     := ziskKeccak256AbcDataSection
 }
 
+/-! ## zisk_sha256_probe_le — PR-K15 SHA-256 intrinsic probe (LE-u32 layout)
+
+    Earlier PR-S1 v1 (`task #17`) tried the SHA-256 intrinsic at
+    CSR `0x805` with the 0.15.0-documented BE-per-u64 packing
+    (state[0] = (h0 BE-u32 << 32) | h1 BE-u32, stored LE as a
+    single u64). Output didn't match `sha256(b"")`.
+
+    Hypothesis: the installed ziskemu (0.18.0) uses a different
+    state packing -- specifically LE-u32 within u64 (state bytes
+    are u32 BE in spec, stored as LE u32s -- so the 64-bit memory
+    layout is `LE(h0) || LE(h1)` = bytes `67 e6 09 6a 85 ae 67 bb`
+    for the first u64). As a u64 value this is
+    `0xbb67ae856a09e667`.
+
+    Probe re-runs the empty-message compression with this
+    alternative layout. If it matches `sha256(b"")`, the 0.18.0
+    intrinsic layout is pinned; if not, document further.
+
+    Expected on success (SHA-256("") in LE-u32 packed memory):
+      67 e6 09 6a 85 ae 67 bb 72 f3 6e 3c 3a f5 4f a5
+      7f 52 0e 51 8c 68 05 9b ab d9 83 1f 19 cd e0 5b
+    Then post-compression state should be SHA-256("")'s words
+    packed the same way:
+      sha256(empty) = e3 b0 c4 42 98 fc 1c 14 9a fb f4 c8 99 6f
+                      b9 24 27 ae 41 e4 64 9b 93 4c a4 95 99 1b
+                      78 52 b8 55
+    As LE-u32 within u64 (per-byte memory order):
+      42 c4 b0 e3 14 1c fc 98 c8 f4 fb 9a 24 b9 6f 99
+      e4 41 ae 27 4c 93 9b 64 1b 99 95 a4 55 b8 52 78
+-/
+def ziskSha256ProbeLePrologue : String :=
+  "  la a0, sha256_le_params\n" ++
+  "  .4byte 0x80552073           # csrs 0x805, a0\n" ++
+  "  # copy 32-byte post-compression state to OUTPUT_ADDR\n" ++
+  "  la t0, sha256_le_state\n" ++
+  "  li t1, 0xa0010000\n" ++
+  "  ld t2, 0(t0);  sd t2, 0(t1)\n" ++
+  "  ld t2, 8(t0);  sd t2, 8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)"
+
+def ziskSha256ProbeLeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_le_state:\n" ++
+  "  # state[0..4] = LE-u32-pack (each u32 stored LE in memory)\n" ++
+  "  .quad 0xbb67ae856a09e667    # LE(h0) || LE(h1)\n" ++
+  "  .quad 0xa54ff53a3c6ef372    # LE(h2) || LE(h3)\n" ++
+  "  .quad 0x9b05688c510e527f    # LE(h4) || LE(h5)\n" ++
+  "  .quad 0x5be0cd191f83d9ab    # LE(h6) || LE(h7)\n" ++
+  ".balign 8\n" ++
+  "sha256_le_input:\n" ++
+  "  # input[0] = LE-u32-pack of message u32[0..2]\n" ++
+  "  # padded empty: u32[0] = 0x80 (LE bytes [80 00 00 00]) || u32[1] = 0\n" ++
+  "  .quad 0x80\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0\n" ++
+  "  .quad 0                     # u32[15] = length BE bits = 0\n" ++
+  ".balign 8\n" ++
+  "sha256_le_params:\n" ++
+  "  .quad sha256_le_state\n" ++
+  "  .quad sha256_le_input"
+
+def ziskSha256ProbeLeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSha256ProbeLePrologue
+  dataAsm     := ziskSha256ProbeLeDataSection
+}
+
 /-! ## zisk_zkvm_keccak256 — PR-K3 parameterised wrapper
 
     Refactors the three hardcoded sponge probes (PR-K2 empty,
@@ -1209,6 +1282,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_keccak256_empty"      => some ziskKeccak256EmptyProbeUnit
   | "zisk_keccak256_abc"        => some ziskKeccak256AbcProbeUnit
   | "zisk_zkvm_keccak256"       => some ziskZkvmKeccak256ProbeUnit
+  | "zisk_sha256_probe_le"      => some ziskSha256ProbeLeUnit
   | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
   | _                           => none
 
@@ -1224,6 +1298,7 @@ def knownProgramNames : List String :=
    "zisk_keccak256_empty",
    "zisk_keccak256_abc",
    "zisk_zkvm_keccak256",
+   "zisk_sha256_probe_le",
    "zisk_keccak256_from_input"]
 
 end EvmAsm.Codegen
