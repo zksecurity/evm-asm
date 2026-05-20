@@ -677,6 +677,8 @@ def lookupProgram : String → Option BuildUnit
   | "evm_div_from_input"        => some evmDivFromInputUnit
   | "evm_mod"                   => some evmModUnit
   | "evm_mod_from_input"        => some evmModFromInputUnit
+  | "evm_sdiv"                  => some evmSdivV4Unit
+  | "evm_sdiv_from_input"       => some evmSdivV4FromInputUnit
   | "evm_sdiv_v4"               => some evmSdivV4Unit
   | "evm_sdiv_v4_from_input"    => some evmSdivV4FromInputUnit
   | "input_echo"                => some inputEchoUnit
@@ -689,9 +691,9 @@ def lookupProgram : String → Option BuildUnit
 
 /-- List of known program names, for use in CLI usage strings. -/
 def knownProgramNames : List String :=
-  ["smoke", "evm_add", "evm_div", "evm_mod", "evm_sdiv_v4", "input_echo",
+  ["smoke", "evm_add", "evm_div", "evm_mod", "evm_sdiv", "evm_sdiv_v4", "input_echo",
    "evm_add_from_input", "evm_div_from_input", "evm_mod_from_input",
-   "evm_sdiv_v4_from_input",
+   "evm_sdiv_from_input", "evm_sdiv_v4_from_input",
    "tiny_interp_add", "tiny_interp_add2",
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2"]
 
