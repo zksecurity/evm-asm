@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateResidualPures
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoopReloadLimbFrames
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -30,11 +31,7 @@ def expTwoMulFixedReloadResidualFalseNextPre
     (squareW.getLimbN 0) (squareW.getLimbN 1)
     (squareW.getLimbN 2) (squareW.getLimbN 3)
     a0 a1 a2 a3 v7 v11
-    (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-      ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-      ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-      ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0⌝ **
-      frame)
+    (expReloadDirectFalseFrame c6 e iterCount ptr nextLimb frame)
 
 @[irreducible]
 def expTwoMulFixedReloadResidualTrueNextPre
@@ -56,11 +53,7 @@ def expTwoMulFixedReloadResidualTrueNextPre
     (rw.getLimbN 0) (rw.getLimbN 1)
     (rw.getLimbN 2) (rw.getLimbN 3)
     a0 a1 a2 a3 v7 v11
-    (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-      ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-      ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-      ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-      frame)
+    (expReloadDirectTrueFrame c6 e iterCount ptr nextLimb frame)
 
 /-- A false-bit reload residual can re-enter the next state-carrying fixed
     iteration precondition once the remaining frame supplies the following
@@ -76,8 +69,7 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithSt
         baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
         sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
         v6 v7 v10 v11 d0 d1 d2 d3
-        (((ptr + signExtend12 (-8 : BitVec 12) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame) ps) :
+        (expReloadDirectTailFrame ptr nextNextLimb frame) ps) :
     let squareW := expSquaringCallSquareW r0 r1 r2 r3
     expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
       64 nextLimb v6 (expTwoMulIterCountNew iterCount) v10
@@ -90,17 +82,15 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithSt
       (squareW.getLimbN 0) (squareW.getLimbN 1)
       (squareW.getLimbN 2) (squareW.getLimbN 3)
       a0 a1 a2 a3 v7 v11
-      (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-        ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-        ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-        ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) = 0⌝ **
-        frame) ps := by
+      (expReloadDirectFalseFrame c6 e iterCount ptr nextLimb frame) ps := by
   rw [expTwoMulFixedReloadBranchResidualWithStateFrame_false] at h
   dsimp
+  rw [expReloadDirectTailFrame_unfold] at h
   rw [expTwoMulFixedIterPreNWithStateFrame_unfold,
     expTwoMulFixedIterPreNWithState_unfold,
     expTwoMulFixedIterPre_unfold,
-    expTwoMulFixedIterPointerFrame_unfold]
+    expTwoMulFixedIterPointerFrame_unfold,
+    expReloadDirectFalseFrame_unfold]
   simp only [expTwoMulFixedIterSkipCountPostScratchPrefix,
     expTwoMulFixedIterSkipRestScratchPrefix,
     expTwoMulFixedIterReloadSkipCountPostScratchSuffixFrame,
@@ -135,8 +125,7 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_t
         baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
         sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
         v6 v7 v10 v11 d0 d1 d2 d3
-        (((ptr + signExtend12 (-8 : BitVec 12) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame))
+        (expReloadDirectTailFrame ptr nextNextLimb frame))
       Q :=
   cpsTripleWithin_weaken
     (fun _ h =>
@@ -161,8 +150,7 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithSta
         baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
         sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
         v6 v7 v10 v11 d0 d1 d2 d3
-        (((ptr + signExtend12 (-8 : BitVec 12) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame) ps) :
+        (expReloadDirectTailFrame ptr nextNextLimb frame) ps) :
     let rw := expTwoMulCondRw (expSquaringCallSquareW r0 r1 r2 r3)
       a0 a1 a2 a3
     expTwoMulFixedIterPreNWithStateFrame (k + 1) baseWord exponentWord
@@ -176,17 +164,15 @@ theorem expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithSta
       (rw.getLimbN 0) (rw.getLimbN 1)
       (rw.getLimbN 2) (rw.getLimbN 3)
       a0 a1 a2 a3 v7 v11
-      (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-        ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-        ⌜c6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-        ⌜(e >>> (63 : BitVec 6).toNat) + signExtend12 (0 : BitVec 12) ≠ 0⌝ **
-        frame) ps := by
+      (expReloadDirectTrueFrame c6 e iterCount ptr nextLimb frame) ps := by
   rw [expTwoMulFixedReloadBranchResidualWithStateFrame_true] at h
   dsimp
+  rw [expReloadDirectTailFrame_unfold] at h
   rw [expTwoMulFixedIterPreNWithStateFrame_unfold,
     expTwoMulFixedIterPreNWithState_unfold,
     expTwoMulFixedIterPre_unfold,
-    expTwoMulFixedIterPointerFrame_unfold]
+    expTwoMulFixedIterPointerFrame_unfold,
+    expReloadDirectTrueFrame_unfold]
   simp only [expTwoMulFixedIterSkipCondCountPostScratchPrefix,
     expTwoMulFixedIterSkipCondRestScratchPrefix,
     expTwoMulFixedIterReloadCondCountPostScratchSuffixFrame,
@@ -221,8 +207,7 @@ theorem cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to
         baseWord exponentWord iterCount e c6 ptr nextLimb nextNextLimb
         sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base
         v6 v7 v10 v11 d0 d1 d2 d3
-        (((ptr + signExtend12 (-8 : BitVec 12) +
-            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame))
+        (expReloadDirectTailFrame ptr nextNextLimb frame))
       Q :=
   cpsTripleWithin_weaken
     (fun _ h =>

@@ -21,6 +21,18 @@ def loopBodyN2CallSkipJ0PreV4
     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 **
   (sp + signExtend12 3936 ↦ₘ scratchMem)
 
+theorem loopBodyN2CallSkipJ0PreV4_unfold
+    {sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word}
+    {retMem dMem dloMem scratchUn0 scratchMem : Word} :
+    loopBodyN2CallSkipJ0PreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem =
+    (loopBodyN2CallSkipJ0Pre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 **
+     (sp + signExtend12 3936 ↦ₘ scratchMem)) := by
+  unfold loopBodyN2CallSkipJ0PreV4
+  rfl
+
 @[irreducible]
 def loopBodyN2CallSkipJ0PostV4
     (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
