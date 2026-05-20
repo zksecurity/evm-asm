@@ -241,6 +241,45 @@ def loopBodyN1CallSkipPostJV4
   (sp + signExtend12 3936 ↦ₘ (if rhat2cHi ≠ 0 then scratchMem else rhat2c)) **
   regOwn .x1
 
+@[irreducible]
+def loopBodyN1CallSkipPostJV4NoX1
+    (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
+  let qHat := div128Quot_v4 u1 u0 v0
+  let dHi := v0 >>> (32 : BitVec 6).toNat
+  let dLo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un1 := u0 >>> (32 : BitVec 6).toNat
+  let div_un0 := (u0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu u1 dHi
+  let rhat := u1 - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+  let qDlo2 := q1' * dLo
+  let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+              then q1' + signExtend12 4095 else q1'
+  let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                then rhat' + dHi else rhat'
+  let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let cu_q1_dlo := q1'' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  loopBodyN1SkipPost sp j qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v0) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ div_un0) **
+  (sp + signExtend12 3936 ↦ₘ (if rhat2cHi ≠ 0 then scratchMem else rhat2c))
+
 /-- Call+addback BEQ postcondition for n=1, generic j, with double-addback handling. -/
 @[irreducible]
 def loopBodyN1CallAddbackBeqPostJ (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Assertion :=
@@ -322,6 +361,57 @@ theorem loopIterPostN1Max_skip {sp j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word}
   (sp + signExtend12 3960 ↦ₘ v0) **
   (sp + signExtend12 3952 ↦ₘ div128DLo v0) **
   (sp + signExtend12 3944 ↦ₘ div128Un0 u0)
+
+@[irreducible] def loopIterPostN1CallV4NoX1
+    (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
+  let qHat := div128Quot_v4 u1 u0 v0
+  let r := iterWithDoubleAddback qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let c3 := (mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3).2.2.2.2
+  let dHi := v0 >>> (32 : BitVec 6).toNat
+  let dLo := (v0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let div_un1 := u0 >>> (32 : BitVec 6).toNat
+  let div_un0 := (u0 <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+  let q1 := rv64_divu u1 dHi
+  let rhat := u1 - q1 * dHi
+  let hi1 := q1 >>> (32 : BitVec 6).toNat
+  let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+  let rhatc := if hi1 = 0 then rhat else rhat + dHi
+  let qDlo := q1c * dLo
+  let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+  let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+  let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+  let qDlo2 := q1' * dLo
+  let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let q1'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+              then q1' + signExtend12 4095 else q1'
+  let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                then rhat' + dHi else rhat'
+  let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+  let cu_q1_dlo := q1'' * dLo
+  let un21 := cu_rhat_un1 - cu_q1_dlo
+  let q0 := rv64_divu un21 dHi
+  let rhat2 := un21 - q0 * dHi
+  let hi2 := q0 >>> (32 : BitVec 6).toNat
+  let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+  let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+  loopExitPostN1 sp j r.1 c3 r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2 v0 v1 v2 v3 **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v0) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ div_un0) **
+  (sp + signExtend12 3936 ↦ₘ (if rhat2cHi ≠ 0 then scratchMem else rhat2c))
+
+theorem loopIterPostN1CallV4NoX1_skip
+    {sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word}
+    (hb : ¬BitVec.ult uTop
+      (mulsubN4_c3 (div128Quot_v4 u1 u0 v0) v0 v1 v2 v3 u0 u1 u2 u3)) :
+    loopBodyN1CallSkipPostJV4NoX1 sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem =
+    loopIterPostN1CallV4NoX1 sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem := by
+  delta loopIterPostN1CallV4NoX1 loopBodyN1CallSkipPostJV4NoX1
+    iterWithDoubleAddback loopBodyN1SkipPost loopBodySkipPost loopExitPostN1 loopExitPost
+  unfold mulsubN4_c3 at hb
+  simp only [if_neg hb]
 
 theorem loopIterPostN1CallNoX1_to_loopIterPostN1Call
     (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
