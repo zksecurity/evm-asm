@@ -15,5 +15,7 @@ import EvmAsm.Stateless.MemoryLayout
 import EvmAsm.Stateless.Unimplemented
 import EvmAsm.Stateless.SSZ.Decode.Program
 import EvmAsm.Stateless.SSZ.Encode.Program
+import EvmAsm.Stateless.Block
+import EvmAsm.Stateless.Transaction
 import EvmAsm.Stateless.Entry
 import EvmAsm.Stateless.EntrySpec
