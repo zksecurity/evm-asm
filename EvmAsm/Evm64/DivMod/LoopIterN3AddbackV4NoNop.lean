@@ -304,7 +304,7 @@ theorem divK_loop_body_n3_call_addback_j0_beq_v4_spec_within_noNop
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0f SLf
   exact cpsTripleWithin_weaken
     (fun h hp => by
-      unfold loopBodyN3CallPreV4 at hp
+      unfold loopBodyN3CallPreV4
       xperm_hyp hp)
     (fun h hp => by
       unfold loopBodyN3CallAddbackJ0PostV4
@@ -400,7 +400,7 @@ theorem divK_loop_body_n3_call_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0f SLf
   exact cpsTripleWithin_weaken
     (fun h hp => by
-      unfold loopBodyN3CallPreV4 at hp
+      unfold loopBodyN3CallPreV4 at hp ⊢
       xperm_hyp hp)
     (fun h hp => by
       unfold loopBodyN3CallAddbackJgt0PostV4
