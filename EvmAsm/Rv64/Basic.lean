@@ -240,11 +240,44 @@ inductive Instr where
 -- Memory constraints
 -- ============================================================================
 
-/-- Valid memory region start. -/
+/-! ### Valid-memory zones
+
+  The verified machine model recognises three disjoint regions as
+  "valid memory" (see GitHub issue #5164 for the rationale). Each is
+  a contiguous `[lo, hi]` byte range; `isValidMemAddr` is the
+  disjunction over all three.
+
+  The legacy zone (`MEM_START..MEM_END`) is unchanged; the other two
+  match ziskemu's host-IO map (`EvmAsm/Codegen/Driver.lean:68-82`,
+  `EvmAsm/Codegen/Programs.lean`):
+
+  | Zone | Range | Purpose |
+  |---|---|---|
+  | Legacy | `0x20..0x78000000` | scratch/heap touched by verified opcodes |
+  | Input  | `0x40000000..0x40002000` | ziskemu `INPUT_ADDR` (8 KiB) |
+  | RAM    | `0xa0000000..0xc0000000` | ziskemu `.data` + `OUTPUT_ADDR` |
+-/
+
+/-- Legacy valid memory region start (low-scratch zone, unchanged
+    from before #5164). -/
 def MEM_START : Nat := 0x20
 
-/-- Valid memory region end. -/
+/-- Legacy valid memory region end (low-scratch zone). -/
 def MEM_END : Nat := 0x78000000
+
+/-- Input-buffer zone start. Matches ziskemu's `INPUT_ADDR`
+    (`EvmAsm/Codegen/Programs.lean`). -/
+def INPUT_MEM_START : Nat := 0x40000000
+
+/-- Input-buffer zone end. 8 KiB above `INPUT_MEM_START`. -/
+def INPUT_MEM_END : Nat := 0x40002000
+
+/-- RAM zone start. Covers ziskemu's writable `.data` section base
+    (`-Tdata=0xa0000000`) and `OUTPUT_ADDR = 0xa0010000`. -/
+def RAM_MEM_START : Nat := 0xa0000000
+
+/-- RAM zone end. Matches ziskemu's writable region tail. -/
+def RAM_MEM_END : Nat := 0xc0000000
 
 /-- Address is 8-byte aligned (doubleword). -/
 def isAligned8 (addr : Word) : Bool := addr.toNat % 8 == 0
@@ -252,9 +285,14 @@ def isAligned8 (addr : Word) : Bool := addr.toNat % 8 == 0
 /-- Address is 4-byte aligned. -/
 def isAligned4 (addr : Word) : Bool := addr.toNat % 4 == 0
 
-/-- Address is in valid memory range. -/
+/-- Address is in valid memory range -- one of three disjoint zones
+    (see issue #5164). The first disjunct preserves the pre-#5164
+    behaviour for unchanged proofs; the additional disjuncts admit
+    addresses in ziskemu's `INPUT_ADDR` and writable-RAM regions. -/
 def isValidMemAddr (addr : Word) : Bool :=
-  decide (MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ MEM_END)
+  (decide (MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ MEM_END)) ||
+  (decide (INPUT_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ INPUT_MEM_END)) ||
+  (decide (RAM_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ RAM_MEM_END))
 
 /-- Valid doubleword memory access: in range AND 8-byte aligned. -/
 def isValidDwordAccess (addr : Word) : Bool :=
@@ -271,7 +309,10 @@ def isValidMemAccess (addr : Word) : Bool :=
     isValidMemAccess addr = (isValidMemAddr addr && isAligned4 addr) := rfl
 
 @[simp] theorem isValidMemAddr_eq {addr : Word} :
-    isValidMemAddr addr = (decide (MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ MEM_END)) := rfl
+    isValidMemAddr addr =
+      ((decide (MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ MEM_END)) ||
+       (decide (INPUT_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ INPUT_MEM_END)) ||
+       (decide (RAM_MEM_START ≤ addr.toNat) && decide (addr.toNat ≤ RAM_MEM_END))) := rfl
 
 @[simp] theorem isAligned8_eq (addr : Word) :
     isAligned8 addr = (addr.toNat % 8 == 0) := rfl

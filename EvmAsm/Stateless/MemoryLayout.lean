@@ -19,8 +19,7 @@
   `INPUT_ADDR`/`OUTPUT_ADDR` constants):
 
   ```
-  0x00000020 .. 0x78000000   verified `isValidMemAddr` range
-                             (see `EvmAsm/Rv64/Basic.lean:244,247`)
+  0x00000020 .. 0x78000000   legacy verified zone (low-scratch)
   0x40000000 .. 0x40002000   INPUT_ADDR  (8 KiB, host-supplied SSZ input)
                                [+ 0..8]   ZisK metadata (zero)
                                [+ 8..16]  LE u64 length of first record
@@ -41,14 +40,9 @@
   numeric values here -- the working-RAM sub-region anchors below are
   the new contribution.
 
-  Note: the verified-side `isValidMemAddr` range
-  (`0x20..0x78000000`) does **not** cover ziskemu's RAM at
-  `0xa0000000..0xc0000000`. This is the same gap that the existing
-  `evm_add` build unit already lives with (it writes `.data` at
-  `0xa0000000` and `OUTPUT_ADDR` at `0xa0010000`, both outside
-  `isValidMemAddr`). Future proof PRs will have to relax the
-  verified memory predicate or introduce a second memory region;
-  out of scope for the Stateless guest scaffold.
+  All three observable zones (legacy, input, RAM) are recognised by
+  the verified `isValidMemAddr` predicate as of issue #5164 -- see
+  `EvmAsm/Rv64/Basic.lean` for the disjunctive definition.
 
   ## Working-RAM sub-regions (0xa0020000 .. 0xc0000000)
 
