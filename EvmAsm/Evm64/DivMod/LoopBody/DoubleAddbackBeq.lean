@@ -242,7 +242,7 @@ private theorem divK_double_addback_beq_v4_spec_within_noNop
     full
 
 /-- Named-postcondition v4 no-NOP wrapper for the double-addback BEQ path. -/
-theorem divK_double_addback_beq_named_v4_spec_within_noNop
+private theorem divK_double_addback_beq_named_v4_spec_within_noNop
     (sp uBase qHat' v0 v1 v2 v3 aun0 aun1 aun2 aun3 aun4 : Word)
     (base : Word)
     (hcarry2_nz : addbackN4_carry aun0 aun1 aun2 aun3 v0 v1 v2 v3 ≠ 0) :
