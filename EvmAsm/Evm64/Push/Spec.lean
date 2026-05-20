@@ -385,6 +385,56 @@ theorem push_one_byte_ofProg_spec_within
     h_code_align h_code_valid h_dst_align h_dst_valid
 
 @[irreducible]
+def pushOneBytePost
+    (codePtr sp codeWord dstWordOld : Word)
+    (codeDwordAddr dstDwordAddr : Word)
+    (codeOff dstOff : BitVec 12) : Assertion :=
+  let byteZext :=
+    (extractByte codeWord (byteOffset (codePtr + signExtend12 codeOff))).zeroExtend 64
+  ((.x10 ↦ᵣ codePtr) ** (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ byteZext) **
+   (codeDwordAddr ↦ₘ codeWord) **
+   (dstDwordAddr ↦ₘ
+     replaceByte dstWordOld (byteOffset (sp + signExtend12 dstOff))
+       (byteZext.truncate 8)))
+
+theorem pushOneBytePost_unfold
+    (codePtr sp codeWord dstWordOld : Word)
+    (codeDwordAddr dstDwordAddr : Word)
+    (codeOff dstOff : BitVec 12) :
+    pushOneBytePost codePtr sp codeWord dstWordOld codeDwordAddr dstDwordAddr
+      codeOff dstOff =
+    (let byteZext :=
+      (extractByte codeWord (byteOffset (codePtr + signExtend12 codeOff))).zeroExtend 64
+    ((.x10 ↦ᵣ codePtr) ** (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ byteZext) **
+     (codeDwordAddr ↦ₘ codeWord) **
+     (dstDwordAddr ↦ₘ
+       replaceByte dstWordOld (byteOffset (sp + signExtend12 dstOff))
+         (byteZext.truncate 8)))) := by
+  delta pushOneBytePost
+  rfl
+
+theorem push_one_byte_ofProg_named_spec_within
+    (codePtr sp v7Old codeWord dstWordOld : Word)
+    (codeDwordAddr dstDwordAddr : Word)
+    (codeOff dstOff : BitVec 12) (base : Word)
+    (h_code_align : alignToDword (codePtr + signExtend12 codeOff) = codeDwordAddr)
+    (h_code_valid : isValidByteAccess (codePtr + signExtend12 codeOff) = true)
+    (h_dst_align  : alignToDword (sp + signExtend12 dstOff) = dstDwordAddr)
+    (h_dst_valid  : isValidByteAccess (sp + signExtend12 dstOff) = true) :
+    cpsTripleWithin 2 base (base + 8)
+      (CodeReq.ofProg base (LBU .x7 .x10 codeOff ;; SB .x12 .x7 dstOff))
+      ((.x10 ↦ᵣ codePtr) ** (.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7Old) **
+       (codeDwordAddr ↦ₘ codeWord) ** (dstDwordAddr ↦ₘ dstWordOld))
+      (pushOneBytePost codePtr sp codeWord dstWordOld codeDwordAddr dstDwordAddr
+        codeOff dstOff) :=
+  cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun _ hp => by rw [pushOneBytePost_unfold]; exact hp)
+    (push_one_byte_ofProg_spec_within codePtr sp v7Old codeWord dstWordOld
+      codeDwordAddr dstDwordAddr codeOff dstOff base
+      h_code_align h_code_valid h_dst_align h_dst_valid)
+
+@[irreducible]
 def evmPushOneBytePost
     (n i : Nat) (codePtr sp codeWord dstWordOld : Word)
     (codeDwordAddr dstDwordAddr : Word) : Assertion :=
