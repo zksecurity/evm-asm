@@ -977,6 +977,193 @@ def ziskSha256ProbeLeUnit : BuildUnit := {
   dataAsm     := ziskSha256ProbeLeDataSection
 }
 
+/-! ## zkvm_sha256 — PR-S2 Merkle-Damgård wrapper
+
+    Parameterised SHA-256 callable matching the zkvm-standards C
+    signature:
+
+        zkvm_status zkvm_sha256(const uint8_t* data, size_t len,
+                                zkvm_sha256_hash* output);
+
+    Sister to PR-K3's `zkvm_keccak256`. Composes the LE-u32
+    intrinsic pinned in PR-S1 (#5286) with the FIPS 180-4
+    Merkle-Damgård wrapper:
+
+      1. Initialise state to the SHA-256 IV (LE-u32 packing).
+      2. For each full 64-byte input block: copy into the
+         intrinsic's `sha256_input` buffer, `csrs 0x805, a0` to
+         compress.
+      3. Final block: copy <64 remainder bytes, append 0x80,
+         append 8-byte big-endian bit-length at offset 56..64.
+         If remainder >= 56, use two blocks (current + a fresh
+         length-only block).
+      4. Squeeze: byte-swap each u32 of the LE-packed state to
+         produce canonical SHA-256 wire bytes
+         (`e3b0c442 98fc1c14 ...` byte order). The byte-swap uses
+         the `xori 3` index trick (within each 4-byte group,
+         byte j maps to byte (3 ^ j)).
+
+    Calling convention (RV64 ABI, mirrors `zkvm_keccak256`):
+      a0 = data ptr; a1 = len; a2 = output ptr;
+      ra = return; returns a0 = ZKVM_EOK = 0. -/
+
+def zkvmSha256Function : String :=
+  "zkvm_sha256:\n" ++
+  "  # save callee-saved regs (s0..s5)\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd s0, 0(sp)\n" ++
+  "  sd s1, 8(sp)\n" ++
+  "  sd s2, 16(sp)\n" ++
+  "  sd s3, 24(sp)\n" ++
+  "  sd s4, 32(sp)\n" ++
+  "  sd s5, 40(sp)\n" ++
+  "  # s0 = state ptr; s1 = data ptr; s2 = remaining len;\n" ++
+  "  # s3 = output ptr (= caller's a2); s4 = bit-length;\n" ++
+  "  # s5 = sha256_input buffer base.\n" ++
+  "  la s0, sha256_w_state\n" ++
+  "  mv s1, a0\n" ++
+  "  mv s2, a1\n" ++
+  "  mv s3, a2\n" ++
+  "  slli s4, a1, 3\n" ++
+  "  la s5, sha256_w_input\n" ++
+  "  # initialise state from IV (LE-u32 packed, 4 × u64)\n" ++
+  "  la t0, sha256_w_iv\n" ++
+  "  ld t1, 0(t0);  sd t1, 0(s0)\n" ++
+  "  ld t1, 8(t0);  sd t1, 8(s0)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s0)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s0)\n" ++
+  "  # absorb full 64-byte blocks\n" ++
+  ".Lzkv_sha_loop:\n" ++
+  "  li t0, 64\n" ++
+  "  blt s2, t0, .Lzkv_sha_final\n" ++
+  "  ld t0, 0(s1);  sd t0, 0(s5)\n" ++
+  "  ld t0, 8(s1);  sd t0, 8(s5)\n" ++
+  "  ld t0, 16(s1); sd t0, 16(s5)\n" ++
+  "  ld t0, 24(s1); sd t0, 24(s5)\n" ++
+  "  ld t0, 32(s1); sd t0, 32(s5)\n" ++
+  "  ld t0, 40(s1); sd t0, 40(s5)\n" ++
+  "  ld t0, 48(s1); sd t0, 48(s5)\n" ++
+  "  ld t0, 56(s1); sd t0, 56(s5)\n" ++
+  "  la a0, sha256_w_params\n" ++
+  "  .4byte 0x80552073           # csrs 0x805, a0\n" ++
+  "  addi s1, s1, 64\n" ++
+  "  addi s2, s2, -64\n" ++
+  "  j .Lzkv_sha_loop\n" ++
+  ".Lzkv_sha_final:\n" ++
+  "  # zero the input buffer\n" ++
+  "  sd zero, 0(s5);  sd zero, 8(s5);  sd zero, 16(s5); sd zero, 24(s5)\n" ++
+  "  sd zero, 32(s5); sd zero, 40(s5); sd zero, 48(s5); sd zero, 56(s5)\n" ++
+  "  # byte-copy remaining s2 bytes from s1 to s5\n" ++
+  "  mv t0, s5\n" ++
+  "  mv t1, s1\n" ++
+  "  mv t2, s2\n" ++
+  ".Lzkv_sha_bcopy:\n" ++
+  "  beqz t2, .Lzkv_sha_pad\n" ++
+  "  lbu t3, 0(t1)\n" ++
+  "  sb  t3, 0(t0)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lzkv_sha_bcopy\n" ++
+  ".Lzkv_sha_pad:\n" ++
+  "  # write 0x80 at offset s2 in input buffer\n" ++
+  "  add t0, s5, s2\n" ++
+  "  li  t1, 0x80\n" ++
+  "  sb  t1, 0(t0)\n" ++
+  "  # if remainder < 56: single final block; else two-block path\n" ++
+  "  li  t0, 56\n" ++
+  "  blt s2, t0, .Lzkv_sha_writelen\n" ++
+  "  # two-block: compress this block (data + 0x80, no length yet)\n" ++
+  "  la  a0, sha256_w_params\n" ++
+  "  .4byte 0x80552073\n" ++
+  "  # zero input buffer for the second (length-only) block\n" ++
+  "  sd zero, 0(s5);  sd zero, 8(s5);  sd zero, 16(s5); sd zero, 24(s5)\n" ++
+  "  sd zero, 32(s5); sd zero, 40(s5); sd zero, 48(s5); sd zero, 56(s5)\n" ++
+  ".Lzkv_sha_writelen:\n" ++
+  "  # 8-byte BE bit-length at offset 56..64 of input buffer\n" ++
+  "  addi t0, s5, 56\n" ++
+  "  srli t1, s4, 56; sb t1, 0(t0)\n" ++
+  "  srli t1, s4, 48; sb t1, 1(t0)\n" ++
+  "  srli t1, s4, 40; sb t1, 2(t0)\n" ++
+  "  srli t1, s4, 32; sb t1, 3(t0)\n" ++
+  "  srli t1, s4, 24; sb t1, 4(t0)\n" ++
+  "  srli t1, s4, 16; sb t1, 5(t0)\n" ++
+  "  srli t1, s4,  8; sb t1, 6(t0)\n" ++
+  "  sb   s4, 7(t0)\n" ++
+  "  # compress final block\n" ++
+  "  la  a0, sha256_w_params\n" ++
+  "  .4byte 0x80552073\n" ++
+  "  # squeeze: byte-swap each u32 of state into output\n" ++
+  "  # output[i] = state[i ^ 3]   (reverses bytes within each 4-byte group)\n" ++
+  "  li  t0, 0\n" ++
+  ".Lzkv_sha_squeeze:\n" ++
+  "  li  t1, 32\n" ++
+  "  beq t0, t1, .Lzkv_sha_return\n" ++
+  "  xori t2, t0, 3\n" ++
+  "  add t3, s0, t2\n" ++
+  "  lbu t4, 0(t3)\n" ++
+  "  add t5, s3, t0\n" ++
+  "  sb  t4, 0(t5)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  j .Lzkv_sha_squeeze\n" ++
+  ".Lzkv_sha_return:\n" ++
+  "  li  a0, 0\n" ++
+  "  ld s0, 0(sp); ld s1, 8(sp); ld s2, 16(sp); ld s3, 24(sp); ld s4, 32(sp); ld s5, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+def ziskZkvmSha256Prologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  # call 1: sha256(empty)\n" ++
+  "  la a0, zsha_empty\n" ++
+  "  li a1, 0\n" ++
+  "  li a2, 0xa0010000\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  # call 2: sha256(\"abc\")\n" ++
+  "  la a0, zsha_abc\n" ++
+  "  li a1, 3\n" ++
+  "  li a2, 0xa0010020\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  # call 3: sha256(0xaa × 200)\n" ++
+  "  la a0, zsha_aa\n" ++
+  "  li a1, 200\n" ++
+  "  li a2, 0xa0010040\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  j .Lzkv_sha_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  ".Lzkv_sha_done:"
+
+def ziskZkvmSha256DataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667    # LE(h0) || LE(h1)\n" ++
+  "  .quad 0xa54ff53a3c6ef372    # LE(h2) || LE(h3)\n" ++
+  "  .quad 0x9b05688c510e527f    # LE(h4) || LE(h5)\n" ++
+  "  .quad 0x5be0cd191f83d9ab    # LE(h6) || LE(h7)\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  "zsha_empty:\n" ++
+  "  .byte 0\n" ++
+  "zsha_abc:\n" ++
+  "  .ascii \"abc\"\n" ++
+  "zsha_aa:\n" ++
+  "  .fill 200, 1, 0xaa"
+
+def ziskZkvmSha256ProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskZkvmSha256Prologue
+  dataAsm     := ziskZkvmSha256DataSection
+}
+
 /-! ## zisk_zkvm_keccak256 — PR-K3 parameterised wrapper
 
     Refactors the three hardcoded sponge probes (PR-K2 empty,
@@ -1156,6 +1343,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_keccak256_abc"        => some ziskKeccak256AbcProbeUnit
   | "zisk_zkvm_keccak256"       => some ziskZkvmKeccak256ProbeUnit
   | "zisk_sha256_probe_le"      => some ziskSha256ProbeLeUnit
+  | "zisk_zkvm_sha256"          => some ziskZkvmSha256ProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -1170,6 +1358,7 @@ def knownProgramNames : List String :=
    "zisk_keccak256_empty",
    "zisk_keccak256_abc",
    "zisk_zkvm_keccak256",
-   "zisk_sha256_probe_le"]
+   "zisk_sha256_probe_le",
+   "zisk_zkvm_sha256"]
 
 end EvmAsm.Codegen
