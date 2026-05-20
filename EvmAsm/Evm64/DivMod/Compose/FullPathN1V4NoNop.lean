@@ -16,6 +16,7 @@ namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
 open EvmAsm.Rv64.AddrNorm (se12_32 se12_40 se12_48 se12_56)
+open EvmAsm.Evm64.DivMod.AddrNorm (slt_jpos_3)
 
 /-- Sp-relative n=1 max-skip j=0 precondition over `divCode_noNop_v4`. -/
 @[irreducible]
@@ -493,5 +494,39 @@ theorem divK_loop_body_n1_call_jgt0_exact_loopIterScratch_v4_noNop (j sp base : 
         j sp base hpos jOld v5Old v6Old v7Old v10Old v11Old v2Old
         v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal
         retMem dMem dloMem scratchUn0 scratchMem halign hbltu hborrow_zero
+
+/-- Loop body n=1, call path, j=3 over `divCode_noNop_v4`, selecting the
+    skip or addback correction from the computed mulsub borrow bit. -/
+theorem divK_loop_body_n1_call_j3_exact_loopIterScratch_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) =
+      base + div128CallRetOff)
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz :
+      let qHat := divKTrialCallV4QHat u1 u0 v0
+      let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+      let c3 := ms.2.2.2.2
+      let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
+      let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
+      carry = 0 → addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) :
+    cpsTripleWithin 224 (base + loopBodyOff) (base + loopBodyOff) (divCode_noNop_v4 base)
+      (loopBodyN1CallSkipJgt0PreV4NoX1 sp (3 : Word)
+        jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem **
+        (.x1 ↦ᵣ raVal))
+      (loopIterPostN1CallScratchNoX1 sp base (3 : Word)
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+        (.x1 ↦ᵣ raVal)) := by
+  exact divK_loop_body_n1_call_jgt0_exact_loopIterScratch_v4_noNop
+    (3 : Word) sp base slt_jpos_3
+    jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal
+    retMem dMem dloMem scratchUn0 scratchMem halign hbltu hcarry2_nz
 
 end EvmAsm.Evm64
