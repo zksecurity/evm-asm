@@ -10,9 +10,9 @@ import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
-/-- Full SDIV code region handle: wrapper followed by `evm_div_callable`. -/
+/-- Legacy verified SDIV code region handle: wrapper followed by `evm_div_callable`. -/
 abbrev sdivCode (base : Word) : EvmAsm.Rv64.CodeReq :=
-  EvmAsm.Rv64.CodeReq.ofProg base EvmAsm.Evm64.evm_sdiv
+  EvmAsm.Rv64.CodeReq.ofProg base EvmAsm.Evm64.evm_sdiv_legacy
 
 /-- v4 full SDIV code region handle: wrapper followed by `evm_div_callable_v4`. -/
 abbrev sdivCodeV4 (base : Word) : EvmAsm.Rv64.CodeReq :=

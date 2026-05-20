@@ -7,11 +7,27 @@
 
 import EvmAsm.Rv64.Program
 import EvmAsm.Evm64.Add.Program
+import EvmAsm.Evm64.And.Program
+import EvmAsm.Evm64.Byte.Program
 import EvmAsm.Evm64.DivMod.Program
+import EvmAsm.Evm64.Dup.Program
+import EvmAsm.Evm64.Eq.Program
+import EvmAsm.Evm64.Gt.Program
+import EvmAsm.Evm64.IsZero.Program
+import EvmAsm.Evm64.Lt.Program
+import EvmAsm.Evm64.MLoad.Program
+import EvmAsm.Evm64.MStore.Program
+import EvmAsm.Evm64.MStore8.Program
+import EvmAsm.Evm64.Multiply.Program
+import EvmAsm.Evm64.Not.Program
+import EvmAsm.Evm64.Or.Program
+import EvmAsm.Evm64.Pop.Program
 import EvmAsm.Evm64.Push.Program
 import EvmAsm.Evm64.SDiv.Program
 import EvmAsm.Evm64.SMod.Program
 import EvmAsm.Codegen.Layout
+import EvmAsm.Codegen.Dispatch
+import EvmAsm.Stateless.Entry
 
 namespace EvmAsm.Codegen
 
@@ -280,132 +296,242 @@ def tinyInterpAdd2Unit : BuildUnit := {
   dataAsm     := tinyInterpDataSection tinyInterpAdd2Bytecode
 }
 
+/-! ## divK NOP-splice helpers (used by both M2 standalone DIV/MOD
+    wrappers and the M8 dispatcher handlers, so hoisted above the
+    M5b registry section that references them) -/
+
+/-- `EvmAsm.Evm64.evm_div` with the NOP "exit PC" at internal index 267
+    replaced by a forward `JAL .x0 +304` that skips the 75-instruction
+    inline `divK_div128_v4` subroutine and lands at the instruction
+    immediately following the body. In the M2 standalone wrapper that
+    landing site is the start of `evmAddEpilogue`; in the M8
+    dispatcher wrapper (M5b registry) it is the `mv x10, x9` of the
+    handler's `x10RestoreAdvance1` tail. -/
+def evmDivPatched : Program :=
+  (EvmAsm.Evm64.evm_div : List Instr).take 267 ++
+  [Instr.JAL .x0 (304 : BitVec 21)] ++
+  (EvmAsm.Evm64.evm_div : List Instr).drop 268
+
+/-- `EvmAsm.Evm64.evm_mod` with the same NOP-splice as `evmDivPatched`.
+    Same +304 byte offset because the MOD body has the identical
+    343-instruction layout (267 main + NOP + 75 subroutine). -/
+def evmModPatched : Program :=
+  (EvmAsm.Evm64.evm_mod : List Instr).take 267 ++
+  [Instr.JAL .x0 (304 : BitVec 21)] ++
+  (EvmAsm.Evm64.evm_mod : List Instr).drop 268
+
 /-! ## tiny_interp_dispatch — M5b runtime fetch/decode/dispatch loop
 
     Same EVM bytecodes as M5a, but routed through an actual RISC-V
-    dispatch loop instead of an unrolled chain. Per CODEGEN.md
-    §Tricky bits #9 ("Codegen is not verified") the loop scaffold
-    lives as raw asm; the verified opcode `Program`s are wrapped
-    one-by-one in `h_*` subroutines (`<emitProgram body>` + raw asm
-    `addi x10, x10, <width>` + `ret`). The body of each handler stays
-    verbatim what the verified core produced.
+    dispatch loop. The dispatcher scaffolding (loop body, 256-entry
+    jump table, `h_invalid` fallback, `.exit_label`) now lives in
+    `EvmAsm.Codegen.Dispatch`; this section declares only the opcode
+    handler registry.
+
+    **Adding a new opcode = adding one `OpcodeHandlerSpec` entry below.**
 
     Calling convention (informal):
-      x10  EVM code pointer  (preserved across handler calls; the
-                              wrapper advances it by the opcode's byte
-                              width before returning)
+      x10  EVM code pointer  (preserved across handler calls; each
+                              handler with `tail := .advanceAndRet n`
+                              advances `x10` by `n` before returning)
       x12  EVM stack pointer (handlers update freely; persistent
                               across the loop)
       x1   return address    (clobbered by `jalr ra, ...`; each
-                              handler must end in `ret`)
+                              `advanceAndRet` handler ends in `ret`)
       x5, x6, x7   scratch   (clobbered by both the dispatcher's
                               fetch/lookup *and* the verified handler
-                              bodies — see `evm_add` which uses
-                              x5/x6/x7/x11; the dispatcher reloads
-                              from x10 and the table base on every
-                              iteration, so no preservation needed)
+                              bodies; the dispatcher reloads from x10
+                              and the table base on every iteration,
+                              so no preservation needed)
 
-    Coverage: PUSH1, ADD, STOP. All other opcode bytes fall to
-    `h_invalid`, which (for this first slice) takes the same exit
-    path as STOP. -/
+    Coverage (M6b): 81 opcodes wired —
+      - **PUSH0..PUSH32** (33) via `pushHandlers`
+      - **DUP1..DUP16** (16) via `dupHandlers`
+      - **SWAP1..SWAP16** (16) via `swapHandlers`
+      - **16 fixed-shape singletons** via `singletonHandlers`:
+        SUB, MUL, SIGNEXTEND, AND, OR, XOR, NOT, LT, GT, SLT, SGT,
+        EQ, ISZERO, BYTE, SHR, POP — each a parameter-free verified
+        `Program` with the standard `<body>` + `addi x10, x10, 1` +
+        `ret` ABI.
+      - **STOP** via `stopHandler` (jumps to `.exit_label` instead
+        of returning to the dispatcher).
 
-/-- Label for the handler that bytes `b` dispatches to. Bytes not in
-    the table map to `h_invalid`. -/
-def opcodeHandlerLabel : Nat → String
-  | 0x00 => "h_STOP"
-  | 0x01 => "h_ADD"
-  | 0x60 => "h_PUSH1"
-  | _    => "h_invalid"
+    All other opcode bytes fall to `h_invalid` (emitted automatically
+    by `emitDispatcherEpilogue`), which takes the same exit path as
+    STOP. -/
 
-/-- Emit a 256-entry jump table, one `.dword` per opcode byte, where
-    entry `b` is the address of the handler `opcodeHandlerLabel b`.
-    Lives in `.data` (alongside the bytecode + stack scratch) so the
-    `-Tdata=0xa0000000` link argument places it in writable RAM —
-    GNU `as` doesn't require the table to be writable, but keeping
-    everything in one section is simpler than adding `-Trodata=…`. -/
-def emitOpcodeHandlerTable : String :=
-  let entries :=
-    (List.range 256).map (fun b => s!"  .dword {opcodeHandlerLabel b}")
-  ".section .data\n" ++
-  ".balign 8\n" ++
-  "opcode_handlers:\n" ++
-  String.intercalate "\n" entries
+/-- PUSH0..PUSH32. Opcode byte = `0x5f + n`; the handler advances
+    `x10` by `1 + n` (one opcode byte + `n` immediate bytes). -/
+def pushHandlers : List OpcodeHandlerSpec :=
+  (List.range 33).map (fun n =>
+    { label   := s!"h_PUSH{n}"
+      opcodes := [0x5f + n]
+      body    := EvmAsm.Evm64.evm_push n
+      tail    := .advanceAndRet (1 + n) })
 
-/-- Dispatcher prologue: init the EVM pointers and enter the main
-    fetch/decode/dispatch loop. Each iteration:
-      1. `lbu x5, 0(x10)`            — fetch opcode byte at code[x10]
-      2. `la x6, opcode_handlers`    — base of jump table
-      3. `slli x5, x5, 3`            — opcode * 8 (entry stride)
-      4. `add x6, x6, x5`            — &opcode_handlers[opcode]
-      5. `ld x7, 0(x6)`              — load handler address
-      6. `jalr x1, x7, 0`            — call handler (saves return PC in x1)
-      7. on return: `j .dispatch_loop`
+/-- DUP1..DUP16. Opcode byte = `0x7f + n` (so DUP1 = `0x80`);
+    width 1. `evm_dup n` duplicates the n-th stack item (1-indexed
+    from top) onto the top. -/
+def dupHandlers : List OpcodeHandlerSpec :=
+  (List.range 16).map (fun i =>
+    let n := i + 1
+    { label   := s!"h_DUP{n}"
+      opcodes := [0x7f + n]
+      body    := EvmAsm.Evm64.evm_dup n
+      tail    := .advanceAndRet 1 })
 
-    Handlers themselves bake in the PC-advance + `ret`. STOP and
-    `invalid` handlers `j .exit_label` instead of returning. -/
-def tinyInterpDispatchPrologue : String :=
-  "  la x10, evm_code\n" ++
-  "  la x12, evm_stack_top\n" ++
-  ".dispatch_loop:\n" ++
-  "  lbu x5, 0(x10)\n" ++
-  "  la x6, opcode_handlers\n" ++
-  "  slli x5, x5, 3\n" ++
-  "  add x6, x6, x5\n" ++
-  "  ld x7, 0(x6)\n" ++
-  "  jalr x1, x7, 0\n" ++
-  "  j .dispatch_loop"
+/-- SWAP1..SWAP16. Opcode byte = `0x8f + n` (so SWAP1 = `0x90`);
+    width 1. `evm_swap n` swaps the top with the (n+1)-th stack
+    item. -/
+def swapHandlers : List OpcodeHandlerSpec :=
+  (List.range 16).map (fun i =>
+    let n := i + 1
+    { label   := s!"h_SWAP{n}"
+      opcodes := [0x8f + n]
+      body    := EvmAsm.Evm64.evm_swap n
+      tail    := .advanceAndRet 1 })
 
-/-- Dispatcher epilogue: handler subroutines + exit path. Order
-    matters — handlers come first (each ends with `ret` or `j
-    .exit_label`, so they don't fall through), then `.exit_label`
-    runs `evmAddEpilogue` and falls through to the halt stub that
-    `emitBuildUnit` appends. -/
-def tinyInterpDispatchEpilogue : String :=
-  -- h_PUSH1: verified evm_push 1 body, then advance x10 by 2 (opcode + 1 imm byte)
-  "h_PUSH1:\n" ++
-  emitProgram (EvmAsm.Evm64.evm_push 1) ++ "\n" ++
-  "  addi x10, x10, 2\n" ++
-  "  ret\n" ++
-  -- h_ADD: verified evm_add body, then advance x10 by 1 (opcode-only)
-  "h_ADD:\n" ++
-  emitProgram EvmAsm.Evm64.evm_add ++ "\n" ++
-  "  addi x10, x10, 1\n" ++
-  "  ret\n" ++
-  -- h_STOP: jump to exit (doesn't return to dispatcher)
-  "h_STOP:\n" ++
-  "  j .exit_label\n" ++
-  -- h_invalid: same exit path as STOP for this slice; future revs
-  -- may write a marker byte before exiting so the diff catches it.
-  "h_invalid:\n" ++
-  "  j .exit_label\n" ++
-  -- .exit_label: copy result limbs from [x12] to OUTPUT_ADDR, then
-  -- fall through to the linux93 halt stub appended by emitBuildUnit.
-  ".exit_label:\n" ++
-  emitProgram evmAddEpilogue
+/-- Tail used by handlers whose verified body clobbers `x10` (the
+    EVM code pointer in our dispatcher convention). Restores `x10`
+    from `x9` (saved via `preBody`), then advances by 1 and returns. -/
+private def x10RestoreAdvance1 : HandlerTail :=
+  .custom "  mv x10, x9\n  addi x10, x10, 1\n  ret"
 
-/-- `.data` section: bytecode + stack scratch (M5a layout) followed
-    by the 256-entry jump table. GNU `as` is fine with multiple
-    `.section .data` directives — they coalesce. -/
-def tinyInterpDispatchDataSection (bytecodeBytes : String) : String :=
-  tinyInterpDataSection bytecodeBytes ++ "\n" ++
-  emitOpcodeHandlerTable
+/-- Fixed-shape singleton opcodes: parameter-free verified `Program`s
+    that fit the standard `<body>` + `addi x10, x10, 1` + `ret` ABI.
 
-/-- Build a dispatch `BuildUnit` for a given bytecode. Reuses the
-    M5a `tinyInterpAddBytecode` / `tinyInterpAdd2Bytecode` literals
-    so M5a and M5b run on identical input bytes and produce identical
-    expected outputs. -/
-def tinyInterpDispatchUnit (bytecodeBytes : String) : BuildUnit := {
-  body        := []
-  prologueAsm := tinyInterpDispatchPrologue
-  epilogueAsm := tinyInterpDispatchEpilogue
-  dataAsm     := tinyInterpDispatchDataSection bytecodeBytes
-}
+    Four bodies (`evm_mul`, `evm_signextend`, `evm_byte`, `evm_shr`)
+    use `x10` as an internal scratch / accumulator register, which
+    clobbers our dispatcher's preserved EVM code pointer. They carry
+    `preBody := "  mv x9, x10"` to stash x10 in x9 (a register no
+    verified opcode body touches) and use `x10RestoreAdvance1` as
+    the tail to restore before advancing. -/
+def singletonHandlers : List OpcodeHandlerSpec :=
+  [ { label := "h_ADD"        , opcodes := [0x01], body := EvmAsm.Evm64.evm_add       , tail := .advanceAndRet 1 }
+  , { label := "h_MUL"        , opcodes := [0x02], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_mul       , tail := x10RestoreAdvance1 }
+  , { label := "h_SUB"        , opcodes := [0x03], body := EvmAsm.Evm64.evm_sub       , tail := .advanceAndRet 1 }
+  , { label := "h_SIGNEXTEND" , opcodes := [0x0b], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_signextend, tail := x10RestoreAdvance1 }
+  , { label := "h_LT"         , opcodes := [0x10], body := EvmAsm.Evm64.evm_lt        , tail := .advanceAndRet 1 }
+  , { label := "h_GT"         , opcodes := [0x11], body := EvmAsm.Evm64.evm_gt        , tail := .advanceAndRet 1 }
+  , { label := "h_SLT"        , opcodes := [0x12], body := EvmAsm.Evm64.evm_slt       , tail := .advanceAndRet 1 }
+  , { label := "h_SGT"        , opcodes := [0x13], body := EvmAsm.Evm64.evm_sgt       , tail := .advanceAndRet 1 }
+  , { label := "h_EQ"         , opcodes := [0x14], body := EvmAsm.Evm64.evm_eq        , tail := .advanceAndRet 1 }
+  , { label := "h_ISZERO"     , opcodes := [0x15], body := EvmAsm.Evm64.evm_iszero    , tail := .advanceAndRet 1 }
+  , { label := "h_AND"        , opcodes := [0x16], body := EvmAsm.Evm64.evm_and       , tail := .advanceAndRet 1 }
+  , { label := "h_OR"         , opcodes := [0x17], body := EvmAsm.Evm64.evm_or        , tail := .advanceAndRet 1 }
+  , { label := "h_XOR"        , opcodes := [0x18], body := EvmAsm.Evm64.evm_xor       , tail := .advanceAndRet 1 }
+  , { label := "h_NOT"        , opcodes := [0x19], body := EvmAsm.Evm64.evm_not       , tail := .advanceAndRet 1 }
+  , { label := "h_BYTE"       , opcodes := [0x1a], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_byte      , tail := x10RestoreAdvance1 }
+  , { label := "h_SHR"        , opcodes := [0x1c], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_shr       , tail := x10RestoreAdvance1 }
+  , { label := "h_POP"        , opcodes := [0x50], body := EvmAsm.Evm64.evm_pop       , tail := .advanceAndRet 1 } ]
+
+/-- M7 memory opcodes. Register-parameterized; the dispatcher
+    prologue sets up `x13 = &evm_memory` (see
+    `EvmAsm/Codegen/Dispatch.lean`). The scratch registers `x14..x18`
+    are caller-saved across the `jalr` from the dispatcher loop;
+    nothing else in the registry preserves them.
+
+    Stack-pointer bookkeeping is internal to the verified bodies:
+    `evm_mload` is net stack-neutral, while `evm_mstore` and
+    `evm_mstore8` each end with `ADDI .x12 .x12 64` so the wrapper
+    uses the standard `.advanceAndRet 1` tail. None of the memory
+    opcodes touch `x10`, so no `preBody` is needed. -/
+def memoryHandlers : List OpcodeHandlerSpec :=
+  [ -- MLOAD: pop offset, push value. memBase=x13;
+    -- scratch: offReg=x15, byteReg=x16, accReg=x17, addrReg=x18.
+    { label   := "h_MLOAD"
+      opcodes := [0x51]
+      body    := EvmAsm.Evm64.evm_mload .x15 .x16 .x17 .x18 .x13
+      tail    := .advanceAndRet 1 }
+  , -- MSTORE: pop offset + value, write 32 bytes BE to memory.
+    -- valReg=x14 (scratch; placeholder per evm_mstore docstring).
+    { label   := "h_MSTORE"
+      opcodes := [0x52]
+      body    := EvmAsm.Evm64.evm_mstore .x15 .x14 .x16 .x17 .x18 .x13
+      tail    := .advanceAndRet 1 }
+  , -- MSTORE8: pop offset + value, write 1 byte to memory.
+    { label   := "h_MSTORE8"
+      opcodes := [0x53]
+      body    := EvmAsm.Evm64.evm_mstore8 .x15 .x14 .x18 .x13
+      tail    := .advanceAndRet 1 } ]
+
+/-- M8 unsigned division opcodes. Both `evm_div` and `evm_mod` carry
+    a 75-instruction `divK_div128_v4` subroutine appended after a
+    NOP "exit PC" at body index 267; the `evmDivPatched` /
+    `evmModPatched` helpers (above) replace that NOP with `JAL .x0
+    (304 : BitVec 21)` so the main path skips the inline subroutine
+    and lands at the handler's wrapper tail.
+
+    Both bodies clobber `x10` heavily (Knuth-D quotient accumulator,
+    69 references) AND `x9` heavily (loop counter `j`, 94 refs).
+    So we can't reuse the standard `x9`-as-save pattern from M6b —
+    DIV/MOD save `x10` to **`x14`** instead, with a custom tail that
+    restores from `x14`. `x14` is unused by `evm_div` / `evm_mod` (and
+    their internal subroutine `divK_div128_v4`), and it's outside the
+    dispatcher's preserved set, so clobbering it post-handler is fine.
+
+    Stack-scratch: `evm_div` writes to negative `x12` offsets down to
+    `-152` bytes (per `divK_*` scratch layout). The dispatcher's
+    256-byte `evm_stack_low` block leaves 192 bytes below `x12`
+    after two PUSH ops — comfortably > 152.
+
+    **SDIV / SMOD are deferred to M8.5 / M9.** Their verified bodies
+    end with a "saved-ra-ret" pattern (`JALR x0, x18, 0`) that
+    bypasses the dispatcher's standard wrapper tail; integrating them
+    needs a trampoline-style wrapper (set `x18` to a per-handler
+    "restore" stub before the body runs, splice off the body's
+    initial save_ra_block). Tracked as the next codegen PR. -/
+private def divModTail : HandlerTail :=
+  .custom "  mv x10, x14\n  addi x10, x10, 1\n  ret"
+
+def divModHandlers : List OpcodeHandlerSpec :=
+  [ { label   := "h_DIV"
+      opcodes := [0x04]
+      preBody := "  mv x14, x10"
+      body    := evmDivPatched
+      tail    := divModTail }
+  , { label   := "h_MOD"
+      opcodes := [0x06]
+      preBody := "  mv x14, x10"
+      body    := evmModPatched
+      tail    := divModTail } ]
+
+/-- STOP: transitions out of the dispatcher loop instead of returning
+    to it. The body is empty; the dispatcher's `jalr` lands on
+    `h_STOP:` which jumps to `.exit_label`. -/
+def stopHandler : OpcodeHandlerSpec :=
+  { label   := "h_STOP"
+    opcodes := [0x00]
+    body    := []
+    tail    := .custom "  j .exit_label" }
+
+/-- M5b dispatch registry. Order doesn't affect correctness — the
+    256-entry jump table is built by `jumpTargetLabel`, which scans
+    the list for a spec whose `opcodes` contains the byte. -/
+def tinyInterpRegistry : List OpcodeHandlerSpec :=
+  pushHandlers ++ dupHandlers ++ swapHandlers ++ singletonHandlers ++
+  memoryHandlers ++ divModHandlers ++ [stopHandler]
 
 def tinyInterpDispatchAddUnit : BuildUnit :=
-  tinyInterpDispatchUnit tinyInterpAddBytecode
+  buildDispatchUnit tinyInterpRegistry evmAddEpilogue tinyInterpAddBytecode
 
 def tinyInterpDispatchAdd2Unit : BuildUnit :=
-  tinyInterpDispatchUnit tinyInterpAdd2Bytecode
+  buildDispatchUnit tinyInterpRegistry evmAddEpilogue tinyInterpAdd2Bytecode
+
+/-! ## runtime_dispatcher — M8.5 runtime-bytecode dispatcher
+
+    Same `tinyInterpRegistry` and `evmAddEpilogue` as the
+    `tiny_interp_dispatch_*` units, but the dispatcher prologue
+    reads `x10` from `INPUT_ADDR + INPUT_DATA_OFFSET = 0x40000010`
+    instead of an in-`.data` label. One ELF runs any bytecode; the
+    bash test harness packs each per-case bytecode into a
+    ziskemu `-i <file>` payload and reuses the same dispatcher
+    ELF for every case.
+
+    See `EvmAsm/Codegen/Dispatch.lean` for `buildRuntimeDispatchUnit`
+    and the runtime prologue/data-section helpers. -/
+def runtimeDispatcherUnit : BuildUnit :=
+  buildRuntimeDispatchUnit tinyInterpRegistry evmAddEpilogue
 
 /-! ## evm_div — M2 first DIV end-to-end through ziskemu
 
@@ -438,16 +564,6 @@ def tinyInterpDispatchAdd2Unit : BuildUnit :=
     the subroutine still use the original `jal x2, +560` offsets, which
     remain correct because we only replaced the NOP, not the
     subroutine's position relative to its callers. -/
-
-/-- `EvmAsm.Evm64.evm_div` with the NOP "exit PC" at internal index 267
-    replaced by a forward JAL that skips the 75-instruction subroutine
-    and lands at the instruction immediately following the body — i.e.
-    the start of whatever `Program` is appended next (`evmAddEpilogue`
-    in both DIV BuildUnits below). -/
-def evmDivPatched : Program :=
-  (EvmAsm.Evm64.evm_div : List Instr).take 267 ++
-  [Instr.JAL .x0 (304 : BitVec 21)] ++
-  (EvmAsm.Evm64.evm_div : List Instr).drop 268
 
 /-- Dividend as four LE limbs. 2^64, exercises the phase-B n=2 cascade
     plus the normalize/loop path (not an early-exit). -/
@@ -534,15 +650,6 @@ def evmDivFromInputUnit : BuildUnit := {
     same NOP-splice fix applies. Like `evm_div`, `evm_mod` is not yet
     proven correct in Lean — the scripts under `scripts/codegen-evm_mod*`
     provide empirical confirmation by running on ziskemu. -/
-
-/-- `EvmAsm.Evm64.evm_mod` with the NOP "exit PC" at index 267 replaced
-    by a forward JAL skipping the 75-instruction subroutine to land at
-    `evmAddEpilogue`. Same +304 byte offset as `evmDivPatched` because
-    the MOD body has the identical 343-instruction layout. -/
-def evmModPatched : Program :=
-  (EvmAsm.Evm64.evm_mod : List Instr).take 267 ++
-  [Instr.JAL .x0 (304 : BitVec 21)] ++
-  (EvmAsm.Evm64.evm_mod : List Instr).drop 268
 
 /-- Dividend as four LE limbs. 2^64, exercises the phase-B n=1 cascade
     on the divisor (b=3, limb 0 only) plus the loop body. -/
@@ -754,6 +861,12 @@ def lookupProgram : String → Option BuildUnit
   | "tiny_interp_add2"          => some tinyInterpAdd2Unit
   | "tiny_interp_dispatch_add"  => some tinyInterpDispatchAddUnit
   | "tiny_interp_dispatch_add2" => some tinyInterpDispatchAdd2Unit
+  | "runtime_dispatcher"        => some runtimeDispatcherUnit
+  | "stateless_guest"           => some statelessGuestUnit
+  | "zisk_keccak_probe"         => some ziskKeccakProbeUnit
+  | "zisk_keccak256_empty"      => some ziskKeccak256EmptyProbeUnit
+  | "zisk_keccak256_abc"        => some ziskKeccak256AbcProbeUnit
+  | "zisk_zkvm_keccak256"       => some ziskZkvmKeccak256ProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -765,6 +878,12 @@ def knownProgramNames : List String :=
    "evm_smod", "evm_smod_from_input",
    "evm_smod_v4", "evm_smod_v4_from_input",
    "tiny_interp_add", "tiny_interp_add2",
-   "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2"]
+   "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2",
+   "runtime_dispatcher",
+   "stateless_guest",
+   "zisk_keccak_probe",
+   "zisk_keccak256_empty",
+   "zisk_keccak256_abc",
+   "zisk_zkvm_keccak256"]
 
 end EvmAsm.Codegen

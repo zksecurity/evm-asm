@@ -8,6 +8,7 @@
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterCasePostStateBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateResidualBridge
 import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateStep
+import EvmAsm.Evm64.Exp.Compose.SavedBitFixedIterStateLoopReloadLimbFrames
 
 namespace EvmAsm.Evm64.Exp.Compose
 
@@ -423,8 +424,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
             controlC6 e iterCount ptr nextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3 bit
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            ((((ptr + signExtend12 (-8 : BitVec 12)) +
-              signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame))
+            (expReloadDirectTailFrame ptr nextNextLimb frame))
           Q)
     (hReloadFalse :
       ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
@@ -435,11 +435,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) = 0⌝ **
+            (expReloadDirectFalseFrame controlC6 e iterCount ptr nextLimb
               frame))
           Q)
     (hReloadTrue :
@@ -451,11 +447,7 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
             e iterCount nextLimb ptr nextNextLimb sp evmSp
             r0 r1 r2 r3 a0 a1 a2 a3
             v6' v7' v10' v11' d0' d1' d2' d3' base
-            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
-              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
-              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
-              ⌜(e >>> (63 : BitVec 6).toNat) +
-                signExtend12 (0 : BitVec 12) ≠ 0⌝ **
+            (expReloadDirectTrueFrame controlC6 e iterCount ptr nextLimb
               frame))
           Q) :
     cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
@@ -465,12 +457,11 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
         controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
         tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
         a0 a1 a2 a3 v7 v11
-        ((((ptr + signExtend12 (-8 : BitVec 12)) +
-          signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame))
+        (expReloadDirectTailFrame ptr nextNextLimb frame))
       Q := by
   have hFrameCurrent :
-      (((((ptr + signExtend12 (-8 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) ** frame).pcFree) := by
+      (expReloadDirectTailFrame ptr nextNextLimb frame).pcFree := by
+    rw [expReloadDirectTailFrame_unfold]
     pcFree
     exact hFrame
   exact
@@ -478,26 +469,31 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_state_step_reloadDi
       controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
       sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
       a0 a1 a2 a3 v7 v11 base
-      (((ptr + signExtend12 (-8 : BitVec 12)) +
-        signExtend12 (0 : BitVec 12) ↦ₘ nextNextLimb) ** frame)
+      (expReloadDirectTailFrame ptr nextNextLimb frame)
       Q hFrameCurrent hbase hControlMachine hk hCount hBase hNextNext
       hBranch
       (fun bit v6' v7' v10' v11' d0' d1' d2' d3' => by
         cases bit
         · exact
-            cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
-              (by
-                simpa only [
-                  expTwoMulFixedReloadResidualFalseNextPre,
-                  expTwoMulFixedStateReloadFalsePre] using
-                  hReloadFalse v6' v7' v10' v11' d0' d1' d2' d3')
+            (by
+              simpa only [expReloadDirectTailFrame_unfold] using
+                cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_false_to_iterPreNWithStateFrame
+                  (by
+                    simpa only [
+                      expTwoMulFixedReloadResidualFalseNextPre,
+                      expTwoMulFixedStateReloadFalsePre,
+                      expReloadDirectFalseFrame_unfold] using
+                      hReloadFalse v6' v7' v10' v11' d0' d1' d2' d3'))
         · exact
-            cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
-              (by
-                simpa only [
-                  expTwoMulFixedReloadResidualTrueNextPre,
-                  expTwoMulFixedStateReloadTruePre] using
-                  hReloadTrue v6' v7' v10' v11' d0' d1' d2' d3'))
+            (by
+              simpa only [expReloadDirectTailFrame_unfold] using
+                cpsTripleWithin_expTwoMulFixedReloadBranchResidualWithStateFrame_true_to_iterPreNWithStateFrame
+                  (by
+                    simpa only [
+                      expTwoMulFixedReloadResidualTrueNextPre,
+                      expTwoMulFixedStateReloadTruePre,
+                      expReloadDirectTrueFrame_unfold] using
+                      hReloadTrue v6' v7' v10' v11' d0' d1' d2' d3')))
 
 /-- Final fixed-loop state-frame wrapper.
 
