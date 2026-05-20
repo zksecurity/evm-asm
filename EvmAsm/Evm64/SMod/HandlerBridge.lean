@@ -133,6 +133,14 @@ theorem smodHandler_stack_zero_divisor
   simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
   exact EvmWord.smod_zero_right
 
+theorem smodHandler_stack_intMin_neg_one
+    (state : EvmState) (rest : List EvmWord) :
+    (ArithmeticHandlers.smodHandler
+      { state with stack := BitVec.intMin 256 :: (-1 : EvmWord) :: rest }).stack =
+        0 :: rest := by
+  simp [ArithmeticHandlers.smodHandler, ArithmeticHandlers.binaryHandler]
+  exact EvmWord.smod_intMin_neg_one
+
 theorem smodHandler_stack_neg_pos_sign
     (state : EvmState) (rest : List EvmWord) :
     (ArithmeticHandlers.smodHandler

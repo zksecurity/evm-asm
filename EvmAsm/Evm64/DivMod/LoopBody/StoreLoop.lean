@@ -313,6 +313,25 @@ theorem divK_store_loop_j0_v4_spec_within_noNop
     (fun h hp => by xperm_hyp hp)
     full
 
+/-- Store q[0] + loop exit at j=0 over `sharedDivModCodeNoNop_v4`, with
+    exact caller-framed `x1` carried through the store-loop fragment. -/
+theorem divK_store_loop_j0_v4_spec_within_noNop_exact_x1
+    (sp qHat v5Old v7Old qOld raVal : Word)
+    (base : Word) :
+    let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+    let j' := (0 : Word) + signExtend12 4095
+    cpsTripleWithin 6 (base + storeLoopOff) (base + denormOff) (sharedDivModCodeNoNop_v4 base)
+      (((.x9 ↦ᵣ (0 : Word)) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+        (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
+        (qAddr ↦ₘ qOld)) ** (.x1 ↦ᵣ raVal))
+      (((.x9 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+        (.x5 ↦ᵣ (0 : Word) <<< (3 : BitVec 6).toNat) ** (.x7 ↦ᵣ qAddr) **
+        (.x0 ↦ᵣ (0 : Word)) ** (qAddr ↦ₘ qHat)) ** (.x1 ↦ᵣ raVal)) := by
+  intro qAddr j'
+  have hStore := divK_store_loop_j0_v4_spec_within_noNop sp qHat v5Old v7Old qOld base
+  dsimp only [] at hStore
+  exact cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) hStore
+
 /-- Store q[0] + loop exit at j=0. Since j' = -1 < 0, BGE is not taken,
     so this is a cpsTripleWithin (not cpsBranchWithin) to base+908. -/
 
@@ -534,5 +553,26 @@ theorem divK_store_loop_jgt0_v4_spec_within_noNop
     (fun h hp => by xperm_hyp hp)
     (fun h hp => by xperm_hyp hp)
     full
+
+/-- Store q[j] + loop back at j>0 over `sharedDivModCodeNoNop_v4`, with
+    exact caller-framed `x1` carried through the store-loop fragment. -/
+theorem divK_store_loop_jgt0_v4_spec_within_noNop_exact_x1
+    (sp j qHat v5Old v7Old qOld raVal : Word)
+    (base : Word)
+    (hj_pos : BitVec.slt (j + signExtend12 4095) 0 = false) :
+    let jX8 := j <<< (3 : BitVec 6).toNat
+    let qAddr := sp + signExtend12 4088 - jX8
+    let j' := j + signExtend12 4095
+    cpsTripleWithin 6 (base + storeLoopOff) (base + loopBodyOff) (sharedDivModCodeNoNop_v4 base)
+      (((.x9 ↦ᵣ j) ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+        (.x5 ↦ᵣ v5Old) ** (.x7 ↦ᵣ v7Old) ** (.x0 ↦ᵣ (0 : Word)) **
+        (qAddr ↦ₘ qOld)) ** (.x1 ↦ᵣ raVal))
+      (((.x9 ↦ᵣ j') ** (.x12 ↦ᵣ sp) ** (.x11 ↦ᵣ qHat) **
+        (.x5 ↦ᵣ jX8) ** (.x7 ↦ᵣ qAddr) ** (.x0 ↦ᵣ (0 : Word)) **
+        (qAddr ↦ₘ qHat)) ** (.x1 ↦ᵣ raVal)) := by
+  intro jX8 qAddr j'
+  have hStore := divK_store_loop_jgt0_v4_spec_within_noNop sp j qHat v5Old v7Old qOld base hj_pos
+  dsimp only [] at hStore
+  exact cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) hStore
 
 end EvmAsm.Evm64

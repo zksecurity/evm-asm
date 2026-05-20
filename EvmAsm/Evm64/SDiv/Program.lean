@@ -228,6 +228,11 @@ def evm_sdiv : EvmAsm.Rv64.Program :=
 def evm_sdiv_v4 : EvmAsm.Rv64.Program :=
   evm_sdiv_wrapper ;; evm_div_callable_v4
 
+/-- Regression pin: the executable v4 SDIV body uses the corrected v4
+    callable divider. -/
+theorem evm_sdiv_v4_uses_div_callable_v4 :
+    evm_sdiv_v4 = (evm_sdiv_wrapper ;; evm_div_callable_v4) := rfl
+
 theorem evm_sdiv_length : evm_sdiv.length = 390 := by
   native_decide
 

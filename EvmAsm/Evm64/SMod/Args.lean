@@ -61,6 +61,10 @@ theorem stackAfterSMod_eq (args : Args) (rest : List EvmWord) :
     smodResultFromArgs (smodArgs 0 divisor) = 0 := by
   exact EvmWord.zero_smod_left
 
+theorem smodResultFromArgs_intMin_neg_one :
+    smodResultFromArgs (smodArgs (BitVec.intMin 256) (-1)) = 0 := by
+  exact EvmWord.smod_intMin_neg_one
+
 theorem smodResultFromArgs_neg_pos_sign :
     smodResultFromArgs (smodArgs (-3) 2) = (-1 : EvmWord) := by
   exact EvmWord.smod_neg_pos_sign
