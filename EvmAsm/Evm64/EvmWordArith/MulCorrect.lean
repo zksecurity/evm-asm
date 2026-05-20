@@ -147,16 +147,16 @@ theorem mul_correct_limb2 (a b : EvmWord) :
 
 /-- Recombine div/mod into a single linear equation: q*W + r = x.
     Used to convert nested div/mod pairs into flat linear constraints for omega. -/
-private theorem div_mod_eq (W : Nat) {x q r : Nat} (hq : q = x / W) (hr : r = x % W) :
+theorem div_mod_eq (W : Nat) {x q r : Nat} (hq : q = x / W) (hr : r = x % W) :
     q * W + r = x := by subst hq; subst hr; rw [Nat.mul_comm]; exact Nat.div_add_mod x W
 
 /-- `(a % W + b) % W = (a + b) % W`. Used by the limb-3 simp set so the
     nested mod/add chains flatten before the final omega. -/
-private theorem mod_add_cancel_left (a b : Nat) :
+theorem mod_add_cancel_left (a b : Nat) :
     (a % 2^64 + b) % 2^64 = (a + b) % 2^64 := by omega
 
 /-- `(a + b % W) % W = (a + b) % W`. Mirror of `mod_add_cancel_left`. -/
-private theorem mod_add_cancel_right (a b : Nat) :
+theorem mod_add_cancel_right (a b : Nat) :
     (a + b % 2^64) % 2^64 = (a + b) % 2^64 := by omega
 
 /-- 4×4 schoolbook product expansion into digit columns. Extracted so `ring`
