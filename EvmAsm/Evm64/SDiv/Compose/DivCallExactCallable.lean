@@ -61,6 +61,54 @@ theorem evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode
       hRet
   exact EvmAsm.Rv64.cpsTripleWithin_seq_same_cr hStackCall hRetFramed
 
+/-- v4 variant of the preserving-`x1` unsigned-DIV callable wrapper whose
+    no-NOP body proof already has the exact caller return address in the
+    dispatch precondition. -/
+theorem evm_div_callable_v4_preserving_x1_exact_pre_spec_in_sdivCodeV4
+    (sp base x9Val raVal : Word) (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+        (base + wrapperEndOff)
+        ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
+        (EvmAsm.Evm64.sharedDivModCodeNoNop_v4 (base + wrapperEndOff))
+        (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+          x9Val raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal))) :
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCodeV4 base)
+      (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+      (EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) := by
+  have hStackCallDiv :=
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := EvmAsm.Evm64.sharedDivModCodeNoNop_v4_sub_div_callable_code_v4)
+      hStack
+  have hStackCall :=
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := evm_div_callable_code_v4_sub_sdivCodeV4 (base := base))
+      hStackCallDiv
+  have hRetDiv :=
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := EvmAsm.Evm64.evm_div_callable_code_v4_ret_sub
+        (base := base + wrapperEndOff))
+      (EvmAsm.Evm64.ret_spec_within' ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff) raVal)
+  have hRet :=
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := evm_div_callable_code_v4_sub_sdivCodeV4 (base := base))
+      hRetDiv
+  have hRetFramed :=
+    EvmAsm.Rv64.cpsTripleWithin_frameL
+      (EvmAsm.Evm64.divStackDispatchPostCallable sp a b)
+      (EvmAsm.Evm64.divStackDispatchPostCallable_pcFree sp a b)
+      hRet
+  exact EvmAsm.Rv64.cpsTripleWithin_seq_same_cr hStackCall hRetFramed
+
 /-- Stronger exact-pre wrapper that keeps SDIV's caller-framed `x9` explicit
     across the embedded unsigned-DIV callable. -/
 theorem evm_div_callable_preserving_x1_x9_exact_pre_spec_in_sdivCode
@@ -339,6 +387,37 @@ theorem evm_div_callable_preserving_x1_exact_pre_framed_spec_in_sdivCode
   exact
     EvmAsm.Rv64.cpsTripleWithin_frameR F (by pcFree)
       (evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode
+        sp base x9Val raVal a b v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
+
+/-- v4 framed variant of
+    `evm_div_callable_v4_preserving_x1_exact_pre_spec_in_sdivCodeV4`. -/
+theorem evm_div_callable_v4_preserving_x1_exact_pre_framed_spec_in_sdivCodeV4
+    {F : EvmAsm.Rv64.Assertion} [EvmAsm.Rv64.Assertion.PCFree F]
+    (sp base x9Val raVal : Word) (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+        (base + wrapperEndOff)
+        ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
+        (EvmAsm.Evm64.sharedDivModCodeNoNop_v4 (base + wrapperEndOff))
+        (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+          x9Val raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0)
+        (EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal))) :
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCodeV4 base)
+      (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+      ((EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) ** F) := by
+  exact
+    EvmAsm.Rv64.cpsTripleWithin_frameR F (by pcFree)
+      (evm_div_callable_v4_preserving_x1_exact_pre_spec_in_sdivCodeV4
         sp base x9Val raVal a b v2 v5 v6 v7 v10 v11
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
