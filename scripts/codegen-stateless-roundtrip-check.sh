@@ -72,7 +72,8 @@ print(c.to_bytes(8, 'little').hex())
 }
 
 # Build the 112-hex-char expected output (= 56 bytes):
-#   32 hash bytes (keccak256(SSZ blob), PR-K5)
+#   32 hash bytes (PR-S10: SSZ hash_tree_root(ByteList[1024],
+#                  witness.headers[0]); was PR-K7 keccak)
 # | 1 byte bool
 # | 8 LE bytes chain_id
 # | 7 zero bytes (gap)

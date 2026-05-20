@@ -2247,29 +2247,27 @@ def ziskSszHashTreeRootBytesProbeUnit : BuildUnit := {
     into the encoder pipeline end-to-end. Once PR-S series lands,
     the SHA-256 hash_tree_root replaces this keccak. -/
 def statelessGuestEpilogue : String :=
-  "  # PR-K7: overwrite OUTPUT[0..32] with keccak256 of the FIRST\n" ++
-  "  # element of witness.headers (witness.headers[0]) if the list\n" ++
-  "  # is non-empty; else keccak256(empty).\n" ++
+  "  # PR-S10: overwrite OUTPUT[0..32] with the SSZ\n" ++
+  "  # `hash_tree_root` of the first element of witness.headers,\n" ++
+  "  # treated as a `ByteList[MAX_BYTES_PER_HEADER]` where\n" ++
+  "  # MAX_BYTES_PER_HEADER = 2^10 = 1024 (per\n" ++
+  "  # `execution-specs/.../stateless_ssz.py` line 54). The SSZ\n" ++
+  "  # capacity in chunks is 1024/32 = 32, so `limit_log2 = 5`.\n" ++
   "  # \n" ++
-  "  # Navigation:\n" ++
-  "  #   ssz_start  = INPUT_ADDR + 16\n" ++
-  "  #   offset_1   = LWU @ ssz_start +  4   (witness offset)\n" ++
-  "  #   witness    = ssz_start + offset_1\n" ++
-  "  #   inner_off2 = LWU @ witness  +  8   (headers offset)\n" ++
-  "  #   hdrs_start = witness + inner_off2\n" ++
-  "  #   offset_3   = LWU @ ssz_start + 16  (witness end)\n" ++
-  "  #   hdrs_end   = ssz_start + offset_3\n" ++
-  "  #   hdrs_len   = hdrs_end - hdrs_start\n" ++
-  "  #   if hdrs_len > 0:\n" ++
-  "  #     first_off  = LWU @ hdrs_start    (inner offset[0] = 4 * N)\n" ++
-  "  #     el0_start  = hdrs_start + first_off\n" ++
-  "  #     if first_off == 4 (N == 1):\n" ++
-  "  #       el0_end  = hdrs_end\n" ++
-  "  #     else (N >= 2):\n" ++
-  "  #       el0_end  = hdrs_start + LWU @ hdrs_start + 4 (inner offset[1])\n" ++
-  "  #     el0_len    = el0_end - el0_start\n" ++
-  "  #   else:\n" ++
-  "  #     hash empty (el0_len = 0)\n" ++
+  "  # SSZ algorithm (matches consensus-specs / remerkleable):\n" ++
+  "  #   chunks  = pack(el0_bytes)\n" ++
+  "  #   partial = merkleize(chunks, limit_log2=5)\n" ++
+  "  #   length  = u256_le(el0_len)\n" ++
+  "  #   root    = sha256(partial || length)\n" ++
+  "  # \n" ++
+  "  # When `witness.headers` is empty (`el0_len = 0`), the\n" ++
+  "  # function takes the n=0 short-circuit: partial = Z_5,\n" ++
+  "  # length_chunk = zeros, root = sha256(Z_5 || 0_chunk).\n" ++
+  "  # \n" ++
+  "  # Navigation chases the same SSZ offsets as PR-K7's keccak\n" ++
+  "  # variant; only the final hash call differs (1 arg added,\n" ++
+  "  # the output ptr moves a2 → a3 to make room for the SSZ\n" ++
+  "  # limit_log2_chunks argument in a2).\n" ++
   "  li sp, 0xa0050000\n" ++
   "  li t3, 0x40000000\n" ++
   "  addi t3, t3, 16             # t3 = ssz_start\n" ++
@@ -2280,7 +2278,7 @@ def statelessGuestEpilogue : String :=
   "  lwu t6, 16(t3)              # outer offset_3 (witness end)\n" ++
   "  add t6, t3, t6              # t6 = hdrs_end\n" ++
   "  sub a1, t6, a0              # a1 = hdrs_len (tentative len)\n" ++
-  "  beqz a1, .Lsg_call_keccak   # empty headers: hash empty\n" ++
+  "  beqz a1, .Lsg_call_hash     # empty headers: hash empty\n" ++
   "  # Non-empty headers: read first inner offset to find element 0\n" ++
   "  lwu t4, 0(a0)               # t4 = first_inner_offset = 4 * N\n" ++
   "  add t5, a0, t4              # t5 = el0_start\n" ++
@@ -2291,17 +2289,55 @@ def statelessGuestEpilogue : String :=
   ".Lsg_one_elem:\n" ++
   "  sub a1, t6, t5              # a1 = el0_len\n" ++
   "  mv a0, t5                   # a0 = el0_start\n" ++
-  ".Lsg_call_keccak:\n" ++
-  "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR (hash field)\n" ++
-  "  jal ra, zkvm_keccak256\n" ++
+  ".Lsg_call_hash:\n" ++
+  "  li a2, 5                    # a2 = limit_log2 (ByteList[1024])\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR (hash field)\n" ++
+  "  jal ra, ssz_hash_tree_root_bytes\n" ++
   "  j .Lsg_done\n" ++
-  zkvmKeccak256Function ++ "\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
   ".Lsg_done:"
 
 def statelessGuestDataSection : String :=
   ".section .data\n" ++
-  "zk3_state:\n" ++
-  "  .zero 200"
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
 
 def statelessGuestUnit : BuildUnit := {
   body        := EvmAsm.Stateless.run_stateless_guest

@@ -195,9 +195,13 @@ def main() -> int:
         type=Path,
         default=None,
         help=(
-            "Optionally write keccak256(SSZ blob) as a 64-hex-char "
-            "string. PR-K5's stateless_guest stamps this into the "
-            "output's `new_payload_request_root` field."
+            "Optionally write the SSZ `hash_tree_root` of "
+            "`witness.headers[0]` (as a `ByteList[1024]`) as a "
+            "64-hex-char string. PR-S10's stateless_guest stamps "
+            "this into the output's `new_payload_request_root` "
+            "field (replacing PR-K7's keccak stub). When "
+            "`witness.headers` is empty, hashes an empty "
+            "`ByteList[1024]()`."
         ),
     )
     args = parser.parse_args()
@@ -233,11 +237,19 @@ def main() -> int:
     )
 
     if args.hash_out is not None:
-        from Crypto.Hash import keccak
-        # PR-K7: the guest hashes `witness.headers[0]` -- element 0
-        # of the SSZ list, extracted via the inner offsets table.
-        # When the list is empty, hash empty.
+        # PR-S10: the guest computes SSZ `hash_tree_root` of
+        # `witness.headers[0]` -- element 0 of the SSZ list -- as a
+        # `ByteList[MAX_BYTES_PER_HEADER = 1024]`. When the list is
+        # empty, hashes an empty `ByteList[1024]()`. We extract
+        # element 0 from the SSZ blob and feed it through the same
+        # consensus-specs SSZ library the guest's contract is
+        # checked against (remerkleable, via execution-specs).
         import struct as _struct
+        from ethereum.forks.amsterdam.stateless_ssz import (
+            MAX_BYTES_PER_HEADER,
+        )
+        from remerkleable.byte_arrays import ByteList
+
         offset_1 = _struct.unpack_from("<I", blob, 4)[0]
         offset_3 = _struct.unpack_from("<I", blob, 16)[0]
         witness_start = offset_1
@@ -264,15 +276,15 @@ def main() -> int:
             element_0 = blob[el0_start:el0_end]
             why = f"N={n_elements}, el0 {len(element_0)}B"
 
-        h = keccak.new(digest_bits=256)
-        h.update(element_0)
-        digest = h.hexdigest()
+        root = ByteList[MAX_BYTES_PER_HEADER](element_0).hash_tree_root()
+        digest = root.hex() if isinstance(root, bytes) else bytes(root).hex()
         args.hash_out.parent.mkdir(parents=True, exist_ok=True)
         with args.hash_out.open("w") as fh:
             fh.write(digest)
         print(
             f"wrote {args.hash_out}: "
-            f"keccak256(witness.headers[0], {why}) = {digest}",
+            f"ssz_hash_tree_root(ByteList[{MAX_BYTES_PER_HEADER}], "
+            f"witness.headers[0], {why}) = {digest}",
             file=sys.stderr,
         )
 
