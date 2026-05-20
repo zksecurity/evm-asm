@@ -39,7 +39,7 @@ untouched. Generated artifacts go in `gen-out/` (gitignored).
 | `EvmAsm/Codegen/Emit.lean` | Pure `emitReg`, `emitInstr`, `emitProgram` — `Instr → String`. No `IO`. |
 | `EvmAsm/Codegen/Layout.lean` | `HaltConv` enum, halt stubs, `_start` preamble, `.option norvc`, `MEM_START`/`MEM_END` constants, `BuildUnit` struct + `emitBuildUnit`/`emitDataLabel` helpers. |
 | `EvmAsm/Codegen/Dispatch.lean` | M5b dispatcher scaffolding: `OpcodeHandlerSpec` (with optional `preBody` for x10-clobbering handlers) + `HandlerTail` types, `emitDispatcherPrologue`/`Epilogue`/`DataSection` and `buildDispatchUnit` helpers. Pure (no IO). |
-| `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `evm_div`, `evm_mod`, `input_echo`, `evm_add_from_input`, `evm_div_from_input`, `evm_mod_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`) plus the M5b opcode handler registry (`tinyInterpRegistry`) composed from `pushHandlers` (PUSH0..32), `dupHandlers` (DUP1..16), `swapHandlers` (SWAP1..16), `singletonHandlers` (17 fixed-shape opcodes), `stopHandler`; shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`, `evmDivPatched`/`evmModPatched` for the DIV/MOD NOP-splice). |
+| `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `evm_div`, `evm_mod`, `input_echo`, `evm_add_from_input`, `evm_div_from_input`, `evm_mod_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`) plus the M5b opcode handler registry (`tinyInterpRegistry`) composed from `pushHandlers` (PUSH0..32), `dupHandlers` (DUP1..16), `swapHandlers` (SWAP1..16), `singletonHandlers` (17 fixed-shape opcodes), `memoryHandlers` (MLOAD/MSTORE/MSTORE8, M7), `stopHandler`; shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`, `evmDivPatched`/`evmModPatched` for the DIV/MOD NOP-splice). |
 | `EvmAsm/Codegen/Tests/Cases.lean` | Per-opcode regression test registry: `OpcodeTestCase` struct + `opcodeTestCases` list. Wraps each bytecode through the M5b dispatcher for end-to-end ziskemu validation. |
 | `EvmAsm/Codegen/Cli.lean` | Argument parsing (`--program`, `--test-case`, `--list-test-cases`, `--halt`, `--out`, `--asm-only`). |
 | `EvmAsm/Codegen/Driver.lean` | `IO`: shells out to `as`/`ld` if available; `--asm-only` for CI without the cross toolchain. |
@@ -455,13 +455,66 @@ PASS; `scripts/codegen-tiny-interp{,-dispatch}-check.sh`,
 exit 0; full M6b suite runs in ~48 s (under the 60 s threshold
 for considering the runtime-bytecode optimization).
 
+### M7 — Memory opcodes (S/M) — **DONE (2026-05-20)**
+
+Wires MLOAD / MSTORE / MSTORE8 into `tinyInterpRegistry`. First
+milestone needing infrastructure beyond a stack-only ABI: the
+dispatcher prologue now initialises a third persistent register
+(`x13` = EVM memory base) alongside `x10` (code pointer) and `x12`
+(stack pointer). MSIZE is deferred — the verified core doesn't
+yet bookkeep memory expansion (`evmMemSizeIs` lives outside the
+verified `Program`s; see `docs/99-mload-design.md` §4 and the
+`evm_mload` docstring).
+
+**Delivered:**
+- `EvmAsm/Codegen/Dispatch.lean` — `emitDispatcherPrologue` adds
+  `la x13, evm_memory`. `emitDispatcherDataSection` now declares
+  a 32 KiB `evm_memory:` `.zero` block between `evm_stack_top:`
+  and `opcode_handlers:`.
+- `EvmAsm/Codegen/Programs.lean` — new `memoryHandlers` list with
+  three entries:
+    - `h_MLOAD` (0x51): `evm_mload .x15 .x16 .x17 .x18 .x13`
+    - `h_MSTORE` (0x52): `evm_mstore .x15 .x14 .x16 .x17 .x18 .x13`
+    - `h_MSTORE8` (0x53): `evm_mstore8 .x15 .x14 .x18 .x13`
+  All three use `.advanceAndRet 1` — no `preBody` needed (none
+  touch `x10`). MSTORE / MSTORE8's internal `ADDI .x12 .x12 64`
+  handles the stack shrink.
+- `EvmAsm/Codegen/Tests/Cases.lean` — two new cases
+  (`mstore_mload`, `mstore8_basic`). Total now 24.
+
+**Register convention.**
+- `x10` = EVM code pointer (preserved across handlers)
+- `x12` = EVM stack pointer (handlers update freely)
+- `x13` = EVM memory base, init'd in dispatcher prologue (new in M7)
+- `x14, x15, x16, x17, x18` = caller-saved scratch for memory handlers
+
+**`.data` budget.**
+The dispatcher's `.data` section starts at `0xa0000000` and must
+stay under `0xa0010000` (= `OUTPUT_ADDR`). Post-M7 layout: ~50 B
+bytecode + 256 B stack scratch + 32 KiB EVM memory + 2 KiB jump
+table ≈ 35 KiB. Comfortably under the 64 KiB cap. A future
+milestone that needs > 32 KiB of EVM memory should either grow
+the budget (extending `.data` is bounded by `OUTPUT_ADDR`) or
+relocate `evm_memory` to a separate section linked above
+`OUTPUT_ADDR + 0x10000`.
+
+**Exit criteria (met).**
+`scripts/codegen-opcodes-check.sh` exits 0 with all 24 cases
+PASS; legacy scripts (`codegen-tiny-interp{,-dispatch}-check.sh`,
+`codegen-smoke.sh`, `codegen-evm_add{,-from-input}-check.sh`,
+`codegen-evm_div{,-cases}-check.sh`, `codegen-evm_mod{,-cases}-check.sh`)
+all still exit 0. Full M7 suite runs in **~57 s** — just under
+the 60 s threshold; the next milestone that materially grows the
+dispatcher ELF should consider the runtime-bytecode optimization.
+
 ### Sequencing
 
-M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅ → M6b ✅.
+M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅ → M6b ✅ → M7 ✅.
 M3 is deferred; revisit only if a future milestone (full opcode
 coverage, JUMP/JUMPI, or the binary encoder) makes label-free
-emission unreadable. M6b unblocks M7 (memory opcodes) by validating
-the registry pattern at scale.
+emission unreadable. M7 unblocks M8 (hint-dependent opcodes
+through the dispatcher) and any non-trivial EVM bytecode that
+exercises memory.
 
 ## Tricky bits / open questions
 
@@ -540,16 +593,16 @@ the registry pattern at scale.
   Four handlers that clobber `x10` (MUL, SIGNEXTEND, BYTE, SHR)
   use the new `OpcodeHandlerSpec.preBody` field to save the EVM
   code pointer in `x9` before the body and restore it in the tail.
+- **M7.** ✅ `scripts/codegen-opcodes-check.sh` exits 0 with **24
+  test cases** PASS (validated 2026-05-20). Three memory opcodes
+  wired (MLOAD, MSTORE, MSTORE8) plus a 32 KiB `evm_memory:`
+  `.data` region and `x13` = memory-base in the dispatcher prologue.
+  MSIZE deferred pending verified memory-expansion bookkeeping.
+  Suite runtime: ~57 s (just under the 60 s threshold).
 
-## Future work (post-M6b)
+## Future work (post-M7)
 
 Near-term (builds directly on M6a's registry; no new design surface):
-
-- **M7 — memory opcodes.** MLOAD / MSTORE / MSTORE8 / MSIZE are
-  register-parameterized verified `Program`s (take a `memBase` /
-  `sizeReg`). Need to extend `emitDispatcherPrologue` to init an
-  additional EVM-memory base register (likely `x13`) and a size
-  register (`x14`), and declare a 64 KB `evm_memory:` `.data` block.
 - **M8 — hint-input demo via `evm_div` / `evm_mod`.** Closes the loop
   on M4's prover-hint infrastructure. The standalone `evm_div` /
   `evm_mod` wrappers in `Programs.lean` already exercise the

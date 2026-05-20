@@ -15,6 +15,9 @@ import EvmAsm.Evm64.Eq.Program
 import EvmAsm.Evm64.Gt.Program
 import EvmAsm.Evm64.IsZero.Program
 import EvmAsm.Evm64.Lt.Program
+import EvmAsm.Evm64.MLoad.Program
+import EvmAsm.Evm64.MStore.Program
+import EvmAsm.Evm64.MStore8.Program
 import EvmAsm.Evm64.Multiply.Program
 import EvmAsm.Evm64.Not.Program
 import EvmAsm.Evm64.Or.Program
@@ -403,6 +406,36 @@ def singletonHandlers : List OpcodeHandlerSpec :=
   , { label := "h_SHR"        , opcodes := [0x1c], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_shr       , tail := x10RestoreAdvance1 }
   , { label := "h_POP"        , opcodes := [0x50], body := EvmAsm.Evm64.evm_pop       , tail := .advanceAndRet 1 } ]
 
+/-- M7 memory opcodes. Register-parameterized; the dispatcher
+    prologue sets up `x13 = &evm_memory` (see
+    `EvmAsm/Codegen/Dispatch.lean`). The scratch registers `x14..x18`
+    are caller-saved across the `jalr` from the dispatcher loop;
+    nothing else in the registry preserves them.
+
+    Stack-pointer bookkeeping is internal to the verified bodies:
+    `evm_mload` is net stack-neutral, while `evm_mstore` and
+    `evm_mstore8` each end with `ADDI .x12 .x12 64` so the wrapper
+    uses the standard `.advanceAndRet 1` tail. None of the memory
+    opcodes touch `x10`, so no `preBody` is needed. -/
+def memoryHandlers : List OpcodeHandlerSpec :=
+  [ -- MLOAD: pop offset, push value. memBase=x13;
+    -- scratch: offReg=x15, byteReg=x16, accReg=x17, addrReg=x18.
+    { label   := "h_MLOAD"
+      opcodes := [0x51]
+      body    := EvmAsm.Evm64.evm_mload .x15 .x16 .x17 .x18 .x13
+      tail    := .advanceAndRet 1 }
+  , -- MSTORE: pop offset + value, write 32 bytes BE to memory.
+    -- valReg=x14 (scratch; placeholder per evm_mstore docstring).
+    { label   := "h_MSTORE"
+      opcodes := [0x52]
+      body    := EvmAsm.Evm64.evm_mstore .x15 .x14 .x16 .x17 .x18 .x13
+      tail    := .advanceAndRet 1 }
+  , -- MSTORE8: pop offset + value, write 1 byte to memory.
+    { label   := "h_MSTORE8"
+      opcodes := [0x53]
+      body    := EvmAsm.Evm64.evm_mstore8 .x15 .x14 .x18 .x13
+      tail    := .advanceAndRet 1 } ]
+
 /-- STOP: transitions out of the dispatcher loop instead of returning
     to it. The body is empty; the dispatcher's `jalr` lands on
     `h_STOP:` which jumps to `.exit_label`. -/
@@ -417,7 +450,7 @@ def stopHandler : OpcodeHandlerSpec :=
     the list for a spec whose `opcodes` contains the byte. -/
 def tinyInterpRegistry : List OpcodeHandlerSpec :=
   pushHandlers ++ dupHandlers ++ swapHandlers ++ singletonHandlers ++
-  [stopHandler]
+  memoryHandlers ++ [stopHandler]
 
 def tinyInterpDispatchAddUnit : BuildUnit :=
   buildDispatchUnit tinyInterpRegistry evmAddEpilogue tinyInterpAddBytecode

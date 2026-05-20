@@ -94,12 +94,19 @@ def emitJumpTable (registry : List OpcodeHandlerSpec) : String :=
   String.intercalate "\n" entries
 
 /-- Dispatcher prologue: init EVM pointers (`x10` = code, `x12` =
-    stack top) and enter the main fetch/decode/dispatch loop. Each
-    iteration loads the opcode byte at `[x10]`, indexes the jump
-    table, `jalr`s to the handler, then jumps back to `.dispatch_loop`. -/
+    stack top, `x13` = EVM memory base) and enter the main
+    fetch/decode/dispatch loop. Each iteration loads the opcode byte
+    at `[x10]`, indexes the jump table, `jalr`s to the handler, then
+    jumps back to `.dispatch_loop`.
+
+    `x13` is added in M7 for the memory opcodes (MLOAD, MSTORE,
+    MSTORE8). Handlers that don't touch memory ignore it; the verified
+    bodies that do use it take `memBaseReg` as a Lean argument and our
+    M7 handler entries pass `.x13`. -/
 def emitDispatcherPrologue : String :=
   "  la x10, evm_code\n" ++
   "  la x12, evm_stack_top\n" ++
+  "  la x13, evm_memory\n" ++
   ".dispatch_loop:\n" ++
   "  lbu x5, 0(x10)\n" ++
   "  la x6, opcode_handlers\n" ++
@@ -121,14 +128,27 @@ def emitDispatcherEpilogue
   ".exit_label:\n" ++
   emitProgram exitBody
 
-/-- `.data` section: bytecode bytes under `evm_code:`, 256 bytes of
-    writable stack scratch ending at `evm_stack_top:`, then the
-    256-entry jump table under `opcode_handlers:`. The stack region
-    grows downward from `evm_stack_top`; the jump table lives at the
-    same address (no padding needed since `evm_stack_top` is already
-    8-byte aligned) — safe at the worst-case M5b depth of 2 (= 64
-    bytes), but worth allocating an explicit reserved tail if a
-    future test program uses deeper stacks. -/
+/-- `.data` section layout (starts at `0xa0000000` per
+    `Driver.lean`'s `-Tdata=...`):
+
+    ```
+    evm_code:         <bytecode> (~50 B)
+    .balign 32
+    evm_stack_low:    .zero 256             (256-byte EVM stack scratch)
+    evm_stack_top:
+    .balign 32
+    evm_memory:       .zero 0x8000          (32 KiB EVM memory, M7 onward)
+    .balign 8
+    opcode_handlers:  256 × .dword (jump table, 2 KiB)
+    ```
+
+    Total: ~50 + 256 + 32768 + 2048 ≈ 35 KiB, well under the 64 KiB
+    cap before `OUTPUT_ADDR = 0xa0010000`. Going beyond 32 KiB of
+    EVM memory would risk overrunning OUTPUT_ADDR.
+
+    The EVM stack region grows downward from `evm_stack_top`; safe at
+    the worst-case M5b depth of 2 (= 64 bytes). The EVM memory region
+    grows upward from `evm_memory` indexed by `memBaseReg + offset`. -/
 def emitDispatcherDataSection
     (bytecodeBytes : String) (registry : List OpcodeHandlerSpec) : String :=
   ".section .data\n" ++
@@ -139,6 +159,9 @@ def emitDispatcherDataSection
   "evm_stack_low:\n" ++
   "  .zero 256\n" ++
   "evm_stack_top:\n" ++
+  ".balign 32\n" ++
+  "evm_memory:\n" ++
+  "  .zero 0x8000\n" ++   -- 32 KiB EVM memory (M7 onward)
   emitJumpTable registry
 
 /-- Build a `BuildUnit` that runs the dispatcher over `bytecodeBytes`

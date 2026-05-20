@@ -146,6 +146,22 @@ def opcodeTestCases : List OpcodeTestCase :=
     { name           := "arith_mix"
       bytecode       := "0x60, 0x03, 0x60, 0x05, 0x02, 0x60, 0x10, 0x03, 0x00"
       expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+    -- ## M7 memory opcodes (MLOAD / MSTORE / MSTORE8)
+  , -- PUSH1 0x42; PUSH1 0x00; MSTORE; PUSH1 0x00; MLOAD; STOP
+    -- MSTORE writes 0x42 big-endian to memory[0..32]; MLOAD reads it
+    -- back to the stack. EVM word = 0x42, on the stack as four LE u64
+    -- limbs with limb 0 = 0x42 (decimal 66).
+    { name           := "mstore_mload"
+      bytecode       := "0x60, 0x42, 0x60, 0x00, 0x52, 0x60, 0x00, 0x51, 0x00"
+      expectedOutHex := "4200000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0xff; PUSH1 0x00; MSTORE8; PUSH1 0x00; MLOAD; STOP
+    -- MSTORE8 writes one byte (0xff) at memory[0]. MLOAD reads 32 bytes
+    -- big-endian → EVM word = 0xff · 2^248. As LE limbs that's
+    -- [0, 0, 0, 0xff00000000000000]; limb 3 written to bytes 24..31
+    -- in LE order ends with 0xff at byte 31.
+    { name           := "mstore8_basic"
+      bytecode       := "0x60, 0xff, 0x60, 0x00, 0x53, 0x60, 0x00, 0x51, 0x00"
+      expectedOutHex := "00000000000000000000000000000000000000000000000000000000000000ff" }
   ]
 
 /-- Find a test case by name. -/
