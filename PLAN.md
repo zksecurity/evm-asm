@@ -945,6 +945,91 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 
 ---
 
+## Stateless Guest (parallel STF track)
+
+Full plan: `~/.claude/plans/please-cut-a-branch-warm-wand.md`.
+Branch: `feat/run-stateless-guest-scaffold`.
+
+Stakeholders asked for `run_stateless_guest`
+(`execution-specs/src/ethereum/forks/amsterdam/stateless_guest.py:33`)
+to be implemented in RV64IM macro-assembly **early**, so testing can
+start before the proof effort catches up. Lands in a multi-PR sequence
+under `EvmAsm/Stateless/`. Each module ships with a `Program.lean` and
+a `Spec.lean` placeholder so CPS-triple proofs slot in later without
+restructuring. Precompiles raise a distinct `Unimplemented` exit code
+(0xFE marker at `OUTPUT_ADDR`); KECCAK256, ECRECOVER, SHA256, etc. go
+through ECALL bridges (extending `EvmAsm/EL/Keccak*EcallBridge.lean`).
+
+### PR sequence
+
+| PR | Scope | First fixture that passes |
+|---|---|---|
+| PR1 | Scaffold + `Unimplemented` exit + `Entry` stub | `empty_witness` (Unimplemented marker round-trip) |
+| PR2 | SSZ decode/encode + roundtrip script | `empty_witness` (false-validation roundtrip) |
+| PR3 | Headers RLP decode + validate + Witness DBs | `single_header`, `chain_3_headers` |
+| PR4 | MPT walk + read-side WitnessState | `mpt_one_account` |
+| PR5 | SSZ `hash_tree_root` + SHA256 bridge | `compute_new_payload_request_root` |
+| PR6 | Block + Transaction + ECRECOVER bridge | `tx_transfer` |
+| PR7 | EVM interpreter dispatch + opcode wiring | `bytecode_push_add` |
+| PR8+ | Remaining opcodes, MPT mutation, state-root | tracked under Phase 5–11 above |
+
+### Status
+
+- ✅ PR1 scaffold committed: `EvmAsm/Stateless/` with
+  `MemoryLayout.lean`, `Unimplemented.lean`, `Entry.lean`,
+  `EntrySpec.lean`, and the `Stateless.lean` umbrella.
+- ✅ #5164 resolved: `isValidMemAddr` is a 3-region predicate
+  (legacy + INPUT + RAM); existing proofs unaffected.
+- ✅ PR2 SSZ output encoder + roundtrip: `Stateless/SSZ/Encode/`
+  emits the 41-byte SSZ encoding of `StatelessValidationResult(root=0,
+  valid=false, chain_id=1)` at `OUTPUT_ADDR`; bytes verified identical
+  to Python's `serialize_stateless_output` reference encoder via
+  `scripts/codegen-stateless-roundtrip-check.sh` on ziskemu.
+- ✅ PR3 SSZ chain_id decoder: `Stateless/SSZ/Decode/` reads
+  `chain_id` from `INPUT_ADDR + 24` (SSZ container header byte 8).
+  Encoder parameterised on `x10`; the decoded `chain_id` flows
+  through to `OUTPUT_ADDR`. Roundtrip test feeds Python-generated
+  SSZ blobs with `chain_id ∈ {1, 0x1234567890ABCDEF}`; both pass on
+  ziskemu.
+- ✅ PR4 witness-length validation bit: `decode_validation_bit`
+  reads `offset_1` and `offset_3` from the outer container header
+  and sets `x11 = 1` iff the witness body is empty (length 12).
+  Encoder ORs `x11` into the packed `bool || chain_id` word.
+  Third fixture (`--with-empty-header`) flips the bool to 0;
+  output round-trips through Python's SSZ decoder.
+- ✅ PR5 headers-emptiness bit: `decode_validation_bit` now chases
+  the inner offset chain (outer offset_1 → witness_addr → inner
+  offset_headers → headers_addr; outer offset_3 → headers_end) and
+  sets `x11 = 1` iff `witness.headers` is empty regardless of
+  state/codes. Fourth fixture (`--with-empty-state-node`) keeps
+  bool=1 under PR5 vs. 0 under PR4 -- confirms the deeper walk.
+- ✅ PR6 header_count surfacing: `decode_header_count` reads the
+  first u32 of the headers list (with a BEQ guard for the empty
+  case) and divides by 4, leaving the count in `x16`. Encoder
+  writes it as a u64 at `OUTPUT_ADDR + 48` (diagnostic field past
+  the 41-byte SSZ result). Fifth fixture (`--with-two-empty-headers`)
+  verifies count=2.
+- ✅ PR-K1 ziskemu keccak intrinsic pinned: `CSRS 0x800, a0`
+  (32-bit encoding `0x80052073`) triggers `_opcode_keccak` in
+  ziskemu, which permutes the 200-byte state buffer pointed to by
+  `a0` via `zisk_keccakf1600`. New `zisk_keccak_probe` BuildUnit
+  emits the raw `.4byte` and copies the post-permutation state to
+  OUTPUT_ADDR; matches the Keccak team's reference vector for the
+  zero-state permutation. Source:
+  `ziskos/entrypoint/src/syscalls/keccakf.rs` + `syscall.rs`
+  (`SYSCALL_KECCAKF_ID = 0x800`) + `ziskos_syscall!` macro
+  expanding to `csrs <csr>, <reg>`.
+
+### Cross-references
+
+- Memory layout: `EvmAsm/Stateless/MemoryLayout.lean`.
+- Reason codes (precompile, EIP-7702, EIP-4844, etc.):
+  `EvmAsm/Stateless/Unimplemented.lean`.
+- SDIV blocker (`evm-asm-9iqmw`) does **not** block this track —
+  fixtures avoiding SDIV are picked first.
+
+---
+
 ## Priority Order
 
 **Immediate (recreate deleted specs) — ✅ ALL DONE:**

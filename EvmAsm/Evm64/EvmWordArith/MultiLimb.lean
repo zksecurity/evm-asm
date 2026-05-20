@@ -61,7 +61,7 @@ theorem halfword_decompose {x : Word} :
 -- rv64_divu Nat-level correctness
 -- ============================================================================
 
-private theorem beq_zero_false {b : Word} (hb : b ≠ 0) : (b == 0#64) = false := by
+theorem beq_zero_false {b : Word} (hb : b ≠ 0) : (b == 0#64) = false := by
   cases h : b == 0#64
   · rfl
   · exfalso; apply hb; exact eq_of_beq h

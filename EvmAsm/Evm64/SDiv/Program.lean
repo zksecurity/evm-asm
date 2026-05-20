@@ -206,9 +206,11 @@ theorem evm_sdiv_call_target_byte_offset :
     4 * evm_sdiv_wrapper.length := by
   native_decide
 
-/-- Full SDIV code region. The wrapper returns via `x18`; the appended
-    `evm_div_callable` block is reached only by the wrapper's near call. -/
-def evm_sdiv : EvmAsm.Rv64.Program :=
+/-- Legacy verified SDIV code region. The wrapper returns via `x18`; the
+    appended `evm_div_callable` block is reached only by the wrapper's near
+    call. Existing `sdivCode` composition proofs still target this surface
+    until the dispatcher proofs are lifted to the v4 no-NOP code surface. -/
+def evm_sdiv_legacy : EvmAsm.Rv64.Program :=
   evm_sdiv_wrapper ;; evm_div_callable
 
 /-- v4 full SDIV code region. This keeps the same SDIV wrapper and swaps the

@@ -49,7 +49,7 @@ theorem or_toNat_eq_add_of_le_one {a b : Word}
     If the first addition overflows (u + carryIn ≥ 2^64), the intermediate
     result is small, so the second addition (intermediate + v) can't also overflow
     when the total carry is ≤ 1. -/
-private theorem addback_carries_exclusive (u_i v_i carryIn : Word)
+theorem addback_carries_exclusive (u_i v_i carryIn : Word)
     (hci : carryIn.toNat ≤ 1) :
     let uPlusCarry := u_i + carryIn
     let uNew := uPlusCarry + v_i

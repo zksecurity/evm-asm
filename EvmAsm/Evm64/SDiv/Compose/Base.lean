@@ -31,14 +31,14 @@ theorem sdivCode_wrapper_sub {base : Word} :
     ∀ a i, (EvmAsm.Rv64.CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
       (sdivCode base) a = some i := by
   unfold sdivCode
-  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base base evm_sdiv evm_sdiv_wrapper 0
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base base evm_sdiv_legacy evm_sdiv_wrapper 0
     (EvmAsm.Evm64.SDiv.AddrNorm.wrapperStart_addr base)
-    (by unfold evm_sdiv; simp only [EvmAsm.Rv64.seq, EvmAsm.Rv64.Program]; rfl)
+    (by unfold evm_sdiv_legacy; simp only [EvmAsm.Rv64.seq, EvmAsm.Rv64.Program]; rfl)
     (by
-      rw [evm_sdiv_length, evm_sdiv_wrapper_length]
+      rw [evm_sdiv_legacy_length, evm_sdiv_wrapper_length]
       norm_num)
     (by
-      rw [evm_sdiv_length]
+      rw [evm_sdiv_legacy_length]
       norm_num)
 
 /-- Wrapper sub-region inside `sdivCodeV4`. -/
@@ -65,10 +65,10 @@ theorem sdivCode_div_callable_v1_sub {base : Word} :
   rw [evm_div_callable_code_eq_ofProg (base + 284)] at h
   unfold sdivCode
   exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + 284)
-    evm_sdiv evm_div_callable 71
+    evm_sdiv_legacy evm_div_callable 71
     (EvmAsm.Evm64.SDiv.AddrNorm.divCallableStart_addr base)
     (by
-      unfold evm_sdiv EvmAsm.Rv64.seq
+      unfold evm_sdiv_legacy EvmAsm.Rv64.seq
       rw [← evm_sdiv_wrapper_length]
       have h_drop :
           List.drop evm_sdiv_wrapper.length
@@ -79,7 +79,7 @@ theorem sdivCode_div_callable_v1_sub {base : Word} :
       simp only [List.take_length])
     (by native_decide)
     (by
-      rw [evm_sdiv_length]
+      rw [evm_sdiv_legacy_length]
       norm_num)
     a i h
 

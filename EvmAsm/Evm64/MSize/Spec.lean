@@ -74,7 +74,7 @@ theorem evm_msize_spec_within
   EVM execution — gas costs bound `sizeBytes` well below `2^64`).
 -/
 
-private theorem evmWordIs_msize_unfold (nsp : Word) (sizeBytes : Nat)
+theorem evmWordIs_msize_unfold (nsp : Word) (sizeBytes : Nat)
     (h_size_lt : sizeBytes < 2 ^ 64) :
     evmWordIs nsp (BitVec.ofNat 256 sizeBytes) =
       ((nsp ↦ₘ BitVec.ofNat 64 sizeBytes) ** ((nsp + 8) ↦ₘ 0) **

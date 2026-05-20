@@ -45,7 +45,7 @@ theorem div_nat_le_one_of_msb (uLo d : Word) (hd : d.toNat ≥ 2^63) :
 -- n=4 shift=0 correctness: q=0 case (a < b)
 -- ============================================================================
 
-private theorem bnz_of_lt {a b : EvmWord} (h : a.toNat < b.toNat) : b ≠ 0 := by
+theorem bnz_of_lt {a b : EvmWord} (h : a.toNat < b.toNat) : b ≠ 0 := by
   intro heq; subst heq; simp at h
 
 /-- When a < b, the quotient is 0. -/
@@ -62,7 +62,7 @@ theorem mod_self_of_lt {a b : EvmWord} (h_lt : a.toNat < b.toNat) :
 -- n=4 shift=0 correctness: q=1 case (b ≤ a < 2*b)
 -- ============================================================================
 
-private theorem bnz_of_lt2 {a b : EvmWord} (h : a.toNat < 2 * b.toNat) : b ≠ 0 := by
+theorem bnz_of_lt2 {a b : EvmWord} (h : a.toNat < 2 * b.toNat) : b ≠ 0 := by
   intro heq; subst heq; simp at h
 
 /-- When b ≤ a < 2b, the quotient is 1. -/

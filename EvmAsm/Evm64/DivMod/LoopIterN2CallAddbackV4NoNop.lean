@@ -38,7 +38,7 @@ def loopBodyN2CallAddbackBeqJgt0PostV4
   regOwn .x1
 
 /-- No-NOP/v4 loop body cpsTripleWithin for n=2, call+addback, j=0. -/
-theorem divK_loop_body_n2_call_addback_j0_beq_v4_spec_within_noNop
+private theorem divK_loop_body_n2_call_addback_j0_beq_v4_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
     (retMem dMem dloMem scratch_un0 scratchMem : Word)
@@ -164,7 +164,7 @@ theorem divK_loop_body_n2_call_addback_j0_beq_v4_spec_within_noNop
     full
 
 /-- No-NOP/v4 loop body cpsTripleWithin for n=2, call+addback, j>0. -/
-theorem divK_loop_body_n2_call_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
+private theorem divK_loop_body_n2_call_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
     (hpos : BitVec.slt (j + signExtend12 4095) 0 = false)
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)

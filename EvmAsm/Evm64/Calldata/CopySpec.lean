@@ -61,12 +61,12 @@ theorem evm_calldatacopy_preamble_length
   simp [evm_calldatacopy_preamble, LD, ADDI, ADD, single, seq,
     Program.length_append]
 
-private theorem signExtend12_callDataPtrOff :
+theorem signExtend12_callDataPtrOff :
     signExtend12 (BitVec.ofNat 12 callDataPtrOff) =
       BitVec.ofNat 64 callDataPtrOff := by
   rw [signExtend12_ofNat_small (by decide)]
 
-private theorem signExtend12_callDataLenOff :
+theorem signExtend12_callDataLenOff :
     signExtend12 (BitVec.ofNat 12 callDataLenOff) =
       BitVec.ofNat 64 callDataLenOff := by
   rw [signExtend12_ofNat_small (by decide)]

@@ -32,17 +32,17 @@ theorem carry_toNat {x y : Word} :
     simp [BitVec.toNat_ofNat]; omega
 
 -- OR of two {0,1}-valued Words
-private theorem or_01_toNat (x y : Word) (hx : x = 0 ∨ x = 1) (hy : y = 0 ∨ y = 1) :
+theorem or_01_toNat (x y : Word) (hx : x = 0 ∨ x = 1) (hy : y = 0 ∨ y = 1) :
     (x ||| y).toNat = min 1 (x.toNat + y.toNat) := by
   rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> decide
 
 -- {0,1} fact for if-then-else
-private theorem ite_word_01 (c : Prop) [Decidable c] :
+theorem ite_word_01 (c : Prop) [Decidable c] :
     (if c then (1 : Word) else 0) = 0 ∨ (if c then (1 : Word) else 0) = 1 := by
   split <;> simp
 
 -- Combined carry: (carry_a ||| carry_b).toNat = (a + b + cin) / 2^64
-private theorem combined_carry_toNat {x y cin : Word} (hcin : cin.toNat ≤ 1) :
+theorem combined_carry_toNat {x y cin : Word} (hcin : cin.toNat ≤ 1) :
     let psum := x + y
     let ca := if BitVec.ult psum y then (1 : Word) else 0
     let res := psum + cin
