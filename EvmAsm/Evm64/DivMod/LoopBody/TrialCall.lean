@@ -227,6 +227,54 @@ def divKTrialCallV4ScratchOut (uHi uLo vTop scratchMem : Word) : Word :=
   let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
   if rhat2cHi ≠ 0 then scratchMem else rhat2c
 
+theorem divKTrialCallV4DLo_eq (vTop : Word) :
+    divKTrialCallV4DLo vTop =
+      (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat := by
+  unfold divKTrialCallV4DLo
+  rfl
+
+theorem divKTrialCallV4Un0_eq (uLo : Word) :
+    divKTrialCallV4Un0 uLo =
+      (uLo <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat := by
+  unfold divKTrialCallV4Un0
+  rfl
+
+theorem divKTrialCallV4ScratchOut_eq
+    (uHi uLo vTop scratchMem : Word) :
+    divKTrialCallV4ScratchOut uHi uLo vTop scratchMem =
+      let dHi := vTop >>> (32 : BitVec 6).toNat
+      let dLo := (vTop <<< (32 : BitVec 6).toNat) >>> (32 : BitVec 6).toNat
+      let div_un1 := uLo >>> (32 : BitVec 6).toNat
+      let q1 := rv64_divu uHi dHi
+      let rhat := uHi - q1 * dHi
+      let hi1 := q1 >>> (32 : BitVec 6).toNat
+      let q1c := if hi1 = 0 then q1 else q1 + signExtend12 4095
+      let rhatc := if hi1 = 0 then rhat else rhat + dHi
+      let qDlo := q1c * dLo
+      let rhatUn1 := (rhatc <<< (32 : BitVec 6).toNat) ||| div_un1
+      let q1' := if BitVec.ult rhatUn1 qDlo then q1c + signExtend12 4095 else q1c
+      let rhat' := if BitVec.ult rhatUn1 qDlo then rhatc + dHi else rhatc
+      let rhatHi2 := rhat' >>> (32 : BitVec 6).toNat
+      let qDlo2 := q1' * dLo
+      let rhatUn1' := (rhat' <<< (32 : BitVec 6).toNat) ||| div_un1
+      let q1'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                  then q1' + signExtend12 4095 else q1'
+      let rhat'' := if rhatHi2 = 0 ∧ BitVec.ult rhatUn1' qDlo2
+                    then rhat' + dHi else rhat'
+      let cu_rhat_un1 := (rhat'' <<< (32 : BitVec 6).toNat) ||| div_un1
+      let cu_q1_dlo := q1'' * dLo
+      let un21 := cu_rhat_un1 - cu_q1_dlo
+      let q0 := rv64_divu un21 dHi
+      let rhat2 := un21 - q0 * dHi
+      let hi2 := q0 >>> (32 : BitVec 6).toNat
+      let rhat2c := if hi2 = 0 then rhat2 else rhat2 + dHi
+      let rhat2cHi := rhat2c >>> (32 : BitVec 6).toNat
+      if rhat2cHi ≠ 0 then scratchMem else rhat2c := by
+  unfold divKTrialCallV4ScratchOut divKTrialCallV4Rhat2c divKTrialCallV4Un21
+    divKTrialCallV4Q1dd divKTrialCallV4Rhatdd divKTrialCallV4DHi
+    divKTrialCallV4DLo divKTrialCallV4Un1
+  rfl
+
 /-- Bundled postcondition for the v4 trial-call path. This mirrors
     `divKTrialCallFullPost`, but tracks the extra v4 scratch cell and the
     second D3 correction values from `div128V4SpecPost`. -/
