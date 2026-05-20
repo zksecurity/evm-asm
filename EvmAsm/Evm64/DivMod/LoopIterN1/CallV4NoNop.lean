@@ -385,6 +385,37 @@ theorem divK_loop_body_n1_call_skip_j0_v4_spec_within_noNop_exact_x1
       rw [sepConj_assoc'] at hp; xperm_hyp hp)
     full
 
+/-- No-NOP/v4 n=1 call+skip j=0 exact-`x1` spec exposing the
+    scratch-parameterized post used by the callable loop surface. -/
+theorem divK_loop_body_n1_call_skip_j0_v4_spec_within_noNop_exact_x1_scratch
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal : Word)
+    (retMem dMem dloMem scratch_un0 scratchMem : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult u1 v0)
+    (hborrow : loopBodyN1CallSkipJ0BorrowV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    cpsTripleWithin 148 (base + loopBodyOff) (base + denormOff) (sharedDivModCodeNoNop_v4 base)
+      (loopBodyN1CallSkipJ0PreV4NoX1 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratch_un0 scratchMem **
+        (.x1 ↦ᵣ raVal))
+      (loopBodyN1CallSkipPostJScratchNoX1 sp base (0 : Word)
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+        (.x1 ↦ᵣ raVal)) := by
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by
+      rw [loopBodyN1CallSkipJ0PostV4NoX1_eq_scratch] at hp
+      exact hp)
+    (divK_loop_body_n1_call_skip_j0_v4_spec_within_noNop_exact_x1
+      sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal
+      retMem dMem dloMem scratch_un0 scratchMem base halign hbltu hborrow)
+
 /-- No-NOP/v4 n=1 call+skip j=0 spec with the call frame split so future
     callers can keep `x1` outside the loop-body assertion. -/
 theorem divK_loop_body_n1_call_skip_j0_v4_spec_within_noNop_noX1
