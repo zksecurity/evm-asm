@@ -4,7 +4,7 @@
   Split v4 zero-divisor callable wrappers for DIV.
 -/
 
-import EvmAsm.Evm64.DivMod.Callable
+import EvmAsm.Evm64.DivMod.CallableV4Div
 
 namespace EvmAsm.Evm64
 

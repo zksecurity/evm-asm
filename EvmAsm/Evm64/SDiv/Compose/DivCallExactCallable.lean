@@ -6,6 +6,8 @@
 -/
 
 import EvmAsm.Evm64.SDiv.Compose.DivCallPostPcFreeBasics
+import EvmAsm.Evm64.DivMod.CallableV1Legacy
+import EvmAsm.Evm64.DivMod.CallableV4Div
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
@@ -39,20 +41,20 @@ theorem evm_div_callable_preserving_x1_exact_pre_spec_in_sdivCode
       (EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) := by
   have hStackCallDiv :=
     EvmAsm.Rv64.cpsTripleWithin_extend_code
-      (hmono := EvmAsm.Evm64.divCode_noNop_sub_div_callable_code)
+      (hmono := EvmAsm.Evm64.divCode_noNop_sub_div_callable_code_v1)
       hStack
   have hStackCall :=
     EvmAsm.Rv64.cpsTripleWithin_extend_code
-      (hmono := evm_div_callable_code_sub_sdivCode (base := base))
+      (hmono := evm_div_callable_code_v1_sub_sdivCode (base := base))
       hStackCallDiv
   have hRetDiv :=
     EvmAsm.Rv64.cpsTripleWithin_extend_code
-      (hmono := EvmAsm.Evm64.evm_div_callable_code_ret_sub
+      (hmono := EvmAsm.Evm64.evm_div_callable_code_v1_ret_sub
         (base := base + wrapperEndOff))
       (EvmAsm.Evm64.ret_spec_within' ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff) raVal)
   have hRet :=
     EvmAsm.Rv64.cpsTripleWithin_extend_code
-      (hmono := evm_div_callable_code_sub_sdivCode (base := base))
+      (hmono := evm_div_callable_code_v1_sub_sdivCode (base := base))
       hRetDiv
   have hRetFramed :=
     EvmAsm.Rv64.cpsTripleWithin_frameL
@@ -247,8 +249,8 @@ theorem evm_div_callable_preserving_branch_return_x1_spec_in_sdivCode
       (EvmAsm.Evm64.divStackDispatchPostNoX1 sp a b **
         (.x1 ↦ᵣ branch.returnX1)) := by
   exact EvmAsm.Rv64.cpsTripleWithin_extend_code
-    (hmono := evm_div_callable_code_sub_sdivCode (base := base))
-    (EvmAsm.Evm64.evm_div_callable_spec_from_noNop_branch_return_x1
+    (hmono := evm_div_callable_code_v1_sub_sdivCode (base := base))
+    (EvmAsm.Evm64.evm_div_callable_v1_spec_from_noNop_branch_return_x1
       sp (base + wrapperEndOff) a b v5 v6 v7 v10 v11
       q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
       nMem shiftMem jMem retMem dMem dloMem scratchUn0 branch hStack)
