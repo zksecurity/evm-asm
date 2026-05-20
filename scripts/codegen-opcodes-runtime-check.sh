@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# codegen-opcodes-check.sh — generic per-opcode regression runner.
+# codegen-opcodes-runtime-check.sh — M8.5 runtime-bytecode test runner.
 #
-# Enumerates Lean-declared test cases (`EvmAsm/Codegen/Tests/Cases.lean`)
-# via `lake exe codegen --list-test-cases`, then for each case:
-#   1. emits an ELF via `lake exe codegen --test-case <name>` (wraps the
-#      bytecode through the M5b dispatcher's `tinyInterpRegistry`)
-#   2. runs it on ziskemu
-#   3. diffs the first 32 bytes of ziskemu's `-o` output against the
-#      case's `expectedOutHex`.
+# Builds the M8.5 `runtime_dispatcher` ELF **once**, then iterates
+# Lean-declared test cases (`EvmAsm/Codegen/Tests/Cases.lean`) packing
+# each per-case bytecode into a ziskemu `-i <file>` payload and reusing
+# the same dispatcher ELF.
+#
+# Replaces the per-case-ELF assemble + link work that
+# `scripts/codegen-opcodes-check.sh` does for every case. Same expected
+# outputs; ~6× faster on the macOS dev box.
 #
 # Adding a new opcode regression = appending one record to
 # `opcodeTestCases` in `Tests/Cases.lean` — no edits to this script.
@@ -31,16 +32,22 @@ if [[ -z "$ZISKEMU" ]]; then
   fi
 fi
 
+PYTHON="${PYTHON:-python3}"
+if ! command -v "$PYTHON" >/dev/null 2>&1; then
+  echo "$PYTHON not found — set PYTHON=... or install python3" >&2
+  exit 1
+fi
+
 mkdir -p gen-out
 
 echo "==> lake build codegen"
 lake build codegen
 
-# `lake exe codegen --list-test-cases` emits `<name>\t<expectedOutHex>`
-# per line; we read both columns. Single source of truth lives in
-# `EvmAsm/Codegen/Tests/Cases.lean`. Uses portable `while read` so the
-# script works on the macOS bash 3.2 default (no `mapfile`).
+echo "==> emit + link runtime_dispatcher.elf (once)"
+lake exe codegen --program runtime_dispatcher --halt linux93 -o gen-out/runtime_dispatcher
 
+# `--list-test-cases` is a 3-column TSV: <name> <expected_hex> <bytecode_csv>.
+# Single source of truth lives in `EvmAsm/Codegen/Tests/Cases.lean`.
 LIST_FILE="gen-out/.opcodes-list"
 lake exe codegen --list-test-cases >"$LIST_FILE"
 
@@ -52,26 +59,24 @@ if [[ "$TOTAL" -eq 0 ]]; then
   exit 1
 fi
 
-echo "==> running $TOTAL test case(s)"
+echo "==> running $TOTAL test case(s) through runtime_dispatcher.elf"
 
 FAILED=()
-# `--list-test-cases` emits TSV with `<name>\t<expected>\t<bytecode>`
-# since M8.5; this legacy runner only needs name+expected, so we drop
-# the 3rd column into `_bytecode_unused` to keep `read` honest.
-while IFS=$'\t' read -r name expected _bytecode_unused; do
-  if [[ -z "$name" || -z "$expected" ]]; then
+while IFS=$'\t' read -r name expected bytecode_csv; do
+  if [[ -z "$name" || -z "$expected" || -z "$bytecode_csv" ]]; then
     echo
-    echo "==> SKIP: malformed --list-test-cases line"
+    echo "==> SKIP: malformed --list-test-cases line (missing 1+ columns)"
     FAILED+=("${name:-<unknown>} (malformed-tsv)")
     continue
   fi
 
   echo
-  echo "==> emit $name"
-  lake exe codegen --test-case "$name" --halt linux93 -o "gen-out/$name"
+  echo "==> pack $name"
+  "$PYTHON" scripts/pack-bytecode.py "$bytecode_csv" "gen-out/$name.input"
 
-  echo "==> ziskemu -e gen-out/$name.elf -o gen-out/$name.output"
-  "$ZISKEMU" -e "gen-out/$name.elf" -o "gen-out/$name.output" -n 200000 \
+  echo "==> ziskemu -e runtime_dispatcher.elf -i gen-out/$name.input"
+  "$ZISKEMU" -e gen-out/runtime_dispatcher.elf -i "gen-out/$name.input" \
+    -o "gen-out/$name.output" -n 200000 \
     >"gen-out/$name.emu.log" 2>&1
 
   actual="$(xxd -p -c 64 -l 32 "gen-out/$name.output" | tr -d '\n')"

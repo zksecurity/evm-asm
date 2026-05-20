@@ -162,6 +162,19 @@ def opcodeTestCases : List OpcodeTestCase :=
     { name           := "mstore8_basic"
       bytecode       := "0x60, 0xff, 0x60, 0x00, 0x53, 0x60, 0x00, 0x51, 0x00"
       expectedOutHex := "00000000000000000000000000000000000000000000000000000000000000ff" }
+    -- ## M8 unsigned division opcodes
+    -- (SDIV / SMOD deferred: their verified bodies use a saved-ra-ret
+    -- pattern that bypasses the dispatcher's standard wrapper tail;
+    -- integrating them needs a trampoline approach planned as the
+    -- next codegen PR.)
+  , -- PUSH1 0x02; PUSH1 0x0a; DIV; STOP — 10 / 2 = 5
+    { name           := "div_basic"
+      bytecode       := "0x60, 0x02, 0x60, 0x0a, 0x04, 0x00"
+      expectedOutHex := "0500000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x03; PUSH1 0x0a; MOD; STOP — 10 % 3 = 1
+    { name           := "mod_basic"
+      bytecode       := "0x60, 0x03, 0x60, 0x0a, 0x06, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
   ]
 
 /-- Find a test case by name. -/

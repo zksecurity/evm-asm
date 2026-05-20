@@ -111,11 +111,14 @@ def main (args : List String) : IO UInt32 := do
   | .ok opts => do
       match opts.mode with
       | .listTestCases => do
-          -- TSV: `<name>\t<expectedOutHex>` per line; the bash runner
-          -- reads both columns so the expected hex stays single-sourced
-          -- in `Tests/Cases.lean`.
+          -- TSV: `<name>\t<expectedOutHex>\t<bytecode>` per line.
+          -- The bytecode column lets the M8.5 runtime-bytecode runner
+          -- pack a ziskemu `-i <file>` payload without re-parsing
+          -- Lean. Backwards-compatible with the M6a 2-column reader
+          -- as long as it uses `read -r name expected` (extra fields
+          -- just get dropped).
           for tc in Tests.opcodeTestCases do
-            IO.println s!"{tc.name}\t{tc.expectedOutHex}"
+            IO.println s!"{tc.name}\t{tc.expectedOutHex}\t{tc.bytecode}"
           return 0
       | .program => do
           match lookupProgram opts.target with

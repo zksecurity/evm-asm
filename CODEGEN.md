@@ -38,14 +38,15 @@ untouched. Generated artifacts go in `gen-out/` (gitignored).
 | `EvmAsm/Codegen.lean` | Top-level umbrella (mirrors `EvmAsm/Rv64.lean`, `EvmAsm/Evm64.lean`). |
 | `EvmAsm/Codegen/Emit.lean` | Pure `emitReg`, `emitInstr`, `emitProgram` — `Instr → String`. No `IO`. |
 | `EvmAsm/Codegen/Layout.lean` | `HaltConv` enum, halt stubs, `_start` preamble, `.option norvc`, `MEM_START`/`MEM_END` constants, `BuildUnit` struct + `emitBuildUnit`/`emitDataLabel` helpers. |
-| `EvmAsm/Codegen/Dispatch.lean` | M5b dispatcher scaffolding: `OpcodeHandlerSpec` (with optional `preBody` for x10-clobbering handlers) + `HandlerTail` types, `emitDispatcherPrologue`/`Epilogue`/`DataSection` and `buildDispatchUnit` helpers. Pure (no IO). |
+| `EvmAsm/Codegen/Dispatch.lean` | M5b dispatcher scaffolding: `OpcodeHandlerSpec` (with optional `preBody` for x10-clobbering handlers) + `HandlerTail` types, `emitDispatcherPrologue`/`Epilogue`/`DataSection` and `buildDispatchUnit` helpers. M8.5 adds the parallel runtime-bytecode helpers (`emitRuntimeDispatcherPrologue` / `emitRuntimeDispatcherDataSection` / `buildRuntimeDispatchUnit`) that read bytecode from `INPUT_ADDR + INPUT_DATA_OFFSET` at runtime. Pure (no IO). |
 | `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `evm_div`, `evm_mod`, `input_echo`, `evm_add_from_input`, `evm_div_from_input`, `evm_mod_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`) plus the M5b opcode handler registry (`tinyInterpRegistry`) composed from `pushHandlers` (PUSH0..32), `dupHandlers` (DUP1..16), `swapHandlers` (SWAP1..16), `singletonHandlers` (17 fixed-shape opcodes), `memoryHandlers` (MLOAD/MSTORE/MSTORE8, M7), `stopHandler`; shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`, `evmDivPatched`/`evmModPatched` for the DIV/MOD NOP-splice). |
 | `EvmAsm/Codegen/Tests/Cases.lean` | Per-opcode regression test registry: `OpcodeTestCase` struct + `opcodeTestCases` list. Wraps each bytecode through the M5b dispatcher for end-to-end ziskemu validation. |
 | `EvmAsm/Codegen/Cli.lean` | Argument parsing (`--program`, `--test-case`, `--list-test-cases`, `--halt`, `--out`, `--asm-only`). |
 | `EvmAsm/Codegen/Driver.lean` | `IO`: shells out to `as`/`ld` if available; `--asm-only` for CI without the cross toolchain. |
 | `Main.lean` | Already exists as `import EvmAsm`; extend to call `EvmAsm.Codegen.Cli.main`. |
 | `lakefile.toml` | Add `[[lean_exe]] name = "codegen"; root = "Main"; supportInterpreter = true`. |
-| `scripts/codegen-*.sh` | Per-milestone round-trip checks: `codegen-smoke.sh` (M0), `codegen-evm_add-check.sh` (M2), `codegen-evm_add-from-input-check.sh` (M4), `codegen-tiny-interp-check.sh` (M5a), `codegen-tiny-interp-dispatch-check.sh` (M5b), `codegen-opcodes-check.sh` (M6a; canonical opcode regression runner), `codegen-evm_div-check.sh` / `codegen-evm_div-cases-check.sh` / `codegen-evm_mod-check.sh` / `codegen-evm_mod-cases-check.sh` (standalone DIV/MOD wrappers — not yet routed through the dispatcher). |
+| `scripts/codegen-*.sh` | Per-milestone round-trip checks: `codegen-smoke.sh` (M0), `codegen-evm_add-check.sh` (M2), `codegen-evm_add-from-input-check.sh` (M4), `codegen-tiny-interp-check.sh` (M5a), `codegen-tiny-interp-dispatch-check.sh` (M5b), `codegen-opcodes-check.sh` (M6a legacy per-case-ELF runner), `codegen-opcodes-runtime-check.sh` (M8.5 **canonical** runtime-bytecode runner, ~3× faster), `codegen-evm_div-check.sh` / `codegen-evm_div-cases-check.sh` / `codegen-evm_mod-check.sh` / `codegen-evm_mod-cases-check.sh` (standalone DIV/MOD wrappers — also routed through the dispatcher in M8). |
+| `scripts/pack-bytecode.py` | Helper used by `codegen-opcodes-runtime-check.sh`: parses a comma-separated `0xNN` byte list and emits `<8-byte LE length><bytes><zero pad to multiple-of-8>` (ziskemu input file format). |
 | `gen-out/` | Generated `.s`/`.elf`/`.input`; gitignored. |
 
 ## Milestones
@@ -507,14 +508,123 @@ all still exit 0. Full M7 suite runs in **~57 s** — just under
 the 60 s threshold; the next milestone that materially grows the
 dispatcher ELF should consider the runtime-bytecode optimization.
 
+### M8 — Unsigned division (DIV, MOD) through the dispatcher (M) — **DONE (2026-05-20)**
+
+Routes the verified `evm_div` (0x04) and `evm_mod` (0x06) bodies
+through `tinyInterpRegistry` using the existing `evmDivPatched` /
+`evmModPatched` NOP-splice helpers (lifted out of the M2 standalone
+DIV/MOD wrappers and hoisted before the M5b registry section).
+
+**Delivered:**
+- `EvmAsm/Codegen/Programs.lean`:
+  - Hoisted `evmDivPatched` / `evmModPatched` above the M5b
+    registry so both the M2 standalone wrappers (`evmDivUnit`,
+    `evmModUnit`, etc.) and the new M8 dispatcher handlers can
+    reference them.
+  - New `divModHandlers : List OpcodeHandlerSpec` with two entries
+    (`h_DIV`, `h_MOD`). Both use `preBody := "  mv x14, x10"` and a
+    custom tail (`divModTail`) that restores via `mv x10, x14`.
+    **`x14` instead of `x9`** because `evm_div` / `evm_mod` use `x9`
+    as the Knuth-D loop counter `j` (94 references); the standard
+    M6b `mv x9, x10` save would be destroyed mid-body.
+- `EvmAsm/Codegen/Tests/Cases.lean`: two new cases — `div_basic`
+  (10/2 = 5) and `mod_basic` (10%3 = 1). Total now 26.
+
+**Discovered scope reduction.** SDIV (0x05) and SMOD (0x07) ended up
+deferred. The earlier plan assumed they'd ride the same wrapping
+pattern, but their verified bodies (`evm_sdiv` / `evm_smod`) end with
+a "saved-ra-ret" pattern — `JALR x0, x18, 0` after the wrapper has
+copied `x1` into `x18` at the start — which **bypasses the dispatcher's
+standard wrapper tail entirely**. Integrating them needs a
+trampoline-style wrapper: set `x18` to point at a per-handler restore
+stub *before* the body runs, and splice off the body's initial
+`save_ra_block` so the trampoline target sticks. That's a new
+infrastructure surface; tracked as a separate codegen PR (M8.5 or
+M9-prep).
+
+**Register clobber audit lesson.** M6b's `mv x9, x10` save trick
+isn't universal — it assumed `x9` was unused by the verified body.
+For DIV/MOD (which use `x9` as `j`) we picked `x14` instead. **The
+M7-and-beyond habit of `grep -c '\.x10\b'` before adding a handler
+needs to extend to the chosen save register too:** verify
+`grep -c '\.<save-reg>\b'` is zero across the body's `Program.lean`
+and any callable subroutines.
+
+**Exit criteria (met).**
+`scripts/codegen-opcodes-check.sh` exits 0 with all 26 cases PASS
+(24 prior + 2 new). Pre-existing scripts unchanged. Full M8 suite
+runs in **~60 s** — at the threshold. The next opcode batch (M9
+self-calling, or M8.5 SDIV/SMOD via trampoline) should bundle the
+runtime-bytecode optimization to keep the suite snappy.
+
+### M8.5 — Runtime-bytecode dispatcher (S/M) — **DONE (2026-05-20)**
+
+Pure infrastructure: build the dispatcher ELF **once**; per case
+the test harness packs the bytecode into a `ziskemu -i <file>`
+payload instead of rebuilding the ELF per case. M8 put the suite
+at ~60 s; this brings it to **~20 s** (3× speedup) and leaves
+headroom for the next several opcode milestones.
+
+**Delivered:**
+- `EvmAsm/Codegen/Dispatch.lean` — new helpers:
+  - `emitRuntimeDispatcherPrologue` — same fetch/decode/dispatch
+    loop as the `.data`-baked variant, but `li x10, 0x40000010`
+    (= `INPUT_ADDR + INPUT_DATA_OFFSET`) replaces
+    `la x10, evm_code`.
+  - `emitRuntimeDispatcherDataSection` — drops the `evm_code:`
+    block. Stack scratch, `evm_memory:`, and the 256-entry jump
+    table all stay.
+  - `buildRuntimeDispatchUnit (registry, exitBody) → BuildUnit` —
+    factory mirroring `buildDispatchUnit` but with no bytecode
+    parameter.
+- `EvmAsm/Codegen/Programs.lean` — new `runtimeDispatcherUnit`
+  using `tinyInterpRegistry` + `evmAddEpilogue`. Registered as
+  `"runtime_dispatcher"` in `lookupProgram` / `knownProgramNames`.
+- `EvmAsm/Codegen/Cli.lean` — `--list-test-cases` extended to a
+  **3-column TSV** (`name\thex\tbytecode`). The legacy
+  per-case-ELF runner (`codegen-opcodes-check.sh`) updated to
+  drop the 3rd column with a placeholder var; the new
+  `codegen-opcodes-runtime-check.sh` reads all three.
+- `scripts/pack-bytecode.py` — new helper. Parses a
+  comma-separated `0xNN` list and emits `<8-byte LE u64
+  length><bytecode><zero pad to multiple-of-8>`. The zero pad is
+  required by ziskemu (`EmuContext::new() input size must be a
+  multiple of 8`); trailing zeros are harmless because the
+  dispatcher hits the bytecode's own STOP first.
+- `scripts/codegen-opcodes-runtime-check.sh` — new canonical
+  runner. Builds `runtime_dispatcher.elf` once, then iterates
+  `--list-test-cases`, packing each per-case bytecode into
+  `gen-out/<name>.input` and running ziskemu against the shared
+  ELF.
+
+**Suite runtime (validated on a macOS dev box):**
+- Legacy `codegen-opcodes-check.sh`: ~60 s (26 cases, one
+  assemble + link per case).
+- New `codegen-opcodes-runtime-check.sh`: **~20 s** (26 cases,
+  one assemble + link total). 3× speedup.
+
+The speedup is smaller than the ~6× I predicted in the M8.5 plan;
+per-case ziskemu invocation overhead (process startup, ELF load,
+input parse) is bigger than I modelled (~0.5 s vs the predicted
+0.1 s). Still plenty of headroom for M9 / M10 / M11 to add
+handler text without forcing the suite back over the 60 s mark.
+
+**Exit criteria (met).**
+Both `codegen-opcodes-runtime-check.sh` (new canonical) and
+`codegen-opcodes-check.sh` (legacy fallback, kept for
+backwards-compat during the transition) exit 0 with the same 26
+cases PASS. Pre-existing M2/M4/M5/M7/M8 scripts unchanged.
+PROGRESS.md regenerated (program count 16 → 17, script count
+14 → 15).
+
 ### Sequencing
 
-M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅ → M6b ✅ → M7 ✅.
+M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅ → M6b ✅ → M7 ✅ → M8 ✅ → M8.5 ✅.
 M3 is deferred; revisit only if a future milestone (full opcode
 coverage, JUMP/JUMPI, or the binary encoder) makes label-free
-emission unreadable. M7 unblocks M8 (hint-dependent opcodes
-through the dispatcher) and any non-trivial EVM bytecode that
-exercises memory.
+emission unreadable. M8.5 unblocks the next opcode batches (M9
+SDIV/SMOD trampoline, M10 ADDMOD/EXP callable, M11 control flow)
+by keeping the test suite fast.
 
 ## Tricky bits / open questions
 
@@ -599,19 +709,35 @@ exercises memory.
   `.data` region and `x13` = memory-base in the dispatcher prologue.
   MSIZE deferred pending verified memory-expansion bookkeeping.
   Suite runtime: ~57 s (just under the 60 s threshold).
+- **M8.** ✅ `scripts/codegen-opcodes-check.sh` exits 0 with **26
+  test cases** PASS (validated 2026-05-20). DIV (0x04) and MOD (0x06)
+  routed through `tinyInterpRegistry` using the
+  `evmDivPatched` / `evmModPatched` NOP-splice helpers. Save register
+  switched from `x9` to `x14` for these two handlers because the
+  verified bodies use `x9` as the Knuth-D loop counter. SDIV/SMOD
+  deferred — their bodies use a saved-ra-ret pattern that bypasses
+  the dispatcher's wrapper tail.
+- **M8.5.** ✅ `scripts/codegen-opcodes-runtime-check.sh` exits 0
+  with **26 test cases** PASS (validated 2026-05-20). New
+  `runtime_dispatcher` BuildUnit reads bytecode at
+  `INPUT_ADDR + INPUT_DATA_OFFSET = 0x40000010` at runtime instead
+  of baking it into `.data`. Suite runtime dropped from ~60 s to
+  ~20 s (3× speedup). Legacy `codegen-opcodes-check.sh` still
+  passes as the fallback.
 
-## Future work (post-M7)
+## Future work (post-M8.5)
 
-Near-term (builds directly on M6a's registry; no new design surface):
-- **M8 — hint-input demo via `evm_div` / `evm_mod`.** Closes the loop
-  on M4's prover-hint infrastructure. The standalone `evm_div` /
-  `evm_mod` wrappers in `Programs.lean` already exercise the
-  hint-input path end-to-end through ziskemu (with `evm_div_from_input`
-  / `evm_mod_from_input`); M8 routes them through the dispatcher
-  instead, so the same bytecode that runs ADD can also run DIV.
-  Likely needs a `callableLabel?` extension to `OpcodeHandlerSpec`
-  to expose distinct entry points for opcodes that are also
-  near-called from within other handlers.
+Near-term:
+
+- **M9 — SDIV / SMOD trampoline.** Adds 2 opcodes. New trampoline
+  wrapper for handlers whose verified bodies end with a saved-ra-ret
+  (`JALR x0, x18, 0`): pre-stage `x18` to a per-handler restore stub
+  before the body runs, splice off the body's initial save_ra_block.
+- **M10 — ADDMOD / EXP via `callableLabel?`.** Adds 2 opcodes that
+  internally `JAL` to callable variants of other handlers (`evm_mul`
+  for EXP, MOD for ADDMOD). Needs a new `callableLabel?` field on
+  `OpcodeHandlerSpec` so the same body gets both a dispatcher-entry
+  label and a callable-entry label.
 
 Longer-term (genuine new design surface):
 
