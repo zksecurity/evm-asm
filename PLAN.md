@@ -1009,6 +1009,16 @@ through ECALL bridges (extending `EvmAsm/EL/Keccak*EcallBridge.lean`).
   writes it as a u64 at `OUTPUT_ADDR + 48` (diagnostic field past
   the 41-byte SSZ result). Fifth fixture (`--with-two-empty-headers`)
   verifies count=2.
+- ✅ PR-K1 ziskemu keccak intrinsic pinned: `CSRS 0x800, a0`
+  (32-bit encoding `0x80052073`) triggers `_opcode_keccak` in
+  ziskemu, which permutes the 200-byte state buffer pointed to by
+  `a0` via `zisk_keccakf1600`. New `zisk_keccak_probe` BuildUnit
+  emits the raw `.4byte` and copies the post-permutation state to
+  OUTPUT_ADDR; matches the Keccak team's reference vector for the
+  zero-state permutation. Source:
+  `ziskos/entrypoint/src/syscalls/keccakf.rs` + `syscall.rs`
+  (`SYSCALL_KECCAKF_ID = 0x800`) + `ziskos_syscall!` macro
+  expanding to `csrs <csr>, <reg>`.
 
 ### Cross-references
 
