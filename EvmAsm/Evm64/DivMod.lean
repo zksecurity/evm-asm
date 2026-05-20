@@ -40,6 +40,7 @@ import EvmAsm.Evm64.DivMod.LoopIterN2MaxAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2CallAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3MaxV4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN3MaxAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3CallAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.Compose.ModFullPathN2LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3LoopUnified
