@@ -123,6 +123,18 @@ theorem loopBodyN1CallAddbackBeqJgt0PostV4NoX1_to_loopBodyN1CallAddbackBeqJgt0Po
   delta loopBodyN1CallAddbackBeqJgt0PostV4NoX1 loopBodyN1CallAddbackBeqJgt0PostV4 at hp ⊢
   simpa only [sepConj_assoc'] using hp
 
+theorem loopBodyN1CallAddbackBeqJgt0PostV4NoX1_eq_scratch
+    (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) :
+    loopBodyN1CallAddbackBeqJgt0PostV4NoX1 sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem =
+      loopBodyN1CallAddbackBeqPostJScratchNoX1 sp base j
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  delta loopBodyN1CallAddbackBeqJgt0PostV4NoX1 loopBodyN1CallAddbackBeqPostJScratchNoX1
+  rfl
+
 /-- No-NOP/v4 loop body cpsTripleWithin for n=1, call+addback, j=0. -/
 theorem divK_loop_body_n1_call_addback_j0_beq_v4_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
