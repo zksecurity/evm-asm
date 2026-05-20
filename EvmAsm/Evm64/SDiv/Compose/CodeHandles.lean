@@ -14,6 +14,10 @@ namespace EvmAsm.Evm64.SDiv.Compose
 abbrev sdivCode (base : Word) : EvmAsm.Rv64.CodeReq :=
   EvmAsm.Rv64.CodeReq.ofProg base EvmAsm.Evm64.evm_sdiv
 
+/-- v4 full SDIV code region handle: wrapper followed by `evm_div_callable_v4`. -/
+abbrev sdivCodeV4 (base : Word) : EvmAsm.Rv64.CodeReq :=
+  EvmAsm.Rv64.CodeReq.ofProg base EvmAsm.Evm64.evm_sdiv_v4
+
 /-- Code handle for the saved-`ra` prologue block. -/
 abbrev saveRaCode (base : Word) : EvmAsm.Rv64.CodeReq :=
   EvmAsm.Rv64.CodeReq.ofProg (base + saveRaOff) (EvmAsm.Evm64.evm_sdiv_save_ra_block .x18)
@@ -65,5 +69,9 @@ abbrev savedRaRetCode (base : Word) : EvmAsm.Rv64.CodeReq :=
 /-- Code handle for the appended unsigned divider callable. -/
 abbrev divCallableCode (base : Word) : EvmAsm.Rv64.CodeReq :=
   EvmAsm.Rv64.CodeReq.ofProg (base + wrapperEndOff) EvmAsm.Evm64.evm_div_callable
+
+/-- Code handle for the appended v4 unsigned divider callable. -/
+abbrev divCallableCodeV4 (base : Word) : EvmAsm.Rv64.CodeReq :=
+  EvmAsm.Rv64.CodeReq.ofProg (base + wrapperEndOff) EvmAsm.Evm64.evm_div_callable_v4
 
 end EvmAsm.Evm64.SDiv.Compose

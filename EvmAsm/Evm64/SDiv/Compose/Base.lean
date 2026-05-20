@@ -65,6 +65,32 @@ theorem sdivCode_div_callable_sub {base : Word} :
       norm_num)
     a i h
 
+/-- The appended v4 unsigned DIV callable sub-region inside `sdivCodeV4`. -/
+theorem sdivCodeV4_div_callable_sub {base : Word} :
+    ∀ a i, (evm_div_callable_code_v4 (base + 284)) a = some i →
+      (sdivCodeV4 base) a = some i := by
+  intro a i h
+  rw [evm_div_callable_code_v4_eq_ofProg (base + 284)] at h
+  unfold sdivCodeV4
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base (base + 284)
+    evm_sdiv_v4 evm_div_callable_v4 71
+    (EvmAsm.Evm64.SDiv.AddrNorm.divCallableStart_addr base)
+    (by
+      unfold evm_sdiv_v4 EvmAsm.Rv64.seq
+      rw [← evm_sdiv_wrapper_length]
+      have h_drop :
+          List.drop evm_sdiv_wrapper.length
+              (evm_sdiv_wrapper ++ evm_div_callable_v4) =
+            evm_div_callable_v4 := by
+        exact List.drop_append_length
+      rw [h_drop]
+      simp only [List.take_length])
+    (by native_decide)
+    (by
+      rw [evm_sdiv_v4_length]
+      norm_num)
+    a i h
+
 /-- Bundled top-level SDIV code subsumptions for the wrapper and appended
     unsigned DIV callable. -/
 theorem sdivCode_top_level_subs {base : Word} :
