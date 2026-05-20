@@ -13,6 +13,7 @@
 
 import EvmAsm.Evm64.SDiv.LimbSpec
 import EvmAsm.Evm64.SDiv.AddrNorm
+import EvmAsm.Evm64.DivMod.CallableV4Div
 import EvmAsm.Evm64.SDiv.Compose.BaseCode
 import EvmAsm.Evm64.SDiv.Compose.BaseOffsets
 import EvmAsm.Evm64.SDiv.Compose.BaseSignSequence

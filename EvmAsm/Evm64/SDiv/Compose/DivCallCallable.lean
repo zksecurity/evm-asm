@@ -5,7 +5,7 @@
   the full SDIV code region.
 -/
 
-import EvmAsm.Evm64.DivMod.Callable
+import EvmAsm.Evm64.DivMod.CallableV4Div
 import EvmAsm.Evm64.SDiv.Compose.BaseCode
 
 namespace EvmAsm.Evm64.SDiv.Compose

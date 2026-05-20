@@ -22,6 +22,7 @@ import EvmAsm.Evm64.DivMod.Spec
 import EvmAsm.Evm64.DivMod.Shift0Dispatcher
 import EvmAsm.Evm64.DivMod.SpecCall
 import EvmAsm.Evm64.DivMod.CallableV1Legacy
+import EvmAsm.Evm64.DivMod.CallableV4Div
 import EvmAsm.Evm64.DivMod.CallableV4Mod
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin

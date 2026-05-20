@@ -6,6 +6,7 @@
 -/
 
 import EvmAsm.Evm64.SDiv.Compose.DivCallPostPcFreeBasics
+import EvmAsm.Evm64.DivMod.CallableV4Div
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
