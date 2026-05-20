@@ -72,16 +72,20 @@ print(c.to_bytes(8, 'little').hex())
 }
 
 # Build the 112-hex-char expected output (= 56 bytes):
-#   32 zero bytes (hash) | 1 byte bool | 8 LE bytes chain_id
-# | 7 zero bytes (gap)   | 8 LE bytes header_count (PR6 diagnostic)
+#   32 hash bytes (keccak256(SSZ blob), PR-K5)
+# | 1 byte bool
+# | 8 LE bytes chain_id
+# | 7 zero bytes (gap)
+# | 8 LE bytes header_count (PR6 diagnostic)
 expected_hex_for() {
-  local cid="$1"
-  local bool_hex="$2"      # "00" or "01"
-  local count_dec="$3"     # decimal header_count
+  local hash_hex="$1"      # 64-hex-char keccak256(SSZ blob)
+  local cid="$2"
+  local bool_hex="$3"      # "00" or "01"
+  local count_dec="$4"     # decimal header_count
   local chain_le hcount_le
   chain_le="$(chain_id_le_hex "$cid")"
   hcount_le="$(python3 -c "print(int('$count_dec').to_bytes(8, 'little').hex())")"
-  echo "$(printf '00%.0s' $(seq 1 32))${bool_hex}${chain_le}$(printf '00%.0s' $(seq 1 7))${hcount_le}"
+  echo "${hash_hex}${bool_hex}${chain_le}$(printf '00%.0s' $(seq 1 7))${hcount_le}"
 }
 
 run_fixture() {
@@ -94,20 +98,24 @@ run_fixture() {
 
   local safe_label="${label//[^0-9A-Za-z_]/_}"
   local input_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.input"
+  local hash_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.expected-hash"
   local output_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.output"
   local log_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.emu.log"
 
   echo "==> [$label] gen SSZ input  (chain_id=$cid${extra_args[*]:+, ${extra_args[*]}})"
   uv run --directory execution-specs --quiet python3 \
-    "$INPUT_GEN" "$cid" "$input_file" "${extra_args[@]}"
+    "$INPUT_GEN" "$cid" "$input_file" --hash-out "$hash_file" "${extra_args[@]}"
+
+  local hash_hex
+  hash_hex="$(cat "$hash_file")"
 
   echo "==> [$label] ziskemu run"
   "$ZISKEMU" -e gen-out/stateless_guest.elf -i "$input_file" \
-    -o "$output_file" -n 100000 >"$log_file" 2>&1
+    -o "$output_file" -n 500000 >"$log_file" 2>&1
 
   local actual expected
   actual="$(xxd -p -l 56 "$output_file" | tr -d '\n')"
-  expected="$(expected_hex_for "$cid" "$bool_hex" "$count_dec")"
+  expected="$(expected_hex_for "$hash_hex" "$cid" "$bool_hex" "$count_dec")"
 
   echo "    expected: $expected"
   echo "    actual:   $actual"

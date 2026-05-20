@@ -653,18 +653,10 @@ def evmModFromInputUnit : BuildUnit := {
   dataAsm     := evmModFromInputDataSection
 }
 
-/-! ## stateless_guest — PR2 SSZ-output stub
+/-! ## stateless_guest — PR2 SSZ output + PR-K5 keccak hash field
 
-    Renders the stub `StatelessValidationResult(root = 0,
-    valid = false, chain_id = 1)` as 41 SSZ bytes at `OUTPUT_ADDR`,
-    then falls through to the codegen halt stub.
-
-    Body lives in `EvmAsm/Stateless/Entry.lean`. No prologue, no
-    `.data`, no epilogue -- the encoder owns the entire post-`_start`
-    sequence. -/
-def statelessGuestUnit : BuildUnit := {
-  body := EvmAsm.Stateless.run_stateless_guest
-}
+    See the definition of `statelessGuestUnit` below
+    (after `zkvmKeccak256Function`, which the epilogue inlines). -/
 
 /-! ## zisk_keccak_probe — PR-K1 ziskemu Keccak-f[1600] intrinsic probe
 
@@ -1042,6 +1034,56 @@ def ziskKeccak256FromInputProbeUnit : BuildUnit := {
   body        := NOP
   prologueAsm := ziskKeccak256FromInputPrologue
   dataAsm     := ziskKeccak256FromInputDataSection
+}
+
+/-! ## stateless_guest body — PR-K5 keccak hash field
+
+    Replaces the zero-stub `new_payload_request_root` field in
+    `Stateless.Entry.run_stateless_guest`'s SSZ output with the
+    keccak256 of the entire SSZ-input byte string the host
+    streamed in via `ziskemu -i`. Concretely:
+
+    - Body: the unchanged `Stateless.Entry.run_stateless_guest`
+      Program. It writes:
+        bytes  0..32 : zero hash (placeholder)
+        byte      32 : successful_validation (PR4/PR5 derived)
+        bytes 33..41 : chain_id (PR3 from-decode)
+        bytes 41..48 : zero gap
+        bytes 48..56 : header_count diagnostic (PR6 from-decode)
+    - Epilogue (raw asm): set up sp, load (data ptr, len) from
+      INPUT_ADDR + (16, 8), set output = OUTPUT_ADDR + 0, and
+      `jal ra, zkvm_keccak256`. The function overwrites
+      OUTPUT[0..32] with keccak256(input bytes), clobbering the
+      zero stub.
+
+    The host-side `compute_new_payload_request_root` per the spec
+    is SSZ `hash_tree_root` (SHA-256), not Keccak. PR-K5 stamps a
+    *content-dependent* hash there so the test harness has a
+    non-trivial value to verify and the keccak bridge is wired
+    into the encoder pipeline end-to-end. Once PR-S series lands,
+    the SHA-256 hash_tree_root replaces this keccak. -/
+def statelessGuestEpilogue : String :=
+  "  # PR-K5: overwrite OUTPUT[0..32] zero-stub with\n" ++
+  "  # keccak256 of the SSZ input bytes.\n" ++
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000           # INPUT_ADDR\n" ++
+  "  ld a1, 8(a3)                # length (u64 LE)\n" ++
+  "  addi a0, a3, 16             # data ptr\n" ++
+  "  li a2, 0xa0010000           # OUTPUT_ADDR (hash field)\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  j .Lsg_done\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  ".Lsg_done:"
+
+def statelessGuestDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def statelessGuestUnit : BuildUnit := {
+  body        := EvmAsm.Stateless.run_stateless_guest
+  epilogueAsm := statelessGuestEpilogue
+  dataAsm     := statelessGuestDataSection
 }
 
 /-! ## registry -/

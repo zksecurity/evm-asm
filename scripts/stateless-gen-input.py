@@ -135,6 +135,16 @@ def main() -> int:
             "PR6's decode_header_count should yield 2."
         ),
     )
+    parser.add_argument(
+        "--hash-out",
+        type=Path,
+        default=None,
+        help=(
+            "Optionally write keccak256(SSZ blob) as a 64-hex-char "
+            "string. PR-K5's stateless_guest stamps this into the "
+            "output's `new_payload_request_root` field."
+        ),
+    )
     args = parser.parse_args()
 
     chain_id = int(args.chain_id, 0)
@@ -165,6 +175,18 @@ def main() -> int:
         f"+ {pad} B pad = {total + pad} B total",
         file=sys.stderr,
     )
+
+    if args.hash_out is not None:
+        from Crypto.Hash import keccak
+        h = keccak.new(digest_bits=256)
+        h.update(blob)
+        digest = h.hexdigest()
+        args.hash_out.parent.mkdir(parents=True, exist_ok=True)
+        with args.hash_out.open("w") as fh:
+            fh.write(digest)
+        print(f"wrote {args.hash_out}: keccak256(SSZ blob) = {digest}",
+              file=sys.stderr)
+
     return 0
 
 
