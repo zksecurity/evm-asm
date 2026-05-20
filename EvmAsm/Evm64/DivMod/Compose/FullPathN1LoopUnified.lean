@@ -161,6 +161,24 @@ theorem preloopN1UnifiedPostNoX1_frame_to_preloopN1UnifiedPost
     simp only [iterN1_false, iterN1_true, ite_true, sepConj_emp_right'] at hp ⊢
     xperm_hyp hp
 
+theorem preloopN1UnifiedPost_to_preloopN1UnifiedPostNoX1_frame
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      preloopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (preloopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 ** regOwn .x1) h := by
+  intro h hp
+  cases bltu_3 <;> cases bltu_2 <;> cases bltu_1 <;> cases bltu_0
+  all_goals
+    delta preloopN1UnifiedPostNoX1 preloopN1UnifiedPost loopN1UnifiedPostNoX1
+      loopN1UnifiedPost loopN1Iter210PostNoX1 loopN1Iter210Post loopN1Iter10PostNoX1
+      loopN1Iter10Post loopIterPostN1NoX1 loopIterPostN1 loopIterPostN1CallNoX1
+      loopIterPostN1Call loopIterPostN1Max at hp ⊢
+    simp only [iterN1_false, iterN1_true, ite_true, sepConj_emp_right'] at hp ⊢
+    xperm_hyp hp
+
 -- ============================================================================
 -- Double-addback loop instantiation helper (heartbeat isolation)
 -- ============================================================================
