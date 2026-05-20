@@ -67,25 +67,25 @@ theorem fromLimbs_getLimb (v : EvmWord) :
     fin4_val_2, fin4_val_3]
   bv_decide
 
-private theorem getLimb_fromLimbs_0 (limbs : Fin 4 → Word) :
+theorem getLimb_fromLimbs_0 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 0 = limbs 0 := by
   simp only [fromLimbs, getLimb, fin4_val_0]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
-private theorem getLimb_fromLimbs_1 (limbs : Fin 4 → Word) :
+theorem getLimb_fromLimbs_1 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 1 = limbs 1 := by
   simp only [fromLimbs, getLimb, fin4_val_1]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
-private theorem getLimb_fromLimbs_2 (limbs : Fin 4 → Word) :
+theorem getLimb_fromLimbs_2 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 2 = limbs 2 := by
   simp only [fromLimbs, getLimb, fin4_val_2]
   generalize limbs 0 = l0; generalize limbs 1 = l1
   generalize limbs 2 = l2; generalize limbs 3 = l3
   bv_decide
-private theorem getLimb_fromLimbs_3 (limbs : Fin 4 → Word) :
+theorem getLimb_fromLimbs_3 (limbs : Fin 4 → Word) :
     (EvmWord.fromLimbs limbs).getLimb 3 = limbs 3 := by
   simp only [fromLimbs, getLimb, fin4_val_3]
   generalize limbs 0 = l0; generalize limbs 1 = l1

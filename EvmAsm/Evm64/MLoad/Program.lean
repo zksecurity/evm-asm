@@ -83,7 +83,7 @@ open EvmAsm.Rv64
 
     `accReg` must differ from `byteReg`; the spec slice will enforce
     this via a `Reg` disjointness hypothesis. -/
-private def mload_byte_pack
+def mload_byte_pack
     (addrReg byteReg accReg : Reg) (limbStart : Nat) : Nat → Program
   | 0     =>
       LBU accReg addrReg (BitVec.ofNat 12 limbStart)
@@ -100,7 +100,7 @@ private def mload_byte_pack
     EVM word (so `limbStart = 24`); for `j = 3` (the high limb) the MSB
     lives at byte `(off + 0)`, i.e. `limbStart = 0`. The general
     formula is `limbStart = 8 * (3 - j)`. -/
-private def mload_one_limb
+def mload_one_limb
     (addrReg byteReg accReg : Reg) (j : Nat) : Program :=
   mload_byte_pack addrReg byteReg accReg (8 * (3 - j)) 7 ;;
   SD .x12 accReg (BitVec.ofNat 12 (8 * j))

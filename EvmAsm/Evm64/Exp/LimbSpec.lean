@@ -1176,7 +1176,8 @@ theorem exp_prologue_fixed_spec_within
 abbrev exp_msb_bit_test_block_fixed_code (base : Word) : CodeReq :=
   CodeReq.ofProg base exp_msb_bit_test_block_fixed
 
-private def hSR_helper (c10 e : Word) (base : Word) :
+/-- Lift the fixed bit-test block's leading `SRLI` to the full block code. -/
+theorem exp_msb_bit_test_block_fixed_srli_spec_within (c10 e : Word) (base : Word) :
     cpsTripleWithin 1 base (base + 4)
       (exp_msb_bit_test_block_fixed_code base)
       ((.x19 ↦ᵣ e) ** (.x10 ↦ᵣ c10))
@@ -1187,7 +1188,8 @@ private def hSR_helper (c10 e : Word) (base : Word) :
       [.SRLI .x10 .x19 63] 0 (by bv_omega) (by decide) (by decide) (by decide))
   exact cpsTripleWithin_weaken (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) hext
 
-private def hSL_helper (e : Word) (base : Word) :
+/-- Lift the fixed bit-test block's `SLLI` step to the full block code. -/
+theorem exp_msb_bit_test_block_fixed_slli_spec_within (e : Word) (base : Word) :
     cpsTripleWithin 1 (base + 4) (base + 8)
       (exp_msb_bit_test_block_fixed_code base)
       (.x19 ↦ᵣ e)
@@ -1199,7 +1201,8 @@ private def hSL_helper (e : Word) (base : Word) :
   have haddr : (base + 4 : Word) + 4 = base + 8 := by bv_addr
   rw [haddr] at hext; exact hext
 
-private def hAD_helper (c6 : Word) (base : Word) :
+/-- Lift the fixed bit-test block's counter decrement to the full block code. -/
+theorem exp_msb_bit_test_block_fixed_decrement_spec_within (c6 : Word) (base : Word) :
     cpsTripleWithin 1 (base + 8) (base + 12)
       (exp_msb_bit_test_block_fixed_code base)
       (.x6 ↦ᵣ c6)
@@ -1217,7 +1220,7 @@ private def hAD_helper (c6 : Word) (base : Word) :
 
 /-- BNE spec (instruction 4 of fixed block) lifted to the full fixed code.
     Used by both skip and reload path proofs. -/
-private def hBNE_raw_helper (c6_new : Word) (base : Word) :
+theorem exp_msb_bit_test_block_fixed_bne_spec_within (c6_new : Word) (base : Word) :
     cpsBranchWithin 1 (base + 12)
       (exp_msb_bit_test_block_fixed_code base)
       ((.x6 ↦ᵣ c6_new) ** (.x0 ↦ᵣ (0 : Word)))
@@ -1246,14 +1249,14 @@ theorem exp_msb_bit_test_block_fixed_skip_spec_within
   let c6_new := c6 + signExtend12 (-1 : BitVec 12)
   -- Compose 3 instructions with explicit intermediate types
   have hSR_f := cpsTripleWithin_frameR ((.x6 ↦ᵣ c6) ** (.x0 ↦ᵣ (0:Word)))
-    (by pcFree) (hSR_helper c10 e base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_srli_spec_within c10 e base)
   have hSL_f := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)) ** (.x6 ↦ᵣ c6) ** (.x0 ↦ᵣ (0:Word)))
-    (by pcFree) (hSL_helper e base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_slli_spec_within e base)
   have hAD_f := cpsTripleWithin_frameR
     ((.x19 ↦ᵣ (e <<< (1:BitVec 6).toNat)) ** (.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)) **
      (.x0 ↦ᵣ (0:Word)))
-    (by pcFree) (hAD_helper c6 base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_decrement_spec_within c6 base)
   have h3_seq := cpsTripleWithin_seq_perm_same_cr (fun _ hp => by xperm_hyp hp)
     (cpsTripleWithin_seq_perm_same_cr (fun _ hp => by xperm_hyp hp) hSR_f hSL_f) hAD_f
   have h3 : cpsTripleWithin 3 base (base + 12) (exp_msb_bit_test_block_fixed_code base)
@@ -1263,7 +1266,7 @@ theorem exp_msb_bit_test_block_fixed_skip_spec_within
     cpsTripleWithin_weaken (fun _ hp => by xperm_hyp hp) (fun _ hp => by xperm_hyp hp) h3_seq
   have hBNE_f := cpsBranchWithin_frameR
     ((.x19 ↦ᵣ (e <<< (1:BitVec 6).toNat)) ** (.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)))
-    (by pcFree) (hBNE_raw_helper c6_new base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_bne_spec_within c6_new base)
   have hBNE_t := cpsBranchWithin_takenPath hBNE_f (fun _ hQf => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, heq⟩⟩⟩, _⟩ := hQf
     exact hc6 heq)
@@ -1296,15 +1299,15 @@ theorem exp_msb_bit_test_block_fixed_reload_spec_within
   have hSR_f := cpsTripleWithin_frameR
     ((.x6 ↦ᵣ c6) ** (.x0 ↦ᵣ (0:Word)) ** (.x16 ↦ᵣ ptr) **
      ((ptr + signExtend12 0) ↦ₘ nextLimb))
-    (by pcFree) (hSR_helper c10 e base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_srli_spec_within c10 e base)
   have hSL_f := cpsTripleWithin_frameR
     ((.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)) ** (.x6 ↦ᵣ c6) ** (.x0 ↦ᵣ (0:Word)) **
      (.x16 ↦ᵣ ptr) ** ((ptr + signExtend12 0) ↦ₘ nextLimb))
-    (by pcFree) (hSL_helper e base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_slli_spec_within e base)
   have hAD_f := cpsTripleWithin_frameR
     ((.x19 ↦ᵣ (e <<< (1:BitVec 6).toNat)) ** (.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)) **
      (.x0 ↦ᵣ (0:Word)) ** (.x16 ↦ᵣ ptr) ** ((ptr + signExtend12 0) ↦ₘ nextLimb))
-    (by pcFree) (hAD_helper c6 base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_decrement_spec_within c6 base)
   have h3_seq := cpsTripleWithin_seq_perm_same_cr (fun _ hp => by xperm_hyp hp)
     (cpsTripleWithin_seq_perm_same_cr (fun _ hp => by xperm_hyp hp) hSR_f hSL_f) hAD_f
   have h3 : cpsTripleWithin 3 base (base+12) (exp_msb_bit_test_block_fixed_code base)
@@ -1317,7 +1320,7 @@ theorem exp_msb_bit_test_block_fixed_reload_spec_within
   have hBNE_f := cpsBranchWithin_frameR
     ((.x19 ↦ᵣ (e <<< (1:BitVec 6).toNat)) ** (.x10 ↦ᵣ (e >>> (63:BitVec 6).toNat)) **
      (.x16 ↦ᵣ ptr) ** ((ptr + signExtend12 (0:BitVec 12)) ↦ₘ nextLimb))
-    (by pcFree) (hBNE_raw_helper c6_new base)
+    (by pcFree) (exp_msb_bit_test_block_fixed_bne_spec_within c6_new base)
   have hBNE_nt := cpsBranchWithin_ntakenPath hBNE_f (fun _ hQt => by
     obtain ⟨_, _, _, _, ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hne⟩⟩⟩, _⟩ := hQt
     exact hne hc6)

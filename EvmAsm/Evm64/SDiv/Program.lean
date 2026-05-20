@@ -206,15 +206,29 @@ theorem evm_sdiv_call_target_byte_offset :
     4 * evm_sdiv_wrapper.length := by
   native_decide
 
-/-- Full SDIV code region. The wrapper returns via `x18`; the appended
-    `evm_div_callable` block is reached only by the wrapper's near call. -/
-def evm_sdiv : EvmAsm.Rv64.Program :=
+/-- Legacy verified SDIV code region. The wrapper returns via `x18`; the
+    appended `evm_div_callable` block is reached only by the wrapper's near
+    call. Existing `sdivCode` composition proofs still target this surface
+    until the dispatcher proofs are lifted to the v4 no-NOP code surface. -/
+def evm_sdiv_legacy : EvmAsm.Rv64.Program :=
   evm_sdiv_wrapper ;; evm_div_callable
 
-theorem evm_sdiv_length : evm_sdiv.length = 390 := by
+theorem evm_sdiv_legacy_length : evm_sdiv_legacy.length = 390 := by
   native_decide
 
-theorem evm_sdiv_byte_length : 4 * evm_sdiv.length = 1560 := by
+theorem evm_sdiv_legacy_byte_length : 4 * evm_sdiv_legacy.length = 1560 := by
+  rw [evm_sdiv_legacy_length]
+
+/-- Corrected v4 SDIV code region. This is the same wrapper as `evm_sdiv_legacy`
+    with the appended unsigned divider callable switched to `divK_div128_v4`.
+    This is the exported implementation surface for SDIV. -/
+def evm_sdiv : EvmAsm.Rv64.Program :=
+  evm_sdiv_wrapper ;; evm_div_callable_v4
+
+theorem evm_sdiv_length : evm_sdiv.length = 414 := by
+  native_decide
+
+theorem evm_sdiv_byte_length : 4 * evm_sdiv.length = 1656 := by
   rw [evm_sdiv_length]
 
 example :
