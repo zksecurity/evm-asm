@@ -1,29 +1,31 @@
 #!/usr/bin/env bash
-# codegen-stateless-roundtrip-check.sh -- Stateless guest PR3 verification.
+# codegen-stateless-roundtrip-check.sh -- Stateless guest PR4 verification.
 #
 # Builds the `stateless_guest` program through codegen -> as -> ld,
-# generates an SSZ-encoded `SszStatelessInput` (via the
-# `execution-specs` reference library) carrying a known `chain_id`,
-# feeds it to ziskemu, and diffs the first 41 bytes of ziskemu's
-# public output against the expected SSZ encoding of
-# `SszStatelessValidationResult(root = 0, valid = false,
-#                              chain_id = <input chain_id>)`.
+# generates SSZ-encoded `SszStatelessInput`s (via the
+# `execution-specs` reference library) carrying a known `chain_id`
+# and either an empty witness or a witness with one zero-length
+# header, feeds each to ziskemu, and diffs the first 41 bytes of
+# ziskemu's public output against the expected SSZ encoding of
+# `SszStatelessValidationResult`.
 #
-# The shape of the test:
-#   1. Python builds a real `SszStatelessInput` with `chain_id = N`
-#      and writes the length-prefixed file ziskemu expects.
-#   2. Guest reads `chain_id` at `INPUT_ADDR + 24` (see
-#      `EvmAsm/Stateless/SSZ/Decode/Program.lean`) and feeds it to the
-#      encoder.
-#   3. Encoder writes 41 SSZ bytes at `OUTPUT_ADDR`
-#      (`EvmAsm/Stateless/SSZ/Encode/Program.lean`).
-#   4. We compare output bytes against the Python-derived expected.
+# What's exercised:
+#   * `Stateless.SSZ.Decode.read_chain_id` -- u64 LE at byte 24 of
+#     INPUT_ADDR.
+#   * `Stateless.SSZ.Decode.decode_validation_bit` -- reads
+#     offset_1 and offset_3 from the outer container header (u32 LE
+#     at bytes 20 and 32) and sets `x11 = 1` iff
+#     `offset_3 - offset_1 == 12` (empty SszExecutionWitness body).
+#   * `Stateless.SSZ.Encode.serialize_stateless_output` -- packs both
+#     into the 41-byte SSZ result at OUTPUT_ADDR.
 #
-# Test fixtures (overridable via $CHAIN_ID): two values, including
-# one that exercises all 8 bytes of the chain_id LE encoding.
+# Fixtures:
+#   1. chain_id = 1,                  empty witness     -> bool=1
+#   2. chain_id = 0x1234567890ABCDEF, empty witness     -> bool=1
+#   3. chain_id = 0xDEADBEEF,         one empty header  -> bool=0
 #
 # Exit:
-#   0 -- both fixtures match expected
+#   0 -- all fixtures match expected
 #   1 -- emission / build / emulation failed, or output mismatch
 set -euo pipefail
 
@@ -63,32 +65,39 @@ print(c.to_bytes(8, 'little').hex())
 " "$1"
 }
 
-# Build the 82-hex-char expected output for a given chain_id:
-#   32 zero bytes (hash) | 1 zero byte (bool false) | 8 LE bytes of chain_id
+# Build the 82-hex-char expected output for a given chain_id + bool:
+#   32 zero bytes (hash) | 1 byte bool | 8 LE bytes of chain_id
 expected_hex_for() {
   local cid="$1"
-  local low7
-  low7="$(chain_id_le_hex "$cid")"
-  echo "$(printf '00%.0s' $(seq 1 33))${low7}"
+  local bool_hex="$2"  # "00" or "01"
+  local low8
+  low8="$(chain_id_le_hex "$cid")"
+  echo "$(printf '00%.0s' $(seq 1 32))${bool_hex}${low8}"
 }
 
 run_fixture() {
-  local cid="$1"
-  local input_file="$REPO_ROOT/gen-out/stateless_guest-${cid//[^0-9A-Fa-fx]/_}.input"
-  local output_file="$REPO_ROOT/gen-out/stateless_guest-${cid//[^0-9A-Fa-fx]/_}.output"
-  local log_file="$REPO_ROOT/gen-out/stateless_guest-${cid//[^0-9A-Fa-fx]/_}.emu.log"
+  local label="$1"
+  local cid="$2"
+  local bool_hex="$3"
+  shift 3
+  local extra_args=("$@")
 
-  echo "==> [chain_id=$cid] gen SSZ input"
+  local safe_label="${label//[^0-9A-Za-z_]/_}"
+  local input_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.input"
+  local output_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.output"
+  local log_file="$REPO_ROOT/gen-out/stateless_guest-${safe_label}.emu.log"
+
+  echo "==> [$label] gen SSZ input  (chain_id=$cid${extra_args[*]:+, ${extra_args[*]}})"
   uv run --directory execution-specs --quiet python3 \
-    "$INPUT_GEN" "$cid" "$input_file"
+    "$INPUT_GEN" "$cid" "$input_file" "${extra_args[@]}"
 
-  echo "==> [chain_id=$cid] ziskemu run"
+  echo "==> [$label] ziskemu run"
   "$ZISKEMU" -e gen-out/stateless_guest.elf -i "$input_file" \
     -o "$output_file" -n 100000 >"$log_file" 2>&1
 
   local actual expected
   actual="$(xxd -p -l 41 "$output_file" | tr -d '\n')"
-  expected="$(expected_hex_for "$cid")"
+  expected="$(expected_hex_for "$cid" "$bool_hex")"
 
   echo "    expected: $expected"
   echo "    actual:   $actual"
@@ -103,13 +112,10 @@ run_fixture() {
 }
 
 fail=0
-for cid in "${CHAIN_ID:-1 0x1234567890ABCDEF}"; do
-  for c in $cid; do
-    if ! run_fixture "$c"; then
-      fail=1
-    fi
-  done
-done
+run_fixture "empty_witness_chain1" 1 "01"                          || fail=1
+run_fixture "empty_witness_chain_big" 0x1234567890ABCDEF "01"      || fail=1
+run_fixture "one_empty_header_chain_dead" 0xDEADBEEF "00" \
+            --with-empty-header                                    || fail=1
 
 if [[ "$fail" -eq 0 ]]; then
   echo "==> PASS: all stateless_guest fixtures match expected SSZ output"

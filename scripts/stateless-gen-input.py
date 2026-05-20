@@ -28,19 +28,38 @@ import sys
 from pathlib import Path
 
 
-def build_ssz_blob(chain_id: int) -> bytes:
-    """SSZ-encode an `SszStatelessInput` whose `chain_config.chain_id`
-    is `chain_id` and whose other fields are empty defaults."""
+def build_ssz_blob(chain_id: int, with_empty_header: bool) -> bytes:
+    """SSZ-encode an `SszStatelessInput`.
+
+    `chain_config.chain_id` is set from `chain_id`. Other fields are
+    empty defaults, except when `with_empty_header` is `True`: then
+    `witness.headers` carries one zero-length entry, growing the
+    witness body from 12 bytes (the offsets table alone) to 16 bytes
+    (offsets + a 4-byte inner offsets entry for the single empty
+    header). This is the fixture the guest's
+    `decode_validation_bit` uses to flip its bool to `0`."""
     from ethereum.forks.amsterdam.stateless_ssz import (
+        MAX_BYTES_PER_HEADER,
+        MAX_WITNESS_HEADERS,
         SszChainConfig,
         SszExecutionWitness,
         SszNewPayloadRequest,
         SszStatelessInput,
     )
+    from remerkleable.byte_arrays import ByteList
+    from remerkleable.complex import List as SszList
+
+    if with_empty_header:
+        headers = SszList[ByteList[MAX_BYTES_PER_HEADER], MAX_WITNESS_HEADERS](
+            ByteList[MAX_BYTES_PER_HEADER]()
+        )
+        witness = SszExecutionWitness(headers=headers)
+    else:
+        witness = SszExecutionWitness()
 
     ssz_input = SszStatelessInput(
         new_payload_request=SszNewPayloadRequest(),
-        witness=SszExecutionWitness(),
+        witness=witness,
         chain_config=SszChainConfig(chain_id=chain_id),
         public_keys=(),
     )
@@ -54,10 +73,18 @@ def main() -> int:
         help="Python integer literal (e.g. 1, 0x1234567890ABCDEF).",
     )
     parser.add_argument("out_file", type=Path)
+    parser.add_argument(
+        "--with-empty-header",
+        action="store_true",
+        help=(
+            "Inject one zero-length entry into `witness.headers` so the "
+            "guest's decode_validation_bit yields 0 (non-empty witness)."
+        ),
+    )
     args = parser.parse_args()
 
     chain_id = int(args.chain_id, 0)
-    blob = build_ssz_blob(chain_id)
+    blob = build_ssz_blob(chain_id, args.with_empty_header)
 
     # ziskemu reads the input file in u64 chunks and rejects sizes that
     # aren't a multiple of 8 ("EmuContext::new() input size must be a
