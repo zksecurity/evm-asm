@@ -164,6 +164,67 @@ def emitDispatcherDataSection
   "  .zero 0x8000\n" ++   -- 32 KiB EVM memory (M7 onward)
   emitJumpTable registry
 
+/-! ## Runtime-bytecode dispatcher (M8.5)
+
+    Variant of the dispatcher that reads its bytecode at runtime
+    from ziskemu's `-i <file>` input region instead of baking it
+    into `.data`. Lets a single ELF run any bytecode — the test
+    harness packs each per-case bytecode into an input file and
+    re-uses the same ELF.
+
+    Reads bytecode at `INPUT_ADDR + INPUT_DATA_OFFSET = 0x40000010`
+    (see `EvmAsm/Codegen/Programs.lean` for the symbolic constants).
+    All other dispatcher state (stack scratch, evm_memory, jump
+    table) is identical to the `.data`-baked variant — only the
+    prologue's `la x10, evm_code` swaps to `li x10, 0x40000010`
+    and the `.data` section drops the `evm_code:` block. -/
+
+/-- Runtime-bytecode dispatcher prologue. Same fetch/decode/dispatch
+    loop as `emitDispatcherPrologue`; differs only in how `x10` is
+    initialised — pointed at the input region instead of an
+    in-`.data` label. The hex literal `0x40000010` matches
+    `INPUT_ADDR + INPUT_DATA_OFFSET` in `Programs.lean`. -/
+def emitRuntimeDispatcherPrologue : String :=
+  "  li x10, 0x40000010\n" ++   -- INPUT_ADDR + INPUT_DATA_OFFSET
+  "  la x12, evm_stack_top\n" ++
+  "  la x13, evm_memory\n" ++
+  ".dispatch_loop:\n" ++
+  "  lbu x5, 0(x10)\n" ++
+  "  la x6, opcode_handlers\n" ++
+  "  slli x5, x5, 3\n" ++
+  "  add x6, x6, x5\n" ++
+  "  ld x7, 0(x6)\n" ++
+  "  jalr x1, x7, 0\n" ++
+  "  j .dispatch_loop"
+
+/-- Runtime-bytecode `.data` section. Drops the `evm_code:` block
+    (no baked bytecode); everything else matches the `.data`-baked
+    variant. Same 32 KiB budget concerns. -/
+def emitRuntimeDispatcherDataSection
+    (registry : List OpcodeHandlerSpec) : String :=
+  ".section .data\n" ++
+  ".balign 32\n" ++
+  "evm_stack_low:\n" ++
+  "  .zero 256\n" ++
+  "evm_stack_top:\n" ++
+  ".balign 32\n" ++
+  "evm_memory:\n" ++
+  "  .zero 0x8000\n" ++   -- 32 KiB EVM memory (M7 onward)
+  emitJumpTable registry
+
+/-- Build a runtime-bytecode `BuildUnit` for `registry` + `exitBody`.
+    The emitted ELF doesn't carry any bytecode — the test harness
+    supplies it at runtime via `ziskemu -i <file>` (8-byte LE length
+    prefix + raw bytes; see M4's input-region convention). -/
+def buildRuntimeDispatchUnit
+    (registry : List OpcodeHandlerSpec)
+    (exitBody : Program) : BuildUnit := {
+  body        := []
+  prologueAsm := emitRuntimeDispatcherPrologue
+  epilogueAsm := emitDispatcherEpilogue registry exitBody
+  dataAsm     := emitRuntimeDispatcherDataSection registry
+}
+
 /-- Build a `BuildUnit` that runs the dispatcher over `bytecodeBytes`
     using `registry`. `exitBody` is the verified `Program` invoked
     at `.exit_label` to surface the result (usually `evmAddEpilogue`). -/

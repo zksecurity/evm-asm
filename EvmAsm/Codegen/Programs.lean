@@ -523,6 +523,21 @@ def tinyInterpDispatchAddUnit : BuildUnit :=
 def tinyInterpDispatchAdd2Unit : BuildUnit :=
   buildDispatchUnit tinyInterpRegistry evmAddEpilogue tinyInterpAdd2Bytecode
 
+/-! ## runtime_dispatcher — M8.5 runtime-bytecode dispatcher
+
+    Same `tinyInterpRegistry` and `evmAddEpilogue` as the
+    `tiny_interp_dispatch_*` units, but the dispatcher prologue
+    reads `x10` from `INPUT_ADDR + INPUT_DATA_OFFSET = 0x40000010`
+    instead of an in-`.data` label. One ELF runs any bytecode; the
+    bash test harness packs each per-case bytecode into a
+    ziskemu `-i <file>` payload and reuses the same dispatcher
+    ELF for every case.
+
+    See `EvmAsm/Codegen/Dispatch.lean` for `buildRuntimeDispatchUnit`
+    and the runtime prologue/data-section helpers. -/
+def runtimeDispatcherUnit : BuildUnit :=
+  buildRuntimeDispatchUnit tinyInterpRegistry evmAddEpilogue
+
 /-! ## evm_div — M2 first DIV end-to-end through ziskemu
 
     NOTE: `evm_div` is not yet proven correct in Lean — the spec
@@ -906,6 +921,7 @@ def lookupProgram : String → Option BuildUnit
   | "tiny_interp_add2"          => some tinyInterpAdd2Unit
   | "tiny_interp_dispatch_add"  => some tinyInterpDispatchAddUnit
   | "tiny_interp_dispatch_add2" => some tinyInterpDispatchAdd2Unit
+  | "runtime_dispatcher"        => some runtimeDispatcherUnit
   | "stateless_guest"           => some statelessGuestUnit
   | "zisk_keccak_probe"         => some ziskKeccakProbeUnit
   | "zisk_keccak256_empty"      => some ziskKeccak256EmptyProbeUnit
@@ -918,6 +934,7 @@ def knownProgramNames : List String :=
    "evm_add_from_input", "evm_div_from_input", "evm_mod_from_input",
    "tiny_interp_add", "tiny_interp_add2",
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2",
+   "runtime_dispatcher",
    "stateless_guest",
    "zisk_keccak_probe",
    "zisk_keccak256_empty",
