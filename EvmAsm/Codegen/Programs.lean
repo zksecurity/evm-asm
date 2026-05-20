@@ -461,6 +461,40 @@ def evmDivUnit : BuildUnit := {
   dataAsm     := evmDivDataSection
 }
 
+/-! ## evm_div_from_input — M4 prover-supplied DIV operands
+
+    Same wrapping as `evmDivUnit`, but operands arrive at runtime from
+    the ziskemu `-i` input region instead of being baked into `.data`.
+    Lets one ELF cover many test vectors. Layout is identical to
+    `evm_add_from_input` plus the 256 B `div_scratch:` block in front
+    of `operands_ram:`. -/
+
+def evm_div_from_input : Program :=
+  LI .x5 (INPUT_ADDR + (BitVec.ofNat 64 INPUT_DATA_OFFSET)) ;;
+  copy64 .x12 .x5 .x6 ++
+  EvmAsm.Evm64.evm_div ++
+  evmAddEpilogue
+
+def evmDivFromInputPrologue : String :=
+  "  la x12, operands_ram"
+
+/-- `.data` section: 256 B of writable `div_scratch:` *before*
+    `operands_ram:` (64 B reserved zero, overwritten at runtime). -/
+def evmDivFromInputDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "div_scratch:\n" ++
+  "  .zero 256\n" ++
+  ".balign 8\n" ++
+  "operands_ram:\n" ++
+  "  .zero 64"
+
+def evmDivFromInputUnit : BuildUnit := {
+  body        := evm_div_from_input
+  prologueAsm := evmDivFromInputPrologue
+  dataAsm     := evmDivFromInputDataSection
+}
+
 /-! ## registry -/
 
 /-- Look up a program by name. Returns `none` for unknown names so the CLI
@@ -469,6 +503,7 @@ def lookupProgram : String → Option BuildUnit
   | "smoke"                     => some smokeUnit
   | "evm_add"                   => some evmAddUnit
   | "evm_div"                   => some evmDivUnit
+  | "evm_div_from_input"        => some evmDivFromInputUnit
   | "input_echo"                => some inputEchoUnit
   | "evm_add_from_input"        => some evmAddFromInputUnit
   | "tiny_interp_add"           => some tinyInterpAddUnit
@@ -479,7 +514,8 @@ def lookupProgram : String → Option BuildUnit
 
 /-- List of known program names, for use in CLI usage strings. -/
 def knownProgramNames : List String :=
-  ["smoke", "evm_add", "evm_div", "input_echo", "evm_add_from_input",
+  ["smoke", "evm_add", "evm_div", "input_echo",
+   "evm_add_from_input", "evm_div_from_input",
    "tiny_interp_add", "tiny_interp_add2",
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2"]
 
