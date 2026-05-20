@@ -237,19 +237,21 @@ def main() -> int:
     )
 
     if args.hash_out is not None:
-        # PR-S11: the guest computes SSZ `hash_tree_root` of the
-        # entire `witness.headers` field -- a
-        # `List[ByteList[MAX_BYTES_PER_HEADER],
-        #       MAX_WITNESS_HEADERS]` -- via the
-        # `ssz_hash_tree_root_list_bytelist` function.
-        # We extract every element from the SSZ blob and feed
-        # them through the same consensus-specs SSZ library the
-        # guest's contract is checked against (remerkleable,
-        # via execution-specs).
+        # PR-S12: the guest computes SSZ `hash_tree_root` of the
+        # entire `witness: ExecutionWitness` Container (3 sub-
+        # lists: state, codes, headers). We extract each sub-
+        # list's elements from the SSZ blob and rebuild the
+        # Container via remerkleable's `SszExecutionWitness`,
+        # then hash_tree_root() against that.
         import struct as _struct
         from ethereum.forks.amsterdam.stateless_ssz import (
+            MAX_BYTES_PER_CODE,
             MAX_BYTES_PER_HEADER,
+            MAX_BYTES_PER_WITNESS_NODE,
+            MAX_WITNESS_CODES,
             MAX_WITNESS_HEADERS,
+            MAX_WITNESS_NODES,
+            SszExecutionWitness,
         )
         from remerkleable.byte_arrays import ByteList
         from remerkleable.complex import List as SszList
@@ -258,41 +260,58 @@ def main() -> int:
         offset_3 = _struct.unpack_from("<I", blob, 16)[0]
         witness_start = offset_1
         witness_end = offset_3
-        inner_off2 = _struct.unpack_from("<I", blob, witness_start + 8)[0]
-        headers_start = witness_start + inner_off2
-        headers_end = witness_end
+        witness_section = blob[witness_start:witness_end]
 
-        headers_len = headers_end - headers_start
-        elements = []
-        if headers_len > 0:
-            first_inner = _struct.unpack_from(
-                "<I", blob, headers_start)[0]
-            n_elements = first_inner // 4
-            for i in range(n_elements):
+        # Parse 3 u32 offsets in the witness Container header.
+        off_state   = _struct.unpack_from("<I", witness_section, 0)[0]
+        off_codes   = _struct.unpack_from("<I", witness_section, 4)[0]
+        off_headers = _struct.unpack_from("<I", witness_section, 8)[0]
+        end = len(witness_section)
+
+        def parse_list(section: bytes) -> list:
+            if not section:
+                return []
+            first_inner = _struct.unpack_from("<I", section, 0)[0]
+            n = first_inner // 4
+            out = []
+            for i in range(n):
                 inner_i = _struct.unpack_from(
-                    "<I", blob, headers_start + 4 * i)[0]
-                el_start = headers_start + inner_i
-                if i + 1 < n_elements:
+                    "<I", section, 4 * i)[0]
+                el_start = inner_i
+                if i + 1 < n:
                     inner_next = _struct.unpack_from(
-                        "<I", blob, headers_start + 4 * (i + 1))[0]
-                    el_end = headers_start + inner_next
+                        "<I", section, 4 * (i + 1))[0]
+                    el_end = inner_next
                 else:
-                    el_end = headers_end
-                elements.append(blob[el_start:el_end])
+                    el_end = len(section)
+                out.append(section[el_start:el_end])
+            return out
 
-        BL = ByteList[MAX_BYTES_PER_HEADER]
-        LL = SszList[BL, MAX_WITNESS_HEADERS]
-        ssz_value = LL(*(BL(e) for e in elements))
-        root = ssz_value.hash_tree_root()
+        state_elems = parse_list(witness_section[off_state:off_codes])
+        codes_elems = parse_list(witness_section[off_codes:off_headers])
+        headers_elems = parse_list(witness_section[off_headers:end])
+
+        SBL = ByteList[MAX_BYTES_PER_WITNESS_NODE]
+        CBL = ByteList[MAX_BYTES_PER_CODE]
+        HBL = ByteList[MAX_BYTES_PER_HEADER]
+        SL = SszList[SBL, MAX_WITNESS_NODES]
+        CL = SszList[CBL, MAX_WITNESS_CODES]
+        HL = SszList[HBL, MAX_WITNESS_HEADERS]
+        ssz_witness = SszExecutionWitness(
+            state=SL(*(SBL(e) for e in state_elems)),
+            codes=CL(*(CBL(e) for e in codes_elems)),
+            headers=HL(*(HBL(e) for e in headers_elems)),
+        )
+        root = ssz_witness.hash_tree_root()
         digest = root.hex() if isinstance(root, bytes) else bytes(root).hex()
         args.hash_out.parent.mkdir(parents=True, exist_ok=True)
         with args.hash_out.open("w") as fh:
             fh.write(digest)
         print(
             f"wrote {args.hash_out}: "
-            f"ssz_hash_tree_root(List[ByteList[{MAX_BYTES_PER_HEADER}], "
-            f"{MAX_WITNESS_HEADERS}], witness.headers, "
-            f"N={len(elements)}) = {digest}",
+            f"ssz_hash_tree_root(ExecutionWitness, state={len(state_elems)}, "
+            f"codes={len(codes_elems)}, headers={len(headers_elems)}) "
+            f"= {digest}",
             file=sys.stderr,
         )
 
