@@ -167,6 +167,56 @@ theorem evm_div_bzero_stack_spec_within_dispatch_noNop_uni (sp base : Word)
         exact hq)
       hFramed
 
+/-- v4 zero-divisor DIV dispatcher over the shared no-NOP code surface. -/
+theorem evm_div_bzero_stack_spec_within_dispatch_noNop_v4_uni (sp base : Word)
+    (a b : EvmWord) (v1 v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (sharedDivModCodeNoNop_v4 base)
+      (divModStackDispatchPre sp a b
+        v1 v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      (divStackDispatchPost sp a b) := by
+  let frame : Assertion :=
+    (.x9 ↦ᵣ v1) ** (.x2 ↦ᵣ v2) ** (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) **
+    (.x11 ↦ᵣ v11) ** evmWordIs sp a **
+    divScratchValuesCall sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0
+  have hBzero :=
+    evm_div_bzero_stack_spec_within_noNop_v4 sp base a b v5 v10 hbz
+  have hFramed :
+      cpsTripleWithin (8 + 5) base (base + nopOff) (sharedDivModCodeNoNop_v4 base)
+        (((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
+          (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) b) ** frame)
+        ((((.x12 ↦ᵣ (sp + 32)) ** regOwn .x5 ** regOwn .x10 **
+          (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) ** frame)) :=
+    cpsTripleWithin_frameR frame (by
+      dsimp [frame]
+      rw [divScratchValuesCall_unfold]
+      pcFree) hBzero
+  exact cpsTripleWithin_mono_nSteps (by decide) <|
+    cpsTripleWithin_weaken
+      (fun _ hp => by
+        rw [divModStackDispatchPre_unfold] at hp
+        dsimp [frame]
+        simp only [sepConj_comm', sepConj_left_comm'] at hp ⊢
+        exact hp)
+      (fun _ hq => by
+        dsimp [frame] at hq
+        refine divStackDispatchPost_weaken_bzero_frame (sp := sp) (a := a) (b := b)
+          (v1 := v1) (v2 := v2) (v6 := v6) (v7 := v7) (v11 := v11)
+          (q0 := q0) (q1 := q1) (q2 := q2) (q3 := q3)
+          (u0 := u0) (u1 := u1) (u2 := u2) (u3 := u3)
+          (u4 := u4) (u5 := u5) (u6 := u6) (u7 := u7)
+          (shiftMem := shiftMem) (nMem := nMem) (jMem := jMem)
+          (retMem := retMem) (dMem := dMem) (dloMem := dloMem)
+          (scratch_un0 := scratch_un0) _ ?_
+        simp only [sepConj_assoc', sepConj_comm', sepConj_left_comm'] at hq ⊢
+        exact hq)
+      hFramed
+
 /-- Framed zero-divisor DIV dispatcher post over `divCode_noNop`, before the
     usual weakening to `divStackDispatchPost`. This keeps the incoming `x1`
     value concrete for callable wrappers that need the following `ret` address
