@@ -82,7 +82,7 @@ theorem pushByteOffsets_valid_of_lt {n i : Nat}
     `code[pc + 1 + i]`) is the byte at integer position `n - 1 - i`,
     so it goes into memory offset `n - 1 - i` from the new stack
     pointer (which holds limb 0's LSB at offset 0). -/
-private def push_one_byte (n i : Nat) : Program :=
+def push_one_byte (n i : Nat) : Program :=
   LBU .x7 .x10 (BitVec.ofNat 12 (pushByteSrcOffset i)) ;;
   SB .x12 .x7 (BitVec.ofNat 12 (pushByteDstOffset n i))
 
@@ -90,11 +90,11 @@ private def push_one_byte (n i : Nat) : Program :=
 
     Defined by recursion on `k` so `evm_push n` can be expressed for
     arbitrary symbolic `n` while keeping the per-byte block uniform. -/
-private def push_bytes (n : Nat) : Nat → Program
+def push_bytes (n : Nat) : Nat → Program
   | 0     => prog_skip
   | k + 1 => push_bytes n k ;; push_one_byte n k
 
-private theorem push_one_byte_length (n i : Nat) :
+theorem push_one_byte_length (n i : Nat) :
     (push_one_byte n i).length = 2 := by
   unfold push_one_byte LBU SB single seq
   rfl
@@ -112,7 +112,7 @@ theorem push_bytes_length (n k : Nat) :
       rw [List.length_append, ih, push_one_byte_length]
       omega
 
-private theorem push_bytes_byte_slice (n k i : Nat) (hi : i < k) :
+theorem push_bytes_byte_slice (n k i : Nat) (hi : i < k) :
     ((push_bytes n k : List Instr).drop (2 * i)).take 2 =
       (push_one_byte n i : List Instr) := by
   induction k with
