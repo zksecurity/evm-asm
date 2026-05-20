@@ -42,6 +42,15 @@ structure OpcodeHandlerSpec where
   /-- Opcode bytes this handler covers. Bytes not claimed by any
       spec route to `h_invalid` via the jump table fill. -/
   opcodes : List Nat
+  /-- Raw asm emitted *between* the label and the verified body.
+      Used to save dispatcher-state registers that the verified body
+      may clobber. For example, `evm_mul` / `evm_signextend` /
+      `evm_byte` / `evm_shr` use `x10` as a scratch accumulator —
+      our dispatcher expects `x10` to be the preserved EVM code
+      pointer, so those handlers carry `preBody := "  mv x9, x10"`
+      and a tail that restores via `mv x10, x9` before advancing.
+      Empty string means "no save needed". -/
+  preBody : String := ""
   /-- Verified RV64 body, rendered verbatim via `emitProgram`.
       May be empty (e.g. STOP has no work to do before exiting). -/
   body    : Program
@@ -57,11 +66,13 @@ def emitTail : HandlerTail → String
 
 /-- Render the handler as a labeled subroutine. Empty bodies (STOP,
     INVALID-style entries) skip the body line entirely to avoid a
-    blank line after the label. -/
+    blank line after the label. `preBody` is inserted between the
+    label and the body (used for clobber-saving). -/
 def emitSubroutine (h : OpcodeHandlerSpec) : String :=
+  let preLine  := if h.preBody.isEmpty then "" else h.preBody ++ "\n"
   let bodyText := emitProgram h.body
   let bodyLine := if bodyText.isEmpty then "" else bodyText ++ "\n"
-  s!"{h.label}:\n" ++ bodyLine ++ emitTail h.tail
+  s!"{h.label}:\n" ++ preLine ++ bodyLine ++ emitTail h.tail
 
 end OpcodeHandlerSpec
 

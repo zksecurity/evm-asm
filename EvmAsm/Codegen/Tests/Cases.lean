@@ -32,11 +32,23 @@ structure OpcodeTestCase where
   expectedOutHex : String
 
 /-- Registry of test cases. M5a/M5b's two original bytecodes are
-    migrated here; they keep the original expected hex strings so
-    the new harness cross-checks against the existing per-bytecode
-    scripts. -/
+    migrated as `add_basic` / `add_chain`; M6b adds ~20 more — one
+    per singleton opcode, one per parametric family, plus a kitchen-
+    sink case that chains multiple opcodes.
+
+    EVM convention reminder: stack values are 256-bit big-endian;
+    `OUTPUT_ADDR` receives the post-STOP stack top as 32 bytes,
+    interpreted as four little-endian u64 limbs. So `0x42` on the
+    EVM stack surfaces as `42 00 00 00 00 00 00 00 ...` (low byte
+    first in the LE limb encoding).
+
+    Binary opcodes pop top (`a`) then second (`b`); the order
+    matters for non-commutative ones (`SUB`, `DIV`, `MOD`, `SHR`,
+    comparisons). For SUB specifically: pushes `a - b` where `a`
+    was the top — so `PUSH1 0x03; PUSH1 0x05; SUB` yields `5 - 3 = 2`. -/
 def opcodeTestCases : List OpcodeTestCase :=
-  [ -- PUSH1 0xFF; PUSH1 0x01; ADD; STOP → 0x100, LE limbs [0x100, 0, 0, 0]
+  [ -- ## Baseline (migrated from M5a/M5b)
+    -- PUSH1 0xff; PUSH1 0x01; ADD; STOP → 0x100
     { name           := "add_basic"
       bytecode       := "0x60, 0xff, 0x60, 0x01, 0x01, 0x00"
       expectedOutHex := "0001000000000000000000000000000000000000000000000000000000000000" }
@@ -44,6 +56,96 @@ def opcodeTestCases : List OpcodeTestCase :=
     { name           := "add_chain"
       bytecode       := "0x60, 0x10, 0x60, 0x20, 0x01, 0x60, 0x30, 0x01, 0x00"
       expectedOutHex := "6000000000000000000000000000000000000000000000000000000000000000" }
+    -- ## Singletons (16, one per fixed-shape opcode)
+  , -- PUSH1 0x03; PUSH1 0x05; SUB; STOP → 5 - 3 = 2
+    { name           := "sub_basic"
+      bytecode       := "0x60, 0x03, 0x60, 0x05, 0x03, 0x00"
+      expectedOutHex := "0200000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x03; PUSH1 0x04; MUL; STOP → 4 * 3 = 12 = 0x0c
+    { name           := "mul_basic"
+      bytecode       := "0x60, 0x03, 0x60, 0x04, 0x02, 0x00"
+      expectedOutHex := "0c00000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x7f; PUSH1 0x00; SIGNEXTEND; STOP — byte 0 of 0x7f has
+    -- high bit 0, so sign-extension is a no-op → 0x7f.
+    { name           := "signextend_basic"
+      bytecode       := "0x60, 0x7f, 0x60, 0x00, 0x0b, 0x00"
+      expectedOutHex := "7f00000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x05; PUSH1 0x03; LT; STOP → 3 < 5 = 1
+    { name           := "lt_basic"
+      bytecode       := "0x60, 0x05, 0x60, 0x03, 0x10, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x03; PUSH1 0x05; GT; STOP → 5 > 3 = 1
+    { name           := "gt_basic"
+      bytecode       := "0x60, 0x03, 0x60, 0x05, 0x11, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x02; PUSH1 0x01; SLT; STOP — signed `a < b` with a=1, b=2 → 1
+    { name           := "slt_basic"
+      bytecode       := "0x60, 0x02, 0x60, 0x01, 0x12, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x03; PUSH1 0x05; SGT; STOP — signed `a > b` with a=5, b=3 → 1
+    { name           := "sgt_basic"
+      bytecode       := "0x60, 0x03, 0x60, 0x05, 0x13, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x42; PUSH1 0x42; EQ; STOP → 1
+    { name           := "eq_basic"
+      bytecode       := "0x60, 0x42, 0x60, 0x42, 0x14, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x00; ISZERO; STOP → 1
+    { name           := "iszero_basic"
+      bytecode       := "0x60, 0x00, 0x15, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x0f; PUSH1 0xff; AND; STOP → 0xff & 0x0f = 0x0f
+    { name           := "and_basic"
+      bytecode       := "0x60, 0x0f, 0x60, 0xff, 0x16, 0x00"
+      expectedOutHex := "0f00000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x0f; PUSH1 0xa0; OR; STOP → 0xa0 | 0x0f = 0xaf
+    { name           := "or_basic"
+      bytecode       := "0x60, 0x0f, 0x60, 0xa0, 0x17, 0x00"
+      expectedOutHex := "af00000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x0f; PUSH1 0xff; XOR; STOP → 0xff ^ 0x0f = 0xf0
+    { name           := "xor_basic"
+      bytecode       := "0x60, 0x0f, 0x60, 0xff, 0x18, 0x00"
+      expectedOutHex := "f000000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x00; NOT; STOP → ~0 (32 bytes of 0xff)
+    { name           := "not_basic"
+      bytecode       := "0x60, 0x00, 0x19, 0x00"
+      expectedOutHex := "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }
+  , -- PUSH32 0x0102…20; PUSH1 0x1f; BYTE; STOP — byte 31 (LSByte
+    -- big-endian) of 0x0102…1f20 is 0x20.
+    { name           := "byte_basic"
+      bytecode       := "0x7f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x60, 0x1f, 0x1a, 0x00"
+      expectedOutHex := "2000000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x80; PUSH1 0x04; SHR; STOP — shift=4 on top, value=0x80
+    -- → 0x80 >> 4 = 0x08.
+    { name           := "shr_basic"
+      bytecode       := "0x60, 0x80, 0x60, 0x04, 0x1c, 0x00"
+      expectedOutHex := "0800000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x42; PUSH1 0xff; POP; STOP — POP removes 0xff, leaves 0x42
+    { name           := "pop_basic"
+      bytecode       := "0x60, 0x42, 0x60, 0xff, 0x50, 0x00"
+      expectedOutHex := "4200000000000000000000000000000000000000000000000000000000000000" }
+    -- ## Family representatives (3, one per parametric family)
+  , -- PUSH32 0x0102…20; STOP — the 32 immediate bytes are read
+    -- big-endian into the EVM word; surfaced LE in OUTPUT_ADDR.
+    { name           := "push32_basic"
+      bytecode       := "0x7f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x00"
+      expectedOutHex := "201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201" }
+  , -- PUSH1 0x42; DUP1; ADD; STOP — DUP1 makes stack [0x42, 0x42];
+    -- ADD → 0x84.
+    { name           := "dup1_basic"
+      bytecode       := "0x60, 0x42, 0x80, 0x01, 0x00"
+      expectedOutHex := "8400000000000000000000000000000000000000000000000000000000000000" }
+  , -- PUSH1 0x05; PUSH1 0x02; SWAP1; SUB; STOP — SWAP1 yields top=5,
+    -- second=2; SUB → 5 - 2 = 3.
+    { name           := "swap1_basic"
+      bytecode       := "0x60, 0x05, 0x60, 0x02, 0x90, 0x03, 0x00"
+      expectedOutHex := "0300000000000000000000000000000000000000000000000000000000000000" }
+    -- ## Kitchen sink (cross-family chain)
+  , -- PUSH1 0x03; PUSH1 0x05; MUL; PUSH1 0x10; SUB; STOP
+    -- MUL: 5*3=15=0x0f. SUB: 0x10 - 0x0f = 0x01.
+    { name           := "arith_mix"
+      bytecode       := "0x60, 0x03, 0x60, 0x05, 0x02, 0x60, 0x10, 0x03, 0x00"
+      expectedOutHex := "0100000000000000000000000000000000000000000000000000000000000000" }
   ]
 
 /-- Find a test case by name. -/

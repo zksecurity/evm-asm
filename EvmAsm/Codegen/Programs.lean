@@ -7,8 +7,26 @@
 
 import EvmAsm.Rv64.Program
 import EvmAsm.Evm64.Add.Program
+import EvmAsm.Evm64.And.Program
+import EvmAsm.Evm64.Byte.Program
 import EvmAsm.Evm64.DivMod.Program
+import EvmAsm.Evm64.Dup.Program
+import EvmAsm.Evm64.Eq.Program
+import EvmAsm.Evm64.Gt.Program
+import EvmAsm.Evm64.IsZero.Program
+import EvmAsm.Evm64.Lt.Program
+import EvmAsm.Evm64.Multiply.Program
+import EvmAsm.Evm64.Not.Program
+import EvmAsm.Evm64.Or.Program
+import EvmAsm.Evm64.Pop.Program
 import EvmAsm.Evm64.Push.Program
+import EvmAsm.Evm64.Sgt.Program
+import EvmAsm.Evm64.Shift.Program
+import EvmAsm.Evm64.SignExtend.Program
+import EvmAsm.Evm64.Slt.Program
+import EvmAsm.Evm64.Sub.Program
+import EvmAsm.Evm64.Swap.Program
+import EvmAsm.Evm64.Xor.Program
 import EvmAsm.Codegen.Layout
 import EvmAsm.Codegen.Dispatch
 
@@ -303,26 +321,102 @@ def tinyInterpAdd2Unit : BuildUnit := {
                               and the table base on every iteration,
                               so no preservation needed)
 
-    Coverage: PUSH1, ADD, STOP. All other opcode bytes fall to
-    `h_invalid` (emitted automatically by `emitDispatcherEpilogue`),
-    which takes the same exit path as STOP. -/
+    Coverage (M6b): 81 opcodes wired —
+      - **PUSH0..PUSH32** (33) via `pushHandlers`
+      - **DUP1..DUP16** (16) via `dupHandlers`
+      - **SWAP1..SWAP16** (16) via `swapHandlers`
+      - **16 fixed-shape singletons** via `singletonHandlers`:
+        SUB, MUL, SIGNEXTEND, AND, OR, XOR, NOT, LT, GT, SLT, SGT,
+        EQ, ISZERO, BYTE, SHR, POP — each a parameter-free verified
+        `Program` with the standard `<body>` + `addi x10, x10, 1` +
+        `ret` ABI.
+      - **STOP** via `stopHandler` (jumps to `.exit_label` instead
+        of returning to the dispatcher).
+
+    All other opcode bytes fall to `h_invalid` (emitted automatically
+    by `emitDispatcherEpilogue`), which takes the same exit path as
+    STOP. -/
+
+/-- PUSH0..PUSH32. Opcode byte = `0x5f + n`; the handler advances
+    `x10` by `1 + n` (one opcode byte + `n` immediate bytes). -/
+def pushHandlers : List OpcodeHandlerSpec :=
+  (List.range 33).map (fun n =>
+    { label   := s!"h_PUSH{n}"
+      opcodes := [0x5f + n]
+      body    := EvmAsm.Evm64.evm_push n
+      tail    := .advanceAndRet (1 + n) })
+
+/-- DUP1..DUP16. Opcode byte = `0x7f + n` (so DUP1 = `0x80`);
+    width 1. `evm_dup n` duplicates the n-th stack item (1-indexed
+    from top) onto the top. -/
+def dupHandlers : List OpcodeHandlerSpec :=
+  (List.range 16).map (fun i =>
+    let n := i + 1
+    { label   := s!"h_DUP{n}"
+      opcodes := [0x7f + n]
+      body    := EvmAsm.Evm64.evm_dup n
+      tail    := .advanceAndRet 1 })
+
+/-- SWAP1..SWAP16. Opcode byte = `0x8f + n` (so SWAP1 = `0x90`);
+    width 1. `evm_swap n` swaps the top with the (n+1)-th stack
+    item. -/
+def swapHandlers : List OpcodeHandlerSpec :=
+  (List.range 16).map (fun i =>
+    let n := i + 1
+    { label   := s!"h_SWAP{n}"
+      opcodes := [0x8f + n]
+      body    := EvmAsm.Evm64.evm_swap n
+      tail    := .advanceAndRet 1 })
+
+/-- Tail used by handlers whose verified body clobbers `x10` (the
+    EVM code pointer in our dispatcher convention). Restores `x10`
+    from `x9` (saved via `preBody`), then advances by 1 and returns. -/
+private def x10RestoreAdvance1 : HandlerTail :=
+  .custom "  mv x10, x9\n  addi x10, x10, 1\n  ret"
+
+/-- Fixed-shape singleton opcodes: parameter-free verified `Program`s
+    that fit the standard `<body>` + `addi x10, x10, 1` + `ret` ABI.
+
+    Four bodies (`evm_mul`, `evm_signextend`, `evm_byte`, `evm_shr`)
+    use `x10` as an internal scratch / accumulator register, which
+    clobbers our dispatcher's preserved EVM code pointer. They carry
+    `preBody := "  mv x9, x10"` to stash x10 in x9 (a register no
+    verified opcode body touches) and use `x10RestoreAdvance1` as
+    the tail to restore before advancing. -/
+def singletonHandlers : List OpcodeHandlerSpec :=
+  [ { label := "h_ADD"        , opcodes := [0x01], body := EvmAsm.Evm64.evm_add       , tail := .advanceAndRet 1 }
+  , { label := "h_MUL"        , opcodes := [0x02], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_mul       , tail := x10RestoreAdvance1 }
+  , { label := "h_SUB"        , opcodes := [0x03], body := EvmAsm.Evm64.evm_sub       , tail := .advanceAndRet 1 }
+  , { label := "h_SIGNEXTEND" , opcodes := [0x0b], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_signextend, tail := x10RestoreAdvance1 }
+  , { label := "h_LT"         , opcodes := [0x10], body := EvmAsm.Evm64.evm_lt        , tail := .advanceAndRet 1 }
+  , { label := "h_GT"         , opcodes := [0x11], body := EvmAsm.Evm64.evm_gt        , tail := .advanceAndRet 1 }
+  , { label := "h_SLT"        , opcodes := [0x12], body := EvmAsm.Evm64.evm_slt       , tail := .advanceAndRet 1 }
+  , { label := "h_SGT"        , opcodes := [0x13], body := EvmAsm.Evm64.evm_sgt       , tail := .advanceAndRet 1 }
+  , { label := "h_EQ"         , opcodes := [0x14], body := EvmAsm.Evm64.evm_eq        , tail := .advanceAndRet 1 }
+  , { label := "h_ISZERO"     , opcodes := [0x15], body := EvmAsm.Evm64.evm_iszero    , tail := .advanceAndRet 1 }
+  , { label := "h_AND"        , opcodes := [0x16], body := EvmAsm.Evm64.evm_and       , tail := .advanceAndRet 1 }
+  , { label := "h_OR"         , opcodes := [0x17], body := EvmAsm.Evm64.evm_or        , tail := .advanceAndRet 1 }
+  , { label := "h_XOR"        , opcodes := [0x18], body := EvmAsm.Evm64.evm_xor       , tail := .advanceAndRet 1 }
+  , { label := "h_NOT"        , opcodes := [0x19], body := EvmAsm.Evm64.evm_not       , tail := .advanceAndRet 1 }
+  , { label := "h_BYTE"       , opcodes := [0x1a], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_byte      , tail := x10RestoreAdvance1 }
+  , { label := "h_SHR"        , opcodes := [0x1c], preBody := "  mv x9, x10", body := EvmAsm.Evm64.evm_shr       , tail := x10RestoreAdvance1 }
+  , { label := "h_POP"        , opcodes := [0x50], body := EvmAsm.Evm64.evm_pop       , tail := .advanceAndRet 1 } ]
+
+/-- STOP: transitions out of the dispatcher loop instead of returning
+    to it. The body is empty; the dispatcher's `jalr` lands on
+    `h_STOP:` which jumps to `.exit_label`. -/
+def stopHandler : OpcodeHandlerSpec :=
+  { label   := "h_STOP"
+    opcodes := [0x00]
+    body    := []
+    tail    := .custom "  j .exit_label" }
 
 /-- M5b dispatch registry. Order doesn't affect correctness — the
     256-entry jump table is built by `jumpTargetLabel`, which scans
     the list for a spec whose `opcodes` contains the byte. -/
 def tinyInterpRegistry : List OpcodeHandlerSpec :=
-  [ { label   := "h_PUSH1"
-      opcodes := [0x60]
-      body    := EvmAsm.Evm64.evm_push 1
-      tail    := .advanceAndRet 2 }
-  , { label   := "h_ADD"
-      opcodes := [0x01]
-      body    := EvmAsm.Evm64.evm_add
-      tail    := .advanceAndRet 1 }
-  , { label   := "h_STOP"
-      opcodes := [0x00]
-      body    := []
-      tail    := .custom "  j .exit_label" } ]
+  pushHandlers ++ dupHandlers ++ swapHandlers ++ singletonHandlers ++
+  [stopHandler]
 
 def tinyInterpDispatchAddUnit : BuildUnit :=
   buildDispatchUnit tinyInterpRegistry evmAddEpilogue tinyInterpAddBytecode

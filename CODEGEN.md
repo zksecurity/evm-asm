@@ -38,8 +38,8 @@ untouched. Generated artifacts go in `gen-out/` (gitignored).
 | `EvmAsm/Codegen.lean` | Top-level umbrella (mirrors `EvmAsm/Rv64.lean`, `EvmAsm/Evm64.lean`). |
 | `EvmAsm/Codegen/Emit.lean` | Pure `emitReg`, `emitInstr`, `emitProgram` — `Instr → String`. No `IO`. |
 | `EvmAsm/Codegen/Layout.lean` | `HaltConv` enum, halt stubs, `_start` preamble, `.option norvc`, `MEM_START`/`MEM_END` constants, `BuildUnit` struct + `emitBuildUnit`/`emitDataLabel` helpers. |
-| `EvmAsm/Codegen/Dispatch.lean` | M5b dispatcher scaffolding: `OpcodeHandlerSpec` + `HandlerTail` types, `emitDispatcherPrologue`/`Epilogue`/`DataSection` and `buildDispatchUnit` helpers. Pure (no IO). |
-| `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `evm_div`, `evm_mod`, `input_echo`, `evm_add_from_input`, `evm_div_from_input`, `evm_mod_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`) plus the M5b opcode handler registry (`tinyInterpRegistry`) and shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`, `evmDivPatched`/`evmModPatched` for the DIV/MOD NOP-splice). |
+| `EvmAsm/Codegen/Dispatch.lean` | M5b dispatcher scaffolding: `OpcodeHandlerSpec` (with optional `preBody` for x10-clobbering handlers) + `HandlerTail` types, `emitDispatcherPrologue`/`Epilogue`/`DataSection` and `buildDispatchUnit` helpers. Pure (no IO). |
+| `EvmAsm/Codegen/Programs.lean` | Registry (`smoke`, `evm_add`, `evm_div`, `evm_mod`, `input_echo`, `evm_add_from_input`, `evm_div_from_input`, `evm_mod_from_input`, `tiny_interp_{add,add2}`, `tiny_interp_dispatch_{add,add2}` → `BuildUnit`) plus the M5b opcode handler registry (`tinyInterpRegistry`) composed from `pushHandlers` (PUSH0..32), `dupHandlers` (DUP1..16), `swapHandlers` (SWAP1..16), `singletonHandlers` (17 fixed-shape opcodes), `stopHandler`; shared helpers (`advancePc`, `copy64`, `evmAddEpilogue`, `evmDivPatched`/`evmModPatched` for the DIV/MOD NOP-splice). |
 | `EvmAsm/Codegen/Tests/Cases.lean` | Per-opcode regression test registry: `OpcodeTestCase` struct + `opcodeTestCases` list. Wraps each bytecode through the M5b dispatcher for end-to-end ziskemu validation. |
 | `EvmAsm/Codegen/Cli.lean` | Argument parsing (`--program`, `--test-case`, `--list-test-cases`, `--halt`, `--out`, `--asm-only`). |
 | `EvmAsm/Codegen/Driver.lean` | `IO`: shells out to `as`/`ld` if available; `--asm-only` for CI without the cross toolchain. |
@@ -408,13 +408,60 @@ the same order.
 pass); `scripts/codegen-tiny-interp{,-dispatch}-check.sh` continue
 to exit 0; M2/M4 scripts unchanged.
 
+### M6b — Mass wire-up of fixed-shape opcodes (M) — **DONE (2026-05-20)**
+
+Bring M5b dispatcher coverage from 3 → 82 opcodes by registering
+every verified handler that matches the standard ABI (`<body>` +
+`addi x10, x10, width` + `ret`). Pure registry expansion against
+M6a's infrastructure; the dispatcher scaffolding (loop, jump table,
+exit path) is unchanged from M6a.
+
+**Delivered:**
+- `EvmAsm/Codegen/Programs.lean` `tinyInterpRegistry` now composed
+  from four builders:
+  - `pushHandlers` — PUSH0..PUSH32 (33 entries, opcode bytes
+    `0x5f + n`, tail `.advanceAndRet (1 + n)`).
+  - `dupHandlers` — DUP1..DUP16 (16 entries, opcode bytes
+    `0x7f + n`, tail `.advanceAndRet 1`).
+  - `swapHandlers` — SWAP1..SWAP16 (16 entries, opcode bytes
+    `0x8f + n`, tail `.advanceAndRet 1`).
+  - `singletonHandlers` — 17 fixed-shape singletons: ADD, MUL, SUB,
+    SIGNEXTEND, LT, GT, SLT, SGT, EQ, ISZERO, AND, OR, XOR, NOT,
+    BYTE, SHR, POP.
+  Plus `stopHandler` for STOP. Total: 33 + 16 + 16 + 17 + 1 =
+  **83 wired opcodes**; remaining 173 bytes fall to `h_invalid`.
+- **`OpcodeHandlerSpec.preBody : String`** added in
+  `EvmAsm/Codegen/Dispatch.lean`. Used to inject raw asm between
+  the handler's label and verified body. Required because four
+  verified bodies (`evm_mul`, `evm_signextend`, `evm_byte`,
+  `evm_shr`) use `x10` as a scratch accumulator, which clobbers
+  our dispatcher's preserved EVM code pointer. Those handlers
+  carry `preBody := "  mv x9, x10"` to stash the code pointer in
+  `x9` (a register no verified opcode body touches) and a
+  `x10RestoreAdvance1` tail that restores it before the standard
+  advance + ret. Discovered empirically when `mul_basic` panicked
+  ziskemu with `Mem::read() section not found for addr: 1` — the
+  `addi x10, x10, 1` after `MULHU .x10 ...` landed at address 1.
+- **`EvmAsm/Codegen/Tests/Cases.lean`** grew from 2 to 22 cases:
+  16 singleton tests (one per opcode), 3 family representatives
+  (`push32_basic`, `dup1_basic`, `swap1_basic`), one `arith_mix`
+  kitchen sink, plus the two M6a baseline cases (`add_basic`,
+  `add_chain`).
+
+**Exit criteria (met).**
+`scripts/codegen-opcodes-check.sh` exits 0 with all 22 cases
+PASS; `scripts/codegen-tiny-interp{,-dispatch}-check.sh`,
+`codegen-smoke.sh`, and `codegen-evm_add-check.sh` continue to
+exit 0; full M6b suite runs in ~48 s (under the 60 s threshold
+for considering the runtime-bytecode optimization).
+
 ### Sequencing
 
-M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅.
+M0 ✅ → M1 ✅ → M2 ✅ → M4 ✅ → M5a ✅ → M5b ✅ → M6a ✅ → M6b ✅.
 M3 is deferred; revisit only if a future milestone (full opcode
 coverage, JUMP/JUMPI, or the binary encoder) makes label-free
-emission unreadable. M6a unblocks mass opcode wire-up (M6b) by
-making each new opcode a one-record registry append.
+emission unreadable. M6b unblocks M7 (memory opcodes) by validating
+the registry pattern at scale.
 
 ## Tricky bits / open questions
 
@@ -485,17 +532,19 @@ making each new opcode a one-record registry append.
   `add_chain`) migrated as the seed regression suite. `--list-test-cases`
   emits TSV with expected outputs so the bash runner stays in sync
   with `Tests/Cases.lean` automatically.
+- **M6b.** ✅ `scripts/codegen-opcodes-check.sh` exits 0 with **22
+  test cases** PASS (validated 2026-05-20). 83 opcodes wired through
+  `tinyInterpRegistry`: PUSH0..32, DUP1..16, SWAP1..16, plus 17
+  fixed-shape singletons (ADD, MUL, SUB, SIGNEXTEND, LT, GT, SLT,
+  SGT, EQ, ISZERO, AND, OR, XOR, NOT, BYTE, SHR, POP) and STOP.
+  Four handlers that clobber `x10` (MUL, SIGNEXTEND, BYTE, SHR)
+  use the new `OpcodeHandlerSpec.preBody` field to save the EVM
+  code pointer in `x9` before the body and restore it in the tail.
 
-## Future work (post-M6a)
+## Future work (post-M6b)
 
 Near-term (builds directly on M6a's registry; no new design surface):
 
-- **M6b — mass wire-up of fixed-shape opcodes.** SUB, MUL, AND, OR,
-  XOR, NOT, LT, GT, SLT, SGT, EQ, ISZERO, BYTE, SHR, POP, PUSH0
-  (one `OpcodeHandlerSpec` each), then parametric PUSH2..32 / DUP1..16
-  / SWAP1..16 builders. ~80 opcodes wired with one batch + a test
-  case per family. Pure registry expansion against M6a's
-  `tinyInterpRegistry`.
 - **M7 — memory opcodes.** MLOAD / MSTORE / MSTORE8 / MSIZE are
   register-parameterized verified `Program`s (take a `memBase` /
   `sizeReg`). Need to extend `emitDispatcherPrologue` to init an
