@@ -7,6 +7,7 @@
 
 import EvmAsm.Rv64.Program
 import EvmAsm.Evm64.Add.Program
+import EvmAsm.Evm64.DivMod.Program
 import EvmAsm.Evm64.Push.Program
 import EvmAsm.Codegen.Layout
 
@@ -404,6 +405,62 @@ def tinyInterpDispatchAddUnit : BuildUnit :=
 def tinyInterpDispatchAdd2Unit : BuildUnit :=
   tinyInterpDispatchUnit tinyInterpAdd2Bytecode
 
+/-! ## evm_div — M2 first verified DIV end-to-end
+
+    `evm_div` shares ADD's `x12`-points-at-operands convention: before,
+    `x12 = sp` with dividend `a` at `sp+0..32` and divisor `b` at
+    `sp+32..64`; after, the quotient lives at `sp+32..64` and `x12 = sp+32`.
+    So `evmAddEpilogue` (which copies `[x12, x12+32)` to `OUTPUT_ADDR`)
+    works unchanged for DIV.
+
+    Unlike ADD, `evm_div` also uses scratch at "negative" offsets from
+    `x12` — the verified body encodes them as the unsigned bit pattern
+    of 12-bit signed negatives (`3936..4088 ≡ -160..-8`). The `.data`
+    layout therefore places a 256-byte zero-filled `div_scratch:` block
+    *before* the `operands:` label so that `x12 - 160..-8` lands in
+    writable RAM. -/
+
+/-- Dividend as four LE limbs. 2^64, exercises the phase-B n=2 cascade
+    plus the normalize/loop path (not an early-exit). -/
+def evmDivDividend : List UInt64 := [0, 1, 0, 0]
+
+/-- Divisor as four LE limbs. 2. -/
+def evmDivDivisor : List UInt64 := [2, 0, 0, 0]
+
+/-- Expected quotient = 2^64 / 2 = 2^63, LE limbs. The actual on-disk
+    expected hex is asserted by `scripts/codegen-evm_div-check.sh`; this
+    constant is documentation. -/
+def evmDivExpectedQuotient : List UInt64 := [0x8000000000000000, 0, 0, 0]
+
+/-- Same `la x12, operands` as ADD — points the EVM stack pointer at
+    the dividend, with the divisor packed directly after it. -/
+def evmDivPrologue : String :=
+  "  la x12, operands"
+
+/-- `.data` section: 256 bytes of zero-filled scratch labeled
+    `div_scratch:` *first*, then `operands:` with dividend ++ divisor
+    (eight LE dwords). The scratch comes first so that `x12 - 160..-8`
+    (the verified body's scratch range, encoded as unsigned 12-bit
+    offsets `3936..4088`) falls inside writable RAM.
+
+    Written as raw asm rather than `emitDataLabel` because the layout
+    mixes `.zero` and `.dword`. -/
+def evmDivDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "div_scratch:\n" ++
+  "  .zero 256\n" ++
+  ".balign 8\n" ++
+  "operands:\n" ++
+  String.intercalate "\n"
+    ((evmDivDividend ++ evmDivDivisor).map emitDword)
+
+def evmDivUnit : BuildUnit := {
+  body        := EvmAsm.Evm64.evm_div ++ evmAddEpilogue
+  prologueAsm := evmDivPrologue
+  dataAsm     := evmDivDataSection
+}
+
 /-! ## registry -/
 
 /-- Look up a program by name. Returns `none` for unknown names so the CLI
@@ -411,6 +468,7 @@ def tinyInterpDispatchAdd2Unit : BuildUnit :=
 def lookupProgram : String → Option BuildUnit
   | "smoke"                     => some smokeUnit
   | "evm_add"                   => some evmAddUnit
+  | "evm_div"                   => some evmDivUnit
   | "input_echo"                => some inputEchoUnit
   | "evm_add_from_input"        => some evmAddFromInputUnit
   | "tiny_interp_add"           => some tinyInterpAddUnit
@@ -421,7 +479,7 @@ def lookupProgram : String → Option BuildUnit
 
 /-- List of known program names, for use in CLI usage strings. -/
 def knownProgramNames : List String :=
-  ["smoke", "evm_add", "input_echo", "evm_add_from_input",
+  ["smoke", "evm_add", "evm_div", "input_echo", "evm_add_from_input",
    "tiny_interp_add", "tiny_interp_add2",
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2"]
 
