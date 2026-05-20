@@ -6,6 +6,7 @@
 
 import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeq
+import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 
 open EvmAsm.Rv64.Tactics
 open EvmAsm.Evm64.DivMod.AddrNorm (slt_jpos_1)
