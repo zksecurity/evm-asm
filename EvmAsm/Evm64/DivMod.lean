@@ -27,6 +27,7 @@ import EvmAsm.Evm64.DivMod.LoopBody.DoubleAddbackBeq
 import EvmAsm.Evm64.DivMod.LoopBody.DoubleAddbackBeqV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.MulsubFull
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddback
+import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqNamed
 import EvmAsm.Evm64.DivMod.Compose.SharedLoopPost
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
