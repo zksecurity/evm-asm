@@ -64,12 +64,12 @@ theorem clzStep_snd_of_pass {K M_s : Nat} {m : Word} {p : Word × Word}
 -- signExtend12 concrete toNat values
 -- ============================================================================
 
-private theorem se_1  : (signExtend12 (1  : BitVec 12)).toNat = 1  := by decide
-private theorem se_2  : (signExtend12 (2  : BitVec 12)).toNat = 2  := by decide
-private theorem se_4  : (signExtend12 (4  : BitVec 12)).toNat = 4  := by decide
-private theorem se_8  : (signExtend12 (8  : BitVec 12)).toNat = 8  := by decide
-private theorem se_16 : (signExtend12 (16 : BitVec 12)).toNat = 16 := by decide
-private theorem se_32 : (signExtend12 (32 : BitVec 12)).toNat = 32 := by decide
+theorem se_1  : (signExtend12 (1  : BitVec 12)).toNat = 1  := by decide
+theorem se_2  : (signExtend12 (2  : BitVec 12)).toNat = 2  := by decide
+theorem se_4  : (signExtend12 (4  : BitVec 12)).toNat = 4  := by decide
+theorem se_8  : (signExtend12 (8  : BitVec 12)).toNat = 8  := by decide
+theorem se_16 : (signExtend12 (16 : BitVec 12)).toNat = 16 := by decide
+theorem se_32 : (signExtend12 (32 : BitVec 12)).toNat = 32 := by decide
 
 -- ============================================================================
 -- CLZ pipeline: stages 0–4 (before the final stage 5)
