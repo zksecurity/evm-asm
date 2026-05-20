@@ -82,6 +82,44 @@ def evm_mod_callable : Program :=
   cc_ret ;;            -- replaces the NOP at the exit slot
   divK_div128
 
+/-- v4 LP64-callable wrapper for `evm_div`, using the corrected
+    `divK_div128_v4` subroutine. This is a code-surface helper for the v4
+    migration; existing callable specs remain on `evm_div_callable` until the
+    dispatcher proofs are lifted to v4. -/
+def evm_div_callable_v4 : Program :=
+  divK_phaseA 1020 ;;
+  divK_phaseB ;;
+  divK_clz ;;
+  divK_phaseC2 172 ;;
+  divK_normB ;;
+  divK_normA 40 ;;
+  divK_copyAU ;;
+  divK_loopSetup 464 ;;
+  divK_loopBody 560 7736 ;;
+  divK_denorm ;;
+  divK_div_epilogue 24 ;;
+  divK_zeroPath ;;
+  cc_ret ;;
+  divK_div128_v4
+
+/-- v4 LP64-callable wrapper for `evm_mod`, using the corrected
+    `divK_div128_v4` subroutine. -/
+def evm_mod_callable_v4 : Program :=
+  divK_phaseA 1020 ;;
+  divK_phaseB ;;
+  divK_clz ;;
+  divK_phaseC2 172 ;;
+  divK_normB ;;
+  divK_normA 40 ;;
+  divK_copyAU ;;
+  divK_loopSetup 464 ;;
+  divK_loopBody 560 7736 ;;
+  divK_denorm ;;
+  divK_mod_epilogue 24 ;;
+  divK_zeroPath ;;
+  cc_ret ;;
+  divK_div128_v4
+
 -- ============================================================================
 -- CodeReq abbreviations
 -- ============================================================================
@@ -133,6 +171,44 @@ abbrev evm_mod_callable_code (base : Word) : CodeReq :=
     CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,
     cc_ret_code   (base + nopOff),                          -- block 12: NOP ↔ cc_ret swap
     CodeReq.ofProg (base + div128Off)     divK_div128
+  ]
+
+/-- 14-block CodeReq layout for `evm_div_callable_v4`. -/
+abbrev evm_div_callable_code_v4 (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,
+    CodeReq.ofProg (base + clzOff)        divK_clz,
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),
+    CodeReq.ofProg (base + normBOff)      divK_normB,
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),
+    CodeReq.ofProg (base + denormOff)     divK_denorm,
+    CodeReq.ofProg (base + epilogueOff)   (divK_div_epilogue 24),
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,
+    cc_ret_code   (base + nopOff),
+    CodeReq.ofProg (base + div128Off)     divK_div128_v4
+  ]
+
+/-- 14-block CodeReq layout for `evm_mod_callable_v4`. -/
+abbrev evm_mod_callable_code_v4 (base : Word) : CodeReq :=
+  CodeReq.unionAll [
+    CodeReq.ofProg  base                  (divK_phaseA 1020),
+    CodeReq.ofProg (base + phaseBOff)     divK_phaseB,
+    CodeReq.ofProg (base + clzOff)        divK_clz,
+    CodeReq.ofProg (base + phaseC2Off)    (divK_phaseC2 172),
+    CodeReq.ofProg (base + normBOff)      divK_normB,
+    CodeReq.ofProg (base + normAOff)      (divK_normA 40),
+    CodeReq.ofProg (base + copyAUOff)     divK_copyAU,
+    CodeReq.ofProg (base + loopSetupOff)  (divK_loopSetup 464),
+    CodeReq.ofProg (base + loopBodyOff)   (divK_loopBody 560 7736),
+    CodeReq.ofProg (base + denormOff)     divK_denorm,
+    CodeReq.ofProg (base + epilogueOff)   (divK_mod_epilogue 24),
+    CodeReq.ofProg (base + zeroPathOff)   divK_zeroPath,
+    cc_ret_code   (base + nopOff),
+    CodeReq.ofProg (base + div128Off)     divK_div128_v4
   ]
 
 -- ============================================================================

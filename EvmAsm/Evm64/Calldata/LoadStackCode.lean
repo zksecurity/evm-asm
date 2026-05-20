@@ -52,6 +52,25 @@ theorem evm_calldataload_window_of_mloadStackCode_spec_within
   exact h
 
 /--
+Transport an `evm_mload_code` triple to the program-identical in-bounds
+CALLDATALOAD window core. This is the direct EVM-code sibling of
+`evm_calldataload_window_of_mloadStackCode_spec_within`.
+
+Distinctive token:
+Calldata.LoadStackCode.evm_calldataload_window_of_evm_mload_spec_within #104.
+-/
+theorem evm_calldataload_window_of_evm_mload_spec_within
+    {n : Nat} {P Q : Assertion}
+    (offReg byteReg accReg addrReg envPtrReg : Reg) (base endPc : Word)
+    (h : cpsTripleWithin n base endPc
+      (evm_mload_code offReg byteReg accReg addrReg envPtrReg base) P Q) :
+    cpsTripleWithin n base endPc
+      (evm_calldataload_window_code offReg byteReg accReg addrReg envPtrReg base)
+      P Q := by
+  rw [evm_calldataload_window_code_eq_evm_mload_code]
+  exact h
+
+/--
 CALLDATALOAD prologue stack spec: pop the calldata offset from the EVM stack
 slot at `x12` and resolve the source byte pointer
 `addrReg ← envPtrReg + offReg` where `envPtrReg` holds `env.callDataPtr`.

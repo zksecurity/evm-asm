@@ -31,6 +31,14 @@ def emitReg (r : Reg) : String := toString r
 
 def natToHex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 
+/-- Render a signed branch/JAL offset as PC-relative: `.+N` or `.-N`.
+    Plain integer operands to RV64 branches and JAL are interpreted by
+    GNU-as as absolute target addresses (not relative offsets), which
+    breaks at link time when text is loaded at e.g. `0x80000000`. The
+    PC-relative form keeps the offset anchored at the current pc. -/
+def emitBranchOff (n : Int) : String :=
+  if n < 0 then s!".{n}" else s!".+{n}"
+
 /-- Render a single RV64IM instruction as one GNU-as line. -/
 def emitInstr : Instr → String
   -- RV64I ALU register-register
@@ -72,15 +80,15 @@ def emitInstr : Instr → String
   | .LHU   rd rs1 off  => s!"lhu {emitReg rd}, {off.toInt}({emitReg rs1})"
   | .SB    rs1 rs2 off => s!"sb {emitReg rs2}, {off.toInt}({emitReg rs1})"
   | .SH    rs1 rs2 off => s!"sh {emitReg rs2}, {off.toInt}({emitReg rs1})"
-  -- RV64I branches (signed 13-bit byte offset)
-  | .BEQ   rs1 rs2 off => s!"beq {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  | .BNE   rs1 rs2 off => s!"bne {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  | .BLT   rs1 rs2 off => s!"blt {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  | .BGE   rs1 rs2 off => s!"bge {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  | .BLTU  rs1 rs2 off => s!"bltu {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  | .BGEU  rs1 rs2 off => s!"bgeu {emitReg rs1}, {emitReg rs2}, {off.toInt}"
-  -- RV64I jumps
-  | .JAL   rd off      => s!"jal {emitReg rd}, {off.toInt}"
+  -- RV64I branches (signed 13-bit byte offset, emitted as PC-relative)
+  | .BEQ   rs1 rs2 off => s!"beq {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  | .BNE   rs1 rs2 off => s!"bne {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  | .BLT   rs1 rs2 off => s!"blt {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  | .BGE   rs1 rs2 off => s!"bge {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  | .BLTU  rs1 rs2 off => s!"bltu {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  | .BGEU  rs1 rs2 off => s!"bgeu {emitReg rs1}, {emitReg rs2}, {emitBranchOff off.toInt}"
+  -- RV64I jumps (JAL offset is PC-relative; JALR offset is register-indirect)
+  | .JAL   rd off      => s!"jal {emitReg rd}, {emitBranchOff off.toInt}"
   | .JALR  rd rs1 off  => s!"jalr {emitReg rd}, {off.toInt}({emitReg rs1})"
   -- RV64I pseudo-instructions
   | .MV    rd rs       => s!"mv {emitReg rd}, {emitReg rs}"

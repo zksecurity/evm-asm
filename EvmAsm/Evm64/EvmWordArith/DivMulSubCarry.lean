@@ -30,7 +30,7 @@ namespace EvmWord
 
 /-- Helper: when MULHU = 2^64 - 2 (maximum), the low product is at most 1.
     From (2^64-1)² = (2^64-2)·2^64 + 1, so MUL result ≤ 1. -/
-private theorem prodLo_le_one_of_mulhu_max {q v_i : Word}
+theorem prodLo_le_one_of_mulhu_max {q v_i : Word}
     (h : (rv64_mulhu q v_i).toNat = 2^64 - 2) :
     (q * v_i).toNat ≤ 1 := by
   have := partial_product_decompose q v_i

@@ -24,8 +24,10 @@ import EvmAsm.Evm64.DivMod.SpecCall
 import EvmAsm.Evm64.DivMod.N4StackSpec
 import EvmAsm.Evm64.DivMod.N4StackSpecWithin
 import EvmAsm.Evm64.DivMod.LoopBody.DoubleAddbackBeq
+import EvmAsm.Evm64.DivMod.LoopBody.DoubleAddbackBeqV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.MulsubFull
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddback
+import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqNamed
 import EvmAsm.Evm64.DivMod.Compose.SharedLoopPost
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
@@ -37,6 +39,7 @@ import EvmAsm.Evm64.DivMod.LoopIterN2MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2AddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3AddbackV4NoNop

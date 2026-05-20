@@ -43,7 +43,7 @@ open SimpleEnvField
 /-- Load and push a single 64-bit limb of the environment field at
     `field.offset + 8 * i` onto the EVM stack slot `8 * i` above the
     new top-of-stack pointer in `x12`. -/
-private def env_one_limb (envBaseReg tmpReg : Reg) (field : SimpleEnvField)
+def env_one_limb (envBaseReg tmpReg : Reg) (field : SimpleEnvField)
     (i : Nat) : Program :=
   LD tmpReg envBaseReg (BitVec.ofNat 12 (field.offset + 8 * i)) ;;
   SD .x12   tmpReg     (BitVec.ofNat 12 (8 * i))

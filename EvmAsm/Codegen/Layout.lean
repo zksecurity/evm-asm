@@ -48,13 +48,32 @@ instance : ToString HaltConv := ⟨HaltConv.toString⟩
 
 end HaltConv
 
-/-- Inclusive lower bound of the verified valid memory region.
-    Mirrors `MEM_START` at `EvmAsm/Rv64/Basic.lean:244`. -/
+/-! ## Verified memory zones (mirror of `EvmAsm/Rv64/Basic.lean`)
+
+    Post-#5164 the verified model recognises three disjoint zones;
+    the codegen side carries the same constants so any address-bounds
+    introspection downstream sees the same numeric values.
+-/
+
+/-- Inclusive lower bound of the legacy valid memory zone.
+    Mirrors `MEM_START` at `EvmAsm/Rv64/Basic.lean`. -/
 def MEM_START : Nat := 0x20
 
-/-- Inclusive upper bound of the verified valid memory region.
-    Mirrors `MEM_END` at `EvmAsm/Rv64/Basic.lean:247`. -/
+/-- Inclusive upper bound of the legacy valid memory zone. -/
 def MEM_END : Nat := 0x78000000
+
+/-- Lower bound of the input-buffer zone (matches `INPUT_ADDR`). -/
+def INPUT_MEM_START : Nat := 0x40000000
+
+/-- Upper bound of the input-buffer zone. -/
+def INPUT_MEM_END : Nat := 0x40002000
+
+/-- Lower bound of the writable-RAM zone (covers `.data`
+    and `OUTPUT_ADDR`). -/
+def RAM_MEM_START : Nat := 0xa0000000
+
+/-- Upper bound of the writable-RAM zone. -/
+def RAM_MEM_END : Nat := 0xc0000000
 
 /-- A program-plus-wrapping that codegen knows how to turn into a single
     `.s` file: the verified RV64 body, optional raw-asm prologue and

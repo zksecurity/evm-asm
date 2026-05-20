@@ -72,7 +72,7 @@ reasoning. -/
 
 /-- One folding step preserves the `< 256^k` bucket and grows the bucket
     by one byte. -/
-private theorem appendByte_lt_pow {acc : Nat} {b : BitVec 8} {k : Nat}
+theorem appendByte_lt_pow {acc : Nat} {b : BitVec 8} {k : Nat}
     (h : acc < 256 ^ k) : appendByte acc b < 256 ^ (k + 1) := by
   have hb : b.toNat < 256 := b.isLt
   have hsucc : acc + 1 ≤ 256 ^ k := h
@@ -87,10 +87,8 @@ private theorem appendByte_lt_pow {acc : Nat} {b : BitVec 8} {k : Nat}
   omega
 
 /-- Generic byte-fold bound: starting from `acc < 256^k` and folding `n`
-    bytes (any `BitVec 8` source) yields a value `< 256^(k+n)`.  We keep
-    this private; the public statement is the specialization to
-    `callDataLoadNat`. -/
-private theorem foldl_appendByte_lt_pow
+    bytes (any `BitVec 8` source) yields a value `< 256^(k+n)`. -/
+theorem foldl_appendByte_lt_pow
     {α : Type _} (g : α → BitVec 8) :
     ∀ (xs : List α) (acc k : Nat),
       acc < 256 ^ k →
@@ -143,8 +141,8 @@ where the spec collapses to a constant-zero limbset. -/
 
 /-- Folding `appendByte 0` over any list (every byte is zero) yields `0`.
     This is the structural ingredient shared between `callDataLoadNat_nil`
-    and `callDataLoadNat_of_ge_length`; we keep it private. -/
-private theorem foldl_appendByte_zero
+    and `callDataLoadNat_of_ge_length`. -/
+theorem foldl_appendByte_zero
     {α : Type _} (xs : List α) :
     xs.foldl (fun acc (_ : α) => appendByte acc 0) 0 = 0 := by
   induction xs with

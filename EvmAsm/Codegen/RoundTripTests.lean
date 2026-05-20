@@ -64,16 +64,16 @@ open EvmAsm.Rv64
 #guard emitInstr (.SH  .x6 .x5 (2 : BitVec 12)) = "sh x5, 2(x6)"
 
 -- Branches (signed 13-bit byte offset)
-#guard emitInstr (.BEQ  .x5 .x6 (16 : BitVec 13))  = "beq x5, x6, 16"
-#guard emitInstr (.BNE  .x5 .x6 (-8 : BitVec 13))  = "bne x5, x6, -8"
-#guard emitInstr (.BLT  .x5 .x6 (0 : BitVec 13))   = "blt x5, x6, 0"
-#guard emitInstr (.BGE  .x5 .x6 (4 : BitVec 13))   = "bge x5, x6, 4"
-#guard emitInstr (.BLTU .x5 .x6 (4 : BitVec 13))   = "bltu x5, x6, 4"
-#guard emitInstr (.BGEU .x5 .x6 (4 : BitVec 13))   = "bgeu x5, x6, 4"
+#guard emitInstr (.BEQ  .x5 .x6 (16 : BitVec 13))  = "beq x5, x6, .+16"
+#guard emitInstr (.BNE  .x5 .x6 (-8 : BitVec 13))  = "bne x5, x6, .-8"
+#guard emitInstr (.BLT  .x5 .x6 (0 : BitVec 13))   = "blt x5, x6, .+0"
+#guard emitInstr (.BGE  .x5 .x6 (4 : BitVec 13))   = "bge x5, x6, .+4"
+#guard emitInstr (.BLTU .x5 .x6 (4 : BitVec 13))   = "bltu x5, x6, .+4"
+#guard emitInstr (.BGEU .x5 .x6 (4 : BitVec 13))   = "bgeu x5, x6, .+4"
 
 -- Jumps
-#guard emitInstr (.JAL  .x1 (32 : BitVec 21))             = "jal x1, 32"
-#guard emitInstr (.JAL  .x1 (-16 : BitVec 21))            = "jal x1, -16"
+#guard emitInstr (.JAL  .x1 (32 : BitVec 21))             = "jal x1, .+32"
+#guard emitInstr (.JAL  .x1 (-16 : BitVec 21))            = "jal x1, .-16"
 #guard emitInstr (.JALR .x0 .x1 (0 : BitVec 12))          = "jalr x0, 0(x1)"
 
 -- Pseudo
