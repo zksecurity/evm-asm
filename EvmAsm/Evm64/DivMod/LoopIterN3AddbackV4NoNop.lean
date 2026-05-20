@@ -6,13 +6,37 @@
 
 import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeq
-import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 
 open EvmAsm.Rv64.Tactics
+open EvmAsm.Evm64.DivMod.AddrNorm (slt_jpos_1)
 
 namespace EvmAsm.Evm64
 
 open EvmAsm.Rv64
+
+@[irreducible]
+def loopBodyN3CallAddbackJ0PostV4
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
+  let dLo := divKTrialCallV4DLo v2
+  let divUn0 := divKTrialCallV4Un0 u2
+  let qHat := divKTrialCallV4QHat u3 u2 v2
+  let scratchOut := divKTrialCallV4ScratchOut u3 u2 v2 scratchMem
+  loopBodyN3AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v2) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ divUn0) **
+  (sp + signExtend12 3936 ↦ₘ scratchOut) **
+  regOwn .x1
+
+@[irreducible]
+def loopBodyN3CallAddbackJgt0PreV4
+    (j sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word) : Assertion :=
+  loopBodyN3CallSkipPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    j v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 **
+  (sp + signExtend12 3936 ↦ₘ scratchMem)
 
 @[irreducible]
 def loopBodyN3CallAddbackJgt0PostV4
@@ -194,21 +218,6 @@ theorem divK_loop_body_n3_max_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
       xperm_hyp hp)
     full
 
-@[irreducible]
-def loopBodyN3CallAddbackJ0PostV4
-    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
-  let dLo := divKTrialCallV4DLo v2
-  let divUn0 := divKTrialCallV4Un0 u2
-  let qHat := divKTrialCallV4QHat u3 u2 v2
-  let scratchOut := divKTrialCallV4ScratchOut u3 u2 v2 scratchMem
-  loopBodyN3AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
-  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
-  (sp + signExtend12 3960 ↦ₘ v2) **
-  (sp + signExtend12 3952 ↦ₘ dLo) **
-  (sp + signExtend12 3944 ↦ₘ divUn0) **
-  (sp + signExtend12 3936 ↦ₘ scratchOut) **
-  regOwn .x1
-
 /-- No-NOP/v4 variant of `divK_loop_body_n3_call_addback_j0_beq_spec_within_noNop`. -/
 theorem divK_loop_body_n3_call_addback_j0_beq_v4_spec_within_noNop
     (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
@@ -220,10 +229,10 @@ theorem divK_loop_body_n3_call_addback_j0_beq_v4_spec_within_noNop
     (hborrow : loopBodyN3CallAddbackBorrowV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop)
     (hcarry2_nz : loopBodyN3CallAddbackCarry2NzV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
     cpsTripleWithin 224 (base + loopBodyOff) (base + denormOff) (sharedDivModCodeNoNop_v4 base)
-      (loopBodyN3CallPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-        (0 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem)
+      (loopBodyN3CallSkipJ0PreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem)
       (loopBodyN3CallAddbackJ0PostV4 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem) := by
-  unfold loopBodyN3CallPreV4
+  unfold loopBodyN3CallSkipJ0PreV4
   let uBase := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
   let qAddr := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
   let dHi := divKTrialCallV4DHi v2
@@ -294,21 +303,15 @@ theorem divK_loop_body_n3_call_addback_j0_beq_v4_spec_within_noNop
   have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0f SLf
   exact cpsTripleWithin_weaken
-    (fun h hp => by xperm_hyp hp)
+    (fun h hp => by
+      rw [loopBodyN3CallSkipPre_unfold] at hp
+      xperm_hyp hp)
     (fun h hp => by
       unfold loopBodyN3CallAddbackJ0PostV4
       unfold loopBodyN3AddbackBeqPost loopBodyAddbackBeqPost loopExitPost
       rw [sepConj_assoc'] at hp
       xperm_hyp hp)
     full
-
-@[irreducible]
-def loopBodyN3CallAddbackJgt0PreV4
-    (j sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
-    (retMem dMem dloMem scratchUn0 scratchMem : Word) : Assertion :=
-  loopBodyN3CallPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    j v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem
 
 /-- No-NOP/v4 variant of `divK_loop_body_n3_call_addback_jgt0_beq_spec_within_noNop`. -/
 theorem divK_loop_body_n3_call_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
@@ -397,7 +400,7 @@ theorem divK_loop_body_n3_call_addback_jgt0_beq_v4_spec_within_noNop (j : Word)
     (fun h hp => by rw [sepConj_assoc'] at hp; xperm_hyp hp) TFfMCA0f SLf
   exact cpsTripleWithin_weaken
     (fun h hp => by
-      unfold loopBodyN3CallPreV4 at hp
+      rw [loopBodyN3CallSkipPre_unfold] at hp
       xperm_hyp hp)
     (fun h hp => by
       unfold loopBodyN3CallAddbackJgt0PostV4

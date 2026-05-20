@@ -87,7 +87,7 @@ def preloopN3UnifiedPost (bltu_1 bltu_0 : Bool)
 
 /-- Helper: instantiate unified n=3 loop (double-addback) with explicit normalized values.
     Separates the loop application from the composition for heartbeat budgeting. -/
-private theorem evm_div_n3_loop_unified_inst
+theorem evm_div_n3_loop_unified_inst
     (bltu_1 bltu_0 : Bool) (sp base : Word)
     (shift antiShift b0' b1' b2' b3' u0 u1 u2 u3 u4 : Word)
     (v10Old v11Old jMem : Word)
@@ -111,7 +111,7 @@ private theorem evm_div_n3_loop_unified_inst
     hbltu_1 hbltu_0 hcarry2
 
 /-- No-NOP variant of `evm_div_n3_loop_unified_inst`. -/
-private theorem evm_div_n3_loop_unified_inst_noNop
+theorem evm_div_n3_loop_unified_inst_noNop
     (bltu_1 bltu_0 : Bool) (sp base : Word)
     (shift antiShift b0' b1' b2' b3' u0 u1 u2 u3 u4 : Word)
     (v10Old v11Old jMem : Word)
