@@ -124,6 +124,24 @@ theorem expTwoMulFixedReloadLimbFrameN_succ_of_control_no_reload
   expTwoMulFixedReloadLimbFrameN_succ_no_reload
     (expTwoMulFixedControlInvariant_no_reload_mod hControl hC6)
 
+theorem expTwoMulFixedControlInvariant_pre_reload_mod
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : (c6 + signExtend12 (-1 : BitVec 12)).toNat = 1) :
+    k % 64 = 62 := by
+  unfold expTwoMulFixedControlInvariant at hControl
+  rcases hControl with ⟨hNat, _⟩
+  have hPos : 1 ≤ c6.toNat := by
+    rw [hNat]
+    have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+    omega
+  have hDec := controlFrame_word_add_neg1_toNat (w := c6) hPos
+  rw [hDec, hNat] at hC6
+  have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
+  omega
+
 theorem expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_pre_reload
     {exponentWord : EvmWord} {k : Nat} {ptr : Word}
     (hMod : k % 64 = 62) :
@@ -153,16 +171,7 @@ theorem expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_control_pre_rel
     expTwoMulFixedSavedNextLimbFrameN exponentWord (k + 1) ptr =
       expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr := by
   apply expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_pre_reload
-  unfold expTwoMulFixedControlInvariant at hControl
-  rcases hControl with ⟨hNat, _⟩
-  have hPos : 1 ≤ c6.toNat := by
-    rw [hNat]
-    have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
-    omega
-  have hDec := controlFrame_word_add_neg1_toNat (w := c6) hPos
-  rw [hDec, hNat] at hC6
-  have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
-  omega
+  exact expTwoMulFixedControlInvariant_pre_reload_mod hControl hC6
 
 @[irreducible]
 def expTwoMulFixedPreReloadFrameN
