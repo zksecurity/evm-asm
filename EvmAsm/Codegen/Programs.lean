@@ -418,7 +418,29 @@ def tinyInterpDispatchAdd2Unit : BuildUnit :=
     of 12-bit signed negatives (`3936..4088 ≡ -160..-8`). The `.data`
     layout therefore places a 256-byte zero-filled `div_scratch:` block
     *before* the `operands:` label so that `x12 - 160..-8` lands in
-    writable RAM. -/
+    writable RAM.
+
+    `evm_div`'s body lays out main code, then a NOP "exit PC" at index
+    267, then the 75-instruction `divK_div128_v4` subroutine. When the
+    main path completes (via `divK_div_epilogue`'s JAL +24 to the NOP)
+    it falls through into the subroutine instead of halting — and the
+    codegen's halt stub, appended after the body, is unreachable. We
+    splice the body to replace that NOP with `JAL .x0 +304`, which
+    skips over the 75 subroutine instructions (75·4 + 4 = 304 bytes)
+    and lands at the start of `evmAddEpilogue`. The verified callers of
+    the subroutine still use the original `jal x2, +560` offsets, which
+    remain correct because we only replaced the NOP, not the
+    subroutine's position relative to its callers. -/
+
+/-- `EvmAsm.Evm64.evm_div` with the NOP "exit PC" at internal index 267
+    replaced by a forward JAL that skips the 75-instruction subroutine
+    and lands at the instruction immediately following the body — i.e.
+    the start of whatever `Program` is appended next (`evmAddEpilogue`
+    in both DIV BuildUnits below). -/
+def evmDivPatched : Program :=
+  (EvmAsm.Evm64.evm_div : List Instr).take 267 ++
+  [Instr.JAL .x0 (304 : BitVec 21)] ++
+  (EvmAsm.Evm64.evm_div : List Instr).drop 268
 
 /-- Dividend as four LE limbs. 2^64, exercises the phase-B n=2 cascade
     plus the normalize/loop path (not an early-exit). -/
@@ -456,7 +478,7 @@ def evmDivDataSection : String :=
     ((evmDivDividend ++ evmDivDivisor).map emitDword)
 
 def evmDivUnit : BuildUnit := {
-  body        := EvmAsm.Evm64.evm_div ++ evmAddEpilogue
+  body        := evmDivPatched ++ evmAddEpilogue
   prologueAsm := evmDivPrologue
   dataAsm     := evmDivDataSection
 }
@@ -472,7 +494,7 @@ def evmDivUnit : BuildUnit := {
 def evm_div_from_input : Program :=
   LI .x5 (INPUT_ADDR + (BitVec.ofNat 64 INPUT_DATA_OFFSET)) ;;
   copy64 .x12 .x5 .x6 ++
-  EvmAsm.Evm64.evm_div ++
+  evmDivPatched ++
   evmAddEpilogue
 
 def evmDivFromInputPrologue : String :=
