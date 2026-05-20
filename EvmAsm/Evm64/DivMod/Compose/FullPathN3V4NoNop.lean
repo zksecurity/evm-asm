@@ -48,6 +48,24 @@ def loopBodyN3CallSkipJ0NormPreV4
   (sp + signExtend12 3944 ↦ₘ scratchUn0) **
   regOwn .x1 ** (sp + signExtend12 3936 ↦ₘ scratchMem)
 
+/-- n=3 max-skip j=1 precondition over `divCode_noNop_v4`. -/
+@[irreducible]
+def loopBodyN3MaxSkipJ1NormPreV4
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word) : Assertion :=
+  loopBodyN3MaxSkipPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+
+/-- n=3 call-skip j=1 precondition over `divCode_noNop_v4`. -/
+@[irreducible]
+def loopBodyN3CallSkipJ1NormPreV4
+    (sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word) : Assertion :=
+  loopBodyN3CallSkipPre sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 **
+  (sp + signExtend12 3936 ↦ₘ scratchMem)
+
 /-- Loop body n=3, max+skip, j=0 over `divCode_noNop_v4`, with
     sp-relative addresses hidden behind a named precondition. -/
 theorem divK_loop_body_n3_max_skip_j0_norm_v4_noNop (sp base : Word)
@@ -73,6 +91,33 @@ theorem divK_loop_body_n3_max_skip_j0_norm_v4_noNop (sp base : Word)
              u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
   delta loopBodyN3MaxSkipJ0NormPreV4
   exact raw'
+
+/-- Loop body n=3, max+skip, j=1 over `divCode_noNop_v4`, with
+    the precondition hidden behind an irreducible definition. -/
+theorem divK_loop_body_n3_max_skip_j1_norm_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (hbltu : ¬BitVec.ult u3 v2) :
+    (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+     then (1 : Word) else 0) = (0 : Word) →
+    cpsTripleWithin 76 (base + loopBodyOff) (base + loopBodyOff) (divCode_noNop_v4 base)
+      (loopBodyN3MaxSkipJ1NormPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld)
+      (loopBodyN3SkipPost sp (1 : Word) (signExtend12 4095 : Word)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro hborrow
+  have raw := divK_loop_body_n3_max_skip_j1_v4_spec_within_noNop
+    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
+    hbltu hborrow
+  have raw' := cpsTripleWithin_extend_code
+    (hmono := sharedDivModCodeNoNop_v4_sub_divCode_noNop_v4) raw
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      delta loopBodyN3MaxSkipJ1NormPreV4 at hp
+      xperm_hyp hp)
+    (fun h hp => hp)
+    raw'
 
 /-- Loop body n=3, call+skip, j=0 over `divCode_noNop_v4`, with
     sp-relative addresses hidden behind a named precondition. -/
@@ -107,6 +152,34 @@ theorem divK_loop_body_n3_call_skip_j0_norm_v4_noNop (sp base : Word)
       xperm_hyp hp)
     (fun h hp => hp)
     raw
+
+/-- Loop body n=3, call+skip, j=1 over `divCode_noNop_v4`, with
+    the precondition hidden behind an irreducible definition. -/
+theorem divK_loop_body_n3_call_skip_j1_norm_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) =
+      base + div128CallRetOff)
+    (hbltu : BitVec.ult u3 v2)
+    (hborrow : mulsubN4NoBorrow (divKTrialCallV4QHat u3 u2 v2) v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    cpsTripleWithin 148 (base + loopBodyOff) (base + loopBodyOff) (divCode_noNop_v4 base)
+      (loopBodyN3CallSkipJ1NormPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem)
+      (loopBodyN3CallSkipJgt0PostV4 sp base (1 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem) := by
+  have raw := divK_loop_body_n3_call_skip_j1_v4_spec_within_noNop
+    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+    retMem dMem dloMem scratchUn0 scratchMem base
+    halign hbltu hborrow
+  have raw' := cpsTripleWithin_extend_code
+    (hmono := sharedDivModCodeNoNop_v4_sub_divCode_noNop_v4) raw
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      delta loopBodyN3CallSkipJ1NormPreV4 at hp
+      xperm_hyp hp)
+    (fun h hp => hp)
+    raw'
 
 /-- Loop body n=3, max+addback (BEQ double-addback), j=0 over
     `divCode_noNop_v4`, with sp-relative addresses hidden behind a named
