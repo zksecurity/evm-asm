@@ -975,9 +975,122 @@ theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_r
         (fun hk_lt v6' v7' v10' v11' d0' d1' d2' d3' => by
           simpa only [expReloadDirectFalsePre] using
             hReloadFalse hk_lt v6' v7' v10' v11' d0' d1' d2' d3')
-        (fun hk_lt v6' v7' v10' v11' d0' d1' d2' d3' => by
+      (fun hk_lt v6' v7' v10' v11' d0' d1' d2' d3' => by
           simpa only [expReloadDirectTruePre] using
             hReloadTrue hk_lt v6' v7' v10' v11' d0' d1' d2' d3')
         hExit)
+
+/-- From-pre variant of
+    `cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_reloadTailFrameN_of_control_from_pre`.
+
+    This is the reload-boundary counterpart of
+    `cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_reloadLimbFrameN_of_pre`:
+    the current precondition already carries the control invariant, so
+    recursive callers only need to provide the reload branch fact. -/
+theorem cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_reloadTailFrameN_of_pre
+    {baseWord exponentWord : EvmWord} {k iterations : Nat}
+    (controlC6 e machineC6 iterCount v10 v18 ptr nextLimb
+      nextNextLimb sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3
+      e0 e1 e2 e3 a0 a1 a2 a3 v7 v11 : Word)
+    (base : Word)
+    (Q : Assertion)
+    (hbase : (base + 44 : Word) &&& 1 = 0)
+    (hControlMachine : controlC6 = machineC6)
+    (hk : k < 256)
+    (hBase : baseWord = expResultWord a0 a1 a2 a3)
+    (hC6 : controlC6 + signExtend12 (-1 : BitVec 12) = 0)
+    (hNextNext :
+      nextNextLimb = exponentWord.getLimbN (2 - (k + 1) / 64))
+    (hBranch :
+      k < 255 →
+      ∀ (bit : Bool)
+        (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
+        cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expReloadDirectBranchPre k baseWord exponentWord
+            controlC6 e iterCount ptr nextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3
+            bit v6' v7' v10' v11' d0' d1' d2' d3' base
+            (((((ptr + signExtend12 (-8 : BitVec 12)) +
+              signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
+              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+                (ptr + signExtend12 (-8 : BitVec 12)))))
+          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
+            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
+            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+              (ptr + signExtend12 (-8 : BitVec 12))))))
+    (hReloadFalse :
+      k < 255 →
+      ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
+        cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expReloadDirectFalsePre k baseWord exponentWord
+            e iterCount nextLimb ptr nextNextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3
+            v6' v7' v10' v11' d0' d1' d2' d3' base
+            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
+              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
+              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
+              ⌜(e >>> (63 : BitVec 6).toNat) +
+                signExtend12 (0 : BitVec 12) = 0⌝ **
+              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+                (ptr + signExtend12 (-8 : BitVec 12))))
+          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
+            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
+            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+              (ptr + signExtend12 (-8 : BitVec 12))))))
+    (hReloadTrue :
+      k < 255 →
+      ∀ (v6' v7' v10' v11' d0' d1' d2' d3' : Word),
+        cpsTripleWithin (expTwoMulFixedIterationsBodyBound iterations)
+          (base + 44) (base + 296)
+          (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+          (expReloadDirectTruePre k baseWord exponentWord
+            e iterCount nextLimb ptr nextNextLimb sp evmSp
+            r0 r1 r2 r3 a0 a1 a2 a3
+            v6' v7' v10' v11' d0' d1' d2' d3' base
+            (((ptr + signExtend12 (0 : BitVec 12)) ↦ₘ nextLimb) **
+              ⌜expTwoMulIterCountNew iterCount ≠ 0⌝ **
+              ⌜controlC6 + signExtend12 (-1 : BitVec 12) = 0⌝ **
+              ⌜(e >>> (63 : BitVec 6).toNat) +
+                signExtend12 (0 : BitVec 12) ≠ 0⌝ **
+              expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+                (ptr + signExtend12 (-8 : BitVec 12))))
+          (Q ** (((((ptr + signExtend12 (-8 : BitVec 12)) +
+            signExtend12 (0 : BitVec 12)) ↦ₘ nextNextLimb) **
+            expTwoMulFixedReloadLimbFrameN exponentWord (k + 1)
+              (ptr + signExtend12 (-8 : BitVec 12))))))
+    (hExit :
+      k = 255 →
+      ∀ ps,
+        expTwoMulFixedIterCaseExitPost iterCount e machineC6 ptr nextLimb
+          sp evmSp r0 r1 r2 r3 a0 a1 a2 a3 base ps →
+        Q ps) :
+    cpsTripleWithin (expTwoMulFixedIterationsBodyBound (iterations + 1))
+      (base + 44) (base + 296)
+      (evmExpMsbSavedBitTwoMulFixedCanonicalAppendedMulCode base)
+      (expTwoMulFixedIterPreNWithStateFrame k baseWord exponentWord
+        controlC6 e machineC6 iterCount v10 v18 ptr nextLimb sp evmSp
+        tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+        a0 a1 a2 a3 v7 v11
+        (expTwoMulFixedReloadTailFrameN exponentWord k ptr))
+      (Q ** expTwoMulFixedReloadTailFrameN exponentWord k ptr) := by
+  intro R hR s hcr hPreR hpc
+  obtain ⟨hp, hcompat, psPre, psR, hdisj, hunion, hPre, hRps⟩ := hPreR
+  have hState :
+      expTwoMulFixedIterStateInvariant baseWord exponentWord k
+        iterCount e controlC6 ptr nextLimb evmSp r0 r1 r2 r3 :=
+    expTwoMulFixedIterPreNWithStateFrame_pure hPre
+  exact
+    cpsTripleWithin_expTwoMulFixedIterPreNWithStateFrame_head_reloadDirect_reloadTailFrameN_of_control_from_pre
+      controlC6 e machineC6 iterCount v10 v18 ptr nextLimb nextNextLimb
+      sp evmSp tOld vOld r0 r1 r2 r3 d0 d1 d2 d3 e0 e1 e2 e3
+      a0 a1 a2 a3 v7 v11 base Q hbase hControlMachine hk hBase
+      hState.2.2.1 hC6 hNextNext hBranch hReloadFalse hReloadTrue hExit
+      R hR s hcr
+      ⟨hp, hcompat, psPre, psR, hdisj, hunion, hPre, hRps⟩
+      hpc
 
 end EvmAsm.Evm64.Exp.Compose
