@@ -39,6 +39,21 @@ theorem sdivCode_wrapper_sub {base : Word} :
       rw [evm_sdiv_length]
       norm_num)
 
+/-- Wrapper sub-region inside `sdivCodeV4`. -/
+theorem sdivCodeV4_wrapper_sub {base : Word} :
+    ∀ a i, (EvmAsm.Rv64.CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
+      (sdivCodeV4 base) a = some i := by
+  unfold sdivCodeV4
+  exact EvmAsm.Rv64.CodeReq.ofProg_mono_sub base base evm_sdiv_v4 evm_sdiv_wrapper 0
+    (EvmAsm.Evm64.SDiv.AddrNorm.wrapperStart_addr base)
+    (by unfold evm_sdiv_v4; simp only [EvmAsm.Rv64.seq, EvmAsm.Rv64.Program]; rfl)
+    (by
+      rw [evm_sdiv_v4_length, evm_sdiv_wrapper_length]
+      norm_num)
+    (by
+      rw [evm_sdiv_v4_length]
+      norm_num)
+
 /-- The appended unsigned DIV callable sub-region inside `sdivCode`. -/
 theorem sdivCode_div_callable_sub {base : Word} :
     ∀ a i, (evm_div_callable_code (base + 284)) a = some i →
@@ -99,6 +114,15 @@ theorem sdivCode_top_level_subs {base : Word} :
     (∀ a i, (evm_div_callable_code (base + 284)) a = some i →
       (sdivCode base) a = some i) := by
   exact ⟨sdivCode_wrapper_sub, sdivCode_div_callable_sub⟩
+
+/-- Bundled top-level SDIV v4 code subsumptions for the wrapper and appended
+    v4 unsigned DIV callable. -/
+theorem sdivCodeV4_top_level_subs {base : Word} :
+    (∀ a i, (EvmAsm.Rv64.CodeReq.ofProg base evm_sdiv_wrapper) a = some i →
+      (sdivCodeV4 base) a = some i) ∧
+    (∀ a i, (evm_div_callable_code_v4 (base + 284)) a = some i →
+      (sdivCodeV4 base) a = some i) := by
+  exact ⟨sdivCodeV4_wrapper_sub, sdivCodeV4_div_callable_sub⟩
 
 /-- The near `JAL` at the SDIV wrapper's `divCall` block targets the appended
     unsigned DIV callable, which starts at `base + wrapperEndOff`.  This is
