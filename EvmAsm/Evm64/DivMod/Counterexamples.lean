@@ -5,6 +5,7 @@
   that motivated the div128 v4 migration.
 -/
 
+import EvmAsm.Evm64.DivMod.Callable
 import EvmAsm.Evm64.DivMod.Program
 import EvmAsm.Evm64.DivMod.LoopDefs.IterV4
 
@@ -47,6 +48,40 @@ theorem evm_mod_uses_div128_v4 :
       divK_mod_epilogue 24 ;;
       divK_zeroPath ;;
       single (.ADDI .x0 .x0 0) ;;
+      divK_div128_v4) := rfl
+
+theorem evm_div_callable_v4_uses_div128_v4 :
+    evm_div_callable_v4 =
+      (divK_phaseA 1020 ;;
+      divK_phaseB ;;
+      divK_clz ;;
+      divK_phaseC2 172 ;;
+      divK_normB ;;
+      divK_normA 40 ;;
+      divK_copyAU ;;
+      divK_loopSetup 464 ;;
+      divK_loopBody 560 7736 ;;
+      divK_denorm ;;
+      divK_div_epilogue 24 ;;
+      divK_zeroPath ;;
+      cc_ret ;;
+      divK_div128_v4) := rfl
+
+theorem evm_mod_callable_v4_uses_div128_v4 :
+    evm_mod_callable_v4 =
+      (divK_phaseA 1020 ;;
+      divK_phaseB ;;
+      divK_clz ;;
+      divK_phaseC2 172 ;;
+      divK_normB ;;
+      divK_normA 40 ;;
+      divK_copyAU ;;
+      divK_loopSetup 464 ;;
+      divK_loopBody 560 7736 ;;
+      divK_denorm ;;
+      divK_mod_epilogue 24 ;;
+      divK_zeroPath ;;
+      cc_ret ;;
       divK_div128_v4) := rfl
 
 -- Counterexample A:
