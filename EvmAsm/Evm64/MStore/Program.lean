@@ -99,7 +99,7 @@ open EvmAsm.Rv64
 
     `accReg` must differ from `byteReg`; the spec slice will enforce
     this via a `Reg` disjointness hypothesis. -/
-private def mstore_byte_unpack
+def mstore_byte_unpack
     (addrReg byteReg accReg : Reg) (limbStart : Nat) : Nat → Program
   | 0     =>
       SRLI byteReg accReg (BitVec.ofNat 6 ((7 - 0) * 8)) ;;
@@ -119,7 +119,7 @@ private def mstore_byte_unpack
     formula is `limbStart = 8 * (3 - j)`. The value limb is read from
     `x12 + 8 * j + 32` (top-of-stack `value` lives 32 bytes below
     `offset`). -/
-private def mstore_one_limb
+def mstore_one_limb
     (addrReg byteReg accReg : Reg) (j : Nat) : Program :=
   LD accReg .x12 (BitVec.ofNat 12 (8 * j + 32)) ;;
   mstore_byte_unpack addrReg byteReg accReg (8 * (3 - j)) 7

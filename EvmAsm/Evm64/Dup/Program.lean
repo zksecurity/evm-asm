@@ -13,7 +13,7 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 /-- One limb pair for DUP: LD x7 from source offset, SD x7 to destination offset. -/
-private def dup_one_limb (n i : Nat) : Program :=
+def dup_one_limb (n i : Nat) : Program :=
   LD .x7 .x12 (BitVec.ofNat 12 (n * 32 + i * 8)) ;;
   SD .x12 .x7 (BitVec.ofNat 12 (i * 8))
 

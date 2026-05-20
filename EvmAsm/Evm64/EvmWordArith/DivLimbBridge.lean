@@ -94,10 +94,10 @@ theorem fromLimbs_ne_zero_of_or {b0 b1 b2 b3 : Word}
 -- EvmWord nonzero ↔ getLimbN OR nonzero
 -- ============================================================================
 
-private theorem or_eq_zero_imp_left {a b : Word} (h : a ||| b = 0) : a = 0 := by
+theorem or_eq_zero_imp_left {a b : Word} (h : a ||| b = 0) : a = 0 := by
   bv_decide
 
-private theorem or_eq_zero_imp_right {a b : Word} (h : a ||| b = 0) : b = 0 := by
+theorem or_eq_zero_imp_right {a b : Word} (h : a ||| b = 0) : b = 0 := by
   bv_decide
 
 /-- An EvmWord is nonzero iff the OR of its four limbs is nonzero.

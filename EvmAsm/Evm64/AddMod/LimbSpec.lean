@@ -96,6 +96,46 @@ def evmAddModPrologueLimbPost (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) : Assertion :=
   ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) **
   ((sp + 56) ↦ₘ result3)
 
+theorem evmAddModPrologueLimbPost_unfold (sp a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
+    evmAddModPrologueLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3 =
+      (let sum0 := a0 + b0
+       let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
+       let psum1 := a1 + b1
+       let carry1a := if BitVec.ult psum1 b1 then (1 : Word) else 0
+       let result1 := psum1 + carry0
+       let carry1b := if BitVec.ult result1 carry0 then (1 : Word) else 0
+       let carry1 := carry1a ||| carry1b
+       let psum2 := a2 + b2
+       let carry2a := if BitVec.ult psum2 b2 then (1 : Word) else 0
+       let result2 := psum2 + carry1
+       let carry2b := if BitVec.ult result2 carry1 then (1 : Word) else 0
+       let carry2 := carry2a ||| carry2b
+       let psum3 := a3 + b3
+       let carry3a := if BitVec.ult psum3 b3 then (1 : Word) else 0
+       let result3 := psum3 + carry2
+       let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
+       let carry3 := carry3a ||| carry3b
+       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
+       (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ sum0) ** ((sp + 40) ↦ₘ result1) ** ((sp + 48) ↦ₘ result2) **
+       ((sp + 56) ↦ₘ result3)) := by
+  delta evmAddModPrologueLimbPost; rfl
+
+theorem evm_addmod_prologue_named_spec_within (sp : Word) (base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (v7 v6 v5 v11 : Word) :
+    cpsTripleWithin 30 base (base + 120) (evm_addmod_prologue_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       (sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) ** ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) ** ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3))
+      (evmAddModPrologueLimbPost sp a0 a1 a2 a3 b0 b1 b2 b3) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmAddModPrologueLimbPost_unfold]; exact hp)
+    (evm_addmod_prologue_spec_within sp base
+      a0 a1 a2 a3 b0 b1 b2 b3 v7 v6 v5 v11)
+
 /-- Stack-level prologue spec on `evmWordIs` surface: thin lift of
     `evm_add_stack_spec_within`. -/
 theorem evm_addmod_prologue_stack_spec_within (sp base : Word)
@@ -159,6 +199,45 @@ def evmAddModPrologueStackPost (sp : Word) (a b : EvmWord) : Assertion :=
   (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
   (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
   evmWordIs sp a ** evmWordIs (sp + 32) (a + b)
+
+theorem evmAddModPrologueStackPost_unfold (sp : Word) (a b : EvmWord) :
+    evmAddModPrologueStackPost sp a b =
+      (let a0 := a.getLimbN 0; let b0 := b.getLimbN 0
+       let a1 := a.getLimbN 1; let b1 := b.getLimbN 1
+       let a2 := a.getLimbN 2; let b2 := b.getLimbN 2
+       let a3 := a.getLimbN 3; let b3 := b.getLimbN 3
+       let sum0 := a0 + b0
+       let carry0 := if BitVec.ult sum0 b0 then (1 : Word) else 0
+       let psum1 := a1 + b1
+       let carry1a := if BitVec.ult psum1 b1 then (1 : Word) else 0
+       let result1 := psum1 + carry0
+       let carry1b := if BitVec.ult result1 carry0 then (1 : Word) else 0
+       let carry1 := carry1a ||| carry1b
+       let psum2 := a2 + b2
+       let carry2a := if BitVec.ult psum2 b2 then (1 : Word) else 0
+       let result2 := psum2 + carry1
+       let carry2b := if BitVec.ult result2 carry1 then (1 : Word) else 0
+       let carry2 := carry2a ||| carry2b
+       let psum3 := a3 + b3
+       let carry3a := if BitVec.ult psum3 b3 then (1 : Word) else 0
+       let result3 := psum3 + carry2
+       let carry3b := if BitVec.ult result3 carry2 then (1 : Word) else 0
+       let carry3 := carry3a ||| carry3b
+       (.x12 ↦ᵣ (sp + 32)) ** (.x7 ↦ᵣ result3) ** (.x6 ↦ᵣ carry3b) **
+       (.x5 ↦ᵣ carry3) ** (.x11 ↦ᵣ carry3a) **
+       evmWordIs sp a ** evmWordIs (sp + 32) (a + b)) := by
+  delta evmAddModPrologueStackPost; rfl
+
+theorem evm_addmod_prologue_stack_named_spec_within (sp base : Word)
+    (a b : EvmWord) (v7 v6 v5 v11 : Word) :
+    cpsTripleWithin 30 base (base + 120) (evm_addmod_prologue_code base)
+      ((.x12 ↦ᵣ sp) ** (.x7 ↦ᵣ v7) ** (.x6 ↦ᵣ v6) ** (.x5 ↦ᵣ v5) ** (.x11 ↦ᵣ v11) **
+       evmWordIs sp a ** evmWordIs (sp + 32) b)
+      (evmAddModPrologueStackPost sp a b) :=
+  cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => by simp only [evmAddModPrologueStackPost_unfold]; exact hp)
+    (evm_addmod_prologue_stack_spec_within sp base a b v7 v6 v5 v11)
 
 -- ============================================================================
 -- evm_addmod_epilogue (1 instruction, slice evm-asm-hsybl toward evm-asm-s7v49)

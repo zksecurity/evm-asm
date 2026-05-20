@@ -83,7 +83,7 @@ theorem evm_calldatasize_spec_within
 /-- Concretization of `evmWordIs nsp (BitVec.ofNat 256 callDataLen.toNat)`
     as four limb cells: low limb is `callDataLen`, upper three are zero.
     Mirror of `evmWordIs_msize_unfold`. -/
-private theorem evmWordIs_calldatasize_unfold
+theorem evmWordIs_calldatasize_unfold
     (nsp : Word) (callDataLen : Word) :
     evmWordIs nsp (BitVec.ofNat 256 callDataLen.toNat) =
       ((nsp ↦ₘ callDataLen) ** ((nsp + 8) ↦ₘ 0) **

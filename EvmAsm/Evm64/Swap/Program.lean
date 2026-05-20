@@ -13,7 +13,7 @@ namespace EvmAsm.Evm64
 open EvmAsm.Rv64
 
 /-- One limb quad for SWAP: LD x7 from top, LD x6 from nth, SD x6 to top, SD x7 to nth. -/
-private def swap_one_limb (n i : Nat) : Program :=
+def swap_one_limb (n i : Nat) : Program :=
   LD .x7 .x12 (BitVec.ofNat 12 (i * 8)) ;;
   LD .x6 .x12 (BitVec.ofNat 12 (n * 32 + i * 8)) ;;
   SD .x12 .x6 (BitVec.ofNat 12 (i * 8)) ;;

@@ -27,7 +27,7 @@ namespace EvmWord
     Key identity: `a % 2^64 / 2^B % 256 = a / 2^B % 256` when `B + 8 ≤ 64`.
     Proof: `2^64 = 2^B * 2^(64-B)`, and `2^(64-B) ≥ 256`, so the high quotient
     `(a / 2^64) * 2^(64-B)` is a multiple of 256 and vanishes under `% 256`. -/
-private theorem mod_pow64_div_mod256_eq (a B : Nat) (hB : B + 8 ≤ 64) :
+theorem mod_pow64_div_mod256_eq (a B : Nat) (hB : B + 8 ≤ 64) :
     a % 2 ^ 64 / 2 ^ B % 256 = a / 2 ^ B % 256 := by
   -- a = q * 2^64 + r, and 2^64 = 2^B * 2^(64-B)
   -- So a / 2^B = q * 2^(64-B) + r / 2^B
@@ -87,7 +87,7 @@ def byte (i x : EvmWord) : EvmWord :=
     BitVec.ofNat 256 ((x.toNat / 2 ^ ((31 - i.toNat) * 8)) % 256)
   else 0
 
-private theorem getLimb_0_ofNat_small (n : Nat) :
+theorem getLimb_0_ofNat_small (n : Nat) :
     getLimb (BitVec.ofNat 256 n) 0 = BitVec.ofNat 64 n := by
   simp only [getLimb]
   simp only [Fin.val_zero, Nat.zero_mul]
@@ -95,7 +95,7 @@ private theorem getLimb_0_ofNat_small (n : Nat) :
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
   omega
 
-private theorem getLimb_high_ofNat_small (n : Nat) (hn : n < 2 ^ 64)
+theorem getLimb_high_ofNat_small (n : Nat) (hn : n < 2 ^ 64)
     (i : Fin 4) (hi : i.val ≠ 0) :
     getLimb (BitVec.ofNat 256 n) i = 0 := by
   simp only [getLimb]

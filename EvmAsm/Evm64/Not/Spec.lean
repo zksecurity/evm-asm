@@ -53,7 +53,7 @@ theorem evm_not_spec_within (sp base : Word)
 /-- Helper: `x ^^^ signExtend12 (-1)` is bitwise complement at `Word` (BitVec 64) width.
     `signExtend12 (-1 : BitVec 12)` evaluates to `(-1 : Word) = BitVec.allOnes 64`,
     and `x ^^^ allOnes = ~~~x`. -/
-private theorem xor_signExtend12_neg_one (x : Word) :
+theorem xor_signExtend12_neg_one (x : Word) :
     x ^^^ signExtend12 (-1 : BitVec 12) = ~~~ x := by
   have h : signExtend12 (-1 : BitVec 12) = (-1 : Word) := by decide
   rw [h]; bv_decide
