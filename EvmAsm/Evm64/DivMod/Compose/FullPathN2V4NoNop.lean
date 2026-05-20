@@ -8,6 +8,7 @@ import EvmAsm.Evm64.DivMod.Compose.FullPathN2LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2CallV4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN2AddbackV4NoNop
 
 open EvmAsm.Rv64.Tactics
 
@@ -95,6 +96,71 @@ theorem divK_loop_body_n2_call_skip_j0_norm_v4_noNop (sp base : Word)
         v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
         retMem dMem dloMem scratchUn0 scratchMem base
         halign hbltu hborrow)
+  rw [loopBodyN2CallSkipJ0PreV4_unfold] at raw
+  rw [loopBodyN2CallSkipJ0Pre_unfold] at raw
+  simp only [se12_32, se12_40, se12_48, se12_56,
+             u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
+             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      delta loopBodyN2CallSkipJ0NormPreV4 loopBodyN2MaxSkipJ0NormPreV4 at hp
+      xperm_hyp hp)
+    (fun h hp => hp)
+    raw
+
+/-- Loop body n=2, max+addback (BEQ double-addback), j=0 over
+    `divCode_noNop_v4`, with sp-relative addresses hidden behind a named
+    precondition. -/
+theorem divK_loop_body_n2_max_addback_j0_beq_norm_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (hbltu : ¬BitVec.ult u2 v1)
+    (hcarry2_nz : isAddbackCarry2NzN2Max v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    (if BitVec.ult uTop (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+     then (1 : Word) else 0) ≠ (0 : Word) →
+    cpsTripleWithin 152 (base + loopBodyOff) (base + denormOff) (divCode_noNop_v4 base)
+      (loopBodyN2MaxSkipJ0NormPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld)
+      (loopBodyN2AddbackBeqPost sp (0 : Word) (signExtend12 4095 : Word)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop) := by
+  intro hborrow
+  have raw := divK_loop_body_n2_max_addback_j0_beq_v4_spec_within_noNop
+    sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld base
+    hbltu hcarry2_nz hborrow
+  have raw' := cpsTripleWithin_extend_code
+    (hmono := sharedDivModCodeNoNop_v4_sub_divCode_noNop_v4) raw
+  rw [loopBodyN2MaxSkipJ0Pre_unfold] at raw'
+  simp only [se12_32, se12_40, se12_48, se12_56,
+             u_base_off0_j0, u_base_off4088_j0, u_base_off4080_j0,
+             u_base_off4072_j0, u_base_off4064_j0, q_addr_j0] at raw'
+  delta loopBodyN2MaxSkipJ0NormPreV4
+  exact raw'
+
+/-- Loop body n=2, call+addback (BEQ double-addback), j=0 over
+    `divCode_noNop_v4`, with sp-relative addresses hidden behind a named
+    precondition. -/
+theorem divK_loop_body_n2_call_addback_j0_beq_norm_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) =
+      base + div128CallRetOff)
+    (hbltu : BitVec.ult u2 v1)
+    (hborrow : loopBodyN2CallAddbackBorrowV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop)
+    (hcarry2_nz : loopBodyN2CallAddbackCarry2NzV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    cpsTripleWithin 224 (base + loopBodyOff) (base + denormOff) (divCode_noNop_v4 base)
+      (loopBodyN2CallSkipJ0NormPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem)
+      (loopBodyN2CallAddbackJ0PostV4 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem) := by
+  have raw :=
+    cpsTripleWithin_extend_code
+      (hmono := sharedDivModCodeNoNop_v4_sub_divCode_noNop_v4)
+      (divK_loop_body_n2_call_addback_j0_beq_v4_spec_within_noNop
+        sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+        retMem dMem dloMem scratchUn0 scratchMem base
+        halign hbltu hborrow hcarry2_nz)
   rw [loopBodyN2CallSkipJ0PreV4_unfold] at raw
   rw [loopBodyN2CallSkipJ0Pre_unfold] at raw
   simp only [se12_32, se12_40, se12_48, se12_56,
