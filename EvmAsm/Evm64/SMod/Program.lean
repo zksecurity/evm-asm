@@ -58,6 +58,7 @@ theorem evm_smod_saved_ra_ret_block_byte_length (savedRaReg : Reg) :
     Register layout:
     * `x18` saves the caller return address across the nested `JAL`.
     * `x8` stores `sign(dividend)` and drives the final remainder correction.
+    * `x13` preserves `sign(dividend)` across the nested MOD callable.
     * `x9` stores `sign(divisor)` only for absolute-value normalization.
     * `x10`, `x11`, and `x7` are scratch registers for conditional negation.
 
@@ -66,24 +67,26 @@ theorem evm_smod_saved_ra_ret_block_byte_length (savedRaReg : Reg) :
 def evm_smod_wrapper : Program :=
   evm_smod_save_ra_block .x18 ;;
   evm_sdiv_sign_bit_block .x12 .x8 evm_smodDividendTopLimbOff ;;
+  ADDI .x13 .x8 0 ;;
   evm_sdiv_sign_bit_block .x12 .x9 evm_smodDivisorTopLimbOff ;;
   evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11 0 8 16 24 ;;
   evm_sdiv_cond_negate_256_block .x12 .x9 .x10 .x7 .x11 32 40 48 56 ;;
   evm_sdiv_div_call_block evm_smodCallOff ;;
-  evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11 32 40 48 56 ;;
+  evm_sdiv_cond_negate_256_block .x12 .x13 .x10 .x7 .x11 0 8 16 24 ;;
   evm_smod_saved_ra_ret_block .x18
 
-theorem evm_smod_wrapper_length : evm_smod_wrapper.length = 70 := by
+theorem evm_smod_wrapper_length : evm_smod_wrapper.length = 71 := by
   native_decide
 
 theorem evm_smod_wrapper_byte_length :
-    4 * evm_smod_wrapper.length = 280 := by
+    4 * evm_smod_wrapper.length = 284 := by
   rw [evm_smod_wrapper_length]
 
 theorem evm_smod_call_target_byte_offset :
     4 *
       ((evm_smod_save_ra_block .x18).length +
        (evm_sdiv_sign_bit_block .x12 .x8 evm_smodDividendTopLimbOff).length +
+       (ADDI .x13 .x8 0).length +
        (evm_sdiv_sign_bit_block .x12 .x9 evm_smodDivisorTopLimbOff).length +
        (evm_sdiv_cond_negate_256_block .x12 .x8 .x10 .x7 .x11 0 8 16 24).length +
        (evm_sdiv_cond_negate_256_block .x12 .x9 .x10 .x7 .x11 32 40 48 56).length) +
@@ -96,10 +99,21 @@ theorem evm_smod_call_target_byte_offset :
 def evm_smod : Program :=
   evm_smod_wrapper ;; evm_mod_callable
 
-theorem evm_smod_length : evm_smod.length = 389 := by
+/-- v4 full SMOD code region. This keeps the same SMOD wrapper and swaps the
+    appended unsigned MOD callable to the corrected v4 divider body. -/
+def evm_smod_v4 : Program :=
+  evm_smod_wrapper ;; evm_mod_callable_v4
+
+theorem evm_smod_length : evm_smod.length = 390 := by
   native_decide
 
-theorem evm_smod_byte_length : 4 * evm_smod.length = 1556 := by
+theorem evm_smod_v4_length : evm_smod_v4.length = 414 := by
+  native_decide
+
+theorem evm_smod_byte_length : 4 * evm_smod.length = 1560 := by
   rw [evm_smod_length]
+
+theorem evm_smod_v4_byte_length : 4 * evm_smod_v4.length = 1656 := by
+  rw [evm_smod_v4_length]
 
 end EvmAsm.Evm64
