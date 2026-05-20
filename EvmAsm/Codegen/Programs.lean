@@ -759,6 +759,57 @@ def ziskKeccak256EmptyProbeUnit : BuildUnit := {
   dataAsm     := ziskKeccak256EmptyDataSection
 }
 
+/-! ## zisk_keccak256_abc — PR-K2a single-block input
+
+    Same sponge skeleton as PR-K2 but with the 3-byte input "abc"
+    (RFC test vector) XORed into state positions 0..3 before the
+    padding bytes (`0x01` at byte 3, `0x80` at byte 135). Single
+    absorb block, single keccak-f call, then squeeze.
+
+    Expected:
+      keccak256(b"abc") =
+        4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45
+
+    Demonstrates the single-block absorb path (input ≤ rate). The
+    multi-block path lands in a follow-up. -/
+def ziskKeccak256AbcPrologue : String :=
+  "  la s0, k256a_state\n" ++
+  "  # zero state\n" ++
+  "  mv t3, s0\n" ++
+  "  li t4, 25\n" ++
+  ".Lk256a_zero:\n" ++
+  "  sd zero, 0(t3)\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  bnez t4, .Lk256a_zero\n" ++
+  "  # input \"abc\" at state[0..3]\n" ++
+  "  li t0, 0x61; sb t0, 0(s0)\n" ++
+  "  li t0, 0x62; sb t0, 1(s0)\n" ++
+  "  li t0, 0x63; sb t0, 2(s0)\n" ++
+  "  # Ethereum Keccak padding (length 3 < rate 136)\n" ++
+  "  li t0, 0x01; sb t0, 3(s0)\n" ++
+  "  li t0, 0x80; sb t0, 135(s0)\n" ++
+  "  # call keccak-f\n" ++
+  "  mv a0, s0\n" ++
+  "  .4byte 0x80052073\n" ++
+  "  # squeeze 32 bytes to OUTPUT_ADDR\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  ld t1, 0(s0);  sd t1, 0(t0)\n" ++
+  "  ld t1, 8(s0);  sd t1, 8(t0)\n" ++
+  "  ld t1, 16(s0); sd t1, 16(t0)\n" ++
+  "  ld t1, 24(s0); sd t1, 24(t0)"
+
+def ziskKeccak256AbcDataSection : String :=
+  ".section .data\n" ++
+  "k256a_state:\n" ++
+  "  .zero 200"
+
+def ziskKeccak256AbcProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskKeccak256AbcPrologue
+  dataAsm     := ziskKeccak256AbcDataSection
+}
+
 /-! ## registry -/
 
 /-- Look up a program by name. Returns `none` for unknown names so the CLI
@@ -779,6 +830,7 @@ def lookupProgram : String → Option BuildUnit
   | "stateless_guest"           => some statelessGuestUnit
   | "zisk_keccak_probe"         => some ziskKeccakProbeUnit
   | "zisk_keccak256_empty"      => some ziskKeccak256EmptyProbeUnit
+  | "zisk_keccak256_abc"        => some ziskKeccak256AbcProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -789,6 +841,7 @@ def knownProgramNames : List String :=
    "tiny_interp_dispatch_add", "tiny_interp_dispatch_add2",
    "stateless_guest",
    "zisk_keccak_probe",
-   "zisk_keccak256_empty"]
+   "zisk_keccak256_empty",
+   "zisk_keccak256_abc"]
 
 end EvmAsm.Codegen
