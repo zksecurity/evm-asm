@@ -161,7 +161,7 @@ private theorem mod_add_cancel_right (a b : Nat) :
 
 /-- 4×4 schoolbook product expansion into digit columns. Extracted so `ring`
     runs in its own heartbeat budget. -/
-private theorem product_expansion (a0 a1 a2 a3 b0 b1 b2 b3 W : Nat) :
+theorem product_expansion (a0 a1 a2 a3 b0 b1 b2 b3 W : Nat) :
     (a0 + a1 * W + a2 * W^2 + a3 * W^3) * (b0 + b1 * W + b2 * W^2 + b3 * W^3) =
     a0*b0 + (a0*b1 + a1*b0) * W + (a0*b2 + a1*b1 + a2*b0) * W^2 +
     (a0*b3 + a1*b2 + a2*b1 + a3*b0) * W^3 +
@@ -169,7 +169,7 @@ private theorem product_expansion (a0 a1 a2 a3 b0 b1 b2 b3 W : Nat) :
 
 /-- Geometric series: (W-1)(1+W+W²) + 1 = W³. Substitute `W = n + 1` to
     sidestep Nat subtraction, then `ring` closes the polynomial identity. -/
-private theorem geo_series_identity (W : Nat) (hW : 0 < W) :
+theorem geo_series_identity (W : Nat) (hW : 0 < W) :
     (W - 1) + (W - 1) * W + (W - 1) * W ^ 2 + 1 = W ^ 3 := by
   obtain ⟨n, rfl⟩ : ∃ n, W = n + 1 := ⟨W - 1, by omega⟩
   simp only [Nat.add_sub_cancel]
