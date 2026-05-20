@@ -286,6 +286,57 @@ theorem evm_div_callable_code_eq_ofProg (base : Word) :
     show (base + nopOff) + BitVec.ofNat 64 (4 * 1) = base + div128Off
     bv_omega]
 
+-- v4 variant of `evm_div_callable_code_eq_ofProg`.
+open EvmAsm.Rv64.CodeReq in
+theorem evm_div_callable_code_v4_eq_ofProg (base : Word) :
+    evm_div_callable_code_v4 base = CodeReq.ofProg base evm_div_callable_v4 := by
+  unfold evm_div_callable_code_v4 evm_div_callable_v4 cc_ret_code
+  simp only [unionAll_cons, unionAll_nil, union_empty_right]
+  unfold seq
+  unfold Program
+  symm
+  rw [ofProg_append]
+  rw [show base + BitVec.ofNat 64 (4 * (divK_phaseA 1020).length) =
+        base + phaseBOff by rw [divK_phaseA_len]; rfl]
+  rw [ofProg_append]
+  rw [show (base + phaseBOff) + BitVec.ofNat 64 (4 * divK_phaseB.length) =
+        base + clzOff by rw [divK_phaseB_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + clzOff) + BitVec.ofNat 64 (4 * divK_clz.length) =
+        base + phaseC2Off by rw [divK_clz_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + phaseC2Off) + BitVec.ofNat 64 (4 * (divK_phaseC2 172).length) =
+        base + normBOff by rw [divK_phaseC2_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + normBOff) + BitVec.ofNat 64 (4 * divK_normB.length) =
+        base + normAOff by rw [divK_normB_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + normAOff) + BitVec.ofNat 64 (4 * (divK_normA 40).length) =
+        base + copyAUOff by rw [divK_normA_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + copyAUOff) + BitVec.ofNat 64 (4 * divK_copyAU.length) =
+        base + loopSetupOff by rw [divK_copyAU_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + loopSetupOff) + BitVec.ofNat 64 (4 * (divK_loopSetup 464).length) =
+        base + loopBodyOff by rw [divK_loopSetup_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + loopBodyOff) + BitVec.ofNat 64 (4 * (divK_loopBody 560 7736).length) =
+        base + denormOff by rw [divK_loopBody_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + denormOff) + BitVec.ofNat 64 (4 * divK_denorm.length) =
+        base + epilogueOff by rw [divK_denorm_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + epilogueOff) + BitVec.ofNat 64 (4 * (divK_div_epilogue 24).length) =
+        base + zeroPathOff by rw [divK_divEpilogue_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + zeroPathOff) + BitVec.ofNat 64 (4 * divK_zeroPath.length) =
+        base + nopOff by rw [divK_zeroPath_len]; bv_omega]
+  rw [ofProg_append]
+  rw [show (base + nopOff) + BitVec.ofNat 64 (4 * cc_ret.length) =
+        base + div128Off by
+    show (base + nopOff) + BitVec.ofNat 64 (4 * 1) = base + div128Off
+    bv_omega]
+
 -- Per-block subsumption lemmas for evm_div_callable_code / evm_mod_callable_code
 --
 -- Mirror the `shared_b*_div` / `shared_b*_mod` pattern from
