@@ -38,11 +38,13 @@ import EvmAsm.Evm64.DivMod.LoopIterN2NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2AddbackV4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN2MaxAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN2CallAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN3AddbackV4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN3CallAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN4MaxV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN4CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN4AddbackV4NoNop
@@ -57,3 +59,4 @@ import EvmAsm.Evm64.DivMod.Compose.FullPathN4CallV4NoNop
 import EvmAsm.Evm64.DivMod.Compose.FullPathN3V4NoNop
 import EvmAsm.Evm64.DivMod.Compose.FullPathN2V4NoNop
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1V4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN4CallAddbackV4NoNop
