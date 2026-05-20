@@ -18,26 +18,33 @@
 
   Total: 41 bytes.
 
-  ## Caller contract (PR4)
+  ## Caller contract (PR6)
 
-  Caller places both fields the encoder writes in registers:
+  Caller places all three fields in registers:
 
-      x10 : chain_id              (u64, LE-encoded at output bytes 33..41)
-      x11 : successful_validation (low byte only; 0 or 1 in practice)
+      x10 : chain_id              (u64 LE at output bytes 33..41)
+      x11 : successful_validation (low byte at output byte 32)
+      x16 : header_count          (u64 LE at output bytes 48..56,
+                                   PR6 diagnostic field)
 
-  The encoder must only see `0` or `1` in `x11`'s low byte; higher
-  bits are ignored by the SSZ wire (byte 32 is the bool), but a
-  non-bool low byte would corrupt the encoding. PR4's
-  `Stateless.SSZ.Decode.decode_validation_bit` is the source of the
-  bit and guarantees `x11 ∈ {0, 1}`.
+  The encoder must only see `0` or `1` in `x11`'s low byte; PR5's
+  `decode_validation_bit` guarantees that.
 
-  Hash field is still stubbed:
+  PR6 layout at `OUTPUT_ADDR`:
 
-      new_payload_request_root = 0x00...00  (32 zero bytes)
-      successful_validation    = x11        (one byte at offset 32)
-      chain_id                 = x10        (LE bytes at offset 33..41)
+      bytes  0..32 : new_payload_request_root  (still zero-stub)
+      byte      32 : successful_validation     (x11 low byte)
+      bytes 33..41 : chain_id                  (x10 LE)
+      bytes 41..48 : zero gap                  (ziskemu inits OUTPUT to 0)
+      bytes 48..56 : header_count              (x16 LE u64, PR6 diagnostic)
 
-  Later PRs replace the zero `root` (PR5: SSZ `hash_tree_root`).
+  Bytes 48..56 are **not** part of the SSZ-encoded
+  `StatelessValidationResult` -- they're scratch the test harness
+  uses to verify that the deeper offset walk in
+  `decode_header_count` actually produces the right value.
+  Once the real STF lands, this scratch field goes away.
+
+  Later PRs replace the zero `root`.
 
   ## Memory layout
 
@@ -56,9 +63,9 @@
 
   ## Frame
 
-  10 instructions: 1 LI (base) + 4 SD (zero hash) + 1 SLLI + 1 OR
+  11 instructions: 1 LI (base) + 4 SD (zero hash) + 1 SLLI + 1 OR
   (mix in bool) + 1 SD (packed bool || low-7 chain bytes) + 1 SRLI +
-  1 SB (high chain byte).
+  1 SB (high chain byte) + 1 SD (header_count diagnostic).
 
   ## Encoding math
 
@@ -97,10 +104,12 @@ def OUTPUT_BASE : Word := 0xa0010000
     Caller contract:
       - `x10` holds the u64 `chain_id` to encode.
       - `x11` holds `successful_validation` (low byte = 0 or 1).
+      - `x16` holds `header_count` (u64; PR6 diagnostic field).
 
     The body writes the 41-byte SSZ encoding of
-    `StatelessValidationResult` at `OUTPUT_BASE` and falls through to
-    the caller's halt stub. -/
+    `StatelessValidationResult` at `OUTPUT_BASE`, an 8-byte
+    `header_count` diagnostic at `OUTPUT_BASE + 48`, and falls
+    through to the caller's halt stub. -/
 def serialize_stateless_output : Program :=
   LI .x6 OUTPUT_BASE ;;
   SD .x6 .x0 0  ;;
@@ -111,6 +120,7 @@ def serialize_stateless_output : Program :=
   OR' .x7 .x7 .x11 ;;
   SD .x6 .x7 32 ;;
   SRLI .x7 .x10 56 ;;
-  SB .x6 .x7 40
+  SB .x6 .x7 40 ;;
+  SD .x6 .x16 48
 
 end EvmAsm.Stateless.SSZ.Encode

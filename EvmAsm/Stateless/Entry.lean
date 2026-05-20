@@ -45,14 +45,18 @@
     `OUTPUT_ADDR + 0..N`.
   - Halts with the codegen halt stub.
 
-  ## PR5 status
+  ## PR6 status
 
-  Decode + light validation:
+  Decode + light validation + header_count diagnostic:
     - `Stateless.SSZ.Decode.read_chain_id` reads `chain_id` from the
       host-supplied `SszStatelessInput` on `INPUT_ADDR` into `x10`.
     - `Stateless.SSZ.Decode.decode_validation_bit` chases the outer
       SSZ → witness → headers offset chain and sets `x11 = 1` iff
-      `witness.headers` is empty (regardless of `state` / `codes`).
+      `witness.headers` is empty. Leaves `headers_addr` in `x17`
+      and `headers_byte_length` in `x14` for the count step.
+    - `Stateless.SSZ.Decode.decode_header_count` reads the first
+      u32 of the headers list and divides by 4 (with a BEQ guard
+      for the empty case), leaving `header_count` in `x16`.
 
   Encode:
     - `Stateless.SSZ.Encode.serialize_stateless_output` writes the
@@ -75,15 +79,17 @@ namespace EvmAsm.Stateless
 
 open EvmAsm.Rv64
 
-/-- PR4 body: decode `chain_id` + validation bit from `INPUT_ADDR`,
-    then encode the `StatelessValidationResult` at `OUTPUT_ADDR`.
-    Falls through to the halt stub appended by `emitBuildUnit`.
+/-- PR6 body: decode `chain_id` + validation bit + header_count
+    from `INPUT_ADDR`, then encode the SSZ result + diagnostic at
+    `OUTPUT_ADDR`. Falls through to the halt stub appended by
+    `emitBuildUnit`.
 
-    Replaced in successor PRs by the full decode → validate → execute
-    → encode pipeline. -/
+    Replaced in successor PRs by the full decode → validate →
+    execute → encode pipeline. -/
 def run_stateless_guest : Program :=
   EvmAsm.Stateless.SSZ.Decode.read_chain_id ++
   EvmAsm.Stateless.SSZ.Decode.decode_validation_bit ++
+  EvmAsm.Stateless.SSZ.Decode.decode_header_count ++
   EvmAsm.Stateless.SSZ.Encode.serialize_stateless_output
 
 end EvmAsm.Stateless
