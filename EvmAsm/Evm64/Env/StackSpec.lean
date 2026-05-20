@@ -39,7 +39,7 @@ open SimpleEnvField
     that `env_one_limb_spec_within` produces, so the stack-form lift
     can fan the envIs cell out into the four ↦ₘ atoms consumed by the
     raw memory-cell spec. -/
-private theorem evmWordIs_field_unfold
+theorem evmWordIs_field_unfold
     (envAddr : Word) (field : SimpleEnvField) (env : EvmEnv) :
     cellIs envAddr field env =
       (((envAddr + BitVec.ofNat 64 (field.offset + 0))  ↦ₘ (field.value env).getLimbN 0) **
@@ -60,7 +60,7 @@ private theorem evmWordIs_field_unfold
 /-- Bound on the per-limb load offset: the largest field offset is
     `chainIdOff = 384`, and `8*i ≤ 24`, so `field.offset + 8*i ≤ 408`,
     well under 2048.  Used to discharge `signExtend12_ofNat_small`. -/
-private theorem field_offset_add_lt_2048
+theorem field_offset_add_lt_2048
     (field : SimpleEnvField) (i : Nat) (hi : i < 4) :
     field.offset + 8 * i < 2048 := by
   interval_cases i <;> cases field <;> decide
