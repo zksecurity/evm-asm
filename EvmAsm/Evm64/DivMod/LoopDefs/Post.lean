@@ -865,6 +865,27 @@ def loopN1Iter10PostNoX1 (bltu_1 bltu_0 : Bool)
     (sp + signExtend12 3944 ↦ₘ div128Un0 u0)
   | true,  true  => empAssertion
 
+theorem loopN1Iter10PostNoX1_frame_to_loopN1Iter10Post
+    (bltu_1 bltu_0 : Bool)
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig
+     retMem dMem dloMem scratch_un0 raVal : Word) :
+    ∀ h,
+      (loopN1Iter10PostNoX1 bltu_1 bltu_0 sp base v0 v1 v2 v3
+        u0 u1 u2 u3 uTop u0Orig retMem dMem dloMem scratch_un0 **
+        (.x1 ↦ᵣ raVal)) h →
+      loopN1Iter10Post bltu_1 bltu_0 sp base v0 v1 v2 v3
+        u0 u1 u2 u3 uTop u0Orig retMem dMem dloMem scratch_un0 h := by
+  intro h hp
+  have hpOwn := sepConj_mono_right (regIs_to_regOwn .x1 raVal) h hp
+  cases bltu_1 <;> cases bltu_0
+  all_goals
+    delta loopN1Iter10PostNoX1 loopN1Iter10Post loopIterPostN1NoX1
+      loopIterPostN1 loopIterPostN1CallNoX1 loopIterPostN1Call
+      loopIterPostN1Max at hp hpOwn ⊢
+    simp only [sepConj_emp_right'] at hpOwn ⊢
+    rw [sepConj_assoc'] at hpOwn
+    xperm_hyp hpOwn
+
 /-- Postcondition for n=1 three-iteration loop (j=2, j=1, j=0) with double addback.
     Parameterized by `(bltu_2 bltu_1 bltu_0 : Bool)` covering all 8 path combinations. -/
 @[irreducible]
@@ -904,6 +925,29 @@ def loopN1Iter210PostNoX1 (bltu_2 bltu_1 bltu_0 : Bool)
     u0_orig_1 r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1 u0_orig_0
     scratch_ret scratch_d scratch_dlo scratch_un0 **
   ((u_base_2 + signExtend12 4064) ↦ₘ r2.2.2.2.2.2) ** (q_addr_2 ↦ₘ r2.1)
+
+theorem loopN1Iter210PostNoX1_frame_to_loopN1Iter210Post
+    (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0_orig_1 u0_orig_0
+     retMem dMem dloMem scratch_un0 raVal : Word) :
+    ∀ h,
+      (loopN1Iter210PostNoX1 bltu_2 bltu_1 bltu_0 sp base
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0_orig_1 u0_orig_0
+        retMem dMem dloMem scratch_un0 ** (.x1 ↦ᵣ raVal)) h →
+      loopN1Iter210Post bltu_2 bltu_1 bltu_0 sp base
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0_orig_1 u0_orig_0
+        retMem dMem dloMem scratch_un0 h := by
+  intro h hp
+  have hpOwn := sepConj_mono_right (regIs_to_regOwn .x1 raVal) h hp
+  cases bltu_2 <;> cases bltu_1 <;> cases bltu_0
+  all_goals
+    delta loopN1Iter210PostNoX1 loopN1Iter210Post loopN1Iter10PostNoX1
+      loopN1Iter10Post loopIterPostN1NoX1 loopIterPostN1
+      loopIterPostN1CallNoX1 loopIterPostN1Call loopIterPostN1Max at hp hpOwn ⊢
+    simp only [sepConj_emp_right'] at hpOwn ⊢
+    rw [sepConj_assoc'] at hpOwn
+    xperm_hyp hpOwn
 
 /-- Unified n=1 four-iteration postcondition with double addback.
     Parameterized by `(bltu_3 bltu_2 bltu_1 bltu_0 : Bool)` covering all 16 path combinations. -/
