@@ -165,6 +165,18 @@ theorem loopBodyN1CallSkipJgt0PostV4NoX1_eq_scratch
   delta loopBodyN1CallSkipJgt0PostV4NoX1 loopBodyN1CallSkipPostJScratchNoX1
   rfl
 
+theorem loopBodyN1CallSkipJ0PostV4NoX1_eq_scratch
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) :
+    loopBodyN1CallSkipJ0PostV4NoX1 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem =
+      loopBodyN1CallSkipPostJScratchNoX1 sp base (0 : Word)
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  delta loopBodyN1CallSkipJ0PostV4NoX1 loopBodyN1CallSkipPostJScratchNoX1
+  rfl
+
 /-- No-NOP/v4 loop body cpsTripleWithin for n=1, call+skip, j=0.
     This consumes the v4 div128 call path and exits to denorm. -/
 theorem divK_loop_body_n1_call_skip_j0_v4_spec_within_noNop
