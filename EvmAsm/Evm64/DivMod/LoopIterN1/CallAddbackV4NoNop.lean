@@ -59,6 +59,18 @@ theorem loopBodyN1CallAddbackBeqJ0PostV4NoX1_to_loopBodyN1CallAddbackBeqJ0PostV4
   delta loopBodyN1CallAddbackBeqJ0PostV4NoX1 loopBodyN1CallAddbackBeqJ0PostV4 at hp ⊢
   simpa only [sepConj_assoc'] using hp
 
+theorem loopBodyN1CallAddbackBeqJ0PostV4NoX1_eq_scratch
+    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) :
+    loopBodyN1CallAddbackBeqJ0PostV4NoX1 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem =
+      loopBodyN1CallAddbackBeqPostJScratchNoX1 sp base (0 : Word)
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  delta loopBodyN1CallAddbackBeqJ0PostV4NoX1 loopBodyN1CallAddbackBeqPostJScratchNoX1
+  rfl
+
 @[irreducible]
 def loopBodyN1CallAddbackBeqJgt0PostV4
     (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
