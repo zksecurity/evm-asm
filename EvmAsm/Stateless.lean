@@ -13,6 +13,7 @@
 
 import EvmAsm.Stateless.MemoryLayout
 import EvmAsm.Stateless.Unimplemented
+import EvmAsm.Stateless.Constants
 import EvmAsm.Stateless.SSZ.Decode.Program
 import EvmAsm.Stateless.SSZ.Encode.Program
 import EvmAsm.Stateless.Headers
