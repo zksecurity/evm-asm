@@ -138,6 +138,8 @@ run_fixture "one_empty_state_node_chain_coffee" 0xC0FFEE "01" 0 \
             --with-empty-state-node                                || fail=1
 run_fixture "two_empty_headers_chain_beef" 0xBEEF "00" 2 \
             --with-two-empty-headers                               || fail=1
+run_fixture "one_real_header_chain_face" 0xFACE "00" 1 \
+            --with-one-real-header                                 || fail=1
 
 if [[ "$fail" -eq 0 ]]; then
   echo "==> PASS: all stateless_guest fixtures match expected SSZ output"

@@ -28,11 +28,51 @@ import sys
 from pathlib import Path
 
 
+def _rlp_encoded_test_header() -> bytes:
+    """Construct + RLP-encode an amsterdam Block Header with fixed
+    test field values. Used by `--with-one-real-header` so the
+    fixture's `witness.headers[0]` is a real (~660-byte) header."""
+    from ethereum.crypto.hash import Hash32
+    from ethereum_rlp import rlp
+    from ethereum_types.bytes import Bytes, Bytes8, Bytes32
+    from ethereum_types.numeric import U64, U256, Uint
+
+    from ethereum.forks.amsterdam.blocks import Header
+    from ethereum.forks.amsterdam.fork_types import Bloom
+
+    h = Header(
+        parent_hash=Hash32(b"\x11" * 32),
+        ommers_hash=Hash32(b"\x22" * 32),
+        coinbase=Bytes(b"\x33" * 20),
+        state_root=Hash32(b"\x44" * 32),
+        transactions_root=Hash32(b"\x55" * 32),
+        receipt_root=Hash32(b"\x66" * 32),
+        bloom=Bloom(b"\x00" * 256),
+        difficulty=Uint(0),
+        number=Uint(0x1234),
+        gas_limit=Uint(0x1c9c380),
+        gas_used=Uint(0x100),
+        timestamp=U256(0x6566778899),
+        extra_data=Bytes(b"evm-asm2 PR-K7"),
+        prev_randao=Bytes32(b"\x77" * 32),
+        nonce=Bytes8(b"\x00" * 8),
+        base_fee_per_gas=Uint(0x07),
+        withdrawals_root=Hash32(b"\x88" * 32),
+        blob_gas_used=U64(0),
+        excess_blob_gas=U64(0),
+        parent_beacon_block_root=Hash32(b"\x99" * 32),
+        requests_hash=Hash32(b"\xaa" * 32),
+        block_access_list_hash=Hash32(b"\xbb" * 32),
+    )
+    return rlp.encode(h)
+
+
 def build_ssz_blob(
     chain_id: int,
     with_empty_header: bool,
     with_empty_state_node: bool,
     with_two_empty_headers: bool,
+    with_one_real_header: bool,
 ) -> bytes:
     """SSZ-encode an `SszStatelessInput`.
 
@@ -87,6 +127,11 @@ def build_ssz_blob(
             ByteList[MAX_BYTES_PER_HEADER](),
             ByteList[MAX_BYTES_PER_HEADER](),
         )
+    if with_one_real_header:
+        header_bytes = _rlp_encoded_test_header()
+        witness_kwargs["headers"] = SszList[
+            ByteList[MAX_BYTES_PER_HEADER], MAX_WITNESS_HEADERS
+        ](ByteList[MAX_BYTES_PER_HEADER](header_bytes))
     if with_empty_state_node:
         witness_kwargs["state"] = SszList[
             ByteList[MAX_BYTES_PER_WITNESS_NODE], MAX_WITNESS_NODES
@@ -136,6 +181,16 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--with-one-real-header",
+        action="store_true",
+        help=(
+            "Inject a single RLP-encoded amsterdam Header into "
+            "`witness.headers[0]`. Used by PR-K7 to test per-element "
+            "extraction: the guest hashes element 0 (the header "
+            "bytes), not the whole section."
+        ),
+    )
+    parser.add_argument(
         "--hash-out",
         type=Path,
         default=None,
@@ -153,6 +208,7 @@ def main() -> int:
         args.with_empty_header,
         args.with_empty_state_node,
         args.with_two_empty_headers,
+        args.with_one_real_header,
     )
 
     # ziskemu reads the input file in u64 chunks and rejects sizes that
@@ -178,29 +234,45 @@ def main() -> int:
 
     if args.hash_out is not None:
         from Crypto.Hash import keccak
-        # PR-K6: the guest hashes the `witness.headers` SSZ section
-        # bytes (not the whole input). Extract those via the outer
-        # offsets, then keccak256 them.
+        # PR-K7: the guest hashes `witness.headers[0]` -- element 0
+        # of the SSZ list, extracted via the inner offsets table.
+        # When the list is empty, hash empty.
         import struct as _struct
         offset_1 = _struct.unpack_from("<I", blob, 4)[0]
         offset_3 = _struct.unpack_from("<I", blob, 16)[0]
         witness_start = offset_1
         witness_end = offset_3
-        # Inner offset_2 lives at witness_start + 8 within the SSZ
-        # blob (third u32 of the witness container).
         inner_off2 = _struct.unpack_from("<I", blob, witness_start + 8)[0]
         headers_start = witness_start + inner_off2
         headers_end = witness_end
-        headers_section = blob[headers_start:headers_end]
+
+        headers_len = headers_end - headers_start
+        if headers_len == 0:
+            element_0 = b""
+            why = "headers empty"
+        else:
+            first_inner = _struct.unpack_from(
+                "<I", blob, headers_start)[0]
+            el0_start = headers_start + first_inner
+            n_elements = first_inner // 4
+            if n_elements == 1:
+                el0_end = headers_end
+            else:
+                second_inner = _struct.unpack_from(
+                    "<I", blob, headers_start + 4)[0]
+                el0_end = headers_start + second_inner
+            element_0 = blob[el0_start:el0_end]
+            why = f"N={n_elements}, el0 {len(element_0)}B"
+
         h = keccak.new(digest_bits=256)
-        h.update(headers_section)
+        h.update(element_0)
         digest = h.hexdigest()
         args.hash_out.parent.mkdir(parents=True, exist_ok=True)
         with args.hash_out.open("w") as fh:
             fh.write(digest)
         print(
             f"wrote {args.hash_out}: "
-            f"keccak256(witness.headers, {len(headers_section)}B) = {digest}",
+            f"keccak256(witness.headers[0], {why}) = {digest}",
             file=sys.stderr,
         )
 
