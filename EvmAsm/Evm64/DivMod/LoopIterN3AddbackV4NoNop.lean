@@ -8,36 +8,6 @@ import EvmAsm.Evm64.DivMod.LoopIterN3CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeq
 import EvmAsm.Evm64.DivMod.LoopBody.CorrectionAddbackBeqV4NoNop
 
-open EvmAsm.Rv64.Tactics
-open EvmAsm.Evm64.DivMod.AddrNorm (slt_jpos_1)
-
-namespace EvmAsm.Evm64
-
-open EvmAsm.Rv64
-
-@[irreducible]
-def loopBodyN3CallAddbackJ0PostV4
-    (sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
-  let dLo := divKTrialCallV4DLo v2
-  let divUn0 := divKTrialCallV4Un0 u2
-  let qHat := divKTrialCallV4QHat u3 u2 v2
-  let scratchOut := divKTrialCallV4ScratchOut u3 u2 v2 scratchMem
-  loopBodyN3AddbackBeqPost sp (0 : Word) qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop **
-  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
-  (sp + signExtend12 3960 ↦ₘ v2) **
-  (sp + signExtend12 3952 ↦ₘ dLo) **
-  (sp + signExtend12 3944 ↦ₘ divUn0) **
-  (sp + signExtend12 3936 ↦ₘ scratchOut) **
-  regOwn .x1
-
-@[irreducible]
-def loopBodyN3CallAddbackJgt0PreV4
-    (j sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-     v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld : Word)
-    (retMem dMem dloMem scratchUn0 scratchMem : Word) : Assertion :=
-  loopBodyN3CallPreV4 sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
-    j v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld retMem dMem dloMem scratchUn0 scratchMem
-
 @[irreducible]
 def loopBodyN3CallAddbackJgt0PostV4
     (sp base j v0 v1 v2 v3 u0 u1 u2 u3 uTop scratchMem : Word) : Assertion :=
