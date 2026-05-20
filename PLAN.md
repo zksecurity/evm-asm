@@ -991,6 +991,12 @@ through ECALL bridges (extending `EvmAsm/EL/Keccak*EcallBridge.lean`).
   through to `OUTPUT_ADDR`. Roundtrip test feeds Python-generated
   SSZ blobs with `chain_id ∈ {1, 0x1234567890ABCDEF}`; both pass on
   ziskemu.
+- ✅ PR4 witness-length validation bit: `decode_validation_bit`
+  reads `offset_1` and `offset_3` from the outer container header
+  and sets `x11 = 1` iff the witness body is empty (length 12).
+  Encoder ORs `x11` into the packed `bool || chain_id` word.
+  Third fixture (`--with-empty-header`) flips the bool to 0;
+  output round-trips through Python's SSZ decoder.
 
 ### Cross-references
 
