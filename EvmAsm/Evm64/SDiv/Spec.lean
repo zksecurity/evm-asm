@@ -405,6 +405,35 @@ theorem evm_sdiv_zero_divisor_result_stack_spec_within
     q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
     shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase
 
+/-- v4 top-level zero-divisor SDIV stack bridge with the concrete semantic
+    zero-result stack shape. -/
+theorem evm_sdiv_zero_divisor_result_stack_v4_spec_within
+    (vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      v2 v5 v6 : Word)
+    (dividend : EvmWord) (rest : List EvmWord)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (base : Word) (hbase : base &&& 1 = 0) :
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+      base (vRa &&& ~~~(1 : Word)) (sdivCodeV4 base)
+      ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
+         (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **
+         (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
+         (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
+        evmStackIs sp (dividend :: (0 : EvmWord) :: rest)) **
+       ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
+        EvmAsm.Evm64.divScratchValuesCallNoX1 sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0))
+      (sdivZeroDivisorPost sp vRa base dividend ((0 : EvmWord) :: rest)) := by
+  rw [sdivZeroDivisorPost_unfold]
+  exact saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_spec_in_sdivCodeV4
+    vRa vSavedOld sp sDividendOld sDivisorOld
+    dividendMaskOld dividendValueOld dividendCarryOld
+    v2 v5 v6 dividend rest
+    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase
+
 /-- Top-level zero-divisor SDIV stack bridge.
 
     This is the caller-visible zero-divisor path through the full `sdivCode`:
@@ -436,6 +465,40 @@ theorem evm_sdiv_zero_divisor_handler_stack_spec_within
           { state with stack := dividend :: (0 : EvmWord) :: rest }).stack) := by
   rw [sdivZeroDivisorPost_unfold]
   exact saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_handler_stack_spec_in_sdivCode
+    vRa vSavedOld sp sDividendOld sDivisorOld
+    dividendMaskOld dividendValueOld dividendCarryOld
+    v2 v5 v6 state dividend rest
+    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    shiftMem nMem jMem retMem dMem dloMem scratchUn0 base hbase
+
+/-- v4 top-level zero-divisor SDIV handler-stack bridge.
+
+    This is the caller-visible zero-divisor path through the full
+    `sdivCodeV4`, exposing the post stack using the executable `sdivHandler`
+    view. -/
+theorem evm_sdiv_zero_divisor_handler_stack_v4_spec_within
+    (vRa vSavedOld sp sDividendOld sDivisorOld
+      dividendMaskOld dividendValueOld dividendCarryOld
+      v2 v5 v6 : Word)
+    (state : EvmState) (dividend : EvmWord) (rest : List EvmWord)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (base : Word) (hbase : base &&& 1 = 0) :
+    EvmAsm.Rv64.cpsTripleWithin (((49 + (EvmAsm.Evm64.unifiedDivBound + 1)) + 21) + 1)
+      base (vRa &&& ~~~(1 : Word)) (sdivCodeV4 base)
+      ((((.x1 ↦ᵣ vRa) ** (.x18 ↦ᵣ vSavedOld) ** (.x12 ↦ᵣ sp) **
+         (.x8 ↦ᵣ sDividendOld) ** (.x9 ↦ᵣ sDivisorOld) **
+         (.x0 ↦ᵣ (0 : Word)) ** (.x10 ↦ᵣ dividendMaskOld) **
+         (.x7 ↦ᵣ dividendValueOld) ** (.x11 ↦ᵣ dividendCarryOld)) **
+        evmStackIs sp (dividend :: (0 : EvmWord) :: rest)) **
+       ((.x2 ↦ᵣ v2) ** (.x5 ↦ᵣ v5) ** (.x6 ↦ᵣ v6) **
+        EvmAsm.Evm64.divScratchValuesCallNoX1 sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0))
+      (sdivZeroDivisorPost sp vRa base dividend
+        (ArithmeticHandlers.sdivHandler
+          { state with stack := dividend :: (0 : EvmWord) :: rest }).stack) := by
+  rw [sdivZeroDivisorPost_unfold]
+  exact saveRa_signs_abs_signXor_then_divCall_bzero_stack_entry_zero_divisor_handler_stack_spec_in_sdivCodeV4
     vRa vSavedOld sp sDividendOld sDivisorOld
     dividendMaskOld dividendValueOld dividendCarryOld
     v2 v5 v6 state dividend rest
