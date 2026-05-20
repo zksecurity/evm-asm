@@ -164,6 +164,49 @@ theorem expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_control_pre_rel
   have hr : k % 64 < 64 := Nat.mod_lt _ (by decide)
   omega
 
+@[irreducible]
+def expTwoMulFixedPreReloadFrameN
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) : Assertion :=
+  expTwoMulFixedSavedNextLimbFrameN exponentWord k ptr **
+  expTwoMulFixedSavedNextLimbFrameN exponentWord (k + 1) ptr
+
+theorem expTwoMulFixedPreReloadFrameN_unfold
+    {exponentWord : EvmWord} {k : Nat} {ptr : Word} :
+    expTwoMulFixedPreReloadFrameN exponentWord k ptr =
+      (expTwoMulFixedSavedNextLimbFrameN exponentWord k ptr **
+      expTwoMulFixedSavedNextLimbFrameN exponentWord (k + 1) ptr) := by
+  delta expTwoMulFixedPreReloadFrameN
+  rfl
+
+theorem expTwoMulFixedPreReloadFrameN_pcFree
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) :
+    (expTwoMulFixedPreReloadFrameN exponentWord k ptr).pcFree := by
+  rw [expTwoMulFixedPreReloadFrameN_unfold,
+    expTwoMulFixedSavedNextLimbFrameN_unfold,
+    expTwoMulFixedSavedNextLimbFrameN_unfold,
+    expTwoMulFixedSavedNextLimbFrame_unfold,
+    expTwoMulFixedSavedNextLimbFrame_unfold]
+  pcFree
+
+instance pcFreeInst_expTwoMulFixedPreReloadFrameN
+    (exponentWord : EvmWord) (k : Nat) (ptr : Word) :
+    Assertion.PCFree
+      (expTwoMulFixedPreReloadFrameN exponentWord k ptr) :=
+  ⟨expTwoMulFixedPreReloadFrameN_pcFree exponentWord k ptr⟩
+
+theorem expTwoMulFixedPreReloadFrameN_handoff_of_control
+    {exponentWord : EvmWord} {k : Nat}
+    {c6 ptr nextLimb evmSp : Word}
+    (hControl :
+      expTwoMulFixedControlInvariant exponentWord k c6 ptr nextLimb evmSp)
+    (hC6 : (c6 + signExtend12 (-1 : BitVec 12)).toNat = 1) :
+    expTwoMulFixedPreReloadFrameN exponentWord k ptr =
+      (expTwoMulFixedSavedNextLimbFrameN exponentWord k ptr **
+        expTwoMulFixedReloadLimbFrameN exponentWord (k + 1) ptr) := by
+  rw [expTwoMulFixedPreReloadFrameN_unfold,
+    expTwoMulFixedSavedNextLimbFrameN_eq_succ_reload_limb_of_control_pre_reload
+      hControl hC6]
+
 theorem expTwoMulFixedReloadLimbFrameN_eq_of_reload_nextNext
     {exponentWord : EvmWord} {k : Nat} {ptr nextNextLimb : Word}
     (hMod : k % 64 = 63)
