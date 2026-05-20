@@ -945,6 +945,52 @@ This is the heart of the STF — the inner loop that executes EVM bytecode.
 
 ---
 
+## Stateless Guest (parallel STF track)
+
+Full plan: `~/.claude/plans/please-cut-a-branch-warm-wand.md`.
+Branch: `feat/run-stateless-guest-scaffold`.
+
+Stakeholders asked for `run_stateless_guest`
+(`execution-specs/src/ethereum/forks/amsterdam/stateless_guest.py:33`)
+to be implemented in RV64IM macro-assembly **early**, so testing can
+start before the proof effort catches up. Lands in a multi-PR sequence
+under `EvmAsm/Stateless/`. Each module ships with a `Program.lean` and
+a `Spec.lean` placeholder so CPS-triple proofs slot in later without
+restructuring. Precompiles raise a distinct `Unimplemented` exit code
+(0xFE marker at `OUTPUT_ADDR`); KECCAK256, ECRECOVER, SHA256, etc. go
+through ECALL bridges (extending `EvmAsm/EL/Keccak*EcallBridge.lean`).
+
+### PR sequence
+
+| PR | Scope | First fixture that passes |
+|---|---|---|
+| PR1 | Scaffold + `Unimplemented` exit + `Entry` stub | `empty_witness` (Unimplemented marker round-trip) |
+| PR2 | SSZ decode/encode + roundtrip script | `empty_witness` (false-validation roundtrip) |
+| PR3 | Headers RLP decode + validate + Witness DBs | `single_header`, `chain_3_headers` |
+| PR4 | MPT walk + read-side WitnessState | `mpt_one_account` |
+| PR5 | SSZ `hash_tree_root` + SHA256 bridge | `compute_new_payload_request_root` |
+| PR6 | Block + Transaction + ECRECOVER bridge | `tx_transfer` |
+| PR7 | EVM interpreter dispatch + opcode wiring | `bytecode_push_add` |
+| PR8+ | Remaining opcodes, MPT mutation, state-root | tracked under Phase 5–11 above |
+
+### Status
+
+- ✅ PR1 scaffold committed: `EvmAsm/Stateless/` with
+  `MemoryLayout.lean`, `Unimplemented.lean`, `Entry.lean`,
+  `EntrySpec.lean`, and the `Stateless.lean` umbrella. `Entry`'s body
+  is one `LI` + `unimplemented_exit`, so the codegen path is live but
+  every input lands on the 0xFE marker.
+
+### Cross-references
+
+- Memory layout: `EvmAsm/Stateless/MemoryLayout.lean`.
+- Reason codes (precompile, EIP-7702, EIP-4844, etc.):
+  `EvmAsm/Stateless/Unimplemented.lean`.
+- SDIV blocker (`evm-asm-9iqmw`) does **not** block this track —
+  fixtures avoiding SDIV are picked first.
+
+---
+
 ## Priority Order
 
 **Immediate (recreate deleted specs) — ✅ ALL DONE:**
