@@ -255,6 +255,34 @@ def divKTrialCallFullPostV4 (sp j n uHi uLo vTop base scratchMem : Word) : Asser
   (sp + signExtend12 3944 ↦ₘ un0Div) **
   (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut uHi uLo vTop scratchMem)
 
+/-- Exact-x1 version of `divKTrialCallFullPostV4`, used by callable
+    compositions that must preserve the caller return address concretely. -/
+@[irreducible]
+def divKTrialCallFullPostV4ExactX1
+    (sp j n uHi uLo vTop base scratchMem raVal : Word) : Assertion :=
+  let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+  let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+  let dHi := divKTrialCallV4DHi vTop
+  let dLo := divKTrialCallV4DLo vTop
+  let un0Div := divKTrialCallV4Un0 uLo
+  let q1'' := divKTrialCallV4Q1dd uHi uLo vTop
+  let q0'' := divKTrialCallV4Q0dd uHi uLo vTop
+  let x7Exit := divKTrialCallV4X7Exit uHi uLo vTop
+  let x9Exit := divKTrialCallV4X9Exit uHi uLo vTop
+  let q := divKTrialCallV4QHat uHi uLo vTop
+  (.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ x9Exit) ** (.x1 ↦ᵣ raVal) **
+  (.x5 ↦ᵣ q0'') ** (.x6 ↦ᵣ dHi) **
+  (.x7 ↦ᵣ x7Exit) ** (.x10 ↦ᵣ q1'') ** (.x11 ↦ᵣ q) **
+  (.x2 ↦ᵣ (base + div128CallRetOff)) ** (.x0 ↦ᵣ (0 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ j) ** (sp + signExtend12 3984 ↦ₘ n) **
+  (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+  (vtopBase + signExtend12 32 ↦ₘ vTop) **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ vTop) **
+  (sp + signExtend12 3952 ↦ₘ dLo) **
+  (sp + signExtend12 3944 ↦ₘ un0Div) **
+  (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut uHi uLo vTop scratchMem)
+
 private theorem tc_lb_save_j {base : Word} :
     (base + loopBodyOff : Word) + 4 = base + (loopBodyOff + 4) := by
   simp [BitVec.add_assoc]
@@ -775,6 +803,94 @@ theorem divK_trial_call_full_v4_spec_within_noNop
   have full := cpsTripleWithin_seq_perm_same_cr
     (fun h hp => by xperm_hyp hp) STLf_taken_scratch TCPf
   unfold divKTrialCallFullPostV4
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by
+      simp only [divKTrialCallV4DHi, divKTrialCallV4DLo, divKTrialCallV4Un1, divKTrialCallV4Un0,
+        divKTrialCallV4Q1dd, divKTrialCallV4Rhatdd, divKTrialCallV4Un21,
+        divKTrialCallV4Rhat2c, divKTrialCallV4Q0c, divKTrialCallV4Q0d,
+        divKTrialCallV4Rhat2d, divKTrialCallV4Q0dd, divKTrialCallV4QHat,
+        divKTrialCallV4X7Exit, divKTrialCallV4X9Exit, divKTrialCallV4ScratchOut]
+      xperm_hyp hq)
+    full
+
+/-- Exact-x1 version of `divK_trial_call_full_v4_spec_within_noNop`.
+    This avoids hiding the caller return address behind `regOwn .x1`. -/
+theorem divK_trial_call_full_v4_spec_within_noNop_exact_x1
+    (sp j n jOld v5Old v6Old v7Old v10Old v11Old v2Old uHi uLo vTop : Word)
+    (retMem dMem dloMem un0Mem scratchMem raVal : Word)
+    (base : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu : BitVec.ult uHi vTop) :
+    let uAddr := sp + signExtend12 4056 - (j + n) <<< (3 : BitVec 6).toNat
+    let vtopBase := sp + (n + signExtend12 4095) <<< (3 : BitVec 6).toNat
+    cpsTripleWithin 88 (base + loopBodyOff) (base + div128CallRetOff) (sharedDivModCodeNoNop_v4 base)
+      (((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) **
+       (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+       (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+       (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ n) **
+       (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+       (vtopBase + signExtend12 32 ↦ₘ vTop) **
+       (sp + signExtend12 3968 ↦ₘ retMem) **
+       (sp + signExtend12 3960 ↦ₘ dMem) **
+       (sp + signExtend12 3952 ↦ₘ dloMem) **
+       (sp + signExtend12 3944 ↦ₘ un0Mem) **
+       (sp + signExtend12 3936 ↦ₘ scratchMem)) ** (.x1 ↦ᵣ raVal))
+      (divKTrialCallFullPostV4ExactX1 sp j n uHi uLo vTop base scratchMem raVal) := by
+  intro uAddr vtopBase
+  have STL := divK_save_trial_load_v4_spec_within_noNop
+    sp j n jOld v5Old v6Old v7Old v10Old uHi uLo vTop base
+  dsimp only [] at STL
+  have hbltu_raw := bltu_spec_gen_within .x7 .x10 (12 : BitVec 13) uHi vTop (base + trialCallOff)
+  rw [lb_bltu_taken, lb_bltu_ntaken] at hbltu_raw
+  have hbltu_ext := cpsBranchWithin_extend_code (hmono :=
+    lb_sub_noNop_v4 13 _ _ (by decide) (by bv_addr) (by decide)) hbltu_raw
+  have taken := cpsBranchWithin_takenPath hbltu_ext (fun hp hQf => by
+    obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, ⟨_, hpure⟩⟩⟩ := hQf
+    exact hpure hbltu)
+  have taken_clean := cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (fun h hp => sepConj_mono_right
+      (fun h' hp' => ((sepConj_pure_right h').1 hp').1) h hp) taken
+  have TCP := divK_trial_call_path_v4_spec_within_noNop_preserving_x1
+    sp j uLo uHi vTop vtopBase base raVal v2Old v11Old
+    retMem dMem dloMem un0Mem scratchMem halign
+  unfold div128V4SpecPost at TCP
+  have STLf := cpsTripleWithin_frameR
+    ((.x1 ↦ᵣ raVal) ** (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) STL
+  have taken_framed := cpsTripleWithin_frameR
+    ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ j) ** (.x1 ↦ᵣ raVal) **
+     (.x5 ↦ᵣ uLo) ** (.x6 ↦ᵣ vtopBase) **
+     (.x11 ↦ᵣ v11Old) ** (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+     (sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop) **
+     (sp + signExtend12 3968 ↦ₘ retMem) **
+     (sp + signExtend12 3960 ↦ₘ dMem) **
+     (sp + signExtend12 3952 ↦ₘ dloMem) **
+     (sp + signExtend12 3944 ↦ₘ un0Mem))
+    (by pcFree) taken_clean
+  have TCPf := cpsTripleWithin_frameR
+    ((sp + signExtend12 3976 ↦ₘ j) **
+     (sp + signExtend12 3984 ↦ₘ n) **
+     (uAddr ↦ₘ uHi) ** ((uAddr + 8) ↦ₘ uLo) **
+     (vtopBase + signExtend12 32 ↦ₘ vTop))
+    (by pcFree) TCP
+  have STLf_taken_clean := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf taken_framed
+  have STLf_taken_scratch := cpsTripleWithin_frameR
+    (sp + signExtend12 3936 ↦ₘ scratchMem)
+    (by pcFree) STLf_taken_clean
+  have full := cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by xperm_hyp hp) STLf_taken_scratch TCPf
+  unfold divKTrialCallFullPostV4ExactX1
   exact cpsTripleWithin_weaken
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by
