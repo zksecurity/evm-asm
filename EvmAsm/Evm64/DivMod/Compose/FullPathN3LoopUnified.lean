@@ -533,6 +533,21 @@ def fullDivN3UnifiedPost (bltu_1 bltu_0 : Bool)
   fullDivN3Frame bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
     retMem dMem dloMem scratch_un0
 
+/-- Bundled n=3 full-path postcondition with `x1` split out of the preserved
+    frame. -/
+@[irreducible]
+def fullDivN3UnifiedPostNoX1 (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  let shift := fullDivN3Shift b2
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1
+    r0.1 r1.1 (0 : Word) (0 : Word) **
+  ((sp + signExtend12 3992) ↦ₘ shift) **
+  fullDivN3FrameNoX1 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0
+
 theorem fullDivN3Shift_unfold (b2 : Word) :
     fullDivN3Shift b2 = (clzResult b2).1 := by
   delta fullDivN3Shift
@@ -701,6 +716,40 @@ theorem fullDivN3FrameNoX1_frame_to_fullDivN3Frame
   delta fullDivN3Frame fullDivN3FrameNoX1
     fullDivN3Scratch fullDivN3ScratchNoX1 at h_frame ⊢
   xperm_hyp h_frame
+
+/-- Split the old n=3 bundled post into the no-`x1` post plus separate `x1`
+    ownership. -/
+theorem fullDivN3UnifiedPost_to_fullDivN3UnifiedPostNoX1_frame
+    (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      fullDivN3UnifiedPost bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (fullDivN3UnifiedPostNoX1 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h := by
+  intro h h_post
+  delta fullDivN3UnifiedPost fullDivN3UnifiedPostNoX1 fullDivN3Frame
+    fullDivN3FrameNoX1 fullDivN3Scratch fullDivN3ScratchNoX1 at h_post ⊢
+  simp only [denormDivPost_unfold] at h_post ⊢
+  xperm_hyp h_post
+
+/-- Recombine the split n=3 no-`x1` bundled post with separate `x1`
+    ownership. -/
+theorem fullDivN3UnifiedPostNoX1_frame_to_fullDivN3UnifiedPost
+    (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      (fullDivN3UnifiedPostNoX1 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h →
+      fullDivN3UnifiedPost bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h := by
+  intro h h_post
+  delta fullDivN3UnifiedPost fullDivN3UnifiedPostNoX1 fullDivN3Frame
+    fullDivN3FrameNoX1 fullDivN3Scratch fullDivN3ScratchNoX1 at h_post ⊢
+  simp only [denormDivPost_unfold] at h_post ⊢
+  xperm_hyp h_post
 
 theorem fullDivN3C3_false (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     fullDivN3C3 bltu_1 false a0 a1 a2 a3 b0 b1 b2 b3 =
