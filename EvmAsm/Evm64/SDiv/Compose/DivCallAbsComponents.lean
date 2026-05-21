@@ -72,6 +72,62 @@ theorem sdivAbsDivisorWord_eq_components
         | 3 => sdivAbsSum3 limb0 limb1 limb2 top := by
   rfl
 
+theorem sdivAbsDividendWord_getLimbN_0
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDividendWord limb0 limb1 limb2 top).getLimbN 0 =
+      sdivAbsSum0 limb0 top := by
+  rw [sdivAbsDividendWord_eq_components, EvmWord.getLimbN_lt _ 0 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDividendWord_getLimbN_1
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDividendWord limb0 limb1 limb2 top).getLimbN 1 =
+      sdivAbsSum1 limb0 limb1 top := by
+  rw [sdivAbsDividendWord_eq_components, EvmWord.getLimbN_lt _ 1 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDividendWord_getLimbN_2
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDividendWord limb0 limb1 limb2 top).getLimbN 2 =
+      sdivAbsSum2 limb0 limb1 limb2 top := by
+  rw [sdivAbsDividendWord_eq_components, EvmWord.getLimbN_lt _ 2 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDividendWord_getLimbN_3
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDividendWord limb0 limb1 limb2 top).getLimbN 3 =
+      sdivAbsSum3 limb0 limb1 limb2 top := by
+  rw [sdivAbsDividendWord_eq_components, EvmWord.getLimbN_lt _ 3 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDivisorWord_getLimbN_0
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDivisorWord limb0 limb1 limb2 top).getLimbN 0 =
+      sdivAbsSum0 limb0 top := by
+  rw [sdivAbsDivisorWord_eq_components, EvmWord.getLimbN_lt _ 0 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDivisorWord_getLimbN_1
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDivisorWord limb0 limb1 limb2 top).getLimbN 1 =
+      sdivAbsSum1 limb0 limb1 top := by
+  rw [sdivAbsDivisorWord_eq_components, EvmWord.getLimbN_lt _ 1 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDivisorWord_getLimbN_2
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDivisorWord limb0 limb1 limb2 top).getLimbN 2 =
+      sdivAbsSum2 limb0 limb1 limb2 top := by
+  rw [sdivAbsDivisorWord_eq_components, EvmWord.getLimbN_lt _ 2 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
+theorem sdivAbsDivisorWord_getLimbN_3
+    (limb0 limb1 limb2 top : Word) :
+    (sdivAbsDivisorWord limb0 limb1 limb2 top).getLimbN 3 =
+      sdivAbsSum3 limb0 limb1 limb2 top := by
+  rw [sdivAbsDivisorWord_eq_components, EvmWord.getLimbN_lt _ 3 (by decide)]
+  exact EvmWord.getLimb_fromLimbs
+
 theorem sdivAbsDividendWord_evmWordIs_sp_components
     (sp limb0 limb1 limb2 top : Word) :
     evmWordIs sp (sdivAbsDividendWord limb0 limb1 limb2 top) =
