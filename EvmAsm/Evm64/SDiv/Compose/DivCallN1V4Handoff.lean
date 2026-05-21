@@ -154,6 +154,60 @@ abbrev sdivN1V4Hbltu0
       (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
       (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).1
 
+/-- SDIV absolute-limb spelling of the N1/v4 quotient limb 3 computed by the
+    call/max/max/max DIV path. -/
+abbrev sdivN1V4Quot3
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Word :=
+  (EvmAsm.Evm64.loopN1CallMaxmaxmaxR3
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.2
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.1
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.2
+    0 0 0).1
+
+/-- SDIV absolute-limb spelling of the N1/v4 quotient limb 2 computed by the
+    call/max/max/max DIV path. -/
+abbrev sdivN1V4Quot2
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Word :=
+  (EvmAsm.Evm64.loopN1CallMaxmaxmaxR2
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.2
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.1
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.2
+    0 0 0
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.1).1
+
+/-- SDIV absolute-limb spelling of the N1/v4 quotient limb 1 computed by the
+    call/max/max/max DIV path. -/
+abbrev sdivN1V4Quot1
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) : Word :=
+  (EvmAsm.Evm64.loopN1CallMaxmaxmaxR1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).2.2.2
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.1
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.2
+    0 0 0
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.1
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.1).1
+
 /-- Exact SDIV div-call handoff specialized to the v4 scratch frame shape
     produced by the N1 call/max/max/max no-NOP DIV path. -/
 theorem saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4Scratch_spec_in_sdivCodeV4
