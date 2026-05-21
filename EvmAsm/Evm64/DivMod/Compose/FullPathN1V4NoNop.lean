@@ -1599,4 +1599,54 @@ theorem divK_loop_n1_call_j3_exact_x1_framed_v4_noNop_input
     (isAddbackCarry2NzN1CallV4_raw I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
       (loopN1CallMaxmaxmaxExactInputHypotheses_carry2Call I hh))
 
+/-- Bundled statement for the j=2/j=1/j=0 all-max tail after the first
+    j=3 call-body step in the N1 call/max/max/max exact path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxIter210ExactInputSpec
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  cpsTripleWithin 556 (I.base + loopBodyOff) (I.base + denormOff)
+    (divCode_noNop_v4 I.base)
+    (loopN1Iter210PreWithScratchNoX1 I.sp
+      I.jOld I.v5Old I.v6Old I.v7Old I.v10Old I.v11Old I.v2Old
+      I.v0 I.v1 I.v2 I.v3
+      I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+      I.u0Orig1 I.u0Orig0 I.q2Old I.q1Old I.q0Old
+      (I.base + div128CallRetOff) I.v0 (divKTrialCallV4DLo I.v0)
+      (divKTrialCallV4Un0 I.u0) ** (.x1 ↦ᵣ I.raVal))
+    (loopN1Iter210PostNoX1 false false false I.sp I.base I.v0 I.v1 I.v2 I.v3
+      I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+      I.u0Orig1 I.u0Orig0 (I.base + div128CallRetOff) I.v0
+      (divKTrialCallV4DLo I.v0) (divKTrialCallV4Un0 I.u0) ** (.x1 ↦ᵣ I.raVal))
+
+/-- Prove the bundled all-max tail after the first j=3 call-body step. -/
+theorem divK_loop_n1_call_iter210_exact_x1_framed_v4_noNop_input
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (hh : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    loopN1CallMaxmaxmaxIter210ExactInputSpec I := by
+  unfold loopN1CallMaxmaxmaxIter210ExactInputSpec
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  exact divK_loop_n1_iter210_maxmaxmax_exact_x1_v4_noNop I.sp I.base
+    I.jOld I.v5Old I.v6Old I.v7Old I.v10Old I.v11Old I.v2Old
+    I.v0 I.v1 I.v2 I.v3
+    I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+    I.u0Orig1 I.u0Orig0 I.q2Old I.q1Old I.q0Old
+    (I.base + div128CallRetOff) I.v0 (divKTrialCallV4DLo I.v0)
+    (divKTrialCallV4Un0 I.u0) I.raVal
+    (by
+      dsimp only [r3]
+      exact loopN1CallMaxmaxmaxExactInputHypotheses_hbltu2 I hh)
+    (by
+      dsimp only [r3]
+      have h := loopN1CallMaxmaxmaxExactInputHypotheses_hbltu1 I hh
+      unfold loopN1CallMaxmaxmaxR2 at h
+      exact h)
+    (by
+      dsimp only [r3]
+      have h := loopN1CallMaxmaxmaxExactInputHypotheses_hbltu0 I hh
+      unfold loopN1CallMaxmaxmaxR1 at h
+      unfold loopN1CallMaxmaxmaxR2 at h
+      exact h)
+    (loopN1CallMaxmaxmaxExactInputHypotheses_carry2 I hh)
+
 end EvmAsm.Evm64
