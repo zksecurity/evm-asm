@@ -1286,6 +1286,56 @@ def ziskZkvmSha256ProbeUnit : BuildUnit := {
   dataAsm     := ziskZkvmSha256DataSection
 }
 
+/-! ## zisk_sha256_from_input — PR-S3 host-supplied input
+
+    Mirror of PR-K4 `zisk_keccak256_from_input` for SHA-256:
+    hash whatever's at `INPUT_ADDR + 16` (length given at
+    `INPUT_ADDR + 8` per ziskemu's input-region layout) and
+    write the 32-byte digest to `OUTPUT_ADDR + 0..32`.
+
+    Uses PR-S2's `zkvm_sha256` (the Merkle-Damgård wrapper)
+    inlined per-BuildUnit. Test exercises arbitrary input
+    lengths via the Python harness (`--shape header` for an
+    RLP-encoded amsterdam Header ~658 bytes, `--shape long`
+    for 1024 bytes of 0x55). -/
+def ziskSha256FromInputPrologue : String :=
+  "  # set up stack\n" ++
+  "  li sp, 0xa0050000\n" ++
+  "  # read length and data ptr from ziskemu input region\n" ++
+  "  li a3, 0x40000000           # INPUT_ADDR\n" ++
+  "  ld a1, 8(a3)                # a1 = length (u64 LE at INPUT_ADDR + 8)\n" ++
+  "  addi a0, a3, 16             # a0 = data ptr (INPUT_ADDR + 16)\n" ++
+  "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  j .Lzks_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  ".Lzks_done:"
+
+def ziskSha256FromInputDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input"
+
+def ziskSha256FromInputProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSha256FromInputPrologue
+  dataAsm     := ziskSha256FromInputDataSection
+}
+
 /-! ## zisk_zkvm_keccak256 — PR-K3 parameterised wrapper
 
     Refactors the three hardcoded sponge probes (PR-K2 empty,
@@ -2379,6 +2429,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_sha256_probe_le"      => some ziskSha256ProbeLeUnit
   | "zisk_zkvm_sha256"          => some ziskZkvmSha256ProbeUnit
   | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
+  | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
   | "zisk_ssz_merkleize_pow2"   => some ziskSszMerkleizePow2ProbeUnit
@@ -2405,6 +2456,7 @@ def knownProgramNames : List String :=
    "zisk_sha256_probe_le",
    "zisk_zkvm_sha256",
    "zisk_keccak256_from_input",
+   "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
    "zisk_ssz_merkleize_pow2",
