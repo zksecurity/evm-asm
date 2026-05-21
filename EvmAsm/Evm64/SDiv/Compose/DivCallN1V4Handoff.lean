@@ -9,6 +9,27 @@ import EvmAsm.Evm64.SDiv.Compose.DivCallExactHandoff
 
 namespace EvmAsm.Evm64.SDiv.Compose
 
+/-- Normalized N1 dividend tuple for SDIV's absolute-value operands. -/
+abbrev sdivN1V4NormU
+    (dividendLimb0 dividendLimb1 dividendLimb2 dividendTop divisorLimb0 divisorTop : Word) :
+    Word × Word × Word × Word × Word :=
+  EvmAsm.Evm64.fullDivN1NormU
+    (sdivAbsSum0 dividendLimb0 dividendTop)
+    (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
+    (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+    (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+    (sdivAbsSum0 divisorLimb0 divisorTop)
+
+/-- Normalized N1 divisor tuple for SDIV's absolute-value operands. -/
+abbrev sdivN1V4NormV
+    (divisorLimb0 divisorLimb1 divisorLimb2 divisorTop : Word) :
+    Word × Word × Word × Word :=
+  EvmAsm.Evm64.fullDivN1NormV
+    (sdivAbsSum0 divisorLimb0 divisorTop)
+    (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+    (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+
 /-- The v4-only trial-call scratch cell after the SDIV N1 call/max/max/max
     DIV path, expressed over SDIV's absolute-value divisor limbs. -/
 abbrev sdivN1V4ScratchOut
