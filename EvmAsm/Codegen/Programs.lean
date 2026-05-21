@@ -2039,6 +2039,91 @@ def ziskSszMerkleizeProbeUnit : BuildUnit := {
   dataAsm     := ziskSszMerkleizeDataSection
 }
 
+/-! ## ssz_pack_bytes — PR-S8 SSZ byte chunker
+
+    Packs an arbitrary byte string into 32-byte chunks for
+    consumption by `ssz_merkleize`. The byte stream is copied
+    verbatim; the final chunk is right-zero-padded if the byte
+    count is not a multiple of 32. Returns the chunk count.
+
+    Calling convention:
+      a0 (input)  : src ptr
+      a1 (input)  : byte length L (0 ≤ L ≤ 1024)
+      a2 (input)  : dst chunk buffer ptr (32 * ceil(L/32) bytes)
+      ra (input)  : return
+      a0 (output) : chunk count = ceil(L / 32)
+      bytes at *a2: source bytes followed by zero-padding
+
+    Byte-at-a-time copy (slow path, ~L instructions). Acceptable
+    for bring-up; a future PR can specialise to 8-byte units
+    when alignment is known. -/
+def sszPackBytesFunction : String :=
+  "ssz_pack_bytes:\n" ++
+  "  # a0 = src, a1 = L, a2 = dst.\n" ++
+  "  # First copy L bytes from src to dst (byte-wise).\n" ++
+  "  mv t0, a0                  # t0 = src cursor\n" ++
+  "  mv t1, a2                  # t1 = dst cursor\n" ++
+  "  mv t2, a1                  # t2 = remaining bytes\n" ++
+  ".Lszpb_copy:\n" ++
+  "  beqz t2, .Lszpb_check_pad\n" ++
+  "  lbu t3, 0(t0)\n" ++
+  "  sb  t3, 0(t1)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_copy\n" ++
+  ".Lszpb_check_pad:\n" ++
+  "  # remainder = L & 31; if zero, skip pad. else pad = 32 - remainder.\n" ++
+  "  andi t2, a1, 31\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  li t3, 32\n" ++
+  "  sub t2, t3, t2             # t2 = pad bytes\n" ++
+  ".Lszpb_pad:\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  sb zero, 0(t1)\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_pad\n" ++
+  ".Lszpb_count:\n" ++
+  "  # chunks = ceil(L / 32) = (L + 31) >> 5\n" ++
+  "  addi t0, a1, 31\n" ++
+  "  srli a0, t0, 5\n" ++
+  "  ret"
+
+/-- `zisk_ssz_pack_bytes`: probe BuildUnit that reads
+    `(L : u64, data : L bytes)` from the host input region,
+    calls `ssz_pack_bytes`, and writes the result to OUTPUT in
+    the layout `(chunk_count : u64, chunks : chunk_count * 32
+    bytes)`. The test script diffs the entire OUTPUT against
+    Python's recomputation. Input layout:
+      bytes  0.. 8 : L (u64 LE)
+      bytes  8..   : L source bytes -/
+def ziskSszPackBytesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # a1 = L\n" ++
+  "  addi a0, a3, 16             # a0 = src ptr\n" ++
+  "  li a2, 0xa0010008           # a2 = dst chunks (OUTPUT + 8)\n" ++
+  "  jal ra, ssz_pack_bytes\n" ++
+  "  # write chunk count (a0) at OUTPUT + 0\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lzs8_done\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  ".Lzs8_done:"
+
+def ziskSszPackBytesDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "ssz_pack_bytes_scratch:\n" ++
+  "  .zero 8"
+
+def ziskSszPackBytesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszPackBytesPrologue
+  dataAsm     := ziskSszPackBytesDataSection
+}
+
 /-! ## stateless_guest body — PR-K5 keccak hash field
 
     Replaces the zero-stub `new_payload_request_root` field in
@@ -2167,6 +2252,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
   | "zisk_ssz_merkleize_pow2"   => some ziskSszMerkleizePow2ProbeUnit
   | "zisk_ssz_merkleize"        => some ziskSszMerkleizeProbeUnit
+  | "zisk_ssz_pack_bytes"       => some ziskSszPackBytesProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -2191,6 +2277,7 @@ def knownProgramNames : List String :=
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
    "zisk_ssz_merkleize_pow2",
-   "zisk_ssz_merkleize"]
+   "zisk_ssz_merkleize",
+   "zisk_ssz_pack_bytes"]
 
 end EvmAsm.Codegen
