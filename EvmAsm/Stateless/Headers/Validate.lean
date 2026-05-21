@@ -44,19 +44,48 @@
   the RISC-V side this becomes a `BNE/BGE` check against
   `n_headers` early; overflow routes to `Unimplemented`.
 
-  ## PR-K8 status
+  ## PR-K18 status
 
-  Scaffold only. The Program lands in a follow-up once
-  `BlockHash` is wired (PR-K9) and `Decode` is enough to extract
-  `parent_hash`.
+  Asm implementation lands in
+  `EvmAsm.Codegen.Programs.headersValidateChainFunction`,
+  composing PR-K16 `headers_keccak_array` (per-header digest
+  table) with PR-K17 `headers_parent_hash` (RLP extraction).
+
+  Calling convention (`headers_validate_chain`):
+    a0 (input)  : SSZ list section ptr (witness.headers)
+    a1 (input)  : section_len
+    a2 (input)  : u64 output ptr (receives element count N)
+    ra (input)  : return
+    a0 (output) : 0  iff every `header[i].parent_hash` for i ≥ 1
+                    equals `keccak256(header[i-1])`
+                    AND every header's RLP-decode of the first
+                    field succeeds
+                 1  on any mismatch (or RLP-decode failure)
+    8 bytes at *a2 = N (element count)
+
+  N ≤ 1 always returns 0 (no chain links to check).
+
+  ## Side effects
+
+  Uses a 256 × 32 = 8 KB `.data` scratch (`vh_keccak_table`)
+  to hold every per-header digest; reuses
+  `vh_extracted_parent_hash` (32 B) as a one-slot scratch for
+  the RLP-extracted field. PR-K18+ exports this same scratch
+  area as the `block_hashes[]` lookup that
+  `Block/Execute` consumes (mirroring
+  `EXECUTION_WITNESS_AREA` in `MemoryLayout.lean`).
+
+  ## Wiring
+
+  Standalone probe `zisk_headers_validate_chain` exercises the
+  function on synthetic SSZ-encoded header lists. PR-K19+ wires
+  it into the stateless guest's STF.
 -/
 
 namespace EvmAsm.Stateless.Headers.Validate
 
--- TODO(stateless-headers): expose `validate_headers` Program
--- iterating over `witness.headers`, computing block hashes via
--- `Stateless.Headers.BlockHash`, and verifying parent_hash chain
--- contiguity. On any failure, route to `Stateless.unimplemented_exit`
--- with the appropriate reason code.
+-- TODO(stateless-headers): expose a `cpsTripleWithin` spec
+-- over `headers_validate_chain` once the per-header keccak
+-- semantics are formalised.
 
 end EvmAsm.Stateless.Headers.Validate

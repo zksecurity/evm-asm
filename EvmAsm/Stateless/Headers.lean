@@ -38,4 +38,7 @@
 import EvmAsm.Stateless.Headers.BlockHash
 import EvmAsm.Stateless.Headers.Decode
 import EvmAsm.Stateless.Headers.Validate
+import EvmAsm.Stateless.Headers.KeccakChain
+import EvmAsm.Stateless.Headers.KeccakArray
+import EvmAsm.Stateless.Headers.ParentHash
 import EvmAsm.Stateless.Headers.Spec
