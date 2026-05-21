@@ -2470,6 +2470,139 @@ def ziskMptNodeKindProbeUnit : BuildUnit := {
   dataAsm     := ziskMptNodeKindDataSection
 }
 
+/-! ## mpt_branch_child -- PR-K22 extract i-th child of a branch
+
+    Wraps `rlp_list_nth_item` with a branch-shape-aware
+    interpretation of the returned content. Ethereum MPT branch
+    nodes have items 0..15 each being one of:
+
+      * 32-byte hash       (Bytes32: 0xa0 + 32 raw bytes)
+      * empty bytes        (RLP 0x80)
+      * inlined RLP node   (variable bytes, < 32 bytes total)
+
+    Calling convention:
+      a0 (input)  : branch node bytes ptr
+      a1 (input)  : node byte length
+      a2 (input)  : nibble (0..15)
+      a3 (input)  : 32-byte output buffer ptr
+      ra (input)  : return
+      a0 (output) :
+        0 = hash slot (32 bytes copied to *a3)
+        1 = empty slot (output buffer zeroed)
+        2 = inlined RLP node (output buffer holds first ≤ 32
+            bytes of the inlined form, zero-padded)
+        3 = parse failure (nibble out of range or node
+            malformed)
+
+    Does NOT verify the caller has actually given a branch
+    node; if applied to a 2-item leaf/extension, items 0 and 1
+    are returned according to the same length-driven rules but
+    the semantics aren't branch-children. -/
+def mptBranchChildFunction : String :=
+  "mpt_branch_child:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  mv s0, a0                  # node ptr\n" ++
+  "  mv s1, a1                  # node_len\n" ++
+  "  mv s2, a2                  # nibble\n" ++
+  "  mv s3, a3                  # out ptr\n" ++
+  "  li t0, 16\n" ++
+  "  bgeu s2, t0, .Lmbc_fail    # nibble ≥ 16 → out of range\n" ++
+  "  # Call rlp_list_nth_item(node, len, nibble, &mbc_offset, &mbc_length).\n" ++
+  "  mv a0, s0; mv a1, s1; mv a2, s2\n" ++
+  "  la a3, mbc_offset\n" ++
+  "  la a4, mbc_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmbc_fail\n" ++
+  "  la t0, mbc_length\n" ++
+  "  ld t1, 0(t0)\n" ++
+  "  beqz t1, .Lmbc_empty       # length 0 ⇒ empty slot\n" ++
+  "  li t0, 32\n" ++
+  "  bne t1, t0, .Lmbc_inlined  # length != 32 ⇒ inlined\n" ++
+  "  # Hash slot: copy 32 bytes from node + offset to out.\n" ++
+  "  la t0, mbc_offset\n" ++
+  "  ld t2, 0(t0)\n" ++
+  "  add t2, s0, t2             # src\n" ++
+  "  ld t3,  0(t2); sd t3,  0(s3)\n" ++
+  "  ld t3,  8(t2); sd t3,  8(s3)\n" ++
+  "  ld t3, 16(t2); sd t3, 16(s3)\n" ++
+  "  ld t3, 24(t2); sd t3, 24(s3)\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lmbc_ret\n" ++
+  ".Lmbc_empty:\n" ++
+  "  sd zero,  0(s3); sd zero,  8(s3)\n" ++
+  "  sd zero, 16(s3); sd zero, 24(s3)\n" ++
+  "  li a0, 1\n" ++
+  "  j .Lmbc_ret\n" ++
+  ".Lmbc_inlined:\n" ++
+  "  # Length 1..31. Zero the output, then byte-copy `length` bytes.\n" ++
+  "  sd zero,  0(s3); sd zero,  8(s3)\n" ++
+  "  sd zero, 16(s3); sd zero, 24(s3)\n" ++
+  "  la t0, mbc_offset\n" ++
+  "  ld t2, 0(t0)\n" ++
+  "  add t2, s0, t2             # src cursor\n" ++
+  "  mv t3, s3                  # dst cursor\n" ++
+  ".Lmbc_inline_cp:\n" ++
+  "  beqz t1, .Lmbc_inline_done\n" ++
+  "  lbu t4, 0(t2)\n" ++
+  "  sb  t4, 0(t3)\n" ++
+  "  addi t2, t2, 1\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lmbc_inline_cp\n" ++
+  ".Lmbc_inline_done:\n" ++
+  "  li a0, 2\n" ++
+  "  j .Lmbc_ret\n" ++
+  ".Lmbc_fail:\n" ++
+  "  sd zero,  0(s3); sd zero,  8(s3)\n" ++
+  "  sd zero, 16(s3); sd zero, 24(s3)\n" ++
+  "  li a0, 3\n" ++
+  ".Lmbc_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_mpt_branch_child`: probe BuildUnit. Reads
+    (node_len, nibble, node_bytes) from host input, writes
+    (status, 32-byte content) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : node_len (u64)
+      bytes  8..16 : nibble (u64)
+      bytes 16..   : node bytes
+    Output layout:
+      bytes  0.. 8 : status (0 hash / 1 empty / 2 inlined / 3 fail)
+      bytes  8..40 : 32-byte content (hash, zeros, or inlined bytes) -/
+def ziskMptBranchChildPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a4, 0x40000000\n" ++
+  "  ld a1, 8(a4)                # node_len\n" ++
+  "  ld a2, 16(a4)               # nibble\n" ++
+  "  addi a0, a4, 24             # node ptr\n" ++
+  "  li a3, 0xa0010008           # 32-byte out at OUTPUT + 8\n" ++
+  "  jal ra, mpt_branch_child\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status\n" ++
+  "  j .Lmbc_pdone\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptBranchChildFunction ++ "\n" ++
+  ".Lmbc_pdone:"
+
+def ziskMptBranchChildDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "mbc_offset:\n" ++
+  "  .zero 8\n" ++
+  "mbc_length:\n" ++
+  "  .zero 8"
+
+def ziskMptBranchChildProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskMptBranchChildPrologue
+  dataAsm     := ziskMptBranchChildDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -2912,6 +3045,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_witness_lookup_by_hash" => some ziskWitnessLookupByHashProbeUnit
   | "zisk_rlp_list_nth_item"    => some ziskRlpListNthItemProbeUnit
   | "zisk_mpt_node_kind"        => some ziskMptNodeKindProbeUnit
+  | "zisk_mpt_branch_child"     => some ziskMptBranchChildProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -2943,6 +3077,7 @@ def knownProgramNames : List String :=
    "zisk_witness_lookup_by_hash",
    "zisk_rlp_list_nth_item",
    "zisk_mpt_node_kind",
+   "zisk_mpt_branch_child",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
