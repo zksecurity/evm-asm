@@ -1,3 +1,4 @@
+-- file-size-exception: grandfathered at 1207 lines; j=3 framing lemmas added to existing n1 v4/no-NOP composition file pending a split
 /-
   EvmAsm.Evm64.DivMod.Compose.FullPathN1V4NoNop
 
@@ -1117,6 +1118,74 @@ def loopN1CallMaxmaxmaxScratchPreNoX1 (sp : Word)
     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
     retMem dMem dloMem scratchUn0 **
   (sp + signExtend12 3936 ↦ₘ scratchMem)
+
+/-- First j=3 call-body step for the N1 call/max/max/max path. This
+    exposes the v4-call scratch post while framing the j=2/j=1/j=0 cells
+    needed by the following all-max iter210 wrapper. -/
+theorem divK_loop_n1_call_j3_exact_x1_framed_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem raVal : Word)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) =
+      base + div128CallRetOff)
+    (hbltu : BitVec.ult u1 v0)
+    (hcarry2_nz :
+      let qHat := divKTrialCallV4QHat u1 u0 v0
+      let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+      let c3 := ms.2.2.2.2
+      let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
+      let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
+      carry = 0 → addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0) :
+    cpsTripleWithin 224 (base + loopBodyOff) (base + loopBodyOff) (divCode_noNop_v4 base)
+      (loopN1CallMaxmaxmaxScratchPreNoX1 sp
+        jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
+        retMem dMem dloMem scratchUn0 scratchMem ** (.x1 ↦ᵣ raVal))
+      (loopIterPostN1CallScratchNoX1 sp base (3 : Word)
+        (divKTrialCallV4QHat u1 u0 v0)
+        (divKTrialCallV4DLo v0)
+        (divKTrialCallV4Un0 u0)
+        (divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+        (.x1 ↦ᵣ raVal) **
+        ((sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat +
+          signExtend12 0) ↦ₘ u0Orig2) **
+        ((sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ q2Old) **
+        ((sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat +
+          signExtend12 0) ↦ₘ u0Orig1) **
+        ((sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ q1Old) **
+        ((sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat +
+          signExtend12 0) ↦ₘ u0Orig0) **
+        ((sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ q0Old)) := by
+  let uBase2 := sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr2 := sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat
+  let uBase1 := sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr1 := sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat
+  let uBase0 := sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr0 := sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat
+  have J3 := divK_loop_body_n1_call_j3_exact_loopIterScratch_v4_noNop
+    sp base jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop q3Old raVal
+    retMem dMem dloMem scratchUn0 scratchMem halign hbltu hcarry2_nz
+  have J3f := cpsTripleWithin_frameR
+    (((uBase2 + signExtend12 0) ↦ₘ u0Orig2) ** (qAddr2 ↦ₘ q2Old) **
+     ((uBase1 + signExtend12 0) ↦ₘ u0Orig1) ** (qAddr1 ↦ₘ q1Old) **
+     ((uBase0 + signExtend12 0) ↦ₘ u0Orig0) ** (qAddr0 ↦ₘ q0Old))
+    (by pcFree) J3
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      delta loopN1CallMaxmaxmaxScratchPreNoX1 loopN1PreWithScratchNoX1 loopN1Pre at hp
+      delta loopBodyN1CallSkipJgt0PreV4NoX1 at ⊢
+      dsimp only [uBase2, qAddr2, uBase1, qAddr1, uBase0, qAddr0] at hp ⊢
+      simp only [se12_32, se12_40, se12_48, se12_56] at hp ⊢
+      xperm_hyp hp)
+    (fun h hp => by
+      dsimp only [uBase2, qAddr2, uBase1, qAddr1, uBase0, qAddr0] at hp
+      rw [sepConj_assoc'] at hp
+      exact hp)
+    J3f
 
 /-- Explicit no-`x1` post for the N1 path where j=3 uses the v4 call path
     and j=2/j=1/j=0 all use max. The extra v4 div128 scratch cell is
