@@ -692,6 +692,175 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4_abs_sp
         _hbnz _hb3z _hb2z _hb1z _hshift_nz _halign _hbltu3 _hbltu2
         _hbltu1 _hbltu0 _hcarry2 _hdiv0 _hdiv1 _hdiv2 _hdiv3)
 
+/-- Concrete N1/v4 SDIV handoff with an externally named dispatch `x2`
+    value.  The full DIV stack proof is still built internally; callers only
+    need to identify `v2` with the clz-derived dispatch bit. -/
+theorem saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4_abs_v2_spec_in_sdivCodeV4
+    (vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+      v2 v5 v6 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratchUn0 scratchMem : Word)
+    (hbase : base &&& 1 = 0)
+    (hv2 :
+      v2 =
+        ((EvmAsm.Evm64.clzResult (sdivAbsSum0 divisorLimb0 divisorTop)).2 >>>
+          (63 : Nat)))
+    (hbnz :
+      sdivAbsSum0 divisorLimb0 divisorTop |||
+        sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop |||
+        sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop |||
+        sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop ≠ 0)
+    (hb3z : sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0)
+    (hb2z : sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop = 0)
+    (hb1z : sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop = 0)
+    (hshift_nz : (EvmAsm.Evm64.clzResult (sdivAbsSum0 divisorLimb0 divisorTop)).1 ≠ 0)
+    (halign : EvmAsm.Evm64.fullDivN1CallMaxmaxmaxExactInputAligned sp
+      (base + wrapperEndOff) jMem (1 : Word)
+      (EvmAsm.Evm64.fullDivN1Shift (sdivAbsSum0 divisorLimb0 divisorTop))
+      (EvmAsm.Evm64.fullDivN1NormU
+        (sdivAbsSum0 dividendLimb0 dividendTop)
+        (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
+        (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsSum0 divisorLimb0 divisorTop)).1
+      (sdivAbsSum0 dividendLimb0 dividendTop >>>
+        ((EvmAsm.Evm64.fullDivN1AntiShift
+          (sdivAbsSum0 divisorLimb0 divisorTop)).toNat % 64))
+      (sdivAbsCarry3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+      (EvmAsm.Evm64.fullDivN1AntiShift (sdivAbsSum0 divisorLimb0 divisorTop))
+      (sdivAbsSum0 dividendLimb0 dividendTop)
+      (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
+      (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+      (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+      (sdivAbsSum0 divisorLimb0 divisorTop)
+      (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+      (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+      (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+      (0 : Word) (0 : Word) (0 : Word) (0 : Word)
+      retMem dMem dloMem scratchUn0 scratchMem ((base + divCallOff) + 4))
+    (hbltu3 : EvmAsm.Evm64.isTrialN1_j3 true
+      (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+      (sdivAbsSum0 divisorLimb0 divisorTop))
+    (hbltu2 : ¬BitVec.ult
+      (EvmAsm.Evm64.loopN1CallMaxmaxmaxR3
+        (EvmAsm.Evm64.fullDivN1NormV
+          (sdivAbsSum0 divisorLimb0 divisorTop)
+          (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+          (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+          (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).1
+        (EvmAsm.Evm64.fullDivN1NormV
+          (sdivAbsSum0 divisorLimb0 divisorTop)
+          (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+          (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+          (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.1
+        (EvmAsm.Evm64.fullDivN1NormV
+          (sdivAbsSum0 divisorLimb0 divisorTop)
+          (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+          (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+          (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.2.1
+        (EvmAsm.Evm64.fullDivN1NormV
+          (sdivAbsSum0 divisorLimb0 divisorTop)
+          (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+          (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+          (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.2.2
+        (EvmAsm.Evm64.fullDivN1NormU
+          (sdivAbsSum0 dividendLimb0 dividendTop)
+          (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
+          (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+          (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+          (sdivAbsSum0 divisorLimb0 divisorTop)).2.2.2.1
+        (EvmAsm.Evm64.fullDivN1NormU
+          (sdivAbsSum0 dividendLimb0 dividendTop)
+          (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
+          (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+          (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+          (sdivAbsSum0 divisorLimb0 divisorTop)).2.2.2.2
+        0 0 0).2.1
+      (EvmAsm.Evm64.fullDivN1NormV
+        (sdivAbsSum0 divisorLimb0 divisorTop)
+        (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+        (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+        (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).1)
+    (hbltu1 :
+      sdivN1V4Hbltu1 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (hbltu0 :
+      sdivN1V4Hbltu0 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (hcarry2 : EvmAsm.Evm64.Carry2NzAll
+      (EvmAsm.Evm64.fullDivN1NormV
+        (sdivAbsSum0 divisorLimb0 divisorTop)
+        (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+        (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+        (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).1
+      (EvmAsm.Evm64.fullDivN1NormV
+        (sdivAbsSum0 divisorLimb0 divisorTop)
+        (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+        (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+        (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.1
+      (EvmAsm.Evm64.fullDivN1NormV
+        (sdivAbsSum0 divisorLimb0 divisorTop)
+        (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+        (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+        (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.2.1
+      (EvmAsm.Evm64.fullDivN1NormV
+        (sdivAbsSum0 divisorLimb0 divisorTop)
+        (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
+        (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+        (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.2.2)
+    (hdiv0 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 0 =
+        sdivN1V4Quot0 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (hdiv1 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 1 =
+        sdivN1V4Quot1 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (hdiv2 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 2 =
+        sdivN1V4Quot2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (hdiv3 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 3 =
+        sdivN1V4Quot3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop) :
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      (base + wrapperEndOff) (base + resultSignFixOff) (sdivCodeV4 base)
+      (saveRaDivCallDispatchReadyPost vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+        v2 v5 v6 q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 **
+       ((sp + EvmAsm.Rv64.signExtend12 3936) ↦ₘ scratchMem))
+      (((saveRaDivCallCallablePostNoX9 vRa sp base
+        dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+        divisorLimb0 divisorLimb1 divisorLimb2 divisorTop **
+        (.x9 ↦ᵣ (EvmAsm.Rv64.signExtend12 4095 : Word))) **
+       ((sp + EvmAsm.Rv64.signExtend12 3936) ↦ₘ
+        sdivN1V4ScratchOut dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop scratchMem))) := by
+  subst v2
+  exact
+    saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4_abs_spec_in_sdivCodeV4
+      vRa sp base
+      dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorLimb1 divisorLimb2 divisorTop
+      v5 v6
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratchUn0 scratchMem
+      hbase hbnz hb3z hb2z hb1z hshift_nz halign hbltu3 hbltu2 hbltu1
+      hbltu0 hcarry2 hdiv0 hdiv1 hdiv2 hdiv3
+
 /-- Exact SDIV div-call handoff specialized to the N1/v4 scratch frame shape,
     accepting the N1 path's native bound and lifting it to `unifiedDivBound`. -/
 theorem saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4Scratch_bound_spec_in_sdivCodeV4
