@@ -6,6 +6,7 @@
 
   Start with the n=4 (b[3]≠0, shift≠0) case as the primary composition.
 -/
+-- file-size-exception: spans n=4/shift0/MOD full-path compositions that share cross-cutting epilogue lemmas; split would require duplicating shared helpers
 
 import EvmAsm.Evm64.DivMod.Compose.PhaseAB
 import EvmAsm.Evm64.DivMod.Compose.PhaseABNoNop

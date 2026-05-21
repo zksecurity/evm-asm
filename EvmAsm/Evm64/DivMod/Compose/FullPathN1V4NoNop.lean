@@ -3,6 +3,7 @@
 
   v4/no-NOP wrappers for the n=1 DIV loop-body j=0 exit paths.
 -/
+-- file-size-exception: n=1 call/max exact-x1 full composition chain; loop-invariant predicates and branch-fact helpers are mutually referential across the pre-loop/loop/full-path boundary; splitting is a dedicated follow-up refactor
 
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathV4NoNop
