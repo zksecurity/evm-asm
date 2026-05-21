@@ -1376,4 +1376,41 @@ def loopN1CallMaxmaxmaxExactHypotheses
   Carry2NzAll v0 v1 v2 v3 ∧
   isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
+/-- Project the j=3 BLTU-taken fact from the compact N1 call/max/max/max hypotheses. -/
+theorem loopN1CallMaxmaxmaxExactHypotheses_hbltu3
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (h : loopN1CallMaxmaxmaxExactHypotheses
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    BitVec.ult u1 v0 := by
+  unfold loopN1CallMaxmaxmaxExactHypotheses at h
+  exact h.1
+
+/-- Project the all-max branch facts from the compact N1 call/max/max/max hypotheses. -/
+theorem loopN1CallMaxmaxmaxExactHypotheses_branches
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (h : loopN1CallMaxmaxmaxExactHypotheses
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 := by
+  unfold loopN1CallMaxmaxmaxExactHypotheses at h
+  exact h.2.1
+
+/-- Project the global carry2 condition from the compact N1 call/max/max/max hypotheses. -/
+theorem loopN1CallMaxmaxmaxExactHypotheses_carry2
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (h : loopN1CallMaxmaxmaxExactHypotheses
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    Carry2NzAll v0 v1 v2 v3 := by
+  unfold loopN1CallMaxmaxmaxExactHypotheses at h
+  exact h.2.2.1
+
+/-- Project the v4 N1 call carry condition from the compact N1 call/max/max/max hypotheses. -/
+theorem loopN1CallMaxmaxmaxExactHypotheses_carry2Call
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (h : loopN1CallMaxmaxmaxExactHypotheses
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  unfold loopN1CallMaxmaxmaxExactHypotheses at h
+  exact h.2.2.2
+
 end EvmAsm.Evm64
