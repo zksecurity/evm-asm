@@ -1367,4 +1367,13 @@ def loopN1CallMaxmaxmaxExactX1ScratchSpec (sp base : Word)
     (loopN1CallMaxmaxmaxScratchPostNoX1 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop
       u0Orig2 u0Orig1 u0Orig0 scratchMem ** (.x1 ↦ᵣ raVal))
 
+/-- Compact assumptions for the N1 call/max/max/max exact path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxExactHypotheses
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word) : Prop :=
+  BitVec.ult u1 v0 ∧
+  loopN1CallMaxmaxmaxBranchFacts v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 ∧
+  Carry2NzAll v0 v1 v2 v3 ∧
+  isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
 end EvmAsm.Evm64
