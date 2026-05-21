@@ -671,6 +671,37 @@ theorem fullDivN3FrameNoX1_unfold (bltu_1 bltu_0 : Bool)
   delta fullDivN3FrameNoX1
   rfl
 
+/-- Split the old n=3 preserved frame into the no-`x1` frame plus separate
+    `x1` ownership. -/
+theorem fullDivN3Frame_to_fullDivN3FrameNoX1_frame
+    (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      fullDivN3Frame bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (fullDivN3FrameNoX1 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h := by
+  intro h h_frame
+  delta fullDivN3Frame fullDivN3FrameNoX1
+    fullDivN3Scratch fullDivN3ScratchNoX1 at h_frame ⊢
+  xperm_hyp h_frame
+
+/-- Recombine the split n=3 no-`x1` frame with separate `x1` ownership. -/
+theorem fullDivN3FrameNoX1_frame_to_fullDivN3Frame
+    (bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      (fullDivN3FrameNoX1 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h →
+      fullDivN3Frame bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h := by
+  intro h h_frame
+  delta fullDivN3Frame fullDivN3FrameNoX1
+    fullDivN3Scratch fullDivN3ScratchNoX1 at h_frame ⊢
+  xperm_hyp h_frame
+
 theorem fullDivN3C3_false (bltu_1 : Bool) (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     fullDivN3C3 bltu_1 false a0 a1 a2 a3 b0 b1 b2 b3 =
     let v := fullDivN3NormV b0 b1 b2 b3
