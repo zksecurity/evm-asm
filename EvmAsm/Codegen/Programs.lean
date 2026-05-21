@@ -2603,6 +2603,137 @@ def ziskMptBranchChildProbeUnit : BuildUnit := {
   dataAsm     := ziskMptBranchChildDataSection
 }
 
+/-! ## hp_decode_nibbles -- PR-K23 HP-encoded path → nibble array
+
+    Decode the HP-encoded first item of a leaf/extension MPT
+    node into an array of one-nibble bytes (each ∈ [0..15]).
+    Also returns whether the node is a leaf or extension.
+
+    HP encoding cheat-sheet (input byte 0):
+      high nibble  meaning
+      ----------   -------
+         0         extension, even path length (low nibble must be 0)
+         1         extension, odd path length (low nibble is first path nibble)
+         2         leaf, even path length (low nibble must be 0)
+         3         leaf, odd path length (low nibble is first path nibble)
+      anything else → invalid
+
+    Remaining input bytes hold 2 nibbles each (high, then low),
+    contributing to the output starting at the next slot.
+
+    Calling convention:
+      a0 (input)  : HP-encoded path bytes ptr
+      a1 (input)  : path byte length
+      a2 (input)  : output nibble buffer (caller-allocated;
+                    holds up to 2 * (a1 - 1) + 1 bytes,
+                    one byte per nibble)
+      a3 (input)  : u64 out ptr (number of nibbles emitted)
+      a4 (input)  : u64 out ptr (is_leaf flag: 0 = ext, 1 = leaf)
+      ra (input)  : return
+      a0 (output) : 0 success, 1 parse failure (empty input,
+                    high nibble ≥ 4, or even path with non-zero
+                    low nibble of byte 0).
+
+    Each output byte holds one nibble in its low 4 bits; the
+    high 4 bits are zero. This is the format consumed by future
+    `mpt_walk` (PR-K24) which compares one byte per nibble. -/
+def hpDecodeNibblesFunction : String :=
+  "hp_decode_nibbles:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # path_bytes ptr\n" ++
+  "  mv s1, a1                  # len\n" ++
+  "  mv s2, a2                  # out nibble buf\n" ++
+  "  mv s3, a3                  # out count ptr\n" ++
+  "  mv s4, a4                  # out is_leaf ptr\n" ++
+  "  beqz s1, .Lhp_fail\n" ++
+  "  lbu t0, 0(s0)              # b0\n" ++
+  "  srli t1, t0, 4             # high nibble\n" ++
+  "  andi t2, t0, 0xf           # low nibble\n" ++
+  "  li t3, 4\n" ++
+  "  bgeu t1, t3, .Lhp_fail     # high ≥ 4 → invalid\n" ++
+  "  # is_leaf = (high & 2) >> 1\n" ++
+  "  andi t3, t1, 2\n" ++
+  "  srli t3, t3, 1\n" ++
+  "  sd t3, 0(s4)\n" ++
+  "  # is_odd = high & 1\n" ++
+  "  andi t1, t1, 1\n" ++
+  "  beqz t1, .Lhp_even\n" ++
+  "  # Odd: write low as first output nibble.\n" ++
+  "  sb t2, 0(s2)\n" ++
+  "  li t5, 1                   # nibble count so far\n" ++
+  "  addi t6, s2, 1             # output cursor\n" ++
+  "  j .Lhp_loop_init\n" ++
+  ".Lhp_even:\n" ++
+  "  bnez t2, .Lhp_fail         # even but low nibble != 0\n" ++
+  "  li t5, 0\n" ++
+  "  mv t6, s2\n" ++
+  ".Lhp_loop_init:\n" ++
+  "  li t0, 1                   # i = 1\n" ++
+  ".Lhp_loop:\n" ++
+  "  bgeu t0, s1, .Lhp_done\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lbu t2, 0(t1)\n" ++
+  "  srli t3, t2, 4\n" ++
+  "  andi t4, t2, 0xf\n" ++
+  "  sb t3, 0(t6)\n" ++
+  "  sb t4, 1(t6)\n" ++
+  "  addi t6, t6, 2\n" ++
+  "  addi t5, t5, 2\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  j .Lhp_loop\n" ++
+  ".Lhp_done:\n" ++
+  "  sd t5, 0(s3)\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lhp_ret\n" ++
+  ".Lhp_fail:\n" ++
+  "  li a0, 1\n" ++
+  ".Lhp_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_hp_decode_nibbles`: probe BuildUnit. Reads
+    (path_len, path_bytes) from host input, writes
+    (status, count, is_leaf, nibbles...) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : path_len (u64)
+      bytes  8..   : HP-encoded path bytes
+    Output layout:
+      bytes  0.. 8 : status (u64; 0 ok, 1 fail)
+      bytes  8..16 : nibble count (u64)
+      bytes 16..24 : is_leaf (u64)
+      bytes 24..   : nibble bytes (count bytes; each in [0..15]) -/
+def ziskHpDecodeNibblesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a4, 0x40000000\n" ++
+  "  ld a1, 8(a4)                # path_len\n" ++
+  "  addi a0, a4, 16             # path bytes ptr\n" ++
+  "  li a2, 0xa0010018           # nibble buf at OUTPUT + 24\n" ++
+  "  li a3, 0xa0010008           # count ptr at OUTPUT + 8\n" ++
+  "  li a4, 0xa0010010           # is_leaf ptr at OUTPUT + 16\n" ++
+  "  jal ra, hp_decode_nibbles\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lhp_pdone\n" ++
+  hpDecodeNibblesFunction ++ "\n" ++
+  ".Lhp_pdone:"
+
+def ziskHpDecodeNibblesDataSection : String :=
+  ".section .data\n" ++
+  "hp_pad:\n" ++
+  "  .zero 8"
+
+def ziskHpDecodeNibblesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHpDecodeNibblesPrologue
+  dataAsm     := ziskHpDecodeNibblesDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3046,6 +3177,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_rlp_list_nth_item"    => some ziskRlpListNthItemProbeUnit
   | "zisk_mpt_node_kind"        => some ziskMptNodeKindProbeUnit
   | "zisk_mpt_branch_child"     => some ziskMptBranchChildProbeUnit
+  | "zisk_hp_decode_nibbles"    => some ziskHpDecodeNibblesProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3078,6 +3210,7 @@ def knownProgramNames : List String :=
    "zisk_rlp_list_nth_item",
    "zisk_mpt_node_kind",
    "zisk_mpt_branch_child",
+   "zisk_hp_decode_nibbles",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
