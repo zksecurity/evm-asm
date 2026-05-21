@@ -1212,20 +1212,95 @@ def isAddbackCarry2NzN1CallV4
   isAddbackCarry2Nz (divKTrialCallV4QHat u1 u0 v0)
     v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
+/-- Result of the j=3 v4 call iteration in the N1 call/max/max/max path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxR3
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  iterWithDoubleAddback (divKTrialCallV4QHat u1 u0 v0)
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
+/-- Result of the following j=2 all-max iteration in the N1 call/max/max/max path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxR2
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  iterN1Max v0 v1 v2 v3 u0Orig2
+    r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+
+/-- Result of the following j=1 all-max iteration in the N1 call/max/max/max path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxR1
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word) :
+    Word × Word × Word × Word × Word × Word :=
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  iterN1Max v0 v1 v2 v3 u0Orig1
+    r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1
+
 /-- Compact all-max branch facts after the j=3 v4 call iteration in the
     N1 call/max/max/max path. -/
 @[irreducible]
 def loopN1CallMaxmaxmaxBranchFacts
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop
      u0Orig2 u0Orig1 : Word) : Prop :=
-  let qHat := divKTrialCallV4QHat u1 u0 v0
-  let r3 := iterWithDoubleAddback qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
-  let r2 := iterN1Max v0 v1 v2 v3 u0Orig2
-    r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
   ¬BitVec.ult r3.2.1 v0 ∧
   ¬BitVec.ult r2.2.1 v0 ∧
-  ¬BitVec.ult
-    (iterN1Max v0 v1 v2 v3 u0Orig1
-      r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.1 v0
+  ¬BitVec.ult r1.2.1 v0
+
+/-- The j=2 all-max branch fact packaged in
+    `loopN1CallMaxmaxmaxBranchFacts`. -/
+theorem loopN1CallMaxmaxmaxBranchFacts_hbltu2
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (hbranches : loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1 v0 := by
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  have hbranches' := hbranches
+  unfold loopN1CallMaxmaxmaxBranchFacts at hbranches'
+  change (¬BitVec.ult r3.2.1 v0 ∧ ¬BitVec.ult r2.2.1 v0 ∧
+      ¬BitVec.ult r1.2.1 v0) at hbranches'
+  simpa [r3] using hbranches'.1
+
+/-- The j=1 all-max branch fact packaged in
+    `loopN1CallMaxmaxmaxBranchFacts`. -/
+theorem loopN1CallMaxmaxmaxBranchFacts_hbltu1
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (hbranches : loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2).2.1 v0 := by
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  have hbranches' := hbranches
+  unfold loopN1CallMaxmaxmaxBranchFacts at hbranches'
+  change (¬BitVec.ult r3.2.1 v0 ∧ ¬BitVec.ult r2.2.1 v0 ∧
+      ¬BitVec.ult r1.2.1 v0) at hbranches'
+  simpa [r2] using hbranches'.2.1
+
+/-- The j=0 all-max branch fact packaged in
+    `loopN1CallMaxmaxmaxBranchFacts`. -/
+theorem loopN1CallMaxmaxmaxBranchFacts_hbltu0
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (hbranches : loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1).2.1 v0 := by
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  have hbranches' := hbranches
+  unfold loopN1CallMaxmaxmaxBranchFacts at hbranches'
+  change (¬BitVec.ult r3.2.1 v0 ∧ ¬BitVec.ult r2.2.1 v0 ∧
+      ¬BitVec.ult r1.2.1 v0) at hbranches'
+  simpa [r1] using hbranches'.2.2
 
 end EvmAsm.Evm64
