@@ -7,6 +7,7 @@
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1LoopUnified
 import EvmAsm.Evm64.DivMod.Compose.FullPathV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN1.MaxV4NoNop
+import EvmAsm.Evm64.DivMod.LoopIterN1.MaxAddbackV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN1.CallV4NoNop
 import EvmAsm.Evm64.DivMod.LoopIterN1.CallAddbackV4NoNop
 
@@ -178,6 +179,82 @@ theorem divK_loop_body_n1_max_skip_jgt0_norm_v4_noNop (j sp base : Word)
       xperm_hyp hp)
     (fun h hp => hp)
     raw'
+
+/-- Loop body n=1, max path, j=3 over `divCode_noNop_v4`, selecting the
+    skip or addback correction from the computed mulsub borrow bit while
+    preserving concrete `x1`. -/
+theorem divK_loop_body_n1_max_j3_exact_loopIter_v4_noNop (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld raVal : Word)
+    (hbltu : ¬BitVec.ult u1 v0)
+    (hcarry2_nz : isAddbackCarry2NzN1Max v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    cpsTripleWithin 152 (base + loopBodyOff) (base + loopBodyOff) (divCode_noNop_v4 base)
+      (loopBodyN1MaxSkipJgt0NormPreV4 (3 : Word)
+        sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld **
+        (.x1 ↦ᵣ raVal))
+      (loopIterPostN1Max sp (3 : Word) v0 v1 v2 v3 u0 u1 u2 u3 uTop **
+        (.x1 ↦ᵣ raVal)) := by
+  by_cases hb : BitVec.ult uTop
+      (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+  · have hborrow :
+        (if BitVec.ult uTop
+            (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+         then (1 : Word) else 0) ≠ (0 : Word) := by
+      rw [if_pos hb]
+      decide
+    have raw := divK_loop_body_n1_max_addback_jgt0_beq_v4_spec_within_noNop
+      (3 : Word) slt_jpos_3
+      sp jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld
+      base hbltu hcarry2_nz
+    change (let uBase := sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
+      let qAddr := sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
+      (if BitVec.ult uTop
+          (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+       then (1 : Word) else 0) ≠ (0 : Word) →
+      cpsTripleWithin 152 (base + loopBodyOff) (base + loopBodyOff)
+        (sharedDivModCodeNoNop_v4 base)
+        ((.x12 ↦ᵣ sp) ** (.x9 ↦ᵣ (3 : Word)) **
+         (.x5 ↦ᵣ v5Old) ** (.x6 ↦ᵣ v6Old) **
+         (.x7 ↦ᵣ v7Old) ** (.x10 ↦ᵣ v10Old) ** (.x11 ↦ᵣ v11Old) **
+         (.x2 ↦ᵣ v2Old) ** (.x0 ↦ᵣ (0 : Word)) **
+         (sp + signExtend12 3976 ↦ₘ jOld) ** (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
+         ((sp + signExtend12 32) ↦ₘ v0) ** ((uBase + signExtend12 0) ↦ₘ u0) **
+         ((sp + signExtend12 40) ↦ₘ v1) ** ((uBase + signExtend12 4088) ↦ₘ u1) **
+         ((sp + signExtend12 48) ↦ₘ v2) ** ((uBase + signExtend12 4080) ↦ₘ u2) **
+         ((sp + signExtend12 56) ↦ₘ v3) ** ((uBase + signExtend12 4072) ↦ₘ u3) **
+         ((uBase + signExtend12 4064) ↦ₘ uTop) **
+         (qAddr ↦ₘ qOld))
+        (loopBodyN1AddbackBeqPost sp (3 : Word) (signExtend12 4095 : Word)
+          v0 v1 v2 v3 u0 u1 u2 u3 uTop)) at raw
+    have raw0 := raw hborrow
+    have raw' := cpsTripleWithin_extend_code
+      (hmono := sharedDivModCodeNoNop_v4_sub_divCode_noNop_v4) raw0
+    have framed := cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) raw'
+    exact cpsTripleWithin_weaken
+      (fun h hp => by
+        delta loopBodyN1MaxSkipJgt0NormPreV4 at hp
+        xperm_hyp hp)
+      (fun h hp => by
+        rw [← loopIterPostN1Max_addback hb]
+        exact hp)
+      framed
+  · have hborrow :
+        (if BitVec.ult uTop
+            (mulsubN4_c3 (signExtend12 4095 : Word) v0 v1 v2 v3 u0 u1 u2 u3)
+         then (1 : Word) else 0) = (0 : Word) := if_neg hb
+    have raw := divK_loop_body_n1_max_skip_jgt0_norm_v4_noNop
+      (3 : Word) sp base slt_jpos_3
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop qOld hbltu hborrow
+    have framed := cpsTripleWithin_frameR (.x1 ↦ᵣ raVal) (by pcFree) raw
+    exact cpsTripleWithin_weaken
+      (fun h hp => hp)
+      (fun h hp => by
+        rw [← loopIterPostN1Max_skip hb]
+        exact hp)
+      (cpsTripleWithin_mono_nSteps (by decide) framed)
 
 /-- Loop body n=1, call+skip, j=0 over `divCode_noNop_v4`, with
     sp-relative addresses hidden behind a named precondition. -/
