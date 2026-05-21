@@ -4014,6 +4014,162 @@ def ziskRlpEncodeUintBeProbeUnit : BuildUnit := {
   dataAsm     := ziskRlpEncodeUintBeDataSection
 }
 
+/-! ## account_encode -- PR-K31 mutating side of account_decode
+
+    Encode (nonce, balance, storage_root, code_hash) into the
+    canonical 4-field RLP list bytes used as the value of a
+    state-trie leaf node. The inverse of PR-K27 account_decode.
+
+    Composition:
+      payload = rlp_encode_uint_be(nonce_be, 8) +
+                rlp_encode_uint_be(balance_be, 32) +
+                0xa0 + storage_root +
+                0xa0 + code_hash
+      out = 0xf8 + len(payload) + payload
+
+    The 0xf8 prefix is correct because the payload is always
+    > 55 bytes (storage_root + code_hash already total 66 bytes,
+    plus at least 2 bytes for nonce/balance encodings).
+
+    Calling convention:
+      a0 (input)  : nonce 8-byte BE ptr
+      a1 (input)  : balance 32-byte BE ptr
+      a2 (input)  : storage_root ptr (32 bytes)
+      a3 (input)  : code_hash ptr (32 bytes)
+      a4 (input)  : output buffer ptr (≥ 128 bytes)
+      a5 (input)  : u64 out ptr (bytes_written)
+      ra (input)  : return
+      a0 (output) : 0 (always success; cap fixed by caller)
+
+    Scratch: ae_scratch (64 bytes) for staging nonce_rlp +
+    balance_rlp before they're copied to the output buffer. -/
+def accountEncodeFunction : String :=
+  "account_encode:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp); sd s4, 40(sp); sd s5, 48(sp)\n" ++
+  "  mv s0, a0                   # nonce_be ptr\n" ++
+  "  mv s1, a1                   # balance_be ptr\n" ++
+  "  mv s2, a2                   # storage_root ptr\n" ++
+  "  mv s3, a3                   # code_hash ptr\n" ++
+  "  mv s4, a4                   # output buf\n" ++
+  "  mv s5, a5                   # bytes_written out\n" ++
+  "  # Step 1: rlp_encode_uint_be(nonce_be, 8) → ae_scratch.\n" ++
+  "  mv a0, s0\n" ++
+  "  li a1, 8\n" ++
+  "  la a2, ae_scratch\n" ++
+  "  jal ra, rlp_encode_uint_be\n" ++
+  "  la t0, ae_nonce_len; sd a0, 0(t0)\n" ++
+  "  # Step 2: rlp_encode_uint_be(balance_be, 32) → ae_scratch + nonce_len.\n" ++
+  "  la t0, ae_nonce_len; ld t1, 0(t0)\n" ++
+  "  la t2, ae_scratch\n" ++
+  "  add a2, t2, t1\n" ++
+  "  mv a0, s1\n" ++
+  "  li a1, 32\n" ++
+  "  jal ra, rlp_encode_uint_be\n" ++
+  "  la t0, ae_balance_len; sd a0, 0(t0)\n" ++
+  "  # Step 3: payload_len = nonce_len + balance_len + 33 + 33.\n" ++
+  "  la t0, ae_nonce_len; ld t1, 0(t0)\n" ++
+  "  la t0, ae_balance_len; ld t2, 0(t0)\n" ++
+  "  add t3, t1, t2\n" ++
+  "  addi t3, t3, 66            # + 33 + 33 (storage_root + code_hash)\n" ++
+  "  # Step 4: write outer prefix 0xf8 + payload_len.\n" ++
+  "  mv t4, s4                  # cursor\n" ++
+  "  li t5, 0xf8\n" ++
+  "  sb t5, 0(t4)\n" ++
+  "  sb t3, 1(t4)\n" ++
+  "  addi t4, t4, 2\n" ++
+  "  # Step 5: copy nonce_rlp (t1 bytes) from ae_scratch to t4.\n" ++
+  "  la t5, ae_scratch\n" ++
+  "  mv t6, t1                  # remaining\n" ++
+  ".Lae_copy_nonce:\n" ++
+  "  beqz t6, .Lae_copy_balance_init\n" ++
+  "  lbu t1, 0(t5)\n" ++
+  "  sb  t1, 0(t4)\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  addi t6, t6, -1\n" ++
+  "  j .Lae_copy_nonce\n" ++
+  ".Lae_copy_balance_init:\n" ++
+  "  # Step 6: copy balance_rlp from ae_scratch + nonce_len. t5 is already there.\n" ++
+  "  la t0, ae_balance_len; ld t6, 0(t0)\n" ++
+  ".Lae_copy_balance:\n" ++
+  "  beqz t6, .Lae_copy_storage_root\n" ++
+  "  lbu t1, 0(t5)\n" ++
+  "  sb  t1, 0(t4)\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  addi t6, t6, -1\n" ++
+  "  j .Lae_copy_balance\n" ++
+  ".Lae_copy_storage_root:\n" ++
+  "  # Step 7: write 0xa0 + storage_root (32 bytes).\n" ++
+  "  li t5, 0xa0\n" ++
+  "  sb t5, 0(t4)\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  ld t5,  0(s2); sd t5,  0(t4)\n" ++
+  "  ld t5,  8(s2); sd t5,  8(t4)\n" ++
+  "  ld t5, 16(s2); sd t5, 16(t4)\n" ++
+  "  ld t5, 24(s2); sd t5, 24(t4)\n" ++
+  "  addi t4, t4, 32\n" ++
+  "  # Step 8: write 0xa0 + code_hash.\n" ++
+  "  li t5, 0xa0\n" ++
+  "  sb t5, 0(t4)\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  ld t5,  0(s3); sd t5,  0(t4)\n" ++
+  "  ld t5,  8(s3); sd t5,  8(t4)\n" ++
+  "  ld t5, 16(s3); sd t5, 16(t4)\n" ++
+  "  ld t5, 24(s3); sd t5, 24(t4)\n" ++
+  "  addi t4, t4, 32\n" ++
+  "  # bytes_written = (t4 - s4)\n" ++
+  "  sub t4, t4, s4\n" ++
+  "  sd t4, 0(s5)\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp); ld s4, 40(sp); ld s5, 48(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_account_encode`: probe BuildUnit. Reads
+    (nonce_be8, balance_be32, storage_root, code_hash) from
+    host input (104 bytes total). Writes (bytes_written, RLP)
+    to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : nonce (8-byte BE)
+      bytes  8..40 : balance (32-byte BE)
+      bytes 40..72 : storage_root (32 B)
+      bytes 72..104: code_hash (32 B) -/
+def ziskAccountEncodePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a6, 0x40000000\n" ++
+  "  addi a0, a6, 8              # nonce_be\n" ++
+  "  addi a1, a6, 16             # balance_be\n" ++
+  "  addi a2, a6, 48             # storage_root\n" ++
+  "  addi a3, a6, 80             # code_hash\n" ++
+  "  li a4, 0xa0010008           # output RLP at OUTPUT + 8\n" ++
+  "  li a5, 0xa0010000           # bytes_written at OUTPUT + 0\n" ++
+  "  jal ra, account_encode\n" ++
+  "  j .Lae_pdone\n" ++
+  rlpEncodeUintBeFunction ++ "\n" ++
+  accountEncodeFunction ++ "\n" ++
+  ".Lae_pdone:"
+
+def ziskAccountEncodeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "ae_nonce_len:\n" ++
+  "  .zero 8\n" ++
+  "ae_balance_len:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "ae_scratch:\n" ++
+  "  .zero 64"
+
+def ziskAccountEncodeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskAccountEncodePrologue
+  dataAsm     := ziskAccountEncodeDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -4465,6 +4621,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_account_at_address"   => some ziskAccountAtAddressProbeUnit
   | "zisk_slot_at_index"        => some ziskSlotAtIndexProbeUnit
   | "zisk_rlp_encode_uint_be"   => some ziskRlpEncodeUintBeProbeUnit
+  | "zisk_account_encode"       => some ziskAccountEncodeProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -4505,6 +4662,7 @@ def knownProgramNames : List String :=
    "zisk_account_at_address",
    "zisk_slot_at_index",
    "zisk_rlp_encode_uint_be",
+   "zisk_account_encode",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
