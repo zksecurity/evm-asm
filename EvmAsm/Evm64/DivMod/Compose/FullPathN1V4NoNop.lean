@@ -1466,4 +1466,41 @@ def loopN1CallMaxmaxmaxExactInputHypotheses
   loopN1CallMaxmaxmaxExactHypotheses
     I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
 
+/-- Project the j=3 BLTU-taken fact from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu3
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    BitVec.ult I.u1 I.v0 := by
+  unfold loopN1CallMaxmaxmaxExactInputHypotheses at h
+  exact loopN1CallMaxmaxmaxExactHypotheses_hbltu3
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 h
+
+/-- Project the all-max branch facts from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_branches
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    loopN1CallMaxmaxmaxBranchFacts
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 := by
+  unfold loopN1CallMaxmaxmaxExactInputHypotheses at h
+  exact loopN1CallMaxmaxmaxExactHypotheses_branches
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 h
+
+/-- Project the global carry2 condition from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_carry2
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    Carry2NzAll I.v0 I.v1 I.v2 I.v3 := by
+  unfold loopN1CallMaxmaxmaxExactInputHypotheses at h
+  exact loopN1CallMaxmaxmaxExactHypotheses_carry2
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 h
+
+/-- Project the v4 N1 call carry condition from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_carry2Call
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    isAddbackCarry2NzN1CallV4 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop := by
+  unfold loopN1CallMaxmaxmaxExactInputHypotheses at h
+  exact loopN1CallMaxmaxmaxExactHypotheses_carry2Call
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 h
+
 end EvmAsm.Evm64
