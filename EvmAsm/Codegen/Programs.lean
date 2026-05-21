@@ -1641,7 +1641,7 @@ def ziskSszPairHashProbeUnit : BuildUnit := {
     each Z_i against Python's recomputation.
 -/
 def sszZeroHashesDataSection : String :=
-  ".section .rodata\n" ++
+  ".section .data\n" ++
   ".balign 32\n" ++
   "ssz_zero_hashes:\n" ++
   "  .byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00    # Z_0\n" ++
@@ -1849,6 +1849,196 @@ def ziskSszMerkleizePow2ProbeUnit : BuildUnit := {
   dataAsm     := ziskSszMerkleizePow2DataSection
 }
 
+/-! ## ssz_merkleize — PR-S7 arbitrary-length SSZ merkleization
+
+    Lifts `ssz_merkleize_pow2` (PR-S6) to the general SSZ case
+    by zero-padding short inputs out to a power of two, then
+    further padding the resulting root up to the SSZ capacity by
+    pair-hashing with `Z_d` from the PR-S5 table at each missing
+    depth.
+
+    Two phases:
+      1. Pad chunks up to `M = next_pow2(n)` with `Z_0`. Reduce
+         in place via `ssz_merkleize_pow2`. Result: partial root
+         at depth `d_M = log2(M)`.
+      2. For `d` from `d_M` to `limit_log2 - 1`:
+             partial_root = sha256_pair(partial_root, Z_d)
+
+    Edge case `n = 0`: result is `Z_{limit_log2}` straight from
+    the zero-hashes table; phase 1 is skipped.
+
+    Calling convention:
+      a0 (input)  : ptr to `n * 32` chunk bytes
+      a1 (input)  : n (0 ≤ n ≤ 32)
+      a2 (input)  : limit_log2 L (0 ≤ L ≤ 31; capacity = 2^L)
+      a3 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Clobbers t0..t6, a0..a3. Saves/restores s0..s6 and ra via
+    a 64-byte stack frame. -/
+def sszMerkleizeFunction : String :=
+  "ssz_merkleize:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp)\n" ++
+  "  sd s1, 16(sp)\n" ++
+  "  sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp)\n" ++
+  "  sd s5, 48(sp)\n" ++
+  "  sd s6, 56(sp)\n" ++
+  "  # s5 = chunks_in ptr; s0 = n; s1 = limit_log2 L; s6 = out ptr\n" ++
+  "  mv s5, a0\n" ++
+  "  mv s0, a1\n" ++
+  "  mv s1, a2\n" ++
+  "  mv s6, a3\n" ++
+  "  # n == 0 → root is Z_L (look up directly)\n" ++
+  "  beqz s0, .Lszm_zero_path\n" ++
+  "  # phase 1: compute M = next_pow2(n) and depth_M = log2(M)\n" ++
+  "  li t0, 1                    # candidate M\n" ++
+  "  li s4, 0                    # candidate depth\n" ++
+  ".Lszm_pow2_scan:\n" ++
+  "  bge t0, s0, .Lszm_have_M\n" ++
+  "  slli t0, t0, 1\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_pow2_scan\n" ++
+  ".Lszm_have_M:\n" ++
+  "  mv s3, t0                   # s3 = M; s4 = depth_M = log2(M)\n" ++
+  "  # copy n*32 input bytes into ssz_merkleize_padded, zero-pad the rest\n" ++
+  "  la t0, ssz_merkleize_padded\n" ++
+  "  slli t1, s0, 5              # t1 = n*32 bytes to copy\n" ++
+  "  mv t2, s5                   # src\n" ++
+  "  mv t3, t0                   # dst\n" ++
+  ".Lszm_cp:\n" ++
+  "  beqz t1, .Lszm_pad\n" ++
+  "  ld t4, 0(t2)\n" ++
+  "  sd t4, 0(t3)\n" ++
+  "  addi t2, t2, 8\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_cp\n" ++
+  ".Lszm_pad:\n" ++
+  "  sub t1, s3, s0              # t1 = M - n (slots to zero)\n" ++
+  "  slli t1, t1, 5              # t1 = (M-n)*32 bytes\n" ++
+  ".Lszm_zr:\n" ++
+  "  beqz t1, .Lszm_call_pow2\n" ++
+  "  sd zero, 0(t3)\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_zr\n" ++
+  ".Lszm_call_pow2:\n" ++
+  "  # call ssz_merkleize_pow2(padded, M, ssz_merkleize_partial)\n" ++
+  "  la a0, ssz_merkleize_padded\n" ++
+  "  mv a1, s3\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, ssz_merkleize_pow2\n" ++
+  "  # phase 2: mix in Z_d for d in [depth_M, L)\n" ++
+  ".Lszm_mix:\n" ++
+  "  beq s4, s1, .Lszm_copy_out\n" ++
+  "  # ssz_merkleize_partial[0..32]   = current root (input L)\n" ++
+  "  # ssz_merkleize_partial[32..64]  = Z_{s4}        (input R)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s4, 5              # offset = s4*32\n" ++
+  "  add t0, t0, t1              # &Z_{s4}\n" ++
+  "  la t2, ssz_merkleize_partial\n" ++
+  "  addi t2, t2, 32             # &partial[32..]\n" ++
+  "  ld t3,  0(t0); sd t3,  0(t2)\n" ++
+  "  ld t3,  8(t0); sd t3,  8(t2)\n" ++
+  "  ld t3, 16(t0); sd t3, 16(t2)\n" ++
+  "  ld t3, 24(t0); sd t3, 24(t2)\n" ++
+  "  la a0, ssz_merkleize_partial\n" ++
+  "  li a1, 64\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_mix\n" ++
+  ".Lszm_copy_out:\n" ++
+  "  la t0, ssz_merkleize_partial\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  "  j .Lszm_ret\n" ++
+  ".Lszm_zero_path:\n" ++
+  "  # root = Z_L (n == 0 case)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s1, 5\n" ++
+  "  add t0, t0, t1\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  ".Lszm_ret:\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp)\n" ++
+  "  ld s1, 16(sp)\n" ++
+  "  ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp)\n" ++
+  "  ld s5, 48(sp)\n" ++
+  "  ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_merkleize`: probe BuildUnit that reads
+    `(limit_log2 : u64, n : u64, chunks : n * 32 bytes)` from
+    the host input region and writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : ignored ziskemu length prefix
+      bytes  8..16 : limit_log2 (u64 LE)
+      bytes 16..24 : n (u64 LE)
+      bytes 24..   : n * 32 chunk bytes -/
+def ziskSszMerkleizePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a2, 8(a3)                # a2 = limit_log2 L\n" ++
+  "  ld a1, 16(a3)               # a1 = n\n" ++
+  "  addi a0, a3, 24             # a0 = chunks ptr\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR (now caller out ptr)\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  j .Lzs7_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  ".Lzs7_done:"
+
+def ziskSszMerkleizeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszMerkleizeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszMerkleizePrologue
+  dataAsm     := ziskSszMerkleizeDataSection
+}
+
 /-! ## stateless_guest body — PR-K5 keccak hash field
 
     Replaces the zero-stub `new_payload_request_root` field in
@@ -1976,6 +2166,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
   | "zisk_ssz_merkleize_pow2"   => some ziskSszMerkleizePow2ProbeUnit
+  | "zisk_ssz_merkleize"        => some ziskSszMerkleizeProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -1999,6 +2190,7 @@ def knownProgramNames : List String :=
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
-   "zisk_ssz_merkleize_pow2"]
+   "zisk_ssz_merkleize_pow2",
+   "zisk_ssz_merkleize"]
 
 end EvmAsm.Codegen
