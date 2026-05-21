@@ -1776,4 +1776,59 @@ theorem loopN1CallMaxmaxmaxIter210FramedPostInput_to_scratchPost
   rw [sepConj_assoc'] at hp
   xperm_hyp hp
 
+/-- The framed all-max tail over the compact pre/post assertions that sit
+    between the j=3 call-body step and the final scratch post. -/
+theorem divK_loop_n1_call_iter210_framed_prepost_exact_x1_v4_noNop_input
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (hh : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    cpsTripleWithin 556 (I.base + loopBodyOff) (I.base + denormOff)
+      (divCode_noNop_v4 I.base)
+      (loopN1CallMaxmaxmaxIter210FramedPreInput I)
+      (loopN1CallMaxmaxmaxIter210FramedPostInput I) := by
+  unfold loopN1CallMaxmaxmaxIter210FramedPreInput
+    loopN1CallMaxmaxmaxIter210FramedPostInput
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  let c3 := (mulsubN4 (divKTrialCallV4QHat I.u1 I.u0 I.v0)
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3).2.2.2.2
+  let uBase3 := I.sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr3 := I.sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
+  have H210 := divK_loop_n1_iter210_maxmaxmax_exact_x1_v4_noNop I.sp I.base
+    (3 : Word) ((3 : Word) <<< (3 : BitVec 6).toNat) uBase3 qAddr3 c3 r3.1
+    r3.2.2.2.2.1
+    I.v0 I.v1 I.v2 I.v3
+    I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+    I.u0Orig1 I.u0Orig0 I.q2Old I.q1Old I.q0Old
+    (I.base + div128CallRetOff) I.v0 (divKTrialCallV4DLo I.v0)
+    (divKTrialCallV4Un0 I.u0) I.raVal
+    (by
+      dsimp only [r3]
+      exact loopN1CallMaxmaxmaxExactInputHypotheses_hbltu2 I hh)
+    (by
+      dsimp only [r3]
+      have h := loopN1CallMaxmaxmaxExactInputHypotheses_hbltu1 I hh
+      unfold loopN1CallMaxmaxmaxR2 at h
+      exact h)
+    (by
+      dsimp only [r3]
+      have h := loopN1CallMaxmaxmaxExactInputHypotheses_hbltu0 I hh
+      unfold loopN1CallMaxmaxmaxR1 at h
+      unfold loopN1CallMaxmaxmaxR2 at h
+      exact h)
+    (loopN1CallMaxmaxmaxExactInputHypotheses_carry2 I hh)
+  have H210f := cpsTripleWithin_frameR
+    (loopN1CallMaxmaxmaxIter210FrameInput I) (by pcFree) H210
+  exact H210f
+
+/-- Framed all-max tail from the actual bundled j=3 post to the final N1
+    call/max/max/max scratch post. -/
+theorem divK_loop_n1_call_iter210_framed_exact_x1_v4_noNop_input
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (hh : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    loopN1CallMaxmaxmaxIter210FramedExactInputSpec I := by
+  unfold loopN1CallMaxmaxmaxIter210FramedExactInputSpec
+  exact cpsTripleWithin_weaken
+    (loopN1CallMaxmaxmaxJ3PostInput_to_iter210FramedPre I)
+    (loopN1CallMaxmaxmaxIter210FramedPostInput_to_scratchPost I)
+    (divK_loop_n1_call_iter210_framed_prepost_exact_x1_v4_noNop_input I hh)
+
 end EvmAsm.Evm64
