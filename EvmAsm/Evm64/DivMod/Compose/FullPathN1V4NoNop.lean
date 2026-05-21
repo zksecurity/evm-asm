@@ -1707,6 +1707,47 @@ def loopN1CallMaxmaxmaxIter210FramedExactInputSpec
       I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
       I.u0Orig2 I.u0Orig1 I.u0Orig0 I.scratchMem ** (.x1 ↦ᵣ I.raVal))
 
+/-- The precondition required by the framed all-max tail after the actual
+    bundled j=3 call-body step. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxIter210FramedPreInput
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  let c3 := (mulsubN4 (divKTrialCallV4QHat I.u1 I.u0 I.v0)
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3).2.2.2.2
+  let uBase3 := I.sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr3 := I.sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
+  (loopN1Iter210PreWithScratchNoX1 I.sp
+    (3 : Word) ((3 : Word) <<< (3 : BitVec 6).toNat) uBase3 qAddr3 c3 r3.1
+    r3.2.2.2.2.1
+    I.v0 I.v1 I.v2 I.v3
+    I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+    I.u0Orig1 I.u0Orig0 I.q2Old I.q1Old I.q0Old
+    (I.base + div128CallRetOff) I.v0 (divKTrialCallV4DLo I.v0)
+    (divKTrialCallV4Un0 I.u0) ** (.x1 ↦ᵣ I.raVal)) **
+  loopN1CallMaxmaxmaxIter210FrameInput I
+
+/-- Rearrange the actual bundled j=3 post into the framed all-max tail
+    precondition. -/
+theorem loopN1CallMaxmaxmaxJ3PostInput_to_iter210FramedPre
+    (I : LoopN1CallMaxmaxmaxExactInputs) :
+    ∀ h,
+      loopN1CallMaxmaxmaxJ3PostInput I h →
+      loopN1CallMaxmaxmaxIter210FramedPreInput I h := by
+  intro h hp
+  delta loopN1CallMaxmaxmaxJ3PostInput loopN1CallMaxmaxmaxIter210FramedPreInput
+    loopN1CallMaxmaxmaxIter210FrameInput at hp ⊢
+  delta loopIterPostN1CallScratchNoX1 loopN1Iter210PreWithScratchNoX1
+    loopN1Iter210Pre loopExitPostN1 loopExitPost at hp ⊢
+  dsimp only at hp ⊢
+  have hj' := jpred_3
+  rw [hj', u_n1_j3_0_eq_j2_4088, u_n1_j3_4088_eq_j2_4080,
+      u_n1_j3_4080_eq_j2_4072, u_n1_j3_4072_eq_j2_4064] at hp
+  simp only [se12_32, se12_40, se12_48, se12_56] at hp ⊢
+  unfold loopN1CallMaxmaxmaxR3
+  rw [sepConj_assoc'] at hp
+  xperm_hyp hp
+
 /-- The post produced by framing the bundled all-max tail with the j=3
     q/top/scratch cells. -/
 @[irreducible]
