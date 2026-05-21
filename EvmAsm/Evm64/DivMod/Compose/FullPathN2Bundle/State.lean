@@ -105,6 +105,25 @@ def fullDivN2FrameNoX1 (bltu_2 bltu_1 bltu_0 : Bool)
   (sp + signExtend12 3952 ↦ₘ n2ScratchDLo scratch) **
   (sp + signExtend12 3944 ↦ₘ n2ScratchUn0 scratch)
 
+/-- Bundled n=2 full-path postcondition. -/
+@[irreducible]
+def fullDivN2UnifiedPost (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  fullDivN2DenormPost bltu_2 bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3 **
+  fullDivN2Frame bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0
+
+/-- Bundled n=2 full-path postcondition with `x1` split out of the preserved
+    frame. -/
+@[irreducible]
+def fullDivN2UnifiedPostNoX1 (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  fullDivN2DenormPost bltu_2 bltu_1 bltu_0 sp a0 a1 a2 a3 b0 b1 b2 b3 **
+  fullDivN2FrameNoX1 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+    retMem dMem dloMem scratch_un0
+
 theorem fullDivN2ScratchFinal_unfold (bltu_2 bltu_1 bltu_0 : Bool)
     (base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
     fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
@@ -224,5 +243,37 @@ theorem fullDivN2FrameNoX1_frame_to_fullDivN2Frame
   intro h h_frame
   delta fullDivN2Frame fullDivN2FrameNoX1 at h_frame ⊢
   xperm_hyp h_frame
+
+/-- Split the old n=2 bundled post into the no-`x1` post plus separate `x1`
+    ownership. -/
+theorem fullDivN2UnifiedPost_to_fullDivN2UnifiedPostNoX1_frame
+    (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      fullDivN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (fullDivN2UnifiedPostNoX1 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h := by
+  intro h h_post
+  delta fullDivN2UnifiedPost fullDivN2UnifiedPostNoX1 fullDivN2Frame
+    fullDivN2FrameNoX1 at h_post ⊢
+  xperm_hyp h_post
+
+/-- Recombine the split n=2 no-`x1` bundled post with separate `x1`
+    ownership. -/
+theorem fullDivN2UnifiedPostNoX1_frame_to_fullDivN2UnifiedPost
+    (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      (fullDivN2UnifiedPostNoX1 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h →
+      fullDivN2UnifiedPost bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h := by
+  intro h h_post
+  delta fullDivN2UnifiedPost fullDivN2UnifiedPostNoX1 fullDivN2Frame
+    fullDivN2FrameNoX1 at h_post ⊢
+  xperm_hyp h_post
 
 end EvmAsm.Evm64
