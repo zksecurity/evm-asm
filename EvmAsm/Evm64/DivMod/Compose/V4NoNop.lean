@@ -118,6 +118,14 @@ theorem sharedNoNop_v4_b9_div {b : Word} :
     ∀ a i, (CodeReq.ofProg (b + denormOff) divK_denorm) a = some i →
       (divCode_noNop_v4 b) a = some i := by
   unfold divCode_noNop_v4; simp only [CodeReq.unionAll_cons]; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; skipBlock; exact CodeReq.union_mono_left
+/-- DIV epilogue block is included in the DIV no-NOP v4 code surface. -/
+theorem divNoNop_v4_b10_divEpilogue {b : Word} :
+    ∀ a i, (CodeReq.ofProg (b + epilogueOff) (divK_div_epilogue 24)) a = some i →
+      (divCode_noNop_v4 b) a = some i := by
+  unfold divCode_noNop_v4; simp only [CodeReq.unionAll_cons]
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  skipBlock; skipBlock; skipBlock; skipBlock; skipBlock
+  exact CodeReq.union_mono_left
 theorem sharedNoNop_v4_b10_div {b : Word} :
     ∀ a i, (CodeReq.ofProg (b + zeroPathOff) divK_zeroPath) a = some i →
       (divCode_noNop_v4 b) a = some i := by
