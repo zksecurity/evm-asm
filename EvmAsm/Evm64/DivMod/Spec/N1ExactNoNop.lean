@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.DivMod.Spec.CallablePost
 import EvmAsm.Evm64.DivMod.Spec.Dispatcher
+import EvmAsm.Evm64.DivMod.Compose.FullPathN1V4NoNop
 
 namespace EvmAsm.Evm64
 
@@ -271,6 +272,139 @@ theorem fullDivN1UnifiedPostNoX1_to_divConcretePostNoX1Frame
     apply sepConj_mono (regIs_implies_regOwn .x10 (v := r3.1))
     exact fun _ hp => hp
     exact hpLeft
+
+/-- Bridge the v4 call/max/max/max N1 post into the concrete callable DIV
+    post frame, retaining the v4-only scratch word at `sp+3936` as a separate
+    frame atom. Quotient arithmetic is supplied as four limb equalities so this
+    lemma only performs stack/register/frame reshaping. -/
+theorem fullDivN1CallMaxmaxmaxUnifiedPostNoX1_to_divConcretePostNoX1Frame_extra
+    (sp base shift : Word) (a b : EvmWord)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem raVal : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hdiv0 : (EvmWord.div a b).getLimbN 0 =
+      (iterN1Max v0 v1 v2 v3 u0Orig0
+        (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1).2.1
+        (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1).2.2.1
+        (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1).2.2.2.1
+        (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1).2.2.2.2.1).1)
+    (hdiv1 : (EvmWord.div a b).getLimbN 1 =
+      (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1).1)
+    (hdiv2 : (EvmWord.div a b).getLimbN 2 =
+      (loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2).1)
+    (hdiv3 : (EvmWord.div a b).getLimbN 3 =
+      (loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop).1) :
+    ∀ h,
+      (fullDivN1CallMaxmaxmaxUnifiedPostNoX1 sp base shift
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem **
+        (.x1 ↦ᵣ raVal)) h →
+      let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+      let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+      let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+        r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+      let antiShift := signExtend12 (0 : BitVec 12) - shift
+      let u0' := (r0.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.1 <<< (antiShift.toNat % 64))
+      let u1' := (r0.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.1 <<< (antiShift.toNat % 64))
+      let u2' := (r0.2.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.2.1 <<< (antiShift.toNat % 64))
+      let u3' := r0.2.2.2.2.1 >>> (shift.toNat % 64)
+      (divConcretePostNoX1Frame sp a b (signExtend12 4095) raVal antiShift
+        r1.1 r2.1 r0.1
+        r0.1 r1.1 r2.1 r3.1 u0' u1' u2' u3'
+        r0.2.2.2.2.2 r1.2.2.2.2.2 r2.2.2.2.2.2 r3.2.2.2.2.2
+        shift 1 0 (base + div128CallRetOff) v0
+        (divKTrialCallV4DLo v0) (divKTrialCallV4Un0 u0) **
+       ((sp + signExtend12 3936) ↦ₘ
+        divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)) h := by
+  intro h hq
+  dsimp
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  delta fullDivN1CallMaxmaxmaxUnifiedPostNoX1
+    fullDivN1CallMaxmaxmaxDenormPost fullDivN1CallMaxmaxmaxDenormFrameNoX1 at hq
+  simp only [denormDivPost_unfold] at hq
+  rw [divConcretePostNoX1Frame_unfold, divScratchValuesCallNoX1_unfold,
+    divScratchValues_unfold]
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+      from by rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ ha0 ha1 ha2 ha3]]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
+      (((sp + 32) ↦ₘ r0.1) ** ((sp + 40) ↦ₘ r1.1) **
+       ((sp + 48) ↦ₘ r2.1) ** ((sp + 56) ↦ₘ r3.1))
+      from by
+        subst r0
+        subst r1
+        subst r2
+        subst r3
+        rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+          hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [word_add_zero] at hq
+  let outExact : Assertion :=
+    ((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ r0.1) ** (.x10 ↦ᵣ r3.1) **
+      (.x0 ↦ᵣ (0 : Word)) **
+      ((sp + 32 ↦ₘ r0.1) ** (sp + 40 ↦ₘ r1.1) **
+       (sp + 48 ↦ₘ r2.1) ** (sp + 56 ↦ₘ r3.1)))
+  let outOwned : Assertion :=
+    ((.x12 ↦ᵣ (sp + 32)) ** regOwn .x5 ** regOwn .x10 **
+      (.x0 ↦ᵣ (0 : Word)) **
+      ((sp + 32 ↦ₘ r0.1) ** (sp + 40 ↦ₘ r1.1) **
+       (sp + 48 ↦ₘ r2.1) ** (sp + 56 ↦ₘ r3.1)))
+  let frame : Assertion :=
+    ((.x9 ↦ᵣ (signExtend12 4095 : Word)) ** (.x1 ↦ᵣ raVal) **
+      (.x2 ↦ᵣ signExtend12 (0 : BitVec 12) - shift) **
+      (.x6 ↦ᵣ r1.1) ** (.x7 ↦ᵣ r2.1) **
+      (.x11 ↦ᵣ r0.1) **
+      ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3)) **
+      ((sp + signExtend12 4088 ↦ₘ r0.1) **
+       (sp + signExtend12 4080 ↦ₘ r1.1) **
+       (sp + signExtend12 4072 ↦ₘ r2.1) **
+       (sp + signExtend12 4064 ↦ₘ r3.1) **
+       (sp + signExtend12 4056 ↦ₘ
+          (r0.2.1 >>> (shift.toNat % 64)) |||
+          (r0.2.2.1 <<< ((signExtend12 (0 : BitVec 12) - shift).toNat % 64))) **
+       (sp + signExtend12 4048 ↦ₘ
+          (r0.2.2.1 >>> (shift.toNat % 64)) |||
+          (r0.2.2.2.1 <<< ((signExtend12 (0 : BitVec 12) - shift).toNat % 64))) **
+       (sp + signExtend12 4040 ↦ₘ
+          (r0.2.2.2.1 >>> (shift.toNat % 64)) |||
+          (r0.2.2.2.2.1 <<< ((signExtend12 (0 : BitVec 12) - shift).toNat % 64))) **
+       (sp + signExtend12 4032 ↦ₘ
+          (r0.2.2.2.2.1 >>> (shift.toNat % 64))) **
+       (sp + signExtend12 4024 ↦ₘ r0.2.2.2.2.2) **
+       (sp + signExtend12 4016 ↦ₘ r1.2.2.2.2.2) **
+       (sp + signExtend12 4008 ↦ₘ r2.2.2.2.2.2) **
+       (sp + signExtend12 4000 ↦ₘ r3.2.2.2.2.2) **
+       (sp + signExtend12 3992 ↦ₘ shift) **
+       (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
+       (sp + signExtend12 3976 ↦ₘ (0 : Word))) **
+      (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+      (sp + signExtend12 3960 ↦ₘ v0) **
+      (sp + signExtend12 3952 ↦ₘ divKTrialCallV4DLo v0) **
+      (sp + signExtend12 3944 ↦ₘ divKTrialCallV4Un0 u0))
+  let extraScratch : Assertion :=
+      (sp + signExtend12 3936 ↦ₘ
+        divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+  change ((outOwned ** frame) ** extraScratch) h
+  have hExact : ((outExact ** frame) ** extraScratch) h := by
+    dsimp [outExact, frame, extraScratch]
+    dsimp [r0, r1, r2, r3, antiShift] at hq
+    xperm_hyp hq
+  refine sepConj_mono_left (fun hLeft hpLeft => ?_) h hExact
+  · refine sepConj_mono_left (fun hOut hpOut => ?_) hLeft hpLeft
+    dsimp [outExact, outOwned] at hpOut ⊢
+    apply sepConj_mono_right
+    apply sepConj_mono (regIs_implies_regOwn .x5 (v := r0.1))
+    apply sepConj_mono (regIs_implies_regOwn .x10 (v := r3.1))
+    exact fun _ hp => hp
+    exact hpOut
 
 /-- Recombine the split no-`x1` full-path post with separate `x1` ownership. -/
 theorem fullDivN1UnifiedPostNoX1_frame_to_fullDivN1UnifiedPost
