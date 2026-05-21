@@ -1204,4 +1204,28 @@ def loopN1CallMaxmaxmaxScratchPostNoX1 (sp base : Word)
   ((u_base_3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) ** (q_addr_3 ↦ₘ r3.1) **
   (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
 
+/-- Double-addback progress for the v4 n=1 call path, using the quotient
+    selected by `divKTrialCallV4QHat`. -/
+@[irreducible]
+def isAddbackCarry2NzN1CallV4
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word) : Prop :=
+  isAddbackCarry2Nz (divKTrialCallV4QHat u1 u0 v0)
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
+/-- Compact all-max branch facts after the j=3 v4 call iteration in the
+    N1 call/max/max/max path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxBranchFacts
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 : Word) : Prop :=
+  let qHat := divKTrialCallV4QHat u1 u0 v0
+  let r3 := iterWithDoubleAddback qHat v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := iterN1Max v0 v1 v2 v3 u0Orig2
+    r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+  ¬BitVec.ult r3.2.1 v0 ∧
+  ¬BitVec.ult r2.2.1 v0 ∧
+  ¬BitVec.ult
+    (iterN1Max v0 v1 v2 v3 u0Orig1
+      r2.2.1 r2.2.2.1 r2.2.2.2.1 r2.2.2.2.2.1).2.1 v0
+
 end EvmAsm.Evm64
