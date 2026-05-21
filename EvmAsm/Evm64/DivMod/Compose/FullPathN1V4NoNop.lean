@@ -1739,6 +1739,69 @@ def fullDivN1CallMaxmaxmaxExactInputHypotheses (sp base : Word)
       a0 a1 a2 a3 b0 b1 b2 b3
       q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
 
+/-- Build the canonical full-DIV n=1 call/max/max/max hypothesis wrapper
+    from the path branch facts and the universal carry2 assumption. -/
+theorem fullDivN1CallMaxmaxmaxExactInputHypotheses_of_bltu
+    (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word)
+    (hbltu3 : isTrialN1_j3 true a3 b0)
+    (hbltu2 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR3
+        (fullDivN1NormV b0 b1 b2 b3).1
+        (fullDivN1NormV b0 b1 b2 b3).2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.2
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        0 0 0).2.1
+      (fullDivN1NormV b0 b1 b2 b3).1)
+    (hbltu1 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR2
+        (fullDivN1NormV b0 b1 b2 b3).1
+        (fullDivN1NormV b0 b1 b2 b3).2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.2
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        0 0 0
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.1).2.1
+      (fullDivN1NormV b0 b1 b2 b3).1)
+    (hbltu0 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR1
+        (fullDivN1NormV b0 b1 b2 b3).1
+        (fullDivN1NormV b0 b1 b2 b3).2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.2
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        0 0 0
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.1).2.1
+      (fullDivN1NormV b0 b1 b2 b3).1)
+    (hcarry2 : Carry2NzAll
+      (fullDivN1NormV b0 b1 b2 b3).1
+      (fullDivN1NormV b0 b1 b2 b3).2.1
+      (fullDivN1NormV b0 b1 b2 b3).2.2.1
+      (fullDivN1NormV b0 b1 b2 b3).2.2.2) :
+    fullDivN1CallMaxmaxmaxExactInputHypotheses sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal := by
+  unfold fullDivN1CallMaxmaxmaxExactInputHypotheses
+  exact loopN1CallMaxmaxmaxExactInputHypotheses_of_bltu
+    (fullDivN1CallMaxmaxmaxExactInputs sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
+    (fullDivN1CallMaxmaxmaxExactInputs_hbltu3 sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal
+      hbltu3)
+    hbltu2 hbltu1 hbltu0 hcarry2
+
 /-- Bundled statement for the first j=3 call-body step of the N1
     call/max/max/max exact path. -/
 @[irreducible]
