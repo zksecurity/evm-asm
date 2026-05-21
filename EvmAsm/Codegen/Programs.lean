@@ -2734,6 +2734,369 @@ def ziskHpDecodeNibblesProbeUnit : BuildUnit := {
   dataAsm     := ziskHpDecodeNibblesDataSection
 }
 
+/-! ## mpt_walk -- PR-K24 end-to-end MPT lookup
+
+    Compose every K-stack primitive into a single
+    `mpt_walk(root, witness, path) → value` entry. Walks the
+    branch / extension / leaf chain following nibble path
+    elements.
+
+    Calling convention:
+      a0 (input)  : root_hash ptr (32 bytes)
+      a1 (input)  : witness.state SSZ list section ptr
+      a2 (input)  : witness section_len
+      a3 (input)  : path_nibbles ptr (one byte per nibble)
+      a4 (input)  : path_nibbles_len
+      a5 (input)  : value output buffer ptr (256 bytes)
+      a6 (input)  : u64 out ptr (matched value byte length)
+      ra (input)  : return
+      a0 (output) : 0 (found) / 1 (not found) / 2 (parse error)
+
+    Calls itself transitively via PR-K19..K23 primitives.
+    Uses a 256-byte mw_value_buf for the output and ~200 B of
+    additional scratch state. -/
+def mptWalkFunction : String :=
+  "mpt_walk:\n" ++
+  "  addi sp, sp, -80\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp); sd s7, 64(sp)\n" ++
+  "  sd s8, 72(sp)\n" ++
+  "  mv s0, a1                   # s0 = witness ptr\n" ++
+  "  mv s1, a2                   # s1 = witness_len\n" ++
+  "  mv s2, a3                   # s2 = path_nibbles ptr\n" ++
+  "  mv s3, a4                   # s3 = path_nibbles_len\n" ++
+  "  mv s4, a5                   # s4 = value out buf\n" ++
+  "  mv s5, a6                   # s5 = value_len out ptr\n" ++
+  "  # Copy root_hash to mw_lookup_hash for the first lookup.\n" ++
+  "  la t0, mw_lookup_hash\n" ++
+  "  ld t1,  0(a0); sd t1,  0(t0)\n" ++
+  "  ld t1,  8(a0); sd t1,  8(t0)\n" ++
+  "  ld t1, 16(a0); sd t1, 16(t0)\n" ++
+  "  ld t1, 24(a0); sd t1, 24(t0)\n" ++
+  "  # First lookup of root_hash in witness.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, mw_lookup_hash\n" ++
+  "  la a3, mw_lookup_offset\n" ++
+  "  la a4, mw_lookup_length\n" ++
+  "  jal ra, witness_lookup_by_hash\n" ++
+  "  bnez a0, .Lmw_not_found\n" ++
+  "  # s7 = current node ptr; s8 = current node len; s6 = consumed nibbles.\n" ++
+  "  la t0, mw_lookup_offset; ld t1, 0(t0); add s7, s0, t1\n" ++
+  "  la t0, mw_lookup_length; ld s8, 0(t0)\n" ++
+  "  li s6, 0\n" ++
+  ".Lmw_loop:\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  jal ra, mpt_node_kind\n" ++
+  "  beqz a0, .Lmw_branch\n" ++
+  "  li t0, 1; beq a0, t0, .Lmw_extension\n" ++
+  "  li t0, 2; beq a0, t0, .Lmw_leaf\n" ++
+  "  j .Lmw_parse_fail\n" ++
+  ".Lmw_branch:\n" ++
+  "  beq s6, s3, .Lmw_branch_end\n" ++
+  "  # Get child slot via rlp_list_nth_item (bypass mpt_branch_child so we\n" ++
+  "  # can keep the actual inlined byte count, not zero-padded to 32).\n" ++
+  "  add t0, s2, s6              # &path[consumed]\n" ++
+  "  lbu t1, 0(t0)\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  mv a2, t1                   # nibble (item index)\n" ++
+  "  la a3, mw_child_offset\n" ++
+  "  la a4, mw_child_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  addi s6, s6, 1\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_child_length; ld t1, 0(t0)\n" ++
+  "  beqz t1, .Lmw_not_found      # empty slot\n" ++
+  "  li t2, 32\n" ++
+  "  beq t1, t2, .Lmw_branch_hash\n" ++
+  "  # Inlined (length 1..31): set node to (s7 + child_offset, child_length).\n" ++
+  "  la t0, mw_child_offset; ld t2, 0(t0)\n" ++
+  "  add s7, s7, t2\n" ++
+  "  mv s8, t1\n" ++
+  "  j .Lmw_loop\n" ++
+  ".Lmw_branch_hash:\n" ++
+  "  # 32-byte hash: copy to mw_lookup_hash then lookup.\n" ++
+  "  la t0, mw_child_offset; ld t1, 0(t0)\n" ++
+  "  add t2, s7, t1\n" ++
+  "  la t3, mw_lookup_hash\n" ++
+  "  ld t4,  0(t2); sd t4,  0(t3)\n" ++
+  "  ld t4,  8(t2); sd t4,  8(t3)\n" ++
+  "  ld t4, 16(t2); sd t4, 16(t3)\n" ++
+  "  ld t4, 24(t2); sd t4, 24(t3)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, mw_lookup_hash\n" ++
+  "  la a3, mw_lookup_offset\n" ++
+  "  la a4, mw_lookup_length\n" ++
+  "  jal ra, witness_lookup_by_hash\n" ++
+  "  bnez a0, .Lmw_not_found\n" ++
+  "  la t0, mw_lookup_offset; ld t1, 0(t0); add s7, s0, t1\n" ++
+  "  la t0, mw_lookup_length; ld s8, 0(t0)\n" ++
+  "  j .Lmw_loop\n" ++
+  ".Lmw_branch_end:\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  li a2, 16\n" ++
+  "  la a3, mw_value_offset\n" ++
+  "  la a4, mw_value_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_value_length; ld t1, 0(t0)\n" ++
+  "  beqz t1, .Lmw_not_found     # empty value slot\n" ++
+  "  j .Lmw_copy_value\n" ++
+  ".Lmw_extension:\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  li a2, 0\n" ++
+  "  la a3, mw_path_offset\n" ++
+  "  la a4, mw_path_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_path_offset; ld t1, 0(t0); add a0, s7, t1\n" ++
+  "  la t0, mw_path_length; ld a1, 0(t0)\n" ++
+  "  la a2, mw_nibble_buf\n" ++
+  "  la a3, mw_nibble_count\n" ++
+  "  la a4, mw_is_leaf\n" ++
+  "  jal ra, hp_decode_nibbles\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_is_leaf; ld t1, 0(t0)\n" ++
+  "  bnez t1, .Lmw_parse_fail    # node kind said extension; HP says leaf\n" ++
+  "  la t0, mw_nibble_count; ld t1, 0(t0)\n" ++
+  "  add t2, s6, t1\n" ++
+  "  bgtu t2, s3, .Lmw_not_found # consumed + nib_count > path_len\n" ++
+  "  # Compare nibbles\n" ++
+  "  la t2, mw_nibble_buf\n" ++
+  "  add t3, s2, s6\n" ++
+  "  mv t4, t1\n" ++
+  ".Lmw_ext_cmp:\n" ++
+  "  beqz t4, .Lmw_ext_cmp_done\n" ++
+  "  lbu t5, 0(t2)\n" ++
+  "  lbu t6, 0(t3)\n" ++
+  "  bne t5, t6, .Lmw_not_found\n" ++
+  "  addi t2, t2, 1\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lmw_ext_cmp\n" ++
+  ".Lmw_ext_cmp_done:\n" ++
+  "  add s6, s6, t1\n" ++
+  "  # Get item 1 (child ref).\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  li a2, 1\n" ++
+  "  la a3, mw_child_offset\n" ++
+  "  la a4, mw_child_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_child_length; ld t1, 0(t0)\n" ++
+  "  la t0, mw_child_offset; ld t2, 0(t0)\n" ++
+  "  add t3, s7, t2\n" ++
+  "  li t4, 32\n" ++
+  "  beq t1, t4, .Lmw_ext_hash\n" ++
+  "  # Inline child: t3 is its ptr, t1 is its length.\n" ++
+  "  mv s7, t3\n" ++
+  "  mv s8, t1\n" ++
+  "  j .Lmw_loop\n" ++
+  ".Lmw_ext_hash:\n" ++
+  "  la t4, mw_lookup_hash\n" ++
+  "  ld t5,  0(t3); sd t5,  0(t4)\n" ++
+  "  ld t5,  8(t3); sd t5,  8(t4)\n" ++
+  "  ld t5, 16(t3); sd t5, 16(t4)\n" ++
+  "  ld t5, 24(t3); sd t5, 24(t4)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, mw_lookup_hash\n" ++
+  "  la a3, mw_lookup_offset\n" ++
+  "  la a4, mw_lookup_length\n" ++
+  "  jal ra, witness_lookup_by_hash\n" ++
+  "  bnez a0, .Lmw_not_found\n" ++
+  "  la t0, mw_lookup_offset; ld t1, 0(t0); add s7, s0, t1\n" ++
+  "  la t0, mw_lookup_length; ld s8, 0(t0)\n" ++
+  "  j .Lmw_loop\n" ++
+  ".Lmw_leaf:\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  li a2, 0\n" ++
+  "  la a3, mw_path_offset\n" ++
+  "  la a4, mw_path_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_path_offset; ld t1, 0(t0); add a0, s7, t1\n" ++
+  "  la t0, mw_path_length; ld a1, 0(t0)\n" ++
+  "  la a2, mw_nibble_buf\n" ++
+  "  la a3, mw_nibble_count\n" ++
+  "  la a4, mw_is_leaf\n" ++
+  "  jal ra, hp_decode_nibbles\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  "  la t0, mw_is_leaf; ld t1, 0(t0)\n" ++
+  "  li t2, 1\n" ++
+  "  bne t1, t2, .Lmw_parse_fail\n" ++
+  "  la t0, mw_nibble_count; ld t1, 0(t0)\n" ++
+  "  sub t2, s3, s6              # remaining nibbles\n" ++
+  "  bne t1, t2, .Lmw_not_found  # length mismatch\n" ++
+  "  la t2, mw_nibble_buf\n" ++
+  "  add t3, s2, s6\n" ++
+  "  mv t4, t1\n" ++
+  ".Lmw_leaf_cmp:\n" ++
+  "  beqz t4, .Lmw_leaf_match\n" ++
+  "  lbu t5, 0(t2)\n" ++
+  "  lbu t6, 0(t3)\n" ++
+  "  bne t5, t6, .Lmw_not_found\n" ++
+  "  addi t2, t2, 1\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lmw_leaf_cmp\n" ++
+  ".Lmw_leaf_match:\n" ++
+  "  mv a0, s7\n" ++
+  "  mv a1, s8\n" ++
+  "  li a2, 1\n" ++
+  "  la a3, mw_value_offset\n" ++
+  "  la a4, mw_value_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmw_parse_fail\n" ++
+  ".Lmw_copy_value:\n" ++
+  "  # Write value_len, then byte-copy at most 256 bytes from\n" ++
+  "  # (s7 + mw_value_offset) to s4.\n" ++
+  "  la t0, mw_value_length; ld t1, 0(t0)\n" ++
+  "  sd t1, 0(s5)\n" ++
+  "  la t0, mw_value_offset; ld t2, 0(t0); add t2, s7, t2\n" ++
+  "  mv t3, s4                   # dst\n" ++
+  "  li t4, 256\n" ++
+  "  bgtu t1, t4, .Lmw_copy_set_cap\n" ++
+  "  j .Lmw_copy_loop\n" ++
+  ".Lmw_copy_set_cap:\n" ++
+  "  mv t1, t4\n" ++
+  ".Lmw_copy_loop:\n" ++
+  "  beqz t1, .Lmw_found\n" ++
+  "  lbu t0, 0(t2)\n" ++
+  "  sb  t0, 0(t3)\n" ++
+  "  addi t2, t2, 1\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lmw_copy_loop\n" ++
+  ".Lmw_found:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lmw_ret\n" ++
+  ".Lmw_not_found:\n" ++
+  "  li a0, 1\n" ++
+  "  sd zero, 0(s5)              # value_len = 0\n" ++
+  "  j .Lmw_ret\n" ++
+  ".Lmw_parse_fail:\n" ++
+  "  li a0, 2\n" ++
+  "  sd zero, 0(s5)\n" ++
+  ".Lmw_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp); ld s7, 64(sp)\n" ++
+  "  ld s8, 72(sp)\n" ++
+  "  addi sp, sp, 80\n" ++
+  "  ret"
+
+/-- `zisk_mpt_walk`: probe BuildUnit. Reads
+    (witness_len, path_len, root_hash, path_nibbles,
+     witness_bytes) from host input, writes
+    (status, value_len, value_bytes) to OUTPUT.
+    Input layout:
+      bytes   0..  8 : witness_len (u64)
+      bytes   8.. 16 : path_len (u64)
+      bytes  16.. 48 : root_hash (32 bytes)
+      bytes  48..   : path_nibbles bytes (path_len of them)
+      bytes  48 + path_len .. : witness section bytes
+    Output layout:
+      bytes   0.. 8 : status (0 found / 1 not / 2 fail)
+      bytes   8..16 : value_len
+      bytes  16..   : value bytes (up to 256 - 16 = 240) -/
+def ziskMptWalkPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a7, 0x40000000\n" ++
+  "  ld t6, 8(a7)                # witness_len\n" ++
+  "  ld t5, 16(a7)               # path_len\n" ++
+  "  addi a0, a7, 24             # root_hash ptr (offset 16 from start of file)\n" ++
+  "  addi a3, a7, 56             # path_nibbles ptr (offset 48)\n" ++
+  "  # witness ptr = path_nibbles + path_len.\n" ++
+  "  add a1, a3, t5\n" ++
+  "  mv a2, t6                   # witness_len\n" ++
+  "  mv a4, t5                   # path_len\n" ++
+  "  li a5, 0xa0010010           # value buf at OUTPUT + 16\n" ++
+  "  li a6, 0xa0010008           # value_len ptr at OUTPUT + 8\n" ++
+  "  jal ra, mpt_walk\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lmw_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  witnessLookupByHashFunction ++ "\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  mptBranchChildFunction ++ "\n" ++
+  hpDecodeNibblesFunction ++ "\n" ++
+  mptWalkFunction ++ "\n" ++
+  ".Lmw_pdone:"
+
+def ziskMptWalkDataSection : String :=
+  ".section .data\n" ++
+  ".balign 32\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "wlh_scratch_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 8\n" ++
+  "mbc_offset:\n" ++
+  "  .zero 8\n" ++
+  "mbc_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_lookup_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_lookup_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_lookup_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_child_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_path_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 8\n" ++
+  "mw_child_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 8\n" ++
+  "mw_value_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 8\n" ++
+  "mw_nibble_count:\n" ++
+  "  .zero 8\n" ++
+  "mw_is_leaf:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_nibble_buf:\n" ++
+  "  .zero 128"
+
+def ziskMptWalkProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskMptWalkPrologue
+  dataAsm     := ziskMptWalkDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3178,6 +3541,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_mpt_node_kind"        => some ziskMptNodeKindProbeUnit
   | "zisk_mpt_branch_child"     => some ziskMptBranchChildProbeUnit
   | "zisk_hp_decode_nibbles"    => some ziskHpDecodeNibblesProbeUnit
+  | "zisk_mpt_walk"             => some ziskMptWalkProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3211,6 +3575,7 @@ def knownProgramNames : List String :=
    "zisk_mpt_node_kind",
    "zisk_mpt_branch_child",
    "zisk_hp_decode_nibbles",
+   "zisk_mpt_walk",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
