@@ -1547,6 +1547,97 @@ theorem loopN1CallMaxmaxmaxBranchFacts_hbltu0
       ¬BitVec.ult r1.2.1 v0) at hbranches'
   simpa [r1] using hbranches'.2.2
 
+/-- Denormalization entry state for the N1 path where j=3 uses the v4
+    call path and j=2/j=1/j=0 all use max. This mirrors
+    `fullDivN1DenormPre`, but uses the v4 call/max/max/max quotient and
+    remainder chain instead of the generic `div128Quot` chain. The shift is
+    threaded from the original divisor; it must not be recomputed from the
+    normalized top limb. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxDenormPre (sp shift : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 : Word) :
+    Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let c0 := (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3
+    u0Orig0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+  ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ sp + signExtend12 4056) ** (.x0 ↦ᵣ (0 : Word)) **
+   (.x5 ↦ᵣ (0 : Word)) ** (.x7 ↦ᵣ sp + signExtend12 4088) **
+   (.x2 ↦ᵣ r0.2.2.2.2.1) ** (.x10 ↦ᵣ c0) **
+   ((sp + signExtend12 3992) ↦ₘ shift) **
+   ((sp + signExtend12 4056) ↦ₘ r0.2.1) **
+   ((sp + signExtend12 4048) ↦ₘ r0.2.2.1) **
+   ((sp + signExtend12 4040) ↦ₘ r0.2.2.2.1) **
+   ((sp + signExtend12 4032) ↦ₘ r0.2.2.2.2.1) **
+   ((sp + signExtend12 4088) ↦ₘ r0.1) **
+   ((sp + signExtend12 4080) ↦ₘ r1.1) **
+   ((sp + signExtend12 4072) ↦ₘ r2.1) **
+   ((sp + signExtend12 4064) ↦ₘ r3.1) **
+   ((sp + signExtend12 32) ↦ₘ v0) **
+   ((sp + signExtend12 40) ↦ₘ v1) **
+   ((sp + signExtend12 48) ↦ₘ v2) **
+   ((sp + signExtend12 56) ↦ₘ v3))
+
+/-- Caller frame retained at the v4 call/max/max/max denormalization entry. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxDenormFrameNoX1 (sp base : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) : Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ r2.2.2.2.2.2) **
+  ((sp + signExtend12 4000) ↦ₘ r3.2.2.2.2.2) **
+  (sp + signExtend12 3984 ↦ₘ (1 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x9 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  (sp + signExtend12 3968 ↦ₘ (base + div128CallRetOff)) **
+  (sp + signExtend12 3960 ↦ₘ v0) **
+  (sp + signExtend12 3952 ↦ₘ divKTrialCallV4DLo v0) **
+  (sp + signExtend12 3944 ↦ₘ divKTrialCallV4Un0 u0) **
+  (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
+
+/-- Repackage the explicit v4 call/max/max/max loop post as the denorm entry
+    surface plus retained caller frame. -/
+theorem loopN1CallMaxmaxmaxScratchPostNoX1_to_denormPre_frame
+    (sp base : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem shift raVal : Word)
+    (h : PartialState)
+    (hp :
+      ((loopN1CallMaxmaxmaxScratchPostNoX1 sp base
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 scratchMem **
+        (.x1 ↦ᵣ raVal)) **
+       (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+        ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+        ((sp + signExtend12 3992) ↦ₘ shift))) h) :
+    ((fullDivN1CallMaxmaxmaxDenormPre sp shift
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 **
+      fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem) ** (.x1 ↦ᵣ raVal)) h := by
+  delta loopN1CallMaxmaxmaxScratchPostNoX1 loopN1Iter210PostNoX1
+    loopN1Iter10PostNoX1 loopIterPostN1NoX1 loopIterPostN1Max
+    fullDivN1CallMaxmaxmaxDenormPre fullDivN1CallMaxmaxmaxDenormFrameNoX1
+    loopN1CallMaxmaxmaxR3 loopN1CallMaxmaxmaxR2 loopN1CallMaxmaxmaxR1 at hp ⊢
+  simp (config := { decide := true }) only
+    [iterN1_false, ite_false, n1_ub3_off4064, n1_qa3,
+      n2_ub2_off4064, n2_qa2, n3_ub1_off4064, n3_qa1,
+      sepConj_emp_right'] at hp ⊢
+  rw [loopExitPostN1_j0_eq] at hp
+  simp (config := { decide := true }) only
+    [se12_32, se12_40, se12_48, se12_56] at hp ⊢
+  xperm_hyp hp
+
 /-- The named scratch precondition is PC-free, so later composed call/max
     surfaces can use it under `cpsTripleWithin_frameR`. -/
 theorem loopN1CallMaxmaxmaxScratchPreNoX1_pcFree (sp : Word)
