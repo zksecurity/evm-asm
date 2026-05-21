@@ -2359,6 +2359,117 @@ def ziskRlpListNthItemProbeUnit : BuildUnit := {
   dataAsm     := ziskRlpListNthItemDataSection
 }
 
+/-! ## mpt_node_kind -- PR-K21 classifier
+
+    Determines whether an RLP-encoded MPT node is a leaf,
+    extension, or branch by:
+      1. Probing whether item 2 exists (presence = 17-item
+         branch list).
+      2. If absent, reading item 0's first byte and inspecting
+         the high nibble (HP encoding flag: 0/1 → extension,
+         2/3 → leaf).
+
+    Calling convention:
+      a0 (input)  : node bytes ptr
+      a1 (input)  : node byte length
+      ra (input)  : return
+      a0 (output) : 0 branch / 1 extension / 2 leaf / 3 parse fail
+
+    Calls `rlp_list_nth_item` twice. Uses four 8-byte `.data`
+    scratches (`mnk_dummy_offset`, `mnk_dummy_length`,
+    `mnk_path_offset`, `mnk_path_length`) for the temporary
+    returns. -/
+def mptNodeKindFunction : String :=
+  "mpt_node_kind:\n" ++
+  "  addi sp, sp, -32\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp)\n" ++
+  "  mv s0, a0                  # node ptr\n" ++
+  "  mv s1, a1                  # node_len\n" ++
+  "  # Probe item 2 (index 2). If found ⇒ 17-item branch list.\n" ++
+  "  li a2, 2\n" ++
+  "  la a3, mnk_dummy_offset\n" ++
+  "  la a4, mnk_dummy_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  beqz a0, .Lmnk_branch\n" ++
+  "  # Item 2 absent ⇒ 2-item list (leaf or extension).\n" ++
+  "  # Get item 0 to read path's first byte.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 0\n" ++
+  "  la a3, mnk_path_offset\n" ++
+  "  la a4, mnk_path_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmnk_fail        # item 0 missing ⇒ parse fail\n" ++
+  "  la t0, mnk_path_offset\n" ++
+  "  ld t1, 0(t0)               # path content offset\n" ++
+  "  la t0, mnk_path_length\n" ++
+  "  ld t2, 0(t0)               # path content length\n" ++
+  "  beqz t2, .Lmnk_fail        # empty path ⇒ malformed HP\n" ++
+  "  add t3, s0, t1             # path byte ptr\n" ++
+  "  lbu t4, 0(t3)\n" ++
+  "  srli t4, t4, 4             # high nibble\n" ++
+  "  li t5, 2\n" ++
+  "  bltu t4, t5, .Lmnk_extension  # 0,1 → extension\n" ++
+  "  li t5, 4\n" ++
+  "  bltu t4, t5, .Lmnk_leaf       # 2,3 → leaf\n" ++
+  "  j .Lmnk_fail                   # ≥ 4 → invalid HP\n" ++
+  ".Lmnk_branch:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_extension:\n" ++
+  "  li a0, 1\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_leaf:\n" ++
+  "  li a0, 2\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_fail:\n" ++
+  "  li a0, 3\n" ++
+  ".Lmnk_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp)\n" ++
+  "  addi sp, sp, 32\n" ++
+  "  ret"
+
+/-- `zisk_mpt_node_kind`: probe BuildUnit. Reads
+    (node_len, node_bytes) from host input, writes
+    classification result to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : node_len (u64)
+      bytes  8..   : node bytes
+    Output layout:
+      bytes  0.. 8 : kind (u64; 0 branch / 1 ext / 2 leaf / 3 fail) -/
+def ziskMptNodeKindPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # node_len\n" ++
+  "  addi a0, a3, 16             # node ptr\n" ++
+  "  jal ra, mpt_node_kind\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write kind\n" ++
+  "  j .Lmnk_pdone\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  ".Lmnk_pdone:"
+
+def ziskMptNodeKindDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8"
+
+def ziskMptNodeKindProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskMptNodeKindPrologue
+  dataAsm     := ziskMptNodeKindDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3596,6 +3707,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_headers_validate_chain" => some ziskHeadersValidateChainProbeUnit
   | "zisk_witness_lookup_by_hash" => some ziskWitnessLookupByHashProbeUnit
   | "zisk_rlp_list_nth_item"    => some ziskRlpListNthItemProbeUnit
+  | "zisk_mpt_node_kind"        => some ziskMptNodeKindProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3631,6 +3743,7 @@ def knownProgramNames : List String :=
    "zisk_headers_validate_chain",
    "zisk_witness_lookup_by_hash",
    "zisk_rlp_list_nth_item",
+   "zisk_mpt_node_kind",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",

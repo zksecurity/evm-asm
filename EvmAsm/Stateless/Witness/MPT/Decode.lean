@@ -18,20 +18,43 @@
   decoder just records `(item_start, item_len)` offsets into a
   small node-shape struct in scratch RAM.
 
-  ## PR-K20 status
+  ## PR-K20 / PR-K21 status
 
-  The first primitive lands: `rlp_list_nth_item` walks an
-  RLP-encoded list to extract the N-th item's content bounds.
-  Higher-level node decoding (variant classification + per-
-  shape extraction) composes this primitive in follow-ups:
+  Two primitives are now in place:
 
-    - PR-K20 (this)  : `rlp_list_nth_item`
-    - PR-K21+ (next) : `mpt_node_kind` (leaf / extension / branch
-                       classification from item count + first
-                       nibble of item 0)
+    - PR-K20 (#5388) : `rlp_list_nth_item` walks an RLP-encoded
+                       list to extract the N-th item's content
+                       bounds.
+    - PR-K21 (this)  : `mpt_node_kind` classifies an MPT node
+                       as leaf / extension / branch from item
+                       count + path-prefix nibble.
+
+  Higher-level node decoding composes the two:
+
     - PR-K22+        : `mpt_branch_child` wraps PR-K20 with
-                       index in 0..15
-    - PR-K23+        : `mpt_leaf_extract_value` / `mpt_extension_next`
+                       index in 0..15.
+    - PR-K23+        : `mpt_leaf_extract_value` / `mpt_extension_next`.
+
+  Calling convention for `mpt_node_kind`:
+
+      Input:
+        a0 (input)  : RLP-encoded node bytes ptr
+        a1 (input)  : node byte length
+        ra (input)  : return
+
+      Output:
+        a0 = 0   branch node (17-item RLP list)
+        a0 = 1   extension node (2-item list, item 0 high-nibble ∈ {0,1})
+        a0 = 2   leaf node (2-item list, item 0 high-nibble ∈ {2,3})
+        a0 = 3   parse failure (not a list, empty list, malformed item 0,
+                 or item 0 high-nibble outside [0..3])
+
+  HP encoding cheat-sheet for the first path byte:
+
+      high nibble = 0  →  extension, even path length
+      high nibble = 1  →  extension, odd path length
+      high nibble = 2  →  leaf, even path length
+      high nibble = 3  →  leaf, odd path length
 
   Calling convention for `rlp_list_nth_item`:
 
@@ -63,6 +86,13 @@
 
   `rlpListNthItemFunction` emits `rlp_list_nth_item:`. Pure
   register arithmetic; no scratch memory; leaf-callable.
+
+  `mptNodeKindFunction` emits `mpt_node_kind:`. Calls
+  `rlp_list_nth_item` twice (once to probe item 2 for the
+  branch case, once to read item 0's path byte for the leaf
+  vs extension distinction). Uses four 8-byte `.data` scratches
+  for the temporary `(offset, length)` returns. Not
+  leaf-callable (calls into `rlp_list_nth_item`).
 -/
 
 namespace EvmAsm.Stateless.Witness.MPT.Decode
