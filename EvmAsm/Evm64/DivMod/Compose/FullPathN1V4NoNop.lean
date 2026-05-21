@@ -1550,9 +1550,11 @@ theorem loopN1CallMaxmaxmaxBranchFacts_hbltu0
 /-- Denormalization entry state for the N1 path where j=3 uses the v4
     call path and j=2/j=1/j=0 all use max. This mirrors
     `fullDivN1DenormPre`, but uses the v4 call/max/max/max quotient and
-    remainder chain instead of the generic `div128Quot` chain. -/
+    remainder chain instead of the generic `div128Quot` chain. The shift is
+    threaded from the original divisor; it must not be recomputed from the
+    normalized top limb. -/
 @[irreducible]
-def fullDivN1CallMaxmaxmaxDenormPre (sp : Word)
+def fullDivN1CallMaxmaxmaxDenormPre (sp shift : Word)
     (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 : Word) :
     Assertion :=
   let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
@@ -1565,7 +1567,7 @@ def fullDivN1CallMaxmaxmaxDenormPre (sp : Word)
   ((.x12 ↦ᵣ sp) ** (.x6 ↦ᵣ sp + signExtend12 4056) ** (.x0 ↦ᵣ (0 : Word)) **
    (.x5 ↦ᵣ (0 : Word)) ** (.x7 ↦ᵣ sp + signExtend12 4088) **
    (.x2 ↦ᵣ r0.2.2.2.2.1) ** (.x10 ↦ᵣ c0) **
-   ((sp + signExtend12 3992) ↦ₘ (clzResult v0).1) **
+   ((sp + signExtend12 3992) ↦ₘ shift) **
    ((sp + signExtend12 4056) ↦ₘ r0.2.1) **
    ((sp + signExtend12 4048) ↦ₘ r0.2.2.1) **
    ((sp + signExtend12 4040) ↦ₘ r0.2.2.2.1) **
@@ -1609,7 +1611,7 @@ def fullDivN1CallMaxmaxmaxDenormFrameNoX1 (sp base : Word)
 theorem loopN1CallMaxmaxmaxScratchPostNoX1_to_denormPre_frame
     (sp base : Word)
     (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
-     u0Orig2 u0Orig1 u0Orig0 scratchMem raVal : Word)
+     u0Orig2 u0Orig1 u0Orig0 scratchMem shift raVal : Word)
     (h : PartialState)
     (hp :
       ((loopN1CallMaxmaxmaxScratchPostNoX1 sp base
@@ -1617,8 +1619,8 @@ theorem loopN1CallMaxmaxmaxScratchPostNoX1_to_denormPre_frame
         (.x1 ↦ᵣ raVal)) **
        (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
         ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
-        ((sp + signExtend12 3992) ↦ₘ (clzResult v0).1))) h) :
-    ((fullDivN1CallMaxmaxmaxDenormPre sp
+        ((sp + signExtend12 3992) ↦ₘ shift))) h) :
+    ((fullDivN1CallMaxmaxmaxDenormPre sp shift
         v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 **
       fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
         a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
