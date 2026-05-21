@@ -1552,4 +1552,51 @@ theorem loopN1CallMaxmaxmaxExactInputAligned_raw
   unfold loopN1CallMaxmaxmaxExactInputAligned at h
   exact h
 
+/-- Bundled statement for the first j=3 call-body step of the N1
+    call/max/max/max exact path. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxJ3ExactInputSpec
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  cpsTripleWithin 224 (I.base + loopBodyOff) (I.base + loopBodyOff)
+    (divCode_noNop_v4 I.base)
+    (loopN1CallMaxmaxmaxScratchPreNoX1 I.sp
+      I.jOld I.v5Old I.v6Old I.v7Old I.v10Old I.v11Old I.v2Old
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+      I.u0Orig2 I.u0Orig1 I.u0Orig0 I.q3Old I.q2Old I.q1Old I.q0Old
+      I.retMem I.dMem I.dloMem I.scratchUn0 I.scratchMem ** (.x1 ↦ᵣ I.raVal))
+    (loopIterPostN1CallScratchNoX1 I.sp I.base (3 : Word)
+      (divKTrialCallV4QHat I.u1 I.u0 I.v0)
+      (divKTrialCallV4DLo I.v0)
+      (divKTrialCallV4Un0 I.u0)
+      (divKTrialCallV4ScratchOut I.u1 I.u0 I.v0 I.scratchMem)
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop **
+      (.x1 ↦ᵣ I.raVal) **
+      ((I.sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat +
+        signExtend12 0) ↦ₘ I.u0Orig2) **
+      ((I.sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q2Old) **
+      ((I.sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat +
+        signExtend12 0) ↦ₘ I.u0Orig1) **
+      ((I.sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q1Old) **
+      ((I.sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat +
+        signExtend12 0) ↦ₘ I.u0Orig0) **
+      ((I.sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q0Old))
+
+/-- Prove the bundled first j=3 call-body step from the bundled input
+    alignment and branch/carry hypotheses. -/
+theorem divK_loop_n1_call_j3_exact_x1_framed_v4_noNop_input
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (halign : loopN1CallMaxmaxmaxExactInputAligned I)
+    (hh : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    loopN1CallMaxmaxmaxJ3ExactInputSpec I := by
+  unfold loopN1CallMaxmaxmaxJ3ExactInputSpec
+  exact divK_loop_n1_call_j3_exact_x1_framed_v4_noNop I.sp I.base
+    I.jOld I.v5Old I.v6Old I.v7Old I.v10Old I.v11Old I.v2Old
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+    I.u0Orig2 I.u0Orig1 I.u0Orig0 I.q3Old I.q2Old I.q1Old I.q0Old
+    I.retMem I.dMem I.dloMem I.scratchUn0 I.scratchMem I.raVal
+    (loopN1CallMaxmaxmaxExactInputAligned_raw I halign)
+    (loopN1CallMaxmaxmaxExactInputHypotheses_hbltu3 I hh)
+    (isAddbackCarry2NzN1CallV4_raw I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+      (loopN1CallMaxmaxmaxExactInputHypotheses_carry2Call I hh))
+
 end EvmAsm.Evm64
