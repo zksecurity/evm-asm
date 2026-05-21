@@ -1606,6 +1606,56 @@ def fullDivN1CallMaxmaxmaxDenormFrameNoX1 (sp base : Word)
   (sp + signExtend12 3944 ↦ₘ divKTrialCallV4Un0 u0) **
   (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
 
+/-- Denormalization+DIV-epilogue postcondition for the N1 path where j=3
+    uses the v4 call path and j=2/j=1/j=0 all use max. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxDenormPost (sp shift : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 : Word) :
+    Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  denormDivPost sp shift r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1
+    r0.1 r1.1 r2.1 r3.1 **
+  ((sp + signExtend12 3992) ↦ₘ shift)
+
+@[irreducible]
+def fullDivN1CallMaxmaxmaxUnifiedPostNoX1 (sp base shift : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) : Assertion :=
+  fullDivN1CallMaxmaxmaxDenormPost sp shift
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 **
+  fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+    a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    u0Orig2 u0Orig1 u0Orig0 scratchMem
+
+theorem fullDivN1CallMaxmaxmaxUnifiedPostNoX1_pcFree (sp base shift : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) :
+    (fullDivN1CallMaxmaxmaxUnifiedPostNoX1 sp base shift
+      a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 scratchMem).pcFree := by
+  delta fullDivN1CallMaxmaxmaxUnifiedPostNoX1
+  pcFree
+  · delta fullDivN1CallMaxmaxmaxDenormPost
+    pcFree
+  · delta fullDivN1CallMaxmaxmaxDenormFrameNoX1
+    pcFree
+
+instance pcFreeInst_fullDivN1CallMaxmaxmaxUnifiedPostNoX1
+    (sp base shift : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) :
+    Assertion.PCFree
+      (fullDivN1CallMaxmaxmaxUnifiedPostNoX1 sp base shift
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem) :=
+  ⟨fullDivN1CallMaxmaxmaxUnifiedPostNoX1_pcFree sp base shift
+    a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    u0Orig2 u0Orig1 u0Orig0 scratchMem⟩
+
 /-- Repackage the explicit v4 call/max/max/max loop post as the denorm entry
     surface plus retained caller frame. -/
 theorem loopN1CallMaxmaxmaxScratchPostNoX1_to_denormPre_frame
