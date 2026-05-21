@@ -2574,7 +2574,7 @@ def ziskSszPairHashProbeUnit : BuildUnit := {
     each Z_i against Python's recomputation.
 -/
 def sszZeroHashesDataSection : String :=
-  ".section .rodata\n" ++
+  ".section .data\n" ++
   ".balign 32\n" ++
   "ssz_zero_hashes:\n" ++
   "  .byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00    # Z_0\n" ++
@@ -2782,6 +2782,767 @@ def ziskSszMerkleizePow2ProbeUnit : BuildUnit := {
   dataAsm     := ziskSszMerkleizePow2DataSection
 }
 
+/-! ## ssz_merkleize — PR-S7 arbitrary-length SSZ merkleization
+
+    Lifts `ssz_merkleize_pow2` (PR-S6) to the general SSZ case
+    by zero-padding short inputs out to a power of two, then
+    further padding the resulting root up to the SSZ capacity by
+    pair-hashing with `Z_d` from the PR-S5 table at each missing
+    depth.
+
+    Two phases:
+      1. Pad chunks up to `M = next_pow2(n)` with `Z_0`. Reduce
+         in place via `ssz_merkleize_pow2`. Result: partial root
+         at depth `d_M = log2(M)`.
+      2. For `d` from `d_M` to `limit_log2 - 1`:
+             partial_root = sha256_pair(partial_root, Z_d)
+
+    Edge case `n = 0`: result is `Z_{limit_log2}` straight from
+    the zero-hashes table; phase 1 is skipped.
+
+    Calling convention:
+      a0 (input)  : ptr to `n * 32` chunk bytes
+      a1 (input)  : n (0 ≤ n ≤ 32)
+      a2 (input)  : limit_log2 L (0 ≤ L ≤ 31; capacity = 2^L)
+      a3 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Clobbers t0..t6, a0..a3. Saves/restores s0..s6 and ra via
+    a 64-byte stack frame. -/
+def sszMerkleizeFunction : String :=
+  "ssz_merkleize:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp)\n" ++
+  "  sd s1, 16(sp)\n" ++
+  "  sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp)\n" ++
+  "  sd s5, 48(sp)\n" ++
+  "  sd s6, 56(sp)\n" ++
+  "  # s5 = chunks_in ptr; s0 = n; s1 = limit_log2 L; s6 = out ptr\n" ++
+  "  mv s5, a0\n" ++
+  "  mv s0, a1\n" ++
+  "  mv s1, a2\n" ++
+  "  mv s6, a3\n" ++
+  "  # n == 0 → root is Z_L (look up directly)\n" ++
+  "  beqz s0, .Lszm_zero_path\n" ++
+  "  # phase 1: compute M = next_pow2(n) and depth_M = log2(M)\n" ++
+  "  li t0, 1                    # candidate M\n" ++
+  "  li s4, 0                    # candidate depth\n" ++
+  ".Lszm_pow2_scan:\n" ++
+  "  bge t0, s0, .Lszm_have_M\n" ++
+  "  slli t0, t0, 1\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_pow2_scan\n" ++
+  ".Lszm_have_M:\n" ++
+  "  mv s3, t0                   # s3 = M; s4 = depth_M = log2(M)\n" ++
+  "  # copy n*32 input bytes into ssz_merkleize_padded, zero-pad the rest\n" ++
+  "  la t0, ssz_merkleize_padded\n" ++
+  "  slli t1, s0, 5              # t1 = n*32 bytes to copy\n" ++
+  "  mv t2, s5                   # src\n" ++
+  "  mv t3, t0                   # dst\n" ++
+  ".Lszm_cp:\n" ++
+  "  beqz t1, .Lszm_pad\n" ++
+  "  ld t4, 0(t2)\n" ++
+  "  sd t4, 0(t3)\n" ++
+  "  addi t2, t2, 8\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_cp\n" ++
+  ".Lszm_pad:\n" ++
+  "  sub t1, s3, s0              # t1 = M - n (slots to zero)\n" ++
+  "  slli t1, t1, 5              # t1 = (M-n)*32 bytes\n" ++
+  ".Lszm_zr:\n" ++
+  "  beqz t1, .Lszm_call_pow2\n" ++
+  "  sd zero, 0(t3)\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_zr\n" ++
+  ".Lszm_call_pow2:\n" ++
+  "  # call ssz_merkleize_pow2(padded, M, ssz_merkleize_partial)\n" ++
+  "  la a0, ssz_merkleize_padded\n" ++
+  "  mv a1, s3\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, ssz_merkleize_pow2\n" ++
+  "  # phase 2: mix in Z_d for d in [depth_M, L)\n" ++
+  ".Lszm_mix:\n" ++
+  "  beq s4, s1, .Lszm_copy_out\n" ++
+  "  # ssz_merkleize_partial[0..32]   = current root (input L)\n" ++
+  "  # ssz_merkleize_partial[32..64]  = Z_{s4}        (input R)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s4, 5              # offset = s4*32\n" ++
+  "  add t0, t0, t1              # &Z_{s4}\n" ++
+  "  la t2, ssz_merkleize_partial\n" ++
+  "  addi t2, t2, 32             # &partial[32..]\n" ++
+  "  ld t3,  0(t0); sd t3,  0(t2)\n" ++
+  "  ld t3,  8(t0); sd t3,  8(t2)\n" ++
+  "  ld t3, 16(t0); sd t3, 16(t2)\n" ++
+  "  ld t3, 24(t0); sd t3, 24(t2)\n" ++
+  "  la a0, ssz_merkleize_partial\n" ++
+  "  li a1, 64\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_mix\n" ++
+  ".Lszm_copy_out:\n" ++
+  "  la t0, ssz_merkleize_partial\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  "  j .Lszm_ret\n" ++
+  ".Lszm_zero_path:\n" ++
+  "  # root = Z_L (n == 0 case)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s1, 5\n" ++
+  "  add t0, t0, t1\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  ".Lszm_ret:\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp)\n" ++
+  "  ld s1, 16(sp)\n" ++
+  "  ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp)\n" ++
+  "  ld s5, 48(sp)\n" ++
+  "  ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_merkleize`: probe BuildUnit that reads
+    `(limit_log2 : u64, n : u64, chunks : n * 32 bytes)` from
+    the host input region and writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : ignored ziskemu length prefix
+      bytes  8..16 : limit_log2 (u64 LE)
+      bytes 16..24 : n (u64 LE)
+      bytes 24..   : n * 32 chunk bytes -/
+def ziskSszMerkleizePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a2, 8(a3)                # a2 = limit_log2 L\n" ++
+  "  ld a1, 16(a3)               # a1 = n\n" ++
+  "  addi a0, a3, 24             # a0 = chunks ptr\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR (now caller out ptr)\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  j .Lzs7_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  ".Lzs7_done:"
+
+def ziskSszMerkleizeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszMerkleizeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszMerkleizePrologue
+  dataAsm     := ziskSszMerkleizeDataSection
+}
+
+/-! ## ssz_pack_bytes — PR-S8 SSZ byte chunker
+
+    Packs an arbitrary byte string into 32-byte chunks for
+    consumption by `ssz_merkleize`. The byte stream is copied
+    verbatim; the final chunk is right-zero-padded if the byte
+    count is not a multiple of 32. Returns the chunk count.
+
+    Calling convention:
+      a0 (input)  : src ptr
+      a1 (input)  : byte length L (0 ≤ L ≤ 1024)
+      a2 (input)  : dst chunk buffer ptr (32 * ceil(L/32) bytes)
+      ra (input)  : return
+      a0 (output) : chunk count = ceil(L / 32)
+      bytes at *a2: source bytes followed by zero-padding
+
+    Byte-at-a-time copy (slow path, ~L instructions). Acceptable
+    for bring-up; a future PR can specialise to 8-byte units
+    when alignment is known. -/
+def sszPackBytesFunction : String :=
+  "ssz_pack_bytes:\n" ++
+  "  # a0 = src, a1 = L, a2 = dst.\n" ++
+  "  # First copy L bytes from src to dst (byte-wise).\n" ++
+  "  mv t0, a0                  # t0 = src cursor\n" ++
+  "  mv t1, a2                  # t1 = dst cursor\n" ++
+  "  mv t2, a1                  # t2 = remaining bytes\n" ++
+  ".Lszpb_copy:\n" ++
+  "  beqz t2, .Lszpb_check_pad\n" ++
+  "  lbu t3, 0(t0)\n" ++
+  "  sb  t3, 0(t1)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_copy\n" ++
+  ".Lszpb_check_pad:\n" ++
+  "  # remainder = L & 31; if zero, skip pad. else pad = 32 - remainder.\n" ++
+  "  andi t2, a1, 31\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  li t3, 32\n" ++
+  "  sub t2, t3, t2             # t2 = pad bytes\n" ++
+  ".Lszpb_pad:\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  sb zero, 0(t1)\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_pad\n" ++
+  ".Lszpb_count:\n" ++
+  "  # chunks = ceil(L / 32) = (L + 31) >> 5\n" ++
+  "  addi t0, a1, 31\n" ++
+  "  srli a0, t0, 5\n" ++
+  "  ret"
+
+/-- `zisk_ssz_pack_bytes`: probe BuildUnit that reads
+    `(L : u64, data : L bytes)` from the host input region,
+    calls `ssz_pack_bytes`, and writes the result to OUTPUT in
+    the layout `(chunk_count : u64, chunks : chunk_count * 32
+    bytes)`. The test script diffs the entire OUTPUT against
+    Python's recomputation. Input layout:
+      bytes  0.. 8 : L (u64 LE)
+      bytes  8..   : L source bytes -/
+def ziskSszPackBytesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # a1 = L\n" ++
+  "  addi a0, a3, 16             # a0 = src ptr\n" ++
+  "  li a2, 0xa0010008           # a2 = dst chunks (OUTPUT + 8)\n" ++
+  "  jal ra, ssz_pack_bytes\n" ++
+  "  # write chunk count (a0) at OUTPUT + 0\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lzs8_done\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  ".Lzs8_done:"
+
+def ziskSszPackBytesDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "ssz_pack_bytes_scratch:\n" ++
+  "  .zero 8"
+
+def ziskSszPackBytesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszPackBytesPrologue
+  dataAsm     := ziskSszPackBytesDataSection
+}
+
+/-! ## ssz_hash_tree_root_bytes — PR-S9 SSZ hash_tree_root(Bytes)
+
+    Composes PR-S8 `ssz_pack_bytes`, PR-S7 `ssz_merkleize`, and
+    PR-S2 `zkvm_sha256` into a single named entry point:
+
+        chunks       = pack(value)
+        partial_root = merkleize(chunks, limit_log2_chunks)
+        root         = sha256(partial_root || u256_le(len))
+
+    Matches the SSZ spec for variable-length `Bytes` with
+    declared capacity `B_max = 32 * 2^limit_log2_chunks` bytes.
+
+    Calling convention:
+      a0 (input)  : src bytes ptr
+      a1 (input)  : L (0 ≤ L ≤ 1024)
+      a2 (input)  : limit_log2_chunks (0 ≤ L_log2 ≤ 31)
+      a3 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Uses three scratches in `.data`:
+      ssz_hb_chunks  (1024 B) -- packed chunks before merkleize
+      ssz_hb_partial (32 B)   -- partial root from merkleize
+      ssz_hb_mix     (64 B)   -- (partial || length) buffer
+                                 for the final sha256 -/
+def sszHashTreeRootBytesFunction : String :=
+  "ssz_hash_tree_root_bytes:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp)\n" ++
+  "  sd s1, 16(sp)\n" ++
+  "  sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp)\n" ++
+  "  # s0 = src; s1 = L; s2 = limit_log2; s3 = out ptr\n" ++
+  "  mv s0, a0\n" ++
+  "  mv s1, a1\n" ++
+  "  mv s2, a2\n" ++
+  "  mv s3, a3\n" ++
+  "  # Step 1: pack(src, L) -> ssz_hb_chunks. Returns chunk count in a0.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, ssz_hb_chunks\n" ++
+  "  jal ra, ssz_pack_bytes\n" ++
+  "  mv s4, a0                  # s4 = chunks count\n" ++
+  "  # Step 2: merkleize(ssz_hb_chunks, s4, s2, ssz_hb_partial)\n" ++
+  "  la a0, ssz_hb_chunks\n" ++
+  "  mv a1, s4\n" ++
+  "  mv a2, s2\n" ++
+  "  la a3, ssz_hb_partial\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  # Step 3: write length chunk (u256 LE of L) at ssz_hb_mix + 32..64\n" ++
+  "  # Copy partial root into ssz_hb_mix[0..32]\n" ++
+  "  la t0, ssz_hb_partial\n" ++
+  "  la t1, ssz_hb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  # Length chunk at ssz_hb_mix + 32..64: u64 LE of L, then 24 zero bytes.\n" ++
+  "  sd s1, 32(t1)               # low 8 bytes = L (LE)\n" ++
+  "  sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1)\n" ++
+  "  sd zero, 56(t1)\n" ++
+  "  # Step 4: sha256(ssz_hb_mix, 64) -> caller's out ptr (s3)\n" ++
+  "  la a0, ssz_hb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s3\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp)\n" ++
+  "  ld s1, 16(sp)\n" ++
+  "  ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_bytes`: probe BuildUnit that reads
+    `(L, limit_log2, data)` from host input, calls the wrapper,
+    writes the 32-byte SSZ root to OUTPUT_ADDR.
+    Input layout:
+      file bytes  0.. 8 : L            (at INPUT_ADDR +  8)
+      file bytes  8..16 : limit_log2   (at INPUT_ADDR + 16)
+      file bytes 16..   : L source bytes (at INPUT_ADDR + 24) -/
+def ziskSszHashTreeRootBytesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a4, 0x40000000\n" ++
+  "  ld a1, 8(a4)                # a1 = L\n" ++
+  "  ld a2, 16(a4)               # a2 = limit_log2_chunks\n" ++
+  "  addi a0, a4, 24             # a0 = src ptr\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_bytes\n" ++
+  "  j .Lzs9_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  ".Lzs9_done:"
+
+def ziskSszHashTreeRootBytesDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootBytesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootBytesPrologue
+  dataAsm     := ziskSszHashTreeRootBytesDataSection
+}
+
+/-! ## ssz_hash_tree_root_list_bytelist — PR-S11
+
+    SSZ hash_tree_root for `List[ByteList[B], M]`.
+
+    Reads the SSZ-encoded list section directly (inner-offset
+    table at the start, concatenated element bytes after).
+    Iterates over elements, recursively SSZ-hashes each as a
+    `ByteList[B]` via `ssz_hash_tree_root_bytes`, merkleizes the
+    resulting child roots with capacity `2^count_log2`, then
+    mixes in the element count.
+
+    Calling convention:
+      a0 (input)  : section ptr (read-only)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : per-element byte_limit_log2_chunks
+      a3 (input)  : list count_limit_log2 (capacity = 2^a3)
+      a4 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    PR-S11 caps N (element count) at 32, matching the inner
+    merkleize cap. Output is byte-identical to
+    `SszList[ByteList[B], M](...).hash_tree_root()` from
+    `remerkleable` for any compliant input. -/
+def sszHashTreeRootListByteListFunction : String :=
+  "ssz_hash_tree_root_list_bytelist:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = byte_log2\n" ++
+  "  mv s3, a3                  # s3 = count_log2\n" ++
+  "  mv s4, a4                  # s4 = out ptr\n" ++
+  "  beqz s1, .Lszls_N0          # empty section ⇒ N = 0\n" ++
+  "  lwu t0, 0(s0)              # offset_0 = 4 * N\n" ++
+  "  srli s5, t0, 2             # s5 = N (element count)\n" ++
+  "  li s6, 0                   # s6 = i (loop counter)\n" ++
+  ".Lszls_loop:\n" ++
+  "  beq s6, s5, .Lszls_done_loop\n" ++
+  "  slli t0, s6, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s6, 1\n" ++
+  "  beq t3, s5, .Lszls_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)              # inner_off_{i+1}\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lszls_have_end\n" ++
+  ".Lszls_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lszls_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  mv a2, s2                  # byte_log2\n" ++
+  "  la a3, ssz_ltb_child_roots\n" ++
+  "  slli t0, s6, 5             # 32*i\n" ++
+  "  add a3, a3, t0             # &child_roots[i]\n" ++
+  "  jal ra, ssz_hash_tree_root_bytes\n" ++
+  "  addi s6, s6, 1\n" ++
+  "  j .Lszls_loop\n" ++
+  ".Lszls_done_loop:\n" ++
+  "  la a0, ssz_ltb_child_roots\n" ++
+  "  mv a1, s5                  # N\n" ++
+  "  mv a2, s3                  # count_log2\n" ++
+  "  la a3, ssz_ltb_partial\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  la t0, ssz_ltb_partial\n" ++
+  "  la t1, ssz_ltb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  sd s5, 32(t1)              # length = N (u64 LE)\n" ++
+  "  sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1)\n" ++
+  "  sd zero, 56(t1)\n" ++
+  "  la a0, ssz_ltb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s4\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  j .Lszls_ret\n" ++
+  ".Lszls_N0:\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s3, 5\n" ++
+  "  add t0, t0, t1             # &Z_{count_log2}\n" ++
+  "  la t1, ssz_ltb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  sd zero, 32(t1); sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1); sd zero, 56(t1)\n" ++
+  "  la a0, ssz_ltb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s4\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  ".Lszls_ret:\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_list_bytelist`: probe BuildUnit
+    that reads the SSZ-encoded list section from host input and
+    writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len
+      bytes  8..16 : byte_limit_log2
+      bytes 16..24 : count_limit_log2
+      bytes 24..   : SSZ list section bytes -/
+def ziskSszHashTreeRootListByteListPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a5, 0x40000000\n" ++
+  "  ld a1, 8(a5)                # section_len\n" ++
+  "  ld a2, 16(a5)               # byte_log2\n" ++
+  "  ld a3, 24(a5)               # count_log2\n" ++
+  "  addi a0, a5, 32             # section ptr\n" ++
+  "  li a4, 0xa0010000           # OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  j .Lzs11_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  ".Lzs11_done:"
+
+def ziskSszHashTreeRootListByteListDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootListByteListProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootListByteListPrologue
+  dataAsm     := ziskSszHashTreeRootListByteListDataSection
+}
+
+/-! ## ssz_hash_tree_root_execution_witness — PR-S12
+
+    SSZ Container hash for the amsterdam `ExecutionWitness`.
+    Three variable-size fields (state, codes, headers); each
+    field is itself a `List[ByteList[B_i], M_i]` and gets
+    hashed via `ssz_hash_tree_root_list_bytelist` (PR-S11). The
+    three resulting child roots are merkleized with capacity 4
+    slots (`limit_log2 = ceil(log2(3)) = 2`) to produce the
+    Container root.
+
+    Per the SSZ spec for Containers, NO mix_in_length step
+    follows -- only variable-length List/Bytes types mix in
+    length.
+
+    Calling convention:
+      a0 (input)  : section ptr (SSZ-encoded ExecutionWitness)
+      a1 (input)  : section_len
+      a2 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Per-field caps inherited from PR-S11: each list's N ≤ 32.
+    Test fixtures stay well below; production-sized witnesses
+    are a follow-up. -/
+def sszHashTreeRootExecutionWitnessFunction : String :=
+  "ssz_hash_tree_root_execution_witness:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                   # s0 = section ptr\n" ++
+  "  mv s1, a1                   # s1 = section_len\n" ++
+  "  mv s2, a2                   # s2 = out ptr\n" ++
+  "  lwu s3, 0(s0)               # off_state\n" ++
+  "  lwu s4, 4(s0)               # off_codes\n" ++
+  "  lwu s5, 8(s0)               # off_headers\n" ++
+  "  add s6, s0, s1              # section_end\n" ++
+  "  # Field 0: state (List[ByteList[2^20], 2^20]; byte_log2=15, count_log2=20)\n" ++
+  "  add a0, s0, s3              # state_start\n" ++
+  "  add t0, s0, s4              # state_end\n" ++
+  "  sub a1, t0, a0\n" ++
+  "  li a2, 15\n" ++
+  "  li a3, 20\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Field 1: codes (List[ByteList[2^24], 2^16]; byte_log2=19, count_log2=16)\n" ++
+  "  add a0, s0, s4              # codes_start\n" ++
+  "  add t0, s0, s5              # codes_end\n" ++
+  "  sub a1, t0, a0\n" ++
+  "  li a2, 19\n" ++
+  "  li a3, 16\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  addi a4, a4, 32\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Field 2: headers (List[ByteList[2^10], 2^8]; byte_log2=5, count_log2=8)\n" ++
+  "  add a0, s0, s5              # headers_start\n" ++
+  "  sub a1, s6, a0\n" ++
+  "  li a2, 5\n" ++
+  "  li a3, 8\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  addi a4, a4, 64\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Merkleize 3 field roots, capacity = 4 slots (limit_log2 = 2)\n" ++
+  "  la a0, ssz_ew_field_roots\n" ++
+  "  li a1, 3\n" ++
+  "  li a2, 2\n" ++
+  "  mv a3, s2\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_execution_witness`: probe BuildUnit
+    that reads the SSZ-encoded ExecutionWitness section from host
+    input and writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len
+      bytes  8..   : SSZ ExecutionWitness section bytes -/
+def ziskSszHashTreeRootExecutionWitnessPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010000           # OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_execution_witness\n" ++
+  "  j .Lzs12_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  sszHashTreeRootExecutionWitnessFunction ++ "\n" ++
+  ".Lzs12_done:"
+
+def ziskSszHashTreeRootExecutionWitnessDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ew_field_roots:\n" ++
+  "  .zero 96\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootExecutionWitnessProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootExecutionWitnessPrologue
+  dataAsm     := ziskSszHashTreeRootExecutionWitnessDataSection
+}
+
 /-! ## stateless_guest body — PR-K5 keccak hash field
 
     Replaces the zero-stub `new_payload_request_root` field in
@@ -2809,61 +3570,96 @@ def ziskSszMerkleizePow2ProbeUnit : BuildUnit := {
     into the encoder pipeline end-to-end. Once PR-S series lands,
     the SHA-256 hash_tree_root replaces this keccak. -/
 def statelessGuestEpilogue : String :=
-  "  # PR-K7: overwrite OUTPUT[0..32] with keccak256 of the FIRST\n" ++
-  "  # element of witness.headers (witness.headers[0]) if the list\n" ++
-  "  # is non-empty; else keccak256(empty).\n" ++
+  "  # PR-S12: overwrite OUTPUT[0..32] with the SSZ\n" ++
+  "  # `hash_tree_root` of the entire `witness:\n" ++
+  "  # ExecutionWitness` field -- a 3-field Container holding\n" ++
+  "  # state / codes / headers lists.\n" ++
   "  # \n" ++
-  "  # Navigation:\n" ++
-  "  #   ssz_start  = INPUT_ADDR + 16\n" ++
-  "  #   offset_1   = LWU @ ssz_start +  4   (witness offset)\n" ++
-  "  #   witness    = ssz_start + offset_1\n" ++
-  "  #   inner_off2 = LWU @ witness  +  8   (headers offset)\n" ++
-  "  #   hdrs_start = witness + inner_off2\n" ++
-  "  #   offset_3   = LWU @ ssz_start + 16  (witness end)\n" ++
-  "  #   hdrs_end   = ssz_start + offset_3\n" ++
-  "  #   hdrs_len   = hdrs_end - hdrs_start\n" ++
-  "  #   if hdrs_len > 0:\n" ++
-  "  #     first_off  = LWU @ hdrs_start    (inner offset[0] = 4 * N)\n" ++
-  "  #     el0_start  = hdrs_start + first_off\n" ++
-  "  #     if first_off == 4 (N == 1):\n" ++
-  "  #       el0_end  = hdrs_end\n" ++
-  "  #     else (N >= 2):\n" ++
-  "  #       el0_end  = hdrs_start + LWU @ hdrs_start + 4 (inner offset[1])\n" ++
-  "  #     el0_len    = el0_end - el0_start\n" ++
-  "  #   else:\n" ++
-  "  #     hash empty (el0_len = 0)\n" ++
+  "  # SSZ algorithm (Container, NO mix_in_length):\n" ++
+  "  #   state_root   = hash_tree_root(List[ByteList[2^20], 2^20])\n" ++
+  "  #   codes_root   = hash_tree_root(List[ByteList[2^24], 2^16])\n" ++
+  "  #   headers_root = hash_tree_root(List[ByteList[2^10], 2^8])\n" ++
+  "  #   root         = merkleize([state_root, codes_root,\n" ++
+  "  #                             headers_root], log2=2)\n" ++
+  "  # \n" ++
+  "  # Per-field caps: each list's N ≤ 32 (inherited from\n" ++
+  "  # PR-S11's `ssz_hash_tree_root_list_bytelist`). Test\n" ++
+  "  # fixtures stay well below.\n" ++
+  "  # \n" ++
+  "  # Navigation: chase the outer SSZ offset chain to find\n" ++
+  "  # the bounds of the `witness` field within the SSZ-encoded\n" ++
+  "  # `SszStatelessInput`, then delegate the per-sub-field\n" ++
+  "  # walk + recursive hashing to\n" ++
+  "  # `ssz_hash_tree_root_execution_witness`.\n" ++
   "  li sp, 0xa0050000\n" ++
   "  li t3, 0x40000000\n" ++
   "  addi t3, t3, 16             # t3 = ssz_start\n" ++
-  "  lwu t4, 4(t3)               # outer offset_1\n" ++
-  "  add t5, t3, t4              # t5 = witness_addr\n" ++
-  "  lwu t6, 8(t5)               # inner offset_2 (headers offset)\n" ++
-  "  add a0, t5, t6              # a0 = hdrs_start (tentative data ptr)\n" ++
-  "  lwu t6, 16(t3)              # outer offset_3 (witness end)\n" ++
-  "  add t6, t3, t6              # t6 = hdrs_end\n" ++
-  "  sub a1, t6, a0              # a1 = hdrs_len (tentative len)\n" ++
-  "  beqz a1, .Lsg_call_keccak   # empty headers: hash empty\n" ++
-  "  # Non-empty headers: read first inner offset to find element 0\n" ++
-  "  lwu t4, 0(a0)               # t4 = first_inner_offset = 4 * N\n" ++
-  "  add t5, a0, t4              # t5 = el0_start\n" ++
-  "  li t3, 4\n" ++
-  "  beq t4, t3, .Lsg_one_elem   # N == 1 → el0_end = hdrs_end (t6 already)\n" ++
-  "  lwu t4, 4(a0)               # t4 = second_inner_offset\n" ++
-  "  add t6, a0, t4              # t6 = el0_end (override)\n" ++
-  ".Lsg_one_elem:\n" ++
-  "  sub a1, t6, t5              # a1 = el0_len\n" ++
-  "  mv a0, t5                   # a0 = el0_start\n" ++
-  ".Lsg_call_keccak:\n" ++
+  "  lwu t4, 4(t3)               # outer offset_1 (witness offset)\n" ++
+  "  add a0, t3, t4              # a0 = witness_start (section ptr)\n" ++
+  "  lwu t5, 16(t3)              # outer offset_3 (witness end)\n" ++
+  "  add t5, t3, t5              # witness_end\n" ++
+  "  sub a1, t5, a0              # a1 = witness section_len\n" ++
   "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR (hash field)\n" ++
-  "  jal ra, zkvm_keccak256\n" ++
+  "  jal ra, ssz_hash_tree_root_execution_witness\n" ++
   "  j .Lsg_done\n" ++
-  zkvmKeccak256Function ++ "\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  sszHashTreeRootExecutionWitnessFunction ++ "\n" ++
   ".Lsg_done:"
 
 def statelessGuestDataSection : String :=
   ".section .data\n" ++
-  "zk3_state:\n" ++
-  "  .zero 200"
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ew_field_roots:\n" ++
+  "  .zero 96\n" ++
+  sszZeroHashesDataSection
 
 def statelessGuestUnit : BuildUnit := {
   body        := EvmAsm.Stateless.run_stateless_guest
@@ -2916,6 +3712,11 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
   | "zisk_ssz_merkleize_pow2"   => some ziskSszMerkleizePow2ProbeUnit
+  | "zisk_ssz_merkleize"        => some ziskSszMerkleizeProbeUnit
+  | "zisk_ssz_pack_bytes"       => some ziskSszPackBytesProbeUnit
+  | "zisk_ssz_hash_tree_root_bytes" => some ziskSszHashTreeRootBytesProbeUnit
+  | "zisk_ssz_hash_tree_root_list_bytelist" => some ziskSszHashTreeRootListByteListProbeUnit
+  | "zisk_ssz_hash_tree_root_execution_witness" => some ziskSszHashTreeRootExecutionWitnessProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -2946,6 +3747,11 @@ def knownProgramNames : List String :=
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
-   "zisk_ssz_merkleize_pow2"]
+   "zisk_ssz_merkleize_pow2",
+   "zisk_ssz_merkleize",
+   "zisk_ssz_pack_bytes",
+   "zisk_ssz_hash_tree_root_bytes",
+   "zisk_ssz_hash_tree_root_list_bytelist",
+   "zisk_ssz_hash_tree_root_execution_witness"]
 
 end EvmAsm.Codegen

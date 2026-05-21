@@ -104,7 +104,7 @@ with open(sys.argv[1], 'wb') as f:
 
 with open(sys.argv[1] + '.expected.txt', 'w') as f:
     f.write(f'{expected_status} {expected_offset} {expected_length}')
-" "$in_file" "${args[@]}"
+" "$in_file" "${args[@]+"${args[@]}"}"
 
   "$ZISKEMU" -e gen-out/zisk_witness_lookup_by_hash.elf \
     -i "$in_file" -o "$out_file" -n 500000 \

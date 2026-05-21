@@ -95,6 +95,35 @@ theorem divConcretePostNoX1_weaken_callable_frame
       exact fun _ hp => hp
   exact by xperm_hyp hOwn
 
+/-- Split the historical no-`x1` DIV stack post into the callable public post
+    plus separate `x1` ownership. This is the ownership-only bridge; exact
+    return-address preservation requires a stronger upstream post. -/
+theorem divStackDispatchPostNoX1_weaken_callable_own_x1
+    (sp : Word) (a b : EvmWord) :
+  ∀ h : PartialState,
+      divStackDispatchPostNoX1 sp a b h →
+      (divStackDispatchPostCallable sp a b ** regOwn .x1) h := by
+  intro h hp
+  rw [divStackDispatchPostNoX1_unfold] at hp
+  rw [divStackDispatchPostCallable_unfold]
+  rw [divScratchOwnCall_unfold] at hp
+  rw [divScratchOwnCallNoX1_unfold]
+  xperm_hyp hp
+
+/-- Framed variant of `divStackDispatchPostNoX1_weaken_callable_own_x1`
+    preserving an exact caller-owned `x9` atom. -/
+theorem divStackDispatchPostNoX1_weaken_callable_own_x1_frame_x9
+    (sp : Word) (a b : EvmWord) (x9Val : Word) :
+  ∀ h : PartialState,
+      (divStackDispatchPostNoX1 sp a b ** (.x9 ↦ᵣ x9Val)) h →
+      ((divStackDispatchPostCallable sp a b ** regOwn .x1) **
+        (.x9 ↦ᵣ x9Val)) h := by
+  intro h hp
+  apply sepConj_mono_left
+  · exact fun hLeft hpLeft =>
+      divStackDispatchPostNoX1_weaken_callable_own_x1 sp a b hLeft hpLeft
+  · exact hp
+
 /-- Concrete no-NOP MOD callable post bundle before weakening. -/
 @[irreducible]
 def modConcretePostNoX1Frame (sp : Word) (a b : EvmWord)
@@ -175,5 +204,34 @@ theorem modConcretePostNoX1_weaken_callable_frame
       apply sepConj_mono (regIs_implies_regOwn .x7 (v := v7))
       exact fun _ hp => hp
   exact by xperm_hyp hOwn
+
+/-- Split the historical no-`x1` MOD stack post into the callable public post
+    plus separate `x1` ownership. This mirrors
+    `divStackDispatchPostNoX1_weaken_callable_own_x1`. -/
+theorem modStackDispatchPostNoX1_weaken_callable_own_x1
+    (sp : Word) (a b : EvmWord) :
+  ∀ h : PartialState,
+      modStackDispatchPostNoX1 sp a b h →
+      (modStackDispatchPostCallable sp a b ** regOwn .x1) h := by
+  intro h hp
+  rw [modStackDispatchPostNoX1_unfold] at hp
+  rw [modStackDispatchPostCallable_unfold]
+  rw [divScratchOwnCall_unfold] at hp
+  rw [divScratchOwnCallNoX1_unfold]
+  xperm_hyp hp
+
+/-- Framed variant of `modStackDispatchPostNoX1_weaken_callable_own_x1`
+    preserving an exact caller-owned `x9` atom. -/
+theorem modStackDispatchPostNoX1_weaken_callable_own_x1_frame_x9
+    (sp : Word) (a b : EvmWord) (x9Val : Word) :
+  ∀ h : PartialState,
+      (modStackDispatchPostNoX1 sp a b ** (.x9 ↦ᵣ x9Val)) h →
+      ((modStackDispatchPostCallable sp a b ** regOwn .x1) **
+        (.x9 ↦ᵣ x9Val)) h := by
+  intro h hp
+  apply sepConj_mono_left
+  · exact fun hLeft hpLeft =>
+      modStackDispatchPostNoX1_weaken_callable_own_x1 sp a b hLeft hpLeft
+  · exact hp
 
 end EvmAsm.Evm64
