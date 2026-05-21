@@ -82,6 +82,29 @@ def fullDivN2Frame (bltu_2 bltu_1 bltu_0 : Bool)
   (sp + signExtend12 3952 ↦ₘ n2ScratchDLo scratch) **
   (sp + signExtend12 3944 ↦ₘ n2ScratchUn0 scratch) ** regOwn .x1
 
+@[irreducible]
+def fullDivN2FrameNoX1 (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    Assertion :=
+  let r2 := fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+  let r1 := fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let scratch := fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+    a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+  ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+  ((sp + signExtend12 4008) ↦ₘ r2.2.2.2.2.2) **
+  ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+  (sp + signExtend12 3984 ↦ₘ (2 : Word)) **
+  (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+  (.x9 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+  (sp + signExtend12 3968 ↦ₘ n2ScratchRet scratch) **
+  (sp + signExtend12 3960 ↦ₘ n2ScratchD scratch) **
+  (sp + signExtend12 3952 ↦ₘ n2ScratchDLo scratch) **
+  (sp + signExtend12 3944 ↦ₘ n2ScratchUn0 scratch)
+
 theorem fullDivN2ScratchFinal_unfold (bltu_2 bltu_1 bltu_0 : Bool)
     (base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
     fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
@@ -146,6 +169,31 @@ theorem fullDivN2Frame_unfold (bltu_2 bltu_1 bltu_0 : Bool)
     (sp + signExtend12 3952 ↦ₘ n2ScratchDLo scratch) **
     (sp + signExtend12 3944 ↦ₘ n2ScratchUn0 scratch) ** regOwn .x1 := by
   delta fullDivN2Frame
+  rfl
+
+theorem fullDivN2FrameNoX1_unfold (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    fullDivN2FrameNoX1 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0 =
+    let r2 := fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+    let r1 := fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+    let r0 := fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+    let scratch := fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+      a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0
+    ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+    ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+    ((sp + signExtend12 4024) ↦ₘ r0.2.2.2.2.2) **
+    ((sp + signExtend12 4016) ↦ₘ r1.2.2.2.2.2) **
+    ((sp + signExtend12 4008) ↦ₘ r2.2.2.2.2.2) **
+    ((sp + signExtend12 4000) ↦ₘ (0 : Word)) **
+    (sp + signExtend12 3984 ↦ₘ (2 : Word)) **
+    (sp + signExtend12 3976 ↦ₘ (0 : Word)) **
+    (.x9 ↦ᵣ signExtend12 4095) ** (.x11 ↦ᵣ r0.1) **
+    (sp + signExtend12 3968 ↦ₘ n2ScratchRet scratch) **
+    (sp + signExtend12 3960 ↦ₘ n2ScratchD scratch) **
+    (sp + signExtend12 3952 ↦ₘ n2ScratchDLo scratch) **
+    (sp + signExtend12 3944 ↦ₘ n2ScratchUn0 scratch) := by
+  delta fullDivN2FrameNoX1
   rfl
 
 end EvmAsm.Evm64
