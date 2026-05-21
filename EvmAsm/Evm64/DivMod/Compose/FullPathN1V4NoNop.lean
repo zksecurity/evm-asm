@@ -1831,4 +1831,23 @@ theorem divK_loop_n1_call_iter210_framed_exact_x1_v4_noNop_input
     (loopN1CallMaxmaxmaxIter210FramedPostInput_to_scratchPost I)
     (divK_loop_n1_call_iter210_framed_prepost_exact_x1_v4_noNop_input I hh)
 
+/-- Full bundled N1 call/max/max/max exact path: j=3 uses the v4 call
+    path and j=2/j=1/j=0 all use the all-max path. -/
+theorem divK_loop_n1_call_maxmaxmax_exact_x1_scratch_input_v4_noNop
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (halign : loopN1CallMaxmaxmaxExactInputAligned I)
+    (hh : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    loopN1CallMaxmaxmaxExactInputSpec I := by
+  unfold loopN1CallMaxmaxmaxExactInputSpec
+  unfold loopN1CallMaxmaxmaxExactX1ScratchSpec
+  have J3 := divK_loop_n1_call_j3_exact_x1_framed_v4_noNop_input I halign hh
+  unfold loopN1CallMaxmaxmaxJ3ExactInputSpec at J3
+  have Htail := divK_loop_n1_call_iter210_framed_exact_x1_v4_noNop_input I hh
+  unfold loopN1CallMaxmaxmaxIter210FramedExactInputSpec at Htail
+  exact cpsTripleWithin_seq_perm_same_cr
+    (fun h hp => by
+      unfold loopN1CallMaxmaxmaxJ3PostInput
+      exact hp)
+    J3 Htail
+
 end EvmAsm.Evm64
