@@ -672,4 +672,24 @@ theorem evm_div_stack_spec_noNop_preNoX1_callableOwnPost
         hbnz hb3z hb2nz hshift_nz halign
         hbltu_1 hbltu_0 hcarry2 hdivWord
 
+/-- Zero-divisor branch of the no-NOP DIV dispatcher from the callable-ready
+    precondition shape, preserving exact caller-framed `x1` and `x9`. -/
+theorem evm_div_stack_spec_bzero_noNop_preNoX1_callableExactPost
+    (sp base : Word) (a b : EvmWord)
+    (x9Val raVal v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (hbz : b = 0) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      ((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) := by
+  exact evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
+    sp base a b x9Val raVal v2 v5 v6 v7 v10 v11
+    q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+    nMem shiftMem jMem retMem dMem dloMem scratch_un0 hbz
+
 end EvmAsm.Evm64
