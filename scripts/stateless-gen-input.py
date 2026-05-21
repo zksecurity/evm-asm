@@ -237,18 +237,22 @@ def main() -> int:
     )
 
     if args.hash_out is not None:
-        # PR-S10: the guest computes SSZ `hash_tree_root` of
-        # `witness.headers[0]` -- element 0 of the SSZ list -- as a
-        # `ByteList[MAX_BYTES_PER_HEADER = 1024]`. When the list is
-        # empty, hashes an empty `ByteList[1024]()`. We extract
-        # element 0 from the SSZ blob and feed it through the same
-        # consensus-specs SSZ library the guest's contract is
-        # checked against (remerkleable, via execution-specs).
+        # PR-S11: the guest computes SSZ `hash_tree_root` of the
+        # entire `witness.headers` field -- a
+        # `List[ByteList[MAX_BYTES_PER_HEADER],
+        #       MAX_WITNESS_HEADERS]` -- via the
+        # `ssz_hash_tree_root_list_bytelist` function.
+        # We extract every element from the SSZ blob and feed
+        # them through the same consensus-specs SSZ library the
+        # guest's contract is checked against (remerkleable,
+        # via execution-specs).
         import struct as _struct
         from ethereum.forks.amsterdam.stateless_ssz import (
             MAX_BYTES_PER_HEADER,
+            MAX_WITNESS_HEADERS,
         )
         from remerkleable.byte_arrays import ByteList
+        from remerkleable.complex import List as SszList
 
         offset_1 = _struct.unpack_from("<I", blob, 4)[0]
         offset_3 = _struct.unpack_from("<I", blob, 16)[0]
@@ -259,32 +263,36 @@ def main() -> int:
         headers_end = witness_end
 
         headers_len = headers_end - headers_start
-        if headers_len == 0:
-            element_0 = b""
-            why = "headers empty"
-        else:
+        elements = []
+        if headers_len > 0:
             first_inner = _struct.unpack_from(
                 "<I", blob, headers_start)[0]
-            el0_start = headers_start + first_inner
             n_elements = first_inner // 4
-            if n_elements == 1:
-                el0_end = headers_end
-            else:
-                second_inner = _struct.unpack_from(
-                    "<I", blob, headers_start + 4)[0]
-                el0_end = headers_start + second_inner
-            element_0 = blob[el0_start:el0_end]
-            why = f"N={n_elements}, el0 {len(element_0)}B"
+            for i in range(n_elements):
+                inner_i = _struct.unpack_from(
+                    "<I", blob, headers_start + 4 * i)[0]
+                el_start = headers_start + inner_i
+                if i + 1 < n_elements:
+                    inner_next = _struct.unpack_from(
+                        "<I", blob, headers_start + 4 * (i + 1))[0]
+                    el_end = headers_start + inner_next
+                else:
+                    el_end = headers_end
+                elements.append(blob[el_start:el_end])
 
-        root = ByteList[MAX_BYTES_PER_HEADER](element_0).hash_tree_root()
+        BL = ByteList[MAX_BYTES_PER_HEADER]
+        LL = SszList[BL, MAX_WITNESS_HEADERS]
+        ssz_value = LL(*(BL(e) for e in elements))
+        root = ssz_value.hash_tree_root()
         digest = root.hex() if isinstance(root, bytes) else bytes(root).hex()
         args.hash_out.parent.mkdir(parents=True, exist_ok=True)
         with args.hash_out.open("w") as fh:
             fh.write(digest)
         print(
             f"wrote {args.hash_out}: "
-            f"ssz_hash_tree_root(ByteList[{MAX_BYTES_PER_HEADER}], "
-            f"witness.headers[0], {why}) = {digest}",
+            f"ssz_hash_tree_root(List[ByteList[{MAX_BYTES_PER_HEADER}], "
+            f"{MAX_WITNESS_HEADERS}], witness.headers, "
+            f"N={len(elements)}) = {digest}",
             file=sys.stderr,
         )
 
