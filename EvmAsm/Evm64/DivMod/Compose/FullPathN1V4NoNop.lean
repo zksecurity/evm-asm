@@ -1273,6 +1273,28 @@ def loopN1CallMaxmaxmaxBranchFacts
   ¬BitVec.ult r2.2.1 v0 ∧
   ¬BitVec.ult r1.2.1 v0
 
+/-- Build the compact all-max branch-fact bundle from the three branch
+    conditions that follow the j=3 v4 call iteration. -/
+theorem loopN1CallMaxmaxmaxBranchFacts_of_bltu
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (hbltu2 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop).2.1 v0)
+    (hbltu1 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2).2.1 v0)
+    (hbltu0 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1).2.1 v0) :
+    loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 := by
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  unfold loopN1CallMaxmaxmaxBranchFacts
+  change (¬BitVec.ult r3.2.1 v0 ∧ ¬BitVec.ult r2.2.1 v0 ∧
+      ¬BitVec.ult r1.2.1 v0)
+  exact ⟨by simpa [r3] using hbltu2, by
+    exact ⟨by simpa [r2] using hbltu1, by simpa [r1] using hbltu0⟩⟩
+
 /-- The j=2 all-max branch fact packaged in
     `loopN1CallMaxmaxmaxBranchFacts`. -/
 theorem loopN1CallMaxmaxmaxBranchFacts_hbltu2
@@ -1503,6 +1525,28 @@ theorem loopN1CallMaxmaxmaxExactInputHypotheses_of_branches
   exact loopN1CallMaxmaxmaxExactHypotheses_of_branches
     I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
     hbltu3 hbranches hcarry2
+
+/-- Build the bundled N1 call/max/max/max exact-path hypotheses directly
+    from the four path branch facts and the universal carry2 assumption. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_of_bltu
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (hbltu3 : BitVec.ult I.u1 I.v0)
+    (hbltu2 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop).2.1
+      I.v0)
+    (hbltu1 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR2 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+        I.u0Orig2).2.1 I.v0)
+    (hbltu0 : ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR1 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+        I.u0Orig2 I.u0Orig1).2.1 I.v0)
+    (hcarry2 : Carry2NzAll I.v0 I.v1 I.v2 I.v3) :
+    loopN1CallMaxmaxmaxExactInputHypotheses I := by
+  exact loopN1CallMaxmaxmaxExactInputHypotheses_of_branches I hbltu3
+    (loopN1CallMaxmaxmaxBranchFacts_of_bltu
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+      hbltu2 hbltu1 hbltu0)
+    hcarry2
 
 /-- Project the j=3 BLTU-taken fact from bundled N1 call/max/max/max inputs. -/
 theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu3
