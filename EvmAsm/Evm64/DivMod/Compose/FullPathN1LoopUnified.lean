@@ -119,6 +119,30 @@ def preloopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
   ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
   ((sp + signExtend12 3992) ↦ₘ (clzResult b0).1)
 
+/-- No-`x1` variant of `preloopN1UnifiedPost`; callers can keep exact `x1`
+    framed through the loop and into denormalization. -/
+@[irreducible]
+def preloopN1UnifiedPostNoX1 (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  let shift := (clzResult b0).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let v0' := b0 <<< (shift.toNat % 64)
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let u0S := a0 <<< (shift.toNat % 64)
+  let u1S := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u2S := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u3S := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  loopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+    v0' v1' v2' v3' u3S (a3 >>> (antiShift.toNat % 64)) (0 : Word) (0 : Word) (0 : Word)
+    u2S u1S u0S
+    retMem dMem dloMem scratch_un0 **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 3992) ↦ₘ (clzResult b0).1)
+
 -- ============================================================================
 -- Double-addback loop instantiation helper (heartbeat isolation)
 -- ============================================================================
