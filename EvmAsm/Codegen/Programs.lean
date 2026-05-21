@@ -3509,6 +3509,511 @@ def ziskAccountDecodeProbeUnit : BuildUnit := {
   dataAsm     := ziskAccountDecodeDataSection
 }
 
+/-! ## account_at_address -- PR-K28 compose lookup + decode
+
+    Take a raw Ethereum address, walk the state trie, decode
+    the resulting Account RLP into its four fields. The
+    cleanest top-of-K-stack abstraction: caller sees only
+    `(address, state_root, witness) → fields`.
+
+    Output struct layout (104 bytes at caller-supplied ptr):
+      offset  0..  8 : nonce (u64 LE)
+      offset  8.. 40 : balance (u256 BE, left-zero-padded)
+      offset 40.. 72 : storage_root (32 B)
+      offset 72..104 : code_hash (32 B)
+
+    Calling convention:
+      a0 (input)  : address bytes ptr
+      a1 (input)  : address byte length (typically 20)
+      a2 (input)  : state_root ptr (32 bytes)
+      a3 (input)  : witness section ptr
+      a4 (input)  : witness section_len
+      a5 (input)  : output struct ptr (104 bytes)
+      ra (input)  : return
+
+      a0 (output) :
+        0 = found and decoded
+        1 = not found in trie     (output zeroed)
+        2 = mpt_walk parse error  (output zeroed)
+        3 = account_decode failure (output zeroed)
+
+    Internal:
+      Step 1: mpt_lookup_by_key(addr, ..., aa_value_scratch).
+      Step 2: account_decode(scratch_val, scratch_len, ...).
+    Reuses the K-stack primitive scratches. -/
+def accountAtAddressFunction : String :=
+  "account_at_address:\n" ++
+  "  addi sp, sp, -32\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp)\n" ++
+  "  mv s0, a5                   # output struct ptr\n" ++
+  "  # Step 1: mpt_lookup_by_key.\n" ++
+  "  la a5, aa_value_scratch\n" ++
+  "  la a6, aa_value_len\n" ++
+  "  jal ra, mpt_lookup_by_key\n" ++
+  "  mv s1, a0                   # save lookup status\n" ++
+  "  beqz a0, .Laa_lookup_ok\n" ++
+  "  # Not found / parse error: zero the output struct.\n" ++
+  "  sd zero,  0(s0); sd zero,  8(s0); sd zero, 16(s0); sd zero, 24(s0)\n" ++
+  "  sd zero, 32(s0); sd zero, 40(s0); sd zero, 48(s0); sd zero, 56(s0)\n" ++
+  "  sd zero, 64(s0); sd zero, 72(s0); sd zero, 80(s0); sd zero, 88(s0)\n" ++
+  "  sd zero, 96(s0)\n" ++
+  "  mv a0, s1\n" ++
+  "  j .Laa_ret\n" ++
+  ".Laa_lookup_ok:\n" ++
+  "  la a0, aa_value_scratch\n" ++
+  "  la t0, aa_value_len; ld a1, 0(t0)\n" ++
+  "  mv a2, s0                   # nonce at struct + 0\n" ++
+  "  addi a3, s0, 8              # balance at struct + 8\n" ++
+  "  addi a4, s0, 40             # storage_root at struct + 40\n" ++
+  "  addi a5, s0, 72             # code_hash at struct + 72\n" ++
+  "  jal ra, account_decode\n" ++
+  "  beqz a0, .Laa_done\n" ++
+  "  # account_decode failed: zero struct, return 3.\n" ++
+  "  sd zero,  0(s0); sd zero,  8(s0); sd zero, 16(s0); sd zero, 24(s0)\n" ++
+  "  sd zero, 32(s0); sd zero, 40(s0); sd zero, 48(s0); sd zero, 56(s0)\n" ++
+  "  sd zero, 64(s0); sd zero, 72(s0); sd zero, 80(s0); sd zero, 88(s0)\n" ++
+  "  sd zero, 96(s0)\n" ++
+  "  li a0, 3\n" ++
+  "  j .Laa_ret\n" ++
+  ".Laa_done:\n" ++
+  "  li a0, 0\n" ++
+  ".Laa_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp)\n" ++
+  "  addi sp, sp, 32\n" ++
+  "  ret"
+
+/-- `zisk_account_at_address`: probe BuildUnit. Reads
+    (witness_len, addr_len, state_root, addr, witness) from
+    host input. Writes (status, nonce, balance, storage_root,
+    code_hash) to OUTPUT.
+    Output layout:
+      bytes   0.. 8 : status
+      bytes   8..16 : nonce
+      bytes  16..48 : balance
+      bytes  48..80 : storage_root
+      bytes  80..112: code_hash -/
+def ziskAccountAtAddressPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a7, 0x40000000\n" ++
+  "  ld t6, 8(a7)                # witness_len\n" ++
+  "  ld t5, 16(a7)               # addr_len\n" ++
+  "  addi a2, a7, 24             # state_root ptr\n" ++
+  "  addi a0, a7, 56             # address ptr\n" ++
+  "  mv a1, t5                   # addr_len\n" ++
+  "  add a3, a0, t5              # witness ptr = address + addr_len\n" ++
+  "  mv a4, t6                   # witness_len\n" ++
+  "  li a5, 0xa0010008           # output struct at OUTPUT + 8\n" ++
+  "  # Pre-zero 104 bytes of output struct so a failure surfaces as zeros.\n" ++
+  "  sd zero, 0(a5); sd zero, 8(a5); sd zero, 16(a5); sd zero, 24(a5)\n" ++
+  "  sd zero, 32(a5); sd zero, 40(a5); sd zero, 48(a5); sd zero, 56(a5)\n" ++
+  "  sd zero, 64(a5); sd zero, 72(a5); sd zero, 80(a5); sd zero, 88(a5)\n" ++
+  "  sd zero, 96(a5)\n" ++
+  "  jal ra, account_at_address\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status\n" ++
+  "  j .Laa_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  witnessLookupByHashFunction ++ "\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  mptBranchChildFunction ++ "\n" ++
+  hpDecodeNibblesFunction ++ "\n" ++
+  bytesToNibblesFunction ++ "\n" ++
+  mptWalkFunction ++ "\n" ++
+  mptLookupByKeyFunction ++ "\n" ++
+  accountDecodeFunction ++ "\n" ++
+  accountAtAddressFunction ++ "\n" ++
+  ".Laa_pdone:"
+
+def ziskAccountAtAddressDataSection : String :=
+  ".section .data\n" ++
+  ".balign 32\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "wlh_scratch_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mbc_offset:\n" ++
+  "  .zero 8\n" ++
+  "mbc_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_lookup_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_lookup_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_lookup_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_child_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_nibble_count:\n" ++
+  "  .zero 8\n" ++
+  "mw_is_leaf:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_nibble_buf:\n" ++
+  "  .zero 128\n" ++
+  ".balign 32\n" ++
+  "mlk_keccak_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "mlk_nibble_buf:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "ad_offset:\n" ++
+  "  .zero 8\n" ++
+  "ad_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 8\n" ++
+  "aa_value_len:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "aa_value_scratch:\n" ++
+  "  .zero 256"
+
+def ziskAccountAtAddressProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskAccountAtAddressPrologue
+  dataAsm     := ziskAccountAtAddressDataSection
+}
+
+/-! ## slot_at_index -- PR-K29 storage trie lookup
+
+    Storage-trie counterpart to `account_at_address`. Takes a
+    32-byte slot index (big-endian u256) and walks the
+    per-account storage trie, decoding the looked-up value as
+    a u256.
+
+    Per `execution-specs/.../trie.py::encode_node`, the value
+    stored in the storage trie is `rlp.encode(slot_value:U256)`
+    -- one RLP layer on top of the canonical leading-zero-
+    stripped big-int. `mpt_walk` strips the leaf's outer item-1
+    string prefix (one layer), so the value bytes we receive
+    are exactly `rlp.encode(slot_value)`. We then apply one
+    more layer of RLP decoding to recover the u256.
+
+    Encoding cheat-sheet for slot values:
+      slot_value = 0          → 0x80         (RLP empty)
+      slot_value = 1          → 0x01         (single byte)
+      slot_value = 0x7f       → 0x7f
+      slot_value = 0x80       → 0x81 0x80    (1-byte string)
+      slot_value = 0x0100     → 0x82 0x01 0x00 (2-byte string)
+      slot_value = 2^256 - 1  → 0xa0 + 32 × 0xff
+
+    Calling convention:
+      a0 (input)  : slot_idx bytes ptr (32-byte big-endian u256)
+      a1 (input)  : slot_idx byte length (typically 32)
+      a2 (input)  : storage_root ptr (32 bytes)
+      a3 (input)  : witness section ptr
+      a4 (input)  : witness section_len
+      a5 (input)  : output u256 BE ptr (32 bytes)
+      ra (input)  : return
+
+      a0 (output) :
+        0 found and decoded
+        1 not found (output zeroed)
+        2 mpt_walk parse error (output zeroed)
+        3 RLP-u256 decode failure (output zeroed)
+
+    Internal: `mpt_lookup_by_key(slot_idx, ..., si_value_scratch)`
+    then `slot_decode_u256` over the looked-up bytes. -/
+def slotDecodeU256Function : String :=
+  "slot_decode_u256:\n" ++
+  "  # a0 = val_bytes ptr, a1 = val_len, a2 = 32-byte BE out ptr.\n" ++
+  "  # Returns 0 (ok) / 1 (fail). Output is zeroed on every path.\n" ++
+  "  sd zero,  0(a2); sd zero,  8(a2); sd zero, 16(a2); sd zero, 24(a2)\n" ++
+  "  beqz a1, .Lsdu_fail        # empty input: malformed encoded value\n" ++
+  "  lbu t0, 0(a0)\n" ++
+  "  li t1, 0x80\n" ++
+  "  bltu t0, t1, .Lsdu_single  # b0 < 0x80: single byte\n" ++
+  "  beq t0, t1, .Lsdu_zero     # b0 == 0x80: empty string ⇒ 0\n" ++
+  "  li t1, 0xa1\n" ++
+  "  bgeu t0, t1, .Lsdu_fail    # b0 ≥ 0xa1: too long for a u256\n" ++
+  "  # Short string of n bytes (1 ≤ n ≤ 32).\n" ++
+  "  li t1, 0x80\n" ++
+  "  sub t2, t0, t1             # n\n" ++
+  "  addi t3, a1, -1\n" ++
+  "  bltu t3, t2, .Lsdu_fail    # not enough bytes for declared length\n" ++
+  "  li t4, 32\n" ++
+  "  sub t4, t4, t2             # 32 - n\n" ++
+  "  add t5, a2, t4             # dst (right-aligned)\n" ++
+  "  addi t6, a0, 1             # src\n" ++
+  "  mv t3, t2                  # remaining\n" ++
+  ".Lsdu_copy:\n" ++
+  "  beqz t3, .Lsdu_ok\n" ++
+  "  lbu t1, 0(t6)\n" ++
+  "  sb  t1, 0(t5)\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t6, t6, 1\n" ++
+  "  addi t3, t3, -1\n" ++
+  "  j .Lsdu_copy\n" ++
+  ".Lsdu_single:\n" ++
+  "  sb t0, 31(a2)              # write u256 = b0 at byte 31 (BE LSB)\n" ++
+  ".Lsdu_zero:\n" ++
+  ".Lsdu_ok:\n" ++
+  "  li a0, 0\n" ++
+  "  ret\n" ++
+  ".Lsdu_fail:\n" ++
+  "  li a0, 1\n" ++
+  "  ret"
+
+def slotAtIndexFunction : String :=
+  "slot_at_index:\n" ++
+  "  addi sp, sp, -32\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp)\n" ++
+  "  mv s0, a5                  # u256 out ptr\n" ++
+  "  la a5, si_value_scratch\n" ++
+  "  la a6, si_value_len\n" ++
+  "  jal ra, mpt_lookup_by_key\n" ++
+  "  mv s1, a0\n" ++
+  "  beqz a0, .Lsi_decode\n" ++
+  "  sd zero,  0(s0); sd zero,  8(s0); sd zero, 16(s0); sd zero, 24(s0)\n" ++
+  "  mv a0, s1\n" ++
+  "  j .Lsi_ret\n" ++
+  ".Lsi_decode:\n" ++
+  "  la a0, si_value_scratch\n" ++
+  "  la t0, si_value_len; ld a1, 0(t0)\n" ++
+  "  mv a2, s0\n" ++
+  "  jal ra, slot_decode_u256\n" ++
+  "  beqz a0, .Lsi_done\n" ++
+  "  sd zero,  0(s0); sd zero,  8(s0); sd zero, 16(s0); sd zero, 24(s0)\n" ++
+  "  li a0, 3\n" ++
+  "  j .Lsi_ret\n" ++
+  ".Lsi_done:\n" ++
+  "  li a0, 0\n" ++
+  ".Lsi_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp)\n" ++
+  "  addi sp, sp, 32\n" ++
+  "  ret"
+
+/-- `zisk_slot_at_index`: probe BuildUnit. Reads
+    (witness_len, slot_len, storage_root, slot_idx, witness)
+    from host input. Writes (status, u256) to OUTPUT. -/
+def ziskSlotAtIndexPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a7, 0x40000000\n" ++
+  "  ld t6, 8(a7)                # witness_len\n" ++
+  "  ld t5, 16(a7)               # slot_len\n" ++
+  "  addi a2, a7, 24             # storage_root ptr\n" ++
+  "  addi a0, a7, 56             # slot_idx ptr\n" ++
+  "  mv a1, t5                   # slot_len\n" ++
+  "  add a3, a0, t5              # witness ptr = slot_idx + slot_len\n" ++
+  "  mv a4, t6                   # witness_len\n" ++
+  "  li a5, 0xa0010008           # u256 out at OUTPUT + 8\n" ++
+  "  sd zero, 0(a5); sd zero, 8(a5); sd zero, 16(a5); sd zero, 24(a5)\n" ++
+  "  jal ra, slot_at_index\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lsi_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  witnessLookupByHashFunction ++ "\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  mptBranchChildFunction ++ "\n" ++
+  hpDecodeNibblesFunction ++ "\n" ++
+  bytesToNibblesFunction ++ "\n" ++
+  mptWalkFunction ++ "\n" ++
+  mptLookupByKeyFunction ++ "\n" ++
+  slotDecodeU256Function ++ "\n" ++
+  slotAtIndexFunction ++ "\n" ++
+  ".Lsi_pdone:"
+
+def ziskSlotAtIndexDataSection : String :=
+  ".section .data\n" ++
+  ".balign 32\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "wlh_scratch_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mbc_offset:\n" ++
+  "  .zero 8\n" ++
+  "mbc_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_lookup_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_lookup_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_lookup_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_child_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_nibble_count:\n" ++
+  "  .zero 8\n" ++
+  "mw_is_leaf:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_nibble_buf:\n" ++
+  "  .zero 128\n" ++
+  ".balign 32\n" ++
+  "mlk_keccak_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "mlk_nibble_buf:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "si_value_len:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "si_value_scratch:\n" ++
+  "  .zero 256"
+
+def ziskSlotAtIndexProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSlotAtIndexPrologue
+  dataAsm     := ziskSlotAtIndexDataSection
+}
+
+/-! ## rlp_encode_uint_be -- PR-K30 RLP canonical-form encoder
+
+    Strip leading zeros from a big-endian byte array and emit
+    the canonical RLP encoding:
+
+      value == 0       → 0x80 (1 byte; RLP empty bytes)
+      value < 0x80     → single byte = value
+      else (1..32 B)   → 0x80 + len  +  stripped BE bytes
+
+    Building block for `account_encode` (PR-K31+), which calls
+    this for the nonce / balance fields, and for state-root
+    recompute after MPT mutation.
+
+    Calling convention:
+      a0 (input)  : src bytes ptr (BE, possibly with leading zeros)
+      a1 (input)  : src byte length (any; typical: 8 for u64,
+                    32 for u256)
+      a2 (input)  : output buffer ptr (≥ a1 + 1 bytes capacity)
+      ra (input)  : return
+      a0 (output) : number of bytes written
+
+    Pure register arithmetic, no scratch, leaf-callable. -/
+def rlpEncodeUintBeFunction : String :=
+  "rlp_encode_uint_be:\n" ++
+  "  # Find first non-zero byte; stripped_len = src_len - leading_zeros.\n" ++
+  "  mv t0, a0\n" ++
+  "  mv t1, a1\n" ++
+  ".Lreu_skip_zero:\n" ++
+  "  beqz t1, .Lreu_all_zero\n" ++
+  "  lbu t3, 0(t0)\n" ++
+  "  bnez t3, .Lreu_have\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lreu_skip_zero\n" ++
+  ".Lreu_all_zero:\n" ++
+  "  li t3, 0x80\n" ++
+  "  sb t3, 0(a2)\n" ++
+  "  li a0, 1\n" ++
+  "  ret\n" ++
+  ".Lreu_have:\n" ++
+  "  # t0 = ptr to first non-zero byte; t1 = stripped_len.\n" ++
+  "  mv t6, t1\n" ++
+  "  li t3, 1\n" ++
+  "  bne t1, t3, .Lreu_multi\n" ++
+  "  lbu t4, 0(t0)\n" ++
+  "  li t5, 0x80\n" ++
+  "  bgeu t4, t5, .Lreu_multi\n" ++
+  "  # Single-byte form.\n" ++
+  "  sb t4, 0(a2)\n" ++
+  "  li a0, 1\n" ++
+  "  ret\n" ++
+  ".Lreu_multi:\n" ++
+  "  # Short-string form: 0x80 + stripped_len, then stripped bytes.\n" ++
+  "  li t3, 0x80\n" ++
+  "  add t3, t3, t6\n" ++
+  "  sb t3, 0(a2)\n" ++
+  "  addi t4, a2, 1\n" ++
+  "  mv t1, t6\n" ++
+  ".Lreu_copy:\n" ++
+  "  beqz t1, .Lreu_done\n" ++
+  "  lbu t5, 0(t0)\n" ++
+  "  sb  t5, 0(t4)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lreu_copy\n" ++
+  ".Lreu_done:\n" ++
+  "  addi a0, t6, 1               # 1 + stripped_len\n" ++
+  "  ret"
+
+/-- `zisk_rlp_encode_uint_be`: probe BuildUnit. Reads
+    (src_len, src_bytes) from host input, writes
+    (bytes_written, encoded_bytes) to OUTPUT. -/
+def ziskRlpEncodeUintBePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # src_len\n" ++
+  "  addi a0, a3, 16             # src ptr\n" ++
+  "  li a2, 0xa0010008           # output at OUTPUT + 8\n" ++
+  "  jal ra, rlp_encode_uint_be\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # bytes_written at OUTPUT + 0\n" ++
+  "  j .Lreu_pdone\n" ++
+  rlpEncodeUintBeFunction ++ "\n" ++
+  ".Lreu_pdone:"
+
+def ziskRlpEncodeUintBeDataSection : String :=
+  ".section .data\n" ++
+  "reu_pad:\n" ++
+  "  .zero 8"
+
+def ziskRlpEncodeUintBeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskRlpEncodeUintBePrologue
+  dataAsm     := ziskRlpEncodeUintBeDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3957,6 +4462,9 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_bytes_to_nibbles"     => some ziskBytesToNibblesProbeUnit
   | "zisk_mpt_lookup_by_key"    => some ziskMptLookupByKeyProbeUnit
   | "zisk_account_decode"       => some ziskAccountDecodeProbeUnit
+  | "zisk_account_at_address"   => some ziskAccountAtAddressProbeUnit
+  | "zisk_slot_at_index"        => some ziskSlotAtIndexProbeUnit
+  | "zisk_rlp_encode_uint_be"   => some ziskRlpEncodeUintBeProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3994,6 +4502,9 @@ def knownProgramNames : List String :=
    "zisk_bytes_to_nibbles",
    "zisk_mpt_lookup_by_key",
    "zisk_account_decode",
+   "zisk_account_at_address",
+   "zisk_slot_at_index",
+   "zisk_rlp_encode_uint_be",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
