@@ -1707,4 +1707,32 @@ def loopN1CallMaxmaxmaxIter210FramedExactInputSpec
       I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
       I.u0Orig2 I.u0Orig1 I.u0Orig0 I.scratchMem ** (.x1 ↦ᵣ I.raVal))
 
+/-- The post produced by framing the bundled all-max tail with the j=3
+    q/top/scratch cells. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxIter210FramedPostInput
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  (loopN1Iter210PostNoX1 false false false I.sp I.base I.v0 I.v1 I.v2 I.v3
+    I.u0Orig2 r3.2.1 r3.2.2.1 r3.2.2.2.1 r3.2.2.2.2.1
+    I.u0Orig1 I.u0Orig0 (I.base + div128CallRetOff) I.v0
+    (divKTrialCallV4DLo I.v0) (divKTrialCallV4Un0 I.u0) ** (.x1 ↦ᵣ I.raVal)) **
+  loopN1CallMaxmaxmaxIter210FrameInput I
+
+/-- Rearrange the framed all-max tail post into the final bundled N1
+    call/max/max/max scratch post. -/
+theorem loopN1CallMaxmaxmaxIter210FramedPostInput_to_scratchPost
+    (I : LoopN1CallMaxmaxmaxExactInputs) :
+    ∀ h,
+      loopN1CallMaxmaxmaxIter210FramedPostInput I h →
+      (loopN1CallMaxmaxmaxScratchPostNoX1 I.sp I.base
+        I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+        I.u0Orig2 I.u0Orig1 I.u0Orig0 I.scratchMem ** (.x1 ↦ᵣ I.raVal)) h := by
+  intro h hp
+  delta loopN1CallMaxmaxmaxIter210FramedPostInput
+    loopN1CallMaxmaxmaxIter210FrameInput loopN1CallMaxmaxmaxScratchPostNoX1 at hp ⊢
+  unfold loopN1CallMaxmaxmaxR3 at hp
+  rw [sepConj_assoc'] at hp
+  xperm_hyp hp
+
 end EvmAsm.Evm64
