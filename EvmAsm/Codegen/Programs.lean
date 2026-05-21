@@ -3335,6 +3335,180 @@ def ziskMptLookupByKeyProbeUnit : BuildUnit := {
   dataAsm     := ziskMptLookupByKeyDataSection
 }
 
+/-! ## account_decode -- PR-K27 RLP splitter for Account records
+
+    Decode an RLP-encoded Ethereum Account (the value bytes
+    that `mpt_lookup_by_key` returns for state-trie addresses)
+    into four caller-supplied output slots.
+
+    Calling convention:
+      a0 (input)  : account RLP bytes ptr
+      a1 (input)  : account RLP byte length
+      a2 (input)  : u64 nonce out ptr (8 bytes; written LE u64)
+      a3 (input)  : u256 balance out ptr (32 bytes; written BE,
+                    left-zero-padded for values < 32 bytes)
+      a4 (input)  : storage_root out ptr (32 bytes)
+      a5 (input)  : code_hash out ptr (32 bytes)
+      ra (input)  : return
+      a0 (output) : 0 success / 1 parse fail
+
+    Composes PR-K20 `rlp_list_nth_item` four times. Field types
+    enforced:
+      * nonce / balance : variable-length BE big-int (length
+                          in [0, 8] for nonce, [0, 32] for balance)
+      * storage_root / code_hash : exactly 32 bytes each. -/
+def accountDecodeFunction : String :=
+  "account_decode:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp)\n" ++
+  "  mv s0, a0                  # account ptr\n" ++
+  "  mv s1, a1                  # account_len\n" ++
+  "  mv s2, a2                  # nonce out\n" ++
+  "  mv s3, a3                  # balance out\n" ++
+  "  mv s4, a4                  # storage_root out\n" ++
+  "  mv s5, a5                  # code_hash out\n" ++
+  "  # Field 0: nonce (u64 BE → LE store)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 0\n" ++
+  "  la a3, ad_offset\n" ++
+  "  la a4, ad_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lad_fail\n" ++
+  "  la t0, ad_length; ld t1, 0(t0)\n" ++
+  "  li t2, 8\n" ++
+  "  bgtu t1, t2, .Lad_fail      # nonce > 8 bytes\n" ++
+  "  la t0, ad_offset; ld t3, 0(t0); add t3, s0, t3\n" ++
+  "  li t2, 0                   # accumulator\n" ++
+  ".Lad_nonce_loop:\n" ++
+  "  beqz t1, .Lad_nonce_done\n" ++
+  "  slli t2, t2, 8\n" ++
+  "  lbu t4, 0(t3)\n" ++
+  "  or t2, t2, t4\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lad_nonce_loop\n" ++
+  ".Lad_nonce_done:\n" ++
+  "  sd t2, 0(s2)               # nonce_out (LE u64)\n" ++
+  "  # Field 1: balance (u256 BE → BE 32-byte buffer)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 1\n" ++
+  "  la a3, ad_offset\n" ++
+  "  la a4, ad_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lad_fail\n" ++
+  "  la t0, ad_length; ld t1, 0(t0)\n" ++
+  "  li t2, 32\n" ++
+  "  bgtu t1, t2, .Lad_fail      # balance > 32 bytes\n" ++
+  "  # Zero balance_out\n" ++
+  "  sd zero,  0(s3); sd zero,  8(s3); sd zero, 16(s3); sd zero, 24(s3)\n" ++
+  "  # Right-align: write to s3 + (32 - length)\n" ++
+  "  sub t2, t2, t1             # 32 - length\n" ++
+  "  add t4, s3, t2             # dst\n" ++
+  "  la t0, ad_offset; ld t3, 0(t0); add t3, s0, t3\n" ++
+  ".Lad_bal_loop:\n" ++
+  "  beqz t1, .Lad_bal_done\n" ++
+  "  lbu t5, 0(t3)\n" ++
+  "  sb  t5, 0(t4)\n" ++
+  "  addi t3, t3, 1\n" ++
+  "  addi t4, t4, 1\n" ++
+  "  addi t1, t1, -1\n" ++
+  "  j .Lad_bal_loop\n" ++
+  ".Lad_bal_done:\n" ++
+  "  # Field 2: storage_root (must be exactly 32 bytes)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 2\n" ++
+  "  la a3, ad_offset\n" ++
+  "  la a4, ad_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lad_fail\n" ++
+  "  la t0, ad_length; ld t1, 0(t0)\n" ++
+  "  li t2, 32\n" ++
+  "  bne t1, t2, .Lad_fail\n" ++
+  "  la t0, ad_offset; ld t3, 0(t0); add t3, s0, t3\n" ++
+  "  ld t4,  0(t3); sd t4,  0(s4)\n" ++
+  "  ld t4,  8(t3); sd t4,  8(s4)\n" ++
+  "  ld t4, 16(t3); sd t4, 16(s4)\n" ++
+  "  ld t4, 24(t3); sd t4, 24(s4)\n" ++
+  "  # Field 3: code_hash (must be exactly 32 bytes)\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 3\n" ++
+  "  la a3, ad_offset\n" ++
+  "  la a4, ad_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lad_fail\n" ++
+  "  la t0, ad_length; ld t1, 0(t0)\n" ++
+  "  li t2, 32\n" ++
+  "  bne t1, t2, .Lad_fail\n" ++
+  "  la t0, ad_offset; ld t3, 0(t0); add t3, s0, t3\n" ++
+  "  ld t4,  0(t3); sd t4,  0(s5)\n" ++
+  "  ld t4,  8(t3); sd t4,  8(s5)\n" ++
+  "  ld t4, 16(t3); sd t4, 16(s5)\n" ++
+  "  ld t4, 24(t3); sd t4, 24(s5)\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lad_ret\n" ++
+  ".Lad_fail:\n" ++
+  "  li a0, 1\n" ++
+  ".Lad_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_account_decode`: probe BuildUnit. Reads
+    (account_len, account_bytes) from host input, writes
+    (status, nonce, balance, storage_root, code_hash) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : account_len (u64)
+      bytes  8..   : account RLP bytes
+    Output layout:
+      bytes   0.. 8 : status (u64)
+      bytes   8..16 : nonce (u64 LE)
+      bytes  16..48 : balance (u256 BE)
+      bytes  48..80 : storage_root
+      bytes  80..112: code_hash -/
+def ziskAccountDecodePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a6, 0x40000000\n" ++
+  "  ld a1, 8(a6)                # account_len\n" ++
+  "  addi a0, a6, 16             # account ptr\n" ++
+  "  li a2, 0xa0010008\n" ++
+  "  li a3, 0xa0010010\n" ++
+  "  li a4, 0xa0010030\n" ++
+  "  li a5, 0xa0010050\n" ++
+  "  # Pre-zero all outputs so a parse failure surfaces as zeros.\n" ++
+  "  sd zero, 0(a2)\n" ++
+  "  sd zero,  0(a3); sd zero,  8(a3); sd zero, 16(a3); sd zero, 24(a3)\n" ++
+  "  sd zero,  0(a4); sd zero,  8(a4); sd zero, 16(a4); sd zero, 24(a4)\n" ++
+  "  sd zero,  0(a5); sd zero,  8(a5); sd zero, 16(a5); sd zero, 24(a5)\n" ++
+  "  jal ra, account_decode\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status\n" ++
+  "  j .Lad_pdone\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  accountDecodeFunction ++ "\n" ++
+  ".Lad_pdone:"
+
+def ziskAccountDecodeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "ad_offset:\n" ++
+  "  .zero 8\n" ++
+  "ad_length:\n" ++
+  "  .zero 8"
+
+def ziskAccountDecodeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskAccountDecodePrologue
+  dataAsm     := ziskAccountDecodeDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3782,6 +3956,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_mpt_walk"             => some ziskMptWalkProbeUnit
   | "zisk_bytes_to_nibbles"     => some ziskBytesToNibblesProbeUnit
   | "zisk_mpt_lookup_by_key"    => some ziskMptLookupByKeyProbeUnit
+  | "zisk_account_decode"       => some ziskAccountDecodeProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3818,6 +3993,7 @@ def knownProgramNames : List String :=
    "zisk_mpt_walk",
    "zisk_bytes_to_nibbles",
    "zisk_mpt_lookup_by_key",
+   "zisk_account_decode",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
