@@ -162,6 +162,110 @@ theorem fullDivN2DenormPost_fullDivN2Frame_to_divStackDispatchPostNoX1
   rw [word_add_zero] at hq
   xperm_hyp hq
 
+/-- Convert the split n=2 full-path post plus exact caller `x1` to the
+    exact-register concrete callable post surface. -/
+theorem fullDivN2UnifiedPostNoX1_frame_to_divConcretePostNoX1ExactRegsFrame
+    (bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base : Word) (a b : EvmWord)
+    (a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (raVal : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hdiv0 : (EvmWord.div a b).getLimbN 0 =
+      (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv1 : (EvmWord.div a b).getLimbN 1 =
+      (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv2 : (EvmWord.div a b).getLimbN 2 =
+      (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv3 : (EvmWord.div a b).getLimbN 3 = (0 : Word)) :
+    ∀ h,
+      (fullDivN2UnifiedPostNoX1 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        (.x1 ↦ᵣ raVal)) h →
+      divConcretePostNoX1ExactRegsFrame sp a b
+        (signExtend12 4095) raVal
+        (signExtend12 (0 : BitVec 12) - fullDivN2Shift b1)
+        (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (0 : Word)
+        (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (0 : Word)
+        (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.1 >>>
+            ((fullDivN2Shift b1).toNat % 64)) |||
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat) % 64)))
+        (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 >>>
+            ((fullDivN2Shift b1).toNat % 64)) |||
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat) % 64)))
+        (((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 >>>
+            ((fullDivN2Shift b1).toNat % 64)) |||
+          ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN2Shift b1).toNat) % 64)))
+        ((fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 >>>
+          ((fullDivN2Shift b1).toNat % 64))
+        (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.2
+        (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.2
+        (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.2
+        (0 : Word)
+        (fullDivN2Shift b1) (2 : Word) (0 : Word)
+        (n2ScratchRet (fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+          a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0))
+        (n2ScratchD (fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+          a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0))
+        (n2ScratchDLo (fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+          a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0))
+        (n2ScratchUn0 (fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+          a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0)) h := by
+  intro h hq
+  let shift := fullDivN2Shift b1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let r2 := fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3
+  let r1 := fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let scratch := fullDivN2ScratchFinal bltu_2 bltu_1 bltu_0 base
+    a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0
+  let u0' := (r0.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.1 <<< (antiShift.toNat % 64))
+  let u1' := (r0.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u2' := (r0.2.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u3' := r0.2.2.2.2.1 >>> (shift.toNat % 64)
+  rw [divConcretePostNoX1ExactRegsFrame_unfold]
+  change
+    (((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ r0.1) ** (.x10 ↦ᵣ (0 : Word)) **
+      (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+     ((.x9 ↦ᵣ (signExtend12 4095 : Word)) ** (.x1 ↦ᵣ raVal) **
+      (.x2 ↦ᵣ antiShift) ** (.x6 ↦ᵣ r1.1) ** (.x7 ↦ᵣ r2.1) **
+      (.x11 ↦ᵣ r0.1) ** evmWordIs sp a **
+      divScratchValuesCallNoX1 sp r0.1 r1.1 r2.1 (0 : Word)
+        u0' u1' u2' u3' r0.2.2.2.2.2 r1.2.2.2.2.2
+        r2.2.2.2.2.2 (0 : Word) shift (2 : Word) (0 : Word)
+        (n2ScratchRet scratch) (n2ScratchD scratch)
+        (n2ScratchDLo scratch) (n2ScratchUn0 scratch))) h
+  delta fullDivN2UnifiedPostNoX1 fullDivN2DenormPost fullDivN2FrameNoX1 at hq
+  simp only [denormDivPost_unfold] at hq
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+      from by rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ ha0 ha1 ha2 ha3]]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
+      (((sp + 32) ↦ₘ
+          (fullDivN2R0 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 40) ↦ₘ
+          (fullDivN2R1 bltu_2 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 48) ↦ₘ
+          (fullDivN2R2 bltu_2 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 56) ↦ₘ (0 : Word)))
+      from by
+        rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+          hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [divScratchValuesCallNoX1_unfold, divScratchValues_unfold]
+  rw [word_add_zero] at hq
+  xperm_hyp hq
+
 /-- N=2 DIV stack-level entry point: mirrors `evm_div_n3_stack_spec_within`
 and `evm_mod_n2_stack_spec_within`. -/
 theorem evm_div_n2_stack_spec_within
