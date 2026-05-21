@@ -119,6 +119,66 @@ def preloopN1UnifiedPost (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
   ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
   ((sp + signExtend12 3992) ↦ₘ (clzResult b0).1)
 
+/-- No-`x1` variant of `preloopN1UnifiedPost`; callers can keep exact `x1`
+    framed through the loop and into denormalization. -/
+@[irreducible]
+def preloopN1UnifiedPostNoX1 (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  let shift := (clzResult b0).1
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let v0' := b0 <<< (shift.toNat % 64)
+  let v1' := (b1 <<< (shift.toNat % 64)) ||| (b0 >>> (antiShift.toNat % 64))
+  let v2' := (b2 <<< (shift.toNat % 64)) ||| (b1 >>> (antiShift.toNat % 64))
+  let v3' := (b3 <<< (shift.toNat % 64)) ||| (b2 >>> (antiShift.toNat % 64))
+  let u0S := a0 <<< (shift.toNat % 64)
+  let u1S := (a1 <<< (shift.toNat % 64)) ||| (a0 >>> (antiShift.toNat % 64))
+  let u2S := (a2 <<< (shift.toNat % 64)) ||| (a1 >>> (antiShift.toNat % 64))
+  let u3S := (a3 <<< (shift.toNat % 64)) ||| (a2 >>> (antiShift.toNat % 64))
+  loopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+    v0' v1' v2' v3' u3S (a3 >>> (antiShift.toNat % 64)) (0 : Word) (0 : Word) (0 : Word)
+    u2S u1S u0S
+    retMem dMem dloMem scratch_un0 **
+  ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+  ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+  ((sp + signExtend12 3992) ↦ₘ (clzResult b0).1)
+
+theorem preloopN1UnifiedPostNoX1_frame_to_preloopN1UnifiedPost
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      (preloopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 ** regOwn .x1) h →
+      preloopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h := by
+  intro h hp
+  cases bltu_3 <;> cases bltu_2 <;> cases bltu_1 <;> cases bltu_0
+  all_goals
+    delta preloopN1UnifiedPostNoX1 preloopN1UnifiedPost loopN1UnifiedPostNoX1
+      loopN1UnifiedPost loopN1Iter210PostNoX1 loopN1Iter210Post loopN1Iter10PostNoX1
+      loopN1Iter10Post loopIterPostN1NoX1 loopIterPostN1 loopIterPostN1CallNoX1
+      loopIterPostN1Call loopIterPostN1Max at hp ⊢
+    simp only [iterN1_false, iterN1_true, ite_true, sepConj_emp_right'] at hp ⊢
+    xperm_hyp hp
+
+theorem preloopN1UnifiedPost_to_preloopN1UnifiedPostNoX1_frame
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      preloopN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h →
+      (preloopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 ** regOwn .x1) h := by
+  intro h hp
+  cases bltu_3 <;> cases bltu_2 <;> cases bltu_1 <;> cases bltu_0
+  all_goals
+    delta preloopN1UnifiedPostNoX1 preloopN1UnifiedPost loopN1UnifiedPostNoX1
+      loopN1UnifiedPost loopN1Iter210PostNoX1 loopN1Iter210Post loopN1Iter10PostNoX1
+      loopN1Iter10Post loopIterPostN1NoX1 loopIterPostN1 loopIterPostN1CallNoX1
+      loopIterPostN1Call loopIterPostN1Max at hp ⊢
+    simp only [iterN1_false, iterN1_true, ite_true, sepConj_emp_right'] at hp ⊢
+    xperm_hyp hp
+
 -- ============================================================================
 -- Double-addback loop instantiation helper (heartbeat isolation)
 -- ============================================================================
@@ -438,6 +498,61 @@ theorem evm_div_n1_noNop_preloop_loop_unified_spec
     (fun h hp => by xperm_hyp hp)
     (fun h hq => by delta preloopN1UnifiedPost; xperm_hyp hq)
     hFull
+
+/-- No-NOP n=1 preloop+loop path with the final preloop post split into
+    no-`x1` state plus separate `x1` ownership. -/
+theorem evm_div_n1_noNop_preloop_loop_unified_spec_noX1_post
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old : Word)
+    (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7 nMem shiftMem jMem : Word)
+    (retMem dMem dloMem scratch_un0 : Word)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0)
+    (hshift_nz : (clzResult b0).1 ≠ 0)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
+    (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
+    (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b0).1).toNat % 64))
+      ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b2 <<< (((clzResult b0).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b3 <<< (((clzResult b0).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))) :
+    cpsTripleWithin (8 + 21 + 24 + 4 + 21 + 21 + 4 + 808) base (base + denormOff) (divCode_noNop base)
+      ((.x12 ↦ᵣ sp) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) ** (.x0 ↦ᵣ (0 : Word)) **
+       (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x2 ↦ᵣ (clzResult b0).2 >>> (63 : Nat)) **
+       (.x9 ↦ᵣ signExtend12 (4 : BitVec 12) - (4 : Word)) **
+       (.x11 ↦ᵣ v11Old) **
+       ((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+       ((sp + 32) ↦ₘ b0) ** ((sp + 40) ↦ₘ b1) **
+       ((sp + 48) ↦ₘ b2) ** ((sp + 56) ↦ₘ b3) **
+       ((sp + signExtend12 4088) ↦ₘ q0) ** ((sp + signExtend12 4080) ↦ₘ q1) **
+       ((sp + signExtend12 4072) ↦ₘ q2) ** ((sp + signExtend12 4064) ↦ₘ q3) **
+       ((sp + signExtend12 4056) ↦ₘ u0Old) ** ((sp + signExtend12 4048) ↦ₘ u1Old) **
+       ((sp + signExtend12 4040) ↦ₘ u2Old) ** ((sp + signExtend12 4032) ↦ₘ u3Old) **
+       ((sp + signExtend12 4024) ↦ₘ u4Old) **
+       ((sp + signExtend12 4016) ↦ₘ u5) ** ((sp + signExtend12 4008) ↦ₘ u6) **
+       ((sp + signExtend12 4000) ↦ₘ u7) ** ((sp + signExtend12 3984) ↦ₘ nMem) **
+       ((sp + signExtend12 3992) ↦ₘ shiftMem) **
+       ((sp + signExtend12 3976) ↦ₘ jMem) **
+       ((sp + signExtend12 3968) ↦ₘ retMem) **
+       ((sp + signExtend12 3960) ↦ₘ dMem) **
+       ((sp + signExtend12 3952) ↦ₘ dloMem) **
+       ((sp + signExtend12 3944) ↦ₘ scratch_un0) ** regOwn .x1)
+      (preloopN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 ** regOwn .x1) := by
+  exact cpsTripleWithin_weaken
+    (fun h hp => hp)
+    (preloopN1UnifiedPost_to_preloopN1UnifiedPostNoX1_frame
+      bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+      retMem dMem dloMem scratch_un0)
+    (evm_div_n1_noNop_preloop_loop_unified_spec
+      bltu_3 bltu_2 bltu_1 bltu_0 sp base a0 a1 a2 a3 b0 b1 b2 b3
+      v5 v6 v7 v10 v11Old q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old
+      u5 u6 u7 nMem shiftMem jMem retMem dMem dloMem scratch_un0
+      hbnz hb3z hb2z hb1z hshift_nz halign hbltu_3 hbltu_2 hbltu_1 hbltu_0
+      hcarry2)
 
 -- ============================================================================
 -- Irreducible full-path intermediates for n=1
