@@ -1212,6 +1212,19 @@ def isAddbackCarry2NzN1CallV4
   isAddbackCarry2Nz (divKTrialCallV4QHat u1 u0 v0)
     v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
+/-- Expand the compact v4 n=1 call carry predicate into the raw
+    double-addback progress hypothesis expected by the j=3 call-body spec. -/
+theorem isAddbackCarry2NzN1CallV4_raw
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hcarry2 : isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop) :
+    let qHat := divKTrialCallV4QHat u1 u0 v0
+    let ms := mulsubN4 qHat v0 v1 v2 v3 u0 u1 u2 u3
+    let c3 := ms.2.2.2.2
+    let carry := addbackN4_carry ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 v0 v1 v2 v3
+    let ab := addbackN4 ms.1 ms.2.1 ms.2.2.1 ms.2.2.2.1 (uTop - c3) v0 v1 v2 v3
+    carry = 0 → addbackN4_carry ab.1 ab.2.1 ab.2.2.1 ab.2.2.2.1 v0 v1 v2 v3 ≠ 0 := by
+  simpa [isAddbackCarry2NzN1CallV4, isAddbackCarry2Nz] using hcarry2
+
 /-- Result of the j=3 v4 call iteration in the N1 call/max/max/max path. -/
 @[irreducible]
 def loopN1CallMaxmaxmaxR3
