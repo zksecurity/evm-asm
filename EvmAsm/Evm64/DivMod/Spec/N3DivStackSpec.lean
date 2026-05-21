@@ -182,6 +182,118 @@ theorem evm_div_n3_stack_spec_within_word_exact_x1_noNop
         ha0 ha1 ha2 ha3 hdiv0 hdiv1 hdiv2 hdiv3 h hq)
     hFull
 
+/-- Convert the split n=3 full-path post plus exact caller `x1` to the
+    exact-register concrete callable post surface. -/
+theorem fullDivN3UnifiedPostNoX1_frame_to_divConcretePostNoX1ExactRegsFrame
+    (bltu_1 bltu_0 : Bool)
+    (sp base : Word) (a b : EvmWord)
+    (a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word)
+    (raVal : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hdiv0 : (EvmWord.div a b).getLimbN 0 =
+      (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv1 : (EvmWord.div a b).getLimbN 1 =
+      (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1)
+    (hdiv2 : (EvmWord.div a b).getLimbN 2 = (0 : Word))
+    (hdiv3 : (EvmWord.div a b).getLimbN 3 = (0 : Word)) :
+    ∀ h,
+      (fullDivN3UnifiedPostNoX1 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        (.x1 ↦ᵣ raVal)) h →
+      divConcretePostNoX1ExactRegsFrame sp a b
+        (signExtend12 4095) raVal
+        (signExtend12 (0 : BitVec 12) - fullDivN3Shift b2)
+        (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (0 : Word)
+        (0 : Word)
+        (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1
+        (0 : Word)
+        (0 : Word)
+        (((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.1 >>>
+            ((fullDivN3Shift b2).toNat % 64)) |||
+          ((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN3Shift b2).toNat) % 64)))
+        (((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1 >>>
+            ((fullDivN3Shift b2).toNat % 64)) |||
+          ((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN3Shift b2).toNat) % 64)))
+        (((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.1 >>>
+            ((fullDivN3Shift b2).toNat % 64)) |||
+          ((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 <<<
+            (((signExtend12 (0 : BitVec 12) - fullDivN3Shift b2).toNat) % 64)))
+        ((fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.1 >>>
+          ((fullDivN3Shift b2).toNat % 64))
+        (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.2
+        (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.2.2.2
+        (0 : Word)
+        (0 : Word)
+        (fullDivN3Shift b2) (3 : Word) (0 : Word)
+        (if bltu_0 then (base + div128CallRetOff)
+          else if bltu_1 then (base + div128CallRetOff) else retMem)
+        (if bltu_0 then (fullDivN3NormV b0 b1 b2 b3).2.2.1
+          else if bltu_1 then (fullDivN3NormV b0 b1 b2 b3).2.2.1 else dMem)
+        (if bltu_0 then div128DLo (fullDivN3NormV b0 b1 b2 b3).2.2.1
+          else if bltu_1 then div128DLo (fullDivN3NormV b0 b1 b2 b3).2.2.1 else dloMem)
+        (if bltu_0 then div128Un0
+            (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).2.2.1
+          else if bltu_1 then div128Un0
+            (fullDivN3NormU a0 a1 a2 a3 b2).2.2.2.1
+          else scratch_un0) h := by
+  intro h hq
+  let shift := fullDivN3Shift b2
+  let antiShift := signExtend12 (0 : BitVec 12) - shift
+  let r1 := fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3
+  let r0 := fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3
+  let v := fullDivN3NormV b0 b1 b2 b3
+  let u := fullDivN3NormU a0 a1 a2 a3 b2
+  let scratchRet := if bltu_0 then (base + div128CallRetOff)
+    else if bltu_1 then (base + div128CallRetOff) else retMem
+  let scratchD := if bltu_0 then v.2.2.1
+    else if bltu_1 then v.2.2.1 else dMem
+  let scratchDLo := if bltu_0 then div128DLo v.2.2.1
+    else if bltu_1 then div128DLo v.2.2.1 else dloMem
+  let scratchUn0 := if bltu_0 then div128Un0 r1.2.2.1
+    else if bltu_1 then div128Un0 u.2.2.2.1 else scratch_un0
+  let u0' := (r0.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.1 <<< (antiShift.toNat % 64))
+  let u1' := (r0.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u2' := (r0.2.2.2.1 >>> (shift.toNat % 64)) ||| (r0.2.2.2.2.1 <<< (antiShift.toNat % 64))
+  let u3' := r0.2.2.2.2.1 >>> (shift.toNat % 64)
+  rw [divConcretePostNoX1ExactRegsFrame_unfold]
+  change
+    (((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ r0.1) ** (.x10 ↦ᵣ (0 : Word)) **
+      (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+     ((.x9 ↦ᵣ (signExtend12 4095 : Word)) ** (.x1 ↦ᵣ raVal) **
+      (.x2 ↦ᵣ antiShift) ** (.x6 ↦ᵣ r1.1) ** (.x7 ↦ᵣ (0 : Word)) **
+      (.x11 ↦ᵣ r0.1) ** evmWordIs sp a **
+      divScratchValuesCallNoX1 sp r0.1 r1.1 (0 : Word) (0 : Word)
+        u0' u1' u2' u3' r0.2.2.2.2.2 r1.2.2.2.2.2
+        (0 : Word) (0 : Word) shift (3 : Word) (0 : Word)
+        scratchRet scratchD scratchDLo scratchUn0)) h
+  delta fullDivN3UnifiedPostNoX1 fullDivN3DenormPost fullDivN3FrameNoX1
+    fullDivN3ScratchNoX1 at hq
+  simp only [denormDivPost_unfold] at hq
+  rw [show evmWordIs sp a =
+      ((sp ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+       ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3))
+      from by rw [evmWordIs_sp_limbs_eq sp a _ _ _ _ ha0 ha1 ha2 ha3]]
+  rw [show evmWordIs (sp + 32) (EvmWord.div a b) =
+      (((sp + 32) ↦ₘ
+          (fullDivN3R0 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 40) ↦ₘ
+          (fullDivN3R1 bltu_1 a0 a1 a2 a3 b0 b1 b2 b3).1) **
+       ((sp + 48) ↦ₘ (0 : Word)) **
+       ((sp + 56) ↦ₘ (0 : Word)))
+      from by
+        rw [evmWordIs_sp32_limbs_eq sp (EvmWord.div a b) _ _ _ _
+          hdiv0 hdiv1 hdiv2 hdiv3]]
+  rw [divScratchValuesCallNoX1_unfold, divScratchValues_unfold]
+  rw [word_add_zero] at hq
+  xperm_hyp hq
+
 /-- No-NOP n=3 DIV stack spec weakened to the callable post surface with
     separate `x1` ownership and exact `x9`. -/
 theorem evm_div_n3_stack_spec_within_word_noNop_callableOwnPost
