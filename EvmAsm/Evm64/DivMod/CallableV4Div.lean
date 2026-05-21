@@ -422,6 +422,56 @@ theorem evm_div_callable_v4_spec_from_noNop_preserving_x1_x9_framed
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
 
+/-- v4 callable DIV wrapper for no-NOP body proofs that already carry an
+    explicit PC-free frame through the body. This is useful when the v4 body
+    surface exposes an extra scratch cell as part of its own pre/post. -/
+theorem evm_div_callable_v4_spec_from_noNop_preserving_x1_x9_body_framed
+    {F : Assertion} [Assertion.PCFree F]
+    (sp base x9Val raVal : Word) (a b : EvmWord)
+    (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (sharedDivModCodeNoNop_v4 base)
+        (divModStackDispatchPreNoX1 sp a b
+          x9Val raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+        (((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+          (.x9 ↦ᵣ x9Val)) ** F)) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code_v4 base)
+      (divModStackDispatchPreNoX1 sp a b
+        x9Val raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+      (((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) ** F) := by
+  have hStackCall :=
+    cpsTripleWithin_extend_code
+      (hmono := sharedDivModCodeNoNop_v4_sub_div_callable_code_v4) hStack
+  have hStackForRet :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (evm_div_callable_code_v4 base)
+        (divModStackDispatchPreNoX1 sp a b
+          x9Val raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+        (((divStackDispatchPostCallable sp a b ** (.x9 ↦ᵣ x9Val)) ** F) **
+          (.x1 ↦ᵣ raVal)) :=
+    cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by xperm_hyp hp) hStackCall
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_div_callable_code_v4_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL ((divStackDispatchPostCallable sp a b ** (.x9 ↦ᵣ x9Val)) ** F)
+      (by
+        rw [divStackDispatchPostCallable_unfold, divScratchOwnCallNoX1_unfold,
+          divScratchOwn_unfold]
+        pcFree)
+      hRet
+  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by xperm_hyp hp)
+    (cpsTripleWithin_seq_same_cr hStackForRet hRetFramed)
+
 theorem evm_div_callable_v4_spec_from_noNop_branch_return_x1 (sp base : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
