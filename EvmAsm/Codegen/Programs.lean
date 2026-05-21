@@ -3174,6 +3174,167 @@ def ziskBytesToNibblesProbeUnit : BuildUnit := {
   dataAsm     := ziskBytesToNibblesDataSection
 }
 
+/-! ## mpt_lookup_by_key -- PR-K26 keccak + nibbles + mpt_walk
+
+    Compose the lookup chain that turns a raw key (address or
+    storage slot index) into a value via Ethereum's standard
+    `keccak256(key) -> path -> mpt_walk(...)` shape.
+
+    Both Ethereum state and storage tries use this same shape;
+    only the value semantics differ (account RLP vs 32-byte
+    storage word).
+
+    Calling convention:
+      a0 (input)  : key bytes ptr (20-byte address or 32-byte
+                    storage slot index, big-endian)
+      a1 (input)  : key byte length
+      a2 (input)  : root_hash ptr (32 bytes)
+      a3 (input)  : witness section ptr
+      a4 (input)  : witness section_len
+      a5 (input)  : value output buffer ptr (256 bytes)
+      a6 (input)  : u64 out ptr (matched value byte length)
+      ra (input)  : return
+      a0 (output) : 0 found / 1 not found / 2 parse error
+                    (mirrors mpt_walk return codes).
+
+    Internal scratch buffers:
+      mlk_keccak_buf : 32 bytes (keccak256 output)
+      mlk_nibble_buf : 64 bytes (one nibble per byte) -/
+def mptLookupByKeyFunction : String :=
+  "mpt_lookup_by_key:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a2                   # s0 = root_hash ptr\n" ++
+  "  mv s1, a3                   # s1 = witness ptr\n" ++
+  "  mv s2, a4                   # s2 = witness_len\n" ++
+  "  mv s3, a5                   # s3 = value out\n" ++
+  "  mv s4, a6                   # s4 = value_len out\n" ++
+  "  # Step 1: keccak(key) -> mlk_keccak_buf.\n" ++
+  "  la a2, mlk_keccak_buf\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  # Step 2: bytes_to_nibbles(mlk_keccak_buf, 32, mlk_nibble_buf).\n" ++
+  "  la a0, mlk_keccak_buf\n" ++
+  "  li a1, 32\n" ++
+  "  la a2, mlk_nibble_buf\n" ++
+  "  jal ra, bytes_to_nibbles\n" ++
+  "  # Step 3: mpt_walk(root, witness, witness_len, path, 64, val_out, val_len).\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  mv a2, s2\n" ++
+  "  la a3, mlk_nibble_buf\n" ++
+  "  li a4, 64\n" ++
+  "  mv a5, s3\n" ++
+  "  mv a6, s4\n" ++
+  "  jal ra, mpt_walk\n" ++
+  "  # a0 already holds mpt_walk's status.\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_mpt_lookup_by_key`: probe BuildUnit. Reads
+    (witness_len, key_len, root_hash, key, witness) from host
+    input and writes (status, value_len, value_bytes) to OUTPUT.
+    Input layout:
+      bytes   0.. 8 : witness_len (u64)
+      bytes   8..16 : key_len (u64)
+      bytes  16..48 : root_hash (32 bytes)
+      bytes  48..   : key bytes (key_len)
+      bytes  48+key_len.. : witness section bytes
+    Output: same as PR-K24 mpt_walk. -/
+def ziskMptLookupByKeyPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a7, 0x40000000\n" ++
+  "  ld t6, 8(a7)                # witness_len\n" ++
+  "  ld t5, 16(a7)               # key_len\n" ++
+  "  addi a2, a7, 24             # root_hash ptr (input offset 16)\n" ++
+  "  addi a0, a7, 56             # key ptr (input offset 48)\n" ++
+  "  mv a1, t5                   # key_len\n" ++
+  "  add a3, a0, t5              # witness ptr = key + key_len\n" ++
+  "  mv a4, t6                   # witness_len\n" ++
+  "  li a5, 0xa0010010           # value buf at OUTPUT + 16\n" ++
+  "  li a6, 0xa0010008           # value_len at OUTPUT + 8\n" ++
+  "  jal ra, mpt_lookup_by_key\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lmlk_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  witnessLookupByHashFunction ++ "\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  mptBranchChildFunction ++ "\n" ++
+  hpDecodeNibblesFunction ++ "\n" ++
+  bytesToNibblesFunction ++ "\n" ++
+  mptWalkFunction ++ "\n" ++
+  mptLookupByKeyFunction ++ "\n" ++
+  ".Lmlk_pdone:"
+
+def ziskMptLookupByKeyDataSection : String :=
+  ".section .data\n" ++
+  ".balign 32\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "wlh_scratch_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mbc_offset:\n" ++
+  "  .zero 8\n" ++
+  "mbc_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_lookup_hash:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_lookup_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_lookup_length:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_child_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "mw_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_path_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_child_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_offset:\n" ++
+  "  .zero 8\n" ++
+  "mw_value_length:\n" ++
+  "  .zero 8\n" ++
+  "mw_nibble_count:\n" ++
+  "  .zero 8\n" ++
+  "mw_is_leaf:\n" ++
+  "  .zero 8\n" ++
+  ".balign 32\n" ++
+  "mw_nibble_buf:\n" ++
+  "  .zero 128\n" ++
+  ".balign 32\n" ++
+  "mlk_keccak_buf:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "mlk_nibble_buf:\n" ++
+  "  .zero 64"
+
+def ziskMptLookupByKeyProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskMptLookupByKeyPrologue
+  dataAsm     := ziskMptLookupByKeyDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3620,6 +3781,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_hp_decode_nibbles"    => some ziskHpDecodeNibblesProbeUnit
   | "zisk_mpt_walk"             => some ziskMptWalkProbeUnit
   | "zisk_bytes_to_nibbles"     => some ziskBytesToNibblesProbeUnit
+  | "zisk_mpt_lookup_by_key"    => some ziskMptLookupByKeyProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3655,6 +3817,7 @@ def knownProgramNames : List String :=
    "zisk_hp_decode_nibbles",
    "zisk_mpt_walk",
    "zisk_bytes_to_nibbles",
+   "zisk_mpt_lookup_by_key",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
