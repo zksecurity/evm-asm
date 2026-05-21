@@ -7,6 +7,7 @@
 
 import EvmAsm.Evm64.DivMod.Spec.CallablePost
 import EvmAsm.Evm64.DivMod.Spec.Dispatcher
+import EvmAsm.Evm64.DivMod.Spec.UnifiedBzero
 import EvmAsm.Evm64.DivMod.Compose.FullPathN1V4NoNop
 
 namespace EvmAsm.Evm64
@@ -783,6 +784,16 @@ theorem evm_div_n1_call_maxmaxmax_stack_spec_within_word_noNop_v4_preNoX1_callab
       refine sepConj_mono_left (fun hLeft hpLeft => ?_) h hConcrete
       exact divConcretePostNoX1_weaken_callable_frame sp a b hLeft hpLeft)
     hFull
+
+/-- Lift the N1 v4 call/max/max/max callable-extra bound to the shared
+    `unifiedDivBound` expected by SDIV handoff surfaces. -/
+theorem evm_div_n1_call_maxmaxmax_stack_spec_within_word_noNop_v4_preNoX1_callableExtra_bound_unified
+    {P Q : Assertion} (base : Word)
+    (h :
+      cpsTripleWithin ((8 + 21 + 24 + 4 + 21 + 21 + 4 + 780) + (2 + 23 + 10))
+        base (base + nopOff) (divCode_noNop_v4 base) P Q) :
+    cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop_v4 base) P Q := by
+  exact cpsTripleWithin_mono_nSteps (by unfold unifiedDivBound; decide) h
 
 /-- Recombine the split no-`x1` full-path post with separate `x1` ownership. -/
 theorem fullDivN1UnifiedPostNoX1_frame_to_fullDivN1UnifiedPost
