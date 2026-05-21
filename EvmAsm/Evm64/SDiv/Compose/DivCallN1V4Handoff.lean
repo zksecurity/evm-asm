@@ -37,23 +37,11 @@ abbrev sdivN1V4ScratchOut
       divisorLimb0 divisorLimb1 divisorLimb2 divisorTop scratchMem : Word) :
     Word :=
   EvmAsm.Evm64.divKTrialCallV4ScratchOut
-    (EvmAsm.Evm64.fullDivN1NormU
-      (sdivAbsSum0 dividendLimb0 dividendTop)
-      (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
-      (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
-      (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
-      (sdivAbsSum0 divisorLimb0 divisorTop)).2.2.2.2
-    (EvmAsm.Evm64.fullDivN1NormU
-      (sdivAbsSum0 dividendLimb0 dividendTop)
-      (sdivAbsSum1 dividendLimb0 dividendLimb1 dividendTop)
-      (sdivAbsSum2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
-      (sdivAbsSum3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
-      (sdivAbsSum0 divisorLimb0 divisorTop)).2.2.2.1
-    (EvmAsm.Evm64.fullDivN1NormV
-      (sdivAbsSum0 divisorLimb0 divisorTop)
-      (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
-      (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
-      (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).1
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.2
+    (sdivN1V4NormU dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+      divisorLimb0 divisorTop).2.2.2.1
+    (sdivN1V4NormV divisorLimb0 divisorLimb1 divisorLimb2 divisorTop).1
     scratchMem
 
 /-- SDIV absolute-limb spelling of the N1 `j = 1` non-borrow branch
