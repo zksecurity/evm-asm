@@ -506,6 +506,30 @@ theorem saveRaDivCallDispatchReadyPost_exact_callable_x9out_divCode_n1_v4_abs_sp
         (sdivAbsSum1 divisorLimb0 divisorLimb1 divisorTop)
         (sdivAbsSum2 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
         (sdivAbsSum3 divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).2.2.2)
+    (_hdiv0 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 0 =
+        sdivN1V4Quot0 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (_hdiv1 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 1 =
+        sdivN1V4Quot1 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (_hdiv2 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 2 =
+        sdivN1V4Quot2 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
+    (_hdiv3 :
+      (EvmAsm.Evm64.EvmWord.div
+        (sdivAbsDividendWord dividendLimb0 dividendLimb1 dividendLimb2 dividendTop)
+        (sdivAbsDivisorWord divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)).getLimbN 3 =
+        sdivN1V4Quot3 dividendLimb0 dividendLimb1 dividendLimb2 dividendTop
+          divisorLimb0 divisorLimb1 divisorLimb2 divisorTop)
     (hStack :
       EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
         (base + wrapperEndOff)
