@@ -1579,6 +1579,50 @@ instance pcFreeInst_loopN1CallMaxmaxmaxScratchPreNoX1 (sp : Word)
     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
     retMem dMem dloMem scratchUn0 scratchMem⟩
 
+/-- Handoff from the n=1 v4 preloop postcondition to the canonical framed
+    call/max/max/max loop precondition, preserving exact `x1`. -/
+theorem loopSetupPost_to_fullDivN1CallMaxmaxmaxScratchPreNoX1_framed
+    (sp : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v11Old : Word)
+    (jMem retMem dMem dloMem scratchUn0 scratchMem raVal : Word) :
+    ∀ h,
+      (loopSetupPost sp (1 : Word) (clzResult b0).1 a0 a1 a2 a3 b0 b1 b2 b3 **
+       ((.x11 ↦ᵣ v11Old) ** ((sp + signExtend12 3976) ↦ₘ jMem) **
+        (sp + signExtend12 3968 ↦ₘ retMem) **
+        (sp + signExtend12 3960 ↦ₘ dMem) **
+        (sp + signExtend12 3952 ↦ₘ dloMem) **
+        (sp + signExtend12 3944 ↦ₘ scratchUn0) **
+        (sp + signExtend12 3936 ↦ₘ scratchMem) **
+        (.x1 ↦ᵣ raVal))) h →
+      (loopN1CallMaxmaxmaxScratchPreNoX1 sp
+        jMem (1 : Word) (fullDivN1Shift b0) (fullDivN1NormU a0 a1 a2 a3 b0).1
+        (a0 >>> ((fullDivN1AntiShift b0).toNat % 64)) v11Old (fullDivN1AntiShift b0)
+        (fullDivN1NormV b0 b1 b2 b3).1
+        (fullDivN1NormV b0 b1 b2 b3).2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.1
+        (fullDivN1NormV b0 b1 b2 b3).2.2.2
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.2.2
+        (0 : Word) (0 : Word) (0 : Word)
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).2.1
+        (fullDivN1NormU a0 a1 a2 a3 b0).1
+        (0 : Word) (0 : Word) (0 : Word) (0 : Word)
+        retMem dMem dloMem scratchUn0 scratchMem ** (.x1 ↦ᵣ raVal) **
+       (((sp + 0) ↦ₘ a0) ** ((sp + 8) ↦ₘ a1) **
+        ((sp + 16) ↦ₘ a2) ** ((sp + 24) ↦ₘ a3) **
+        ((sp + signExtend12 3992) ↦ₘ (clzResult b0).1))) h := by
+  intro h hp
+  delta loopN1CallMaxmaxmaxScratchPreNoX1 loopN1PreWithScratchNoX1 loopN1Pre at ⊢
+  delta loopSetupPost fullDivN1NormV fullDivN1NormU fullDivN1Shift fullDivN1AntiShift at hp ⊢
+  simp only [x1_val_n1] at hp
+  simp only [n1_ub3_off0, n1_ub3_off4088, n1_ub3_off4080,
+              n1_ub3_off4072, n1_ub3_off4064,
+              n2_ub2_off0, n3_ub1_off0, n3_ub0_off0,
+              n1_qa3, n2_qa2, n3_qa1, n3_qa0,
+              se12_32, se12_40, se12_48, se12_56] at hp ⊢
+  xperm_hyp hp
+
 /-- Opaque statement wrapper for the N1 path where j=3 uses the v4 call path
     and j=2/j=1/j=0 all use max. Keeping this triple behind a name avoids
     repeatedly elaborating the full pre/post shape at downstream theorem
