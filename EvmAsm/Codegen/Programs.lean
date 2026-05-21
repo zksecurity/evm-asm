@@ -1829,6 +1829,143 @@ def ziskHeadersParentHashProbeUnit : BuildUnit := {
   dataAsm     := ziskHeadersParentHashDataSection
 }
 
+/-! ## headers_validate_chain -- PR-K18 parent_hash chain check
+
+    Composes PR-K16 `headers_keccak_array` (build per-header
+    digest table) with PR-K17 `headers_parent_hash` (RLP-extract
+    each header's first 32-byte field) to verify the
+    `validate_headers` invariant:
+
+        header[i].parent_hash == keccak256(header[i-1])
+            for every i in 1..N
+
+    matches the Python check in
+    `execution-specs/.../stateless.py::validate_headers`.
+
+    Calling convention:
+      a0 (input)  : SSZ list section ptr (witness.headers)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : 8-byte output ptr (receives N as u64 LE)
+      ra (input)  : return
+      a0 (output) : 0 on success (chain valid) or N ≤ 1
+                    1 on mismatch / RLP-decode failure
+
+    Walks the list using the same SSZ inner-offset table as
+    PR-K15/K16. Caps at N ≤ 256 (matches `MAX_WITNESS_HEADERS`).
+
+    Uses two `.data` scratch buffers:
+      vh_keccak_table          : 256 × 32 = 8 KB
+      vh_extracted_parent_hash : 32 B
+-/
+def headersValidateChainFunction : String :=
+  "headers_validate_chain:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = N out ptr\n" ++
+  "  # Step 1: keccak each header into vh_keccak_table.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, vh_keccak_table\n" ++
+  "  jal ra, headers_keccak_array\n" ++
+  "  mv s3, a0                  # s3 = N\n" ++
+  "  sd s3, 0(s2)               # *N_out = N\n" ++
+  "  # If N ≤ 1, no chain links to check → ok.\n" ++
+  "  li t0, 2\n" ++
+  "  bltu s3, t0, .Lvh_ok\n" ++
+  "  # Loop i = 1..N.\n" ++
+  "  li s4, 1\n" ++
+  ".Lvh_loop:\n" ++
+  "  beq s4, s3, .Lvh_ok\n" ++
+  "  # Find element i bounds from inner-offset table.\n" ++
+  "  slli t0, s4, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s4, 1\n" ++
+  "  beq t3, s3, .Lvh_use_end\n" ++
+  "  slli t3, t3, 2\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4\n" ++
+  "  j .Lvh_have_end\n" ++
+  ".Lvh_use_end:\n" ++
+  "  add t4, s0, s1\n" ++
+  ".Lvh_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  la a2, vh_extracted_parent_hash\n" ++
+  "  jal ra, headers_parent_hash\n" ++
+  "  bnez a0, .Lvh_fail         # RLP parse failed\n" ++
+  "  # Compare extracted parent_hash against vh_keccak_table[i-1].\n" ++
+  "  la t0, vh_keccak_table\n" ++
+  "  addi t1, s4, -1\n" ++
+  "  slli t1, t1, 5             # (i-1) * 32\n" ++
+  "  add t0, t0, t1             # &table[i-1]\n" ++
+  "  la t1, vh_extracted_parent_hash\n" ++
+  "  ld t2,  0(t0); ld t3,  0(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2,  8(t0); ld t3,  8(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2, 16(t0); ld t3, 16(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2, 24(t0); ld t3, 24(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lvh_loop\n" ++
+  ".Lvh_ok:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lvh_ret\n" ++
+  ".Lvh_fail:\n" ++
+  "  li a0, 1\n" ++
+  ".Lvh_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_headers_validate_chain`: probe BuildUnit that reads an
+    SSZ list of RLP-encoded headers from host input and writes
+    (status, N) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8 : status (u64 LE; 0 ok / 1 mismatch)
+      bytes  8..16 : N (u64 LE; element count) -/
+def ziskHeadersValidateChainPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010008           # N out ptr (OUTPUT + 8)\n" ++
+  "  jal ra, headers_validate_chain\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lvh_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  headersKeccakArrayFunction ++ "\n" ++
+  headersParentHashFunction ++ "\n" ++
+  headersValidateChainFunction ++ "\n" ++
+  ".Lvh_pdone:"
+
+def ziskHeadersValidateChainDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "vh_keccak_table:\n" ++
+  "  .zero 8192                 # 256 × 32-byte digests\n" ++
+  ".balign 32\n" ++
+  "vh_extracted_parent_hash:\n" ++
+  "  .zero 32"
+
+def ziskHeadersValidateChainProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersValidateChainPrologue
+  dataAsm     := ziskHeadersValidateChainDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -2267,6 +2404,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_headers_keccak_chain" => some ziskHeadersKeccakChainProbeUnit
   | "zisk_headers_keccak_array" => some ziskHeadersKeccakArrayProbeUnit
   | "zisk_headers_parent_hash"  => some ziskHeadersParentHashProbeUnit
+  | "zisk_headers_validate_chain" => some ziskHeadersValidateChainProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -2294,6 +2432,7 @@ def knownProgramNames : List String :=
    "zisk_headers_keccak_chain",
    "zisk_headers_keccak_array",
    "zisk_headers_parent_hash",
+   "zisk_headers_validate_chain",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
