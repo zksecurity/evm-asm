@@ -1348,4 +1348,23 @@ instance pcFreeInst_loopN1CallMaxmaxmaxScratchPreNoX1 (sp : Word)
     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
     retMem dMem dloMem scratchUn0 scratchMem⟩
 
+/-- Opaque statement wrapper for the N1 path where j=3 uses the v4 call path
+    and j=2/j=1/j=0 all use max. Keeping this triple behind a name avoids
+    repeatedly elaborating the full pre/post shape at downstream theorem
+    declarations. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxExactX1ScratchSpec (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem raVal : Word) : Prop :=
+  cpsTripleWithin 780 (base + loopBodyOff) (base + denormOff) (divCode_noNop_v4 base)
+    (loopN1CallMaxmaxmaxScratchPreNoX1 sp
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
+      retMem dMem dloMem scratchUn0 scratchMem ** (.x1 ↦ᵣ raVal))
+    (loopN1CallMaxmaxmaxScratchPostNoX1 sp base v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 scratchMem ** (.x1 ↦ᵣ raVal))
+
 end EvmAsm.Evm64
