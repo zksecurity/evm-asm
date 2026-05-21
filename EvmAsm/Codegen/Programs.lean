@@ -1734,6 +1734,101 @@ def ziskHeadersKeccakArrayProbeUnit : BuildUnit := {
   dataAsm     := ziskHeadersKeccakArrayDataSection
 }
 
+/-! ## headers_parent_hash -- PR-K17 RLP-walk to extract the
+    first 32-byte field of an RLP-encoded Ethereum header
+    (`parent_hash`).
+
+    Skips the outer list prefix (0xc0..0xc0+55 short form, 0xf8
+    1-byte-length, or 0xf9 2-byte-length forms), expects a
+    0xa0 Bytes32 string prefix, then copies the 32 raw bytes
+    to the caller's output.
+
+    Calling convention:
+      a0 (input)  : RLP-encoded header ptr (read-only)
+      a1 (input)  : header byte length
+      a2 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) :
+        0 on success; 32 bytes at *a2 = parent_hash
+        1 on RLP parse failure
+
+    Pure register arithmetic; no scratch memory, no callee-saved
+    registers used. Leaf-callable. -/
+def headersParentHashFunction : String :=
+  "headers_parent_hash:\n" ++
+  "  # a0 = header ptr, a1 = header_len, a2 = out ptr\n" ++
+  "  lbu t0, 0(a0)                # first byte\n" ++
+  "  li t1, 0xc0\n" ++
+  "  bltu t0, t1, .Lhph_fail      # not an RLP list (< 0xc0)\n" ++
+  "  li t1, 0xf8\n" ++
+  "  bltu t0, t1, .Lhph_short     # 0xc0..0xf7 → short list, 1-byte prefix\n" ++
+  "  # long list: t0 in [0xf8..0xff].\n" ++
+  "  # length_of_length = t0 - 0xf7. Outer prefix = 1 + length_of_length bytes.\n" ++
+  "  li t1, 0xf7\n" ++
+  "  sub t2, t0, t1               # length_of_length\n" ++
+  "  li t3, 2                     # cap: support 0xf8 (LoL=1), 0xf9 (LoL=2)\n" ++
+  "  bltu t3, t2, .Lhph_fail      # LoL > 2 → unsupported\n" ++
+  "  addi t2, t2, 1               # prefix bytes = LoL + 1\n" ++
+  "  add a0, a0, t2               # skip prefix\n" ++
+  "  sub a1, a1, t2\n" ++
+  "  j .Lhph_after_prefix\n" ++
+  ".Lhph_short:\n" ++
+  "  addi a0, a0, 1               # skip 1-byte prefix\n" ++
+  "  addi a1, a1, -1\n" ++
+  ".Lhph_after_prefix:\n" ++
+  "  # Expect 0xa0 Bytes32 prefix.\n" ++
+  "  li t0, 33\n" ++
+  "  bltu a1, t0, .Lhph_fail      # not enough bytes for 0xa0 + 32\n" ++
+  "  lbu t1, 0(a0)\n" ++
+  "  li t2, 0xa0\n" ++
+  "  bne t1, t2, .Lhph_fail       # not a Bytes32 string\n" ++
+  "  # Copy 32 bytes from a0+1 to a2.\n" ++
+  "  ld t0,  1(a0); sd t0,  0(a2)\n" ++
+  "  ld t0,  9(a0); sd t0,  8(a2)\n" ++
+  "  ld t0, 17(a0); sd t0, 16(a2)\n" ++
+  "  ld t0, 25(a0); sd t0, 24(a2)\n" ++
+  "  li a0, 0\n" ++
+  "  ret\n" ++
+  ".Lhph_fail:\n" ++
+  "  li a0, 1\n" ++
+  "  ret"
+
+/-- `zisk_headers_parent_hash`: probe BuildUnit that reads an
+    RLP-encoded header from host input and writes
+    `(status, parent_hash)` to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : header_len (u64)
+      bytes  8..   : RLP-encoded header bytes
+    Output layout:
+      bytes  0.. 8 : status (u64 LE; 0 = ok, 1 = parse fail)
+      bytes  8..40 : parent_hash (32 bytes; meaningful only on
+                     status=0; on failure, contains zeros) -/
+def ziskHeadersParentHashPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # header_len\n" ++
+  "  addi a0, a3, 16             # header ptr\n" ++
+  "  li a2, 0xa0010008           # parent_hash output (OUTPUT + 8)\n" ++
+  "  # Pre-zero output[8..40] so a parse failure surfaces as zeros.\n" ++
+  "  sd zero,  0(a2); sd zero,  8(a2); sd zero, 16(a2); sd zero, 24(a2)\n" ++
+  "  jal ra, headers_parent_hash\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write status at OUTPUT + 0\n" ++
+  "  j .Lhph_pdone\n" ++
+  headersParentHashFunction ++ "\n" ++
+  ".Lhph_pdone:"
+
+def ziskHeadersParentHashDataSection : String :=
+  ".section .data\n" ++
+  "hph_scratch:\n" ++
+  "  .zero 8"
+
+def ziskHeadersParentHashProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersParentHashPrologue
+  dataAsm     := ziskHeadersParentHashDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -2171,6 +2266,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
   | "zisk_headers_keccak_chain" => some ziskHeadersKeccakChainProbeUnit
   | "zisk_headers_keccak_array" => some ziskHeadersKeccakArrayProbeUnit
+  | "zisk_headers_parent_hash"  => some ziskHeadersParentHashProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -2197,6 +2293,7 @@ def knownProgramNames : List String :=
    "zisk_keccak256_from_input",
    "zisk_headers_keccak_chain",
    "zisk_headers_keccak_array",
+   "zisk_headers_parent_hash",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
