@@ -1537,6 +1537,939 @@ def ziskKeccak256FromInputProbeUnit : BuildUnit := {
   dataAsm     := ziskKeccak256FromInputDataSection
 }
 
+/-! ## headers_keccak_chain -- PR-K15 walk an SSZ list section,
+    keccak each element, return the last digest + count.
+
+    Walks the SSZ inner-offset table to derive per-element
+    bounds (same parsing shape as the SSZ list-merkleize work),
+    then calls `zkvm_keccak256(el_i_start, el_i_len, out_ptr)`
+    for each element. The output buffer is overwritten on every
+    iteration; after the loop, it holds the LAST element's
+    digest. Returns the element count `N` in `a0`.
+
+    Calling convention:
+      a0 (input)  : SSZ list section ptr (read-only)
+      a1 (input)  : section_len (0 ⇒ empty list)
+      a2 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : N (element count)
+      32 bytes at *a2 : keccak256(element[N-1]) if N > 0, else 0.
+
+    No per-element scratch; works for any N. -/
+def headersKeccakChainFunction : String :=
+  "headers_keccak_chain:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = output ptr\n" ++
+  "  beqz s1, .Lhkc_n0          # empty section ⇒ N = 0\n" ++
+  "  lwu t0, 0(s0)              # offset_0 = 4 * N\n" ++
+  "  srli s3, t0, 2             # s3 = N\n" ++
+  "  li s4, 0                   # s4 = i\n" ++
+  ".Lhkc_loop:\n" ++
+  "  beq s4, s3, .Lhkc_done\n" ++
+  "  slli t0, s4, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s4, 1\n" ++
+  "  beq t3, s3, .Lhkc_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lhkc_have_end\n" ++
+  ".Lhkc_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lhkc_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  mv a2, s2                  # output (overwritten each iter)\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lhkc_loop\n" ++
+  ".Lhkc_n0:\n" ++
+  "  sd zero,  0(s2)\n" ++
+  "  sd zero,  8(s2)\n" ++
+  "  sd zero, 16(s2)\n" ++
+  "  sd zero, 24(s2)\n" ++
+  "  li s3, 0                   # N = 0\n" ++
+  ".Lhkc_done:\n" ++
+  "  mv a0, s3                  # return N\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_headers_keccak_chain`: probe BuildUnit that reads an
+    SSZ list section from host input and writes the count + last
+    digest to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8 : N (u64 LE)
+      bytes  8..40 : keccak256(element[N-1]) or 0 if N=0 -/
+def ziskHeadersKeccakChainPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010008           # last_hash output (OUTPUT + 8)\n" ++
+  "  jal ra, headers_keccak_chain\n" ++
+  "  li t0, 0xa0010000           # write N at OUTPUT + 0\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lhkc_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  headersKeccakChainFunction ++ "\n" ++
+  ".Lhkc_pdone:"
+
+def ziskHeadersKeccakChainDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def ziskHeadersKeccakChainProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersKeccakChainPrologue
+  dataAsm     := ziskHeadersKeccakChainDataSection
+}
+
+/-! ## headers_keccak_array -- PR-K16 walk SSZ list section,
+    keccak each element, store every digest in caller table.
+
+    Sibling of `headers_keccak_chain` (PR-K15): same SSZ-list
+    parsing loop, but each iteration writes the digest to
+    `table[i]` instead of overwriting the same slot. Returns the
+    element count `N`.
+
+    Calling convention:
+      a0 (input)  : section ptr (read-only)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : table base ptr (must hold N*32 bytes)
+      ra (input)  : return
+      a0 (output) : N (element count)
+      32 bytes at *(table + 32*i) = keccak256(element[i])
+        for each i in 0..N. -/
+def headersKeccakArrayFunction : String :=
+  "headers_keccak_array:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = table base\n" ++
+  "  beqz s1, .Lhka_n0\n" ++
+  "  lwu t0, 0(s0)\n" ++
+  "  srli s3, t0, 2             # s3 = N\n" ++
+  "  li s4, 0                   # s4 = i\n" ++
+  ".Lhka_loop:\n" ++
+  "  beq s4, s3, .Lhka_done\n" ++
+  "  slli t0, s4, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s4, 1\n" ++
+  "  beq t3, s3, .Lhka_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lhka_have_end\n" ++
+  ".Lhka_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lhka_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  slli t0, s4, 5             # 32*i\n" ++
+  "  add a2, s2, t0             # a2 = &table[i]\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lhka_loop\n" ++
+  ".Lhka_n0:\n" ++
+  "  li s3, 0\n" ++
+  ".Lhka_done:\n" ++
+  "  mv a0, s3                  # return N\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_headers_keccak_array`: probe BuildUnit that reads an
+    SSZ list section from host input and writes (count, table)
+    to OUTPUT, capped at N ≤ 7 to fit ziskemu's 256-byte output
+    channel.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8     : N (u64 LE)
+      bytes  8..8+32*N : N digests of 32 bytes each -/
+def ziskHeadersKeccakArrayPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010008           # table at OUTPUT + 8\n" ++
+  "  jal ra, headers_keccak_array\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write N at OUTPUT + 0\n" ++
+  "  j .Lhka_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  headersKeccakArrayFunction ++ "\n" ++
+  ".Lhka_pdone:"
+
+def ziskHeadersKeccakArrayDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def ziskHeadersKeccakArrayProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersKeccakArrayPrologue
+  dataAsm     := ziskHeadersKeccakArrayDataSection
+}
+
+/-! ## headers_parent_hash -- PR-K17 RLP-walk to extract the
+    first 32-byte field of an RLP-encoded Ethereum header
+    (`parent_hash`).
+
+    Skips the outer list prefix (0xc0..0xc0+55 short form, 0xf8
+    1-byte-length, or 0xf9 2-byte-length forms), expects a
+    0xa0 Bytes32 string prefix, then copies the 32 raw bytes
+    to the caller's output.
+
+    Calling convention:
+      a0 (input)  : RLP-encoded header ptr (read-only)
+      a1 (input)  : header byte length
+      a2 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) :
+        0 on success; 32 bytes at *a2 = parent_hash
+        1 on RLP parse failure
+
+    Pure register arithmetic; no scratch memory, no callee-saved
+    registers used. Leaf-callable. -/
+def headersParentHashFunction : String :=
+  "headers_parent_hash:\n" ++
+  "  # a0 = header ptr, a1 = header_len, a2 = out ptr\n" ++
+  "  lbu t0, 0(a0)                # first byte\n" ++
+  "  li t1, 0xc0\n" ++
+  "  bltu t0, t1, .Lhph_fail      # not an RLP list (< 0xc0)\n" ++
+  "  li t1, 0xf8\n" ++
+  "  bltu t0, t1, .Lhph_short     # 0xc0..0xf7 → short list, 1-byte prefix\n" ++
+  "  # long list: t0 in [0xf8..0xff].\n" ++
+  "  # length_of_length = t0 - 0xf7. Outer prefix = 1 + length_of_length bytes.\n" ++
+  "  li t1, 0xf7\n" ++
+  "  sub t2, t0, t1               # length_of_length\n" ++
+  "  li t3, 2                     # cap: support 0xf8 (LoL=1), 0xf9 (LoL=2)\n" ++
+  "  bltu t3, t2, .Lhph_fail      # LoL > 2 → unsupported\n" ++
+  "  addi t2, t2, 1               # prefix bytes = LoL + 1\n" ++
+  "  add a0, a0, t2               # skip prefix\n" ++
+  "  sub a1, a1, t2\n" ++
+  "  j .Lhph_after_prefix\n" ++
+  ".Lhph_short:\n" ++
+  "  addi a0, a0, 1               # skip 1-byte prefix\n" ++
+  "  addi a1, a1, -1\n" ++
+  ".Lhph_after_prefix:\n" ++
+  "  # Expect 0xa0 Bytes32 prefix.\n" ++
+  "  li t0, 33\n" ++
+  "  bltu a1, t0, .Lhph_fail      # not enough bytes for 0xa0 + 32\n" ++
+  "  lbu t1, 0(a0)\n" ++
+  "  li t2, 0xa0\n" ++
+  "  bne t1, t2, .Lhph_fail       # not a Bytes32 string\n" ++
+  "  # Copy 32 bytes from a0+1 to a2.\n" ++
+  "  ld t0,  1(a0); sd t0,  0(a2)\n" ++
+  "  ld t0,  9(a0); sd t0,  8(a2)\n" ++
+  "  ld t0, 17(a0); sd t0, 16(a2)\n" ++
+  "  ld t0, 25(a0); sd t0, 24(a2)\n" ++
+  "  li a0, 0\n" ++
+  "  ret\n" ++
+  ".Lhph_fail:\n" ++
+  "  li a0, 1\n" ++
+  "  ret"
+
+/-- `zisk_headers_parent_hash`: probe BuildUnit that reads an
+    RLP-encoded header from host input and writes
+    `(status, parent_hash)` to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : header_len (u64)
+      bytes  8..   : RLP-encoded header bytes
+    Output layout:
+      bytes  0.. 8 : status (u64 LE; 0 = ok, 1 = parse fail)
+      bytes  8..40 : parent_hash (32 bytes; meaningful only on
+                     status=0; on failure, contains zeros) -/
+def ziskHeadersParentHashPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # header_len\n" ++
+  "  addi a0, a3, 16             # header ptr\n" ++
+  "  li a2, 0xa0010008           # parent_hash output (OUTPUT + 8)\n" ++
+  "  # Pre-zero output[8..40] so a parse failure surfaces as zeros.\n" ++
+  "  sd zero,  0(a2); sd zero,  8(a2); sd zero, 16(a2); sd zero, 24(a2)\n" ++
+  "  jal ra, headers_parent_hash\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write status at OUTPUT + 0\n" ++
+  "  j .Lhph_pdone\n" ++
+  headersParentHashFunction ++ "\n" ++
+  ".Lhph_pdone:"
+
+def ziskHeadersParentHashDataSection : String :=
+  ".section .data\n" ++
+  "hph_scratch:\n" ++
+  "  .zero 8"
+
+def ziskHeadersParentHashProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersParentHashPrologue
+  dataAsm     := ziskHeadersParentHashDataSection
+}
+
+/-! ## headers_validate_chain -- PR-K18 parent_hash chain check
+
+    Composes PR-K16 `headers_keccak_array` (build per-header
+    digest table) with PR-K17 `headers_parent_hash` (RLP-extract
+    each header's first 32-byte field) to verify the
+    `validate_headers` invariant:
+
+        header[i].parent_hash == keccak256(header[i-1])
+            for every i in 1..N
+
+    matches the Python check in
+    `execution-specs/.../stateless.py::validate_headers`.
+
+    Calling convention:
+      a0 (input)  : SSZ list section ptr (witness.headers)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : 8-byte output ptr (receives N as u64 LE)
+      ra (input)  : return
+      a0 (output) : 0 on success (chain valid) or N ≤ 1
+                    1 on mismatch / RLP-decode failure
+
+    Walks the list using the same SSZ inner-offset table as
+    PR-K15/K16. Caps at N ≤ 256 (matches `MAX_WITNESS_HEADERS`).
+
+    Uses two `.data` scratch buffers:
+      vh_keccak_table          : 256 × 32 = 8 KB
+      vh_extracted_parent_hash : 32 B
+-/
+def headersValidateChainFunction : String :=
+  "headers_validate_chain:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = N out ptr\n" ++
+  "  # Step 1: keccak each header into vh_keccak_table.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, vh_keccak_table\n" ++
+  "  jal ra, headers_keccak_array\n" ++
+  "  mv s3, a0                  # s3 = N\n" ++
+  "  sd s3, 0(s2)               # *N_out = N\n" ++
+  "  # If N ≤ 1, no chain links to check → ok.\n" ++
+  "  li t0, 2\n" ++
+  "  bltu s3, t0, .Lvh_ok\n" ++
+  "  # Loop i = 1..N.\n" ++
+  "  li s4, 1\n" ++
+  ".Lvh_loop:\n" ++
+  "  beq s4, s3, .Lvh_ok\n" ++
+  "  # Find element i bounds from inner-offset table.\n" ++
+  "  slli t0, s4, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s4, 1\n" ++
+  "  beq t3, s3, .Lvh_use_end\n" ++
+  "  slli t3, t3, 2\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4\n" ++
+  "  j .Lvh_have_end\n" ++
+  ".Lvh_use_end:\n" ++
+  "  add t4, s0, s1\n" ++
+  ".Lvh_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  la a2, vh_extracted_parent_hash\n" ++
+  "  jal ra, headers_parent_hash\n" ++
+  "  bnez a0, .Lvh_fail         # RLP parse failed\n" ++
+  "  # Compare extracted parent_hash against vh_keccak_table[i-1].\n" ++
+  "  la t0, vh_keccak_table\n" ++
+  "  addi t1, s4, -1\n" ++
+  "  slli t1, t1, 5             # (i-1) * 32\n" ++
+  "  add t0, t0, t1             # &table[i-1]\n" ++
+  "  la t1, vh_extracted_parent_hash\n" ++
+  "  ld t2,  0(t0); ld t3,  0(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2,  8(t0); ld t3,  8(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2, 16(t0); ld t3, 16(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  ld t2, 24(t0); ld t3, 24(t1); bne t2, t3, .Lvh_fail\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lvh_loop\n" ++
+  ".Lvh_ok:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lvh_ret\n" ++
+  ".Lvh_fail:\n" ++
+  "  li a0, 1\n" ++
+  ".Lvh_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_headers_validate_chain`: probe BuildUnit that reads an
+    SSZ list of RLP-encoded headers from host input and writes
+    (status, N) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8 : status (u64 LE; 0 ok / 1 mismatch)
+      bytes  8..16 : N (u64 LE; element count) -/
+def ziskHeadersValidateChainPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010008           # N out ptr (OUTPUT + 8)\n" ++
+  "  jal ra, headers_validate_chain\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lvh_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  headersKeccakArrayFunction ++ "\n" ++
+  headersParentHashFunction ++ "\n" ++
+  headersValidateChainFunction ++ "\n" ++
+  ".Lvh_pdone:"
+
+def ziskHeadersValidateChainDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "vh_keccak_table:\n" ++
+  "  .zero 8192                 # 256 × 32-byte digests\n" ++
+  ".balign 32\n" ++
+  "vh_extracted_parent_hash:\n" ++
+  "  .zero 32"
+
+def ziskHeadersValidateChainProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersValidateChainPrologue
+  dataAsm     := ziskHeadersValidateChainDataSection
+}
+
+/-! ## witness_lookup_by_hash -- PR-K19 (linear-scan flavour)
+
+    Find the entry in an SSZ list section whose keccak256 digest
+    matches a caller-supplied target hash. Returns the matched
+    entry's (offset, length) within the section, or status=1 on
+    miss.
+
+    Calling convention:
+      a0 (input)  : SSZ list section ptr (witness.state /
+                    witness.codes shape)
+      a1 (input)  : section_len (0 ⇒ guaranteed miss)
+      a2 (input)  : 32-byte target hash ptr
+      a3 (input)  : u64 out ptr (matched entry's byte offset
+                    within the section; meaningful only on hit)
+      a4 (input)  : u64 out ptr (matched entry's byte length;
+                    meaningful only on hit)
+      ra (input)  : return
+      a0 (output) : 0 on hit, 1 on miss
+
+    Walks every element computing `keccak256(element_bytes)`
+    until either a match is found or the list is exhausted.
+    O(N) per call; PR-K20+ will replace with a pre-built bucket
+    table for O(1) average lookups. -/
+def witnessLookupByHashFunction : String :=
+  "witness_lookup_by_hash:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                  # section ptr\n" ++
+  "  mv s1, a1                  # section_len\n" ++
+  "  mv s2, a2                  # target_hash ptr\n" ++
+  "  mv s3, a3                  # out_offset ptr\n" ++
+  "  mv s4, a4                  # out_length ptr\n" ++
+  "  beqz s1, .Lwlh_miss        # empty section ⇒ miss\n" ++
+  "  lwu t0, 0(s0)              # first inner offset = 4 * N\n" ++
+  "  srli s5, t0, 2             # s5 = N\n" ++
+  "  li s6, 0                   # s6 = i\n" ++
+  ".Lwlh_loop:\n" ++
+  "  beq s6, s5, .Lwlh_miss\n" ++
+  "  # Compute element i bounds.\n" ++
+  "  slli t0, s6, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s6, 1\n" ++
+  "  beq t3, s5, .Lwlh_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lwlh_have_end\n" ++
+  ".Lwlh_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lwlh_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  la a2, wlh_scratch_hash\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  # Compare scratch_hash vs target_hash.\n" ++
+  "  la t0, wlh_scratch_hash\n" ++
+  "  mv t1, s2\n" ++
+  "  ld t2,  0(t0); ld t3,  0(t1); bne t2, t3, .Lwlh_no_match\n" ++
+  "  ld t2,  8(t0); ld t3,  8(t1); bne t2, t3, .Lwlh_no_match\n" ++
+  "  ld t2, 16(t0); ld t3, 16(t1); bne t2, t3, .Lwlh_no_match\n" ++
+  "  ld t2, 24(t0); ld t3, 24(t1); bne t2, t3, .Lwlh_no_match\n" ++
+  "  # Match. Recompute (offset, length) from i (clobbered above).\n" ++
+  "  slli t0, s6, 2\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  sd t2, 0(s3)               # *out_offset = inner_off_i\n" ++
+  "  addi t3, s6, 1\n" ++
+  "  beq t3, s5, .Lwlh_last_len\n" ++
+  "  slli t3, t3, 2\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  sub t4, t4, t2             # length = inner_off_{i+1} - inner_off_i\n" ++
+  "  j .Lwlh_store_len\n" ++
+  ".Lwlh_last_len:\n" ++
+  "  sub t4, s1, t2             # length = section_len - inner_off_i\n" ++
+  ".Lwlh_store_len:\n" ++
+  "  sd t4, 0(s4)\n" ++
+  "  li a0, 0                   # hit\n" ++
+  "  j .Lwlh_ret\n" ++
+  ".Lwlh_no_match:\n" ++
+  "  addi s6, s6, 1\n" ++
+  "  j .Lwlh_loop\n" ++
+  ".Lwlh_miss:\n" ++
+  "  li a0, 1                   # miss\n" ++
+  ".Lwlh_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_witness_lookup_by_hash`: probe BuildUnit. Reads
+    (section_len, target_hash, section_bytes) from host input,
+    writes (status, offset, length) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..40 : target_hash (32 bytes)
+      bytes 40..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8 : status (u64; 0 hit, 1 miss)
+      bytes  8..16 : matched entry offset within section (u64)
+      bytes 16..24 : matched entry length (u64) -/
+def ziskWitnessLookupByHashPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a5, 0x40000000\n" ++
+  "  ld a1, 8(a5)                # section_len\n" ++
+  "  addi a2, a5, 16             # target_hash ptr\n" ++
+  "  addi a0, a5, 48             # section ptr\n" ++
+  "  li a3, 0xa0010008           # out_offset (OUTPUT + 8)\n" ++
+  "  li a4, 0xa0010010           # out_length (OUTPUT + 16)\n" ++
+  "  # Pre-zero offset/length so a miss surfaces as zeros.\n" ++
+  "  sd zero, 0(a3)\n" ++
+  "  sd zero, 0(a4)\n" ++
+  "  jal ra, witness_lookup_by_hash\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # status at OUTPUT + 0\n" ++
+  "  j .Lwlh_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  witnessLookupByHashFunction ++ "\n" ++
+  ".Lwlh_pdone:"
+
+def ziskWitnessLookupByHashDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200\n" ++
+  ".balign 32\n" ++
+  "wlh_scratch_hash:\n" ++
+  "  .zero 32"
+
+def ziskWitnessLookupByHashProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskWitnessLookupByHashPrologue
+  dataAsm     := ziskWitnessLookupByHashDataSection
+}
+
+/-! ## rlp_list_nth_item -- PR-K20 walk RLP list to extract
+    the N-th item's content bounds.
+
+    Foundation for MPT node decoding. Handles all RLP item
+    forms: single bytes, short strings (0x80..0xb7), long
+    strings (0xb8..0xbf), short lists (0xc0..0xf7), long lists
+    (0xf8..0xff with length-of-length in [1..8]).
+
+    Calling convention:
+      a0 (input)  : list bytes ptr (start of outer RLP list
+                    prefix)
+      a1 (input)  : total list byte length
+      a2 (input)  : index N (0-based)
+      a3 (input)  : u64 out ptr (content offset within list bytes)
+      a4 (input)  : u64 out ptr (content byte length)
+      ra (input)  : return
+      a0 (output) : 0 on hit, 1 on parse error / OOB.
+
+    Content interpretation:
+      * Single byte (0x00..0x7f)   : offset = item_start; len = 1
+      * Short string (0x80..0xb7)  : offset = item_start+1; len = b - 0x80
+      * Long string (0xb8..0xbf)   : offset = item_start+1+lol; len = decoded
+      * Short list (0xc0..0xf7)    : offset = item_start; len = full encoded length
+      * Long list (0xf8..0xff)     : offset = item_start; len = full encoded length
+
+    Byte-string items have their RLP prefix stripped; sub-list
+    items are returned in full (so callers can recurse with
+    another call to `rlp_list_nth_item`).
+
+    Pure register arithmetic, no scratch memory, leaf-callable. -/
+def rlpListNthItemFunction : String :=
+  "rlp_list_nth_item:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                  # s0 = list_ptr\n" ++
+  "  add s1, a0, a1             # s1 = list_end\n" ++
+  "  mv s2, a2                  # s2 = N\n" ++
+  "  mv s3, a3                  # s3 = out_offset_ptr\n" ++
+  "  mv s4, a4                  # s4 = out_length_ptr\n" ++
+  "  # Parse outer list prefix.\n" ++
+  "  bgeu s0, s1, .Lrln_fail\n" ++
+  "  lbu t0, 0(s0)\n" ++
+  "  li t1, 0xc0\n" ++
+  "  bltu t0, t1, .Lrln_fail    # not an RLP list\n" ++
+  "  li t1, 0xf8\n" ++
+  "  bltu t0, t1, .Lrln_short_outer\n" ++
+  "  # Long outer: prefix bytes = 1 + (t0 - 0xf7)\n" ++
+  "  li t1, 0xf7\n" ++
+  "  sub t2, t0, t1             # lol\n" ++
+  "  addi t2, t2, 1             # prefix bytes\n" ++
+  "  add s5, s0, t2             # s5 = cursor at first item\n" ++
+  "  j .Lrln_walk\n" ++
+  ".Lrln_short_outer:\n" ++
+  "  addi s5, s0, 1\n" ++
+  ".Lrln_walk:\n" ++
+  "  li s6, 0                   # i\n" ++
+  ".Lrln_loop:\n" ++
+  "  beq s6, s2, .Lrln_at_target\n" ++
+  "  bgeu s5, s1, .Lrln_fail    # walked past end of list\n" ++
+  "  # Compute size of item at s5; advance s5 by it.\n" ++
+  "  lbu t0, 0(s5)\n" ++
+  "  li t1, 0x80\n" ++
+  "  bltu t0, t1, .Lrln_skip_single\n" ++
+  "  li t1, 0xb8\n" ++
+  "  bltu t0, t1, .Lrln_skip_short_string\n" ++
+  "  li t1, 0xc0\n" ++
+  "  bltu t0, t1, .Lrln_skip_long_string\n" ++
+  "  li t1, 0xf8\n" ++
+  "  bltu t0, t1, .Lrln_skip_short_list\n" ++
+  "  # Long list: lol = t0 - 0xf7\n" ++
+  "  li t1, 0xf7\n" ++
+  "  sub t2, t0, t1             # lol\n" ++
+  "  li t3, 0                   # decoded length accumulator\n" ++
+  "  mv t4, t2                  # remaining length bytes\n" ++
+  "  addi t5, s5, 1\n" ++
+  ".Lrln_skll_be:\n" ++
+  "  beqz t4, .Lrln_skll_done\n" ++
+  "  slli t3, t3, 8\n" ++
+  "  lbu t6, 0(t5)\n" ++
+  "  or t3, t3, t6\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lrln_skll_be\n" ++
+  ".Lrln_skll_done:\n" ++
+  "  addi t6, t2, 1\n" ++
+  "  add t6, t6, t3             # 1 + lol + decoded\n" ++
+  "  add s5, s5, t6\n" ++
+  "  j .Lrln_step\n" ++
+  ".Lrln_skip_short_list:\n" ++
+  "  li t1, 0xc0\n" ++
+  "  sub t6, t0, t1\n" ++
+  "  addi t6, t6, 1             # 1 + (t0 - 0xc0)\n" ++
+  "  add s5, s5, t6\n" ++
+  "  j .Lrln_step\n" ++
+  ".Lrln_skip_long_string:\n" ++
+  "  li t1, 0xb7\n" ++
+  "  sub t2, t0, t1             # lol\n" ++
+  "  li t3, 0\n" ++
+  "  mv t4, t2\n" ++
+  "  addi t5, s5, 1\n" ++
+  ".Lrln_skls_be:\n" ++
+  "  beqz t4, .Lrln_skls_done\n" ++
+  "  slli t3, t3, 8\n" ++
+  "  lbu t6, 0(t5)\n" ++
+  "  or t3, t3, t6\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lrln_skls_be\n" ++
+  ".Lrln_skls_done:\n" ++
+  "  addi t6, t2, 1\n" ++
+  "  add t6, t6, t3\n" ++
+  "  add s5, s5, t6\n" ++
+  "  j .Lrln_step\n" ++
+  ".Lrln_skip_short_string:\n" ++
+  "  li t1, 0x80\n" ++
+  "  sub t6, t0, t1\n" ++
+  "  addi t6, t6, 1\n" ++
+  "  add s5, s5, t6\n" ++
+  "  j .Lrln_step\n" ++
+  ".Lrln_skip_single:\n" ++
+  "  addi s5, s5, 1\n" ++
+  ".Lrln_step:\n" ++
+  "  addi s6, s6, 1\n" ++
+  "  j .Lrln_loop\n" ++
+  ".Lrln_at_target:\n" ++
+  "  bgeu s5, s1, .Lrln_fail    # target index past last item\n" ++
+  "  lbu t0, 0(s5)\n" ++
+  "  li t1, 0x80\n" ++
+  "  bltu t0, t1, .Lrln_t_single\n" ++
+  "  li t1, 0xb8\n" ++
+  "  bltu t0, t1, .Lrln_t_short_string\n" ++
+  "  li t1, 0xc0\n" ++
+  "  bltu t0, t1, .Lrln_t_long_string\n" ++
+  "  li t1, 0xf8\n" ++
+  "  bltu t0, t1, .Lrln_t_short_list\n" ++
+  "  # Long list (full encoded form)\n" ++
+  "  li t1, 0xf7\n" ++
+  "  sub t2, t0, t1\n" ++
+  "  li t3, 0\n" ++
+  "  mv t4, t2\n" ++
+  "  addi t5, s5, 1\n" ++
+  ".Lrln_tll_be:\n" ++
+  "  beqz t4, .Lrln_tll_done\n" ++
+  "  slli t3, t3, 8\n" ++
+  "  lbu t6, 0(t5)\n" ++
+  "  or t3, t3, t6\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lrln_tll_be\n" ++
+  ".Lrln_tll_done:\n" ++
+  "  addi t6, t2, 1\n" ++
+  "  add t6, t6, t3             # full encoded size\n" ++
+  "  sub t1, s5, s0\n" ++
+  "  sd t1, 0(s3)\n" ++
+  "  sd t6, 0(s4)\n" ++
+  "  j .Lrln_ok\n" ++
+  ".Lrln_t_short_list:\n" ++
+  "  li t1, 0xc0\n" ++
+  "  sub t6, t0, t1\n" ++
+  "  addi t6, t6, 1\n" ++
+  "  sub t1, s5, s0\n" ++
+  "  sd t1, 0(s3)\n" ++
+  "  sd t6, 0(s4)\n" ++
+  "  j .Lrln_ok\n" ++
+  ".Lrln_t_long_string:\n" ++
+  "  li t1, 0xb7\n" ++
+  "  sub t2, t0, t1\n" ++
+  "  li t3, 0\n" ++
+  "  mv t4, t2\n" ++
+  "  addi t5, s5, 1\n" ++
+  ".Lrln_tls_be:\n" ++
+  "  beqz t4, .Lrln_tls_done\n" ++
+  "  slli t3, t3, 8\n" ++
+  "  lbu t6, 0(t5)\n" ++
+  "  or t3, t3, t6\n" ++
+  "  addi t5, t5, 1\n" ++
+  "  addi t4, t4, -1\n" ++
+  "  j .Lrln_tls_be\n" ++
+  ".Lrln_tls_done:\n" ++
+  "  # content offset = s5 + 1 + lol - s0\n" ++
+  "  addi t6, t2, 1\n" ++
+  "  add t6, t6, s5\n" ++
+  "  sub t6, t6, s0\n" ++
+  "  sd t6, 0(s3)\n" ++
+  "  sd t3, 0(s4)               # content length = decoded\n" ++
+  "  j .Lrln_ok\n" ++
+  ".Lrln_t_short_string:\n" ++
+  "  # content offset = s5 + 1 - s0; length = t0 - 0x80\n" ++
+  "  addi t6, s5, 1\n" ++
+  "  sub t6, t6, s0\n" ++
+  "  sd t6, 0(s3)\n" ++
+  "  li t1, 0x80\n" ++
+  "  sub t1, t0, t1\n" ++
+  "  sd t1, 0(s4)\n" ++
+  "  j .Lrln_ok\n" ++
+  ".Lrln_t_single:\n" ++
+  "  # content offset = s5 - s0; length = 1\n" ++
+  "  sub t1, s5, s0\n" ++
+  "  sd t1, 0(s3)\n" ++
+  "  li t1, 1\n" ++
+  "  sd t1, 0(s4)\n" ++
+  ".Lrln_ok:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lrln_ret\n" ++
+  ".Lrln_fail:\n" ++
+  "  li a0, 1\n" ++
+  ".Lrln_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_rlp_list_nth_item`: probe BuildUnit. Reads
+    (list_len, N, list_bytes) from host input, writes
+    (status, offset, length) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : list_len (u64)
+      bytes  8..16 : N (u64)
+      bytes 16..   : RLP list bytes
+    Output layout:
+      bytes  0.. 8 : status (0 hit / 1 miss)
+      bytes  8..16 : content offset (u64)
+      bytes 16..24 : content length (u64) -/
+def ziskRlpListNthItemPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a5, 0x40000000\n" ++
+  "  ld a1, 8(a5)                # list_len\n" ++
+  "  ld a2, 16(a5)               # N\n" ++
+  "  addi a0, a5, 24             # list ptr\n" ++
+  "  li a3, 0xa0010008\n" ++
+  "  li a4, 0xa0010010\n" ++
+  "  sd zero, 0(a3); sd zero, 0(a4)\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lrln_pdone\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  ".Lrln_pdone:"
+
+def ziskRlpListNthItemDataSection : String :=
+  ".section .data\n" ++
+  "rln_scratch:\n" ++
+  "  .zero 8"
+
+def ziskRlpListNthItemProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskRlpListNthItemPrologue
+  dataAsm     := ziskRlpListNthItemDataSection
+}
+
+/-! ## mpt_node_kind -- PR-K21 classifier
+
+    Determines whether an RLP-encoded MPT node is a leaf,
+    extension, or branch by:
+      1. Probing whether item 2 exists (presence = 17-item
+         branch list).
+      2. If absent, reading item 0's first byte and inspecting
+         the high nibble (HP encoding flag: 0/1 → extension,
+         2/3 → leaf).
+
+    Calling convention:
+      a0 (input)  : node bytes ptr
+      a1 (input)  : node byte length
+      ra (input)  : return
+      a0 (output) : 0 branch / 1 extension / 2 leaf / 3 parse fail
+
+    Calls `rlp_list_nth_item` twice. Uses four 8-byte `.data`
+    scratches (`mnk_dummy_offset`, `mnk_dummy_length`,
+    `mnk_path_offset`, `mnk_path_length`) for the temporary
+    returns. -/
+def mptNodeKindFunction : String :=
+  "mpt_node_kind:\n" ++
+  "  addi sp, sp, -32\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp)\n" ++
+  "  mv s0, a0                  # node ptr\n" ++
+  "  mv s1, a1                  # node_len\n" ++
+  "  # Probe item 2 (index 2). If found ⇒ 17-item branch list.\n" ++
+  "  li a2, 2\n" ++
+  "  la a3, mnk_dummy_offset\n" ++
+  "  la a4, mnk_dummy_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  beqz a0, .Lmnk_branch\n" ++
+  "  # Item 2 absent ⇒ 2-item list (leaf or extension).\n" ++
+  "  # Get item 0 to read path's first byte.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  li a2, 0\n" ++
+  "  la a3, mnk_path_offset\n" ++
+  "  la a4, mnk_path_length\n" ++
+  "  jal ra, rlp_list_nth_item\n" ++
+  "  bnez a0, .Lmnk_fail        # item 0 missing ⇒ parse fail\n" ++
+  "  la t0, mnk_path_offset\n" ++
+  "  ld t1, 0(t0)               # path content offset\n" ++
+  "  la t0, mnk_path_length\n" ++
+  "  ld t2, 0(t0)               # path content length\n" ++
+  "  beqz t2, .Lmnk_fail        # empty path ⇒ malformed HP\n" ++
+  "  add t3, s0, t1             # path byte ptr\n" ++
+  "  lbu t4, 0(t3)\n" ++
+  "  srli t4, t4, 4             # high nibble\n" ++
+  "  li t5, 2\n" ++
+  "  bltu t4, t5, .Lmnk_extension  # 0,1 → extension\n" ++
+  "  li t5, 4\n" ++
+  "  bltu t4, t5, .Lmnk_leaf       # 2,3 → leaf\n" ++
+  "  j .Lmnk_fail                   # ≥ 4 → invalid HP\n" ++
+  ".Lmnk_branch:\n" ++
+  "  li a0, 0\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_extension:\n" ++
+  "  li a0, 1\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_leaf:\n" ++
+  "  li a0, 2\n" ++
+  "  j .Lmnk_ret\n" ++
+  ".Lmnk_fail:\n" ++
+  "  li a0, 3\n" ++
+  ".Lmnk_ret:\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp)\n" ++
+  "  addi sp, sp, 32\n" ++
+  "  ret"
+
+/-- `zisk_mpt_node_kind`: probe BuildUnit. Reads
+    (node_len, node_bytes) from host input, writes
+    classification result to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : node_len (u64)
+      bytes  8..   : node bytes
+    Output layout:
+      bytes  0.. 8 : kind (u64; 0 branch / 1 ext / 2 leaf / 3 fail) -/
+def ziskMptNodeKindPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # node_len\n" ++
+  "  addi a0, a3, 16             # node ptr\n" ++
+  "  jal ra, mpt_node_kind\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write kind\n" ++
+  "  j .Lmnk_pdone\n" ++
+  rlpListNthItemFunction ++ "\n" ++
+  mptNodeKindFunction ++ "\n" ++
+  ".Lmnk_pdone:"
+
+def ziskMptNodeKindDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "mnk_dummy_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_dummy_length:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_offset:\n" ++
+  "  .zero 8\n" ++
+  "mnk_path_length:\n" ++
+  "  .zero 8"
+
+def ziskMptNodeKindProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskMptNodeKindPrologue
+  dataAsm     := ziskMptNodeKindDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -1641,7 +2574,7 @@ def ziskSszPairHashProbeUnit : BuildUnit := {
     each Z_i against Python's recomputation.
 -/
 def sszZeroHashesDataSection : String :=
-  ".section .rodata\n" ++
+  ".section .data\n" ++
   ".balign 32\n" ++
   "ssz_zero_hashes:\n" ++
   "  .byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00    # Z_0\n" ++
@@ -1849,6 +2782,767 @@ def ziskSszMerkleizePow2ProbeUnit : BuildUnit := {
   dataAsm     := ziskSszMerkleizePow2DataSection
 }
 
+/-! ## ssz_merkleize — PR-S7 arbitrary-length SSZ merkleization
+
+    Lifts `ssz_merkleize_pow2` (PR-S6) to the general SSZ case
+    by zero-padding short inputs out to a power of two, then
+    further padding the resulting root up to the SSZ capacity by
+    pair-hashing with `Z_d` from the PR-S5 table at each missing
+    depth.
+
+    Two phases:
+      1. Pad chunks up to `M = next_pow2(n)` with `Z_0`. Reduce
+         in place via `ssz_merkleize_pow2`. Result: partial root
+         at depth `d_M = log2(M)`.
+      2. For `d` from `d_M` to `limit_log2 - 1`:
+             partial_root = sha256_pair(partial_root, Z_d)
+
+    Edge case `n = 0`: result is `Z_{limit_log2}` straight from
+    the zero-hashes table; phase 1 is skipped.
+
+    Calling convention:
+      a0 (input)  : ptr to `n * 32` chunk bytes
+      a1 (input)  : n (0 ≤ n ≤ 32)
+      a2 (input)  : limit_log2 L (0 ≤ L ≤ 31; capacity = 2^L)
+      a3 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Clobbers t0..t6, a0..a3. Saves/restores s0..s6 and ra via
+    a 64-byte stack frame. -/
+def sszMerkleizeFunction : String :=
+  "ssz_merkleize:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp)\n" ++
+  "  sd s1, 16(sp)\n" ++
+  "  sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp)\n" ++
+  "  sd s5, 48(sp)\n" ++
+  "  sd s6, 56(sp)\n" ++
+  "  # s5 = chunks_in ptr; s0 = n; s1 = limit_log2 L; s6 = out ptr\n" ++
+  "  mv s5, a0\n" ++
+  "  mv s0, a1\n" ++
+  "  mv s1, a2\n" ++
+  "  mv s6, a3\n" ++
+  "  # n == 0 → root is Z_L (look up directly)\n" ++
+  "  beqz s0, .Lszm_zero_path\n" ++
+  "  # phase 1: compute M = next_pow2(n) and depth_M = log2(M)\n" ++
+  "  li t0, 1                    # candidate M\n" ++
+  "  li s4, 0                    # candidate depth\n" ++
+  ".Lszm_pow2_scan:\n" ++
+  "  bge t0, s0, .Lszm_have_M\n" ++
+  "  slli t0, t0, 1\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_pow2_scan\n" ++
+  ".Lszm_have_M:\n" ++
+  "  mv s3, t0                   # s3 = M; s4 = depth_M = log2(M)\n" ++
+  "  # copy n*32 input bytes into ssz_merkleize_padded, zero-pad the rest\n" ++
+  "  la t0, ssz_merkleize_padded\n" ++
+  "  slli t1, s0, 5              # t1 = n*32 bytes to copy\n" ++
+  "  mv t2, s5                   # src\n" ++
+  "  mv t3, t0                   # dst\n" ++
+  ".Lszm_cp:\n" ++
+  "  beqz t1, .Lszm_pad\n" ++
+  "  ld t4, 0(t2)\n" ++
+  "  sd t4, 0(t3)\n" ++
+  "  addi t2, t2, 8\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_cp\n" ++
+  ".Lszm_pad:\n" ++
+  "  sub t1, s3, s0              # t1 = M - n (slots to zero)\n" ++
+  "  slli t1, t1, 5              # t1 = (M-n)*32 bytes\n" ++
+  ".Lszm_zr:\n" ++
+  "  beqz t1, .Lszm_call_pow2\n" ++
+  "  sd zero, 0(t3)\n" ++
+  "  addi t3, t3, 8\n" ++
+  "  addi t1, t1, -8\n" ++
+  "  j .Lszm_zr\n" ++
+  ".Lszm_call_pow2:\n" ++
+  "  # call ssz_merkleize_pow2(padded, M, ssz_merkleize_partial)\n" ++
+  "  la a0, ssz_merkleize_padded\n" ++
+  "  mv a1, s3\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, ssz_merkleize_pow2\n" ++
+  "  # phase 2: mix in Z_d for d in [depth_M, L)\n" ++
+  ".Lszm_mix:\n" ++
+  "  beq s4, s1, .Lszm_copy_out\n" ++
+  "  # ssz_merkleize_partial[0..32]   = current root (input L)\n" ++
+  "  # ssz_merkleize_partial[32..64]  = Z_{s4}        (input R)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s4, 5              # offset = s4*32\n" ++
+  "  add t0, t0, t1              # &Z_{s4}\n" ++
+  "  la t2, ssz_merkleize_partial\n" ++
+  "  addi t2, t2, 32             # &partial[32..]\n" ++
+  "  ld t3,  0(t0); sd t3,  0(t2)\n" ++
+  "  ld t3,  8(t0); sd t3,  8(t2)\n" ++
+  "  ld t3, 16(t0); sd t3, 16(t2)\n" ++
+  "  ld t3, 24(t0); sd t3, 24(t2)\n" ++
+  "  la a0, ssz_merkleize_partial\n" ++
+  "  li a1, 64\n" ++
+  "  la a2, ssz_merkleize_partial\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lszm_mix\n" ++
+  ".Lszm_copy_out:\n" ++
+  "  la t0, ssz_merkleize_partial\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  "  j .Lszm_ret\n" ++
+  ".Lszm_zero_path:\n" ++
+  "  # root = Z_L (n == 0 case)\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s1, 5\n" ++
+  "  add t0, t0, t1\n" ++
+  "  ld t1,  0(t0); sd t1,  0(s6)\n" ++
+  "  ld t1,  8(t0); sd t1,  8(s6)\n" ++
+  "  ld t1, 16(t0); sd t1, 16(s6)\n" ++
+  "  ld t1, 24(t0); sd t1, 24(s6)\n" ++
+  ".Lszm_ret:\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp)\n" ++
+  "  ld s1, 16(sp)\n" ++
+  "  ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp)\n" ++
+  "  ld s5, 48(sp)\n" ++
+  "  ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_merkleize`: probe BuildUnit that reads
+    `(limit_log2 : u64, n : u64, chunks : n * 32 bytes)` from
+    the host input region and writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : ignored ziskemu length prefix
+      bytes  8..16 : limit_log2 (u64 LE)
+      bytes 16..24 : n (u64 LE)
+      bytes 24..   : n * 32 chunk bytes -/
+def ziskSszMerkleizePrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a2, 8(a3)                # a2 = limit_log2 L\n" ++
+  "  ld a1, 16(a3)               # a1 = n\n" ++
+  "  addi a0, a3, 24             # a0 = chunks ptr\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR (now caller out ptr)\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  j .Lzs7_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  ".Lzs7_done:"
+
+def ziskSszMerkleizeDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszMerkleizeProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszMerkleizePrologue
+  dataAsm     := ziskSszMerkleizeDataSection
+}
+
+/-! ## ssz_pack_bytes — PR-S8 SSZ byte chunker
+
+    Packs an arbitrary byte string into 32-byte chunks for
+    consumption by `ssz_merkleize`. The byte stream is copied
+    verbatim; the final chunk is right-zero-padded if the byte
+    count is not a multiple of 32. Returns the chunk count.
+
+    Calling convention:
+      a0 (input)  : src ptr
+      a1 (input)  : byte length L (0 ≤ L ≤ 1024)
+      a2 (input)  : dst chunk buffer ptr (32 * ceil(L/32) bytes)
+      ra (input)  : return
+      a0 (output) : chunk count = ceil(L / 32)
+      bytes at *a2: source bytes followed by zero-padding
+
+    Byte-at-a-time copy (slow path, ~L instructions). Acceptable
+    for bring-up; a future PR can specialise to 8-byte units
+    when alignment is known. -/
+def sszPackBytesFunction : String :=
+  "ssz_pack_bytes:\n" ++
+  "  # a0 = src, a1 = L, a2 = dst.\n" ++
+  "  # First copy L bytes from src to dst (byte-wise).\n" ++
+  "  mv t0, a0                  # t0 = src cursor\n" ++
+  "  mv t1, a2                  # t1 = dst cursor\n" ++
+  "  mv t2, a1                  # t2 = remaining bytes\n" ++
+  ".Lszpb_copy:\n" ++
+  "  beqz t2, .Lszpb_check_pad\n" ++
+  "  lbu t3, 0(t0)\n" ++
+  "  sb  t3, 0(t1)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_copy\n" ++
+  ".Lszpb_check_pad:\n" ++
+  "  # remainder = L & 31; if zero, skip pad. else pad = 32 - remainder.\n" ++
+  "  andi t2, a1, 31\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  li t3, 32\n" ++
+  "  sub t2, t3, t2             # t2 = pad bytes\n" ++
+  ".Lszpb_pad:\n" ++
+  "  beqz t2, .Lszpb_count\n" ++
+  "  sb zero, 0(t1)\n" ++
+  "  addi t1, t1, 1\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  j .Lszpb_pad\n" ++
+  ".Lszpb_count:\n" ++
+  "  # chunks = ceil(L / 32) = (L + 31) >> 5\n" ++
+  "  addi t0, a1, 31\n" ++
+  "  srli a0, t0, 5\n" ++
+  "  ret"
+
+/-- `zisk_ssz_pack_bytes`: probe BuildUnit that reads
+    `(L : u64, data : L bytes)` from the host input region,
+    calls `ssz_pack_bytes`, and writes the result to OUTPUT in
+    the layout `(chunk_count : u64, chunks : chunk_count * 32
+    bytes)`. The test script diffs the entire OUTPUT against
+    Python's recomputation. Input layout:
+      bytes  0.. 8 : L (u64 LE)
+      bytes  8..   : L source bytes -/
+def ziskSszPackBytesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # a1 = L\n" ++
+  "  addi a0, a3, 16             # a0 = src ptr\n" ++
+  "  li a2, 0xa0010008           # a2 = dst chunks (OUTPUT + 8)\n" ++
+  "  jal ra, ssz_pack_bytes\n" ++
+  "  # write chunk count (a0) at OUTPUT + 0\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)\n" ++
+  "  j .Lzs8_done\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  ".Lzs8_done:"
+
+def ziskSszPackBytesDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "ssz_pack_bytes_scratch:\n" ++
+  "  .zero 8"
+
+def ziskSszPackBytesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszPackBytesPrologue
+  dataAsm     := ziskSszPackBytesDataSection
+}
+
+/-! ## ssz_hash_tree_root_bytes — PR-S9 SSZ hash_tree_root(Bytes)
+
+    Composes PR-S8 `ssz_pack_bytes`, PR-S7 `ssz_merkleize`, and
+    PR-S2 `zkvm_sha256` into a single named entry point:
+
+        chunks       = pack(value)
+        partial_root = merkleize(chunks, limit_log2_chunks)
+        root         = sha256(partial_root || u256_le(len))
+
+    Matches the SSZ spec for variable-length `Bytes` with
+    declared capacity `B_max = 32 * 2^limit_log2_chunks` bytes.
+
+    Calling convention:
+      a0 (input)  : src bytes ptr
+      a1 (input)  : L (0 ≤ L ≤ 1024)
+      a2 (input)  : limit_log2_chunks (0 ≤ L_log2 ≤ 31)
+      a3 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Uses three scratches in `.data`:
+      ssz_hb_chunks  (1024 B) -- packed chunks before merkleize
+      ssz_hb_partial (32 B)   -- partial root from merkleize
+      ssz_hb_mix     (64 B)   -- (partial || length) buffer
+                                 for the final sha256 -/
+def sszHashTreeRootBytesFunction : String :=
+  "ssz_hash_tree_root_bytes:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp)\n" ++
+  "  sd s1, 16(sp)\n" ++
+  "  sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp)\n" ++
+  "  # s0 = src; s1 = L; s2 = limit_log2; s3 = out ptr\n" ++
+  "  mv s0, a0\n" ++
+  "  mv s1, a1\n" ++
+  "  mv s2, a2\n" ++
+  "  mv s3, a3\n" ++
+  "  # Step 1: pack(src, L) -> ssz_hb_chunks. Returns chunk count in a0.\n" ++
+  "  mv a0, s0\n" ++
+  "  mv a1, s1\n" ++
+  "  la a2, ssz_hb_chunks\n" ++
+  "  jal ra, ssz_pack_bytes\n" ++
+  "  mv s4, a0                  # s4 = chunks count\n" ++
+  "  # Step 2: merkleize(ssz_hb_chunks, s4, s2, ssz_hb_partial)\n" ++
+  "  la a0, ssz_hb_chunks\n" ++
+  "  mv a1, s4\n" ++
+  "  mv a2, s2\n" ++
+  "  la a3, ssz_hb_partial\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  # Step 3: write length chunk (u256 LE of L) at ssz_hb_mix + 32..64\n" ++
+  "  # Copy partial root into ssz_hb_mix[0..32]\n" ++
+  "  la t0, ssz_hb_partial\n" ++
+  "  la t1, ssz_hb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  # Length chunk at ssz_hb_mix + 32..64: u64 LE of L, then 24 zero bytes.\n" ++
+  "  sd s1, 32(t1)               # low 8 bytes = L (LE)\n" ++
+  "  sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1)\n" ++
+  "  sd zero, 56(t1)\n" ++
+  "  # Step 4: sha256(ssz_hb_mix, 64) -> caller's out ptr (s3)\n" ++
+  "  la a0, ssz_hb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s3\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp)\n" ++
+  "  ld s1, 16(sp)\n" ++
+  "  ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_bytes`: probe BuildUnit that reads
+    `(L, limit_log2, data)` from host input, calls the wrapper,
+    writes the 32-byte SSZ root to OUTPUT_ADDR.
+    Input layout:
+      file bytes  0.. 8 : L            (at INPUT_ADDR +  8)
+      file bytes  8..16 : limit_log2   (at INPUT_ADDR + 16)
+      file bytes 16..   : L source bytes (at INPUT_ADDR + 24) -/
+def ziskSszHashTreeRootBytesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a4, 0x40000000\n" ++
+  "  ld a1, 8(a4)                # a1 = L\n" ++
+  "  ld a2, 16(a4)               # a2 = limit_log2_chunks\n" ++
+  "  addi a0, a4, 24             # a0 = src ptr\n" ++
+  "  li a3, 0xa0010000           # a3 = OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_bytes\n" ++
+  "  j .Lzs9_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  ".Lzs9_done:"
+
+def ziskSszHashTreeRootBytesDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootBytesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootBytesPrologue
+  dataAsm     := ziskSszHashTreeRootBytesDataSection
+}
+
+/-! ## ssz_hash_tree_root_list_bytelist — PR-S11
+
+    SSZ hash_tree_root for `List[ByteList[B], M]`.
+
+    Reads the SSZ-encoded list section directly (inner-offset
+    table at the start, concatenated element bytes after).
+    Iterates over elements, recursively SSZ-hashes each as a
+    `ByteList[B]` via `ssz_hash_tree_root_bytes`, merkleizes the
+    resulting child roots with capacity `2^count_log2`, then
+    mixes in the element count.
+
+    Calling convention:
+      a0 (input)  : section ptr (read-only)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : per-element byte_limit_log2_chunks
+      a3 (input)  : list count_limit_log2 (capacity = 2^a3)
+      a4 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    PR-S11 caps N (element count) at 32, matching the inner
+    merkleize cap. Output is byte-identical to
+    `SszList[ByteList[B], M](...).hash_tree_root()` from
+    `remerkleable` for any compliant input. -/
+def sszHashTreeRootListByteListFunction : String :=
+  "ssz_hash_tree_root_list_bytelist:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = byte_log2\n" ++
+  "  mv s3, a3                  # s3 = count_log2\n" ++
+  "  mv s4, a4                  # s4 = out ptr\n" ++
+  "  beqz s1, .Lszls_N0          # empty section ⇒ N = 0\n" ++
+  "  lwu t0, 0(s0)              # offset_0 = 4 * N\n" ++
+  "  srli s5, t0, 2             # s5 = N (element count)\n" ++
+  "  li s6, 0                   # s6 = i (loop counter)\n" ++
+  ".Lszls_loop:\n" ++
+  "  beq s6, s5, .Lszls_done_loop\n" ++
+  "  slli t0, s6, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s6, 1\n" ++
+  "  beq t3, s5, .Lszls_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)              # inner_off_{i+1}\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lszls_have_end\n" ++
+  ".Lszls_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lszls_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  mv a2, s2                  # byte_log2\n" ++
+  "  la a3, ssz_ltb_child_roots\n" ++
+  "  slli t0, s6, 5             # 32*i\n" ++
+  "  add a3, a3, t0             # &child_roots[i]\n" ++
+  "  jal ra, ssz_hash_tree_root_bytes\n" ++
+  "  addi s6, s6, 1\n" ++
+  "  j .Lszls_loop\n" ++
+  ".Lszls_done_loop:\n" ++
+  "  la a0, ssz_ltb_child_roots\n" ++
+  "  mv a1, s5                  # N\n" ++
+  "  mv a2, s3                  # count_log2\n" ++
+  "  la a3, ssz_ltb_partial\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  la t0, ssz_ltb_partial\n" ++
+  "  la t1, ssz_ltb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  sd s5, 32(t1)              # length = N (u64 LE)\n" ++
+  "  sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1)\n" ++
+  "  sd zero, 56(t1)\n" ++
+  "  la a0, ssz_ltb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s4\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  "  j .Lszls_ret\n" ++
+  ".Lszls_N0:\n" ++
+  "  la t0, ssz_zero_hashes\n" ++
+  "  slli t1, s3, 5\n" ++
+  "  add t0, t0, t1             # &Z_{count_log2}\n" ++
+  "  la t1, ssz_ltb_mix\n" ++
+  "  ld t2,  0(t0); sd t2,  0(t1)\n" ++
+  "  ld t2,  8(t0); sd t2,  8(t1)\n" ++
+  "  ld t2, 16(t0); sd t2, 16(t1)\n" ++
+  "  ld t2, 24(t0); sd t2, 24(t1)\n" ++
+  "  sd zero, 32(t1); sd zero, 40(t1)\n" ++
+  "  sd zero, 48(t1); sd zero, 56(t1)\n" ++
+  "  la a0, ssz_ltb_mix\n" ++
+  "  li a1, 64\n" ++
+  "  mv a2, s4\n" ++
+  "  jal ra, zkvm_sha256\n" ++
+  ".Lszls_ret:\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_list_bytelist`: probe BuildUnit
+    that reads the SSZ-encoded list section from host input and
+    writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len
+      bytes  8..16 : byte_limit_log2
+      bytes 16..24 : count_limit_log2
+      bytes 24..   : SSZ list section bytes -/
+def ziskSszHashTreeRootListByteListPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a5, 0x40000000\n" ++
+  "  ld a1, 8(a5)                # section_len\n" ++
+  "  ld a2, 16(a5)               # byte_log2\n" ++
+  "  ld a3, 24(a5)               # count_log2\n" ++
+  "  addi a0, a5, 32             # section ptr\n" ++
+  "  li a4, 0xa0010000           # OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  j .Lzs11_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  ".Lzs11_done:"
+
+def ziskSszHashTreeRootListByteListDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootListByteListProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootListByteListPrologue
+  dataAsm     := ziskSszHashTreeRootListByteListDataSection
+}
+
+/-! ## ssz_hash_tree_root_execution_witness — PR-S12
+
+    SSZ Container hash for the amsterdam `ExecutionWitness`.
+    Three variable-size fields (state, codes, headers); each
+    field is itself a `List[ByteList[B_i], M_i]` and gets
+    hashed via `ssz_hash_tree_root_list_bytelist` (PR-S11). The
+    three resulting child roots are merkleized with capacity 4
+    slots (`limit_log2 = ceil(log2(3)) = 2`) to produce the
+    Container root.
+
+    Per the SSZ spec for Containers, NO mix_in_length step
+    follows -- only variable-length List/Bytes types mix in
+    length.
+
+    Calling convention:
+      a0 (input)  : section ptr (SSZ-encoded ExecutionWitness)
+      a1 (input)  : section_len
+      a2 (input)  : 32-byte output ptr
+      ra (input)  : return
+      a0 (output) : 0 (ZKVM_EOK)
+
+    Per-field caps inherited from PR-S11: each list's N ≤ 32.
+    Test fixtures stay well below; production-sized witnesses
+    are a follow-up. -/
+def sszHashTreeRootExecutionWitnessFunction : String :=
+  "ssz_hash_tree_root_execution_witness:\n" ++
+  "  addi sp, sp, -64\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp); sd s3, 32(sp)\n" ++
+  "  sd s4, 40(sp); sd s5, 48(sp); sd s6, 56(sp)\n" ++
+  "  mv s0, a0                   # s0 = section ptr\n" ++
+  "  mv s1, a1                   # s1 = section_len\n" ++
+  "  mv s2, a2                   # s2 = out ptr\n" ++
+  "  lwu s3, 0(s0)               # off_state\n" ++
+  "  lwu s4, 4(s0)               # off_codes\n" ++
+  "  lwu s5, 8(s0)               # off_headers\n" ++
+  "  add s6, s0, s1              # section_end\n" ++
+  "  # Field 0: state (List[ByteList[2^20], 2^20]; byte_log2=15, count_log2=20)\n" ++
+  "  add a0, s0, s3              # state_start\n" ++
+  "  add t0, s0, s4              # state_end\n" ++
+  "  sub a1, t0, a0\n" ++
+  "  li a2, 15\n" ++
+  "  li a3, 20\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Field 1: codes (List[ByteList[2^24], 2^16]; byte_log2=19, count_log2=16)\n" ++
+  "  add a0, s0, s4              # codes_start\n" ++
+  "  add t0, s0, s5              # codes_end\n" ++
+  "  sub a1, t0, a0\n" ++
+  "  li a2, 19\n" ++
+  "  li a3, 16\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  addi a4, a4, 32\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Field 2: headers (List[ByteList[2^10], 2^8]; byte_log2=5, count_log2=8)\n" ++
+  "  add a0, s0, s5              # headers_start\n" ++
+  "  sub a1, s6, a0\n" ++
+  "  li a2, 5\n" ++
+  "  li a3, 8\n" ++
+  "  la a4, ssz_ew_field_roots\n" ++
+  "  addi a4, a4, 64\n" ++
+  "  jal ra, ssz_hash_tree_root_list_bytelist\n" ++
+  "  # Merkleize 3 field roots, capacity = 4 slots (limit_log2 = 2)\n" ++
+  "  la a0, ssz_ew_field_roots\n" ++
+  "  li a1, 3\n" ++
+  "  li a2, 2\n" ++
+  "  mv a3, s2\n" ++
+  "  jal ra, ssz_merkleize\n" ++
+  "  li a0, 0\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp); ld s3, 32(sp)\n" ++
+  "  ld s4, 40(sp); ld s5, 48(sp); ld s6, 56(sp)\n" ++
+  "  addi sp, sp, 64\n" ++
+  "  ret"
+
+/-- `zisk_ssz_hash_tree_root_execution_witness`: probe BuildUnit
+    that reads the SSZ-encoded ExecutionWitness section from host
+    input and writes the SSZ root to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : section_len
+      bytes  8..   : SSZ ExecutionWitness section bytes -/
+def ziskSszHashTreeRootExecutionWitnessPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010000           # OUTPUT_ADDR\n" ++
+  "  jal ra, ssz_hash_tree_root_execution_witness\n" ++
+  "  j .Lzs12_done\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  sszHashTreeRootExecutionWitnessFunction ++ "\n" ++
+  ".Lzs12_done:"
+
+def ziskSszHashTreeRootExecutionWitnessDataSection : String :=
+  ".section .data\n" ++
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ew_field_roots:\n" ++
+  "  .zero 96\n" ++
+  sszZeroHashesDataSection
+
+def ziskSszHashTreeRootExecutionWitnessProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskSszHashTreeRootExecutionWitnessPrologue
+  dataAsm     := ziskSszHashTreeRootExecutionWitnessDataSection
+}
+
 /-! ## stateless_guest body — PR-K5 keccak hash field
 
     Replaces the zero-stub `new_payload_request_root` field in
@@ -1876,61 +3570,96 @@ def ziskSszMerkleizePow2ProbeUnit : BuildUnit := {
     into the encoder pipeline end-to-end. Once PR-S series lands,
     the SHA-256 hash_tree_root replaces this keccak. -/
 def statelessGuestEpilogue : String :=
-  "  # PR-K7: overwrite OUTPUT[0..32] with keccak256 of the FIRST\n" ++
-  "  # element of witness.headers (witness.headers[0]) if the list\n" ++
-  "  # is non-empty; else keccak256(empty).\n" ++
+  "  # PR-S12: overwrite OUTPUT[0..32] with the SSZ\n" ++
+  "  # `hash_tree_root` of the entire `witness:\n" ++
+  "  # ExecutionWitness` field -- a 3-field Container holding\n" ++
+  "  # state / codes / headers lists.\n" ++
   "  # \n" ++
-  "  # Navigation:\n" ++
-  "  #   ssz_start  = INPUT_ADDR + 16\n" ++
-  "  #   offset_1   = LWU @ ssz_start +  4   (witness offset)\n" ++
-  "  #   witness    = ssz_start + offset_1\n" ++
-  "  #   inner_off2 = LWU @ witness  +  8   (headers offset)\n" ++
-  "  #   hdrs_start = witness + inner_off2\n" ++
-  "  #   offset_3   = LWU @ ssz_start + 16  (witness end)\n" ++
-  "  #   hdrs_end   = ssz_start + offset_3\n" ++
-  "  #   hdrs_len   = hdrs_end - hdrs_start\n" ++
-  "  #   if hdrs_len > 0:\n" ++
-  "  #     first_off  = LWU @ hdrs_start    (inner offset[0] = 4 * N)\n" ++
-  "  #     el0_start  = hdrs_start + first_off\n" ++
-  "  #     if first_off == 4 (N == 1):\n" ++
-  "  #       el0_end  = hdrs_end\n" ++
-  "  #     else (N >= 2):\n" ++
-  "  #       el0_end  = hdrs_start + LWU @ hdrs_start + 4 (inner offset[1])\n" ++
-  "  #     el0_len    = el0_end - el0_start\n" ++
-  "  #   else:\n" ++
-  "  #     hash empty (el0_len = 0)\n" ++
+  "  # SSZ algorithm (Container, NO mix_in_length):\n" ++
+  "  #   state_root   = hash_tree_root(List[ByteList[2^20], 2^20])\n" ++
+  "  #   codes_root   = hash_tree_root(List[ByteList[2^24], 2^16])\n" ++
+  "  #   headers_root = hash_tree_root(List[ByteList[2^10], 2^8])\n" ++
+  "  #   root         = merkleize([state_root, codes_root,\n" ++
+  "  #                             headers_root], log2=2)\n" ++
+  "  # \n" ++
+  "  # Per-field caps: each list's N ≤ 32 (inherited from\n" ++
+  "  # PR-S11's `ssz_hash_tree_root_list_bytelist`). Test\n" ++
+  "  # fixtures stay well below.\n" ++
+  "  # \n" ++
+  "  # Navigation: chase the outer SSZ offset chain to find\n" ++
+  "  # the bounds of the `witness` field within the SSZ-encoded\n" ++
+  "  # `SszStatelessInput`, then delegate the per-sub-field\n" ++
+  "  # walk + recursive hashing to\n" ++
+  "  # `ssz_hash_tree_root_execution_witness`.\n" ++
   "  li sp, 0xa0050000\n" ++
   "  li t3, 0x40000000\n" ++
   "  addi t3, t3, 16             # t3 = ssz_start\n" ++
-  "  lwu t4, 4(t3)               # outer offset_1\n" ++
-  "  add t5, t3, t4              # t5 = witness_addr\n" ++
-  "  lwu t6, 8(t5)               # inner offset_2 (headers offset)\n" ++
-  "  add a0, t5, t6              # a0 = hdrs_start (tentative data ptr)\n" ++
-  "  lwu t6, 16(t3)              # outer offset_3 (witness end)\n" ++
-  "  add t6, t3, t6              # t6 = hdrs_end\n" ++
-  "  sub a1, t6, a0              # a1 = hdrs_len (tentative len)\n" ++
-  "  beqz a1, .Lsg_call_keccak   # empty headers: hash empty\n" ++
-  "  # Non-empty headers: read first inner offset to find element 0\n" ++
-  "  lwu t4, 0(a0)               # t4 = first_inner_offset = 4 * N\n" ++
-  "  add t5, a0, t4              # t5 = el0_start\n" ++
-  "  li t3, 4\n" ++
-  "  beq t4, t3, .Lsg_one_elem   # N == 1 → el0_end = hdrs_end (t6 already)\n" ++
-  "  lwu t4, 4(a0)               # t4 = second_inner_offset\n" ++
-  "  add t6, a0, t4              # t6 = el0_end (override)\n" ++
-  ".Lsg_one_elem:\n" ++
-  "  sub a1, t6, t5              # a1 = el0_len\n" ++
-  "  mv a0, t5                   # a0 = el0_start\n" ++
-  ".Lsg_call_keccak:\n" ++
+  "  lwu t4, 4(t3)               # outer offset_1 (witness offset)\n" ++
+  "  add a0, t3, t4              # a0 = witness_start (section ptr)\n" ++
+  "  lwu t5, 16(t3)              # outer offset_3 (witness end)\n" ++
+  "  add t5, t3, t5              # witness_end\n" ++
+  "  sub a1, t5, a0              # a1 = witness section_len\n" ++
   "  li a2, 0xa0010000           # a2 = OUTPUT_ADDR (hash field)\n" ++
-  "  jal ra, zkvm_keccak256\n" ++
+  "  jal ra, ssz_hash_tree_root_execution_witness\n" ++
   "  j .Lsg_done\n" ++
-  zkvmKeccak256Function ++ "\n" ++
+  zkvmSha256Function ++ "\n" ++
+  sszPackBytesFunction ++ "\n" ++
+  sszMerkleizePow2Function ++ "\n" ++
+  sszMerkleizeFunction ++ "\n" ++
+  sszHashTreeRootBytesFunction ++ "\n" ++
+  sszHashTreeRootListByteListFunction ++ "\n" ++
+  sszHashTreeRootExecutionWitnessFunction ++ "\n" ++
   ".Lsg_done:"
 
 def statelessGuestDataSection : String :=
   ".section .data\n" ++
-  "zk3_state:\n" ++
-  "  .zero 200"
+  ".balign 8\n" ++
+  "sha256_w_iv:\n" ++
+  "  .quad 0xbb67ae856a09e667\n" ++
+  "  .quad 0xa54ff53a3c6ef372\n" ++
+  "  .quad 0x9b05688c510e527f\n" ++
+  "  .quad 0x5be0cd191f83d9ab\n" ++
+  ".balign 8\n" ++
+  "sha256_w_state:\n" ++
+  "  .zero 32\n" ++
+  ".balign 8\n" ++
+  "sha256_w_input:\n" ++
+  "  .zero 64\n" ++
+  ".balign 8\n" ++
+  "sha256_w_params:\n" ++
+  "  .quad sha256_w_state\n" ++
+  "  .quad sha256_w_input\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_scratch:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_padded:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_merkleize_partial:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_chunks:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_hb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_child_roots:\n" ++
+  "  .zero 1024\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_partial:\n" ++
+  "  .zero 32\n" ++
+  ".balign 32\n" ++
+  "ssz_ltb_mix:\n" ++
+  "  .zero 64\n" ++
+  ".balign 32\n" ++
+  "ssz_ew_field_roots:\n" ++
+  "  .zero 96\n" ++
+  sszZeroHashesDataSection
 
 def statelessGuestUnit : BuildUnit := {
   body        := EvmAsm.Stateless.run_stateless_guest
@@ -1972,10 +3701,22 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_sha256_probe_le"      => some ziskSha256ProbeLeUnit
   | "zisk_zkvm_sha256"          => some ziskZkvmSha256ProbeUnit
   | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
+  | "zisk_headers_keccak_chain" => some ziskHeadersKeccakChainProbeUnit
+  | "zisk_headers_keccak_array" => some ziskHeadersKeccakArrayProbeUnit
+  | "zisk_headers_parent_hash"  => some ziskHeadersParentHashProbeUnit
+  | "zisk_headers_validate_chain" => some ziskHeadersValidateChainProbeUnit
+  | "zisk_witness_lookup_by_hash" => some ziskWitnessLookupByHashProbeUnit
+  | "zisk_rlp_list_nth_item"    => some ziskRlpListNthItemProbeUnit
+  | "zisk_mpt_node_kind"        => some ziskMptNodeKindProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
   | "zisk_ssz_merkleize_pow2"   => some ziskSszMerkleizePow2ProbeUnit
+  | "zisk_ssz_merkleize"        => some ziskSszMerkleizeProbeUnit
+  | "zisk_ssz_pack_bytes"       => some ziskSszPackBytesProbeUnit
+  | "zisk_ssz_hash_tree_root_bytes" => some ziskSszHashTreeRootBytesProbeUnit
+  | "zisk_ssz_hash_tree_root_list_bytelist" => some ziskSszHashTreeRootListByteListProbeUnit
+  | "zisk_ssz_hash_tree_root_execution_witness" => some ziskSszHashTreeRootExecutionWitnessProbeUnit
   | _                           => none
 
 /-- List of known program names, for use in CLI usage strings. -/
@@ -1996,9 +3737,21 @@ def knownProgramNames : List String :=
    "zisk_sha256_probe_le",
    "zisk_zkvm_sha256",
    "zisk_keccak256_from_input",
+   "zisk_headers_keccak_chain",
+   "zisk_headers_keccak_array",
+   "zisk_headers_parent_hash",
+   "zisk_headers_validate_chain",
+   "zisk_witness_lookup_by_hash",
+   "zisk_rlp_list_nth_item",
+   "zisk_mpt_node_kind",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
-   "zisk_ssz_merkleize_pow2"]
+   "zisk_ssz_merkleize_pow2",
+   "zisk_ssz_merkleize",
+   "zisk_ssz_pack_bytes",
+   "zisk_ssz_hash_tree_root_bytes",
+   "zisk_ssz_hash_tree_root_list_bytelist",
+   "zisk_ssz_hash_tree_root_execution_witness"]
 
 end EvmAsm.Codegen

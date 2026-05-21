@@ -72,7 +72,9 @@ print(c.to_bytes(8, 'little').hex())
 }
 
 # Build the 112-hex-char expected output (= 56 bytes):
-#   32 hash bytes (keccak256(SSZ blob), PR-K5)
+#   32 hash bytes (PR-S12: SSZ hash_tree_root(ExecutionWitness),
+#                  the 3-field Container with state, codes,
+#                  headers sub-lists; was PR-S11's headers-only)
 # | 1 byte bool
 # | 8 LE bytes chain_id
 # | 7 zero bytes (gap)
@@ -104,7 +106,8 @@ run_fixture() {
 
   echo "==> [$label] gen SSZ input  (chain_id=$cid${extra_args[*]:+, ${extra_args[*]}})"
   uv run --directory execution-specs --quiet python3 \
-    "$INPUT_GEN" "$cid" "$input_file" --hash-out "$hash_file" "${extra_args[@]}"
+    "$INPUT_GEN" "$cid" "$input_file" --hash-out "$hash_file" \
+    "${extra_args[@]+"${extra_args[@]}"}"
 
   local hash_hex
   hash_hex="$(cat "$hash_file")"

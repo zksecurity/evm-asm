@@ -57,6 +57,51 @@ theorem divConcretePostNoX1Frame_pcFree
     divScratchValues_unfold]
   pcFree
 
+/-- Concrete no-NOP DIV callable post bundle before weakening, preserving
+    exact values for `x5` and `x10` as produced by full-path proofs. -/
+@[irreducible]
+def divConcretePostNoX1ExactRegsFrame (sp : Word) (a b : EvmWord)
+    (x9Val raVal v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) : Assertion :=
+  (((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
+    (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+   ((.x9 ↦ᵣ x9Val) ** (.x1 ↦ᵣ raVal) ** (.x2 ↦ᵣ v2) **
+      (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) **
+      evmWordIs sp a **
+      divScratchValuesCallNoX1 sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0))
+
+theorem divConcretePostNoX1ExactRegsFrame_unfold
+    {sp : Word} {a b : EvmWord}
+    {x9Val raVal v2 v5 v6 v7 v10 v11 : Word}
+    {q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word} :
+    divConcretePostNoX1ExactRegsFrame sp a b x9Val raVal v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0 =
+    (((.x12 ↦ᵣ (sp + 32)) ** (.x5 ↦ᵣ v5) ** (.x10 ↦ᵣ v10) **
+      (.x0 ↦ᵣ (0 : Word)) ** evmWordIs (sp + 32) (EvmWord.div a b)) **
+     ((.x9 ↦ᵣ x9Val) ** (.x1 ↦ᵣ raVal) ** (.x2 ↦ᵣ v2) **
+        (.x6 ↦ᵣ v6) ** (.x7 ↦ᵣ v7) ** (.x11 ↦ᵣ v11) **
+        evmWordIs sp a **
+        divScratchValuesCallNoX1 sp q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratch_un0)) := by
+  delta divConcretePostNoX1ExactRegsFrame
+  rfl
+
+theorem divConcretePostNoX1ExactRegsFrame_pcFree
+    (sp : Word) (a b : EvmWord)
+    (x9Val raVal v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     shiftMem nMem jMem retMem dMem dloMem scratch_un0 : Word) :
+    (divConcretePostNoX1ExactRegsFrame sp a b x9Val raVal v2 v5 v6 v7 v10 v11
+      q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+      shiftMem nMem jMem retMem dMem dloMem scratch_un0).pcFree := by
+  rw [divConcretePostNoX1ExactRegsFrame_unfold, divScratchValuesCallNoX1_unfold,
+    divScratchValues_unfold]
+  pcFree
+
 /-- Weaken the concrete no-NOP DIV callable post bundle to the public
     callable postcondition plus the caller-framed exact `x1` and `x9` atoms. -/
 theorem divConcretePostNoX1_weaken_callable_frame
