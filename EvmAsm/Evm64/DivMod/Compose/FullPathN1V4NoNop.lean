@@ -1495,6 +1495,69 @@ structure LoopN1CallMaxmaxmaxExactInputs where
   scratchMem : Word
   raVal : Word
 
+/-- Canonical bundled inputs for the full-DIV n=1 branch where the j=3
+    iteration uses the v4 call path and j=2/j=1/j=0 use all-max. -/
+def fullDivN1CallMaxmaxmaxExactInputs (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word) :
+    LoopN1CallMaxmaxmaxExactInputs :=
+  let v := fullDivN1NormV b0 b1 b2 b3
+  let u := fullDivN1NormU a0 a1 a2 a3 b0
+  { sp := sp
+    base := base
+    jOld := jOld
+    v5Old := v5Old
+    v6Old := v6Old
+    v7Old := v7Old
+    v10Old := v10Old
+    v11Old := v11Old
+    v2Old := v2Old
+    v0 := v.1
+    v1 := v.2.1
+    v2 := v.2.2.1
+    v3 := v.2.2.2
+    u0 := u.2.2.2.1
+    u1 := u.2.2.2.2
+    u2 := 0
+    u3 := 0
+    uTop := 0
+    u0Orig2 := u.2.2.1
+    u0Orig1 := u.2.1
+    u0Orig0 := u.1
+    q3Old := q3Old
+    q2Old := q2Old
+    q1Old := q1Old
+    q0Old := q0Old
+    retMem := retMem
+    dMem := dMem
+    dloMem := dloMem
+    scratchUn0 := scratchUn0
+    scratchMem := scratchMem
+    raVal := raVal }
+
+/-- The full-DIV n=1 j=3 trial predicate gives the j=3 taken branch fact
+    for the canonical call/max/max/max bundled inputs. -/
+theorem fullDivN1CallMaxmaxmaxExactInputs_hbltu3
+    (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word)
+    (hbltu3 : isTrialN1_j3 true a3 b0) :
+    BitVec.ult
+      (fullDivN1CallMaxmaxmaxExactInputs sp base
+        jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        a0 a1 a2 a3 b0 b1 b2 b3
+        q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal).u1
+      (fullDivN1CallMaxmaxmaxExactInputs sp base
+        jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        a0 a1 a2 a3 b0 b1 b2 b3
+        q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal).v0 := by
+  unfold isTrialN1_j3 at hbltu3
+  unfold fullDivN1CallMaxmaxmaxExactInputs fullDivN1NormU fullDivN1NormV
+    fullDivN1AntiShift fullDivN1Shift
+  simpa using hbltu3.symm
+
 /-- Spec wrapper specialized to bundled N1 call/max/max/max inputs. -/
 @[irreducible]
 def loopN1CallMaxmaxmaxExactInputSpec
