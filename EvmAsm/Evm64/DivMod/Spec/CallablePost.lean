@@ -124,6 +124,20 @@ theorem divStackDispatchPostNoX1_weaken_callable_own_x1_frame_x9
       divStackDispatchPostNoX1_weaken_callable_own_x1 sp a b hLeft hpLeft
   · exact hp
 
+/-- Weaken an exact caller-framed `x1` callable post to the ownership-only
+    callable post shape, preserving an exact caller-owned `x9` atom. -/
+theorem divStackDispatchPostCallable_exact_x1_weaken_own_x1_frame_x9
+    (sp : Word) (a b : EvmWord) (raVal x9Val : Word) :
+  ∀ h : PartialState,
+      ((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Val)) h →
+      ((divStackDispatchPostCallable sp a b ** regOwn .x1) **
+        (.x9 ↦ᵣ x9Val)) h := by
+  intro h hp
+  exact sepConj_mono_left
+    (sepConj_mono_right (regIs_implies_regOwn .x1 (v := raVal)))
+    h hp
+
 /-- Concrete no-NOP MOD callable post bundle before weakening. -/
 @[irreducible]
 def modConcretePostNoX1Frame (sp : Word) (a b : EvmWord)
