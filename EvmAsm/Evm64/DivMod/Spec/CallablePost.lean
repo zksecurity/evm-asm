@@ -191,4 +191,19 @@ theorem modConcretePostNoX1_weaken_callable_frame
       exact fun _ hp => hp
   exact by xperm_hyp hOwn
 
+/-- Split the historical no-`x1` MOD stack post into the callable public post
+    plus separate `x1` ownership. This mirrors
+    `divStackDispatchPostNoX1_weaken_callable_own_x1`. -/
+theorem modStackDispatchPostNoX1_weaken_callable_own_x1
+    (sp : Word) (a b : EvmWord) :
+  ∀ h : PartialState,
+      modStackDispatchPostNoX1 sp a b h →
+      (modStackDispatchPostCallable sp a b ** regOwn .x1) h := by
+  intro h hp
+  rw [modStackDispatchPostNoX1_unfold] at hp
+  rw [modStackDispatchPostCallable_unfold]
+  rw [divScratchOwnCall_unfold] at hp
+  rw [divScratchOwnCallNoX1_unfold]
+  xperm_hyp hp
+
 end EvmAsm.Evm64
