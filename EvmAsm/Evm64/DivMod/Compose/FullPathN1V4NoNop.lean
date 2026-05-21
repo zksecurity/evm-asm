@@ -1503,4 +1503,37 @@ theorem loopN1CallMaxmaxmaxExactInputHypotheses_carry2Call
   exact loopN1CallMaxmaxmaxExactHypotheses_carry2Call
     I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1 h
 
+/-- Project the j=2 all-max branch fact from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu2
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop).2.1
+      I.v0 := by
+  exact loopN1CallMaxmaxmaxBranchFacts_hbltu2
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+    (loopN1CallMaxmaxmaxExactInputHypotheses_branches I h)
+
+/-- Project the j=1 all-max branch fact from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu1
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR2 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+        I.u0Orig2).2.1 I.v0 := by
+  exact loopN1CallMaxmaxmaxBranchFacts_hbltu1
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+    (loopN1CallMaxmaxmaxExactInputHypotheses_branches I h)
+
+/-- Project the j=0 all-max branch fact from bundled N1 call/max/max/max inputs. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu0
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputHypotheses I) :
+    ¬BitVec.ult
+      (loopN1CallMaxmaxmaxR1 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+        I.u0Orig2 I.u0Orig1).2.1 I.v0 := by
+  exact loopN1CallMaxmaxmaxBranchFacts_hbltu0
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+    (loopN1CallMaxmaxmaxExactInputHypotheses_branches I h)
+
 end EvmAsm.Evm64
