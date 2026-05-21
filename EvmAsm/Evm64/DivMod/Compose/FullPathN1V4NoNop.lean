@@ -1606,6 +1606,27 @@ def fullDivN1CallMaxmaxmaxDenormFrameNoX1 (sp base : Word)
   (sp + signExtend12 3944 ↦ₘ divKTrialCallV4Un0 u0) **
   (sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut u1 u0 v0 scratchMem)
 
+theorem fullDivN1CallMaxmaxmaxDenormFrameNoX1_pcFree (sp base : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) :
+    (fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+      a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 scratchMem).pcFree := by
+  delta fullDivN1CallMaxmaxmaxDenormFrameNoX1
+  pcFree
+
+instance pcFreeInst_fullDivN1CallMaxmaxmaxDenormFrameNoX1
+    (sp base : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem : Word) :
+    Assertion.PCFree
+      (fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem) :=
+  ⟨fullDivN1CallMaxmaxmaxDenormFrameNoX1_pcFree sp base
+    a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    u0Orig2 u0Orig1 u0Orig0 scratchMem⟩
+
 /-- Denormalization+DIV-epilogue postcondition for the N1 path where j=3
     uses the v4 call path and j=2/j=1/j=0 all use max. -/
 @[irreducible]
@@ -1655,6 +1676,76 @@ instance pcFreeInst_fullDivN1CallMaxmaxmaxUnifiedPostNoX1
   ⟨fullDivN1CallMaxmaxmaxUnifiedPostNoX1_pcFree sp base shift
     a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
     u0Orig2 u0Orig1 u0Orig0 scratchMem⟩
+
+/-- v4 no-NOP N1 denormalization and DIV epilogue for the path where j=3
+    uses the call path and j=2/j=1/j=0 all use max. -/
+theorem evm_div_n1_call_maxmaxmax_denorm_epilogue_spec_v4_noNop
+    (sp base shift : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 : Word)
+    (hshift_nz : shift ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop_v4 base)
+      (fullDivN1CallMaxmaxmaxDenormPre sp shift
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0)
+      (fullDivN1CallMaxmaxmaxDenormPost sp shift
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0) := by
+  let r3 := loopN1CallMaxmaxmaxR3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+  let r2 := loopN1CallMaxmaxmaxR2 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2
+  let r1 := loopN1CallMaxmaxmaxR1 v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1
+  let r0 := iterN1Max v0 v1 v2 v3 u0Orig0
+    r1.2.1 r1.2.2.1 r1.2.2.2.1 r1.2.2.2.2.1
+  let c0 := (mulsubN4 (signExtend12 4095 : Word) v0 v1 v2 v3
+    u0Orig0 r1.2.1 r1.2.2.1 r1.2.2.2.1).2.2.2.2
+  have h := evm_div_preamble_denorm_epilogue_spec_v4_noNop sp base
+    r0.2.1 r0.2.2.1 r0.2.2.2.1 r0.2.2.2.2.1 shift
+    r0.2.2.2.2.1 (0 : Word) (sp + signExtend12 4056) (sp + signExtend12 4088)
+    c0 r0.1 r1.1 r2.1 r3.1
+    v0 v1 v2 v3 hshift_nz
+  exact cpsTripleWithin_weaken
+    (fun h hp => by
+      subst r3; subst r2; subst r1; subst r0; subst c0
+      delta fullDivN1CallMaxmaxmaxDenormPre at hp
+      simp only [se12_32, se12_40, se12_48, se12_56] at hp
+      xperm_hyp hp)
+    (fun h hq => by
+      subst r3; subst r2; subst r1; subst r0
+      delta fullDivN1CallMaxmaxmaxDenormPost
+      xperm_hyp hq)
+    h
+
+/-- Exact-`x1` framed v4 no-NOP N1 denormalization and DIV epilogue for
+    the call/max/max/max path. -/
+theorem evm_div_n1_call_maxmaxmax_denorm_epilogue_spec_v4_noNop_exact_x1
+    (sp base shift : Word)
+    (a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 scratchMem raVal : Word)
+    (hshift_nz : shift ≠ 0) :
+    cpsTripleWithin (2 + 23 + 10) (base + denormOff) (base + nopOff) (divCode_noNop_v4 base)
+      (fullDivN1CallMaxmaxmaxDenormPre sp shift
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 u0Orig0 **
+       fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem **
+       (.x1 ↦ᵣ raVal))
+      (fullDivN1CallMaxmaxmaxUnifiedPostNoX1 sp base shift
+        a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 scratchMem **
+       (.x1 ↦ᵣ raVal)) := by
+  have hDenorm :=
+    evm_div_n1_call_maxmaxmax_denorm_epilogue_spec_v4_noNop
+      sp base shift v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 hshift_nz
+  have hFramed := cpsTripleWithin_frameR
+    (fullDivN1CallMaxmaxmaxDenormFrameNoX1 sp base
+      a0 a1 a2 a3 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 scratchMem **
+     (.x1 ↦ᵣ raVal))
+    (by pcFree) hDenorm
+  exact cpsTripleWithin_weaken
+    (fun h hp => by xperm_hyp hp)
+    (fun h hq => by
+      delta fullDivN1CallMaxmaxmaxUnifiedPostNoX1
+      xperm_hyp hq)
+    hFramed
 
 /-- Repackage the explicit v4 call/max/max/max loop post as the denorm entry
     surface plus retained caller frame. -/
