@@ -625,4 +625,38 @@ theorem evm_div_callable_v4_preserving_x1_x9out_exact_pre_divCode_body_framed_sp
         q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
         nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
 
+/-- v4 embedded DIV callable wrapper for full `divCode_noNop_v4` body proofs
+    that transform an explicit frame. -/
+theorem evm_div_callable_v4_preserving_x1_x9out_exact_pre_divCode_body_frame_transform_spec_in_sdivCodeV4
+    {FPre FPost : EvmAsm.Rv64.Assertion} [EvmAsm.Rv64.Assertion.PCFree FPost]
+    (sp base x9In x9Out raVal : Word) (a b : EvmWord) (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      EvmAsm.Rv64.cpsTripleWithin EvmAsm.Evm64.unifiedDivBound
+        (base + wrapperEndOff)
+        ((base + wrapperEndOff) + EvmAsm.Evm64.nopOff)
+        (EvmAsm.Evm64.divCode_noNop_v4 (base + wrapperEndOff))
+        (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+          x9In raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** FPre)
+        (((EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+          (.x9 ↦ᵣ x9Out)) ** FPost)) :
+    EvmAsm.Rv64.cpsTripleWithin (EvmAsm.Evm64.unifiedDivBound + 1)
+      (base + wrapperEndOff) (raVal &&& ~~~1) (sdivCodeV4 base)
+      (EvmAsm.Evm64.divModStackDispatchPreNoX1 sp a b
+        x9In raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** FPre)
+      (((EvmAsm.Evm64.divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Out)) ** FPost) := by
+  exact
+    EvmAsm.Rv64.cpsTripleWithin_extend_code
+      (hmono := evm_div_callable_code_v4_sub_sdivCodeV4 (base := base))
+      (EvmAsm.Evm64.evm_div_callable_v4_spec_from_divCode_noNop_preserving_x1_x9out_body_frame_transform
+        sp (base + wrapperEndOff) x9In x9Out raVal a b v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        nMem shiftMem jMem retMem dMem dloMem scratchUn0 hStack)
+
 end EvmAsm.Evm64.SDiv.Compose
