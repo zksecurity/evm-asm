@@ -72,9 +72,9 @@ print(c.to_bytes(8, 'little').hex())
 }
 
 # Build the 112-hex-char expected output (= 56 bytes):
-#   32 hash bytes (PR-S11: SSZ hash_tree_root(
-#                  List[ByteList[1024], 256], witness.headers);
-#                  was PR-S10's headers[0]-only)
+#   32 hash bytes (PR-S12: SSZ hash_tree_root(ExecutionWitness),
+#                  the 3-field Container with state, codes,
+#                  headers sub-lists; was PR-S11's headers-only)
 # | 1 byte bool
 # | 8 LE bytes chain_id
 # | 7 zero bytes (gap)
