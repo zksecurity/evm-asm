@@ -1413,4 +1413,57 @@ theorem loopN1CallMaxmaxmaxExactHypotheses_carry2Call
   unfold loopN1CallMaxmaxmaxExactHypotheses at h
   exact h.2.2.2
 
+/-- Bundle the many scalar inputs to the N1 call/max/max/max exact path.
+    This gives later theorem statements a single data parameter instead of a
+    long spine of old-register, limb, scratch, and memory-cell arguments. -/
+structure LoopN1CallMaxmaxmaxExactInputs where
+  sp : Word
+  base : Word
+  jOld : Word
+  v5Old : Word
+  v6Old : Word
+  v7Old : Word
+  v10Old : Word
+  v11Old : Word
+  v2Old : Word
+  v0 : Word
+  v1 : Word
+  v2 : Word
+  v3 : Word
+  u0 : Word
+  u1 : Word
+  u2 : Word
+  u3 : Word
+  uTop : Word
+  u0Orig2 : Word
+  u0Orig1 : Word
+  u0Orig0 : Word
+  q3Old : Word
+  q2Old : Word
+  q1Old : Word
+  q0Old : Word
+  retMem : Word
+  dMem : Word
+  dloMem : Word
+  scratchUn0 : Word
+  scratchMem : Word
+  raVal : Word
+
+/-- Spec wrapper specialized to bundled N1 call/max/max/max inputs. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxExactInputSpec
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  loopN1CallMaxmaxmaxExactX1ScratchSpec I.sp I.base
+    I.jOld I.v5Old I.v6Old I.v7Old I.v10Old I.v11Old I.v2Old
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+    I.u0Orig2 I.u0Orig1 I.u0Orig0 I.q3Old I.q2Old I.q1Old I.q0Old
+    I.retMem I.dMem I.dloMem I.scratchUn0 I.scratchMem I.raVal
+
+/-- Compact hypotheses specialized to bundled N1 call/max/max/max inputs. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxExactInputHypotheses
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  loopN1CallMaxmaxmaxExactHypotheses
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+
 end EvmAsm.Evm64
