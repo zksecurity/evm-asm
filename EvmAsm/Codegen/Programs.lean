@@ -3097,6 +3097,83 @@ def ziskMptWalkProbeUnit : BuildUnit := {
   dataAsm     := ziskMptWalkDataSection
 }
 
+/-! ## bytes_to_nibbles -- PR-K25 byte → nibble array expansion
+
+    Convert N bytes into 2N nibbles (one byte per nibble, in
+    [0..15]). Each input byte writes 2 output bytes: high nibble
+    then low nibble. The output format matches what `mpt_walk`
+    (PR-K24) consumes as its path argument.
+
+    Composes with `zkvm_keccak256` to derive the standard MPT
+    path from a state-trie or storage-trie key:
+
+        keccak256(address)   -- 32 bytes
+        bytes_to_nibbles     -- 64 nibbles
+        mpt_walk(...)        -- account / slot lookup
+
+    Calling convention:
+      a0 (input)  : src bytes ptr
+      a1 (input)  : src byte length
+      a2 (input)  : dst nibble buf ptr (2 * a1 bytes)
+      ra (input)  : return
+      a0 (output) : 2 * a1 (number of nibbles emitted)
+
+    Pure register arithmetic, no scratch memory, leaf-callable. -/
+def bytesToNibblesFunction : String :=
+  "bytes_to_nibbles:\n" ++
+  "  mv t0, a0                  # src cursor\n" ++
+  "  mv t1, a2                  # dst cursor\n" ++
+  "  mv t2, a1                  # remaining\n" ++
+  "  li t6, 0                   # emitted count\n" ++
+  ".Lbtn_loop:\n" ++
+  "  beqz t2, .Lbtn_done\n" ++
+  "  lbu t3, 0(t0)\n" ++
+  "  srli t4, t3, 4\n" ++
+  "  andi t5, t3, 0xf\n" ++
+  "  sb t4, 0(t1)\n" ++
+  "  sb t5, 1(t1)\n" ++
+  "  addi t0, t0, 1\n" ++
+  "  addi t1, t1, 2\n" ++
+  "  addi t2, t2, -1\n" ++
+  "  addi t6, t6, 2\n" ++
+  "  j .Lbtn_loop\n" ++
+  ".Lbtn_done:\n" ++
+  "  mv a0, t6\n" ++
+  "  ret"
+
+/-- `zisk_bytes_to_nibbles`: probe BuildUnit. Reads
+    (src_len, src_bytes) from host input, writes
+    (nibble_count, nibbles) to OUTPUT.
+    Input layout:
+      bytes  0.. 8 : src_len (u64)
+      bytes  8..   : src bytes
+    Output layout:
+      bytes  0.. 8 : nibble_count (u64 = 2 * src_len)
+      bytes  8..   : nibble bytes -/
+def ziskBytesToNibblesPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # src_len\n" ++
+  "  addi a0, a3, 16             # src bytes ptr\n" ++
+  "  li a2, 0xa0010008           # nibble buf at OUTPUT + 8\n" ++
+  "  jal ra, bytes_to_nibbles\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # nibble_count at OUTPUT + 0\n" ++
+  "  j .Lbtn_pdone\n" ++
+  bytesToNibblesFunction ++ "\n" ++
+  ".Lbtn_pdone:"
+
+def ziskBytesToNibblesDataSection : String :=
+  ".section .data\n" ++
+  "btn_pad:\n" ++
+  "  .zero 8"
+
+def ziskBytesToNibblesProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskBytesToNibblesPrologue
+  dataAsm     := ziskBytesToNibblesDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -3542,6 +3619,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_mpt_branch_child"     => some ziskMptBranchChildProbeUnit
   | "zisk_hp_decode_nibbles"    => some ziskHpDecodeNibblesProbeUnit
   | "zisk_mpt_walk"             => some ziskMptWalkProbeUnit
+  | "zisk_bytes_to_nibbles"     => some ziskBytesToNibblesProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -3576,6 +3654,7 @@ def knownProgramNames : List String :=
    "zisk_mpt_branch_child",
    "zisk_hp_decode_nibbles",
    "zisk_mpt_walk",
+   "zisk_bytes_to_nibbles",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
