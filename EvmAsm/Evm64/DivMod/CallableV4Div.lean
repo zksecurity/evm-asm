@@ -159,6 +159,27 @@ theorem sharedDivModCodeNoNop_v4_sub_div_callable_code_v4 {base : Word} :
     (CodeReq.union_split_mono callable_b13_div_v4
     (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h))))))))))))
 
+/-- `divCode_noNop_v4 ⊆ evm_div_callable_code_v4`: the callable DIV code is
+    the exact no-NOP DIV body followed by the callable return. -/
+theorem divCode_noNop_v4_sub_div_callable_code_v4 {base : Word} :
+    ∀ a i, (divCode_noNop_v4 base) a = some i →
+           (evm_div_callable_code_v4 base) a = some i := by
+  unfold divCode_noNop_v4; simp only [CodeReq.unionAll_cons]
+  exact CodeReq.union_split_mono callable_b0_div_v4
+    (CodeReq.union_split_mono callable_b1_div_v4
+    (CodeReq.union_split_mono callable_b2_div_v4
+    (CodeReq.union_split_mono callable_b3_div_v4
+    (CodeReq.union_split_mono callable_b4_div_v4
+    (CodeReq.union_split_mono callable_b5_div_v4
+    (CodeReq.union_split_mono callable_b6_div_v4
+    (CodeReq.union_split_mono callable_b7_div_v4
+    (CodeReq.union_split_mono callable_b8_div_v4
+    (CodeReq.union_split_mono callable_b9_div_v4
+    (CodeReq.union_split_mono callable_b10_div_v4
+    (CodeReq.union_split_mono callable_b11_div_v4
+    (CodeReq.union_split_mono callable_b13_div_v4
+    (fun _ _ h => by simp [CodeReq.unionAll_nil, CodeReq.empty] at h)))))))))))))
+
 theorem evm_div_callable_v4_spec_from_noNop (sp base raVal : Word)
     (a b : EvmWord) (v5 v6 v7 v10 v11 : Word)
     (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
@@ -500,6 +521,56 @@ theorem evm_div_callable_v4_spec_from_noNop_preserving_x1_x9out_body_framed
   have hStackCall :=
     cpsTripleWithin_extend_code
       (hmono := sharedDivModCodeNoNop_v4_sub_div_callable_code_v4) hStack
+  have hStackForRet :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (evm_div_callable_code_v4 base)
+        (divModStackDispatchPreNoX1 sp a b
+          x9In raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+        (((divStackDispatchPostCallable sp a b ** (.x9 ↦ᵣ x9Out)) ** F) **
+          (.x1 ↦ᵣ raVal)) :=
+    cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by xperm_hyp hp) hStackCall
+  have hRet :=
+    cpsTripleWithin_extend_code (hmono := evm_div_callable_code_v4_ret_sub (base := base))
+      (ret_spec_within' (base + nopOff) raVal)
+  have hRetFramed :=
+    cpsTripleWithin_frameL ((divStackDispatchPostCallable sp a b ** (.x9 ↦ᵣ x9Out)) ** F)
+      (by
+        rw [divStackDispatchPostCallable_unfold, divScratchOwnCallNoX1_unfold,
+          divScratchOwn_unfold]
+        pcFree)
+      hRet
+  exact cpsTripleWithin_weaken (fun _ hp => hp) (fun _ hp => by xperm_hyp hp)
+    (cpsTripleWithin_seq_same_cr hStackForRet hRetFramed)
+
+/-- v4 callable DIV wrapper for full `divCode_noNop_v4` body proofs that
+    already carry an explicit PC-free frame and return a possibly different
+    exact x9 value. -/
+theorem evm_div_callable_v4_spec_from_divCode_noNop_preserving_x1_x9out_body_framed
+    {F : Assertion} [Assertion.PCFree F]
+    (sp base x9In x9Out raVal : Word) (a b : EvmWord)
+    (v2 v5 v6 v7 v10 v11 : Word)
+    (q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratchUn0 : Word)
+    (hStack :
+      cpsTripleWithin unifiedDivBound base (base + nopOff) (divCode_noNop_v4 base)
+        (divModStackDispatchPreNoX1 sp a b
+          x9In raVal v2 v5 v6 v7 v10 v11
+          q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+          shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+        (((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+          (.x9 ↦ᵣ x9Out)) ** F)) :
+    cpsTripleWithin (unifiedDivBound + 1) base (raVal &&& ~~~1)
+      (evm_div_callable_code_v4 base)
+      (divModStackDispatchPreNoX1 sp a b
+        x9In raVal v2 v5 v6 v7 v10 v11
+        q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratchUn0 ** F)
+      (((divStackDispatchPostCallable sp a b ** (.x1 ↦ᵣ raVal)) **
+        (.x9 ↦ᵣ x9Out)) ** F) := by
+  have hStackCall :=
+    cpsTripleWithin_extend_code
+      (hmono := divCode_noNop_v4_sub_div_callable_code_v4) hStack
   have hStackForRet :
       cpsTripleWithin unifiedDivBound base (base + nopOff) (evm_div_callable_code_v4 base)
         (divModStackDispatchPreNoX1 sp a b
