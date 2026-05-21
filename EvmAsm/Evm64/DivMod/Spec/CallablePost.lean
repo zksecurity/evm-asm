@@ -220,4 +220,18 @@ theorem modStackDispatchPostNoX1_weaken_callable_own_x1
   rw [divScratchOwnCallNoX1_unfold]
   xperm_hyp hp
 
+/-- Framed variant of `modStackDispatchPostNoX1_weaken_callable_own_x1`
+    preserving an exact caller-owned `x9` atom. -/
+theorem modStackDispatchPostNoX1_weaken_callable_own_x1_frame_x9
+    (sp : Word) (a b : EvmWord) (x9Val : Word) :
+  ∀ h : PartialState,
+      (modStackDispatchPostNoX1 sp a b ** (.x9 ↦ᵣ x9Val)) h →
+      ((modStackDispatchPostCallable sp a b ** regOwn .x1) **
+        (.x9 ↦ᵣ x9Val)) h := by
+  intro h hp
+  apply sepConj_mono_left
+  · exact fun hLeft hpLeft =>
+      modStackDispatchPostNoX1_weaken_callable_own_x1 sp a b hLeft hpLeft
+  · exact hp
+
 end EvmAsm.Evm64
