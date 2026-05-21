@@ -621,10 +621,8 @@ theorem evm_div_stack_spec_noNop_preNoX1_callableOwnPost
   cases branch with
   | bzero v1 v2 hbz =>
       exact cpsTripleWithin_weaken (fun _ hp => hp)
-        (fun h hp => by
-          exact sepConj_mono_left
-            (sepConj_mono_right (regIs_implies_regOwn .x1 (v := raVal)))
-            h hp)
+        (divStackDispatchPostCallable_exact_x1_weaken_own_x1_frame_x9
+          sp a b raVal v1)
         (evm_div_bzero_stack_spec_within_dispatch_noNop_callable_uni
           sp base a b v1 raVal v2 v5 v6 v7 v10 v11
           q0 q1 q2 q3 u0 u1 u2 u3 u4 u5 u6 u7
