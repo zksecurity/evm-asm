@@ -1303,4 +1303,36 @@ theorem loopN1CallMaxmaxmaxBranchFacts_hbltu0
       ¬BitVec.ult r1.2.1 v0) at hbranches'
   simpa [r1] using hbranches'.2.2
 
+/-- The named scratch precondition is PC-free, so later composed call/max
+    surfaces can use it under `cpsTripleWithin_frameR`. -/
+theorem loopN1CallMaxmaxmaxScratchPreNoX1_pcFree (sp : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word) :
+    (loopN1CallMaxmaxmaxScratchPreNoX1 sp
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop
+      u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
+      retMem dMem dloMem scratchUn0 scratchMem).pcFree := by
+  delta loopN1CallMaxmaxmaxScratchPreNoX1
+  pcFree
+
+instance pcFreeInst_loopN1CallMaxmaxmaxScratchPreNoX1 (sp : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop
+     u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old : Word)
+    (retMem dMem dloMem scratchUn0 scratchMem : Word) :
+    Assertion.PCFree
+      (loopN1CallMaxmaxmaxScratchPreNoX1 sp
+        jOld v5Old v6Old v7Old v10Old v11Old v2Old
+        v0 v1 v2 v3 u0 u1 u2 u3 uTop
+        u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
+        retMem dMem dloMem scratchUn0 scratchMem) :=
+  ⟨loopN1CallMaxmaxmaxScratchPreNoX1_pcFree sp
+    jOld v5Old v6Old v7Old v10Old v11Old v2Old
+    v0 v1 v2 v3 u0 u1 u2 u3 uTop
+    u0Orig2 u0Orig1 u0Orig0 q3Old q2Old q1Old q0Old
+    retMem dMem dloMem scratchUn0 scratchMem⟩
+
 end EvmAsm.Evm64
