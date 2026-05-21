@@ -1638,6 +1638,102 @@ def ziskHeadersKeccakChainProbeUnit : BuildUnit := {
   dataAsm     := ziskHeadersKeccakChainDataSection
 }
 
+/-! ## headers_keccak_array -- PR-K16 walk SSZ list section,
+    keccak each element, store every digest in caller table.
+
+    Sibling of `headers_keccak_chain` (PR-K15): same SSZ-list
+    parsing loop, but each iteration writes the digest to
+    `table[i]` instead of overwriting the same slot. Returns the
+    element count `N`.
+
+    Calling convention:
+      a0 (input)  : section ptr (read-only)
+      a1 (input)  : section_len (0 = empty list)
+      a2 (input)  : table base ptr (must hold N*32 bytes)
+      ra (input)  : return
+      a0 (output) : N (element count)
+      32 bytes at *(table + 32*i) = keccak256(element[i])
+        for each i in 0..N. -/
+def headersKeccakArrayFunction : String :=
+  "headers_keccak_array:\n" ++
+  "  addi sp, sp, -48\n" ++
+  "  sd ra,  0(sp)\n" ++
+  "  sd s0,  8(sp); sd s1, 16(sp); sd s2, 24(sp)\n" ++
+  "  sd s3, 32(sp); sd s4, 40(sp)\n" ++
+  "  mv s0, a0                  # s0 = section ptr\n" ++
+  "  mv s1, a1                  # s1 = section_len\n" ++
+  "  mv s2, a2                  # s2 = table base\n" ++
+  "  beqz s1, .Lhka_n0\n" ++
+  "  lwu t0, 0(s0)\n" ++
+  "  srli s3, t0, 2             # s3 = N\n" ++
+  "  li s4, 0                   # s4 = i\n" ++
+  ".Lhka_loop:\n" ++
+  "  beq s4, s3, .Lhka_done\n" ++
+  "  slli t0, s4, 2             # 4*i\n" ++
+  "  add t1, s0, t0\n" ++
+  "  lwu t2, 0(t1)              # inner_off_i\n" ++
+  "  add a0, s0, t2             # el_i_start\n" ++
+  "  addi t3, s4, 1\n" ++
+  "  beq t3, s3, .Lhka_use_end\n" ++
+  "  slli t3, t3, 2             # 4*(i+1)\n" ++
+  "  add t3, s0, t3\n" ++
+  "  lwu t4, 0(t3)\n" ++
+  "  add t4, s0, t4             # el_i_end\n" ++
+  "  j .Lhka_have_end\n" ++
+  ".Lhka_use_end:\n" ++
+  "  add t4, s0, s1             # el_i_end = section_end\n" ++
+  ".Lhka_have_end:\n" ++
+  "  sub a1, t4, a0             # el_i_len\n" ++
+  "  slli t0, s4, 5             # 32*i\n" ++
+  "  add a2, s2, t0             # a2 = &table[i]\n" ++
+  "  jal ra, zkvm_keccak256\n" ++
+  "  addi s4, s4, 1\n" ++
+  "  j .Lhka_loop\n" ++
+  ".Lhka_n0:\n" ++
+  "  li s3, 0\n" ++
+  ".Lhka_done:\n" ++
+  "  mv a0, s3                  # return N\n" ++
+  "  ld ra,  0(sp)\n" ++
+  "  ld s0,  8(sp); ld s1, 16(sp); ld s2, 24(sp)\n" ++
+  "  ld s3, 32(sp); ld s4, 40(sp)\n" ++
+  "  addi sp, sp, 48\n" ++
+  "  ret"
+
+/-- `zisk_headers_keccak_array`: probe BuildUnit that reads an
+    SSZ list section from host input and writes (count, table)
+    to OUTPUT, capped at N ≤ 7 to fit ziskemu's 256-byte output
+    channel.
+    Input layout:
+      bytes  0.. 8 : section_len (u64)
+      bytes  8..   : SSZ list section bytes
+    Output layout:
+      bytes  0.. 8     : N (u64 LE)
+      bytes  8..8+32*N : N digests of 32 bytes each -/
+def ziskHeadersKeccakArrayPrologue : String :=
+  "  li sp, 0xa0050000\n" ++
+  "  li a3, 0x40000000\n" ++
+  "  ld a1, 8(a3)                # section_len\n" ++
+  "  addi a0, a3, 16             # section ptr\n" ++
+  "  li a2, 0xa0010008           # table at OUTPUT + 8\n" ++
+  "  jal ra, headers_keccak_array\n" ++
+  "  li t0, 0xa0010000\n" ++
+  "  sd a0, 0(t0)                # write N at OUTPUT + 0\n" ++
+  "  j .Lhka_pdone\n" ++
+  zkvmKeccak256Function ++ "\n" ++
+  headersKeccakArrayFunction ++ "\n" ++
+  ".Lhka_pdone:"
+
+def ziskHeadersKeccakArrayDataSection : String :=
+  ".section .data\n" ++
+  "zk3_state:\n" ++
+  "  .zero 200"
+
+def ziskHeadersKeccakArrayProbeUnit : BuildUnit := {
+  body        := NOP
+  prologueAsm := ziskHeadersKeccakArrayPrologue
+  dataAsm     := ziskHeadersKeccakArrayDataSection
+}
+
 /-! ## zisk_ssz_pair_hash — PR-S4 SSZ merkleization primitive
 
     First consumer of the SSZ `hash_tree_root` shim:
@@ -2074,6 +2170,7 @@ def lookupProgram : String → Option BuildUnit
   | "zisk_zkvm_sha256"          => some ziskZkvmSha256ProbeUnit
   | "zisk_keccak256_from_input" => some ziskKeccak256FromInputProbeUnit
   | "zisk_headers_keccak_chain" => some ziskHeadersKeccakChainProbeUnit
+  | "zisk_headers_keccak_array" => some ziskHeadersKeccakArrayProbeUnit
   | "zisk_sha256_from_input"    => some ziskSha256FromInputProbeUnit
   | "zisk_ssz_pair_hash"        => some ziskSszPairHashProbeUnit
   | "zisk_ssz_zero_hashes"      => some ziskSszZeroHashesProbeUnit
@@ -2099,6 +2196,7 @@ def knownProgramNames : List String :=
    "zisk_zkvm_sha256",
    "zisk_keccak256_from_input",
    "zisk_headers_keccak_chain",
+   "zisk_headers_keccak_array",
    "zisk_sha256_from_input",
    "zisk_ssz_pair_hash",
    "zisk_ssz_zero_hashes",
