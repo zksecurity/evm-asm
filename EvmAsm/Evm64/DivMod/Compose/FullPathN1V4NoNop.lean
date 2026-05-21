@@ -1649,4 +1649,62 @@ theorem divK_loop_n1_call_iter210_exact_x1_framed_v4_noNop_input
       exact h)
     (loopN1CallMaxmaxmaxExactInputHypotheses_carry2 I hh)
 
+/-- Actual assertion produced by the bundled j=3 call-body step, including
+    the cells framed for the following all-max tail. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxJ3PostInput
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Assertion :=
+  loopIterPostN1CallScratchNoX1 I.sp I.base (3 : Word)
+    (divKTrialCallV4QHat I.u1 I.u0 I.v0)
+    (divKTrialCallV4DLo I.v0)
+    (divKTrialCallV4Un0 I.u0)
+    (divKTrialCallV4ScratchOut I.u1 I.u0 I.v0 I.scratchMem)
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop **
+  (.x1 ↦ᵣ I.raVal) **
+  ((I.sp + signExtend12 4056 - (2 : Word) <<< (3 : BitVec 6).toNat +
+    signExtend12 0) ↦ₘ I.u0Orig2) **
+  ((I.sp + signExtend12 4088 - (2 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q2Old) **
+  ((I.sp + signExtend12 4056 - (1 : Word) <<< (3 : BitVec 6).toNat +
+    signExtend12 0) ↦ₘ I.u0Orig1) **
+  ((I.sp + signExtend12 4088 - (1 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q1Old) **
+  ((I.sp + signExtend12 4056 - (0 : Word) <<< (3 : BitVec 6).toNat +
+    signExtend12 0) ↦ₘ I.u0Orig0) **
+  ((I.sp + signExtend12 4088 - (0 : Word) <<< (3 : BitVec 6).toNat) ↦ₘ I.q0Old)
+
+/-- Frame cells carried around the j=2/j=1/j=0 all-max tail after the
+    bundled j=3 call-body step. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxIter210FrameInput
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Assertion :=
+  let r3 := loopN1CallMaxmaxmaxR3 I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+  let uBase3 := I.sp + signExtend12 4056 - (3 : Word) <<< (3 : BitVec 6).toNat
+  let qAddr3 := I.sp + signExtend12 4088 - (3 : Word) <<< (3 : BitVec 6).toNat
+  ((uBase3 + signExtend12 4064) ↦ₘ r3.2.2.2.2.2) **
+  (qAddr3 ↦ₘ r3.1) **
+  (I.sp + signExtend12 3936 ↦ₘ divKTrialCallV4ScratchOut I.u1 I.u0 I.v0 I.scratchMem)
+
+/-- The j=3 frame carried around the all-max tail is PC-free. -/
+theorem loopN1CallMaxmaxmaxIter210FrameInput_pcFree
+    (I : LoopN1CallMaxmaxmaxExactInputs) :
+    (loopN1CallMaxmaxmaxIter210FrameInput I).pcFree := by
+  delta loopN1CallMaxmaxmaxIter210FrameInput
+  pcFree
+
+instance pcFreeInst_loopN1CallMaxmaxmaxIter210FrameInput
+    (I : LoopN1CallMaxmaxmaxExactInputs) :
+    Assertion.PCFree (loopN1CallMaxmaxmaxIter210FrameInput I) :=
+  ⟨loopN1CallMaxmaxmaxIter210FrameInput_pcFree I⟩
+
+/-- Bundled framed all-max tail from the actual j=3 post to the final
+    N1 call/max/max/max scratch post. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxIter210FramedExactInputSpec
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  cpsTripleWithin 556 (I.base + loopBodyOff) (I.base + denormOff)
+    (divCode_noNop_v4 I.base)
+    (loopN1CallMaxmaxmaxJ3PostInput I)
+    (loopN1CallMaxmaxmaxScratchPostNoX1 I.sp I.base
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop
+      I.u0Orig2 I.u0Orig1 I.u0Orig0 I.scratchMem ** (.x1 ↦ᵣ I.raVal))
+
 end EvmAsm.Evm64
