@@ -1568,6 +1568,20 @@ def loopN1CallMaxmaxmaxExactInputSpec
     I.u0Orig2 I.u0Orig1 I.u0Orig0 I.q3Old I.q2Old I.q1Old I.q0Old
     I.retMem I.dMem I.dloMem I.scratchUn0 I.scratchMem I.raVal
 
+/-- Final spec wrapper for the canonical full-DIV n=1 call/max/max/max
+    bundled inputs. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxExactInputSpec (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word) :
+    Prop :=
+  loopN1CallMaxmaxmaxExactInputSpec
+    (fullDivN1CallMaxmaxmaxExactInputs sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
+
 /-- Compact hypotheses specialized to bundled N1 call/max/max/max inputs. -/
 @[irreducible]
 def loopN1CallMaxmaxmaxExactInputHypotheses
@@ -1696,6 +1710,34 @@ theorem loopN1CallMaxmaxmaxExactInputAligned_raw
       ~~~(1 : Word) = I.base + div128CallRetOff := by
   unfold loopN1CallMaxmaxmaxExactInputAligned at h
   exact h
+
+/-- Alignment wrapper for the canonical full-DIV n=1 call/max/max/max
+    bundled inputs. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxExactInputAligned (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word) :
+    Prop :=
+  loopN1CallMaxmaxmaxExactInputAligned
+    (fullDivN1CallMaxmaxmaxExactInputs sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
+
+/-- Hypothesis wrapper for the canonical full-DIV n=1 call/max/max/max
+    bundled inputs. -/
+@[irreducible]
+def fullDivN1CallMaxmaxmaxExactInputHypotheses (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word) :
+    Prop :=
+  loopN1CallMaxmaxmaxExactInputHypotheses
+    (fullDivN1CallMaxmaxmaxExactInputs sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
 
 /-- Bundled statement for the first j=3 call-body step of the N1
     call/max/max/max exact path. -/
@@ -2015,5 +2057,34 @@ theorem divK_loop_n1_call_maxmaxmax_exact_x1_scratch_input_v4_noNop_of_bltu
   exact divK_loop_n1_call_maxmaxmax_exact_x1_scratch_input_v4_noNop I halign
     (loopN1CallMaxmaxmaxExactInputHypotheses_of_bltu I
       hbltu3 hbltu2 hbltu1 hbltu0 hcarry2)
+
+/-- Final exact path for the canonical full-DIV n=1 call/max/max/max
+    bundled inputs. -/
+theorem fullDivN1_call_maxmaxmax_exact_x1_scratch_v4_noNop
+    (sp base : Word)
+    (jOld v5Old v6Old v7Old v10Old v11Old v2Old : Word)
+    (a0 a1 a2 a3 b0 b1 b2 b3 : Word)
+    (q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal : Word)
+    (halign : fullDivN1CallMaxmaxmaxExactInputAligned sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
+    (hh : fullDivN1CallMaxmaxmaxExactInputHypotheses sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal) :
+    fullDivN1CallMaxmaxmaxExactInputSpec sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal := by
+  unfold fullDivN1CallMaxmaxmaxExactInputSpec
+  unfold fullDivN1CallMaxmaxmaxExactInputAligned at halign
+  unfold fullDivN1CallMaxmaxmaxExactInputHypotheses at hh
+  exact divK_loop_n1_call_maxmaxmax_exact_x1_scratch_input_v4_noNop
+    (fullDivN1CallMaxmaxmaxExactInputs sp base
+      jOld v5Old v6Old v7Old v10Old v11Old v2Old
+      a0 a1 a2 a3 b0 b1 b2 b3
+      q3Old q2Old q1Old q0Old retMem dMem dloMem scratchUn0 scratchMem raVal)
+    halign hh
 
 end EvmAsm.Evm64
