@@ -1490,6 +1490,20 @@ def loopN1CallMaxmaxmaxExactInputHypotheses
   loopN1CallMaxmaxmaxExactHypotheses
     I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
 
+/-- Build the bundled N1 call/max/max/max exact-path hypothesis wrapper
+    from the bundled branch facts plus the universal carry2 assumption. -/
+theorem loopN1CallMaxmaxmaxExactInputHypotheses_of_branches
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (hbltu3 : BitVec.ult I.u1 I.v0)
+    (hbranches : loopN1CallMaxmaxmaxBranchFacts
+      I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1)
+    (hcarry2 : Carry2NzAll I.v0 I.v1 I.v2 I.v3) :
+    loopN1CallMaxmaxmaxExactInputHypotheses I := by
+  unfold loopN1CallMaxmaxmaxExactInputHypotheses
+  exact loopN1CallMaxmaxmaxExactHypotheses_of_branches
+    I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
+    hbltu3 hbranches hcarry2
+
 /-- Project the j=3 BLTU-taken fact from bundled N1 call/max/max/max inputs. -/
 theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu3
     (I : LoopN1CallMaxmaxmaxExactInputs)
