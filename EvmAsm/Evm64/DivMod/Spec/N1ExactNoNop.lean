@@ -272,6 +272,21 @@ theorem fullDivN1UnifiedPostNoX1_to_divConcretePostNoX1Frame
     exact fun _ hp => hp
     exact hpLeft
 
+/-- Recombine the split no-`x1` full-path post with separate `x1` ownership. -/
+theorem fullDivN1UnifiedPostNoX1_frame_to_fullDivN1UnifiedPost
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool)
+    (sp base a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 : Word) :
+    ∀ h,
+      (fullDivN1UnifiedPostNoX1 bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 **
+        regOwn .x1) h →
+      fullDivN1UnifiedPost bltu_3 bltu_2 bltu_1 bltu_0 sp base
+        a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h := by
+  intro h hq
+  delta fullDivN1UnifiedPost fullDivN1Frame fullDivN1Scratch
+    fullDivN1UnifiedPostNoX1 fullDivN1FrameNoX1 fullDivN1ScratchNoX1 at hq ⊢
+  xperm_hyp hq
+
 /-- No-NOP n=1 DIV stack spec with the callable precondition shape. The
     precondition keeps caller-framed `x1`/`x9` exact; the current full-path
     proof preserves `x1` ownership, so the postcondition exposes the split
@@ -358,5 +373,64 @@ theorem evm_div_n1_stack_spec_within_word_noNop_preNoX1_fullPost
       xperm_hyp hpOwn)
     (fun _ hq => hq)
     hFull
+
+/-- No-NOP n=1 DIV stack spec from the callable precondition shape to the
+    public callable post, with separate `x1` ownership and exact `x9`. -/
+theorem evm_div_n1_stack_spec_within_word_noNop_preNoX1_callableOwnPost
+    (bltu_3 bltu_2 bltu_1 bltu_0 : Bool) (sp base : Word)
+    (a b : EvmWord)
+    (a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old : Word)
+    (q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
+     nMem shiftMem jMem retMem dMem dloMem scratch_un0 : Word)
+    (raVal : Word)
+    (ha0 : a.getLimbN 0 = a0) (ha1 : a.getLimbN 1 = a1)
+    (ha2 : a.getLimbN 2 = a2) (ha3 : a.getLimbN 3 = a3)
+    (hb0 : b.getLimbN 0 = b0) (hb1 : b.getLimbN 1 = b1)
+    (hb2 : b.getLimbN 2 = b2) (hb3 : b.getLimbN 3 = b3)
+    (hbnz : b0 ||| b1 ||| b2 ||| b3 ≠ 0)
+    (hb3z : b3 = 0) (hb2z : b2 = 0) (hb1z : b1 = 0)
+    (hshift_nz : (clzResult b0).1 ≠ 0)
+    (halign : ((base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&& ~~~(1 : Word) = base + div128CallRetOff)
+    (hbltu_3 : isTrialN1_j3 bltu_3 a3 b0)
+    (hbltu_2 : isTrialN1_j2 bltu_3 bltu_2 a2 a3 b0 b1 b2 b3)
+    (hbltu_1 : isTrialN1_j1 bltu_3 bltu_2 bltu_1 a1 a2 a3 b0 b1 b2 b3)
+    (hbltu_0 : isTrialN1_j0 bltu_3 bltu_2 bltu_1 bltu_0 a0 a1 a2 a3 b0 b1 b2 b3)
+    (hcarry2 : Carry2NzAll (b0 <<< (((clzResult b0).1).toNat % 64))
+      ((b1 <<< (((clzResult b0).1).toNat % 64)) ||| (b0 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b2 <<< (((clzResult b0).1).toNat % 64)) ||| (b1 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64)))
+      ((b3 <<< (((clzResult b0).1).toNat % 64)) ||| (b2 >>> ((signExtend12 (0 : BitVec 12) - (clzResult b0).1).toNat % 64))))
+    (hdivWord : fullDivN1QuotientWord bltu_3 bltu_2 bltu_1 bltu_0
+      a0 a1 a2 a3 b0 b1 b2 b3 = EvmWord.div a b) :
+    cpsTripleWithin 946 base (base + nopOff) (divCode_noNop base)
+      (divModStackDispatchPreNoX1 sp a b
+        (signExtend12 (4 : BitVec 12) - (4 : Word)) raVal
+        ((clzResult b0).2 >>> (63 : Nat))
+        v5 v6 v7 v10 v11Old
+        q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
+        shiftMem nMem jMem retMem dMem dloMem scratch_un0)
+      ((divStackDispatchPostCallable sp a b ** regOwn .x1) **
+        (.x9 ↦ᵣ (signExtend12 4095 : Word))) := by
+  obtain ⟨hdiv0, hdiv1, hdiv2, hdiv3⟩ :=
+    fullDivN1_hdivs_of_word_eq bltu_3 bltu_2 bltu_1 bltu_0
+      a b a0 a1 a2 a3 b0 b1 b2 b3 hdivWord
+  exact cpsTripleWithin_weaken
+    (fun _ hp => hp)
+    (fun h hp =>
+      divStackDispatchPostNoX1_weaken_callable_own_x1_frame_x9
+        sp a b (signExtend12 4095 : Word) h
+        (fullDivN1UnifiedPost_to_divStackDispatchPostNoX1
+          bltu_3 bltu_2 bltu_1 bltu_0 sp base a b
+          a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0
+          ha0 ha1 ha2 ha3 hdiv0 hdiv1 hdiv2 hdiv3 h
+          (fullDivN1UnifiedPostNoX1_frame_to_fullDivN1UnifiedPost
+            bltu_3 bltu_2 bltu_1 bltu_0 sp base
+            a0 a1 a2 a3 b0 b1 b2 b3 retMem dMem dloMem scratch_un0 h hp)))
+    (evm_div_n1_stack_spec_within_word_noNop_preNoX1_fullPost
+      bltu_3 bltu_2 bltu_1 bltu_0 sp base
+      a b a0 a1 a2 a3 b0 b1 b2 b3 v5 v6 v7 v10 v11Old
+      q0 q1 q2 q3 u0Old u1Old u2Old u3Old u4Old u5 u6 u7
+      nMem shiftMem jMem retMem dMem dloMem scratch_un0 raVal
+      ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hbnz hb3z hb2z hb1z hshift_nz
+      halign hbltu_3 hbltu_2 hbltu_1 hbltu_0 hcarry2)
 
 end EvmAsm.Evm64
