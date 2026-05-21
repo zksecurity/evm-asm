@@ -1536,4 +1536,20 @@ theorem loopN1CallMaxmaxmaxExactInputHypotheses_hbltu0
     I.v0 I.v1 I.v2 I.v3 I.u0 I.u1 I.u2 I.u3 I.uTop I.u0Orig2 I.u0Orig1
     (loopN1CallMaxmaxmaxExactInputHypotheses_branches I h)
 
+/-- Bundled alignment condition for the v4 div128 call return address. -/
+@[irreducible]
+def loopN1CallMaxmaxmaxExactInputAligned
+    (I : LoopN1CallMaxmaxmaxExactInputs) : Prop :=
+  ((I.base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&&
+    ~~~(1 : Word) = I.base + div128CallRetOff
+
+/-- Unpack bundled alignment into the raw equality expected by the j=3 call step. -/
+theorem loopN1CallMaxmaxmaxExactInputAligned_raw
+    (I : LoopN1CallMaxmaxmaxExactInputs)
+    (h : loopN1CallMaxmaxmaxExactInputAligned I) :
+    ((I.base + div128CallRetOff) + signExtend12 (0 : BitVec 12)) &&&
+      ~~~(1 : Word) = I.base + div128CallRetOff := by
+  unfold loopN1CallMaxmaxmaxExactInputAligned at h
+  exact h
+
 end EvmAsm.Evm64
