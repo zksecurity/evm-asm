@@ -1212,6 +1212,15 @@ def isAddbackCarry2NzN1CallV4
   isAddbackCarry2Nz (divKTrialCallV4QHat u1 u0 v0)
     v0 v1 v2 v3 u0 u1 u2 u3 uTop
 
+/-- Specialize the universal double-addback carry hypothesis to the quotient
+    selected by the v4 n=1 call path. -/
+theorem isAddbackCarry2NzN1CallV4_of_carry2All
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop : Word)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
+    isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop := by
+  unfold isAddbackCarry2NzN1CallV4
+  exact hcarry2 (divKTrialCallV4QHat u1 u0 v0) u0 u1 u2 u3 uTop
+
 /-- Expand the compact v4 n=1 call carry predicate into the raw
     double-addback progress hypothesis expected by the j=3 call-body spec. -/
 theorem isAddbackCarry2NzN1CallV4_raw
@@ -1375,6 +1384,21 @@ def loopN1CallMaxmaxmaxExactHypotheses
   loopN1CallMaxmaxmaxBranchFacts v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 ∧
   Carry2NzAll v0 v1 v2 v3 ∧
   isAddbackCarry2NzN1CallV4 v0 v1 v2 v3 u0 u1 u2 u3 uTop
+
+/-- Build the compact N1 call/max/max/max exact-path hypothesis bundle from
+    the branch facts plus the universal carry2 assumption. -/
+theorem loopN1CallMaxmaxmaxExactHypotheses_of_branches
+    (v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 : Word)
+    (hbltu3 : BitVec.ult u1 v0)
+    (hbranches : loopN1CallMaxmaxmaxBranchFacts
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1)
+    (hcarry2 : Carry2NzAll v0 v1 v2 v3) :
+    loopN1CallMaxmaxmaxExactHypotheses
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop u0Orig2 u0Orig1 := by
+  unfold loopN1CallMaxmaxmaxExactHypotheses
+  exact ⟨hbltu3, hbranches, hcarry2,
+    isAddbackCarry2NzN1CallV4_of_carry2All
+      v0 v1 v2 v3 u0 u1 u2 u3 uTop hcarry2⟩
 
 /-- Project the j=3 BLTU-taken fact from the compact N1 call/max/max/max hypotheses. -/
 theorem loopN1CallMaxmaxmaxExactHypotheses_hbltu3
